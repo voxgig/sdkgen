@@ -2150,6 +2150,198 @@
    ],
    "example": "rb: `client.Planet.create({ \"$action\" => \"terraform\", \"id\" => \"planet_id\" })`",
    "identity": "cell | `client.Ⓔ.create({ \"$action\" => \"terraform\", \"Ⓕ\" => \"Ⓔ_id\" })`"
+  },
+  "25f8905d37": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] The example passes the API key from the `DEMO_APIKEY` environment variable as the `apikey` option. || nine examples pass the env read as apikey; runtimes read options.apikey only (probes ts, py)"
+  },
+  "4966aea016": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] ... key and secret ... as the `apikey` and `secret` options. || secret read only under auth.basic in all 20 PrepareAuth"
+  },
+  "21fc35c768": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Ⓝ. Create, update, patch, and remove a planet || crud-bare ts block order || 'planet' unmasked (one entity)"
+  },
+  "81aabf087b": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Ⓝ. Create and remove a planet || crud-noupdate"
+  },
+  "219aa7c229": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Ⓝ. Create, update, and remove a planet || doc-nested"
+  },
+  "9bcb2825f2": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Satellite is nested under planet, so the match also gives `planet_id`. || ts and c doc-nested blocks pass planet_id and id"
+  },
+  "b83e95bec6": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Ⓝ. Update a gauge || ref-issues"
+  },
+  "b4e03207de": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] The program below runs these Ⓝ steps in order. || go B tutorial"
+  },
+  "a06a8df5bb": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] `Data()` reads an entity's record. || go record accessor derived"
+  },
+  "a8c3a1d8ce": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] **Create, update, patch, and remove a Ⓔ.** || go lead"
+  },
+  "ea12b61c7f": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] **Create and remove a Ⓔ.** || go lead"
+  },
+  "a2c72437b6": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] **Create, update, and remove a Ⓔ.** || go lead"
+  },
+  "4e460e7bba": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] The program below runs this step. || go ent-none"
+  },
+  "26d1a4e4aa": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] **Update a Ⓔ.** || go lead"
+  },
+  "b442c2e605": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] `Update()` returns `(value, error)`: ... || go Update (any, error) || no 'too' without an earlier step"
+  },
+  "23dc789f01": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Load a Ⓔ: ⟦⟧ is the entity; ⟦⟧ holds the failure || rust Result, zig EntResult"
+  },
+  "93ac2276de": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] List Ⓔ records: ⟦⟧ is a ⟦⟧ of entities ...; ⟦⟧ holds the failure || rust Vec, zig slice"
+  },
+  "7e4d6fd58f": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Like any operation, an action's call gives back the entity; its data is then that action's OWN response ... || ran ts, py; read go, c, php, java, lua, rust, cpp create ops || a non-map response becomes {}"
+  },
+  "0a6358906c": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] **Returns:** ⟦⟧, a result map. || all 20 direct read"
+  },
+  "746a31db3f": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] The first argument holds the test feature's options, which the call switches on, and replaces any ⟦⟧ in the second ... || test() read in 14 runtimes: active true and setpath feature.test || thin in a no-test SDK: no test feature reads those options"
+  },
+  "5266d8cbf2": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Client ⟦⟧ || members of the client in every page"
+  },
+  "7a3e73d523": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Control options. || no literal true of all 20 || says little"
+  },
+  "010ab525bc": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] A failure is reported in the result, not as an error, so branch on ⟦⟧. || go Direct err nil on every path (ran)"
+  },
+  "4cc33fe3da": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] The match is optional. || list signatures, runtime table"
+  },
+  "6cfad26916": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] The data must include the entity id, `Ⓕ`, unless the entity already holds it. || paramValue in go, py, php, java; c reads entity data"
+  },
+  "05a5a62f89": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Password for HTTP Basic authentication; `apikey` is the user name. || js, ocaml, cpp PrepareAuth"
+  },
+  "f616466503": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Create a test client. || no-test, testMock generated"
+  },
+  "dd74ff9ab6": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] This SDK is generated without the `test` feature, so the client has no mock transport and refuses every request. || ran ts, py, go; generated all 20: only zig and clojure keep the mock"
+  },
+  "1f08cc692d": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] It takes no arguments. || go Test() = TestSDK(nil, nil), Main_go.ts:216"
+  },
+  "b1e62e338a": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] go action Call cell || Planet(nil).Create exists || compiled by nothing"
+  },
+  "57d83d252b": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Create a new ⟦⟧ entity. || c, clojure, elixir accessors"
+  },
+  "0d2b7ebded": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] Create another ⟦⟧ entity with the same client and options. || make"
+  },
+  "aa27f7dd7e": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] ... return its result items, every one already read. || runtime table stream lines c, rust, zig"
+  },
+  "c0e844726c": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] c action Call cell || demo_planet exists (client.c:366) || compiled by nothing"
+  },
+  "cca0deacc3": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] zig action Call cell || client.planet exists (sdk.zig:430) || long; compiled by nothing"
+  },
+  "72922e3782": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] ... return a sequence of its result items. || elixir entity_base.ex runs run_op before return"
+  },
+  "3deec669ce": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] The result map always comes back inside `Ok`. || rust direct"
+  },
+  "72c41ba898": {
+   "verdict": "ok",
+   "note": "[independent reader of the sentence round, s3c-sfix-verify] elixir action Call cell || Demo.planet/2, Planet.create/3 || compiled by nothing"
+  },
+  "20caf7c646": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] go names the operation bare because Load takes two required parameters (EntityLoadOp.fragment.go:13 `func (e *EntyClass) Load(reqmatch map[string]any, ctrl map[string]any) (any, error) {`): `Load()` would not compile. The pair and the record read are unchanged and true. Checked against rust (Entity.fragment.rs load(reqmatch, ctrl) -> Result) and py (load(reqmatch=None, ...), which keeps `load()`)."
+  },
+  "19898188ee": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] As 20caf7c646 for List: List(reqmatch, ctrl) has no defaults in go; the value is []any of entities (make_result.go `var entities []any`). Read with the same rust and py signatures."
+  },
+  "f832084416": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] As 20caf7c646 for Update; the value is the entity it wrote (EntityUpdateOp.fragment.go returns e). ok."
+  },
+  "263b1f2143": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] rust load(reqmatch: Value, ctrl: Value) and zig load(reqmatch: Value, ctrl: Value) take two required values, so the bare name is the compilable way to name it; Ok/.ok is the entity, Err/.err the failure (Entity.fragment.rs, Entity.fragment.zig EntResult). Against go (also bare) and ts (`load()`, optional parameters)."
+  },
+  "e155e1e5ca": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] As 263b1f2143 for list: rust Vec / zig slice of entities, one per record. ok."
+  },
+  "746f265c38": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] As 263b1f2143 for update. ok."
+  },
+  "3c3c04f33c": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] Every getter clones the match in the ported runtimes: go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`, py `return vs.clone(self._match)`; the match is plain data, so the clone is a real copy (unlike ts's utility instance). Families: C, Lisp, dynamic, static."
+  },
+  "28235772cb": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] The stream ends early on the signal in each runtime that declares it: ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, go Entity.fragment.go (a closed channel), perl `return undef if $aborted->();` (exhaustion), clojure `(when (and (seq xs) (not (signalled?)))`, ocaml Seq.Nil. 'reports an abort' covers an AbortSignal, a channel and a callable; the key is named `callopts.signal` in every language's prose. ok."
+  },
+  "f1bcce31a0": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] A field member: ts EntityBase.fragment.ts:18 `name = ''` (a class property, read without a call) and ocaml sdk_types.ml `mutable e_name : string;`. Against go (GetName(), a method, which keeps 'Return the entity name.'). ok."
+  },
+  "808ab9f422": {
+   "verdict": "ok",
+   "note": "[freeze reader, v33-frozen; sentence by the shared engineer] The deleted read names a member or field each runtime declares (re-derived by the guard): ts `deleted()` (EntityBase.fragment.ts), c `vt->deleted` (sdk.h `bool (*deleted)(Entity*);`), rb `deleted` (Entity.fragment.rb, a method without parentheses), zig field `deleted: bool`. It says nothing about the data (brief 7 decision 11). ok; perl's instance printed `result->deleted` without the sigil and was fixed in its provider at this freeze."
   }
  },
  "unmapped": [],
