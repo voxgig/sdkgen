@@ -70,8 +70,7 @@ const forms: Forms = {
   uncompared: { returns: 'the runtime documents a return with `@return` on some methods only; the facts that rest on the others are cited' },
   cite: {
     'ref.facts.none': { file: 'src/cmp/rb/fragment/EntityLoadOp.fragment.rb', quote: 'def load(reqmatch = nil, ctrl = nil)' },
-    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: 'return { "ok" => false, "err" => err }' },
-    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: '"ok" => body_err.nil? && status >= 200 && status < 300,', unquoted: { true: 'ok is the boolean the status test computes; true is not spelled' } },
+    'ref.facts.direct.okFalse': { file: MAIN, quote: 'return { "ok" => false, "err" => err }' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rb/fragment/Entity.fragment.rb", quote: "VoxgigStruct.clone(@_data)" },
     'facts.recordType': { file: ENTITY, quote: '@return [EntityName, Hash]' },
     'ref.facts.container': { file: MAIN, quote: 'out.is_a?(Hash) ? out : {}' },
