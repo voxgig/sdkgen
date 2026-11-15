@@ -15,9 +15,6 @@ type Decl = {
   rest: string
   file: string
   bare?: boolean // declared with no parameter list: a property or field
-  // Filled from the forms after reading (see dims): what the member is called
-  // on, whether it is a field rather than something called, how a failure
-  // shows in the declaration, and whether the return was read from a comment.
   on: On
   field: boolean
   fails: string
@@ -36,12 +33,8 @@ type Family =
   | 'options' | 'utility' | 'direct' | 'prepare' | 'tester'
   | 'data' | 'match' | 'make' | 'name' | 'client' | 'entopts' | 'stream'
 
-// `also`: quotes from further files; `unquoted`: a token the fact states
-// that no quote holds, and why the fact still stands.
-// `value`: what was audited, for a fact no quote can hold (prose, a boolean,
-// a kind); the fact must still be it.
-// `absent`: a fact that something is not there, shown by a search that must
-// match nothing in the named runtime files (a directory names every file under it).
+// `unquoted`: a token no quote holds, and why; `value`: what was audited where
+// no quote can hold it; `absent`: a search the named files must not match.
 type Citation = {
   file: string, quote: string | string[], value?: any
   also?: { file: string, quote: string | string[] }[]
@@ -50,19 +43,15 @@ type Citation = {
   absent: { pattern: RegExp, files: string[] }, value: any
 }
 
-// Where a stream's items come from, read off its implementation by position:
-// `construct` builds what the caller iterates (a generator's own head where the
-// function is one; the final return where nothing is deferred), `run` starts
-// the operation, `draw` takes the streaming feature's items. A quote before the
-// construct runs before the stream returns.
+// A stream read by position: a `run` or `draw` quote ahead of `construct`
+// (what the caller iterates) happens before the stream returns.
 type StreamItems = {
   file: string
   construct: string
   starts: 'at call' | 'on iteration'
   run: string
   draw: string
-  // What the table states; must equal what the positions give.
-  runs: string
+  runs: string // as the positions give
   items: string
 }
 
@@ -74,18 +63,16 @@ type Forms = {
   bare?: boolean
   split?: 'comma' | 'space'
   receiver?: RegExp
-  // For a runtime whose parameters are not a bracketed list after the name
-  // (perl's `my (...) = @_`, ocaml's arrows): the parameters and the return,
-  // from the source after the match.
+  // Parameters not in a bracketed list after the name (perl's `my (...) = @_`,
+  // ocaml's arrows), read from the source after the match.
   declReader?: (after: string) => { params: string[], returns?: string, field?: boolean } | null
   optional: (param: string) => boolean
   // `rest`: the source after the parameter list, for a return on a later line.
   returns: (after: string, before: string, head: string, rest: string) => string
   param?: (param: string) => { name: string, type: string }
 
-  // The source that defines an operation, and the method it is declared as
-  // there. Default: the ops file named Entity<Op>Op, and the one public
-  // entity member it declares.
+  // The source defining an operation, and its method there. Default: the ops
+  // file named Entity<Op>Op, and the one public entity member it declares.
   opSource?: (op: OpName) => string[]
   // An operation the runtime does not have, with the reason.
   absentOps?: Partial<Record<OpName, string>>
@@ -101,30 +88,17 @@ type Forms = {
   entityCtor?: string
   // The client constructor's declaration, where it is not spelled as {ctor}.
   ctorDecl?: string
-  // The test constructor's declaration (default: members.tester).
-  testDecl?: string
+  testDecl?: string // default: members.tester
 
-  // What a declaration is called on (default: the type for a constructor's
-  // name or a `static` head, else an instance).
-  on?: (d: Decl) => On
-  // Whether a declaration is a field or property rather than called (default: bare).
-  field?: (d: Decl) => boolean
-  // How a failure shows in a declaration, '' where it does not.
-  fails?: (d: Decl) => string
-  // Where the runtime's operations show a failure in their declaration: the
-  // word they show, and the word a call to them needs ('' when none).
-  failure?: { shows: string, call: string }
-  // A call may be written without a parameter list (rb), so a signature
-  // without one is not a field.
-  parenless?: boolean
-  // Whether a declaration's return was read from a comment.
+  on?: (d: Decl) => On // default: a constructor's name or a `static` head is on the type
+  field?: (d: Decl) => boolean // default: bare
+  fails?: (d: Decl) => string // how a failure shows in a declaration
+  failure?: { shows: string, call: string } // what each operation shows; what a call needs
+  parenless?: boolean // a call may be written without a parameter list (rb)
   returnsFrom?: (d: Decl) => 'code' | 'comment'
   stream?: StreamItems
-  // What the forms' author read off the runtime for named declarations; the
-  // reader requires the same, so a changed runtime or a changed reading fails.
   expect?: Record<string, Partial<{ on: On, field: boolean, fails: string }>>
-  // Facts the table states that no declaration shows, cited.
-  shows?: Record<string, Citation>
+  shows?: Record<string, Citation> // facts no declaration shows
 
   style: {
     exception: 'throw' | 'raise' | 'die'
@@ -222,7 +196,6 @@ function splitParams(inner: string, how: 'comma' | 'space' = 'comma'): string[] 
 
 const CTOR_NAMES = /^(constructor|__init__|__construct|initialize|init|new|EntyClass|ProjectNameSDK)$/
 
-// The dimensions a page states besides name, parameters and return.
 function dims(forms: Forms, d: Omit<Decl, 'on' | 'field' | 'fails' | 'from'> & Partial<Decl>): Decl {
   const x = d as Decl
   x.field = null != forms.field ? forms.field(x) : !!x.bare

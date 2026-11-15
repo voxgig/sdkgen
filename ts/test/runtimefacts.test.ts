@@ -79,7 +79,7 @@ describe('runtimefacts', () => {
       }
       for (const x of res.account.excepted) lines.push(`  excepted ${x.path}: ${x.reason}`)
       for (const x of res.account.ahead) lines.push(`  cited ahead of a declaration ${x.path} = ${JSON.stringify(x.value)}`)
-      // One line per declared leaf, for a reviewer's fact sheet.
+      // One line per declared leaf, for a fact sheet.
       const cites = new Map(res.account.cited.map((c) => [c.path, c.file]))
       for (const [p, c] of Object.entries(res.account.category)) {
         lines.push(`${t} account ${p}: ${c}${cites.has(p) ? ' (' + cites.get(p) + ')' : ''}`)
