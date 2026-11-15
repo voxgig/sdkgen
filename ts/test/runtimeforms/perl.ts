@@ -64,6 +64,10 @@ const forms: Forms = {
     draw: "my $next = $src->();",
     runs: "before it returns", items: "as the caller iterates",
   },
+  // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
+  cite: {
+    'ref.facts.direct.okFalse': { value: "0", file: "src/cmp/perl/fragment/Main.fragment.pm", quote: "'ok' => 0," },
+  },
 }
 
 export { forms }
