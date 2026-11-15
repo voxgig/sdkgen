@@ -174,6 +174,16 @@ function accessorLine(forms: Forms, client: any[], entity: any[]): string {
 }
 
 
+// Whether the language's provider declares a fact: a citation of one it does
+// not declare is ahead of it (an unported language's).
+function declares(t: string, path: string): boolean {
+  const p = Path.resolve(__dirname, '..', 'dist-test-scaffold', '.sdk', 'dist', 'cmp', t, 'Syntax_' + t + '.js')
+  if (!Fs.existsSync(p)) return false
+  let x: any = require(p).Syntax
+  for (const k of path.replace(/\[(\d+)\]/g, '.$1').split('.')) { if (null == x) return false; x = x[k] }
+  return undefined !== x
+}
+
 function section(t: string, forms: Forms, v: View): string {
   const client = read(forms.files.client)
   const entity = read(forms.files.entity)
@@ -219,7 +229,8 @@ function section(t: string, forms: Forms, v: View): string {
       'without the feature the items are the whole result, read before the first one is handed over.',
     ...newRows(t, forms, v),
     ...Object.entries(forms.cite || {}).filter(([p, c]: [string, any]) => AHEAD.test(p) && 'value' in c)
-      .map(([p, c]: [string, any]) => `- \`${p}\`, cited ahead of a provider: \`${c.value}\` (${c.file}: \`${c.quote}\`)`),
+      .map(([p, c]: [string, any]) => `- \`${p}\`, cited${declares(t, p) ? '' : ' ahead of a provider'}: \`${c.value}\` (` +
+        ('absent' in c ? `absent from the whole runtime: ${c.absent.pattern}` : `${c.file}: \`${c.quote}\``) + ')'),
     ...Object.entries(forms.shows || {}).map(([what, c]: [string, any]) => `- ${what}: ${JSON.stringify(c.value)} (${c.file ?? 'absent from ' + c.absent?.files.join(', ')})`),
     '',
     null == forms.types.column
