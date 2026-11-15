@@ -50,10 +50,8 @@ describe('lua table key guard', () => {
     deepStrictEqual(callers, [
       'ReadmeEntity_lua.ts',
       'ReadmeHowto_lua.ts',
-      'ReadmeQuick_lua.ts',
-      'ReadmeRef_lua.ts',
-      'ReadmeTopQuick_lua.ts',
       'ReadmeTopTest_lua.ts',
+      'Syntax_lua.ts',
       'TestEntity_lua.ts',
     ])
   })
