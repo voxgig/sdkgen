@@ -3,6 +3,7 @@
 // `label name: Type = default`; a return after `throws ->` or `->`, which may
 // sit on the line after the parameter list.
 import type { Forms } from './forms'
+import { bracketed } from './forms'
 
 const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/swift/fragment/Entity${o}Op.fragment.swift`)
 
@@ -50,7 +51,22 @@ const forms: Forms = {
   record: (rec) => ({ name: (/(\w+)\(\)$/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'init', accessor: '${entity.Name}' },
   types: { column: 'swift' },
+  exceptions: {
+    streamItems: 'NEEDS SHARED: swift hands an AsyncStream (for await) over items runOp and the streaming feature have produced before stream returns; no stream kind has an async call form without saying the items arrive as iterated',
+  },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'testSDK',
+  fails: (d) => { const b = bracketed(d.rest, 0, '('); return null != b && /^\s*throws\b/.test(d.rest.slice(b.end)) ? 'throws' : '' },
+  failure: { shows: 'throws', call: 'try' },
+  expect: { testSDK: { on: 'type', fails: '' }, prepare: { fails: 'throws' }, stream: { fails: 'throws' }, direct: { fails: '' } },
+  stream: {
+    file: "src/cmp/swift/fragment/EntityBase.fragment.swift",
+    construct: "return AsyncStream { continuation in", starts: "at call",
+    run: "let materialised = try runOp(ctx, {})",
+    draw: "items = streamFn()",
+    runs: "before it returns", items: "before it returns",
+  },
 }
 
 export { forms }
