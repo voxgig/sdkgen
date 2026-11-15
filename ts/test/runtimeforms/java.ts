@@ -42,6 +42,16 @@ const forms: Forms = {
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'ProjectNameSDK', accessor: '${accessor}' },
   types: { column: 'java' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'testSDK',
+  expect: { testSDK: { on: 'type' } },
+  stream: {
+    file: "src/cmp/java/fragment/EntityBase.fragment.java",
+    construct: "Iterator<Object> guarded = new Iterator<Object>() {", starts: "on iteration",
+    run: "Object materialised = runOp(ctx, () -> {});",
+    draw: "item = ready ? src.next() : null;",
+    runs: "before it returns", items: "as the caller iterates",
+  },
 }
 
 export { forms }
