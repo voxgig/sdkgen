@@ -11,7 +11,8 @@ import { kind_remove } from '../dist/action/remove.js'
 import { COPY_LOG, fingerprint, readCopies } from '../dist/action/copies.js'
 
 
-// Unshipped by the installed source, recorded exactly as an add wrote it.
+// A component an earlier release shipped and this one does not: on disk and
+// in the copy record exactly as an add wrote it.
 const RETIRED = 'src/cmp/ts/ReadmeGone_ts.ts'
 const COMPILED = 'dist/cmp/ts/ReadmeGone_ts.js'
 

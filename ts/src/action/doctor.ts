@@ -86,10 +86,12 @@ type DoctorReport = {
 
   additive: string[]
 
-  // Unshipped by its source, and unchanged since an add wrote it.
+  // A component its source no longer ships, which the copy record shows an
+  // add wrote and nothing changed: the next add removes it.
   retired: string[]
 
-  // Unshipped by its source, and changed here. Informational.
+  // The same, changed in this project: kept, and used in place of the shared
+  // component. Informational, like `additive`.
   override: string[]
 
   superseded: string[]
@@ -477,7 +479,12 @@ async function doctor(
 }
 
 
-// A shared component calls a target's own component of this name first.
+// Which root-level components the project's own wiring calls. The wiring is
+// hand-written TypeScript (Root.ts / Top.ts / BuildSDK.ts), so this is a
+// reference check, not a diff: sdkgen has no reference copy of a file it does
+// not ship.
+// A component the project holds under a name a shared component dispatches
+// to is used in place of the shared section.
 function replacesShared(kind: string, file: string): string {
   const m = file.match(/^src\/cmp\/([^/]+)\/([A-Za-z]+)_\1\.ts$/)
   return ('additive' === kind || 'override' === kind) && null != m &&
@@ -485,10 +492,6 @@ function replacesShared(kind: string, file: string): string {
 }
 
 
-// Which root-level components the project's own wiring calls. The wiring is
-// hand-written TypeScript (Root.ts / Top.ts / BuildSDK.ts), so this is a
-// reference check, not a diff: sdkgen has no reference copy of a file it does
-// not ship.
 function checkWiring(actx: ActionContext, report: DoctorReport) {
   const fs = actx.fs()
   const src = Path.join(actx.folder, 'src')
@@ -935,6 +938,8 @@ function noteDrift(
   const merging = MERGE === projectCopyMode(actx)
 
   return (category: Category, label: string) => {
+    // Not shipped: retired if the record shows an add wrote it unchanged,
+    // otherwise the project's own.
     if ('unshipped' === category) {
       const same = untouched(fs, actx.folder, copies, label)
       if (true !== same) {

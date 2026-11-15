@@ -507,7 +507,8 @@ function pruneStaleTemplates(
 }
 
 
-// Deletes an unshipped component only when the copy record shows it unchanged.
+// A component the source no longer ships is removed only when the copy record
+// shows an add wrote it and nothing has changed it since.
 function pruneRetired(
   ctx$: any, actx: any, fromDir: string, toRel: string,
   origname: string, name: string,
@@ -530,7 +531,8 @@ type RetiredCopies = {
 }
 
 
-// A file the record has no entry for may be the project's own.
+// Of the files an add no longer writes, the ones it may delete. A file the
+// record has no entry for may be the project's own, so it is never one.
 function retiredCopies(
   ctx$: any, toRel: string, unwanted: string[], copies: RetiredCopies,
 ): string[] {
