@@ -5,7 +5,9 @@
 import type { Forms } from './forms'
 import { bracketed } from './forms'
 
-const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/swift/fragment/Entity${o}Op.fragment.swift`)
+const MAIN = 'src/cmp/swift/fragment/Main.fragment.swift'
+const BASE = 'src/cmp/swift/fragment/EntityBase.fragment.swift'
+const OPS =['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/swift/fragment/Entity${o}Op.fragment.swift`)
 
 const forms: Forms = {
   files: {
@@ -54,6 +56,33 @@ const forms: Forms = {
   exceptions: {
   },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // A signature returns after `->`; a `throws` ahead of it is the failure, not the return.
+  sigReturns: (sig) => ((/->\s*([^\n]+)$/.exec(sig) || [])[1] || '').trim(),
+  renames: { fetchargsIn: 'fetchargs', testoptsIn: 'testopts', sdkoptsIn: 'sdkopts' },
+  typeNames: {
+    'ProjectNameSdk.VMap': 'VMap', 'ProjectNameSdk.VMap?': 'VMap?', 'ProjectNameSdk.Utility': 'Utility',
+    '${Name}EntityBase': 'ProjectNameEntityBase',
+  },
+  namesWhy: 'the client class spells SDK types module-qualified inside its own body only, so an entity accessor cannot shadow them (Main.fragment.swift:3-15), and names its raw arguments with an In suffix; outside it they are VMap, Utility and the argument names the page gives. MainEntity_swift writes the accessor\'s return as ${Name}EntityBase, which is the ProjectNameEntityBase class of EntityBase.fragment.swift:8',
+  cite: {
+    'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/swift/fragment/Main.fragment.swift", quote: "r.entries[\"ok\"] = .bool(false)" },
+    'facts.collection': { file: 'tm/swift/Sources/ProjectNameSDK/Struct/Value.swift', quote: 'case list(VList)' },
+    'facts.unwrap': { value: 'asNative as? Entity', file: 'tm/swift/Sources/ProjectNameSDK/feature/ValidateFeature.swift', quote: 'if let ent = record.asNative as? Entity {' },
+    'ref.facts.none': { file: MAIN, quote: 'public init(_ optionsIn: ProjectNameSdk.VMap? = nil) {' },
+    'ref.facts.setArg': { file: BASE, quote: 'public func data(_ newdata: Value?) -> Value {' },
+    'ref.facts.container': { file: MAIN, quote: 'private var options: ProjectNameSdk.VMap = ProjectNameSdk.VMap()' },
+    'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'return clone(.map(options)).asMap ?? ProjectNameSdk.VMap()' },
+    'ref.facts.client[1].kind': { value: 'utility', file: MAIN, quote: 'return ProjectNameSdk.Utility.copy(utility)' },
+    'ref.facts.entity[0].copy': { value: true, file: BASE, quote: 'return clone(data)' },
+    'ref.facts.prepare.fails': { value: 'style', file: MAIN, quote: 'public func prepare(_ fetchargsIn: ProjectNameSdk.VMap?) throws -> ProjectNameSdk.VMap {' },
+    'ref.facts.body.values': {
+      value: 'a `String`, or `Data` or `[UInt8]` as a `.native` value',
+      file: 'tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift',
+      quote: 'if let text = body.asString, text != "" {\n    req.httpBody = text.data(using: .utf8)\n    req.setValue("application/json", forHTTPHeaderField: "Content-Type")\n  } else if case .native(let ref) = body {\n    if let data = ref.value as? Data {\n      req.httpBody = data\n    } else if let bytes = ref.value as? [UInt8] {',
+      unquoted: { String: 'a text body is the Value case read by body.asString' },
+    },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*)\b|isCancelled|AbortController/i, files: ['tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift', 'src/cmp/swift/fragment/EntityLoadOp.fragment.swift'] } },
+  },
   // What the table states besides names, parameters and returns.
   testDecl: 'testSDK',
   fails: (d) => { const b = bracketed(d.rest, 0, '('); return null != b && /^\s*throws\b/.test(d.rest.slice(b.end)) ? 'throws' : '' },
@@ -72,6 +101,8 @@ const forms: Forms = {
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/swift/Config_swift.ts", quote: "default: return BaseFeature()" },
   },
+  // direct's `ok` on a failure, cited ahead of the provider: a port declares
+  // ref.facts.direct.okFalse as this value (in `cite` above).
 }
 
 export { forms }
