@@ -33,9 +33,10 @@
   "section": "reference",
   "what": "dropped sentence",
   "file": "doc-crud/rb/REFERENCE.md",
-  "from": " A\nfailure is reported in the result, not as an error, so branch on\n`result[\"ok\"]`.",
+  "from": " A failure is reported in the result, not as an error, so\nbranch on `result[\"ok\"]`.",
   "to": "",
-  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "rb-retries-number",
@@ -142,9 +143,10 @@
   "section": "reference",
   "what": "wrong collection",
   "file": "doc-crud/go/REFERENCE.md",
-  "from": "Returns a `[]any` of entities, one per record; `err` is non-nil on\nfailure.",
-  "to": "Returns a `map[string]any` of entities, one per record; `err` is non-nil on\nfailure.",
-  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+  "from": "Returns a `[]any` of entities, one per\nrecord; `err` is non-nil on failure.",
+  "to": "Returns a `map[string]any` of entities, one per\nrecord; `err` is non-nil on failure.",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "go-err-nil",

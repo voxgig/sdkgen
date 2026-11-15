@@ -4,18 +4,20 @@
   "lang": "rb",
   "section": "reference",
   "file": "doc-crud/rb/REFERENCE.md",
-  "from": " A\nfailure is reported in the result, not as an error, so branch on\n`result[\"ok\"]`.",
+  "from": " A failure is reported in the result, not as an error, so\nbranch on `result[\"ok\"]`.",
   "to": "",
-  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "missing-direct-every-variation",
   "lang": "rb",
   "section": "reference",
   "file": "*/rb/REFERENCE.md",
-  "from": " A\nfailure is reported in the result, not as an error, so branch on\n`result[\"ok\"]`.",
+  "from": " A failure is reported in the result, not as an error, so\nbranch on `result[\"ok\"]`.",
   "to": "",
-  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "missing-table-row",
@@ -30,29 +32,32 @@
   "lang": "lua",
   "section": "reference",
   "file": "*/lua/REFERENCE.md",
-  "from": " A failure\nis reported in the result, not as an error, so branch on `result.ok`.",
+  "from": " A\nfailure is reported in the result, not as an error, so branch on\n`result.ok`.",
   "to": "",
   "why": "T1/T2: the reviewers' attack: a shared sentence dropped from every REFERENCE of a port. lua (style pair, shared with go) gave PASS with 'absent 36 (35 explained)'; perl (die) and swift (wrapped) share their style with no reference, so their absent list was empty and nothing moved from scratch. Must be a new absent entry with no reason, which fails the one command.",
-  "adapted": "v3.3 (k-freeze33a): the from text of v33p ('A failed request is reported ...') is no longer printed (the sentence fixes); the same intent on the new text, which occurs once in each of the 19 REFERENCEs"
+  "adapted": "v3.3 (k-freeze33a): the from text of v33p ('A failed request is reported ...') is no longer printed (the sentence fixes); the same intent on the new text, which occurs once in each of the 19 REFERENCEs",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "missing-direct-every-variation-perl",
   "lang": "perl",
   "section": "reference",
   "file": "*/perl/REFERENCE.md",
-  "from": " A failure is\nreported in the result, not as an error, so branch on `$result->{ok}`.",
+  "from": " A failure\nis reported in the result, not as an error, so branch on\n`$result->{ok}`.",
   "to": "",
   "why": "T1/T2: the reviewers' attack: a shared sentence dropped from every REFERENCE of a port. lua (style pair, shared with go) gave PASS with 'absent 36 (35 explained)'; perl (die) and swift (wrapped) share their style with no reference, so their absent list was empty and nothing moved from scratch. Must be a new absent entry with no reason, which fails the one command.",
-  "adapted": "v3.3 (k-freeze33a): the from text of v33p ('A failed request is reported ...') is no longer printed (the sentence fixes); the same intent on the new text, which occurs once in each of the 19 REFERENCEs"
+  "adapted": "v3.3 (k-freeze33a): the from text of v33p ('A failed request is reported ...') is no longer printed (the sentence fixes); the same intent on the new text, which occurs once in each of the 19 REFERENCEs",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "missing-direct-every-variation-swift",
   "lang": "swift",
   "section": "reference",
   "file": "*/swift/REFERENCE.md",
-  "from": "\nA failure is reported in the result, not as an error, so branch on\n`result.entries[\"ok\"] == .bool(true)`.",
+  "from": " A failure is reported in the result, not as an\nerror, so branch on `result.entries[\"ok\"] == .bool(true)`.",
   "to": "",
   "why": "T1/T2: the reviewers' attack: a shared sentence dropped from every REFERENCE of a port. lua (style pair, shared with go) gave PASS with 'absent 36 (35 explained)'; perl (die) and swift (wrapped) share their style with no reference, so their absent list was empty and nothing moved from scratch. Must be a new absent entry with no reason, which fails the one command.",
-  "adapted": "v3.3 (k-freeze33a): the from text of v33p ('A failed request is reported ...') is no longer printed (the sentence fixes); the same intent on the new text, which occurs once in each of the 19 REFERENCEs"
+  "adapted": "v3.3 (k-freeze33a): the from text of v33p ('A failed request is reported ...') is no longer printed (the sentence fixes); the same intent on the new text, which occurs once in each of the 19 REFERENCEs",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  }
 ]

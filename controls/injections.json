@@ -21,11 +21,12 @@
   "id": "sentence-removed-go",
   "lang": "go",
   "section": "reference",
-  "what": "a shared direct() sentence removed (v3.3: the branch sentence's go read, `result[\"ok\"] == true`, is go's alone, so its class is open from scratch whatever happens to it; the key sentence's read `result[\"err\"]` is py's and rb's too)",
+  "what": "a shared direct() sentence removed (the freeze reworded direct's Returns: the key read now stands in the sentence about an unreadable body, which is removed whole; go's branch read is its own, its class open from scratch)",
   "file": "doc-crud/go/REFERENCE.md",
-  "from": " A key is read as\n`result[\"err\"]`.",
+  "from": " When\nthe body cannot be read, `ok` is `false` and the key `err` holds the\nerror, read as `result[\"err\"]`; a request that cannot be made gives only\n`ok` (`false`) and `err`.",
   "to": "",
-  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "sentence-removed-go-branch",
@@ -33,8 +34,9 @@
   "section": "reference",
   "what": "the direct() branch sentence removed: v3.2's intent of sentence-removed-go, restored beside its retargeted copy (the sentence round's check, required fix 3)",
   "file": "doc-crud/go/REFERENCE.md",
-  "from": " A failure is reported in the result, not as an error,\nso branch on `result[\"ok\"] == true`.",
-  "to": ""
+  "from": " A failure is reported in the result, not as an\nerror, so branch on `result[\"ok\"] == true`.",
+  "to": "",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "false-sentence-py",
@@ -42,8 +44,9 @@
   "section": "reference",
   "what": "raises -> returns None (false)",
   "file": "doc-crud/py/REFERENCE.md",
-  "from": "per record, and raises on failure.",
-  "to": "per record, and returns `None` on failure."
+  "from": "per record,\nand raises on failure.",
+  "to": "per record,\nand returns `None` on failure.",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "false-sentence-added-ts",
@@ -60,9 +63,10 @@
   "section": "reference",
   "what": "'The match is optional' -> required",
   "file": "doc-crud/py/REFERENCE.md",
-  "from": "The match is optional.",
-  "to": "The match is required.",
-  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+  "from": "The match is optional;",
+  "to": "The match is required;",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "negation-go",

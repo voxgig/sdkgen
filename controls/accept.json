@@ -12,17 +12,19 @@
   "lang": "py",
   "section": "reference",
   "file": "doc-crud/py/REFERENCE.md",
-  "from": "`ok` is `False`\nunless the status is 2xx",
-  "to": "`ok` is `True`\nunless the status is 2xx",
-  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+  "from": "`ok` is `False` unless the status is 2xx",
+  "to": "`ok` is `True` unless the status is 2xx",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "raises-returns-py",
   "lang": "py",
   "section": "reference",
   "file": "doc-crud/py/REFERENCE.md",
-  "from": "per record, and raises on failure.",
-  "to": "per record, and returns `None` on failure."
+  "from": "per record,\nand raises on failure.",
+  "to": "per record,\nand returns `None` on failure.",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "negation-go",
@@ -46,9 +48,10 @@
   "lang": "rb",
   "section": "reference",
   "file": "B/rb/REFERENCE.md",
-  "from": "`ok` is `false`\nunless the status is 2xx",
-  "to": "`ok` is `true`\nunless the status is 2xx",
-  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+  "from": "`ok` is `false` unless the status is 2xx",
+  "to": "`ok` is `true` unless the status is 2xx",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
  },
  {
   "id": "raises-returns-rb-new-language",
