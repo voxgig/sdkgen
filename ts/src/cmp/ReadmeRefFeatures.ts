@@ -6,8 +6,29 @@ import { activeByDefault, featureDocs, honoursActivationOrder } from './FeatureD
 import type { FeatureDoc } from './FeatureDocs'
 
 
+// How the page names a feature option and the runtime's true value: the
+// provider's own key and literal printers, which the shared REFERENCE passes;
+// a per-language page that calls this passes none, and no literal is printed.
+type Spell = { key: (path: string[]) => string, on: string }
+
+const code = (s: string): string => '`' + s + '`'
+
+function usage(f: FeatureDoc, spell?: Spell): string {
+  const key = (path: string[]): string => code(spell ? spell.key(path) : path.join('.'))
+  const more = 0 < f.options.length ? ', and override any option above in the same entry' : ''
+  if (activeByDefault(f)) {
+    return `It runs without being switched on. Override any option above under ${key(['feature', f.name])} ` +
+      'in the client options; switching its `active` option off stops it.'
+  }
+  return spell
+    ? `Set ${key(['feature', f.name, 'active'])} to ${code(spell.on)} in the client options${more}.`
+    : `Switch it on with ${key(['feature', f.name, 'active'])} in the client options${more}.`
+}
+
+
 const ReadmeRefFeatures = cmp(function ReadmeRefFeatures(props: any) {
   const { target, ctx$ } = props
+  const spell: Spell | undefined = props.spell
   const { model } = ctx$
 
   const features: FeatureDoc[] = featureDocs(model, target)
@@ -115,9 +136,7 @@ another when you do not.
 
     Content(`**Usage**
 
-Set \`feature.${f.name}.active\` to true in the client options${
-  0 < f.options.length ?
-    ', and override any option above in the same entry' : ''}. Every option keeps
+${usage(f, spell)} Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -146,7 +165,7 @@ its default unless you name it.
     }
 
     Content(onByDefault(f)
-      ? '- Active by default: set `active: false` to switch it off.\n\n'
+      ? '- Active by default: switching its `active` option off stops it.\n\n'
       : '- Inactive by default: leaving it out costs nothing at runtime.\n\n')
   }
 })

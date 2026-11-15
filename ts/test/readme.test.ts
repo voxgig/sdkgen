@@ -310,4 +310,18 @@ describe('ReadmeRefFeatures', () => {
     ok(/`cost` activated before `cache`/.test(out), out)
     ok(!out.includes('\\`'), 'no escaped backtick')
   })
+
+  test('an on-by-default feature is not told to be switched on; the true literal is the provider\'s (S09 residue)', async () => {
+    const py = { key: (path: string[]) => 'options' + path.map((k) => `["${k}"]`).join(''), on: 'True' }
+    const out = await renderRefFeatures(SHIPPED, { spell: py })
+    const log = featSection(out, 'log')
+    ok(!/Set `[^`]*active[^`]*` to/.test(log), log)
+    ok(/It runs without being switched on/.test(log), log)
+    ok(!/`active: false`/.test(log), log)
+    ok(featSection(out, 'audit').includes('Set `options["feature"]["audit"]["active"]` to `True` in the client options'))
+    // A per-language page passes no printers: no literal at all.
+    const bare = await renderRefFeatures(SHIPPED)
+    ok(!/ to true\b|`true`(?! \|)/.test(bare.split('\n').filter((l) => !l.startsWith('|')).join('\n')), bare)
+    ok(featSection(bare, 'audit').includes('Switch it on with `feature.audit.active` in the client options'))
+  })
 })
