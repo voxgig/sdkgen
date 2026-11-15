@@ -1,15 +1,15 @@
 {
  "absent": {
-  "322c78c566": "zig prints the same sentence with its own facts: '`list()` returns a result whose `.ok` is a slice of entities, one per record, and whose `.err` reports failure' (crud-bare/zig/README.md:56); rust's collection is code (`Vec`), zig's a word (slice), so the masks differ",
-  "ad23683b78": "zig prints '// Create — .ok carries the created entity; asEntity().data(null) reads its record' (crud-bare/zig/README.md:89); rust's Ok in a comment is not masked as its code fact `Ok`",
-  "88dc628742": "zig prints '// Load an ambient: .ok is the entity; .err on failure' (B/README.md:637); rust's comment spells Ok and Err bare, which the mask does not read as the facts | zig prints '// Load a planet: .ok is the entity; .err on failure' (crud-bare root README); same sentence, bare Ok/Err masked differently",
-  "4ca4d664d8": "zig prints '// List planet records: .ok is a slice of entities, one per record; .err on failure' (crud-bare root README); same sentence, Vec/slice and bare Ok/Err masked differently",
-  "12182a3155": "zig prints '`options` is a `Value` map (`h.vnull()` for none).' (B/zig/REFERENCE.md:17); zig's container `Value` equals its direct.returns, so the mask label holds both paths",
   "7d1db2c55c": "zig prints '**Returns:** `Value`, a result map holding `ok`, `status`, `headers` and `data`, ...' (B/zig/REFERENCE.md:111); the type differs and is masked as a fact in zig, as code in rust",
   "1691416fca": "rust's own note on direct (notes.member:direct): its direct returns a Result whose Ok always holds the map; zig's direct returns a plain Value (B/zig/REFERENCE.md:111), so the note has nothing to say there",
   "5c8f458658": "zig prints '**Returns:** `E!Value`, the fetch definition: the request `direct()` would send.' (B/zig/REFERENCE.md:121); the return type is masked as a fact in zig",
   "22b75277d3": "zig prints 'Pass a map to set it.' (B/zig/REFERENCE.md:162,167): zig's setArg is 'a map' (cited, Entity.fragment.zig data_impl/matchv_impl), rust's `Some(&map)`",
   "f6b8425ed5": "make is not a method of zig's entity struct: it is reached through the Entity interface as asEntity().makeEnt() (tm/zig/core/types.zig:56,64; v_make in Entity.fragment.zig), which neither OLD nor NEW documents; recorded as a gap for the integration (a member the forms do not list)",
+  "322c78c566": "zig prints the same sentence with its own facts: '`list()` returns a result whose `.ok` is a slice of entities, one per record, and whose `.err` reports failure' (crud-bare/zig/README.md:56); rust's collection is code (`Vec`), zig's a word (slice), so the masks differ",
+  "ad23683b78": "zig prints '// Create — .ok carries the created entity; asEntity().data(null) reads its record' (crud-bare/zig/README.md:89); rust's Ok in a comment is not masked as its code fact `Ok`",
+  "88dc628742": "zig prints '// Load an ambient: .ok is the entity; .err on failure' (B/README.md:637); rust's comment spells Ok and Err bare, which the mask does not read as the facts | zig prints '// Load a planet: .ok is the entity; .err on failure' (crud-bare root README); same sentence, bare Ok/Err masked differently",
+  "4ca4d664d8": "zig prints '// List planet records: .ok is a slice of entities, one per record; .err on failure' (crud-bare root README); same sentence, Vec/slice and bare Ok/Err masked differently",
+  "12182a3155": "zig prints '`options` is a `Value` map (`h.vnull()` for none).' (B/zig/REFERENCE.md:17); zig's container `Value` equals its direct.returns, so the mask label holds both paths",
   "bea4cfb8e1": "zig prints 'The result's `.ok` is a slice of entities, one per record, and its `.err` reports failure.' (B/zig/REFERENCE.md:203); Vec/slice masked differently"
  },
  "360f66a3d2": {

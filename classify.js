@@ -185,7 +185,8 @@ function run(a) {
     // runtime's own printer, and the sentence around it is what is shared.
     const style = styleOf(myFacts)
     const same = refs.filter((r) => styleBy.get(r) === style)
-    const erase = (mk) => mk.replace(/`[^`]*`/g, '`…`')
+    // a code span or a fact slot is the runtime's own token: compared as one placeholder
+    const erase = (mk) => mk.replace(/`[^`]*`|⟦[^⟧]*⟧/g, '`…`')
     const myErased = new Set([...myAny].map(erase))
     const absent = {}
     if (same.length) for (const v of vars) {

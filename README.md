@@ -88,3 +88,29 @@ The blocks table: `classes` counts the "otherwise" pairs grouped by their masked
 - `selftest.js`: `--modes reviewed,scratch`; parts `recheck`, `missing`, `facts`, `sentences`.
 - `classify.js`: the duplicate check ("printed more often than any reference") now counts only variations some reference has the section in. Before, go's direct() sentence, printed in `lone-go` and `alias-go2` where no reference exists, was taken for a duplicate and left open, so dropping it from one variation was invisible from scratch (the selftest's `sentence-removed-go [scratch]`).
 - `selftest.js` runs 176 controls: ledger 24 + recheck 19 + accept 7 + missing 3, each in both modes (106); facts 6 in both modes (12); sentences 2; purity 27 (22 mutations, 5 real-notes checks); blocks 28; recall 1.
+
+## Changes at v3.3 (sfix: what "the same sentence" is)
+
+- `cut.js`: a word equal to an entity or field name is masked only where the model supplied it: per unit template, the word must change across the learners' units (OLD of every language, NEW of the reference languages; the language masked left out). `learn: false` keeps the v3.2 mask for code lines, blocks, heading paths and tokens (block ids are unchanged). Article and step number are no part of a template. Composite entity forms (planet_entity) are left out of the learned vocabulary, so PlanetEntity is ⒺEntity everywhere. A bold lead ending in `.`, `!` or `?` (`**Create a client.**`) ends a sentence; `**Returns:**` does not.
+- `ident.js` (new): sentence identity and the match form (see its header). Verdicts and sentence ids are keyed by the identity; `classify.js` accepts by the match form; text the fixture model holds (an entity's or a field's description, a project's entity_desc) is no sentence and takes no verdict.
+- `rekey.js` (new): maps every record keyed by a class or sentence id from the v3.2 identity (`legacy/v32`) to this one, through the units; `--verdicts` carries sentence verdicts.
+- `reviewed/sentences.json`: the 297 verdicts of the sentence review, carried by `rekey.js --verdicts` (written by that tool, from the reviewers' file).
+- `classify.js`: an accepted class whose NEW sentence a reviewer called false is counted on the screen (not failed: the fix is in shared code).
+- `buildfresh.js` (new), in the one command: a source under `ts/src`, `ts/test` or `ts/project/.sdk/src/cmp` (fragments: their staged copy) newer than its build output fails, naming the file.
+- `handstale.js` (new), in the one command (not from scratch): a hand record whose reason quotes a code span or a quoted passage that no OLD or NEW page of the language and no file of the clone holds fails as STALE.
+- `sentences.js`: identity ids; model text left out; one-language sentences classified (note, code, shared-condition, provider-literal, unexplained). `sharewords.js`: identity (`--v32` for the old mask).
+- `selftest.js`: parts `masking` (controls/masking.json, both modes) and `identity`.
+
+### For a port started from v3.2 (its records keyed by the v3.2 ids)
+
+```sh
+export PATH=/opt/node24/bin:$PATH
+# in the port's workspace W (W/tools a copy of the v3.2 tools, W/sdkgen, W/out):
+cp -a <sfix>/tools W/tools-v33                        # the new tools beside the old
+for d in hand pinned classes counts normalizers purity-allow; do cp -a W/tools/$d/<lang>.json W/tools-v33/$d/ 2>/dev/null; done
+cp -a W/tools/normalizers/<lang>.js W/tools-v33/normalizers/ 2>/dev/null
+node W/tools-v33/rekey.js --clone W/sdkgen --old W/out/old --new W/out/new --lang <lang> --from W/tools --to W/tools-v33 --dry   # read the report
+node W/tools-v33/rekey.js --clone W/sdkgen --old W/out/old --new W/out/new --lang <lang> --from W/tools --to W/tools-v33 --json W/rekey-<lang>.json
+W/tools-v33/portcheck.sh W/sdkgen W/out <lang>      # decide every CONFLICT, UNSOURCED and open class in hand/<lang>.json
+```
+Exit 1 from rekey.js means something is listed for a person (a merge whose decisions disagree, a class with units no old class held, a hand entry that could not be carried). Running it again on records it already re-keyed changes nothing.

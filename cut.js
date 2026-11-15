@@ -355,6 +355,7 @@ function candidates(VL, title, s) {
 const MARK = { E: '', F: '', S: 'Ⓢ', L: 'Ⓛ' }
 const SYM = { E: 'Ⓔ', F: 'Ⓕ', S: 'Ⓢ', L: 'Ⓛ' }
 const canon = (w) => w.toLowerCase().replace(/_/g, '')
+const sameName = (a, b) => { const x = canon(a), y = canon(b); return x.includes(y) || y.includes(x) }
 function templateOf(s, rs) {
   let out = '', at = 0
   for (const r of rs) { out += s.slice(at, r.s) + MARK[r.t]; at = r.e }
@@ -385,6 +386,17 @@ function learned(roots) {
     let row = T.get(key)
     if (!row) { row = ms.map(() => new Map()); T.set(key, row) }
     ms.forEach((r, i) => { const c = canon(r.w); if (!row[i].has(c)) row[i].set(c, new Set()); row[i].get(c).add(src) })
+    // TIES: two model positions that hold the same name ("Load a planet: the
+    // entity, a PlanetEntity"), counted per source: [same, units]
+    if (!row.ties) row.ties = new Map()
+    if (!row.ties.has(src)) row.ties.set(src, new Map())
+    const tm = row.ties.get(src)
+    for (let i = 0; i < ms.length; i++) for (let j = i + 1; j < ms.length; j++) {
+      const p = i + ',' + j, x = tm.get(p) || [0, 0]
+      x[1]++
+      if (sameName(ms[i].w, ms[j].w)) x[0]++
+      tm.set(p, x)
+    }
   }
   const newLangs = LEARNERS_NEW()
   for (const { root, side } of sidesOf(roots)) {
@@ -404,19 +416,38 @@ function learned(roots) {
 
 // The model ranges of a unit's text for `lang`: each candidate with what
 // replaces it (Ⓔ, Ⓕ, Ⓢ, Ⓛ, or null: the word stays).
-function modelRanges(roots, lang) {
+// `excl`: the language whose new pages are left out of the learning (default `lang`).
+function modelRanges(roots, lang, excl = lang) {
   const VL = vocabLearn(roots)
   const title = REG.languages[lang]
-  const self = 'new:' + lang
+  const self = 'new:' + excl
   return (s) => {
     const { ranges } = candidates(VL, title, s)
     const ms = ranges.filter((r) => 'E' === r.t || 'F' === r.t)
     if (!ms.length) return ranges.map((r) => ({ ...r, rep: SYM[r.t] }))
     const row = learned(roots).get(templateOf(s, ranges))
+    // a tie every other source keeps that this unit breaks (an entity swapped
+    // for another in one place): the later position is marked, so the unit is
+    // not the template's
+    const broken = new Set()
+    if (row && row.ties) {
+      // the other sources' counts, else (a template only this language prints) its own
+      let srcs = [...row.ties.keys()].filter((x) => x !== self)
+      if (!srcs.length) srcs = [...row.ties.keys()]
+      const sum = new Map()
+      for (const x of srcs) for (const [p, [s, n]] of row.ties.get(x)) { const y = sum.get(p) || [0, 0]; sum.set(p, [y[0] + s, y[1] + n]) }
+      // tied: the same name in at least nine units of ten, over three or more
+      for (const [p, [s, n]] of sum) {
+        if (n < 3 || s < 0.9 * n) continue
+        const [i, j] = p.split(',').map(Number)
+        if (!sameName(ms[i].w, ms[j].w)) broken.add(j)
+      }
+    }
     let i = 0
     return ranges.map((r) => {
       if ('S' === r.t || 'L' === r.t) return { ...r, rep: SYM[r.t] }
       const pos = row ? row[i] : null
+      if (broken.has(i)) { i++; return { ...r, rep: SYM[r.t] + '≠' } }
       i++
       // no learner printed this template: the v3.2 mask
       if (!pos) return { ...r, rep: SYM[r.t] }

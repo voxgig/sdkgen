@@ -1,15 +1,15 @@
 {
  "absent": {
-  "322c78c566": "rust prints '`list()` returns a result whose `Ok` is a `Vec` of entities, one per record, and whose `Err` reports failure' (crud-bare/rust/README.md:47); masks differ (`Vec` code, slice a word)",
-  "ad23683b78": "rust prints '// Create — Ok carries the created entity; data(None) reads its record' (crud-bare/rust/README.md:80); its bare Ok in a comment is not masked as the fact `Ok`",
-  "88dc628742": "rust prints '// Load an ambient: Ok is the entity; Err on failure' (B/README.md:584); bare Ok/Err masked differently | rust prints '// Load a planet: Ok is the entity; Err on failure' (crud-bare root README); same sentence",
-  "4ca4d664d8": "rust prints '// List planet records: Ok is a Vec of entities, one per record; Err on failure' (crud-bare root README); same sentence",
-  "12182a3155": "rust prints '`options` is a `Value` map (`Value::Noval` for none).' (B/rust/REFERENCE.md:16); in zig `Value` is also direct.returns, so zig's mask label holds two paths",
   "7d1db2c55c": "rust prints '**Returns:** `Result<Value, DemoError>`, a result map holding ...' (B/rust/REFERENCE.md:112); same sentence, its type masked differently",
   "5c8f458658": "rust prints '**Returns:** `Result<Value, DemoError>`, the fetch definition: the request `direct()` would send.' (B/rust/REFERENCE.md:126)",
   "083fc645cd": "zig's own note on prepare (notes.member:prepare): zig's prepare returns an error union (E!Value); rust's returns a Result and its failure is stated by the Returns sentence",
   "96ae20c828": "rust prints 'Pass `Some(&map)` to set it.' (B/rust/REFERENCE.md:167): rust's setArg is `Some(&map)` (cited), zig's 'a map'",
   "b7514cf478": "zig's own note on stream (notes.member:streamList, the throw:false behaviour of its result union); rust's stream returns a Result<IntoIter> with no such case",
+  "322c78c566": "rust prints '`list()` returns a result whose `Ok` is a `Vec` of entities, one per record, and whose `Err` reports failure' (crud-bare/rust/README.md:47); masks differ (`Vec` code, slice a word)",
+  "ad23683b78": "rust prints '// Create — Ok carries the created entity; data(None) reads its record' (crud-bare/rust/README.md:80); its bare Ok in a comment is not masked as the fact `Ok`",
+  "88dc628742": "rust prints '// Load an ambient: Ok is the entity; Err on failure' (B/README.md:584); bare Ok/Err masked differently | rust prints '// Load a planet: Ok is the entity; Err on failure' (crud-bare root README); same sentence",
+  "4ca4d664d8": "rust prints '// List planet records: Ok is a Vec of entities, one per record; Err on failure' (crud-bare root README); same sentence",
+  "12182a3155": "rust prints '`options` is a `Value` map (`Value::Noval` for none).' (B/rust/REFERENCE.md:16); in zig `Value` is also direct.returns, so zig's mask label holds two paths",
   "bea4cfb8e1": "rust prints 'The result's `Ok` is a `Vec` of entities, one per record, and its `Err` reports failure.' (B/rust/REFERENCE.md:205)"
  },
  "e164551f17": {

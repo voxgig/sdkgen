@@ -118,8 +118,8 @@ function make(a) {
   }
 
   // Skeleton and fills of a raw text, with model names learned without `excl`.
-  function analyse(text, kind, excl) {
-    const mr = C.modelRanges(roots, excl)(text)
+  function analyse(text, kind, lang, excl = lang) {
+    const mr = C.modelRanges(roots, lang, excl)(text)
     const ps = positions(text, kind)
     const piece = (s, e) => {
       let out = '', at = s
@@ -188,7 +188,7 @@ function make(a) {
     return kind + '\u0000' + build(x, (i) => varies(x, i, null))
   }
   function match(text, kind, lang, excl) {
-    const x = analyse(text, kind, excl)
+    const x = analyse(text, kind, lang, excl)
     if (x.whole) return wholeText(text, kind, lang)
     // a slot only where the language supplies its own declared fact, and no
     // other language prints the same text there as plain shared text
