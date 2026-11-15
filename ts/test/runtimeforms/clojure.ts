@@ -56,11 +56,18 @@ const forms: Forms = {
   // The porter's, from here on.
   renames: { args: ['data', 'match'] },
   namesWhy: 'clojure passes by position; the runtime names the setter argument args',
+  exceptions: {
+    streamItems: 'WRONG: clojure: ref.facts.entity stream kind streamLazy ("return a lazy stream of its result items"); Entity.fragment.clj runs run-op and realises the streaming feature\'s items with vec and mapv before it returns; the lazy-seq walks the realised vector',
+  },
   uncompared: { returns: 'the clojure runtime declares no types, so a signature\'s `-> x` is compared with nothing; the facts that rest on one are cited' },
   cite: {
+    'ref.facts.none': { file: 'src/cmp/clojure/fragment/EntityLoadOp.fragment.clj', quote: ';; Load a single EntityName (reqmatch: id/query fields; nil = empty match).' },
+    'ref.facts.lits.false': { value: 'false', file: 'tm/clojure/src/sdk/client.clj', quote: '(vs/jm "ok" false "err" (core/ucall (core/client-root-ctx client) :clean (:err pr)))' },
+    'ref.facts.lits.true': { value: 'true', file: 'tm/clojure/src/sdk/client.clj', quote: 'out (vs/jm "ok" (and (nil? body-err) (>= status 200) (< status 300))', unquoted: { true: 'ok is the boolean the status test computes; true is not spelled' } },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: "(vs/clone (deref (:_data ent)))" },
     'notes.members': { value: "State accessors are stored on the entity map and called via keyword lookup.", file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: [":data-get (fn [] (ent-data-get ent))"] },
-    'notes.instance': { value: "The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-export: `(sdk.client/get-utility client)` returns a copy of it.", file: "tm/clojure/src/sdk/client.clj", quote: ["(defn get-utility [client] (core/get-utility client))"], also: [{ file: "tm/clojure/src/sdk/core.clj", quote: ["(defn get-utility [client] (utility-copy (:utility client)))"] }] },
+    'notes.instance': { value: "The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-export: `(sdk.client/get-utility client)` returns a copy of it.", file: "tm/clojure/src/sdk/client.clj", quote: ["(ns sdk.client", "(defn get-utility [client] (core/get-utility client))"], also: [{ file: "tm/clojure/src/sdk/core.clj", quote: ["(defn get-utility [client] (utility-copy (:utility client)))"] }],
+      unquoted: { '(sdk.client/get-utility client)': 'the call a caller writes to the defn the quote shows' } },
     'facts.collection': { value: "vector", file: OPS[1], quote: [';; Resolves to a vector of entities, one per record, as make-result builds', '(if (vs/islist items) (vec items) items)'] },
     'ref.facts.container': { file: 'tm/clojure/src/sdk/client.clj', quote: '[voxgig.struct :as vs]' },
     'ref.facts.ctor[0]': { file: 'src/cmp/clojure/Main_clojure.ts', quote: ['(ns sdk.api', '(:require [sdk.client :as client]${requires}))'] },
@@ -80,7 +87,17 @@ const forms: Forms = {
       unquoted: { String: 'a string, which the comment above raw-body names' },
     },
     'ref.facts.body.once': { value: "an `InputStream`", file: 'tm/clojure/src/sdk/core.clj', quote: ';; read here, once, before the first attempt, so that a retry sends the same' , also: [{ file: 'tm/clojure/src/sdk/core.clj', quote: '(if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)' }] },
-    'ref.facts.cancel': { value: false, file: 'tm/clojure/src/sdk/core.clj', quote: '(def ^:private http-client (delay (http-client-for HttpClient$Redirect/NORMAL)))' },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/clojure/src/sdk/core.clj'] } },
+  },
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test-sdk',
+  on: (d) => /^\s*:/.test(d.head) ? 'instance' : 'module',
+  stream: {
+    file: "src/cmp/clojure/fragment/Entity.fragment.clj",
+    construct: "(letfn [(lz [xs] (lazy-seq", starts: "on iteration",
+    run: "(run-op ctx (fn []))\n    (let [result (core/oget ctx :result)",
+    draw: "(vec ((core/oget result :stream)))",
+    runs: "before it returns", items: "before it returns",
   },
 }
 
