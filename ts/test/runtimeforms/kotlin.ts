@@ -59,6 +59,10 @@ const forms: Forms = {
     draw: "if (source.hasNext() && !aborted()) source.next() else end",
     runs: "before it returns", items: "as the caller iterates",
   },
+  // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
+  cite: {
+    'ref.facts.direct.okFalse': { value: "false", file: "tm/kotlin/core/SdkClient.kt", quote: "out[\"ok\"] = false" },
+  },
 }
 
 export { forms }
