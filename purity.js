@@ -28,7 +28,14 @@ const MODEL_READ = /\bmodel\b|ctx\$|getModelPath|\btarget\.|\bKIT\b|@voxgig\/api
 // A word compared with a name in place of a reserved list: an inline array
 // of quoted words tested for membership, or a name compared with a quoted word.
 const INLINE_RESERVED = /\[\s*['"][A-Za-z_]+['"](\s*,\s*['"][A-Za-z_]+['"])*\s*\]\s*\.(includes|indexOf|some|find)\(|\b(name|n|id|ident|word|s)\s*(===|==|!==)\s*['"][a-z_]+['"]|['"][a-z_]+['"]\s*(===|==|!==)\s*(name|n|id|ident|word)\b/
+// Name surgery: cutting or testing the end or start of a name (a
+// depluralising `.replace(/s$/, '')`, `.slice(0, -1)`, `endsWith('s')`) is a
+// naming rule however it is spelled, in a printer, a hook or a helper either
+// one defines. An anchored pattern counts only when it holds a letter, so an
+// indentation `.replace(/^/gm, '  ')` is not one.
+const NAME_SURGERY = /\.replace\(\s*\/(\^[^/\n]*[A-Za-z][^/\n]*|[^/\n]*[A-Za-z][^/\n]*\$)\/\w*\s*,|\b(?:name|Name|ident|word|var|str|s|n|id|key)\s*\.(?:slice\(\s*0\s*,\s*-\s*\d|substr(?:ing)?\()|\.(?:name|var|accessor|Name)\s*\.(?:slice\(\s*0\s*,\s*-\s*\d|substr(?:ing)?\()|\.(endsWith|startsWith)\(\s*['"`][A-Za-z]{1,6}['"`]\s*\)|\.replace\(\s*['"`][A-Za-z]{1,6}['"`]\s*,/
 const SYNTAX_CHECKS = [
+  ['name surgery', NAME_SURGERY],
   ['model read', MODEL_READ],
   ['inline reserved-word test', INLINE_RESERVED],
   ['reserved-word list', /RESERVED|isReserved|new Set(<[^>]*>)?\(\[\s*'[a-z]/],
@@ -171,6 +178,20 @@ function declaredNotes(providers, lang) {
 }
 const flat = (s) => String(s).replace(/\\n/g, ' ').replace(/\s+/g, ' ').trim()
 
+// The text of a function a file defines (`function f(`, `const f = (`/`=>`), with its first line.
+function fnBody(text, fn) {
+  const re = new RegExp(`(^|\\n)[ \\t]*(?:export\\s+)?(?:function\\s+${fn}\\s*\\(|const\\s+${fn}\\s*(?::[^=\\n]*)?=)`)
+  const m = re.exec(text)
+  if (!m) return null
+  const start = m.index + m[1].length
+  let i = text.indexOf('{', start), depth = 0
+  const arrowExpr = /=>\s*[^{\s]/.test(text.slice(start, (text.indexOf('\n', start) + 1) || text.length)) && !/=>\s*\{/.test(text.slice(start, (text.indexOf('\n', start) + 1) || text.length))
+  let end
+  if (arrowExpr || i < 0) end = (text.indexOf('\n', start) + 1) || text.length
+  else { for (; i < text.length; i++) { if ('{' === text[i]) depth++; else if ('}' === text[i] && 0 === --depth) break } end = i + 1 }
+  return { text: text.slice(start, end), line: text.slice(0, start).split('\n').length }
+}
+
 function namingFindings(file, lang, providers) {
   const src = Fs.readFileSync(file, 'utf8')
   const F = []
@@ -181,6 +202,7 @@ function namingFindings(file, lang, providers) {
     if (/RESERVED|new Set(<[^>]*>)?\(\[\s*'/.test(line) && !/^import/.test(line)) F.push({ check: 'reserved list not imported', line: i + 1, text: line.trim() })
     if (INLINE_RESERVED.test(line)) F.push({ check: 'inline reserved-word test', line: i + 1, text: line.trim() })
     if (/['"`]\s*\+\s*\w+\(|\w+\([^)]*\)\s*\+\s*['"`]/.test(line) && !/Name\s*\+/.test(line)) F.push({ check: 'concatenation onto a generator name', line: i + 1, text: line.trim() })
+    if (NAME_SURGERY.test(line)) F.push({ check: 'name surgery', line: i + 1, text: line.trim() })
   })
   // functions the hook calls, and who else in the language calls them
   const imported = []
@@ -199,7 +221,39 @@ function namingFindings(file, lang, providers) {
     calls.push({ fn: n, from, alsoCalledBy: by })
     if (!by.length) F.push({ check: 'naming function no non-README component calls', line: 0, text: `${n} (from ${from})` })
   }
-  return { findings: F, calls }
+  // Follow what the hook imports from its own language's directory, and the
+  // functions those call in the same file: the same rules apply in a helper.
+  // A rule in a helper a non-README component also calls is the code
+  // generator's own (the generator names things by it): reported, not open.
+  const helpers = []
+  for (const { n, from } of imported) {
+    if (!/^\.\.?\//.test(from)) continue
+    const file = ['.ts', '.js', ''].map((x) => Path.resolve(dir, from + x)).find((f) => Fs.existsSync(f) && Fs.statSync(f).isFile())
+    if (!file || !Path.resolve(file).startsWith(Path.resolve(providers) + Path.sep)) continue
+    const text = Fs.readFileSync(file, 'utf8')
+    const shared = (calls.find((c) => c.fn === n) || { alsoCalledBy: [] }).alsoCalledBy.length > 0
+    const seen = new Set(), todo = [n]
+    while (todo.length) {
+      const fn = todo.shift()
+      if (seen.has(fn)) continue
+      seen.add(fn)
+      const body = fnBody(text, fn)
+      if (!body) continue
+      helpers.push({ fn, file: Path.relative(providers, file), via: n, shared })
+      body.text.split('\n').forEach((line, k) => {
+        if (/^\s*(\/\/|\*)/.test(line)) return
+        const at = body.line + k
+        const hit = (check) => F.push({ check: `${check} in helper ${fn} (${Path.relative(providers, file)})`, line: at, text: line.trim(), helper: fn, shared })
+        if (/\+\s*['"`](s|es|ies)['"`]|plurali[sz]|\.replace\([^)]*y\$/.test(line)) hit('pluralisation')
+        if (NAME_SURGERY.test(line)) hit('name surgery')
+        if (/RESERVED|new Set(<[^>]*>)?\(\[\s*'/.test(line) && !/^import/.test(line)) hit('reserved list not imported')
+        if (INLINE_RESERVED.test(line)) hit('inline reserved-word test')
+        if (MODEL_READ.test(line) && /\bmodel\b/.test(line) && !/\(\s*model\b|model\s*:/.test(line)) void 0
+      })
+      for (const m of body.text.matchAll(/\b([A-Za-z_$][\w$]*)\s*\(/g)) if (!seen.has(m[1]) && fnBody(text, m[1])) todo.push(m[1])
+    }
+  }
+  return { findings: F, calls, helpers }
 }
 
 function main() {
@@ -237,7 +291,9 @@ function main() {
     const all = [...(r.syntax ? r.syntax.findings.map((f) => ({ ...f, file: 'Syntax' })) : []), ...(r.syntax ? r.syntax.lint.map((f) => ({ ...f, file: 'Syntax' })) : []), ...(r.naming ? r.naming.findings.map((f) => ({ ...f, file: 'Naming' })) : [])]
     for (const f of all) {
       const ok = (allow[l] || []).find((x) => x.file === f.file && x.check === f.check && x.text === f.text)
-      if (ok) r.accepted.push({ ...f, why: ok.why }); else r.open.push(f)
+      if (ok) r.accepted.push({ ...f, why: ok.why })
+      else if (f.helper && f.shared) r.accepted.push({ ...f, why: `in ${f.helper}, which a non-README component also calls: the code generator names things by this rule too` })
+      else r.open.push(f)
     }
     if (r.open.length) bad++
   }

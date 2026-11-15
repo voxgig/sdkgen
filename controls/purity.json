@@ -183,5 +183,29 @@
     "to": "    'member:direct': 'The result map always comes back inside `Ok`' +\n      ', for a non-2xx response and\\nfor a request that could not be made alike; its `ok` key reports the failure.',"
    }
   ]
+ },
+ {
+  "id": "perl-scalar-helper-depluralise",
+  "lang": "perl",
+  "file": "perl/Syntax_perl.ts",
+  "from": "const scalar = (name: string): string => '$' + name",
+  "to": "const scalar = (name: string): string => '$' + name.replace(/s$/, '')",
+  "why": "T3: the perl reviewer's a17: a depluralising rule inside a helper the provider defines; purity reported 0 open"
+ },
+ {
+  "id": "go-hook-helper-depluralise",
+  "lang": "go",
+  "file": "go/utility_go.ts",
+  "from": "  const pascal = camelify(name)\n",
+  "to": "  const pascal = camelify(name.replace(/s$/, ''))\n",
+  "why": "T3: the same rule inside goVarName in utility_go.ts, a helper only the naming hook calls: purity follows what the hook imports from its own language's directory"
+ },
+ {
+  "id": "perl-scalar-helper-slice",
+  "lang": "perl",
+  "file": "perl/Syntax_perl.ts",
+  "from": "const scalar = (name: string): string => '$' + name",
+  "to": "const scalar = (name: string): string => '$' + (name.endsWith('s') ? name.slice(0, -1) : name)",
+  "why": "T3: the same rule written as a suffix test and a negative slice"
  }
 ]
