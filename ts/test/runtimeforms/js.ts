@@ -39,6 +39,16 @@ const forms: Forms = {
   types: { column: 'js' },
   uncompared: { paramTypes: 'js declares no parameter types', returns: 'js declares no return types' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test',
+  expect: { test: { on: 'type' } },
+  stream: {
+    file: "src/cmp/js/fragment/EntityBase.fragment.js",
+    construct: "async *stream(action, args, callopts)", starts: "on iteration",
+    run: "const failed = await this._streamSteps(ctx)",
+    draw: "for await (const item of result.stream())",
+    runs: "as the caller iterates", items: "as the caller iterates",
+  },
 }
 
 export { forms }
