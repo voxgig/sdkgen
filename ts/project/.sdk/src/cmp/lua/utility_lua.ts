@@ -7,6 +7,12 @@ import {
 } from '@voxgig/struct'
 
 
+// The module a program requires the SDK by, and the file Main writes it to.
+function luaSdkModule(model: any): string {
+  return model.name + '_sdk'
+}
+
+
 function projectPath(suffix?: string): string {
   return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
 }
@@ -118,6 +124,7 @@ function luaLongString(s: string): string {
 }
 
 export {
+  luaSdkModule,
   luaLongString,
   clean,
   formatLuaTable,

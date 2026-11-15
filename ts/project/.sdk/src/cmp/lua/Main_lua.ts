@@ -28,6 +28,7 @@ import { PrepareAuth } from './PrepareAuth_lua'
 import { Gitignore } from './Gitignore_lua'
 import { MainEntity } from './MainEntity_lua'
 import { EntityTypes } from './EntityTypes_lua'
+import { luaSdkModule } from './utility_lua'
 
 
 const CONTAINED = ['secrets']
@@ -134,7 +135,7 @@ feature/secrets/native/sekretovault.so: feature/secrets/native/sekretovault.c
     })
   }
 
-  File({ name: model.name + '_sdk.' + target.ext }, () => {
+  File({ name: luaSdkModule(model) + '.' + target.ext }, () => {
 
     Fragment(
       {
