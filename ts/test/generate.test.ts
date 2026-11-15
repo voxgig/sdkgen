@@ -2531,7 +2531,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   // brings a patch operation.
   test('the reference says each operation returns the entity', async () => {
     const expect: Record<string, RegExp> = {
-      load: /\bthe entity, whose record `[^`]+` reads\b|\bthe entity\b(?:[^`.]|`[^`]*`)*\. `[^`]+` reads its record\b/,
+      // The wrapped style names its unwrap before the record read.
+      load: /\bthe entity, whose record `[^`]+` reads\b|\bthe entity\b(?:[^`.]|`[^`]*`)*\. (?:`[^`]+` takes the entity out, and )?`[^`]+` reads its record\b/,
       list: /\bentities, one per record\b|\bone entity per record\b/,
       create: /\bthe created entity\b(?! data)/,
       update: /\bthe updated entity\b(?! data)/,
