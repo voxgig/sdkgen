@@ -286,4 +286,14 @@ describe('ReadmeRefFeatures', () => {
     const one = await renderRefFeatures({ retry: { transport: 'wrap' }, cache: { transport: 'wrap' }, audit: SHIPPED.audit })
     ok(/`audit` attaches to pipeline hooks\nrather than the transport, so its order/.test(one), one)
   })
+
+  test('a union option type stays in its cell (V27)', async () => {
+    const out = await renderRefFeatures({
+      netsim: { transport: 'wrap', optspec: { shape: ['`$ONE`', '`$NUMBER`', '`$MAP`'] } },
+    })
+    const row = out.split('\n').find((l) => l.startsWith('| `shape` |')) || ''
+    strictEqual(row, '| `shape` | number \\| map |')
+    // Every row of the table has the header's two cells.
+    strictEqual(row.split(/(?<!\\)\|/).length - 2, 2, row)
+  })
 })
