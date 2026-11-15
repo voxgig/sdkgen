@@ -38,7 +38,7 @@ const forms: Forms = {
   decl: (name) => new RegExp(`^(?:\\s*mutable ${name}(?=\\s*:)|let (?:rec )?${name}(?=\\s))`, 'm'),
     declReader: (after) => {
     const field = /^\s*:\s*([^;]+);/.exec(after)
-    if (null != field) return arrows(field[1].replace(/\s+/g, ' '))
+    if (null != field) return { ...arrows(field[1].replace(/\s+/g, ' ')), field: !/->/.test(field[1]) }
     const head = /^((?:\s*\((?:[^()]|\([^()]*\))*\))*)\s*(?::\s*([^=]+?))?\s*=/.exec(after)
     if (null == head) return null
     const groups = [...head[1].matchAll(/\(((?:[^()]|\([^()]*\))*)\)/g)].map((m) => m[1].trim()).filter((p) => '' !== p)
@@ -72,12 +72,25 @@ const forms: Forms = {
     dataGet: 'e_data_get', dataSet: 'e_data_set', matchGet: 'e_match_get', matchSet: 'e_match_set',
     make: 'e_make', name: 'e_name', stream: 'e_stream',
   },
-  streamKind: (d) => /\bSeq\.t$/.test(d.returns) ? 'streamLazy' : 'stream',
+  // The Seq is built over a list run_op has already produced (Entity_ocaml.ts),
+  // so it is an iterator over the items, not a lazy read of them.
+  streamKind: (d) => /\bSeq\.t$/.test(d.returns) ? 'streamSync' : 'stream',
   style: { exception: 'raise', raises: /\braise\b/ },
   record: (rec) => ({ name: (/(e_\w+)/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'entity_obj', client: 'sdk_client', sdk: 'Sdk_client', ctor: 'make', accessor: '${fn}' },
   types: { column: null, reason: 'the code generator has no ocaml column in canonToType (every type maps to any); the page\'s type words are the provider\'s own' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test',
+  on: (d) => /^\s*mutable /.test(d.head) ? 'instance' : 'module',
+  expect: { e_name: { field: true }, e_deleted: { field: true }, e_data: { field: true }, e_load: { field: false }, test: { on: 'module' } },
+  stream: {
+    file: "src/cmp/ocaml/Entity_ocaml.ts",
+    construct: "seq_of raw);", starts: "on iteration",
+    run: "ignore (run_op ctx (fun () -> ()));\n      let signal",
+    draw: "| Some fn -> fn ()",
+    runs: "before it returns", items: "before it returns",
+  },
 }
 
 export { forms }
