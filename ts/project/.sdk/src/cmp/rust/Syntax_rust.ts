@@ -41,7 +41,7 @@ const refFacts: RefFacts = {
     remove: 'remove(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>',
   },
   client: [
-    { kind: 'options', sig: 'options_map() -> Value' },
+    { kind: 'options', sig: 'options_map() -> Value', copy: true },
     { kind: 'utility', sig: 'get_utility() -> Rc<Utility>' },
     { kind: 'direct', sig: 'direct(fetchargs: Value) -> Result<Value, ProjectNameError>' },
     { kind: 'prepare', sig: 'prepare(fetchargs: Value) -> Result<Value, ProjectNameError>' },

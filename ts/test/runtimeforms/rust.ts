@@ -50,6 +50,7 @@ const forms: Forms = {
   // The porter's, from here on.
   typeNames: { 'Rc<crate::entity::${mod}::${cls}>': 'Rc<EntyClass>' },
   cite: {
+    'ref.facts.client[0].copy': { value: true, file: "src/cmp/rust/fragment/Main.fragment.rs", quote: "vs::clone(&self.options.borrow())" },
     'ref.facts.direct.okFalse': { file: MAIN, quote: '("ok", Value::Bool(false)),' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rust/fragment/Entity.fragment.rs", quote: "vs::clone(&self.data.borrow())" },
     'notes.member:direct': { value: "The result map always comes back inside `Ok`, for a non-2xx response and\nfor a request that could not be made alike; its `ok` key reports the failure.", file: "src/cmp/rust/fragment/Main.fragment.rs", quote: ["        self.raw_request(fetchargs)", "            Err(err) => {\n                return Ok(jo(vec![", "        Ok(jo(vec![\n            (\"ok\", Value::Bool(false)),"] },
