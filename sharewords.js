@@ -63,7 +63,7 @@ function main() {
   const ts = Path.join(Path.resolve(a.clone), 'ts')
   const sections = K.list(a.section) || C.SECTIONS
   const named = K.list(a.lang) || []
-  const vars = C.variationsOf(a.root)
+  const vars = C.variationsOf(a.root).filter((v) => !K.list(a.vars) || K.list(a.vars).includes(v))
   // "the same sentence" is ident.js's identity (one template, one sentence,
   // whatever each language's tokens); --v32 counts with the v3.2 mask instead
   const I = a.v32 ? null : Ident.make({ clone: a.clone, old: a.old || Path.join(Path.dirname(Path.resolve(a.root)), 'old'), new: a.root })
