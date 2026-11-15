@@ -52,8 +52,8 @@ const forms: Forms = {
   typeNames: { '*@import("../entity/${mod}.zig").${cls}': '*EntyClass' },
   namesWhy: 'zig passes by position; the runtime suffixes a parameter it rebinds with _in, and the accessor\'s return is spelled through the generator',
   cite: {
-    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: '.{ "ok", h.vbool(false) },' },
-    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: '.{ "ok", h.vbool(200 <= status and status < 300) },', unquoted: { true: 'ok is the bool the status test computes; true is not spelled' } },
+    'ref.facts.setArg': { value: 'a map', file: 'src/cmp/zig/fragment/Entity.fragment.zig', quote: ['self.data = if (arg == .null) h.omap() else h.clone(arg);', 'const cloned = h.to_map(h.clone(arg));'] },
+    'ref.facts.direct.okFalse': { file: MAIN, quote: '.{ "ok", h.vbool(false) },' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/zig/fragment/Entity.fragment.zig", quote: "return h.clone(self.data);" },
     'facts.collection': { value: "slice", file: ENTITY, quote: 'pub const EntListResult = union(enum) {\n    ok: []*EntyClass,' },
     'facts.ok': { file: ENTITY, quote: '.ok => EntResult{ .ok = self },' },
