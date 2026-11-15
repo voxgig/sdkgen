@@ -33,6 +33,13 @@ function scalaPackage(model: any): string {
 }
 
 
+// The package the client, its entity contract and the config live in
+// (`package SCALAPACKAGE.core` in tm/scala/core), which callers import.
+function scalaCorePackage(model: any): string {
+  return scalaPackage(model) + '.core'
+}
+
+
 // Maven-style coordinates (used by Package_scala for the publish metadata).
 function mavenGroupId(model: any): string {
   const org = String(model.origin || 'voxgig-sdk')
@@ -142,5 +149,6 @@ export {
   jsonAppendLines,
   projectPath,
   scalaPackage,
+  scalaCorePackage,
   scalaVarName,
 }

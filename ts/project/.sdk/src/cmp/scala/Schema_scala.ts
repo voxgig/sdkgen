@@ -14,6 +14,7 @@ import {
 
 import {
   scalaPackage,
+  scalaCorePackage,
   jsonAppendLines,
 } from './utility_scala'
 
@@ -32,7 +33,7 @@ const Schema = cmp(async function Schema(props: any) {
   // data, so nothing in utility or feature has to reach up for it.
   File({ name: 'Schema.' + target.ext }, () => {
 
-    Content(`package ${scalapackage}.core
+    Content(`package ${scalaCorePackage(model)}
 
 import java.util.{Map => JMap}
 
