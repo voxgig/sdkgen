@@ -32,8 +32,10 @@ function checkSyntaxInterface(target, declared) {
         (null == from ? 'an interface before ' + SYNTAX_CHANGES[0].to + ' (it declares none)' :
             'interface ' + from) +
         ', and this sdkgen calls interface ' + SYNTAX_INTERFACE + '. ' +
+        'An unchanged copy from a package is refreshed by `voxgig-sdkgen package update` ' +
+        '(doctor lists it as OUTDATED). Otherwise, ' +
         (0 === changes.length ? '' :
-            'Check each change, then declare interface: \'' + SYNTAX_INTERFACE + '\':\n' +
+            'check each change, then declare interface: \'' + SYNTAX_INTERFACE + '\':\n' +
                 changes.map((c) => '  - ' + c.to + ': ' + c.change).join('\n')));
 }
 //# sourceMappingURL=syntaxversion.js.map
