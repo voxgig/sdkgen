@@ -42,6 +42,7 @@ const refFacts: RefFacts = {
     call: 'let client = {client}.testSDK(nil, nil)', args: true,
   }],
   testMock: 'generated',
+  deleted: false,
   accessor: { sig: '{accessor}(_ entopts: VMap? = nil) -> ProjectNameEntityBase', arg: 'entopts', param: 'entopts' },
   op: {
     list: 'list(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value',

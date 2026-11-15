@@ -54,6 +54,7 @@ const refFacts: RefFacts = {
   cancel: false,
   streamSignal: true,
   testMock: 'generated',
+  deleted: false,
 }
 
 // An Elixir string literal: `#` is escaped, since `#{` interpolates.
@@ -171,7 +172,7 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'elixir'),
     key: (_container, path) => path.join('.'),
     instance: (e, desc) => [`${e.sym.var} = ${desc.layout.module}.${e.sym.accessor}(sdk)`],
-    read: (value, key) => `Voxgig.Struct.getprop(${value}, ${str(key)})`,
+    read: (value, key, _truth) => `Voxgig.Struct.getprop(${value}, ${str(key)})`,
   },
 
   notes: {

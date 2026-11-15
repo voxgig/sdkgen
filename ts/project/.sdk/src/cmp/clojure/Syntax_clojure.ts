@@ -60,6 +60,7 @@ const refFacts: RefFacts = {
   memberNamed: 'bare',
   streamSignal: true,
   testMock: 'always',
+  deleted: false,
 }
 
 // Field types as the old reference named them; clojure emits no typed models.
@@ -214,7 +215,7 @@ const Syntax: SyntaxType = {
     type: (t) => TYPES[canonKey(t)] ?? 'any',
     key: (container, path) => 0 === path.length ? container : path.join('.'),
     instance: (e, desc) => [`(require '[${e.sym.module} :as ${e.sym.alias}])`, '', `(def ${e.sym.var} (${acc(e, desc)} client nil))`],
-    read: (value, key) => `(vs/getprop ${value} ${str(key)})`,
+    read: (value, key, _truth) => `(vs/getprop ${value} ${str(key)})`,
   },
 
   notes: {

@@ -64,10 +64,39 @@ function serveSyntax(target: string, module: any, log?: any): any {
   }
   if (!served.has(module)) {
     const at = servedInterface(target, syntax.interface, log)
+    if (SYNTAX_INTERFACE === at) {
+      checkDeclared(target, syntax)
+    }
     served.set(module, SYNTAX_INTERFACE === at ? module :
       { ...module, Syntax: { ...syntax, facts: { ...syntax.facts, served: at } } })
   }
   return served.get(module)
+}
+
+
+// Opt-in facts a provider on the current interface declares even when it has
+// none (false), and printers whose every parameter it names: a fact left out
+// or a parameter dropped would otherwise leave a sentence out unsaid.
+const DECLARED: { at: string, keys: string[] }[] = [
+  { at: 'ref.facts', keys: ['deleted', 'streamSignal'] },
+]
+const ARITY: { at: string, n: number }[] = [
+  { at: 'ref.read', n: 3 },
+]
+
+function checkDeclared(target: string, syntax: any): void {
+  const get = (at: string) => at.split('.').reduce((v: any, k: string) => v?.[k], syntax)
+  const missing = [
+    ...DECLARED.flatMap((d) => null == get(d.at) ? [] :
+      d.keys.filter((k) => !(k in get(d.at))).map((k) => d.at + '.' + k + ' (declare false if none)')),
+    ...ARITY.filter((a) => 'function' === typeof get(a.at) && get(a.at).length < a.n)
+      .map((a) => a.at + ' takes ' + a.n + ' parameters, and declares ' + get(a.at).length),
+  ]
+  if (0 < missing.length) {
+    throw new SdkGenError(target + ': the syntax provider .sdk/' + componentSource(target, 'Syntax') +
+      ' leaves out what interface ' + SYNTAX_INTERFACE + ' asks it to declare:\n' +
+      missing.map((m) => '  - ' + m).join('\n'))
+  }
 }
 
 

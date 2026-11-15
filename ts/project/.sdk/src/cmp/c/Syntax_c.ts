@@ -56,6 +56,7 @@ const refFacts: RefFacts = {
   cancel: false,
   deleted: '{var}->vt->deleted({var})',
   testMock: 'generated',
+  streamSignal: false,
 }
 
 const str = (s: string): string => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'

@@ -142,7 +142,7 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'py'),
     key: (container, path) => container + path.map((k) => `[${str(k)}]`).join(''),
     instance: (e) => [`${e.sym.var} = client.${e.sym.accessor}()`],
-    read: (value, key) => `${value}[${str(key)}]`,
+    read: (value, key, _truth) => `${value}[${str(key)}]`,
   },
 }
 

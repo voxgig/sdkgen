@@ -56,6 +56,7 @@ const refFacts: RefFacts = {
   cancel: false,
   deleted: '{var}.deleted',
   testMock: 'always',
+  streamSignal: false,
 }
 
 const str = (s: string): string => JSON.stringify(s)

@@ -136,7 +136,7 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'ts'),
     key: (container, path) => [container, ...path].join('.'),
     instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}()`],
-    read: (value, key) => jsProp(value, key),
+    read: (value, key, _truth) => jsProp(value, key),
   },
 }
 

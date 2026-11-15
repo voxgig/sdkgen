@@ -153,7 +153,7 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'lua'),
     key: (container, path) => container + path.map(index).join(''),
     instance: (e) => [`local ${e.sym.var} = client:${e.sym.accessor}(nil)`],
-    read: (value, key) => value + index(key),
+    read: (value, key, _truth) => value + index(key),
   },
 
   notes: {

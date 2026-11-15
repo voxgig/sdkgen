@@ -249,7 +249,7 @@ function returnClause(f: RuntimeFacts, value: string): string {
 // `ref`: what the reference page knows besides: the none value, and how a
 // removed entity's mark is read ({var} the entity).
 function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string | null, bound: string,
-  ref: { none?: string, deleted?: string } = {}): string {
+  ref: { none?: string, deleted?: string | false } = {}): string {
   const parts = [OP_DOES[op]]
   if ('list' === op) {
     parts.push(0 === needs.length
@@ -260,7 +260,7 @@ function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string |
   }
   if (null != idInData) parts.push(`The data must include the entity id, ${code(idInData)}, unless the entity already holds it.`)
   parts.push(returnClause(f, opValue(f, op)))
-  if ('remove' === op && null != ref.deleted) {
+  if ('remove' === op && 'string' === typeof ref.deleted) {
     parts.push(`${code(ref.deleted.replace(/\{var\}/g, bound))} reads the mark.`)
   }
   // Every single-entity result says how its record is read: the reference's

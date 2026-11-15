@@ -179,7 +179,7 @@ type RefFacts = {
   // `direct`, where a call is not written with parentheses.
   memberNamed?: 'call' | 'bare'
   // How a removed entity's mark is read, {var} the entity: '{var}.deleted()'.
-  deleted?: string
+  deleted?: string | false
 }
 
 

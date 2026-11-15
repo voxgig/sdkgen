@@ -188,7 +188,7 @@ const Syntax: SyntaxType = {
     type,
     key: (container, path) => scalar(container) + (0 === path.length ? '' : '->' + path.map((k) => `{${hkey(k)}}`).join('')),
     instance: (e) => [`my ${scalar(e.sym.var)} = $client->${e.sym.accessor};`],
-    read: (value, key) => `${scalar(value)}->{${hkey(key)}}`,
+    read: (value, key, _truth) => `${scalar(value)}->{${hkey(key)}}`,
   },
 }
 
