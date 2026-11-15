@@ -35,7 +35,7 @@ const refFacts: RefFacts = {
     remove: 'remove(match?: object, ctrl?: object)',
   },
   client: [
-    { kind: 'options', sig: 'options()', returns: 'object' },
+    { kind: 'options', sig: 'options()', returns: 'object', copy: true },
     { kind: 'utility', sig: 'utility()', returns: 'object' },
     { kind: 'direct', sig: 'direct(fetchargs?: object)' },
     { kind: 'prepare', sig: 'prepare(fetchargs?: object)' },
@@ -47,7 +47,7 @@ const refFacts: RefFacts = {
     { kind: 'make', sig: 'make()' },
     { kind: 'streamIterator', sig: 'stream(action: string, args?: object, callopts?: object)', runs: 'iterate' },
     { kind: 'client', sig: 'client()' },
-    { kind: 'entopts', sig: 'entopts()' },
+    { kind: 'entopts', sig: 'entopts()', copy: true },
   ],
   direct: { returns: 'Promise<{ ok, status, headers, data }>', signal: 'AbortSignal', abortCode: 'request_aborted', okFalse: 'false' },
   prepare: { returns: 'Promise<{ url, method, headers, body } | Error>', fails: 'value' },

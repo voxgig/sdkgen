@@ -53,6 +53,8 @@ const forms: Forms = {
     ['Control', 'object'], ['any', 'object'], ['Partial<D>', 'object'], ['Record<string,any>', 'object'],
   ]),
   cite: {
+    'ref.facts.client[0].copy': { value: true, file: "src/cmp/ts/fragment/Main.fragment.ts", quote: "return this._utility.struct.clone(this._options)" },
+    'ref.facts.entity[5].copy': { value: true, file: "src/cmp/ts/fragment/EntityBase.fragment.ts", quote: "return this._utility.struct.merge([{}, this._entopts])" },
     'ref.facts.direct.abortCode': { file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: "const abort = ctx.error('request_aborted', 'request aborted')" },
     'ref.facts.none': { file: 'src/cmp/ts/fragment/EntityBase.fragment.ts', quote: 'return undefined' },
     'ref.facts.direct.okFalse': { file: MAIN, quote: 'return { ok: false, err: utility.clean(this._rootctx, fetchdef) }' },
@@ -80,11 +82,12 @@ const forms: Forms = {
     },
     'ref.facts.direct.signal': { file: 'tm/ts/src/Control.ts', quote: 'signal?: AbortSignal' },
     'ref.facts.prepare.returns': {
-      file: MAIN, quote: ['async prepare(fetchargs?: any)', 'return ctx.error(\'spec_method_allow\'', 'return makeFetchDef(ctx)', 'async direct(fetchargs?: any): Promise<DirectResult>'],
+      file: MAIN, quote: ['async prepare(fetchargs?: any)', 'return ctx.error(\'spec_method_allow\'', 'return makeFetchDef(ctx)'],
       also: [{ file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: ['    url,\n    method: spec.method,\n    headers: spec.headers,', 'fetchdef.body ='] },
         { file: 'tm/ts/src/Context.ts', quote: 'return new ProjectNameError(code, msg, this)' }],
       unquoted: {
         Error: 'ctx.error returns a ProjectNameError, which extends Error',
+        Promise: 'prepare is an async method, so it returns a Promise; its declaration spells no return type',
       },
     },
     'ref.facts.prepare.fails': { value: "value", file: MAIN, quote: 'return ctx.error(\'spec_method_allow\'' },
