@@ -39,6 +39,7 @@ const refFacts: RefFacts = {
     sig: '{client}.testSDK(_ testopts: VMap?, _ sdkopts: VMap?) -> {client}',
     call: 'let client = {client}.testSDK(nil, nil)', args: true,
   }],
+  testMock: 'generated',
   accessor: { sig: '{accessor}(_ entopts: VMap? = nil) -> ProjectNameEntityBase', arg: 'entopts', param: 'entopts' },
   op: {
     list: 'list(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value',
@@ -170,7 +171,7 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'swift'),
     key: (container, path) => container + path.map((k) => `[${str(k)}]`).join(''),
     instance: (e) => [`let ${e.sym.var} = client.${e.sym.accessor}()`],
-    read: (value, key) => `${value}.entries[${str(key)}]`,
+    read: (value, key, truth) => `${value}.entries[${str(key)}]` + (truth ? ' == .bool(true)' : ''),
   },
 }
 

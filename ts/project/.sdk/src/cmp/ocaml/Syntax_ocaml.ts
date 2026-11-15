@@ -32,6 +32,7 @@ const refFacts: RefFacts = {
     { sig: 'test () : {client}', call: 'let client = {module}.test ()', args: false },
     { sig: 'test_with (testopts : value) (sdkopts : value) : {client}', call: 'let client = {module}.test_with Noval Noval', args: true },
   ],
+  testMock: 'generated',
   accessor: { sig: '{accessor} (client : {client}) (entopts : value) : entity_obj', arg: 'entopts', param: 'entopts' },
   op: {
     list: 'e_list (value) (value) : entity_obj list',
@@ -221,7 +222,7 @@ const Syntax: SyntaxType = {
     type: typeOf,
     key: (_container, path) => path.join('.'),
     instance: (e, desc) => [`let ${e.sym.var} = ${desc.layout.module}.${e.sym.accessor} client ${refFacts.none}`],
-    read: (v, key) => `getp ${v} ${str(key)}`,
+    read: (v, key, truth) => `getp ${v} ${str(key)}` + (truth ? ' = Bool true' : ''),
   },
 
   notes: {

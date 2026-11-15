@@ -27,6 +27,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'string', OBJECT: 'table', ANY: 'any' },
   ctor: ['local sdk = require("{module}")', 'local client = {ctor}(options)'],
   test: [{ sig: 'sdk.test(testopts?, sdkopts?)', call: 'local client = sdk.test()', args: true }],
+  testMock: 'generated',
   accessor: { sig: '{accessor}(data)', arg: 'entopts', param: 'data' },
   op: {
     list: 'list(reqmatch, ctrl) -> {Class}[], err',

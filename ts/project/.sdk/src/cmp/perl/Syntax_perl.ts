@@ -25,6 +25,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'string', OBJECT: 'hashref', ANY: 'any' },
   ctor: ['use lib \'lib\';', 'use {module};', '', 'my $client = {ctor}($options);'],
   test: [{ sig: '{client}->test($testopts, $sdkopts)', call: 'my $client = {client}->test();', args: true }],
+  testMock: 'generated',
   accessor: { sig: '{accessor}($data)', arg: 'entopts', param: 'data' },
   op: {
     list: 'list($reqmatch, $ctrl) -> arrayref',
