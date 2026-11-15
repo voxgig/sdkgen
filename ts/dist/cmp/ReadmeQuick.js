@@ -12,6 +12,7 @@ const sdkdesc_1 = require("../helpers/sdkdesc");
 const example_1 = require("../helpers/example");
 const example_2 = require("../helpers/example");
 const runtimeprose_1 = require("../helpers/runtimeprose");
+const markdown_1 = require("../helpers/markdown");
 const ReadmeQuick = (0, component_1.cmp)(function ReadmeQuick(props) {
     const { target, ctx$ } = props;
     const t = target.name;
@@ -46,7 +47,6 @@ function describeTarget(ctx$, target) {
         throw new Error(`${target.name}: a syntax provider needs a Naming hook (cmp/${target.name}/Naming_${target.name})`);
     return (0, sdkdesc_1.sdkDescription)(ctx$.model, target, hook.Naming, ctx$.stdrep);
 }
-const article = (s) => /^[aeiou]/i.test(s) ? 'an' : 'a';
 function series(items) {
     if (items.length < 3)
         return items.join(' and ');
@@ -63,14 +63,20 @@ function placement(desc) {
         return `The client sends the API key as the \`${name}\` cookie.`;
     return 'authorization' === name.toLowerCase() ? '' : `The client sends the API key in the \`${name}\` header.`;
 }
+// The example reads the credentials from the environment and passes them as
+// options: no client reads the environment itself (PrepareAuth reads only the
+// options).
 function clientText(desc) {
-    const env = desc.options.filter((o) => null != o.env).map((o) => '`' + o.env + '`');
+    const creds = desc.options.filter((o) => null != o.env);
+    const env = creds.map((o) => '`' + o.env + '`');
+    const opt = creds.map((o) => '`' + o.name + '`');
     const sentences = [];
     if (1 === env.length) {
-        sentences.push(`The client reads its API key from the ${env[0]} environment variable.`);
+        sentences.push(`The example passes the API key from the ${env[0]} environment variable as the ${opt[0]} option.`);
     }
     else if (2 === env.length) {
-        sentences.push(`The client reads its API key and secret from the ${env[0]} and ${env[1]} environment variables.`);
+        sentences.push(`The example passes the API key and secret from the ${env[0]} and ${env[1]} environment ` +
+            `variables as the ${opt[0]} and ${opt[1]} options.`);
     }
     const required = desc.server.filter((v) => v.required).map((v) => '`' + v.name + '`');
     const dflt = desc.server.filter((v) => !v.required).map((v) => `\`${v.name}\` defaults to \`${v.dflt}\``);
@@ -89,7 +95,7 @@ function wrap(text, first = '', rest = '') {
     const out = [];
     let line = first;
     let empty = true;
-    for (const word of text.split(' ')) {
+    for (const word of (0, markdown_1.spans)(text)) {
         if (!empty && 72 < (line + ' ' + word).length) {
             out.push(line);
             line = rest + word;
@@ -142,22 +148,23 @@ function quickSteps(p, desc, where = 'tutorial') {
     if (null != q && null != q.load && null != load) {
         const e = ent(q.load.entity);
         const n = e.Name.toLowerCase();
-        lead.push(`loading ${article(n)} ${n}`);
+        lead.push(`loading ${(0, runtimeprose_1.article)(n)} ${n}`);
         const nested = null == q.load.nested ? '' :
-            `${e.Name} is nested under ${q.load.nested.parent}, so provide the \`${q.load.nested.param}\`. `;
+            `${e.Name} is nested under ${q.load.nested.parent}, so the match also gives \`${q.load.nested.param}\`. `;
         steps.push({
-            title: `Load ${article(n)} ${n}`, text: nested + (0, runtimeprose_1.loadSentence)(f, boundName(load, 'one')) + noteText(p, 'tutorial:load', desc),
-            stmts: load, comment: (0, runtimeprose_1.loadComment)(f, `Load ${article(n)} ${n}`, e.className),
+            title: `Load ${(0, runtimeprose_1.article)(n)} ${n}`, text: nested + (0, runtimeprose_1.loadSentence)(f, boundName(load, 'one')) + noteText(p, 'tutorial:load', desc),
+            stmts: load, comment: (0, runtimeprose_1.loadComment)(f, `Load ${(0, runtimeprose_1.article)(n)} ${n}`, e.className),
         });
     }
     const writes = (0, example_1.writeBlock)(desc, f);
     if (null != q && null != writes) {
         const ops = (0, example_1.writeOps)(desc);
         const n = ent(q.entity).Name.toLowerCase();
-        lead.push(`${series(ops.map((o) => GERUND[o]))} ${article(n)} ${n}`);
-        const title = series(ops);
+        lead.push(`${series(ops.map((o) => GERUND[o]))} ${(0, runtimeprose_1.article)(n)} ${n}`);
+        const title = `${series(ops)} ${(0, runtimeprose_1.article)(n)} ${n}`;
         const Title = title.charAt(0).toUpperCase() + title.slice(1);
-        steps.push({ title: Title, text: (0, runtimeprose_1.writeSentence)(f, ops) + noteText(p, 'tutorial:write', desc), stmts: writes, comment: Title });
+        // `after`: the client is the only step before, or a list or load came too.
+        steps.push({ title: Title, text: (0, runtimeprose_1.writeSentence)(f, ops, 1 < steps.length) + noteText(p, 'tutorial:write', desc), stmts: writes, comment: Title });
     }
     return { steps, lead };
 }
@@ -180,8 +187,8 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
     // opens the program unnamed, as it always did.
     if (p.program) {
         out += (1 === steps.length
-            ? 'The program after this step runs it.'
-            : `The program after these ${steps.length} steps runs them in order.`) + '\n\n';
+            ? 'The program below runs this step.'
+            : `The program below runs these ${steps.length} steps in order.`) + '\n\n';
         steps.forEach((s, i) => {
             const lead = `${i + 1}. **${s.title}.**`;
             out += ('' === s.text ? lead : wrap(s.text.trim(), lead + ' ', '   ')) + '\n';

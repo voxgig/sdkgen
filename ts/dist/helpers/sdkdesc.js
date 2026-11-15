@@ -120,7 +120,7 @@ function describe(model, target, naming, template) {
 // schema make_options validates against; `feature` is assembled per target.
 const OPTION_TEXT = [
     ['apikey', 'API key for authentication.'],
-    ['secret', 'API secret for authentication.'],
+    ['secret', 'Password for HTTP Basic authentication; `apikey` is the user name.'],
     ['base', 'Base URL for API requests.'],
     ['prefix', 'URL prefix appended after base.'],
     ['suffix', 'URL suffix appended after path.'],

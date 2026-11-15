@@ -5,6 +5,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mdCell = mdCell;
 exports.mdInline = mdInline;
+exports.spans = spans;
 // A relative markdown link becomes its label; an absolute one or an anchor stays.
 function unlinkRelative(text) {
     return text.replace(/\[([^\]]*)\]\(([^)\s]*)\)/g, (all, label, href) => /^([a-z][a-z0-9+.-]*:|#|\/\/)/i.test(href) ? all : label);
@@ -24,5 +25,18 @@ function mdInline(text) {
     if (null == text)
         return '';
     return unlinkRelative(String(text)).replace(/\$\$/g, () => '$&#36;').trim();
+}
+// The words of a paragraph for wrapping: a code span with spaces in it stays
+// one word, so a wrapped line never breaks inside it.
+function spans(text) {
+    const out = [];
+    for (const word of text.split(' ')) {
+        const open = 0 < out.length && 1 === (out[out.length - 1].split('`').length - 1) % 2;
+        if (open)
+            out[out.length - 1] += ' ' + word;
+        else
+            out.push(word);
+    }
+    return out;
 }
 //# sourceMappingURL=markdown.js.map

@@ -134,18 +134,20 @@ function memberText(m, p, desc, ent) {
         case 'dataSet': return 'Set the entity data.';
         case 'matchGet': return 'Get the entity match criteria.';
         case 'matchSet': return 'Set the entity match criteria.';
-        case 'make': return `Create a new ${code(ent ? typeOf(r, ent) : '')} instance with the same client and\noptions.`;
+        case 'make': return 'class' === r.facts.entityBy
+            ? `Create a new ${code(ent ? typeOf(r, ent) : '')} instance with the same client and\noptions.`
+            : `Create another ${code(ent ? typeOf(r, ent) : '')} entity with the same client and\noptions.`;
         case 'name': return 'Return the entity name.';
         case 'client': return `Return the parent ${code(desc.layout.client)} instance.`;
         case 'entopts': return m.copy ? 'Return a copy of the entity options.' : 'Return the entity options.';
         case 'stream': return streamText('stream its result items.', m);
         case 'streamIterator': return streamText('yield its result items as an async iterator.', m);
         case 'streamGenerator': return streamText('yield its result items as a generator.', m);
-        case 'streamLazy': return streamText('return a lazy sequence of its result items.', m);
+        case 'streamLazy': return streamText('return a sequence of its result items.', m);
         case 'streamSync': return streamText('return an iterator over its result items.', m);
         case 'streamFunction': return streamText('return a function that returns its next result item on each ' +
             `call, and ${code(r.facts.none)} once the items end.`, m);
-        case 'streamList': return streamText(`return its result items as one list. ${(0, runtimeprose_1.failsSentence)(p.facts)}`, m);
+        case 'streamList': return streamText(`return its result items, every one already read. ${(0, runtimeprose_1.failsSentence)(p.facts)}`, m);
         case 'direct': return 'Make a direct HTTP request to any API endpoint.';
         case 'prepare': return `Prepare a fetch definition without sending the request. Accepts the\nsame parameters as ${code(sig('direct'))}.`;
     }
@@ -167,7 +169,6 @@ function keyTable(p, container, rows) {
 }
 function directRows(p, desc) {
     const r = p.ref;
-    const explain = { k: 'map', entries: [{ key: 'explain', value: { k: 'lit', type: 'BOOLEAN', text: '' } }] };
     const rows = [
         { path: ['path'], type: 'STRING', text: 'URL path with optional `{param}` placeholders.' },
         { path: ['method'], type: 'STRING', text: 'HTTP method (default: `GET`).' },
@@ -175,7 +176,9 @@ function directRows(p, desc) {
         { path: ['query'], type: 'OBJECT', text: 'Query string parameters.' },
         { path: ['headers'], type: 'OBJECT', text: 'Request headers (merged with defaults).' },
         { path: ['body'], type: 'ANY', text: `Request body (${r.facts.maps} are JSON-serialized).` },
-        { path: ['ctrl'], type: 'OBJECT', text: `Control options (e.g. ${code(p.expr(explain, (0, example_1.newScope)(true), desc))}).` },
+        // No example: an operation's `explain` is a map the pipeline fills, and
+        // direct() records nothing in it.
+        { path: ['ctrl'], type: 'OBJECT', text: 'Control options.' },
     ];
     return rows;
 }
@@ -189,10 +192,14 @@ function clientMember(m, p, desc) {
             out += `| ${code(r.key('fetchargs', ['ctrl', 'signal']))} | ${code(r.facts.direct.signal)} | ` +
                 `Aborts the request in flight: \`ok\` is then ${okFalse(r)} and \`err.code\` is ${code(abortCode(r))}. |\n`;
         }
-        out += '\n' + wrap(`**Returns:** ${code(fill(r.facts.direct.returns, desc))}, a result map holding \`ok\`, ` +
-            '`status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is ' +
-            `${okFalse(r)} and \`err\` holds the error. A failed request is reported in the result, ` +
-            `not as an error, so branch on ${code(r.read('result', 'ok'))}.`) + '\n\n';
+        // A key as this language reads it: `err` is a key of the result, not the
+        // error a signature may also return.
+        out += '\n' + wrap(`**Returns:** ${code(fill(r.facts.direct.returns, desc))}, a result map. For a ` +
+            'response, 2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and `ok` is ' +
+            `${okFalse(r)} unless the status is 2xx. When the body cannot be read, \`ok\` is ${okFalse(r)} and ` +
+            `the key \`err\` holds the error; a request that cannot be made gives only \`ok\` (${okFalse(r)}) ` +
+            `and \`err\`. A key is read as ${code(r.read('result', 'err'))}. A failure is reported in the ` +
+            `result, not as an error, so branch on ${code(r.read('result', 'ok', true))}.`) + '\n\n';
     }
     else if ('prepare' === m.kind) {
         const fails = 'value' === r.facts.prepare.fails
@@ -226,20 +233,28 @@ function constructorText(p, desc) {
         (0, example_1.note)(p, 'ctor', desc) + keyTable(p, 'options', desc.ref.optionRows) + '\n';
 }
 // The test constructor exists in every runtime, with or without the test
-// feature; without it, the client it returns has no mock transport.
+// feature. Without it, the client has the mock only where the runtime ships
+// the test feature whatever the model says (testMock 'always'); elsewhere it
+// is in test mode with no transport, so the fetcher refuses every request.
 function testText(p, desc) {
     const r = p.ref;
     if (0 === r.facts.test.length)
         return '';
+    if (null == r.facts.testMock)
+        throw new Error('ReadmeRef: the test constructor needs ref.facts.testMock');
     let out = '\n### Test client\n\n';
-    const mock = desc.ref.test ? 'with mock features active' :
-        'in test mode. This SDK is generated without the `test` feature, so it has no mock transport';
+    const mock = desc.ref.test || 'always' === r.facts.testMock
+        ? 'Create a test client with mock features active.'
+        : 'Create a test client. This SDK is generated without the `test` feature, so the client has no ' +
+            'mock transport and refuses every request.';
     for (const t of r.facts.test) {
-        out += `#### ${code(fill(t.sig, desc))}\n\n` + wrap((t.args
-            ? `Create a test client ${mock}. The first argument holds the test feature's options ` +
-                `and the second further client options, merged over the test defaults; both may be ${code(r.facts.none)}.`
-            : `Create a test client ${mock}, and no options.`) +
-            `${altText(t.alts || [], desc)} It returns a client in test mode.`) + `\n\n${fenced(p, [fill(t.call, desc)])}\n`;
+        out += `#### ${code(fill(t.sig, desc))}\n\n` + wrap(mock + ' ' +
+            (t.args
+                ? 'The first argument holds the test feature\'s options, which the call switches on, and replaces ' +
+                    `any ${code(r.key('options', ['feature', 'test']))} in the second, which holds the other client ` +
+                    `options; both may be ${code(r.facts.none)}.`
+                : 'It takes no arguments.') +
+            altText(t.alts || [], desc)) + `\n\n${fenced(p, [fill(t.call, desc)])}\n`;
     }
     return out + (0, example_1.note)(p, 'test', desc);
 }
@@ -250,14 +265,15 @@ function accessorText(r, type) {
     const { arg, param } = r.facts.accessor;
     const what = 'data' === arg ? 'data' : 'options';
     const name = 'data' === arg ? 'data' : 'entopts';
-    const made = `Create a new ${code(type)} instance.`;
+    // Where an entity is no instance of a class (named by its Name or its module).
+    const made = `Create a new ${code(type)} ${'class' === r.facts.entityBy ? 'instance' : 'entity'}.`;
     return param === name
         ? `${made} Pass ${code(r.facts.none)} for no initial\n${what}.`
         : wrap(`${made} Its ${code(param)} argument holds the entity ${what}: pass ${code(r.facts.none)} for none.`);
 }
 function instanceText(p, desc) {
     const r = p.ref;
-    let out = `\n### Instance ${r.facts.noun}\n\n` + (0, example_1.note)(p, 'instance', desc);
+    let out = `\n### Client ${r.facts.noun}\n\n` + (0, example_1.note)(p, 'instance', desc);
     for (const ent of desc.entities) {
         out += `#### ${code(fill(r.facts.accessor.sig, desc, ent))}\n\n` +
             accessorText(r, typeOf(r, ent)) + '\n\n';
@@ -313,10 +329,11 @@ arguments go beside them too, and are sent as that action's payload.
 
 | Action | Operation | Route | Call |
 | --- | --- | --- | --- |
-${ent.actions.map((a) => `| ${code(a.action)} | ${code(p.facts.method[a.op])} | ${code(a.path)} | ${code(actionCall(p, desc, ent, a))} |`).join('\n')}
+${ent.actions.map((a) => `| ${code(a.action)} | ${code(p.facts.method[a.op])} | ${code(a.path)} | ${code(actionCall(p, desc, ent, a)).replace(/\|/g, '\\|')} |`).join('\n')}
 
-An action returns that action's OWN response, which is not necessarily a
-${ent.Name} record — check the API definition for its shape.
+Like any operation, an action's call gives back the entity; its data is
+then that action's OWN response, which is not necessarily a ${ent.Name}
+record — check the API definition for its shape.
 
 `;
     }
@@ -340,14 +357,24 @@ ${ent.Name} record — check the API definition for its shape.
     }
     return out;
 }
-// How one custom action is called, on one line: the call statement as the
-// language writes it outside error handling. Not a block: its payload is the
-// action's own, which no model states, so it could be neither type-checked
-// nor run.
+// How one custom action is called, on one line: the statements of the call,
+// with what the language declares ahead of it and the check it needs, joined.
+// Not a block: its payload is the action's own, which no model states, so it
+// could be neither type-checked nor run.
 function actionCall(p, desc, ent, a) {
     const [stmt] = (0, example_1.actionBlock)(desc, ent, a);
     const narrow = { ...stmt, wide: false, note: undefined };
-    return p.call(narrow, desc, (0, example_1.newScope)(true), { inAttempt: false, last: true })[0].split('\n')[0];
+    const sc = (0, example_1.newScope)(true);
+    sc.local = new Set();
+    sc.stmts = [narrow];
+    const lines = [...(p.before ? p.before([narrow], desc, sc) : []),
+        ...p.call(narrow, desc, sc, { inAttempt: false, last: true })];
+    const parts = lines.flatMap((l) => l.split('\n')).map((l) => l.trim()).filter((l) => '' !== l);
+    // A statement that does not end itself is ended with `;`, except where `;`
+    // opens a comment (a Lisp).
+    const semi = !p.comment('').trim().startsWith(';');
+    return parts.reduce((out, cur) => '' === out ? cur
+        : out + (semi && !/[;{(\[,]$/.test(out) && !/^[})\].]/.test(cur) ? '; ' : ' ') + cur, '');
 }
 // The variable an operation's example binds its result to; for an operation
 // with no example, the name the reference's examples give a result.
@@ -396,7 +423,7 @@ ${(0, example_1.note)(p, 'features', desc)}`;
 function wrap(text) {
     const out = [];
     let line = '';
-    for (const word of text.split(' ')) {
+    for (const word of (0, markdown_1.spans)(text)) {
         if ('' !== line && 72 < (line + ' ' + word).length) {
             out.push(line);
             line = word;

@@ -127,6 +127,7 @@ type RefFacts = {
             kind: CtorKind;
         }[];
     }[];
+    testMock: 'model' | 'always';
     accessor: {
         sig: string;
         arg: 'data' | 'entopts';
@@ -218,7 +219,7 @@ type RefSyntax = {
     type: (t: any) => string;
     key: (container: 'options' | 'fetchargs', path: string[]) => string;
     instance: (ent: Ent, desc: SdkDescription) => string[];
-    read: (value: string, key: string) => string;
+    read: (value: string, key: string, truth?: boolean) => string;
 };
 type NoteSlot = `member:${MemberKind}` | 'ctor' | 'test' | 'instance' | 'entity' | 'operations' | 'members' | 'features' | 'tutorial' | 'tutorial:list' | 'tutorial:load' | 'tutorial:write' | 'top';
 declare function printStmts(p: Syntax, stmts: Stmt[], desc: SdkDescription, sc: Scope, inAttempt?: boolean): string[];
