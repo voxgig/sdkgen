@@ -143,13 +143,13 @@ function memberText(m: Member, p: Syntax, desc: SdkDescription, ent?: DescEntity
     case 'data': return 'Get or set the entity data. When called with data, sets the entity\'s\n' +
       'internal data and returns the current data. When called without\narguments, returns ' +
       (m.copy ? 'a copy of the current data.' : 'the current data.')
-    case 'match': return `Get or set the entity match criteria. Works the same as ${code(sig('data'))}.` +
-      (m.copy ? ' ' + COPY_MATCH : '')
+    case 'match': return wrap(`Get or set the entity match criteria. Works the same as ${code(sig('data'))}.` +
+      (m.copy ? ' ' + COPY_MATCH : ''))
     case 'dataArg': return wrap(`Get the entity data.${m.copy ? ' ' + COPY : ''} Pass ${setArg(r)} to set it.`)
     case 'matchArg': return wrap(`Get the entity match criteria.${m.copy ? ' ' + COPY_MATCH : ''} Pass ${setArg(r)} to set it.`)
     case 'dataGet': return 'Get the entity data.' + (m.copy ? ' ' + COPY : '')
     case 'dataSet': return 'Set the entity data.'
-    case 'matchGet': return 'Get the entity match criteria.' + (m.copy ? ' ' + COPY_MATCH : '')
+    case 'matchGet': return wrap('Get the entity match criteria.' + (m.copy ? ' ' + COPY_MATCH : ''))
     case 'matchSet': return 'Set the entity match criteria.'
     case 'make': return 'class' === r.facts.entityBy
       ? `Create a new ${code(ent ? typeOf(r, ent) : '')} instance with the same client and\noptions.`
