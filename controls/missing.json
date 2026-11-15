@@ -22,5 +22,32 @@
   "file": "doc-crud/rb/REFERENCE.md",
   "from": "| `options[\"server\"][\"tenant\"]` | `String` | Required. |\n",
   "to": ""
+ },
+ {
+  "id": "missing-direct-every-variation-lua",
+  "lang": "lua",
+  "section": "reference",
+  "file": "*/lua/REFERENCE.md",
+  "from": " A failed request is reported in the result, not\nas an error, so branch on `result.ok`.",
+  "to": "",
+  "why": "T1/T2: the reviewers' attack: a shared sentence dropped from every REFERENCE of a port. lua (style pair, shared with go) gave PASS with 'absent 36 (35 explained)'; perl (die) and swift (wrapped) share their style with no reference, so their absent list was empty and nothing moved from scratch. Must be a new absent entry with no reason, which fails the one command."
+ },
+ {
+  "id": "missing-direct-every-variation-perl",
+  "lang": "perl",
+  "section": "reference",
+  "file": "*/perl/REFERENCE.md",
+  "from": " A failed request is reported in the result, not\nas an error, so branch on `$result->{ok}`.",
+  "to": "",
+  "why": "T1/T2: the reviewers' attack: a shared sentence dropped from every REFERENCE of a port. lua (style pair, shared with go) gave PASS with 'absent 36 (35 explained)'; perl (die) and swift (wrapped) share their style with no reference, so their absent list was empty and nothing moved from scratch. Must be a new absent entry with no reason, which fails the one command."
+ },
+ {
+  "id": "missing-direct-every-variation-swift",
+  "lang": "swift",
+  "section": "reference",
+  "file": "*/swift/REFERENCE.md",
+  "from": " A failed request is reported in the result, not\nas an error, so branch on `result.entries[\"ok\"]`.",
+  "to": "",
+  "why": "T1/T2: the reviewers' attack: a shared sentence dropped from every REFERENCE of a port. lua (style pair, shared with go) gave PASS with 'absent 36 (35 explained)'; perl (die) and swift (wrapped) share their style with no reference, so their absent list was empty and nothing moved from scratch. Must be a new absent entry with no reason, which fails the one command."
  }
 ]

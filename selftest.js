@@ -89,7 +89,8 @@ function state(lang, section, mode = 'reviewed') {
     const x = node([Path.join(__dirname, tool), '--old', OLD, '--new', W, '--lang', lang, '--section', section, '--classes', cdir, '--out', TR, '--json'])
     try { for (const e of JSON.parse(x.out)) un += e.unclassified } catch (e) { un = NaN }
   }
-  return { open, decided: r.decided || {}, un, absent: new Set(Object.keys(r.absent || {})), openInfo: r.open || {} }
+  // an absent entry counts only without a reason: one with a reason does not fail the one command (T1)
+  return { open, decided: r.decided || {}, un, absent: new Set(Object.entries(r.absent || {}).filter(([, x]) => !x.why).map(([k]) => k)), openInfo: r.open || {} }
 }
 
 function withInjection(j, fn) {
@@ -233,6 +234,22 @@ if (want('sentences')) {
   const r1 = Classify.run({ clone: a.clone, old: OLD, new: NEW, lang, section, classes: TC, out: TR, scratch: true, dry: true, sentences: sf })
   record('sentences', 'false-never-matched', !!(r1.open || {})[pid] && !((r1.decided || {})[pid]), `class ${pid} (${pd.outcome}) with its sentence marked false: ${(r1.open || {})[pid] ? 'left open' : 'STILL MATCHED as ' + ((r1.decided || {})[pid] || {}).outcome}`)
   void cls; void recorded
+}
+
+if (want('regen')) {
+  // T5: the one command with REGEN=1 measures nothing it did not regenerate.
+  // A generator that throws (a clone with no generator in it) and a
+  // regeneration that skips a variation old/ holds (the alias variation, from
+  // a clone outside a workspace) must each fail before any number is printed.
+  progress('regeneration: a generation that throws, and one that regenerates fewer variations than old/ holds')
+  const pc = Path.join(__dirname, 'portcheck.sh')
+  const mk = (name) => { const r = Path.join(TMP, 'regen-' + name); Fs.mkdirSync(Path.join(r, 'new'), { recursive: true }); Fs.symlinkSync(OLD, Path.join(r, 'old')); return r }
+  const run = (clone, root) => { try { return { rc: 0, out: CP.execFileSync('bash', [pc, clone, root, 'lua'], { stdio: 'pipe', env: { ...process.env, REGEN: '1' }, maxBuffer: 1 << 26 }).toString() } } catch (e) { return { rc: e.status, out: String(e.stdout) + String(e.stderr) } } }
+  const bad = Path.join(TMP, 'regen-noclone'); Fs.mkdirSync(Path.join(bad, 'ts'), { recursive: true })
+  const r1 = run(bad, mk('throw'))
+  record('regen', 'generation-throws', 0 !== r1.rc && /REGENERATION FAILED/.test(r1.out) && !/^== portcheck/m.test(r1.out), `exit ${r1.rc}: ${(/REGENERATION FAILED[^\n]*|regenerated[^\n]*/.exec(r1.out) || ['no line'])[0].slice(0, 120)}`)
+  const r2 = run(a.clone, mk('short'))
+  record('regen', 'regeneration-short', 0 !== r2.rc && /REGENERATION SHORT/.test(r2.out) && !/^== portcheck/m.test(r2.out), `exit ${r2.rc}: ${(/REGENERATION SHORT[^\n]*|regenerated[^\n]*/.exec(r2.out) || ['no line'])[0].slice(0, 140)}`)
 }
 
 if (want('identity')) {

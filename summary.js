@@ -61,8 +61,13 @@ if (Fa) {
 const Se = J('sentences.json')
 if (Se) {
   const strict = '1' === process.env.STRICT_SENTENCES
-  out.push(`shared sentences: matched ${Se.matched}, of which against a sentence nobody reviewed ${Se.unreviewed}${strict ? ' (STRICT_SENTENCES=1: fails)' : ' (fails only with STRICT_SENTENCES=1)'}; printed less often than its reference ${Se.fewer} (open, above); absent here but printed by every reference of this result style ${Se.absent} (${Se.absentExplained} explained; listed in <section>.absent.json, not failed)`)
+  const basis = [...new Set(Object.values(Se.sections || {}).map((x) => x.basis).filter(Boolean))]
+  out.push(`shared sentences: matched ${Se.matched}, of which against a sentence nobody reviewed ${Se.unreviewed}${strict ? ' (STRICT_SENTENCES=1: fails)' : ' (fails only with STRICT_SENTENCES=1)'}; printed less often than its reference ${Se.fewer} (open, above); absent here but printed by every reference ${basis.includes('style-independent') ? 'whatever its style (this result style is no reference\'s)' : 'of this result style'} ${Se.absent} (${Se.absentExplained} explained; an unexplained one FAILS)`)
   if (strict && Se.unreviewed) bad++
+  const ao = Se.absentOpen || []
+  for (const x of ao.slice(0, 10)) out.push(`  ABSENT, NO REASON ${x.section} [${x.id}] in ${x.variations} variation(s): ${x.masked}`)
+  if (ao.length > 10) out.push(`  ... ${ao.length - 10} more in review/${lang}/<section>.absent.json`)
+  if (ao.length) { out.push(`  say why in hand/${lang}.json absent: { "<id>": "<why>" } (a shared sentence this language does not print), or print it`); bad++ }
   if (Se.falseVerdict) out.push(`accepted classes whose sentence a reviewer called false (reviewed/sentences.json): ${Se.falseVerdict} (counted, not failed: the fix is in shared code): ${Se.falseList.slice(0, 6).map((x) => x.id).join(' ')}${Se.falseVerdict > 6 ? ' ...' : ''}`)
 }
 const fsl = (() => { try { return Fs.readFileSync(Path.join(dir, 'factsheet.log'), 'utf8').trim().split('\n').pop() } catch (e) { return 'factsheet: not run' } })()

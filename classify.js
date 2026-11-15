@@ -183,8 +183,18 @@ function run(a) {
     // in a variation, which this language prints in none: listed, not failed.
     // Code spans are compared as `…`: a key read or a call is printed by each
     // runtime's own printer, and the sentence around it is what is shared.
+    // A language alone in its result style (perl `die`, swift `wrapped`) has
+    // no reference to share a style-bound sentence with: it is held to the
+    // STYLE-INDEPENDENT sentences, those every reference prints in a
+    // variation whatever its style. A sentence a style branch of shared code
+    // prints (runtimeprose.ts returnClause, failsSentence, ...) is printed by
+    // the references of that style only, so with references of five styles
+    // (throw pair raise errslot union) it is in no such intersection.
     const style = styleOf(myFacts)
-    const same = refs.filter((r) => styleBy.get(r) === style)
+    const sameStyle = refs.filter((r) => styleBy.get(r) === style)
+    const alone = !sameStyle.length && refs.length > 0
+    const same = alone ? refs : sameStyle
+    const styles = [...new Set(same.map((r) => styleBy.get(r)))]
     // a code span or a fact slot is the runtime's own token: compared as one placeholder
     const erase = (mk) => mk.replace(/`[^`]*`|⟦[^⟧]*⟧/g, '`…`')
     const myErased = new Set([...myAny].map(erase))
@@ -201,11 +211,13 @@ function run(a) {
         const ex = exampleOf.get(exk.slice(v.length + 1))
         // keyed by the sentence the reference prints (ident.js identity)
         const id = I.sentenceId(ex.text, ex.kind, ex.lang)
-        if (!absent[id]) absent[id] = { kind, masked: text, example: ex, refs: same, variations: [], why: (hand.absent || {})[id] || '' }
+        if (!absent[id]) absent[id] = { kind, masked: text, example: ex, refs: same, basis: alone ? 'style-independent (every reference, styles ' + styles.join(' ') + ')' : 'same result style ' + style, variations: [], why: (hand.absent || {})[id] || '' }
         absent[id].variations.push(v)
       }
     }
-    K.writeFile(Path.join(a.out, lang, section + '.absent.json'), JSON.stringify({ note: `masked units that every reference of result style '${style}' (${same.join(', ') || 'none'}) prints in a variation and ${lang} prints in none; not failed: say why in hand/${lang}.json absent: { "<id>": "<why>" }`, absent }, null, 1) + '\n')
+    K.writeFile(Path.join(a.out, lang, section + '.absent.json'), JSON.stringify({ note: alone
+      ? `${lang}'s result style '${style}' is no reference's: masked units that EVERY reference (${same.join(', ')}; styles ${styles.join(', ')}) prints in a variation, so style-independent, and ${lang} prints in none; each fails the one command until hand/${lang}.json absent: { "<id>": "<why>" } says why`
+      : `masked units that every reference of result style '${style}' (${same.join(', ') || 'none'}) prints in a variation and ${lang} prints in none; each fails the one command until hand/${lang}.json absent: { "<id>": "<why>" } says why`, basis: alone ? 'style-independent' : 'same style', absent }, null, 1) + '\n')
     const rep = report.sections[section] = { classes: 0, hand: 0, pinned: 0, shared: 0, open: 0, byType: {}, sharedEx: [], openEx: [] }
     const open = {}
     for (const c of classesOf(a, section, lang)) {
@@ -272,14 +284,15 @@ function run(a) {
     K.writeFile(Path.join(a.out, lang, section + '.open.json'), JSON.stringify(open, null, 1) + '\n')
     rep.absent = Object.keys(absent).length; rep.absentExplained = Object.values(absent).filter((x) => x.why).length
     rep.fewer = Object.values(open).filter((x) => /fewer variations/.test(x.hint || '')).length
-    report.absent = { ...(report.absent || {}), ...Object.fromEntries(Object.entries(absent).map(([k, x]) => [k, { section, masked: x.masked, variations: x.variations }])) }
+    report.absent = { ...(report.absent || {}), ...Object.fromEntries(Object.entries(absent).map(([k, x]) => [k, { section, masked: x.masked, variations: x.variations, why: x.why, basis: x.basis }])) }
+    rep.absentBasis = alone ? 'style-independent' : 'same style'
   }
   const file = a['out-file'] || Path.join(a.classes, lang + '.json')
   if (!a.dry) K.writeFile(file, JSON.stringify(out, null, 1) + '\n')
   report.file = a.dry ? null : file
   // what the portcheck summary prints about shared sentences
-  const sum = { matched: 0, unreviewed: 0, fewer: 0, absent: 0, absentExplained: 0, falseVerdict: (report.falseVerdict || []).length, falseList: report.falseVerdict || [], sections: {} }
-  for (const [s, r] of Object.entries(report.sections)) { sum.matched += r.shared; sum.unreviewed += r.sharedUnreviewed || 0; sum.fewer += r.fewer || 0; sum.absent += r.absent || 0; sum.absentExplained += r.absentExplained || 0; sum.sections[s] = { matched: r.shared, unreviewed: r.sharedUnreviewed || 0, fewer: r.fewer || 0, absent: r.absent || 0 } }
+  const sum = { absentOpen: Object.entries(report.absent || {}).filter(([, x]) => !x.why).map(([id, x]) => ({ id, section: x.section, masked: String(x.masked).slice(0, 140), variations: x.variations.length, basis: x.basis })), matched: 0, unreviewed: 0, fewer: 0, absent: 0, absentExplained: 0, falseVerdict: (report.falseVerdict || []).length, falseList: report.falseVerdict || [], sections: {} }
+  for (const [s, r] of Object.entries(report.sections)) { sum.matched += r.shared; sum.unreviewed += r.sharedUnreviewed || 0; sum.fewer += r.fewer || 0; sum.absent += r.absent || 0; sum.absentExplained += r.absentExplained || 0; sum.sections[s] = { matched: r.shared, unreviewed: r.sharedUnreviewed || 0, fewer: r.fewer || 0, absent: r.absent || 0, basis: r.absentBasis } }
   report.sentences = sum
   K.writeFile(Path.join(a.out, lang, 'sentences.json'), JSON.stringify(sum, null, 1) + '\n')
   return report
