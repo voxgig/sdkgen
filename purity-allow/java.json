@@ -1,0 +1,20 @@
+[
+ {
+  "file": "Syntax",
+  "check": "import of a non-printing helper",
+  "text": "javaMap",
+  "why": "A printing helper of Java that purity's list does not know: it lays a map literal out as Map.of(k, v, ...) up to the ten pairs Map.of takes and as Map.ofEntries(Map.entry(k, v), ...) past them (ts/src/helpers/opExample.ts javaMap). It reads no model and decides nothing shown; the old java components used the same helper (through javaMapOf)."
+ },
+ {
+  "file": "Naming",
+  "check": "name surgery in helper JAVA_CORE (java/utility_java.ts)",
+  "text": ".replace(/-sdk$/, '')",
+  "why": "Not in JAVA_CORE: JAVA_CORE is the constant 'core' (utility_java.ts, the subpackage Main_java's Folder writes). purity's fnBody looks for the first '{' after a const that is not an arrow function, so it reads the body of mavenGroupId, the next function in the file, as JAVA_CORE's. The line is mavenGroupId's own (the Maven group id, which the hook does not use)."
+ },
+ {
+  "file": "Naming",
+  "check": "name surgery in helper mavenGroupId (java/utility_java.ts)",
+  "text": ".replace(/-sdk$/, '')",
+  "why": "The hook neither imports nor calls mavenGroupId: purity reached it through the misread body of the constant JAVA_CORE (see the entry above). It is Package_java's Maven group id (com.<org>), which no page prints."
+ }
+]
