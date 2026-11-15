@@ -28,7 +28,7 @@ const refFacts: RefFacts = {
   ctor: ['local sdk = require("{module}")', 'local client = {ctor}(options)'],
   test: [{ sig: 'sdk.test(testopts?, sdkopts?)', call: 'local client = sdk.test()', args: true }],
   testMock: 'generated',
-  accessor: { sig: '{accessor}(data)', arg: 'entopts', param: 'data' },
+  accessor: { sig: '{accessor}(data)', arg: 'entopts', param: 'data', cached: true },
   op: {
     list: 'list(reqmatch, ctrl) -> {Class}[], err',
     load: 'load(reqmatch, ctrl) -> {Class}, err',
@@ -39,7 +39,7 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'options_map() -> table', copy: true },
-    { kind: 'utility', sig: 'get_utility() -> Utility' },
+    { kind: 'utility', sig: 'get_utility() -> Utility', copy: true },
     { kind: 'direct', sig: 'direct(fetchargs) -> table' },
     { kind: 'prepare', sig: 'prepare(fetchargs) -> table, err' },
   ],
@@ -56,6 +56,8 @@ const refFacts: RefFacts = {
   prepare: { returns: 'table, err', fails: 'style' },
   body: { values: 'a string' },
   cancel: false,
+  deleted: '{var}:deleted()',
+  streamSignal: true,
 }
 
 const str = (s: string): string => luaString(s)

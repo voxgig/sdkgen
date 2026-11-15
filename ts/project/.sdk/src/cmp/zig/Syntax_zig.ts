@@ -12,6 +12,7 @@ const facts: RuntimeFacts = {
   ok: '.ok',
   err: '.err',
   unusedError: true,
+  arity: 2,
   prints: 'record',
 }
 
@@ -39,13 +40,13 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'options_map() Value', copy: true },
-    { kind: 'utility', sig: 'get_utility() *Utility' },
+    { kind: 'utility', sig: 'get_utility() *Utility', copy: true },
     { kind: 'direct', sig: 'direct(fetchargs: Value) Value' },
     { kind: 'prepare', sig: 'prepare(fetchargs: Value) E!Value' },
   ],
   entity: [
     { kind: 'dataArg', sig: 'data(args: ?Value) Value', copy: true },
-    { kind: 'matchArg', sig: 'matchv(args: ?Value) Value' },
+    { kind: 'matchArg', sig: 'matchv(args: ?Value) Value', copy: true },
     { kind: 'streamList', sig: 'stream(action: []const u8, args: Value, callopts: Value) StreamResult', runs: 'call' },
     { kind: 'name', sig: 'get_name() []const u8' },
   ],
@@ -53,6 +54,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'E!Value', fails: 'note' },
   body: { values: 'a string value holding the bytes' },
   cancel: false,
+  deleted: '{var}.deleted',
   testMock: 'always',
 }
 

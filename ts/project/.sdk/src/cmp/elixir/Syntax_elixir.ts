@@ -42,7 +42,7 @@ const refFacts: RefFacts = {
   entity: [
     { kind: 'dataGet', sig: 'data_get(entity) :: map()', copy: true },
     { kind: 'dataSet', sig: 'data_set(entity, data)' },
-    { kind: 'matchGet', sig: 'match_get(entity) :: map()' },
+    { kind: 'matchGet', sig: 'match_get(entity) :: map()', copy: true },
     { kind: 'matchSet', sig: 'match_set(entity, match)' },
     { kind: 'make', sig: 'make(entity) :: entity' },
     { kind: 'streamLazy', sig: 'stream(entity, action, args \\\\ nil, callopts \\\\ nil) :: Enumerable.t()', runs: 'call' },
@@ -52,6 +52,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'map()', fails: 'style' },
   body: { values: 'a binary' },
   cancel: false,
+  streamSignal: true,
   testMock: 'generated',
 }
 
