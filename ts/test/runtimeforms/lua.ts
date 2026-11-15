@@ -51,6 +51,28 @@ const forms: Forms = {
   types: { column: 'lua' },
   uncompared: { paramTypes: 'lua declares no parameter types' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test',
+  on: (d) => /\.[\w\\]+$/.test(d.head) ? 'type' : 'instance',
+  fails: (d) => 1 < d.returns.split(', ').length ? 'second value ' + d.returns.split(', ')[1] : '',
+  failure: { shows: 'second value', call: 'err' },
+  returnsFrom: () => 'comment',
+  expect: { test: { on: 'type' }, new: { on: 'type' }, load: { on: 'instance' } },
+  shows: {
+    // The `---@return string? err` comment says string; the code returns a table.
+    'an operation\'s second value on failure': {
+      value: 'the `sdk_err` table, with `status` and `code`, not a string',
+      file: 'tm/lua/utility/make_error.lua',
+      quote: ['sdk_err.status = result.status or -1', 'sdk_err.code = ctx.utility.clean(ctx, err.code)', 'return nil, sdk_err'],
+    },
+  },
+  stream: {
+    file: "src/cmp/lua/fragment/Entity.fragment.lua",
+    construct: "local co = coroutine.create(function()", starts: "on iteration",
+    run: "local failed = self:_stream_steps(ctx)",
+    draw: "for item in stream_fn() do",
+    runs: "as the caller iterates", items: "as the caller iterates",
+  },
 }
 
 export { forms }
