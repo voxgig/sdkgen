@@ -47,6 +47,17 @@ const forms: Forms = {
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'ProjectNameSDK', accessor: '${accessor}' },
   types: { column: 'kotlin' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'testSDK',
+  on: (d) => 'ProjectNameSDK' === d.name || 'EntyClass' === d.name || (/^    fun /.test(d.head) && /companion object \{/.test(d.before)) ? 'type' : 'instance',
+  expect: { testSDK: { on: 'type' }, name: { field: true } },
+  stream: {
+    file: "src/cmp/kotlin/fragment/EntityBase.fragment.kt",
+    construct: "return sequence {", starts: "on iteration",
+    run: "val materialised = runOp(ctx) {}",
+    draw: "if (source.hasNext() && !aborted()) source.next() else end",
+    runs: "before it returns", items: "as the caller iterates",
+  },
 }
 
 export { forms }
