@@ -76,7 +76,9 @@ const forms: Forms = {
     'ref.facts.testMock': { value: "generated", file: "src/cmp/perl/Main_perl.ts", quote: "  return ${model.const.Name}BaseFeature->new;" },
     // `use lib '<sdk>/lib'` read from the SDK's own directory, which is where the Makefile runs its suite with -Ilib.
     'ref.facts.ctor[0]': { file: 'src/cmp/perl/Main_perl.ts', quote: "// callers write `use lib '<sdk>/lib'; use <Name>SDK;`.", also: [{ file: 'tm/perl/Makefile', quote: ['# netsim tests) with prove (TAP). -Ilib puts the generated SDK module on', '\tprove -r -Ilib t/'] }] },
-    'ref.facts.ctor[1]': { file: 'tm/perl/t/feature.t', quote: 'use ProjectNameSDK;' },
+    // The module a caller loads, as the generator says a caller writes it, and the package it names.
+    'ref.facts.ctor[1]': { file: 'src/cmp/perl/Main_perl.ts', quote: "// callers write `use lib '<sdk>/lib'; use <Name>SDK;`.",
+      also: [{ file: MAIN, quote: 'package ProjectNameSDK;' }] },
     'ref.facts.direct.returns': { file: MAIN, quote: ['# direct() is the raw-HTTP escape hatch: it always returns a result hash', '# ({ ok => ..., ... }) and never dies.'], unquoted: { hashref: 'the result is a hash reference literal; the runtime says "a result hash"' } },
     'ref.facts.prepare.returns': { file: MAIN, quote: '# return just the fetchdef hashref (dying on error) so callers -' },
     'ref.facts.none': { file: 'src/cmp/perl/fragment/EntityLoadOp.fragment.pm', quote: '# (undef is treated as an empty match). ctrl: optional per-call control.' },
@@ -89,7 +91,17 @@ const forms: Forms = {
     'ref.facts.prepare.fails': { value: 'style', file: MAIN, quote: 'die $fd_err if $fd_err;' },
     'ref.facts.body.values': { value: 'a byte string, a character string, sent as UTF-8, or a filehandle', file: 'tm/perl/utility/media.pm', quote: '# A string of bytes, a character string (sent as UTF-8), or a filehandle. A' },
     'ref.facts.body.once': { value: 'a filehandle', file: 'tm/perl/utility/media.pm', quote: '# filehandle can be read once, so it is read here, before the first attempt,' },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|alarm\b/i, files: ['tm/perl/utility/fetcher.pm'] } },
+    // Searched over the whole perl runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context|\balarm\b/i, except: [
+      { file: "src/cmp/perl/fragment/Entity.fragment.pm", quote: ["#   - signal: an optional coderef; when it returns true the iterator stops.", "my $signal = ProjectNameHelpers::gp($callopts, 'signal');", "my $aborted = sub {", "return (ref $signal eq 'CODE' && $signal->()) ? 1 : 0;", "return sub {\n      return undef if $aborted->();", "return sub {\n    return undef if $aborted->();"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+      { file: "tm/perl/feature/cost_feature.pm", quote: ["# supersedes it loses precision to catastrophic cancellation.", "# \"piped\" is set by PrePoint, so its absence is the signal."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+      { file: "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Proc.pm", quote: ["# $? packs the exit code in the HIGH byte and the killing signal in the", "# low one, so `$? >> 8` alone reads a signal-killed child as exit 0 - and", "# A child that died from a signal did not answer. Reported as the shells", "# do, 128 + the signal, so it is non-zero and distinguishable. waitpid"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "src/cmp/perl/fragment/Entity.fragment.pm", quote: ["my $signal = ProjectNameHelpers::gp($callopts, 'signal');", "return undef if $aborted->();"] },
     'notes.member:streamFunction': { value: 'An entity is yielded as the hashref its `data_get` returns.', file: ENTITY, quote: '# An entity is yielded as its record, the hashref its data_get returns.' },
   },
 }

@@ -128,11 +128,19 @@ const forms: Forms = {
     'ref.facts.prepare.fails': { value: 'style', file: 'tm/ocaml/sdk_features.ml', quote: 'raise (Sdk_error_exc (ctx_make_error ctx "spec_method_allow"' },
     'ref.facts.body.values': { value: 'a `Str` holding the bytes', file: RUNTIME,
       quote: ['(* A map or a list is JSON, and so is a scalar on a point that declares\n          a JSON body. Anything else goes as given. *)', '| (Str _ | Num _ | Bool _) as b when is_json_request ctx.c_point ->', '| b -> setp fetchdef "body" b);'] },
-    // e_stream's `signal` (Entity_ocaml.ts) only ends the Seq over items run_op
-    // already read; those four occurrences are excused verbatim, any other fails.
-    'ref.facts.cancel': { value: false, absent: {
-      pattern: /\bcancel\w*|\babort(?!ed \(\) (?:= match signal with Func _ -> call_json signal = Bool true|then Seq\.Nil))\w*|\bsignal\b(?! \(a 0-arity fn -> Bool; iteration stops when it returns true\)| = getp callopts "signal" in\n| with Func _ -> call_json signal = Bool true| = Bool true \| _ -> false in\n)(?<!getp callopts "signal)/i,
-      files: [RUNTIME, 'src/cmp/ocaml/EntityOperation_ocaml.ts', 'src/cmp/ocaml/fragment/RunOp.fragment.ml', 'src/cmp/ocaml/Entity_ocaml.ts'] } },
+    // Searched over the whole ocaml runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
+      { file: "src/cmp/ocaml/Entity_ocaml.ts", quote: ["* and signal (a 0-arity fn -> Bool; iteration stops when it returns true). *)", "let signal = getp callopts \"signal\" in", "let aborted () = match signal with Func _ -> call_json signal = Bool true | _ -> false in", "| x :: rest -> if aborted () then Seq.Nil else Seq.Cons (x, seq_of rest) in"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+      { file: "tm/ocaml/feature/secrets/plugins/tls_stubs.c", quote: ["*      callback, so a verification error aborts the handshake; belt and", "* NULL callback means a verification failure aborts the handshake rather", "/* Belt and braces. SSL_VERIFY_PEER already aborts on a bad chain, but a"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/ocaml/feature/secrets/sekreto/secret.ml", quote: ["silence rather than aborting the lines after it. *)"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/ocaml/sdk_features.ml", quote: ["or never. `piped` is set by PrePoint, so its absence is the signal. *)"],
+        why: "an English word in a comment" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "src/cmp/ocaml/Entity_ocaml.ts", quote: ["let signal = getp callopts \"signal\" in", "| x :: rest -> if aborted () then Seq.Nil else Seq.Cons (x, seq_of rest) in"] },
     'notes.operations': { value: 'Each operation takes its match or data, then a control map, `ctrl`,\nboth by position: pass `Noval` for either to give none.',
       file: 'src/cmp/ocaml/EntityOperation_ocaml.ts', quote: ['  return `  ent.${field} <- (fun ${arg} ctrl ->', '      let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in', 'cs_ctrl = (match ctrl with Noval | Null -> None | c -> Some c);'] },
     'notes.member:streamSync': { value: 'Its arguments are the name of the operation, its match, and `callopts`.', file: 'tm/ocaml/sdk_types.ml', quote: ['(* stream action args callopts -> a lazy Seq over result items. *)', 'mutable e_stream : string -> value -> value -> value Seq.t;'] },

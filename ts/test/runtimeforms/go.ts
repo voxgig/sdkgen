@@ -68,7 +68,13 @@ const forms: Forms = {
       quote: '\tcase string:\n\t\tif body != "" {\n\t\t\tbodyReader = strings.NewReader(body)\n\t\t}\n\tcase []byte:\n\t\tbodyReader = bytes.NewReader(body)\n\tcase io.Reader:',
     },
     'ref.facts.body.once': { value: "an `io.Reader`", file: 'tm/go/utility/media.go', quote: 'if r, ok := body.(io.Reader); ok {\n\t\tdata, err := io.ReadAll(r)' },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/go/utility/fetcher.go'] } },
+    // Searched over the whole go runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
+      { file: "src/cmp/go/fragment/Entity.fragment.go", quote: ["var signal <-chan struct{}", "switch s := callopts[\"signal\"].(type) {", "case <-chan struct{}:\n\t\tsignal = s", "case chan struct{}:\n\t\tsignal = s", "case <-signal:"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "src/cmp/go/fragment/Entity.fragment.go", quote: ["switch s := callopts[\"signal\"].(type) {", "case <-signal:"] },
     'ref.facts.testMock': { value: "generated", file: "src/cmp/go/Config_go.ts", quote: "return NewBaseFeatureFunc()" },
     'notes.member:stream': { value: "It sends the items on the returned channel, which closes when the stream\nends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: the error the operation itself would return, sent as the\nlast value. Under `throw: false` in `callopts[\"ctrl\"]`, no error is sent.",
       file: ENTITY,

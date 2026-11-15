@@ -86,7 +86,23 @@ const forms: Forms = {
       unquoted: { String: 'a string, which the comment above raw-body names' },
     },
     'ref.facts.body.once': { value: "an `InputStream`", file: 'tm/clojure/src/sdk/core.clj', quote: ';; read here, once, before the first attempt, so that a retry sends the same' , also: [{ file: 'tm/clojure/src/sdk/core.clj', quote: '(if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)' }] },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/clojure/src/sdk/core.clj'] } },
+    // Searched over the whole clojure runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context|\.interrupt\b|future-cancel/i, except: [
+      { file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: [";;   - signal: an optional 0-arg fn; when it returns true iteration stops.", "signal (vs/getprop callopts \"signal\")", "signalled? (fn [] (and (fn? signal) (boolean (signal))))", ";; A lazy sequence that checks `signal` between yields.", "(when (and (seq xs) (not (signalled?)))"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+      { file: "tm/clojure/feature/secrets/voxgig/sekreto/plugins/httpjson.clj", quote: ["(.interrupt (Thread/currentThread))"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/clojure/feature/secrets/voxgig/sekreto/plugins/proc.clj", quote: ["(.interrupt (Thread/currentThread))"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/clojure/src/sdk/core.clj", quote: ["(when (instance? InterruptedException e) (.interrupt (Thread/currentThread)))"],
+        why: "the transport keeps a thread's interrupt status where the JDK reports one and fails that request with fetch_transport; nothing in the SDK interrupts a thread or reads a signal" },
+      { file: "tm/clojure/src/sdk/features.clj", quote: [";; figure supersedes it loses precision to catastrophic cancellation.", ";; PrePoint, so its absence is the signal."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+      { file: "tm/clojure/src/sdk/features.clj", quote: ["(do (future-cancel fut) (track! ms)"],
+        why: "the timeout feature's own deadline on the transport, which ends a request by time; no caller can cancel an operation through it" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: ["signal (vs/getprop callopts \"signal\")", "(when (and (seq xs) (not (signalled?)))"] },
     'ref.facts.testMock': { value: "always", file: "tm/clojure/src/sdk/features.clj", quote: "\"test\" (test-feature)" },
   },
   // What the table states besides names, parameters and returns.

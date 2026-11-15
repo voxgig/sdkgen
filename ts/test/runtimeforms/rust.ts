@@ -77,7 +77,11 @@ const forms: Forms = {
       file: 'tm/rust/utility/media.rs', quote: ['pub fn bytes_value(bytes: &[u8]) -> Value {', 'Value::Str(s) => Some(s.as_bytes().to_vec()),'],
       unquoted: { 'bytes_value(&[u8])': 'the signature bytes_value(bytes: &[u8]) with its parameter name left out' },
     },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/rust/utility/fetcher.rs'] } },
+    // Searched over the whole rust runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
+      { file: "tm/rust/feature/cost.rs", quote: ["// figure supersedes it loses precision to catastrophic cancellation."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+    ] } },
     'ref.facts.testMock': { value: "generated", file: "src/cmp/rust/Config_rust.ts", quote: "_ => Rc::new(RefCell::new(crate::feature::base::BaseFeature::new()))," },
   },
   // What the table states besides names, parameters and returns.

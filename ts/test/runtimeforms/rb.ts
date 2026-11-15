@@ -85,7 +85,15 @@ const forms: Forms = {
       quote: 'if body_str.is_a?(String)\n        request.body = body_str\n      elsif body_str.respond_to?(:read)',
     },
     'ref.facts.body.once': { value: "an IO", file: 'tm/rb/utility/media.rb', quote: 'body.respond_to?(:read) ? body.read : body' },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/rb/utility/fetcher.rb'] } },
+    // Searched over the whole rb runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
+      { file: "src/cmp/rb/fragment/Entity.fragment.rb", quote: ["#   - `ctrl` (pipeline control) and `signal` (cancellation) honoured.", "signal = callopts[\"signal\"]", "aborted = lambda do", "return false if signal.nil?", "return !!signal.call if signal.respond_to?(:call)", "return !!signal.aborted if signal.respond_to?(:aborted)", "stream_enum.each do |item|\n              throw :stream_stop if aborted.call", "items.each do |item|\n              throw :stream_stop if aborted.call"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+      { file: "tm/rb/feature/cost_feature.rb", quote: ["# supersedes it loses precision to catastrophic cancellation.", "# \"piped\" is set by PrePoint, so its absence is the signal."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "src/cmp/rb/fragment/Entity.fragment.rb", quote: ["signal = callopts[\"signal\"]", "throw :stream_stop if aborted.call"] },
     'ref.facts.testMock': { value: "generated", file: "src/cmp/rb/Main_rb.ts", quote: "${model.const.Name}BaseFeature.new" },
   },
   exceptions: {

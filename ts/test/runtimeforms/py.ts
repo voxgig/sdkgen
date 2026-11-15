@@ -64,7 +64,23 @@ const forms: Forms = {
       quote: ['if isinstance(body, str):\n        return body.encode("utf-8")', 'if isinstance(body, (bytearray, memoryview)):', 'if isinstance(body, bytes) or hasattr(body, "read"):'],
     },
     'ref.facts.body.once': { value: "a file object", file: 'tm/py/pkg/utility/media.py', quote: 'if body is not None and callable(getattr(body, "read", None)):\n        return body.read()' },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/py/pkg/utility/fetcher.py'] } },
+    // Searched over the whole py runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
+      { file: "src/cmp/py/fragment/Entity.fragment.py", quote: ["#   - `ctrl` (pipeline control) and `signal` (cancellation) honoured.", "signal = callopts.get(\"signal\")", "def aborted():", "if signal is None:", "if callable(signal):", "return bool(signal())", "return bool(getattr(signal, \"aborted\", False))", "for item in stream_fn():\n                    if aborted():", "for item in items:\n                    if aborted():"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+      { file: "tm/py/pkg/feature/cost_feature.py", quote: ["# supersedes it loses precision to catastrophic cancellation.", "# `piped` is set by PrePoint, so its absence is the signal."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+      { file: "tm/py/pkg/feature/secrets/voxgig_sekreto/plugins/minivault.py", quote: ["# ended at `Abort trap: 6` on the first vault case.", "# loader would resolve it to /usr/lib and abort."],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/py/pkg/feature/timeout_feature.py", quote: ["# Annotate the fetch definition so a real transport can cancel the", "# request itself (Python-idiomatic analog of an abort signal)."],
+        why: "the timeout feature's own deadline on the transport, which ends a request by time; no caller can cancel an operation through it" },
+      { file: "tm/py/pkg/utility/make_point.py", quote: ["# where `ctx.out.point instanceof Error` aborts the operation)."],
+        why: "a feature (rbac) that places an error before the request stops the operation itself; no caller cancels through it" },
+      { file: "tm/py/pkg/utility/voxgig_struct/voxgig_struct.py", quote: ["so transform/validate injectors can signal \"no value at this slot\""],
+        why: "the vendored struct library's comment on its own error handling" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "src/cmp/py/fragment/Entity.fragment.py", quote: ["signal = callopts.get(\"signal\")", "if aborted():"] },
     'ref.facts.testMock': { value: "generated", file: "src/cmp/py/Main_py.ts", quote: "return _FEATURES[\"base\"]()" },
   },
   exceptions: {

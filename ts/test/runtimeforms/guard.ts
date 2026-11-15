@@ -810,6 +810,23 @@ const CONTROLS: Control[] = [
     },
   },
   {
+    name: 'a region an absence leaves out with no reason', check: 'account', mutate: (_S, forms) => {
+      const p = Object.keys(forms.cite || {}).find((k) => 0 < ((forms.cite as any)[k].absent?.except || []).length)
+      if (null == p) return false
+      const c = (forms.cite as any)[p]
+      ;(forms.cite as any)[p] = { ...c, absent: { ...c.absent, except: c.absent.except.map((x: any, i: number) => 0 === i ? { ...x, why: '' } : x) } }
+      return true
+    },
+  },
+  {
+    name: 'a region left out for a fact the forms no longer cite', check: 'account', mutate: (_S, forms) => {
+      const c = Object.values(forms.cite || {}).find((x: any) => (x.absent?.except || []).some((e: any) => null != e.fact)) as any
+      if (null == c) return false
+      delete (forms.cite as any)[c.absent.except.find((e: any) => null != e.fact).fact]
+      return true
+    },
+  },
+  {
     name: 'an unquoted token that stands beside the quote', check: 'account', mutate: (S, forms) => {
       const spell = (s: string) => s.replace(/\{(\w+)\}/g, (_m, k: string) => forms.tokens[k] ?? '{' + k + '}')
       for (const [k, c] of Object.entries(forms.cite || {}) as [string, any][]) {

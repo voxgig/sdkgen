@@ -43,12 +43,14 @@ const DEFAULTS: [RegExp, Category][] = [
   // Where the test client's mock comes from without the test feature: the
   // factory's fallback, or the runtime's own list of the features it ships.
   [/^ref\.facts\.testMock$/, 'cited'],
+  // Whether a stream reads callopts.signal between items, apart from cancel.
+  [/^ref\.facts\.streamSignal$/, 'cited'],
   [/^notes\./, 'cited'],
 ]
 
 // A fact cited before the provider declares it: its citation carries the
 // value the runtime shows, and a later declaration must equal it.
-const AHEAD = /^ref\.facts\.(direct\.okFalse|testMock)$/
+const AHEAD = /^ref\.facts\.(direct\.okFalse|testMock|streamSignal)$/
 
 function defaultCategory(path: string, value: any): Category | null {
   if ('' === value) return 'convention'
@@ -131,12 +133,16 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
     }
     const c = cite[path]
     if (null != c) {
-      const bad = checkCitation(lang, path, value, c, spell)
+      const bad = checkCitation(lang, path, value, c, spell, (x) => null != cite[x])
       if (null != bad) out.findings.push(bad)
       else {
         out.category[path] = 'cited'
         if ('absent' in c) {
-          out.cited.push({ path, file: c.absent.files.join(' | '), quote: 'absent: ' + c.absent.pattern, value, prose: false, absence: true, unquoted: [] })
+          out.cited.push({
+            path, file: `the whole ${lang} runtime (${runtimeFiles(lang).length} files)`, value, prose: false, absence: true,
+            quote: 'absent: ' + c.absent.pattern + (c.absent.except || []).map((x) => `; left out: ${x.file} ${JSON.stringify(x.quote)} (${x.why})`).join(''),
+            unquoted: [],
+          })
         }
         else {
           const parts = [c, ...(c.also || [])]
@@ -189,8 +195,10 @@ function prosy(value: any, toks: string[], spell: (s: string) => string): boolea
 
 
 // What is not the runtime: the documentation components and providers, the
-// naming hook, the example helpers, and the tests a target generates.
-const NOT_RUNTIME = /(^|\/)(Readme|Syntax|Naming|Test|utility_)[^/]*$|\/tests?\/|_test\.|\.test\./
+// naming hook, the example helpers and test generators of src/cmp, and a
+// target's test trees (perl's t/, swift's Tests/). The test feature's own
+// source (src/feature/test/, TestFeature.*) is runtime.
+const NOT_RUNTIME = /^src\/cmp\/[\w-]+\/(Readme|Syntax|Naming|Test|utility_)[^/]*$|(?<!\/feature)\/(tests?|t|Tests)\/|_test\.|\.test\./
 
 // The files of a runtime: its components and its templates.
 function runtimeFiles(lang: string): string[] {
@@ -222,29 +230,9 @@ const NEAR = 3
 const wordIn = (tok: string, text: string) =>
   new RegExp('(^|[^\\w-])' + tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\w-])').test(text)
 
-function checkCitation(lang: string, path: string, value: any, c: Citation, spell: (s: string) => string): string | null {
-  // An absence: a search over named runtime files that must find nothing.
-  if ('absent' in c) {
-    if (!('value' in c)) return `cite ${path}: an absence pins the value it shows (value: ...)`
-    if (JSON.stringify(c.value) !== JSON.stringify(value)) return `cite ${path}: the fact is ${JSON.stringify(value)}; the absence shows ${JSON.stringify(c.value)}`
-    if (0 === c.absent.files.length) return `cite ${path}: an absence names no files`
-    const re = new RegExp(c.absent.pattern.source, c.absent.pattern.flags.replace('g', ''))
-    let searched = 0
-    for (const f of c.absent.files) {
-      if (!ownFile(lang, f)) return `cite ${path}: ${f} is not one of the ${lang} runtime's files`
-      const p = Path.join(SCAFFOLD, f)
-      if (!Fs.existsSync(p)) return `cite ${path}: ${f} does not exist`
-      const files = Fs.statSync(p).isDirectory() ? runtimeFiles(lang).filter((x) => x.startsWith(f.replace(/\/$/, '') + '/')) : [f]
-      for (const x of files) {
-        searched++
-        const text = Fs.readFileSync(Path.join(SCAFFOLD, x), 'utf8')
-        const m = re.exec(text)
-        if (null != m) return `cite ${path}: the absence of ${c.absent.pattern} no longer holds: ${x} has ${JSON.stringify(m[0])}`
-      }
-    }
-    if (0 === searched) return `cite ${path}: the absence searched no file`
-    return null
-  }
+function checkCitation(lang: string, path: string, value: any, c: Citation, spell: (s: string) => string,
+  cited?: (fact: string) => boolean): string | null {
+  if ('absent' in c) return checkAbsence(lang, path, value, c, cited)
   const quotes: string[] = []
   const texts: [string, string][] = []
   for (const part of [c, ...(c.also || [])]) {
@@ -291,6 +279,49 @@ function checkCitation(lang: string, path: string, value: any, c: Citation, spel
 }
 
 
+// An absence: a search over every file of the language's runtime that must
+// find nothing outside the quoted regions it excludes, each with its reason.
+// A region that no longer holds a match is stale, and fails too.
+function checkAbsence(lang: string, path: string, value: any, c: Extract<Citation, { absent: any }>,
+  cited?: (fact: string) => boolean): string | null {
+  if (!('value' in c)) return `cite ${path}: an absence pins the value it shows (value: ...)`
+  if (JSON.stringify(c.value) !== JSON.stringify(value)) return `cite ${path}: the fact is ${JSON.stringify(value)}; the absence shows ${JSON.stringify(c.value)}`
+  if (null != (c.absent as any).files) return `cite ${path}: an absence searches the whole runtime; quote the regions it leaves out in except, with a reason, instead of naming files`
+  const regions: { file: string, start: number, end: number, quote: string, used: number }[] = []
+  for (const x of c.absent.except || []) {
+    if (null == x.why || '' === x.why.trim()) return `cite ${path}: the region left out of ${x.file} gives no reason`
+    if (null != x.fact && null != cited && !cited(x.fact)) return `cite ${path}: the region left out of ${x.file} shows ${x.fact}, which the forms do not cite`
+    const text = runtimeText(lang, x.file)
+    if (null == text) return `cite ${path}: ${x.file} is not one of the ${lang} runtime's files`
+    for (const q of ([] as string[]).concat(x.quote)) {
+      const n = text.split(q).length - 1
+      if (1 !== n) return `cite ${path}: the region left out of ${x.file} must occur once; it occurs ${n} times (${JSON.stringify(q)})`
+      const start = text.indexOf(q)
+      regions.push({ file: x.file, start, end: start + q.length, quote: q, used: 0 })
+    }
+  }
+  const re = new RegExp(c.absent.pattern.source, c.absent.pattern.flags.replace('g', '') + 'g')
+  const files = runtimeFiles(lang)
+  for (const f of files) {
+    const text = Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')
+    for (const m of text.matchAll(re)) {
+      const at = m.index as number
+      const r = regions.find((x) => x.file === f && x.start <= at && at + m[0].length <= x.end)
+      if (null != r) {
+        r.used++
+        continue
+      }
+      const line = text.slice(0, at).split('\n').length
+      return `cite ${path}: the absence of ${c.absent.pattern} no longer holds: ${f}:${line} has ${JSON.stringify(m[0])}`
+    }
+  }
+  const stale = regions.find((r) => 0 === r.used)
+  if (null != stale) return `cite ${path}: the region left out of ${stale.file} holds no match (${JSON.stringify(stale.quote)}); drop it`
+  if (0 === files.length) return `cite ${path}: the absence searched no file`
+  return null
+}
+
+
 function tally(a: Account): Record<string, number> {
   const n: Record<string, number> = { derived: 0, cited: 0, language: 0, convention: 0, excepted: 0 }
   for (const c of Object.values(a.category)) n[c]++
@@ -304,4 +335,4 @@ function occurrences(lang: string, tok: string): string[] {
   return runtimeFiles(lang).filter((f) => wordIn(tok, Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')))
 }
 
-export { AHEAD, DEFAULTS, account, checkCitation, occurrences, codeTokens, declaredLeaves, defaultCategory, runtimeFiles, runtimeText, tally }
+export { AHEAD, DEFAULTS, NOT_RUNTIME, account, checkAbsence, checkCitation, occurrences, codeTokens, declaredLeaves, defaultCategory, runtimeFiles, runtimeText, tally }

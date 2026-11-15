@@ -113,12 +113,25 @@ const forms: Forms = {
     'ref.facts.entity[0].copy': { value: true, file: ENTITY, quote: 'return vs.clone(self._data)' },
     'ref.facts.entity[2].copy': { value: true, file: ENTITY, quote: 'return vs.clone(self._match)' },
     'ref.facts.body.values': { value: 'a string', file: 'tm/lua/utility/fetcher.lua', quote: 'if type(body_str) ~= "string" then\n    body_str = nil' },
-    // Operations only: every file an operation runs through, outside comments. Entity.fragment.lua is left out because
-    // its stream honours callopts.signal (EntyClass:stream, `local signal = callopts["signal"]`), which this fact does
-    // not state; the shared cancel paragraph cannot say it apart from operations.
-    'ref.facts.cancel': { value: false, absent: {
-      pattern: /^(?![ \t]*--).*(\b(cancel\w*|abort\w*|signal)\b|AbortController|cancel_request)/im,
-      files: [MAIN, ...OPS, 'tm/lua/utility/', 'tm/lua/core/'] } },
+    // Searched over the whole lua runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
+      { file: "src/cmp/lua/fragment/Entity.fragment.lua", quote: ["--   - `ctrl` (pipeline control) and `signal` (cancellation) honoured.", "local signal = callopts[\"signal\"]", "local function aborted()", "if signal == nil then", "if type(signal) == \"function\" then", "return signal() and true or false", "if type(signal) == \"table\" and signal.aborted ~= nil then", "return signal.aborted and true or false", "for item in stream_fn() do\n        if aborted() then", "for _, item in ipairs(items) do\n        if aborted() then"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+      { file: "tm/lua/feature/cost_feature.lua", quote: ["-- supersedes it loses precision to catastrophic cancellation", "-- is set by PrePoint, so its absence is the signal."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+      { file: "tm/lua/feature/secrets/native/sekretonet.c", quote: ["#include <signal.h>", "* callback is what makes a verification error abort the handshake", "/* Belt and braces. SSL_VERIFY_PEER already aborts on a bad chain, but", "signal(SIGPIPE, SIG_IGN);"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/lua/feature/secrets/sekreto/name.lua", quote: ["--- aborting the rest of the file."],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/lua/feature/timeout_feature.lua", quote: ["-- request cannot be raced or aborted the way the async targets do it."],
+        why: "the timeout feature's own deadline on the transport, which ends a request by time; no caller can cancel an operation through it" },
+      { file: "tm/lua/utility/make_point.lua", quote: ["-- in ctx.out[\"point\"] to abort the operation before any endpoint"],
+        why: "a feature (rbac) that places an error before the request stops the operation itself; no caller cancels through it" },
+      { file: "tm/lua/utility/make_spec.lua", quote: ["-- error in ctx.out[\"spec\"] to abort the operation before the request is"],
+        why: "a feature (rbac) that places an error before the request stops the operation itself; no caller cancels through it" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "src/cmp/lua/fragment/Entity.fragment.lua", quote: ["local signal = callopts[\"signal\"]", "if aborted() then"] },
     'notes.member:direct': { value: 'It also returns a second value, which is always `nil`: a failure is\nreported in the result, never in the second value.',
       file: MAIN, quote: ['return self:_op_denied("direct"), nil', 'return { ok = false, err = err }, nil', 'return out, nil'] },
     'notes.member:streamFunction': { value: 'Unlike an operation, it reports a failure by raising it with `error`\nfrom the returned function, as the caller iterates.',
