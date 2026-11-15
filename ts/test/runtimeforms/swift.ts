@@ -52,7 +52,6 @@ const forms: Forms = {
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'init', accessor: '${entity.Name}' },
   types: { column: 'swift' },
   exceptions: {
-    streamItems: 'NEEDS SHARED: swift hands an AsyncStream (for await) over items runOp and the streaming feature have produced before stream returns; no stream kind has an async call form without saying the items arrive as iterated',
   },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
   // What the table states besides names, parameters and returns.
@@ -66,6 +65,10 @@ const forms: Forms = {
     run: "let materialised = try runOp(ctx, {})",
     draw: "items = streamFn()",
     runs: "before it returns", items: "before it returns",
+  },
+  // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
+  cite: {
+    'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/swift/fragment/Main.fragment.swift", quote: "r.entries[\"ok\"] = .bool(false)" },
   },
 }
 
