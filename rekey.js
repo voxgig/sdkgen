@@ -276,22 +276,31 @@ function rekeyVerdicts(a) {
         for (const p of parts) {
           if (I.isModelText(p)) { fwd.get(oid).set('model-text', { lang: r, text: p }); continue }
           const nid = I.sentenceId(p, kind, r)
-          if (!fwd.get(oid).has(nid)) fwd.get(oid).set(nid, { lang: r, section, kind, text: p, identity: I.identity(p, kind, r) })
+          const split = parts.length > 1
+          const prev = fwd.get(oid).get(nid)
+          if (!prev) fwd.get(oid).set(nid, { lang: r, section, kind, text: p, identity: I.identity(p, kind, r), split })
+          else if (!split) prev.split = false
         }
       }
     }
     console.error(`[verdicts ${((Date.now() - t0) / 1000).toFixed(0)}s] ${section} ${r}: ${fwd.size} of ${Object.keys(V).length} old ids found`)
   }
   const back = new Map()
-  for (const [oid, m] of fwd) for (const [nid, ex] of m) { if (!back.has(nid)) back.set(nid, { ex, olds: [] }); back.get(nid).olds.push(oid) }
+  // an old sentence the new splitter cut in two (go's bold step lead) reached
+  // each part; its verdict judged the whole. A part that some old sentence
+  // also was WHOLE takes only the whole ones' verdicts; a part only splits
+  // reached takes theirs, marked fromSplit, for a person to confirm.
+  for (const [oid, m] of fwd) for (const [nid, ex] of m) { if (!back.has(nid)) back.set(nid, { ex, olds: [], split: [] }); (ex.split ? back.get(nid).split : back.get(nid).olds).push(oid) }
   const sentences = {}
   const mixed = []
   for (const [nid, x] of back) {
     if ('model-text' === nid) continue
+    const fromSplit = !x.olds.length
+    if (fromSplit) x.olds = x.split
     const vs = x.olds.map((o) => V[o].verdict)
     const worst = vs.reduce((p, q) => WORSE[q] > WORSE[p] ? q : p, 'ok')
     const same = new Set(vs).size === 1
-    sentences[nid] = { verdict: worst, note: x.olds.map((o) => `[${o}] ${V[o].note}`).join(' || '), from: x.olds, ...(same ? {} : { mixed: vs.join(',') }), example: x.ex.lang + ': ' + x.ex.text.slice(0, 200), identity: x.ex.identity.replace('\u0000', ' | ') }
+    sentences[nid] = { verdict: worst, note: x.olds.map((o) => `[${o}] ${V[o].note}`).join(' || '), from: x.olds, ...(same ? {} : { mixed: vs.join(',') }), ...(fromSplit ? { fromSplit: true } : x.split.length ? { alsoSplitFrom: x.split } : {}), example: x.ex.lang + ': ' + x.ex.text.slice(0, 200), identity: x.ex.identity.replace('\u0000', ' | ') }
     if (!same) mixed.push(nid)
   }
   const notFound = Object.keys(V).filter((o) => !fwd.has(o))
@@ -299,6 +308,9 @@ function rekeyVerdicts(a) {
   const res = { note: 'Verdicts of the v3.2 sentence review (P/sentences/merged.json, 297 ids) carried to the sentence ids of ident.js by rekey.js --verdicts: a new id takes the verdict of every old id that became it when they agree, else the worse with every note (mixed). Written by the tool; read by classify.js and sentences.js.', sentences, unmapped: notFound, modelText, mixed }
   if (a.out) K.writeFile(a.out, JSON.stringify(res, null, 1) + '\n')
   const count = (k) => Object.values(sentences).filter((x) => x.verdict === k).length
+  res.fromSplit = Object.keys(sentences).filter((k) => sentences[k].fromSplit)
+  if (a.out) K.writeFile(a.out, JSON.stringify(res, null, 1) + '\n')
+  console.log(`from a split only (for a person): ${res.fromSplit.map((k) => k + ' ' + sentences[k].verdict + ' ' + sentences[k].identity.slice(0, 80)).join(' ; ')}`)
   console.log(`verdicts: ${Object.keys(V).length} old ids -> ${Object.keys(sentences).length} new sentence ids (ok ${count('ok')}, awkward ${count('awkward')}, false ${count('false')}); mixed ${mixed.length}; old ids not found ${notFound.length}${notFound.length ? ' (' + notFound.join(' ') + ')' : ''}; model text left out ${modelText.length}${modelText.length ? ' (' + modelText.join(' ') + ')' : ''}`)
   return res
 }

@@ -7,7 +7,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "1acbc1dfde": {
+ "92f7d78487": {
   "outcome": "same-meaning",
   "why": "the README test-mode comment says the same: load gives the entity and .data() reads its record",
   "n": 16,
@@ -31,7 +31,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "ae5af7ef57": {
+ "ceeb0a0848": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 16,
@@ -39,7 +39,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "123923823b": {
+ "ff4863a314": {
   "outcome": "correction:S28",
   "why": "",
   "n": 10,
@@ -55,7 +55,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "4147ad0745": {
+ "0538108a37": {
   "outcome": "restored:shared",
   "why": "",
   "n": 18,
@@ -87,7 +87,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "f9029f1fd4": {
+ "da31ab6872": {
   "outcome": "same-meaning",
   "why": "README:313 says the direct() result has no .data; this sentence is about the entities list() resolves to, which do. Two different objects, no disagreement",
   "n": 7,
@@ -95,7 +95,7 @@
   "type": "echo",
   "section": "tutorial"
  },
- "7152f6c8d8": {
+ "5eaef9ab78": {
   "outcome": "same-meaning",
   "why": "the removed sentence and README:313 speak of different objects (entities vs the direct() envelope); nothing disagrees",
   "n": 7,
@@ -111,7 +111,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "428b2a83e1": {
+ "5a3859e529": {
   "outcome": "correction:S28",
   "why": "",
   "n": 3,
@@ -119,7 +119,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d11bb4c954": {
+ "b7c60b65eb": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 3,
@@ -127,7 +127,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "94cf7a3ef4": {
+ "079a339ba7": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 4,
@@ -135,7 +135,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "dd3678c6ed": {
+ "32abc4dab0": {
   "outcome": "restored:shared",
   "why": "restored as the list sentence: list() resolves to an array of entities, one per record; .data() reads a record",
   "n": 7,
@@ -143,7 +143,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "29557c8308": {
+ "a4ead110bd": {
   "outcome": "restored:shared",
   "why": "restored in the list sentence (`.data()` reads an entity's record) and the printed loop",
   "n": 7,
@@ -151,7 +151,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "e0acbb8559": {
+ "c0d621eec3": {
   "outcome": "restored:shared",
   "why": "restored as the step's write sentence: each write resolves to the entity it wrote; the record is read with .data() in the code",
   "n": 4,
@@ -159,7 +159,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "be8d0cda9a": {
+ "9bd326268a": {
   "outcome": "unification:tutorial-op-sentence",
   "why": "",
   "n": 7,
@@ -175,7 +175,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "4e8a2d6360": {
+ "efc6f12457": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 4,
@@ -191,7 +191,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "67bc2b34e8": {
+ "29bba9e03f": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -199,7 +199,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "2609d87cfb": {
+ "1fa815677a": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -207,7 +207,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "69ba25b1fc": {
+ "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -215,7 +215,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "55fa2cf082": {
+ "0cc17840e2": {
   "outcome": "restored:fact",
   "why": "",
   "n": 1,
@@ -223,7 +223,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d39368fa0b": {
+ "9cbb8e3add": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -231,7 +231,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "dd5f182f01": {
+ "c44f65ddeb": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -239,7 +239,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "f4f124751b": {
+ "3528a38f43": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -519,28 +519,21 @@
   "type": "missing",
   "section": "rootquick"
  },
- "9c55b7a847": {
+ "ed2f55cd53": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
-  "n": 6,
+  "n": 7,
   "by": "rule:root-step-comment",
   "type": "reworded",
-  "section": "rootquick"
+  "section": "rootquick",
+  "rekeyed": "9c55b7a847+865b8bed5e"
  },
- "dd62a385e1": {
+ "33da37ea50": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 5,
   "by": "rule:add-step-comment",
   "type": "added",
-  "section": "rootquick"
- },
- "865b8bed5e": {
-  "outcome": "unification:step-comment-runtime-fact",
-  "why": "",
-  "n": 1,
-  "by": "rule:root-step-comment",
-  "type": "reworded",
   "section": "rootquick"
  },
  "1715e659ec": {
@@ -695,7 +688,7 @@
   "type": "echo",
   "section": "reference"
  },
- "c47463a9a1": {
+ "a941f823dc": {
   "outcome": "same-meaning",
   "why": "README test-mode comment: .data() reads the record of the loaded entity; same statement",
   "n": 79,
@@ -727,7 +720,7 @@
   "type": "echo",
   "section": "reference"
  },
- "5b8eca7ad4": {
+ "2bb513dce5": {
   "outcome": "correction:ref-6",
   "why": "the call carries the route's path parameter, so it can fill /planet/{id}/terraform",
   "n": 15,
@@ -794,10 +787,11 @@
  "37cbd7c81c": {
   "outcome": "correction:guard-accessor-arg",
   "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
-  "n": 94,
+  "n": 93,
   "by": "hand",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "37cbd7c81c"
  },
  "8ac9e540a8": {
   "outcome": "restored:shared",
@@ -807,15 +801,16 @@
   "type": "reworded",
   "section": "reference"
  },
- "bde0d2283c": {
+ "cce9e8691a": {
   "outcome": "unification:accessor-sentence",
   "why": "",
-  "n": 16,
+  "n": 92,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "bde0d2283c+cce9e8691a"
  },
- "c47c92da89": {
+ "4299fe5f5e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -831,15 +826,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cce9e8691a": {
-  "outcome": "unification:accessor-sentence",
-  "why": "",
-  "n": 77,
-  "by": "rule:accessor-sentence",
-  "type": "reworded",
-  "section": "reference"
- },
- "291b406422": {
+ "4d47e92215": {
   "outcome": "unification:op-failure-clause",
   "why": "",
   "n": 83,
@@ -945,19 +932,12 @@
  },
  "d2cb7060c6": {
   "outcome": "restored:shared",
-  "why": "restored as 'Create a new `AmbientEntity` instance.' in the accessor sentence",
-  "n": 77,
+  "why": "restored as 'Create a new `AmbientEntity` instance.' in the accessor sentence | restored as 'Create a new `PlanetEntity` instance.' in the accessor sentence",
+  "n": 93,
   "by": "hand",
   "type": "missing",
-  "section": "reference"
- },
- "58f6fe5f58": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Create a new `PlanetEntity` instance.' in the accessor sentence",
-  "n": 17,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "d2cb7060c6+58f6fe5f58"
  },
  "363701dbb8": {
   "outcome": "restored:shared",
@@ -983,7 +963,7 @@
   "type": "missing",
   "section": "reference"
  },
- "d87c331ec7": {
+ "abfa449593": {
   "outcome": "restored:shared",
   "why": "restored as the load sentence 'Resolves to the entity ... `.data()` reads its record.'",
   "n": 28,
@@ -1155,7 +1135,7 @@
   "type": "added",
   "section": "reference"
  },
- "556db3c91e": {
+ "89c5ef9c6d": {
   "outcome": "restored:shared",
   "why": "the record read the old load line stated ('whose record data() reads')",
   "n": 79,
@@ -1187,7 +1167,7 @@
   "type": "added",
   "section": "reference"
  },
- "eaf64e26bd": {
+ "566d3ef425": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 82,
@@ -1283,7 +1263,7 @@
   "type": "added",
   "section": "reference"
  },
- "cbcdf6e5f9": {
+ "e861a34f8e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1358,7 +1338,16 @@
   "type": "reworded",
   "section": "reference"
  },
- "409d0f7ba8": {
+ "205d5e7ca3": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "37cbd7c81c"
+ },
+ "b7bbd03809": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1366,13 +1355,31 @@
   "type": "reworded",
   "section": "reference"
  },
- "e496bcc19a": {
+ "56561c6006": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
   "by": "rule:class-collision",
   "type": "reworded",
   "section": "reference"
+ },
+ "88dc600aad": {
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:accessor-sentence",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "cce9e8691a"
+ },
+ "cff43aaa1d": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Create a new `AmbientEntity` instance.' in the accessor sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference",
+  "rekeyed": "d2cb7060c6"
  },
  "dac11a1691": {
   "outcome": "correction:G27",
@@ -1390,7 +1397,7 @@
   "type": "missing",
   "section": "reference"
  },
- "993924c4c6": {
+ "d245316c2e": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; the heading names it",
   "n": 1,
@@ -1406,7 +1413,7 @@
   "type": "missing",
   "section": "reference"
  },
- "a9d28cef46": {
+ "ad0ce90b71": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter (id) now; under PlanetEntityClient",
   "n": 1,
@@ -1438,7 +1445,7 @@
   "type": "missing",
   "section": "reference"
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs (opMatched); the old line said the same in other words",
   "n": 1,
@@ -1446,7 +1453,7 @@
   "type": "missing",
   "section": "reference"
  },
- "5130ea0617": {
+ "7393140c1f": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1470,7 +1477,7 @@
   "type": "added",
   "section": "reference"
  },
- "dedcfa23a4": {
+ "203296a7bf": {
   "outcome": "correction:ref-6",
   "why": "as 5b8eca7ad4, under PlanetEntityClient (ref-issues)",
   "n": 1,

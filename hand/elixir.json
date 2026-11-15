@@ -1,57 +1,42 @@
 {
- "9e60c5986c": {
-  "outcome": "same-meaning",
-  "why": "moved into the Returns sentence ('a result map holding ok, status, headers and data'); README:282 lists the same keys",
-  "n": 19
+ "facts": {
+  "ref.noun": {
+   "value": "Functions",
+   "why": "elixir has no methods: every member is a module function taking the client or entity as its first argument (Demo.ambient(client, entopts \\\\ nil), options_map(client)); OLD said 'Functions' (OLD B/elixir/REFERENCE.md:41) and 'Common Functions' (:127), so the noun is held; the context counted as contradicted is the shared heading's 'Instance' word before it ('Instance Functions' against OLD's bare 'Functions')",
+   "evidence": "OLD B/elixir/REFERENCE.md:41 '### Functions', :127 '### Common Functions'; Syntax_elixir.ts signatures"
+  }
  },
- "456cb02ae3": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
-  "n": 1
- },
- "552c534dbf": {
-  "outcome": "unification:root-load-nested",
-  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact [carried from class 097d285bff: blocks.js now diffs before the normalizers, so the class id changed; same pair, same decision]",
-  "n": 1
+ "absent": {
+  "afa4347469": "elixir's accessor signature names its parameter entopts (accessor.param 'entopts', derived: Demo.ambient(client, entopts \\\\ nil)), so the page prints the other branch, 'Pass `nil` for no initial options.'; the sentence is for a parameter named otherwise"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
   "n": 15
  },
- "325b1911ed": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
-  "n": 1
+ "35c7a4a5a0": {
+  "outcome": "correction:elixir-arity",
+  "why": "OLD named the function list/2, which is false: def list(ent, reqmatch \\\\ nil, ctrl \\\\ nil) defines list/1, /2 and /3 and the example calls list/1; NEW says `list`. The getelem/2 item read is kept as the note 866a0eed1f",
+  "n": 7
  },
  "7fe2bb62d9": {
   "outcome": "restored:shared",
-  "why": "restored as the comment 'Create \u2014 returns the created entity' and the write sentence",
+  "why": "restored as the comment 'Create — returns the created entity' and the write sentence",
   "n": 4
  },
  "9a132de632": {
   "outcome": "restored:shared",
-  "why": "restored as the comment 'Update \u2014 the id comes off the created entity's record'",
+  "why": "restored as the comment 'Update — the id comes off the created entity's record'",
   "n": 4
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
-  "why": "restored as 'Patch \u2014 sends only the fields given; ...'",
+  "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3
  },
- "9562ae8fc5": {
-  "outcome": "correction:U45",
-  "why": "ref-issues has update only: the step is headed 2. Update",
-  "n": 1
- },
- "e615041e24": {
+ "866a0eed1f": {
   "outcome": "restored:note",
-  "why": "the arity naming the old elixir README stated (the check's misclassified 5): load is defined with defaulted arguments (EntityLoadOp.fragment.ex), the tutorial calls load/2",
-  "n": 16
- },
- "fbaca6bf31": {
-  "outcome": "restored:note",
-  "why": "the arity naming and the getelem/2 item read the old README stated (EntityListOp.fragment.ex; voxgig_struct.ex:466 def getelem(val, key, alt \\\\ nil))",
+  "why": "OLD's list step said `Voxgig.Struct.getelem/2` reads an item; true (voxgig_struct.ex:466 def getelem(val, key, alt \\\\ nil), called with two arguments: getelem/2), kept as the whole note; the note's false arity claim about list/2 is gone (EntityListOp.fragment.ex:8 defines list/1, /2 and /3)",
   "n": 7
  },
  "d2da816355": {
@@ -59,9 +44,19 @@
   "why": "the write results as one sentence; true of elixir (each op returns the entity and raises)",
   "n": 5
  },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
  "c2358342da": {
   "outcome": "restored:fact",
   "why": "the write sentence for the one write ref-issues has",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
   "n": 1
  },
  "f6f21dc984": {
@@ -69,10 +64,15 @@
   "why": "the function name update in the write sentence",
   "n": 1
  },
- "618096b4cc": {
+ "552c534dbf": {
+  "outcome": "unification:root-load-nested",
+  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact [carried from class 097d285bff: blocks.js now diffs before the normalizers, so the class id changed; same pair, same decision]",
+  "n": 1
+ },
+ "f7aa0fdb13": {
   "outcome": "same-meaning",
-  "why": "README:229 calls Demo.test(testopts, sdkopts); same parameters",
-  "n": 19
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16
  },
  "c679f2d6a0": {
   "outcome": "same-meaning",
@@ -89,67 +89,20 @@
   "why": "a word match on log in console.log (the shared Error handling section's TypeScript block, unported); nothing about log's default",
   "n": 19
  },
+ "9e60c5986c": {
+  "outcome": "same-meaning",
+  "why": "moved into the Returns sentence ('a result map holding ok, status, headers and data'); README:282 lists the same keys",
+  "n": 19
+ },
  "48d12b9b75": {
   "outcome": "same-meaning",
   "why": "moved into the prepare Returns sentence (the fetch definition; raises on failure); README:139 calls it fetchdef, the same object",
   "n": 19
  },
- "f7aa0fdb13": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
-  "n": 16
- },
- "805d5a9ce5": {
-  "outcome": "same-meaning",
-  "why": "the type word String.t(), as the README's options table uses it",
-  "n": 4
- },
- "ce1c1aa923": {
-  "outcome": "same-meaning",
-  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
-  "n": 3
- },
- "d3fd73e70d": {
-  "outcome": "same-meaning",
-  "why": "a word match on nil in the README's test line; both say nil means none",
-  "n": 2
- },
- "e59066a2d8": {
-  "outcome": "same-meaning",
-  "why": "moved into the test sentence ('both may be `nil`'); README:203 says the same",
-  "n": 2
- },
- "066a083189": {
-  "outcome": "same-meaning",
-  "why": "the README direct example passes method GET; consistent with GET as the default",
-  "n": 1
- },
- "097bbe00c6": {
-  "outcome": "same-meaning",
-  "why": "a word match on nil in the README's test line; nothing about the accessor's argument",
-  "n": 1
- },
- "91baf1b4b6": {
-  "outcome": "contradiction",
-  "where": "elixir/README.md:232 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `nil`.'",
-  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
-  "n": 1
- },
- "60c2ca2ff4": {
-  "outcome": "restored:shared",
-  "why": "restored as 'The match is optional: without one, every record is listed.'",
-  "n": 83
- },
- "0ccd61dc70": {
-  "outcome": "dropped",
-  "why": "the header of a Type column in tables the shared page replaced with Key / Value type / Description tables; the types are in the new column",
-  "n": 38
- },
- "2b54549049": {
-  "outcome": "restored:shared",
-  "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get/1` reads its record'",
-  "n": 28
+ "e69b3decc0": {
+  "outcome": "restored:note",
+  "why": "the Helpers.deep/1 sentence is the ctor note (the check's misclassified 5); 'struct value node' is said by the shared sentence above it ('`options` is a `Voxgig.Struct` map')",
+  "n": 19
  },
  "3538e6b4b8": {
   "outcome": "dropped",
@@ -201,15 +154,107 @@
   "why": "restored as the prepare Returns sentence: the fetch definition, and it raises on failure",
   "n": 19
  },
+ "4e310eddd0": {
+  "outcome": "restored:shared",
+  "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get/1` reads its record'",
+  "n": 28
+ },
+ "1f2bf8a246": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "n": 83
+ },
  "2f38082332": {
   "outcome": "correction:S09",
   "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
   "n": 19
  },
+ "0ccd61dc70": {
+  "outcome": "dropped",
+  "why": "the header of a Type column in tables the shared page replaced with Key / Value type / Description tables; the types are in the new column",
+  "n": 38
+ },
  "ac1eac6be0": {
   "outcome": "correction:S09",
   "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
   "n": 19
+ },
+ "b5b91fba23": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "9a862f2eb3": {
+  "outcome": "restored:shared",
+  "why": "how the record is read, which the old load sentence stated ('whose record data_get/1 reads')",
+  "n": 79
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "data_get returns a copy: tm/elixir/lib/projectname/entity_base.ex:88 S.clone(S.getprop(ent, \"_data\"))",
+  "n": 94
+ },
+ "71cbb92746": {
+  "outcome": "restored:fact",
+  "why": "stream is a real member (entity_base.ex:118 def stream, a Stream over the items at :172); the kind sentence now names only what the call returns (a lazy sequence: an Elixir Stream, over a list the streaming feature built before the call returns (streaming.ex:58), which the runs sentence beside it says); nothing in it says when items arrive",
+  "n": 94
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in entity_base.ex (Pipeline.run_op at :150 before the Stream is returned); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16
+ },
+ "abe0178bc3": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 3
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1
+ },
+ "d3fd73e70d": {
+  "outcome": "same-meaning",
+  "why": "a word match on nil in the README's test line; both say nil means none",
+  "n": 2
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (elixir/README.md:203)",
+  "n": 2
+ },
+ "805d5a9ce5": {
+  "outcome": "same-meaning",
+  "why": "the type word String.t(), as the README's options table uses it",
+  "n": 4
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `nil`'); README:203 says the same",
+  "n": 2
+ },
+ "097bbe00c6": {
+  "outcome": "same-meaning",
+  "why": "a word match on nil in the README's test line; nothing about the accessor's argument",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "where": "elixir/README.md:232 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `nil`.'",
+  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
+  "n": 1
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
@@ -226,7 +271,7 @@
   "why": "ref-issues: the description's pipe broke the table; escaped now",
   "n": 1
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1
@@ -246,69 +291,9 @@
   "why": "ref-issues: remove inactive",
   "n": 1
  },
- "e69b3decc0": {
-  "outcome": "restored:note",
-  "why": "the Helpers.deep/1 sentence is the ctor note (the check's misclassified 5); 'struct value node' is said by the shared sentence above it ('`options` is a `Voxgig.Struct` map')",
-  "n": 19
- },
- "55a8b68a1f": {
-  "outcome": "restored:fact",
-  "why": "data_get returns a copy: tm/elixir/lib/projectname/entity_base.ex:88 S.clone(S.getprop(ent, \"_data\"))",
-  "n": 94
- },
- "6f9a27dac1": {
-  "outcome": "restored:shared",
-  "why": "how the record is read, which the old load sentence stated ('whose record data_get/1 reads')",
-  "n": 79
- },
- "c2467756ac": {
-  "outcome": "correction:ref-6",
-  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
-  "n": 16
- },
- "fe4aa1b045": {
-  "outcome": "correction:ref-6",
-  "why": "the Call cell carries the route's path parameter id",
-  "n": 16
- },
- "866a0eed1f": {
-  "outcome": "restored:note",
-  "why": "OLD's list step said `Voxgig.Struct.getelem/2` reads an item; true (voxgig_struct.ex:466 def getelem(val, key, alt \\\\ nil), called with two arguments: getelem/2), kept as the whole note; the note's false arity claim about list/2 is gone (EntityListOp.fragment.ex:8 defines list/1, /2 and /3)",
-  "n": 7
- },
- "d94f240980": {
-  "outcome": "correction:elixir-arity",
-  "why": "OLD named the function list/2, which is false: def list(ent, reqmatch \\\\ nil, ctrl \\\\ nil) defines list/1, /2 and /3 and the example calls list/1; NEW says `list`. The getelem/2 item read is kept as the note 866a0eed1f",
-  "n": 7
- },
- "b5b91fba23": {
-  "outcome": "restored:shared",
-  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
-  "n": 19
- },
- "f09662fec4": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (elixir/README.md:203)",
-  "n": 2
- },
- "71cbb92746": {
-  "outcome": "restored:fact",
-  "why": "stream is a real member (entity_base.ex:118 def stream, a Stream over the items at :172); the kind sentence now names only what the call returns (a lazy sequence: an Elixir Stream, over a list the streaming feature built before the call returns (streaming.ex:58), which the runs sentence beside it says); nothing in it says when items arrive",
-  "n": 94
- },
- "169ee4e438": {
-  "outcome": "restored:fact",
-  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in entity_base.ex (Pipeline.run_op at :150 before the Stream is returned); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
-  "n": 94
- },
- "facts": {
-  "ref.noun": {
-   "value": "Functions",
-   "why": "elixir has no methods: every member is a module function taking the client or entity as its first argument (Demo.ambient(client, entopts \\\\ nil), options_map(client)); OLD said 'Functions' (OLD B/elixir/REFERENCE.md:41) and 'Common Functions' (:127), so the noun is held; the context counted as contradicted is the shared heading's 'Instance' word before it ('Instance Functions' against OLD's bare 'Functions')",
-   "evidence": "OLD B/elixir/REFERENCE.md:41 '### Functions', :127 '### Common Functions'; Syntax_elixir.ts signatures"
-  }
- },
- "absent": {
-  "808eae570d": "elixir's accessor signature names its parameter entopts (accessor.param 'entopts', derived: Demo.ambient(client, entopts \\\\ nil)), so the page prints the other branch, 'Pass `nil` for no initial options.'; the sentence is for a parameter named otherwise"
+ "456cb02ae3": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1
  }
 }

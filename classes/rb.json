@@ -47,7 +47,7 @@
   ],
   "unreviewed": 1
  },
- "123923823b": {
+ "ff4863a314": {
   "outcome": "shared:ts:123923823b",
   "why": "masked, it is the ts unit of class 123923823b (correction:S28, by rule:tutorial-leadin)",
   "n": 10,
@@ -59,7 +59,7 @@
   ],
   "unreviewed": 1
  },
- "8269f08815": {
+ "7e1edcb0af": {
   "outcome": "restored:shared",
   "why": "restored as the sentence above the block: '`load` returns the entity and raises on failure; `data_get` reads its record (a `Hash`)'",
   "n": 10,
@@ -67,7 +67,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "4147ad0745": {
+ "0538108a37": {
   "outcome": "shared:ts:4147ad0745",
   "why": "masked, it is the ts unit of class 4147ad0745 (restored:shared, by rule:entities-contract)",
   "n": 18,
@@ -103,7 +103,7 @@
   ],
   "unreviewed": 1
  },
- "2a8a462f5e": {
+ "31efe2422b": {
   "outcome": "shared:py:5e6ce1e565",
   "why": "masked, it is the py unit of class 5e6ce1e565 (unification:tutorial-op-sentence, by rule:add-tutorial-op)",
   "n": 10,
@@ -139,7 +139,7 @@
   ],
   "unreviewed": 1
  },
- "428b2a83e1": {
+ "5a3859e529": {
   "outcome": "shared:ts:428b2a83e1",
   "why": "masked, it is the ts unit of class 428b2a83e1 (correction:S28, by rule:tutorial-leadin)",
   "n": 3,
@@ -151,7 +151,7 @@
   ],
   "unreviewed": 1
  },
- "482b97fbd7": {
+ "0173dc709f": {
   "outcome": "restored:shared",
   "why": "the old list comment's facts are the shared list sentence, plus how a failure shows (raises) and the record's type (a Hash, Entity.fragment.rb data_get returns a Hash clone)",
   "n": 7,
@@ -159,7 +159,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "cb6b6e206b": {
+ "8aaac4149d": {
   "outcome": "restored:shared",
   "why": "the old load comment's facts are the shared load sentence",
   "n": 6,
@@ -167,7 +167,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d5bda2ca41": {
+ "356ad33db7": {
   "outcome": "restored:shared",
   "why": "restored as the comment 'Create — returns the created entity; data_get reads its record'",
   "n": 4,
@@ -175,7 +175,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "a8902f35c7": {
+ "fcf2530b0d": {
   "outcome": "restored:shared",
   "why": "restored as 'Update — the id comes off the created entity's record'; the code still indexes created.data_get[\"id\"]",
   "n": 4,
@@ -183,7 +183,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
   "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3,
@@ -203,7 +203,7 @@
   ],
   "unreviewed": 1
  },
- "1274d63c39": {
+ "c41348288d": {
   "outcome": "shared:py:7f8b2cc8a9",
   "why": "masked, it is the py unit of class 7f8b2cc8a9 (restored:fact, by rule:write-comments)",
   "n": 4,
@@ -215,7 +215,7 @@
   ],
   "unreviewed": 1
  },
- "6f58c092d8": {
+ "0ed7dc127d": {
   "outcome": "shared:ts:94cf7a3ef4",
   "why": "masked, it is the ts unit of class 94cf7a3ef4 (unification:write-comment-style, by rule:write-comment-id2)",
   "n": 4,
@@ -227,7 +227,7 @@
   ],
   "unreviewed": 1
  },
- "ea9f53b714": {
+ "aeabe4bdf1": {
   "outcome": "shared:ts:d11bb4c954",
   "why": "masked, it is the ts unit of class d11bb4c954 (unification:write-comment-style, by rule:write-comment-id2)",
   "n": 3,
@@ -251,7 +251,7 @@
   ],
   "unreviewed": 1
  },
- "67bc2b34e8": {
+ "29bba9e03f": {
   "outcome": "shared:ts:67bc2b34e8",
   "why": "masked, it is the ts unit of class 67bc2b34e8 (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
@@ -263,7 +263,7 @@
   ],
   "unreviewed": 1
  },
- "2609d87cfb": {
+ "1fa815677a": {
   "outcome": "shared:ts:2609d87cfb",
   "why": "masked, it is the ts unit of class 2609d87cfb (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
@@ -275,7 +275,7 @@
   ],
   "unreviewed": 1
  },
- "69ba25b1fc": {
+ "defb73bfd8": {
   "outcome": "shared:ts:69ba25b1fc",
   "why": "masked, it is the ts unit of class 69ba25b1fc (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
@@ -287,7 +287,7 @@
   ],
   "unreviewed": 1
  },
- "d7ede4c606": {
+ "3929ad2a30": {
   "outcome": "correction:write-comment-style",
   "why": "the shared write comment; same facts (the created entity, data_get reads its record)",
   "n": 1,
@@ -295,7 +295,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d39368fa0b": {
+ "9cbb8e3add": {
   "outcome": "shared:ts:d39368fa0b",
   "why": "masked, it is the ts unit of class d39368fa0b (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
@@ -307,7 +307,7 @@
   ],
   "unreviewed": 1
  },
- "1aeada8e90": {
+ "3b2af3d003": {
   "outcome": "same-meaning",
   "why": "README:230 lists data_get as () -> Hash, Get entity data; the same: data_get reads the record, a Hash",
   "n": 1,
@@ -315,7 +315,7 @@
   "type": "echo",
   "section": "tutorial"
  },
- "dd5f182f01": {
+ "c44f65ddeb": {
   "outcome": "shared:ts:dd5f182f01",
   "why": "masked, it is the ts unit of class dd5f182f01 (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
@@ -327,7 +327,7 @@
   ],
   "unreviewed": 1
  },
- "f4f124751b": {
+ "3528a38f43": {
   "outcome": "shared:ts:f4f124751b",
   "why": "masked, it is the ts unit of class f4f124751b (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
@@ -695,7 +695,7 @@
   "type": "block-vanished-token",
   "section": "tutorial"
  },
- "8aafc69c7d": {
+ "686465f5b2": {
   "outcome": "correction:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
   "n": 10,
@@ -703,7 +703,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "90618c2d13": {
+ "c848b4b151": {
   "outcome": "correction:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
   "n": 7,
@@ -711,7 +711,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "88b79047ba": {
+ "f4b39ad2a2": {
   "outcome": "correction:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
   "n": 6,
@@ -879,7 +879,7 @@
   "type": "echo",
   "section": "reference"
  },
- "4b411df79a": {
+ "e5f622335b": {
   "outcome": "same-meaning",
   "why": "README:240: data_get gets the entity data; the same",
   "n": 59,
@@ -903,7 +903,7 @@
   "type": "echo",
   "section": "reference"
  },
- "a1baf337ea": {
+ "c5f436f755": {
   "outcome": "same-meaning",
   "why": "moved into the shared load sentence; README:240 lists data_get the same way",
   "n": 23,
@@ -911,7 +911,7 @@
   "type": "echo",
   "section": "reference"
  },
- "f0ef94c040": {
+ "6593508d3c": {
   "outcome": "same-meaning",
   "why": "moved into the shared list sentence; README:240 lists data_get the same way",
   "n": 70,
@@ -943,19 +943,20 @@
   ],
   "unreviewed": 1
  },
- "bde0d2283c": {
+ "cce9e8691a": {
   "outcome": "shared:ts:bde0d2283c",
-  "why": "masked, it is the ts unit of class bde0d2283c (unification:accessor-sentence, by rule:accessor-sentence)",
-  "n": 16,
+  "why": "masked, it is the ts unit of class bde0d2283c (unification:accessor-sentence, by rule:accessor-sentence) | masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 92,
   "by": "shared",
   "type": "reworded",
   "section": "reference",
   "sentences": [
    "1eccc7250d"
   ],
-  "unreviewed": 1
+  "unreviewed": 1,
+  "rekeyed": "bde0d2283c+cce9e8691a"
  },
- "1df1f4d318": {
+ "bc359f4a19": {
   "outcome": "correction:runtime-forms",
   "why": "create returns the entity (EntityCreateOp.fragment.rb), not a result",
   "n": 15,
@@ -963,47 +964,34 @@
   "type": "reworded",
   "section": "reference"
  },
- "0670e4a87f": {
+ "6414adddb5": {
   "outcome": "correction:runtime-forms",
-  "why": "update returns the entity, not a result",
-  "n": 14,
+  "why": "update returns the entity, not a result | update returns the entity, not a result (ref-issues)",
+  "n": 15,
   "by": "hand",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "0670e4a87f+6414adddb5"
  },
  "d15797ca9d": {
   "outcome": "correction:runtime-forms",
-  "why": "list resolves to an Array of the entity class (EntityListOp.fragment.rb, make_result wraps each record)",
-  "n": 66,
+  "why": "list resolves to an Array of the entity class (EntityListOp.fragment.rb, make_result wraps each record) | as d15797ca9d",
+  "n": 81,
   "by": "hand",
   "type": "reworded",
-  "section": "reference"
- },
- "07afcb51c1": {
-  "outcome": "correction:runtime-forms",
-  "why": "as d15797ca9d",
-  "n": 16,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "d15797ca9d+07afcb51c1"
  },
  "9557524e8d": {
   "outcome": "correction:runtime-forms",
-  "why": "as 36d626bcf0",
-  "n": 11,
+  "why": "as 36d626bcf0 | load defaults its match and returns the entity: EntityLoadOp.fragment.rb:14 def load(reqmatch = nil, ctrl = nil). The README reference table (unported) still shows load(reqmatch, ctrl)",
+  "n": 27,
   "by": "hand",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "9557524e8d+36d626bcf0"
  },
- "36d626bcf0": {
-  "outcome": "correction:runtime-forms",
-  "why": "load defaults its match and returns the entity: EntityLoadOp.fragment.rb:14 def load(reqmatch = nil, ctrl = nil). The README reference table (unported) still shows load(reqmatch, ctrl)",
-  "n": 16,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "ba3ca7097c": {
+ "8fc1b6a197": {
   "outcome": "correction:runtime-forms",
   "why": "remove defaults its match and returns the entity: EntityRemoveOp.fragment.rb:12 def remove(reqmatch = nil, ctrl = nil)",
   "n": 15,
@@ -1013,31 +1001,12 @@
  },
  "d8065d07cb": {
   "outcome": "correction:runtime-forms",
-  "why": "make returns an instance of the entity's own class: Entity.fragment.rb:64-66 `def make ... EntyClass.new(@_client, opts)`. The README member table (ReadmeModel_rb.ts, unported) still says make -> Entity",
-  "n": 77,
+  "why": "make returns an instance of the entity's own class: Entity.fragment.rb:64-66 `def make ... EntyClass.new(@_client, opts)`. The README member table (ReadmeModel_rb.ts, unported) still says make -> Entity | as d8065d07cb",
+  "n": 92,
   "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "81b3ea8a7b": {
-  "outcome": "correction:runtime-forms",
-  "why": "as d8065d07cb",
-  "n": 16,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "cce9e8691a": {
-  "outcome": "shared:ts:cce9e8691a",
-  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
-  "n": 77,
-  "by": "shared",
   "type": "reworded",
   "section": "reference",
-  "sentences": [
-   "b90b5c03ed"
-  ],
-  "unreviewed": 1
+  "rekeyed": "d8065d07cb+81b3ea8a7b"
  },
  "3780da62e4": {
   "outcome": "shared:py:3780da62e4",
@@ -1051,7 +1020,7 @@
   ],
   "unreviewed": 1
  },
- "c47c92da89": {
+ "4299fe5f5e": {
   "outcome": "shared:ts:c47c92da89",
   "why": "masked, it is the ts unit of class c47c92da89 (unification:op-sentences, by rule:op-sentences)",
   "n": 19,
@@ -1143,7 +1112,7 @@
   "type": "missing",
   "section": "reference"
  },
- "8b0851ad11": {
+ "c10c4498b7": {
   "outcome": "restored:shared",
   "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get` reads its record'",
   "n": 28,
@@ -1159,7 +1128,7 @@
   "type": "missing",
   "section": "reference"
  },
- "156675e505": {
+ "fcae1f7486": {
   "outcome": "restored:shared",
   "why": "restored as 'Returns an `Array` of entities, one per record, and raises on failure.' with the record read in the example",
   "n": 83,
@@ -1351,7 +1320,7 @@
   ],
   "unreviewed": 1
  },
- "c29688a7ac": {
+ "c7eb7ed6f9": {
   "outcome": "shared:go:69429bb577",
   "why": "masked, it is the go unit of class 69429bb577 (restored:shared, by hand)",
   "n": 79,
@@ -1387,7 +1356,7 @@
   "type": "added",
   "section": "reference"
  },
- "eaf64e26bd": {
+ "566d3ef425": {
   "outcome": "shared:ts:eaf64e26bd",
   "why": "masked, it is the ts unit of class eaf64e26bd (unification:op-sentences, by rule:op-sentences)",
   "n": 82,
@@ -1399,7 +1368,7 @@
   ],
   "unreviewed": 1
  },
- "c19ca67d5a": {
+ "fbc8bf5458": {
   "outcome": "restored:shared",
   "why": "the old 'Returns an array of entities, one per record ... Raises on error.' in the shared form",
   "n": 83,
@@ -1515,7 +1484,7 @@
   ],
   "unreviewed": 1
  },
- "3d50058045": {
+ "650eff7141": {
   "outcome": "shared:go:3d50058045",
   "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
   "n": 16,
@@ -1527,7 +1496,7 @@
   ],
   "unreviewed": 1
  },
- "b8e5b4084d": {
+ "4f4ee88c0e": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1535,7 +1504,7 @@
   "type": "added",
   "section": "reference"
  },
- "b31b1f71dd": {
+ "3c49d29119": {
   "outcome": "shared:go:b31b1f71dd",
   "why": "masked, it is the go unit of class b31b1f71dd (correction:ref-6, by rule:actions-table)",
   "n": 16,
@@ -1595,7 +1564,7 @@
   ],
   "unreviewed": 1
  },
- "563e095378": {
+ "9ca5c90a96": {
   "outcome": "correction:runtime-forms",
   "why": "patch returns the entity, not a result",
   "n": 3,
@@ -1615,7 +1584,7 @@
   ],
   "unreviewed": 1
  },
- "cbcdf6e5f9": {
+ "e861a34f8e": {
   "outcome": "shared:ts:cbcdf6e5f9",
   "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
   "n": 1,
@@ -1690,15 +1659,25 @@
   ],
   "unreviewed": 1
  },
- "6414adddb5": {
+ "f8447fc95c": {
   "outcome": "correction:runtime-forms",
-  "why": "update returns the entity, not a result (ref-issues)",
+  "why": "list resolves to an Array of the entity class (EntityListOp.fragment.rb, make_result wraps each record)",
   "n": 1,
   "by": "hand",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "d15797ca9d"
  },
- "e496bcc19a": {
+ "ac2746b27e": {
+  "outcome": "correction:runtime-forms",
+  "why": "make returns an instance of the entity's own class: Entity.fragment.rb:64-66 `def make ... EntyClass.new(@_client, opts)`. The README member table (ReadmeModel_rb.ts, unported) still says make -> Entity",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "d8065d07cb"
+ },
+ "56561c6006": {
   "outcome": "shared:ts:e496bcc19a",
   "why": "masked, it is the ts unit of class e496bcc19a (correction:U34, by rule:class-collision)",
   "n": 1,
@@ -1710,7 +1689,20 @@
   ],
   "unreviewed": 1
  },
- "409d0f7ba8": {
+ "88dc600aad": {
+  "outcome": "shared:ts:cce9e8691a",
+  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "b90b5c03ed"
+  ],
+  "unreviewed": 1,
+  "rekeyed": "cce9e8691a"
+ },
+ "b7bbd03809": {
   "outcome": "shared:ts:409d0f7ba8",
   "why": "masked, it is the ts unit of class 409d0f7ba8 (correction:U34, by rule:class-collision)",
   "n": 1,
@@ -1722,7 +1714,7 @@
   ],
   "unreviewed": 1
  },
- "2d539c715b": {
+ "f6aa168485": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient; create returns it",
   "n": 1,
@@ -1730,7 +1722,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "054ea87f7e": {
+ "1f5e594134": {
   "outcome": "correction:U34",
   "why": "ref-issues: patch returns PlanetEntityClient",
   "n": 1,
@@ -1738,7 +1730,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "c89ea40a31": {
+ "0600fa7369": {
   "outcome": "correction:U34",
   "why": "ref-issues: update returns PlanetEntityClient",
   "n": 1,
@@ -1746,7 +1738,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "bf926333f0": {
+ "f3266e30b4": {
   "outcome": "correction:U34",
   "why": "ref-issues: list returns an Array of PlanetEntityClient",
   "n": 1,
@@ -1754,7 +1746,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "dba5fe5c17": {
+ "f8cb689528": {
   "outcome": "correction:U34",
   "why": "ref-issues: load defaults its match and returns PlanetEntityClient",
   "n": 1,
@@ -1778,7 +1770,7 @@
   "type": "missing",
   "section": "reference"
  },
- "993924c4c6": {
+ "d245316c2e": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
   "n": 1,
@@ -1810,7 +1802,7 @@
   "type": "missing",
   "section": "reference"
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,
@@ -1826,7 +1818,7 @@
   "type": "missing",
   "section": "reference"
  },
- "5130ea0617": {
+ "7393140c1f": {
   "outcome": "shared:ts:5130ea0617",
   "why": "masked, it is the ts unit of class 5130ea0617 (correction:U34, by rule:class-collision)",
   "n": 1,
@@ -1850,7 +1842,7 @@
   ],
   "unreviewed": 1
  },
- "e6d8ee9d63": {
+ "e705aa789f": {
   "outcome": "correction:U34",
   "why": "ref-issues: make returns PlanetEntityClient",
   "n": 1,

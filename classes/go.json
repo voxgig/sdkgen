@@ -1,13 +1,14 @@
 {
  "360f66a3d2": {
   "outcome": "same-meaning",
-  "why": "the echo is the word 'server' in the README's `base` cell ('Base URL of the API server'); the README options table does not list `server` at all, so it states nothing about its variables",
-  "n": 16,
+  "why": "the echo is the word 'server' in the README's `base` cell ('Base URL of the API server'); the README options table does not list `server` at all, so it states nothing about its variables | as 360f66a3d2: a word match on the `base` cell, auth-off",
+  "n": 17,
   "by": "hand",
   "type": "echo",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "360f66a3d2+e1b0d2d30d"
  },
- "123923823b": {
+ "ff4863a314": {
   "outcome": "correction:S28",
   "why": "",
   "n": 12,
@@ -31,7 +32,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "8d92fa2135": {
+ "fea443712e": {
   "outcome": "restored:shared",
   "why": "restored as the pair-style step sentences: List returns (value, error), a []any of entities, no {ok, data} wrapper, Data() reads a record; Load the same; and the write sentence",
   "n": 21,
@@ -39,7 +40,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "52f93108d7": {
+ "c5005c09ca": {
   "outcome": "restored:shared",
   "why": "restored in step 3's sentence and the comment 'Load a planet: the entity; err is non-nil on failure'",
   "n": 13,
@@ -47,7 +48,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "4147ad0745": {
+ "0538108a37": {
   "outcome": "restored:shared",
   "why": "",
   "n": 20,
@@ -63,29 +64,32 @@
   "type": "added",
   "section": "tutorial"
  },
- "9b8d1fdca3": {
+ "3320e33aa5": {
   "outcome": "unification:client-env-sentence",
   "why": "",
   "n": 17,
   "by": "rule:apikey-env",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "9b8d1fdca3"
  },
- "9363faf207": {
-  "outcome": "correction:S49",
-  "why": "",
-  "n": 16,
-  "by": "rule:server-vars",
-  "type": "added",
-  "section": "tutorial"
- },
- "4ee5b3632c": {
+ "227d62e867": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 12,
   "by": "rule:op-sentences",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "4ee5b3632c"
+ },
+ "769cd94ade": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 18,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "tutorial",
+  "rekeyed": "bc4fcddb1f+4ee5b3632c+1d764de090"
  },
  "c0831e892a": {
   "outcome": "unification:step-comment-runtime-fact",
@@ -95,31 +99,16 @@
   "type": "added",
   "section": "tutorial"
  },
- "7b051ea3b0": {
+ "b98c5c1370": {
   "outcome": "correction:S50",
   "why": "",
   "n": 2,
   "by": "rule:basic-secret",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "7b051ea3b0"
  },
- "e1b0d2d30d": {
-  "outcome": "same-meaning",
-  "why": "as 360f66a3d2: a word match on the `base` cell, auth-off",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
-  "section": "tutorial"
- },
- "f468efda1d": {
-  "outcome": "correction:S49",
-  "why": "",
-  "n": 1,
-  "by": "rule:server-vars",
-  "type": "added",
-  "section": "tutorial"
- },
- "428b2a83e1": {
+ "5a3859e529": {
   "outcome": "correction:S28",
   "why": "",
   "n": 3,
@@ -127,7 +116,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "6452d5f263": {
+ "71d4afd3c1": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 5,
@@ -135,7 +124,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "6b4b65d6e6": {
+ "7fea879178": {
   "outcome": "restored:shared",
   "why": "restored in step 2's sentence and the comment 'a []any of entities, one per record'",
   "n": 7,
@@ -143,7 +132,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "5859bb0a44": {
+ "2ccfaa74d1": {
   "outcome": "restored:shared",
   "why": "restored as the comment 'Create — the value is the created entity' and step 4's lead-in",
   "n": 5,
@@ -159,7 +148,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "2b06aa734e": {
+ "d7a0eed553": {
   "outcome": "restored:shared",
   "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3,
@@ -167,7 +156,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "cac139f6b5": {
+ "df6795c232": {
   "outcome": "restored:shared",
   "why": "restored as the comment 'Remove' and step 4's lead-in",
   "n": 5,
@@ -175,15 +164,25 @@
   "type": "missing",
   "section": "tutorial"
  },
- "defa8274d4": {
-  "outcome": "unification:go-tutorial-program",
+ "2081dbd030": {
+  "outcome": "restored:fact",
   "why": "",
-  "n": 1,
-  "by": "rule:add-go-steps",
+  "n": 7,
+  "by": "rule:add-go-pair",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "14f5b323fe"
  },
- "14f5b323fe": {
+ "6145dede90": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 7,
+  "by": "rule:add-go-pair",
+  "type": "added",
+  "section": "tutorial",
+  "rekeyed": "14f5b323fe"
+ },
+ "84a20c16fc": {
   "outcome": "restored:fact",
   "why": "",
   "n": 7,
@@ -191,31 +190,25 @@
   "type": "added",
   "section": "tutorial"
  },
- "81b7ba0b82": {
-  "outcome": "restored:fact",
-  "why": "",
-  "n": 7,
-  "by": "rule:add-go-pair",
-  "type": "added",
-  "section": "tutorial"
- },
- "1d764de090": {
-  "outcome": "unification:op-sentences",
-  "why": "",
-  "n": 5,
-  "by": "rule:op-sentences",
-  "type": "added",
-  "section": "tutorial"
- },
- "dd5bf246c5": {
+ "14d7ad06dd": {
   "outcome": "restored:fact",
   "why": "the write results the old program never stated: each write returns (value, error), the value the written entity (EntityCreateOp.fragment.go returns the entity); the stage-3a check's missing sentence (output_defects 6)",
   "n": 3,
   "by": "hand",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "dd5bf246c5"
  },
- "3c1c6f64b8": {
+ "566d36954a": {
+  "outcome": "restored:fact",
+  "why": "the write results the old program never stated: each write returns (value, error), the value the written entity (EntityCreateOp.fragment.go returns the entity); the stage-3a check's missing sentence (output_defects 6) | as dd5bf246c5, crud-noupdate | as dd5bf246c5, doc-nested",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial",
+  "rekeyed": "dd5bf246c5+160b7454ef+e136a25dbb"
+ },
+ "73e14658e4": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 7,
@@ -231,7 +224,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "6f58c092d8": {
+ "0ed7dc127d": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 4,
@@ -239,7 +232,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "ea9f53b714": {
+ "aeabe4bdf1": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 3,
@@ -255,7 +248,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "67bc2b34e8": {
+ "29bba9e03f": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -263,15 +256,16 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "160b7454ef": {
+ "d0cd23d2c9": {
   "outcome": "restored:fact",
   "why": "as dd5bf246c5, crud-noupdate",
   "n": 1,
   "by": "hand",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "160b7454ef"
  },
- "2609d87cfb": {
+ "1fa815677a": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -279,7 +273,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "69ba25b1fc": {
+ "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -287,31 +281,25 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d4e96cf680": {
+ "f2812787cc": {
   "outcome": "unification:tutorial-nested-load",
   "why": "",
   "n": 1,
   "by": "rule:add-nested-sentence",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "d4e96cf680"
  },
- "bc4fcddb1f": {
-  "outcome": "unification:op-sentences",
-  "why": "",
-  "n": 1,
-  "by": "rule:op-sentences",
-  "type": "added",
-  "section": "tutorial"
- },
- "e136a25dbb": {
+ "64340cef2b": {
   "outcome": "restored:fact",
   "why": "as dd5bf246c5, doc-nested",
   "n": 1,
   "by": "hand",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "e136a25dbb"
  },
- "a0788e0dd9": {
+ "1e40e0611c": {
   "outcome": "same-meaning",
   "why": "ent-none has no entity, so the tutorial has no operation to describe; README:7 is the README's generic introduction naming an entity's usual operations, not a restatement of this paragraph",
   "n": 1,
@@ -319,7 +307,7 @@
   "type": "echo",
   "section": "tutorial"
  },
- "d39368fa0b": {
+ "9cbb8e3add": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -335,7 +323,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "dd5f182f01": {
+ "c44f65ddeb": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -343,7 +331,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "f4f124751b": {
+ "3528a38f43": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -351,13 +339,23 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "fbac4aa9f2": {
+ "2ff6ebd59a": {
   "outcome": "restored:fact",
   "why": "as dd5bf246c5, for the one write ref-issues has",
   "n": 1,
   "by": "hand",
   "type": "added",
-  "section": "tutorial"
+  "section": "tutorial",
+  "rekeyed": "fbac4aa9f2"
+ },
+ "3bff3ce162": {
+  "outcome": "restored:fact",
+  "why": "as dd5bf246c5, for the one write ref-issues has",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial",
+  "rekeyed": "fbac4aa9f2"
  },
  "d371d2e0ec": {
   "outcome": "unification:write-comment-style",
@@ -703,7 +701,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "e3e8ee4d91": {
+ "89c4f1f1a9": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 7,
@@ -887,15 +885,16 @@
   "type": "reworded",
   "section": "reference"
  },
- "bde0d2283c": {
+ "cce9e8691a": {
   "outcome": "unification:accessor-sentence",
   "why": "",
-  "n": 18,
+  "n": 106,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "bde0d2283c+cce9e8691a"
  },
- "c47c92da89": {
+ "4299fe5f5e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 21,
@@ -903,15 +902,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cce9e8691a": {
-  "outcome": "unification:accessor-sentence",
-  "why": "",
-  "n": 89,
-  "by": "rule:accessor-sentence",
-  "type": "reworded",
-  "section": "reference"
- },
- "f660fff0bd": {
+ "66054d0498": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 32,
@@ -1127,7 +1118,7 @@
   "type": "added",
   "section": "reference"
  },
- "69429bb577": {
+ "891d0381c7": {
   "outcome": "restored:shared",
   "why": "how the record is read, which the old load sentence stated ('Data() reads its record' in the old tutorial and example comments)",
   "n": 89,
@@ -1151,7 +1142,7 @@
   "type": "added",
   "section": "reference"
  },
- "eaf64e26bd": {
+ "566d3ef425": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 94,
@@ -1231,7 +1222,7 @@
   "type": "added",
   "section": "reference"
  },
- "3d50058045": {
+ "650eff7141": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 18,
@@ -1239,7 +1230,7 @@
   "type": "added",
   "section": "reference"
  },
- "1f5282fbe3": {
+ "586319b6d2": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 18,
@@ -1247,7 +1238,7 @@
   "type": "added",
   "section": "reference"
  },
- "b31b1f71dd": {
+ "3c49d29119": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 18,
@@ -1295,7 +1286,7 @@
   "type": "added",
   "section": "reference"
  },
- "cbcdf6e5f9": {
+ "e861a34f8e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1381,7 +1372,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "e496bcc19a": {
+ "56561c6006": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1389,7 +1380,16 @@
   "type": "reworded",
   "section": "reference"
  },
- "409d0f7ba8": {
+ "88dc600aad": {
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:accessor-sentence",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "cce9e8691a"
+ },
+ "b7bbd03809": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1413,7 +1413,7 @@
   "type": "missing",
   "section": "reference"
  },
- "993924c4c6": {
+ "d245316c2e": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
   "n": 1,
@@ -1421,7 +1421,7 @@
   "type": "missing",
   "section": "reference"
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the patch data sentence names the id the route needs; same fact, other words",
   "n": 1,
@@ -1437,7 +1437,7 @@
   "type": "missing",
   "section": "reference"
  },
- "5130ea0617": {
+ "7393140c1f": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,

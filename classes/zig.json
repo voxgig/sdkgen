@@ -15,7 +15,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "123923823b": {
+ "ff4863a314": {
   "outcome": "correction:S28",
   "why": "",
   "n": 10,
@@ -23,7 +23,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "c80fed460f": {
+ "13a7b586db": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 16,
@@ -31,7 +31,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "4147ad0745": {
+ "0538108a37": {
   "outcome": "restored:shared",
   "why": "",
   "n": 18,
@@ -71,7 +71,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "428b2a83e1": {
+ "5a3859e529": {
   "outcome": "correction:S28",
   "why": "",
   "n": 3,
@@ -79,7 +79,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "486f1d12af": {
+ "886bc364b3": {
   "outcome": "correction:runtime-forms",
   "why": "",
   "n": 7,
@@ -87,7 +87,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "8b61693e8f": {
+ "71f88e02e1": {
   "outcome": "restored:shared",
   "why": "restored in the list sentence and the printed loop (asEntity().data(null) on each item)",
   "n": 7,
@@ -111,7 +111,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
   "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3,
@@ -127,7 +127,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "69f44cda54": {
+ "9917af5f8a": {
   "outcome": "restored:fact",
   "why": "",
   "n": 4,
@@ -135,7 +135,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "6f58c092d8": {
+ "0ed7dc127d": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 4,
@@ -143,7 +143,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "ea9f53b714": {
+ "aeabe4bdf1": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 3,
@@ -159,7 +159,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "67bc2b34e8": {
+ "29bba9e03f": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -167,7 +167,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "2609d87cfb": {
+ "1fa815677a": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -175,7 +175,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "69ba25b1fc": {
+ "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -183,7 +183,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "b2e881d342": {
+ "418c678845": {
   "outcome": "restored:fact",
   "why": "",
   "n": 1,
@@ -191,7 +191,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d39368fa0b": {
+ "9cbb8e3add": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -199,7 +199,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "ead3f5a0ef": {
+ "41949a3c62": {
   "outcome": "contradiction",
   "why": "",
   "n": 1,
@@ -210,7 +210,7 @@
   "true": "the tutorial and REFERENCE: a zig operation returns a result union whose .ok is the entity and .err reports failure; it does not reject, and try/catch does not apply",
   "evidence": "src/cmp/zig/fragment/EntityLoadOp.fragment.zig returns EntResult (.ok / .err); README:152 itself switches on .ok/.err"
  },
- "dd5f182f01": {
+ "c44f65ddeb": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -218,7 +218,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "f4f124751b": {
+ "3528a38f43": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -602,7 +602,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "bd5fd2be75": {
+ "1761faf269": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 7,
@@ -941,7 +941,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "2fb2060684": {
+ "22d98d99fc": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -957,7 +957,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "0f27e4fc5f": {
+ "a873a97030": {
   "outcome": "correction:U34",
   "why": "",
   "n": 82,
@@ -981,7 +981,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "555b8a82ef": {
+ "6ee52056d9": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 27,
@@ -1045,7 +1045,7 @@
   "type": "missing",
   "section": "reference"
  },
- "741ad0f33f": {
+ "6a59b75c3e": {
   "outcome": "restored:shared",
   "why": "restored as 'The match is optional: without one, every record is listed.'",
   "n": 83,
@@ -1225,7 +1225,7 @@
   "type": "added",
   "section": "reference"
  },
- "eaf64e26bd": {
+ "566d3ef425": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 82,
@@ -1309,7 +1309,7 @@
   "type": "added",
   "section": "reference"
  },
- "3d50058045": {
+ "650eff7141": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1317,7 +1317,7 @@
   "type": "added",
   "section": "reference"
  },
- "4f36ed1acf": {
+ "61ab5b9317": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1325,7 +1325,7 @@
   "type": "added",
   "section": "reference"
  },
- "b31b1f71dd": {
+ "3c49d29119": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1333,7 +1333,7 @@
   "type": "added",
   "section": "reference"
  },
- "571b1e3e38": {
+ "b1c24c8130": {
   "outcome": "restored:fact",
   "why": "the record read on every single-entity operation (asEntity().data(null)), true of zig's entity",
   "n": 52,
@@ -1381,7 +1381,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cbcdf6e5f9": {
+ "e861a34f8e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1461,7 +1461,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "91a3a0bd69": {
+ "136cfcabfd": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1469,7 +1469,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "ecc1388a0c": {
+ "58dce0253b": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1493,7 +1493,7 @@
   "type": "missing",
   "section": "reference"
  },
- "993924c4c6": {
+ "d245316c2e": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
   "n": 1,
@@ -1509,7 +1509,7 @@
   "type": "missing",
   "section": "reference"
  },
- "8f254e8c98": {
+ "3423454dfc": {
   "outcome": "correction:U34",
   "why": "ref-issues: under PlanetEntityClient, the list sentence says .ok is a slice of entities, one per record",
   "n": 1,
@@ -1517,7 +1517,7 @@
   "type": "missing",
   "section": "reference"
  },
- "fef338e403": {
+ "877e51dc62": {
   "outcome": "correction:U34",
   "why": "ref-issues: under PlanetEntityClient, the load sentence with the record read",
   "n": 1,
@@ -1557,7 +1557,7 @@
   "type": "missing",
   "section": "reference"
  },
- "26c79b69a8": {
+ "30b274a911": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,
@@ -1573,7 +1573,7 @@
   "type": "missing",
   "section": "reference"
  },
- "5130ea0617": {
+ "7393140c1f": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1589,7 +1589,7 @@
   "type": "added",
   "section": "reference"
  },
- "4ea2d4181f": {
+ "a5f2ead13d": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,

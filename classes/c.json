@@ -15,7 +15,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "123923823b": {
+ "ff4863a314": {
   "outcome": "correction:S28",
   "why": "",
   "n": 10,
@@ -23,7 +23,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "7b27de1bff": {
+ "f36f70d366": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 16,
@@ -31,7 +31,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "4147ad0745": {
+ "0538108a37": {
   "outcome": "restored:shared",
   "why": "",
   "n": 18,
@@ -71,7 +71,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "efb5949362": {
+ "8e6aaf2c0a": {
   "outcome": "correction:runtime-forms",
   "why": "",
   "n": 7,
@@ -79,7 +79,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "428b2a83e1": {
+ "5a3859e529": {
   "outcome": "correction:S28",
   "why": "",
   "n": 3,
@@ -87,7 +87,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "630aac747d": {
+ "435c93be2f": {
   "outcome": "restored:fact",
   "why": "",
   "n": 5,
@@ -95,7 +95,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "6263763b56": {
+ "723a4e550e": {
   "outcome": "restored:shared",
   "why": "restored in the list sentence and the printed loop (`vt->data` on each item)",
   "n": 7,
@@ -111,7 +111,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
   "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3,
@@ -127,7 +127,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "6f58c092d8": {
+ "0ed7dc127d": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 4,
@@ -135,7 +135,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "ea9f53b714": {
+ "aeabe4bdf1": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 3,
@@ -151,7 +151,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "67bc2b34e8": {
+ "29bba9e03f": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -159,7 +159,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "2609d87cfb": {
+ "1fa815677a": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -167,7 +167,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "69ba25b1fc": {
+ "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -175,7 +175,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d39368fa0b": {
+ "9cbb8e3add": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -183,7 +183,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "dd5f182f01": {
+ "c44f65ddeb": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -191,7 +191,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "f4f124751b": {
+ "3528a38f43": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -439,7 +439,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "744bc005dd": {
+ "6351f6484f": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 7,
@@ -791,7 +791,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "2fb2060684": {
+ "22d98d99fc": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -799,7 +799,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "2624404c02": {
+ "24d0da080f": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 28,
@@ -810,10 +810,11 @@
  "bde0d2283c": {
   "outcome": "unification:accessor-sentence",
   "why": "",
-  "n": 94,
+  "n": 93,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "bde0d2283c"
  },
  "042740d448": {
   "outcome": "unification:direct-table",
@@ -826,10 +827,11 @@
  "d5b8571b7f": {
   "outcome": "unification:member-sentences",
   "why": "",
-  "n": 94,
+  "n": 93,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "d5b8571b7f"
  },
  "92ce533dbd": {
   "outcome": "restored:shared",
@@ -903,7 +905,7 @@
   "type": "missing",
   "section": "reference"
  },
- "4f0ad8c7ba": {
+ "18d10f8549": {
   "outcome": "restored:shared",
   "why": "restored as 'The match is optional: without one, every record is listed.' (NULL is the match the example passes)",
   "n": 83,
@@ -1023,7 +1025,7 @@
   "type": "added",
   "section": "reference"
  },
- "31334dded1": {
+ "05c51cea28": {
   "outcome": "restored:fact",
   "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The utility heading.",
   "n": 19,
@@ -1031,7 +1033,7 @@
   "type": "added",
   "section": "reference"
  },
- "83dd225751": {
+ "5482f10770": {
   "outcome": "restored:fact",
   "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). Kind utility (a copy), cited at utility.c:72 (utility_copy).",
   "n": 19,
@@ -1119,7 +1121,7 @@
   "type": "added",
   "section": "reference"
  },
- "43d177af05": {
+ "85dfe8d1e8": {
   "outcome": "restored:fact",
   "why": "how the record is read, now under every single-entity operation (the check's output_defects 2: the c load example's read of vt->data went with the majority shape)",
   "n": 79,
@@ -1146,10 +1148,11 @@
  "88dff1bb13": {
   "outcome": "restored:fact",
   "why": "",
-  "n": 94,
+  "n": 93,
   "by": "rule:add-stream-sig",
   "type": "added",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "88dff1bb13"
  },
  "b3483ee526": {
   "outcome": "restored:fact",
@@ -1167,7 +1170,7 @@
   "type": "added",
   "section": "reference"
  },
- "eaf64e26bd": {
+ "566d3ef425": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 82,
@@ -1247,7 +1250,7 @@
   "type": "added",
   "section": "reference"
  },
- "3d50058045": {
+ "650eff7141": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1255,7 +1258,7 @@
   "type": "added",
   "section": "reference"
  },
- "fead692406": {
+ "53a45f7395": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1263,7 +1266,7 @@
   "type": "added",
   "section": "reference"
  },
- "b31b1f71dd": {
+ "3c49d29119": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1311,7 +1314,7 @@
   "type": "added",
   "section": "reference"
  },
- "9c989d37e7": {
+ "fde65c4f2c": {
   "outcome": "restored:shared",
   "why": "",
   "n": 4,
@@ -1319,7 +1322,7 @@
   "type": "added",
   "section": "reference"
  },
- "cbcdf6e5f9": {
+ "e861a34f8e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1375,6 +1378,24 @@
   "type": "reworded",
   "section": "reference"
  },
+ "cbe6082fc4": {
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:accessor-sentence",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "bde0d2283c"
+ },
+ "9b30bab00c": {
+  "outcome": "unification:member-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:make-sentence",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "d5b8571b7f"
+ },
  "dac11a1691": {
   "outcome": "correction:G27",
   "why": "ref-issues: the field description is escaped into one cell",
@@ -1391,7 +1412,7 @@
   "type": "missing",
   "section": "reference"
  },
- "26c79b69a8": {
+ "30b274a911": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,
@@ -1430,6 +1451,15 @@
   "by": "rule:field-escape",
   "type": "added",
   "section": "reference"
+ },
+ "95d2cfd076": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-stream-sig",
+  "type": "added",
+  "section": "reference",
+  "rekeyed": "88dff1bb13"
  },
  "5153f403d8": {
   "outcome": "correction:S49",

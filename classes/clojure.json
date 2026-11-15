@@ -15,7 +15,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "2f484b3ece": {
+ "db968fff29": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 16,
@@ -23,7 +23,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "123923823b": {
+ "ff4863a314": {
   "outcome": "correction:S28",
   "why": "",
   "n": 10,
@@ -31,7 +31,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "4147ad0745": {
+ "0538108a37": {
   "outcome": "restored:shared",
   "why": "",
   "n": 18,
@@ -71,7 +71,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "428b2a83e1": {
+ "5a3859e529": {
   "outcome": "correction:S28",
   "why": "",
   "n": 3,
@@ -79,7 +79,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "2416829f17": {
+ "ebd7ea7979": {
   "outcome": "unification:op-failure-clause",
   "why": "",
   "n": 7,
@@ -87,7 +87,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "a74dc8fb64": {
+ "114fbf9035": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 4,
@@ -95,7 +95,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "a7a404c62e": {
+ "6713332576": {
   "outcome": "restored:shared",
   "why": "restored in the list sentence and the printed loop ((:data-get item))",
   "n": 7,
@@ -111,7 +111,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
   "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3,
@@ -127,7 +127,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "f8346d135e": {
+ "429c6b7122": {
   "outcome": "restored:fact",
   "why": "",
   "n": 5,
@@ -135,7 +135,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "ea9f53b714": {
+ "aeabe4bdf1": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 3,
@@ -151,7 +151,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "67bc2b34e8": {
+ "29bba9e03f": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -159,7 +159,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "2609d87cfb": {
+ "1fa815677a": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -167,7 +167,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "69ba25b1fc": {
+ "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -175,7 +175,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d39368fa0b": {
+ "9cbb8e3add": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -183,7 +183,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "dd5f182f01": {
+ "c44f65ddeb": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -191,7 +191,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "f4f124751b": {
+ "3528a38f43": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -391,7 +391,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "105d4ff9a2": {
+ "2f3f41f76b": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 7,
@@ -551,7 +551,7 @@
   "type": "echo",
   "section": "reference"
  },
- "37a4e46263": {
+ "9c82c9fc37": {
   "outcome": "same-meaning",
   "why": "README:973 says sdk.api is the public surface to require; consistent with the note that the utility is reached through sdk.client, which sdk.api does not re-export",
   "n": 19,
@@ -607,7 +607,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "08405d5f95": {
+ "c18fb65ad4": {
   "outcome": "unification:op-failure-clause",
   "why": "",
   "n": 83,
@@ -623,7 +623,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "c47c92da89": {
+ "4299fe5f5e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -634,10 +634,11 @@
  "d5b8571b7f": {
   "outcome": "unification:member-sentences",
   "why": "",
-  "n": 94,
+  "n": 93,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "d5b8571b7f"
  },
  "e007bd9e31": {
   "outcome": "unification:op-failure-clause",
@@ -658,10 +659,11 @@
  "bde0d2283c": {
   "outcome": "unification:accessor-sentence",
   "why": "",
-  "n": 94,
+  "n": 93,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "bde0d2283c"
  },
  "042740d448": {
   "outcome": "unification:direct-table",
@@ -679,7 +681,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "156dcc3ff5": {
+ "37cc3a5142": {
   "outcome": "unification:op-failure-clause",
   "why": "",
   "n": 28,
@@ -743,7 +745,7 @@
   "type": "missing",
   "section": "reference"
  },
- "423809a525": {
+ "4c2e0a570d": {
   "outcome": "correction:clojure-utility",
   "why": "false: sdk.api has no get-utility (Main_clojure.ts generates sdk.api without it; the guard reads its re-exports). The route that exists, sdk.client/get-utility, is in the instance note",
   "n": 19,
@@ -751,7 +753,7 @@
   "type": "missing",
   "section": "reference"
  },
- "c1aa3f3565": {
+ "c557a8942d": {
   "outcome": "restored:note",
   "why": "the instance note says (sdk.client/get-utility client) returns a copy of it (core.clj:227 utility-copy)",
   "n": 19,
@@ -807,7 +809,7 @@
   "type": "missing",
   "section": "reference"
  },
- "ca21ef23eb": {
+ "8cf64fe4e8": {
   "outcome": "restored:shared",
   "why": "restored as 'The match is optional: without one, every record is listed.'",
   "n": 83,
@@ -943,7 +945,7 @@
   "type": "added",
   "section": "reference"
  },
- "bb1005dc6f": {
+ "f6e03b47ff": {
   "outcome": "restored:note",
   "why": "the route to the utility, true per tm/clojure/src/sdk/client.clj:69 (the check's misclassified 2)",
   "n": 19,
@@ -951,7 +953,7 @@
   "type": "added",
   "section": "reference"
  },
- "fbfbaaa041": {
+ "0e03ad0cba": {
   "outcome": "restored:note",
   "why": "as bb1005dc6f: core.clj:227 get-utility returns utility-copy",
   "n": 19,
@@ -1095,7 +1097,7 @@
   "type": "added",
   "section": "reference"
  },
- "eaf64e26bd": {
+ "566d3ef425": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 82,
@@ -1175,7 +1177,7 @@
   "type": "added",
   "section": "reference"
  },
- "3d50058045": {
+ "650eff7141": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1183,7 +1185,7 @@
   "type": "added",
   "section": "reference"
  },
- "8dc7a55eb9": {
+ "0cc37532a2": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1191,7 +1193,7 @@
   "type": "added",
   "section": "reference"
  },
- "b31b1f71dd": {
+ "3c49d29119": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1199,7 +1201,7 @@
   "type": "added",
   "section": "reference"
  },
- "f7b6870401": {
+ "2b156828a4": {
   "outcome": "shared:go:69429bb577",
   "why": "masked, it is the go unit of class 69429bb577 (restored:shared, by hand)",
   "n": 51,
@@ -1251,7 +1253,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cbcdf6e5f9": {
+ "e861a34f8e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1339,6 +1341,24 @@
   "type": "reworded",
   "section": "reference"
  },
+ "9b30bab00c": {
+  "outcome": "unification:member-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:make-sentence",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "d5b8571b7f"
+ },
+ "cbe6082fc4": {
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:accessor-sentence",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "bde0d2283c"
+ },
  "dac11a1691": {
   "outcome": "correction:G27",
   "why": "ref-issues: the field description is escaped into one cell",
@@ -1355,7 +1375,7 @@
   "type": "missing",
   "section": "reference"
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,

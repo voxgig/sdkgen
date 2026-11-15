@@ -1,5 +1,5 @@
 {
- "b098a95b4a": {
+ "e164551f17": {
   "outcome": "same-meaning",
   "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
   "n": 16,
@@ -23,7 +23,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "123923823b": {
+ "ff4863a314": {
   "outcome": "correction:S28",
   "why": "",
   "n": 10,
@@ -31,7 +31,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "0a4bca0cd4": {
+ "ba593b10d6": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 16,
@@ -39,7 +39,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "4147ad0745": {
+ "0538108a37": {
   "outcome": "restored:shared",
   "why": "",
   "n": 18,
@@ -71,7 +71,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "b68c78ab53": {
+ "63e8387172": {
   "outcome": "same-meaning",
   "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
   "n": 7,
@@ -95,7 +95,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "428b2a83e1": {
+ "5a3859e529": {
   "outcome": "correction:S28",
   "why": "",
   "n": 3,
@@ -103,7 +103,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "bd61d92d9c": {
+ "81cbe853e3": {
   "outcome": "correction:runtime-forms",
   "why": "",
   "n": 7,
@@ -111,7 +111,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "6c54376e84": {
+ "490bbc8513": {
   "outcome": "restored:shared",
   "why": "restored in the list sentence ('`data(None)` reads an entity's record') and the printed loop",
   "n": 7,
@@ -135,7 +135,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
   "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3,
@@ -151,7 +151,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "10f32ab07b": {
+ "eaa6829248": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 5,
@@ -159,7 +159,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "6f58c092d8": {
+ "0ed7dc127d": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 4,
@@ -167,7 +167,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "ea9f53b714": {
+ "aeabe4bdf1": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 3,
@@ -183,7 +183,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "67bc2b34e8": {
+ "29bba9e03f": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -191,7 +191,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "2609d87cfb": {
+ "1fa815677a": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -199,7 +199,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "69ba25b1fc": {
+ "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -207,7 +207,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d39368fa0b": {
+ "9cbb8e3add": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -215,7 +215,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "dd5f182f01": {
+ "c44f65ddeb": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -231,7 +231,7 @@
   "type": "echo",
   "section": "tutorial"
  },
- "f4f124751b": {
+ "3528a38f43": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -479,7 +479,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "82d42a61e4": {
+ "b115530799": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 7,
@@ -655,7 +655,7 @@
   "type": "echo",
   "section": "reference"
  },
- "5062d75fb9": {
+ "fe0664f9f1": {
   "outcome": "same-meaning",
   "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
   "n": 83,
@@ -754,18 +754,11 @@
  "6738d1d568": {
   "outcome": "unification:member-sentences",
   "why": "",
-  "n": 77,
+  "n": 92,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference"
- },
- "be62a48d77": {
-  "outcome": "unification:member-sentences",
-  "why": "",
-  "n": 16,
-  "by": "rule:make-sentence",
-  "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "6738d1d568+be62a48d77"
  },
  "92ce533dbd": {
   "outcome": "restored:shared",
@@ -791,7 +784,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "2fb2060684": {
+ "22d98d99fc": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -799,7 +792,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cd2c3d374f": {
+ "c99d4ccec6": {
   "outcome": "correction:U34",
   "why": "",
   "n": 82,
@@ -823,7 +816,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "f17d9d9637": {
+ "9e8fa38435": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 27,
@@ -871,7 +864,7 @@
   "type": "missing",
   "section": "reference"
  },
- "18d686c242": {
+ "7961c8c7b6": {
   "outcome": "restored:shared",
   "why": "restored as 'The match is optional: without one, every record is listed.'",
   "n": 83,
@@ -1031,7 +1024,7 @@
   "type": "added",
   "section": "reference"
  },
- "2873c457b3": {
+ "ef4bc34d80": {
   "outcome": "restored:fact",
   "why": "the record read, now on every single-entity operation (the check's output_defects 3: the rust load example's print went with the majority shape)",
   "n": 79,
@@ -1071,7 +1064,7 @@
   "type": "added",
   "section": "reference"
  },
- "eaf64e26bd": {
+ "566d3ef425": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 82,
@@ -1151,7 +1144,7 @@
   "type": "added",
   "section": "reference"
  },
- "3d50058045": {
+ "650eff7141": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1159,7 +1152,7 @@
   "type": "added",
   "section": "reference"
  },
- "1c354e6389": {
+ "88ce7ffc1a": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1167,7 +1160,7 @@
   "type": "added",
   "section": "reference"
  },
- "b31b1f71dd": {
+ "3c49d29119": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1223,7 +1216,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cbcdf6e5f9": {
+ "e861a34f8e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1287,7 +1280,7 @@
   "type": "added",
   "section": "reference"
  },
- "39e83216c5": {
+ "bd1b8fdbf9": {
   "outcome": "same-meaning",
   "why": "ref-issues: moved under PlanetEntityClient with the record read; the README's examples match on Ok/Err the same way",
   "n": 1,
@@ -1311,7 +1304,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "4041929e2a": {
+ "abe9e92cc0": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1319,7 +1312,16 @@
   "type": "reworded",
   "section": "reference"
  },
- "ecc1388a0c": {
+ "73eb76be49": {
+  "outcome": "unification:member-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:make-sentence",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "6738d1d568"
+ },
+ "58dce0253b": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1327,7 +1329,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "c492378c5e": {
+ "65514f523e": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1351,7 +1353,7 @@
   "type": "missing",
   "section": "reference"
  },
- "993924c4c6": {
+ "d245316c2e": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
   "n": 1,
@@ -1359,7 +1361,7 @@
   "type": "missing",
   "section": "reference"
  },
- "b682564ddf": {
+ "36bc67119b": {
   "outcome": "correction:U34",
   "why": "ref-issues: under PlanetEntityClient, the list sentence",
   "n": 1,
@@ -1367,7 +1369,7 @@
   "type": "missing",
   "section": "reference"
  },
- "ed7991ada1": {
+ "4e72408721": {
   "outcome": "correction:U34",
   "why": "ref-issues: under PlanetEntityClient, the load sentence with the record read",
   "n": 1,
@@ -1407,7 +1409,7 @@
   "type": "missing",
   "section": "reference"
  },
- "26c79b69a8": {
+ "30b274a911": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,
@@ -1423,7 +1425,7 @@
   "type": "missing",
   "section": "reference"
  },
- "5130ea0617": {
+ "7393140c1f": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1439,7 +1441,7 @@
   "type": "added",
   "section": "reference"
  },
- "c2a5f7fea0": {
+ "556200ce8a": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,

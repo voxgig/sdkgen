@@ -1,67 +1,62 @@
 {
- "961804c407": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
-  "n": 1
+ "facts": {
+  "ref.noun": {
+   "value": "Functions",
+   "why": "clojure's client and entity members are functions called with the client or entity as an argument ((api/ambient client data), ((:data-get ent))); OLD said 'Client functions' (OLD B/clojure/REFERENCE.md:43); NEW's shared heading is 'Instance <noun>'",
+   "evidence": "OLD B/clojure/REFERENCE.md:43 '### Client functions'; Syntax_clojure.ts signatures"
+  },
+  "ref.heading": {
+   "value": "{module}",
+   "why": "the page's section heading names what the members are reached through; clojure has no client type, and the functions are called through the namespace sdk.api (README `(require '[sdk.api :as api])`, every signature `(api/...)`); OLD's 'Client' named no runtime thing",
+   "evidence": "NEW B/clojure/README.md:52 `(require '[sdk.api :as api]`; Main_clojure.ts:85-90 sdk.api re-exports make-sdk, test-sdk, direct, prepare, options-map; OLD B/clojure/REFERENCE.md:6 '## Client'"
+  },
+  "ref.valueType.OBJECT": {
+   "value": "map",
+   "why": "the type word of an object option in clojure is map; held in the options table (OLD and NEW `headers` | `map`); the 2 new contexts are direct's and prepare's Returns sentences, whose `map` is ref.facts.direct.returns and prepare.returns carrying the same word (one mask label for two facts of equal value)",
+   "evidence": "OLD B/clojure/REFERENCE.md:27-29 '| `headers` | `map` |'; NEW B/clojure/REFERENCE.md:28-30; tm/clojure/src/sdk/client.clj (vs/jm ...) builds maps"
+  }
  },
- "b2dd192333": {
-  "outcome": "correction:S49",
-  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
-  "n": 1
- },
- "3382a46b52": {
-  "outcome": "correction:S49",
-  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
-  "n": 1
- },
- "db3cf06cf7": {
-  "outcome": "correction:S49",
-  "why": "ref-issues root: server variable given; the namespace of an entity no step calls is not required (imports follow the steps)",
-  "n": 1
- },
- "e8f1d090be": {
-  "outcome": "unification:root-load-nested",
-  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact",
-  "n": 1
+ "absent": {
+  "663f4dd150": "clojure prints ';; Create — returns the created entity; ((:data-get created)) reads its record' (crud-bare/clojure/README.md:88); the record read is printed inside the comment in clojure's own form, masked differently"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
   "n": 15
  },
- "325b1911ed": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
-  "n": 1
- },
- "a7a404c62e": {
+ "6713332576": {
   "outcome": "restored:shared",
   "why": "restored in the list sentence and the printed loop ((:data-get item))",
   "n": 7
  },
  "7fe2bb62d9": {
   "outcome": "restored:shared",
-  "why": "restored as the comment 'Create \u2014 returns the created entity' and the write sentence",
+  "why": "restored as the comment 'Create — returns the created entity' and the write sentence",
   "n": 5
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
-  "why": "restored as 'Patch \u2014 sends only the fields given; ...'",
+  "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3
- },
- "9562ae8fc5": {
-  "outcome": "correction:U45",
-  "why": "ref-issues has update only: the step is headed 2. Update",
-  "n": 1
  },
  "d2da816355": {
   "outcome": "restored:fact",
   "why": "the write results as one sentence; true of clojure (each op returns the entity and throws through sdk-throw)",
   "n": 5
  },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
  "c2358342da": {
   "outcome": "restored:fact",
   "why": "the write sentence for the one write ref-issues has",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
   "n": 1
  },
  "f6f21dc984": {
@@ -69,17 +64,37 @@
   "why": "the function name update in the write sentence",
   "n": 1
  },
+ "3382a46b52": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
+  "n": 1
+ },
+ "b2dd192333": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
+  "n": 1
+ },
+ "e8f1d090be": {
+  "outcome": "unification:root-load-nested",
+  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact",
+  "n": 1
+ },
+ "db3cf06cf7": {
+  "outcome": "correction:S49",
+  "why": "ref-issues root: server variable given; the namespace of an entity no step calls is not required (imports follow the steps)",
+  "n": 1
+ },
  "9980e9e173": {
   "outcome": "same-meaning",
   "why": "README:7 and :173 say options is a voxgig.struct map, or nil; same",
   "n": 19
  },
- "618096b4cc": {
+ "f7aa0fdb13": {
   "outcome": "same-meaning",
-  "why": "README:217 calls (api/test-sdk testopts sdkopts); same parameters",
-  "n": 19
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16
  },
- "37a4e46263": {
+ "9c82c9fc37": {
   "outcome": "same-meaning",
   "why": "README:973 says sdk.api is the public surface to require; consistent with the note that the utility is reached through sdk.client, which sdk.api does not re-export",
   "n": 19
@@ -94,6 +109,11 @@
   "why": "README:278 says on error ok is false and err contains the error; same keys",
   "n": 19
  },
+ "2f2794265d": {
+  "outcome": "same-meaning",
+  "why": "README:10 lists create among the operations; the action runs through create",
+  "n": 11
+ },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "a word match on log in console.log; the README says nothing about log's default",
@@ -103,51 +123,6 @@
   "outcome": "same-meaning",
   "why": "moved into the Returns sentence; the README reads the same keys",
   "n": 19
- },
- "f7aa0fdb13": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
-  "n": 16
- },
- "2f2794265d": {
-  "outcome": "same-meaning",
-  "why": "README:10 lists create among the operations; the action runs through create",
-  "n": 11
- },
- "3344d6d2fb": {
-  "outcome": "same-meaning",
-  "why": "the type word string, as the README's options table uses it",
-  "n": 4
- },
- "066a083189": {
-  "outcome": "same-meaning",
-  "why": "the README direct example passes method GET; consistent with GET as the default",
-  "n": 1
- },
- "e59066a2d8": {
-  "outcome": "same-meaning",
-  "why": "moved into the test sentence ('both may be `nil`'); README:173 uses nil for no options the same way",
-  "n": 1
- },
- "ce1c1aa923": {
-  "outcome": "same-meaning",
-  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
-  "n": 1
- },
- "91baf1b4b6": {
-  "outcome": "same-meaning",
-  "why": "README:217 shows the test-sdk call; it does not claim a mock transport in this SDK. No disagreement",
-  "n": 1
- },
- "ca21ef23eb": {
-  "outcome": "restored:shared",
-  "why": "restored as 'The match is optional: without one, every record is listed.'",
-  "n": 83
- },
- "0ccd61dc70": {
-  "outcome": "dropped",
-  "why": "the header of the make-sdk options table, which became the Constructor's table under the shared page (its own header names Name/Type/Description)",
-  "n": 38
  },
  "3bf831e413": {
   "outcome": "restored:shared",
@@ -174,12 +149,17 @@
   "why": "the client functions are under Instance Functions",
   "n": 19
  },
- "423809a525": {
+ "09ca6bd48f": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data ((api/ambient client data)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText); restored as 5ca02aaa87 under the module heading",
+  "n": 94
+ },
+ "4c2e0a570d": {
   "outcome": "correction:clojure-utility",
   "why": "false: sdk.api has no get-utility (Main_clojure.ts generates sdk.api without it; the guard reads its re-exports). The route that exists, sdk.client/get-utility, is in the instance note",
   "n": 19
  },
- "c1aa3f3565": {
+ "c557a8942d": {
   "outcome": "restored:note",
   "why": "the instance note says (sdk.client/get-utility client) returns a copy of it (core.clj:227 utility-copy)",
   "n": 19
@@ -214,15 +194,100 @@
   "why": "restored as the prepare Returns sentence: the fetch definition, and it raises on failure",
   "n": 19
  },
+ "8cf64fe4e8": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "n": 83
+ },
  "2f38082332": {
   "outcome": "correction:S09",
   "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
   "n": 19
  },
+ "0ccd61dc70": {
+  "outcome": "dropped",
+  "why": "the header of the make-sdk options table, which became the Constructor's table under the shared page (its own header names Name/Type/Description)",
+  "n": 38
+ },
  "ac1eac6be0": {
   "outcome": "correction:S09",
   "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
   "n": 19
+ },
+ "b5b91fba23": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "f6e03b47ff": {
+  "outcome": "restored:note",
+  "why": "the route to the utility, true per tm/clojure/src/sdk/client.clj:69 (the check's misclassified 2)",
+  "n": 19
+ },
+ "0e03ad0cba": {
+  "outcome": "restored:note",
+  "why": "as bb1005dc6f: core.clj:227 get-utility returns utility-copy",
+  "n": 19
+ },
+ "5ca02aaa87": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
+  "n": 94
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "data-get returns a copy: Entity.fragment.clj:21 (vs/clone (deref (:_data ent)))",
+  "n": 94
+ },
+ "71cbb92746": {
+  "outcome": "restored:fact",
+  "why": "stream is a real member (Entity.fragment.clj :stream, a lazy-seq at :185); the kind sentence now names only what the call returns (a lazy sequence: the type is a clojure LazySeq, walked over items realised before the call returns, which the runs sentence beside it says); nothing in it says when items arrive",
+  "n": 94
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.clj (run-op at :164 before the lazy-seq is built); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16
+ },
+ "0cc37532a2": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (clojure/README.md:173 uses nil for no options, ent-none)",
+  "n": 1
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 4
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `nil`'); README:173 uses nil for no options the same way",
+  "n": 1
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "same-meaning",
+  "why": "README:217 shows the test-sdk call; it does not claim a mock transport in this SDK. No disagreement",
+  "n": 1
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
@@ -239,7 +304,7 @@
   "why": "ref-issues: the description's pipe broke the table; escaped now",
   "n": 1
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1
@@ -259,84 +324,9 @@
   "why": "ref-issues: remove inactive",
   "n": 1
  },
- "1948d9eee5": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the accessor passes its argument on as the entity options (Entity.fragment.clj:54 make -> :32 new-entity [client entopts]); options, not initial data",
-  "n": 94
- },
- "55a8b68a1f": {
-  "outcome": "restored:fact",
-  "why": "data-get returns a copy: Entity.fragment.clj:21 (vs/clone (deref (:_data ent)))",
-  "n": 94
- },
- "bb1005dc6f": {
-  "outcome": "restored:note",
-  "why": "the route to the utility, true per tm/clojure/src/sdk/client.clj:69 (the check's misclassified 2)",
-  "n": 19
- },
- "fbfbaaa041": {
-  "outcome": "restored:note",
-  "why": "as bb1005dc6f: core.clj:227 get-utility returns utility-copy",
-  "n": 19
- },
- "c2467756ac": {
-  "outcome": "correction:ref-6",
-  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
-  "n": 16
- },
- "8dc7a55eb9": {
-  "outcome": "correction:ref-6",
-  "why": "the Call cell carries the route's path parameter id",
-  "n": 16
- },
- "09ca6bd48f": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data ((api/ambient client data)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText); restored as 5ca02aaa87 under the module heading",
-  "n": 94
- },
- "5ca02aaa87": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
-  "n": 94
- },
- "b5b91fba23": {
-  "outcome": "restored:shared",
-  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
-  "n": 19
- },
- "f09662fec4": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (clojure/README.md:173 uses nil for no options, ent-none)",
+ "961804c407": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
   "n": 1
- },
- "71cbb92746": {
-  "outcome": "restored:fact",
-  "why": "stream is a real member (Entity.fragment.clj :stream, a lazy-seq at :185); the kind sentence now names only what the call returns (a lazy sequence: the type is a clojure LazySeq, walked over items realised before the call returns, which the runs sentence beside it says); nothing in it says when items arrive",
-  "n": 94
- },
- "169ee4e438": {
-  "outcome": "restored:fact",
-  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.clj (run-op at :164 before the lazy-seq is built); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
-  "n": 94
- },
- "facts": {
-  "ref.noun": {
-   "value": "Functions",
-   "why": "clojure's client and entity members are functions called with the client or entity as an argument ((api/ambient client data), ((:data-get ent))); OLD said 'Client functions' (OLD B/clojure/REFERENCE.md:43); NEW's shared heading is 'Instance <noun>'",
-   "evidence": "OLD B/clojure/REFERENCE.md:43 '### Client functions'; Syntax_clojure.ts signatures"
-  },
-  "ref.heading": {
-   "value": "{module}",
-   "why": "the page's section heading names what the members are reached through; clojure has no client type, and the functions are called through the namespace sdk.api (README `(require '[sdk.api :as api])`, every signature `(api/...)`); OLD's 'Client' named no runtime thing",
-   "evidence": "NEW B/clojure/README.md:52 `(require '[sdk.api :as api]`; Main_clojure.ts:85-90 sdk.api re-exports make-sdk, test-sdk, direct, prepare, options-map; OLD B/clojure/REFERENCE.md:6 '## Client'"
-  },
-  "ref.valueType.OBJECT": {
-   "value": "map",
-   "why": "the type word of an object option in clojure is map; held in the options table (OLD and NEW `headers` | `map`); the 2 new contexts are direct's and prepare's Returns sentences, whose `map` is ref.facts.direct.returns and prepare.returns carrying the same word (one mask label for two facts of equal value)",
-   "evidence": "OLD B/clojure/REFERENCE.md:27-29 '| `headers` | `map` |'; NEW B/clojure/REFERENCE.md:28-30; tm/clojure/src/sdk/client.clj (vs/jm ...) builds maps"
-  }
- },
- "absent": {
-  "a12cc73410": "clojure prints ';; Create \u2014 returns the created entity; ((:data-get created)) reads its record' (crud-bare/clojure/README.md:88); the record read is printed inside the comment in clojure's own form, masked differently"
  }
 }

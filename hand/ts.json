@@ -1,30 +1,5 @@
 {
- "c442d0fbe4": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
-  "n": 1
- },
- "d65fe4d4ee": {
-  "outcome": "correction:S50",
-  "why": "auth-basic-query: no secret under Basic in the query (M12), only the server variable with no default (G01), runtime-fact comment; root comment article fixed (a AmbientEntity -> an AmbientEntity)",
-  "n": 1
- },
- "b452b7729b": {
-  "outcome": "unification:ref-list-printed",
-  "why": "ts reference list examples print each item record (item.data())",
-  "n": 1
- },
- "6e068d435b": {
-  "outcome": "correction:ref-6",
-  "why": "the action example block became the Call cell of the Actions table",
-  "n": 1
- },
- "852cbf98ee": {
-  "outcome": "correction:S50",
-  "why": "auth-basic-query: no secret under Basic in the query (M12), only the server variable with no default (G01), runtime-fact step comment naming the class (an AmbientEntity)",
-  "n": 1
- },
- "1acbc1dfde": {
+ "92f7d78487": {
   "outcome": "same-meaning",
   "why": "the README test-mode comment says the same: load gives the entity and .data() reads its record",
   "n": 16
@@ -34,54 +9,54 @@
   "why": "the README options cell now says `server` is Required (one variable has no default) and that region defaults to eu (ReadmeModel_ts.ts fixed in this stage: it called every variable required, the check's defects 6); the two documents agree",
   "n": 15
  },
- "325b1911ed": {
-  "outcome": "same-meaning",
-  "why": "the README options cell now says `server` is Required (one variable has no default) and that region defaults to eu (ReadmeModel_ts.ts fixed in this stage: it called every variable required, the check's defects 6); the two documents agree",
-  "n": 1
- },
- "f9029f1fd4": {
-  "outcome": "same-meaning",
-  "why": "README:313 says the direct() result has no .data; this sentence is about the entities list() resolves to, which do. Two different objects, no disagreement",
-  "n": 7
- },
- "7152f6c8d8": {
-  "outcome": "same-meaning",
-  "why": "the removed sentence and README:313 speak of different objects (entities vs the direct() envelope); nothing disagrees",
-  "n": 7
- },
  "1f1243099a": {
   "outcome": "correction:G01",
   "why": "restored in the step's sentence (`server` must give tenant; region defaults to eu); the comment called every variable required, and region has a default",
   "n": 16
  },
- "dd3678c6ed": {
+ "da31ab6872": {
+  "outcome": "same-meaning",
+  "why": "README:313 says the direct() result has no .data; this sentence is about the entities list() resolves to, which do. Two different objects, no disagreement",
+  "n": 7
+ },
+ "5eaef9ab78": {
+  "outcome": "same-meaning",
+  "why": "the removed sentence and README:313 speak of different objects (entities vs the direct() envelope); nothing disagrees",
+  "n": 7
+ },
+ "32abc4dab0": {
   "outcome": "restored:shared",
   "why": "restored as the list sentence: list() resolves to an array of entities, one per record; .data() reads a record",
   "n": 7
  },
- "29557c8308": {
+ "a4ead110bd": {
   "outcome": "restored:shared",
   "why": "restored in the list sentence (`.data()` reads an entity's record) and the printed loop",
   "n": 7
  },
- "e0acbb8559": {
+ "c0d621eec3": {
   "outcome": "restored:shared",
   "why": "restored as the step's write sentence: each write resolves to the entity it wrote; the record is read with .data() in the code",
   "n": 4
- },
- "9562ae8fc5": {
-  "outcome": "correction:U45",
-  "why": "ref-issues has update only: the step is headed 2. Update, as the operations it runs",
-  "n": 1
  },
  "239605c878": {
   "outcome": "restored:fact",
   "why": "the write results the old step comments stated (the written entity), now one sentence for the step; true of ts: each op returns the entity (EntityCreateOp.fragment.ts)",
   "n": 5
  },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update, as the operations it runs",
+  "n": 1
+ },
  "e0f62c86a8": {
   "outcome": "restored:fact",
   "why": "as the write sentence, for the one write ref-issues has",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "the README options cell now says `server` is Required (one variable has no default) and that region defaults to eu (ReadmeModel_ts.ts fixed in this stage: it called every variable required, the check's defects 6); the two documents agree",
   "n": 1
  },
  "f6f21dc984": {
@@ -89,20 +64,25 @@
   "why": "the method name `update` in the new write sentence",
   "n": 1
  },
+ "d65fe4d4ee": {
+  "outcome": "correction:S50",
+  "why": "auth-basic-query: no secret under Basic in the query (M12), only the server variable with no default (G01), runtime-fact comment; root comment article fixed (a AmbientEntity -> an AmbientEntity)",
+  "n": 1
+ },
  "60df4314a2": {
   "outcome": "correction:G01",
   "why": "the comment called both variables required; the root example passes the one without a default and the tutorial says region defaults to eu",
   "n": 16
  },
- "c47463a9a1": {
-  "outcome": "same-meaning",
-  "why": "README test-mode comment: .data() reads the record of the loaded entity; same statement",
-  "n": 79
+ "852cbf98ee": {
+  "outcome": "correction:S50",
+  "why": "auth-basic-query: no secret under Basic in the query (M12), only the server variable with no default (G01), runtime-fact step comment naming the class (an AmbientEntity)",
+  "n": 1
  },
- "f2c1dbed8f": {
+ "b65a95a1e5": {
   "outcome": "same-meaning",
-  "why": "the README lists tester(testopts?, sdkopts?) as creating a test-mode client; consistent with testopts/sdkopts as described",
-  "n": 19
+  "why": "the README options cell now says `server` is Required (one variable has no default) and that region defaults to eu (ReadmeModel_ts.ts fixed in this stage: it called every variable required, the check's defects 6); the two documents agree",
+  "n": 16
  },
  "e98db96ff8": {
   "outcome": "same-meaning",
@@ -113,6 +93,11 @@
   "outcome": "same-meaning",
   "why": "the README direct() example branches on result.ok; same statement",
   "n": 19
+ },
+ "a941f823dc": {
+  "outcome": "same-meaning",
+  "why": "README test-mode comment: .data() reads the record of the loaded entity; same statement",
+  "n": 79
  },
  "739111c54a": {
   "outcome": "same-meaning",
@@ -129,77 +114,21 @@
   "why": "moved into the Returns sentence; README:302 says the same",
   "n": 19
  },
- "b65a95a1e5": {
-  "outcome": "same-meaning",
-  "why": "the README options cell now says `server` is Required (one variable has no default) and that region defaults to eu (ReadmeModel_ts.ts fixed in this stage: it called every variable required, the check's defects 6); the two documents agree",
-  "n": 16
+ "2bb513dce5": {
+  "outcome": "correction:ref-6",
+  "why": "the call carries the route's path parameter, so it can fill /planet/{id}/terraform",
+  "n": 15
  },
- "3344d6d2fb": {
-  "outcome": "same-meaning",
-  "why": "the type word string, as the README's options table uses it for string options",
-  "n": 4
- },
- "91baf1b4b6": {
-  "outcome": "contradiction",
-  "where": "ts/README.md:230 (no-test): `feature` cell 'Feature activation flags (e.g. `{ test: { active: true } }`)', and ts/README.md:133-144 'Use test mode ... mock client'",
-  "true": "REFERENCE: without the test feature its source does not ship, so test() builds a client with no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
-  "n": 1
- },
- "a0ea2daad1": {
-  "outcome": "dropped",
-  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`), and the tables went with the sentences that replaced them",
-  "n": 116
- },
- "5734aba53e": {
-  "outcome": "dropped",
-  "why": "the accessor and test-client parameter tables became sentences naming each parameter; the signature heading keeps name and type",
-  "n": 113
- },
- "3538e6b4b8": {
-  "outcome": "dropped",
-  "why": "header of the parameter tables that became sentences (accessor, test client)",
-  "n": 113
- },
- "6742b0a309": {
-  "outcome": "dropped",
-  "why": "header of the parameter tables that became sentences (accessor, test client); the Fields and option tables keep theirs",
-  "n": 113
- },
- "0ccd61dc70": {
-  "outcome": "dropped",
-  "why": "header of the parameter tables that became sentences (accessor, test client); the feature option tables keep theirs",
-  "n": 113
- },
- "38660bb110": {
-  "outcome": "dropped",
-  "why": "the accessor's parameter is entopts, not data (MainEntity_ts.ts: the argument is the entity OPTIONS object); the cell named a parameter that does not exist",
-  "n": 94
- },
- "56e3ecb1bc": {
+ "37cbd7c81c": {
   "outcome": "correction:guard-accessor-arg",
-  "why": "false: the argument is the entity options passed to the constructor as entopts (MainEntity_ts.ts:20-25), not initial data; the sentence now says options",
-  "n": 94
+  "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
+  "n": 93,
+  "rekeyed": "37cbd7c81c"
  },
- "d2cb7060c6": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Create a new `AmbientEntity` instance.' in the accessor sentence",
-  "n": 77
- },
- "58f6fe5f58": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Create a new `PlanetEntity` instance.' in the accessor sentence",
-  "n": 17
- },
- "cc0b7cd9c6": {
-  "outcome": "restored:shared",
-  "why": "restored as 'It returns a client in test mode.'",
-  "n": 38
- },
- "d87c331ec7": {
-  "outcome": "restored:shared",
-  "why": "restored as the load sentence 'Resolves to the entity ... `.data()` reads its record.'",
-  "n": 28
+ "6e0387536b": {
+  "outcome": "correction:ref-6",
+  "why": "says the path parameters go beside $action, and the action's own arguments too",
+  "n": 15
  },
  "1d5f2874ab": {
   "outcome": "restored:shared",
@@ -221,10 +150,46 @@
   "why": "the name is in the heading's signature DemoSDK.test(testopts?, sdkopts?); the sentence says what the second argument holds",
   "n": 19
  },
+ "a0ea2daad1": {
+  "outcome": "dropped",
+  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`), and the tables went with the sentences that replaced them",
+  "n": 116
+ },
  "a188efe74d": {
   "outcome": "restored:shared",
   "why": "restored as 'further client options, merged over the test defaults'",
   "n": 19
+ },
+ "cc0b7cd9c6": {
+  "outcome": "restored:shared",
+  "why": "restored as 'It returns a client in test mode.'",
+  "n": 38
+ },
+ "5734aba53e": {
+  "outcome": "dropped",
+  "why": "the accessor and test-client parameter tables became sentences naming each parameter; the signature heading keeps name and type",
+  "n": 113
+ },
+ "3538e6b4b8": {
+  "outcome": "dropped",
+  "why": "header of the parameter tables that became sentences (accessor, test client)",
+  "n": 113
+ },
+ "38660bb110": {
+  "outcome": "dropped",
+  "why": "the accessor's parameter is entopts, not data (MainEntity_ts.ts: the argument is the entity OPTIONS object); the cell named a parameter that does not exist",
+  "n": 94
+ },
+ "56e3ecb1bc": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "false: the argument is the entity options passed to the constructor as entopts (MainEntity_ts.ts:20-25), not initial data; the sentence now says options",
+  "n": 94
+ },
+ "d2cb7060c6": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Create a new `AmbientEntity` instance.' in the accessor sentence | restored as 'Create a new `PlanetEntity` instance.' in the accessor sentence",
+  "n": 93,
+  "rekeyed": "d2cb7060c6+58f6fe5f58"
  },
  "363701dbb8": {
   "outcome": "restored:shared",
@@ -236,15 +201,15 @@
   "why": "inside the Returns sentence: 'on a failure `ok` is `false` and `err` holds the error'",
   "n": 19
  },
- "2f38082332": {
-  "outcome": "correction:S09",
-  "why": "false for log, which is active by default (model/feature/log.aontu active: true); restored as 'inactive until switched on, except `log`'",
-  "n": 19
+ "6742b0a309": {
+  "outcome": "dropped",
+  "why": "header of the parameter tables that became sentences (accessor, test client); the Fields and option tables keep theirs",
+  "n": 113
  },
- "ac1eac6be0": {
-  "outcome": "correction:S09",
-  "why": "the per-feature line now says active-by-default for log and inactive for the rest, from one decision (FeatureDocs.activeByDefault)",
-  "n": 19
+ "abfa449593": {
+  "outcome": "restored:shared",
+  "why": "restored as the load sentence 'Resolves to the entity ... `.data()` reads its record.'",
+  "n": 28
  },
  "6b70d16ff7": {
   "outcome": "restored:shared",
@@ -256,20 +221,89 @@
   "why": "restored as the update sentence (resolves to the entity it wrote, throws on failure)",
   "n": 16
  },
- "66936e5036": {
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log, which is active by default (model/feature/log.aontu active: true); restored as 'inactive until switched on, except `log`'",
+  "n": 19
+ },
+ "0ccd61dc70": {
+  "outcome": "dropped",
+  "why": "header of the parameter tables that became sentences (accessor, test client); the feature option tables keep theirs",
+  "n": 113
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line now says active-by-default for log and inactive for the rest, from one decision (FeatureDocs.activeByDefault)",
+  "n": 19
+ },
+ "97877bc5dd": {
   "outcome": "restored:shared",
-  "why": "restored as the patch sentence",
-  "n": 4
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "89c5ef9c6d": {
+  "outcome": "restored:shared",
+  "why": "the record read the old load line stated ('whose record data() reads')",
+  "n": 79
+ },
+ "50dcec911f": {
+  "outcome": "restored:fact",
+  "why": "stream is a real member (EntityBase.fragment.ts:111 async *stream); the kind sentence now names only what the call returns (an async iterator); nothing in it says when items arrive",
+  "n": 94
+ },
+ "91bc59ac7f": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in EntityBase.fragment.ts (the pipeline runs inside the generator, on the first next()); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
  },
  "7901b4ddb7": {
   "outcome": "correction:S50",
   "why": "auth-basic-query: Basic in the query sends no secret option (catalogue M12/S50)",
   "n": 1
  },
+ "66936e5036": {
+  "outcome": "restored:shared",
+  "why": "restored as the patch sentence",
+  "n": 4
+ },
+ "8e7a866f45": {
+  "outcome": "same-meaning",
+  "why": "ent-none: the type word object, as the README's options table uses it",
+  "n": 2
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it for string options",
+  "n": 4
+ },
+ "176972c3bb": {
+  "outcome": "same-meaning",
+  "why": "ent-none: the test client's parameter types moved into its signature; the README uses object the same way",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "where": "ts/README.md:230 (no-test): `feature` cell 'Feature activation flags (e.g. `{ test: { active: true } }`)', and ts/README.md:133-144 'Use test mode ... mock client'",
+  "true": "REFERENCE: without the test feature its source does not ship, so test() builds a client with no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
+  "n": 1
+ },
  "46dc1a3462": {
   "outcome": "correction:S13",
   "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
   "n": 1
+ },
+ "205d5e7ca3": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
+  "n": 1,
+  "rekeyed": "37cbd7c81c"
+ },
+ "cff43aaa1d": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Create a new `AmbientEntity` instance.' in the accessor sentence",
+  "n": 1,
+  "rekeyed": "d2cb7060c6"
  },
  "dac11a1691": {
   "outcome": "correction:G27",
@@ -281,7 +315,7 @@
   "why": "ref-issues: the description's pipe broke the table; escaped now",
   "n": 1
  },
- "993924c4c6": {
+ "d245316c2e": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; the heading names it",
   "n": 1
@@ -291,7 +325,7 @@
   "why": "under the PlanetEntityClient heading in ref-issues, extended with the route's path parameters",
   "n": 1
  },
- "a9d28cef46": {
+ "ad0ce90b71": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter (id) now; under PlanetEntityClient",
   "n": 1
@@ -311,64 +345,34 @@
   "why": "ref-issues: remove inactive",
   "n": 1
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs (opMatched); the old line said the same in other words",
   "n": 1
- },
- "37cbd7c81c": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
-  "n": 94
- },
- "5b8eca7ad4": {
-  "outcome": "correction:ref-6",
-  "why": "the call carries the route's path parameter, so it can fill /planet/{id}/terraform",
-  "n": 15
- },
- "6e0387536b": {
-  "outcome": "correction:ref-6",
-  "why": "says the path parameters go beside $action, and the action's own arguments too",
-  "n": 15
- },
- "556db3c91e": {
-  "outcome": "restored:shared",
-  "why": "the record read the old load line stated ('whose record data() reads')",
-  "n": 79
  },
  "c2467756ac": {
   "outcome": "correction:ref-6",
   "why": "as 6e0387536b, under PlanetEntityClient (ref-issues)",
   "n": 1
  },
- "dedcfa23a4": {
+ "203296a7bf": {
   "outcome": "correction:ref-6",
   "why": "as 5b8eca7ad4, under PlanetEntityClient (ref-issues)",
   "n": 1
  },
- "8e7a866f45": {
-  "outcome": "same-meaning",
-  "why": "ent-none: the type word object, as the README's options table uses it",
-  "n": 2
- },
- "176972c3bb": {
-  "outcome": "same-meaning",
-  "why": "ent-none: the test client's parameter types moved into its signature; the README uses object the same way",
+ "c442d0fbe4": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
   "n": 1
  },
- "97877bc5dd": {
-  "outcome": "restored:shared",
-  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
-  "n": 19
+ "b452b7729b": {
+  "outcome": "unification:ref-list-printed",
+  "why": "ts reference list examples print each item record (item.data())",
+  "n": 1
  },
- "50dcec911f": {
-  "outcome": "restored:fact",
-  "why": "stream is a real member (EntityBase.fragment.ts:111 async *stream); the kind sentence now names only what the call returns (an async iterator); nothing in it says when items arrive",
-  "n": 94
- },
- "91bc59ac7f": {
-  "outcome": "restored:fact",
-  "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in EntityBase.fragment.ts (the pipeline runs inside the generator, on the first next()); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
-  "n": 94
+ "6e068d435b": {
+  "outcome": "correction:ref-6",
+  "why": "the action example block became the Call cell of the Actions table",
+  "n": 1
  }
 }

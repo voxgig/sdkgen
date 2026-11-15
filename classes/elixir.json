@@ -15,7 +15,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "856866fdcb": {
+ "1da4d2b063": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 16,
@@ -23,7 +23,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "123923823b": {
+ "ff4863a314": {
   "outcome": "correction:S28",
   "why": "",
   "n": 10,
@@ -31,7 +31,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "4147ad0745": {
+ "0538108a37": {
   "outcome": "restored:shared",
   "why": "",
   "n": 18,
@@ -71,7 +71,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d94f240980": {
+ "35c7a4a5a0": {
   "outcome": "correction:elixir-arity",
   "why": "OLD named the function list/2, which is false: def list(ent, reqmatch \\\\ nil, ctrl \\\\ nil) defines list/1, /2 and /3 and the example calls list/1; NEW says `list`. The getelem/2 item read is kept as the note 866a0eed1f",
   "n": 7,
@@ -79,7 +79,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "428b2a83e1": {
+ "5a3859e529": {
   "outcome": "correction:S28",
   "why": "",
   "n": 3,
@@ -103,7 +103,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
   "why": "restored as 'Patch — sends only the fields given; ...'",
   "n": 3,
@@ -127,7 +127,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "928fced1ee": {
+ "36efbfed2b": {
   "outcome": "restored:fact",
   "why": "",
   "n": 4,
@@ -135,7 +135,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "6f58c092d8": {
+ "0ed7dc127d": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 4,
@@ -143,7 +143,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "ea9f53b714": {
+ "aeabe4bdf1": {
   "outcome": "unification:write-comment-style",
   "why": "",
   "n": 3,
@@ -159,7 +159,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "67bc2b34e8": {
+ "29bba9e03f": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -167,7 +167,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "2609d87cfb": {
+ "1fa815677a": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -175,7 +175,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "69ba25b1fc": {
+ "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -183,7 +183,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "918582a022": {
+ "02c2caa84e": {
   "outcome": "restored:fact",
   "why": "",
   "n": 1,
@@ -191,7 +191,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "d39368fa0b": {
+ "9cbb8e3add": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -199,7 +199,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "dd5f182f01": {
+ "c44f65ddeb": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -207,7 +207,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "f4f124751b": {
+ "3528a38f43": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
@@ -407,7 +407,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "ca54140d79": {
+ "a5f98b7c87": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 7,
@@ -615,7 +615,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "c47c92da89": {
+ "4299fe5f5e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -626,10 +626,11 @@
  "c15ce3aefd": {
   "outcome": "unification:member-sentences",
   "why": "",
-  "n": 94,
+  "n": 93,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "c15ce3aefd"
  },
  "e69b3decc0": {
   "outcome": "restored:note",
@@ -655,7 +656,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "7e14c8a101": {
+ "0a8a9e1241": {
   "outcome": "unification:op-failure-clause",
   "why": "",
   "n": 83,
@@ -690,10 +691,11 @@
  "c032f374ab": {
   "outcome": "unification:ref-page-structure",
   "why": "",
-  "n": 94,
+  "n": 93,
   "by": "rule:page-structure2",
   "type": "reworded",
-  "section": "reference"
+  "section": "reference",
+  "rekeyed": "c032f374ab"
  },
  "d567bec3e0": {
   "outcome": "unification:ref-page-structure",
@@ -703,7 +705,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "4f9263e1c7": {
+ "4c5d0c16ab": {
   "outcome": "restored:note",
   "why": "",
   "n": 19,
@@ -799,7 +801,7 @@
   "type": "missing",
   "section": "reference"
  },
- "2b54549049": {
+ "4e310eddd0": {
   "outcome": "restored:shared",
   "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get/1` reads its record'",
   "n": 28,
@@ -807,7 +809,7 @@
   "type": "missing",
   "section": "reference"
  },
- "60c2ca2ff4": {
+ "1f2bf8a246": {
   "outcome": "restored:shared",
   "why": "restored as 'The match is optional: without one, every record is listed.'",
   "n": 83,
@@ -1063,7 +1065,7 @@
   "type": "added",
   "section": "reference"
  },
- "6f9a27dac1": {
+ "9a862f2eb3": {
   "outcome": "restored:shared",
   "why": "how the record is read, which the old load sentence stated ('whose record data_get/1 reads')",
   "n": 79,
@@ -1103,7 +1105,7 @@
   "type": "added",
   "section": "reference"
  },
- "eaf64e26bd": {
+ "566d3ef425": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 82,
@@ -1183,7 +1185,7 @@
   "type": "added",
   "section": "reference"
  },
- "3d50058045": {
+ "650eff7141": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1191,7 +1193,7 @@
   "type": "added",
   "section": "reference"
  },
- "fe4aa1b045": {
+ "abe0178bc3": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1199,7 +1201,7 @@
   "type": "added",
   "section": "reference"
  },
- "b31b1f71dd": {
+ "3c49d29119": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1263,7 +1265,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cbcdf6e5f9": {
+ "e861a34f8e": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1362,6 +1364,24 @@
   "type": "reworded",
   "section": "reference"
  },
+ "9ea35abbeb": {
+  "outcome": "unification:member-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:make-sentence",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "c15ce3aefd"
+ },
+ "4713af1033": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 1,
+  "by": "rule:page-structure2",
+  "type": "reworded",
+  "section": "reference",
+  "rekeyed": "c032f374ab"
+ },
  "dac11a1691": {
   "outcome": "correction:G27",
   "why": "ref-issues: the field description is escaped into one cell",
@@ -1378,7 +1398,7 @@
   "type": "missing",
   "section": "reference"
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,

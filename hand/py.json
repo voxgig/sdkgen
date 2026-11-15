@@ -1,52 +1,42 @@
 {
- "75ea25785e": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
-  "n": 1
- },
- "bb350e2814": {
-  "outcome": "unification:root-load-nested",
-  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact",
-  "n": 1
- },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
   "n": 15
  },
- "325b1911ed": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
-  "n": 1
- },
- "b0f6c1b4a2": {
+ "0f2fcef612": {
   "outcome": "restored:shared",
   "why": "restored as '`load()` returns the entity and raises on failure; `data_get()` reads its record'",
   "n": 10
  },
- "1989b91f6f": {
+ "9fe064910d": {
   "outcome": "restored:shared",
-  "why": "restored as the comment 'Create \u2014 returns the created entity; data_get() reads its record' and the write sentence",
+  "why": "restored as the comment 'Create — returns the created entity; data_get() reads its record' and the write sentence",
   "n": 4
  },
- "8e1fb48a5a": {
+ "691bdc9ddb": {
   "outcome": "restored:shared",
-  "why": "restored as 'Patch \u2014 sends only the fields given; the id comes off the created entity's record'",
+  "why": "restored as 'Patch — sends only the fields given; the id comes off the created entity's record'",
   "n": 3
- },
- "9562ae8fc5": {
-  "outcome": "correction:U45",
-  "why": "ref-issues has update only: the step is headed 2. Update",
-  "n": 1
  },
  "d2da816355": {
   "outcome": "restored:fact",
   "why": "the write results the old step comments stated, as one sentence; true of py (each op returns the entity, EntityCreateOp.fragment.py)",
   "n": 5
  },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
  "db304a6ebf": {
   "outcome": "restored:fact",
   "why": "the write sentence for the one write ref-issues has",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
   "n": 1
  },
  "f6f21dc984": {
@@ -54,19 +44,24 @@
   "why": "the method name update in the write sentence",
   "n": 1
  },
- "0b4cba0581": {
-  "outcome": "same-meaning",
-  "why": "a word match on `None` in the README's test-mode line; nothing about the accessor's argument",
-  "n": 94
+ "bb350e2814": {
+  "outcome": "unification:root-load-nested",
+  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact",
+  "n": 1
  },
  "f9849d3050": {
   "outcome": "same-meaning",
   "why": "README:258 says on error ok is False and err contains the error; same keys as README:126",
   "n": 19
  },
- "891cc0c6f3": {
+ "00791999d2": {
   "outcome": "same-meaning",
-  "why": "README:203-206 shows DemoSDK.test(testopts, sdkopts), both may be None; same",
+  "why": "None for none, as the README says of the test arguments; the same literal for the same meaning (py/README.md:206)",
+  "n": 94
+ },
+ "4d9d4cbe1c": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be None); nothing disagrees (py/README.md:206)",
   "n": 19
  },
  "f64ae2f4fc": {
@@ -84,27 +79,20 @@
   "why": "moved into the Returns sentence ('the fetch definition ... It raises on failure'); README:118 calls it fetchdef, the same object",
   "n": 19
  },
- "066a083189": {
-  "outcome": "same-meaning",
-  "why": "the README direct example passes method GET; consistent with GET as the default",
-  "n": 1
+ "783b0eefd7": {
+  "outcome": "correction:guard-param-name",
+  "why": "the runtime's parameter is args, defaulted (Entity.fragment.py:56); a keyword call data_set(data=...) raises TypeError. The README's member table (ReadmeModel_py.ts:90, unported) still prints (data)",
+  "n": 93
  },
- "91baf1b4b6": {
-  "outcome": "contradiction",
-  "where": "py/README.md:206 (no-test): 'Creates a test-mode client with mock transport.'",
-  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
-  "n": 1
+ "3e38bfed15": {
+  "outcome": "correction:guard-param-name",
+  "why": "the runtime's parameter is args, defaulted (Entity.fragment.py:65); README member table (unported) still prints (match)",
+  "n": 93
  },
- "3a84717ddc": {
-  "outcome": "restored:shared",
-  "why": "restored as 'The match is optional: without one, every record is listed.'",
-  "n": 83
- },
- "ddb3755851": {
-  "outcome": "restored:shared",
-  "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get()` reads its record'",
-  "n": 28
+ "ffab486889": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.py:12 def __init__(self, client, entopts=None)); the signature names the parameter data ({accessor}(data=None)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
+  "n": 94
  },
  "1d5f2874ab": {
   "outcome": "restored:shared",
@@ -126,6 +114,16 @@
   "why": "restored as '**Returns:** `dict`, the fetch definition ... It raises on failure.'",
   "n": 19
  },
+ "c9a733fb0c": {
+  "outcome": "restored:shared",
+  "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get()` reads its record'",
+  "n": 28
+ },
+ "c19864bf92": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "n": 83
+ },
  "2f38082332": {
   "outcome": "correction:S09",
   "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
@@ -135,6 +133,53 @@
   "outcome": "correction:S09",
   "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
   "n": 19
+ },
+ "d53c89fa0e": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "a1d07d2746": {
+  "outcome": "restored:shared",
+  "why": "how the record is read, which the old load sentence stated ('whose record data_get() reads')",
+  "n": 79
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "data_get returns a copy: Entity.fragment.py:63 `return vs.clone(self._data)`; the old README said so for py",
+  "n": 94
+ },
+ "4734507491": {
+  "outcome": "restored:fact",
+  "why": "stream is a real member (Entity.fragment.py:74 def stream, yield at :136, :150); the kind sentence now names only what the call returns (a generator); nothing in it says when items arrive",
+  "n": 94
+ },
+ "91bc59ac7f": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.py (the pipeline runs inside the generator); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16
+ },
+ "9dc7ea3e9f": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "where": "py/README.md:206 (no-test): 'Creates a test-mode client with mock transport.'",
+  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
+  "n": 1
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
@@ -151,17 +196,17 @@
   "why": "ref-issues: the description's pipe broke the table; escaped now",
   "n": 1
  },
- "993924c4c6": {
+ "d245316c2e": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
   "n": 1
  },
- "0832463a36": {
+ "9d28d07c10": {
   "outcome": "correction:U34",
   "why": "ref-issues: the heading sits under the PlanetEntityClient class now",
   "n": 1
  },
- "776a6fa9ee": {
+ "45597eec7e": {
   "outcome": "correction:S25",
   "why": "ref-issues turns remove off: an inactive operation is not documented",
   "n": 1
@@ -176,7 +221,7 @@
   "why": "ref-issues: remove inactive",
   "n": 1
  },
- "0b29ec4944": {
+ "17601e0f3b": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1
@@ -191,41 +236,6 @@
   "why": "the runtime's parameter is args (Entity.fragment.py:65 def match_set(self, args=None))",
   "n": 1
  },
- "c2c1d3d303": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the accessor passes its argument to the entity constructor as entopts (Entity.fragment.py:12 __init__(self, client, entopts=None)): options, not initial data",
-  "n": 94
- },
- "783b0eefd7": {
-  "outcome": "correction:guard-param-name",
-  "why": "the runtime's parameter is args, defaulted (Entity.fragment.py:56); a keyword call data_set(data=...) raises TypeError. The README's member table (ReadmeModel_py.ts:90, unported) still prints (data)",
-  "n": 93
- },
- "3e38bfed15": {
-  "outcome": "correction:guard-param-name",
-  "why": "the runtime's parameter is args, defaulted (Entity.fragment.py:65); README member table (unported) still prints (match)",
-  "n": 93
- },
- "55a8b68a1f": {
-  "outcome": "restored:fact",
-  "why": "data_get returns a copy: Entity.fragment.py:63 `return vs.clone(self._data)`; the old README said so for py",
-  "n": 94
- },
- "c5c066478d": {
-  "outcome": "restored:shared",
-  "why": "how the record is read, which the old load sentence stated ('whose record data_get() reads')",
-  "n": 79
- },
- "c2467756ac": {
-  "outcome": "correction:ref-6",
-  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
-  "n": 16
- },
- "a685f7351f": {
-  "outcome": "correction:ref-6",
-  "why": "the Call cell carries the route's path parameter id",
-  "n": 16
- },
  "b722ab4fcb": {
   "outcome": "correction:guard-param-name",
   "why": "as 783b0eefd7, under PlanetEntityClient (ref-issues)",
@@ -236,34 +246,9 @@
   "why": "the token match was the old parameter name of match_set; the runtime calls it args",
   "n": 1
  },
- "ffab486889": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.py:12 def __init__(self, client, entopts=None)); the signature names the parameter data ({accessor}(data=None)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
-  "n": 94
- },
- "00791999d2": {
-  "outcome": "same-meaning",
-  "why": "None for none, as the README says of the test arguments; the same literal for the same meaning (py/README.md:206)",
-  "n": 94
- },
- "d53c89fa0e": {
-  "outcome": "restored:shared",
-  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
-  "n": 19
- },
- "4d9d4cbe1c": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the same two arguments (both may be None); nothing disagrees (py/README.md:206)",
-  "n": 19
- },
- "4734507491": {
-  "outcome": "restored:fact",
-  "why": "stream is a real member (Entity.fragment.py:74 def stream, yield at :136, :150); the kind sentence now names only what the call returns (a generator); nothing in it says when items arrive",
-  "n": 94
- },
- "91bc59ac7f": {
-  "outcome": "restored:fact",
-  "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.py (the pipeline runs inside the generator); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
-  "n": 94
+ "75ea25785e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1
  }
 }
