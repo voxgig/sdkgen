@@ -46,8 +46,7 @@ const forms: Forms = {
   uncompared: { returns: 'the runtime annotates the returns of the operations and data_get/match_get only; the others are cited where a fact rests on them' },
   cite: {
     'ref.facts.none': { file: 'src/cmp/py/fragment/EntityLoadOp.fragment.py', quote: 'def load(self, reqmatch=None, ctrl=None) -> EntyClass:' },
-    'ref.facts.lits.false': { file: MAIN, quote: 'return {"ok": False, "err": utility.clean(self._rootctx, err)}' },
-    'ref.facts.lits.true': { file: MAIN, quote: '"ok": body_err is None and status >= 200 and status < 300,', unquoted: { True: 'ok is the bool the status test computes; True is not spelled' } },
+    'ref.facts.direct.okFalse': { file: MAIN, quote: 'return {"ok": False, "err": utility.clean(self._rootctx, err)}' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/py/fragment/Entity.fragment.py", quote: "return vs.clone(self._data)" },
     'facts.recordType': { file: ENTITY, quote: ['def data_get(self) -> EntityName:', 'return vs.clone(self._data)'], unquoted: { dict: 'EntityName is a TypedDict, so a dict at run time' } },
     'ref.facts.container': { file: MAIN, quote: 'extend = options.get("extend") if isinstance(options, dict) else None' },
