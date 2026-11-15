@@ -40,6 +40,16 @@ const forms: Forms = {
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: '__construct', accessor: '${accessor}' },
   types: { column: 'php' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test',
+  expect: { test: { on: 'type' } },
+  stream: {
+    file: "src/cmp/php/fragment/Entity.fragment.php",
+    construct: "public function stream(string $action", starts: "on iteration",
+    run: "$failed = $this->_stream_steps($ctx);",
+    draw: "foreach ($streamfn() as $item) {",
+    runs: "as the caller iterates", items: "as the caller iterates",
+  },
 }
 
 export { forms }
