@@ -95,6 +95,18 @@ function make(a) {
     return res
   }
   const isOwn = (l, s) => own(l).some((re) => re.test(s))
+  // the fact paths whose declared value `s` is, in language l
+  const OWNP = new Map()
+  const ownPaths = (l, s) => {
+    const k = l + '\u0000' + s
+    if (OWNP.has(k)) return OWNP.get(k)
+    const res = new Set()
+    for (const f of facts(l)) {
+      for (const v of [f.value, f.value.replace(/`/g, '')]) if (new RegExp('^' + pat(v) + (/^method\./.test(f.path) ? '(\\(\\))?' : '') + '$').test(s)) res.add(f.path)
+    }
+    OWNP.set(k, res)
+    return res
+  }
   const display = new Map()
   const disp = (l) => { if (!display.has(l)) display.set(l, F[l] ? Facts.masker(F[l], roots) : C.masker(roots, l, { numbers: false, learn: false })); return display.get(l) }
 
@@ -156,9 +168,17 @@ function make(a) {
         const x = analyse(u.text, u.kind, r)
         if (x.whole || !x.fills.length) continue
         let row = T2.get(x.k)
-        if (!row) { row = x.fills.map(() => new Map()); T2.set(x.k, row) }
+        if (!row) { row = x.fills.map(() => new Map()); row.paths = x.fills.map(() => new Map()); T2.set(x.k, row) }
         // per content, the languages that print it and whether it is their own declared fact
         x.fills.forEach((f, i) => { if (!row[i]) row[i] = new Map(); if (!row[i].has(f.fill)) row[i].set(f.fill, new Map()); const m = row[i].get(f.fill); m.set(r, (m.get(r) || false) || isOwn(r, f.raw)) })
+        // per position and reference, the fact paths its own text there is the value of
+        x.fills.forEach((f, i) => {
+          if (!row.paths[i]) row.paths[i] = new Map()
+          const ps = ownPaths(r, f.raw)
+          if (!ps.size) return
+          if (!row.paths[i].has(r)) row.paths[i].set(r, new Set())
+          for (const p of ps) row.paths[i].get(r).add(p)
+        })
       }
     }
     return T2
@@ -176,6 +196,31 @@ function make(a) {
     const src = row && row[i] && row[i].get(fill)
     return !!src && [...src.entries()].some(([l, own]) => l !== excl && !own)
   }
+  // The fact a position holds: the paths every reference (but `excl`) whose
+  // own declared fact stands there is the value of, intersected across those
+  // references (py's `list` is its collection AND its list method; ts's
+  // `array` only its collection: the position holds the collection). null
+  // where no reference prints its own fact there.
+  const pathsAt = (x, i, excl) => {
+    const row = table().get(x.k)
+    const m = row && row.paths && row.paths[i]
+    if (!m) return null
+    let S = null
+    for (const [r, ps] of m) {
+      if (r === excl) continue
+      S = null == S ? new Set(ps) : new Set([...S].filter((p) => ps.has(p)))
+    }
+    return S
+  }
+  // a language's text fills a position only as the value of the fact the
+  // position holds: zig's `.err` where rust prints its `Ok` is its own fact,
+  // but of another path, and stays literal
+  const samePath = (lang, x, i, excl) => {
+    const S = pathsAt(x, i, excl)
+    if (!S || !S.size) return false
+    for (const p of ownPaths(lang, x.fills[i].raw)) if (S.has(p)) return true
+    return false
+  }
   const lit = (f) => f.span ? '`' + f.fill + '`' : f.fill
   // the article before a mark is one word, whatever the token after it
   const finish = (s) => s.replace(/(^|[^A-Za-z])([Aa])n?(\s+)(?=⟦|[ⒺⒻⓈ])/g, '$1$2$3')
@@ -190,12 +235,14 @@ function make(a) {
   function match(text, kind, lang, excl) {
     const x = analyse(text, kind, lang, excl)
     if (x.whole) return wholeText(text, kind, lang)
-    // a slot only where the language supplies its own declared fact, and no
-    // other language prints the same text there as plain shared text
-    return build(x, (i) => isOwn(lang, x.fills[i].raw) && !literalElsewhere(x, i, x.fills[i].fill, excl))
+    // a slot only where the language supplies its own declared fact, OF THE
+    // PATH the references' own facts there are (the same fact, not any of
+    // the language's facts), and no other language prints the same text
+    // there as plain shared text
+    return build(x, (i) => isOwn(lang, x.fills[i].raw) && samePath(lang, x, i, excl) && !literalElsewhere(x, i, x.fills[i].fill, excl))
   }
   const sentenceId = (text, kind, lang) => K.classId('sentence', identity(text, kind, lang))
-  const res = { identity, match, sentenceId, analyse, table, isOwn, langs, isModelText: modelTextOf(a, ts) }
+  const res = { identity, match, sentenceId, analyse, table, isOwn, ownPaths, pathsAt, langs, isModelText: modelTextOf(a, ts) }
   MADE.set(key, res)
   return res
 }
