@@ -13,7 +13,7 @@
 #      with no verdict in reviewed/sentences.json.
 # Writes only this language's files: classes/<lang>.json and review/<lang>/.
 # Exit 1 on anything unclassified (RECOUNT and INVALID included), a defect, an
-# impure provider, notes with no region the lint read, a failed guard, a stale
+# impure provider, a wrong step count, heading number or article (pagecheck), notes with no region the lint read, a failed guard, a stale
 # build (a source newer than its output) or a stale hand record (a reason that
 # quotes text no page and no file of the clone holds any more).
 set -u
@@ -72,6 +72,8 @@ if [ "${SCRATCH:-0}" != 1 ]; then
   step "hand records: does every quotation in a reason still stand on a page or in the clone"
   node "$here/handstale.js" --clone "$clone" --old "$root/old" --new "$root/new" --lang "$lang" --json > "$out/handstale.json" 2> "$out/handstale.err" || rc=1
 else rm -f "$out/handstale.json"; fi
+step "page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page"
+node "$here/pagecheck.js" --new "$root/new" --lang "$lang" --section "$sections" --json > "$out/pages.json" 2> "$out/pages.err" || rc=1
 step "printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)"
 node "$here/callcheck.js" --clone "$clone" --new "$root/new" --lang "$lang" --json > "$out/calls.json" 2> "$out/calls.err" || rc=1
 step "purity";   node "$here/purity.js" --providers "$clone/ts/project/.sdk/src/cmp" --lang "$lang" --root "$root/new" --json > "$out/purity.json" 2> "$out/purity.err" || rc=1
