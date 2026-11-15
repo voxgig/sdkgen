@@ -252,6 +252,34 @@ if (want('regen')) {
   record('regen', 'regeneration-short', 0 !== r2.rc && /REGENERATION SHORT/.test(r2.out) && !/^== portcheck/m.test(r2.out), `exit ${r2.rc}: ${(/REGENERATION SHORT[^\n]*|regenerated[^\n]*/.exec(r2.out) || ['no line'])[0].slice(0, 140)}`)
 }
 
+if (want('calls')) {
+  // The printed-call check (callcheck.js): each reviewer's changed example
+  // that it can see is a finding of the kind expected; the ones it cannot see
+  // (expect: none) are run too, so the report says what it misses.
+  progress('printed calls (controls/calls.json)')
+  const CC = require('./callcheck.js')
+  const list = JSON.parse(Fs.readFileSync(Path.join(CTL, 'calls.json'), 'utf8'))
+  const base0 = {}
+  for (const l of [...new Set(list.map((x) => x.lang))]) base0[l] = CC.run({ clone: a.clone, new: NEW, lang: l }).findings.length
+  for (const l of Object.keys(base0)) record('calls', 'clean:' + l, 0 === base0[l], `${base0[l]} finding(s) on the unchanged pages`)
+  for (const j of list) {
+    const R = Path.join(TMP, 'calls-' + j.id)
+    Fs.mkdirSync(R)
+    for (const v of Fs.readdirSync(NEW)) {
+      const vd = Path.join(NEW, v)
+      if (!Fs.statSync(vd).isDirectory()) continue
+      const out = Path.join(R, v)
+      Fs.cpSync(Fs.realpathSync(vd), out, { recursive: true, dereference: true })
+      for (const f of [Path.join(out, 'README.md'), Path.join(out, j.lang, 'README.md'), Path.join(out, j.lang, 'REFERENCE.md')]) if (Fs.existsSync(f)) Fs.writeFileSync(f, Fs.readFileSync(f, 'utf8').replace(new RegExp(j.re, 'g'), j.to))
+    }
+    const r = CC.run({ clone: a.clone, new: R, lang: j.lang })
+    const kinds = [...new Set(r.findings.map((f) => f.kind))]
+    Fs.rmSync(R, { recursive: true, force: true })
+    if ('none' === j.expect) console.log(`  info calls ${j.id}: ${kinds.length ? 'CAUGHT ' + kinds.join(',') : 'not caught, as stated'} (${j.why.slice(0, 90)})`)
+    else record('calls', j.id, kinds.includes(j.expect), `${r.findings.length} finding(s): ${kinds.join(', ') || 'NONE'}${r.findings[0] ? ' - ' + r.findings[0].why.slice(0, 100) : ''}`)
+  }
+}
+
 if (want('identity')) {
   progress('identity: one template one sentence, the bold lead, comment facts, model text, re-key, stale build, stale hand record')
   const C = require('./cut.js')

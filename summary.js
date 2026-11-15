@@ -41,6 +41,12 @@ if (Pu) {
   for (const f of Pu.open.slice(0, 6)) out.push(`  OPEN ${f.file}:${f.line} ${f.check}: ${String(f.text).slice(0, 90)}`)
   if (Pu.open.length) bad++
 } else { out.push('purity: NOT RUN'); bad++ }
+const Ca = J('calls.json')
+if (Ca) {
+  out.push(`printed calls (callcheck, no compiler): ${Ca.ran ? `${Ca.calls} calls of ${Ca.members} runtime members checked; ARITY/RECEIVER/MEMBER findings ${Ca.findings.length}` : 'NOT RUN: ' + Ca.why}`)
+  for (const f of Ca.findings.slice(0, 8)) out.push(`  ${f.kind} ${f.v} ${f.section}: ${f.why.slice(0, 120)} | ${f.line.slice(0, 80)}`)
+  if (Ca.findings.length) bad++
+} else { out.push('printed calls: NOT RUN'); bad++ }
 out.push(`guard: ${guard}`)
 const bt = (() => { try { return Fs.readFileSync(Path.join(dir, 'build.txt'), 'utf8').trim().split('\n') } catch (e) { return null } })()
 if (bt) { out.push(bt[bt.length - 1]); for (const l of bt.filter((x) => /^STALE BUILD/.test(x)).slice(0, 8)) out.push('  ' + l); if (bt.some((x) => /^STALE BUILD/.test(x))) bad++ } else { out.push('build: NOT CHECKED'); bad++ }
@@ -53,8 +59,8 @@ if (Hs) {
 const Fa = J('facts.json')
 if (Fa) {
   const at = Fa.attestation || {}
-  out.push(`facts (language and convention, against the OLD page${Fa.scratch ? '; from scratch, hand records ignored' : ''}): attested ${at.ATTESTED || 0}, recorded by hand ${at.RECORDED || 0}, UNATTESTED ${Fa.unattested.length}, not printed ${at['not printed'] || 0}, not judged ${at['not judged'] || 0}; cited ${Fa.cited}, pinned prose ${Fa.pinned.length} (the reviewer audits each)`)
-  for (const u of Fa.unattested) out.push(`  UNATTESTED ${u.path} = ${JSON.stringify(u.value)} (${u.account}): ${String(u.detail || '').slice(0, 110)}${u.handProblem ? '; ' + u.handProblem : ''}`)
+  out.push(`facts (language and convention, against the OLD page${Fa.scratch ? '; from scratch, hand records ignored' : ''}): attested ${at.ATTESTED || 0}, recorded by hand ${at.RECORDED || 0}, UNATTESTED or NOT JUDGED ${Fa.unattested.length}, not printed ${at['not printed'] || 0}, not judged ${at['not judged'] || 0}; cited ${Fa.cited}, pinned prose ${Fa.pinned.length} (the reviewer audits each)`)
+  for (const u of Fa.unattested) out.push(`  ${'not judged' === u.status ? 'NOT JUDGED' : 'UNATTESTED'} ${u.path} = ${JSON.stringify(u.value)} (${u.account}): ${String(u.detail || '').slice(0, 110)}${u.handProblem ? '; ' + u.handProblem : ''}`)
   if (Fa.unattested.length) out.push(`  record each in hand/${lang}.json facts: { "<path>": { "value", "why", "evidence" } }, or fix the provider`)
   if (Fa.unattested.length || Fa.noAccount) bad++
 } else { out.push('facts: NOT RUN'); bad++ }
