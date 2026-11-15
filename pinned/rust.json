@@ -1027,12 +1027,6 @@
   "why": "",
   "n": 1
  },
- "abb698049e": {
-  "rule": "tok-direct-explain",
-  "outcome": "unification:direct-table",
-  "why": "",
-  "n": 1
- },
  "bad236414a": {
   "rule": "tok-direct-explain",
   "outcome": "unification:direct-table",
