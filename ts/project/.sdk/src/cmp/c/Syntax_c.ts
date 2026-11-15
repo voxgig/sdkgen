@@ -38,6 +38,8 @@ const refFacts: RefFacts = {
     remove: 'Entity* vt->remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
   },
   client: [
+    { kind: 'options', sig: 'voxgig_value* sdk_options_map({client}* client)', copy: true },
+    { kind: 'utility', sig: 'Utility* sdk_get_utility({client}* client)' },
     { kind: 'direct', sig: 'voxgig_value* sdk_direct({client}* client, voxgig_value* fetchargs, PNError** err)' },
     { kind: 'prepare', sig: 'voxgig_value* sdk_prepare({client}* client, voxgig_value* fetchargs, PNError** err)' },
   ],

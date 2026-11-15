@@ -43,8 +43,6 @@ const forms: Forms = {
     entity: /\(\*([a-z_]+)\)\(Entity\*|^(?!static\b)[A-Za-z_]\w*\**\s+\**(entyvar_\w+)\(/gm,
   },
   undocumented: {
-    sdk_options_map: 'WRONG: c: undocumented by the reference; see exceptions members:options',
-    sdk_get_utility: 'WRONG: c: undocumented by the reference; see exceptions members:utility',
     sdk_graphql: 'a GraphQL request through the pipeline; no reference page documents it (old pages neither)',
     mark_deleted: 'set by remove itself; the entity reports it through deleted',
     deleted: 'whether remove succeeded on this instance; not documented by the old pages',
@@ -74,6 +72,8 @@ const forms: Forms = {
     paramNames: 'the EntityVT function pointers in core/sdk.h leave their receiver parameter unnamed (Entity*)',
   },
   cite: {
+    'ref.facts.client[0].copy': { value: true, file: "tm/c/core/utility.c", quote: "voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }" },
+    'ref.facts.client[1].kind': { value: 'utility', file: 'tm/c/core/utility.c', quote: 'Utility* sdk_get_utility(ProjectNameSDK* sdk) { return utility_copy(sdk->utility); }' },
     'ref.facts.setArg': { value: 'a map', file: 'src/cmp/c/fragment/Entity.fragment.c', quote: ['static voxgig_value* entyvar_data(Entity* e, voxgig_value* args) {', 'voxgig_value* cloned = to_map(voxgig_clone(args));'] },
     'ref.facts.none': { file: 'src/cmp/c/fragment/EntityLoadOp.fragment.c', quote: 'if (*err) return NULL;' },
     'ref.facts.direct.okFalse': { file: 'src/cmp/c/fragment/Main.fragment.c', quote: 'return cmap(2, "ok", v_bool(false), "err", v_str(msg));' },
@@ -91,8 +91,6 @@ const forms: Forms = {
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/c/utility/http.c'] } },
   },
   exceptions: {
-    'members:options': 'WRONG: c: the reference declares no options member; tm/c/core/utility.c:70 defines voxgig_value* sdk_options_map(ProjectNameSDK* sdk), a deep clone of the options (sdk.h:477)',
-    'members:utility': 'WRONG: c: the reference declares no utility member; tm/c/core/utility.c:72 defines Utility* sdk_get_utility(ProjectNameSDK* sdk), a copy (sdk.h:478)',
     'types:ARRAY': 'the code generator\'s map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did',
     'types:OBJECT': 'the code generator\'s map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did',
   },
