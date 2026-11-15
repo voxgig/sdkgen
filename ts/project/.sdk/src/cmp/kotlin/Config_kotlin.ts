@@ -24,6 +24,7 @@ import {
 import {
   cleanModel,
   kotlinPackage,
+  kotlinCorePackage,
   jsonAppendLines,
 } from './utility_kotlin'
 
@@ -128,7 +129,7 @@ const Config = cmp(async function Config(props: any) {
 
   File({ name: 'Config.' + target.ext }, () => {
 
-    Content(`package ${kotlinpackage}.core
+    Content(`package ${kotlinCorePackage(model)}
 
 import ${kotlinpackage}.utility.Json
 ${pluginImportBlock}

@@ -36,6 +36,13 @@ function kotlinPackage(model: any): string {
 }
 
 
+// The package holding the client class and the runtime core (the client,
+// SdkEntity, Config): <pkg>.core.
+function kotlinCorePackage(model: any): string {
+  return kotlinPackage(model) + '.core'
+}
+
+
 function gradleGroup(model: any): string {
   const org = String(model.origin || 'voxgig-sdk')
     .replace(/-sdk$/, '')
@@ -133,6 +140,7 @@ export {
   cleanModel,
   gradleGroup,
   kotlinPackage,
+  kotlinCorePackage,
   kotlinVarName,
   jsonAppendLines,
   projectPath,

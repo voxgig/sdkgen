@@ -14,6 +14,7 @@ import {
 
 import {
   kotlinPackage,
+  kotlinCorePackage,
   jsonAppendLines,
 } from './utility_kotlin'
 
@@ -32,7 +33,7 @@ const Schema = cmp(async function Schema(props: any) {
   // so nothing in utility or feature has to reach up for it.
   File({ name: 'Schema.' + target.ext }, () => {
 
-    Content(`package ${kotlinpackage}.core
+    Content(`package ${kotlinCorePackage(model)}
 
 import ${kotlinpackage}.utility.Json
 
