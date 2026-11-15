@@ -12,8 +12,9 @@
   "lang": "py",
   "section": "reference",
   "file": "doc-crud/py/REFERENCE.md",
-  "from": "on a failure `ok` is `False`",
-  "to": "on a failure `ok` is `True`"
+  "from": "`ok` is `False`\nunless the status is 2xx",
+  "to": "`ok` is `True`\nunless the status is 2xx",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
  },
  {
   "id": "raises-returns-py",
@@ -28,8 +29,9 @@
   "lang": "go",
   "section": "reference",
   "file": "doc-crud/go/REFERENCE.md",
-  "from": "even for a non-2xx response",
-  "to": "except for a non-2xx response"
+  "from": "unless the status is 2xx",
+  "to": "when the status is 2xx",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
  },
  {
   "id": "type-cell-zig",
@@ -44,8 +46,9 @@
   "lang": "rb",
   "section": "reference",
   "file": "B/rb/REFERENCE.md",
-  "from": "on a failure `ok` is `false`",
-  "to": "on a failure `ok` is `true`"
+  "from": "`ok` is `false`\nunless the status is 2xx",
+  "to": "`ok` is `true`\nunless the status is 2xx",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
  },
  {
   "id": "raises-returns-rb-new-language",

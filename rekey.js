@@ -143,6 +143,16 @@ function rekeyLang(a) {
   const uniq = new Set(keys), known = [...uniq].filter((k) => newIds.has(k)).length
   let codeDir = a.code ? Path.resolve(a.code) : null
   if (!codeDir) codeDir = uniq.size && known >= 0.9 * uniq.size ? HERE : Path.join(HERE, 'legacy', 'v32')
+  // A shared change retires classes whose records stay (stale), so the share
+  // of known keys can fall under 0.9 while the records are this code's: they
+  // are, when this code knows at least as many of them as the old one does.
+  if (codeDir !== HERE && !a.code && uniq.size) {
+    const LEG = codeOf(Path.join(HERE, 'legacy', 'v32'))
+    const legIds = new Set(sections.flatMap((s) => classesOf(LEG, base, s, lang)).map((c) => c.id))
+    const knownLeg = [...uniq].filter((k) => legIds.has(k)).length
+    progress(`keys known: this code ${known}, the v3.2 code ${knownLeg}, of ${uniq.size}`)
+    if (known >= knownLeg) codeDir = HERE
+  }
   const report = { lang, from, to, code: codeDir, sections: {}, renamed: 0, merged: [], split: [], conflicts: [], unsourced: [], gone: [], carried: { hand: 0, pinned: 0, classes: 0 }, dropped: { hand: [], pinned: [] }, stale: { hand: [], pinned: [] }, absent: {}, counts: null }
   if (codeDir === HERE) {
     report.already = true

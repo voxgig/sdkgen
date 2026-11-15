@@ -21,10 +21,11 @@
   "id": "sentence-removed-go",
   "lang": "go",
   "section": "reference",
-  "what": "the direct() branch-on-ok sentence removed",
+  "what": "a shared direct() sentence removed (v3.3: the branch sentence's go read, `result[\"ok\"] == true`, is go's alone, so its class is open from scratch whatever happens to it; the key sentence's read `result[\"err\"]` is py's and rb's too)",
   "file": "doc-crud/go/REFERENCE.md",
-  "from": " A failed request is\nreported in the result, not as an error, so branch on `result[\"ok\"]`.",
-  "to": ""
+  "from": " A key is read as\n`result[\"err\"]`.",
+  "to": "",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
  },
  {
   "id": "false-sentence-py",
@@ -50,8 +51,9 @@
   "section": "reference",
   "what": "'The match is optional' -> required",
   "file": "doc-crud/py/REFERENCE.md",
-  "from": "The match is optional:",
-  "to": "The match is required:"
+  "from": "The match is optional.",
+  "to": "The match is required.",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
  },
  {
   "id": "negation-go",
@@ -59,8 +61,9 @@
   "section": "reference",
   "what": "'even for a non-2xx' -> 'except for a non-2xx'",
   "file": "doc-crud/go/REFERENCE.md",
-  "from": "even for a non-2xx response",
-  "to": "except for a non-2xx response"
+  "from": "unless the status is 2xx",
+  "to": "when the status is 2xx",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
  },
  {
   "id": "code-comment-ts",
@@ -68,8 +71,8 @@
   "section": "tutorial",
   "what": "a comment inside a block changed",
   "file": "doc-crud/ts/README.md",
-  "from": "// Update \u2014 the id comes off the created entity's record",
-  "to": "// Update \u2014 the id comes from the server"
+  "from": "// Update — the id comes off the created entity's record",
+  "to": "// Update — the id comes from the server"
  },
  {
   "id": "var-renamed-c",

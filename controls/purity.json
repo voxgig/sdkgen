@@ -168,8 +168,8 @@
   "file": "go/Syntax_go.ts",
   "edits": [
    {
-    "from": "    read: (value, key) => `${value}[${str(key)}]`,\n  },",
-    "to": "    read: (value, key) => `${value}[${str(key)}]`,\n    notes: { 'member:direct': 'With the retry feature on, the apikey is resent.' },\n  },"
+    "from": "    read: (value, key, truth) => `${value}[${str(key)}]` + (truth ? ' == true' : ''),\n  },",
+    "to": "    read: (value, key, truth) => `${value}[${str(key)}]` + (truth ? ' == true' : ''),\n    notes: { 'member:direct': 'With the retry feature on, the apikey is resent.' },\n  },"
    }
   ]
  },
@@ -179,8 +179,8 @@
   "file": "rust/Syntax_rust.ts",
   "edits": [
    {
-    "from": "    'member:direct': 'The result map always comes back inside `Ok`, for a non-2xx response and\\nfor a request that could not be made alike; its `ok` key reports the failure.',",
-    "to": "    'member:direct': 'The result map always comes back inside `Ok`' +\n      ', for a non-2xx response and\\nfor a request that could not be made alike; its `ok` key reports the failure.',"
+    "from": "    'member:direct': 'The result map always comes back inside `Ok`.',",
+    "to": "    'member:direct': 'The result map always comes back' +\n      ' inside `Ok`.',"
    }
   ]
  },

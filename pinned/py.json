@@ -896,18 +896,6 @@
   "why": "",
   "n": 1
  },
- "abb698049e": {
-  "rule": "tok-direct-explain",
-  "outcome": "unification:direct-table",
-  "why": "",
-  "n": 1
- },
- "ed3db7803a": {
-  "rule": "tok-direct-explain",
-  "outcome": "unification:direct-table",
-  "why": "",
-  "n": 1
- },
  "5e9a9d5957": {
   "rule": "tok-direct-explain",
   "outcome": "unification:direct-table",
