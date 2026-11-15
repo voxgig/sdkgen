@@ -7,7 +7,7 @@ import * as Path from 'node:path'
 
 import type { Decl, Family, Forms, On, OpName, StreamItems } from './forms'
 import {
-  OPS, defaultSigName, defaultSigParams, defaultSigReturns, esc, findDecls, namePattern, opMethod, opSource,
+  OPS, defaultSigName, defaultSigParams, defaultSigReturns, esc, findDecls, generatorColumn, namePattern, opMethod, opSource,
   publicNames, read,
 } from './forms'
 import { account, codeTokens, runtimeText } from './account'
@@ -232,8 +232,13 @@ function check(t: string, S: any, forms: Forms): Result {
   if (recordOk) verified.add('facts.record')
 
   if (S.ref) {
+    // The column is the generator's own: the one its EntityTypes component reads.
+    const gen = generatorColumn(t)
+    if (gen.column !== forms.types.column) {
+      add('types', `the forms give type column ${forms.types.column}; ${gen.file} ${null == gen.column ? 'uses none' : 'uses ' + gen.column}`)
+    }
     if (null == forms.types.column && (null == forms.types.reason || '' === forms.types.reason.trim())) {
-      add('types', 'the forms give no type column and no reason: say why the printer is checked for totality only')
+      add('types', 'the forms give no type column and no reason: say why the type words are pinned instead')
     }
     for (const c of CANON) {
       const got = S.ref.type(c)
@@ -242,8 +247,18 @@ function check(t: string, S: any, forms: Forms): Result {
       else if (null != forms.types.column) {
         const want = canonToType(c, forms.types.column)
         if (got !== want && null == exc['types:' + key]) add('types', `${key} prints ${got}; the code generator's map says ${want}`)
+        // A word that differs from the map, with its reason, is pinned as well.
+        else if (got !== want && got !== forms.types.words?.[key]) {
+          add('types', `${key} prints ${got}, which differs from the code generator's ${want} with a reason; pin the word in types.words (pinned: ${forms.types.words?.[key]})`)
+        }
       }
-      else if ('any' === got && !(forms.types.any || []).includes(key)) add('types', `${key} prints the generic any`)
+      else {
+        // No generator map: each word is pinned, and the reviewer audits the pins.
+        const pin = forms.types.words?.[key]
+        if (null == pin) add('types', `${key} prints ${got}; with no generator column every type word is pinned in types.words`)
+        else if (got !== pin) add('types', `${key} prints ${got}; the forms pin the type word ${pin}`)
+        if ('any' === got && !(forms.types.any || []).includes(key)) add('types', `${key} prints the generic any`)
+      }
     }
   }
 
@@ -676,6 +691,14 @@ const CONTROLS: Control[] = [
       if (null == S.ref) return false
       const type = S.ref.type
       S.ref.type = (t: any) => '`$INTEGER`' === t ? ('any' === type(t) ? 'anything' : 'any') : type(t)
+      return true
+    },
+  },
+  {
+    name: 'a type word changed', check: 'types', mutate: (S) => {
+      if (null == S.ref) return false
+      const type = S.ref.type
+      S.ref.type = (t: any) => '`$INTEGER`' === t ? type(t) + 'Zz' : type(t)
       return true
     },
   },
