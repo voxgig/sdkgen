@@ -7,15 +7,20 @@ import { bracketed } from './forms'
 
 const MAIN = 'src/cmp/swift/fragment/Main.fragment.swift'
 const BASE = 'src/cmp/swift/fragment/EntityBase.fragment.swift'
+const TYPES = 'tm/swift/Sources/ProjectNameSDK/core/Types.swift'
+// What an operation's Value is unwrapped with, as the runtime writes it.
+const UNWRAP_QUOTE = 'if let ent = record.asNative as? Entity {'
 const OPS =['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/swift/fragment/Entity${o}Op.fragment.swift`)
 
 const forms: Forms = {
   files: {
     client: ['src/cmp/swift/fragment/Main.fragment.swift', 'src/cmp/swift/MainEntity_swift.ts'],
-    entity: ['src/cmp/swift/fragment/Entity.fragment.swift', 'src/cmp/swift/fragment/EntityBase.fragment.swift'],
+    // Types.swift: the Entity protocol's extension gives data() and matchv()
+    // with no argument, which every example's record read calls.
+    entity: ['src/cmp/swift/fragment/Entity.fragment.swift', 'src/cmp/swift/fragment/EntityBase.fragment.swift', TYPES],
     ops: OPS,
   },
-  decl: (name) => new RegExp(`^[ \\t]*(?:public |open |override |static |final )+(?:func |var |let )?${name}(?=[(:\\s])`, 'm'),
+  decl: (name) => new RegExp(`^[ \\t]*(?:(?:public |open |override |static |final )+(?:func |var |let )?|@discardableResult func )${name}(?=[(:\\s])`, 'm'),
   bare: true,
   param: (p) => {
     const m = /^(?:\w+\s+)?(\w+)\s*:\s*([^=]+?)\s*(?:=.*)?$/.exec(p.trim())
@@ -50,7 +55,13 @@ const forms: Forms = {
   streamKind: (d) => /^AsyncStream</.test(d.returns) ? 'streamIterator' : 'stream',
   // An operation returns the entity inside a Value and throws on failure.
   style: { exception: 'throw', raises: /\bthrow\b/, wrapped: (d) => /\bthrows\s*->\s*Value\b/.test(d.rest.slice(0, 200)) },
-  record: (rec) => ({ name: (/(\w+)\(\)$/.exec(rec) || [])[1] || rec }),
+  // The whole record expression: the unwrap, as the runtime writes it, then a
+  // member called with no argument. Anything else names no entity member.
+  record: (rec) => {
+    const m = /^\(\{var\}\.(.+)\)\?\.(\w+)\(\)$/.exec(rec)
+    const quoted = null != m && new RegExp('(?<!\\w)' + m[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?!\\w)').test(UNWRAP_QUOTE)
+    return quoted ? { name: (m as RegExpExecArray)[2], arity: 0 } : { name: rec }
+  },
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'init', accessor: '${entity.Name}' },
   types: { column: 'swift' },
   exceptions: {
@@ -67,19 +78,22 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/swift/fragment/Main.fragment.swift", quote: "r.entries[\"ok\"] = .bool(false)" },
     'facts.collection': { file: 'tm/swift/Sources/ProjectNameSDK/Struct/Value.swift', quote: 'case list(VList)' },
-    'facts.unwrap': { value: 'asNative as? Entity', file: 'tm/swift/Sources/ProjectNameSDK/feature/ValidateFeature.swift', quote: 'if let ent = record.asNative as? Entity {' },
+    'facts.unwrap': { value: 'asNative as? Entity', file: 'tm/swift/Sources/ProjectNameSDK/feature/ValidateFeature.swift', quote: UNWRAP_QUOTE },
     'ref.facts.none': { file: MAIN, quote: 'public init(_ optionsIn: ProjectNameSdk.VMap? = nil) {' },
     'ref.facts.setArg': { file: BASE, quote: 'public func data(_ newdata: Value?) -> Value {' },
     'ref.facts.container': { file: MAIN, quote: 'private var options: ProjectNameSdk.VMap = ProjectNameSdk.VMap()' },
     'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'return clone(.map(options)).asMap ?? ProjectNameSdk.VMap()' },
     'ref.facts.client[1].kind': { value: 'utility', file: MAIN, quote: 'return ProjectNameSdk.Utility.copy(utility)' },
     'ref.facts.entity[0].copy': { value: true, file: BASE, quote: 'return clone(data)' },
+    'ref.facts.entity[1].copy': { value: true, file: BASE, quote: 'return clone(.map(match))' },
     'ref.facts.prepare.fails': { value: 'style', file: MAIN, quote: 'public func prepare(_ fetchargsIn: ProjectNameSdk.VMap?) throws -> ProjectNameSdk.VMap {' },
     'ref.facts.body.values': {
-      value: 'a `String`, or `Data` or `[UInt8]` as a `.native` value',
+      value: 'a `String`, or `Data` or `[UInt8]` wrapped with `.nat`',
       file: 'tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift',
       quote: 'if let text = body.asString, text != "" {\n    req.httpBody = text.data(using: .utf8)\n    req.setValue("application/json", forHTTPHeaderField: "Content-Type")\n  } else if case .native(let ref) = body {\n    if let data = ref.value as? Data {\n      req.httpBody = data\n    } else if let bytes = ref.value as? [UInt8] {',
-      unquoted: { String: 'a text body is the Value case read by body.asString' },
+      // A text body is the string case; bytes are wrapped by the nat constructor, called as `.nat(...)`.
+      also: [{ file: 'tm/swift/Sources/ProjectNameSDK/Struct/Value.swift', quote: ['case string(String)', 'public static func nat(_ v: Any) -> Value { .native(NativeRef(v)) }'] },
+        { file: 'tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift', quote: '_ = cleanUtil(ctx, .nat(sdkErr))' }],
     },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*)\b|isCancelled|AbortController/i, files: ['tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift', 'src/cmp/swift/fragment/EntityLoadOp.fragment.swift'] } },
   },

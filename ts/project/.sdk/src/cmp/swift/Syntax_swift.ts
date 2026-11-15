@@ -2,16 +2,25 @@ import { canonToType, indentLines } from '@voxgig/sdkgen'
 import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
+// An operation returns a Value holding the entity: `unwrap` takes the entity
+// out, and the record is read off it.
+const unwrap = 'asNative as? Entity'
+const read = 'data()'
+
 const facts: RuntimeFacts = {
   method: { list: 'list', load: 'load', create: 'create', update: 'update', patch: 'patch', remove: 'remove' },
   named: 'call',
   async: false,
   result: 'wrapped',
   collection: '`VList`',
-  record: '({var}.asNative as? Entity)?.data()',
-  unwrap: 'asNative as? Entity',
+  record: `({var}.${unwrap})?.${read}`,
+  unwrap,
   prints: 'record',
 }
+
+// The record of the entity a value holds, and of an entity already taken out.
+const recordOf = (v: string): string => (facts.record as string).replace('{var}', v)
+const entityRecord = (v: string): string => `${v}.${read}`
 
 // The fixed API the reference page documents: Main.fragment.swift,
 // EntityBase.fragment.swift, Entity.fragment.swift, the Entity*Op fragments
@@ -47,14 +56,14 @@ const refFacts: RefFacts = {
   ],
   entity: [
     { kind: 'dataArg', sig: 'data(_ newdata: Value?) -> Value', copy: true },
-    { kind: 'matchArg', sig: 'matchv(_ newmatch: Value?) -> Value' },
+    { kind: 'matchArg', sig: 'matchv(_ newmatch: Value?) -> Value', copy: true },
     { kind: 'make', sig: 'make() -> Entity' },
     { kind: 'streamIterator', sig: 'stream(_ action: String, _ args: VMap? = nil, _ callopts: VMap? = nil) throws -> AsyncStream<Value>', runs: 'call' },
     { kind: 'name', sig: 'getName() -> String' },
   ],
   direct: { returns: 'VMap', okFalse: 'false' },
   prepare: { returns: 'VMap', fails: 'style' },
-  body: { values: 'a `String`, or `Data` or `[UInt8]` as a `.native` value' },
+  body: { values: 'a `String`, or `Data` or `[UInt8]` wrapped with `.nat`' },
   cancel: false,
 }
 
@@ -79,9 +88,9 @@ const expr = (e: Expr): string => {
     case 'lit': return lit(e)
     case 'str': return `.string(${str(e.text)})`
     case 'env': return `.string(\n    ProcessInfo.processInfo.environment[${str(e.name)}] ?? "")`
-    case 'record': return `${name(e.of)}.data()`
-    case 'field': return `(${name(e.of)}.asNative as? Entity)?.data().asMap?.entries[${str(e.field)}] ?? .null`
-    case 'fields': return `${name(e.of)}.data()`
+    case 'record': return recordOf(name(e.of))
+    case 'field': return `${recordOf(name(e.of))}.asMap?.entries[${str(e.field)}] ?? .null`
+    case 'fields': return recordOf(name(e.of))
     case 'map': return 0 === e.entries.length ? '.map(VMap())' : '.map([' + e.entries.map(pair).join(', ') + '])'
   }
 }
@@ -139,8 +148,8 @@ const Syntax: SyntaxType = {
 
   // The entity is taken out of the value it is returned in, under the same name.
   print: (s) => 'record' === s.what.k || 'fields' === s.what.k
-    ? [`if let ${name(s.what.of)} = ${name(s.what.of)}.asNative as? Entity {`,
-      `    print(${name(s.what.of)}.data())`, '}']
+    ? [`if let ${name(s.what.of)} = ${name(s.what.of)}.${facts.unwrap} {`,
+      `    print(${entityRecord(name(s.what.of))})`, '}']
     : [`print(${expr(s.what)})`],
 
   attempt: (s, inner) => [
