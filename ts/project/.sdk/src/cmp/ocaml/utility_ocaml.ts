@@ -34,6 +34,21 @@ function entityModule(name: string): string {
 }
 
 
+// The files of the client and error modules (Main_ocaml, SdkError_ocaml).
+const CLIENT_FILE = 'sdk_client'
+const ERROR_FILE = 'sdk_error'
+
+// An OCaml module is named by its file, capitalised.
+function ocamlModule(file: string): string {
+  return file.charAt(0).toUpperCase() + file.slice(1)
+}
+
+// A name inside the module a file defines: Sdk_entity_planet.make.
+function ocamlQualified(file: string, name: string): string {
+  return ocamlModule(file) + '.' + name
+}
+
+
 // The entity_obj field holding an operation's closure.
 function ocamlOpField(opname: string): string {
   return 'e_' + opname
@@ -163,8 +178,12 @@ function ocamlListMatch(entity: any): string {
 
 
 export {
+  CLIENT_FILE,
+  ERROR_FILE,
   clean,
   entityModule,
+  ocamlModule,
+  ocamlQualified,
   formatOcamlValue,
   ocamlListMatch,
   ocamlOpField,
