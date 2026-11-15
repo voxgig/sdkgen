@@ -41,6 +41,14 @@ if (Pu) {
   for (const f of Pu.open.slice(0, 6)) out.push(`  OPEN ${f.file}:${f.line} ${f.check}: ${String(f.text).slice(0, 90)}`)
   if (Pu.open.length) bad++
 } else { out.push('purity: NOT RUN'); bad++ }
+const Pg = J('pages.json')
+if (Pg) {
+  const c = Pg.counts
+  out.push(`page numbers and articles (pagecheck): ${c.steps} step counts, ${c.headings} numbered headings, ${c.lists} ordered lists, ${c.articles} articles checked (${c.notJudged} not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings ${Pg.findings.length}`)
+  for (const f of Pg.findings.slice(0, 8)) out.push(`  ${f.kind} ${f.where}${f.line ? ':' + f.line : ''}: ${f.why} | ${String(f.text).slice(0, 80)}`)
+  if (Pg.findings.length > 8) out.push(`  ... ${Pg.findings.length - 8} more in review/${lang}/pages.json`)
+  if (Pg.findings.length) bad++
+} else { out.push('page numbers and articles: NOT RUN'); bad++ }
 const Ca = J('calls.json')
 if (Ca) {
   out.push(`printed calls (callcheck, no compiler): ${Ca.ran ? `${Ca.calls} calls of ${Ca.members} runtime members checked; ARITY/RECEIVER/MEMBER findings ${Ca.findings.length}` : 'NOT RUN: ' + Ca.why}`)
