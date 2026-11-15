@@ -54,7 +54,7 @@ const refFacts: RefFacts = {
     { kind: 'streamSync', sig: 'e_stream (string) (value) (value) : value Seq.t', runs: 'call' },
     { kind: 'name', sig: 'e_name : string' },
   ],
-  direct: { returns: 'value', okFalse: 'false' },
+  direct: { returns: 'value', okFalse: 'Bool false' },
   prepare: { returns: 'value', fails: 'style' },
   body: { values: 'a `Str` holding the bytes' },
   cancel: false,

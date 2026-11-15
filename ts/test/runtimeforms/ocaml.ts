@@ -113,9 +113,9 @@ const forms: Forms = {
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
-    'ref.facts.direct.okFalse': { value: "false", file: "tm/ocaml/sdk_features.ml", quote: "jo [(\"ok\", Bool false);" },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/ocaml/Config_ocaml.ts", quote: "| _ -> base_feature ()" },
+    'ref.facts.direct.okFalse': { value: "Bool false", file: "tm/ocaml/sdk_features.ml", quote: "jo [(\"ok\", Bool false);" },
     'facts.recordType': { file: 'tm/ocaml/sdk_types.ml', quote: 'mutable e_data_get : unit -> value;' },
     'ref.facts.none': { file: CLIENT, quote: 'let make0 () : sdk_client = make Noval' },
     'ref.facts.container': { file: CLIENT, quote: 'let make (options : value) : sdk_client =' },
