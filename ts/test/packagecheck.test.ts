@@ -501,3 +501,32 @@ describe('package check — feature source', () => {
   })
 
 })
+
+
+describe('package check: a target\'s syntax provider and naming hook', () => {
+  const cmp = (dir: string) => Path.join(dir, '.sdk', 'src', 'cmp', 'iotgo')
+  const points = (dir: string) => checkPackage(dir, actx()).findings.map((f: any) => f.point)
+  const syntax = (dir: string, iface?: string) => Fs.writeFileSync(Path.join(cmp(dir), 'Syntax_iotgo.ts'),
+    'const Syntax = {\n' + (iface ? `  interface: '${iface}',\n` : '') + '}\nexport { Syntax }\n')
+  const naming = (dir: string) => Fs.writeFileSync(Path.join(cmp(dir), 'Naming_iotgo.ts'), 'export {}\n')
+
+  test('both, on the current interface: no finding', () => {
+    const dir = makePackage((d) => { syntax(d, '3.3'); naming(d) })
+    deepStrictEqual(points(dir).filter((p: string) => /provider|hook/.test(p)), [])
+  })
+
+  test('a provider without its hook is an error', () => {
+    const dir = makePackage((d) => syntax(d, '3.3'))
+    ok(points(dir).includes('provider-without-hook'))
+  })
+
+  test('a provider on another interface, or none, is an error', () => {
+    ok(points(makePackage((d) => { syntax(d, '3.2'); naming(d) })).includes('provider-interface'))
+    ok(points(makePackage((d) => { syntax(d); naming(d) })).includes('provider-interface'))
+  })
+
+  test('a hook alone is a warning', () => {
+    const dir = makePackage((d) => naming(d))
+    ok(points(dir).includes('hook-without-provider'))
+  })
+})

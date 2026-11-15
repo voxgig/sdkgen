@@ -16,6 +16,7 @@ const modelcheck_1 = require("../helpers/modelcheck");
 const featureSource_1 = require("../helpers/featureSource");
 const shipped_1 = require("../helpers/shipped");
 const kind_1 = require("./kind");
+const syntaxversion_1 = require("../helpers/syntaxversion");
 const SAME_FILE_LIMIT = 5;
 const UNRESOLVED_INCLUDE = ['multisource_not_found', 'include_extension'];
 function unresolvedIncludeOnly(result) {
@@ -63,6 +64,7 @@ function checkPackage(ref, actx) {
         ...checkManifest(fs, sdk, read),
         ...checkItems(fs, sdk, read.manifest),
         ...checkFeatureSource(fs, sdk, read.manifest),
+        ...checkProviders(fs, sdk, read.manifest),
     ];
     for (const f of findings) {
         const level = 'error' === f.level ? 'error' : f.level;
@@ -298,6 +300,39 @@ function checkFeatureSource(fs, sdk, manifest) {
                 ', so the trim cannot recognise them and every project gets them ' +
                 'whatever its model selects'
         });
+    }
+    return found;
+}
+// A target's documentation: a syntax provider needs its naming hook and
+// declares the interface it is written for; a hook alone writes nothing.
+// Read as text: a package's components compile only inside a project.
+function checkProviders(fs, sdk, manifest) {
+    const found = [];
+    const targets = new Set([
+        ...claims(manifest?.provides, 'target'),
+        ...(0, definition_1.definitionNames)(fs, sdk, 'target'),
+    ]);
+    for (const t of Array.from(targets).sort()) {
+        const dir = node_path_1.default.join(sdk, 'src', 'cmp', t);
+        const has = (name) => fs.existsSync(node_path_1.default.join(dir, name + '_' + t + '.ts'));
+        const file = node_path_1.default.join(dir, 'Syntax_' + t + '.ts');
+        const at = (level, point, note) => ({ level, point, file, kind: 'target', name: t, note: 'src/cmp/' + t + ': ' + note });
+        if (has('Syntax')) {
+            if (!has('Naming')) {
+                found.push(at('error', 'provider-without-hook', 'Syntax_' + t + '.ts has no Naming_' + t + '.ts, so generation stops on its first page'));
+            }
+            const declared = String(fs.readFileSync(file, 'utf8'))
+                .match(/^\s*interface:\s*['"]([^'"]+)['"]/m)?.[1];
+            if (syntaxversion_1.SYNTAX_INTERFACE !== declared) {
+                found.push(at('error', 'provider-interface', 'Syntax_' + t + '.ts declares interface ' + (declared ?? 'none') +
+                    ', and this sdkgen calls ' + syntaxversion_1.SYNTAX_INTERFACE));
+            }
+        }
+        else if (has('Naming') &&
+            !['ReadmeQuick', 'ReadmeRef', 'ReadmeTopQuick'].some((n) => has(n))) {
+            found.push(at('warn', 'hook-without-provider', 'Naming_' + t + '.ts and no Syntax_' + t + '.ts or ReadmeQuick_' + t +
+                '.ts, so the tutorial, the root quick start and REFERENCE.md are empty'));
+        }
     }
     return found;
 }
