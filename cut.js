@@ -80,7 +80,8 @@ function protect(s) {
 
 function splitSentences(text) {
   const { t, back } = protect(text.replace(/\s+/g, ' ').trim())
-  return t.split(/(?<=[.!?:])\s+(?=[A-Z\u0000*(\[_"'<]|\d+\.)/).map((s) => back(s).trim()).filter((s) => '' !== s)
+  // a bold lead (`**Load a planet.** ...`) ends a sentence too
+  return t.split(/(?<=[.!?](?:\*\*)?|:)\s+(?=[A-Z\u0000*(\[_"'<]|\d+\.)/).map((s) => back(s).trim()).filter((s) => '' !== s)
 }
 
 // A comment inside a code line: a whole-line comment, or one trailing code.
@@ -251,6 +252,7 @@ function vocab(roots) {
     for (const f of [P, s, s.replace(/_/g, ''), P.toUpperCase(), s.toUpperCase(), P[0].toLowerCase() + P.slice(1)]) forms.add(f)
   }
   const res = {
+    entNames: [...ents],
     entities: [...forms].filter((x) => x.length > 2).sort((a, b) => b.length - a.length),
     fields: [...fields].filter((f) => !forms.has(f)).sort((a, b) => b.length - a.length),
     sdk: [...sdk],
@@ -264,6 +266,9 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // The class of a unit: model names, the SDK name, the language's title and
 // numbers masked. Entity names are masked inside identifiers too
 // (`PlanetEntity`, `planet_id`); field names only as whole words.
+// `learn: false` (code lines, whole blocks, heading paths, single tokens) is
+// the v3.2 mask exactly. For a unit's text (the default) a word that equals a
+// model name is masked only where the model supplied it: see learnRanges.
 function masker(roots, lang, opt = {}) {
   const V = vocab(roots)
   const title = REG.languages[lang]
@@ -271,7 +276,7 @@ function masker(roots, lang, opt = {}) {
   const fld = V.fields.length ? new RegExp('(?<![A-Za-z0-9_])(' + V.fields.map(esc).join('|') + ')(?![A-Za-z0-9_])', 'g') : null
   const sdk = V.sdk.length ? new RegExp('(?<![A-Za-z])(' + V.sdk.map(esc).join('|') + ')', 'g') : null
   const ttl = title ? new RegExp('(?<![A-Za-z])' + esc(title) + '(?![A-Za-z])', 'g') : null
-  return (s) => {
+  const plain = (s) => {
     let t = s
     if (ent) t = t.replace(ent, 'Ⓔ')
     if (fld) t = t.replace(fld, 'Ⓕ')
@@ -280,6 +285,152 @@ function masker(roots, lang, opt = {}) {
     if (false !== opt.numbers) t = t.replace(/\b\d+\b/g, 'Ⓝ')
     return t
   }
+  if (false === opt.learn) return plain
+  const R = modelRanges(roots, lang)
+  return (s) => {
+    const t = applyRanges(s, R(s))
+    return false !== opt.numbers ? t.replace(/\b\d+\b/g, 'Ⓝ') : t
+  }
+}
+
+// ---- where the model supplied a name ------------------------------------
+//
+// A word that equals an entity or field name of some model (`record`,
+// `utility`, `id`, `fields`, `data`) is not therefore a model name: shared
+// prose says "every record is listed" whatever the model is. A unit's TEMPLATE
+// is its text with every candidate (an entity form, anywhere; a field name, as
+// a whole word) replaced by a mark; the SDK name and the language title are
+// always masked. A candidate is a model slot when, among the units of the same
+// template printed by the LEARNERS, the word at that place is not always the
+// same name: the 21 variations' models name different entities and fields, so
+// a word the model supplies changes from one to another, and a word of shared
+// prose does not. The learners are the OLD pages of every language (the code
+// before the port, not under review) and the NEW pages of the reference
+// languages (ported.json), less the language being masked: a language's own
+// new pages never decide where its own model slots are, so a shared word it
+// replaces by a model name stays a word, and differs from the reference.
+// A template only that language prints falls back to its own pages; a text no
+// learner printed as a unit falls back to the v3.2 mask.
+const SKEL = new Map()
+function vocabLearn(roots) {
+  const V = vocab(roots)
+  if (V.learn) return V.learn
+  const snake = (P) => P.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase()
+  // an entity whose name is another's plus a suffix (planet_entity) is masked
+  // as that entity and the suffix, so PlanetEntity has one shape everywhere
+  const base = V.entNames.filter((P) => !V.entNames.some((Q) => Q !== P && snake(P).startsWith(snake(Q) + '_')))
+  const forms = new Set()
+  for (const P of base) { const s = snake(P); for (const f of [P, s, s.replace(/_/g, ''), P.toUpperCase(), s.toUpperCase(), P[0].toLowerCase() + P.slice(1)]) if (f.length > 2) forms.add(f) }
+  const ents = [...forms].sort((a, b) => b.length - a.length)
+  V.learn = {
+    ent: ents.length ? new RegExp(ents.map(esc).join('|'), 'g') : null,
+    fld: V.fields.length ? new RegExp('(?<![A-Za-z0-9_])(' + V.fields.map(esc).join('|') + ')(?![A-Za-z0-9_])', 'g') : null,
+    sdk: V.sdk.length ? new RegExp('(?<![A-Za-z])(' + V.sdk.map(esc).join('|') + ')', 'g') : null,
+  }
+  return V.learn
+}
+
+// Candidate ranges of a raw text, in its own coordinates: [{s, e, t, w}]
+// (t: E entity, F field, S sdk, L title). Fields and the SDK name are found on
+// a copy where earlier ranges are blanked, as the v3.2 mask replaced them in turn.
+function candidates(VL, title, s) {
+  const out = []
+  let t = s
+  const take = (re, kind) => {
+    if (!re) return
+    re.lastIndex = 0
+    let m
+    const blank = t.split('')
+    while ((m = re.exec(t))) {
+      if (!m[0].length) { re.lastIndex++; continue }
+      out.push({ s: m.index, e: m.index + m[0].length, t: kind, w: m[0] })
+      for (let i = m.index; i < m.index + m[0].length; i++) blank[i] = ''
+    }
+    t = blank.join('')
+  }
+  take(VL.ent, 'E'); take(VL.fld, 'F'); take(VL.sdk, 'S')
+  if (title) take(new RegExp('(?<![A-Za-z])' + esc(title) + '(?![A-Za-z])', 'g'), 'L')
+  return { ranges: out.sort((a, b) => a.s - b.s), blanked: t }
+}
+const MARK = { E: '', F: '', S: 'Ⓢ', L: 'Ⓛ' }
+const SYM = { E: 'Ⓔ', F: 'Ⓕ', S: 'Ⓢ', L: 'Ⓛ' }
+const canon = (w) => w.toLowerCase().replace(/_/g, '')
+function templateOf(s, rs) {
+  let out = '', at = 0
+  for (const r of rs) { out += s.slice(at, r.s) + MARK[r.t]; at = r.e }
+  // the article follows the name ("an ambient", "a planet"): one template
+  // and numbers (a step number) are no part of a template
+  return (out + s.slice(at)).replace(/(^|[^A-Za-z])([Aa])n?(\s+)(?=[\uE001\uE002])/g, '$1$2$3').replace(/\b\d+\b/g, '#')
+}
+
+// Learners of a pair of roots: [old, new]; a single root is NEW unless it is named old.
+function sidesOf(roots) {
+  if (2 === roots.length) return [{ root: roots[0], side: 'old' }, { root: roots[1], side: 'new' }]
+  return roots.map((r) => ({ root: r, side: 'old' === Path.basename(r) ? 'old' : 'new' }))
+}
+const LEARNERS_NEW = () => [...new Set(Object.values(REG.ported).flat())].sort()
+
+// The learned table for a set of roots: template -> per model position, a
+// map from the name there to the set of sources ('old', or a learner language).
+function learned(roots) {
+  const k = roots.join('\0')
+  if (SKEL.has(k)) return SKEL.get(k)
+  const VL = vocabLearn(roots)
+  const T = new Map()
+  const learn = (text, src, title) => {
+    const { ranges } = candidates(VL, title, text)
+    const ms = ranges.filter((r) => 'E' === r.t || 'F' === r.t)
+    if (!ms.length) return
+    const key = templateOf(text, ranges)
+    let row = T.get(key)
+    if (!row) { row = ms.map(() => new Map()); T.set(key, row) }
+    ms.forEach((r, i) => { const c = canon(r.w); if (!row[i].has(c)) row[i].set(c, new Set()); row[i].get(c).add(src) })
+  }
+  const newLangs = LEARNERS_NEW()
+  for (const { root, side } of sidesOf(roots)) {
+    for (const v of variationsOf(root)) for (const section of SECTIONS) {
+      const langs = 'old' === side ? Object.keys(REG.languages) : newLangs
+      for (const lang of langs) {
+        const sect = loadSection(root, v, section, lang)
+        if (null == sect) continue
+        const src = 'old' === side ? 'old' : 'new:' + lang
+        for (const u of units(sect)) learn(u.text, src, REG.languages[lang])
+      }
+    }
+  }
+  SKEL.set(k, T)
+  return T
+}
+
+// The model ranges of a unit's text for `lang`: each candidate with what
+// replaces it (Ⓔ, Ⓕ, Ⓢ, Ⓛ, or null: the word stays).
+function modelRanges(roots, lang) {
+  const VL = vocabLearn(roots)
+  const title = REG.languages[lang]
+  const self = 'new:' + lang
+  return (s) => {
+    const { ranges } = candidates(VL, title, s)
+    const ms = ranges.filter((r) => 'E' === r.t || 'F' === r.t)
+    if (!ms.length) return ranges.map((r) => ({ ...r, rep: SYM[r.t] }))
+    const row = learned(roots).get(templateOf(s, ranges))
+    let i = 0
+    return ranges.map((r) => {
+      if ('S' === r.t || 'L' === r.t) return { ...r, rep: SYM[r.t] }
+      const pos = row ? row[i] : null
+      i++
+      // no learner printed this template: the v3.2 mask
+      if (!pos) return { ...r, rep: SYM[r.t] }
+      const others = [...pos.entries()].filter(([, src]) => [...src].some((x) => x !== self))
+      const names = others.length ? others.length : pos.size
+      return { ...r, rep: names > 1 ? SYM[r.t] : null }
+    })
+  }
+}
+
+function applyRanges(s, rs) {
+  let out = '', at = 0
+  for (const r of rs) { out += s.slice(at, r.s) + (null == r.rep ? r.w : r.rep); at = r.e }
+  return out + s.slice(at)
 }
 
 // Words of a text, code spans counted as their own words.
@@ -288,4 +439,4 @@ function words(s) { return String(s).replace(/`/g, ' ').split(/\s+/).filter((w) 
 // Identifiers and code-span tokens of a text: what novel/vanished tokens are made of.
 function tokens(s) { return String(s).match(/[A-Za-z_][A-Za-z0-9_]*/g) || [] }
 
-module.exports = { REG, SECTIONS, sectionFile, cutSection, loadSection, variationsOf, units, blocks, splitSentences, commentOf, cells, vocab, masker, words, tokens, readIf }
+module.exports = { REG, SECTIONS, sectionFile, cutSection, loadSection, variationsOf, units, blocks, splitSentences, commentOf, cells, vocab, masker, modelRanges, applyRanges, learned, words, tokens, readIf }

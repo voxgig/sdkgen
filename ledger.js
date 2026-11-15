@@ -80,7 +80,10 @@ function spanTokens(u) {
 }
 
 function run(a, section, lang) {
-  const mask = C.masker([a.old, a.new], lang)
+  // the v3.2 mask for pairing, heading paths and tokens; a unit's class key
+  // masks a model name only where the model supplied it (cut.js learnRanges)
+  const mask = C.masker([a.old, a.new], lang, { learn: false })
+  const umask = C.masker([a.old, a.new], lang)
   const vars = K.variations(a)
   const classes = new Map()
   const tally = { variations: 0, oldUnits: 0, newUnits: 0, same: 0, reworded: 0, missing: 0, added: 0 }
@@ -92,6 +95,8 @@ function run(a, section, lang) {
     const c = classes.get(id); c.n++; c.vars.add(v)
     // every distinct instance, unmasked: what classify.js compares across languages
     const ik = show.join('\u0000'); if (!c.inst.has(ik)) c.inst.set(ik, show)
+    // every occurrence: what rekey.js maps old class ids through
+    ;(c.occ = c.occ || []).push({ v, show })
   }
   for (const v of vars) {
     const os = C.loadSection(a.old, v, section, lang), ns = C.loadSection(a.new, v, section, lang)
@@ -120,7 +125,7 @@ function run(a, section, lang) {
             // an identifier the span passes as an argument
             for (const a of m[1].matchAll(/(?<=[(,]\s*|\(\(?:?[\w-]+\s)([a-z_][\w]*)(?=\s*[),])/g)) {
               const t = a[1]
-              if (!code.has(t) && !/^(null|nil|none|true|false|undefined)$/i.test(t)) out.set(mask(u.text) + '\u0000' + t, { u, t })
+              if (!code.has(t) && !/^(null|nil|none|true|false|undefined)$/i.test(t)) out.set(umask(u.text) + '\u0000' + t, { u, t })
             }
           }
         }
@@ -129,8 +134,8 @@ function run(a, section, lang) {
       const od = os ? new Set([...dang(os, O).values()].map((x) => mask(x.t))) : new Set()
       if (C.blocks(ns).length) for (const [k, x] of dang(ns, N)) if (!od.has(mask(x.t))) add('dangling', x.u.kind, k, [x.u.text, `\`${x.t}\` appears in no code block of this section`], v, x.u.ctx)
     }
-    if (null == ns) { O.forEach((u) => { tally.missing++; add('missing', u.kind, mask(u.text), [u.text], v, u.ctx) }); continue }
-    if (null == os) { N.forEach((u) => { tally.added++; add('added', u.kind, mask(u.text), [u.text], v, u.ctx) }); continue }
+    if (null == ns) { O.forEach((u) => { tally.missing++; add('missing', u.kind, umask(u.text), [u.text], v, u.ctx) }); continue }
+    if (null == os) { N.forEach((u) => { tally.added++; add('added', u.kind, umask(u.text), [u.text], v, u.ctx) }); continue }
     const r = pairSection(O, N, mask)
     tally.same += r.same; tally.reworded += r.reworded.length; tally.missing += r.missing.length; tally.added += r.added.length
     // Echoes: a value this section now states differently (reworded, added
@@ -162,17 +167,17 @@ function run(a, section, lang) {
         if (!hits.length || hits.length > 4) continue
         found.push(`\`${sp}\` at ${hits[0].d}:${hits[0].k}: ${hits[0].l.trim().slice(0, 150)}${hits.length > 1 ? ` (+${hits.length - 1} more)` : ''}`)
       }
-      if (found.length) add('echo', u.kind, mask(u.text), [(sign === '-' ? '(removed) ' : '') + u.text, 'still stated, unchanged, elsewhere in this SDK: ' + found.join(' | ')], v, u.ctx)
+      if (found.length) add('echo', u.kind, umask(u.text), [(sign === '-' ? '(removed) ' : '') + u.text, 'still stated, unchanged, elsewhere in this SDK: ' + found.join(' | ')], v, u.ctx)
     }
     for (const p of r.reworded) echo(p.n, '+')
     for (const u of r.added) echo(u, '+')
     for (const u of r.missing) echo(u, '-')
     for (const p of r.reworded) {
       const label = p.o.key ? `${p.o.col} of ${p.o.row}` : p.o.kind + (p.o.kind !== p.n.kind ? ' -> ' + p.n.kind : '')
-      add('reworded', p.o.kind + (p.o.key ? ':' + mask(p.o.col) : ''), mask(p.o.text) + '\u0000' + mask(p.n.text), [p.o.text, p.n.text, label], v, p.o.ctx)
+      add('reworded', p.o.kind + (p.o.key ? ':' + mask(p.o.col) : ''), umask(p.o.text) + '\u0000' + umask(p.n.text), [p.o.text, p.n.text, label], v, p.o.ctx)
     }
-    for (const u of r.missing) add('missing', u.kind, mask(u.text), [u.text], v, u.ctx)
-    for (const u of r.added) add('added', u.kind, mask(u.text), [u.text], v, u.ctx)
+    for (const u of r.missing) add('missing', u.kind, umask(u.text), [u.text], v, u.ctx)
+    for (const u of r.added) add('added', u.kind, umask(u.text), [u.text], v, u.ctx)
   }
   // Tokens: words of the section that one side has and the other never has.
   // Entity and field names are left out (they vary with the model).

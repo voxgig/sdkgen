@@ -41,6 +41,7 @@ const K = require('./common.js')
 const Ledger = require('./ledger.js')
 const Blocks = require('./blocks.js')
 const Facts = require('./facts.js')
+const Ident = require('./ident.js')
 const RULES = require('./rules.js')
 
 const AUTO_TYPES = new Set(['reworded', 'added'])
@@ -67,12 +68,17 @@ function classesOf(a, section, lang) {
   return [...L.classes.map((c) => ({ ...c, tool: 'ledger' })), ...B.classes.map((c) => ({ ...c, tool: 'blocks', type: 'block-' + c.type }))]
 }
 
-// Masked instances of a class: [{ kind, o, n }] (o null for an added unit).
-function masked(c, mask) {
+// Masked instances of a class: [{ kind, o, n, nid }] (o null for an added
+// unit): the match form of each side (ident.js), and the sentence id of the
+// NEW side (null for text the fixture model holds, which takes no verdict).
+function masked(c, mask, I, ulang) {
   const out = []
   for (const show of c.inst.values()) {
-    if ('reworded' === c.type) out.push({ kind: c.kind.split(':')[0], o: mask(show[0], c.kind.split(':')[0]), n: mask(show[1], c.kind.split(':')[0]) })
-    else out.push({ kind: c.kind, o: null, n: mask(show[0], c.kind) })
+    const kind = 'reworded' === c.type ? c.kind.split(':')[0] : c.kind
+    const n = 'reworded' === c.type ? show[1] : show[0]
+    const nid = I && !I.isModelText(n) ? I.sentenceId(n, kind, ulang) : null
+    if ('reworded' === c.type) out.push({ kind, o: mask(show[0], kind), n: mask(n, kind), nid })
+    else out.push({ kind, o: null, n: mask(n, kind), nid })
   }
   return out
 }
@@ -94,14 +100,16 @@ function run(a) {
   const prev = a.scratch ? {} : readJson(Path.join(a.classes, lang + '.json'))
   const rules = new Map(RULES.map((r) => [r.name, r]))
   const myFacts = Facts.load(ts, lang)
-  const myMask = Facts.masker(myFacts, roots)
+  // the match form, learned with this language left out (ident.js)
+  const I = Ident.make({ clone: a.clone, old: a.old, new: a.new })
+  const myMask = (text, kind) => I.match(text, kind, lang, lang)
   const out = {}
   const report = { lang, sections: {}, refs: {}, facts: myFacts.facts.length }
   for (const section of sections) {
     const refs = (K.list(a.refs) || C.REG.ported[section] || []).filter((l) => l !== lang)
     report.refs[section] = refs
     // the reviewed units of the references, masked with each reference's own facts
-    const ck = [section, refs.join(','), a.classes, a.old, a.new, a.humanOnly ? 'h' : ''].join('\u0000')
+    const ck = [lang, section, refs.join(','), a.classes, a.old, a.new, a.humanOnly ? 'h' : ''].join('\u0000')
     const verd = verdicts(a.sentences)
     const cached = a.cache ? REFCACHE.get(ck) : null
     const addedNew = cached ? cached.addedNew : new Map(), pairs = cached ? cached.pairs : new Map()
@@ -115,7 +123,7 @@ function run(a) {
     if (!cached) for (const r of refs) {
       const decided = readJson(Path.join(a.classes, r + '.json'))
       const rF = Facts.load(ts, r)
-      const rmask = Facts.masker(rF, roots)
+      const rmask = (text, kind) => I.match(text, kind, r, lang)
       const mineR = new Map(), has = new Set()
       oftenBy.set(r, mineR); hasBy.set(r, has); styleBy.set(r, styleOf(rF))
       for (const v of vars) {
@@ -125,7 +133,7 @@ function run(a) {
         for (const u of C.units(sect)) {
           const mk = u.kind + '\u0000' + rmask(u.text, u.kind), k = v + '\u0000' + mk
           cnt.set(k, (cnt.get(k) || 0) + 1)
-          if (!exampleOf.has(mk)) exampleOf.set(mk, { lang: r, v, text: u.text })
+          if (!exampleOf.has(mk)) exampleOf.set(mk, { lang: r, v, text: u.text, kind: u.kind })
         }
         for (const [k, n] of cnt) { often.set(k, Math.max(often.get(k) || 0, n)); mineR.set(k, n) }
       }
@@ -136,10 +144,10 @@ function run(a) {
         if ('shared' === d.by) continue
         if (a.humanOnly && 'hand' !== d.by && 'manual' !== d.rule) continue
         const prov = { ref: r, id: c.id, outcome: d.outcome, by: d.by || d.rule || '?' }
-        for (const m of masked(c, rmask)) {
+        for (const m of masked(c, rmask, I, r)) {
           const nk = m.kind + '\u0000' + m.n
           // a sentence a reviewer marked false is never a reference
-          if ('false' === verd[sentenceId(m.kind, m.n)]) continue
+          if (m.nid && 'false' === verd[m.nid]) continue
           if (!addedNew.has(nk)) addedNew.set(nk, [])
           addedNew.get(nk).push(prov)
           if (null != m.o) { const pk = nk + '\u0000' + m.o; if (!pairs.has(pk)) pairs.set(pk, []); pairs.get(pk).push(prov) }
@@ -188,9 +196,11 @@ function run(a) {
         if (myErased.has(ek) || !sets.every((x) => x.has(ek))) continue
         const [kind, text] = ek.split('\u0000')
         if (!/[A-Za-z]{3,}.*\s.*[A-Za-z]{3,}/.test(text.replace(/`…`|⟦[^⟧]*⟧/g, ''))) continue
-        const id = sentenceId(kind, text)
         const exk = [...oftenBy.get(same[0]).keys()].find((k) => k.startsWith(v + '\u0000') && erase(k.slice(v.length + 1)) === ek)
-        if (!absent[id]) absent[id] = { kind, masked: text, example: exampleOf.get(exk.slice(v.length + 1)), refs: same, variations: [], why: (hand.absent || {})[id] || '' }
+        const ex = exampleOf.get(exk.slice(v.length + 1))
+        // keyed by the sentence the reference prints (ident.js identity)
+        const id = I.sentenceId(ex.text, ex.kind, ex.lang)
+        if (!absent[id]) absent[id] = { kind, masked: text, example: ex, refs: same, variations: [], why: (hand.absent || {})[id] || '' }
         absent[id].variations.push(v)
       }
     }
@@ -219,7 +229,7 @@ function run(a) {
       }
       let hint = null
       if (!d && !recount && 'ledger' === c.tool && AUTO_TYPES.has(c.type)) {
-        const ms = masked(c, myMask)
+        const ms = masked(c, myMask, I, lang)
         const lists = ms.map((m) => null == m.o ? addedNew.get(m.kind + '\u0000' + m.n) : pairs.get(m.kind + '\u0000' + m.n + '\u0000' + m.o))
         const dup = lists.every(Boolean) && ms.some(tooOften)
         if (dup) hint = 'masked, it is a reviewed shared sentence, but this language prints it more often in a variation than any reference does: a duplicate?'
@@ -236,7 +246,7 @@ function run(a) {
         }
         if (few) hint = `masked, it is a reviewed shared sentence, but this language prints it in fewer variations, or fewer times, than ${few[0]} does: ${few[1].slice(0, 8).join(', ')}${few[1].length > 8 ? ' ...' : ''}: a dropped sentence?`
         if (p0) {
-          const sids = [...new Set(ms.map((m) => sentenceId(m.kind, m.n)))]
+          const sids = [...new Set(ms.map((m) => m.nid).filter(Boolean))]
           const unrev = sids.filter((x) => !verd[x])
           d = { outcome: `shared:${p0.ref}:${p0.id}`, why: `masked, it is the ${p0.ref} unit of class ${p0.id} (${p0.outcome}, by ${p0.by})`, n: c.n, by: 'shared', sentences: sids, unreviewed: unrev.length }
           rep.sharedUnreviewed = (rep.sharedUnreviewed || 0) + (unrev.length ? 1 : 0)

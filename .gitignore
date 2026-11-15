@@ -5,3 +5,5 @@ inject/
 before/work/
 gen/mstage-*/
 node_modules/
+legacy/*/gen/mstage-*/
+legacy/*/review/

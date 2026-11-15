@@ -108,7 +108,7 @@ function pairBlocks(O, N) {
 }
 
 function run(a, section, lang) {
-  const mask = C.masker([a.old, a.new], lang)
+  const mask = C.masker([a.old, a.new], lang, { learn: false })
   const norm = loadNormalizers(lang, a.normalizers)
   const vars = K.variations(a)
   const tally = { variations: 0, oldBlocks: 0, newBlocks: 0, identical: 0, corrected: 0, unified: 0, changed: 0, oldOnly: 0, newOnly: 0 }
@@ -121,6 +121,7 @@ function run(a, section, lang) {
     const id = K.classId(section + '/block-' + type, key)
     if (!classes.has(id)) classes.set(id, { id, type, kind: 'block', key, show, n: 0, vars: new Set(), where: `${v}: ${at}` })
     const c = classes.get(id); c.n++; c.vars.add(v)
+    ;(c.occ = c.occ || []).push({ v, show })
     return id
   }
   for (const v of vars) {
