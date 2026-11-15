@@ -1740,7 +1740,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/scala.aontu 4cdf74ce532f
 model/target/target-index.aontu e1085548f758
-src/cmp/scala/Config_scala.ts 12ed6618ad10
+src/cmp/scala/Config_scala.ts c9867853aa7b
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
 src/cmp/scala/EntityOperation_scala.ts 5de61f269ee2
 src/cmp/scala/EntityTypes_scala.ts 3c495d07e70b
@@ -1748,6 +1748,7 @@ src/cmp/scala/Entity_scala.ts db47d209fd9d
 src/cmp/scala/Gitignore_scala.ts 4c75b5801ca5
 src/cmp/scala/MainEntity_scala.ts 911328e9d2ca
 src/cmp/scala/Main_scala.ts 5f8d4af4b296
+src/cmp/scala/Naming_scala.ts f604d0612fdb
 src/cmp/scala/Package_scala.ts 8ae04e6b348b
 src/cmp/scala/PrepareAuth_scala.ts b9a5ce33389e
 src/cmp/scala/ReadmeEntity_scala.ts d3d4cf89862b
@@ -1758,12 +1759,10 @@ src/cmp/scala/ReadmeInstall_scala.ts 0e22bad14e50
 src/cmp/scala/ReadmeIntro_scala.ts f0ed7e16f36a
 src/cmp/scala/ReadmeModel_scala.ts d7519593b40f
 src/cmp/scala/ReadmeOptions_scala.ts 6c961d32294b
-src/cmp/scala/ReadmeQuick_scala.ts 016a4dd7ee30
-src/cmp/scala/ReadmeRef_scala.ts 111f50db2fa8
 src/cmp/scala/ReadmeTopHowto_scala.ts 1169e3db1008
-src/cmp/scala/ReadmeTopQuick_scala.ts 6525759c83dd
 src/cmp/scala/ReadmeTopTest_scala.ts a9ffb6404c1b
-src/cmp/scala/Schema_scala.ts 24932d354519
+src/cmp/scala/Schema_scala.ts 98d756d85e8c
+src/cmp/scala/Syntax_scala.ts 40a64f70fe07
 src/cmp/scala/TestClean_scala.ts 8fe9eddddd97
 src/cmp/scala/TestDirect_scala.ts 07de948be724
 src/cmp/scala/TestEntity_scala.ts a075c6549a8d
@@ -1778,7 +1777,7 @@ src/cmp/scala/fragment/EntityRemoveOp.fragment.scala b2b382ba8af4
 src/cmp/scala/fragment/EntityUpdateOp.fragment.scala e7b5cdee3a50
 src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
-src/cmp/scala/utility_scala.ts 05b03af31afd
+src/cmp/scala/utility_scala.ts 5a5d445885e6
 tm/scala/LICENSE 52acd47c245f
 tm/scala/Makefile 53420e3d4296
 tm/scala/VERSION e6635045e1d2
