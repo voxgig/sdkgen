@@ -52,6 +52,8 @@ const forms: Forms = {
   typeNames: { '*@import("../entity/${mod}.zig").${cls}': '*EntyClass' },
   namesWhy: 'zig passes by position; the runtime suffixes a parameter it rebinds with _in, and the accessor\'s return is spelled through the generator',
   cite: {
+    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: '.{ "ok", h.vbool(false) },' },
+    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: '.{ "ok", h.vbool(200 <= status and status < 300) },', unquoted: { true: 'ok is the bool the status test computes; true is not spelled' } },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/zig/fragment/Entity.fragment.zig", quote: "return h.clone(self.data);" },
     'facts.collection': { value: "slice", file: ENTITY, quote: 'pub const EntListResult = union(enum) {\n    ok: []*EntyClass,' },
     'facts.ok': { file: ENTITY, quote: '.ok => EntResult{ .ok = self },' },
@@ -66,12 +68,26 @@ const forms: Forms = {
       file: 'tm/zig/core/utility.zig',
       quote: ['.string, .integer, .float, .number_string, .bool => is_json_request(ctx.point),', 'h.setp(fetchdef, "body", body);'],
     },
-    'ref.facts.cancel': { value: false, file: 'tm/zig/core/utility.zig', quote: 'pub fn fetcher_util(ctx: *Context, fullurl: []const u8, fetchdef: Value) E!Value {' },
-    'notes.member:prepare': { value: "On failure it returns the error of its error union, for `try` or `catch`.", file: MAIN, quote: 'pub fn prepare(self: *ProjectNameSDK, fetchargs_in: Value) E!Value {', also: [{ file: 'tm/zig/core/error.zig', quote: 'pub const E = error{Sdk};' }] },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/zig/core/utility.zig'] } },
+    'notes.member:prepare': { value: "On failure it returns the error of its error union, for `try` or `catch`.", file: MAIN, quote: 'pub fn prepare(self: *ProjectNameSDK, fetchargs_in: Value) E!Value {', also: [{ file: 'tm/zig/core/error.zig', quote: 'pub const E = error{Sdk};' }],
+      unquoted: { try: 'a Zig keyword for a call to an error-union function', catch: 'a Zig keyword for a call to an error-union function' } },
     'notes.member:streamList': { value: "Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with\nwhatever data the failure left; otherwise `.err` holds the branded error.",
       file: ENTITY,
-      quote: ['// What make_error or done hands back, as a stream: the error, or under\n    // `throw: false` the data there is.', '.err => |e| return .{ .err = e },'],
+      quote: ['// What make_error or done hands back, as a stream: the error, or under\n    // `throw: false` the data there is.', '.err => |e| return .{ .err = e },', 'return .{ .ok = sf.call(sf.ctx) };', 'const given = h.to_map(h.getp(stream_opts, "ctrl"));'],
+      unquoted: { 'callopts.ctrl': 'the option path; stream reads the ctrl key of its callopts (stream_opts) with getp' },
     },
+  },
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test_sdk',
+  on: (d) => /^\(self\s*:/.test(d.rest) ? 'instance' : (/^[ \t]+/.test(d.head) ? 'type' : 'module'),
+  fails: (d) => /Result$/.test(d.returns) ? 'error union ' + d.returns : '',
+  failure: { shows: 'Result', call: '.err' },
+  stream: {
+    file: "src/cmp/zig/fragment/Entity.fragment.zig",
+    construct: "return .{ .ok = sf.call(sf.ctx) };", starts: "at call",
+    run: "const point = utility.make_point(ctx) catch return streamItems(self.opError(ctx));",
+    draw: "return .{ .ok = sf.call(sf.ctx) };",
+    runs: "before it returns", items: "before it returns",
   },
 }
 
