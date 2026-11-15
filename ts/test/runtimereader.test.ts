@@ -8,9 +8,10 @@ import { ok, deepStrictEqual } from 'node:assert'
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
-import type { Forms, View } from './runtimeforms/forms'
-import { OPS, esc, findDecls, read, view } from './runtimeforms/forms'
-import { FORMS_SRC, FRAMEWORK } from './runtimeforms/guard'
+import type { Decl, Forms, View } from './runtimeforms/forms'
+import { OPS, bracketed, esc, findDecls, read, view } from './runtimeforms/forms'
+import { FORMS_SRC, FRAMEWORK, streamItems, streamClaims } from './runtimeforms/guard'
+import { checkCitation } from './runtimeforms/account'
 
 const { CANON_TYPE } = require('../dist/helpers/canonType.js')
 const { canonToType } = require('../dist/sdkgen.js')
@@ -23,7 +24,7 @@ const formsOf = (t: string): Forms => require(Path.resolve(__dirname, 'runtimefo
 const CANON = Object.keys(CANON_TYPE)
 
 
-function problems(forms: Forms, v: View): string[] {
+function problems(t: string, forms: Forms, v: View): string[] {
   const out: string[] = []
   const absent = forms.absentOps || {}
   for (const op of OPS) {
@@ -54,7 +55,95 @@ function problems(forms: Forms, v: View): string[] {
     if (null == forms.types.reason) out.push('types: no column and no reason')
   }
   else for (const k of CANON) if ('' === String(canonToType('`$' + k + '`', forms.types.column) ?? '')) out.push(`types: ${k} has no ${forms.types.column} type`)
+  out.push(...dimensionProblems(t, forms, v))
   return out
+}
+
+
+// What a declaration's own text shows, whatever the forms say: `throws` after
+// the parameter list, a `static` head, a decorator or `def self.` that puts it
+// on the type.
+function shownByText(d: Decl): { throws: boolean, onType: boolean } {
+  let throws = false
+  if (d.rest.startsWith('(')) {
+    const b = bracketed(d.rest, 0, '(')
+    if (null != b) throws = /^\s*throws\b/.test(d.rest.slice(b.end))
+  }
+  const above = d.before.split('\n').slice(-2, -1)[0] || ''
+  const onType = /\bstatic\b/.test(d.head) || /^\s*def self\./.test(d.head) || /^\s*@(classmethod|staticmethod)\b/.test(above)
+  return { throws, onType }
+}
+
+function allDecls(forms: Forms, v: View): Decl[] {
+  const names = new Set<string>([
+    ...v.client, ...v.entity, ...Object.values(forms.members).filter((x): x is string => null != x),
+    ...ctorNames(forms),
+  ])
+  const files = read([...forms.files.client, ...forms.files.entity, ...forms.files.ops])
+  return [...names].flatMap((n) => findDecls(forms, files, esc(n)))
+}
+
+const ctorNames = (forms: Forms): string[] =>
+  [forms.ctorDecl || forms.tokens.ctor, forms.testDecl || forms.members.tester].filter((x): x is string => null != x)
+
+function dimensionProblems(t: string, forms: Forms, v: View): string[] {
+  const out: string[] = []
+  for (const d of allDecls(forms, v)) {
+    const s = shownByText(d)
+    if (s.throws && !/throws/.test(d.fails)) out.push(`${d.name} (${d.file}) is declared \`throws\`; the forms read its failure as ${JSON.stringify(d.fails)}`)
+    if (s.onType && 'type' !== d.on) out.push(`${d.name} (${d.file}) is declared on the type; the forms read it as on ${d.on}`)
+    if (d.field && 0 < d.params.length) out.push(`${d.name} (${d.file}) is read as a field and takes ${d.params.length} parameters`)
+  }
+  if (null != forms.failure) {
+    for (const op of OPS) {
+      const d = v.methods[op].decl
+      if (null != d && !d.fails.includes(forms.failure.shows)) {
+        out.push(`${op}: the forms say an operation shows its failure as ${forms.failure.shows}; ${d.name} shows ${JSON.stringify(d.fails)}`)
+      }
+    }
+  }
+  if (null == forms.testDecl && null == forms.members.tester) out.push('no test constructor (testDecl)')
+  else if (0 === findDecls(forms, read(forms.files.client), esc(forms.testDecl || forms.members.tester as string)).length) {
+    out.push(`test constructor ${forms.testDecl || forms.members.tester} is not declared in the client files`)
+  }
+  if (null == forms.stream) out.push('no stream record (forms.stream): when the operation runs and when the items are read')
+  else {
+    const s = streamItems(t, forms.stream)
+    if (null != s.problem) out.push('stream: ' + s.problem)
+    else {
+      if (s.runs !== forms.stream.runs) out.push(`stream: the code runs the operation ${s.runs}; the forms say ${forms.stream.runs}`)
+      if (s.items !== forms.stream.items) out.push(`stream: the code reads the streaming feature's items ${s.items}; the forms say ${forms.stream.items}`)
+      const kind = v.shapes.find((x) => 'stream' === x.member)?.shape.replace(/ \(.*$/, '')
+      const claim = null == kind ? null : streamClaims(kind)
+      if (null != claim && claim !== s.items && null == forms.exceptions?.streamItems) {
+        out.push(`stream: kind ${kind} says its items are read ${claim}; the code reads them ${s.items}`)
+      }
+    }
+  }
+  const every = read([...forms.files.client, ...forms.files.entity, ...forms.files.ops])
+  for (const [name, want] of Object.entries(forms.expect || {})) {
+    const ds = findDecls(forms, every, esc(name))
+    if (0 === ds.length) out.push(`expect ${name}: not declared in the runtime`)
+    for (const d of ds) {
+      for (const [k, w] of Object.entries(want)) {
+        if ((d as any)[k] !== w) out.push(`expect ${name}: ${k} is ${JSON.stringify((d as any)[k])} in ${d.file}; the forms read ${JSON.stringify(w)}`)
+      }
+    }
+  }
+  for (const [what, c] of Object.entries(forms.shows || {})) {
+    const bad = checkCitation(t, 'shows.' + what, (c as any).value, c, (x) => x)
+    if (null != bad) out.push(bad)
+  }
+  return out
+}
+
+
+function dimsCell(d: Decl): string {
+  return [d.fails || '', d.on, d.field ? 'field' : 'callable'].join(' | ')
+}
+
+function retCell(ds: Decl[]): string {
+  return [...new Set(ds.map((d) => d.returns + ('' !== d.returns && 'comment' === d.from ? ' (from a comment)' : '')))].join(' or ')
 }
 
 
@@ -75,23 +164,40 @@ function section(t: string, forms: Forms, v: View): string {
     const ds = findDecls(forms, files, esc(name))
     const fam = Object.entries(forms.members).find(([, n]) => n === name)?.[0] || ''
     const params = 0 === ds.length ? '(not read)' : [...new Set(ds.map((d) => d.bare ? 'property or field' : '(' + d.params.join(', ') + ')'))].join(' or ')
-    return `| ${name} | ${params} | ${[...new Set(ds.map((d) => d.returns))].join(' or ')} | ${fam} | ${shape(name)} |`
+    return `| ${name} | ${params} | ${retCell(ds)} | ${[...new Set(ds.map(dimsCell))].join(' or ') || ' | | '} | ${fam} | ${shape(name)} |`
   }
+  const ctorRow = (label: string, name: string | undefined) => {
+    if (null == name) return `| ${label} | (none) | | | | | |`
+    const ds = findDecls(forms, client, esc(name))
+    return `| ${label} | ${name}${0 === ds.length ? ' (not read)' : ''} | ${[...new Set(ds.map((d) => '(' + d.params.join(', ') + ')'))].join(' or ')} | ${retCell(ds)} | ${[...new Set(ds.map(dimsCell))].join(' or ')} |`
+  }
+  const st = null == forms.stream ? null : streamItems(t, forms.stream)
   const lines = [
     `## ${t}`, '',
     `Result style: **${v.style}**; operations ${v.async ? 'resolve asynchronously' : 'return'}. ` +
     `Record accessor: ${null == v.record ? '(none)' : '`' + v.record.name + '`, ' + v.record.params + ' parameter(s)'}.`, '',
-    '| operation | method | parameters | returns | source |', '| --- | --- | --- | --- | --- |',
+    'A failure shows in a declaration as its `fails` cell (empty: only by the result style); `on` is what a member is called on; ' +
+    '`form` says whether it is called or is a field. A return read from a comment says so.', '',
+    '| operation | method | parameters | returns | fails | on | form | source |', '| --- | --- | --- | --- | --- | --- | --- | --- |',
     ...OPS.map((op) => {
       const m = v.methods[op]
-      if (null != forms.absentOps?.[op]) return `| ${op} | (absent: ${forms.absentOps[op]}) | | | |`
-      return `| ${op} | ${m.method ?? '(' + m.why + ')'} | ${null == m.decl ? '' : m.decl.params.join(', ')} | ${m.decl?.returns ?? ''} | ${(m.decl?.file ?? '').split('#')[0]} |`
+      if (null != forms.absentOps?.[op]) return `| ${op} | (absent: ${forms.absentOps[op]}) | | | | | | |`
+      return `| ${op} | ${m.method ?? '(' + m.why + ')'} | ${null == m.decl ? '' : m.decl.params.join(', ')} | ${null == m.decl ? '' : retCell([m.decl])} | ${null == m.decl ? ' | | ' : dimsCell(m.decl)} | ${(m.decl?.file ?? '').split('#')[0]} |`
     }),
+    ...(null == forms.failure ? [] : ['', `Every operation's declaration shows its failure as \`${forms.failure.shows}\`` +
+      ('' === forms.failure.call ? '.' : `; a call to one is written with \`${forms.failure.call}\`.`)]),
     accessorLine(forms, client, entity),
-    '', '| client member | parameters | returns | family | shape |', '| --- | --- | --- | --- | --- |',
+    '', '| constructor | declaration | parameters | returns | fails | on | form |', '| --- | --- | --- | --- | --- | --- | --- |',
+    ctorRow('client', forms.ctorDecl || forms.tokens.ctor), ctorRow('test', forms.testDecl || forms.members.tester),
+    '', '| client member | parameters | returns | fails | on | form | family | shape |', '| --- | --- | --- | --- | --- | --- | --- | --- |',
     ...v.client.map((n) => memberRow(n, client)),
-    '', '| entity member | parameters | returns | family | shape |', '| --- | --- | --- | --- | --- |',
+    '', '| entity member | parameters | returns | fails | on | form | family | shape |', '| --- | --- | --- | --- | --- | --- | --- | --- |',
     ...v.entity.map((n) => memberRow(n, entity)),
+    '',
+    null == st || null != st.problem ? 'Stream: (not read)' :
+      `Stream (${forms.stream?.file}): the operation runs **${st.runs}**; the streaming feature's items are read **${st.items}**; ` +
+      'without the feature the items are the whole result, read before the first one is handed over.',
+    ...Object.entries(forms.shows || {}).map(([what, c]: [string, any]) => `- ${what}: ${JSON.stringify(c.value)} (${c.file ?? 'absent from ' + c.absent?.files.join(', ')})`),
     '',
     null == forms.types.column
       ? `Field types: no code generator column (${forms.types.reason}).`
@@ -114,7 +220,7 @@ describe('runtimereader', () => {
       const forms = formsOf(t)
       const v = view(forms)
       sections.push(section(t, forms, v))
-      deepStrictEqual(problems(forms, v), [], t + ': what the forms cannot read')
+      deepStrictEqual(problems(t, forms, v), [], t + ': what the forms cannot read')
     })
   }
 

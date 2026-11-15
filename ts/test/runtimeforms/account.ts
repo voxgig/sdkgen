@@ -18,8 +18,10 @@ const DEFAULTS: [RegExp, Category][] = [
   [/^facts\.unusedError$/, 'language'],
   [/^facts\.(collection|recordType|errSlot|nullValue|ok|err|pairForm|unwrap)$/, 'cited'],
   [/^ref\.facts\.(entityBy|noun|entityNoun|heading|keys)$/, 'convention'],
-  [/^ref\.facts\.(none|maps)$/, 'language'],
-  [/^ref\.facts\.lits\.(true|false)$/, 'language'],
+  // What a runtime's source spells: cited, the token in the quote.
+  [/^ref\.facts\.none$/, 'cited'],
+  [/^ref\.facts\.lits\.(true|false)$/, 'cited'],
+  [/^ref\.facts\.maps$/, 'language'],
   [/^ref\.facts\.(setArg|container)$/, 'cited'],
   // Derived where it is the type printer's word, else the options table's.
   [/^ref\.facts\.valueType\.\w+$/, 'derived'],
@@ -41,14 +43,13 @@ const DEFAULTS: [RegExp, Category][] = [
   [/^notes\./, 'cited'],
 ]
 
-// A null value spelled as more than a keyword (`h.vnull()`) is the
-// runtime's, not the language's.
-const LANGUAGE_WORD = /^[A-Za-z]+$/
+// A fact cited before the provider declares it: its citation carries the
+// value the runtime shows, and a later declaration must equal it.
+const AHEAD = /^ref\.facts\.lits\.(true|false)$/
 
 function defaultCategory(path: string, value: any): Category | null {
   if ('' === value) return 'convention'
   if (/\.kind$/.test(path) && /^utility/.test(value)) return 'cited'
-  if ('ref.facts.none' === path && !LANGUAGE_WORD.test(String(value))) return 'cited'
   const hit = DEFAULTS.find(([re]) => re.test(path))
   return null == hit ? null : hit[1]
 }
@@ -75,7 +76,11 @@ function declaredLeaves(S: any): [string, any][] {
 const MARKDOWN = /^facts\.collection$|^ref\.facts\.(body\.\w+|setArg)$/
 
 function codeTokens(path: string, value: any, spell: (s: string) => string): string[] {
-  if ('string' !== typeof value || /^notes\./.test(path) || /\.kind$|\.fails$/.test(path)) return []
+  if ('string' !== typeof value || /\.kind$|\.fails$/.test(path)) return []
+  // A note is prose; the code it names is backticked, less the slots it fills.
+  if (/^notes\./.test(path)) {
+    return [...spell(value).matchAll(/`([^`]+)`/g)].map((m) => m[1]).filter((x) => !/^\{\w+(\.\w+)*\}$/.test(x))
+  }
   const code = spell(value)
   const v = code.replace(/(?<!\$)\{\w+\}/g, ' ').trim()
   if ('' === v) return []
@@ -90,13 +95,15 @@ function codeTokens(path: string, value: any, spell: (s: string) => string): str
 type Account = {
   lang: string
   category: Record<string, Category | 'excepted'>
-  cited: { path: string, file: string, quote: string, prose: boolean, value: any, unquoted: string[] }[]
+  cited: { path: string, file: string, quote: string, prose: boolean, absence: boolean, value: any, unquoted: string[] }[]
   excepted: { path: string, reason: string }[]
+  // Facts cited before the provider declares them.
+  ahead: { path: string, value: any }[]
   findings: string[]
 }
 
 function account(lang: string, S: any, forms: Forms, verified: Set<string>): Account {
-  const out: Account = { lang, category: {}, cited: [], excepted: [], findings: [] }
+  const out: Account = { lang, category: {}, cited: [], excepted: [], ahead: [], findings: [] }
   const cite = forms.cite || {}
   const exc = forms.exceptions || {}
   const spell = (s: string) => s.replace(/\{(\w+)\}/g, (_m, k: string) => forms.tokens[k] ?? '{' + k + '}')
@@ -125,13 +132,18 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
       if (null != bad) out.findings.push(bad)
       else {
         out.category[path] = 'cited'
-        const parts = [c, ...(c.also || [])]
-        const quote = parts.map((x) => ([] as string[]).concat(x.quote).join(' ... ')).join(' | ')
-        out.cited.push({
-          path, file: parts.map((x) => x.file).join(' | '), quote, value,
-          prose: prosy(value, codeTokens(path, value, spell), spell),
-          unquoted: Object.entries(c.unquoted || {}).map(([k, v]) => k + ': ' + v),
-        })
+        if ('absent' in c) {
+          out.cited.push({ path, file: c.absent.files.join(' | '), quote: 'absent: ' + c.absent.pattern, value, prose: false, absence: true, unquoted: [] })
+        }
+        else {
+          const parts = [c, ...(c.also || [])]
+          const quote = parts.map((x) => ([] as string[]).concat(x.quote).join(' ... ')).join(' | ')
+          out.cited.push({
+            path, file: parts.map((x) => x.file).join(' | '), quote, value,
+            prose: prosy(value, codeTokens(path, value, spell), spell), absence: false,
+            unquoted: Object.entries(c.unquoted || {}).map(([k, v]) => k + ': ' + v),
+          })
+        }
       }
       continue
     }
@@ -143,7 +155,20 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
     else out.category[path] = def
   }
 
-  for (const p of Object.keys(cite)) if (!paths.has(p)) out.findings.push(`cite ${p}: the provider declares no such fact`)
+  for (const p of Object.keys(cite)) {
+    if (paths.has(p)) continue
+    if (!AHEAD.test(p)) {
+      out.findings.push(`cite ${p}: the provider declares no such fact`)
+      continue
+    }
+    const c = cite[p]
+    if (!('value' in c)) out.findings.push(`cite ${p}: a fact not yet declared is cited with the value the runtime shows (value: ...)`)
+    else {
+      const bad = checkCitation(lang, p, c.value, c, spell)
+      if (null != bad) out.findings.push(bad)
+      else out.ahead.push({ path: p, value: c.value })
+    }
+  }
   for (const p of Object.keys(exc)) {
     if (/^(facts|ref\.facts|notes)\./.test(p) && !paths.has(p)) out.findings.push(`exception ${p}: the provider declares no such fact`)
   }
@@ -160,10 +185,67 @@ function prosy(value: any, toks: string[], spell: (s: string) => string): boolea
 }
 
 
+// What is not the runtime: the documentation components and providers, the
+// naming hook, the example helpers, and the tests a target generates.
+const NOT_RUNTIME = /(^|\/)(Readme|Syntax|Naming|Test|utility_)[^/]*$|\/tests?\/|_test\.|\.test\./
+
+// The files of a runtime: its components and its templates.
+function runtimeFiles(lang: string): string[] {
+  const out: string[] = []
+  const walk = (rel: string) => {
+    const p = Path.join(SCAFFOLD, rel)
+    if (!Fs.existsSync(p)) return
+    if (Fs.statSync(p).isDirectory()) for (const f of Fs.readdirSync(p).sort()) walk(rel + '/' + f)
+    else if (!NOT_RUNTIME.test(rel)) out.push(rel)
+  }
+  walk('src/cmp/' + lang)
+  walk('tm/' + lang)
+  return out
+}
+
+const ownFile = (lang: string, file: string) =>
+  (file.startsWith('src/cmp/' + lang + '/') || file.startsWith('tm/' + lang + '/')) && !NOT_RUNTIME.test(file)
+
+function runtimeText(lang: string, file: string): string | null {
+  if (!ownFile(lang, file)) return null
+  const p = Path.join(SCAFFOLD, file)
+  return Fs.existsSync(p) && Fs.statSync(p).isFile() ? Fs.readFileSync(p, 'utf8') : null
+}
+
+// How many lines either side of a quote an unquoted token may not appear in.
+const NEAR = 3
+
+// A hyphen joins an identifier in a Lisp, so `to-map` does not hold `map`.
+const wordIn = (tok: string, text: string) =>
+  new RegExp('(^|[^\\w-])' + tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\w-])').test(text)
+
 function checkCitation(lang: string, path: string, value: any, c: Citation, spell: (s: string) => string): string | null {
+  // An absence: a search over named runtime files that must find nothing.
+  if ('absent' in c) {
+    if (!('value' in c)) return `cite ${path}: an absence pins the value it shows (value: ...)`
+    if (JSON.stringify(c.value) !== JSON.stringify(value)) return `cite ${path}: the fact is ${JSON.stringify(value)}; the absence shows ${JSON.stringify(c.value)}`
+    if (0 === c.absent.files.length) return `cite ${path}: an absence names no files`
+    const re = new RegExp(c.absent.pattern.source, c.absent.pattern.flags.replace('g', ''))
+    let searched = 0
+    for (const f of c.absent.files) {
+      if (!ownFile(lang, f)) return `cite ${path}: ${f} is not one of the ${lang} runtime's files`
+      const p = Path.join(SCAFFOLD, f)
+      if (!Fs.existsSync(p)) return `cite ${path}: ${f} does not exist`
+      const files = Fs.statSync(p).isDirectory() ? runtimeFiles(lang).filter((x) => x.startsWith(f.replace(/\/$/, '') + '/')) : [f]
+      for (const x of files) {
+        searched++
+        const text = Fs.readFileSync(Path.join(SCAFFOLD, x), 'utf8')
+        const m = re.exec(text)
+        if (null != m) return `cite ${path}: the absence of ${c.absent.pattern} no longer holds: ${x} has ${JSON.stringify(m[0])}`
+      }
+    }
+    if (0 === searched) return `cite ${path}: the absence searched no file`
+    return null
+  }
   const quotes: string[] = []
+  const texts: [string, string][] = []
   for (const part of [c, ...(c.also || [])]) {
-    if (!part.file.startsWith('src/cmp/' + lang + '/') && !part.file.startsWith('tm/' + lang + '/')) {
+    if (!ownFile(lang, part.file)) {
       return `cite ${path}: ${part.file} is not one of the ${lang} runtime's files`
     }
     const p = Path.join(SCAFFOLD, part.file)
@@ -173,10 +255,15 @@ function checkCitation(lang: string, path: string, value: any, c: Citation, spel
       if ('' === q.trim()) return `cite ${path}: an empty quote`
       if (!text.includes(q)) return `cite ${path}: ${part.file} no longer contains ${JSON.stringify(q)}`
       quotes.push(q)
+      // What surrounds a quote: the lines a reader of it sees.
+      const lines = text.split('\n')
+      const at = text.slice(0, text.indexOf(q)).split('\n').length - 1
+      const n = q.split('\n').length
+      texts.push([part.file + ':' + (at + 1), lines.slice(Math.max(0, at - NEAR), at + n + NEAR).join('\n')])
     }
   }
   const joined = quotes.join('\n')
-  const has = (tok: string) => new RegExp('(^|[^\\w])' + tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\w])').test(joined)
+  const has = (tok: string) => wordIn(tok, joined)
   const toks = codeTokens(path, value, spell)
   for (const tok of toks) {
     if (!has(tok) && null == c.unquoted?.[tok]) {
@@ -191,6 +278,9 @@ function checkCitation(lang: string, path: string, value: any, c: Citation, spel
   }
   for (const tok of Object.keys(c.unquoted || {})) {
     if (!toks.includes(tok) || has(tok)) return `cite ${path}: unquoted ${tok} is not a token the quote lacks`
+    // Not excused where it stands near what the citation quotes.
+    const where = texts.find(([, text]) => wordIn(tok, text))
+    if (null != where) return `cite ${path}: unquoted ${tok} occurs within ${NEAR} lines of the quote at ${where[0]}; quote it there`
   }
   return null
 }
@@ -204,4 +294,9 @@ function tally(a: Account): Record<string, number> {
 
 
 export type { Account, Category }
-export { DEFAULTS, account, codeTokens, declaredLeaves, defaultCategory, tally }
+// The runtime files a token occurs in, for a reviewer of an unquoted token.
+function occurrences(lang: string, tok: string): string[] {
+  return runtimeFiles(lang).filter((f) => wordIn(tok, Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')))
+}
+
+export { DEFAULTS, account, checkCitation, occurrences, codeTokens, declaredLeaves, defaultCategory, runtimeFiles, runtimeText, tally }

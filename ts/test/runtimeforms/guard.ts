@@ -5,12 +5,12 @@
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
-import type { Decl, Family, Forms, OpName } from './forms'
+import type { Decl, Family, Forms, On, OpName, StreamItems } from './forms'
 import {
   OPS, defaultSigName, defaultSigParams, defaultSigReturns, esc, findDecls, namePattern, opMethod, opSource,
   publicNames, read,
 } from './forms'
-import { account, codeTokens } from './account'
+import { account, codeTokens, runtimeText } from './account'
 
 const { CANON_TYPE } = require('../../dist/helpers/canonType.js')
 const { canonToType } = require('../../dist/sdkgen.js')
@@ -113,8 +113,8 @@ function check(t: string, S: any, forms: Forms): Result {
 
   // A declared signature against its runtime declaration; the declaration
   // when it agrees.
-  const sig = (where: string, path: string, sigText: string, files: any[]): Decl | null => {
-    const name = sigName(sigText)
+  const sig = (where: string, path: string, sigText: string, files: any[], instance = false): Decl | null => {
+    const name = sigName(sigText) || (/\(/.test(sigText) ? '' : (/^\s*([\w{}$]+)/.exec(sigText) || [])[1] || '')
     if ('' === name) return null
     const decls = findDecls(forms, files, pattern(name))
     if (0 === decls.length) return add('signature', `${where}: ${spell(name)} is not defined by the runtime's ${where.split(' ')[0]} (${sigText})`), null
@@ -127,6 +127,25 @@ function check(t: string, S: any, forms: Forms): Result {
       return null
     }
     let good = true
+    // A field is not called, and what is called is not written as a field.
+    const called = new RegExp(esc(spell(name)) + '\\s*[(\\[]').test(spell(sigText)) || /^\(/.test(sigText.trim())
+    if (fits.field && called && null == exc['field:' + where]) {
+      good = false
+      add('field', `${where}: ${spell(name)} is a field of the runtime, declared as called (${sigText})`)
+    }
+    if (!fits.field && !called && !forms.parenless && null == exc['field:' + where]) {
+      good = false
+      add('field', `${where}: ${spell(name)} is called in the runtime, declared as a field (${sigText})`)
+    }
+    if (null != forms.failure && fits.fails.includes(forms.failure.shows) &&
+      !spell(sigText).includes(forms.failure.shows) && null == exc['fails:' + where]) {
+      good = false
+      add('fails', `${where}: ${spell(name)} shows its failure as ${forms.failure.shows} in the runtime; the signature does not (${sigText})`)
+    }
+    if (instance && 'type' === fits.on && null == exc['on:' + where]) {
+      good = false
+      add('on', `${where}: ${spell(name)} is declared on the type in the runtime, and listed among the instance members (${sigText})`)
+    }
     const opt = (ps: string[]) => ps.map((p) => forms.optional(p) ? '?' : '!').join('')
     if (fits.params.length === declared.length && opt(fits.params) !== opt(declared) && null == exc['optional:' + where]) {
       good = false
@@ -157,6 +176,8 @@ function check(t: string, S: any, forms: Forms): Result {
     if (0 === decls.length) return add('ctor', `${where}: ${name} is not defined by the runtime (${line})`)
     const fit = decls.find((d) => d.params.filter((p) => !forms.optional(p)).length <= args.length && args.length <= d.params.length)
     if (null == fit) return add('ctor', `${where}: ${name} takes ${decls.map((d) => d.params.length).join(' or ')} parameters, the call passes ${args.length}`)
+    const recv = receiver(line.split(token).join('\u0000ctor'), '\u0000ctor')
+    if ('instance' === fit.on || 'instance' === recv) return add('on', `${where}: ${name} is declared on ${fit.on} in the runtime; the call ${line} makes it on ${recv}`)
     verified.add(path)
   }
 
@@ -242,16 +263,20 @@ function check(t: string, S: any, forms: Forms): Result {
   }
   const memberDecl: Record<string, Decl | null> = {}
   r.client.forEach((m: any, i: number) => {
-    memberDecl['client' + i] = sig('client ' + m.kind, `ref.facts.client[${i}].sig`, m.sig, client)
+    memberDecl['client' + i] = sig('client ' + m.kind, `ref.facts.client[${i}].sig`, m.sig, client, true)
   })
   r.entity.forEach((m: any, i: number) => {
-    memberDecl['entity' + i] = sig('entity ' + m.kind, `ref.facts.entity[${i}].sig`, m.sig, entity)
+    memberDecl['entity' + i] = sig('entity ' + m.kind, `ref.facts.entity[${i}].sig`, m.sig, entity, true)
   })
   r.test.forEach((x: any, i: number) => {
     const d = sig('test', `ref.facts.test[${i}].sig`, x.sig, client)
     if (null == d) return
-    if (spell(x.call).includes(spell(sigName(x.sig)))) verified.add(`ref.facts.test[${i}].call`)
-    else add('test', `test constructor call ${x.call} does not call ${sigName(x.sig)}`)
+    if (!spell(x.call).includes(spell(sigName(x.sig)))) add('test', `test constructor call ${x.call} does not call ${sigName(x.sig)}`)
+    else {
+      const recv = receiver(spell(x.call), spell(sigName(x.sig)))
+      if (!fitsOn(d.on, recv)) add('on', `test constructor ${sigName(x.sig)} is declared on ${d.on === 'module' ? 'its module' : 'the ' + d.on} in the runtime; the call ${x.call} makes it on ${recv}`)
+      else verified.add(`ref.facts.test[${i}].call`)
+    }
     if ((0 < d.params.length) === !!x.args) verified.add(`ref.facts.test[${i}].args`)
     else add('test', `test constructor ${sigName(x.sig)} takes ${d.params.length} parameters; args declared ${x.args}`)
   })
@@ -281,6 +306,29 @@ function check(t: string, S: any, forms: Forms): Result {
     const rname = forms.members[which]
     const d = null == rname ? null : one(client, rname)
     if (null != d && '' !== d.returns && type(d.returns) === norm(r[which].returns, forms)) verified.add(`ref.facts.${which}.returns`)
+  }
+
+  // The call a provider prints for an operation carries what calling a
+  // declaration that fails this way needs.
+  if (null != forms.failure && '' !== forms.failure.call && null != load && load.fails.includes(forms.failure.shows)) {
+    const printed = printCall(S)
+    if (null == printed || !printed.includes(forms.failure.call)) {
+      add('fails', `the runtime's load shows its failure as ${forms.failure.shows}; the printed call ${JSON.stringify(printed)} has no ${forms.failure.call}`)
+    }
+  }
+
+  // A stream kind whose sentence says when the items are read must be what
+  // the code does.
+  {
+    const sk = r.entity.find((m: any) => 'stream' === FAMILY[m.kind])
+    if (null != sk && null != forms.stream) {
+      const st = streamItems(t, forms.stream)
+      const claim = streamClaims(sk.kind)
+      if (null != st.problem) add('streamItems', st.problem)
+      else if (null != claim && claim !== st.items && null == exc.streamItems) {
+        add('streamItems', `stream is ${sk.kind}, whose page says the items are read ${claim}; the code reads them ${st.items}`)
+      }
+    }
   }
 
   // Members both ways.
@@ -381,7 +429,66 @@ function norm(s: string, forms: Forms): string {
   return out.replace(/\s+/g, '')
 }
 
+// What a printed call is made on: the instance its code holds (the name a
+// line binds, client or sdk), a qualifier (a type, a module), `new`, or nothing.
+function receiver(call: string, name: string): On | 'qualified' | 'free' {
+  const at = call.lastIndexOf(name)
+  if (at < 0) return 'free'
+  const pre = call.slice(0, at)
+  if (/\bnew\s+$/.test(pre)) return 'type'
+  const m = /(\$?[\w{}\u0000]+)\s*(?:\.|::|->|\/)$/.exec(pre)
+  if (null == m) return 'free'
+  const bound = new Set([...call.matchAll(/(?:^|\n|\(def\s+)\s*(?:[\w{}<>*:]+\s+\**)?\$?(\w+)\s*(?::=|=(?!=)|\))/g)].map((x) => x[1]))
+  for (const v of ['client', 'self', 'this']) bound.add(v)
+  const r = m[1].replace(/^\$/, '')
+  return bound.has(r) ? 'instance' : 'qualified'
+}
+
+function fitsOn(on: On, recv: string): boolean {
+  if ('instance' === on) return 'instance' === recv
+  if ('type' === on) return 'qualified' === recv || 'type' === recv
+  return 'free' === recv || 'qualified' === recv
+}
+
+// The positions of a stream's quotes give when the operation runs and when the
+// streaming feature's items are read.
+function streamItems(lang: string, s: StreamItems): { runs: string, items: string, problem?: string } {
+  const text = runtimeText(lang, s.file)
+  if (null == text) return { runs: '', items: '', problem: `${s.file} is not a ${lang} runtime file` }
+  const pos: Record<string, number> = {}
+  for (const k of ['construct', 'run', 'draw'] as const) {
+    const n = text.split(s[k]).length - 1
+    if (1 !== n) return { runs: '', items: '', problem: `${s.file} holds the ${k} quote ${n} times (${JSON.stringify(s[k])})` }
+    pos[k] = text.indexOf(s[k])
+  }
+  const after = 'at call' === s.starts ? 'from the call, beside the caller' : 'as the caller iterates'
+  return {
+    runs: pos.run < pos.construct ? 'before it returns' : after,
+    items: pos.draw <= pos.construct ? 'before it returns' : after,
+  }
+}
+
+// When the page's sentence for a stream kind says the items are read.
+function streamClaims(kind: string): string | null {
+  if (['streamIterator', 'streamGenerator', 'streamLazy'].includes(kind)) return 'as the caller iterates'
+  if ('streamList' === kind) return 'before it returns'
+  return null
+}
+
 const PROBE_ENT = { name: 'planet', Name: 'Planet', sym: { accessor: 'Planet', var: 'planet', plural: 'planets' } }
+
+// An operation's call through the provider's own printer, outside any attempt.
+function printCall(S: any): string | null {
+  const sc = { declared: new Set(), local: new Set(), stmts: [], section: [], standalone: false }
+  const desc: any = { layout: { vars: {}, module: 'm', client: 'C', ctor: 'C' }, entities: [{ ...PROBE_ENT, fields: [] }], quick: null, options: [] }
+  try {
+    return S.call({ k: 'call', entity: PROBE_ENT, op: 'load', bind: { role: 'one', entity: PROBE_ENT, name: 'planet' }, arg: null },
+      desc, sc, { inAttempt: false, last: false }).join('\n')
+  }
+  catch (e: any) {
+    return null
+  }
+}
 
 // A record read through the provider's own printer.
 function printRecord(S: any): string | null {
@@ -406,7 +513,9 @@ function full(t: string, S: any, forms: Forms) {
 
 type Control = { name: string, check: string, mutate: (S: any, forms: Forms) => boolean }
 
-const firstCited = (forms: Forms) => Object.keys(forms.cite || {})[0]
+// The first citation of a fact the provider declares, quoting a file.
+const firstCited = (forms: Forms, S: any) => Object.keys(forms.cite || {})
+  .find((k) => !('absent' in (forms.cite as any)[k]) && undefined !== (/^notes\./.test(k) ? (S.notes || {})[k.slice(6)] : get(S, k)))
 
 const CONTROLS: Control[] = [
   { name: 'an operation method renamed', check: 'method', mutate: (S) => { S.facts.method.update = S.facts.method.update + 'Nope'; return true } },
@@ -560,8 +669,8 @@ const CONTROLS: Control[] = [
     },
   },
   {
-    name: 'a citation whose quote no longer exists', check: 'account', mutate: (_S, forms) => {
-      const p = firstCited(forms)
+    name: 'a citation whose quote no longer exists', check: 'account', mutate: (S, forms) => {
+      const p = firstCited(forms, S)
       if (null == p) return false
       const c = (forms.cite as any)[p]
       ;(forms.cite as any)[p] = { ...c, quote: ([] as string[]).concat(c.quote).map((q) => q + ' zz-no-such-text') }
@@ -571,8 +680,8 @@ const CONTROLS: Control[] = [
   {
     name: 'a cited code token changed', check: 'account', mutate: (S, forms) => {
       const spell = (s: string) => s.replace(/\{(\w+)\}/g, (_m, k: string) => forms.tokens[k] ?? '{' + k + '}')
-      const p = Object.keys(forms.cite || {}).find((k) => /^facts\.|^ref\.facts\./.test(k) &&
-        0 < codeTokens(k, get(S, k), spell).filter((x) => null == (forms.cite as any)[k].unquoted?.[x]).length)
+      const p = Object.keys(forms.cite || {}).find((k) => /^facts\.|^ref\.facts\./.test(k) && undefined !== get(S, k) &&
+        !('absent' in (forms.cite as any)[k]) && 0 < codeTokens(k, get(S, k), spell).filter((x) => null == (forms.cite as any)[k].unquoted?.[x]).length)
       if (null == p) return false
       const tok = codeTokens(p, get(S, p), spell).filter((x) => null == (forms.cite as any)[p].unquoted?.[x])[0]
       set(S, p, String(get(S, p)).replace(tok, tok + 'Zz'))
@@ -581,7 +690,7 @@ const CONTROLS: Control[] = [
   },
   {
     name: 'a cited prose value changed', check: 'account', mutate: (S, forms) => {
-      const p = Object.keys(forms.cite || {}).find((k) => /^facts\.|^ref\.facts\./.test(k) && 'value' in (forms.cite as any)[k])
+      const p = Object.keys(forms.cite || {}).find((k) => /^facts\.|^ref\.facts\./.test(k) && undefined !== get(S, k) && 'value' in (forms.cite as any)[k])
       if (null == p) return false
       const v = get(S, p)
       set(S, p, 'boolean' === typeof v ? !v : String(v) + ' or more')
@@ -589,10 +698,103 @@ const CONTROLS: Control[] = [
     },
   },
   {
-    name: 'a cited fact with its citation removed', check: 'account', mutate: (_S, forms) => {
-      const p = firstCited(forms)
+    name: 'a cited fact with its citation removed', check: 'account', mutate: (S, forms) => {
+      const p = firstCited(forms, S)
       if (null == p) return false
       delete (forms.cite as any)[p]
+      return true
+    },
+  },
+  {
+    name: 'a test constructor called on an instance', check: 'on', mutate: (S, forms) => {
+      if (null == S.ref || 0 === S.ref.facts.test.length) return false
+      const x = S.ref.facts.test[S.ref.facts.test.length - 1]
+      const n = (forms.sigName || defaultSigName)(x.sig)
+      const re = new RegExp('(?:[\\w{}$]+\\s*(?:\\.|::|->|/))?' + esc(n), 'g')
+      const all = [...x.call.matchAll(re)]
+      if (0 === all.length) return false
+      const last = all[all.length - 1]
+      x.call = x.call.slice(0, last.index) + 'client.' + n + x.call.slice((last.index as number) + last[0].length)
+      return true
+    },
+  },
+  {
+    name: 'a member the runtime declares on the type listed among the instance members', check: 'on', mutate: (S, forms) => {
+      if (null == S.ref || 0 === S.ref.facts.test.length) return false
+      const x = S.ref.facts.test[0]
+      const n = (forms.sigName || defaultSigName)(x.sig)
+      const d = findDecls(forms, read(forms.files.client), esc(n.replace(/\{(\w+)\}/g, (_m, k) => forms.tokens[k] ?? k)))[0]
+      if (null == d || 'type' !== d.on) return false
+      S.ref.facts.client.push({ kind: 'make', sig: x.sig })
+      return true
+    },
+  },
+  {
+    name: 'a failure marker dropped from the load signature', check: 'fails', mutate: (S, forms) => {
+      if (null == S.ref || null == forms.failure) return false
+      const sig = S.ref.facts.op.load
+      if (!sig.includes(forms.failure.shows)) return false
+      S.ref.facts.op.load = sig.split(forms.failure.shows).join('Zz')
+      return true
+    },
+  },
+  {
+    name: 'the printed call drops what a failing call needs', check: 'fails', mutate: (S, forms) => {
+      if (null == forms.failure || '' === forms.failure.call) return false
+      const call = S.call
+      S.call = (...a: any[]) => call(...a).map((l: string) => l.split(forms.failure!.call).join(''))
+      return true
+    },
+  },
+  {
+    name: 'a stream recorded as read as the caller iterates when the code reads it first', check: 'streamItems', mutate: (S, forms) => {
+      if (null == S.ref || null == forms.stream) return false
+      const m = S.ref.facts.entity.find((x: any) => 'stream' === FAMILY[x.kind])
+      if (null == m) return false
+      if (null != forms.exceptions?.streamItems) return false
+      const lang = (/^(?:src\/cmp|tm)\/([\w-]+)\//.exec(forms.stream.file) || [])[1] || ''
+      m.kind = 'before it returns' === streamItems(lang, forms.stream).items ? 'streamIterator' : 'streamList'
+      return true
+    },
+  },
+  {
+    name: 'a called member declared as a field', check: 'field', mutate: (S, forms) => {
+      if (null == S.ref || forms.parenless) return false
+      const m = [...S.ref.facts.client, ...S.ref.facts.entity].find((x: any) => /^[^(]*\w\(\)/.test(x.sig))
+      if (null == m) return false
+      m.sig = m.sig.replace('()', '')
+      return true
+    },
+  },
+  {
+    name: 'an absence whose search starts to match', check: 'account', mutate: (_S, forms) => {
+      const p = Object.keys(forms.cite || {}).find((k) => 'absent' in (forms.cite as any)[k])
+      if (null == p) return false
+      const c = (forms.cite as any)[p]
+      ;(forms.cite as any)[p] = { ...c, absent: { ...c.absent, pattern: /\w/ } }
+      return true
+    },
+  },
+  {
+    name: 'an unquoted token that stands beside the quote', check: 'account', mutate: (S, forms) => {
+      const spell = (s: string) => s.replace(/\{(\w+)\}/g, (_m, k: string) => forms.tokens[k] ?? '{' + k + '}')
+      for (const [k, c] of Object.entries(forms.cite || {}) as [string, any][]) {
+        if ('absent' in c || undefined === get(S, k) || !/^(facts|ref\.facts)\./.test(k)) continue
+        const toks = codeTokens(k, get(S, k), spell).filter((x) => null == c.unquoted?.[x])
+        if (0 === toks.length) continue
+        ;(forms.cite as any)[k] = { ...c, unquoted: { ...(c.unquoted || {}), [toks[0]]: 'excused although the quote holds it' } }
+        return true
+      }
+      return false
+    },
+  },
+  {
+    name: 'a note naming code its citation does not hold', check: 'account', mutate: (S, forms) => {
+      const k = Object.keys(forms.cite || {}).find((x) => /^notes\./.test(x) && null != (S.notes || {})[x.slice(6)])
+      if (null == k) return false
+      S.notes = { ...S.notes, [k.slice(6)]: S.notes[k.slice(6)] + ' See `zzNoSuchCode`.' }
+      const c = (forms.cite as any)[k]
+      if ('value' in c) (forms.cite as any)[k] = { ...c, value: S.notes[k.slice(6)] }
       return true
     },
   },
@@ -617,5 +819,6 @@ function set(S: any, path: string, v: any) {
 
 
 export {
-  CONTROLS, FAMILY, FORMS, FORMS_SRC, FRAMEWORK, PROVIDERS, check, clone, formsOf, full, syntaxOf,
+  CONTROLS, FAMILY, FORMS, FORMS_SRC, FRAMEWORK, PROVIDERS, check, clone, fitsOn, formsOf, full, printCall, receiver,
+  streamClaims, streamItems, syntaxOf,
 }
