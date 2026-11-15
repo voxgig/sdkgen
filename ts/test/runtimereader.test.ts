@@ -138,6 +138,11 @@ function dimensionProblems(t: string, forms: Forms, v: View): string[] {
 }
 
 
+// A parameter the caller may leave out is marked.
+const paramsOf = (forms: Forms, d: Decl) => d.params.map((p) => forms.optional(p) ? p + ' [optional]' : p).join(', ')
+
+const FAMILIES = ['options', 'utility', 'direct', 'prepare', 'data', 'match', 'make', 'name', 'stream']
+
 function dimsCell(d: Decl): string {
   return [d.fails || '', d.on, d.field ? 'field' : 'callable'].join(' | ')
 }
@@ -163,13 +168,13 @@ function section(t: string, forms: Forms, v: View): string {
   const memberRow = (name: string, files: any[]) => {
     const ds = findDecls(forms, files, esc(name))
     const fam = Object.entries(forms.members).find(([, n]) => n === name)?.[0] || ''
-    const params = 0 === ds.length ? '(not read)' : [...new Set(ds.map((d) => d.bare ? 'property or field' : '(' + d.params.join(', ') + ')'))].join(' or ')
+    const params = 0 === ds.length ? '(not read)' : [...new Set(ds.map((d) => d.bare ? (d.field ? 'property or field' : 'no parameter list') : '(' + paramsOf(forms, d) + ')'))].join(' or ')
     return `| ${name} | ${params} | ${retCell(ds)} | ${[...new Set(ds.map(dimsCell))].join(' or ') || ' | | '} | ${fam} | ${shape(name)} |`
   }
   const ctorRow = (label: string, name: string | undefined) => {
     if (null == name) return `| ${label} | (none) | | | | | |`
     const ds = findDecls(forms, client, esc(name))
-    return `| ${label} | ${name}${0 === ds.length ? ' (not read)' : ''} | ${[...new Set(ds.map((d) => '(' + d.params.join(', ') + ')'))].join(' or ')} | ${retCell(ds)} | ${[...new Set(ds.map(dimsCell))].join(' or ')} |`
+    return `| ${label} | ${name}${0 === ds.length ? ' (not read)' : ''} | ${[...new Set(ds.map((d) => '(' + paramsOf(forms, d) + ')'))].join(' or ')} | ${retCell(ds)} | ${[...new Set(ds.map(dimsCell))].join(' or ')} |`
   }
   const st = null == forms.stream ? null : streamItems(t, forms.stream)
   const lines = [
@@ -182,7 +187,7 @@ function section(t: string, forms: Forms, v: View): string {
     ...OPS.map((op) => {
       const m = v.methods[op]
       if (null != forms.absentOps?.[op]) return `| ${op} | (absent: ${forms.absentOps[op]}) | | | | | | |`
-      return `| ${op} | ${m.method ?? '(' + m.why + ')'} | ${null == m.decl ? '' : m.decl.params.join(', ')} | ${null == m.decl ? '' : retCell([m.decl])} | ${null == m.decl ? ' | | ' : dimsCell(m.decl)} | ${(m.decl?.file ?? '').split('#')[0]} |`
+      return `| ${op} | ${m.method ?? '(' + m.why + ')'} | ${null == m.decl ? '' : paramsOf(forms, m.decl)} | ${null == m.decl ? '' : retCell([m.decl])} | ${null == m.decl ? ' | | ' : dimsCell(m.decl)} | ${(m.decl?.file ?? '').split('#')[0]} |`
     }),
     ...(null == forms.failure ? [] : ['', `Every operation's declaration shows its failure as \`${forms.failure.shows}\`` +
       ('' === forms.failure.call ? '.' : `; a call to one is written with \`${forms.failure.call}\`.`)]),
@@ -193,6 +198,8 @@ function section(t: string, forms: Forms, v: View): string {
     ...v.client.map((n) => memberRow(n, client)),
     '', '| entity member | parameters | returns | fails | on | form | family | shape |', '| --- | --- | --- | --- | --- | --- | --- | --- |',
     ...v.entity.map((n) => memberRow(n, entity)),
+    '',
+    'Members the runtime does not have: ' + (FAMILIES.filter((f) => null == (forms.members as any)[f] && null == (forms.members as any)[f + 'Get']).join(', ') || 'none') + '.',
     '',
     null == st || null != st.problem ? 'Stream: (not read)' :
       `Stream (${forms.stream?.file}): the operation runs **${st.runs}**; the streaming feature's items are read **${st.items}**; ` +

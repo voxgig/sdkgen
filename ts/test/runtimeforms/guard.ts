@@ -362,7 +362,7 @@ function check(t: string, S: any, forms: Forms): Result {
     if (null == rname || fam.endsWith('Get') || fam.endsWith('Set')) continue
     const files = ['options', 'utility', 'direct', 'prepare', 'tester'].includes(fam) ? client : entity
     const d = pub.has(rname) ? one(files, rname) : null
-    if (null != d && !declaredFamilies.has(fam as Family)) add('members', `the runtime defines ${fam} (${rname}); the reference does not declare it`)
+    if (null != d && !declaredFamilies.has(fam as Family) && null == exc['members:' + fam]) add('members', `the runtime defines ${fam} (${rname}); the reference does not declare it`)
     if (null == d && declaredFamilies.has(fam as Family)) add('members', `${fam} is declared; the runtime has no ${rname}`)
   }
 
