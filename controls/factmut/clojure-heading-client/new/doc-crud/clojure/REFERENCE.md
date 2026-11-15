@@ -37,34 +37,35 @@ Create a new SDK client instance. `options` is a `voxgig.struct` map
 
 #### `(api/test-sdk testopts sdkopts)`
 
-Create a test client with mock features active. `testopts` are the test
-feature's options and `sdkopts` further client options, merged over the
-test defaults; both may be `nil`. It returns a client in test mode.
+Create a test client with mock features active. The first argument holds
+the test feature's options, which the call switches on, and replaces any
+`feature.test` in the second, which holds the other client options; both
+may be `nil`.
 
 ```clojure
 (def client (api/test-sdk nil nil))
 ```
 
 
-### Instance Functions
+### Client Functions
 
 The SDK utility object is reached through `sdk.client`, which `sdk.api`
 does not re-export: `(sdk.client/get-utility client)` returns a copy of it.
 
 #### `(api/planet client data)`
 
-Create a new `Planet` instance. Pass `nil` for no initial
-options.
+Create a new `Planet` entity. Its `data` argument holds the entity
+options: pass `nil` for none.
 
 #### `(api/record client data)`
 
-Create a new `Record` instance. Pass `nil` for no initial
-options.
+Create a new `Record` entity. Its `data` argument holds the entity
+options: pass `nil` for none.
 
 #### `(api/utility client data)`
 
-Create a new `Utility` instance. Pass `nil` for no initial
-options.
+Create a new `Utility` entity. Its `data` argument holds the entity
+options: pass `nil` for none.
 
 #### `(api/options-map client) -> map`
 
@@ -84,12 +85,15 @@ Make a direct HTTP request to any API endpoint.
 | `query` | `map` | Query string parameters. |
 | `headers` | `map` | Request headers (merged with defaults). |
 | `body` | `any` | Request body (maps are JSON-serialized). |
-| `ctrl` | `map` | Control options (e.g. `(vs/jm "explain" true)`). |
+| `ctrl` | `map` | Control options. |
 
-**Returns:** `map`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `false` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `(vs/getprop result "ok")`.
+**Returns:** `map`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
+unless the status is 2xx. When the body cannot be read, `ok` is `false`
+and the key `err` holds the error; a request that cannot be made gives
+only `ok` (`false`) and `err`. A key is read as
+`(vs/getprop result "err")`. A failure is reported in the result, not as
+an error, so branch on `(vs/getprop result "ok")`.
 
 #### `(api/prepare client fetchargs) -> map`
 
@@ -129,16 +133,16 @@ arguments go beside them too, and are sent as that action's payload.
 | --- | --- | --- | --- |
 | `terraform` | `create` | `/planet/{id}/terraform` | `(e-planet/create (api/planet client nil) (vs/jm "$action" "terraform" "id" "planet_id") nil)` |
 
-An action returns that action's OWN response, which is not necessarily a
-Planet record — check the API definition for its shape.
+Like any operation, an action's call gives back the entity; its data is
+then that action's OWN response, which is not necessarily a Planet
+record — check the API definition for its shape.
 
 ### Operations
 
 #### `(list ent reqmatch ctrl) -> vector`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a vector of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a vector of entities, one per record, and raises on failure.
 
 ```clojure
 (doseq [item (e-planet/list (api/planet client nil) nil nil)]
@@ -171,9 +175,9 @@ raises on failure. `((:data-get result))` reads its record.
 
 #### `(update ent reqdata ctrl) -> entity`
 
-Update an existing entity. The data must include the entity id, `id`.
-Returns the updated entity, and raises on failure. `((:data-get
-result))` reads its record.
+Update an existing entity. The data must include the entity id, `id`,
+unless the entity already holds it. Returns the updated entity, and
+raises on failure. `((:data-get result))` reads its record.
 
 ```clojure
 (def result
@@ -188,8 +192,9 @@ result))` reads its record.
 #### `(patch ent reqdata ctrl) -> entity`
 
 Change part of an existing entity: only the fields given are sent. The
-data must include the entity id, `id`. Returns the patched entity, and
-raises on failure. `((:data-get result))` reads its record.
+data must include the entity id, `id`, unless the entity already holds
+it. Returns the patched entity, and raises on failure.
+`((:data-get result))` reads its record.
 
 ```clojure
 (def result
@@ -233,13 +238,13 @@ Set the entity match criteria.
 
 #### `((:make ent)) -> entity`
 
-Create a new `Planet` instance with the same client and
+Create another `Planet` entity with the same client and
 options.
 
 #### `(stream ent action args callopts) -> seq`
 
-Run an operation through the pipeline and return a lazy stream of its
-result items.
+Run an operation through the pipeline and return a sequence of its
+result items. The operation runs before the call returns.
 
 #### `((:get-name ent)) -> string`
 
@@ -267,9 +272,8 @@ Return the entity name.
 
 #### `(list ent reqmatch ctrl) -> vector`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a vector of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a vector of entities, one per record, and raises on failure.
 
 ```clojure
 (doseq [item (e-record/list (api/record client nil) nil nil)]
@@ -298,13 +302,13 @@ Set the entity match criteria.
 
 #### `((:make ent)) -> entity`
 
-Create a new `Record` instance with the same client and
+Create another `Record` entity with the same client and
 options.
 
 #### `(stream ent action args callopts) -> seq`
 
-Run an operation through the pipeline and return a lazy stream of its
-result items.
+Run an operation through the pipeline and return a sequence of its
+result items. The operation runs before the call returns.
 
 #### `((:get-name ent)) -> string`
 
@@ -332,9 +336,8 @@ Return the entity name.
 
 #### `(list ent reqmatch ctrl) -> vector`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a vector of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a vector of entities, one per record, and raises on failure.
 
 ```clojure
 (doseq [item (e-utility/list (api/utility client nil) nil nil)]
@@ -363,13 +366,13 @@ Set the entity match criteria.
 
 #### `((:make ent)) -> entity`
 
-Create a new `Utility` instance with the same client and
+Create another `Utility` entity with the same client and
 options.
 
 #### `(stream ent action args callopts) -> seq`
 
-Run an operation through the pipeline and return a lazy stream of its
-result items.
+Run an operation through the pipeline and return a sequence of its
+result items. The operation runs before the call returns.
 
 #### `((:get-name ent)) -> string`
 

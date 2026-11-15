@@ -38,9 +38,9 @@ Every operation returns entities, not raw records.
 
 ### 1. Create a client
 
-The client reads its API key from the `DEMO_APIKEY` environment
-variable. The server URL is templated, so `server` must give `tenant`;
-`region` defaults to `eu`.
+The example passes the API key from the `DEMO_APIKEY` environment
+variable as the `apikey` option. The server URL is templated, so
+`server` must give `tenant`; `region` defaults to `eu`.
 
 ```perl
 use DemoSDK;
@@ -72,9 +72,9 @@ else {
 
 ### 3. Load a satellite
 
-Satellite is nested under planet, so provide the `planet_id`. `load()`
-returns the entity and dies on failure; `$satellite->data_get` reads its
-record (a `hashref`).
+Satellite is nested under planet, so the match also gives `planet_id`.
+`load()` returns the entity and dies on failure; `$satellite->data_get`
+reads its record (a `hashref`).
 
 ```perl
 my $satellite = eval { $client->Satellite->load({ 'planet_id' => 'example_planet_id', 'id' => 'example_id' }) };
@@ -86,7 +86,7 @@ else {
 }
 ```
 
-### 4. Create, update, and remove
+### 4. Create, update, and remove a planet
 
 Each write returns the entity it wrote (a removed one is marked as
 deleted), and dies on failure.

@@ -35,20 +35,20 @@ Create a new SDK client instance.
 #### `DemoSDK.testSDK(_ testopts: VMap?, _ sdkopts: VMap?) -> DemoSDK`
 
 Create a test client with mock features active. The first argument holds
-the test feature's options and the second further client options, merged
-over the test defaults; both may be `nil`. It returns a client in test
-mode.
+the test feature's options, which the call switches on, and replaces any
+`options["feature"]["test"]` in the second, which holds the other client
+options; both may be `nil`.
 
 ```swift
 let client = DemoSDK.testSDK(nil, nil)
 ```
 
 
-### Instance Methods
+### Client Methods
 
 #### `Ambient(_ entopts: VMap? = nil) -> DemoEntityBase`
 
-Create a new `Ambient` instance. Pass `nil` for no initial
+Create a new `Ambient` entity. Pass `nil` for no initial
 options.
 
 #### `optionsMap() -> VMap`
@@ -73,12 +73,15 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["query"]` | `VMap` | Query string parameters. |
 | `fetchargs["headers"]` | `VMap` | Request headers (merged with defaults). |
 | `fetchargs["body"]` | `Value` | Request body (maps are JSON-serialized). |
-| `fetchargs["ctrl"]` | `VMap` | Control options (e.g. `.map([("explain", .bool(true))])`). |
+| `fetchargs["ctrl"]` | `VMap` | Control options. |
 
-**Returns:** `VMap`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `false` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `result.entries["ok"]`.
+**Returns:** `VMap`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
+unless the status is 2xx. When the body cannot be read, `ok` is `false`
+and the key `err` holds the error; a request that cannot be made gives
+only `ok` (`false`) and `err`. A key is read as `result.entries["err"]`.
+A failure is reported in the result, not as an error, so branch on
+`result.entries["ok"] == .bool(true)`.
 
 #### `prepare(_ fetchargs: VMap?) throws -> VMap`
 
@@ -109,8 +112,8 @@ let ambient = client.Ambient()
 #### `load(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`
 
 Load a single entity matching the given criteria. Returns a value
-holding the entity, and throws on failure. `(result.asNative as?
-Entity)?.data()` reads its record.
+holding the entity, and throws on failure.
+`(result.asNative as? Entity)?.data()` reads its record.
 
 ```swift
 let result = try client.Ambient().load(nil, nil)
@@ -129,7 +132,7 @@ Get the entity match criteria. Pass a `Value` to set it.
 
 #### `make() -> Entity`
 
-Create a new `Ambient` instance with the same client and
+Create another `Ambient` entity with the same client and
 options.
 
 #### `stream(_ action: String, _ args: VMap? = nil, _ callopts: VMap? = nil) throws -> AsyncStream<Value>`

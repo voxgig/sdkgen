@@ -19,7 +19,7 @@ Create a new SDK client instance.
 | --- | --- | --- |
 | `options` | `VMap` | SDK configuration options. |
 | `options["apikey"]` | `String` | API key for authentication. |
-| `options["secret"]` | `String` | API secret for authentication. |
+| `options["secret"]` | `String` | Password for HTTP Basic authentication; `apikey` is the user name. |
 | `options["base"]` | `String` | Base URL for API requests. |
 | `options["prefix"]` | `String` | URL prefix appended after base. |
 | `options["suffix"]` | `String` | URL suffix appended after path. |
@@ -36,30 +36,30 @@ Create a new SDK client instance.
 #### `DemoSDK.testSDK(_ testopts: VMap?, _ sdkopts: VMap?) -> DemoSDK`
 
 Create a test client with mock features active. The first argument holds
-the test feature's options and the second further client options, merged
-over the test defaults; both may be `nil`. It returns a client in test
-mode.
+the test feature's options, which the call switches on, and replaces any
+`options["feature"]["test"]` in the second, which holds the other client
+options; both may be `nil`.
 
 ```swift
 let client = DemoSDK.testSDK(nil, nil)
 ```
 
 
-### Instance Methods
+### Client Methods
 
 #### `Planet(_ entopts: VMap? = nil) -> DemoEntityBase`
 
-Create a new `Planet` instance. Pass `nil` for no initial
+Create a new `Planet` entity. Pass `nil` for no initial
 options.
 
 #### `Record(_ entopts: VMap? = nil) -> DemoEntityBase`
 
-Create a new `Record` instance. Pass `nil` for no initial
+Create a new `Record` entity. Pass `nil` for no initial
 options.
 
 #### `Utility(_ entopts: VMap? = nil) -> DemoEntityBase`
 
-Create a new `Utility` instance. Pass `nil` for no initial
+Create a new `Utility` entity. Pass `nil` for no initial
 options.
 
 #### `optionsMap() -> VMap`
@@ -84,12 +84,15 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["query"]` | `VMap` | Query string parameters. |
 | `fetchargs["headers"]` | `VMap` | Request headers (merged with defaults). |
 | `fetchargs["body"]` | `Value` | Request body (maps are JSON-serialized). |
-| `fetchargs["ctrl"]` | `VMap` | Control options (e.g. `.map([("explain", .bool(true))])`). |
+| `fetchargs["ctrl"]` | `VMap` | Control options. |
 
-**Returns:** `VMap`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `false` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `result.entries["ok"]`.
+**Returns:** `VMap`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
+unless the status is 2xx. When the body cannot be read, `ok` is `false`
+and the key `err` holds the error; a request that cannot be made gives
+only `ok` (`false`) and `err`. A key is read as `result.entries["err"]`.
+A failure is reported in the result, not as an error, so branch on
+`result.entries["ok"] == .bool(true)`.
 
 #### `prepare(_ fetchargs: VMap?) throws -> VMap`
 
@@ -127,16 +130,17 @@ arguments go beside them too, and are sent as that action's payload.
 | --- | --- | --- | --- |
 | `terraform` | `create` | `/planet/{id}/terraform` | `_ = try client.Planet().create(VMap([("$action", .string("terraform")), ("id", .string("planet_id"))]), nil)` |
 
-An action returns that action's OWN response, which is not necessarily a
-Planet record — check the API definition for its shape.
+Like any operation, an action's call gives back the entity; its data is
+then that action's OWN response, which is not necessarily a Planet
+record — check the API definition for its shape.
 
 ### Operations
 
 #### `list(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a value holding a `VList`
-of entities, one per record, and throws on failure.
+List entities matching the given criteria. The match is optional.
+Returns a value holding a `VList` of entities, one per record, and
+throws on failure.
 
 ```swift
 let results = try client.Planet().list(nil, nil)
@@ -150,8 +154,8 @@ for item in results.asList?.items ?? [] {
 #### `load(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`
 
 Load a single entity matching the given criteria. Returns a value
-holding the entity, and throws on failure. `(result.asNative as?
-Entity)?.data()` reads its record.
+holding the entity, and throws on failure.
+`(result.asNative as? Entity)?.data()` reads its record.
 
 ```swift
 let result = try client.Planet().load(VMap([("id", .string("planet_id"))]), nil)
@@ -160,8 +164,8 @@ let result = try client.Planet().load(VMap([("id", .string("planet_id"))]), nil)
 #### `create(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value`
 
 Create a new entity with the given data. Returns a value holding the
-created entity, and throws on failure. `(result.asNative as?
-Entity)?.data()` reads its record.
+created entity, and throws on failure.
+`(result.asNative as? Entity)?.data()` reads its record.
 
 ```swift
 let result = try client.Planet().create(VMap([
@@ -172,9 +176,10 @@ let result = try client.Planet().create(VMap([
 
 #### `update(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value`
 
-Update an existing entity. The data must include the entity id, `id`.
-Returns a value holding the updated entity, and throws on failure.
-`(result.asNative as? Entity)?.data()` reads its record.
+Update an existing entity. The data must include the entity id, `id`,
+unless the entity already holds it. Returns a value holding the updated
+entity, and throws on failure. `(result.asNative as? Entity)?.data()`
+reads its record.
 
 ```swift
 let result = try client.Planet().update(VMap([
@@ -186,9 +191,9 @@ let result = try client.Planet().update(VMap([
 #### `patch(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value`
 
 Change part of an existing entity: only the fields given are sent. The
-data must include the entity id, `id`. Returns a value holding the
-patched entity, and throws on failure. `(result.asNative as?
-Entity)?.data()` reads its record.
+data must include the entity id, `id`, unless the entity already holds
+it. Returns a value holding the patched entity, and throws on failure.
+`(result.asNative as? Entity)?.data()` reads its record.
 
 ```swift
 let result = try client.Planet().patch(VMap([
@@ -200,8 +205,8 @@ let result = try client.Planet().patch(VMap([
 #### `remove(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`
 
 Remove the entity matching the given criteria. Returns a value holding
-the entity, marked as deleted, and throws on failure. `(result.asNative
-as? Entity)?.data()` reads its record.
+the entity, marked as deleted, and throws on failure.
+`(result.asNative as? Entity)?.data()` reads its record.
 
 ```swift
 let result = try client.Planet().remove(VMap([("id", .string("planet_id"))]), nil)
@@ -220,7 +225,7 @@ Get the entity match criteria. Pass a `Value` to set it.
 
 #### `make() -> Entity`
 
-Create a new `Planet` instance with the same client and
+Create another `Planet` entity with the same client and
 options.
 
 #### `stream(_ action: String, _ args: VMap? = nil, _ callopts: VMap? = nil) throws -> AsyncStream<Value>`
@@ -252,9 +257,9 @@ let record = client.Record()
 
 #### `list(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a value holding a `VList`
-of entities, one per record, and throws on failure.
+List entities matching the given criteria. The match is optional.
+Returns a value holding a `VList` of entities, one per record, and
+throws on failure.
 
 ```swift
 let results = try client.Record().list(nil, nil)
@@ -278,7 +283,7 @@ Get the entity match criteria. Pass a `Value` to set it.
 
 #### `make() -> Entity`
 
-Create a new `Record` instance with the same client and
+Create another `Record` entity with the same client and
 options.
 
 #### `stream(_ action: String, _ args: VMap? = nil, _ callopts: VMap? = nil) throws -> AsyncStream<Value>`
@@ -310,9 +315,9 @@ let utility = client.Utility()
 
 #### `list(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a value holding a `VList`
-of entities, one per record, and throws on failure.
+List entities matching the given criteria. The match is optional.
+Returns a value holding a `VList` of entities, one per record, and
+throws on failure.
 
 ```swift
 let results = try client.Utility().list(nil, nil)
@@ -336,7 +341,7 @@ Get the entity match criteria. Pass a `Value` to set it.
 
 #### `make() -> Entity`
 
-Create a new `Utility` instance with the same client and
+Create another `Utility` entity with the same client and
 options.
 
 #### `stream(_ action: String, _ args: VMap? = nil, _ callopts: VMap? = nil) throws -> AsyncStream<Value>`

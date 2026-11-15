@@ -38,9 +38,9 @@ operation returns entities, not raw records.
 
 ### 1. Create a client
 
-The client reads its API key from the `DEMO_APIKEY` environment
-variable. The server URL is templated, so `server` must give `tenant`;
-`region` defaults to `eu`.
+The example passes the API key from the `DEMO_APIKEY` environment
+variable as the `apikey` option. The server URL is templated, so
+`server` must give `tenant`; `region` defaults to `eu`.
 
 ```perl
 use DemoSDK;

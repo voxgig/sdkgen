@@ -76,7 +76,7 @@ else {
 }
 ```
 
-### 4. Create, update, patch, and remove
+### 4. Create, update, patch, and remove a planet
 
 Each write returns the entity it wrote (a removed one is marked as
 deleted), and dies on failure.

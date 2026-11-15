@@ -39,8 +39,7 @@ defaults.
 
 #### `test () : sdk_client`
 
-Create a test client with mock features active, and no options. It
-returns a client in test mode.
+Create a test client with mock features active. It takes no arguments.
 
 ```ocaml
 let client = Sdk_client.test ()
@@ -49,16 +48,16 @@ let client = Sdk_client.test ()
 #### `test_with (testopts : value) (sdkopts : value) : sdk_client`
 
 Create a test client with mock features active. The first argument holds
-the test feature's options and the second further client options, merged
-over the test defaults; both may be `Noval`. It returns a client in test
-mode.
+the test feature's options, which the call switches on, and replaces any
+`feature.test` in the second, which holds the other client options; both
+may be `Noval`.
 
 ```ocaml
 let client = Sdk_client.test_with Noval Noval
 ```
 
 
-### Instance functions
+### Client functions
 
 #### `direct (client : sdk_client) (fetchargs : value) : value`
 
@@ -74,12 +73,15 @@ Make a direct HTTP request to any API endpoint.
 | `query` | `map` | Query string parameters. |
 | `headers` | `map` | Request headers (merged with defaults). |
 | `body` | `value` | Request body (maps are JSON-serialized). |
-| `ctrl` | `map` | Control options (e.g. `jo [("explain", (Bool true))]`). |
+| `ctrl` | `map` | Control options. |
 
-**Returns:** `value`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `Bool false`
-and `err` holds the error. A failed request is reported in the result,
-not as an error, so branch on `getp result "ok"`.
+**Returns:** `value`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `Bool false`
+unless the status is 2xx. When the body cannot be read, `ok` is
+`Bool false` and the key `err` holds the error; a request that cannot be
+made gives only `ok` (`Bool false`) and `err`. A key is read as
+`getp result "err"`. A failure is reported in the result, not as an
+error, so branch on `getp result "ok" = Bool true`.
 
 #### `prepare (client : sdk_client) (fetchargs : value) : value`
 

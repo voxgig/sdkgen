@@ -7,7 +7,8 @@
    "lang": "clojure",
    "fact": "ref.entityNoun",
    "change": "ref.facts.entityNoun 'Members' -> 'Fields'",
-   "files": 18
+   "files": 18,
+   "regenerated33a": "k-freeze33a: pages from the v33a clone through enumgen.js"
   },
   {
    "id": "rb-maps-arrays",
@@ -15,7 +16,8 @@
    "lang": "rb",
    "fact": "ref.maps",
    "change": "ref.facts.maps 'hashes' -> 'arrays'",
-   "files": 19
+   "files": 19,
+   "regenerated33a": "k-freeze33a: pages from the v33a clone through enumgen.js"
   },
   {
    "id": "clojure-heading-client",
@@ -23,7 +25,8 @@
    "lang": "clojure",
    "fact": "ref.heading",
    "change": "ref.facts.heading '{module}' -> '{client}'",
-   "files": 19
+   "files": 19,
+   "regenerated33a": "k-freeze33a: pages from the v33a clone through enumgen.js"
   },
   {
    "id": "rb-noun-functions",
@@ -31,7 +34,8 @@
    "lang": "rb",
    "fact": "ref.noun",
    "change": "ref.facts.noun 'Methods' -> 'Functions'",
-   "files": 19
+   "files": 19,
+   "regenerated33a": "k-freeze33a: pages from the v33a clone through enumgen.js"
   },
   {
    "id": "py-keys-bare",
@@ -40,7 +44,8 @@
    "fact": "ref.keys",
    "change": "ref.facts.keys 'member' -> 'bare' (an enumeration)",
    "files": 19,
-   "regenerated": "v3.3 n-tools: pages from the v33p clone through enumgen.js (the v3.2 pages differed from v33p in shared wording too, which the minimal pair counts)"
+   "regenerated": "v3.3 n-tools: pages from the v33p clone through enumgen.js (the v3.2 pages differed from v33p in shared wording too, which the minimal pair counts)",
+   "regenerated33a": "k-freeze33a: pages from the v33a clone through enumgen.js"
   },
   {
    "id": "perl-prints-record",
@@ -49,7 +54,8 @@
    "fact": "prints",
    "change": "prints 'fields' -> 'record'",
    "files": 51,
-   "why": "T4: the reviewers' attack; the v3.3 sheet called it ATTESTED"
+   "why": "T4: the reviewers' attack; the v3.3 sheet called it ATTESTED",
+   "regenerated33a": "k-freeze33a: pages from the v33a clone through enumgen.js"
   },
   {
    "id": "ocaml-keys-member",
@@ -61,7 +67,8 @@
    "why": "T4: the reviewers' attack; the v3.3 sheet called it ATTESTED; the OLD page reads as the mutated value, so only the reviewed decision (a hand fact record) catches it: reviewed mode only",
    "modes": [
     "reviewed"
-   ]
+   ],
+   "regenerated33a": "k-freeze33a: pages from the v33a clone through enumgen.js"
   },
   {
    "id": "swift-entityby-name",
@@ -73,7 +80,8 @@
    "why": "T4: the reviewers' attack; the v3.3 sheet called it ATTESTED; the OLD page reads as the mutated value, so only the reviewed decision (a hand fact record) catches it: reviewed mode only",
    "modes": [
     "reviewed"
-   ]
+   ],
+   "regenerated33a": "k-freeze33a: pages from the v33a clone through enumgen.js"
   }
  ],
  "moved": [

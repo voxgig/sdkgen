@@ -688,13 +688,13 @@ let client = DemoSDK::new(jo(vec![
     ])),
 ]));
 
-// List planet records: Ok is a Vec of entities, one per record; Err on failure
+// List planet records: Ok is a Vec of entities, one per record; Err holds the failure
 let planets = client.planet(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
 for planet in &planets {
     println!("{:?}", planet.data(None));
 }
 
-// Load a planet: Ok is the entity; Err on failure
+// Load a planet: Ok is the entity; Err holds the failure
 let planet = client.planet(Value::Noval).load(jo(vec![("id", Value::str("example_id"))]), Value::Noval).unwrap();
 println!("{:?}", planet.data(None));
 ```
@@ -761,7 +761,7 @@ const client = sdk.DemoSDK.new(h.jo(&.{
     }) },
 }));
 
-// List planet records: .ok is a slice of entities, one per record; .err on failure
+// List planet records: .ok is a slice of entities, one per record; .err holds the failure
 const planets = switch (client.planet(h.vnull()).list(h.vnull(), h.vnull())) {
     .ok => |e| e,
     .err => |e| return std.debug.print("list failed: {s}\n", .{e.msg}),
@@ -770,7 +770,7 @@ for (planets) |planet| {
     std.debug.print("{s}\n", .{h.stringify(planet.asEntity().data(null))});
 }
 
-// Load a planet: .ok is the entity; .err on failure
+// Load a planet: .ok is the entity; .err holds the failure
 const planet = switch (client.planet(h.vnull()).load(h.jo(&.{.{ "id", h.vstr("example_id") }}), h.vnull())) {
     .ok => |e| e,
     .err => |e| return std.debug.print("load failed: {s}\n", .{e.msg}),

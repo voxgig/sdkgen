@@ -621,7 +621,7 @@ let client = DemoSDK::new(jo(vec![
     ])),
 ]));
 
-// List console records: Ok is a Vec of entities, one per record; Err on failure
+// List console records: Ok is a Vec of entities, one per record; Err holds the failure
 let consoles = client.console(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
 for console in &consoles {
     println!("{:?}", console.data(None));
@@ -680,7 +680,7 @@ const client = sdk.DemoSDK.new(h.jo(&.{
     }) },
 }));
 
-// List console records: .ok is a slice of entities, one per record; .err on failure
+// List console records: .ok is a slice of entities, one per record; .err holds the failure
 const consoles = switch (client.console(h.vnull()).list(h.vnull(), h.vnull())) {
     .ok => |e| e,
     .err => |e| return std.debug.print("list failed: {s}\n", .{e.msg}),

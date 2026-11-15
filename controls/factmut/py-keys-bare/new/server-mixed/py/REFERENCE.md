@@ -37,16 +37,16 @@ Create a new SDK client instance. `options` is a `dict` map
 #### `DemoSDK.test(testopts=None, sdkopts=None)`
 
 Create a test client with mock features active. The first argument holds
-the test feature's options and the second further client options, merged
-over the test defaults; both may be `None`. It returns a client in test
-mode.
+the test feature's options, which the call switches on, and replaces any
+`options["feature"]["test"]` in the second, which holds the other client
+options; both may be `None`.
 
 ```python
 client = DemoSDK.test()
 ```
 
 
-### Instance Methods
+### Client Methods
 
 #### `Ambient(data=None)`
 
@@ -105,12 +105,15 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["query"]` | `dict` | Query string parameters. |
 | `fetchargs["headers"]` | `dict` | Request headers (merged with defaults). |
 | `fetchargs["body"]` | `any` | Request body (dicts are JSON-serialized). |
-| `fetchargs["ctrl"]` | `dict` | Control options (e.g. `{"explain": True}`). |
+| `fetchargs["ctrl"]` | `dict` | Control options. |
 
-**Returns:** `dict`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `False` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `result["ok"]`.
+**Returns:** `dict`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `False`
+unless the status is 2xx. When the body cannot be read, `ok` is `False`
+and the key `err` holds the error; a request that cannot be made gives
+only `ok` (`False`) and `err`. A key is read as `result["err"]`. A
+failure is reported in the result, not as an error, so branch on
+`result["ok"]`.
 
 #### `prepare(fetchargs=None) -> dict`
 
@@ -200,9 +203,8 @@ console = client.Console()
 
 #### `list(reqmatch=None, ctrl=None) -> list[ConsoleEntity]`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```python
 results = client.Console().list()
@@ -263,9 +265,8 @@ graph_ql = client.GraphQl()
 
 #### `list(reqmatch=None, ctrl=None) -> list[GraphQlEntity]`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```python
 results = client.GraphQl().list()
@@ -326,9 +327,8 @@ history = client.History()
 
 #### `list(reqmatch=None, ctrl=None) -> list[HistoryEntity]`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```python
 results = client.History().list()
@@ -397,16 +397,16 @@ arguments go beside them too, and are sent as that action's payload.
 | --- | --- | --- | --- |
 | `terraform` | `create` | `/planet/{id}/terraform` | `client.Planet().create({"$action": "terraform", "id": "planet_id"})` |
 
-An action returns that action's OWN response, which is not necessarily a
-Planet record — check the API definition for its shape.
+Like any operation, an action's call gives back the entity; its data is
+then that action's OWN response, which is not necessarily a Planet
+record — check the API definition for its shape.
 
 ### Operations
 
 #### `list(reqmatch=None, ctrl=None) -> list[PlanetEntity]`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```python
 results = client.Planet().list()
@@ -437,9 +437,9 @@ result = client.Planet().create({
 
 #### `update(reqdata, ctrl=None) -> PlanetEntity`
 
-Update an existing entity. The data must include the entity id, `id`.
-Returns the updated entity, and raises on failure. `data_get()` reads
-its record.
+Update an existing entity. The data must include the entity id, `id`,
+unless the entity already holds it. Returns the updated entity, and
+raises on failure. `data_get()` reads its record.
 
 ```python
 result = client.Planet().update({
@@ -510,9 +510,8 @@ record = client.Record()
 
 #### `list(reqmatch=None, ctrl=None) -> list[RecordEntity]`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```python
 results = client.Record().list()
@@ -573,9 +572,8 @@ utility = client.Utility()
 
 #### `list(reqmatch=None, ctrl=None) -> list[UtilityEntity]`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```python
 results = client.Utility().list()

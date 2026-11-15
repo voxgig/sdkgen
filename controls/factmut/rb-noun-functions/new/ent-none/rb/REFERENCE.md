@@ -36,16 +36,17 @@ Create a new SDK client instance.
 
 #### `DemoSDK.test(testopts = nil, sdkopts = nil)`
 
-Create a test client with mock features active. `testopts` are the test
-feature's options and `sdkopts` further client options, merged over the
-test defaults; both may be `nil`. It returns a client in test mode.
+Create a test client with mock features active. The first argument holds
+the test feature's options, which the call switches on, and replaces any
+`options["feature"]["test"]` in the second, which holds the other client
+options; both may be `nil`.
 
 ```ruby
 client = DemoSDK.test
 ```
 
 
-### Instance Functions
+### Client Functions
 
 #### `options_map -> Hash`
 
@@ -69,12 +70,15 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["query"]` | `Hash` | Query string parameters. |
 | `fetchargs["headers"]` | `Hash` | Request headers (merged with defaults). |
 | `fetchargs["body"]` | `any` | Request body (hashes are JSON-serialized). |
-| `fetchargs["ctrl"]` | `Hash` | Control options (e.g. `{ "explain" => true }`). |
+| `fetchargs["ctrl"]` | `Hash` | Control options. |
 
-**Returns:** `Hash`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `false` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `result["ok"]`.
+**Returns:** `Hash`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
+unless the status is 2xx. When the body cannot be read, `ok` is `false`
+and the key `err` holds the error; a request that cannot be made gives
+only `ok` (`false`) and `err`. A key is read as `result["err"]`. A
+failure is reported in the result, not as an error, so branch on
+`result["ok"]`.
 
 #### `prepare(fetchargs = {}) -> Hash`
 

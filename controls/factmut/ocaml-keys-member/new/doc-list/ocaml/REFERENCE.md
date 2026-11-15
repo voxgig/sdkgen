@@ -39,8 +39,7 @@ defaults.
 
 #### `test () : sdk_client`
 
-Create a test client with mock features active, and no options. It
-returns a client in test mode.
+Create a test client with mock features active. It takes no arguments.
 
 ```ocaml
 let client = Sdk_client.test ()
@@ -49,45 +48,45 @@ let client = Sdk_client.test ()
 #### `test_with (testopts : value) (sdkopts : value) : sdk_client`
 
 Create a test client with mock features active. The first argument holds
-the test feature's options and the second further client options, merged
-over the test defaults; both may be `Noval`. It returns a client in test
-mode.
+the test feature's options, which the call switches on, and replaces any
+`feature.test` in the second, which holds the other client options; both
+may be `Noval`.
 
 ```ocaml
 let client = Sdk_client.test_with Noval Noval
 ```
 
 
-### Instance functions
+### Client functions
 
 #### `console (client : sdk_client) (entopts : value) : entity_obj`
 
-Create a new `Console` instance. Pass `Noval` for no initial
+Create a new `Console` entity. Pass `Noval` for no initial
 options.
 
 #### `graph_ql (client : sdk_client) (entopts : value) : entity_obj`
 
-Create a new `GraphQl` instance. Pass `Noval` for no initial
+Create a new `GraphQl` entity. Pass `Noval` for no initial
 options.
 
 #### `history (client : sdk_client) (entopts : value) : entity_obj`
 
-Create a new `History` instance. Pass `Noval` for no initial
+Create a new `History` entity. Pass `Noval` for no initial
 options.
 
 #### `planet (client : sdk_client) (entopts : value) : entity_obj`
 
-Create a new `Planet` instance. Pass `Noval` for no initial
+Create a new `Planet` entity. Pass `Noval` for no initial
 options.
 
 #### `record (client : sdk_client) (entopts : value) : entity_obj`
 
-Create a new `Record` instance. Pass `Noval` for no initial
+Create a new `Record` entity. Pass `Noval` for no initial
 options.
 
 #### `utility (client : sdk_client) (entopts : value) : entity_obj`
 
-Create a new `Utility` instance. Pass `Noval` for no initial
+Create a new `Utility` entity. Pass `Noval` for no initial
 options.
 
 #### `direct (client : sdk_client) (fetchargs : value) : value`
@@ -104,12 +103,15 @@ Make a direct HTTP request to any API endpoint.
 | `query` | `map` | Query string parameters. |
 | `headers` | `map` | Request headers (merged with defaults). |
 | `body` | `value` | Request body (maps are JSON-serialized). |
-| `ctrl` | `map` | Control options (e.g. `jo [("explain", (Bool true))]`). |
+| `ctrl` | `map` | Control options. |
 
-**Returns:** `value`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `Bool false`
-and `err` holds the error. A failed request is reported in the result,
-not as an error, so branch on `getp result "ok"`.
+**Returns:** `value`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `Bool false`
+unless the status is 2xx. When the body cannot be read, `ok` is
+`Bool false` and the key `err` holds the error; a request that cannot be
+made gives only `ok` (`Bool false`) and `err`. A key is read as
+`getp result "err"`. A failure is reported in the result, not as an
+error, so branch on `getp result "ok" = Bool true`.
 
 #### `prepare (client : sdk_client) (fetchargs : value) : value`
 
@@ -142,9 +144,8 @@ both by position: pass `Noval` for either to give none.
 
 #### `e_list (value) (value) : entity_obj list`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```ocaml
 let results = (Sdk_client.console client Noval).e_list (Noval) Noval
@@ -171,7 +172,7 @@ Set the entity match criteria.
 
 #### `e_make () : entity_obj`
 
-Create a new `Console` instance with the same client and
+Create another `Console` entity with the same client and
 options.
 
 #### `e_stream (string) (value) (value) : value Seq.t`
@@ -210,9 +211,8 @@ both by position: pass `Noval` for either to give none.
 
 #### `e_list (value) (value) : entity_obj list`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```ocaml
 let results = (Sdk_client.graph_ql client Noval).e_list (Noval) Noval
@@ -239,7 +239,7 @@ Set the entity match criteria.
 
 #### `e_make () : entity_obj`
 
-Create a new `GraphQl` instance with the same client and
+Create another `GraphQl` entity with the same client and
 options.
 
 #### `e_stream (string) (value) (value) : value Seq.t`
@@ -278,9 +278,8 @@ both by position: pass `Noval` for either to give none.
 
 #### `e_list (value) (value) : entity_obj list`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```ocaml
 let results = (Sdk_client.history client Noval).e_list (Noval) Noval
@@ -307,7 +306,7 @@ Set the entity match criteria.
 
 #### `e_make () : entity_obj`
 
-Create a new `History` instance with the same client and
+Create another `History` entity with the same client and
 options.
 
 #### `e_stream (string) (value) (value) : value Seq.t`
@@ -349,10 +348,11 @@ arguments go beside them too, and are sent as that action's payload.
 
 | Action | Operation | Route | Call |
 | --- | --- | --- | --- |
-| `terraform` | `e_create` | `/planet/{id}/terraform` | `(Sdk_client.planet client Noval).e_create (jo [("$action", Str "terraform"); ("id", (Str "planet_id"))]) Noval` |
+| `terraform` | `e_create` | `/planet/{id}/terraform` | `let _ = (Sdk_client.planet client Noval).e_create (jo [("$action", Str "terraform"); ("id", (Str "planet_id"))]) Noval` |
 
-An action returns that action's OWN response, which is not necessarily a
-Planet record — check the API definition for its shape.
+Like any operation, an action's call gives back the entity; its data is
+then that action's OWN response, which is not necessarily a Planet
+record — check the API definition for its shape.
 
 ### Operations
 
@@ -361,9 +361,8 @@ both by position: pass `Noval` for either to give none.
 
 #### `e_list (value) (value) : entity_obj list`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```ocaml
 let results = (Sdk_client.planet client Noval).e_list (Noval) Noval
@@ -393,9 +392,9 @@ let result = (Sdk_client.planet client Noval).e_create (jo [
 
 #### `e_update (value) (value) : entity_obj`
 
-Update an existing entity. The data must include the entity id, `id`.
-Returns the updated entity, and raises on failure. `result.e_data_get
-()` reads its record.
+Update an existing entity. The data must include the entity id, `id`,
+unless the entity already holds it. Returns the updated entity, and
+raises on failure. `result.e_data_get ()` reads its record.
 
 ```ocaml
 let result = (Sdk_client.planet client Noval).e_update (jo [
@@ -434,7 +433,7 @@ Set the entity match criteria.
 
 #### `e_make () : entity_obj`
 
-Create a new `Planet` instance with the same client and
+Create another `Planet` entity with the same client and
 options.
 
 #### `e_stream (string) (value) (value) : value Seq.t`
@@ -473,9 +472,8 @@ both by position: pass `Noval` for either to give none.
 
 #### `e_list (value) (value) : entity_obj list`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```ocaml
 let results = (Sdk_client.record client Noval).e_list (Noval) Noval
@@ -502,7 +500,7 @@ Set the entity match criteria.
 
 #### `e_make () : entity_obj`
 
-Create a new `Record` instance with the same client and
+Create another `Record` entity with the same client and
 options.
 
 #### `e_stream (string) (value) (value) : value Seq.t`
@@ -541,9 +539,8 @@ both by position: pass `Noval` for either to give none.
 
 #### `e_list (value) (value) : entity_obj list`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns a `list` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns a `list` of entities, one per record, and raises on failure.
 
 ```ocaml
 let results = (Sdk_client.utility client Noval).e_list (Noval) Noval
@@ -570,7 +567,7 @@ Set the entity match criteria.
 
 #### `e_make () : entity_obj`
 
-Create a new `Utility` instance with the same client and
+Create another `Utility` entity with the same client and
 options.
 
 #### `e_stream (string) (value) (value) : value Seq.t`

@@ -36,36 +36,37 @@ Create a new SDK client instance.
 
 #### `DemoSDK.test(testopts = nil, sdkopts = nil)`
 
-Create a test client with mock features active. `testopts` are the test
-feature's options and `sdkopts` further client options, merged over the
-test defaults; both may be `nil`. It returns a client in test mode.
+Create a test client with mock features active. The first argument holds
+the test feature's options, which the call switches on, and replaces any
+`options["feature"]["test"]` in the second, which holds the other client
+options; both may be `nil`.
 
 ```ruby
 client = DemoSDK.test
 ```
 
 
-### Instance Methods
+### Client Methods
 
 #### `Planet(data = nil)`
 
-Create a new `PlanetEntity` instance. Pass `nil` for no initial
-options.
+Create a new `PlanetEntity` instance. Its `data` argument holds the
+entity options: pass `nil` for none.
 
 #### `Record(data = nil)`
 
-Create a new `RecordEntity` instance. Pass `nil` for no initial
-options.
+Create a new `RecordEntity` instance. Its `data` argument holds the
+entity options: pass `nil` for none.
 
 #### `Satellite(data = nil)`
 
-Create a new `SatelliteEntity` instance. Pass `nil` for no initial
-options.
+Create a new `SatelliteEntity` instance. Its `data` argument holds the
+entity options: pass `nil` for none.
 
 #### `Utility(data = nil)`
 
-Create a new `UtilityEntity` instance. Pass `nil` for no initial
-options.
+Create a new `UtilityEntity` instance. Its `data` argument holds the
+entity options: pass `nil` for none.
 
 #### `options_map -> Hash`
 
@@ -89,12 +90,15 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["query"]` | `Hash` | Query string parameters. |
 | `fetchargs["headers"]` | `Hash` | Request headers (merged with defaults). |
 | `fetchargs["body"]` | `any` | Request body (arrays are JSON-serialized). |
-| `fetchargs["ctrl"]` | `Hash` | Control options (e.g. `{ "explain" => true }`). |
+| `fetchargs["ctrl"]` | `Hash` | Control options. |
 
-**Returns:** `Hash`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `false` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `result["ok"]`.
+**Returns:** `Hash`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
+unless the status is 2xx. When the body cannot be read, `ok` is `false`
+and the key `err` holds the error; a request that cannot be made gives
+only `ok` (`false`) and `err`. A key is read as `result["err"]`. A
+failure is reported in the result, not as an error, so branch on
+`result["ok"]`.
 
 #### `prepare(fetchargs = {}) -> Hash`
 
@@ -132,16 +136,16 @@ arguments go beside them too, and are sent as that action's payload.
 | --- | --- | --- | --- |
 | `terraform` | `create` | `/planet/{id}/terraform` | `client.Planet.create({ "$action" => "terraform", "id" => "planet_id" })` |
 
-An action returns that action's OWN response, which is not necessarily a
-Planet record — check the API definition for its shape.
+Like any operation, an action's call gives back the entity; its data is
+then that action's OWN response, which is not necessarily a Planet
+record — check the API definition for its shape.
 
 ### Operations
 
 #### `list(reqmatch = nil, ctrl = nil) -> Array<PlanetEntity>`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns an `Array` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns an `Array` of entities, one per record, and raises on failure.
 
 ```ruby
 results = client.Planet.list
@@ -171,9 +175,9 @@ result = client.Planet.create({
 
 #### `update(reqdata, ctrl = nil) -> PlanetEntity`
 
-Update an existing entity. The data must include the entity id, `id`.
-Returns the updated entity, and raises on failure. `data_get` reads its
-record.
+Update an existing entity. The data must include the entity id, `id`,
+unless the entity already holds it. Returns the updated entity, and
+raises on failure. `data_get` reads its record.
 
 ```ruby
 result = client.Planet.update({
@@ -217,7 +221,8 @@ options.
 #### `stream(action, args = nil, callopts = nil) -> Enumerator`
 
 Run an operation through the pipeline and return an iterator over its
-result items.
+result items. The operation runs when iteration starts, not when the
+call returns.
 
 #### `get_name -> String`
 
@@ -243,9 +248,8 @@ record = client.Record
 
 #### `list(reqmatch = nil, ctrl = nil) -> Array<RecordEntity>`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns an `Array` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns an `Array` of entities, one per record, and raises on failure.
 
 ```ruby
 results = client.Record.list
@@ -278,7 +282,8 @@ options.
 #### `stream(action, args = nil, callopts = nil) -> Enumerator`
 
 Run an operation through the pipeline and return an iterator over its
-result items.
+result items. The operation runs when iteration starts, not when the
+call returns.
 
 #### `get_name -> String`
 
@@ -349,7 +354,8 @@ options.
 #### `stream(action, args = nil, callopts = nil) -> Enumerator`
 
 Run an operation through the pipeline and return an iterator over its
-result items.
+result items. The operation runs when iteration starts, not when the
+call returns.
 
 #### `get_name -> String`
 
@@ -375,9 +381,8 @@ utility = client.Utility
 
 #### `list(reqmatch = nil, ctrl = nil) -> Array<UtilityEntity>`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns an `Array` of entities, one
-per record, and raises on failure.
+List entities matching the given criteria. The match is optional.
+Returns an `Array` of entities, one per record, and raises on failure.
 
 ```ruby
 results = client.Utility.list
@@ -410,7 +415,8 @@ options.
 #### `stream(action, args = nil, callopts = nil) -> Enumerator`
 
 Run an operation through the pipeline and return an iterator over its
-result items.
+result items. The operation runs when iteration starts, not when the
+call returns.
 
 #### `get_name -> String`
 

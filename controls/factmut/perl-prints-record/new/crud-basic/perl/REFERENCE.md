@@ -22,7 +22,7 @@ Create a new SDK client instance.
 | --- | --- | --- |
 | `$options` | `hashref` | SDK configuration options. |
 | `$options->{apikey}` | `string` | API key for authentication. |
-| `$options->{secret}` | `string` | API secret for authentication. |
+| `$options->{secret}` | `string` | Password for HTTP Basic authentication; `apikey` is the user name. |
 | `$options->{base}` | `string` | Base URL for API requests. |
 | `$options->{prefix}` | `string` | URL prefix appended after base. |
 | `$options->{suffix}` | `string` | URL suffix appended after path. |
@@ -39,16 +39,16 @@ Create a new SDK client instance.
 #### `DemoSDK->test($testopts, $sdkopts)`
 
 Create a test client with mock features active. The first argument holds
-the test feature's options and the second further client options, merged
-over the test defaults; both may be `undef`. It returns a client in test
-mode.
+the test feature's options, which the call switches on, and replaces any
+`$options->{feature}{test}` in the second, which holds the other client
+options; both may be `undef`.
 
 ```perl
 my $client = DemoSDK->test();
 ```
 
 
-### Instance Methods
+### Client Methods
 
 #### `Planet($data)`
 
@@ -87,12 +87,14 @@ Make a direct HTTP request to any API endpoint.
 | `$fetchargs->{query}` | `hashref` | Query string parameters. |
 | `$fetchargs->{headers}` | `hashref` | Request headers (merged with defaults). |
 | `$fetchargs->{body}` | `any` | Request body (hashrefs are JSON-serialized). |
-| `$fetchargs->{ctrl}` | `hashref` | Control options (e.g. `{ 'explain' => 1 }`). |
+| `$fetchargs->{ctrl}` | `hashref` | Control options. |
 
-**Returns:** `hashref`, a result map holding `ok`, `status`, `headers`
-and `data`, even for a non-2xx response; on a failure `ok` is `0` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `$result->{ok}`.
+**Returns:** `hashref`, a result map. For a response, 2xx or not, it
+holds the keys `ok`, `status`, `headers` and `data`, and `ok` is `0`
+unless the status is 2xx. When the body cannot be read, `ok` is `0` and
+the key `err` holds the error; a request that cannot be made gives only
+`ok` (`0`) and `err`. A key is read as `$result->{err}`. A failure is
+reported in the result, not as an error, so branch on `$result->{ok}`.
 
 #### `prepare($fetchargs) -> hashref`
 
@@ -130,16 +132,16 @@ arguments go beside them too, and are sent as that action's payload.
 | --- | --- | --- | --- |
 | `terraform` | `create` | `/planet/{id}/terraform` | `$client->Planet->create({ '$action' => 'terraform', 'id' => 'planet_id' });` |
 
-An action returns that action's OWN response, which is not necessarily a
-Planet record — check the API definition for its shape.
+Like any operation, an action's call gives back the entity; its data is
+then that action's OWN response, which is not necessarily a Planet
+record — check the API definition for its shape.
 
 ### Operations
 
 #### `list($reqmatch, $ctrl) -> arrayref`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns an `arrayref` of entities,
-one per record, and dies on failure.
+List entities matching the given criteria. The match is optional.
+Returns an `arrayref` of entities, one per record, and dies on failure.
 
 ```perl
 my $results = $client->Planet->list();
@@ -171,9 +173,9 @@ my $result = $client->Planet->create({
 
 #### `update($reqdata, $ctrl) -> PlanetEntity`
 
-Update an existing entity. The data must include the entity id, `id`.
-Returns the updated entity, and dies on failure. `$result->data_get`
-reads its record.
+Update an existing entity. The data must include the entity id, `id`,
+unless the entity already holds it. Returns the updated entity, and dies
+on failure. `$result->data_get` reads its record.
 
 ```perl
 my $result = $client->Planet->update({
@@ -185,8 +187,9 @@ my $result = $client->Planet->update({
 #### `patch($reqdata, $ctrl) -> PlanetEntity`
 
 Change part of an existing entity: only the fields given are sent. The
-data must include the entity id, `id`. Returns the patched entity, and
-dies on failure. `$result->data_get` reads its record.
+data must include the entity id, `id`, unless the entity already holds
+it. Returns the patched entity, and dies on failure. `$result->data_get`
+reads its record.
 
 ```perl
 my $result = $client->Planet->patch({
@@ -260,9 +263,8 @@ my $record = $client->Record;
 
 #### `list($reqmatch, $ctrl) -> arrayref`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns an `arrayref` of entities,
-one per record, and dies on failure.
+List entities matching the given criteria. The match is optional.
+Returns an `arrayref` of entities, one per record, and dies on failure.
 
 ```perl
 my $results = $client->Record->list();
@@ -326,9 +328,8 @@ my $utility = $client->Utility;
 
 #### `list($reqmatch, $ctrl) -> arrayref`
 
-List entities matching the given criteria. The match is optional:
-without one, every record is listed. Returns an `arrayref` of entities,
-one per record, and dies on failure.
+List entities matching the given criteria. The match is optional.
+Returns an `arrayref` of entities, one per record, and dies on failure.
 
 ```perl
 my $results = $client->Utility->list();

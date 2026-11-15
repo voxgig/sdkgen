@@ -37,16 +37,16 @@ Create a new SDK client instance. `options` is a `dict` map
 #### `DemoSDK.test(testopts=None, sdkopts=None)`
 
 Create a test client with mock features active. The first argument holds
-the test feature's options and the second further client options, merged
-over the test defaults; both may be `None`. It returns a client in test
-mode.
+the test feature's options, which the call switches on, and replaces any
+`options["feature"]["test"]` in the second, which holds the other client
+options; both may be `None`.
 
 ```python
 client = DemoSDK.test()
 ```
 
 
-### Instance Methods
+### Client Methods
 
 #### `Ambient(data=None)`
 
@@ -75,12 +75,15 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["query"]` | `dict` | Query string parameters. |
 | `fetchargs["headers"]` | `dict` | Request headers (merged with defaults). |
 | `fetchargs["body"]` | `any` | Request body (dicts are JSON-serialized). |
-| `fetchargs["ctrl"]` | `dict` | Control options (e.g. `{"explain": True}`). |
+| `fetchargs["ctrl"]` | `dict` | Control options. |
 
-**Returns:** `dict`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `False` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `result["ok"]`.
+**Returns:** `dict`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `False`
+unless the status is 2xx. When the body cannot be read, `ok` is `False`
+and the key `err` holds the error; a request that cannot be made gives
+only `ok` (`False`) and `err`. A key is read as `result["err"]`. A
+failure is reported in the result, not as an error, so branch on
+`result["ok"]`.
 
 #### `prepare(fetchargs=None) -> dict`
 

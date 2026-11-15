@@ -558,7 +558,7 @@ let client = DemoSDK::new(jo(vec![
     ("apikey", Value::str(std::env::var("DEMO_APIKEY").unwrap_or_default())),
 ]));
 
-// Load an ambient: Ok is the entity; Err on failure
+// Load an ambient: Ok is the entity; Err holds the failure
 let ambient = client.ambient(Value::Noval).load(Value::Noval, Value::Noval).unwrap();
 println!("{:?}", ambient.data(None));
 ```
@@ -608,7 +608,7 @@ const client = sdk.DemoSDK.new(h.jo(&.{
     .{ "apikey", h.vstr(std.Io.Threaded.global_single_threaded.environ.process_environ.getAlloc(h.A(), "DEMO_APIKEY") catch "") },
 }));
 
-// Load an ambient: .ok is the entity; .err on failure
+// Load an ambient: .ok is the entity; .err holds the failure
 const ambient = switch (client.ambient(h.vnull()).load(h.vnull(), h.vnull())) {
     .ok => |e| e,
     .err => |e| return std.debug.print("load failed: {s}\n", .{e.msg}),

@@ -37,24 +37,25 @@ Create a new SDK client instance. `options` is a `voxgig.struct` map
 
 #### `(api/test-sdk testopts sdkopts)`
 
-Create a test client with mock features active. `testopts` are the test
-feature's options and `sdkopts` further client options, merged over the
-test defaults; both may be `nil`. It returns a client in test mode.
+Create a test client with mock features active. The first argument holds
+the test feature's options, which the call switches on, and replaces any
+`feature.test` in the second, which holds the other client options; both
+may be `nil`.
 
 ```clojure
 (def client (api/test-sdk nil nil))
 ```
 
 
-### Instance Functions
+### Client Functions
 
 The SDK utility object is reached through `sdk.client`, which `sdk.api`
 does not re-export: `(sdk.client/get-utility client)` returns a copy of it.
 
 #### `(api/ambient client data)`
 
-Create a new `Ambient` instance. Pass `nil` for no initial
-options.
+Create a new `Ambient` entity. Its `data` argument holds the entity
+options: pass `nil` for none.
 
 #### `(api/options-map client) -> map`
 
@@ -74,12 +75,15 @@ Make a direct HTTP request to any API endpoint.
 | `query` | `map` | Query string parameters. |
 | `headers` | `map` | Request headers (merged with defaults). |
 | `body` | `any` | Request body (maps are JSON-serialized). |
-| `ctrl` | `map` | Control options (e.g. `(vs/jm "explain" true)`). |
+| `ctrl` | `map` | Control options. |
 
-**Returns:** `map`, a result map holding `ok`, `status`, `headers` and
-`data`, even for a non-2xx response; on a failure `ok` is `false` and
-`err` holds the error. A failed request is reported in the result, not
-as an error, so branch on `(vs/getprop result "ok")`.
+**Returns:** `map`, a result map. For a response, 2xx or not, it holds
+the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
+unless the status is 2xx. When the body cannot be read, `ok` is `false`
+and the key `err` holds the error; a request that cannot be made gives
+only `ok` (`false`) and `err`. A key is read as
+`(vs/getprop result "err")`. A failure is reported in the result, not as
+an error, so branch on `(vs/getprop result "ok")`.
 
 #### `(api/prepare client fetchargs) -> map`
 
@@ -140,13 +144,13 @@ Set the entity match criteria.
 
 #### `((:make ent)) -> entity`
 
-Create a new `Ambient` instance with the same client and
+Create another `Ambient` entity with the same client and
 options.
 
 #### `(stream ent action args callopts) -> seq`
 
-Run an operation through the pipeline and return a lazy stream of its
-result items.
+Run an operation through the pipeline and return a sequence of its
+result items. The operation runs before the call returns.
 
 #### `((:get-name ent)) -> string`
 
