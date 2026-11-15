@@ -1,0 +1,2692 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "the README cell is about `base` (Base URL of the API server); the js README options table (unported ReadmeModel_js) has no `server` row and says nothing about server variables, so nothing disagrees; the REFERENCE options rows say the same as this sentence",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "92f7d78487": {
+  "outcome": "same-meaning",
+  "why": "the README test-mode comment says the same: load gives the entity and .data() reads its record",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "39aecae10e": {
+  "outcome": "same-meaning",
+  "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "ff4863a314": {
+  "outcome": "shared:ts:ff4863a314",
+  "why": "masked, it is the ts unit of class ff4863a314 (correction:S28, by rule:tutorial-leadin)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "ebfc2354cd"
+  ],
+  "unreviewed": 0
+ },
+ "eaee0ae53d": {
+  "outcome": "unification:tutorial-steps",
+  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "00861c339c": {
+  "outcome": "unification:tutorial-steps",
+  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
+  "n": 10,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "9b1549ef5e": {
+  "outcome": "dropped",
+  "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "9c1038b6ae": {
+  "outcome": "dropped",
+  "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "0538108a37": {
+  "outcome": "shared:ts:0538108a37",
+  "why": "masked, it is the ts unit of class 0538108a37 (restored:shared, by rule:entities-contract)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "9ca694d427"
+  ],
+  "unreviewed": 0
+ },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 0
+ },
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "2282b26fce": {
+  "outcome": "shared:ts:ceeb0a0848",
+  "why": "masked, it is the ts unit of class ceeb0a0848 (unification:op-sentences, by rule:op-sentences)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "ed44d07e36"
+  ],
+  "unreviewed": 0
+ },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 0
+ },
+ "da31ab6872": {
+  "outcome": "same-meaning",
+  "why": "the README line is about the entities list() resolves to having no `.data` property of the array; this sentence reads an entity's record with `.data()`; two different objects, no disagreement",
+  "n": 7,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "cedef8743f": {
+  "outcome": "unification:tutorial-steps",
+  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "33dfe2f615": {
+  "outcome": "unification:tutorial-steps",
+  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "5a3859e529": {
+  "outcome": "shared:ts:5a3859e529",
+  "why": "masked, it is the ts unit of class 5a3859e529 (correction:S28, by rule:tutorial-leadin)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "836725aec1"
+  ],
+  "unreviewed": 0
+ },
+ "62ffd8db5f": {
+  "outcome": "restored:shared",
+  "why": "restored in the one write step, titled with its entity (4. Create, update, patch, and remove a planet), each write a commented call in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "6f98007cd1": {
+  "outcome": "restored:shared",
+  "why": "restored in the one write step, titled with its entity (4. Create, update, patch, and remove a planet), each write a commented call in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "133ad8f265": {
+  "outcome": "restored:shared",
+  "why": "restored in the one write step, titled with its entity (4. Create, update, patch, and remove a planet), each write a commented call in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "42b0d275b2": {
+  "outcome": "restored:shared",
+  "why": "restored as the patch comment in the write block: Patch — sends only the fields given",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "42a1cc7e7e": {
+  "outcome": "restored:shared",
+  "why": "restored in the one write step, titled with its entity (4. Create, update, patch, and remove a planet), each write a commented call in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "9bd326268a": {
+  "outcome": "shared:ts:9bd326268a",
+  "why": "masked, it is the ts unit of class 9bd326268a (unification:tutorial-op-sentence, by rule:add-tutorial-op)",
+  "n": 7,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "5e178e9588"
+  ],
+  "unreviewed": 0
+ },
+ "0d71611cca": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "21fc35c768"
+  ],
+  "unreviewed": 0
+ },
+ "239605c878": {
+  "outcome": "shared:ts:239605c878",
+  "why": "masked, it is the ts unit of class 239605c878 (restored:fact, by hand)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "6d459aa83b"
+  ],
+  "unreviewed": 0
+ },
+ "efc6f12457": {
+  "outcome": "shared:ts:efc6f12457",
+  "why": "masked, it is the ts unit of class efc6f12457 (unification:write-comment-style, by hand)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "64560e9dff"
+  ],
+  "unreviewed": 0
+ },
+ "0ed7dc127d": {
+  "outcome": "shared:ts:079a339ba7",
+  "why": "masked, it is the ts unit of class 079a339ba7 (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "a102512ba9"
+  ],
+  "unreviewed": 0
+ },
+ "aeabe4bdf1": {
+  "outcome": "shared:ts:b7c60b65eb",
+  "why": "masked, it is the ts unit of class b7c60b65eb (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "e3dc10a6b7"
+  ],
+  "unreviewed": 0
+ },
+ "e3989ad2af": {
+  "outcome": "shared:go:e3989ad2af",
+  "why": "masked, it is the go unit of class e3989ad2af (unification:write-comment-style, by rule:add-write-comment)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4235f37e3f"
+  ],
+  "unreviewed": 0
+ },
+ "29bba9e03f": {
+  "outcome": "shared:ts:29bba9e03f",
+  "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "728df7c1c3"
+  ],
+  "unreviewed": 0
+ },
+ "421b4a9858": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity and names the writes it holds (create and remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "1fa815677a": {
+  "outcome": "shared:ts:1fa815677a",
+  "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "1760a2d205"
+  ],
+  "unreviewed": 0
+ },
+ "defb73bfd8": {
+  "outcome": "shared:ts:defb73bfd8",
+  "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "3ab3fb2b2e"
+  ],
+  "unreviewed": 0
+ },
+ "daa5382134": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 0
+ },
+ "644da5618b": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 0
+ },
+ "9cbb8e3add": {
+  "outcome": "shared:ts:9cbb8e3add",
+  "why": "masked, it is the ts unit of class 9cbb8e3add (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "bcbefa9d5b"
+  ],
+  "unreviewed": 0
+ },
+ "c44f65ddeb": {
+  "outcome": "shared:ts:c44f65ddeb",
+  "why": "masked, it is the ts unit of class c44f65ddeb (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "0416b3a5e1"
+  ],
+  "unreviewed": 0
+ },
+ "3528a38f43": {
+  "outcome": "shared:ts:3528a38f43",
+  "why": "masked, it is the ts unit of class 3528a38f43 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "787064e0dd"
+  ],
+  "unreviewed": 0
+ },
+ "89d63c000f": {
+  "outcome": "unification:tutorial-steps",
+  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "e0f62c86a8": {
+  "outcome": "shared:ts:e0f62c86a8",
+  "why": "masked, it is the ts unit of class e0f62c86a8 (restored:fact, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "78dac4093d"
+  ],
+  "unreviewed": 0
+ },
+ "d371d2e0ec": {
+  "outcome": "shared:go:d371d2e0ec",
+  "why": "masked, it is the go unit of class d371d2e0ec (unification:write-comment-style, by rule:add-write-comment)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "fa74e53c4a"
+  ],
+  "unreviewed": 0
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "the README cell is about `base` (Base URL of the API server); the js README options table (unported ReadmeModel_js) has no `server` row and says nothing about server variables, so nothing disagrees; the REFERENCE options rows say the same as this sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "shared:ts:8848495678",
+  "why": "masked, it is the ts unit of class 8848495678 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "the client step's shared sentence names the variable OLD's block already read (process.env.DEMO_APIKEY), passed as the apikey option",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the shared client sentence says what the example does (passes the variable's value as the option); no client of the twenty reads the environment itself; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "0acd9c1b01": {
+  "outcome": "same-meaning",
+  "why": "a method name the shared step sentences name (load, list, update, data), the methods OLD's blocks called",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "401bbd0e9e": {
+  "outcome": "same-meaning",
+  "why": "a method name the shared step sentences name (load, list, update, data), the methods OLD's blocks called",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the shared client sentence says what the example does (passes the variable's value as the option); no client of the twenty reads the environment itself; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "36e1725df7": {
+  "outcome": "same-meaning",
+  "why": "a method name the shared step sentences name (load, list, update, data), the methods OLD's blocks called",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "a method name the shared step sentences name (load, list, update, data), the methods OLD's blocks called",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "8c077b022a": {
+  "outcome": "dropped",
+  "why": "the tokens of the dropped Direct API Access sentence; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "32fa5204d7": {
+  "outcome": "dropped",
+  "why": "the tokens of the dropped Direct API Access sentence; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "15bacfa9a4": {
+  "outcome": "unification:tutorial-load-nested",
+  "why": "doc-nested: the load step loads the nested entity, as the ts tutorial does, and its sentence names the parent key the match gives (planet_id)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "5b486cbeea": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+  "n": 10,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "8f13c5f9a3": {
+  "outcome": "dropped",
+  "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 19,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "tutorial"
+ },
+ "2d1e0c8267": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "737d29091f": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+  "n": 6,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "14a6db9bd2": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "a343342201": {
+  "outcome": "unification:write-step-one-block",
+  "why": "the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write; the created entity's record is read for the id of the later writes (created.data().id) and is no longer printed, nor are the updated and patched records",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "db97ceae30": {
+  "outcome": "restored:shared",
+  "why": "in the one write block of step 4, as an unbound call with its comment (the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write)",
+  "n": 4,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "tutorial"
+ },
+ "edf1247ab1": {
+  "outcome": "restored:shared",
+  "why": "in the one write block of step 4, as an unbound call with its comment (the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "tutorial"
+ },
+ "1a7c91a351": {
+  "outcome": "restored:shared",
+  "why": "in the one write block of step 4, as an unbound call with its comment (the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write)",
+  "n": 5,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "tutorial"
+ },
+ "da3aea7adf": {
+  "outcome": "unification:write-step-one-block",
+  "why": "the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write; the created entity's record is read for the id of the later writes (created.data().id) and is no longer printed, nor are the updated and patched records",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "54206e1492": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "888fb547ba": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "e4791efa29": {
+  "outcome": "unification:write-step-one-block",
+  "why": "the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write; the created entity's record is read for the id of the later writes (created.data().id) and is no longer printed, nor are the updated and patched records",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "e3563c0405": {
+  "outcome": "unification:write-comment-style",
+  "why": "ref-issues: the update is a commented, unbound call in the write block (as ts), and its record is no longer printed",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "ed32e0f03e": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "aeb3c8328d": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "0704cf5fa0": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "671b68e4bd": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "8c3094e962": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e6b0f3f7e": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "39ea7efa32": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "fcb7568a90": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "2d27d490a5": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "14eb5dfde1": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "81ce817c06": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "c76072420b": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "cb1191a23f": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "448bd65283": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "7487ca3728": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "298121a8f9": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b6150d1436": {
+  "outcome": "unification:write-comment-style",
+  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "24bde6532f": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "b3f7fa6f35": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "83f89a05d3": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "8f0aa5975b": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "a233c11c28": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "f210c69b9a": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "0419dbee43": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "c5a190dd29": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "09e7702288": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "845f99973e": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "d1a4a79208": {
+  "outcome": "dropped",
+  "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "38b6bc8ef0": {
+  "outcome": "unification:write-step-one-block",
+  "why": "the updated and patched bindings: the writes are unbound commented calls in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "1e0d444246": {
+  "outcome": "unification:write-step-one-block",
+  "why": "the updated and patched bindings: the writes are unbound commented calls in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "c434e3cf1b": {
+  "outcome": "unification:tutorial-load-nested",
+  "why": "doc-nested: the load step loads the nested satellite with its parent key (planet_id: example_planet_id), as ts does",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "tutorial"
+ },
+ "09f2d870a7": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared step comment Load an ambient: the entity; throws on failure",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "rootquick"
+ },
+ "5eae1ff183": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named); the load step is the one OLD wrote as Load a specific ...",
+  "n": 10,
+  "by": "hand",
+  "type": "added",
+  "section": "rootquick"
+ },
+ "d16fc456ba": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "3c64dff088": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named); the load step is the one OLD wrote as Load a specific ...",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "rootquick"
+ },
+ "e444426c17": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "8e878b6908": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "3768de56c6": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "338004f2be": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "fba5f959fa": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "e7537c54be": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "0893d9329c": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "dbacafdb3f": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "6bdb2d29da": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "cdb707579b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "baba55f601": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e8b6808d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "b65a95a1e5": {
+  "outcome": "same-meaning",
+  "why": "the README cell is about `base` (Base URL of the API server); the js README options table (unported ReadmeModel_js) has no `server` row, so nothing disagrees with the REFERENCE server rows",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c6d819441": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "js/README.md, Error handling (unported ReadmeExplanation_js): on failure `status` holds the HTTP status (for error responses) and `err` holds the error; and DirectResult shape: On error, `ok` is `false` and an `err` property contains the error.",
+  "true": "the REFERENCE: a readable response, 2xx or not, holds ok, status, headers and data, with no err",
+  "evidence": "Main.fragment.js:259-273: err is set only when the body cannot be parsed (unreadableBody), and the result spreads err in only when it is set"
+ },
+ "282d4750fe": {
+  "outcome": "same-meaning",
+  "why": "the README says direct() returns the envelope and is branched on `ok` (Error handling); this sentence says when err is there; the disagreement about a readable non-2xx response is recorded once, on 9c6d819441",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "33a4409681": {
+  "outcome": "same-meaning",
+  "why": "the README says direct() returns the envelope and is branched on `ok` (Error handling); this sentence says when err is there; the disagreement about a readable non-2xx response is recorded once, on 9c6d819441",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "a941f823dc": {
+  "outcome": "same-meaning",
+  "why": "README test-mode comment: .data() reads the record of the loaded entity; same statement",
+  "n": 79,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "277b700b6c": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read (EntityBase.fragment.js:51 deleted()); no disagreement",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "739111c54a": {
+  "outcome": "same-meaning",
+  "why": "the testopts cell went with the parameter table; the name stays in the heading's signature DemoSDK.test(testopts?, sdkopts?) and the README tester row; the sentence calls it the first argument",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6a3f707e97": {
+  "outcome": "same-meaning",
+  "why": "the sdkopts cell went with the parameter table; the name stays in the heading's signature and the README tester row; the sentence calls it the second argument",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "036417f9ca": {
+  "outcome": "same-meaning",
+  "why": "moved into the Returns sentence, which says when `err` is there; the README's DirectResult line is the disagreement recorded on 9c6d819441",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "shared:ts:6aced21d71",
+  "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4fb872e54f"
+  ],
+  "unreviewed": 0
+ },
+ "723eefda19": {
+  "outcome": "shared:ts:723eefda19",
+  "why": "masked, it is the ts unit of class 723eefda19 (correction:runtime-forms, by rule:op-signature)",
+  "n": 28,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4388aa476d"
+  ],
+  "unreviewed": 0
+ },
+ "42c3636ef9": {
+  "outcome": "shared:ts:42c3636ef9",
+  "why": "masked, it is the ts unit of class 42c3636ef9 (correction:runtime-forms, by rule:op-signature)",
+  "n": 83,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "fa8637c0bd"
+  ],
+  "unreviewed": 0
+ },
+ "fc4eb8cd66": {
+  "outcome": "shared:ts:fc4eb8cd66",
+  "why": "masked, it is the ts unit of class fc4eb8cd66 (correction:runtime-forms, by rule:op-signature)",
+  "n": 16,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "03f31979fa"
+  ],
+  "unreviewed": 0
+ },
+ "b2cf6be514": {
+  "outcome": "shared:ts:b2cf6be514",
+  "why": "masked, it is the ts unit of class b2cf6be514 (correction:runtime-forms, by rule:op-signature)",
+  "n": 15,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "21516a568c"
+  ],
+  "unreviewed": 0
+ },
+ "a0555bdf8e": {
+  "outcome": "shared:ts:a0555bdf8e",
+  "why": "masked, it is the ts unit of class a0555bdf8e (correction:runtime-forms, by rule:op-signature)",
+  "n": 16,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0bd42bc9da"
+  ],
+  "unreviewed": 0
+ },
+ "cce9e8691a": {
+  "outcome": "shared:ts:cce9e8691a",
+  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 92,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "b82912bd60": {
+  "outcome": "shared:ts:b82912bd60",
+  "why": "masked, it is the ts unit of class b82912bd60 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0a6358906c"
+  ],
+  "unreviewed": 0
+ },
+ "4d47e92215": {
+  "outcome": "shared:ts:4d47e92215",
+  "why": "masked, it is the ts unit of class 4d47e92215 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 83,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a32ec5077c"
+  ],
+  "unreviewed": 0
+ },
+ "e5cf3d8bf5": {
+  "outcome": "shared:ts:e5cf3d8bf5",
+  "why": "masked, it is the ts unit of class e5cf3d8bf5 (correction:decision-13-utility-live, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "f3e421e046"
+  ],
+  "unreviewed": 0
+ },
+ "8689d10f56": {
+  "outcome": "shared:ts:8689d10f56",
+  "why": "masked, it is the ts unit of class 8689d10f56 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 15,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "b1666a52ac"
+  ],
+  "unreviewed": 0
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client: test() is the only static member (Main.fragment.js:334 static test), and tester() its alias is documented under Client Methods",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "440fa2bee5": {
+  "outcome": "restored:shared",
+  "why": "the name is in the heading's signature DemoSDK.test(testopts?, sdkopts?); the sentence says what the first argument holds",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "89eae73929": {
+  "outcome": "restored:shared",
+  "why": "restored as the test feature's options in the test arguments sentence",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ee9680759c": {
+  "outcome": "restored:shared",
+  "why": "the name is in the heading's signature DemoSDK.test(testopts?, sdkopts?); the sentence says what the second argument holds",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a188efe74d": {
+  "outcome": "restored:shared",
+  "why": "restored as the test arguments sentence: the first argument holds the test feature's options, which the call switches on, and replaces any `options.feature.test` in the second (Main.fragment.js:341-344 setprop(testopts, 'active', true), setpath(sdkopts, 'feature.test', testopts))",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "cc0b7cd9c6": {
+  "outcome": "restored:shared",
+  "why": "restored in the test client's first sentence (Create a test client with mock features active.); tester() is its alias",
+  "n": 38,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed Client <noun> in every language (decided once in shared code); the section lists the client's members",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4aca0e9fc2": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the runtime's parameter is entopts (MainEntity_js.ts `${entity.Name}(entopts) {`, passed to the entity constructor); OLD named it data",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5734aba53e": {
+  "outcome": "dropped",
+  "why": "the accessor and test-client parameter tables became sentences naming each parameter; the signature heading keeps name and type",
+  "n": 113,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3538e6b4b8": {
+  "outcome": "dropped",
+  "why": "header of the parameter tables that became sentences (accessor, test client)",
+  "n": 113,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "38660bb110": {
+  "outcome": "dropped",
+  "why": "the accessor's parameter is entopts, not data (MainEntity_js.ts: the argument is the entity OPTIONS object); the cell named a parameter that does not exist",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "56e3ecb1bc": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "false: the argument is the entity options passed to the constructor as entopts (MainEntity_js.ts, EntityBase.fragment.js:19 constructor(client, entopts)), not initial data",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d2cb7060c6": {
+  "outcome": "restored:shared",
+  "why": "restored as the accessor sentence Create a new `AmbientEntity` instance. (the accessor makes a new entity on every call, MainEntity_js.ts `return new ${cls}(self, entopts)`)",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a0ea2daad1": {
+  "outcome": "dropped",
+  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`)",
+  "n": 116,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a27fcb0198": {
+  "outcome": "unification:ref-page-structure",
+  "why": "the Returns line of options() and utility() ends with a full stop under the Client Methods heading",
+  "n": 38,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1b545527": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7b8e8beaa8": {
+  "outcome": "restored:shared",
+  "why": "inside the Returns sentence: when the body cannot be read, `ok` is `false` and the key `err` holds the error; a request that cannot be made gives only `ok` (`false`) and `err` (Main.fragment.js:208, 259-273)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a9cb864ded": {
+  "outcome": "restored:shared",
+  "why": "restored as the prepare Returns line with what the fetch definition is",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "bcf36bb6e5": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (EntityBase.fragment.js:117-118 and `if (signal && signal.aborted) { return }`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "6742b0a309": {
+  "outcome": "dropped",
+  "why": "header of the parameter tables that became sentences (accessor, test client); the Fields and option tables keep theirs",
+  "n": 113,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "abfa449593": {
+  "outcome": "restored:shared",
+  "why": "restored as the load sentence: Resolves to the entity, and throws on failure. `.data()` reads its record.",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "6b70d16ff7": {
+  "outcome": "restored:shared",
+  "why": "restored as Resolves to the created entity in the create sentence, with how a failure shows",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "a path parameter is also read from the entity's stored match and data, so the id is needed only where the entity does not hold it (tm/js/src/utility/ParamUtility.js reads reqmatch, match, reqdata, data)",
+  "n": 20,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "676de5e63a": {
+  "outcome": "restored:shared",
+  "why": "restored as the update sentence (resolves to the updated entity, throws on failure)",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log, which is active by default (model/feature/log.aontu active: true); restored as inactive until switched on, except `log`",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0ccd61dc70": {
+  "outcome": "dropped",
+  "why": "header of the parameter tables that became sentences (accessor, test client); the feature option tables keep theirs",
+  "n": 113,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line now says active-by-default for log and inactive for the rest, from one decision (FeatureDocs.activeByDefault)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7ddccf533d": {
+  "outcome": "shared:ts:7ddccf533d",
+  "why": "masked, it is the ts unit of class 7ddccf533d (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9b677d094c"
+  ],
+  "unreviewed": 0
+ },
+ "b2a89584dc": {
+  "outcome": "shared:ts:b2a89584dc",
+  "why": "masked, it is the ts unit of class b2a89584dc (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4eea983832"
+  ],
+  "unreviewed": 0
+ },
+ "dc3093e4cd": {
+  "outcome": "shared:ts:dc3093e4cd",
+  "why": "masked, it is the ts unit of class dc3093e4cd (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c71a59923"
+  ],
+  "unreviewed": 0
+ },
+ "35ea4c3e84": {
+  "outcome": "shared:ts:35ea4c3e84",
+  "why": "masked, it is the ts unit of class 35ea4c3e84 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7247de945f"
+  ],
+  "unreviewed": 0
+ },
+ "45067a17c1": {
+  "outcome": "shared:ts:45067a17c1",
+  "why": "masked, it is the ts unit of class 45067a17c1 (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6c3aa41f7c"
+  ],
+  "unreviewed": 0
+ },
+ "06e0e1b2b7": {
+  "outcome": "shared:ts:06e0e1b2b7",
+  "why": "masked, it is the ts unit of class 06e0e1b2b7 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c7c471a05"
+  ],
+  "unreviewed": 0
+ },
+ "a986258b72": {
+  "outcome": "shared:ts:a986258b72",
+  "why": "masked, it is the ts unit of class a986258b72 (unification:ref-test-heading, by rule:test-heading)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ffe4eb970b"
+  ],
+  "unreviewed": 0
+ },
+ "5ce4fbf9a3": {
+  "outcome": "shared:ts:5ce4fbf9a3",
+  "why": "masked, it is the ts unit of class 5ce4fbf9a3 (correction:sentence-review-test, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "746a31db3f"
+  ],
+  "unreviewed": 0
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 0
+ },
+ "82b6e219ea": {
+  "outcome": "shared:ts:82b6e219ea",
+  "why": "masked, it is the ts unit of class 82b6e219ea (correction:guard-accessor-arg, by hand)",
+  "n": 93,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4af20ce756"
+  ],
+  "unreviewed": 0
+ },
+ "95a205867b": {
+  "outcome": "shared:elixir:352c3544e1",
+  "why": "masked, it is the elixir unit of class 352c3544e1 (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fef59d5955"
+  ],
+  "unreviewed": 0
+ },
+ "1691d17c93": {
+  "outcome": "shared:ts:1691d17c93",
+  "why": "masked, it is the ts unit of class 1691d17c93 (same-meaning, by hand)",
+  "n": 38,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c002d31995"
+  ],
+  "unreviewed": 0
+ },
+ "6979eaacb4": {
+  "outcome": "shared:ts:6979eaacb4",
+  "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
+  "n": 34,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea66aefd24"
+  ],
+  "unreviewed": 0
+ },
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "shared:ts:e8e8cc2723",
+  "why": "masked, it is the ts unit of class e8e8cc2723 (correction:freeze-direct-wording, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "42aedb7ce3"
+  ],
+  "unreviewed": 1
+ },
+ "11da65611b": {
+  "outcome": "shared:ts:11da65611b",
+  "why": "masked, it is the ts unit of class 11da65611b (correction:freeze-direct-wording, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fe4d5d27e7"
+  ],
+  "unreviewed": 1
+ },
+ "33ee785ed0": {
+  "outcome": "shared:ts:33ee785ed0",
+  "why": "masked, it is the ts unit of class 33ee785ed0 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "010ab525bc"
+  ],
+  "unreviewed": 0
+ },
+ "72ea88f6fd": {
+  "outcome": "shared:py:fc4313d211",
+  "why": "masked, it is the py unit of class fc4313d211 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c8f458658"
+  ],
+  "unreviewed": 0
+ },
+ "1c8a16afeb": {
+  "outcome": "shared:ts:1c8a16afeb",
+  "why": "masked, it is the ts unit of class 1c8a16afeb (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea3964d6ba"
+  ],
+  "unreviewed": 0
+ },
+ "c5f9000dd5": {
+  "outcome": "shared:ts:c5f9000dd5",
+  "why": "masked, it is the ts unit of class c5f9000dd5 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 28,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9f6d56f5fb"
+  ],
+  "unreviewed": 0
+ },
+ "89c5ef9c6d": {
+  "outcome": "shared:ts:89c5ef9c6d",
+  "why": "masked, it is the ts unit of class 89c5ef9c6d (restored:shared, by hand)",
+  "n": 79,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3bb5d3a968"
+  ],
+  "unreviewed": 0
+ },
+ "0918d10148": {
+  "outcome": "shared:ts:0918d10148",
+  "why": "masked, it is the ts unit of class 0918d10148 (correction:decision-7-match-copy, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3c04f33c"
+  ],
+  "unreviewed": 0
+ },
+ "39135c73d0": {
+  "outcome": "shared:ts:39135c73d0",
+  "why": "masked, it is the ts unit of class 39135c73d0 (restored:fact, by rule:stream-member)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7034f074ec"
+  ],
+  "unreviewed": 0
+ },
+ "50dcec911f": {
+  "outcome": "shared:ts:50dcec911f",
+  "why": "masked, it is the ts unit of class 50dcec911f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4c93659f14"
+  ],
+  "unreviewed": 0
+ },
+ "91bc59ac7f": {
+  "outcome": "shared:ts:91bc59ac7f",
+  "why": "masked, it is the ts unit of class 91bc59ac7f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5003b705ca"
+  ],
+  "unreviewed": 0
+ },
+ "80f77307dc": {
+  "outcome": "shared:ts:80f77307dc",
+  "why": "masked, it is the ts unit of class 80f77307dc (correction:decision-6-stream-signal, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "28235772cb"
+  ],
+  "unreviewed": 0
+ },
+ "9a9b7d8556": {
+  "outcome": "shared:ts:9a9b7d8556",
+  "why": "masked, it is the ts unit of class 9a9b7d8556 (correction:decision-9-field, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0612fc4d79"
+  ],
+  "unreviewed": 1
+ },
+ "fdd66e0776": {
+  "outcome": "shared:ts:fdd66e0776",
+  "why": "masked, it is the ts unit of class fdd66e0776 (correction:decision-9-field, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f1bcce31a0"
+  ],
+  "unreviewed": 0
+ },
+ "0030efbf5a": {
+  "outcome": "shared:ts:0030efbf5a",
+  "why": "masked, it is the ts unit of class 0030efbf5a (correction:decision-14-list-call, by hand)",
+  "n": 82,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fdfa305bc4"
+  ],
+  "unreviewed": 1
+ },
+ "393056d0c1": {
+  "outcome": "shared:go:393056d0c1",
+  "why": "masked, it is the go unit of class 393056d0c1 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "185f26bc68"
+  ],
+  "unreviewed": 0
+ },
+ "0f10166e63": {
+  "outcome": "shared:go:0f10166e63",
+  "why": "masked, it is the go unit of class 0f10166e63 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "abe9546ee3"
+  ],
+  "unreviewed": 0
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 0
+ },
+ "d3f3b82555": {
+  "outcome": "shared:go:d3f3b82555",
+  "why": "masked, it is the go unit of class d3f3b82555 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2b8bc511e9"
+  ],
+  "unreviewed": 0
+ },
+ "7615c6fe93": {
+  "outcome": "shared:ts:7615c6fe93",
+  "why": "masked, it is the ts unit of class 7615c6fe93 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c151802d4a"
+  ],
+  "unreviewed": 0
+ },
+ "6356afc86b": {
+  "outcome": "shared:go:6356afc86b",
+  "why": "masked, it is the go unit of class 6356afc86b (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "120aec2437"
+  ],
+  "unreviewed": 0
+ },
+ "193859bf79": {
+  "outcome": "shared:go:193859bf79",
+  "why": "masked, it is the go unit of class 193859bf79 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "22bdd0ff18"
+  ],
+  "unreviewed": 0
+ },
+ "28d337e733": {
+  "outcome": "shared:go:28d337e733",
+  "why": "masked, it is the go unit of class 28d337e733 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a8d9aa773"
+  ],
+  "unreviewed": 0
+ },
+ "9023782dca": {
+  "outcome": "shared:ts:9023782dca",
+  "why": "masked, it is the ts unit of class 9023782dca (correction:ref-6, by rule:add-action-op)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e3081c2053"
+  ],
+  "unreviewed": 0
+ },
+ "3d50058045": {
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ebea8de27f"
+  ],
+  "unreviewed": 0
+ },
+ "dedcfa23a4": {
+  "outcome": "shared:ts:5b8eca7ad4",
+  "why": "masked, it is the ts unit of class 5b8eca7ad4 (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "49431fb9be"
+  ],
+  "unreviewed": 0
+ },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 0
+ },
+ "c2391366a5": {
+  "outcome": "shared:ts:c2391366a5",
+  "why": "masked, it is the ts unit of class c2391366a5 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d6fd5c15c3"
+  ],
+  "unreviewed": 0
+ },
+ "7b4b41d6fa": {
+  "outcome": "shared:ts:7b4b41d6fa",
+  "why": "masked, it is the ts unit of class 7b4b41d6fa (unification:ref-type-comments, by rule:add-type-comment)",
+  "n": 32,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "bced6e2f5f"
+  ],
+  "unreviewed": 0
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 0
+ },
+ "d933f2cdb3": {
+  "outcome": "shared:ts:d933f2cdb3",
+  "why": "masked, it is the ts unit of class d933f2cdb3 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "863f603c11"
+  ],
+  "unreviewed": 0
+ },
+ "b23edb42bc": {
+  "outcome": "shared:ts:b23edb42bc",
+  "why": "masked, it is the ts unit of class b23edb42bc (correction:decision-11-deleted, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "808ab9f422"
+  ],
+  "unreviewed": 0
+ },
+ "1095fa7261": {
+  "outcome": "shared:ts:1095fa7261",
+  "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8d6016d7e2"
+  ],
+  "unreviewed": 0
+ },
+ "916036b165": {
+  "outcome": "shared:ts:916036b165",
+  "why": "masked, it is the ts unit of class 916036b165 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d77745e7ee"
+  ],
+  "unreviewed": 0
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "5c591f3d19": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "05a5a62f89"
+  ],
+  "unreviewed": 0
+ },
+ "df0db6061e": {
+  "outcome": "shared:ts:df0db6061e",
+  "why": "masked, it is the ts unit of class df0db6061e (correction:runtime-forms, by rule:op-signature)",
+  "n": 4,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a5e47cfb6f"
+  ],
+  "unreviewed": 0
+ },
+ "66936e5036": {
+  "outcome": "restored:shared",
+  "why": "restored as the patch sentence",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f864314c0e": {
+  "outcome": "shared:ts:f864314c0e",
+  "why": "masked, it is the ts unit of class f864314c0e (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "b7eb8b0b55"
+  ],
+  "unreviewed": 0
+ },
+ "cbcdf6e5f9": {
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d3d603d612"
+  ],
+  "unreviewed": 0
+ },
+ "8e7a866f45": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it for string options",
+  "n": 4,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c11b6417b": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "176972c3bb": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "no-test js/README.md, Use test mode (unported ReadmeHowto_js): Create a mock client for unit testing — no server required:, then a load that reads its mock record",
+  "true": "the REFERENCE: without the test feature the test client has no mock transport and refuses every request",
+  "evidence": "Config.fragment.js:32 `const fc = FEATURE_CLASS[fn] || BaseFeature` (no test class generated: the base feature, no mock); the ts contradiction recorded the same"
+ },
+ "05f770bd83": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments, and its feature cell names the same feature.test option; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f616466503"
+  ],
+  "unreviewed": 0
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 0
+ },
+ "da08f7e7bd": {
+  "outcome": "shared:ts:da08f7e7bd",
+  "why": "masked, it is the ts unit of class da08f7e7bd (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "fe06e05f78": {
+  "outcome": "shared:ts:fe06e05f78",
+  "why": "masked, it is the ts unit of class fe06e05f78 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "f6b8425ed5"
+  ],
+  "unreviewed": 0
+ },
+ "10f0d238e2": {
+  "outcome": "shared:ts:10f0d238e2",
+  "why": "masked, it is the ts unit of class 10f0d238e2 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "e35271001c": {
+  "outcome": "shared:ts:e35271001c",
+  "why": "masked, it is the ts unit of class e35271001c (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "18b691f7e7": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the runtime's parameter is entopts (MainEntity_js.ts `${entity.Name}(entopts) {`, passed to the entity constructor); OLD named it data",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f3cf8c6c54": {
+  "outcome": "restored:shared",
+  "why": "restored as the accessor sentence Create a new `AmbientEntity` instance. (the accessor makes a new entity on every call, MainEntity_js.ts `return new ${cls}(self, entopts)`)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; it is escaped into one cell now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; it is escaped into one cell now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d245316c2e": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; the heading names it",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "90066e05ea": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8b03f234f3": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "634de4221b": {
+  "outcome": "shared:ts:82b6e219ea",
+  "why": "masked, it is the ts unit of class 82b6e219ea (correction:guard-accessor-arg, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4af20ce756"
+  ],
+  "unreviewed": 0
+ },
+ "7393140c1f": {
+  "outcome": "shared:ts:7393140c1f",
+  "why": "masked, it is the ts unit of class 7393140c1f (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9fe8f9d917"
+  ],
+  "unreviewed": 0
+ },
+ "7dd340f0f1": {
+  "outcome": "shared:ts:7dd340f0f1",
+  "why": "masked, it is the ts unit of class 7dd340f0f1 (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "0ef48843b0": {
+  "outcome": "shared:ts:0ef48843b0",
+  "why": "masked, it is the ts unit of class 0ef48843b0 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "74c9db4d88"
+  ],
+  "unreviewed": 0
+ },
+ "b4523a5362": {
+  "outcome": "correction:server-required-given",
+  "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:server-required-given",
+  "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:server-required-given",
+  "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:server-required-given",
+  "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fb8c6a1923": {
+  "outcome": "same-meaning",
+  "why": "the none value the shared accessor and test sentences name (ref.facts.none, cited: EntityBase.fragment.js `return undefined`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8e4dd2dd04": {
+  "outcome": "same-meaning",
+  "why": "the variable the reference examples bind (const result = ...), now named by the shared sentences that read it (result.err, result.ok, result.deleted())",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "correction:ref-stream-member",
+  "why": "the shared page documents the entity's stream member, which the js runtime declares (EntityBase.fragment.js:107 `async *stream(action, args, callopts)`); OLD js did not document it",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "correction:ref-stream-member",
+  "why": "the shared page documents the entity's stream member, which the js runtime declares (EntityBase.fragment.js:107 `async *stream(action, args, callopts)`); OLD js did not document it",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-actions",
+  "why": "the Actions table, which OLD js did not print (OLD ts did): an action reachable only through $action and not documented is an endpoint no reader can call; its Call cell is the awaited call",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a4f42304c3": {
+  "outcome": "correction:ref-actions",
+  "why": "the Actions table, which OLD js did not print (OLD ts did): an action reachable only through $action and not documented is an endpoint no reader can call; its Call cell is the awaited call",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names (EntityBase.fragment.js:51 deleted())",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:server-required-given",
+  "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "3f4da3a957": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; the heading names it",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "50e2198a19": {
+  "outcome": "unification:ts-trailing-comma",
+  "why": "the shared features example closes its feature map with a comma, as ts's does (ts normalizer ts-trailing-comma names the same change)",
+  "n": 19,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "91709b5df2": {
+  "outcome": "unification:ref-list-printed",
+  "why": "doc-nested: the list example quotes its string with single quotes, as every js example does, and prints each item's record",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "c442d0fbe4": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "81b5ca4c52": {
+  "outcome": "unification:ref-list-printed",
+  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-list-printed",
+  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "fcd0aab970": {
+  "outcome": "unification:ref-list-printed",
+  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "b452b7729b": {
+  "outcome": "unification:ref-list-printed",
+  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "54777750b6": {
+  "outcome": "unification:ref-type-comments",
+  "why": "the create example's fields carry their type as a comment from the js type column (canonToType js: string), as ts's carry theirs (normalizer ref-type-comments)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

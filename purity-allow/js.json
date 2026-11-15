@@ -1,0 +1,8 @@
+[
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "exampleVarName (from @voxgig/sdkgen)",
+  "why": "An example variable is not a name the code generator makes. The hook adapts the shared example names (results, item, result, the entity name and plural) to js identifier rules with the sdkgen function js's other README components use (ReadmeEntity_js.ts:48 exampleVarName(entity.name, 'js')); no code generator has an equivalent."
+ }
+]
