@@ -33,6 +33,8 @@ const DEFAULTS: [RegExp, Category][] = [
   [/^facts\.(async|result|record|listOf)$/, 'derived'],
   [/^facts\.(named|prints|errVar)$/, 'convention'],
   [/^facts\.unusedError$/, 'language'],
+  // The arguments a call must pass: re-derived from the runtime's list.
+  [/^facts\.arity$/, 'derived'],
   [/^facts\.(collection|recordType|errSlot|nullValue|ok|err|pairForm|noError|unwrap)$/, 'cited'],
   [/^ref\.facts\.(entityBy|noun|entityNoun|heading|keys)$/, 'convention'],
   // What a runtime's source spells: cited, the token in the quote.

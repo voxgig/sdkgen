@@ -232,6 +232,14 @@ function check(t: string, S: any, forms: Forms): Result {
     if (0 < toks.length && toks.every((x) => list.returns.includes(x))) verified.add('facts.collection')
   }
 
+  // The arguments a call must pass: the parameters of list the runtime does
+  // not let a caller leave out (0 where `list()` compiles).
+  if (null != list && null != f.arity) {
+    const req = list.params.filter((p) => !forms.optional(p)).length
+    if (req === f.arity && arityFits(forms, list.params, f.arity)) verified.add('facts.arity')
+    else add('arity', `facts.arity is ${f.arity}; the runtime's ${listM} requires ${req} of its ${list.params.length} parameters`)
+  }
+
   // The record accessor is an entity member, and the printer reads it.
   const acc = forms.record(f.record)
   const accDecls = findDecls(forms, entity, esc(acc.name))
@@ -535,8 +543,10 @@ function check(t: string, S: any, forms: Forms): Result {
     for (const [k, v] of Object.entries(r)) {
       const path = 'ref.facts.' + k
       if (!NEW_FACTS.deleted.test(path)) continue
-      const n = (/[A-Za-z_]\w*/.exec(spell(String(v))) || [])[0]
-      if (null != n && 0 < findDecls(forms, entity, esc(n)).length) verified.add(path)
+      // The member is the last name the read applies to the entity ({var}).
+      const ids = [...spell(String(v)).replace(/\$?\{\w+\}/g, ' ').matchAll(/[A-Za-z_]\w*/g)].map((m) => m[0])
+      const n = ids[ids.length - 1]
+      if (null != n && (0 < findDecls(forms, entity, esc(n)).length || fieldInRuntime(t, n))) verified.add(path)
       else add('deleted', `${path} names ${v}, which the entity does not declare`)
     }
   }
@@ -642,9 +652,13 @@ function recordWhole(t: string, S: any, forms: Forms, accessor: string, printed:
   let rec = spell(String(f.record))
   let good = true
   let parts = 0
+  // A record fact that is the plain accessor (the unwrap a fact of its own):
+  // the printed record is facts.unwrap, then facts.record on what it takes out.
+  let separate = false
   if (null != f.unwrap) {
     const at = new RegExp('(?<!\\w)' + esc(String(f.unwrap)) + '(?!\\w)').exec(rec)
-    if (null == at) {
+    if (null == at && /^\$?\{var\}[.\w]/.test(rec)) separate = true
+    else if (null == at) {
       good = false
       add('record', `facts.record ${f.record} does not unwrap with facts.unwrap, \`${f.unwrap}\`, as cited`)
     }
@@ -671,12 +685,25 @@ function recordWhole(t: string, S: any, forms: Forms, accessor: string, printed:
   }
   if (0 < parts) {
     const whole = String(f.record).replace(/\$\{var\}/g, '$planet').replace(/\{var\}/g, 'planet')
-    if (null == printed || !printed.includes(spell(whole))) {
+    const after = esc(spell(String(f.record)).replace(/^\$?\{var\}/, ''))
+    const fits = separate
+      ? null != printed && new RegExp('\\bplanet\\.' + esc(String(f.unwrap)) + '\\)?\\??' + after).test(printed)
+      : null != printed && printed.includes(spell(whole))
+    if (!fits) {
       good = false
       add('record', `the provider prints a record as ${JSON.stringify(printed)}, which is not facts.record whole (${whole})`)
     }
   }
   return good
+}
+
+// Whether a name is a field of a record or struct in a language's runtime:
+// a C function-pointer member (`bool (*deleted)(Entity*);`) or a typed field
+// (`deleted: bool = false,`, `mutable e_deleted : bool;`).
+function fieldInRuntime(t: string, name: string): boolean {
+  const n = esc(name)
+  const re = new RegExp('\\(\\*\\s*' + n + '\\s*\\)\\s*\\(|(^|\\n)[ \\t]*(?:pub\\s+|mutable\\s+)?' + n + '\\s*:\\s*[\\w?*[]', 'm')
+  return runtimeFiles(t).some((f) => re.test(Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')))
 }
 
 // Whether a name is declared anywhere in a language's runtime: a function,
