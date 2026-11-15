@@ -117,8 +117,8 @@ describe('reference interface', () => {
   // ships the feature whatever the model says.
   test('the test client without the test feature follows testMock, which has no default', () => {
     const none = { ...desc, ref: { ...desc.ref, test: false } }
-    const model = refText(provider((r) => { r.testMock = 'model' }), none).replace(/\n/g, ' ')
-    ok(model.includes('so the client has no mock transport and refuses every request.'), model)
+    const generated = refText(provider((r) => { r.testMock = 'generated' }), none).replace(/\n/g, ' ')
+    ok(generated.includes('so the client has no mock transport and refuses every request.'), generated)
     const always = refText(provider((r) => { r.testMock = 'always' }), none).replace(/\n/g, ' ')
     ok(always.includes('Create a test client with mock features active.'), always)
     ok(!always.includes('no mock transport'), always)
