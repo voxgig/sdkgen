@@ -118,19 +118,24 @@ function run(a) {
     // and per reference: its counts, the variations it has the section in, its result style, an example per unit
     const oftenBy = cached ? cached.oftenBy : new Map(), hasBy = cached ? cached.hasBy : new Map()
     const styleBy = cached ? cached.styleBy : new Map(), exampleOf = cached ? cached.exampleOf : new Map()
+    // per reference and variation: the slot form of each unit it prints (every position a slot), with an example
+    const slotsBy = cached ? cached.slotsBy : new Map()
     const vars = K.variations(a)
     const styleOf = (F) => (F.facts.find((f) => 'result' === f.path) || {}).value
     if (!cached) for (const r of refs) {
       const decided = readJson(Path.join(a.classes, r + '.json'))
       const rF = Facts.load(ts, r)
       const rmask = (text, kind) => I.match(text, kind, r, lang)
-      const mineR = new Map(), has = new Set()
-      oftenBy.set(r, mineR); hasBy.set(r, has); styleBy.set(r, styleOf(rF))
+      const mineR = new Map(), has = new Set(), slotR = new Map()
+      oftenBy.set(r, mineR); hasBy.set(r, has); styleBy.set(r, styleOf(rF)); slotsBy.set(r, slotR)
       for (const v of vars) {
         const sect = C.loadSection(a.new, v, section, r)
         if (null != sect) has.add(v)
-        const cnt = new Map()
+        const cnt = new Map(), sl = new Map()
+        slotR.set(v, sl)
         for (const u of C.units(sect)) {
+          const sf = I.slots(u.text, u.kind, r, lang)
+          if (null != sf) { const sk = u.kind + '\u0000' + sf; if (!sl.has(sk)) sl.set(sk, { lang: r, v, text: u.text, kind: u.kind, n: 0 }); sl.get(sk).n++ }
           const mk = u.kind + '\u0000' + rmask(u.text, u.kind), k = v + '\u0000' + mk
           cnt.set(k, (cnt.get(k) || 0) + 1)
           if (!exampleOf.has(mk)) exampleOf.set(mk, { lang: r, v, text: u.text, kind: u.kind })
@@ -154,14 +159,20 @@ function run(a) {
         }
       }
     }
-    if (a.cache && !cached) REFCACHE.set(ck, { addedNew, pairs, often, oftenBy, hasBy, styleBy, exampleOf })
+    if (a.cache && !cached) REFCACHE.set(ck, { addedNew, pairs, often, oftenBy, hasBy, styleBy, exampleOf, slotsBy })
     // and how often this language prints each, per variation: a shared sentence
     // printed more often than any reference prints it (a duplicate) is not matched
-    const mine = new Map(), myHas = new Set(), myAny = new Set()
+    const mine = new Map(), myHas = new Set(), myAny = new Set(), mySlots = new Map(), mySlotsAny = new Set()
     for (const v of vars) {
       const sect = C.loadSection(a.new, v, section, lang)
       if (null != sect) myHas.add(v)
-      for (const u of C.units(sect)) { const mk = u.kind + '\u0000' + myMask(u.text, u.kind); const k = v + '\u0000' + mk; mine.set(k, (mine.get(k) || 0) + 1); myAny.add(mk) }
+      const sl = new Map()
+      mySlots.set(v, sl)
+      for (const u of C.units(sect)) {
+        const mk = u.kind + '\u0000' + myMask(u.text, u.kind); const k = v + '\u0000' + mk; mine.set(k, (mine.get(k) || 0) + 1); myAny.add(mk)
+        const sf = I.slots(u.text, u.kind, lang, lang)
+        if (null != sf) { const sk = u.kind + '\u0000' + sf; sl.set(sk, (sl.get(sk) || 0) + 1); mySlotsAny.add(sk) }
+      }
     }
     // only in a variation some reference has the section in: lone-go and
     // alias-go2 hold go alone, and nothing there can be a duplicate of a reference
@@ -180,44 +191,81 @@ function run(a) {
       return out
     }
     // Shared sentences every reference of this language's result style prints
-    // in a variation, which this language prints in none: listed, not failed.
-    // Code spans are compared as `…`: a key read or a call is printed by each
-    // runtime's own printer, and the sentence around it is what is shared.
-    // A language alone in its result style (perl `die`, swift `wrapped`) has
-    // no reference to share a style-bound sentence with: it is held to the
-    // STYLE-INDEPENDENT sentences, those every reference prints in a
-    // variation whatever its style. A sentence a style branch of shared code
-    // prints (runtimeprose.ts returnClause, failsSentence, ...) is printed by
-    // the references of that style only, so with references of five styles
-    // (throw pair raise errslot union) it is in no such intersection.
+    // in a variation, which this language does not print there. Every
+    // position is compared as a slot (ident.js slots): a key read, a call, a
+    // fact or a code span is the runtime's own, and the sentence around it is
+    // what is shared. Per variation: a sentence this language prints nowhere
+    // is ABSENT; one it prints in other variations but not in this one, where
+    // every reference prints it, is DROPPED there (so a sentence dropped from
+    // one variation is seen from scratch too, where no count is recorded).
+    // A language alone in its result style (perl `die`, swift `wrapped`, and
+    // among the references ts, go and c) has no reference to share a
+    // style-bound sentence with: it is held to the STYLE-INDEPENDENT
+    // sentences, those every reference prints in a variation whatever its
+    // style. A sentence a style branch of shared code prints (runtimeprose.ts
+    // returnClause, failsSentence, ...) is printed by the references of that
+    // style only, so with references of five styles (throw pair raise errslot
+    // union) it is in no such intersection.
     const style = styleOf(myFacts)
     const sameStyle = refs.filter((r) => styleBy.get(r) === style)
     const alone = !sameStyle.length && refs.length > 0
     const same = alone ? refs : sameStyle
     const styles = [...new Set(same.map((r) => styleBy.get(r)))]
-    // a code span or a fact slot is the runtime's own token: compared as one placeholder
-    const erase = (mk) => mk.replace(/`[^`]*`|⟦[^⟧]*⟧/g, '`…`')
-    const myErased = new Set([...myAny].map(erase))
+    // a reason recorded for an id: a string (absent everywhere), or { why, variations } for a sentence dropped
+    // from some variations only, which holds exactly while those are the variations it is missing from
+    const reasonOf = (id, where, vs) => {
+      const h = (hand.absent || {})[id]
+      if (!h) return ''
+      if ('string' === typeof h) return 'nowhere' === where ? h : ''
+      if (!h.why) return ''
+      if ('nowhere' === where) return h.variations ? '' : h.why
+      return Array.isArray(h.variations) && h.variations.slice().sort().join(',') === vs.slice().sort().join(',') ? h.why : ''
+    }
     const absent = {}
+    const add = (sk, ex, v, where, among, basis) => {
+      const [kind, text] = sk.split('\u0000')
+      // keyed by the sentence the reference prints (ident.js identity)
+      const id = I.sentenceId(ex.text, ex.kind, ex.lang)
+      if (!absent[id]) absent[id] = { kind, masked: text, example: ex, refs: among, basis, where, variations: [] }
+      absent[id].variations.push(v)
+    }
+    const sentenceLike = (sk) => /[A-Za-z]{3,}.*\s.*[A-Za-z]{3,}/.test(sk.split('\u0000')[1].replace(/⟦[^⟧]*⟧/g, ''))
+    const all = (among, v) => myHas.has(v) && among.every((r) => hasBy.get(r).has(v))
+    // ABSENT: printed by every reference of the style in a variation, by this language in none
     if (same.length) for (const v of vars) {
-      if (!myHas.has(v) || !same.every((r) => hasBy.get(r).has(v))) continue
-      const setOf = (r) => new Set([...oftenBy.get(r).keys()].filter((k) => k.startsWith(v + '\u0000')).map((k) => erase(k.slice(v.length + 1))))
-      const sets = same.map(setOf)
-      for (const ek of sets[0]) {
-        if (myErased.has(ek) || !sets.every((x) => x.has(ek))) continue
-        const [kind, text] = ek.split('\u0000')
-        if (!/[A-Za-z]{3,}.*\s.*[A-Za-z]{3,}/.test(text.replace(/`…`|⟦[^⟧]*⟧/g, ''))) continue
-        const exk = [...oftenBy.get(same[0]).keys()].find((k) => k.startsWith(v + '\u0000') && erase(k.slice(v.length + 1)) === ek)
-        const ex = exampleOf.get(exk.slice(v.length + 1))
-        // keyed by the sentence the reference prints (ident.js identity)
-        const id = I.sentenceId(ex.text, ex.kind, ex.lang)
-        if (!absent[id]) absent[id] = { kind, masked: text, example: ex, refs: same, basis: alone ? 'style-independent (every reference, styles ' + styles.join(' ') + ')' : 'same result style ' + style, variations: [], why: (hand.absent || {})[id] || '' }
-        absent[id].variations.push(v)
+      if (!all(same, v)) continue
+      const sets = same.map((r) => slotsBy.get(r).get(v))
+      for (const [sk, ex] of sets[0]) {
+        if (mySlotsAny.has(sk) || !sets.every((x) => x.has(sk)) || !sentenceLike(sk)) continue
+        add(sk, ex, v, 'nowhere', same, alone ? 'style-independent (every reference, styles ' + styles.join(' ') + ')' : 'same result style ' + style)
       }
     }
+    // DROPPED: printed by EVERY reference in a variation, whatever its style,
+    // and by this language in other variations but not in this one. A
+    // constant shortfall is a difference of place, not a drop: zig's prepare
+    // returns an error union and prints no `.err` sentence where rust's Result
+    // does, so in ent-none (no entity, no other `.err` sentence) zig prints
+    // none; it is DROPPED only where the shortfall against the references
+    // that print it least is larger than in every variation it is printed in.
+    const shortfall = (sk, v) => Math.min(...refs.map((r) => (slotsBy.get(r).get(v).get(sk) || { n: 0 }).n)) - (mySlots.get(v).get(sk) || 0)
+    const usual = new Map()
+    const usualOf = (sk) => {
+      if (!usual.has(sk)) { let m = Infinity; for (const v of vars) if (all(refs, v) && mySlots.get(v).get(sk)) m = Math.min(m, shortfall(sk, v)); usual.set(sk, m) }
+      return usual.get(sk)
+    }
+    if (refs.length) for (const v of vars) {
+      if (!all(refs, v)) continue
+      const sets = refs.map((r) => slotsBy.get(r).get(v)), mine = mySlots.get(v)
+      for (const [sk, ex] of sets[0]) {
+        if (mine.has(sk) || !mySlotsAny.has(sk) || !sets.every((x) => x.has(sk)) || !sentenceLike(sk)) continue
+        if (!(shortfall(sk, v) > usualOf(sk))) continue
+        add(sk, ex, v, 'dropped', refs, 'every reference, whatever its style')
+      }
+    }
+    for (const [id, x] of Object.entries(absent)) x.why = reasonOf(id, x.where, x.variations)
     K.writeFile(Path.join(a.out, lang, section + '.absent.json'), JSON.stringify({ note: alone
-      ? `${lang}'s result style '${style}' is no reference's: masked units that EVERY reference (${same.join(', ')}; styles ${styles.join(', ')}) prints in a variation, so style-independent, and ${lang} prints in none; each fails the one command until hand/${lang}.json absent: { "<id>": "<why>" } says why`
-      : `masked units that every reference of result style '${style}' (${same.join(', ') || 'none'}) prints in a variation and ${lang} prints in none; each fails the one command until hand/${lang}.json absent: { "<id>": "<why>" } says why`, basis: alone ? 'style-independent' : 'same style', absent }, null, 1) + '\n')
+      ? `${lang}'s result style '${style}' is no reference's: units (every position a slot) that EVERY reference (${same.join(', ')}; styles ${styles.join(', ')}) prints in a variation, so style-independent, and ${lang} does not print there: where 'nowhere', in no variation; where 'dropped', in other variations but not these. Each fails the one command until hand/${lang}.json absent says why: { "<id>": "<why>" } for one printed nowhere, { "<id>": { "why": "...", "variations": [...] } } for one dropped from exactly those variations`
+      : `units (every position a slot) that every reference of result style '${style}' (${same.join(', ') || 'none'}) prints in a variation and ${lang} does not print there: where 'nowhere', in no variation; where 'dropped', in other variations but not these. Each fails the one command until hand/${lang}.json absent says why: { "<id>": "<why>" } for one printed nowhere, { "<id>": { "why": "...", "variations": [...] } } for one dropped from exactly those variations`, basis: alone ? 'style-independent' : 'same style', absent }, null, 1) + '\n')
     const rep = report.sections[section] = { classes: 0, hand: 0, pinned: 0, shared: 0, open: 0, byType: {}, sharedEx: [], openEx: [] }
     const open = {}
     for (const c of classesOf(a, section, lang)) {
@@ -284,14 +332,14 @@ function run(a) {
     K.writeFile(Path.join(a.out, lang, section + '.open.json'), JSON.stringify(open, null, 1) + '\n')
     rep.absent = Object.keys(absent).length; rep.absentExplained = Object.values(absent).filter((x) => x.why).length
     rep.fewer = Object.values(open).filter((x) => /fewer variations/.test(x.hint || '')).length
-    report.absent = { ...(report.absent || {}), ...Object.fromEntries(Object.entries(absent).map(([k, x]) => [k, { section, masked: x.masked, variations: x.variations, why: x.why, basis: x.basis }])) }
+    report.absent = { ...(report.absent || {}), ...Object.fromEntries(Object.entries(absent).map(([k, x]) => [k, { section, masked: x.masked, variations: x.variations, why: x.why, basis: x.basis, where: x.where }])) }
     rep.absentBasis = alone ? 'style-independent' : 'same style'
   }
   const file = a['out-file'] || Path.join(a.classes, lang + '.json')
   if (!a.dry) K.writeFile(file, JSON.stringify(out, null, 1) + '\n')
   report.file = a.dry ? null : file
   // what the portcheck summary prints about shared sentences
-  const sum = { absentOpen: Object.entries(report.absent || {}).filter(([, x]) => !x.why).map(([id, x]) => ({ id, section: x.section, masked: String(x.masked).slice(0, 140), variations: x.variations.length, basis: x.basis })), matched: 0, unreviewed: 0, fewer: 0, absent: 0, absentExplained: 0, falseVerdict: (report.falseVerdict || []).length, falseList: report.falseVerdict || [], sections: {} }
+  const sum = { absentOpen: Object.entries(report.absent || {}).filter(([, x]) => !x.why).map(([id, x]) => ({ id, section: x.section, masked: String(x.masked).slice(0, 140), variations: x.variations.length, where: x.where, names: 'dropped' === x.where ? x.variations : undefined, basis: x.basis })), matched: 0, unreviewed: 0, fewer: 0, absent: 0, absentExplained: 0, falseVerdict: (report.falseVerdict || []).length, falseList: report.falseVerdict || [], sections: {} }
   for (const [s, r] of Object.entries(report.sections)) { sum.matched += r.shared; sum.unreviewed += r.sharedUnreviewed || 0; sum.fewer += r.fewer || 0; sum.absent += r.absent || 0; sum.absentExplained += r.absentExplained || 0; sum.sections[s] = { matched: r.shared, unreviewed: r.sharedUnreviewed || 0, fewer: r.fewer || 0, absent: r.absent || 0, basis: r.absentBasis } }
   report.sentences = sum
   K.writeFile(Path.join(a.out, lang, 'sentences.json'), JSON.stringify(sum, null, 1) + '\n')
