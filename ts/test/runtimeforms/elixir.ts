@@ -54,9 +54,9 @@ const forms: Forms = {
   namesWhy: 'elixir passes by position; the page names the entity argument entity and the setter argument by what it holds',
   uncompared: { returns: 'the runtime writes @spec on the operations only; the client and entity members carry none, so their declared returns are compared with nothing' },
   cite: {
+    'notes.tutorial:list': { value: '`Voxgig.Struct.getelem/2` reads an item.', file: 'tm/elixir/lib/utility/struct/voxgig_struct.ex', quote: ['defmodule Voxgig.Struct do', 'def getelem(val, key, alt \\\\ nil)'], unquoted: { 'Voxgig.Struct.getelem/2': 'the arity name of def getelem(val, key, alt \\\\ nil) called with two arguments, in the module Voxgig.Struct' } },
     'ref.facts.none': { file: 'src/cmp/elixir/fragment/EntityLoadOp.fragment.ex', quote: 'def load(ent, reqmatch \\\\ nil, ctrl \\\\ nil) do' },
-    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: 'S.jm(["ok", false, "err", err])' },
-    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: 'S.jm(["ok", body_err == nil and status >= 200 and status < 300,', unquoted: { true: 'ok is the boolean the status test computes; true is not spelled' } },
+    'ref.facts.direct.okFalse': { file: MAIN, quote: 'S.jm(["ok", false, "err", err])' },
     'ref.facts.entity[0].copy': { value: true, file: "tm/elixir/lib/projectname/entity_base.ex", quote: "S.clone(S.getprop(ent, \"_data\"))" },
     'notes.ctor': { value: "Build `options` from a native map with `{names.helpers}.deep/1`.", file: "tm/elixir/lib/projectname/helpers.ex", quote: ["def deep(v) do"], also: [{ file: MAIN, quote: 'def new(options \\\\ nil) do' }], unquoted: { '{names.helpers}.deep/1': 'the arity name of def deep(v), behind the helpers module the slot names' } },
     'facts.collection': { value: "`Voxgig.Struct` list",
@@ -76,9 +76,6 @@ const forms: Forms = {
     'notes.member:utilityBase': { value: "It is the client's own node, not a copy.", file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
   },
   exceptions: {
-    'notes.tutorial:list': 'WRONG: elixir: notes.tutorial:list says "Named with its arity, it is `list/2`"; EntityListOp.fragment.ex defines def list(ent, reqmatch \\\\ nil, ctrl \\\\ nil), which is list/1, list/2 and list/3, and the tutorial calls list(planet), list/1',
-    'notes.tutorial:load': 'WRONG: elixir: notes.tutorial:load says "Named with its arity, it is `load/2`"; EntityLoadOp.fragment.ex defines def load(ent, reqmatch \\\\ nil, ctrl \\\\ nil), which is load/1, load/2 and load/3',
-    streamItems: 'WRONG: elixir: ref.facts.entity stream kind streamLazy ("return a lazy stream of its result items"); entity_base.ex runs run_op and calls the streaming feature\'s function before it returns (source(ctx, stream_fn), whose items streaming.ex produces eagerly as a list), and the Stream it returns is a lazy walk over that list',
     'optional:opMatched list': 'the runtime defaults the match, and a nested entity\'s list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)',
     ...Object.fromEntries(['op list', 'op load', 'op create', 'op update', 'op patch', 'op remove', 'opMatched list']
     .map((w) => ['returns:' + w, 'the @spec says term(); the page names what the term is, as the old page did'])),
