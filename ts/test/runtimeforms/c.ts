@@ -72,6 +72,9 @@ const forms: Forms = {
     paramNames: 'the EntityVT function pointers in core/sdk.h leave their receiver parameter unnamed (Entity*)',
   },
   cite: {
+    'ref.facts.none': { file: 'src/cmp/c/fragment/EntityLoadOp.fragment.c', quote: 'if (*err) return NULL;' },
+    'ref.facts.lits.false': { value: 'false', file: 'src/cmp/c/fragment/Main.fragment.c', quote: 'return cmap(2, "ok", v_bool(false), "err", v_str(msg));' },
+    'ref.facts.lits.true': { value: 'true', file: 'src/cmp/c/fragment/Main.fragment.c', quote: '"ok", v_bool(NULL == body_err && status >= 200 && status < 300),', unquoted: { true: 'ok is the bool the status test computes; true is not spelled' } },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/c/fragment/Entity.fragment.c", quote: "return voxgig_clone(self->data);" },
     'facts.collection': { value: "`NULL`-terminated array", file: OPFILES[1], quote: ['// array is NULL-terminated.', 'items[n] = NULL;'] },
     'facts.errSlot': { file: MAIN, quote: '*err = context_make_error(ctx, "spec_method_allow", buf);' },
@@ -83,11 +86,23 @@ const forms: Forms = {
       file: 'tm/c/utility/http.c',
       quote: ['if (voxgig_is_string(body)) {\n    bytes = voxgig_as_string(body);\n    blen = voxgig_string_len(body);', '"body", voxgig_new_string_n(text, len),'],
     },
-    'ref.facts.cancel': { value: false, file: 'tm/c/utility/http.c', quote: '// The default live transport: HTTP/1.1 over a socket, one request per\n// connection.' },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/c/utility/http.c'] } },
   },
   exceptions: {
     'types:ARRAY': 'the code generator\'s map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did',
     'types:OBJECT': 'the code generator\'s map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did',
+  },
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test_sdk',
+  on: (d) => /\(\*/.test(d.head) ? 'instance' : 'module',
+  fails: (d) => /PNError\*\*/.test(d.params[d.params.length - 1] || '') ? 'error parameter PNError**' : '',
+  failure: { shows: 'PNError**', call: '&err' },
+  stream: {
+    file: "src/cmp/c/fragment/Entity.fragment.c",
+    construct: "return res->stream(res->stream_ud);", starts: "at call",
+    run: "feature_hook_util(ctx, \"PrePoint\");",
+    draw: "return res->stream(res->stream_ud);",
+    runs: "before it returns", items: "before it returns",
   },
 }
 
