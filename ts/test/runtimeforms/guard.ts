@@ -6,11 +6,12 @@ import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
 import type { Decl, Family, Forms, On, OpName, StreamItems } from './forms'
+import { SCAFFOLD } from './forms'
 import {
   OPS, defaultSigName, defaultSigParams, defaultSigReturns, esc, findDecls, generatorColumn, namePattern, opMethod, opSource,
   publicNames, read,
 } from './forms'
-import { account, codeTokens, runtimeText } from './account'
+import { account, checkCitation, codeTokens, runtimeFiles, runtimeText } from './account'
 
 const { CANON_TYPE } = require('../../dist/helpers/canonType.js')
 const { canonToType } = require('../../dist/sdkgen.js')
@@ -229,6 +230,7 @@ function check(t: string, S: any, forms: Forms): Result {
     recordOk = false
     add('record', `the provider prints a record as ${JSON.stringify(printed)}, which does not call ${acc.name}`)
   }
+  if (!recordWhole(t, S, forms, acc.name, printed, spell, add)) recordOk = false
   if (recordOk) verified.add('facts.record')
 
   if (S.ref) {
@@ -451,6 +453,64 @@ function check(t: string, S: any, forms: Forms): Result {
   }
 }
 
+// The record expression whole, beyond its trailing accessor: an unwrap in it
+// is facts.unwrap itself, every other member or type it names is declared by
+// the runtime (or cited in recordParts), and a record of more than one part
+// is printed as stated.
+function recordWhole(t: string, S: any, forms: Forms, accessor: string, printed: string | null,
+  spell: (s: string) => string, add: (c: string, what: string) => void): boolean {
+  const f = S.facts
+  let rec = spell(String(f.record))
+  let good = true
+  let parts = 0
+  if (null != f.unwrap) {
+    const at = new RegExp('(?<!\\w)' + esc(String(f.unwrap)) + '(?!\\w)').exec(rec)
+    if (null == at) {
+      good = false
+      add('record', `facts.record ${f.record} does not unwrap with facts.unwrap, \`${f.unwrap}\`, as cited`)
+    }
+    else rec = rec.slice(0, at.index) + ' ' + rec.slice(at.index + String(f.unwrap).length)
+    parts++
+  }
+  const body = rec.replace(/\$?\{var\}/g, ' ')
+  const names = new Set<string>()
+  for (const m of body.matchAll(/^\s*([A-Za-z_]\w*)\s*(?=->|\.)|(?:->|\.|\(:)\s*([A-Za-z_][\w-]*)|\bas[?!]?\s+([A-Za-z_]\w*)|\b([A-Za-z_][\w-]*)\s*\(/g)) {
+    const n = m[1] || m[2] || m[3] || m[4]
+    if (n !== accessor) names.add(n)
+  }
+  for (const n of names) {
+    parts++
+    const c = forms.recordParts?.[n]
+    if (null != c) {
+      const bad = checkCitation(t, 'recordParts.' + n, n, c, spell)
+      if (null != bad) good = false, add('record', bad)
+    }
+    else if (!declaredInRuntime(t, n)) {
+      good = false
+      add('record', `facts.record ${f.record} names ${n}, which the ${t} runtime does not declare (cite it in recordParts where a declaration reads otherwise)`)
+    }
+  }
+  if (0 < parts) {
+    const whole = String(f.record).replace(/\$\{var\}/g, '$planet').replace(/\{var\}/g, 'planet')
+    if (null == printed || !printed.includes(spell(whole))) {
+      good = false
+      add('record', `the provider prints a record as ${JSON.stringify(printed)}, which is not facts.record whole (${whole})`)
+    }
+  }
+  return good
+}
+
+// Whether a name is declared anywhere in a language's runtime: a function,
+// method, binding, type or field declaration, or a C struct field.
+function declaredInRuntime(t: string, name: string): boolean {
+  const n = esc(name)
+  const re = new RegExp(
+    '(^|\\n)[ \\t]*(?:(?:pub|public|open|static|export|private|internal|final|override|inline|extern|const|async|mutable|@discardableResult)\\s+)*' +
+    '(?:func|fn|def|defn|defp|function|sub|let|val|var|const|class|struct|interface|protocol|enum|type|module|defmodule|mutable)\\s+(?:[\\w.]+[.:])?' + n + '\\b' +
+    '|[\\w*]\\s+\\*?' + n + '\\s*;|^\\s*:' + n + '\\s', 'm')
+  return runtimeFiles(t).some((f) => re.test(Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')))
+}
+
 // A type with the signature tokens spelled as the templates spell them.
 function norm(s: string, forms: Forms): string {
   let out = s
@@ -571,6 +631,13 @@ const CONTROLS: Control[] = [
     name: 'the record printer reads another member', check: 'record', mutate: (S) => {
       const expr = S.expr
       S.expr = (e: any, sc: any, d: any) => 'record' === e.k ? e.of.name + '.nosuchreader()' : expr(e, sc, d)
+      return true
+    },
+  },
+  {
+    name: 'the record expression names a member the runtime does not declare', check: 'record', mutate: (S) => {
+      const rec = String(S.facts.record)
+      S.facts.record = /\{var\}/.test(rec) ? rec.replace(/(\$?\{var\})/, '$1.zzNoSuch()') : 'zzNoSuch().' + rec
       return true
     },
   },

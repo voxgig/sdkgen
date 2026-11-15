@@ -113,6 +113,9 @@ type Forms = {
   async?: (d: Decl) => boolean
 
   record: (record: string) => { name: string, arity?: number }
+  // A member or type facts.record names that no declaration the guard reads
+  // shows, cited instead.
+  recordParts?: Record<string, Citation>
 
   // The porter's: how the provider spells its signatures.
   sigName?: (sig: string) => string

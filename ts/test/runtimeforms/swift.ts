@@ -8,8 +8,6 @@ import { bracketed } from './forms'
 const MAIN = 'src/cmp/swift/fragment/Main.fragment.swift'
 const BASE = 'src/cmp/swift/fragment/EntityBase.fragment.swift'
 const TYPES = 'tm/swift/Sources/ProjectNameSDK/core/Types.swift'
-// What an operation's Value is unwrapped with, as the runtime writes it.
-const UNWRAP_QUOTE = 'if let ent = record.asNative as? Entity {'
 const OPS =['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/swift/fragment/Entity${o}Op.fragment.swift`)
 
 const forms: Forms = {
@@ -55,13 +53,9 @@ const forms: Forms = {
   streamKind: (d) => /^AsyncStream</.test(d.returns) ? 'streamIterator' : 'stream',
   // An operation returns the entity inside a Value and throws on failure.
   style: { exception: 'throw', raises: /\bthrow\b/, wrapped: (d) => /\bthrows\s*->\s*Value\b/.test(d.rest.slice(0, 200)) },
-  // The whole record expression: the unwrap, as the runtime writes it, then a
-  // member called with no argument. Anything else names no entity member.
-  record: (rec) => {
-    const m = /^\(\{var\}\.(.+)\)\?\.(\w+)\(\)$/.exec(rec)
-    const quoted = null != m && new RegExp('(?<!\\w)' + m[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?!\\w)').test(UNWRAP_QUOTE)
-    return quoted ? { name: (m as RegExpExecArray)[2], arity: 0 } : { name: rec }
-  },
+  // The accessor the record ends with; the unwrap before it is checked whole,
+  // against facts.unwrap, by the shared guard.
+  record: (rec) => { const m = /\.(\w+)\(\)$/.exec(rec); return null == m ? { name: rec } : { name: m[1], arity: 0 } },
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'init', accessor: '${entity.Name}' },
   types: { column: 'swift' },
   exceptions: {
@@ -80,7 +74,7 @@ const forms: Forms = {
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/swift/Config_swift.ts", quote: "default: return BaseFeature()" },
     'facts.collection': { file: 'tm/swift/Sources/ProjectNameSDK/Struct/Value.swift', quote: 'case list(VList)' },
-    'facts.unwrap': { value: 'asNative as? Entity', file: 'tm/swift/Sources/ProjectNameSDK/feature/ValidateFeature.swift', quote: UNWRAP_QUOTE },
+    'facts.unwrap': { value: 'asNative as? Entity', file: 'tm/swift/Sources/ProjectNameSDK/feature/ValidateFeature.swift', quote: 'if let ent = record.asNative as? Entity {' },
     'ref.facts.none': { file: MAIN, quote: 'public init(_ optionsIn: ProjectNameSdk.VMap? = nil) {' },
     'ref.facts.setArg': { file: BASE, quote: 'public func data(_ newdata: Value?) -> Value {' },
     'ref.facts.container': { file: MAIN, quote: 'private var options: ProjectNameSdk.VMap = ProjectNameSdk.VMap()' },
