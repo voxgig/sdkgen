@@ -296,8 +296,8 @@
   "unreviewed": 1
  },
  "79233d47ba": {
-  "outcome": "shared:clojure:79233d47ba",
-  "why": "masked, it is the clojure unit of class 79233d47ba (same-meaning, by hand)",
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
