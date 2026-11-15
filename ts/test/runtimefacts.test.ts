@@ -10,7 +10,7 @@ import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
 import { account, occurrences, tally } from './runtimeforms/account'
-import { CONTROLS, FORMS, FORMS_SRC, PROVIDERS, check, clone, formsOf, full, syntaxOf } from './runtimeforms/guard'
+import { CONTROLS, FORMS, FORMS_SRC, PROVIDERS, check, clone, ctorSource, formsOf, full, namingOf, syntaxOf } from './runtimeforms/guard'
 
 
 describe('runtimefacts', () => {
@@ -74,6 +74,7 @@ describe('runtimefacts', () => {
         `; types: ${null == forms.types.column
           ? `type words ${Object.keys(forms.types.words || {}).length}, pinned for the reviewer (${Object.entries(forms.types.words || {}).map(([k, v]) => k + ' ' + v).join(', ')}; ${forms.types.reason})`
           : 'column ' + forms.types.column + ' (derived from the generator)'}` +
+        `; constructor ${namingOf(t).layout?.ctor} (${ctorSource(t)})` +
         `; uncompared ${Object.entries(res.uncompared).filter(([, v]) => 0 < v).map(([k, v]) => `${k} ${v} (${(forms.uncompared as any)?.[k]})`).join(', ') || 'none'}`)
       for (const c of res.account.cited) {
         lines.push(`  cited${c.absence ? ' (absence: searched)' : c.prose ? ' (prose: audit only)' : ''} ${c.path} = ${JSON.stringify(c.value)}\n    ${c.file}: ${JSON.stringify(c.quote)}` +
