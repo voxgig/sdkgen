@@ -1,6 +1,8 @@
 import { canonToType, indentLines } from '@voxgig/sdkgen'
 import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, SdkDescription, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
+import { scalaLit } from './utility_scala'
+
 
 const facts: RuntimeFacts = {
   method: { list: 'list', load: 'load', create: 'create', update: 'update', patch: 'patch', remove: 'remove' },
@@ -75,9 +77,8 @@ const str = (s: string): string => JSON.stringify(s)
 
 const name = (r: Ref): string => r.name
 
-const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
-  INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'java.util.List.of()', OBJECT: `${MAP}.of()`, NULL: 'null',
-} as Record<string, string>)[e.type] ?? str(e.text)
+// The literal table the scala generator's own examples use.
+const lit = (e: Extract<Expr, { k: 'lit' }>): string => scalaLit(e.type, e.text)
 
 const data = (r: Ref): string => `${name(r)}.data()`
 
@@ -89,11 +90,15 @@ const expr = (e: Expr): string => {
     case 'record': return data(e.of)
     case 'field': return `${data(e.of)}.asInstanceOf[${MAP}[String, Object]].get(${str(e.field)})`
     case 'fields': return e.fields.map((f) => `${data(e.of)}.asInstanceOf[${MAP}[String, Object]].get(${str(f)})`).join(' + " " + ')
-    case 'map': return mapOf(e.entries.map(pair))
+    case 'map': return mapOf(held(e.entries).map(pair))
   }
 }
 
 const pair = (en: Entry): string => `${str(en.key)}, ${expr(en.value)}`
+
+// Map.of rejects a null value (NullPointerException), so a member whose
+// value is the null literal is left out of a Map.of map.
+const held = (entries: Entry[]): Entry[] => entries.filter((en) => 'null' !== expr(en.value))
 
 // Map.of has an overload per pair count up to ten; Map.ofEntries takes any.
 const many = (n: number): boolean => 10 < n
@@ -105,11 +110,12 @@ const mapOf = (pairs: string[]): string => many(pairs.length)
 // line where it carries types or a closing note.
 const argOf = (s: Extract<Stmt, { k: 'call' }>): string => {
   if (null == s.arg) return 'null'
-  const laid = s.wide && (null != s.note || s.arg.some((en) => null != en.type))
-  if (!laid) return expr({ k: 'map', entries: s.arg })
-  const wrapped = many(s.arg.length)
-  const lines = s.arg.map((en, i) => '    ' + (wrapped ? `${MAP}.entry(${pair(en)})` : pair(en)) +
-    (i < (s.arg as Entry[]).length - 1 ? ',' : '') +
+  const arg = held(s.arg)
+  const laid = s.wide && (null != s.note || arg.some((en) => null != en.type))
+  if (!laid) return expr({ k: 'map', entries: arg })
+  const wrapped = many(arg.length)
+  const lines = arg.map((en, i) => '    ' + (wrapped ? `${MAP}.entry(${pair(en)})` : pair(en)) +
+    (i < arg.length - 1 ? ',' : '') +
     (null == en.type ? '' : '  // ' + canonToType(en.type, 'scala')))
   return `${MAP}.${wrapped ? 'ofEntries' : 'of'}(\n` + [...lines, ...(null == s.note ? [] : ['    // ' + s.note])].join('\n') + '\n)'
 }
