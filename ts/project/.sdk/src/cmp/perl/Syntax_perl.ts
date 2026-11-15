@@ -173,7 +173,7 @@ const Syntax: SyntaxType = {
   expr: (e) => expr(e),
 
   notes: {
-    'member:streamFunction': 'Each item is the hashref `data_get` returns, not an entity.',
+    'member:streamFunction': 'An entity is yielded as the hashref its `data_get` returns.',
   },
 
   ref: {
