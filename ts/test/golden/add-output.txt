@@ -663,7 +663,8 @@ src/cmp/java/EntityTypes_java.ts 7c70fc1164ed
 src/cmp/java/Entity_java.ts 234ee14a0a72
 src/cmp/java/Gitignore_java.ts 549792550319
 src/cmp/java/MainEntity_java.ts 3f146ec80ca7
-src/cmp/java/Main_java.ts e66b76cce845
+src/cmp/java/Main_java.ts ca405fa59a4b
+src/cmp/java/Naming_java.ts 6db5e570a8fb
 src/cmp/java/Package_java.ts 2ed76b17901b
 src/cmp/java/PrepareAuth_java.ts 2e8593a5f789
 src/cmp/java/ReadmeEntity_java.ts 63f97c38dd85
@@ -674,13 +675,11 @@ src/cmp/java/ReadmeInstall_java.ts cf2a01ac4bb8
 src/cmp/java/ReadmeIntro_java.ts 20c352a58d33
 src/cmp/java/ReadmeModel_java.ts 4487884b8c96
 src/cmp/java/ReadmeOptions_java.ts c90bce878518
-src/cmp/java/ReadmeQuick_java.ts 4a4fbd372045
-src/cmp/java/ReadmeRef_java.ts 2b22cb0dfcfb
 src/cmp/java/ReadmeTopHowto_java.ts c3befccf0daa
-src/cmp/java/ReadmeTopQuick_java.ts 8f56c6b38584
 src/cmp/java/ReadmeTopTest_java.ts 145149d54b4b
 src/cmp/java/Schema_java.ts 1695e2237594
 src/cmp/java/SdkError_java.ts 2957202451b0
+src/cmp/java/Syntax_java.ts 5b9a30bac583
 src/cmp/java/TestClean_java.ts f8de8e6f89f4
 src/cmp/java/TestDirect_java.ts c2f28fbc6d2e
 src/cmp/java/TestEntity_java.ts 1c8bf4ad5359
@@ -696,7 +695,7 @@ src/cmp/java/fragment/EntityUpdateOp.fragment.java f25ffe51c7f5
 src/cmp/java/fragment/Main.fragment.java a2f2bdda49f5
 src/cmp/java/fragment/SdkError.fragment.java 4a0e738dbcc0
 src/cmp/java/tsconfig.json 720a3f229019
-src/cmp/java/utility_java.ts 1690775675d7
+src/cmp/java/utility_java.ts 1f3f9528950e
 tm/java/LICENSE 52acd47c245f
 tm/java/Makefile def672a803b0
 tm/java/VERSION e6635045e1d2
