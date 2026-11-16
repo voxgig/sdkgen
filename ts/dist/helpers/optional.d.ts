@@ -18,7 +18,9 @@ declare const OPTIONAL_COMPONENTS: {
 };
 type OptionalComponent = keyof typeof OPTIONAL_COMPONENTS;
 declare const SYNTAX_SECTIONS: string[];
-declare function undeclaredOverride(model: any, file: string): boolean;
+declare function sharedSections(retired?: Record<string, unknown>): string[];
+declare function declaredOverride(model: any, file: string): boolean;
+declare function undeclaredOverride(model: any, file: string, retired?: Record<string, unknown>): boolean;
 declare function optionalComponent(ctx$: any, target: any, name: OptionalComponent): any;
 export type { OptionalComponent, };
-export { OPTIONAL_COMPONENTS, SYNTAX_SECTIONS, optionalComponent, undeclaredOverride, };
+export { OPTIONAL_COMPONENTS, SYNTAX_SECTIONS, optionalComponent, undeclaredOverride, declaredOverride, sharedSections, };

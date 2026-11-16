@@ -652,10 +652,10 @@ function noteDrift(actx, report, copies, kind, source) {
     const merging = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx);
     return (category, label) => {
         if ('unshipped' === category) {
-            const same = (0, copies_1.unchangedCopy)(fs, actx.folder, copies, kind, source, label);
+            const same = (0, copies_1.unchangedCopy)(fs, actx.folder, copies, kind, source, label, (0, optional_1.declaredOverride)(actx.model, label));
             if (true !== same) {
                 report[false === same ? 'override' : 'additive'].push(label);
-                if ((0, optional_1.undeclaredOverride)(actx.model, label)) {
+                if ((0, optional_1.undeclaredOverride)(actx.model, label, (0, copies_1.readRetired)(fs, source.folder))) {
                     report.undeclared.push(label);
                 }
                 return;

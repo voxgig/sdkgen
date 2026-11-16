@@ -15,6 +15,7 @@ exports.projectCopyMode = projectCopyMode;
 exports.untouched = untouched;
 exports.unchangedCopy = unchangedCopy;
 exports.releasedCopy = releasedCopy;
+exports.readRetired = readRetired;
 exports.isCopy = isCopy;
 const node_path_1 = __importDefault(require("node:path"));
 const node_crypto_1 = require("node:crypto");
@@ -354,10 +355,14 @@ function readRetired(fs, sdkfolder) {
         return undefined;
     }
 }
-// An unshipped copy is unchanged when the record says so or when it is a
-// released version; otherwise the record's verdict stands.
-function unchangedCopy(fs, folder, record, kind, source, rel) {
+// An unshipped copy is unchanged when the record says so. With no record of
+// it, a released version is unchanged too, unless the model declares the copy
+// as the project's override. A record that says changed always stands: a
+// copy edited back to an earlier release's text is still the project's edit.
+function unchangedCopy(fs, folder, record, kind, source, rel, declared = false) {
     const same = untouched(fs, folder, record, rel);
-    return true !== same && releasedCopy(fs, folder, kind, source, rel) ? true : same;
+    if (undefined !== same || declared)
+        return same;
+    return releasedCopy(fs, folder, kind, source, rel) ? true : same;
 }
 //# sourceMappingURL=copies.js.map

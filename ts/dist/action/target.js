@@ -368,7 +368,7 @@ function retiredCopies(ctx$, toRel, unwanted, copies) {
     const out = [];
     for (const rel of unwanted) {
         const file = toRel + '/' + rel;
-        const same = (0, copies_1.unchangedCopy)(fs, folder, copies.record, copies.kind, copies.source, file);
+        const same = (0, copies_1.unchangedCopy)(fs, folder, copies.record, copies.kind, copies.source, file, (0, optional_1.declaredOverride)(ctx$.model, file));
         if (true === same && true !== (0, copies_1.untouched)(fs, folder, copies.record, file)) {
             copies.released?.add(file);
         }
@@ -382,7 +382,7 @@ function retiredCopies(ctx$, toRel, unwanted, copies) {
                     'project changed it, so it is kept and still used in place of the ' +
                     'shared one. To use the shared one, delete it and its compiled ' +
                     'output under ' + (0, cmpfile_1.compiledStem)(file) + '.js' +
-                    ((0, optional_1.undeclaredOverride)(ctx$.model, file) ?
+                    ((0, optional_1.undeclaredOverride)(ctx$.model, file, (0, copies_1.readRetired)(fs, copies.source.folder)) ?
                         '. Doctor fails until the model declares it as main: kit: target: ' +
                             (0, cmpfile_1.parseComponent)(file)?.target + ': override: ' +
                             (0, cmpfile_1.parseComponent)(file)?.name + ': true' : '')

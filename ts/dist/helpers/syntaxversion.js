@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SYNTAX_CHANGES = exports.SYNTAX_PREVIOUS = exports.SYNTAX_INTERFACE = void 0;
 exports.servedInterface = servedInterface;
 exports.serveSyntax = serveSyntax;
-exports.declaredInterface = declaredInterface;
 exports.checkSyntaxInterface = checkSyntaxInterface;
 const utility_1 = require("../utility");
 const cmpfile_1 = require("./cmpfile");
@@ -81,11 +80,5 @@ function checkSyntaxInterface(target, declared) {
         (0 === changes.length ? '' :
             'check each change, then declare interface: \'' + SYNTAX_INTERFACE + '\':\n' +
                 changes.map((c) => '  - ' + c.to + ': ' + c.change).join('\n')));
-}
-// The declaration as a provider's source writes it. The constant is not
-// exported, so a literal is the only declaration that compiles, and this
-// reads the same value the loaded provider carries.
-function declaredInterface(src) {
-    return src.match(/^\s*interface:\s*['"]([^'"]+)['"]/m)?.[1];
 }
 //# sourceMappingURL=syntaxversion.js.map
