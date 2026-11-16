@@ -128,10 +128,12 @@ const Syntax: SyntaxType = {
   fence: 'kotlin',
   facts,
 
-  // The client class, and SdkEntity where a record is read.
-  imports: (desc, used) => [
+  // The client class, and SdkEntity: always in the tutorial, whose imports
+  // the reference examples (which print none) cast with; at the root only
+  // where a record is read.
+  imports: (desc, used, place) => [
     `import ${desc.layout.module}.${desc.layout.client}`,
-    ...(used.print || used.field ? [`import ${desc.layout.module}.SdkEntity`] : []),
+    ...('tutorial' === place || used.print || used.field ? [`import ${desc.layout.module}.SdkEntity`] : []),
   ],
 
   client: (s, desc) => [
@@ -179,7 +181,7 @@ const Syntax: SyntaxType = {
   },
 
   notes: {
-    'member:streamLazy': 'The signal is read only as a function of no arguments, a `Function0`, that\nreturns `true` once the stream is to end; any other value is ignored.',
+    'member:streamLazy': 'The signal is read only as a function of no arguments, a `Function0`,\nthat returns `true` once the stream is to end; any other value is\nignored.',
   },
 }
 

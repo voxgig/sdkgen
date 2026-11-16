@@ -80,7 +80,7 @@ const forms: Forms = {
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
-    'ref.facts.streamSignal': { value: true, file: 'src/cmp/kotlin/fragment/EntityBase.fragment.kt', quote: ['val signal = opts["signal"]', 'val aborted: () -> Boolean = when (signal) {'] },
+    'ref.facts.streamSignal': { value: true, file: 'src/cmp/kotlin/fragment/EntityBase.fragment.kt', quote: ['val signal = opts["signal"]', 'val aborted: () -> Boolean = when (signal) {', 'if (source.hasNext() && !aborted()) source.next() else end'] },
     'ref.facts.direct.okFalse': { value: "false", file: "tm/kotlin/core/SdkClient.kt", quote: "out[\"ok\"] = false" },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/kotlin/Config_kotlin.ts", quote: "else -> ${kotlinpackage}.feature.BaseFeature()" },
@@ -98,7 +98,7 @@ const forms: Forms = {
     'ref.facts.body.values': { value: 'a `ByteArray`, a `String` or an `InputStream`', file: 'tm/kotlin/utility/Media.kt', quote: ['// Bytes, an InputStream or a String, sent as they are. An InputStream can be', 'return if (body is InputStream) body.readBytes() else body'],
       also: [{ file: 'tm/kotlin/utility/Fetcher.kt', quote: ['if (body is String && "" != body) {', '} else if (body is ByteArray) {'] }] },
     'ref.facts.body.once': { value: 'an `InputStream`', file: 'tm/kotlin/utility/Media.kt', quote: ['// read once, so it is read here, before the first attempt, and a retry sends', 'return if (body is InputStream) body.readBytes() else body'] },
-    'notes.member:streamLazy': { value: 'The signal is read only as a function of no arguments, a `Function0`, that\nreturns `true` once the stream is to end; any other value is ignored.', file: BASE, quote: ['is Function0<*> -> {', '{ (signal as Function0<Any?>).invoke() == true }', '{ false }'] },
+    'notes.member:streamLazy': { value: 'The signal is read only as a function of no arguments, a `Function0`,\nthat returns `true` once the stream is to end; any other value is\nignored.', file: BASE, quote: ['is Function0<*> -> {', '{ (signal as Function0<Any?>).invoke() == true }', '{ false }'] },
     // Searched over the whole kotlin runtime: a region it leaves out is quoted, with the reason.
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
       { file: BASE, quote: ['*   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a', '*     () -> Boolean that returns true when aborted) is honoured between', 'val signal = opts["signal"]', 'val aborted: () -> Boolean = when (signal) {', '{ (signal as Function0<Any?>).invoke() == true }', 'if (source.hasNext() && !aborted()) source.next() else end'],
