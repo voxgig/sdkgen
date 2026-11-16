@@ -1,10 +1,10 @@
 {
  "tutorial": {
-  "corrected": 14,
+  "corrected": 16,
   "unified": 0,
   "used": {
    "secret-option": 2,
-   "server-required-given": 13,
+   "server-required-given": 15,
    "trailing-blank": 1
   }
  },
