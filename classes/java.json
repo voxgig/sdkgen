@@ -97,7 +97,7 @@
  },
  "3b6556a083": {
   "outcome": "same-meaning",
-  "why": "OLD and NEW both say list returns a list of entities, one per record, and how a record is read; \"throws\" for \"raises\". OLD's \"(as `Object`)\" is shown by the `(List<?>)` cast in the block under it and by the REFERENCE heading `Object list(...)`; OLD's call `list(null, null)` is the call the block makes and the REFERENCE list sentence names",
+  "why": "OLD and NEW both say list returns a list of entities, one per record, and how a record is read; \"throws\" for \"raises\". OLD said \"(as `Object`)\": the declared return type, which no shared sentence can state (an interface gap: an optional fact for the declared return, read by the list and load sentences of ts/src/helpers/runtimeprose.ts; java, kotlin, scala and csharp declare Object, Any?, Object and object?). The page is not false without it: the `(List<?>)` cast in the block under it and the REFERENCE heading `Object list(...)` show the declared type. OLD's call `list(null, null)` is the call the block makes and the REFERENCE list sentence names",
   "n": 7,
   "by": "hand",
   "type": "reworded",
@@ -457,7 +457,7 @@
  },
  "39a9cc2d2c": {
   "outcome": "same-meaning",
-  "why": "OLD's \"(as `Object`)\": the declared return type, shown by the `(List<?>)` cast in the block and by the REFERENCE signature `Object list(...)`",
+  "why": "OLD said \"(as `Object`)\": the declared return type, which no shared sentence can state (the interface gap recorded on 3b6556a083: an optional fact for the declared return, ts/src/helpers/runtimeprose.ts). Shown on the page by the `(List<?>)` cast in the block and by the REFERENCE signature `Object list(...)`",
   "n": 1,
   "by": "hand",
   "type": "vanished-token",
@@ -1984,16 +1984,12 @@
   "unreviewed": 0
  },
  "c56f7ac39f": {
-  "outcome": "shared:ts:b23edb42bc",
-  "why": "masked, it is the ts unit of class b23edb42bc (correction:decision-11-deleted, by hand)",
+  "outcome": "defect",
+  "why": "the remove sentence as java prints it: ts/src/helpers/runtimeprose.ts (opText, the remove sentence) fills only {var} in ref.facts.deleted, so the java page can print the cast only as `((EntityBase) result).deleted()`. EntityBase is in the entity subpackage (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`), which no java page imports or names: the tutorial imports only core types, and javac reports cannot find symbol without the import and compiles it with the import or with the class named in full (ran against the crud SDK). The true, compilable span casts to the class named with its package (voxgig.demosdk.entity in the B model); it needs runtimeprose.ts to fill {module} and {names.<role>} in the deleted template, then a names.entity role from Naming_java.ts and the template in Syntax_java.ts. kotlin and scala cast the same way.",
   "n": 15,
-  "by": "shared",
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "808ab9f422"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "717c04afe8": {
   "outcome": "shared:ts:6979eaacb4",
@@ -2497,8 +2493,8 @@
   "section": "reference"
  },
  "2fc5c0888f": {
-  "outcome": "restored:fact",
-  "why": "ref.facts.deleted `((EntityBase) {var}).deleted()`: deleted() is declared on EntityBase (EntityBase.fragment.java:47), which every entity class extends, and not on SdkEntity (tm/java/core/SdkEntity.java) or Object, the types the examples bind; the cast names the class that has it",
+  "outcome": "defect",
+  "why": "the cast type: ts/src/helpers/runtimeprose.ts (opText, the remove sentence) fills only {var} in ref.facts.deleted, so the java page can print the cast only as `((EntityBase) result).deleted()`. EntityBase is in the entity subpackage (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`), which no java page imports or names: the tutorial imports only core types, and javac reports cannot find symbol without the import and compiles it with the import or with the class named in full (ran against the crud SDK). The true, compilable span casts to the class named with its package (voxgig.demosdk.entity in the B model); it needs runtimeprose.ts to fill {module} and {names.<role>} in the deleted template, then a names.entity role from Naming_java.ts and the template in Syntax_java.ts. kotlin and scala cast the same way.",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
