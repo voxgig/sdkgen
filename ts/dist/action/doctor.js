@@ -23,6 +23,7 @@ const junk_1 = require("../helpers/junk");
 const copies_1 = require("./copies");
 const copymerge_1 = require("../helpers/copymerge");
 const optional_1 = require("../helpers/optional");
+const cmpfile_1 = require("../helpers/cmpfile");
 const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
@@ -60,15 +61,32 @@ async function cmd_doctor_prune(_args, actx) {
     const fs = actx.fs();
     const found = supersededFiles(actx);
     const pruned = [];
+    const dryrun = !!actx.opts?.dryrun;
     for (const abs of found) {
-        fs.unlinkSync(abs);
+        if (!dryrun) {
+            fs.unlinkSync(abs);
+        }
         pruned.push(abs);
-        log.info({ point: 'doctor-prune', file: abs, note: 'pruned superseded: ' + abs });
+        log.info({ point: 'doctor-prune', file: abs, dryrun, note: (dryrun ? 'would prune' : 'pruned') + ' superseded: ' + abs });
+    }
+    for (const rel of orphanCompiledFiles(actx)) {
+        const stem = node_path_1.default.join(actx.folder, rel.replace(/\.js$/, ''));
+        for (const ext of cmpfile_1.COMPILED_EXTS) {
+            if (!dryrun && fs.existsSync(stem + ext)) {
+                fs.unlinkSync(stem + ext);
+            }
+        }
+        pruned.push(rel);
+        log.info({
+            point: 'doctor-prune', file: rel, dryrun,
+            note: (dryrun ? 'would prune' : 'pruned') + ' orphan compiled component: ' + rel,
+        });
     }
     log.info({
         point: 'doctor-prune-end', pruned: pruned.length,
-        note: 0 === pruned.length ? 'nothing superseded to prune' :
-            ('pruned ' + pruned.length + ' superseded file(s)')
+        note: 0 === pruned.length ? 'nothing superseded or orphaned to prune' :
+            ((dryrun ? 'would prune ' : 'pruned ') + pruned.length + ' file(s)' +
+                (dryrun ? ' - ** DRY RUN **' : ''))
     });
     return { report: { pruned, ok: true } };
 }
@@ -132,6 +150,26 @@ function orphanModelFiles(actx) {
     }
     return all.filter((rel) => !seen.has(rel)).sort();
 }
+// A target's compiled component with no source beside it in src/cmp. Only
+// targets the model declares: a removed target's output is never loaded.
+function orphanCompiledFiles(actx) {
+    const fs = actx.fs();
+    const targets = Object.keys(actx.model?.main?.[types_1.KIT]?.target ?? {}).sort();
+    const found = [];
+    for (const t of targets) {
+        for (const rel of walk(fs, node_path_1.default.join(actx.folder, ...(cmpfile_1.CMP_DIST + t).split('/')))) {
+            if (!rel.endsWith('.js')) {
+                continue;
+            }
+            const dist = cmpfile_1.CMP_DIST + t + '/' + rel;
+            const src = node_path_1.default.join(actx.folder, ...(0, cmpfile_1.sourceStem)(dist).split('/'));
+            if (!fs.existsSync(src + '.ts') && !fs.existsSync(src + '.js')) {
+                found.push(dist);
+            }
+        }
+    }
+    return found;
+}
 async function doctor(actx, scope, selected) {
     const log = actx.log;
     const fs = actx.fs();
@@ -139,18 +177,21 @@ async function doctor(actx, scope, selected) {
     const root = actx.folder;
     const report = {
         forked: [], edited: [], stale: [], missing: [], additive: [],
-        retired: [], override: [], superseded: [], unwired: [], orphanModel: [],
-        resyncPending: [], aliasedDiff: [],
+        retired: [], override: [], undeclared: [], damagedRecord: [],
+        superseded: [], unwired: [], orphanModel: [],
+        orphanCompiled: [], resyncPending: [], aliasedDiff: [],
         outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
         ignoredLog: false, ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
+    report.damagedRecord = copies.damaged;
     report.ignoredLog = (0, copies_1.ignoredLog)(fs, root);
     if (report.ignoredLog) {
         log.warn({ point: 'doctor-copies-ignored', note: copies_1.IGNORED_LOG });
     }
     report.superseded = supersededFiles(actx);
     report.orphanModel = orphanModelFiles(actx);
+    report.orphanCompiled = orphanCompiledFiles(actx);
     const kinds = Object.keys(kind_1.KINDS).sort();
     const counts = {};
     for (const kind of kinds) {
@@ -210,8 +251,9 @@ async function doctor(actx, scope, selected) {
     // authoritative either way.
     report.ok = 0 === report.forked.length + report.edited.length -
         report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
-        report.orphanModel.length + report.outdated.length +
-        report.retired.length + report.unresolved.length;
+        report.orphanModel.length + report.orphanCompiled.length + report.outdated.length +
+        report.retired.length + report.unresolved.length +
+        report.undeclared.length + report.damagedRecord.length;
     const customized = new Set(report.customized);
     const unmergeable = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) ? new Set(report.unrecorded) : new Set();
     for (const [kind, note] of [
@@ -222,10 +264,15 @@ async function doctor(actx, scope, selected) {
         ['missing', 'MISSING (would be written by `target add`)'],
         ['additive', 'additive (project-owned, not drift)'],
         ['retired', 'RETIRED (an unchanged copy its source no longer ships; the next add removes it)'],
-        ['override', 'override (its source no longer ships it; changed here, so kept and used instead of the shared component)'],
+        ['override', copymerge_1.OVERWRITE === (0, copies_1.projectCopyMode)(actx) ?
+                'override (its source no longer ships it; changed here, and copies are overwritten in this project, so the next add deletes it)' :
+                'override (its source no longer ships it; changed here, so kept and used instead of the shared component)'],
+        ['undeclared', 'OVERRIDE NOT DECLARED (kept and used instead of the shared section; declare it as main: kit: target: <t>: override: <Name>: true, or delete it and its compiled output)'],
+        ['damagedRecord', 'DAMAGED COPY RECORD (a line that cannot be read; the copies it named read as unrecorded. Restore it from git, or delete the line)'],
         ['superseded', 'SUPERSEDED generated output (run `doctor prune` to delete)'],
         ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
         ['orphanModel', 'ORPHAN MODEL FILE (on disk, included by nothing, read by nobody)'],
+        ['orphanCompiled', 'ORPHAN COMPILED COMPONENT (its source is gone, but generate still loads it; `doctor prune` deletes it)'],
         ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
         ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
         ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
@@ -265,9 +312,12 @@ async function doctor(actx, scope, selected) {
         superseded: report.superseded.length,
         unwired: report.unwired.length,
         orphanModel: report.orphanModel.length,
+        orphanCompiled: report.orphanCompiled.length,
         resyncPending: report.resyncPending.length,
         retired: report.retired.length,
         override: report.override.length,
+        undeclared: report.undeclared.length,
+        damagedRecord: report.damagedRecord.length,
         aliasedDiff: report.aliasedDiff.length,
         outdated: report.outdated.length,
         unresolved: report.unresolved.length,
@@ -279,15 +329,18 @@ async function doctor(actx, scope, selected) {
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
                 report.missing.length + ' missing, ' + report.outdated.length +
                 ' outdated, ' + report.retired.length + ' retired, ' +
+                report.orphanCompiled.length + ' orphan compiled, ' +
+                report.undeclared.length + ' undeclared override, ' +
+                report.damagedRecord.length + ' damaged record line, ' +
                 report.unresolved.length + ' unresolved')
     });
     return { report };
 }
 // A shared component calls a target's own component of this name first.
 function replacesShared(kind, file) {
-    const m = file.match(/^src\/cmp\/([^/]+)\/([A-Za-z]+)_\1\.ts$/);
-    return ('additive' === kind || 'override' === kind) && null != m &&
-        m[2] in optional_1.OPTIONAL_COMPONENTS ? ' (used instead of the shared ' + m[2] + ')' : '';
+    const name = (0, cmpfile_1.parseComponent)(file)?.name;
+    return ('additive' === kind || 'override' === kind) && null != name &&
+        optional_1.SYNTAX_SECTIONS.includes(name) ? ' (used instead of the shared ' + name + ')' : '';
 }
 // Which root-level components the project's own wiring calls. The wiring is
 // hand-written TypeScript (Root.ts / Top.ts / BuildSDK.ts), so this is a
@@ -599,9 +652,12 @@ function noteDrift(actx, report, copies, kind, source) {
     const merging = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx);
     return (category, label) => {
         if ('unshipped' === category) {
-            const same = (0, copies_1.untouched)(fs, actx.folder, copies, label);
+            const same = (0, copies_1.unchangedCopy)(fs, actx.folder, copies, kind, source, label);
             if (true !== same) {
                 report[false === same ? 'override' : 'additive'].push(label);
+                if ((0, optional_1.undeclaredOverride)(actx.model, label)) {
+                    report.undeclared.push(label);
+                }
                 return;
             }
         }
@@ -799,6 +855,11 @@ function copyWarnings(report) {
         }
     }
     const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];
+    if (0 < report.orphanCompiled.length) {
+        lines.push(report.orphanCompiled.length + ' compiled component(s) in .sdk ' +
+            'have no source, and this run still loads them: ' +
+            report.orphanCompiled.join(', ') + '. `npx voxgig-sdkgen doctor prune` deletes them.');
+    }
     for (const item of report.unresolved) {
         lines.push(item.replace('/', ' ') + ': declared from ' +
             report.byItem[item]?.unresolved + ', which is not installed, so this ' +

@@ -7,9 +7,12 @@ type DoctorReport = {
     additive: string[];
     retired: string[];
     override: string[];
+    undeclared: string[];
+    damagedRecord: string[];
     superseded: string[];
     unwired: string[];
     orphanModel: string[];
+    orphanCompiled: string[];
     resyncPending: string[];
     aliasedDiff: string[];
     outdated: string[];

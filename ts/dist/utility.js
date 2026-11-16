@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CONFIG_REPR_VALUES = exports.CONFIG_DATA_THRESHOLD = exports.SdkGenError = void 0;
+exports.escapeRe = escapeRe;
 exports.resolvePath = resolvePath;
 exports.loadOptional = loadOptional;
 exports.requirePath = requirePath;
@@ -140,6 +141,9 @@ class SdkGenError extends Error {
     }
 }
 exports.SdkGenError = SdkGenError;
+function escapeRe(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 const CONFIG_DATA_THRESHOLD = 256 * 1024;
 exports.CONFIG_DATA_THRESHOLD = CONFIG_DATA_THRESHOLD;
 const CONFIG_REPR_VALUES = ['auto', 'data', 'literal'];

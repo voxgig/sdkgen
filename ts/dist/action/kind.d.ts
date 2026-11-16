@@ -1,3 +1,4 @@
+import { escapeRe } from '../utility';
 import { recordedRef, isBare } from './resolve';
 import type { Source } from './resolve';
 type KindDef = {
@@ -13,7 +14,6 @@ type TreeDef = {
     required: boolean;
 };
 declare function aliasModelKey(kind: string): (src: string, origname: string, name: string) => string;
-declare function escapeRe(s: string): string;
 declare const KINDS: Record<string, KindDef>;
 declare function kindTrees(kind: string, name: string): TreeDef[];
 declare function kindDef(kind: string): KindDef;

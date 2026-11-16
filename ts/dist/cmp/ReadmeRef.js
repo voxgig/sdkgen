@@ -128,7 +128,10 @@ function memberText(m, p, desc, ent) {
     const kind = m.kind;
     switch (kind) {
         case 'options': return m.copy ? 'Return a deep copy of the current SDK options.' : 'Return the current SDK options.';
-        case 'utility': return m.copy ? 'Return a copy of the SDK utility object.' : 'Return the SDK utility object.';
+        // A previous-interface provider that says nothing keeps the sentence its
+        // own page carried: no wording is true of both.
+        case 'utility': return m.copy || (null == m.copy && p.facts.served)
+            ? 'Return a copy of the SDK utility object.' : 'Return the SDK utility object.';
         case 'utilityBase': return 'Return the SDK utility object.';
         case 'tester': {
             const test = r.facts.test.find((x) => x.args) || r.facts.test[0];
@@ -212,7 +215,8 @@ function clientMember(m, p, desc) {
             `and \`ok\` is ${okFalse(r)} unless the status is 2xx. When the body cannot be read, \`ok\` is ` +
             `${okFalse(r)} and the key \`err\` holds the error, read as ${code(r.read('result', 'err'))}; a ` +
             `request that cannot be made gives only \`ok\` (${okFalse(r)}) and \`err\`. A failure is reported ` +
-            `in the result, not as an error, so branch on ${code(r.read('result', 'ok', true))}.`) + '\n\n';
+            // A previous-interface read cannot print the test (truth).
+            `in the result, not as an error${f.served ? '' : `, so branch on ${code(r.read('result', 'ok', true))}`}.`) + '\n\n';
     }
     else if ('prepare' === m.kind) {
         const fails = 'value' === r.facts.prepare.fails
@@ -253,14 +257,17 @@ function testText(p, desc) {
     const r = p.ref;
     if (0 === r.facts.test.length)
         return '';
-    if (null == r.facts.testMock)
+    if (null == r.facts.testMock && !p.facts.served)
         throw new Error('ReadmeRef: the test constructor needs ref.facts.testMock');
     let out = '\n### Test client\n\n';
+    // Without testMock (a previous interface) nothing is said of the transport.
     const mock = desc.ref.test || 'always' === r.facts.testMock;
     const lead = mock
         ? 'Create a test client with mock features active.'
-        : 'Create a test client. This SDK is generated without the `test` feature, so the client has no ' +
-            'mock transport and refuses every request.';
+        : null == r.facts.testMock
+            ? 'Create a test client. This SDK is generated without the `test` feature.'
+            : 'Create a test client. This SDK is generated without the `test` feature, so the client has no ' +
+                'mock transport and refuses every request.';
     for (const t of r.facts.test) {
         out += `#### ${code(fill(t.sig, desc))}\n\n` + wrap(lead + ' ' +
             (t.args

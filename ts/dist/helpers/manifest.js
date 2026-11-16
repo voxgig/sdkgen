@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ITEM_NAME_RE = exports.PARITY = exports.SCHEMA = exports.MANIFEST = void 0;
+exports.ITEM_NAME_RE = exports.PARITY = exports.SCHEMA = exports.RETIRED_FILE = exports.MANIFEST = void 0;
+exports.retiredPath = retiredPath;
 exports.manifestPath = manifestPath;
 exports.probePackage = probePackage;
 exports.readManifest = readManifest;
@@ -28,6 +29,13 @@ exports.PARITY = PARITY;
 // the ref already pointed.
 function manifestPath(sdkfolder) {
     return node_path_1.default.join(sdkfolder, '..', MANIFEST);
+}
+// Beside the manifest: for each file under `.sdk/src/cmp/` a release shipped
+// and the package no longer does, the fingerprint of every released version.
+const RETIRED_FILE = 'sdkgen-retired.json';
+exports.RETIRED_FILE = RETIRED_FILE;
+function retiredPath(sdkfolder) {
+    return node_path_1.default.join(sdkfolder, '..', RETIRED_FILE);
 }
 function readManifest(fs, sdkfolder) {
     const file = manifestPath(sdkfolder);
