@@ -134,6 +134,7 @@ const cast = (s: Extract<Stmt, { k: 'call' }>, desc: SdkDescription): string => 
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'scala',
   facts,
 
