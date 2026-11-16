@@ -43,10 +43,15 @@ function record(f: RuntimeFacts, bound: string): string {
   return f.record.replace(/\{var\}/g, bound)
 }
 
+// A previous-interface provider's record fact holds the unwrap itself.
+function unwraps(f: RuntimeFacts): boolean {
+  return 'wrapped' === f.result && !(f.served && null == f.unwrap)
+}
+
 // Where an operation returns a value holding the entity (wrapped), the unwrap
 // that takes it out comes first.
 function readsRecord(f: RuntimeFacts, bound: string, of = 'its'): string {
-  const unwrapped = 'wrapped' === f.result ? `${code(need(f, 'unwrap'))} takes the entity out, and ` : ''
+  const unwrapped = unwraps(f) ? `${code(need(f, 'unwrap'))} takes the entity out, and ` : ''
   return `${unwrapped}${code(record(f, bound))} reads ${of} record`
 }
 
@@ -172,7 +177,7 @@ function carries(f: RuntimeFacts, value: string): string {
 // and how its record is read.
 function createComment(f: RuntimeFacts, bound: string): string {
   return `Create — ${carries(f, 'the created entity')}; ` +
-    ('wrapped' === f.result ? `${need(f, 'unwrap')} takes it out, and ` : '') + `${record(f, bound)} reads its record`
+    (unwraps(f) ? `${need(f, 'unwrap')} takes it out, and ` : '') + `${record(f, bound)} reads its record`
 }
 
 

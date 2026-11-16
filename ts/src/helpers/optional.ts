@@ -1,6 +1,6 @@
 
 import { loadOptional } from '../utility'
-import { checkSyntaxInterface } from './syntaxversion'
+import { serveSyntax } from './syntaxversion'
 import { componentModule, componentSource, parseComponent } from './cmpfile'
 
 
@@ -61,10 +61,7 @@ function optionalComponent(ctx$: any, target: any, name: OptionalComponent): any
   const found = loadOptional(ctx$, componentModule(t, name))
 
   if (undefined !== found) {
-    if ('Syntax' === name) {
-      checkSyntaxInterface(t, found.Syntax?.interface)
-    }
-    return found
+    return 'Syntax' === name ? serveSyntax(t, found, ctx$.log) : found
   }
 
   const lacks = OPTIONAL_COMPONENTS[name]

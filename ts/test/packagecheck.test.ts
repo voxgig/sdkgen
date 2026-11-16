@@ -520,9 +520,10 @@ describe('package check: a target\'s syntax provider and naming hook', () => {
     ok(points(dir).includes('provider-without-hook'))
   })
 
-  test('a provider on another interface, or none, is an error', () => {
-    ok(points(makePackage((d) => { syntax(d, '3.2'); naming(d) })).includes('provider-interface'))
-    ok(points(makePackage((d) => { syntax(d); naming(d) })).includes('provider-interface'))
+  test('a provider on the previous interface, or none, is a warning; an older one an error', () => {
+    ok(points(makePackage((d) => { syntax(d, '3.2'); naming(d) })).includes('provider-interface-previous'))
+    ok(points(makePackage((d) => { syntax(d); naming(d) })).includes('provider-interface-previous'))
+    ok(points(makePackage((d) => { syntax(d, '3.1'); naming(d) })).includes('provider-interface'))
   })
 
   test('a hook alone is a warning', () => {
