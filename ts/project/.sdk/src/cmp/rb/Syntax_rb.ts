@@ -100,6 +100,7 @@ const argOf = (s: Extract<Stmt, { k: 'call' }>): string => {
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'ruby',
   facts,
 

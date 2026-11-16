@@ -114,6 +114,7 @@ const arm = (line: string): string => line.replace(/;$/, ',')
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'zig',
   facts,
 

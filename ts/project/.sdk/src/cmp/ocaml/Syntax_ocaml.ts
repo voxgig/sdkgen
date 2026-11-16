@@ -164,6 +164,7 @@ const defaults = (desc: SdkDescription): string =>
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'ocaml',
   facts,
 

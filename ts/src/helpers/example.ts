@@ -4,6 +4,7 @@
 // built from an SdkDescription and the provider's declared runtime facts.
 
 import type { DescAction, DescArg, DescEntity, DescOp, DescOption, DescSymbols, Scalar, SdkDescription } from './sdkdesc'
+import type { SYNTAX_INTERFACE } from './syntaxversion'
 import { createComment } from './runtimeprose'
 
 
@@ -437,6 +438,8 @@ type CallContext = { inAttempt: boolean, last: boolean }
 type ProgramStep = { title: string, lines: string[] }
 
 type Syntax = {
+  // The interface version this provider is written for: SYNTAX_INTERFACE.
+  interface: typeof SYNTAX_INTERFACE
   fence: string // the code fence language
   facts: RuntimeFacts
   // Each printer returns lines; `inner` prints nested statements at one more level.

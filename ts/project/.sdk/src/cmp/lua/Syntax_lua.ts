@@ -107,6 +107,7 @@ const check = 'if err then error(err) end'
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'lua',
   facts,
 
