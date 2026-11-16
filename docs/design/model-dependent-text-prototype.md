@@ -1,6 +1,6 @@
 # Prototype: the generated text written once, measured
 
-Status: **record in progress** (2026-11-15, second version the same day).
+Status: **record in progress** (2026-11-16, third version).
 Nothing here ships, and nothing here is implemented on `main`. This record
 covers a prototype built from sdkgen `main` at 9aebaf9e (4.44.0) to test
 the proposal that answered the review of
@@ -21,12 +21,17 @@ the proposal is not a general solution to the catalogue; its mechanism
 reaches about a fifth of the 329 entries, and the rest stays individual
 fixes or needs shared derivations it does not supply.
 
-Still out: the seven ports; their integration and the checks run again at
-twenty languages; the measures at twenty; the seven shared edits H3 still
-needs, which are being made (their result goes to section 3.3); the two
-structures the attack on H5 says would decide it, which are being built
-and will be attacked in turn (their result goes to section 3.5); and a
-verdict, which this record does not give.
+Since the second version: the seven shared edits H3 needed were made
+(section 3.3), and the two structures the attack on H5 asked for were
+built and attacked (section 3.5). All seven remaining languages have been
+ported from the base and guide; their independent reviews, fixes and
+verifications are under way.
+
+Still out: the reviews of the seven ports; their integration and the
+checks run again at twenty languages; the measures at twenty; an
+independent reading of the sentences the H3 edits changed; the three
+local fixes the second attack on H5 traced; and a verdict, which this
+record does not give.
 
 The design note this answers is `docs/design/model-dependent-text.md`; the
 issues it was measured against are in
@@ -53,9 +58,9 @@ hypotheses and what would refute each are in section 1.3.
 |---|---|---|
 | H1 | Refuted on one of its three criteria: the interface needed about 25 to 27 breaking changes after the first four languages, against a limit of about 10 (not re-counted at thirteen; the base for the last seven made none). Holds on a second: no provider reads the model, in all thirteen. On the third, per-language prose by source is at most 7.2% (go) at thirteen, under 15%; go is over it (17.0%) only by a wider measure that also counts shared sentences only one runtime's style selects | 3.1 |
 | H2 | Refuted at nine languages and again at thirteen: at thirteen the documentation code shrank 1.83x, 1.41x counting the forms the guard reads, 1.02x counting the guard. Only a projection to twenty, documentation code alone at the measured provider size, passes 2x (2.16x) | 3.2 |
-| H3 | Not decided. Checked independently: of the 36 catalogued entries in the three sections that are fixed or should be, 1 needed a line in each language by the brief's rule (2.8%; 5.6% on a strict reading; both under the limit of about 10%; 16.7%, over it, on the strictest reading, which counts the printers the brief exempts). But 7 are not fixed or only partly fixed (22% to 36% if counted against), each needing one shared edit; those edits are being made | 3.3 |
+| H3 | Not refuted at thirteen languages; not decided at twenty. Checked independently at 3.3: 7 of the 36 in-scope entries were not fixed or only partly fixed. Since then six were fixed by one shared edit each, with no line in any language's file, and D26 by a shared edit for half of it; its other half needs a declared runtime fact per language. Per-language share by the brief's rule: 2.8% to 5.6% (limit about 10%); 16.7% to 19.4% on the strictest reading, which counts printers the brief exempts. The edits are the builder's, not yet checked independently | 3.3 |
 | H4 | Holds for the eight ported languages with a toolchain on the machine used. Not tested for the other five | 3.4 |
-| H5 | Not decided. On the real structure, retirement is safe in every measured state where the project's copy record holds the retired copy as unchanged, given two tool changes; it is unsafe, with or without them, where it does not (no record, a damaged record line, files restored after an update). A pack that ships providers changes pages silently at an interface change, or, with the interface versioned, stops generating at each raise (inferred from the raise and the mutations, not run as a pack). Two structures that would decide it are being built | 3.5 |
+| H5 | Confirmed with conditions, by the builder and by an independent attack, and not yet as built. Retired copies are now recognised without the copy record (the package ships the fingerprints of every released version), and a provider written for the previous interface keeps generating with a warning. The attack found 3 of 19 new states unsafe; each traces to one rule with a local fix, not yet built | 3.5 |
 | Reach | Not a hypothesis of the brief, but the maintainers' first question. Not a general solution to the catalogue: the mechanism reaches 66 of 329 entries (20%; 58 to 70 across the open borders); 81 (25%) are already written once, 46 of them needing a derivation the proposal does not supply; it does nothing for 175 (53%). A reading of the catalogue checked by two samples, one blind | 4 |
 
 ---
@@ -660,19 +665,74 @@ Earlier evidence, for and against:
   would still need a per-language edit. Porting one section at a time made
   documents of the same SDK contradict each other (section 5.6).
 
-**Standing:** not decided. On the criterion as worded, a per-language
-edit, the share is under 10% by the brief's rule (2.8%) and on a strict
-reading (5.6%); only the strictest reading, which counts the type and
-constructor printers the brief exempts, is over (16.7%; builder 13.9%).
-The claim, that the issues are fixed once, is not shown: at the frozen
-state 7 of the 36 entries (19%) are not fixed or only partly fixed, all in
-shared code the prototype had already edited, and counted against the
-proposal they give 22% to 36%, over the line on every reading. What would
-decide it: the seven shared edits (X3, S22, U52, U53, V27, U102 and D26's
-rows), which are being made, with their result to be added here; the seven
-remaining ports; the fence-aware checks, with code-only and any-wording
-variants, run over all twenty; and a count showing that the seven ports
-add no line of their own beyond S13's `testMock`.
+**The seven shared edits** (a builder, ran; not yet checked
+independently). Made on the frozen state, one commit per entry, each
+with a test that fails before it and passes after (run in a second copy
+of the clone):
+
+- X3, S22, U52, U53, V27 and U102: one shared edit each, in
+  `ts/src/cmp/ReadmeRefFeatures.ts`, `ts/src/cmp/FeatureDocs.ts` and a new
+  code-span cell escaper. No language's own file changed: the diff from
+  the frozen state touches nothing under `ts/project`, the forms or
+  `ts/model`. Because those components serve every language, the six are
+  clean on the pages of all twenty, ported or not.
+- D26: the REFERENCE constructor table now takes its rows from the
+  validated option schema (`main.kit.optspec`); `auth`, `allow` and
+  `clean` gained rows, and the type column prints each language's own
+  type words. Four schema keys are excepted, with reasons: `entity`,
+  `test`, `extend` and `utility`. The last two mean different things per
+  runtime (rust, c and ocaml do not read `extend`; zig takes it as an
+  argument of its constructor; rust, c, zig, ocaml and cpp cannot carry a
+  `utility` at all, because their options are a closed value union), so a
+  row for them is true only with a fact each provider declares. D26
+  therefore counts as needing a per-language edit to complete. There is
+  no default column yet.
+- The residues: the feature-ordering note prints feature names as code
+  spans; an on-by-default feature is no longer told to be switched on,
+  and the true value prints through the language's own literal printer;
+  the test client's paragraph without the test feature was reworded.
+  U37 was decided and left: the go title follows `target.title`, and a
+  label rule for the REFERENCE alone would make it disagree with its own
+  README.
+- One sentence an earlier part of the same round wrote was false, and the
+  tools could not have caught it: that without the test feature "nothing
+  reads" the option. Every ported runtime reads `feature.test.active`
+  (for example py `Main.fragment.py:45`, c `Main.fragment.c:38`, go
+  `make_options.go:156`); it was reworded by its author.
+- Checks: the thirteen one commands pass (752 classes opened, every one
+  decided by one written rule per changed sentence); the repository suite
+  2,642 tests, 2,637 pass, 0 fail, 5 skipped; the guard and reader 77 of
+  77; the H3 checker over the 26 variations exits 0 for the thirteen. Of
+  17 attempts to put a defect back in other words, the narrow checks were
+  fooled every time; broader variants caught 10 and missed 7.
+- Not done: no independent reader has read the 11 sentences the round
+  changed. The feature configuration tables print every default in
+  JavaScript spelling for every language (`false`, `'anonymous'`,
+  `['GET']`); this was observed and is not fixed.
+
+The ratio again, over the same 36 entries, with D26's open half counted
+first for the proposal and then against it:
+
+| Reading | Per entry (of 36) | Per distinct defect (of 29) |
+|---|---|---|
+| By the brief's rule | 1/36 = 2.8% (S13) to 2/36 = 5.6% (S13, D26) | 3.4% to 6.9% |
+| Strict (also U44) | 5.6% to 8.3% | 6.9% to 10.3% |
+| Strictest (also N04, U06, M04, M14) | 16.7% to 19.4% | 13.8% to 17.2% |
+
+At the frozen state the "against" column read 22.2%, 25.0% and 36.1% per
+entry.
+
+**Standing:** not refuted at thirteen languages, and not decided at
+twenty. By the brief's rule the per-language share is 2.8% to 5.6%, under
+the limit; it crosses only on the strictest reading, which counts the
+type and constructor printers the brief exempts. "Fixed once" now holds
+for 35 of the 36 entries in the thirteen ported languages, on the
+builder's measurement; D26 needs a declared fact per language to finish.
+What would decide it: an independent reading of the changed sentences;
+the seven remaining ports integrated, so that their own old components no
+longer print D26 and S13; the checker, with its broader variants, run
+over all twenty; and a count showing that the seven ports add no line of
+their own beyond S13's `testMock`.
 
 ### 3.4 H4: examples still compile and run
 
@@ -980,6 +1040,71 @@ package shipping the fingerprints of every released version of each retired
 file), and an interface that can move without stopping a pack. A follow-up
 is building both; they will be attacked in turn, and the result will be
 added here.
+
+**The two structures, built** (a builder, ran):
+
+- **Retired copies recognised without the record.** The package ships
+  `ts/project/sdkgen-retired.json`, made from the release tags by a new
+  `npm run retired` with the copy record's own fingerprint function: 129
+  files, 552 fingerprints, 18,804 bytes (7,257 gzipped), from v0.0.1 to
+  v4.44.0, in about 3 seconds. `doctor`, `target add` and `package update`
+  read it, and `remove` follows `doctor`: a copy identical to a released
+  version is retired and removed whatever the record says or lacks. A
+  record line that cannot be read is now a `doctor` finding that fails
+  the check. A changed or unrecorded copy of a section a shared component
+  writes fails `doctor` until the model declares it
+  (`main: kit: target: <t>: override: <Name>: true`). The duplicated
+  rules the first attack listed were each moved to one place.
+- **An interface that can move without stopping a pack.** A provider
+  that declares the previous interface (3.2), or none, compiles unchanged
+  and generates on 3.3 with one warning per target. All five breaking
+  changes from 3.2 to 3.3 could be served; one (`testMock`) only after its
+  requiredness moved from the type to generation time. The cost: about 70
+  shared lines of machinery and 2 to 6 lines per breaking change, and each
+  raise needs someone to decide how each change is served.
+- Re-runs: rows 5b, S14 and S17b and two new states are now safe; the
+  synthetic damaged-line state and an undeclared edited copy are now loud.
+  Action tests 336 of 336; the suite 2,650 pass, 0 fail, 5 skipped. The
+  builder's verdict: confirmed with conditions (a release must run
+  `npm run retired`; a copy taken from an unreleased build is recognised
+  only for the three shared sections).
+
+**The structures, attacked** (an independent checker, ran). Every row and
+state re-ran with the builder's outcomes, and the list regenerated to the
+same bytes. Of 19 new states, 16 were safe and 3 were not:
+
+- A project copy edited to equal an older release's text is called
+  retired and deleted by a plain `package update` in merge mode, with no
+  warning, even where the model declares the override: a released
+  fingerprint outweighs both the record and the declaration.
+- A release that forgets `npm run retired`, on a project with no record:
+  the stale component is kept and used, and `doctor` says the project
+  matches. The list of shared sections is hand-written, so the
+  declared-override rule does not reach a newly retired component.
+- A provider that imports the interface constant by a deep path compiles
+  and generates with no warning, and so passes every later raise unread;
+  the package has no exports map.
+
+Each traces to one rule, and each has a local fix (a release match must
+not outweigh a record that says changed, or a declaration; derive the
+shared sections from what is retired and check the list's completeness;
+read the declared interface from the loaded value only). None is built.
+Five of the builder's changes can be reverted without any test failing,
+and the served pages' behaviour is not pinned by a test. Through the
+compatibility layer a served provider gives a less complete page than a
+current one, never a more wrong one than its own previous page; a fact
+of the wrong type, a printer that returns nothing, or a required fact set
+to an empty string, each smuggled past the type checker with a cast, still
+gives a silent wrong page. The checker's verdict: confirmed with
+conditions, moderately sure.
+
+**Standing, after the follow-up:** confirmed with conditions by the
+builder and the checker, and not yet as built. H5 is refuted only if
+retirement cannot be made safe without breaking the tool's rules, or if a
+pack's targets stop generating; every unsafe state found traces to one
+rule with a local fix, and packs keep generating. As built, two states
+that need no damaged record are still unsafe. The three local fixes are
+to be made in the integration and attacked there.
 
 ---
 
@@ -1641,10 +1766,13 @@ minutes of it the suite (builder).
 ## 8. Not done yet
 
 - **The seven remaining ports**, from the base for the last seven
-  (`v33-frozen` with the merged tools, tag `base33`) and guide 3.3: js,
-  java, php and cpp are being ported; csharp, scala and kotlin queue behind
-  them. Each is to be reviewed, fixed and verified as the first wave was.
-  Their results go to appendix A and sections 3.1 to 3.4.
+  (`v33-frozen` with the merged tools, tag `base33`) and guide 3.3: all
+  seven are written, each touching only its own files and none needing a
+  breaking interface change. js, java and php pass the one command; cpp,
+  kotlin and scala each fail on one named gap of a checking tool's reader;
+  csharp records one defect that shared code must fix. Each is being
+  reviewed, fixed and verified as the first wave was. Their results go to
+  appendix A and sections 3.1 to 3.4.
 - **Integration at twenty languages**: the seven merged, the one command
   for all twenty, the repository suite, the golden test and the example
   lanes, including lanes that run php, java and cpp examples (on `main`
@@ -1653,20 +1781,17 @@ minutes of it the suite (builder).
 - **The measures at twenty languages**: H1 prose by source and by language,
   H2 lines with each count of section 3.2, purity, and the interface count
   re-counted rather than carried from the freeze.
-- **H3's seven shared edits**: X3, S22, U52, U53, V27, U102 and D26's
-  missing rows. They are being made; then the fence-aware checks, with
-  code-only and any-wording variants, are to be run over all twenty after
-  the ports, and the seven ports' own lines for S13 counted. The result
-  goes to section 3.3. Two readings the checker left unscored (S13's
-  residue without the test feature; the log feature's "set to true") are
-  to be decided with it.
-- **H5's two structures**: retired copies recognised without the copy
-  record, and an interface that can move without stopping a pack. A
-  follow-up is building both; they will then be attacked in turn. The
-  result goes to section 3.5. Not measured by anyone yet: edition
+- **H3 after the shared edits**: an independent reading of the 11
+  changed sentences; D26's four excepted keys and its default column; the
+  checker, with its broader variants, run over all twenty after the
+  ports, and the seven ports' own lines for S13 counted. The feature
+  configuration tables' JavaScript literals are observed and not fixed.
+- **H5's three local fixes** (section 3.5), to be made in the
+  integration and attacked there. Not measured by anyone yet: edition
   components retired end to end; a pack that ships providers upgraded
   across a raise end to end; a version for the naming hook; the CLI's
-  one-line drift summary, which omits retired, outdated and orphan counts.
+  one-line drift summary, which omits retired, outdated and orphan
+  counts.
 - **Sentences of the four first-wave ports**: 81 distinct sentences that
   only they print have no id or verdict in the reviewed set.
 - **The stage-9 verifier's required fixes to the staleness checks** were
