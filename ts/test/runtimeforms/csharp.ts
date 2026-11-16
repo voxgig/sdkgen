@@ -33,8 +33,8 @@ const forms: Forms = {
   undocumented: {
     GetRootCtx: 'the pipeline\'s root context, for features',
     Graphql: 'a GraphQL request through the pipeline; no reference page documents it',
-    MarkDeleted: 'set by Remove itself; the entity reports it through Deleted',
-    Deleted: 'whether Remove succeeded on this instance',
+    MarkDeleted: 'public, and called by the pipeline after any successful operation named remove (Remove, or Stream("remove", ...)); the entity reports it through Deleted',
+    Deleted: 'whether a remove (Remove, or Stream("remove", ...)) succeeded on this instance, or MarkDeleted was called; the remove sentence names it (ref.facts.deleted)',
   },
   members: {
     options: 'OptionsMap', utility: 'GetUtility', direct: 'Direct', prepare: 'Prepare',
@@ -96,7 +96,8 @@ const forms: Forms = {
     'ref.facts.body.values': { value: 'a `byte[]`, a `string` or a `Stream`', file: 'tm/csharp/utility/Fetcher.cs',
       quote: ['if (braw is string body && body != "")', 'else if (braw is byte[] bytes)', 'else if (braw is Stream stream)'],
       also: [{ file: 'tm/csharp/utility/Media.cs', quote: 'if (body is byte[] || body is Stream)' }] },
-    'ref.facts.body.once': { value: 'a `Stream`', file: 'tm/csharp/utility/Media.cs', quote: ['// Bytes, a Stream or a string, sent as they are. A Stream can be read', 'if (body is Stream stream)'] },
+    // The stream is copied whole into a buffer and its bytes are what every attempt sends.
+    'ref.facts.body.once': { value: 'a `Stream`', file: 'tm/csharp/utility/Media.cs', quote: ['if (body is Stream stream)', 'stream.CopyTo(buffer);', 'return buffer.ToArray();'] },
     // Searched over the whole csharp runtime: a region it leaves out is quoted, with the reason.
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
       { file: BASE, quote: ['//   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a', '//     CancellationToken) is honoured between yields.',
