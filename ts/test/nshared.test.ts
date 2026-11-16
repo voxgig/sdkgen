@@ -50,9 +50,9 @@ describe('optional runtime facts select shared sentences', () => {
 
   test('streamSignal: on the stream member, never in the cancel paragraph', () => {
     const on = refText(withRef('py', { streamSignal: true }), desc)
-    ok(on.includes('It ends early once `callopts.signal` reports an abort.'))
+    ok(on.replace(/\s+/g, ' ').includes('It ends early once the `signal` in `callopts` reports an abort.'))
     const off = refText(withRef('py', { streamSignal: false }), desc)
-    ok(!off.includes('callopts.signal'))
+    ok(!off.replace(/\s+/g, ' ').includes('the `signal` in `callopts`'))
     const ts = refText(syntax('ts'), desc)
     const cancel = ts.slice(ts.indexOf('#### Cancelling a call'))
     ok(!cancel.slice(0, cancel.indexOf('\n#', 5)).includes('callopts'))
