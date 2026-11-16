@@ -104,7 +104,8 @@ const forms: Forms = {
     ] } },
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
     'ref.facts.streamSignal': { value: true, file: 'src/cmp/scala/fragment/EntityBase.fragment.scala', quote: ['val signal = opts.get("signal")', 'val aborted: () => Boolean = signal match {'] },
-    'ref.facts.direct.okFalse': { value: "false", file: "tm/scala/core/SdkClient.scala", quote: "out.put(\"ok\", java.lang.Boolean.FALSE)", unquoted: { false: "java.lang.Boolean.FALSE is the boxed false a Scala map of Any holds" } },
+    // The token a Scala reader compares with: `ok` is an Object, and Object == false does not compile.
+    'ref.facts.direct.okFalse': { value: 'java.lang.Boolean.FALSE', file: 'tm/scala/core/SdkClient.scala', quote: 'out.put("ok", java.lang.Boolean.FALSE)' },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/scala/Config_scala.ts", quote: "case _ => new ${scalapackage}.feature.BaseFeature()" },
   },
