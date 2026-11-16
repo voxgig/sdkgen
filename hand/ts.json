@@ -151,9 +151,9 @@
   "n": 19
  },
  "a0ea2daad1": {
-  "outcome": "dropped",
-  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`), and the tables went with the sentences that replaced them",
-  "n": 116
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
+  "n": 64
  },
  "a188efe74d": {
   "outcome": "restored:shared",
@@ -278,8 +278,8 @@
  },
  "176972c3bb": {
   "outcome": "same-meaning",
-  "why": "ent-none: the test client's parameter types moved into its signature; the README uses object the same way",
-  "n": 1
+  "why": "the README prints the same type word; no disagreement",
+  "n": 2
  },
  "91baf1b4b6": {
   "outcome": "contradiction",
@@ -492,8 +492,8 @@
  },
  "5ce4fbf9a3": {
   "outcome": "correction:sentence-review-test",
-  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
-  "n": 19
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
  },
  "cd00ec9b2a": {
   "outcome": "unification:client-heading",
@@ -686,5 +686,315 @@
  },
  "absent": {
   "57d77b63f4": "ts's entity name is a field (EntityBase.fragment.ts:18 `name = ''`, assigned in Entity.fragment.ts), declared `field: true` (brief 7 decision 9, re-derived by the guard: ts forms read a class property as a field), so the page prints the field sentence 'The entity name.' under `name: string`, as ocaml does for e_name; 'Return the entity name.' would be false"
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18
+ },
+ "8dc2e9fad6": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "889a3be7db": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "d7e695403a": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "bb0c98c2da": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "08bc693296": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "c11fbd3bd3": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "c15e157e96": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "a0ea7f51a6": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "68cd0488cc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "c18df8e763": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "caeed47a09": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "2888f25445": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "58ecc8027c": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "3e8924da1b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "20caa1a032": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "20470030b4": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "6e07802bbf": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18
+ },
+ "c23d66bc9b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "b379eb97d8": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19
+ },
+ "83803533d5": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
+  "n": 18
+ },
+ "630b93b404": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "638e6bf8c8": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "bec71fd3ed": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "bd75a6c916": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "525c043584": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "04d9decbcd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "68fa66027f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "9578f954c3": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "81d19a3b94": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "bb4fb6eecf": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "1eac1e568f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "ce48696dcd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "1c87f432bc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "45d9ef79df": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "198312a77c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "5d9dc8ba29": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "b1d4ccff9e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18
+ },
+ "6957a19f18": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "b464f5c04e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "d90bf25f1c": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19
+ },
+ "0ee35d2611": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18
+ },
+ "c6cf58dde1": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 16
+ },
+ "fb53c2b222": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 17
+ },
+ "306bf09289": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19
+ },
+ "d265844143": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19
+ },
+ "63ce60fad7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19
+ },
+ "c2066e4a9e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19
+ },
+ "7ddccf533d": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 16
+ },
+ "e94011ef3f": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19
+ },
+ "05a7710dde": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: a wrapping feature whose model also declares active hooks says so, as the catalogue's X3 fix asks (cost: hook PrePoint, PreDone, PreUnexpected; secrets: hook PreSpec); the wrap sentence above it is unchanged",
+  "n": 38
+ },
+ "9a5ba18db4": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19
+ },
+ "f88d62ac3d": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19
+ },
+ "733ce0d69d": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 1
+ },
+ "85ad2ff922": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
+  "n": 3
+ },
+ "5b46edebf3": {
+  "outcome": "same-meaning",
+  "why": "the README names the same `feature.test` switch (its feature row or its test-mode text); this sentence says the call sets it, switched on; no disagreement",
+  "n": 1
+ },
+ "f4e8df935f": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1
+ },
+ "ea987959c3": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
  }
 }
