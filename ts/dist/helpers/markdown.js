@@ -4,6 +4,7 @@
 // a table row and a link relative to the spec's own site cannot dangle.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mdCell = mdCell;
+exports.mdCodeCell = mdCodeCell;
 exports.mdInline = mdInline;
 exports.spans = spans;
 // A relative markdown link becomes its label; an absolute one or an anchor stays.
@@ -19,6 +20,16 @@ function mdCell(text) {
         .replace(/\|/g, () => '\\|')
         .replace(/\$\$/g, () => '$&#36;')
         .trim();
+}
+// Text as a code span in one table cell: fenced by more backticks than any
+// run inside it, padded where it meets a backtick, its pipes escaped (GFM
+// reads `\|` in a cell's code span as a pipe).
+function mdCodeCell(text) {
+    const t = String(null == text ? '' : text).replace(/\r?\n+/g, ' ');
+    const run = Math.max(0, ...(t.match(/`+/g) || []).map((r) => r.length));
+    const fence = '`'.repeat(run + 1);
+    const pad = /^`|`$/.test(t) ? ' ' : '';
+    return (fence + pad + t + pad + fence).replace(/\|/g, () => '\\|');
 }
 // Text for a paragraph of its own: line breaks kept, relative links unwrapped.
 function mdInline(text) {

@@ -143,6 +143,8 @@ type SdkDescription = {
 declare function readsSecret(model: any): boolean;
 declare function sdkDescription(model: any, target: any, naming?: Naming, stdrep?: Record<string, string>): SdkDescription;
 declare function templateName(map: Record<string, string>, name: string): string;
+declare const OPTION_TEXT: Record<string, string>;
+declare const OPTION_UNSTATED: Record<string, string>;
 declare function showFields(fields: any[], dataIdF: string | null): string[];
 export type { DescAction, DescField, DescFeature, DescOp, DescOptionRow, DescRef, Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
-export { templateName, sdkDescription, readsSecret, showFields as showFieldsOf, };
+export { OPTION_TEXT, OPTION_UNSTATED, templateName, sdkDescription, readsSecret, showFields as showFieldsOf, };
