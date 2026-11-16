@@ -116,6 +116,7 @@ const cast = (r: Ref): string => 'many' === r.role ? '(List<object?>)' : '(IEnti
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'csharp',
   facts,
 
