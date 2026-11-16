@@ -149,17 +149,7 @@
   "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem; same calls and casts",
   "n": 7
  },
- "a886830e24": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update and Patch say the id comes off the created entity's record, and the id is read off the created entity (chainsId) instead of a literal",
-  "n": 3
- },
  "a9c36e9508": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update and Patch say the id comes off the created entity's record, and the id is read off the created entity (chainsId) instead of a literal",
-  "n": 1
- },
- "c62b59bf72": {
   "outcome": "unification:write-comment-style",
   "why": "the shared write comments: Create says what it returns and how its record is read, Update and Patch say the id comes off the created entity's record, and the id is read off the created entity (chainsId) instead of a literal",
   "n": 1
@@ -419,16 +409,6 @@
   "why": "the parent id's example value",
   "n": 1
  },
- "9c6d819441": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
-  "n": 19
- },
- "afe39b8d17": {
-  "outcome": "same-meaning",
-  "why": "the README says ok is false on error and err holds the error; this sentence says when err is there (SdkClient.scala:311 only for an unreadable body, :261,268,273 a request that cannot be made); no disagreement",
-  "n": 19
- },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "a word match on log in console.log (the shared Error handling section's TypeScript block, unported); the README says nothing about log's default",
@@ -531,7 +511,7 @@
  },
  "5cae18f518": {
   "outcome": "restored:shared",
-  "why": "restored as: A failure is reported in the result, not as an error, so branch on `result.get(\"ok\") == true` (rawRequest catches every failure, SdkClient.scala:258-275)",
+  "why": "restored as: A failure is reported in the result, not as an error, so branch on `java.lang.Boolean.TRUE == result.get(\"ok\")` (rawRequest catches every failure, SdkClient.scala:258-275)",
   "n": 19
  },
  "c115f99e12": {
@@ -638,16 +618,6 @@
   "outcome": "restored:fact",
   "why": "the accessor's declared signature (MainEntity_scala.ts:31)",
   "n": 93
- },
- "165ed4ede9": {
-  "outcome": "restored:shared",
-  "why": "the shared Returns paragraph: err only for an unreadable body (SdkClient.scala:311) or a request that cannot be made (:261,:268,:273), read with get",
-  "n": 19
- },
- "873aa54fab": {
-  "outcome": "restored:shared",
-  "why": "OLD said never raises, branch on result.get(\"ok\"); the shared sentence with the truth read of a boxed Boolean, == true",
-  "n": 19
  },
  "c692d85a6d": {
   "outcome": "restored:shared",
@@ -999,5 +969,65 @@
   "74dc5866b7": "ts has an entopts() getter; the scala entity holds entopts in a protected var (EntityBase.fragment.scala:16) and declares no getter",
   "f1bcce31a0": "ts's name is a field; scala's is a method, getName() (EntityBase.fragment.scala:39), field false: scala prints Return the entity name.",
   "808ab9f422": "scala's deleted() is declared on EntityBase (EntityBase.fragment.scala:72) but not on SdkEntity (core/Contracts.scala:16-27), the type every example binds (the accessor returns SdkEntity), so ref.facts.deleted is left undeclared, as for swift and java; the remove sentence still says the entity is marked as deleted"
+ },
+ "549ebf24ea": {
+  "outcome": "same-meaning",
+  "n": 19,
+  "why": "the README direct how-to agrees: it branches on the boxed TRUE and reads status and data, or err for a failure; this sentence says ok is the boxed FALSE (SdkClient.scala:175,307) unless the status is 2xx; no disagreement"
+ },
+ "3c5844c600": {
+  "outcome": "same-meaning",
+  "n": 1,
+  "why": "the README says err holds the error for a transport failure; this sentence says when err is there (SdkClient.scala:311 an unreadable body; :261,:268,:272 a request that cannot be made) and that ok is then the boxed FALSE the runtime writes; no disagreement"
+ },
+ "10d826fbfb": {
+  "outcome": "restored:shared",
+  "n": 19,
+  "why": "the shared Returns paragraph: err only for an unreadable body (SdkClient.scala:311) or a request that cannot be made (:261,:268,:272), read with get; ok then holds java.lang.Boolean.FALSE, the token SdkClient.scala writes at each"
+ },
+ "a2c8963138": {
+  "outcome": "restored:shared",
+  "n": 19,
+  "why": "OLD said never raises and to branch on the ok key; the shared sentence, with the truth test a Scala reader writes on the Object the map returns: compared with java.lang.Boolean.TRUE, as ReadmeHowto_scala and the runtime compare"
+ },
+ "08fe31cfce": {
+  "outcome": "correction:scala-boxed-boolean",
+  "n": 1,
+  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
+ },
+ "70e7193725": {
+  "outcome": "correction:scala-boxed-boolean",
+  "n": 1,
+  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
+ },
+ "f58d94f4bf": {
+  "outcome": "correction:scala-boxed-boolean",
+  "n": 1,
+  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
+ },
+ "4d83ae4f86": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 3,
+  "why": "the write block: the shared write comments and the id read off the created entity, as before (unification write-comment-style); and a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ },
+ "f698b35c73": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 1,
+  "why": "the write block: the shared write comments and the id read off the created entity, as before (unification write-comment-style); and a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ },
+ "43e425fea5": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 1,
+  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ },
+ "72150b9927": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 1,
+  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ },
+ "206a3563f7": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 1,
+  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
  }
 }
