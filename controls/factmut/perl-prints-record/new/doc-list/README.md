@@ -348,15 +348,20 @@ for console in consoles:
 
 ```php
 <?php
-require_once 'demo_sdk.php';
+require_once 'php/demo_sdk.php';
 
 $client = new DemoSDK([
     "apikey" => getenv("DEMO_APIKEY"),
+    "server" => [
+        "tenant" => "<tenant>",
+    ],
 ]);
 
-// List all consoles (an array of entities, one per record; throws on error)
+// List console records: an array of entities, one per record; throws on failure
 $consoles = $client->Console()->list();
-print_r(array_map(fn($item) => $item->data_get(), $consoles));
+foreach ($consoles as $console) {
+    print_r($console->data_get());
+}
 ```
 
 ### Golang
@@ -469,6 +474,7 @@ if (err) {
 
 ```cpp
 #include <cstdlib>
+#include <iostream>
 #include "core/sdk.hpp"
 
 using namespace sdk;
@@ -476,9 +482,12 @@ using namespace sdk;
 const char* apikey = std::getenv("DEMO_APIKEY");
 auto client = std::make_shared<DemoSDK>(vmap({
     {"apikey", Value(apikey ? apikey : "")},
+    {"server", vmap({
+        {"tenant", Value("<tenant>")},
+    })},
 }));
 
-// List all consoles (one entity per record, throws on error)
+// List console records: a std::vector of entities, one per record; throws on failure
 std::vector<SdkEntityPtr> consoles = client->console()->list(Value::undef(), Value::undef());
 for (const auto& console : consoles) {
   std::cout << Struct::jsonify(console->data()) << std::endl;
@@ -494,13 +503,17 @@ using Voxgig.Struct;
 var client = new DemoSDK(new Dictionary<string, object?>
 {
     ["apikey"] = Environment.GetEnvironmentVariable("DEMO_APIKEY"),
+    ["server"] = new Dictionary<string, object?>
+    {
+        ["tenant"] = "<tenant>",
+    },
 });
 
-// List all consoles (a list of entities, one per record, as object?; raises on error)
-var consoleList = (List<object?>)client.Console().List(null)!;
-foreach (var consoleItem in consoleList)
+// List console records: a list of entities, one per record; throws on failure
+var consoles = (List<object?>)client.Console().List(null)!;
+foreach (var console in consoles)
 {
-    Console.WriteLine(StructUtils.Jsonify(((IEntity)consoleItem!).Data()));
+    Console.WriteLine(StructUtils.Jsonify(((IEntity)console!).Data()));
 }
 ```
 
@@ -532,29 +545,31 @@ Map<String, Object> options = new java.util.LinkedHashMap<>();
 options.put("apikey", System.getenv("DEMO_APIKEY"));
 Map<String, Object> server = new java.util.LinkedHashMap<>();
 server.put("tenant", "<tenant>");
-server.put("region", "<region>");
 options.put("server", server);
 DemoSDK client = new DemoSDK(options);
 
-// List all consoles (a list of entities, one per record; raises on error)
-List<?> consoleList = (List<?>) client.console(null).list(null, null);
-for (Object consoleItem : consoleList) {
-    System.out.println(((SdkEntity) consoleItem).data());
+// List console records: a List of entities, one per record; throws on failure
+List<?> consoles = (List<?>) client.console(null).list(null, null);
+for (Object console : consoles) {
+    System.out.println(((SdkEntity) console).data());
 }
 ```
 
 ### JavaScript
 
 ```js
-const { DemoSDK } = require('@voxgig-sdk/demo-sdk-js')
+import { DemoSDK } from '@voxgig-sdk/demo-sdk-js'
 
 const client = new DemoSDK({
   apikey: process.env.DEMO_APIKEY,
+  server: {
+    tenant: '<tenant>',
+  },
 })
 
-// List all consoles (an array of entities, one per record)
-const console_s = await client.Console().list()
-for (const console_ of console_s) {
+// List console records: an array of entities, one per record; throws on failure
+const consoles = await client.Console().list()
+for (const console_ of consoles) {
   console.log(console_.data())
 }
 ```
@@ -567,12 +582,15 @@ import voxgig.demosdk.core.SdkEntity
 
 val client = DemoSDK(mutableMapOf<String, Any?>(
     "apikey" to System.getenv("DEMO_APIKEY"),
+    "server" to mutableMapOf<String, Any?>(
+        "tenant" to "<tenant>",
+    ),
 ))
 
-// List all consoles (a list of entities, one per record; raises on error)
-val consoleList = client.console(null).list(null, null) as List<*>
-for (consoleItem in consoleList) {
-    println((consoleItem as SdkEntity).data())
+// List console records: a list of entities, one per record; throws on failure
+val consoles = client.console(null).list(null, null) as List<*>
+for (console in consoles) {
+    println((console as SdkEntity).data())
 }
 ```
 
@@ -635,13 +653,16 @@ for console in &consoles {
 import voxgig.demosdk.core.DemoSDK
 import voxgig.demosdk.core.SdkEntity
 
+val server = new java.util.LinkedHashMap[String, Object]()
+server.put("tenant", "<tenant>")
 val options = new java.util.LinkedHashMap[String, Object]()
 options.put("apikey", System.getenv("DEMO_APIKEY"))
+options.put("server", server)
 val client = new DemoSDK(options)
 
-// List all consoles (a list of entities, one per record; raises on error)
-val consoleList = client.console(null).list(null, null).asInstanceOf[java.util.List[SdkEntity]]
-consoleList.forEach(consoleItem => println(consoleItem.data()))
+// List console records: an ArrayList of entities, one per record; throws on failure
+val consoles = client.console(null).list(null, null).asInstanceOf[java.util.List[SdkEntity]]
+consoles.forEach(console => println(console.data()))
 ```
 
 ### Swift

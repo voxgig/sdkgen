@@ -325,12 +325,15 @@ print(ambient.data_get())
 
 ```php
 <?php
-require_once 'demo_sdk.php';
+require_once 'php/demo_sdk.php';
 
-$client = new DemoSDK();
+$client = new DemoSDK([
+    "server" => [
+        "tenant" => "<tenant>",
+    ],
+]);
 
-
-// Load a specific ambient (returns the entity; data_get() reads its record; throws on error)
+// Load an ambient: the entity; throws on failure
 $ambient = $client->Ambient()->load();
 print_r($ambient->data_get());
 ```
@@ -432,14 +435,18 @@ if (err) {
 ### C++
 
 ```cpp
+#include <iostream>
 #include "core/sdk.hpp"
 
 using namespace sdk;
 
-auto client = DemoSDK::create();
+auto client = std::make_shared<DemoSDK>(vmap({
+    {"server", vmap({
+        {"tenant", Value("<tenant>")},
+    })},
+}));
 
-
-// Load a specific ambient (returns the entity, throws on error)
+// Load an ambient: the entity; throws on failure
 SdkEntityPtr ambient = client->ambient()->load(Value::undef(), Value::undef());
 std::cout << Struct::jsonify(ambient->data()) << std::endl;
 ```
@@ -450,10 +457,15 @@ std::cout << Struct::jsonify(ambient->data()) << std::endl;
 using DemoSdk;
 using Voxgig.Struct;
 
-var client = new DemoSDK();
+var client = new DemoSDK(new Dictionary<string, object?>
+{
+    ["server"] = new Dictionary<string, object?>
+    {
+        ["tenant"] = "<tenant>",
+    },
+});
 
-
-// Load a specific ambient (returns the entity, raises on error)
+// Load an ambient: the entity; throws on failure
 var ambient = (IEntity)client.Ambient().Load(null)!;
 Console.WriteLine(StructUtils.Jsonify(ambient.Data()));
 ```
@@ -475,6 +487,7 @@ IO.puts(Voxgig.Struct.jsonify(Demo.Entity.Ambient.data_get(ambient)))
 ### Java
 
 ```java
+import java.util.List;
 import java.util.Map;
 import voxgig.demosdk.core.DemoSDK;
 import voxgig.demosdk.core.SdkEntity;
@@ -482,12 +495,10 @@ import voxgig.demosdk.core.SdkEntity;
 Map<String, Object> options = new java.util.LinkedHashMap<>();
 Map<String, Object> server = new java.util.LinkedHashMap<>();
 server.put("tenant", "<tenant>");
-server.put("region", "<region>");
 options.put("server", server);
 DemoSDK client = new DemoSDK(options);
 
-
-// Load a specific ambient (returns the entity, raises on error)
+// Load an ambient: the entity; throws on failure
 SdkEntity ambient = (SdkEntity) client.ambient(null).load(null, null);
 System.out.println(ambient.data());
 ```
@@ -495,11 +506,15 @@ System.out.println(ambient.data());
 ### JavaScript
 
 ```js
-const { DemoSDK } = require('@voxgig-sdk/demo-sdk-js')
+import { DemoSDK } from '@voxgig-sdk/demo-sdk-js'
 
-const client = new DemoSDK()
+const client = new DemoSDK({
+  server: {
+    tenant: '<tenant>',
+  },
+})
 
-// Load a specific ambient (returns the entity)
+// Load an ambient: the entity; throws on failure
 const ambient = await client.Ambient().load()
 console.log(ambient.data())
 ```
@@ -510,10 +525,13 @@ console.log(ambient.data())
 import voxgig.demosdk.core.DemoSDK
 import voxgig.demosdk.core.SdkEntity
 
-val client = DemoSDK()
+val client = DemoSDK(mutableMapOf<String, Any?>(
+    "server" to mutableMapOf<String, Any?>(
+        "tenant" to "<tenant>",
+    ),
+))
 
-
-// Load a specific ambient (returns the entity, raises on error)
+// Load an ambient: the entity; throws on failure
 val ambient = client.ambient(null).load(null, null) as SdkEntity
 println(ambient.data())
 ```
@@ -571,10 +589,13 @@ println!("{:?}", ambient.data(None));
 import voxgig.demosdk.core.DemoSDK
 import voxgig.demosdk.core.SdkEntity
 
-val client = new DemoSDK()
+val server = new java.util.LinkedHashMap[String, Object]()
+server.put("tenant", "<tenant>")
+val options = new java.util.LinkedHashMap[String, Object]()
+options.put("server", server)
+val client = new DemoSDK(options)
 
-
-// Load a specific ambient (returns the entity, raises on error)
+// Load an ambient: the entity; throws on failure
 val ambient = client.ambient(null).load(null, null).asInstanceOf[SdkEntity]
 println(ambient.data())
 ```

@@ -21,12 +21,15 @@ Create a new SDK client instance. `options` is a `dict` map
 | Key | Value type | Description |
 | --- | --- | --- |
 | `options["apikey"]` | `str` | API key for authentication. |
+| `options["auth"]` | `dict` | Settings for how the credential is sent. |
 | `options["base"]` | `str` | Base URL for API requests. |
 | `options["prefix"]` | `str` | URL prefix appended after base. |
 | `options["suffix"]` | `str` | URL suffix appended after path. |
 | `options["headers"]` | `dict` | Custom headers for all requests. |
+| `options["allow"]` | `dict` | Comma-separated allow-lists of the HTTP methods and the operations the client may use. |
 | `options["feature"]` | `dict` | Feature configuration. |
 | `options["system"]` | `dict` | System overrides (e.g. custom fetch). |
+| `options["clean"]` | `dict` | Redaction of everything the SDK emits. |
 | `options["server"]` | `dict` | Values for the variables the server URL is templated on. |
 | `options["server"]["tenant"]` | `str` | Required. |
 | `options["server"]["region"]` | `str` | Defaults to `eu`. |
@@ -208,7 +211,7 @@ options.
 
 Run an operation through the pipeline and yield its result items as a
 generator. The operation runs when iteration starts, not when the call
-returns. It ends early once `callopts.signal` reports an abort.
+returns. It ends early once the `signal` in `callopts` reports an abort.
 
 #### `get_name() -> str`
 
@@ -272,7 +275,7 @@ options.
 
 Run an operation through the pipeline and yield its result items as a
 generator. The operation runs when iteration starts, not when the call
-returns. It ends early once `callopts.signal` reports an abort.
+returns. It ends early once the `signal` in `callopts` reports an abort.
 
 #### `get_name() -> str`
 
@@ -336,7 +339,7 @@ options.
 
 Run an operation through the pipeline and yield its result items as a
 generator. The operation runs when iteration starts, not when the call
-returns. It ends early once `callopts.signal` reports an abort.
+returns. It ends early once the `signal` in `callopts` reports an abort.
 
 #### `get_name() -> str`
 
@@ -417,12 +420,12 @@ wraps whatever is already installed, so **activation order is nesting order**:
 a feature activated later sits OUTSIDE one activated earlier, and sees the call
 first.
 
-That decides behaviour, not just sequence. \`cost\` activated before \`cache\`
-sits inside it, so a response served from the cache never reaches \`cost\` and is
+That decides behaviour, not just sequence. `cost` activated before `cache`
+sits inside it, so a response served from the cache never reaches `cost` and is
 correctly charged nothing; reverse them and every cache hit is billed for money
 that was never spent.
 
-`audit`, `clienttrack`, `debug`, `idempotency`, `log`, `metrics`, `paging`, `rbac`, `streaming`, `telemetry`, `test`, `validate` attach to pipeline hooks
+`audit`, `clienttrack`, `debug`, `idempotency`, `log`, `metrics`, `paging`, `rbac`, `streaming`, `telemetry`, `validate` attach to pipeline hooks
 rather than the transport, so their order does not affect what they observe.
 
 #### `audit`
@@ -447,7 +450,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.audit.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["audit"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -478,7 +481,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.cache.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["cache"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -510,7 +513,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.clienttrack.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["clienttrack"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -547,13 +550,14 @@ another when you do not.
 
 **Usage**
 
-Set `feature.cost.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["cost"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
 
 - Wraps the transport: its place in the activation order decides what it
   sees. See [Ordering](#ordering) above.
+- Also attaches to pipeline hooks.
 - Inactive by default: leaving it out costs nothing at runtime.
 
 #### `debug`
@@ -578,7 +582,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.debug.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["debug"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -609,7 +613,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.idempotency.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["idempotency"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -638,14 +642,14 @@ another when you do not.
 
 **Usage**
 
-Set `feature.log.active` to true in the client options, and override any option above in the same entry. Every option keeps
+It runs without being switched on. Override any option above under `options["feature"]["log"]` in the client options; switching its `active` option off stops it. Every option keeps
 its default unless you name it.
 
 **Considerations**
 
 - Attaches to pipeline hooks, not the transport, so activation order does
   not change what it observes.
-- Active by default: set `active: false` to switch it off.
+- Active by default: switching its `active` option off stops it.
 
 #### `metrics`
 
@@ -666,7 +670,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.metrics.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["metrics"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -704,7 +708,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.netsim.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["netsim"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -739,7 +743,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.paging.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["paging"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -770,7 +774,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.proxy.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["proxy"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -801,7 +805,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.ratelimit.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["ratelimit"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -825,7 +829,7 @@ Access control.
 
 **Usage**
 
-Set `feature.rbac.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["rbac"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -859,7 +863,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.retry.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["retry"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -884,13 +888,14 @@ Secrets.
 
 **Usage**
 
-Set `feature.secrets.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["secrets"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
 
 - Wraps the transport: its place in the activation order decides what it
   sees. See [Ordering](#ordering) above.
+- Also attaches to pipeline hooks.
 - Inactive by default: leaving it out costs nothing at runtime.
 
 #### `streaming`
@@ -915,7 +920,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.streaming.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["streaming"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -946,7 +951,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.telemetry.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["telemetry"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -975,13 +980,11 @@ another when you do not.
 
 **Usage**
 
-Set `feature.test.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["test"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
 
-- Attaches to pipeline hooks, not the transport, so activation order does
-  not change what it observes.
 - Installs the BASE transport that the wrapping features wrap, so it must be
   activated before them.
 - Inactive by default: leaving it out costs nothing at runtime.
@@ -1008,7 +1011,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.timeout.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["timeout"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**
@@ -1040,7 +1043,7 @@ another when you do not.
 
 **Usage**
 
-Set `feature.validate.active` to true in the client options, and override any option above in the same entry. Every option keeps
+Set `options["feature"]["validate"]["active"]` to `True` in the client options, and override any option above in the same entry. Every option keeps
 its default unless you name it.
 
 **Considerations**

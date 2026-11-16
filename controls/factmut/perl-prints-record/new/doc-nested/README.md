@@ -357,19 +357,24 @@ print(satellite.data_get())
 
 ```php
 <?php
-require_once 'demo_sdk.php';
+require_once 'php/demo_sdk.php';
 
 $client = new DemoSDK([
     "apikey" => getenv("DEMO_APIKEY"),
+    "server" => [
+        "tenant" => "<tenant>",
+    ],
 ]);
 
-// List all planets (an array of entities, one per record; throws on error)
+// List planet records: an array of entities, one per record; throws on failure
 $planets = $client->Planet()->list();
-print_r(array_map(fn($item) => $item->data_get(), $planets));
+foreach ($planets as $planet) {
+    print_r($planet->data_get());
+}
 
-// Load a specific planet (returns the entity; data_get() reads its record; throws on error)
-$planet = $client->Planet()->load(["id" => "example_id"]);
-print_r($planet->data_get());
+// Load a satellite: the entity; throws on failure
+$satellite = $client->Satellite()->load(["planet_id" => "example_planet_id", "id" => "example_id"]);
+print_r($satellite->data_get());
 ```
 
 ### Golang
@@ -517,6 +522,7 @@ if (err) {
 
 ```cpp
 #include <cstdlib>
+#include <iostream>
 #include "core/sdk.hpp"
 
 using namespace sdk;
@@ -524,17 +530,20 @@ using namespace sdk;
 const char* apikey = std::getenv("DEMO_APIKEY");
 auto client = std::make_shared<DemoSDK>(vmap({
     {"apikey", Value(apikey ? apikey : "")},
+    {"server", vmap({
+        {"tenant", Value("<tenant>")},
+    })},
 }));
 
-// List all planets (one entity per record, throws on error)
+// List planet records: a std::vector of entities, one per record; throws on failure
 std::vector<SdkEntityPtr> planets = client->planet()->list(Value::undef(), Value::undef());
 for (const auto& planet : planets) {
   std::cout << Struct::jsonify(planet->data()) << std::endl;
 }
 
-// Load a specific planet (returns the entity, throws on error)
-SdkEntityPtr planet = client->planet()->load(vmap({{"id", Value("example_id")}}), Value::undef());
-std::cout << Struct::jsonify(planet->data()) << std::endl;
+// Load a satellite: the entity; throws on failure
+SdkEntityPtr satellite = client->satellite()->load(vmap({{"planet_id", Value("example_planet_id")}, {"id", Value("example_id")}}), Value::undef());
+std::cout << Struct::jsonify(satellite->data()) << std::endl;
 ```
 
 ### C#
@@ -546,18 +555,26 @@ using Voxgig.Struct;
 var client = new DemoSDK(new Dictionary<string, object?>
 {
     ["apikey"] = Environment.GetEnvironmentVariable("DEMO_APIKEY"),
+    ["server"] = new Dictionary<string, object?>
+    {
+        ["tenant"] = "<tenant>",
+    },
 });
 
-// List all planets (a list of entities, one per record, as object?; raises on error)
-var planetList = (List<object?>)client.Planet().List(null)!;
-foreach (var planetItem in planetList)
+// List planet records: a list of entities, one per record; throws on failure
+var planets = (List<object?>)client.Planet().List(null)!;
+foreach (var planet in planets)
 {
-    Console.WriteLine(StructUtils.Jsonify(((IEntity)planetItem!).Data()));
+    Console.WriteLine(StructUtils.Jsonify(((IEntity)planet!).Data()));
 }
 
-// Load a specific planet (returns the entity, raises on error)
-var planet = (IEntity)client.Planet().Load(new Dictionary<string, object?> { ["id"] = "example_id" })!;
-Console.WriteLine(StructUtils.Jsonify(planet.Data()));
+// Load a satellite: the entity; throws on failure
+var satellite = (IEntity)client.Satellite().Load(new Dictionary<string, object?>
+{
+    ["planet_id"] = "example_planet_id",
+    ["id"] = "example_id",
+})!;
+Console.WriteLine(StructUtils.Jsonify(satellite.Data()));
 ```
 
 ### Elixir
@@ -594,37 +611,39 @@ Map<String, Object> options = new java.util.LinkedHashMap<>();
 options.put("apikey", System.getenv("DEMO_APIKEY"));
 Map<String, Object> server = new java.util.LinkedHashMap<>();
 server.put("tenant", "<tenant>");
-server.put("region", "<region>");
 options.put("server", server);
 DemoSDK client = new DemoSDK(options);
 
-// List all planets (a list of entities, one per record; raises on error)
-List<?> planetList = (List<?>) client.planet(null).list(null, null);
-for (Object planetItem : planetList) {
-    System.out.println(((SdkEntity) planetItem).data());
+// List planet records: a List of entities, one per record; throws on failure
+List<?> planets = (List<?>) client.planet(null).list(null, null);
+for (Object planet : planets) {
+    System.out.println(((SdkEntity) planet).data());
 }
 
-// Load a specific planet (returns the entity, raises on error)
-SdkEntity planet = (SdkEntity) client.planet(null).load(Map.of("id", "example_id"), null);
-System.out.println(planet.data());
+// Load a satellite: the entity; throws on failure
+SdkEntity satellite = (SdkEntity) client.satellite(null).load(Map.of("planet_id", "example_planet_id", "id", "example_id"), null);
+System.out.println(satellite.data());
 ```
 
 ### JavaScript
 
 ```js
-const { DemoSDK } = require('@voxgig-sdk/demo-sdk-js')
+import { DemoSDK } from '@voxgig-sdk/demo-sdk-js'
 
 const client = new DemoSDK({
   apikey: process.env.DEMO_APIKEY,
+  server: {
+    tenant: '<tenant>',
+  },
 })
 
-// List all planets (an array of entities, one per record)
+// List planet records: an array of entities, one per record; throws on failure
 const planets = await client.Planet().list()
 for (const planet of planets) {
   console.log(planet.data())
 }
 
-// Load a specific satellite (returns the entity)
+// Load a satellite: the entity; throws on failure
 const satellite = await client.Satellite().load({
   planet_id: 'example_planet_id',
   id: 'example_id',
@@ -640,17 +659,20 @@ import voxgig.demosdk.core.SdkEntity
 
 val client = DemoSDK(mutableMapOf<String, Any?>(
     "apikey" to System.getenv("DEMO_APIKEY"),
+    "server" to mutableMapOf<String, Any?>(
+        "tenant" to "<tenant>",
+    ),
 ))
 
-// List all planets (a list of entities, one per record; raises on error)
-val planetList = client.planet(null).list(null, null) as List<*>
-for (planetItem in planetList) {
-    println((planetItem as SdkEntity).data())
+// List planet records: a list of entities, one per record; throws on failure
+val planets = client.planet(null).list(null, null) as List<*>
+for (planet in planets) {
+    println((planet as SdkEntity).data())
 }
 
-// Load a specific planet (returns the entity, raises on error)
-val planet = client.planet(null).load(mutableMapOf<String, Any?>("id" to "example_id"), null) as SdkEntity
-println(planet.data())
+// Load a satellite: the entity; throws on failure
+val satellite = client.satellite(null).load(mutableMapOf<String, Any?>("planet_id" to "example_planet_id", "id" to "example_id"), null) as SdkEntity
+println(satellite.data())
 ```
 
 ### OCaml
@@ -724,17 +746,20 @@ println!("{:?}", satellite.data(None));
 import voxgig.demosdk.core.DemoSDK
 import voxgig.demosdk.core.SdkEntity
 
+val server = new java.util.LinkedHashMap[String, Object]()
+server.put("tenant", "<tenant>")
 val options = new java.util.LinkedHashMap[String, Object]()
 options.put("apikey", System.getenv("DEMO_APIKEY"))
+options.put("server", server)
 val client = new DemoSDK(options)
 
-// List all planets (a list of entities, one per record; raises on error)
-val planetList = client.planet(null).list(null, null).asInstanceOf[java.util.List[SdkEntity]]
-planetList.forEach(planetItem => println(planetItem.data()))
+// List planet records: an ArrayList of entities, one per record; throws on failure
+val planets = client.planet(null).list(null, null).asInstanceOf[java.util.List[SdkEntity]]
+planets.forEach(planet => println(planet.data()))
 
-// Load a specific planet (returns the entity, raises on error)
-val planet = client.planet(null).load(java.util.Map.of("id", "example_id"), null).asInstanceOf[SdkEntity]
-println(planet.data())
+// Load a satellite: the entity; throws on failure
+val satellite = client.satellite(null).load(java.util.Map.of("planet_id", "example_planet_id", "id", "example_id"), null).asInstanceOf[SdkEntity]
+println(satellite.data())
 ```
 
 ### Swift

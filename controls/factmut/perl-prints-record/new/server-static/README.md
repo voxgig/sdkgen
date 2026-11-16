@@ -322,14 +322,13 @@ print(ambient.data_get())
 
 ```php
 <?php
-require_once 'demo_sdk.php';
+require_once 'php/demo_sdk.php';
 
 $client = new DemoSDK([
     "apikey" => getenv("DEMO_APIKEY"),
 ]);
 
-
-// Load a specific ambient (returns the entity; data_get() reads its record; throws on error)
+// Load an ambient: the entity; throws on failure
 $ambient = $client->Ambient()->load();
 print_r($ambient->data_get());
 ```
@@ -428,6 +427,7 @@ if (err) {
 
 ```cpp
 #include <cstdlib>
+#include <iostream>
 #include "core/sdk.hpp"
 
 using namespace sdk;
@@ -437,8 +437,7 @@ auto client = std::make_shared<DemoSDK>(vmap({
     {"apikey", Value(apikey ? apikey : "")},
 }));
 
-
-// Load a specific ambient (returns the entity, throws on error)
+// Load an ambient: the entity; throws on failure
 SdkEntityPtr ambient = client->ambient()->load(Value::undef(), Value::undef());
 std::cout << Struct::jsonify(ambient->data()) << std::endl;
 ```
@@ -454,8 +453,7 @@ var client = new DemoSDK(new Dictionary<string, object?>
     ["apikey"] = Environment.GetEnvironmentVariable("DEMO_APIKEY"),
 });
 
-
-// Load a specific ambient (returns the entity, raises on error)
+// Load an ambient: the entity; throws on failure
 var ambient = (IEntity)client.Ambient().Load(null)!;
 Console.WriteLine(StructUtils.Jsonify(ambient.Data()));
 ```
@@ -477,6 +475,7 @@ IO.puts(Voxgig.Struct.jsonify(Demo.Entity.Ambient.data_get(ambient)))
 ### Java
 
 ```java
+import java.util.List;
 import java.util.Map;
 import voxgig.demosdk.core.DemoSDK;
 import voxgig.demosdk.core.SdkEntity;
@@ -485,8 +484,7 @@ Map<String, Object> options = new java.util.LinkedHashMap<>();
 options.put("apikey", System.getenv("DEMO_APIKEY"));
 DemoSDK client = new DemoSDK(options);
 
-
-// Load a specific ambient (returns the entity, raises on error)
+// Load an ambient: the entity; throws on failure
 SdkEntity ambient = (SdkEntity) client.ambient(null).load(null, null);
 System.out.println(ambient.data());
 ```
@@ -494,13 +492,13 @@ System.out.println(ambient.data());
 ### JavaScript
 
 ```js
-const { DemoSDK } = require('@voxgig-sdk/demo-sdk-js')
+import { DemoSDK } from '@voxgig-sdk/demo-sdk-js'
 
 const client = new DemoSDK({
   apikey: process.env.DEMO_APIKEY,
 })
 
-// Load a specific ambient (returns the entity)
+// Load an ambient: the entity; throws on failure
 const ambient = await client.Ambient().load()
 console.log(ambient.data())
 ```
@@ -515,8 +513,7 @@ val client = DemoSDK(mutableMapOf<String, Any?>(
     "apikey" to System.getenv("DEMO_APIKEY"),
 ))
 
-
-// Load a specific ambient (returns the entity, raises on error)
+// Load an ambient: the entity; throws on failure
 val ambient = client.ambient(null).load(null, null) as SdkEntity
 println(ambient.data())
 ```
@@ -574,8 +571,7 @@ val options = new java.util.LinkedHashMap[String, Object]()
 options.put("apikey", System.getenv("DEMO_APIKEY"))
 val client = new DemoSDK(options)
 
-
-// Load a specific ambient (returns the entity, raises on error)
+// Load an ambient: the entity; throws on failure
 val ambient = client.ambient(null).load(null, null).asInstanceOf[SdkEntity]
 println(ambient.data())
 ```
