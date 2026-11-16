@@ -10,6 +10,8 @@ const MEDIA = 'tm/js/src/utility/MediaUtility.js'
 const REQUEST = 'tm/js/src/utility/MakeRequestUtility.js'
 const FETCHDEF = 'tm/js/src/utility/MakeFetchDefUtility.js'
 const OPTIONS = 'tm/js/src/utility/MakeOptionsUtility.js'
+const STRUCT = 'tm/js/src/utility/StructUtility.js'
+const TIMEOUT = 'tm/js/src/feature/timeout/TimeoutFeature.js'
 
 const forms: Forms = {
   files: {
@@ -24,17 +26,20 @@ const forms: Forms = {
   // A declaration with no parameter list is read too: it is the field.
   bare: true,
   param: (p) => ({ name: (/^(?:\.\.\.)?(\w+)/.exec(p.trim()) || ['', ''])[1], type: '' }),
-  // Any runtime parameter may be left out; a page signature marks one that
-  // may with `?` (or a default), as the ts page does.
-  optional: (p) => !/^\s*[\w$]+\s*:/.test(p) || /^\s*[\w$]+\?/.test(p) || /=/.test(p),
-  returns: () => '',
+  // A runtime parameter may be left out, except stream's `action`, which it
+  // reads unguarded as the operation name (`opname: action`); a page
+  // signature marks one that may with `?` (or a default), as the ts page does.
+  optional: (p) => /^\s*action\s*$/.test(p) ? false
+    : !/^\s*[\w$]+\s*:/.test(p) || /^\s*[\w$]+\?/.test(p) || /=/.test(p),
+  // Methods declare no return type; a field's string initialiser is its type.
+  returns: (after) => /^\s*=\s*(['"`]).*\1\s*$/.test(after) ? 'string' : '',
   entityCtor: 'constructor',
   public: {
     client: /^  (?:static |async \*?)?((?!constructor\b)[a-z]\w*)\(/gm,
     entity: /^  (?:static |async \*?)?((?!constructor\b)[a-z]\w*)(?:\(|\s*=\s)/gm,
   },
   undocumented: {
-    graphql: 'a GraphQL request through the pipeline; no reference page documents it',
+    graphql: 'a GraphQL request over the prepare and fetch path direct uses, bypassing the feature pipeline; no reference page documents it',
     toJSON: 'the serialised form JSON.stringify uses',
     toString: 'the printed form',
     markDeleted: 'set by remove itself; the entity reports it through deleted',
@@ -59,11 +64,10 @@ const forms: Forms = {
   // A field is written `name: type`; anything else is a call (as the ts forms).
   sigName: (sig) => /^[\w$]+\s*:/.test(sig) && !sig.includes('(') ? (/^[\w$]+/.exec(sig) as RegExpExecArray)[0]
     : ((/([\w{}$-]+)\s*\(/.exec(sig.replace(/^[^(]*?(->|\.)(?=[\w{}]+\s*\()/, '')) || [])[1] || ''),
+  // A field's type, compared with its initialiser; a call's is never written.
+  sigReturns: (sig) => /^[\w$]+\s*:/.test(sig) && !sig.includes('(') ? sig.replace(/^[\w$]+\s*:\s*/, '').trim() : '',
   namesWhy: 'the page names a parameter by what it holds (as the ts page does); js passes them by position',
   renames: { reqmatch: 'match', reqdata: 'data', testoptsarg: 'testopts', sdkoptsarg: 'sdkopts' },
-  exceptions: {
-    'optional:entity streamIterator': 'js lets any argument be left out, but stream passes action on as the operation name (opname: action), so a call without it names no operation; the page shows it required, as the ts page does',
-  },
   // What the table states besides names, parameters and returns.
   testDecl: 'test',
   expect: { test: { on: 'type' } },
@@ -93,28 +97,50 @@ const forms: Forms = {
         { file: 'tm/js/src/utility/Utility.js', quote: 'class Utility {' }] },
     'ref.facts.client[1].kind': { value: "utility", file: MAIN, quote: 'return this._utility.struct.clone(this._utility)' },
     'ref.facts.client[1].returns': {
-      file: MAIN, quote: 'return this._utility.struct.clone(this._utility)',
+      value: 'object', file: MAIN, quote: 'return this._utility.struct.clone(this._utility)',
       unquoted: { object: 'the Utility instance itself (clone hands a class instance back by reference)' },
     },
+    // The options map: absent, `{}`; validated as a map, which the struct
+    // library tests as a non-array of typeof `object`.
     'ref.facts.client[0].returns': {
-      file: MAIN, quote: 'return this._utility.struct.clone(this._options)',
-      also: [{ file: OPTIONS, quote: 'const layer = (b) => null != b && \'object\' === typeof b && !Array.isArray(b) ? b : {}' }],
+      value: 'object', file: MAIN, quote: ['return this._utility.struct.clone(this._options)', 'this._options = this._utility.makeOptions(this._rootctx)'],
+      also: [{ file: OPTIONS, quote: ['let opts = struct.clone(options || {})', 'opts = validate(opts, optspec)'] },
+        { file: STRUCT, quote: ["const S_object = 'object'", 'return null != val && S_object == typeof val && !Array.isArray(val)'] }],
     },
-    'ref.facts.none': { file: BASE, quote: 'return undefined' },
+    // The struct library's none is undefined; an argument left undefined is
+    // taken as none (the test client's options, an accessor's entopts).
+    'ref.facts.none': {
+      value: 'undefined', file: STRUCT, quote: ['const NONE = undefined', 'function getdef(val, alt) {', 'if (NONE === val) {'],
+      also: [{ file: MAIN, quote: 'const sdkopts = getdef(clone(sdkoptsarg), {})' }, { file: BASE, quote: 'entopts = entopts || {}' }],
+    },
     'facts.collection': { value: "array", file: 'tm/js/src/utility/MakeResultUtility.js', quote: ["if ('list' == op.name) {", 'result.resdata = []', 'result.resdata.push(ent)'] },
-    'ref.facts.container': { file: OPTIONS, quote: 'const layer = (b) => null != b && \'object\' === typeof b && !Array.isArray(b) ? b : {}' },
-    'ref.facts.valueType.OBJECT': { file: OPTIONS, quote: 'const layer = (b) => null != b && \'object\' === typeof b && !Array.isArray(b) ? b : {}' },
+    'ref.facts.container': {
+      value: 'object', file: OPTIONS, quote: ['let opts = struct.clone(options || {})', 'opts = validate(opts, optspec)'],
+      also: [{ file: STRUCT, quote: ["const S_object = 'object'", 'return null != val && S_object == typeof val && !Array.isArray(val)'] }],
+    },
+    // An option holding a map: the feature option is tested as typeof
+    // `object`; the validator rejects a non-map where its spec has a map.
+    'ref.facts.valueType.OBJECT': {
+      value: 'object', file: OPTIONS, quote: ": null != opts.feature && 'object' === typeof opts.feature",
+      also: [{ file: STRUCT, quote: ['} else if (!ismap(tval)) {', "inj.errs.push(_invalidTypeMsg(slice(inj.path, -1), S_object, typify(tval), tval), 'V0220')", "const S_object = 'object'"] }],
+    },
     'ref.facts.direct.returns': {
+      value: 'Promise<{ ok, status, headers, data }>',
       file: MAIN, quote: ['async direct(fetchargs) {', 'ok: null == err && status >= 200 && status < 300,', '        status,\n        headers: fetched.headers,\n        data: json,'],
       unquoted: { Promise: 'direct is an async method, so it returns a Promise; js spells no return type' },
     },
+    // The signal fetch is given: read for `aborted` and `reason`, listened to
+    // for `abort`, and swapped for an AbortController's own by the timeout.
     'ref.facts.direct.signal': {
-      file: REQUEST, quote: ['if (true === fetchdef.signal?.aborted) {', 'throw fetchdef.signal.reason'],
+      value: 'AbortSignal', file: REQUEST, quote: ['if (true === fetchdef.signal?.aborted) {', 'throw fetchdef.signal.reason'],
       also: [{ file: FETCHDEF, quote: 'fetchdef.signal = ctx.ctrl.signal' },
-        { file: BASE, quote: '//   - `ctrl` (pipeline control) and `signal` (AbortSignal) are honoured:' }],
+        { file: TIMEOUT, quote: ['const caller = fetchdef.signal', 'controller = new globalThis.AbortController()', 'fetchdef = { ...fetchdef, signal: controller.signal }', "caller.addEventListener('abort', follow, { once: true })"] },
+        { file: 'tm/js/src/utility/FetcherUtility.js', quote: 'const response = await fetch(fullurl, fetchdef)' }],
+      unquoted: { AbortSignal: 'js spells no type: what the runtime reads (aborted, reason, the abort event) and puts in its place (an AbortController\'s signal) is the AbortSignal interface, which fetch takes as its signal' },
     },
-    'ref.facts.direct.abortCode': { file: REQUEST, quote: "const abort = ctx.error('request_aborted', 'request aborted')" },
+    'ref.facts.direct.abortCode': { value: 'request_aborted', file: REQUEST, quote: "const abort = ctx.error('request_aborted', 'request aborted')" },
     'ref.facts.prepare.returns': {
+      value: 'Promise<{ url, method, headers, body } | Error>',
       file: MAIN, quote: ['async prepare(fetchargs) {', 'return ctx.error(\'spec_method_allow\'', 'return makeFetchDef(ctx)'],
       also: [{ file: FETCHDEF, quote: ['    url,\n    method: spec.method,\n    headers: spec.headers,', 'fetchdef.body ='] },
         { file: 'tm/js/src/Context.js', quote: 'return new ProjectNameError(code, msg, this)' }],
@@ -131,7 +157,7 @@ const forms: Forms = {
         Buffer: 'a Node Buffer is a Uint8Array, which ArrayBuffer.isView accepts',
       },
     },
-    'ref.facts.body.once': { value: "a stream", file: REQUEST, quote: '// A stream can be read once; read it now, so that a retry sends the same bytes.' },
+    'ref.facts.body.once': { value: "a stream", file: REQUEST, quote: ['if (isStream(fetchdef.body)) {', 'fetchdef.body = await readStream(fetchdef.body)'] },
     'ref.facts.cancel': { value: true, file: FETCHDEF, quote: 'fetchdef.signal = ctx.ctrl.signal' },
   },
 }

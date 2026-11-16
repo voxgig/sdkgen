@@ -97,7 +97,9 @@ const Syntax: SyntaxType = {
   fence: 'js',
   facts,
 
-  imports: (desc) => [`const { ${desc.layout.client} } = require('${desc.layout.module}')`],
+  // An ES import: the steps use top-level await, which a CommonJS file
+  // cannot hold beside require.
+  imports: (desc) => [`import { ${desc.layout.client} } from '${desc.layout.module}'`],
 
   client: (s, desc) => [
     0 === s.options.length
