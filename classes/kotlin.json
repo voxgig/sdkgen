@@ -495,14 +495,6 @@
   "type": "block-changed",
   "section": "tutorial"
  },
- "474e2b7332": {
-  "outcome": "correction:S49",
-  "why": "ent-none and ref-issues: the client passes the required server option; SdkEntity is imported only where a block reads a record (ref-issues updates only, ent-none makes no call)",
-  "n": 2,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
  "87aafab844": {
   "outcome": "correction:S49",
   "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
@@ -848,20 +840,26 @@
   "section": "reference"
  },
  "9c6d819441": {
-  "outcome": "same-meaning",
-  "why": "a word match on `false` and `headers`: the README's direct how-to (an unported section) says `ok` is `false` on error, which agrees",
+  "outcome": "contradiction",
+  "why": "the README's direct how-to (an unported section) says that on error `err` contains the error value; for a response whose body is read and whose status is not 2xx the runtime sets `ok` false and no `err`, as this sentence says",
   "n": 19,
   "by": "hand",
   "type": "echo",
-  "section": "reference"
+  "section": "reference",
+  "where": "kotlin/README.md, the direct how-to (unported): \"On error, `ok` is `false` and `err` contains the error value.\"",
+  "true": "REFERENCE: a readable non-2xx response gives `ok` false with `status`, `headers` and `data` and no `err`; `err` is set only when the body cannot be read or no request is made",
+  "evidence": "tm/kotlin/core/SdkClient.kt direct: `out[\"ok\"] = bodyErr == null && status in 200..299` sets `ok`, and `out[\"err\"]` is set only `if (bodyErr != null)` or on the prepare, fetch, no-response and invalid-response paths"
  },
  "9efa1d0afc": {
-  "outcome": "same-meaning",
-  "why": "a word match on `false`: the README's direct how-to says `ok` is `false` on error, which agrees",
+  "outcome": "contradiction",
+  "why": "the README's direct how-to (an unported section) says that on error `err` contains the error value; for a response whose body is read and whose status is not 2xx the runtime sets `ok` false and no `err`, as this sentence says",
   "n": 19,
   "by": "hand",
   "type": "echo",
-  "section": "reference"
+  "section": "reference",
+  "where": "kotlin/README.md, the direct how-to (unported): \"On error, `ok` is `false` and `err` contains the error value.\"",
+  "true": "REFERENCE: a readable non-2xx response gives `ok` false with `status`, `headers` and `data` and no `err`; `err` is set only when the body cannot be read or no request is made",
+  "evidence": "tm/kotlin/core/SdkClient.kt direct: `out[\"ok\"] = bodyErr == null && status in 200..299` sets `ok`, and `out[\"err\"]` is set only `if (bodyErr != null)` or on the prepare, fetch, no-response and invalid-response paths"
  },
  "fbcf05a673": {
   "outcome": "same-meaning",
@@ -1704,8 +1702,8 @@
   "unreviewed": 0
  },
  "30bf0a94df": {
-  "outcome": "restored:note",
-  "why": "the kotlin note on the stream member: only a Function0 signal is read, and only `true` ends the stream (EntityBase.fragment.kt:233-240, cited)",
+  "outcome": "defect",
+  "why": "the kotlin note on the stream member waits on a shared change (ts/src/cmp/ReadmeRef.ts STREAM_SIGNAL, ts/src/helpers/sdkdesc.ts RefFacts): what a stream signal must be is a fact every runtime that reads the signal has, with a value per runtime (kotlin and scala a Function0, java a BooleanSupplier, ts and js an AbortSignal, csharp a CancellationToken, go a channel, py rb lua perl elixir ocaml swift a function of no arguments), so it is an optional cited fact with one shared sentence, not a kotlin note; the note stays, true and cited (EntityBase.fragment.kt:233-240, 248), until that lands",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -2335,8 +2333,8 @@
   "section": "reference"
  },
  "8ff27d81e0": {
-  "outcome": "restored:note",
-  "why": "the kotlin stream note names `Function0`, the only signal the stream reads (EntityBase.fragment.kt:234)",
+  "outcome": "defect",
+  "why": "`Function0`, named by the kotlin stream note, waits on a shared change (ts/src/cmp/ReadmeRef.ts STREAM_SIGNAL, ts/src/helpers/sdkdesc.ts RefFacts): what a stream signal must be is a fact every runtime that reads the signal has, with a value per runtime (kotlin and scala a Function0, java a BooleanSupplier, ts and js an AbortSignal, csharp a CancellationToken, go a channel, py rb lua perl elixir ocaml swift a function of no arguments), so it is an optional cited fact with one shared sentence, not a kotlin note; the note stays, true and cited (EntityBase.fragment.kt:233-240, 248), until that lands",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
