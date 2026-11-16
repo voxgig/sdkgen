@@ -7,6 +7,12 @@ import {
 } from '@voxgig/struct'
 
 
+// The SDK's entry file: what Main_php writes and an example requires.
+function phpSdkFile(model: any): string {
+  return model.const.Name.toLowerCase() + '_sdk.php'
+}
+
+
 function projectPath(suffix?: string): string {
   return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
 }
@@ -110,5 +116,6 @@ export {
   clean,
   formatPhpArray,
   formatPhpValue,
+  phpSdkFile,
   projectPath,
 }
