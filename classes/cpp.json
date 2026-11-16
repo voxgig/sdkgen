@@ -445,7 +445,7 @@
  },
  "8415dfcf46": {
   "outcome": "correction:S49",
-  "why": "the client passes the server variables that have no default (S49), and the block includes `<iostream>` because it prints (correction iostream-include: `core/sdk.hpp` does not include it)",
+  "why": "the client passes the server variables that have no default (S49), and the block includes `<iostream>` itself because it prints (iostream-include: OLD reached it only through the log feature's header)",
   "n": 10,
   "by": "hand",
   "type": "block-changed",
@@ -469,7 +469,7 @@
  },
  "39fd7fb6ab": {
   "outcome": "correction:iostream-include",
-  "why": "a block that prints with `std::cout` now includes `<iostream>`: `core/sdk.hpp` does not include it (types.hpp includes only `<ostream>`), so OLD's block did not compile on its own; the README lane hid it by adding `#include <iostream>` itself (generatedcompile.test.ts cppExamples)",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
   "n": 3,
   "by": "hand",
   "type": "block-changed",
@@ -493,7 +493,7 @@
  },
  "20e1f83164": {
   "outcome": "correction:iostream-include",
-  "why": "a block that prints with `std::cout` now includes `<iostream>`: `core/sdk.hpp` does not include it (types.hpp includes only `<ostream>`), so OLD's block did not compile on its own; the README lane hid it by adding `#include <iostream>` itself (generatedcompile.test.ts cppExamples)",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
   "n": 1,
   "by": "hand",
   "type": "block-novel-token",
@@ -629,7 +629,7 @@
  },
  "4e3e036aa2": {
   "outcome": "correction:iostream-include",
-  "why": "crud-bare: the block prints, so it includes `<iostream>`, which `core/sdk.hpp` does not; the step comments are the shared ones",
+  "why": "crud-bare: the block prints, so it includes `<iostream>` itself rather than reaching it through the log feature's header; the step comments are the shared ones",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
@@ -693,7 +693,7 @@
  },
  "2b7c065103": {
   "outcome": "correction:iostream-include",
-  "why": "a block that prints with `std::cout` now includes `<iostream>`: `core/sdk.hpp` does not include it (types.hpp includes only `<ostream>`), so OLD's block did not compile on its own; the README lane hid it by adding `#include <iostream>` itself (generatedcompile.test.ts cppExamples)",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
   "n": 1,
   "by": "hand",
   "type": "block-novel-token",
@@ -1524,16 +1524,12 @@
   "section": "reference"
  },
  "ea3d2bd9d5": {
-  "outcome": "shared:ts:89c5ef9c6d",
-  "why": "masked, it is the ts unit of class 89c5ef9c6d (restored:shared, by hand)",
+  "outcome": "defect",
+  "why": "waits on shared code, ts/src/helpers/runtimeprose.ts opText (the record sentence every single-entity operation ends with). False in the 15 remove copies of this class, true in its 64 load, create, update and patch copies (the class key is the text, so one class holds all 79). cpp's remove absorbs only resmatch (EntityRemoveOp.fragment.cpp:12-18) and never replaces data_, which the entity constructor sets to an empty map (types.hpp:1317); load, create, update and patch replace data_ with the response's resdata. So on the page's remove example, a fresh entity, data() reads an empty map, not the removed record. True statement: a removed entity keeps the data it held; remove reads no record from the response. Needs an optional cited fact (remove keeps the data) and that sentence written once in shared code; cpp alone of the twenty runtimes keeps it (survey Q6). RUN (fix workspace work/probe/remove-main.cpp, B generated whole, g++ -iquote cpp): with a system.fetch that answers every request with the record id p1, name Mars, load then data() prints that record, and remove then data() prints {} with deleted() 1",
   "n": 79,
-  "by": "shared",
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "3bb5d3a968"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "f196c5678a": {
   "outcome": "restored:shared",
@@ -1888,12 +1884,15 @@
   "unreviewed": 0
  },
  "bff341cf32": {
-  "outcome": "same-meaning",
-  "why": "no-test: the README word test is the generated test suite directory, not the test feature; nothing disagrees",
+  "outcome": "contradiction",
+  "why": "",
   "n": 2,
   "by": "hand",
   "type": "echo",
-  "section": "reference"
+  "section": "reference",
+  "where": "no-test cpp/README.md, the unported README (Use test mode; testSDK): 'The test feature installs an in-memory mock transport' and 'Creates a test-mode client with mock transport', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "Config_cpp.ts falls back to return std::make_shared<BaseFeature>(); testSDK sets sdk->mode = \"test\" (Main.fragment.cpp:29), and fetcher throws fetch_mode_block when mode is not live (pipeline.hpp:589-591). RUN: the no-test README's own test-mode block (Use test mode), compiled from the root of a generated no-test SDK (g++ -iquote cpp, linked with its libsdkfeature.a) and run, throws SdkError fetch_mode_block: DemoSDK: load: Request blocked by mode: test (fix workspace work/probe/notest-main.cpp)"
  },
  "46dc1a3462": {
   "outcome": "correction:test-without-feature",
