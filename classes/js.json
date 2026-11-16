@@ -1043,7 +1043,7 @@
   "type": "added",
   "section": "rootquick"
  },
- "d16fc456ba": {
+ "67715b4dfb": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
   "n": 7,
@@ -1243,10 +1243,186 @@
   "type": "block-vanished-token",
   "section": "rootquick"
  },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "8dc2e9fad6": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "889a3be7db": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "d7e695403a": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bb0c98c2da": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "08bc693296": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c11fbd3bd3": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c15e157e96": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "a0ea7f51a6": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "68cd0488cc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c18df8e763": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "caeed47a09": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "2888f25445": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "58ecc8027c": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3e8924da1b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "20caa1a032": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "20470030b4": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6e07802bbf": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c23d66bc9b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b379eb97d8": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "b65a95a1e5": {
   "outcome": "same-meaning",
   "why": "the README cell is about `base` (Base URL of the API server); the js README options table (unported ReadmeModel_js) has no `server` row, so nothing disagrees with the REFERENCE server rows",
   "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "8e7a866f45": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it [v3.4 re-count: x38 to x38, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 38,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -1310,6 +1486,22 @@
   "type": "echo",
   "section": "reference"
  },
+ "176972c3bb": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it [v3.4 re-count: x67 to x67, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 67,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c11b6417b": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it [v3.4 re-count: x38 to x38, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 38,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "036417f9ca": {
   "outcome": "same-meaning",
   "why": "moved into the Returns sentence, which says when `err` is there; the README's DirectResult line is the disagreement recorded on 9c6d819441",
@@ -1317,6 +1509,18 @@
   "by": "hand",
   "type": "echo",
   "section": "reference"
+ },
+ "83803533d5": {
+  "outcome": "shared:ts:83803533d5",
+  "why": "masked, it is the ts unit of class 83803533d5 (correction:X3, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a90f4e8394"
+  ],
+  "unreviewed": 1
  },
  "6aced21d71": {
   "outcome": "shared:ts:6aced21d71",
@@ -1390,6 +1594,246 @@
   ],
   "unreviewed": 0
  },
+ "630b93b404": {
+  "outcome": "shared:ts:630b93b404",
+  "why": "masked, it is the ts unit of class 630b93b404 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "638e6bf8c8": {
+  "outcome": "shared:ts:638e6bf8c8",
+  "why": "masked, it is the ts unit of class 638e6bf8c8 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "bec71fd3ed": {
+  "outcome": "shared:ts:bec71fd3ed",
+  "why": "masked, it is the ts unit of class bec71fd3ed (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "bd75a6c916": {
+  "outcome": "shared:ts:bd75a6c916",
+  "why": "masked, it is the ts unit of class bd75a6c916 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "525c043584": {
+  "outcome": "shared:ts:525c043584",
+  "why": "masked, it is the ts unit of class 525c043584 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "04d9decbcd": {
+  "outcome": "shared:ts:04d9decbcd",
+  "why": "masked, it is the ts unit of class 04d9decbcd (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "68fa66027f": {
+  "outcome": "shared:ts:68fa66027f",
+  "why": "masked, it is the ts unit of class 68fa66027f (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "9578f954c3": {
+  "outcome": "shared:ts:9578f954c3",
+  "why": "masked, it is the ts unit of class 9578f954c3 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "81d19a3b94": {
+  "outcome": "shared:ts:81d19a3b94",
+  "why": "masked, it is the ts unit of class 81d19a3b94 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "bb4fb6eecf": {
+  "outcome": "shared:ts:bb4fb6eecf",
+  "why": "masked, it is the ts unit of class bb4fb6eecf (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "1eac1e568f": {
+  "outcome": "shared:ts:1eac1e568f",
+  "why": "masked, it is the ts unit of class 1eac1e568f (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "ce48696dcd": {
+  "outcome": "shared:ts:ce48696dcd",
+  "why": "masked, it is the ts unit of class ce48696dcd (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "1c87f432bc": {
+  "outcome": "shared:ts:1c87f432bc",
+  "why": "masked, it is the ts unit of class 1c87f432bc (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "45d9ef79df": {
+  "outcome": "shared:ts:45d9ef79df",
+  "why": "masked, it is the ts unit of class 45d9ef79df (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "198312a77c": {
+  "outcome": "shared:ts:198312a77c",
+  "why": "masked, it is the ts unit of class 198312a77c (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "5d9dc8ba29": {
+  "outcome": "shared:ts:5d9dc8ba29",
+  "why": "masked, it is the ts unit of class 5d9dc8ba29 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "b1d4ccff9e": {
+  "outcome": "shared:ts:b1d4ccff9e",
+  "why": "masked, it is the ts unit of class b1d4ccff9e (correction:S09-residue-usage, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "6957a19f18": {
+  "outcome": "shared:ts:6957a19f18",
+  "why": "masked, it is the ts unit of class 6957a19f18 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "b464f5c04e": {
+  "outcome": "shared:ts:b464f5c04e",
+  "why": "masked, it is the ts unit of class b464f5c04e (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "d90bf25f1c": {
+  "outcome": "shared:ts:d90bf25f1c",
+  "why": "masked, it is the ts unit of class d90bf25f1c (correction:residue-escaped-backticks, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "6828ec0405"
+  ],
+  "unreviewed": 1
+ },
  "cce9e8691a": {
   "outcome": "shared:ts:cce9e8691a",
   "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
@@ -1413,6 +1857,18 @@
    "0a6358906c"
   ],
   "unreviewed": 0
+ },
+ "0ee35d2611": {
+  "outcome": "shared:ts:0ee35d2611",
+  "why": "masked, it is the ts unit of class 0ee35d2611 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "3c3013abd4"
+  ],
+  "unreviewed": 1
  },
  "4d47e92215": {
   "outcome": "shared:ts:4d47e92215",
@@ -1556,8 +2012,8 @@
  },
  "a0ea2daad1": {
   "outcome": "dropped",
-  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`)",
-  "n": 116,
+  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`) [v3.4 re-count: x64 to x64, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 64,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -1572,7 +2028,7 @@
  },
  "ac1b545527": {
   "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1658,6 +2114,14 @@
   "type": "missing",
   "section": "reference"
  },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
  "ac1eac6be0": {
   "outcome": "correction:S09",
   "why": "the per-feature line now says active-by-default for log and inactive for the rest, from one decision (FeatureDocs.activeByDefault)",
@@ -1666,9 +2130,81 @@
   "type": "missing",
   "section": "reference"
  },
+ "c6cf58dde1": {
+  "outcome": "shared:ts:c6cf58dde1",
+  "why": "masked, it is the ts unit of class c6cf58dde1 (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6660af7942"
+  ],
+  "unreviewed": 1
+ },
+ "fb53c2b222": {
+  "outcome": "shared:ts:fb53c2b222",
+  "why": "masked, it is the ts unit of class fb53c2b222 (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e60e58a4c1"
+  ],
+  "unreviewed": 1
+ },
+ "306bf09289": {
+  "outcome": "shared:ts:306bf09289",
+  "why": "masked, it is the ts unit of class 306bf09289 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "023d81e0c7"
+  ],
+  "unreviewed": 1
+ },
+ "d265844143": {
+  "outcome": "shared:ts:d265844143",
+  "why": "masked, it is the ts unit of class d265844143 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "896aadddc1"
+  ],
+  "unreviewed": 1
+ },
+ "63ce60fad7": {
+  "outcome": "shared:ts:63ce60fad7",
+  "why": "masked, it is the ts unit of class 63ce60fad7 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a7a09e2e4"
+  ],
+  "unreviewed": 1
+ },
+ "c2066e4a9e": {
+  "outcome": "shared:ts:c2066e4a9e",
+  "why": "masked, it is the ts unit of class c2066e4a9e (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "67f823c461"
+  ],
+  "unreviewed": 1
+ },
  "7ddccf533d": {
   "outcome": "shared:ts:7ddccf533d",
-  "why": "masked, it is the ts unit of class 7ddccf533d (correction:S49, by rule:server-vars)",
+  "why": "masked, it is the ts unit of class 7ddccf533d (correction:D26, by hand)",
   "n": 16,
   "by": "shared",
   "type": "added",
@@ -1751,16 +2287,12 @@
   "unreviewed": 0
  },
  "5ce4fbf9a3": {
-  "outcome": "shared:ts:5ce4fbf9a3",
-  "why": "masked, it is the ts unit of class 5ce4fbf9a3 (correction:sentence-review-test, by hand)",
-  "n": 19,
-  "by": "shared",
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "746a31db3f"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "cd00ec9b2a": {
   "outcome": "shared:ts:cd00ec9b2a",
@@ -1806,9 +2338,9 @@
   "type": "added",
   "section": "reference",
   "sentences": [
-   "c002d31995"
+   "88ef3a95de"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "6979eaacb4": {
   "outcome": "shared:ts:6979eaacb4",
@@ -1966,17 +2498,13 @@
   ],
   "unreviewed": 0
  },
- "80f77307dc": {
-  "outcome": "shared:ts:80f77307dc",
-  "why": "masked, it is the ts unit of class 80f77307dc (correction:decision-6-stream-signal, by hand)",
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
   "n": 94,
-  "by": "shared",
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "28235772cb"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "9a9b7d8556": {
   "outcome": "shared:ts:9a9b7d8556",
@@ -2230,17 +2758,53 @@
   ],
   "unreviewed": 0
  },
- "916036b165": {
-  "outcome": "shared:ts:916036b165",
-  "why": "masked, it is the ts unit of class 916036b165 (correction:S09, by rule:features-log)",
+ "e94011ef3f": {
+  "outcome": "shared:ts:e94011ef3f",
+  "why": "masked, it is the ts unit of class e94011ef3f (correction:residue-escaped-backticks, by hand)",
   "n": 19,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "d77745e7ee"
+   "93576f381a"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
+ },
+ "05a7710dde": {
+  "outcome": "shared:ts:05a7710dde",
+  "why": "masked, it is the ts unit of class 05a7710dde (correction:X3, by hand)",
+  "n": 38,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "30f77ee4fa"
+  ],
+  "unreviewed": 1
+ },
+ "9a5ba18db4": {
+  "outcome": "shared:ts:9a5ba18db4",
+  "why": "masked, it is the ts unit of class 9a5ba18db4 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a0fa8a325e"
+  ],
+  "unreviewed": 1
+ },
+ "f88d62ac3d": {
+  "outcome": "shared:ts:f88d62ac3d",
+  "why": "masked, it is the ts unit of class f88d62ac3d (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5d6d1a8aee"
+  ],
+  "unreviewed": 1
  },
  "482def0a4d": {
   "outcome": "same-meaning",
@@ -2314,14 +2878,6 @@
   ],
   "unreviewed": 0
  },
- "8e7a866f45": {
-  "outcome": "same-meaning",
-  "why": "the type word object, as the README's options table uses it",
-  "n": 2,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "3344d6d2fb": {
   "outcome": "same-meaning",
   "why": "the type word string, as the README's options table uses it for string options",
@@ -2330,21 +2886,17 @@
   "type": "echo",
   "section": "reference"
  },
- "9c11b6417b": {
-  "outcome": "same-meaning",
-  "why": "the type word object, as the README's options table uses it",
-  "n": 2,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "176972c3bb": {
-  "outcome": "same-meaning",
-  "why": "the type word object, as the README's options table uses it",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
+ "85ad2ff922": {
+  "outcome": "shared:ts:85ad2ff922",
+  "why": "masked, it is the ts unit of class 85ad2ff922 (correction:D26, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a52ac61380"
+  ],
+  "unreviewed": 1
  },
  "bff341cf32": {
   "outcome": "contradiction",
@@ -2357,9 +2909,9 @@
   "true": "the REFERENCE: without the test feature the test client has no mock transport and refuses every request",
   "evidence": "Config.fragment.js:32 `const fc = FEATURE_CLASS[fn] || BaseFeature` (no test class generated: the base feature, no mock); the ts contradiction recorded the same"
  },
- "05f770bd83": {
+ "5b46edebf3": {
   "outcome": "same-meaning",
-  "why": "the README's test line says the same of the two arguments, and its feature cell names the same feature.test option; no disagreement",
+  "why": "the README names the same `feature.test` switch (its feature row or its test-mode text); this sentence says the call sets it, switched on; no disagreement",
   "n": 1,
   "by": "hand",
   "type": "echo",
@@ -2396,6 +2948,30 @@
    "dd74ff9ab6"
   ],
   "unreviewed": 0
+ },
+ "f4e8df935f": {
+  "outcome": "shared:ts:f4e8df935f",
+  "why": "masked, it is the ts unit of class f4e8df935f (correction:S13-residue, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "b5ebb46b27"
+  ],
+  "unreviewed": 1
+ },
+ "ea987959c3": {
+  "outcome": "shared:ts:ea987959c3",
+  "why": "masked, it is the ts unit of class ea987959c3 (correction:S13-residue, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "60714446ae"
+  ],
+  "unreviewed": 1
  },
  "da08f7e7bd": {
   "outcome": "shared:ts:da08f7e7bd",
@@ -2553,6 +3129,22 @@
   ],
   "unreviewed": 0
  },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "b4523a5362": {
   "outcome": "correction:server-required-given",
   "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
@@ -2659,7 +3251,7 @@
  },
  "3f4da3a957": {
   "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
   "n": 1,
   "by": "hand",
   "type": "vanished-token",

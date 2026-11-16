@@ -13,6 +13,12 @@
  },
  {
   "file": "Naming",
+  "check": "name surgery in helper JAVA_ENTITY (java/utility_java.ts)",
+  "text": ".replace(/-sdk$/, '')",
+  "why": "Not in JAVA_ENTITY: JAVA_ENTITY is the constant 'entity' (utility_java.ts, the subpackage EntityBase_java's and Entity_java's Folder writes, which the hook gives as names.entity at v3.4). As for JAVA_CORE above, purity's fnBody reads the body of mavenGroupId, the next function in the file, as the constant's; the line is mavenGroupId's own, which the hook does not use."
+ },
+ {
+  "file": "Naming",
   "check": "name surgery in helper mavenGroupId (java/utility_java.ts)",
   "text": ".replace(/-sdk$/, '')",
   "why": "The hook neither imports nor calls mavenGroupId: purity reached it through the misread body of the constant JAVA_CORE (see the entry above). It is Package_java's Maven group id (com.<org>), which no page prints."

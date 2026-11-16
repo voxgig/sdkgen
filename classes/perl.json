@@ -75,7 +75,7 @@
   ],
   "unreviewed": 0
  },
- "e1e46d49e5": {
+ "6f7b45cbe2": {
   "outcome": "restored:shared",
   "why": "the old load sentence, in the shared words; true of perl: _run_op returns $self on success (Entity.fragment.pm:293-296) and dies on failure (:318)",
   "n": 10,
@@ -107,7 +107,7 @@
   ],
   "unreviewed": 0
  },
- "406d576484": {
+ "b29842ad48": {
   "outcome": "restored:shared",
   "why": "the old list sentence's facts in the shared words (arrayref of entities one per record, dies, data_get reads the record), plus the record type",
   "n": 7,
@@ -139,7 +139,7 @@
   ],
   "unreviewed": 0
  },
- "db00c23ac7": {
+ "e49b2bb2a4": {
   "outcome": "restored:shared",
   "why": "the old load sentence's facts (returns the entity, dies, data_get reads the record) are the shared load sentence, with the record type cited (Entity.fragment.pm:99 hashref)",
   "n": 6,
@@ -603,7 +603,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "88a2ac7a3d": {
+ "1c283daa08": {
   "outcome": "restored:shared",
   "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails",
   "n": 7,
@@ -835,7 +835,7 @@
   "type": "echo",
   "section": "reference"
  },
- "586b81880f": {
+ "31e722dca2": {
   "outcome": "same-meaning",
   "why": "a word match on the README options table's `extend` row; the README's result shape says the same of list ('`list` an `arrayref` of entities, one per record')",
   "n": 83,
@@ -1175,7 +1175,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "3ebb5ee1a9": {
+ "d4284f4c26": {
   "outcome": "restored:shared",
   "why": "the shared return clause for list; how the record is read is the tutorial's sentence and each item's print",
   "n": 83,
@@ -1679,9 +1679,9 @@
   ],
   "unreviewed": 0
  },
- "80f77307dc": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
   "n": 94,
   "by": "hand",
   "type": "added",

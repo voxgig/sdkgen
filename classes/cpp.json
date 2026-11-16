@@ -27,7 +27,7 @@
   ],
   "unreviewed": 0
  },
- "316fb70214": {
+ "83977380d8": {
   "outcome": "restored:shared",
   "why": "the shared load sentence: same facts as OLD (returns the entity, throws on failure, `data()` reads its record); `load` is named without parentheses because a call takes two arguments (arity 2, the runtime's load(reqmatch, ctrl) has no defaults), and the record's type `Value` is added (types.hpp `Value data(const Value& arg = Value::undef()) override;`)",
   "n": 16,
@@ -95,7 +95,7 @@
   ],
   "unreviewed": 0
  },
- "b4c2479efb": {
+ "c379ac110f": {
   "outcome": "restored:shared",
   "why": "the shared list sentence: same facts as OLD (a `std::vector` of entities, one per record, throws on failure, `data()` reads an entity's record), `list` named bare (arity 2) and the record's type `Value` added; the thrown type OLD named, sdk::SdkErrorPtr, is in the catch clause of the block under it (`catch (const SdkErrorPtr& err)`)",
   "n": 7,
@@ -595,7 +595,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "84678beea9": {
+ "a50b67ddd7": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
   "n": 7,
@@ -819,6 +819,22 @@
   "type": "block-novel-shape",
   "section": "rootquick"
  },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "066a083189": {
   "outcome": "same-meaning",
   "why": "the README direct example passes method GET; consistent with GET as the default",
@@ -887,6 +903,18 @@
   ],
   "unreviewed": 0
  },
+ "83803533d5": {
+  "outcome": "shared:ts:83803533d5",
+  "why": "masked, it is the ts unit of class 83803533d5 (correction:X3, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a90f4e8394"
+  ],
+  "unreviewed": 1
+ },
  "6aced21d71": {
   "outcome": "shared:ts:6aced21d71",
   "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
@@ -926,6 +954,18 @@
   "by": "hand",
   "type": "reworded",
   "section": "reference"
+ },
+ "d90bf25f1c": {
+  "outcome": "shared:ts:d90bf25f1c",
+  "why": "masked, it is the ts unit of class d90bf25f1c (correction:residue-escaped-backticks, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "6828ec0405"
+  ],
+  "unreviewed": 1
  },
  "aa47f18dea": {
   "outcome": "correction:typed-signatures",
@@ -986,6 +1026,158 @@
    "5ddee20721"
   ],
   "unreviewed": 0
+ },
+ "761c6d484c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "698f390733": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d0145f6c85": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1fac1cf55c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "f8a8fd01f9": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "052a7f401b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dd6016aa7d": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "93dc6c7898": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6528a2408e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "eb1c690d35": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1cac3697e0": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "73f17f9d92": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c5d3b0e2bc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "4ebe439395": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "2e2ea2f618": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "733031c9b8": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "53e790dd17": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9b440c2085": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b3e7de27cd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
  },
  "92ce533dbd": {
   "outcome": "shared:py:92ce533dbd",
@@ -1183,6 +1375,22 @@
   "type": "missing",
   "section": "reference"
  },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
  "ac1eac6be0": {
   "outcome": "restored:shared",
   "why": "replaced by the shared feature sentence on what runs by default; OLD said every feature costs nothing until switched on, false for log",
@@ -1198,6 +1406,78 @@
   "by": "hand",
   "type": "added",
   "section": "reference"
+ },
+ "d742744bfa": {
+  "outcome": "shared:go:d742744bfa",
+  "why": "masked, it is the go unit of class d742744bfa (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "34a4c51a24"
+  ],
+  "unreviewed": 1
+ },
+ "fb53c2b222": {
+  "outcome": "shared:ts:fb53c2b222",
+  "why": "masked, it is the ts unit of class fb53c2b222 (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e60e58a4c1"
+  ],
+  "unreviewed": 1
+ },
+ "49b4da0d68": {
+  "outcome": "shared:go:49b4da0d68",
+  "why": "masked, it is the go unit of class 49b4da0d68 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "87e15b60f5"
+  ],
+  "unreviewed": 1
+ },
+ "d265844143": {
+  "outcome": "shared:ts:d265844143",
+  "why": "masked, it is the ts unit of class d265844143 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "896aadddc1"
+  ],
+  "unreviewed": 1
+ },
+ "4ffa491cf2": {
+  "outcome": "shared:go:4ffa491cf2",
+  "why": "masked, it is the go unit of class 4ffa491cf2 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "538178cf46"
+  ],
+  "unreviewed": 1
+ },
+ "c2066e4a9e": {
+  "outcome": "shared:ts:c2066e4a9e",
+  "why": "masked, it is the ts unit of class c2066e4a9e (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "67f823c461"
+  ],
+  "unreviewed": 1
  },
  "aa731f856a": {
   "outcome": "shared:go:aa731f856a",
@@ -1292,16 +1572,12 @@
   "section": "reference"
  },
  "1054f62797": {
-  "outcome": "shared:go:640b39740e",
-  "why": "masked, it is the go unit of class 640b39740e (correction:sentence-review-test, by hand)",
-  "n": 19,
-  "by": "shared",
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "746a31db3f"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "938b372716": {
   "outcome": "restored:fact",
@@ -1395,6 +1671,14 @@
   ],
   "unreviewed": 0
  },
+ "584b977023": {
+  "outcome": "same-meaning",
+  "why": "the `Value` type cell of the options row, as OLD's table had it [v3.4 re-count: x90 to x90, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 90,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "92238dc9df": {
   "outcome": "shared:c:92238dc9df",
   "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
@@ -1406,14 +1690,6 @@
    "7d64fb6cb3"
   ],
   "unreviewed": 0
- },
- "584b977023": {
-  "outcome": "same-meaning",
-  "why": "the `Value` type cell of the options row, as OLD's table had it",
-  "n": 35,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
  },
  "132238e7e0": {
   "outcome": "shared:py:132238e7e0",
@@ -1524,9 +1800,9 @@
   "section": "reference"
  },
  "ea3d2bd9d5": {
-  "outcome": "defect",
-  "why": "waits on shared code, ts/src/helpers/runtimeprose.ts opText (the record sentence every single-entity operation ends with). False in the 15 remove copies of this class, true in its 64 load, create, update and patch copies (the class key is the text, so one class holds all 79). cpp's remove absorbs only resmatch (EntityRemoveOp.fragment.cpp:12-18) and never replaces data_, which the entity constructor sets to an empty map (types.hpp:1317); load, create, update and patch replace data_ with the response's resdata. So on the page's remove example, a fresh entity, data() reads an empty map, not the removed record. True statement: a removed entity keeps the data it held; remove reads no record from the response. Needs an optional cited fact (remove keeps the data) and that sentence written once in shared code; cpp alone of the twenty runtimes keeps it (survey Q6). RUN (fix workspace work/probe/remove-main.cpp, B generated whole, g++ -iquote cpp): with a system.fetch that answers every request with the record id p1, name Mars, load then data() prints that record, and remove then data() prints {} with deleted() 1",
-  "n": 79,
+  "outcome": "restored:shared",
+  "why": "v3.4, one shared edit: the record clause every single-entity operation's sentence ends with; the port recorded it as defect for its 15 remove copies, false for cpp (remove absorbs only resmatch); those now print the removeKeeps sentence instead (ref.facts.removeKeeps, cited to EntityRemoveOp.fragment.cpp), and the copies left follow load, create, update and patch, which absorb the response's record (true of cpp, as the port read) [v3.4 re-count: x64 to x64, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 64,
   "by": "hand",
   "type": "added",
   "section": "reference"
@@ -1627,7 +1903,7 @@
   "type": "added",
   "section": "reference"
  },
- "bcaa9cc9b0": {
+ "2829afdd30": {
   "outcome": "restored:shared",
   "why": "the shared list return clause",
   "n": 83,
@@ -1799,6 +2075,22 @@
   ],
   "unreviewed": 0
  },
+ "fc814cdcc9": {
+  "outcome": "correction:v34-remove-keeps",
+  "why": "v3.4, one shared edit: cpp's remove absorbs only the response's match (EntityRemoveOp.fragment.cpp: `if (ctx->result->resmatch.is_map()) { this->match_ = ctx->result->resmatch; }`), so the page no longer says data() reads the removed record (its fixer ran it: remove then data() gives {} although the response carried a record); it says no record is read and data() keeps what the entity held (ref.facts.removeKeeps, cited)",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "5788fca383": {
+  "outcome": "correction:v34-remove-keeps",
+  "why": "v3.4, one shared edit: cpp's remove absorbs only the response's match (EntityRemoveOp.fragment.cpp: `if (ctx->result->resmatch.is_map()) { this->match_ = ctx->result->resmatch; }`), so the page no longer says data() reads the removed record (its fixer ran it: remove then data() gives {} although the response carried a record); it says no record is read and data() keeps what the entity held (ref.facts.removeKeeps, cited)",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "1095fa7261": {
   "outcome": "shared:ts:1095fa7261",
   "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
@@ -1811,17 +2103,65 @@
   ],
   "unreviewed": 0
  },
- "916036b165": {
-  "outcome": "shared:ts:916036b165",
-  "why": "masked, it is the ts unit of class 916036b165 (correction:S09, by rule:features-log)",
+ "e94011ef3f": {
+  "outcome": "shared:ts:e94011ef3f",
+  "why": "masked, it is the ts unit of class e94011ef3f (correction:residue-escaped-backticks, by hand)",
   "n": 19,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "d77745e7ee"
+   "93576f381a"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
+ },
+ "05a7710dde": {
+  "outcome": "shared:ts:05a7710dde",
+  "why": "masked, it is the ts unit of class 05a7710dde (correction:X3, by hand)",
+  "n": 38,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "30f77ee4fa"
+  ],
+  "unreviewed": 1
+ },
+ "9a5ba18db4": {
+  "outcome": "shared:ts:9a5ba18db4",
+  "why": "masked, it is the ts unit of class 9a5ba18db4 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a0fa8a325e"
+  ],
+  "unreviewed": 1
+ },
+ "2c3647ff67": {
+  "outcome": "shared:go:2c3647ff67",
+  "why": "masked, it is the go unit of class 2c3647ff67 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3013abd4"
+  ],
+  "unreviewed": 1
+ },
+ "f88d62ac3d": {
+  "outcome": "shared:ts:f88d62ac3d",
+  "why": "masked, it is the ts unit of class f88d62ac3d (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5d6d1a8aee"
+  ],
+  "unreviewed": 1
  },
  "482def0a4d": {
   "outcome": "same-meaning",
@@ -1925,6 +2265,30 @@
    "dd74ff9ab6"
   ],
   "unreviewed": 0
+ },
+ "a2f5d538a4": {
+  "outcome": "shared:go:a2f5d538a4",
+  "why": "masked, it is the go unit of class a2f5d538a4 (correction:S13-residue, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "b5ebb46b27"
+  ],
+  "unreviewed": 1
+ },
+ "6d4558798f": {
+  "outcome": "shared:ts:ea987959c3",
+  "why": "masked, it is the ts unit of class ea987959c3 (correction:S13-residue, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "60714446ae"
+  ],
+  "unreviewed": 1
  },
  "da08f7e7bd": {
   "outcome": "shared:ts:da08f7e7bd",
@@ -2237,6 +2601,22 @@
    "799b8582a8"
   ],
   "unreviewed": 0
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
  },
  "b4523a5362": {
   "outcome": "correction:S49",

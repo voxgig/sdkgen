@@ -203,7 +203,7 @@
   ],
   "unreviewed": 0
  },
- "53ecb3c159": {
+ "050e749050": {
   "outcome": "unification:write-comment-style",
   "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 53ecb3c159): the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
   "n": 5,
@@ -2395,9 +2395,9 @@
   ],
   "unreviewed": 0
  },
- "80f77307dc": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -3054,17 +3054,17 @@
   "type": "novel-token",
   "section": "reference"
  },
- "7a9d5874ad": {
-  "outcome": "correction:stream-documented",
-  "why": "OLD omitted e_stream, a public entity_obj field (sdk_types.ml `mutable e_stream : string -> value -> value -> value Seq.t;`); the shared stream sentence and the note on its arguments document it",
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
   "section": "reference"
  },
- "eea38408c0": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+ "7a9d5874ad": {
+  "outcome": "correction:stream-documented",
+  "why": "OLD omitted e_stream, a public entity_obj field (sdk_types.ml `mutable e_stream : string -> value -> value -> value Seq.t;`); the shared stream sentence and the note on its arguments document it",
   "n": 1,
   "by": "hand",
   "type": "novel-token",

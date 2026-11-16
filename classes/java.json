@@ -75,7 +75,7 @@
   ],
   "unreviewed": 0
  },
- "41e1d81585": {
+ "86f6a4de0b": {
   "outcome": "restored:shared",
   "why": "the shared throw-style load sentence, in place of OLD's \"`load()` returns the ENTITY — call data() for the record — and raises on error\"; `load` is named without parentheses because a Java call must pass both arguments (facts.arity 2, derived)",
   "n": 10,
@@ -95,7 +95,7 @@
   ],
   "unreviewed": 0
  },
- "3b6556a083": {
+ "6de940147a": {
   "outcome": "same-meaning",
   "why": "OLD and NEW both say list returns a list of entities, one per record, and how a record is read; \"throws\" for \"raises\". OLD said \"(as `Object`)\": the declared return type, which no shared sentence can state (an interface gap: an optional fact for the declared return, read by the list and load sentences of ts/src/helpers/runtimeprose.ts; java, kotlin, scala and csharp declare Object, Any?, Object and object?). The page is not false without it: the `(List<?>)` cast in the block under it and the REFERENCE heading `Object list(...)` show the declared type. OLD's call `list(null, null)` is the call the block makes and the REFERENCE list sentence names",
   "n": 7,
@@ -127,7 +127,7 @@
   ],
   "unreviewed": 0
  },
- "b6d0e5b55b": {
+ "368df803c0": {
   "outcome": "same-meaning",
   "why": "OLD: load returns the entity, data() reads the record, raises on error; NEW says the same in the shared sentence with Java's verb, throws",
   "n": 6,
@@ -647,7 +647,7 @@
   "type": "added",
   "section": "rootquick"
  },
- "0e961634da": {
+ "df5011037a": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows); the list comment names the List it returns",
   "n": 7,
@@ -839,6 +839,174 @@
   "type": "block-novel-shape",
   "section": "rootquick"
  },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3f329031a9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "7bf9c2f8d2": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "2061945a0b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "5f5bb3e680": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c601d54b55": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6bc85eabaf": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "356d1582fc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "897205fd36": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "20e6c8dde9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "8b65a53c90": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "78333f7015": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "05892bf152": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b440a40732": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e748d61f95": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "dc563305c5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e6685f3a5e": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "766d31b2c7": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c209a51ec5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "0100eff743": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "9c6d819441": {
   "outcome": "same-meaning",
   "why": "the README's direct section says the same of the result (its keys; ok false on a failure, err holding the error); this sentence says when err is there: SdkClient.java:370-377 puts err only for an unreadable body, :314-336 ok false and err for a request that cannot be made",
@@ -895,6 +1063,18 @@
   "type": "reworded",
   "section": "reference"
  },
+ "83803533d5": {
+  "outcome": "shared:ts:83803533d5",
+  "why": "masked, it is the ts unit of class 83803533d5 (correction:X3, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a90f4e8394"
+  ],
+  "unreviewed": 1
+ },
  "6aced21d71": {
   "outcome": "shared:ts:6aced21d71",
   "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
@@ -906,6 +1086,246 @@
    "4fb872e54f"
   ],
   "unreviewed": 0
+ },
+ "d90bf25f1c": {
+  "outcome": "shared:ts:d90bf25f1c",
+  "why": "masked, it is the ts unit of class d90bf25f1c (correction:residue-escaped-backticks, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "6828ec0405"
+  ],
+  "unreviewed": 1
+ },
+ "cba00db955": {
+  "outcome": "shared:go:cba00db955",
+  "why": "masked, it is the go unit of class cba00db955 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "5b0ec68709": {
+  "outcome": "shared:go:5b0ec68709",
+  "why": "masked, it is the go unit of class 5b0ec68709 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "08965ffbb4": {
+  "outcome": "shared:go:08965ffbb4",
+  "why": "masked, it is the go unit of class 08965ffbb4 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "889d332d0b": {
+  "outcome": "shared:go:889d332d0b",
+  "why": "masked, it is the go unit of class 889d332d0b (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "27149099a9": {
+  "outcome": "shared:go:27149099a9",
+  "why": "masked, it is the go unit of class 27149099a9 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "6fe270b550": {
+  "outcome": "shared:go:6fe270b550",
+  "why": "masked, it is the go unit of class 6fe270b550 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "f7233aa3b6": {
+  "outcome": "shared:go:f7233aa3b6",
+  "why": "masked, it is the go unit of class f7233aa3b6 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "ea4cb13a1e": {
+  "outcome": "shared:go:ea4cb13a1e",
+  "why": "masked, it is the go unit of class ea4cb13a1e (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "dcc70a03de": {
+  "outcome": "shared:go:dcc70a03de",
+  "why": "masked, it is the go unit of class dcc70a03de (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "d6472618ac": {
+  "outcome": "shared:go:d6472618ac",
+  "why": "masked, it is the go unit of class d6472618ac (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "d8de8bd95e": {
+  "outcome": "shared:go:d8de8bd95e",
+  "why": "masked, it is the go unit of class d8de8bd95e (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "f69eeecf59": {
+  "outcome": "shared:go:f69eeecf59",
+  "why": "masked, it is the go unit of class f69eeecf59 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "be02bc7506": {
+  "outcome": "shared:go:be02bc7506",
+  "why": "masked, it is the go unit of class be02bc7506 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "88cae6ce16": {
+  "outcome": "shared:go:88cae6ce16",
+  "why": "masked, it is the go unit of class 88cae6ce16 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "1ff9b11568": {
+  "outcome": "shared:go:1ff9b11568",
+  "why": "masked, it is the go unit of class 1ff9b11568 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "5ceb6ac376": {
+  "outcome": "shared:go:5ceb6ac376",
+  "why": "masked, it is the go unit of class 5ceb6ac376 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "88e2a0c24b": {
+  "outcome": "shared:go:88e2a0c24b",
+  "why": "masked, it is the go unit of class 88e2a0c24b (correction:S09-residue-usage, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "d7c526f4cb": {
+  "outcome": "shared:go:d7c526f4cb",
+  "why": "masked, it is the go unit of class d7c526f4cb (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "a6ea738079": {
+  "outcome": "shared:go:a6ea738079",
+  "why": "masked, it is the go unit of class a6ea738079 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
  },
  "042740d448": {
   "outcome": "shared:go:042740d448",
@@ -923,6 +1343,14 @@
   "outcome": "unification:member-sentences",
   "why": "make's sentence names the class make() instantiates (Entity.fragment.java:21-24 `return new EntyClass(this.client, opts);` with a copy of the options) and that it keeps the client; the ledger pairs the first OLD entity with another under the renamed headings, a pairing artefact",
   "n": 92,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d50241e758": {
+  "outcome": "restored:shared",
+  "why": "ent-none: as 0ca8d83ae7, the options type is in the table row [v3.4 re-count: x19 to x19, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 19,
   "by": "hand",
   "type": "reworded",
   "section": "reference"
@@ -947,20 +1375,12 @@
   "type": "reworded",
   "section": "reference"
  },
- "c58f2fe3f9": {
+ "9a110f7104": {
   "outcome": "same-meaning",
   "why": "the same list sentence with the collection named (`List`, cited MakeResult.java) and Java's verb",
   "n": 83,
   "by": "hand",
   "type": "reworded",
-  "section": "reference"
- },
- "0ca8d83ae7": {
-  "outcome": "restored:shared",
-  "why": "the constructor's options type is stated in the parameters table row `options` | `Map<String, Object>` (the container fact, cited Main.fragment.java:16)",
-  "n": 17,
-  "by": "hand",
-  "type": "missing",
   "section": "reference"
  },
  "1d5f2874ab": {
@@ -981,8 +1401,8 @@
  },
  "d553096f96": {
   "outcome": "restored:shared",
-  "why": "restored in the shared test sentence: \"... both may be `null`\" (SdkClient.java:386-401 treats null as none)",
-  "n": 19,
+  "why": "restored in the shared test sentence: \"... both may be `null`\" (SdkClient.java:386-401 treats null as none) [v3.4 re-count: x18 to x18, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 18,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -1227,6 +1647,22 @@
   "type": "missing",
   "section": "reference"
  },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
  "ac1eac6be0": {
   "outcome": "correction:S09",
   "why": "the per-feature line says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
@@ -1242,6 +1678,86 @@
   "by": "hand",
   "type": "added",
   "section": "reference"
+ },
+ "d742744bfa": {
+  "outcome": "shared:go:d742744bfa",
+  "why": "masked, it is the go unit of class d742744bfa (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "34a4c51a24"
+  ],
+  "unreviewed": 1
+ },
+ "fb53c2b222": {
+  "outcome": "shared:ts:fb53c2b222",
+  "why": "masked, it is the ts unit of class fb53c2b222 (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e60e58a4c1"
+  ],
+  "unreviewed": 1
+ },
+ "49b4da0d68": {
+  "outcome": "shared:go:49b4da0d68",
+  "why": "masked, it is the go unit of class 49b4da0d68 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "87e15b60f5"
+  ],
+  "unreviewed": 1
+ },
+ "d265844143": {
+  "outcome": "shared:ts:d265844143",
+  "why": "masked, it is the ts unit of class d265844143 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "896aadddc1"
+  ],
+  "unreviewed": 1
+ },
+ "4ffa491cf2": {
+  "outcome": "shared:go:4ffa491cf2",
+  "why": "masked, it is the go unit of class 4ffa491cf2 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "538178cf46"
+  ],
+  "unreviewed": 1
+ },
+ "d89ec369a4": {
+  "outcome": "correction:runtime-forms",
+  "why": "the fetchargs type cells give the declared `Map<String, Object>` (the generator's java column) [v3.4 re-count: x128 to x128, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 128,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2066e4a9e": {
+  "outcome": "shared:ts:c2066e4a9e",
+  "why": "masked, it is the ts unit of class c2066e4a9e (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "67f823c461"
+  ],
+  "unreviewed": 1
  },
  "aa731f856a": {
   "outcome": "shared:go:aa731f856a",
@@ -1368,16 +1884,12 @@
   "unreviewed": 0
  },
  "0bf51a1c12": {
-  "outcome": "shared:go:640b39740e",
-  "why": "masked, it is the go unit of class 640b39740e (correction:sentence-review-test, by hand)",
-  "n": 19,
-  "by": "shared",
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "746a31db3f"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "cd00ec9b2a": {
   "outcome": "shared:ts:cd00ec9b2a",
@@ -1454,14 +1966,6 @@
    "78e12a7505"
   ],
   "unreviewed": 0
- },
- "d89ec369a4": {
-  "outcome": "correction:runtime-forms",
-  "why": "the fetchargs type cells give the declared `Map<String, Object>` (the generator's java column)",
-  "n": 90,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
  },
  "92238dc9df": {
   "outcome": "shared:c:92238dc9df",
@@ -1723,17 +2227,13 @@
   ],
   "unreviewed": 0
  },
- "80f77307dc": {
-  "outcome": "shared:ts:80f77307dc",
-  "why": "masked, it is the ts unit of class 80f77307dc (correction:decision-6-stream-signal, by hand)",
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
   "n": 94,
-  "by": "shared",
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "28235772cb"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "4a8f5b4fa2": {
   "outcome": "shared:rb:d8065d07cb",
@@ -1983,9 +2483,9 @@
   ],
   "unreviewed": 0
  },
- "c56f7ac39f": {
-  "outcome": "defect",
-  "why": "the remove sentence as java prints it: ts/src/helpers/runtimeprose.ts (opText, the remove sentence) fills only {var} in ref.facts.deleted, so the java page can print the cast only as `((EntityBase) result).deleted()`. EntityBase is in the entity subpackage (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`), which no java page imports or names: the tutorial imports only core types, and javac reports cannot find symbol without the import and compiles it with the import or with the class named in full (ran against the crud SDK). The true, compilable span casts to the class named with its package (voxgig.demosdk.entity in the B model); it needs runtimeprose.ts to fill {module} and {names.<role>} in the deleted template, then a names.entity role from Naming_java.ts and the template in Syntax_java.ts. kotlin and scala cast the same way.",
+ "578c11b09a": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: java's deleted read names EntityBase by its package, which the hook gives from the generator's JAVA_ENTITY (EntityBase_java.ts and Entity_java.ts write it in that folder: `package JAVAPACKAGE.entity;`), because no example imports it; the java fixer compiled it with javac: without an import or the full name it does not compile, with the full name it does",
   "n": 15,
   "by": "hand",
   "type": "added",
@@ -2015,17 +2515,65 @@
   ],
   "unreviewed": 0
  },
- "916036b165": {
-  "outcome": "shared:ts:916036b165",
-  "why": "masked, it is the ts unit of class 916036b165 (correction:S09, by rule:features-log)",
+ "e94011ef3f": {
+  "outcome": "shared:ts:e94011ef3f",
+  "why": "masked, it is the ts unit of class e94011ef3f (correction:residue-escaped-backticks, by hand)",
   "n": 19,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "d77745e7ee"
+   "93576f381a"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
+ },
+ "05a7710dde": {
+  "outcome": "shared:ts:05a7710dde",
+  "why": "masked, it is the ts unit of class 05a7710dde (correction:X3, by hand)",
+  "n": 38,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "30f77ee4fa"
+  ],
+  "unreviewed": 1
+ },
+ "9a5ba18db4": {
+  "outcome": "shared:ts:9a5ba18db4",
+  "why": "masked, it is the ts unit of class 9a5ba18db4 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a0fa8a325e"
+  ],
+  "unreviewed": 1
+ },
+ "2c3647ff67": {
+  "outcome": "shared:go:2c3647ff67",
+  "why": "masked, it is the go unit of class 2c3647ff67 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3013abd4"
+  ],
+  "unreviewed": 1
+ },
+ "f88d62ac3d": {
+  "outcome": "shared:ts:f88d62ac3d",
+  "why": "masked, it is the ts unit of class f88d62ac3d (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5d6d1a8aee"
+  ],
+  "unreviewed": 1
  },
  "482def0a4d": {
   "outcome": "same-meaning",
@@ -2135,14 +2683,6 @@
   "type": "echo",
   "section": "reference"
  },
- "d50241e758": {
-  "outcome": "restored:shared",
-  "why": "ent-none: as 0ca8d83ae7, the options type is in the table row",
-  "n": 2,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
  "bff341cf32": {
   "outcome": "contradiction",
   "why": "",
@@ -2153,6 +2693,14 @@
   "where": "the unported README's testSDK line (its Reference section: \"Creates a test-mode client with mock transport\") and its \"Use test mode\" how-to (\"Create a mock client for unit testing\"), printed by java's own README components, true only with the test feature",
   "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
   "evidence": "read, not run: Config_java.ts:205-208 makeFeature falls back to `new ${javapackage}.feature.BaseFeature()` for test when the SDK has no TestFeature; Fetcher.java:272-273 throws fetch_mode_block when the client mode is not live, and testSDK sets mode \"test\" (Main.fragment.java:31)"
+ },
+ "e710557629": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
@@ -2185,6 +2733,18 @@
    "dd74ff9ab6"
   ],
   "unreviewed": 0
+ },
+ "a2f5d538a4": {
+  "outcome": "shared:go:a2f5d538a4",
+  "why": "masked, it is the go unit of class a2f5d538a4 (correction:S13-residue, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "b5ebb46b27"
+  ],
+  "unreviewed": 1
  },
  "7f188f33e8": {
   "outcome": "correction:U34",
@@ -2348,6 +2908,22 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "b4523a5362": {
   "outcome": "correction:S49",
   "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
@@ -2492,9 +3068,25 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "f5e43d74c9": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the package names java's deleted read now prints (`voxgig.demosdk.entity.EntityBase`): the module the hook gives (javaPackage) and the generator's JAVA_ENTITY subpackage",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fb41c2d7ae": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the package names java's deleted read now prints (`voxgig.demosdk.entity.EntityBase`): the module the hook gives (javaPackage) and the generator's JAVA_ENTITY subpackage",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "2fc5c0888f": {
-  "outcome": "defect",
-  "why": "the cast type: ts/src/helpers/runtimeprose.ts (opText, the remove sentence) fills only {var} in ref.facts.deleted, so the java page can print the cast only as `((EntityBase) result).deleted()`. EntityBase is in the entity subpackage (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`), which no java page imports or names: the tutorial imports only core types, and javac reports cannot find symbol without the import and compiles it with the import or with the class named in full (ran against the crud SDK). The true, compilable span casts to the class named with its package (voxgig.demosdk.entity in the B model); it needs runtimeprose.ts to fill {module} and {names.<role>} in the deleted template, then a names.entity role from Naming_java.ts and the template in Syntax_java.ts. kotlin and scala cast the same way.",
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the cast type of java's deleted read, which the port recorded as defect because no page names EntityBase's package; it is now printed in full, `((voxgig.demosdk.entity.EntityBase) result).deleted()`, from the hook's module and JAVA_ENTITY (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`)",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -2502,7 +3094,7 @@
  },
  "db819a027f": {
   "outcome": "correction:decision-11-deleted",
-  "why": "the remove sentence names how the mark is read: `((EntityBase) result).deleted()` (EntityBase.fragment.java:47; runOp marks it, :159-160)",
+  "why": "the remove sentence names how the mark is read: ((EntityBase) result).deleted() (the deleted old component's wording) (EntityBase.fragment.java:47; runOp marks it, :159-160)",
   "n": 1,
   "by": "hand",
   "type": "novel-token",

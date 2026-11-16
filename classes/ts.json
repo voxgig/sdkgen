@@ -863,6 +863,14 @@
   "type": "echo",
   "section": "reference"
  },
+ "8e7a866f45": {
+  "outcome": "same-meaning",
+  "why": "ent-none: the type word object, as the README's options table uses it [v3.4 re-count: x38 to x38, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 38,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "9c6d819441": {
   "outcome": "same-meaning",
   "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
@@ -915,6 +923,22 @@
   "outcome": "same-meaning",
   "why": "the sdkopts cell went with the parameter table; the name stays in the heading's signature and the README tester row; the sentence calls it the second argument",
   "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "176972c3bb": {
+  "outcome": "same-meaning",
+  "why": "the README prints the same type word; no disagreement [v3.4 re-count: x67 to x67, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 67,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c11b6417b": {
+  "outcome": "same-meaning",
+  "why": "the OLD Returns line of options() without its full stop, re-paired under the client heading (unification:ref-page-structure at v3.2); the README uses object for the same type; no disagreement [v3.4 re-count: x38 to x38, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 38,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -1337,7 +1361,7 @@
  },
  "ac1b545527": {
   "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1597,7 +1621,7 @@
  },
  "65160f6e35": {
   "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
   "n": 19,
   "by": "hand",
   "type": "added",
@@ -1695,9 +1719,9 @@
   "type": "added",
   "section": "reference"
  },
- "80f77307dc": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -1887,34 +1911,10 @@
   "type": "added",
   "section": "reference"
  },
- "8e7a866f45": {
-  "outcome": "same-meaning",
-  "why": "ent-none: the type word object, as the README's options table uses it",
-  "n": 2,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "3344d6d2fb": {
   "outcome": "same-meaning",
   "why": "the type word string, as the README's options table uses it for string options",
   "n": 4,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "176972c3bb": {
-  "outcome": "same-meaning",
-  "why": "the README prints the same type word; no disagreement",
-  "n": 2,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "9c11b6417b": {
-  "outcome": "same-meaning",
-  "why": "the OLD Returns line of options() without its full stop, re-paired under the client heading (unification:ref-page-structure at v3.2); the README uses object for the same type; no disagreement",
-  "n": 2,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -2260,7 +2260,7 @@
  },
  "3f4da3a957": {
   "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
   "n": 1,
   "by": "hand",
   "type": "vanished-token",

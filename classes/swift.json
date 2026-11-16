@@ -75,7 +75,7 @@
   ],
   "unreviewed": 0
  },
- "bc59087427": {
+ "e868c93710": {
   "outcome": "correction:decision-14-bare-name",
   "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
   "n": 16,
@@ -95,7 +95,7 @@
   ],
   "unreviewed": 0
  },
- "9d80e50c20": {
+ "bb09ec54d3": {
   "outcome": "same-meaning",
   "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
   "n": 7,
@@ -115,7 +115,7 @@
   ],
   "unreviewed": 0
  },
- "44fa0dabac": {
+ "46de314a64": {
   "outcome": "correction:decision-14-bare-name",
   "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
   "n": 7,
@@ -167,7 +167,7 @@
   "type": "added",
   "section": "tutorial"
  },
- "5fd9f16c2d": {
+ "6fac2dabd5": {
   "outcome": "correction:decision-12-unwrap",
   "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
   "n": 5,
@@ -787,7 +787,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "a34e47004d": {
+ "e678cc17ee": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
   "n": 7,
@@ -1051,7 +1051,7 @@
   "type": "echo",
   "section": "reference"
  },
- "c3df4bebb5": {
+ "391ed7dd04": {
   "outcome": "same-meaning",
   "why": "a word match on VList: the README options table says `extend` is a `VList`; nothing about list",
   "n": 83,
@@ -1379,7 +1379,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cfa055cffe": {
+ "9ebd31cf78": {
   "outcome": "restored:shared",
   "why": "the wrapped style's return clause for list: a value holding a VList of entities, throws on failure; same facts",
   "n": 83,
@@ -1919,7 +1919,7 @@
   "type": "added",
   "section": "reference"
  },
- "2fc026d092": {
+ "19021dc95b": {
   "outcome": "correction:decision-12-unwrap",
   "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
   "n": 79,
@@ -2007,9 +2007,9 @@
   ],
   "unreviewed": 0
  },
- "80f77307dc": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
   "n": 94,
   "by": "hand",
   "type": "added",

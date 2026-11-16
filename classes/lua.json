@@ -143,7 +143,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "243f8c95d4": {
+ "c9542a950a": {
   "outcome": "same-meaning",
   "why": "OLD: list's value is an array of entities, one per record, no wrapper, data_get() reads each. NEW says the same across the list sentence ('the value is an array of entities, one per record') and the next ('`data_get()` reads an entity's record'); OLD's 'there is no wrapper' is the clause the sentence round dropped from the pair style once, for go and lua alike, as old go wording the review found awkward ('Every operation returns entities' says it); 'iterate it directly' is what the loop under it shows. Re-read at v33m: same meaning",
   "n": 7,
@@ -191,7 +191,7 @@
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "1cb5c3d551"
+   "ac5867f66c"
   ],
   "unreviewed": 1
  },
@@ -663,7 +663,7 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "1fc1a9e93d": {
+ "7a50f1e4de": {
   "outcome": "correction:step-comment-runtime-fact",
   "why": "as 218287b1bf: 'an array of entities, one per record; err is non-nil on failure', OLD's facts in the shared form",
   "n": 7,
@@ -1243,7 +1243,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "b69fd8280e": {
+ "9fbe2759e6": {
   "outcome": "unification:op-failure-clause",
   "why": "the failure clause in the shared pair form ('; `err` is non-nil on failure'); the same fact as OLD's 'or `nil` and an error on failure' (make_error.lua:86 `return nil, sdk_err`)",
   "n": 83,
@@ -1301,7 +1301,7 @@
  },
  "34c77adf3c": {
   "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1723,9 +1723,9 @@
   ],
   "unreviewed": 0
  },
- "80f77307dc": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -2588,7 +2588,7 @@
  },
  "3f4da3a957": {
   "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
   "n": 1,
   "by": "hand",
   "type": "vanished-token",
