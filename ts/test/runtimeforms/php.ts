@@ -62,7 +62,7 @@ const forms: Forms = {
     // The porter's citations.
     'facts.collection': { value: 'array', file: 'tm/php/utility/MakeResult.php', quote: ['$entities = [];', '$entities[] = $ent;', '$result->resdata = $entities;'] },
     'facts.recordType': { file: ENTITY, quote: '@return EntityName|array The current EntityName data as an assoc-array.' },
-    'ref.facts.none': { file: 'src/cmp/php/fragment/EntityLoadOp.fragment.php', quote: 'public function load(?array $reqmatch = null, $ctrl = null): mixed' },
+    'ref.facts.none': { value: 'null', file: 'src/cmp/php/fragment/EntityLoadOp.fragment.php', quote: 'public function load(?array $reqmatch = null, $ctrl = null): mixed' },
     'ref.facts.container': { file: MAIN, quote: 'public function __construct(array $options = [])' },
     // The file a caller requires: the name Main_php writes, required by its own directory as the SDK's files require theirs.
     'ref.facts.ctor[0]': { file: 'src/cmp/php/Main_php.ts', quote: 'File({ name: phpSdkFile(model) }, () => {',
@@ -77,7 +77,10 @@ const forms: Forms = {
     'ref.facts.entity[2].returns': { file: ENTITY, quote: '@return array The current match filter (any subset of EntityName fields).' },
     'ref.facts.entity[2].copy': { value: true, file: ENTITY, quote: 'return Struct::clone($this->_match);' },
     'ref.facts.direct.returns': { file: MAIN, quote: ['private function op_denied(string $op): array', '$out = [\n                "ok" => null === $body_err && $status >= 200 && $status < 300,', 'return $out;'] },
-    'ref.facts.prepare.returns': { file: 'tm/php/utility/MakeFetchDef.php', quote: 'public static function call(ProjectNameContext $ctx): array', also: [{ file: MAIN, quote: ['[$fetchdef, $fd_err] = ($utility->make_fetch_def)($ctx);', 'return $fetchdef;'] }] },
+    // What prepare returns is the fetch definition: built as an array literal, and taken as `array $fetchdef` by the transport it is made for.
+    'ref.facts.prepare.returns': { file: 'tm/php/utility/MakeFetchDef.php', quote: "$fetchdef = ['url' => $url, 'method' => $spec->method, 'headers' => $spec->headers];",
+      also: [{ file: MAIN, quote: ['[$fetchdef, $fd_err] = ($utility->make_fetch_def)($ctx);', 'return $fetchdef;'] },
+        { file: 'tm/php/utility/Fetcher.php', quote: 'public static function call(ProjectNameContext $ctx, string $fullurl, array $fetchdef)' }] },
     'ref.facts.prepare.fails': { value: 'style', file: MAIN, quote: '// an {ok, err, ...} dict. prepare() now raises on error, so catch it', also: [{ file: 'tm/php/utility/MakeError.php', quote: 'throw $sdk_err;' }] },
     'ref.facts.body.values': { value: 'a string of bytes or text, or a stream', file: 'tm/php/utility/Media.php', quote: '// A string of bytes or text, or a stream, sent as it is. A stream can be' },
     'ref.facts.body.once': { value: 'a stream', file: 'tm/php/utility/Media.php', quote: ['// A string of bytes or text, or a stream, sent as it is. A stream can be', '// read once, so it is read here, before the first attempt, and a retry'] },
@@ -93,11 +96,14 @@ const forms: Forms = {
         why: 'the timeout feature says, in its comments, that a php request cannot be aborted, and annotates the fetch definition with a timeout instead: the absence itself' },
     ] } },
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
-    'ref.facts.streamSignal': { value: true, file: 'src/cmp/php/fragment/Entity.fragment.php', quote: ["$signal = $callopts['signal'] ?? null;", '$aborted = function () use ($signal): bool {'] },
+    // The read, then the early end on both paths (the streaming feature's generator, the materialised items).
+    'ref.facts.streamSignal': { value: true, file: 'src/cmp/php/fragment/Entity.fragment.php', quote: ["$signal = $callopts['signal'] ?? null;",
+      'foreach ($streamfn() as $item) {\n                    if ($aborted()) {\n                        return;',
+      'foreach ($items as $item) {\n                if ($aborted()) {\n                    return;'] },
     'ref.facts.accessor.cached': { value: true, file: 'src/cmp/php/MainEntity_php.ts', quote: ['if ($data === null) {\n            if ($this->_${field} === null) {', 'return $this->_${field};'] },
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/php/fragment/Main.fragment.php", quote: "return [\"ok\" => false, \"err\" => $err];" },
-    // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "generated", file: "src/cmp/php/Main_php.ts", quote: "return new ${model.const.Name}BaseFeature();" },
+    // The test client's mock without the test feature, cited ahead: the factory's fallback, its default branch.
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/php/Main_php.ts", quote: "default:\n                return new ${model.const.Name}BaseFeature();" },
   },
 }
 
