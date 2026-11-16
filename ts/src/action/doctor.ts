@@ -197,14 +197,16 @@ async function cmd_doctor_prune(_args: string[], actx: ActionContext): Promise<A
 
   const found = supersededFiles(actx)
   const pruned: string[] = []
+  const dryrun = !!actx.opts?.dryrun
 
   for (const abs of found) {
-    fs.unlinkSync(abs)
+    if (!dryrun) {
+      fs.unlinkSync(abs)
+    }
     pruned.push(abs)
-    log.info({ point: 'doctor-prune', file: abs, note: 'pruned superseded: ' + abs })
+    log.info({ point: 'doctor-prune', file: abs, dryrun, note: (dryrun ? 'would prune' : 'pruned') + ' superseded: ' + abs })
   }
 
-  const dryrun = !!actx.opts?.dryrun
   for (const rel of orphanCompiledFiles(actx)) {
     const stem = Path.join(actx.folder, rel.replace(/\.js$/, ''))
     for (const ext of ['.js', '.js.map', '.d.ts', '.d.ts.map']) {
@@ -221,8 +223,9 @@ async function cmd_doctor_prune(_args: string[], actx: ActionContext): Promise<A
 
   log.info({
     point: 'doctor-prune-end', pruned: pruned.length,
-    note: 0 === pruned.length ? 'nothing superseded to prune' :
-      ('pruned ' + pruned.length + ' superseded file(s)')
+    note: 0 === pruned.length ? 'nothing superseded or orphaned to prune' :
+      ((dryrun ? 'would prune ' : 'pruned ') + pruned.length + ' file(s)' +
+        (dryrun ? ' - ** DRY RUN **' : ''))
   })
 
   return { report: { pruned, ok: true } }
