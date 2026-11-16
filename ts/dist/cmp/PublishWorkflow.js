@@ -20,7 +20,7 @@ const PublishWorkflow = (0, component_1.cmp)(function PublishWorkflow(props) {
         if (false === t.active) {
             return;
         }
-        if ('npm' === (t.publish?.registry?.name || '')) {
+        if ('npm' === (t.publish?.registry?.name || '') && (0, packageMeta_1.hasPackageName)(model, t.name)) {
             npmTargets.push(t);
         }
     });

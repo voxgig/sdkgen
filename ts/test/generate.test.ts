@@ -742,6 +742,24 @@ describe('generate', () => {
   })
 
 
+  test('the root readme lists a consumer target under Packages only by a name it has', async () => {
+    const rows = (readme: string): string[] => (topSections(readme)['Packages'] || '').split('\n')
+      .filter((line: string) => /^\| (?!Language |---)/.test(line))
+
+    const bundled = rows((await generate(['py', 'py-data']))['README.md'])
+    deepStrictEqual(bundled.map((line) => line.split(' | ')[0]), ['| Python', '| Python Data'])
+
+    // A consumer target the generator does not know: its derived name is the SDK's.
+    const unnamed = (await generate(['py', 'rb'], undefined, phasesOff('rb')))['README.md']
+    deepStrictEqual(rows(unnamed).map((line) => line.split(' | ')[0]), ['| Python'])
+    ok(topSections(unnamed)['Surfaces'].includes('| **Ruby** | `rb/` |'), 'rb lost its surface row')
+
+    const named = rows((await generate(['py', 'rb'], undefined,
+      phasesOff('rb') + "\nmain: kit: target: rb: publish: registry: package: 'acme-demo-client'"))['README.md'])
+    ok(named.some((line) => line.startsWith('| Ruby | `acme-demo-client` |')), named.join('\n'))
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 

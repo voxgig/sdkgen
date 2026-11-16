@@ -127,6 +127,7 @@ import {
 import type { Manifest, ManifestRead } from './helpers/manifest'
 import {
   packageName,
+  hasPackageName,
   sdkName,
   installCommand,
   registryState,
@@ -1299,6 +1300,7 @@ export {
   prefixLeadingDigit,
 
   packageName,
+  hasPackageName,
   sdkName,
   installCommand,
   registryState,

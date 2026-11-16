@@ -3,6 +3,7 @@ import { each } from 'jostraca'
 
 import { KIT, nom } from '@voxgig/apidef'
 
+import { isConsumer } from './alongside'
 import { kindCollection } from './kindCollection'
 import { modelText } from './text'
 
@@ -279,6 +280,19 @@ function packageName(model: any, eco: string): string {
   }
 }
 
+
+// For any other consumer packageName would answer the SDK's own name.
+const NAMED_CONSUMERS = ['go-cli', 'go-mcp', 'py-data']
+
+function hasPackageName(model: any, target: string): boolean {
+  const declared = model?.main?.[KIT]?.target?.[target]
+  if (!isConsumer(declared)) {
+    return true
+  }
+  const pkg = declared?.publish?.registry?.package
+  return (null != pkg && '' !== pkg) || NAMED_CONSUMERS.includes(originName(model, target))
+}
+
 // Copy-paste install command for a target, using the REAL package name.
 // Only a package that is actually live on its registry (isPublished) gets a
 // registry install command; everything else (pending / inactive / tag-only,
@@ -416,6 +430,7 @@ export {
   repoInfo,
   apiName,
   packageName,
+  hasPackageName,
   installCommand,
   registryState,
   isPublished,

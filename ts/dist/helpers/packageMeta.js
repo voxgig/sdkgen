@@ -7,6 +7,7 @@ exports.originName = originName;
 exports.repoInfo = repoInfo;
 exports.apiName = apiName;
 exports.packageName = packageName;
+exports.hasPackageName = hasPackageName;
 exports.installCommand = installCommand;
 exports.registryState = registryState;
 exports.isPublished = isPublished;
@@ -30,6 +31,7 @@ exports.packageVersion = packageVersion;
 exports.docsSiteUrl = docsSiteUrl;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const alongside_1 = require("./alongside");
 const kindCollection_1 = require("./kindCollection");
 const text_1 = require("./text");
 const PUBLISHER = 'Voxgig';
@@ -269,6 +271,16 @@ function packageName(model, eco) {
         default:
             return `${origin}-${base}`;
     }
+}
+// For any other consumer packageName would answer the SDK's own name.
+const NAMED_CONSUMERS = ['go-cli', 'go-mcp', 'py-data'];
+function hasPackageName(model, target) {
+    const declared = model?.main?.[apidef_1.KIT]?.target?.[target];
+    if (!(0, alongside_1.isConsumer)(declared)) {
+        return true;
+    }
+    const pkg = declared?.publish?.registry?.package;
+    return (null != pkg && '' !== pkg) || NAMED_CONSUMERS.includes(originName(model, target));
 }
 // Copy-paste install command for a target, using the REAL package name.
 // Only a package that is actually live on its registry (isPublished) gets a

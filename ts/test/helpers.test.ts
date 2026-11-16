@@ -21,6 +21,7 @@ import {
   originName,
   goModule,
   packageName,
+  hasPackageName,
   sdkName,
   repoInfo,
   registryState,
@@ -760,6 +761,45 @@ describe('helpers', () => {
         'an aliased ts returned an empty install line')
     })
 
+  })
+
+
+  describe('hasPackageName', () => {
+
+    const off = { active: false }
+    const phase = { entity: off, feature: off, readme: off, agentguide: off, test: off }
+
+    const model = {
+      name: 'demo',
+      origin: 'acme',
+      main: {
+        kit: {
+          target: {
+            ts: { name: 'ts' },
+            'py-data': { name: 'py-data', phase },
+            'go-cli': { name: 'go-cli', phase },
+            cli2: { name: 'cli2', origname: 'go-cli', phase },
+            provider: { name: 'provider', phase, publish: { registry: { name: 'npm' } } },
+            named: {
+              name: 'named', phase,
+              publish: { registry: { name: 'npm', package: '@acme/demo-provider' } },
+            },
+          },
+        },
+      },
+    }
+
+    test('an SDK target, and a consumer packageName derives a name for', () => {
+      for (const target of ['ts', 'py-data', 'go-cli', 'cli2']) {
+        strictEqual(hasPackageName(model, target), true, target)
+      }
+    })
+
+    // packageName would answer the SDK's own name for it.
+    test('any other consumer target only by the package it declares', () => {
+      strictEqual(hasPackageName(model, 'provider'), false)
+      strictEqual(hasPackageName(model, 'named'), true)
+    })
   })
 
 
