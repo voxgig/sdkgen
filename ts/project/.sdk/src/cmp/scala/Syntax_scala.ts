@@ -1,7 +1,7 @@
 import { canonToType, indentLines } from '@voxgig/sdkgen'
 import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, SdkDescription, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
-import { scalaLit } from './utility_scala'
+import { scalaLit, scalaObjectLit } from './utility_scala'
 
 
 const facts: RuntimeFacts = {
@@ -63,7 +63,7 @@ const refFacts: RefFacts = {
     },
     { kind: 'name', sig: 'getName(): String' },
   ],
-  direct: { returns: 'java.util.Map[String, Object]', okFalse: 'false' },
+  direct: { returns: 'java.util.Map[String, Object]', okFalse: 'java.lang.Boolean.FALSE' },
   prepare: { returns: 'java.util.Map[String, Object]', fails: 'style' },
   body: { values: 'an `Array[Byte]`, a `java.io.InputStream` or a `String`', once: 'a `java.io.InputStream`' },
   cancel: false,
@@ -96,6 +96,11 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${str(en.key)}, ${expr(en.value)}`
 
+// A value a map of Object holds directly: an operation's argument map, or a
+// put. A nested map's own values are inferred and need no box.
+const boxed = (e: Expr): string => 'lit' === e.k ? scalaObjectLit(e.type, e.text) : expr(e)
+const objPair = (en: Entry): string => `${str(en.key)}, ${boxed(en.value)}`
+
 // Map.of rejects a null value (NullPointerException), so a member whose
 // value is the null literal is left out of a Map.of map.
 const held = (entries: Entry[]): Entry[] => entries.filter((en) => 'null' !== expr(en.value))
@@ -112,9 +117,9 @@ const argOf = (s: Extract<Stmt, { k: 'call' }>): string => {
   if (null == s.arg) return 'null'
   const arg = held(s.arg)
   const laid = s.wide && (null != s.note || arg.some((en) => null != en.type))
-  if (!laid) return expr({ k: 'map', entries: arg })
+  if (!laid) return mapOf(arg.map(objPair))
   const wrapped = many(arg.length)
-  const lines = arg.map((en, i) => '    ' + (wrapped ? `${MAP}.entry(${pair(en)})` : pair(en)) +
+  const lines = arg.map((en, i) => '    ' + (wrapped ? `${MAP}.entry(${objPair(en)})` : objPair(en)) +
     (i < arg.length - 1 ? ',' : '') +
     (null == en.type ? '' : '  // ' + canonToType(en.type, 'scala')))
   return `${MAP}.${wrapped ? 'ofEntries' : 'of'}(\n` + [...lines, ...(null == s.note ? [] : ['    // ' + s.note])].join('\n') + '\n)'
@@ -145,11 +150,11 @@ const Syntax: SyntaxType = {
     for (const en of s.options) {
       if ('map' === en.value.k) {
         out.push(`val ${en.key} = ${NEW_MAP}`)
-        for (const sub of en.value.entries) out.push(`${en.key}.put(${str(sub.key)}, ${expr(sub.value)})`)
+        for (const sub of en.value.entries) out.push(`${en.key}.put(${str(sub.key)}, ${boxed(sub.value)})`)
       }
     }
     out.push(`val options = ${NEW_MAP}`)
-    for (const en of s.options) out.push(`options.put(${str(en.key)}, ${'map' === en.value.k ? en.key : expr(en.value)})`)
+    for (const en of s.options) out.push(`options.put(${str(en.key)}, ${'map' === en.value.k ? en.key : boxed(en.value)})`)
     out.push(`val client = new ${desc.layout.ctor}(options)`)
     return out
   },
@@ -186,7 +191,9 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'scala'),
     key: (container, path) => container + path.map((k) => `[${str(k)}]`).join(''),
     instance: (e) => [`val ${e.sym.var} = client.${e.sym.accessor}(null)`],
-    read: (value, key, truth) => `${value}.get(${str(key)})` + (truth ? ' == true' : ''),
+    // A truth test compares the boxed TRUE with the Object a map returns
+    // (Object == true does not compile), as ReadmeHowto_scala writes it.
+    read: (value, key, truth) => (truth ? 'java.lang.Boolean.TRUE == ' : '') + `${value}.get(${str(key)})`,
   },
 }
 

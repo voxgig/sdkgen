@@ -131,6 +131,17 @@ function scalaLit(type: any, placeholder: string = 'example'): string {
   return JSON.stringify(placeholder)
 }
 
+// Scala tries no implicit conversion to Object, so a primitive literal held
+// directly by a map of Object is boxed, as the runtime boxes its own.
+function scalaObjectLit(type: any, placeholder: string = 'example'): string {
+  const lit = scalaLit(type, placeholder)
+  const k = canonScalarKey(type)
+  if ('INTEGER' === k) return `java.lang.Long.valueOf(${lit})`
+  if ('NUMBER' === k) return `java.lang.Double.valueOf(${lit})`
+  if ('BOOLEAN' === k) return 'true' === lit ? 'java.lang.Boolean.TRUE' : 'java.lang.Boolean.FALSE'
+  return lit
+}
+
 
 // A list's required parameters as its match.
 function scalaListMatch(entity: any): string {
@@ -143,6 +154,7 @@ function scalaListMatch(entity: any): string {
 
 export {
   scalaLit,
+  scalaObjectLit,
   scalaListMatch,
   cleanModel,
   mavenGroupId,
