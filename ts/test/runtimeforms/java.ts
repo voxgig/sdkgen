@@ -81,7 +81,7 @@ const forms: Forms = {
     ] } },
     // The no-argument constructor chains to the options one with no options.
     'ref.facts.ctorAlts[0].kind': { value: 'defaults', file: MAIN, quote: 'public ProjectNameSDK() {\n    this(null);' },
-    'facts.collection': { file: 'tm/java/utility/MakeResult.java', quote: 'List<Object> entities = new ArrayList<>();' },
+    'facts.collection': { value: '`List`', file: 'tm/java/utility/MakeResult.java', quote: 'List<Object> entities = new ArrayList<>();' },
     // The client constructor chains to the options one with null: no options.
     'ref.facts.none': { file: MAIN, quote: 'this(null);' },
     'ref.facts.container': { file: MAIN, quote: 'public ProjectNameSDK(Map<String, Object> options) {' },

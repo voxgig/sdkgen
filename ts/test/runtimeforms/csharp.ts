@@ -82,10 +82,10 @@ const forms: Forms = {
     'ref.facts.testMock': { value: "generated", file: "src/cmp/csharp/Config_csharp.ts", quote: "return new Feature.BaseFeature();" },
     'facts.collection': { value: 'list', file: 'tm/csharp/utility/MakeResult.cs', quote: ['var entities = new List<object?>();', 'result.Resdata = entities;'],
       also: [{ file: 'tm/csharp/utility/Done.cs', quote: 'return ctx.Result.Resdata;' }] },
-    'ref.facts.none': { file: 'src/cmp/csharp/MainEntity_csharp.ts', quote: 'public ${model.const.Name}EntityBase ${entity.Name}(Dictionary<string, object?>? entopts = null)' },
-    'ref.facts.container': { file: MAIN, quote: 'public ProjectNameSDK(Dictionary<string, object?>? options = null)' },
+    'ref.facts.none': { value: 'null', file: 'src/cmp/csharp/MainEntity_csharp.ts', quote: 'public ${model.const.Name}EntityBase ${entity.Name}(Dictionary<string, object?>? entopts = null)' },
+    'ref.facts.container': { value: 'Dictionary<string, object?>', file: MAIN, quote: 'public ProjectNameSDK(Dictionary<string, object?>? options = null)' },
     // The module an example imports is the namespace every generated file declares.
-    'ref.facts.ctor[0]': { file: MAIN, quote: ['using ProjectNameSdk.Feature;', 'namespace ProjectNameSdk;'],
+    'ref.facts.ctor[0]': { value: 'using {module};', file: MAIN, quote: ['using ProjectNameSdk.Feature;', 'namespace ProjectNameSdk;'],
       also: [{ file: 'src/cmp/csharp/Main_csharp.ts', quote: "ProjectNameSdk: model.const.Name + 'Sdk'," }] },
     'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'return global::Voxgig.Struct.StructUtils.Clone(_options) as Dictionary<string, object?>' },
     // Decision 13: the getter returns what the copy function allocates.
