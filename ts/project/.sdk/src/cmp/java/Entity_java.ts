@@ -12,7 +12,7 @@ import {
   getModelPath
 } from '@voxgig/apidef'
 
-import { javaPackage } from './utility_java'
+import { JAVA_ENTITY, javaPackage } from './utility_java'
 import { EntityOperation } from './EntityOperation_java'
 
 
@@ -36,7 +36,7 @@ const Entity = cmp(function Entity(props: any) {
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/java/fragment/')
 
-  Folder({ name: 'entity' }, () => {
+  Folder({ name: JAVA_ENTITY }, () => {
 
     File({ name: cls + '.' + target.ext }, () => {
 

@@ -61,7 +61,8 @@ const refFacts: RefFacts = {
   cancel: false,
   // The examples bind an operation's result as Object or SdkEntity, which
   // declare no deleted(): EntityBase, which every entity class extends, does.
-  deleted: '((EntityBase) {var}).deleted()',
+  // It is named in full, as no example imports its package.
+  deleted: '(({module}.{names.entity}.EntityBase) {var}).deleted()',
   streamSignal: true,
 }
 

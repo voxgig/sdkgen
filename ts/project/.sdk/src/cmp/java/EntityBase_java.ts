@@ -10,7 +10,7 @@ import {
 } from '@voxgig/sdkgen'
 
 
-import { javaPackage } from './utility_java'
+import { JAVA_ENTITY, javaPackage } from './utility_java'
 
 
 // Generates entity/EntityBase.java: the shared entity runtime (state,
@@ -22,7 +22,7 @@ const EntityBase = cmp(async function EntityBase(props: any) {
 
   const javapackage = javaPackage(model)
 
-  Folder({ name: 'entity' }, () => {
+  Folder({ name: JAVA_ENTITY }, () => {
 
     File({ name: 'EntityBase.' + target.ext }, () => {
 
