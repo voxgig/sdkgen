@@ -13,11 +13,15 @@ import { bracketed, splitParams } from './forms'
 // `parenless`: a call may leave its parentheses out (rb, perl).
 // `ctor`: a printed constructor name and the runtime declaration it runs
 // (rb's `new` runs `initialize`).
+// `factory`: template functions that construct their type argument from the
+// arguments they pass on (cpp `std::make_shared<X>(...)`): a call of X's
+// constructor on the type. The guard requires each in the runtime.
 type CallNotation = {
   on: Partial<Record<On, string[]>>
   args?: 'paren' | 'space' | 'lisp'
   parenless?: boolean
   ctor?: Record<string, string>
+  factory?: string[]
 }
 
 // `kind`: a variable the code holds (instance), a call's result, a qualifier
@@ -90,6 +94,16 @@ function readCalls(n: CallNotation, text: string, name: string, bound: string[] 
     let args: string[] | null = null
     let i = after
     while (' ' === text[i] || '\t' === text[i]) i++
+    const fac = (n.factory || []).find((f) => new RegExp(`(?<![\\w:])${esc(f)}\\s*<\\s*$`).test(text.slice(0, at)))
+    if (null != fac && '>' === text[i]) {
+      let j = i + 1
+      while (' ' === text[j] || '\t' === text[j]) j++
+      const b = '(' === text[j] ? bracketed(text, j, '(') : null
+      if (null != b) out.push({ name, at, sep: '', recv: '', kind: 'type', args: splitParams(b.inner) })
+      continue
+    }
+    // A name bound by `=` is a binding, not a call (ocaml's `let planet = ...`).
+    if ('space' === how && /^\s*=(?![=>])/.test(text.slice(after))) continue
     if ('space' === how) args = spaceArgs(text, after)
     else if ('(' === text[i]) {
       const b = bracketed(text, i, '(')

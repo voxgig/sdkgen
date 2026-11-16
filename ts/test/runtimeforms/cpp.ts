@@ -67,7 +67,7 @@ const forms: Forms = {
   types: { column: 'cpp' },
   // How a call is written: `->` on a shared handle (the client, an entity),
   // `::` on the class for its static members.
-  calls: { on: { instance: ['->'], type: ['::'] } },
+  calls: { on: { instance: ['->'], type: ['::'] }, factory: ['std::make_shared'] },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
   typeNames: { 'std::shared_ptr<${cls}>': 'std::shared_ptr<EntyClass>' },
   namesWhy: 'MainEntity_cpp.ts writes the accessor\'s return through the generator\'s class name (${cls}, entityClassName), which is the EntyClass of Entity.fragment.cpp',
@@ -101,9 +101,6 @@ const forms: Forms = {
     'ref.facts.ctor[2]': { file: 'src/cmp/cpp/fragment/Main.fragment.cpp', quote: 'namespace sdk {',
       unquoted: { using: 'a C++ keyword: the line brings the namespace the templates open into scope' } },
     // The client is held by a shared handle, made as the runtime makes its own (testSDK, create).
-    'ref.facts.ctor[4]': { file: 'src/cmp/cpp/fragment/Main.fragment.cpp',
-      quote: ['explicit ProjectNameSDK(Value options = Value::undef()) : SdkClient(options) {}', 'auto sdk = std::make_shared<ProjectNameSDK>(SdkClient::testOptions(testopts, sdkopts));'],
-      unquoted: { client: 'the name the page binds the client to, as every other example does' } },
     'ref.facts.ctorAlts[0].kind': { value: 'defaults', file: 'src/cmp/cpp/fragment/Main.fragment.cpp',
       quote: '// Convenience no-arg constructor.\n  static std::shared_ptr<ProjectNameSDK> create() {\n    return std::make_shared<ProjectNameSDK>(Value::undef());' },
     'ref.facts.client[0].copy': { value: true, file: TYPES, quote: 'Value out = Struct::clone(options);' },

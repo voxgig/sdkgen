@@ -374,6 +374,9 @@ function check(t: string, S: any, forms: Forms): Result {
   if (null == forms.calls) add('calls', 'the forms do not say how a call is written (calls: { on, args, parenless, ctor })')
   else {
     const N = forms.calls
+    for (const fac of N.factory || []) {
+      if (!client.some((x: any) => new RegExp(`${esc(fac)}\\s*<`).test(x.text))) add('ctor', `calls.factory ${fac} is called nowhere in the ${t} runtime's client files`)
+    }
     const hook = namingOf(t)
     if (null != hook.problem) add('ctor', hook.problem)
     else {
@@ -451,8 +454,20 @@ function check(t: string, S: any, forms: Forms): Result {
         if (null != name) calledAs('ctorAlts', `ref.facts.ctorAlts[${i}].call`, x.call, name + (/\(/.test(x.call) ? '()' : ''))
       })
       // Each operation as the call printer prints it: the accessor, then the method.
-      const accDecls = findDecls(forms, client, pattern(forms.tokens.accessor || ''))
+      // The accessor's token is matched as written: spelling it would rewrite
+      // the `{accessor}` inside a token such as `${accessor}` and find nothing.
+      const accDecls = findDecls(forms, client, esc(forms.tokens.accessor || ''))
       const ent = desc.entities[0]
+      if (0 === accDecls.length) add('on', `the accessor ${forms.tokens.accessor} is declared in none of ${forms.files.client.join(', ')}, so no accessor call can be judged`)
+      else {
+        // The reference's entity block, as ref.instance prints it.
+        let text = ''
+        try { text = S.ref.instance(ent, desc).join('\n') }
+        catch (e: any) { add('on', 'ref.instance throws: ' + e.message) }
+        const cs = readCalls(N, text, ent.sym.accessor, [ent.sym.var])
+        if ('' !== text && 0 === cs.length) add('on', `ref.instance prints ${JSON.stringify(text)}, which calls no ${ent.sym.accessor}`)
+        for (const c of cs) judge('ref.instance accessor', null, c, accDecls, text)
+      }
       for (const op of OPS) {
         const m = (f.method as any)[op]
         const d = one(read(opSource(forms, op)), m) || one(ops, m)
@@ -1243,6 +1258,29 @@ const CONTROLS: Control[] = [
     name: 'an accessor argument shown as data when it is options', check: 'accessor', mutate: (S, forms) => {
       if (null == S.ref || null == forms.entityCtor || null != forms.exceptions?.['ref.facts.accessor.arg']) return false
       S.ref.facts.accessor.arg = 'data' === S.ref.facts.accessor.arg ? 'entopts' : 'data'
+      return true
+    },
+  },
+  {
+    // The accessor is an instance member everywhere: written on the client's
+    // type in the reference's entity block, it must fail.
+    name: 'the entity accessor called on the client type in the reference block', check: 'on', mutate: (S, forms) => {
+      const N = forms.calls
+      if (null == S.ref || null == N || 'paren' !== (N.args || 'paren')) return false
+      const tsep = (N.on.type || [])[0]
+      const isep = N.on.instance || []
+      if (null == tsep || 0 === isep.length) return false
+      const inst = S.ref.instance
+      S.ref = { ...S.ref, instance: (e: any, d: any) => inst(e, d).map((l: string) =>
+        l.replace(new RegExp('\\$?\\bclient\\s*(?:' + isep.map(esc).join('|') + ')\\s*(?=' + esc(e.sym.accessor) + '\\b)'),
+          forms.tokens.client + tsep)) }
+      return true
+    },
+  },
+  {
+    name: 'a call factory the runtime never calls', check: 'ctor', mutate: (_S, forms) => {
+      if (null == forms.calls || null == forms.calls.factory) return false
+      forms.calls = { ...forms.calls, factory: forms.calls.factory.map((f) => f.replace(/_shared$/, '_unique')) }
       return true
     },
   },
