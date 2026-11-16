@@ -546,7 +546,7 @@
  },
  "dae78da098": {
   "outcome": "restored:shared",
-  "why": "the accessor sentence 'Create a new `AmbientEntity` instance. Pass `null` for no initial options.' (MainEntity_csharp.ts:172-175 makes a new entity on every call); its return type `DemoEntityBase`, which OLD gave in the sentence, is in the signature heading",
+  "why": "the accessor sentence 'Create a new `AmbientEntity` instance. Pass `null` for no initial options.' (MainEntity_csharp.ts:25-28 makes a new entity on every call); its return type `DemoEntityBase`, which OLD gave in the sentence, is in the signature heading",
   "n": 93
  },
  "badde432a5": {
@@ -826,7 +826,7 @@
  },
  "eea38408c0": {
   "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the token `signal` of the stream's sentence (`callopts.signal`, read at EntityBase.fragment.cs:268)",
+  "why": "brief 7 decision 6: the token `signal` of the stream's sentence, the key the stream reads (`callopts[\"signal\"]`, a CancellationToken, read at EntityBase.fragment.cs:267-270); the sentence spells the key in another language's form, recorded as a defect (80f77307dc)",
   "n": 1
  },
  "590771adbd": {
@@ -1018,6 +1018,11 @@
   "outcome": "defect",
   "why": "shared code names the list's item and the loaded entity alike (ts/src/helpers/example.ts refOf: 'item' and 'one' both take entity.sym.var), and the root quick start prints both in one block (ts/src/cmp/ReadmeQuick.ts topQuickText, `bare` drops the try blocks): `foreach (var planet in planets)` then `var planet = (IEntity)...` at the same level. C# puts a local's scope over its whole block, so the later `var planet` conflicts with the loop variable (CS0136, C# spec 'local variable declaration space ... includes any nested blocks'); OLD named them planetItem and planet and compiled. The provider cannot rename: the names are decided once in shared code. Needs an additive shared fact (see report)",
   "n": 1
+ },
+ "80f77307dc": {
+  "outcome": "defect",
+  "why": "the stream sentence 'It ends early once `callopts.signal` reports an abort.' is one literal in shared code (ts/src/cmp/ReadmeRef.ts STREAM_SIGNAL), so C# prints a code span C# cannot write: callopts is a Dictionary<string, object?>, whose key is written `callopts[\"signal\"]`, and only a CancellationToken there ends the stream (EntityBase.fragment.cs:267-270; any other value becomes CancellationToken.None). The provider cannot respell a shared sentence: needs the key printed through ref.key and the signal type as a fact (see report)",
+  "n": 94
  },
  "bff341cf32": {
   "outcome": "contradiction",
