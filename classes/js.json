@@ -17,7 +17,7 @@
  },
  "39aecae10e": {
   "outcome": "same-meaning",
-  "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "why": "the echo of the dropped tutorial sentence 9c1038b6ae (the drop is recorded there): what remains elsewhere on the page means the same as what was removed, the README's Error handling section (unported, ReadmeExplanation_js) still calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; no disagreement. An echo class takes contradiction, defect or same-meaning (tools/ledger.js invalidFor), not dropped",
   "n": 19,
   "by": "hand",
   "type": "echo",
@@ -587,9 +587,9 @@
   "type": "block-old-only",
   "section": "tutorial"
  },
- "2d1e0c8267": {
+ "c4f725c32e": {
   "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
@@ -681,6 +681,22 @@
   "n": 1,
   "by": "hand",
   "type": "block-changed",
+  "section": "tutorial"
+ },
+ "544bcc7c67": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "7f936dfd5c": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
   "section": "tutorial"
  },
  "87aafab844": {
@@ -891,6 +907,14 @@
   "type": "block-novel-token",
   "section": "tutorial"
  },
+ "2a829fba0d": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
  "24bde6532f": {
   "outcome": "dropped",
   "why": "tokens of the dropped Direct API Access block; said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
@@ -1043,68 +1067,84 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "8e878b6908": {
+ "f458039d34": {
   "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 5,
   "by": "hand",
   "type": "block-changed",
   "section": "rootquick"
  },
- "3768de56c6": {
+ "949dea79d5": {
   "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
   "section": "rootquick"
  },
- "338004f2be": {
+ "5858559485": {
   "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
   "section": "rootquick"
  },
- "fba5f959fa": {
+ "dd418592e4": {
   "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
   "section": "rootquick"
  },
- "e7537c54be": {
+ "d6aa87d1b3": {
   "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 3,
   "by": "hand",
   "type": "block-changed",
   "section": "rootquick"
  },
- "0893d9329c": {
+ "9f5f4330f0": {
   "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
   "section": "rootquick"
  },
- "dbacafdb3f": {
+ "ba7c3f0f8b": {
   "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
   "section": "rootquick"
  },
- "6bdb2d29da": {
+ "7c8f002676": {
   "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
+  "section": "rootquick"
+ },
+ "a922ecc0a2": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "2f996acf19": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
   "section": "rootquick"
  },
  "ff935caa13": {
@@ -1169,6 +1209,14 @@
   "n": 1,
   "by": "hand",
   "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7c7be741ea": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
   "section": "rootquick"
  },
  "b1989358a0": {

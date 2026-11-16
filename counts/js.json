@@ -1,8 +1,9 @@
 {
  "tutorial": {
-  "corrected": 15,
+  "corrected": 18,
   "unified": 0,
   "used": {
+   "js-esm-import": 18,
    "secret-option": 2,
    "server-required-given": 15
   }
@@ -11,6 +12,7 @@
   "corrected": 4,
   "unified": 1,
   "used": {
+   "js-esm-import": 5,
    "root-load-step": 1,
    "server-required-given": 2,
    "step-comment-runtime-fact": 3,

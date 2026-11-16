@@ -1,7 +1,7 @@
 {
  "39aecae10e": {
   "outcome": "same-meaning",
-  "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "why": "the echo of the dropped tutorial sentence 9c1038b6ae (the drop is recorded there): what remains elsewhere on the page means the same as what was removed, the README's Error handling section (unported, ReadmeExplanation_js) still calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; no disagreement. An echo class takes contradiction, defect or same-meaning (tools/ledger.js invalidFor), not dropped",
   "n": 19
  },
  "92f7d78487": {
@@ -227,11 +227,6 @@
  "e3563c0405": {
   "outcome": "unification:write-comment-style",
   "why": "ref-issues: the update is a commented, unbound call in the write block (as ts), and its record is no longer printed",
-  "n": 1
- },
- "2d1e0c8267": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
   "n": 1
  },
  "8f13c5f9a3": {
@@ -462,46 +457,6 @@
  "e444426c17": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
-  "n": 1
- },
- "8e878b6908": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
-  "n": 5
- },
- "e7537c54be": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
-  "n": 3
- },
- "0893d9329c": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
-  "n": 1
- },
- "dbacafdb3f": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
-  "n": 1
- },
- "6bdb2d29da": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
-  "n": 1
- },
- "338004f2be": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s",
-  "n": 1
- },
- "3768de56c6": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
-  "n": 1
- },
- "fba5f959fa": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
   "n": 1
  },
  "ff935caa13": {
@@ -950,6 +905,81 @@
   "why": "the create example's fields carry their type as a comment from the js type column (canonToType js: string), as ts's carry theirs (normalizer ref-type-comments)",
   "n": 1
  },
+ "f458039d34": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 5
+ },
+ "d6aa87d1b3": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 3
+ },
+ "949dea79d5": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "5858559485": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "dd418592e4": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "9f5f4330f0": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "ba7c3f0f8b": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "7c8f002676": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "c4f725c32e": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "a922ecc0a2": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "2f996acf19": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "7c7be741ea": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "544bcc7c67": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "7f936dfd5c": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "2a829fba0d": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
  "facts": {
   "named": {
    "value": "call",
@@ -963,8 +993,8 @@
   }
  },
  "absent": {
-  "99a8153c15": "ts names the entity class in the step comment because it declares facts.listOf ({Class}[]); js declares no listOf (the runtime names no type: its list resolves to a plain array of entities, MakeResultUtility.js result.resdata.push(ent)), so js prints the same comment without the class, Load an ambient: the entity; throws on failure, in the same variations",
-  "a0b269a293": "ts names the entity class in the list comment because it declares facts.listOf; js declares none and prints the same comment with its collection word, List planet records: an array of entities, one per record; throws on failure (crud-bare/README.md JavaScript block), in the same variations",
+  "99a8153c15": "ts names the entity class in this step comment because it declares facts.listOf; js declares no listOf because its methods declare no return type: the forms read none (uncompared returns), and the class is named only in a JSDoc comment, `@returns {Promise<EntyClass>}` (EntityLoadOp.fragment.js), which no check reads. js prints the same comment without the class, Load an ambient: the entity; throws on failure, in the same variations",
+  "a0b269a293": "ts names the entity class in the list comment because it declares facts.listOf; js declares none because its methods declare no return type (the class array is named only in the JSDoc comment `@returns {Promise<EntyClass[]>}`, EntityListOp.fragment.js, which no check reads), and prints the same comment with its collection word, List planet records: an array of entities, one per record; throws on failure (crud-bare/README.md JavaScript block), in the same variations",
   "7ab5ba644d": "printed only after the lead quick start of the root README (ts, ReadmeQuick.ts); every other language's root block, js's and the reference languages' other than ts, sits under Quickstart in other languages with no sentences after it"
  }
 }
