@@ -241,7 +241,7 @@ function prosy(value: any, toks: string[], spell: (s: string) => string): boolea
 // naming hook, the example helpers and test generators of src/cmp, and a
 // target's test trees (perl's t/, swift's Tests/). The test feature's own
 // source (src/feature/test/, TestFeature.*) is runtime.
-const NOT_RUNTIME = /^src\/cmp\/[\w-]+\/(Readme|Syntax|Naming|Test|utility_)[^/]*$|(?<!\/feature)\/(tests?|t|Tests)\/|_test\.|\.test\./
+const NOT_RUNTIME = /^src\/cmp\/[\w-]+\/(Readme|Syntax|Naming|Test|utility_)[^/]*$|(?<!\/feature)\/(tests?|t|Tests|sdktest)\/|_test\.|\.test\./
 
 // The files of a runtime: its components and its templates.
 function runtimeFiles(lang: string): string[] {

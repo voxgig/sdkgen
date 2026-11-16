@@ -99,8 +99,6 @@ const forms: Forms = {
         why: 'the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it', fact: 'ref.facts.streamSignal' },
       { file: 'tm/scala/feature/CostFeature.scala', quote: ['// supersedes it loses precision to catastrophic cancellation', '// is set by prePoint, so its absence is the signal.'],
         why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
-      { file: 'tm/scala/sdktest/SdkTestSupport.scala', quote: ['// so a crash in one test never aborts the whole suite.'],
-        why: "the generated SDK's own test tree (sdktest/, which the shared rule for test trees does not name): a comment on a test crash" },
     ] } },
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
     'ref.facts.streamSignal': { value: true, file: 'src/cmp/scala/fragment/EntityBase.fragment.scala', quote: ['val signal = opts.get("signal")', 'val aborted: () => Boolean = signal match {'] },
