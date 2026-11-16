@@ -5,7 +5,7 @@ import {
   ROOT, makeProject, targetRef, target_add, recordLog,
 } from './actionharness'
 
-import { doctor } from '../dist/action/doctor.js'
+import { action_doctor, copyWarnings, doctor } from '../dist/action/doctor.js'
 import { package_update } from '../dist/action/package.js'
 import { kind_remove } from '../dist/action/remove.js'
 import { COPY_LOG, fingerprint, readCopies } from '../dist/action/copies.js'
@@ -139,5 +139,42 @@ describe('a component the source has retired', () => {
       refused = err.message
     }
     ok(refused.includes(RETIRED), refused)
+  })
+})
+
+
+describe('compiled output whose source is gone', () => {
+
+  async function orphaned(): Promise<any> {
+    const project = makeProject()
+    await target_add([targetRef('ts')], project.actx)
+    project.fs.mkdirSync(ROOT + '/dist/cmp/ts', { recursive: true })
+    project.fs.writeFileSync(ROOT + '/' + COMPILED, '// compiled, source deleted\n')
+    project.fs.writeFileSync(ROOT + '/' + COMPILED + '.map', '{}\n')
+    // Compiled output beside its source is not an orphan.
+    project.fs.writeFileSync(ROOT + '/dist/cmp/ts/Main_ts.js', '// compiled\n')
+    return project
+  }
+
+  test('fails doctor, and generate is told', async () => {
+    const project = await orphaned()
+    const report: any = (await doctor(project.actx)).report
+    deepStrictEqual(report.orphanCompiled, [COMPILED])
+    strictEqual(report.ok, false)
+    ok(copyWarnings(report).some((l: string) => l.includes(COMPILED)))
+  })
+
+  test('doctor prune deletes it, and a dry run does not', async () => {
+    const dry = await orphaned()
+    dry.actx.opts.dryrun = true
+    await action_doctor(['doctor', 'prune'], dry.actx)
+    ok(exists(dry, COMPILED))
+
+    const project = await orphaned()
+    await action_doctor(['doctor', 'prune'], project.actx)
+    ok(!exists(project, COMPILED))
+    ok(!exists(project, COMPILED + '.map'))
+    ok(exists(project, 'dist/cmp/ts/Main_ts.js'))
+    strictEqual(((await doctor(project.actx)).report as any).ok, true)
   })
 })
