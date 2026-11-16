@@ -899,7 +899,7 @@
  },
  "eea38408c0": {
   "outcome": "correction:decision-6-stream-signal",
-  "why": "the stream sentence \"It ends early once `callopts.signal` reports an abort\" (EntityBase.fragment.java:214-216, 285)",
+  "why": "the stream sentence \"It ends early once the `signal` in `callopts` reports an abort\" (EntityBase.fragment.java:214-216, 285)",
   "n": 1
  },
  "352437f6ea": {
