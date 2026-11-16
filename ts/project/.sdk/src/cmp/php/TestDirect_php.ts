@@ -28,7 +28,7 @@ import {
   liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
-import { formatPhpValue } from './utility_php'
+import { formatPhpValue, phpSdkFile } from './utility_php'
 
 
 // Blocked without the ids its request needs, rather than sent with null.
@@ -187,7 +187,7 @@ declare(strict_types=1);
 
 // ${entity.Name} direct test
 
-require_once __DIR__ . '/../${model.const.Name.toLowerCase()}_sdk.php';
+require_once __DIR__ . '/../${phpSdkFile(model)}';
 require_once __DIR__ . '/Runner.php';
 
 use PHPUnit\\Framework\\TestCase;

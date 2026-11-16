@@ -8,6 +8,8 @@ import {
   resolveAuthName,
 } from '@voxgig/sdkgen'
 
+import { phpSdkFile } from './utility_php'
+
 
 // The canary sweep, as TestClean_ts emits it: every credential slot holds a
 // distinctive value, every diagnostic feature this SDK ships is switched on
@@ -26,7 +28,7 @@ const TestClean = cmp(function TestClean(props: any) {
     basic: isHttpBasicAuth(model),
   }
 
-  File({ name: 'CleanTest.' + target.ext }, () => Content(render(model.const.Name, auth)))
+  File({ name: 'CleanTest.' + target.ext }, () => Content(render(model.const.Name, phpSdkFile(model), auth)))
 })
 
 
@@ -35,11 +37,9 @@ function phpstr(s: string): string {
 }
 
 
-function render(Name: string, auth: {
+function render(Name: string, sdkfile: string, auth: {
   suppressed: boolean, where: string, name: string, basic: boolean
 }): string {
-  const lower = Name.toLowerCase()
-
   return `<?php
 declare(strict_types=1);
 
@@ -51,7 +51,7 @@ declare(strict_types=1);
 // the SDK is searched for the canaries and their encoded forms. It also
 // proves its own sensitivity: with clean switched off the canary MUST show.
 
-require_once __DIR__ . '/../${lower}_sdk.php';
+require_once __DIR__ . '/../${sdkfile}';
 
 use PHPUnit\\Framework\\TestCase;
 
