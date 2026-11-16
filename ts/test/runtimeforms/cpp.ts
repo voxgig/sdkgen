@@ -104,6 +104,8 @@ const forms: Forms = {
     'ref.facts.ctorAlts[0].kind': { value: 'defaults', file: 'src/cmp/cpp/fragment/Main.fragment.cpp',
       quote: '// Convenience no-arg constructor.\n  static std::shared_ptr<ProjectNameSDK> create() {\n    return std::make_shared<ProjectNameSDK>(Value::undef());' },
     'ref.facts.client[0].copy': { value: true, file: TYPES, quote: 'Value out = Struct::clone(options);' },
+    // remove's absorb step takes the response's match and nothing else: its data stays.
+    'ref.facts.removeKeeps': { value: true, file: 'src/cmp/cpp/fragment/EntityRemoveOp.fragment.cpp', quote: ['runOp(ctx, [this, ctx]() {', 'if (ctx->result->resmatch.is_map()) {', 'this->match_ = ctx->result->resmatch;'] },
     // Decision 13: the getter returns what the copy function builds, a new object.
     'ref.facts.client[1].copy': { value: true, file: TYPES, quote: 'inline UtilityPtr SdkClient::getUtility() { return utility->copy(); }',
       also: [{ file: TYPES, quote: ['UtilityPtr copy() const {\n    auto u = std::shared_ptr<Utility>(new Utility(NoRegister{}));'] }] },

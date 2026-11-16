@@ -67,6 +67,7 @@ const refFacts: RefFacts = {
   cancel: false,
   streamSignal: false,
   deleted: '{var}->deleted()',
+  removeKeeps: true,
 }
 
 // A double-quoted C++ string literal.
