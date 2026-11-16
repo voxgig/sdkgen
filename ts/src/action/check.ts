@@ -45,6 +45,7 @@ import {
 import { scaffoldFolder } from '../helpers/shipped'
 
 import { KINDS } from './kind'
+import { SYNTAX_INTERFACE } from '../helpers/syntaxversion'
 
 
 const SAME_FILE_LIMIT = 5
@@ -127,6 +128,7 @@ function checkPackage(ref: string, actx: ActionContext): CheckReport {
     ...checkManifest(fs, sdk, read),
     ...checkItems(fs, sdk, read.manifest),
     ...checkFeatureSource(fs, sdk, read.manifest),
+    ...checkProviders(fs, sdk, read.manifest),
   ]
 
   for (const f of findings) {
@@ -454,6 +456,48 @@ function checkFeatureSource(
         ', so the trim cannot recognise them and every project gets them ' +
         'whatever its model selects'
     })
+  }
+
+  return found
+}
+
+
+// A target's documentation: a syntax provider needs its naming hook and
+// declares the interface it is written for; a hook alone writes nothing.
+// Read as text: a package's components compile only inside a project.
+function checkProviders(fs: any, sdk: string, manifest?: Manifest): Finding[] {
+  const found: Finding[] = []
+  const targets = new Set([
+    ...claims(manifest?.provides, 'target'),
+    ...definitionNames(fs, sdk, 'target'),
+  ])
+
+  for (const t of Array.from(targets).sort()) {
+    const dir = Path.join(sdk, 'src', 'cmp', t)
+    const has = (name: string) => fs.existsSync(Path.join(dir, name + '_' + t + '.ts'))
+    const file = Path.join(dir, 'Syntax_' + t + '.ts')
+    const at = (level: 'error' | 'warn', point: string, note: string): Finding =>
+      ({ level, point, file, kind: 'target', name: t, note: 'src/cmp/' + t + ': ' + note })
+
+    if (has('Syntax')) {
+      if (!has('Naming')) {
+        found.push(at('error', 'provider-without-hook',
+          'Syntax_' + t + '.ts has no Naming_' + t + '.ts, so generation stops on its first page'))
+      }
+      const declared = String(fs.readFileSync(file, 'utf8'))
+        .match(/^\s*interface:\s*['"]([^'"]+)['"]/m)?.[1]
+      if (SYNTAX_INTERFACE !== declared) {
+        found.push(at('error', 'provider-interface',
+          'Syntax_' + t + '.ts declares interface ' + (declared ?? 'none') +
+          ', and this sdkgen calls ' + SYNTAX_INTERFACE))
+      }
+    }
+    else if (has('Naming') &&
+      !['ReadmeQuick', 'ReadmeRef', 'ReadmeTopQuick'].some((n) => has(n))) {
+      found.push(at('warn', 'hook-without-provider',
+        'Naming_' + t + '.ts and no Syntax_' + t + '.ts or ReadmeQuick_' + t +
+        '.ts, so the tutorial, the root quick start and REFERENCE.md are empty'))
+    }
   }
 
   return found
