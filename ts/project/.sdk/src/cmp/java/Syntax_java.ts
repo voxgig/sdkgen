@@ -1,5 +1,7 @@
-import { canonToType, indentLines, javaMap } from '@voxgig/sdkgen'
+import { canonToType, indentLines, javaMap, javaMapItems } from '@voxgig/sdkgen'
 import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
+
+import { javaLit } from './utility_java'
 
 
 const facts: RuntimeFacts = {
@@ -67,9 +69,8 @@ const str = (s: string): string => JSON.stringify(s)
 
 const name = (r: Ref): string => r.name
 
-const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
-  INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'List.of()', OBJECT: 'Map.of()', NULL: 'null',
-} as Record<string, string>)[e.type] ?? str(e.text)
+// The generator's one table of example literals.
+const lit = (e: Extract<Expr, { k: 'lit' }>): string => javaLit(e.type, e.text)
 
 // An operation returns Object. A result the block reads is bound as an
 // SdkEntity, cast once; a list's item, an Object, is cast where it is read.
@@ -101,8 +102,14 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${str(en.key)}, ${expr(en.value)}`
 
+// Map.of rejects a null value: the generator's rule (javaMapItems) leaves a
+// null-only member out, which a reader's get() then reads as null.
+const kept = (entries: Entry[]): Entry[] =>
+  javaMapItems(entries.map((en) => ({ en, type: 'lit' === en.value.k ? en.value.type : null }))).map((it: any) => it.en)
+
 // Map.of on one line; Map.ofEntries past the pairs Map.of takes.
-const mapOf = (entries: Entry[]): string => {
+const mapOf = (all: Entry[]): string => {
+  const entries = kept(all)
   const m = javaMap(entries.length)
   return m.open + entries.map((en) => m.pair(pair(en))).join(', ') + ')'
 }
@@ -111,11 +118,12 @@ const mapOf = (entries: Entry[]): string => {
 // line where it carries types or a closing note.
 const argOf = (s: Extract<Stmt, { k: 'call' }>): string => {
   if (null == s.arg) return 'null'
-  const laid = s.wide && (null != s.note || s.arg.some((en) => null != en.type))
-  if (!laid) return mapOf(s.arg)
-  const m = javaMap(s.arg.length)
-  const n = s.arg.length
-  const lines = s.arg.map((en, i) => '    ' + m.pair(pair(en)) + (i < n - 1 ? ',' : '') +
+  const arg = kept(s.arg)
+  const laid = s.wide && (null != s.note || arg.some((en) => null != en.type))
+  if (!laid) return mapOf(arg)
+  const m = javaMap(arg.length)
+  const n = arg.length
+  const lines = arg.map((en, i) => '    ' + m.pair(pair(en)) + (i < n - 1 ? ',' : '') +
     (null == en.type ? '' : '  // ' + canonToType(en.type, 'java')))
   return m.open + '\n' + [...lines, ...(null == s.note ? [] : ['    // ' + s.note])].join('\n') + '\n)'
 }
