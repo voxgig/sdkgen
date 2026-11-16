@@ -38,6 +38,10 @@ function javaPackage(model: any): string {
 }
 
 
+// The subpackage that holds the client class and the SdkEntity contract.
+const JAVA_CORE = 'core'
+
+
 function mavenGroupId(model: any): string {
   const org = String(model.origin || 'voxgig-sdk')
     .replace(/-sdk$/, '')
@@ -136,6 +140,7 @@ function javaListMatch(entity: any): string {
 
 
 export {
+  JAVA_CORE,
   javaLit,
   javaListMatch,
   cleanModel,

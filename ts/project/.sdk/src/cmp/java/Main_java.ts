@@ -31,7 +31,7 @@ import { EntityBase } from './EntityBase_java'
 import { EntityTypes } from './EntityTypes_java'
 import { SdkError } from './SdkError_java'
 import { PrepareAuth } from './PrepareAuth_java'
-import { javaPackage } from './utility_java'
+import { JAVA_CORE, javaPackage } from './utility_java'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -67,7 +67,7 @@ const Main = cmp(async function Main(props: any) {
 
   PrepareAuth({ target })
 
-  Folder({ name: 'core' }, () => {
+  Folder({ name: JAVA_CORE }, () => {
 
     SdkError({ target })
 
