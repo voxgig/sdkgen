@@ -65,6 +65,7 @@ const refFacts: RefFacts = {
   body: { values: 'a `ByteArray`, a `String` or an `InputStream`', once: 'an `InputStream`' },
   cancel: false,
   streamSignal: true,
+  streamSignalForm: 'a function of no arguments, a `Function0`, that returns `true` once the stream is to end',
 }
 
 // A Kotlin string literal: `$` would start a template.
@@ -181,9 +182,6 @@ const Syntax: SyntaxType = {
     read: (value, key, truth) => `${value}[${str(key)}]` + (truth ? ' == true' : ''),
   },
 
-  notes: {
-    'member:streamLazy': 'The signal is read only as a function of no arguments, a `Function0`,\nthat returns `true` once the stream is to end; any other value is\nignored.',
-  },
 }
 
 
