@@ -33,7 +33,18 @@
    "clojure",
    "rust",
    "elixir",
-   "rb"
+   "rb",
+   "js",
+   "php",
+   "lua",
+   "csharp",
+   "java",
+   "kotlin",
+   "scala",
+   "swift",
+   "cpp",
+   "perl",
+   "ocaml"
   ],
   "rootquick": [
    "ts",
@@ -44,7 +55,18 @@
    "clojure",
    "rust",
    "elixir",
-   "rb"
+   "rb",
+   "js",
+   "php",
+   "lua",
+   "csharp",
+   "java",
+   "kotlin",
+   "scala",
+   "swift",
+   "cpp",
+   "perl",
+   "ocaml"
   ],
   "reference": [
    "ts",
@@ -55,7 +77,18 @@
    "clojure",
    "rust",
    "elixir",
-   "rb"
+   "rb",
+   "js",
+   "php",
+   "lua",
+   "csharp",
+   "java",
+   "kotlin",
+   "scala",
+   "swift",
+   "cpp",
+   "perl",
+   "ocaml"
   ]
  },
  "families": {
