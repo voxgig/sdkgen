@@ -100,7 +100,7 @@ ${serverOptionRow}${apikeyOptionRow}${secretOptionRow}| \`base\` | \`string\` | 
 | Method | Returns | Description |
 | --- | --- | --- |
 | \`options()\` | \`object\` | Deep copy of current SDK options. |
-| \`utility()\` | \`Utility\` | Deep copy of the SDK utility object. |
+| \`utility()\` | \`Utility\` | The SDK utility object itself, not a copy. |
 | \`prepare(fetchargs?)\` | \`Promise<FetchDef>\` | Build an HTTP request definition without sending it. |
 | \`direct(fetchargs?)\` | \`Promise<DirectResult>\` | Build and send an HTTP request. |
 `)

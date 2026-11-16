@@ -13,6 +13,7 @@ const { fillLayout, listBlock } = require('../dist/helpers/example.js')
 const { opText } = require('../dist/helpers/runtimeprose.js')
 
 const STAGE = Path.resolve(__dirname, '..', 'dist-test-scaffold', '.sdk', 'dist', 'cmp')
+const CMP = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
 
 function provider(lang: string, edit: (r: any) => void): any {
   const { Syntax } = require(Path.join(STAGE, lang, 'Syntax_' + lang + '.js'))
@@ -69,5 +70,24 @@ describe('integration 3.4: shared changes', () => {
     strictEqual(fillLayout('(({module}.{names.entity}.EntityBase) {var}).deleted()', { module: 'voxgig.demosdk', names: { entity: 'entity' } }),
       '((voxgig.demosdk.entity.EntityBase) {var}).deleted()')
     strictEqual(fillLayout('{names.none} {x}', { names: {} }), '{names.none} {x}')
+  })
+
+  // The README's methods table (a section not yet shared) must not say what
+  // the REFERENCE's copy fact denies: ts and js hand back the live object.
+  test('the README methods row for the utility getter agrees with the provider\'s copy fact', () => {
+    const Fs = require('node:fs')
+    const seen: string[] = []
+    for (const lang of Fs.readdirSync(STAGE)) {
+      const syn = Path.join(STAGE, lang, 'Syntax_' + lang + '.js')
+      const model = Path.join(CMP, lang, 'ReadmeModel_' + lang + '.ts')
+      if (!Fs.existsSync(syn) || !Fs.existsSync(model)) continue
+      const { Syntax } = require(syn)
+      const m = (Syntax.ref?.facts?.client || []).find((x: any) => 'utility' === x.kind)
+      const row = String(Fs.readFileSync(model, 'utf8')).split('\n').find((l: string) => /SDK utility object/.test(l))
+      if (null == m || null == row) continue
+      seen.push(lang)
+      if (true !== m.copy) ok(!/\bcopy\b/i.test(row.replace(/not a copy/i, '')), lang + ': ' + row)
+    }
+    ok(seen.includes('ts') && seen.includes('js'), seen.join(' '))
   })
 })
