@@ -52,30 +52,58 @@ function table(ts, lang) {
 // feature trees (vendored plugins with a `load` of their own) and private
 // declarations are not the SDK's members
   const sdk = Path.join(ts, 'project', '.sdk')
-  const tree = [Path.join(sdk, 'tm', lang), Path.join(sdk, 'src', 'cmp', lang)].flatMap((d) => walk(d)).filter((f) => !/[/\\]test[s]?[/\\]|_test\.|Test\.|\.test\.|[/\\]feature[/\\]/.test(f)).map((f) => Path.relative(sdk, f))
+  const tree = [Path.join(sdk, 'tm', lang), Path.join(sdk, 'src', 'cmp', lang)].flatMap((d) => walk(d)).filter((f) => !/[/\\](?:test[s]?|sdktest)[/\\]|_test\.|Test\.|\.test\.|[/\\]feature[/\\]/.test(f)).map((f) => Path.relative(sdk, f))
   const everywhere = F.read(tree)
   for (const m of members.values()) {
     m.arities = new Set([m.params.length])
+    m.ons = new Set([m.on])
     for (const d of F.findDecls(forms, everywhere, F.esc(m.name))) {
       if (/\b(private|fileprivate)\b/.test(d.head || '')) continue
-      m.arities.add(d.params.length); m.required = Math.min(m.required, d.params.filter((p) => !forms.optional(p)).length); m.max = Math.max(m.max || 0, d.params.length) }
+      // a local binding of the same name (kotlin `val list = parent as ...`) is not an overload of a callable member
+      if (d.field && !m.field) continue
+      m.arities.add(d.params.length); m.ons.add(d.on); m.required = Math.min(m.required, d.params.filter((p) => !forms.optional(p)).length); m.max = Math.max(m.max || 0, d.params.length) }
     m.max = Math.max(m.max || 0, m.params.length)
   }
+  // the types the runtime declares: a variable cast to any other type (a standard collection) is not a runtime receiver
+  const types = new Set()
+  for (const { text } of everywhere) for (const x of text.matchAll(/\b(?:class|interface|trait|object|struct|protocol|record|enum|type)\s+([A-Z]\w*)/g)) types.add(x[1])
   // the constructor the naming hook prints (`sdk.new`): the member after the binding
   let ctor = null
   try { const L = require('./facts.js').load(ts, lang).facts.find((x) => 'layout.ctor' === x.path); if (L) ctor = String(L.value).split(/\.|::|->|:/).pop() } catch (e) { }
-  return { members, forms, ctor }
+  return { members, forms, ctor, types }
+}
+
+// what a separator says a call is made on, from the forms' call notation: a
+// separator that serves the instance and something else says nothing
+function sepFrom(forms) {
+  const on = forms.calls && forms.calls.on
+  if (!on) return null
+  const by = {}
+  for (const [k, seps] of Object.entries(on)) for (const x of seps || []) (by[x] = by[x] || new Set()).add(k)
+  const out = {}
+  for (const [x, ks] of Object.entries(by)) { if (1 === ks.size) out[x] = [...ks][0]; else if (!ks.has('instance')) out[x] = 'type' }
+  return 0 < Object.keys(out).length ? out : null
+}
+
+// the type a binding's right-hand side casts to (scala .asInstanceOf[T], kotlin and swift `as T`, java and csharp `(T) x`, go `.(T)`), by its last name
+function castType(rhs) {
+  const m = /\.asInstanceOf\[\s*([\w.]+)/.exec(rhs) || /\bas[?!]?\s+([\w.]+)/.exec(rhs) || /^\s*\(\s*([\w.]+)(?:<[^>]*>)?\s*\)/.exec(rhs) || /\.\(\s*\*?([\w.]+)\s*\)\s*$/.exec(rhs)
+  return m ? m[1].split('.').pop() : null
 }
 
 // the top-level arguments of a bracketed list starting at s[i] === '('
 function argsAt(s, i) {
-  let depth = 0, cur = '', out = [], q = null
+  let depth = 0, angle = 0, cur = '', out = [], q = null
   for (let k = i; k < s.length; k++) {
     const c = s[k]
     if (q) { cur += c; if (c === q && s[k - 1] !== '\\') q = null; continue }
     if ('"' === c || "'" === c) { q = c; cur += c; continue }
     if ('([{'.includes(c)) { depth++; if (1 === depth) continue }
     if (')]}'.includes(c)) { depth--; if (0 === depth) { if (cur.trim()) out.push(cur.trim()); return { args: out, end: k } } }
+    // type arguments (`mutableMapOf<String, Any?>(...)`, `new Dictionary<string, object?>`) bracket their commas
+    if (1 <= depth && '<' === c && /\w/.test(s[k - 1] || '')) angle++
+    else if (0 < angle && '>' === c && !'-='.includes(s[k - 1])) angle--
+    if (0 < angle) { cur += c; continue }
     if (1 === depth && ',' === c) { out.push(cur.trim()); cur = ''; continue }
     if (1 === depth && '=' === c && '>' === s[k + 1]) { out.push(cur.trim()); cur = ''; k++; continue }
     cur += c
@@ -113,7 +141,7 @@ function run(a) {
   const accessors = new Set(V.entities.filter((e) => /^[A-Z][a-z0-9]+$/.test(e)))
   // an accessor is generated per entity (not in the forms): any entity name form, any case
   const entForm = (n) => entVars.has(n.toLowerCase()) || entVars.has(n.toLowerCase().replace(/_/g, ''))
-  const sep = SEP[lang]
+  const sep = SEP[lang] || sepFrom(T.forms)
   const findings = []
   const seen = new Set()
   let calls = 0
@@ -125,7 +153,8 @@ function run(a) {
     for (const b of C.blocks(sect)) {
       const code = b.code.split('\n').map((l) => COMMENT.test(l) ? '' : l).join('\n')
       // receivers whose members are the runtime's: the client, the module binding, and a variable bound from the client in this block
-      const known = new Set(['client', 'sdk', 'self', ...[...code.matchAll(/\$?(\w+)\s*(?::=|=)(?!=)[^=\n]*\bclient\b/g)].map((x) => x[1])])
+      const known = new Set(['client', 'sdk', 'self', ...[...code.matchAll(/\$?(\w+)\s*(?::=|=)(?!=)([^=\n]*\bclient\b[^\n]*)/g)]
+        .filter((x) => { const t = castType(x[2]); return null == t || T.types.has(t) }).map((x) => x[1])])
       for (const m of code.matchAll(re)) {
         const [all, recv, s, name, open] = m
         if ((NOT_SEP[lang] || new Set()).has(s)) continue
@@ -133,7 +162,7 @@ function run(a) {
         const at = m.index + all.length
         const mem = T.members.get(name)
         const report = (kind, why) => { const k = kind + '\u0000' + name + '\u0000' + why; if (seen.has(k)) return; seen.add(k); findings.push({ kind, name, why, v, section, at: b.at, line: code.split('\n')[code.slice(0, m.index).split('\n').length - 1].trim().slice(0, 140) }) }
-        if (accessors.has(name) && sep && 'instance' !== sep[s] && 'client' === rv) { report('RECEIVER', `the entity accessor ${name} is made on the client instance; '${s}' makes it on the ${sep[s]}`); continue }
+        if (accessors.has(name) && sep && sep[s] && 'instance' !== sep[s] && 'client' === rv) { report('RECEIVER', `the entity accessor ${name} is made on the client instance; '${s}' makes it on the ${sep[s]}`); continue }
         if (!mem) {
           if (T.ctor && name === T.ctor) continue
           if (open && /\(/.test(open) && known.has(rv) && !accessors.has(name) && !entForm(name) && !/^[A-Z]/.test(rv)) report('MEMBER', `${rv}${s}${name}(...): the runtime declares no member ${name}`)
@@ -141,7 +170,7 @@ function run(a) {
         }
         if (!open) continue
         calls++
-        if (sep && sep[s] && mem.on && ('instance' === mem.on) !== ('instance' === sep[s])) report('RECEIVER', `${name} is declared on the ${mem.on}; '${s}' calls it on the ${sep[s]}`)
+        if (sep && sep[s] && mem.on && ![...mem.ons].some((o) => ('instance' === o) === ('instance' === sep[s]))) report('RECEIVER', `${name} is declared on the ${mem.on}; '${s}' calls it on the ${sep[s]}`)
         let n
         if ('ocaml' === lang) { const at0 = atomsAt(code, m.index + all.length - open.length); n = 1 === at0.length && '()' === at0[0] && 0 === mem.max ? 0 : at0.length }
         else if (/\(/.test(open)) { const g = argsAt(code, m.index + all.length - 1); if (!g) continue; n = g.args.length }
