@@ -124,6 +124,7 @@ const printed = (e: Expr): string => 'fields' === e.k
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'cpp',
   facts,
 
