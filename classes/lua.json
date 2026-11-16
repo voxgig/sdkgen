@@ -895,6 +895,30 @@
   "type": "block-novel-shape",
   "section": "rootquick"
  },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b231c49579": {
+  "outcome": "same-meaning",
+  "why": "the README states the same of log's options (the table's `active` default true); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "b65a95a1e5": {
   "outcome": "same-meaning",
   "why": "the echo is the word 'server' in the README options table's `base` cell; that table (ReadmeModel_lua, not ported) does not list `server`, so it says nothing that disagrees",
@@ -905,8 +929,8 @@
  },
  "05ce2654d0": {
   "outcome": "same-meaning",
-  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
-  "n": 19,
+  "why": "the README's test-mode text names the same arguments and feature.test option, with the test feature present in these variations; no disagreement",
+  "n": 18,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -959,6 +983,14 @@
   "type": "echo",
   "section": "reference"
  },
+ "83803533d5": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
  "6aced21d71": {
   "outcome": "shared:ts:6aced21d71",
   "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
@@ -970,6 +1002,158 @@
    "4fb872e54f"
   ],
   "unreviewed": 0
+ },
+ "630b93b404": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "638e6bf8c8": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bec71fd3ed": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bd75a6c916": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "525c043584": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "04d9decbcd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "68fa66027f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9578f954c3": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "81d19a3b94": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bb4fb6eecf": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1eac1e568f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ce48696dcd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1c87f432bc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "45d9ef79df": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "198312a77c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5d9dc8ba29": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b1d4ccff9e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6957a19f18": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b464f5c04e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
  },
  "d1093fdf0b": {
   "outcome": "correction:runtime-forms",
@@ -1023,6 +1207,14 @@
   ],
   "unreviewed": 0
  },
+ "d90bf25f1c": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
  "947fe9e1d7": {
   "outcome": "correction:runtime-forms",
   "why": "the operation returns its entity class (Entity.fragment.lua:437 `return self, nil`; the op comments `---@return EntyClass`), not any; list returns the array of entities make_result built (make_result.lua:32-38)",
@@ -1042,6 +1234,14 @@
    "5ddee20721"
   ],
   "unreviewed": 0
+ },
+ "0ee35d2611": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
  },
  "b69fd8280e": {
   "outcome": "unification:op-failure-clause",
@@ -1163,6 +1363,14 @@
   "type": "missing",
   "section": "reference"
  },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
  "ac1eac6be0": {
   "outcome": "correction:S09",
   "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
@@ -1171,17 +1379,61 @@
   "type": "missing",
   "section": "reference"
  },
- "7ddccf533d": {
-  "outcome": "shared:ts:7ddccf533d",
-  "why": "masked, it is the ts unit of class 7ddccf533d (correction:S49, by rule:server-vars)",
-  "n": 16,
-  "by": "shared",
+ "c6cf58dde1": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 17,
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "9b677d094c"
-  ],
-  "unreviewed": 0
+  "section": "reference"
+ },
+ "fb53c2b222": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "306bf09289": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d265844143": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "63ce60fad7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2066e4a9e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7ddccf533d": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "b2a89584dc": {
   "outcome": "shared:ts:b2a89584dc",
@@ -1256,16 +1508,12 @@
   "unreviewed": 0
  },
  "466798fb0c": {
-  "outcome": "shared:ts:5ce4fbf9a3",
-  "why": "masked, it is the ts unit of class 5ce4fbf9a3 (correction:sentence-review-test, by hand)",
-  "n": 19,
-  "by": "shared",
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "746a31db3f"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "cd00ec9b2a": {
   "outcome": "shared:ts:cd00ec9b2a",
@@ -1320,15 +1568,12 @@
   "unreviewed": 0
  },
  "d2b1853b85": {
-  "outcome": "contradiction",
-  "why": "",
-  "n": 16,
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
+  "n": 71,
   "by": "hand",
   "type": "added",
-  "section": "reference",
-  "where": "lua/README.md:214 (B; every variation): '| `direct` | `(fetchargs) -> table, err` |', and lua/README.md:68: '`direct` follows the same `(value, err)` convention:' followed by `if err then error(err) end`; ReadmeModel_lua, not ported",
-  "true": "REFERENCE: direct returns the result table and a second value that is always nil; a failure is in the table (`ok` false, `err` set when no response was read or the body could not be read)",
-  "evidence": "Main.fragment.lua:267 `return self:_op_denied(\"direct\"), nil`, :300 `return { ok = false, err = err }, nil`, :368 `return out, nil`, :371-374 `return { ok = false, err = ... }, nil`; every return path of direct ends `, nil`"
+  "section": "reference"
  },
  "65160f6e35": {
   "outcome": "shared:ts:65160f6e35",
@@ -1714,17 +1959,37 @@
   ],
   "unreviewed": 0
  },
- "916036b165": {
-  "outcome": "shared:ts:916036b165",
-  "why": "masked, it is the ts unit of class 916036b165 (correction:S09, by rule:features-log)",
+ "e94011ef3f": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
   "n": 19,
-  "by": "shared",
+  "by": "hand",
   "type": "added",
-  "section": "reference",
-  "sentences": [
-   "d77745e7ee"
-  ],
-  "unreviewed": 0
+  "section": "reference"
+ },
+ "05a7710dde": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: a wrapping feature whose model also declares active hooks says so, as the catalogue's X3 fix asks (cost: hook PrePoint, PreDone, PreUnexpected; secrets: hook PreSpec); the wrap sentence above it is unchanged",
+  "n": 38,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9a5ba18db4": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f88d62ac3d": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "482def0a4d": {
   "outcome": "same-meaning",
@@ -1845,6 +2110,14 @@
   "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
   "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)"
  },
+ "5b46edebf3": {
+  "outcome": "same-meaning",
+  "why": "the README names the same `feature.test` switch (its feature row or its test-mode text); this sentence says the call sets it, switched on; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "46dc1a3462": {
   "outcome": "correction:S13",
   "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
@@ -1876,6 +2149,22 @@
    "dd74ff9ab6"
   ],
   "unreviewed": 0
+ },
+ "f4e8df935f": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b41862bb96": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "da08f7e7bd": {
   "outcome": "shared:ts:da08f7e7bd",
@@ -2088,6 +2377,22 @@
    "74c9db4d88"
   ],
   "unreviewed": 0
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
  },
  "b4523a5362": {
   "outcome": "correction:S49",
