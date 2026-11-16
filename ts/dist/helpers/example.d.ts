@@ -92,6 +92,7 @@ type RuntimeFacts = {
     unusedError?: boolean;
     listOf?: string;
     arity?: number;
+    blockScope?: boolean;
     prints: Prints;
 };
 type Prints = 'record' | 'listFields' | 'fields';
@@ -159,8 +160,10 @@ type RefFacts = {
     };
     cancel: boolean;
     streamSignal?: boolean;
+    streamSignalForm?: string;
     memberNamed?: 'call' | 'bare';
     deleted?: string;
+    removeKeeps?: boolean;
 };
 type CtorKind = 'defaults' | 'explicit';
 declare function entOf(desc: SdkDescription, name: string): Ent;
@@ -248,6 +251,7 @@ declare function printJoined(p: Syntax, steps: {
 }[], desc: SdkDescription, sc: Scope): string;
 declare function newScope(standalone?: boolean, place?: ShowPlace): Scope;
 declare function note(p: Syntax, slot: NoteSlot, desc?: SdkDescription): string;
+declare function fillLayout(text: string, layout: any): string;
 declare function indent(lines: string[], by: string): string[];
 export type { CallContext, CtorKind, NoteSlot, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, Prints, ProgramStep, ShowPlace, StreamRuns, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };
-export { actionBlock, checksItself, interrupts, clientBlock, entOf, featureBlock, refOpBlock, indent, listBlock, newScope, note, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };
+export { actionBlock, checksItself, interrupts, clientBlock, entOf, featureBlock, fillLayout, refOpBlock, indent, listBlock, newScope, note, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };

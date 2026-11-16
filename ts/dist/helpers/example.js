@@ -10,6 +10,7 @@ exports.interrupts = interrupts;
 exports.clientBlock = clientBlock;
 exports.entOf = entOf;
 exports.featureBlock = featureBlock;
+exports.fillLayout = fillLayout;
 exports.refOpBlock = refOpBlock;
 exports.indent = indent;
 exports.listBlock = listBlock;
@@ -97,7 +98,12 @@ function listBlock(desc, facts, where = 'tutorial') {
         return null;
     const entity = entOf(desc, q.entity);
     const many = refOf(desc, 'many', entity, 'entity');
-    const item = refOf(desc, 'item', entity, 'entity');
+    let item = refOf(desc, 'item', entity, 'entity');
+    // The root quick start's list and load share one block: where a local is
+    // in scope over its whole block, the item takes the generic name.
+    if (facts.blockScope && 'top' === where && null != q.load && q.load.entity === q.entity) {
+        item = { ...item, name: (desc.layout.vars || {})[GENERIC.item] ?? GENERIC.item };
+    }
     return [{
             k: 'attempt', what: 'list', body: [
                 call(entity, 'list', 0 < q.list.length ? argEntries(q.list, null) : null, many),
@@ -321,12 +327,15 @@ function note(p, slot, desc) {
     const text = p.notes && Object.prototype.hasOwnProperty.call(p.notes, slot) ? p.notes[slot] : undefined;
     if (null == text || '' === text)
         return '';
-    const layout = desc ? desc.layout : {};
-    const filled = text.replace(/\{(module|client|ctor|names\.\w+)\}/g, (m, k) => {
+    return fillLayout(text, desc ? desc.layout : {}) + '\n\n';
+}
+// {module}, {client}, {ctor} and {names.<role>} filled from the layout the
+// naming hook decided; any other brace is left as it is.
+function fillLayout(text, layout) {
+    return text.replace(/\{(module|client|ctor|names\.\w+)\}/g, (m, k) => {
         const v = k.startsWith('names.') ? (layout.names || {})[k.slice(6)] : layout[k];
         return 'string' === typeof v ? v : m;
     });
-    return filled + '\n\n';
 }
 function indent(lines, by) {
     return lines.map((l) => '' === l ? l : by + l);

@@ -113,10 +113,15 @@ function streamText(what, m, r) {
     if (null == m.runs)
         throw new Error(`ReadmeRef: stream member ${m.sig} needs runs`);
     return wrap(`Run an operation through the pipeline and ${what} ${STREAM_RUNS[m.runs].replace(/\n/g, ' ')}` +
-        (r.facts.streamSignal ? ' ' + STREAM_SIGNAL : ''));
+        (r.facts.streamSignal ? ' ' + streamSignalText(r) : ''));
 }
-// A stream that reads `callopts.signal` (ReadmeRef's streamSignal fact).
-const STREAM_SIGNAL = 'It ends early once `callopts.signal` reports an abort.';
+// A stream that reads a signal from its call options (the streamSignal fact):
+// named in words, since each language writes the key its own way, with the
+// one form the runtime reads where it ignores any other value.
+function streamSignalText(r) {
+    return 'It ends early once the `signal` in `callopts` reports an abort' +
+        (r.facts.streamSignalForm ? `; the signal is read only as ${r.facts.streamSignalForm}, and any other value is ignored.` : '.');
+}
 // What a getter hands back: a copy where the runtime clones, which its member
 // declares (Member.copy).
 const COPY = 'Returns a copy of the current data.';
@@ -373,7 +378,8 @@ record — check the API definition for its shape.
             const sig = (0 < op.needs.length && r.facts.opMatched && r.facts.opMatched[name]) || r.facts.op[name];
             const block = (0, example_1.refOpBlock)(desc, p.facts, ent, op);
             out += `#### ${code(fill(sig, desc, ent))}\n\n` +
-                `${wrap((0, runtimeprose_1.opText)(p.facts, op.name, op.needs, op.idInData, boundOf(block, desc), { none: r.facts.none, deleted: r.facts.deleted }))}\n\n`;
+                `${wrap((0, runtimeprose_1.opText)(p.facts, op.name, op.needs, op.idInData, boundOf(block, desc), { none: r.facts.none, deleted: null == r.facts.deleted ? undefined : (0, example_1.fillLayout)(r.facts.deleted, desc.layout),
+                    removeKeeps: r.facts.removeKeeps }))}\n\n`;
             if (null != block)
                 out += (0, example_1.printBlock)(p, block, desc, (0, example_1.newScope)(true)) + '\n';
             out += (0, media_1.bodyNoteText)(op.body, r.facts.body);

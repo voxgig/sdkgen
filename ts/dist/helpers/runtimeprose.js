@@ -244,7 +244,10 @@ function opText(f, op, needs, idInData, bound, ref = {}) {
     }
     // Every single-entity result says how its record is read: the reference's
     // examples print none of them (the majority shape), so the sentence keeps it.
-    if ('list' !== op)
+    if ('remove' === op && ref.removeKeeps) {
+        parts.push(`It reads no record from the response: ${code(record(f, bound))} still reads the data the entity held.`);
+    }
+    else if ('list' !== op)
         parts.push(readsRecord(f, bound) + '.');
     return parts.join(' ');
 }
