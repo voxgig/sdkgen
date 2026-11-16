@@ -24,6 +24,7 @@ import {
 import {
   cleanModel,
   scalaPackage,
+  scalaCorePackage,
   jsonAppendLines,
 } from './utility_scala'
 
@@ -117,7 +118,7 @@ const Config = cmp(async function Config(props: any) {
 
   File({ name: 'Config.' + target.ext }, () => {
 
-    Content(`package ${scalapackage}.core
+    Content(`package ${scalaCorePackage(model)}
 
 import java.util.{Map => JMap}
 
