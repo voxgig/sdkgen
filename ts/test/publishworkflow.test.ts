@@ -130,6 +130,28 @@ describe('PublishWorkflow', () => {
   })
 
 
+  // packageName would answer the SDK's own name for a consumer target, so
+  // one publishes only a package it names.
+  test('a consumer target gets a workflow only for a package it names', async () => {
+    const off = { active: false }
+    const phase = { entity: off, feature: off, readme: off, agentguide: off, test: off }
+    const provider = (registry: any) => ({ active: true, name: 'provider', phase, publish: { registry } })
+
+    const unnamed = await render({ ...NPM_TS, provider: provider({ name: 'npm' }) })
+    ok(null != unnamed['.github/workflows/publish-ts.yml'], 'no ts workflow: ' + Object.keys(unnamed))
+    deepStrictEqual(Object.keys(unnamed).filter((p) => /provider/.test(p)), [],
+      'a workflow for a package the target never named')
+    ok(!unnamed['.sdk/PUBLISHING.md'].includes('provider'), 'the doc lists the consumer target')
+
+    const named = await render({
+      ...NPM_TS,
+      provider: provider({ name: 'npm', package: '@acme/demo-provider' }),
+    })
+    ok(named['.github/workflows/publish-provider.yml'].includes('@acme/demo-provider'),
+      'the consumer target does not publish its own package: ' + Object.keys(named))
+  })
+
+
   test('the set-up doc goes to .sdk, not into the target', async () => {
     const out = await render(NPM_TS)
 

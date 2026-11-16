@@ -26,6 +26,7 @@ import { isConsumer } from '../helpers/alongside'
 import {
   installCommand as pkgInstall,
   packageName,
+  hasPackageName,
   registryState,
   vendorCommand,
   apiName,
@@ -172,7 +173,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const docTargets = ordered.filter((t: any) => !isCliOrMcp(t))
 
   const pkgTargets = activeTargets
-    .slice()
+    .filter((t: any) => hasPackageName(model, t.name))
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')

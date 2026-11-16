@@ -127,7 +127,7 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     const consumerTargets = ordered.filter((t) => (0, alongside_1.isConsumer)(t) && !isCliOrMcp(t));
     const docTargets = ordered.filter((t) => !isCliOrMcp(t));
     const pkgTargets = activeTargets
-        .slice()
+        .filter((t) => (0, packageMeta_1.hasPackageName)(model, t.name))
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const langList = sdkTargets.map((t) => t.title).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);

@@ -8,7 +8,7 @@ import {
   getModelPath
 } from '../types'
 
-import { packageName, packageVersion, repoInfo } from '../helpers/packageMeta'
+import { hasPackageName, packageName, packageVersion, repoInfo } from '../helpers/packageMeta'
 
 import { npmTrustScript } from '../admin/npm-trust'
 
@@ -28,7 +28,7 @@ const PublishWorkflow = cmp(function PublishWorkflow(props: any) {
     if (false === t.active) {
       return
     }
-    if ('npm' === (t.publish?.registry?.name || '')) {
+    if ('npm' === (t.publish?.registry?.name || '') && hasPackageName(model, t.name)) {
       npmTargets.push(t)
     }
   })
