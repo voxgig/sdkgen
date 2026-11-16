@@ -53,13 +53,19 @@ import {
   loadContent,
 } from './action'
 
-import { kindModel, kindIndex, resolveKind, escapeRe } from './kind'
+import { kindModel, kindIndex, resolveKind } from './kind'
+
+import {
+  aliasCmpName, aliasCmpText, compiledFiles, compiledStem, parseComponent,
+} from '../helpers/cmpfile'
+
+import { undeclaredOverride } from '../helpers/optional'
 
 import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 import type { Source } from './resolve'
 
 import {
-  recordCopies, guardCopies, readCopies, untouched, projectCopyMode,
+  recordCopies, guardCopies, readCopies, unchangedCopy, projectCopyMode,
 } from './copies'
 import type { CopyRecord } from './copies'
 
@@ -234,8 +240,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         return
       }
 
-      pruneRetired(ctx$, actx, tfolder + '/src/cmp/' + torigname,
-        'src/cmp/' + tname, torigname, tname)
+      pruneRetired(ctx$, actx, 'target', source, tfolder + '/src/cmp/' + torigname,
+        'src/cmp/' + tname)
 
       if (aliased) {
         aliasCmpTree(ctx$, tfolder + '/src/cmp/' + torigname,
@@ -287,29 +293,6 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 })
 
 
-
-
-function aliasCmpName(name: string, torigname: string, tname: string): string {
-  return name.replace(
-    new RegExp('_' + escapeRe(torigname) + '(\\.[^.]+)$'), '_' + tname + '$1')
-}
-
-
-function aliasCmpText(
-  src: string, torigname: string, tname: string, cmpbase = 'src/cmp/',
-): string {
-  const orig = escapeRe(torigname)
-
-  return src
-    // The fragment directory, read relative to __dirname. The fragments are
-    // copied into the ALIAS's folder, so leaving the origin path would miss —
-    // or, if the origin target is also installed, silently read ITS fragments.
-    .replace(new RegExp(escapeRe(cmpbase) + orig + '/', 'g'), cmpbase + tname + '/')
-    // Sibling imports: `'./Package_go'` -> `'./Package_go2'`. Anchored on the
-    // closing quote (captured, so the style is preserved) to keep it off file
-    // EXTENSIONS — `Main.fragment.go` must not become `Main.fragment.go2`.
-    .replace(new RegExp('_' + orig + '([\'"])', 'g'), '_' + tname + '$1')
-}
 
 
 function aliasCmpTree(
@@ -509,11 +492,14 @@ function pruneStaleTemplates(
 
 // Deletes an unshipped component only when the copy record shows it unchanged.
 function pruneRetired(
-  ctx$: any, actx: any, fromDir: string, toRel: string,
-  origname: string, name: string,
+  ctx$: any, actx: any, kind: string, source: Source, fromDir: string,
+  toRel: string,
 ) {
+  const { origname, name } = source
   pruneStaleTemplates(ctx$, fromDir, toRel, [], !!actx?.opts?.dryrun, undefined, {
     record: readCopies(ctx$.fs(), ctx$.folder ?? '.'),
+    kind,
+    source,
     rename: origname === name ? undefined :
       (rel: string) => aliasCmpName(rel, origname, name),
     discard: true === actx?.flags?.force || OVERWRITE === projectCopyMode(actx),
@@ -523,6 +509,8 @@ function pruneRetired(
 
 type RetiredCopies = {
   record: CopyRecord
+  kind: string
+  source: Source
   rename?: (rel: string) => string
   // Overwrite mode or --force: a changed copy goes too, as it would be
   // overwritten if the source still shipped it.
@@ -540,7 +528,8 @@ function retiredCopies(
 
   for (const rel of unwanted) {
     const file = toRel + '/' + rel
-    const same = untouched(fs, folder, copies.record, file)
+    const same = unchangedCopy(fs, folder, copies.record, copies.kind,
+      copies.source, file)
 
     if (true === same || (false === same && true === copies.discard)) {
       out.push(rel)
@@ -551,7 +540,11 @@ function retiredCopies(
         note: file + ': its source no longer ships this component, and this ' +
           'project changed it, so it is kept and still used in place of the ' +
           'shared one. To use the shared one, delete it and its compiled ' +
-          'output under dist/' + file.replace(/^src\//, '').replace(/\.ts$/, '.js')
+          'output under ' + compiledStem(file) + '.js' +
+          (undeclaredOverride(ctx$.model, file) ?
+            '. Doctor fails until the model declares it as main: kit: target: ' +
+            parseComponent(file)?.target + ': override: ' +
+            parseComponent(file)?.name + ': true' : '')
       })
     }
   }
@@ -563,12 +556,10 @@ function retiredCopies(
 // The loader requires `.sdk/dist/<path>`, and `tsc --build` leaves the output
 // of a deleted source in place.
 function removeCompiled(fs: any, folder: string, rel: string) {
-  const stem = Path.join(folder, 'dist', rel.replace(/^src\//, '')
-    .replace(/\.ts$/, ''))
-
-  for (const ext of ['.js', '.js.map', '.d.ts', '.d.ts.map']) {
-    if (fs.existsSync(stem + ext)) {
-      fs.unlinkSync(stem + ext)
+  for (const out of compiledFiles(rel)) {
+    const abs = Path.join(folder, ...out.split('/'))
+    if (fs.existsSync(abs)) {
+      fs.unlinkSync(abs)
     }
   }
 }

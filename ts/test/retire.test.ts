@@ -1,15 +1,21 @@
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
+import Path from 'node:path'
+
 import {
   ROOT, makeProject, targetRef, target_add, recordLog,
 } from './actionharness'
+
+import { RETIRED_FILE } from '../dist/helpers/manifest.js'
 
 import { action_doctor, copyWarnings, doctor } from '../dist/action/doctor.js'
 import { package_update } from '../dist/action/package.js'
 import { kind_remove } from '../dist/action/remove.js'
 import { COPY_LOG, fingerprint, readCopies } from '../dist/action/copies.js'
 
+
+const PACKAGE_ROOT = Path.resolve(__dirname, '..')
 
 // Unshipped by the installed source, recorded exactly as an add wrote it.
 const RETIRED = 'src/cmp/ts/ReadmeGone_ts.ts'
@@ -176,5 +182,138 @@ describe('compiled output whose source is gone', () => {
     ok(!exists(project, COMPILED + '.map'))
     ok(exists(project, 'dist/cmp/ts/Main_ts.js'))
     strictEqual(((await doctor(project.actx)).report as any).ok, true)
+  })
+})
+
+
+describe('a retired copy recognised without the record', () => {
+
+  const LIST = PACKAGE_ROOT + '/project/' + RETIRED_FILE
+  const TEXT = "import { x } from './utility_ts'\nexport const ReadmeGone = 'released'\n"
+
+  // The bundled package's retired list, naming RETIRED with TEXT's fingerprint.
+  function released(project: any, prints: string[] = [fingerprint(TEXT)]) {
+    project.fs.mkdirSync(PACKAGE_ROOT + '/project', { recursive: true })
+    project.fs.writeFileSync(LIST, JSON.stringify({ files: { [RETIRED]: prints } }))
+  }
+
+  async function unrecorded(rel = RETIRED, text = TEXT, alias?: string): Promise<any> {
+    const project = makeProject()
+    await target_add([targetRef('ts') + (null == alias ? '' : '~' + alias)], project.actx)
+    project.fs.writeFileSync(ROOT + '/' + rel, text)
+    released(project)
+    return project
+  }
+
+  test('an unrecorded copy a release shipped is retired, and an add removes it', async () => {
+    const project = await unrecorded()
+
+    const before: any = (await doctor(project.actx)).report
+    deepStrictEqual(before.retired, [RETIRED])
+    deepStrictEqual(before.additive, [])
+    strictEqual(before.ok, false)
+
+    await target_add([targetRef('ts')], project.actx)
+    ok(!exists(project, RETIRED))
+    strictEqual(((await doctor(project.actx)).report as any).ok, true)
+  })
+
+  test('remove does not refuse it', async () => {
+    const project = await unrecorded()
+    await kind_remove('target', ['ts'], project.actx)
+    ok(!exists(project, RETIRED))
+  })
+
+  test('a record that calls it changed does not outweigh the release', async () => {
+    const project = await unrecorded()
+    project.fs.appendFileSync(ROOT + '/' + COPY_LOG,
+      JSON.stringify({ op: 'add', files: { [RETIRED]: 'feedfacefeedface' } }) + '\n')
+    deepStrictEqual(((await doctor(project.actx)).report as any).retired, [RETIRED])
+  })
+
+  test('an aliased copy is read back through the alias', async () => {
+    const rel = 'src/cmp/ts2/ReadmeGone_ts2.ts'
+    const project = await unrecorded(rel, TEXT.replace("'./utility_ts'", "'./utility_ts2'"), 'ts2')
+    deepStrictEqual(((await doctor(project.actx)).report as any).retired, [rel])
+  })
+
+  test('a copy that is no release is the project\'s, as before', async () => {
+    const project = await unrecorded(RETIRED, TEXT + '// local\n')
+    const report: any = (await doctor(project.actx)).report
+    deepStrictEqual(report.additive, [RETIRED])
+    deepStrictEqual(report.retired, [])
+    await target_add([targetRef('ts')], project.actx)
+    ok(exists(project, RETIRED))
+  })
+})
+
+
+describe('a changed copy of a section a shared component writes', () => {
+
+  const QUICK = 'src/cmp/ts/ReadmeQuick_ts.ts'
+
+  async function overridden(declared: boolean): Promise<any> {
+    const project = makeProject(declared ?
+      { target: { ts: { override: { ReadmeQuick: true } } } } : {})
+    await target_add([targetRef('ts')], project.actx)
+    project.fs.writeFileSync(ROOT + '/' + QUICK, '// this project\'s own tutorial\n')
+    return project
+  }
+
+  test('fails doctor until the model declares it', async () => {
+    const report: any = (await doctor((await overridden(false)).actx)).report
+    deepStrictEqual(report.undeclared, [QUICK])
+    strictEqual(report.ok, false)
+
+    const declared: any = (await doctor((await overridden(true)).actx)).report
+    deepStrictEqual(declared.undeclared, [])
+    deepStrictEqual(declared.additive, [QUICK])
+    strictEqual(declared.ok, true, JSON.stringify(declared))
+  })
+
+  test('an add keeps it and names the declaration', async () => {
+    const log = recordLog()
+    const project = makeProject({ log })
+    await target_add([targetRef('ts')], project.actx)
+    project.fs.writeFileSync(ROOT + '/' + QUICK, '// own\n')
+    project.fs.appendFileSync(ROOT + '/' + COPY_LOG,
+      JSON.stringify({ op: 'add', files: { [QUICK]: fingerprint('// other\n') } }) + '\n')
+    await target_add([targetRef('ts')], project.actx)
+    ok(exists(project, QUICK))
+    ok(log.lines.some((l: any) => 'target-component-override' === l.point &&
+      String(l.note).includes('override: ReadmeQuick: true')))
+  })
+})
+
+
+describe('a damaged copy record', () => {
+
+  test('a line that cannot be read is a doctor finding', async () => {
+    const project = makeProject()
+    await target_add([targetRef('ts')], project.actx)
+    project.fs.appendFileSync(ROOT + '/' + COPY_LOG, '{"op":"add","files":{"src/cm\n')
+
+    const lines = String(project.fs.readFileSync(ROOT + '/' + COPY_LOG, 'utf8')).split('\n')
+    const report: any = (await doctor(project.actx)).report
+    deepStrictEqual(report.damagedRecord, [COPY_LOG + ':' + (lines.length - 1)])
+    strictEqual(report.ok, false)
+  })
+
+  test('an entry of the wrong shape is damage too', async () => {
+    const project = makeProject()
+    await target_add([targetRef('ts')], project.actx)
+    project.fs.appendFileSync(ROOT + '/' + COPY_LOG, '[1,2]\n"x"\n')
+    strictEqual(readCopies(project.actx.fs(), ROOT).damaged.length, 2)
+  })
+
+  test('the next add does not join its line to a cut one', async () => {
+    const project = makeProject()
+    await target_add([targetRef('ts')], project.actx)
+    project.fs.appendFileSync(ROOT + '/' + COPY_LOG, '{"op":"add","fi')
+    await target_add([targetRef('go')], project.actx)
+
+    const record = readCopies(project.actx.fs(), ROOT)
+    strictEqual(record.damaged.length, 1)
+    ok(Object.keys(record.files).some((rel: string) => rel.startsWith('src/cmp/go/')))
   })
 })

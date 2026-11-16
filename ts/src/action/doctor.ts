@@ -38,13 +38,17 @@ import { findFeatureSources, featureExcludes } from '../helpers/featureSource'
 import { isJunk } from '../helpers/junk'
 
 import {
-  readCopies, untouched, itemKey, ignoredLog, IGNORED_LOG, projectCopyMode,
+  readCopies, untouched, unchangedCopy, itemKey, ignoredLog, IGNORED_LOG, projectCopyMode,
 } from './copies'
 import type { CopyRecord } from './copies'
 
-import { MERGE } from '../helpers/copymerge'
+import { MERGE, OVERWRITE } from '../helpers/copymerge'
 
-import { OPTIONAL_COMPONENTS } from '../helpers/optional'
+import { SYNTAX_SECTIONS, undeclaredOverride } from '../helpers/optional'
+
+import {
+  CMP_DIST, COMPILED_EXTS, parseComponent, sourceStem,
+} from '../helpers/cmpfile'
 
 
 const IGNORED_RE = /(~|-jostraca-off)$/
@@ -91,6 +95,15 @@ type DoctorReport = {
 
   // Unshipped by its source, and changed here. Informational.
   override: string[]
+
+  // An override or additive copy named after a section a shared component
+  // writes from the syntax provider, which the model does not declare under
+  // `main.kit.target.<t>.override`. Counts against ok.
+  undeclared: string[]
+
+  // Copy record lines that cannot be read. Counts against ok: the copies they
+  // named read as unrecorded.
+  damagedRecord: string[]
 
   superseded: string[]
 
@@ -209,7 +222,7 @@ async function cmd_doctor_prune(_args: string[], actx: ActionContext): Promise<A
 
   for (const rel of orphanCompiledFiles(actx)) {
     const stem = Path.join(actx.folder, rel.replace(/\.js$/, ''))
-    for (const ext of ['.js', '.js.map', '.d.ts', '.d.ts.map']) {
+    for (const ext of COMPILED_EXTS) {
       if (!dryrun && fs.existsSync(stem + ext)) {
         fs.unlinkSync(stem + ext)
       }
@@ -323,13 +336,14 @@ function orphanCompiledFiles(actx: ActionContext): string[] {
   const found: string[] = []
 
   for (const t of targets) {
-    for (const rel of walk(fs, Path.join(actx.folder, 'dist', 'cmp', t))) {
+    for (const rel of walk(fs, Path.join(actx.folder, ...(CMP_DIST + t).split('/')))) {
       if (!rel.endsWith('.js')) {
         continue
       }
-      const src = Path.join(actx.folder, 'src', 'cmp', t, rel.replace(/\.js$/, ''))
+      const dist = CMP_DIST + t + '/' + rel
+      const src = Path.join(actx.folder, ...sourceStem(dist).split('/'))
       if (!fs.existsSync(src + '.ts') && !fs.existsSync(src + '.js')) {
-        found.push('dist/cmp/' + t + '/' + rel)
+        found.push(dist)
       }
     }
   }
@@ -348,13 +362,16 @@ async function doctor(
 
   const report: DoctorReport = {
     forked: [], edited: [], stale: [], missing: [], additive: [],
-    retired: [], override: [], superseded: [], unwired: [], orphanModel: [],
+    retired: [], override: [], undeclared: [], damagedRecord: [],
+    superseded: [], unwired: [], orphanModel: [],
     orphanCompiled: [], resyncPending: [], aliasedDiff: [],
     outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
     ignoredLog: false, ok: true,
   }
 
   const copies = readCopies(fs, root)
+
+  report.damagedRecord = copies.damaged
 
   report.ignoredLog = ignoredLog(fs, root)
   if (report.ignoredLog) {
@@ -445,7 +462,8 @@ async function doctor(
   report.ok = 0 === report.forked.length + report.edited.length -
     report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
     report.orphanModel.length + report.orphanCompiled.length + report.outdated.length +
-    report.retired.length + report.unresolved.length
+    report.retired.length + report.unresolved.length +
+    report.undeclared.length + report.damagedRecord.length
 
   const customized = new Set(report.customized)
   const unmergeable = MERGE === projectCopyMode(actx) ? new Set(report.unrecorded) : new Set()
@@ -458,7 +476,11 @@ async function doctor(
     ['missing', 'MISSING (would be written by `target add`)'],
     ['additive', 'additive (project-owned, not drift)'],
     ['retired', 'RETIRED (an unchanged copy its source no longer ships; the next add removes it)'],
-    ['override', 'override (its source no longer ships it; changed here, so kept and used instead of the shared component)'],
+    ['override', OVERWRITE === projectCopyMode(actx) ?
+      'override (its source no longer ships it; changed here, and copies are overwritten in this project, so the next add deletes it)' :
+      'override (its source no longer ships it; changed here, so kept and used instead of the shared component)'],
+    ['undeclared', 'OVERRIDE NOT DECLARED (kept and used instead of the shared section; declare it as main: kit: target: <t>: override: <Name>: true, or delete it and its compiled output)'],
+    ['damagedRecord', 'DAMAGED COPY RECORD (a line that cannot be read; the copies it named read as unrecorded. Restore it from git, or delete the line)'],
     ['superseded', 'SUPERSEDED generated output (run `doctor prune` to delete)'],
     ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
     ['orphanModel', 'ORPHAN MODEL FILE (on disk, included by nothing, read by nobody)'],
@@ -508,6 +530,8 @@ async function doctor(
     resyncPending: report.resyncPending.length,
     retired: report.retired.length,
     override: report.override.length,
+    undeclared: report.undeclared.length,
+    damagedRecord: report.damagedRecord.length,
     aliasedDiff: report.aliasedDiff.length,
     outdated: report.outdated.length,
     unresolved: report.unresolved.length,
@@ -520,6 +544,8 @@ async function doctor(
         report.missing.length + ' missing, ' + report.outdated.length +
         ' outdated, ' + report.retired.length + ' retired, ' +
         report.orphanCompiled.length + ' orphan compiled, ' +
+        report.undeclared.length + ' undeclared override, ' +
+        report.damagedRecord.length + ' damaged record line, ' +
         report.unresolved.length + ' unresolved')
   })
 
@@ -529,9 +555,9 @@ async function doctor(
 
 // A shared component calls a target's own component of this name first.
 function replacesShared(kind: string, file: string): string {
-  const m = file.match(/^src\/cmp\/([^/]+)\/([A-Za-z]+)_\1\.ts$/)
-  return ('additive' === kind || 'override' === kind) && null != m &&
-    m[2] in OPTIONAL_COMPONENTS ? ' (used instead of the shared ' + m[2] + ')' : ''
+  const name = parseComponent(file)?.name
+  return ('additive' === kind || 'override' === kind) && null != name &&
+    SYNTAX_SECTIONS.includes(name) ? ' (used instead of the shared ' + name + ')' : ''
 }
 
 
@@ -986,9 +1012,12 @@ function noteDrift(
 
   return (category: Category, label: string) => {
     if ('unshipped' === category) {
-      const same = untouched(fs, actx.folder, copies, label)
+      const same = unchangedCopy(fs, actx.folder, copies, kind, source, label)
       if (true !== same) {
         report[false === same ? 'override' : 'additive'].push(label)
+        if (undeclaredOverride(actx.model, label)) {
+          report.undeclared.push(label)
+        }
         return
       }
     }

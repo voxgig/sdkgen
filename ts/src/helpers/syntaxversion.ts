@@ -1,4 +1,5 @@
 import { SdkGenError } from '../utility'
+import { componentSource } from './cmpfile'
 
 
 // The interface a syntax provider is written against, declared by the
@@ -30,7 +31,7 @@ function checkSyntaxInterface(target: string, declared: unknown): void {
 
   const from = 'string' === typeof declared ? declared : undefined
   const changes = SYNTAX_CHANGES.filter((c) => null == from || before(from, c.to))
-  const file = `.sdk/src/cmp/${target}/Syntax_${target}.ts`
+  const file = '.sdk/' + componentSource(target, 'Syntax')
 
   throw new SdkGenError(target + ': the syntax provider ' + file + ' is written for ' +
     (null == from ? 'an interface before ' + SYNTAX_CHANGES[0].to + ' (it declares none)' :
@@ -44,8 +45,17 @@ function checkSyntaxInterface(target: string, declared: unknown): void {
 }
 
 
+// The declaration as a provider's source writes it. The constant is not
+// exported, so a literal is the only declaration that compiles, and this
+// reads the same value the loaded provider carries.
+function declaredInterface(src: string): string | undefined {
+  return src.match(/^\s*interface:\s*['"]([^'"]+)['"]/m)?.[1]
+}
+
+
 export {
   SYNTAX_INTERFACE,
+  declaredInterface,
   SYNTAX_CHANGES,
   checkSyntaxInterface,
 }

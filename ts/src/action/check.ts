@@ -45,7 +45,9 @@ import {
 import { scaffoldFolder } from '../helpers/shipped'
 
 import { KINDS } from './kind'
-import { SYNTAX_INTERFACE } from '../helpers/syntaxversion'
+import { SYNTAX_INTERFACE, declaredInterface } from '../helpers/syntaxversion'
+import { componentSource } from '../helpers/cmpfile'
+import { SYNTAX_SECTIONS } from '../helpers/optional'
 
 
 const SAME_FILE_LIMIT = 5
@@ -473,9 +475,9 @@ function checkProviders(fs: any, sdk: string, manifest?: Manifest): Finding[] {
   ])
 
   for (const t of Array.from(targets).sort()) {
-    const dir = Path.join(sdk, 'src', 'cmp', t)
-    const has = (name: string) => fs.existsSync(Path.join(dir, name + '_' + t + '.ts'))
-    const file = Path.join(dir, 'Syntax_' + t + '.ts')
+    const pathOf = (name: string) => Path.join(sdk, ...componentSource(t, name).split('/'))
+    const has = (name: string) => fs.existsSync(pathOf(name))
+    const file = pathOf('Syntax')
     const at = (level: 'error' | 'warn', point: string, note: string): Finding =>
       ({ level, point, file, kind: 'target', name: t, note: 'src/cmp/' + t + ': ' + note })
 
@@ -484,8 +486,7 @@ function checkProviders(fs: any, sdk: string, manifest?: Manifest): Finding[] {
         found.push(at('error', 'provider-without-hook',
           'Syntax_' + t + '.ts has no Naming_' + t + '.ts, so generation stops on its first page'))
       }
-      const declared = String(fs.readFileSync(file, 'utf8'))
-        .match(/^\s*interface:\s*['"]([^'"]+)['"]/m)?.[1]
+      const declared = declaredInterface(String(fs.readFileSync(file, 'utf8')))
       if (SYNTAX_INTERFACE !== declared) {
         found.push(at('error', 'provider-interface',
           'Syntax_' + t + '.ts declares interface ' + (declared ?? 'none') +
@@ -493,7 +494,7 @@ function checkProviders(fs: any, sdk: string, manifest?: Manifest): Finding[] {
       }
     }
     else if (has('Naming') &&
-      !['ReadmeQuick', 'ReadmeRef', 'ReadmeTopQuick'].some((n) => has(n))) {
+      !SYNTAX_SECTIONS.some((n) => has(n))) {
       found.push(at('warn', 'hook-without-provider',
         'Naming_' + t + '.ts and no Syntax_' + t + '.ts or ReadmeQuick_' + t +
         '.ts, so the tutorial, the root quick start and REFERENCE.md are empty'))

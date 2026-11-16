@@ -1,6 +1,7 @@
 
 import { loadOptional } from '../utility'
 import { checkSyntaxInterface } from './syntaxversion'
+import { componentModule, componentSource, parseComponent } from './cmpfile'
 
 
 const DOCS = 'https://github.com/voxgig/sdkgen/blob/main/docs/how-to/' +
@@ -40,9 +41,24 @@ const OPTIONAL_COMPONENTS = {
 type OptionalComponent = keyof typeof OPTIONAL_COMPONENTS
 
 
+// The sections a shared component writes from the target's syntax provider
+// when the target has no component of its own by that name.
+const SYNTAX_SECTIONS: string[] = ['ReadmeQuick', 'ReadmeRef', 'ReadmeTopQuick']
+
+
+// A target's own copy of a section the shared component writes from the
+// syntax provider, which the model does not name as the project's choice
+// under `main.kit.target.<t>.override.<Name>`.
+function undeclaredOverride(model: any, file: string): boolean {
+  const own = parseComponent(file)
+  return null != own && SYNTAX_SECTIONS.includes(own.name) &&
+    true !== model?.main?.kit?.target?.[own.target]?.override?.[own.name]
+}
+
+
 function optionalComponent(ctx$: any, target: any, name: OptionalComponent): any {
   const t = target.name
-  const found = loadOptional(ctx$, `./cmp/${t}/${name}_${t}`)
+  const found = loadOptional(ctx$, componentModule(t, name))
 
   if (undefined !== found) {
     if ('Syntax' === name) {
@@ -52,7 +68,7 @@ function optionalComponent(ctx$: any, target: any, name: OptionalComponent): any
   }
 
   const lacks = OPTIONAL_COMPONENTS[name]
-  const file = `.sdk/src/cmp/${t}/${name}_${t}.ts`
+  const file = '.sdk/' + componentSource(t, name)
 
   if (null == lacks) {
     ctx$.log?.debug?.({
@@ -80,5 +96,7 @@ export type {
 
 export {
   OPTIONAL_COMPONENTS,
+  SYNTAX_SECTIONS,
   optionalComponent,
+  undeclaredOverride,
 }

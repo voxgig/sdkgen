@@ -5,7 +5,7 @@ import { File, Content } from 'jostraca'
 
 import { KIT } from '../types'
 
-import { SdkGenError } from '../utility'
+import { SdkGenError, escapeRe } from '../utility'
 
 import { provenanceReplace } from '../helpers/stdrep'
 
@@ -70,11 +70,6 @@ function aliasModelKey(kind: string) {
         return kind + ':' + gap + q + name + q + ':'
       })
   }
-}
-
-
-function escapeRe(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 

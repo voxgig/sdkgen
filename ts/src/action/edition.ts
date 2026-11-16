@@ -198,8 +198,8 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
             !!props.actx?.opts?.dryrun)
         }
         else {
-          pruneRetired(ctx$, props.actx, source.folder + '/' + from[i].path,
-            tree.path, source.origname, source.name)
+          pruneRetired(ctx$, props.actx, 'edition', source,
+            source.folder + '/' + from[i].path, tree.path)
         }
 
         copyTree(ctx$, source, tree, from[i].path)

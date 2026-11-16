@@ -14,7 +14,11 @@ import {
   definitionFileName, definitionFolder, indexName,
 } from '../helpers/definition'
 
-import { KINDS } from './kind'
+import { KINDS, kindTrees } from './kind'
+
+import { retiredPath } from '../helpers/manifest'
+
+import { aliasCmpName, aliasCmpText } from '../helpers/cmpfile'
 
 import type { Source } from './resolve'
 
@@ -46,6 +50,8 @@ type CopyItem = {
 type CopyRecord = {
   items: Record<string, CopyItem>
   files: Record<string, string>
+  // Where a line could not be read: `log/copies.jsonl:<n>`, or the legacy file.
+  damaged: string[]
 }
 
 // A null forgets the item or the file.
@@ -74,19 +80,30 @@ function fingerprint(content: any): string {
 }
 
 
-// Unreadable lines are skipped. A copy can then only lose its entry, which
-// leaves it unrecorded, as in a project from before the record existed.
+// An unreadable line is skipped and named in `damaged`: the copies it held
+// read as unrecorded, and doctor reports the line.
 function readCopies(fs: any, folder: string): CopyRecord {
-  const record: CopyRecord = { items: {}, files: {} }
+  const record: CopyRecord = { items: {}, files: {}, damaged: [] }
   const log = logPath(folder)
 
-  const entries = fs.existsSync(log) ?
-    String(fs.readFileSync(log, 'utf8')).split('\n').map(parseEntry) :
-    [readLegacy(fs, folder)]
-
-  for (const entry of entries) {
-    if (null != entry) {
-      apply(record, entry)
+  if (fs.existsSync(log)) {
+    String(fs.readFileSync(log, 'utf8')).split('\n').forEach((line, i) => {
+      const entry = parseEntry(line)
+      if (null === entry) {
+        record.damaged.push(COPY_LOG + ':' + (i + 1))
+      }
+      else if (null != entry) {
+        apply(record, entry)
+      }
+    })
+  }
+  else {
+    const legacy = readLegacy(fs, folder)
+    if (null === legacy) {
+      record.damaged.push(LEGACY)
+    }
+    else if (null != legacy) {
+      apply(record, legacy)
     }
   }
 
@@ -94,21 +111,30 @@ function readCopies(fs: any, folder: string): CopyRecord {
 }
 
 
-function parseEntry(line: string): CopyEntry | undefined {
+// Undefined for a blank line, null for one that is not an entry.
+function parseEntry(line: string): CopyEntry | null | undefined {
   if ('' === line.trim()) {
     return undefined
   }
 
   try {
-    return JSON.parse(line) ?? undefined
+    const entry = JSON.parse(line)
+    return isEntry(entry) ? entry : null
   }
   catch (err: any) {
-    return undefined
+    return null
   }
 }
 
 
-function readLegacy(fs: any, folder: string): CopyEntry | undefined {
+function isEntry(entry: any): entry is CopyEntry {
+  const map = (v: any) => null == v || ('object' === typeof v && !Array.isArray(v))
+  return null != entry && 'object' === typeof entry && !Array.isArray(entry) &&
+    map(entry.items) && map(entry.files)
+}
+
+
+function readLegacy(fs: any, folder: string): CopyEntry | null | undefined {
   const path = Path.join(folder, LEGACY)
 
   if (!fs.existsSync(path)) {
@@ -120,7 +146,7 @@ function readLegacy(fs: any, folder: string): CopyEntry | undefined {
     return { items: read?.items ?? {}, files: read?.files ?? {} }
   }
   catch (err: any) {
-    return undefined
+    return null
   }
 }
 
@@ -162,12 +188,16 @@ function appendEntry(actx: ActionContext, op: string, entry: CopyEntry) {
       lines.push(entryLine('import', imported))
     }
   }
+  // A line cut short must not swallow the next one.
+  else if (!String(fs.readFileSync(log, 'utf8')).endsWith('\n')) {
+    lines.unshift('')
+  }
 
   if (changes(entry)) {
     lines.push(entryLine(op, entry))
   }
 
-  if (0 < lines.length) {
+  if (lines.some((line) => '' !== line)) {
     fs.mkdirSync(Path.dirname(log), { recursive: true })
     fs.appendFileSync(log, lines.join('\n') + '\n')
 
@@ -344,8 +374,18 @@ async function guardCopies<T>(
   }
 
   const fs = actx.fs()
-  const files = readCopies(fs, actx.folder).files
+  const record = readCopies(fs, actx.folder)
+  const files = record.files
   const flags = actx.flags ?? {}
+
+  if (0 < record.damaged.length) {
+    actx.log.warn({
+      point: 'copies-damaged', lines: record.damaged,
+      note: 'cannot read ' + record.damaged.join(', ') + ': the copies it ' +
+        'named read as unrecorded, so a changed one cannot be told from an ' +
+        'outdated one. Restore it from git, or delete the line.',
+    })
+  }
 
   return withCopyMerge({
     fs,
@@ -383,6 +423,61 @@ function untouched(
 }
 
 
+// Is this project copy, of a file its source no longer ships, byte for byte
+// a version a release of that source shipped? Read from the source package's
+// retired list, so it holds without the copy record.
+function releasedCopy(
+  fs: any, folder: string, kind: string, source: Source, rel: string,
+): boolean {
+  const aliased = source.name !== source.origname
+  const from = kindTrees(kind, source.origname)
+  const at = kindTrees(kind, source.name)
+    .findIndex((tree: any) => rel.startsWith(tree.path + '/'))
+  const list = readRetired(fs, source.folder)
+
+  if (at < 0 || null == list) {
+    return false
+  }
+
+  const inner = rel.slice(kindTrees(kind, source.name)[at].path.length + 1)
+  const prints = list[from[at].path + '/' +
+    (aliased ? aliasCmpName(inner, source.name, source.origname) : inner)]
+  const abs = Path.join(folder, ...rel.split('/'))
+
+  if (!Array.isArray(prints) || !fs.existsSync(abs)) {
+    return false
+  }
+
+  const bytes = fs.readFileSync(abs)
+  return prints.includes(fingerprint(aliased ? Buffer.from(aliasCmpText(
+    bytes.toString('latin1'), source.name, source.origname), 'latin1') : bytes))
+}
+
+
+function readRetired(fs: any, sdkfolder: string): Record<string, string[]> | undefined {
+  const path = retiredPath(sdkfolder)
+
+  try {
+    return fs.existsSync(path) ?
+      JSON.parse(String(fs.readFileSync(path, 'utf8')))?.files : undefined
+  }
+  catch (err: any) {
+    return undefined
+  }
+}
+
+
+// An unshipped copy is unchanged when the record says so or when it is a
+// released version; otherwise the record's verdict stands.
+function unchangedCopy(
+  fs: any, folder: string, record: CopyRecord, kind: string, source: Source,
+  rel: string,
+): boolean | undefined {
+  const same = untouched(fs, folder, record, rel)
+  return true !== same && releasedCopy(fs, folder, kind, source, rel) ? true : same
+}
+
+
 export type {
   CopyItem,
   CopyRecord,
@@ -402,5 +497,7 @@ export {
   guardCopies,
   projectCopyMode,
   untouched,
+  unchangedCopy,
+  releasedCopy,
   isCopy,
 }
