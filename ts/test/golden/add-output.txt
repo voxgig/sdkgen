@@ -924,7 +924,7 @@ src/cmp/kotlin/ReadmeTopHowto_kotlin.ts 5f8193767df5
 src/cmp/kotlin/ReadmeTopTest_kotlin.ts 6707235865eb
 src/cmp/kotlin/Schema_kotlin.ts 3621db550db1
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
-src/cmp/kotlin/Syntax_kotlin.ts 19dae9e6e0ca
+src/cmp/kotlin/Syntax_kotlin.ts 9af920319bfd
 src/cmp/kotlin/TestClean_kotlin.ts e85fcde325cb
 src/cmp/kotlin/TestDirect_kotlin.ts b2f5a64898e4
 src/cmp/kotlin/TestEntity_kotlin.ts 0bc109537d13
