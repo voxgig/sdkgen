@@ -1,28 +1,35 @@
 {
- "39aecae10e": {
-  "outcome": "same-meaning",
-  "why": "the echo of the dropped tutorial sentence 9c1038b6ae (the drop is recorded there): what remains elsewhere on the page means the same as what was removed, the README's Error handling section (unported, ReadmeExplanation_js) still calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; no disagreement. An echo class takes contradiction, defect or same-meaning (tools/ledger.js invalidFor), not dropped",
-  "n": 19
+ "facts": {
+  "named": {
+   "value": "call",
+   "why": "OLD said Use `client.direct()` to call any API endpoint directly (tutorial) and `stream()` takes the signal (REFERENCE): OLD js names a member as a call in prose; js writes every call with parentheses (calls.args paren)",
+   "evidence": "OLD B/js/README.md \"Use `client.direct()` to call any API endpoint directly:\"; OLD B/js/REFERENCE.md \"`stream()` takes the signal\""
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD used for the client's members (Instance Methods, Static Methods, Common Methods); held there; the new context is the shared heading Client Methods, decided once for all twenty",
+   "evidence": "OLD B/js/REFERENCE.md \"### Instance Methods\", \"### Static Methods\""
+  }
  },
- "92f7d78487": {
-  "outcome": "same-meaning",
-  "why": "the README test-mode comment says the same: load gives the entity and .data() reads its record",
-  "n": 16
+ "absent": {
+  "99a8153c15": "ts names the entity class in this step comment because it declares facts.listOf; js declares no listOf because its methods declare no return type: the forms read none (uncompared returns), and the class is named only in a JSDoc comment, `@returns {Promise<EntyClass>}` (EntityLoadOp.fragment.js), which no check reads. js prints the same comment without the class, Load an ambient: the entity; throws on failure, in the same variations",
+  "7ab5ba644d": "printed only after the lead quick start of the root README (ts, ReadmeQuick.ts); every other language's root block, js's and the reference languages' other than ts, sits under Quickstart in other languages with no sentences after it",
+  "a0b269a293": "ts names the entity class in the list comment because it declares facts.listOf; js declares none because its methods declare no return type (the class array is named only in the JSDoc comment `@returns {Promise<EntyClass[]>}`, EntityListOp.fragment.js, which no check reads), and prints the same comment with its collection word, List planet records: an array of entities, one per record; throws on failure (crud-bare/README.md JavaScript block), in the same variations"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "the README cell is about `base` (Base URL of the API server); the js README options table (unported ReadmeModel_js) has no `server` row and says nothing about server variables, so nothing disagrees; the REFERENCE options rows say the same as this sentence",
   "n": 15
  },
- "325b1911ed": {
+ "92f7d78487": {
   "outcome": "same-meaning",
-  "why": "the README cell is about `base` (Base URL of the API server); the js README options table (unported ReadmeModel_js) has no `server` row and says nothing about server variables, so nothing disagrees; the REFERENCE options rows say the same as this sentence",
-  "n": 1
+  "why": "the README test-mode comment says the same: load gives the entity and .data() reads its record",
+  "n": 16
  },
- "da31ab6872": {
+ "39aecae10e": {
   "outcome": "same-meaning",
-  "why": "the README line is about the entities list() resolves to having no `.data` property of the array; this sentence reads an entity's record with `.data()`; two different objects, no disagreement",
-  "n": 7
+  "why": "the echo of the dropped tutorial sentence 9c1038b6ae (the drop is recorded there): what remains elsewhere on the page means the same as what was removed, the README's Error handling section (unported, ReadmeExplanation_js) still calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; no disagreement. An echo class takes contradiction, defect or same-meaning (tools/ledger.js invalidFor), not dropped",
+  "n": 19
  },
  "eaee0ae53d": {
   "outcome": "unification:tutorial-steps",
@@ -34,21 +41,6 @@
   "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
   "n": 10
  },
- "cedef8743f": {
-  "outcome": "unification:tutorial-steps",
-  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
-  "n": 6
- },
- "33dfe2f615": {
-  "outcome": "unification:tutorial-steps",
-  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
-  "n": 7
- },
- "89d63c000f": {
-  "outcome": "unification:tutorial-steps",
-  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
-  "n": 1
- },
  "9b1549ef5e": {
   "outcome": "dropped",
   "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
@@ -58,6 +50,21 @@
   "outcome": "dropped",
   "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
   "n": 19
+ },
+ "da31ab6872": {
+  "outcome": "same-meaning",
+  "why": "the README line is about the entities list() resolves to having no `.data` property of the array; this sentence reads an entity's record with `.data()`; two different objects, no disagreement",
+  "n": 7
+ },
+ "cedef8743f": {
+  "outcome": "unification:tutorial-steps",
+  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
+  "n": 6
+ },
+ "33dfe2f615": {
+  "outcome": "unification:tutorial-steps",
+  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
+  "n": 7
  },
  "62ffd8db5f": {
   "outcome": "restored:shared",
@@ -74,19 +81,29 @@
   "why": "restored in the one write step, titled with its entity (4. Create, update, patch, and remove a planet), each write a commented call in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 3
  },
+ "42b0d275b2": {
+  "outcome": "restored:shared",
+  "why": "restored as the patch comment in the write block: Patch \u2014 sends only the fields given",
+  "n": 3
+ },
  "42a1cc7e7e": {
   "outcome": "restored:shared",
   "why": "restored in the one write step, titled with its entity (4. Create, update, patch, and remove a planet), each write a commented call in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 5
  },
- "42b0d275b2": {
-  "outcome": "restored:shared",
-  "why": "restored as the patch comment in the write block: Patch — sends only the fields given",
-  "n": 3
- },
  "421b4a9858": {
   "outcome": "unification:write-title-entity",
   "why": "the write step is titled with its entity and names the writes it holds (create and remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1
+ },
+ "89d63c000f": {
+  "outcome": "unification:tutorial-steps",
+  "why": "the shared tutorial numbers its steps and writes the heading in sentence case; the step is the same",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "the README cell is about `base` (Base URL of the API server); the js README options table (unported ReadmeModel_js) has no `server` row and says nothing about server variables, so nothing disagrees; the REFERENCE options rows say the same as this sentence",
   "n": 1
  },
  "6fb3670380": {
@@ -97,16 +114,6 @@
  "275db80f77": {
   "outcome": "correction:sentence-review-env",
   "why": "the shared client sentence says what the example does (passes the variable's value as the option); no client of the twenty reads the environment itself; the token is the option name the sentence names",
-  "n": 1
- },
- "f5ea3ada1b": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the shared client sentence says what the example does (passes the variable's value as the option); no client of the twenty reads the environment itself; the token is the option name the sentence names",
-  "n": 1
- },
- "e5e05eb7a6": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
   "n": 1
  },
  "1a135d465d": {
@@ -129,11 +136,6 @@
   "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
   "n": 1
  },
- "a12e1f1e52": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
-  "n": 1
- },
  "0acd9c1b01": {
   "outcome": "same-meaning",
   "why": "a method name the shared step sentences name (load, list, update, data), the methods OLD's blocks called",
@@ -144,6 +146,16 @@
   "why": "a method name the shared step sentences name (load, list, update, data), the methods OLD's blocks called",
   "n": 1
  },
+ "e5e05eb7a6": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the shared client sentence says what the example does (passes the variable's value as the option); no client of the twenty reads the environment itself; the token is the option name the sentence names",
+  "n": 1
+ },
  "36e1725df7": {
   "outcome": "same-meaning",
   "why": "a method name the shared step sentences name (load, list, update, data), the methods OLD's blocks called",
@@ -152,6 +164,11 @@
  "f6f21dc984": {
   "outcome": "same-meaning",
   "why": "a method name the shared step sentences name (load, list, update, data), the methods OLD's blocks called",
+  "n": 1
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
   "n": 1
  },
  "8c077b022a": {
@@ -174,19 +191,14 @@
   "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
   "n": 10
  },
- "14a6db9bd2": {
-  "outcome": "unification:tutorial-attempt",
-  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
-  "n": 5
+ "8f13c5f9a3": {
+  "outcome": "dropped",
+  "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
+  "n": 19
  },
- "54206e1492": {
-  "outcome": "unification:tutorial-attempt",
-  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
-  "n": 1
- },
- "888fb547ba": {
-  "outcome": "unification:tutorial-attempt",
-  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+ "c4f725c32e": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1
  },
  "737d29091f": {
@@ -194,20 +206,15 @@
   "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
   "n": 6
  },
+ "14a6db9bd2": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+  "n": 5
+ },
  "a343342201": {
   "outcome": "unification:write-step-one-block",
   "why": "the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write; the created entity's record is read for the id of the later writes (created.data().id) and is no longer printed, nor are the updated and patched records",
   "n": 3
- },
- "da3aea7adf": {
-  "outcome": "unification:write-step-one-block",
-  "why": "the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write; the created entity's record is read for the id of the later writes (created.data().id) and is no longer printed, nor are the updated and patched records",
-  "n": 1
- },
- "e4791efa29": {
-  "outcome": "unification:write-step-one-block",
-  "why": "the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write; the created entity's record is read for the id of the later writes (created.data().id) and is no longer printed, nor are the updated and patched records",
-  "n": 1
  },
  "db97ceae30": {
   "outcome": "restored:shared",
@@ -224,19 +231,39 @@
   "why": "in the one write block of step 4, as an unbound call with its comment (the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write)",
   "n": 5
  },
+ "da3aea7adf": {
+  "outcome": "unification:write-step-one-block",
+  "why": "the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write; the created entity's record is read for the id of the later writes (created.data().id) and is no longer printed, nor are the updated and patched records",
+  "n": 1
+ },
+ "54206e1492": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+  "n": 1
+ },
+ "888fb547ba": {
+  "outcome": "unification:tutorial-attempt",
+  "why": "the shared tutorial wraps each read step in try / catch for the throw style (helpers/example.ts interrupts: a failure interrupts), as the ts tutorial prints; the call and the record read inside are OLD's; blocks are paired by position, so where the steps were renumbered a list is paired with a load; doc-list names the array consoles (the naming hook's var, exampleVarName) where OLD wrote console_s",
+  "n": 1
+ },
+ "e4791efa29": {
+  "outcome": "unification:write-step-one-block",
+  "why": "the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write; the created entity's record is read for the id of the later writes (created.data().id) and is no longer printed, nor are the updated and patched records",
+  "n": 1
+ },
  "e3563c0405": {
   "outcome": "unification:write-comment-style",
   "why": "ref-issues: the update is a commented, unbound call in the write block (as ts), and its record is no longer printed",
   "n": 1
  },
- "8f13c5f9a3": {
-  "outcome": "dropped",
-  "why": "said elsewhere on the same page: the README's Error handling section (unported, ReadmeExplanation_js) calls `client.direct({` and branches on `result.ok`, and its how-to 'Make a direct HTTP request' shows it again; the shared tutorial, ts's included, covers entity operations only",
-  "n": 19
+ "544bcc7c67": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
  },
- "c434e3cf1b": {
-  "outcome": "unification:tutorial-load-nested",
-  "why": "doc-nested: the load step loads the nested satellite with its parent key (planet_id: example_planet_id), as ts does",
+ "7f936dfd5c": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1
  },
  "87aafab844": {
@@ -245,11 +272,6 @@
   "n": 1
  },
  "37b37bdcf2": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
-  "n": 1
- },
- "bc883ce38e": {
   "outcome": "correction:server-required-given",
   "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
   "n": 1
@@ -291,82 +313,92 @@
  },
  "4e6b0f3f7e": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "39ea7efa32": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "fcb7568a90": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "2d27d490a5": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "14eb5dfde1": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "70ac6b6b08": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "b3e1a90434": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "81ce817c06": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "431e9ea0d5": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "4e30f7a270": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "c76072420b": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "cb1191a23f": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "448bd65283": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "7487ca3728": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "298121a8f9": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
  "b6150d1436": {
   "outcome": "unification:write-comment-style",
-  "why": "words of the shared write comments (Create — resolves to the created entity; .data() reads its record; Update — the id comes off the created entity's record; Patch — sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "why": "words of the shared write comments (Create \u2014 resolves to the created entity; .data() reads its record; Update \u2014 the id comes off the created entity's record; Patch \u2014 sends only the fields given; Remove); the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
+  "n": 1
+ },
+ "bc883ce38e": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1
+ },
+ "2a829fba0d": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1
  },
  "24bde6532f": {
@@ -434,6 +466,11 @@
   "why": "the updated and patched bindings: the writes are unbound commented calls in one block; the shared tutorial writes every write in one step, titled with its entity, one block with a comment per call (as ts); OLD js had a heading and a block per write",
   "n": 1
  },
+ "c434e3cf1b": {
+  "outcome": "unification:tutorial-load-nested",
+  "why": "doc-nested: the load step loads the nested satellite with its parent key (planet_id: example_planet_id), as ts does",
+  "n": 1
+ },
  "09f2d870a7": {
   "outcome": "restored:shared",
   "why": "restored as the shared step comment Load an ambient: the entity; throws on failure",
@@ -444,19 +481,69 @@
   "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named); the load step is the one OLD wrote as Load a specific ...",
   "n": 10
  },
+ "67715b4dfb": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 7
+ },
  "3c64dff088": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named); the load step is the one OLD wrote as Load a specific ...",
   "n": 5
  },
- "d16fc456ba": {
-  "outcome": "unification:step-comment-runtime-fact",
-  "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
-  "n": 7
- },
  "e444426c17": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1
+ },
+ "f458039d34": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 5
+ },
+ "949dea79d5": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "5858559485": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "dd418592e4": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "d6aa87d1b3": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 3
+ },
+ "9f5f4330f0": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "ba7c3f0f8b": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "7c8f002676": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "a922ecc0a2": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+  "n": 1
+ },
+ "2f996acf19": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1
  },
  "ff935caa13": {
@@ -467,21 +554,6 @@
  "fe936330a5": {
   "outcome": "correction:server-required-given",
   "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
-  "n": 1
- },
- "d22dabf866": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
-  "n": 1
- },
- "797ec8d55d": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
-  "n": 1
- },
- "5ac10c03c6": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
   "n": 1
  },
  "cdb707579b": {
@@ -497,6 +569,26 @@
  "41e8b6808d": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)",
+  "n": 1
+ },
+ "797ec8d55d": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1
+ },
+ "d22dabf866": {
+  "outcome": "correction:server-required-given",
+  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction)",
+  "n": 1
+ },
+ "7c7be741ea": {
+  "outcome": "correction:js-esm-import",
+  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
   "n": 1
  },
  "b1989358a0": {
@@ -518,6 +610,11 @@
   "outcome": "same-meaning",
   "why": "the README cell is about `base` (Base URL of the API server); the js README options table (unported ReadmeModel_js) has no `server` row, so nothing disagrees with the REFERENCE server rows",
   "n": 16
+ },
+ "8e7a866f45": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it [v3.4 re-count: x38 to x38, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 38
  },
  "9c6d819441": {
   "outcome": "contradiction",
@@ -556,6 +653,16 @@
   "outcome": "same-meaning",
   "why": "the sdkopts cell went with the parameter table; the name stays in the heading's signature and the README tester row; the sentence calls it the second argument",
   "n": 19
+ },
+ "176972c3bb": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it [v3.4 re-count: x67 to x67, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 67
+ },
+ "9c11b6417b": {
+  "outcome": "same-meaning",
+  "why": "the type word object, as the README's options table uses it [v3.4 re-count: x38 to x38, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 38
  },
  "036417f9ca": {
   "outcome": "same-meaning",
@@ -602,11 +709,6 @@
   "why": "the runtime's parameter is entopts (MainEntity_js.ts `${entity.Name}(entopts) {`, passed to the entity constructor); OLD named it data",
   "n": 93
  },
- "18b691f7e7": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the runtime's parameter is entopts (MainEntity_js.ts `${entity.Name}(entopts) {`, passed to the entity constructor); OLD named it data",
-  "n": 1
- },
  "5734aba53e": {
   "outcome": "dropped",
   "why": "the accessor and test-client parameter tables became sentences naming each parameter; the signature heading keeps name and type",
@@ -632,15 +734,10 @@
   "why": "restored as the accessor sentence Create a new `AmbientEntity` instance. (the accessor makes a new entity on every call, MainEntity_js.ts `return new ${cls}(self, entopts)`)",
   "n": 93
  },
- "f3cf8c6c54": {
-  "outcome": "restored:shared",
-  "why": "restored as the accessor sentence Create a new `AmbientEntity` instance. (the accessor makes a new entity on every call, MainEntity_js.ts `return new ${cls}(self, entopts)`)",
-  "n": 1
- },
  "a0ea2daad1": {
   "outcome": "dropped",
-  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`)",
-  "n": 116
+  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`) [v3.4 re-count: x64 to x64, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 64
  },
  "a27fcb0198": {
   "outcome": "unification:ref-page-structure",
@@ -649,13 +746,8 @@
  },
  "ac1b545527": {
   "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
   "n": 19
- },
- "3f4da3a957": {
-  "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
-  "n": 1
  },
  "7b8e8beaa8": {
   "outcome": "restored:shared",
@@ -717,25 +809,15 @@
   "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
   "n": 2
  },
+ "5c591f3d19": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 2
+ },
  "66936e5036": {
   "outcome": "restored:shared",
   "why": "restored as the patch sentence",
   "n": 4
- },
- "8e7a866f45": {
-  "outcome": "same-meaning",
-  "why": "the type word object, as the README's options table uses it",
-  "n": 2
- },
- "9c11b6417b": {
-  "outcome": "same-meaning",
-  "why": "the type word object, as the README's options table uses it",
-  "n": 2
- },
- "176972c3bb": {
-  "outcome": "same-meaning",
-  "why": "the type word object, as the README's options table uses it",
-  "n": 1
  },
  "3344d6d2fb": {
   "outcome": "same-meaning",
@@ -745,19 +827,24 @@
  "bff341cf32": {
   "outcome": "contradiction",
   "why": "",
-  "where": "no-test js/README.md, Use test mode (unported ReadmeHowto_js): Create a mock client for unit testing — no server required:, then a load that reads its mock record",
+  "where": "no-test js/README.md, Use test mode (unported ReadmeHowto_js): Create a mock client for unit testing \u2014 no server required:, then a load that reads its mock record",
   "true": "the REFERENCE: without the test feature the test client has no mock transport and refuses every request",
   "evidence": "Config.fragment.js:32 `const fc = FEATURE_CLASS[fn] || BaseFeature` (no test class generated: the base feature, no mock); the ts contradiction recorded the same",
-  "n": 1
- },
- "05f770bd83": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the two arguments, and its feature cell names the same feature.test option; no disagreement",
   "n": 1
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
   "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1
+ },
+ "18b691f7e7": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the runtime's parameter is entopts (MainEntity_js.ts `${entity.Name}(entopts) {`, passed to the entity constructor); OLD named it data",
+  "n": 1
+ },
+ "f3cf8c6c54": {
+  "outcome": "restored:shared",
+  "why": "restored as the accessor sentence Create a new `AmbientEntity` instance. (the accessor makes a new entity on every call, MainEntity_js.ts `return new ${cls}(self, entopts)`)",
   "n": 1
  },
  "dac11a1691": {
@@ -771,11 +858,6 @@
   "n": 1
  },
  "d245316c2e": {
-  "outcome": "correction:U34",
-  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; the heading names it",
-  "n": 1
- },
- "57048dc63c": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; the heading names it",
   "n": 1
@@ -795,46 +877,6 @@
   "why": "ref-issues turns remove off: an inactive operation is not documented",
   "n": 1
  },
- "c442d0fbe4": {
-  "outcome": "correction:S25",
-  "why": "ref-issues turns remove off: an inactive operation is not documented",
-  "n": 1
- },
- "db819a027f": {
-  "outcome": "correction:decision-11-deleted",
-  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names (EntityBase.fragment.js:51 deleted())",
-  "n": 1
- },
- "b452b7729b": {
-  "outcome": "unification:ref-list-printed",
-  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
-  "n": 1
- },
- "81b5ca4c52": {
-  "outcome": "unification:ref-list-printed",
-  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
-  "n": 1
- },
- "6a8837b248": {
-  "outcome": "unification:ref-list-printed",
-  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
-  "n": 1
- },
- "fcd0aab970": {
-  "outcome": "unification:ref-list-printed",
-  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
-  "n": 1
- },
- "5c591f3d19": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
-  "n": 2
- },
- "045e555fdd": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
-  "n": 1
- },
  "b4523a5362": {
   "outcome": "correction:server-required-given",
   "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
@@ -851,11 +893,6 @@
   "n": 1
  },
  "05e95df417": {
-  "outcome": "correction:server-required-given",
-  "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
-  "n": 1
- },
- "a9e4808c74": {
   "outcome": "correction:server-required-given",
   "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
   "n": 1
@@ -890,6 +927,31 @@
   "why": "the Actions table, which OLD js did not print (OLD ts did): an action reachable only through $action and not documented is an endpoint no reader can call; its Call cell is the awaited call",
   "n": 1
  },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names (EntityBase.fragment.js:51 deleted())",
+  "n": 1
+ },
+ "045e555fdd": {
+  "outcome": "correction:secret-option",
+  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction)",
+  "n": 1
+ },
+ "a9e4808c74": {
+  "outcome": "correction:server-required-given",
+  "why": "the options table names the server variables the URL is templated on, which OLD js left out (ts's OLD page had the rows)",
+  "n": 1
+ },
+ "3f4da3a957": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false for the runtimes (sentence review): explain is a map the pipeline fills (js EntityBase.fragment.js _unexpected reads ctrl.explain.err), so the row says only what ctrl is",
+  "n": 1
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; the heading names it",
+  "n": 1
+ },
  "50e2198a19": {
   "outcome": "unification:ts-trailing-comma",
   "why": "the shared features example closes its feature map with a comma, as ts's does (ts normalizer ts-trailing-comma names the same change)",
@@ -900,101 +962,174 @@
   "why": "doc-nested: the list example quotes its string with single quotes, as every js example does, and prints each item's record",
   "n": 1
  },
+ "c442d0fbe4": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1
+ },
+ "81b5ca4c52": {
+  "outcome": "unification:ref-list-printed",
+  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
+  "n": 1
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-list-printed",
+  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
+  "n": 1
+ },
+ "fcd0aab970": {
+  "outcome": "unification:ref-list-printed",
+  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
+  "n": 1
+ },
+ "b452b7729b": {
+  "outcome": "unification:ref-list-printed",
+  "why": "the reference list examples print each item's record (for (const item of results) { console.log(item.data()) }), as ts's do",
+  "n": 1
+ },
  "54777750b6": {
   "outcome": "unification:ref-type-comments",
   "why": "the create example's fields carry their type as a comment from the js type column (canonToType js: string), as ts's carry theirs (normalizer ref-type-comments)",
   "n": 1
  },
- "f458039d34": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 5
- },
- "d6aa87d1b3": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 3
- },
- "949dea79d5": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+ "05f770bd83": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments, and its feature cell names the same feature.test option; no disagreement",
   "n": 1
  },
- "5858559485": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18
+ },
+ "8dc2e9fad6": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "889a3be7db": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "d7e695403a": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "bb0c98c2da": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "08bc693296": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "c11fbd3bd3": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "c15e157e96": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "a0ea7f51a6": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "68cd0488cc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "c18df8e763": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "caeed47a09": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "2888f25445": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "58ecc8027c": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "3e8924da1b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "20caa1a032": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "20470030b4": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "6e07802bbf": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18
+ },
+ "c23d66bc9b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "b379eb97d8": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18
+ },
+ "5ce4fbf9a3": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
+ },
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94
+ },
+ "5b46edebf3": {
+  "outcome": "same-meaning",
+  "why": "the README names the same `feature.test` switch (its feature row or its test-mode text); this sentence says the call sets it, switched on; no disagreement",
   "n": 1
  },
- "dd418592e4": {
-  "outcome": "correction:secret-option",
-  "why": "HTTP Basic auth needs the secret beside the apikey (PrepareAuth composes the two); OLD js omitted it (the tools' secret-option normalizer names the same correction); OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
   "n": 1
  },
- "9f5f4330f0": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
   "n": 1
- },
- "ba7c3f0f8b": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "7c8f002676": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); the step comments are the shared form (the shared step comment states what the call gives back and how it fails, from the runtime facts (async throw; no listOf, so no class is named)), and where the API has both, the root loads after it lists, as ts does; doc-list names the array consoles where OLD wrote console_s; and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "c4f725c32e": {
-  "outcome": "correction:server-required-given",
-  "why": "OLD js gave no server variables, so its client example threw on its first line for a templated server URL (makeOptions refuses an unfilled variable); the shared client example and sentence give the required one (normalizer server-required-given names the same correction); and the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "a922ecc0a2": {
-  "outcome": "correction:js-esm-import",
-  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "2f996acf19": {
-  "outcome": "correction:js-esm-import",
-  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "7c7be741ea": {
-  "outcome": "correction:js-esm-import",
-  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "544bcc7c67": {
-  "outcome": "correction:js-esm-import",
-  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "7f936dfd5c": {
-  "outcome": "correction:js-esm-import",
-  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "2a829fba0d": {
-  "outcome": "correction:js-esm-import",
-  "why": "the SDK is imported with an ES import, as on the ts page (normalizer js-esm-import): the steps use top-level await, and node 24 refuses OLD's require beside it before the first statement (ERR_AMBIGUOUS_MODULE_SYNTAX), while NEW's import runs to the live request; both run from the repository root of generated SDKs (default, crud and basic-server models)",
-  "n": 1
- },
- "facts": {
-  "named": {
-   "value": "call",
-   "why": "OLD said Use `client.direct()` to call any API endpoint directly (tutorial) and `stream()` takes the signal (REFERENCE): OLD js names a member as a call in prose; js writes every call with parentheses (calls.args paren)",
-   "evidence": "OLD B/js/README.md \"Use `client.direct()` to call any API endpoint directly:\"; OLD B/js/REFERENCE.md \"`stream()` takes the signal\""
-  },
-  "ref.noun": {
-   "value": "Methods",
-   "why": "the noun OLD used for the client's members (Instance Methods, Static Methods, Common Methods); held there; the new context is the shared heading Client Methods, decided once for all twenty",
-   "evidence": "OLD B/js/REFERENCE.md \"### Instance Methods\", \"### Static Methods\""
-  }
- },
- "absent": {
-  "99a8153c15": "ts names the entity class in this step comment because it declares facts.listOf; js declares no listOf because its methods declare no return type: the forms read none (uncompared returns), and the class is named only in a JSDoc comment, `@returns {Promise<EntyClass>}` (EntityLoadOp.fragment.js), which no check reads. js prints the same comment without the class, Load an ambient: the entity; throws on failure, in the same variations",
-  "a0b269a293": "ts names the entity class in the list comment because it declares facts.listOf; js declares none because its methods declare no return type (the class array is named only in the JSDoc comment `@returns {Promise<EntyClass[]>}`, EntityListOp.fragment.js, which no check reads), and prints the same comment with its collection word, List planet records: an array of entities, one per record; throws on failure (crud-bare/README.md JavaScript block), in the same variations",
-  "7ab5ba644d": "printed only after the lead quick start of the root README (ts, ReadmeQuick.ts); every other language's root block, js's and the reference languages' other than ts, sits under Quickstart in other languages with no sentences after it"
  }
 }

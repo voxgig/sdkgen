@@ -19,10 +19,25 @@
   "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
   "n": 15
  },
+ "b31c974005": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 15
+ },
+ "a65ba4a33f": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 2
+ },
  "35c7a4a5a0": {
   "outcome": "correction:elixir-arity",
   "why": "OLD named the function list/2, which is false: def list(ent, reqmatch \\\\ nil, ctrl \\\\ nil) defines list/1, /2 and /3 and the example calls list/1; NEW says `list`. The getelem/2 item read is kept as the note 866a0eed1f",
   "n": 7
+ },
+ "bef2b8f986": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 3
  },
  "7fe2bb62d9": {
   "outcome": "restored:shared",
@@ -49,288 +64,6 @@
   "why": "the write results as one sentence; true of elixir (each op returns the entity and raises)",
   "n": 5
  },
- "9562ae8fc5": {
-  "outcome": "correction:U45",
-  "why": "ref-issues has update only: the step is headed 2. Update",
-  "n": 1
- },
- "c2358342da": {
-  "outcome": "restored:fact",
-  "why": "the write sentence for the one write ref-issues has",
-  "n": 1
- },
- "325b1911ed": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
-  "n": 1
- },
- "f6f21dc984": {
-  "outcome": "same-meaning",
-  "why": "the function name update in the write sentence",
-  "n": 1
- },
- "552c534dbf": {
-  "outcome": "unification:root-load-nested",
-  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact [carried from class 097d285bff: blocks.js now diffs before the normalizers, so the class id changed; same pair, same decision]",
-  "n": 1
- },
- "f7aa0fdb13": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
-  "n": 16
- },
- "c679f2d6a0": {
-  "outcome": "same-meaning",
-  "why": "README:240 calls the argument fetchargs too",
-  "n": 19
- },
- "4c63671fe1": {
-  "outcome": "same-meaning",
-  "why": "README:282-285 lists the same keys; on error ok is false and err carries the error",
-  "n": 19
- },
- "f64ae2f4fc": {
-  "outcome": "same-meaning",
-  "why": "a word match on log in console.log (the shared Error handling section's TypeScript block, unported); nothing about log's default",
-  "n": 19
- },
- "9e60c5986c": {
-  "outcome": "same-meaning",
-  "why": "moved into the Returns sentence ('a result map holding ok, status, headers and data'); README:282 lists the same keys",
-  "n": 19
- },
- "48d12b9b75": {
-  "outcome": "same-meaning",
-  "why": "moved into the prepare Returns sentence (the fetch definition; raises on failure); README:139 calls it fetchdef, the same object",
-  "n": 19
- },
- "e69b3decc0": {
-  "outcome": "restored:note",
-  "why": "the Helpers.deep/1 sentence is the ctor note (the check's misclassified 5); 'struct value node' is said by the shared sentence above it ('`options` is a `Voxgig.Struct` map')",
-  "n": 19
- },
- "3538e6b4b8": {
-  "outcome": "dropped",
-  "why": "the Name header of the constructor table, which is now the options-map table (Key / Value type / Description)",
-  "n": 19
- },
- "5be8ab90b3": {
-  "outcome": "restored:shared",
-  "why": "the section is Constructor plus Test client",
-  "n": 19
- },
- "d389e7085e": {
-  "outcome": "restored:shared",
-  "why": "h3fix, one shared edit: OLD's 'Both arguments may be <none>.' is said in the test client's argument sentence ('both may be <none>', or without the test feature 'Both may be <none>.'), as decided at v3.3; the class is re-split because no-test now prints the S13-residue sentence, so the OLD units pair one variation fewer",
-  "n": 18
- },
- "c4b8cddb2a": {
-  "outcome": "correction:runtime-forms",
-  "why": "the runtime defaults fetchargs: Main.fragment.ex:176 def direct(client, fetchargs \\\\ nil)",
-  "n": 19
- },
- "9674dcccb4": {
-  "outcome": "restored:shared",
-  "why": "restored as the Returns sentence with the same keys",
-  "n": 19
- },
- "d67d7ab0ca": {
-  "outcome": "restored:shared",
-  "why": "restored as 'A failed request is reported in the result, not as an error, so branch on Voxgig.Struct.getprop(result, \"ok\")'",
-  "n": 19
- },
- "829e15b858": {
-  "outcome": "restored:shared",
-  "why": "restored as '**Parameters (`fetchargs` map keys):**'",
-  "n": 19
- },
- "c115f99e12": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Path parameter values for `{param}` substitution.'",
-  "n": 19
- },
- "3594a3d17c": {
-  "outcome": "correction:runtime-forms",
-  "why": "the runtime defaults fetchargs: Main.fragment.ex:103 def prepare(client, fetchargs \\\\ nil)",
-  "n": 19
- },
- "c41a606d0c": {
-  "outcome": "restored:shared",
-  "why": "restored as the prepare Returns sentence: the fetch definition, and it raises on failure",
-  "n": 19
- },
- "4e310eddd0": {
-  "outcome": "restored:shared",
-  "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get/1` reads its record'",
-  "n": 28
- },
- "1f2bf8a246": {
-  "outcome": "restored:shared",
-  "why": "restored as 'The match is optional.' (v3.3: 'without one, every record is listed' overstated, sentence review)",
-  "n": 83
- },
- "2f38082332": {
-  "outcome": "correction:S09",
-  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
-  "n": 19
- },
- "0ccd61dc70": {
-  "outcome": "dropped",
-  "why": "the header of a Type column in tables the shared page replaced with Key / Value type / Description tables; the types are in the new column",
-  "n": 38
- },
- "ac1eac6be0": {
-  "outcome": "correction:S09",
-  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
-  "n": 19
- },
- "b5b91fba23": {
-  "outcome": "restored:shared",
-  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
-  "n": 19
- },
- "9a862f2eb3": {
-  "outcome": "restored:shared",
-  "why": "how the record is read, which the old load sentence stated ('whose record data_get/1 reads')",
-  "n": 79
- },
- "55a8b68a1f": {
-  "outcome": "restored:fact",
-  "why": "data_get returns a copy: tm/elixir/lib/projectname/entity_base.ex:88 S.clone(S.getprop(ent, \"_data\"))",
-  "n": 94
- },
- "71cbb92746": {
-  "outcome": "restored:fact",
-  "why": "stream is a real member (entity_base.ex:118 def stream, a Stream over the items at :172); the kind sentence now names only what the call returns (a lazy sequence: an Elixir Stream, over a list the streaming feature built before the call returns (streaming.ex:58), which the runs sentence beside it says); nothing in it says when items arrive",
-  "n": 94
- },
- "169ee4e438": {
-  "outcome": "restored:fact",
-  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in entity_base.ex (Pipeline.run_op at :150 before the Stream is returned); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
-  "n": 94
- },
- "c2467756ac": {
-  "outcome": "correction:ref-6",
-  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
-  "n": 16
- },
- "fe4aa1b045": {
-  "outcome": "correction:ref-6",
-  "why": "the Call cell carries the route's path parameter id",
-  "n": 16
- },
- "ce1c1aa923": {
-  "outcome": "same-meaning",
-  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
-  "n": 3
- },
- "066a083189": {
-  "outcome": "same-meaning",
-  "why": "the README direct example passes method GET; consistent with GET as the default",
-  "n": 1
- },
- "d3fd73e70d": {
-  "outcome": "same-meaning",
-  "why": "a word match on nil in the README's test line; both say nil means none",
-  "n": 2
- },
- "f09662fec4": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (elixir/README.md:203)",
-  "n": 2
- },
- "805d5a9ce5": {
-  "outcome": "same-meaning",
-  "why": "the type word String.t(), as the README's options table uses it",
-  "n": 4
- },
- "e59066a2d8": {
-  "outcome": "same-meaning",
-  "why": "moved into the test sentence ('both may be `nil`'); README:203 says the same",
-  "n": 2
- },
- "097bbe00c6": {
-  "outcome": "same-meaning",
-  "why": "a word match on nil in the README's test line; nothing about the accessor's argument",
-  "n": 1
- },
- "91baf1b4b6": {
-  "outcome": "contradiction",
-  "where": "elixir/README.md:232 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `nil`.'",
-  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
-  "n": 1
- },
- "46dc1a3462": {
-  "outcome": "correction:S13",
-  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
-  "n": 1
- },
- "dac11a1691": {
-  "outcome": "correction:G27",
-  "why": "ref-issues: the field description is escaped into one cell",
-  "n": 1
- },
- "d7495fe92f": {
-  "outcome": "correction:G27",
-  "why": "ref-issues: the description's pipe broke the table; escaped now",
-  "n": 1
- },
- "0b29ec4944": {
-  "outcome": "restored:shared",
-  "why": "the update data sentence names the id the route needs; same fact, other words",
-  "n": 1
- },
- "6ad6c0b1b5": {
-  "outcome": "correction:S25",
-  "why": "ref-issues turns remove off: an inactive operation is not documented",
-  "n": 1
- },
- "9b3a3864f9": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: remove inactive",
-  "n": 1
- },
- "f010700f70": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: remove inactive",
-  "n": 1
- },
- "456cb02ae3": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
-  "n": 1
- },
- "e615041e24": {
-  "outcome": "restored:note",
-  "why": "the arity naming the old elixir README stated (the check's misclassified 5): load is defined with defaulted arguments (EntityLoadOp.fragment.ex), the tutorial calls load/2",
-  "n": 16
- },
- "fbaca6bf31": {
-  "outcome": "restored:note",
-  "why": "the arity naming and the getelem/2 item read the old README stated (EntityListOp.fragment.ex; voxgig_struct.ex:466 def getelem(val, key, alt \\\\ nil))",
-  "n": 7
- },
- "618096b4cc": {
-  "outcome": "same-meaning",
-  "why": "README:229 calls Demo.test(testopts, sdkopts); same parameters",
-  "n": 19
- },
- "b31c974005": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
-  "n": 15
- },
- "a65ba4a33f": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
-  "n": 2
- },
- "bef2b8f986": {
-  "outcome": "unification:write-title-entity",
-  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
-  "n": 3
- },
  "36efbfed2b": {
   "outcome": "restored:fact",
   "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 36efbfed2b): restored:fact",
@@ -351,9 +84,24 @@
   "why": "awkward sentence of the review fixed: it now says where the parent id goes (the match, as the example passes it); same fact",
   "n": 1
  },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
  "ec589bf68a": {
   "outcome": "unification:write-title-entity",
   "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1
+ },
+ "c2358342da": {
+  "outcome": "restored:fact",
+  "why": "the write sentence for the one write ref-issues has",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
   "n": 1
  },
  "275db80f77": {
@@ -366,166 +114,14 @@
   "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1
  },
- "b67e90270b": {
+ "f6f21dc984": {
   "outcome": "same-meaning",
-  "why": "the README's test-mode text names the same arguments and feature.test option, with the test feature present in these variations; no disagreement",
-  "n": 18
- },
- "89672a79c6": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19
- },
- "940b78cf67": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19
- },
- "4a665209ea": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
-  "n": 93
- },
- "4a52fad3f8": {
-  "outcome": "correction:sentence-review-update-id",
-  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
-  "n": 19
- },
- "f9f3b2f196": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
-  "n": 93
- },
- "e6bdda6646": {
-  "outcome": "unification:client-heading",
-  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
-  "n": 19
- },
- "43dd422fa5": {
-  "outcome": "correction:sentence-review-test",
-  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
-  "n": 18
- },
- "65160f6e35": {
-  "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
-  "n": 19
- },
- "a3b8649937": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "251d7318e6": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "ac937e958b": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "8af08aaa2c": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "8b58bd85fe": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "d51d922508": {
-  "outcome": "correction:sentence-review-stream",
-  "why": "the stream sentence fixed once (sentence review): a lazy sequence over items already read misled (clojure Entity.fragment.clj:164,180,185 realises every item before returning; elixir entity_base.ex:150,160,172 a Stream over a list), and 'one list' was false for rust's IntoIter; the sentence names what is returned, the runs sentence when the operation runs",
-  "n": 94
- },
- "17e455f4a3": {
-  "outcome": "correction:sentence-review-list-match",
-  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
-  "n": 82
- },
- "305e4ccb59": {
-  "outcome": "correction:action-call-cell",
-  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
-  "n": 16
- },
- "a9081dcdc4": {
-  "outcome": "correction:sentence-review-action",
-  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
-  "n": 16
- },
- "6fcc39ea14": {
-  "outcome": "correction:sentence-review-secret",
-  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
-  "n": 2
- },
- "bff341cf32": {
-  "outcome": "contradiction",
-  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
-  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
-  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
+  "why": "the function name update in the write sentence",
   "n": 1
  },
- "81aa9cecf9": {
-  "outcome": "correction:sentence-review-test",
-  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
-  "n": 1
- },
- "dbdce4bb0e": {
-  "outcome": "correction:sentence-review-test",
-  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
-  "n": 1
- },
- "adafebfb81": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
-  "n": 1
- },
- "bdfe5eae3f": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
-  "n": 1
- },
- "faf1092d19": {
-  "outcome": "correction:action-call-cell",
-  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
-  "n": 1
- },
- "9c6d819441": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
-  "n": 19
- },
- "90ea97d025": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
-  "n": 19
- },
- "e8e8cc2723": {
-  "outcome": "correction:freeze-direct-wording",
-  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
-  "n": 19
- },
- "a871f94acb": {
-  "outcome": "correction:freeze-direct-wording",
-  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
-  "n": 19
- },
- "0918d10148": {
-  "outcome": "correction:decision-7-match-copy",
-  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
-  "n": 94
- },
- "80f77307dc": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
-  "n": 94
- },
- "eea38408c0": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+ "552c534dbf": {
+  "outcome": "unification:root-load-nested",
+  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact [carried from class 097d285bff: blocks.js now diffs before the normalizers, so the class id changed; same pair, same decision]",
   "n": 1
  },
  "c9601209b9": {
@@ -638,6 +234,46 @@
   "why": "the README states the same of log's options (the table's `active` default true); no disagreement",
   "n": 19
  },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16
+ },
+ "b67e90270b": {
+  "outcome": "same-meaning",
+  "why": "the README's test-mode text names the same arguments and feature.test option, with the test feature present in these variations; no disagreement",
+  "n": 18
+ },
+ "c679f2d6a0": {
+  "outcome": "same-meaning",
+  "why": "README:240 calls the argument fetchargs too",
+  "n": 19
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "90ea97d025": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log (the shared Error handling section's TypeScript block, unported); nothing about log's default",
+  "n": 19
+ },
+ "9e60c5986c": {
+  "outcome": "same-meaning",
+  "why": "moved into the Returns sentence ('a result map holding ok, status, headers and data'); README:282 lists the same keys",
+  "n": 19
+ },
+ "48d12b9b75": {
+  "outcome": "same-meaning",
+  "why": "moved into the prepare Returns sentence (the fetch definition; raises on failure); README:139 calls it fetchdef, the same object",
+  "n": 19
+ },
  "83803533d5": {
   "outcome": "correction:X3",
   "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
@@ -743,15 +379,115 @@
   "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
   "n": 19
  },
+ "e69b3decc0": {
+  "outcome": "restored:note",
+  "why": "the Helpers.deep/1 sentence is the ctor note (the check's misclassified 5); 'struct value node' is said by the shared sentence above it ('`options` is a `Voxgig.Struct` map')",
+  "n": 19
+ },
+ "4a665209ea": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93
+ },
+ "4a52fad3f8": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 19
+ },
+ "f9f3b2f196": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93
+ },
+ "e6bdda6646": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19
+ },
  "45da5a1c7e": {
   "outcome": "correction:S09-residue-on-by-default",
   "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
   "n": 19
  },
+ "3538e6b4b8": {
+  "outcome": "dropped",
+  "why": "the Name header of the constructor table, which is now the options-map table (Key / Value type / Description)",
+  "n": 19
+ },
+ "5be8ab90b3": {
+  "outcome": "restored:shared",
+  "why": "the section is Constructor plus Test client",
+  "n": 19
+ },
+ "d389e7085e": {
+  "outcome": "restored:shared",
+  "why": "h3fix, one shared edit: OLD's 'Both arguments may be <none>.' is said in the test client's argument sentence ('both may be <none>', or without the test feature 'Both may be <none>.'), as decided at v3.3; the class is re-split because no-test now prints the S13-residue sentence, so the OLD units pair one variation fewer",
+  "n": 18
+ },
+ "c4b8cddb2a": {
+  "outcome": "correction:runtime-forms",
+  "why": "the runtime defaults fetchargs: Main.fragment.ex:176 def direct(client, fetchargs \\\\ nil)",
+  "n": 19
+ },
+ "9674dcccb4": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns sentence with the same keys",
+  "n": 19
+ },
+ "d67d7ab0ca": {
+  "outcome": "restored:shared",
+  "why": "restored as 'A failed request is reported in the result, not as an error, so branch on Voxgig.Struct.getprop(result, \"ok\")'",
+  "n": 19
+ },
+ "829e15b858": {
+  "outcome": "restored:shared",
+  "why": "restored as '**Parameters (`fetchargs` map keys):**'",
+  "n": 19
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Path parameter values for `{param}` substitution.'",
+  "n": 19
+ },
+ "3594a3d17c": {
+  "outcome": "correction:runtime-forms",
+  "why": "the runtime defaults fetchargs: Main.fragment.ex:103 def prepare(client, fetchargs \\\\ nil)",
+  "n": 19
+ },
+ "c41a606d0c": {
+  "outcome": "restored:shared",
+  "why": "restored as the prepare Returns sentence: the fetch definition, and it raises on failure",
+  "n": 19
+ },
+ "4e310eddd0": {
+  "outcome": "restored:shared",
+  "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get/1` reads its record'",
+  "n": 28
+ },
+ "1f2bf8a246": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional.' (v3.3: 'without one, every record is listed' overstated, sentence review)",
+  "n": 83
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19
+ },
+ "0ccd61dc70": {
+  "outcome": "dropped",
+  "why": "the header of a Type column in tables the shared page replaced with Key / Value type / Description tables; the types are in the new column",
+  "n": 38
+ },
  "689587aa26": {
   "outcome": "correction:X3",
   "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
   "n": 18
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19
  },
  "e1a075f227": {
   "outcome": "correction:D26",
@@ -788,6 +524,81 @@
   "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
   "n": 90
  },
+ "43dd422fa5": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
+ },
+ "65160f6e35": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 19
+ },
+ "a3b8649937": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "a871f94acb": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "8b58bd85fe": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "9a862f2eb3": {
+  "outcome": "restored:shared",
+  "why": "how the record is read, which the old load sentence stated ('whose record data_get/1 reads')",
+  "n": 79
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "data_get returns a copy: tm/elixir/lib/projectname/entity_base.ex:88 S.clone(S.getprop(ent, \"_data\"))",
+  "n": 94
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "d51d922508": {
+  "outcome": "correction:sentence-review-stream",
+  "why": "the stream sentence fixed once (sentence review): a lazy sequence over items already read misled (clojure Entity.fragment.clj:164,180,185 realises every item before returning; elixir entity_base.ex:150,160,172 a Stream over a list), and 'one list' was false for rust's IntoIter; the sentence names what is returned, the runs sentence when the operation runs",
+  "n": 94
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in entity_base.ex (Pipeline.run_op at :150 before the Stream is returned); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "17e455f4a3": {
+  "outcome": "correction:sentence-review-list-match",
+  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
+  "n": 82
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16
+ },
+ "305e4ccb59": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
+  "n": 16
+ },
+ "a9081dcdc4": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
+  "n": 16
+ },
  "e94011ef3f": {
   "outcome": "correction:residue-escaped-backticks",
   "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
@@ -808,6 +619,48 @@
   "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
   "n": 19
  },
+ "6fcc39ea14": {
+  "outcome": "correction:sentence-review-secret",
+  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
+  "n": 2
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 3
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1
+ },
+ "d3fd73e70d": {
+  "outcome": "same-meaning",
+  "why": "a word match on nil in the README's test line; both say nil means none",
+  "n": 2
+ },
+ "805d5a9ce5": {
+  "outcome": "same-meaning",
+  "why": "the type word String.t(), as the README's options table uses it",
+  "n": 4
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `nil`'); README:203 says the same",
+  "n": 2
+ },
+ "097bbe00c6": {
+  "outcome": "same-meaning",
+  "why": "a word match on nil in the README's test line; nothing about the accessor's argument",
+  "n": 1
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
+  "n": 1
+ },
  "0b29ac0038": {
   "outcome": "same-meaning",
   "why": "the README names the same `feature.test` switch (its feature row or its test-mode text); this sentence says the call sets it, switched on; no disagreement",
@@ -818,9 +671,64 @@
   "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
   "n": 1
  },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1
+ },
+ "81aa9cecf9": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 1
+ },
+ "dbdce4bb0e": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 1
+ },
  "9db58b0cc1": {
   "outcome": "correction:S13-residue",
   "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1
+ },
+ "adafebfb81": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1
+ },
+ "bdfe5eae3f": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1
+ },
+ "6ad6c0b1b5": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
   "n": 1
  },
  "37b4c175e7": {
@@ -832,5 +740,102 @@
   "outcome": "correction:D26",
   "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
   "n": 1
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1
+ },
+ "faf1092d19": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "456cb02ae3": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1
+ },
+ "4c63671fe1": {
+  "outcome": "same-meaning",
+  "why": "README:282-285 lists the same keys; on error ok is false and err carries the error",
+  "n": 19
+ },
+ "b5b91fba23": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "71cbb92746": {
+  "outcome": "restored:fact",
+  "why": "stream is a real member (entity_base.ex:118 def stream, a Stream over the items at :172); the kind sentence now names only what the call returns (a lazy sequence: an Elixir Stream, over a list the streaming feature built before the call returns (streaming.ex:58), which the runs sentence beside it says); nothing in it says when items arrive",
+  "n": 94
+ },
+ "fe4aa1b045": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (elixir/README.md:203)",
+  "n": 2
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "where": "elixir/README.md:232 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `nil`.'",
+  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
+  "n": 1
+ },
+ "e615041e24": {
+  "outcome": "restored:note",
+  "why": "the arity naming the old elixir README stated (the check's misclassified 5): load is defined with defaulted arguments (EntityLoadOp.fragment.ex), the tutorial calls load/2",
+  "n": 16
+ },
+ "fbaca6bf31": {
+  "outcome": "restored:note",
+  "why": "the arity naming and the getelem/2 item read the old README stated (EntityListOp.fragment.ex; voxgig_struct.ex:466 def getelem(val, key, alt \\\\ nil))",
+  "n": 7
+ },
+ "618096b4cc": {
+  "outcome": "same-meaning",
+  "why": "README:229 calls Demo.test(testopts, sdkopts); same parameters",
+  "n": 19
+ },
+ "89672a79c6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "940b78cf67": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "251d7318e6": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "ac937e958b": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "8af08aaa2c": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94
+ },
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94
  }
 }

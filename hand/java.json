@@ -1,47 +1,83 @@
 {
+ "absent": {
+  "ed44d07e36": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"`load` returns the entity and throws on failure; `data()` reads its record.\"",
+  "5e178e9588": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"`list` returns a `List` of entities, one per record, and throws on failure; ...\"",
+  "6d459aa83b": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Each write returns the entity it wrote (a removed one is marked as deleted), and throws on failure.\"",
+  "64560e9dff": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Create \u2014 returns the created entity; data() reads its record\"",
+  "78dac4093d": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"`update` returns the entity it wrote, and throws on failure.\"",
+  "99a8153c15": "ts names the entity type in the step comment from facts.listOf; java declares no listOf (operations are declared to return Object, EntityLoadOp.fragment.java:22, so the guard cannot derive one), and prints \"Load an ambient: the entity; throws on failure\"",
+  "7ab5ba644d": "not a sentence of any language's block: the root README prints it once, after the lead target's (ts) quick start (ReadmeTop.ts:430-432, credentialPlacement); java's own tutorial prints the same sentence in its lead paragraph",
+  "a0b269a293": "as 99a8153c15: no listOf for java (list is declared `Object list(...)`); java prints \"List planet records: a List of entities, one per record; throws on failure\"",
+  "f3e421e046": "java's getUtility returns a copy (`return this.utility.copy();`, SdkClient.java:108; Utility.copy allocates `new Utility(true)`, Utility.java:99-100), declared copy: true and cited, so the page says \"Return a copy of the SDK utility object.\"",
+  "f30b7d4864": "java's direct takes no abort signal: no `signal` is read on the direct path (the cancel absence, cited over the whole java runtime, finds none outside the stream); ref.facts.direct.signal is not declared",
+  "ea3964d6ba": "java's prepare throws (SdkClient.java:145 `throw ctx.makeError(\"spec_method_allow\", ...)`, prepare.fails \"style\"); it prints \"It throws on failure.\"",
+  "abe923e0b2": "java's client has no `tester` alias of its test constructor: the public members of Main.fragment.java and SdkClient.java are the constructors, testSDK, optionsMap, getUtility, getRootCtx, prepare, direct, graphql (the guard's member check finds no other)",
+  "9efa1b3a1e": "java operations cannot be cancelled: no operation reads an abort signal (ref.facts.cancel false, a cited absence over the whole java runtime; only the stream reads callopts.signal, EntityBase.fragment.java:214)",
+  "bb93495ee9": "as 9efa1b3a1e: no cancel paragraph for java",
+  "d86e9841eb": "as 9efa1b3a1e",
+  "cad5dfc5f6": "as 9efa1b3a1e",
+  "9f6d56f5fb": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the entity, and throws on failure.\"",
+  "4c93659f14": "java's stream returns a `Stream<Object>` (EntityBase.fragment.java:206, kind streamLazy, derived): \"return a sequence of its result items\", not an async iterator",
+  "5003b705ca": "java's stream runs the operation before it returns (`runOp` at EntityBase.fragment.java:246 before the Stream is built at :278-314; runs: call, derived): \"The operation runs before the call returns.\"",
+  "2d65ce1465": "a java entity has no public client getter: `client` is a protected field (EntityBase.fragment.java:31), and the guard's member check finds no public client member",
+  "74dc5866b7": "a java entity has no public entity-options getter: `entopts` is a protected field (EntityBase.fragment.java:33)",
+  "f1bcce31a0": "java's entity name is read through a method, `public String getName()` (EntityBase.fragment.java:80; the field `name` is protected, :30), so the page says \"Return the entity name.\"",
+  "a32ec5077c": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns a `List` of entities, one per record, and throws on failure.\"",
+  "d6fd5c15c3": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the created entity, and throws on failure.\"",
+  "863f603c11": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the updated entity, and throws on failure.\"",
+  "b1666a52ac": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the entity, marked as deleted, and throws on failure.\"",
+  "b7eb8b0b55": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the patched entity, and throws on failure.\""
+ },
+ "facts": {
+  "named": {
+   "value": "call",
+   "why": "java writes a call with parentheses (calls.args paren, derived), and OLD named operations as calls (`load()`, `list(null, null)`); with facts.arity 2 the shared opName names operations bare in tutorial prose (`load`), since a Java call must pass both arguments, so the minimal pair against bare finds no OLD unit that differs",
+   "evidence": "OLD B/java/README.md tutorial: \"`load()` returns the ENTITY \u2014 call data() for the record \u2014 and raises on error.\"; OLD crud-bare/java/README.md: \"`list(null, null)` returns a list of entities ...\""
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD java used for the client's and an entity's members (\"Instance Methods\", Static Methods (the deleted old component's wording), \"Common Methods\"); held for the entity's members; the new context is the shared heading \"Client Methods\", decided once for all twenty; java's client members are instance methods of DemoSDK and SdkClient",
+   "evidence": "OLD B/java/REFERENCE.md \"### Instance Methods\", \"### Common Methods\""
+  }
+ },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match on the README options table's `base` cell (\"Base URL of the API server\"); that table (ReadmeOptions_java, unported) does not list `server`, so it states nothing about its variables",
   "n": 15
- },
- "325b1911ed": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README options table's `base` cell (\"Base URL of the API server\"), server-mixed; that table does not list `server`",
-  "n": 1
  },
  "ab76c4efa0": {
   "outcome": "restored:shared",
   "why": "restored as the shared throw-style load sentence \"`load` returns the entity and throws on failure; `data()` reads its record\": load returns the entity (EntityBase.fragment.java:162 `return this;`) and a failure is thrown (RuntimeException, :176-182); \"raises\" was not Java's word",
   "n": 10
  },
- "41e1d81585": {
+ "86f6a4de0b": {
   "outcome": "restored:shared",
-  "why": "the shared throw-style load sentence, in place of OLD's \"`load()` returns the ENTITY — call data() for the record — and raises on error\"; `load` is named without parentheses because a Java call must pass both arguments (facts.arity 2, derived)",
+  "why": "the shared throw-style load sentence, in place of OLD's \"`load()` returns the ENTITY \u2014 call data() for the record \u2014 and raises on error\"; `load` is named without parentheses because a Java call must pass both arguments (facts.arity 2, derived)",
   "n": 10
  },
- "3b6556a083": {
+ "6de940147a": {
   "outcome": "same-meaning",
   "why": "OLD and NEW both say list returns a list of entities, one per record, and how a record is read; \"throws\" for \"raises\". OLD said \"(as `Object`)\": the declared return type, which no shared sentence can state (an interface gap: an optional fact for the declared return, read by the list and load sentences of ts/src/helpers/runtimeprose.ts; java, kotlin, scala and csharp declare Object, Any?, Object and object?). The page is not false without it: the `(List<?>)` cast in the block under it and the REFERENCE heading `Object list(...)` show the declared type. OLD's call `list(null, null)` is the call the block makes and the REFERENCE list sentence names",
   "n": 7
  },
- "b6d0e5b55b": {
+ "368df803c0": {
   "outcome": "same-meaning",
   "why": "OLD: load returns the entity, data() reads the record, raises on error; NEW says the same in the shared sentence with Java's verb, throws",
   "n": 6
  },
  "454d326c2d": {
   "outcome": "restored:shared",
-  "why": "restored as the shared create comment \"Create — returns the created entity; data() reads its record\"",
+  "why": "restored as the shared create comment \"Create \u2014 returns the created entity; data() reads its record\"",
   "n": 5
  },
  "77832f0697": {
   "outcome": "restored:shared",
-  "why": "restored as \"Update — the id comes off the created entity's record\": the example now reads the id off the created entity instead of supplying a literal",
+  "why": "restored as \"Update \u2014 the id comes off the created entity's record\": the example now reads the id off the created entity instead of supplying a literal",
   "n": 4
  },
  "691bdc9ddb": {
   "outcome": "restored:shared",
-  "why": "restored as \"Patch — sends only the fields given; the id comes off the created entity's record\"",
+  "why": "restored as \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"",
   "n": 3
  },
  "cd43169d87": {
@@ -57,6 +93,11 @@
  "fdd288e4f2": {
   "outcome": "restored:shared",
   "why": "ref-issues: the shared write sentence for the one write the step makes",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README options table's `base` cell (\"Base URL of the API server\"), server-mixed; that table does not list `server`",
   "n": 1
  },
  "6fb3670380": {
@@ -89,11 +130,6 @@
   "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
   "n": 1
  },
- "a12e1f1e52": {
-  "outcome": "correction:S49",
-  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them (server-mixed: account)",
-  "n": 1
- },
  "e5e05eb7a6": {
   "outcome": "correction:S50",
   "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
@@ -114,6 +150,11 @@
   "why": "the method name update in the write sentence (ref-issues)",
   "n": 1
  },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them (server-mixed: account)",
+  "n": 1
+ },
  "5a5008f076": {
   "outcome": "same-meaning",
   "why": "OLD's prose named `list(null, null)`; NEW's tutorial prose names the operation `list` (a Java call passes both arguments, so the call is not named with empty parentheses); the block still calls list(null, null)",
@@ -131,17 +172,17 @@
  },
  "b4ab2ad4c9": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 3
  },
  "ff1c629891": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal (crud-noupdate: create and remove)",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal (crud-noupdate: create and remove)",
   "n": 1
  },
  "f143373bc5": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal (doc-nested: no patch)",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal (doc-nested: no patch)",
   "n": 1
  },
  "02cbd69daa": {
@@ -161,32 +202,32 @@
  },
  "14eb5dfde1": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "70ac6b6b08": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "b3e1a90434": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "431e9ea0d5": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "4e30f7a270": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "c76072420b": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "2a3f051b73": {
@@ -201,27 +242,27 @@
  },
  "fa99929817": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "39cd96730f": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "3805b111d7": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "3bcb548528": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "c4f1ef9b16": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "why": "the shared write comments: \"Create \u2014 returns the created entity; data() reads its record\", \"Update \u2014 the id comes off the created entity's record\", \"Patch \u2014 sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
   "n": 1
  },
  "f9713683ba": {
@@ -239,7 +280,7 @@
   "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
   "n": 10
  },
- "0e961634da": {
+ "df5011037a": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows); the list comment names the List it returns",
   "n": 7
@@ -384,92 +425,35 @@
   "why": "the README binds `Map<String, Object> fetchdef = client.prepare(...)`; the prepare Returns sentence names the same fetch definition, and that it throws",
   "n": 19
  },
- "482def0a4d": {
-  "outcome": "same-meaning",
-  "why": "the README passes apikey and secret together as client options; this cell says what secret is for",
-  "n": 2
- },
- "bff341cf32": {
-  "outcome": "contradiction",
-  "where": "the unported README's testSDK line (its Reference section: \"Creates a test-mode client with mock transport\") and its \"Use test mode\" how-to (\"Create a mock client for unit testing\"), printed by java's own README components, true only with the test feature",
-  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
-  "evidence": "read, not run: Config_java.ts:205-208 makeFeature falls back to `new ${javapackage}.feature.BaseFeature()` for test when the SDK has no TestFeature; Fetcher.java:272-273 throws fetch_mode_block when the client mode is not live, and testSDK sets mode \"test\" (Main.fragment.java:31)",
-  "n": 2
- },
- "bd4b298802": {
-  "outcome": "same-meaning",
-  "why": "ent-none: the README's testSDK line says both arguments may be null; this sentence says the same and what each holds (SdkClient.testOptions, SdkClient.java:386-401)",
-  "n": 1
- },
- "d4af1f09d0": {
-  "outcome": "same-meaning",
-  "why": "OLD's \"Both arguments may be `null`\", still in the README; the REFERENCE now says it in the shared test sentence",
-  "n": 1
- },
- "f4eb119497": {
+ "8124ae79db": {
   "outcome": "correction:runtime-forms",
-  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object data(Object... args)` (EntityBase.fragment.java:85)",
-  "n": 94
- },
- "86206ede5b": {
-  "outcome": "correction:runtime-forms",
-  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object match(Object... args)` (EntityBase.fragment.java:98)",
-  "n": 94
- },
- "23aa32ee94": {
-  "outcome": "correction:runtime-forms",
-  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Entity make()` (Entity.fragment.java:21)",
-  "n": 94
- },
- "61862bd04a": {
-  "outcome": "correction:runtime-forms",
-  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `String getName()` (EntityBase.fragment.java:80)",
-  "n": 94
- },
- "183dea1a01": {
-  "outcome": "unification:accessor-sentence",
-  "why": "the accessor sentence names the class the accessor instantiates, `AmbientEntity` (MainEntity_java.ts:32 `new ${javapackage}.entity.${cls}`), with \"Pass `null` for no initial options\"; the `SdkEntity` it returns is in the heading `SdkEntity ambient(Map<String, Object> entopts)`",
-  "n": 93
- },
- "f0dcff770a": {
-  "outcome": "correction:runtime-forms",
-  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object list(Map<String, Object> reqmatch, Map<String, Object> ctrl)`",
-  "n": 83
- },
- "3469c940f0": {
-  "outcome": "restored:shared",
-  "why": "restored as \"The match is optional; a call without one is `list(null, null)`\": the no-match call (facts.arity 2). OLD's \"to list all records\" overstated (the entity's stored match still applies, and an endpoint may page)",
-  "n": 83
- },
- "993924c4c6": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
-  "n": 77
- },
- "051347e851": {
-  "outcome": "restored:fact",
-  "why": "the accessor heading is its declared signature, `SdkEntity ambient(Map<String, Object> entopts)` (MainEntity_java.ts:31)",
+  "why": "the options type cells give the declared type `Map<String, Object>` (the generator's java column; Main.fragment.java:16), not the raw `Map`",
   "n": 76
  },
- "cb54e2d2ed": {
-  "outcome": "correction:runtime-forms",
-  "why": "the type cell is the declared type `Map<String, Object>` (SdkClient.java:115,201 take Map<String, Object> fetchargs), derived from the code generator's java column; OLD wrote `Map`",
-  "n": 57
+ "55e0b0d3ac": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
+  "n": 16
  },
- "0aeda469e7": {
-  "outcome": "correction:runtime-forms",
-  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object load(Map<String, Object> reqmatch, Map<String, Object> ctrl)`",
-  "n": 28
+ "b2f8d161db": {
+  "outcome": "unification:member-sentences",
+  "why": "make's sentence names the class make() instantiates (Entity.fragment.java:21-24 `return new EntyClass(this.client, opts);` with a copy of the options) and that it keeps the client; the ledger pairs the first OLD entity with another under the renamed headings, a pairing artefact",
+  "n": 92
  },
- "957163de8e": {
+ "d50241e758": {
   "outcome": "restored:shared",
-  "why": "restored as the shared op sentence \"Returns the entity, and throws on failure. `data()` reads its record.\"",
-  "n": 28
+  "why": "ent-none: as 0ca8d83ae7, the options type is in the table row [v3.4 re-count: x19 to x19, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 19
  },
- "0b29ec4944": {
-  "outcome": "correction:sentence-review-update-id",
-  "why": "the update sentence says the id must be in the data unless the entity already holds it (the path parameter is read from the entity's match and data too, Param.java:56-77)",
-  "n": 20
+ "91234b31f0": {
+  "outcome": "same-meaning",
+  "why": "the same remove sentence with Java's verb, throws (a RuntimeException)",
+  "n": 15
+ },
+ "9a110f7104": {
+  "outcome": "same-meaning",
+  "why": "the same list sentence with the collection named (`List`, cited MakeResult.java) and Java's verb",
+  "n": 83
  },
  "1d5f2874ab": {
   "outcome": "restored:shared",
@@ -483,13 +467,28 @@
  },
  "d553096f96": {
   "outcome": "restored:shared",
-  "why": "restored in the shared test sentence: \"... both may be `null`\" (SdkClient.java:386-401 treats null as none)",
-  "n": 19
+  "why": "restored in the shared test sentence: \"... both may be `null`\" (SdkClient.java:386-401 treats null as none) [v3.4 re-count: x18 to x18, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 18
  },
  "aa6c3feb8f": {
   "outcome": "unification:client-heading",
   "why": "the client's members are headed \"Client Methods\" in every language (the shared heading Client <noun>); java's are instance methods of DemoSDK and its SdkClient base",
   "n": 19
+ },
+ "051347e851": {
+  "outcome": "restored:fact",
+  "why": "the accessor heading is its declared signature, `SdkEntity ambient(Map<String, Object> entopts)` (MainEntity_java.ts:31)",
+  "n": 76
+ },
+ "183dea1a01": {
+  "outcome": "unification:accessor-sentence",
+  "why": "the accessor sentence names the class the accessor instantiates, `AmbientEntity` (MainEntity_java.ts:32 `new ${javapackage}.entity.${cls}`), with \"Pass `null` for no initial options\"; the `SdkEntity` it returns is in the heading `SdkEntity ambient(Map<String, Object> entopts)`",
+  "n": 93
+ },
+ "d0d999496b": {
+  "outcome": "restored:fact",
+  "why": "the accessor heading is its declared signature, `SdkEntity record_(Map<String, Object> entopts)` (MainEntity_java.ts:31; record_ is javaVarName's escape of the keyword record)",
+  "n": 17
  },
  "b99648bc3d": {
   "outcome": "correction:runtime-forms",
@@ -516,6 +515,11 @@
   "why": "restored as \"A failure is reported in the result, not as an error, so branch on `Boolean.TRUE.equals(result.get(\"ok\"))`\": direct catches every RuntimeException (SdkClient.java:313-327) and returns ok false; the branch is written as a Java truth test, since `result.get(\"ok\")` is an Object",
   "n": 19
  },
+ "cb54e2d2ed": {
+  "outcome": "correction:runtime-forms",
+  "why": "the type cell is the declared type `Map<String, Object>` (SdkClient.java:115,201 take Map<String, Object> fetchargs), derived from the code generator's java column; OLD wrote `Map`",
+  "n": 57
+ },
  "c115f99e12": {
   "outcome": "unification:direct-table",
   "why": "the shared direct table cell \"Path parameter values for `{param}` substitution.\"",
@@ -536,30 +540,50 @@
   "why": "restored as the shared prepare Returns sentence: the fetch definition, and \"It throws on failure.\" (SdkClient.java:145 throws spec_method_allow)",
   "n": 19
  },
- "2f38082332": {
-  "outcome": "correction:S09",
-  "why": "false for log (active by default, model/feature/log.aontu); the shared sentence says \"except `log`\"",
-  "n": 19
+ "0aeda469e7": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object load(Map<String, Object> reqmatch, Map<String, Object> ctrl)`",
+  "n": 28
  },
- "ac1eac6be0": {
-  "outcome": "correction:S09",
-  "why": "the per-feature line says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
-  "n": 19
- },
- "0ca8d83ae7": {
+ "957163de8e": {
   "outcome": "restored:shared",
-  "why": "the constructor's options type is stated in the parameters table row `options` | `Map<String, Object>` (the container fact, cited Main.fragment.java:16)",
-  "n": 17
+  "why": "restored as the shared op sentence \"Returns the entity, and throws on failure. `data()` reads its record.\"",
+  "n": 28
  },
- "d50241e758": {
+ "f4eb119497": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object data(Object... args)` (EntityBase.fragment.java:85)",
+  "n": 94
+ },
+ "86206ede5b": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object match(Object... args)` (EntityBase.fragment.java:98)",
+  "n": 94
+ },
+ "23aa32ee94": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Entity make()` (Entity.fragment.java:21)",
+  "n": 94
+ },
+ "61862bd04a": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `String getName()` (EntityBase.fragment.java:80)",
+  "n": 94
+ },
+ "993924c4c6": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
+  "n": 77
+ },
+ "f0dcff770a": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object list(Map<String, Object> reqmatch, Map<String, Object> ctrl)`",
+  "n": 83
+ },
+ "3469c940f0": {
   "outcome": "restored:shared",
-  "why": "ent-none: as 0ca8d83ae7, the options type is in the table row",
-  "n": 2
- },
- "d0d999496b": {
-  "outcome": "restored:fact",
-  "why": "the accessor heading is its declared signature, `SdkEntity record_(Map<String, Object> entopts)` (MainEntity_java.ts:31; record_ is javaVarName's escape of the keyword record)",
-  "n": 17
+  "why": "restored as \"The match is optional; a call without one is `list(null, null)`\": the no-match call (facts.arity 2). OLD's \"to list all records\" overstated (the entity's stored match still applies, and an endpoint may page)",
+  "n": 83
  },
  "562e90457c": {
   "outcome": "correction:runtime-forms",
@@ -581,120 +605,35 @@
   "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object update(Map<String, Object> reqdata, Map<String, Object> ctrl)`",
   "n": 16
  },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "the update sentence says the id must be in the data unless the entity already holds it (the path parameter is read from the entity's match and data too, Param.java:56-77)",
+  "n": 20
+ },
  "e1e40527b4": {
   "outcome": "restored:shared",
   "why": "restored as \"Returns the updated entity, and throws on failure.\"",
   "n": 16
  },
- "4568f32934": {
-  "outcome": "correction:runtime-forms",
-  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object patch(Map<String, Object> reqdata, Map<String, Object> ctrl)`",
-  "n": 4
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); the shared sentence says \"except `log`\"",
+  "n": 19
  },
- "50d6ad1e73": {
-  "outcome": "restored:shared",
-  "why": "restored as \"Returns the patched entity, and throws on failure.\"",
-  "n": 4
- },
- "46dc1a3462": {
-  "outcome": "correction:S13",
-  "why": "no-test: the SDK has no test feature, so testSDK builds a client with no mock transport (Config_java.ts:208 falls back to BaseFeature) that refuses every request (Fetcher.java:272-273 fetch_mode_block); the sentence says so",
-  "n": 1
- },
- "032adf5867": {
-  "outcome": "restored:fact",
-  "why": "ref-issues: the accessor heading is its declared signature, `SdkEntity planetEntity(Map<String, Object> entopts)`",
-  "n": 1
- },
- "ed3da20ea2": {
-  "outcome": "correction:U34",
-  "why": "ref-issues: the class the accessor instantiates is PlanetEntityClient where the entity type PlanetEntity collides (entityClassName)",
-  "n": 1
- },
- "d89f31f1f5": {
-  "outcome": "restored:fact",
-  "why": "ref-issues: the accessor heading, `SdkEntity planetEntity(Map<String, Object> entopts)`",
-  "n": 1
- },
- "92e45cf378": {
-  "outcome": "correction:G27",
-  "why": "ref-issues: the unescaped pipe split OLD's cell; the description is one escaped cell",
-  "n": 1
- },
- "dac11a1691": {
-  "outcome": "correction:G27",
-  "why": "ref-issues: the field description is escaped into one cell",
-  "n": 1
- },
- "035bdeb70d": {
-  "outcome": "correction:G27",
-  "why": "ref-issues: the field description is one table cell; its pipe is escaped and the relative link text kept without a link that would break from REFERENCE.md",
-  "n": 1
- },
- "9b3a3864f9": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: remove is inactive, so it is not documented",
-  "n": 1
- },
- "f010700f70": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: remove is inactive",
-  "n": 1
- },
- "d245316c2e": {
-  "outcome": "correction:U34",
-  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
-  "n": 1
- },
- "99e505dfce": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename (ref-issues: the entity named planet_entity has the class PlanetEntityEntity)",
-  "n": 1
- },
- "55e0b0d3ac": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
-  "n": 16
- },
- "861a2bfee4": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
-  "n": 76
- },
- "b2f8d161db": {
-  "outcome": "unification:member-sentences",
-  "why": "make's sentence names the class make() instantiates (Entity.fragment.java:21-24 `return new EntyClass(this.client, opts);` with a copy of the options) and that it keeps the client; the ledger pairs the first OLD entity with another under the renamed headings, a pairing artefact",
-  "n": 92
- },
- "7f188f33e8": {
-  "outcome": "correction:U34",
-  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; make() returns it",
-  "n": 1
- },
- "5d54345ff5": {
-  "outcome": "unification:member-sentences",
-  "why": "ref-issues: make's sentence names the class PlanetEntityEntity (entityClassName of planet_entity)",
-  "n": 1
- },
- "91234b31f0": {
-  "outcome": "same-meaning",
-  "why": "the same remove sentence with Java's verb, throws (a RuntimeException)",
-  "n": 15
- },
- "c58f2fe3f9": {
-  "outcome": "same-meaning",
-  "why": "the same list sentence with the collection named (`List`, cited MakeResult.java) and Java's verb",
-  "n": 83
- },
- "8124ae79db": {
-  "outcome": "correction:runtime-forms",
-  "why": "the options type cells give the declared type `Map<String, Object>` (the generator's java column; Main.fragment.java:16), not the raw `Map`",
-  "n": 76
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
+  "n": 19
  },
  "d8fb46805d": {
   "outcome": "restored:fact",
   "why": "ctorAlts: the no-argument constructor `public ProjectNameSDK()` (Main.fragment.java:12-14, chains to this(null)), which OLD did not document",
   "n": 19
+ },
+ "d89ec369a4": {
+  "outcome": "correction:runtime-forms",
+  "why": "the fetchargs type cells give the declared `Map<String, Object>` (the generator's java column) [v3.4 re-count: x128 to x128, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 128
  },
  "80a19e889c": {
   "outcome": "restored:fact",
@@ -716,11 +655,6 @@
   "why": "the accessor heading is its declared signature (MainEntity_java.ts:31)",
   "n": 17
  },
- "d89ec369a4": {
-  "outcome": "correction:runtime-forms",
-  "why": "the fetchargs type cells give the declared `Map<String, Object>` (the generator's java column)",
-  "n": 90
- },
  "165ed4ede9": {
   "outcome": "restored:shared",
   "why": "the shared direct Returns sentence: when the body cannot be read ok is false and err is set (SdkClient.java:361-377); a request that cannot be made gives ok false and err only (:314-336)",
@@ -735,6 +669,11 @@
   "outcome": "restored:shared",
   "why": "prepare throws (SdkClient.java:145)",
   "n": 19
+ },
+ "861a2bfee4": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
+  "n": 76
  },
  "80d61d1816": {
   "outcome": "restored:shared",
@@ -786,10 +725,112 @@
   "why": "the shared update sentence with Java's verb",
   "n": 16
  },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for",
+  "n": 2
+ },
+ "4568f32934": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object patch(Map<String, Object> reqdata, Map<String, Object> ctrl)`",
+  "n": 4
+ },
+ "50d6ad1e73": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Returns the patched entity, and throws on failure.\"",
+  "n": 4
+ },
  "0c361e13cd": {
   "outcome": "restored:shared",
   "why": "the shared patch sentence with Java's verb",
   "n": 4
+ },
+ "bd4b298802": {
+  "outcome": "same-meaning",
+  "why": "ent-none: the README's testSDK line says both arguments may be null; this sentence says the same and what each holds (SdkClient.testOptions, SdkClient.java:386-401)",
+  "n": 1
+ },
+ "d4af1f09d0": {
+  "outcome": "same-meaning",
+  "why": "OLD's \"Both arguments may be `null`\", still in the README; the REFERENCE now says it in the shared test sentence",
+  "n": 1
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "where": "the unported README's testSDK line (its Reference section: \"Creates a test-mode client with mock transport\") and its \"Use test mode\" how-to (\"Create a mock client for unit testing\"), printed by java's own README components, true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "read, not run: Config_java.ts:205-208 makeFeature falls back to `new ${javapackage}.feature.BaseFeature()` for test when the SDK has no TestFeature; Fetcher.java:272-273 throws fetch_mode_block when the client mode is not live, and testSDK sets mode \"test\" (Main.fragment.java:31)",
+  "n": 2
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so testSDK builds a client with no mock transport (Config_java.ts:208 falls back to BaseFeature) that refuses every request (Fetcher.java:272-273 fetch_mode_block); the sentence says so",
+  "n": 1
+ },
+ "7f188f33e8": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; make() returns it",
+  "n": 1
+ },
+ "5d54345ff5": {
+  "outcome": "unification:member-sentences",
+  "why": "ref-issues: make's sentence names the class PlanetEntityEntity (entityClassName of planet_entity)",
+  "n": 1
+ },
+ "035bdeb70d": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is one table cell; its pipe is escaped and the relative link text kept without a link that would break from REFERENCE.md",
+  "n": 1
+ },
+ "032adf5867": {
+  "outcome": "restored:fact",
+  "why": "ref-issues: the accessor heading is its declared signature, `SdkEntity planetEntity(Map<String, Object> entopts)`",
+  "n": 1
+ },
+ "ed3da20ea2": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class the accessor instantiates is PlanetEntityClient where the entity type PlanetEntity collides (entityClassName)",
+  "n": 1
+ },
+ "92e45cf378": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the unescaped pipe split OLD's cell; the description is one escaped cell",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove is inactive, so it is not documented",
+  "n": 1
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove is inactive",
+  "n": 1
+ },
+ "d245316c2e": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1
+ },
+ "d89f31f1f5": {
+  "outcome": "restored:fact",
+  "why": "ref-issues: the accessor heading, `SdkEntity planetEntity(Map<String, Object> entopts)`",
+  "n": 1
+ },
+ "99e505dfce": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename (ref-issues: the entity named planet_entity has the class PlanetEntityEntity)",
+  "n": 1
+ },
+ "c2d76ec109": {
+  "outcome": "restored:fact",
+  "why": "ctorAlts: `new DemoSDK()` (Main.fragment.java:12)",
+  "n": 1
  },
  "b4523a5362": {
   "outcome": "correction:S49",
@@ -809,21 +850,6 @@
  "05e95df417": {
   "outcome": "correction:S49",
   "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
-  "n": 1
- },
- "a9e4808c74": {
-  "outcome": "correction:S49",
-  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
-  "n": 1
- },
- "045e555fdd": {
-  "outcome": "correction:S50",
-  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
-  "n": 1
- },
- "c2d76ec109": {
-  "outcome": "restored:fact",
-  "why": "ctorAlts: `new DemoSDK()` (Main.fragment.java:12)",
   "n": 1
  },
  "fc7ff3ec21": {
@@ -846,6 +872,11 @@
   "why": "the truth test of ok",
   "n": 1
  },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "data and match's parameter `args` and stream's parameter `args`, as declared",
+  "n": 1
+ },
  "d2db1c52b0": {
   "outcome": "restored:fact",
   "why": "the stream member, `Stream<Object> stream(...)` (EntityBase.fragment.java:206), which OLD did not document",
@@ -854,11 +885,6 @@
  "fd48acdf84": {
   "outcome": "restored:fact",
   "why": "the stream member (EntityBase.fragment.java:206)",
-  "n": 1
- },
- "07b6a683db": {
-  "outcome": "restored:fact",
-  "why": "data and match's parameter `args` and stream's parameter `args`, as declared",
   "n": 1
  },
  "057b5775f7": {
@@ -897,13 +923,23 @@
   "n": 1
  },
  "2fc5c0888f": {
-  "outcome": "defect",
-  "why": "the cast type: ts/src/helpers/runtimeprose.ts (opText, the remove sentence) fills only {var} in ref.facts.deleted, so the java page can print the cast only as `((EntityBase) result).deleted()`. EntityBase is in the entity subpackage (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`), which no java page imports or names: the tutorial imports only core types, and javac reports cannot find symbol without the import and compiles it with the import or with the class named in full (ran against the crud SDK). The true, compilable span casts to the class named with its package (voxgig.demosdk.entity in the B model); it needs runtimeprose.ts to fill {module} and {names.<role>} in the deleted template, then a names.entity role from Naming_java.ts and the template in Syntax_java.ts. kotlin and scala cast the same way.",
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the cast type of java's deleted read, which the port recorded as defect because no page names EntityBase's package; it is now printed in full, `((voxgig.demosdk.entity.EntityBase) result).deleted()`, from the hook's module and JAVA_ENTITY (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`)",
   "n": 1
  },
  "db819a027f": {
   "outcome": "correction:decision-11-deleted",
-  "why": "the remove sentence names how the mark is read: `((EntityBase) result).deleted()` (EntityBase.fragment.java:47; runOp marks it, :159-160)",
+  "why": "the remove sentence names how the mark is read: ((EntityBase) result).deleted() (the deleted old component's wording) (EntityBase.fragment.java:47; runOp marks it, :159-160)",
+  "n": 1
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
+  "n": 1
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
   "n": 1
  },
  "8928fd2128": {
@@ -931,45 +967,15 @@
   "why": "ref-issues: the class PlanetEntityClient named in the accessor sentence",
   "n": 1
  },
- "fde030938b": {
-  "outcome": "restored:shared",
-  "why": "the update example closes with the shared note \"// Fields to update\" inside the map; the call is unchanged",
-  "n": 16
- },
- "a5c010c994": {
-  "outcome": "restored:shared",
-  "why": "the patch example closes with \"// Only the fields to change\"; the call is unchanged",
-  "n": 4
- },
- "f348eeaeba": {
-  "outcome": "restored:shared",
-  "why": "the \"Fields to update\" note",
-  "n": 1
- },
- "1070ff1f72": {
-  "outcome": "restored:shared",
-  "why": "the update and patch notes",
-  "n": 1
- },
- "54d103011e": {
-  "outcome": "restored:shared",
-  "why": "the \"Only the fields to change\" note",
-  "n": 1
- },
- "0856872351": {
-  "outcome": "restored:shared",
-  "why": "the patch note",
-  "n": 1
- },
- "3a03a66ea9": {
-  "outcome": "restored:shared",
-  "why": "the patch note",
-  "n": 1
- },
  "532eee5659": {
   "outcome": "unification:java-client-block",
   "why": "the client printer declares `options` first and builds each map-valued option just before it is put (as OLD's tutorial did); OLD's features block built `feature` first. The same statements; javac compiled it (B reference, my/compileblocks.js)",
   "n": 19
+ },
+ "fde030938b": {
+  "outcome": "restored:shared",
+  "why": "the update example closes with the shared note \"// Fields to update\" inside the map; the call is unchanged",
+  "n": 16
  },
  "d4a7f67a9c": {
   "outcome": "unification:entity-heading",
@@ -996,6 +1002,11 @@
   "why": "as 69d4c36d51: the last instance block, OLD's `SdkEntity utility = client.utility(null);` unchanged, has no partner after the shift",
   "n": 17
  },
+ "a5c010c994": {
+  "outcome": "restored:shared",
+  "why": "the patch example closes with \"// Only the fields to change\"; the call is unchanged",
+  "n": 4
+ },
  "be53355376": {
   "outcome": "restored:fact",
   "why": "ent-none: the no-argument test constructor overload's example (Main.fragment.java:24)",
@@ -1006,50 +1017,189 @@
   "why": "ref-issues: the planet remove example is gone (remove is inactive); the tool pairs OLD's remove block with the next block, the PlanetEntity instance block",
   "n": 1
  },
- "absent": {
-  "ed44d07e36": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"`load` returns the entity and throws on failure; `data()` reads its record.\"",
-  "5e178e9588": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"`list` returns a `List` of entities, one per record, and throws on failure; ...\"",
-  "6d459aa83b": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Each write returns the entity it wrote (a removed one is marked as deleted), and throws on failure.\"",
-  "64560e9dff": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Create — returns the created entity; data() reads its record\"",
-  "78dac4093d": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"`update` returns the entity it wrote, and throws on failure.\"",
-  "99a8153c15": "ts names the entity type in the step comment from facts.listOf; java declares no listOf (operations are declared to return Object, EntityLoadOp.fragment.java:22, so the guard cannot derive one), and prints \"Load an ambient: the entity; throws on failure\"",
-  "a0b269a293": "as 99a8153c15: no listOf for java (list is declared `Object list(...)`); java prints \"List planet records: a List of entities, one per record; throws on failure\"",
-  "7ab5ba644d": "not a sentence of any language's block: the root README prints it once, after the lead target's (ts) quick start (ReadmeTop.ts:430-432, credentialPlacement); java's own tutorial prints the same sentence in its lead paragraph",
-  "f3e421e046": "java's getUtility returns a copy (`return this.utility.copy();`, SdkClient.java:108; Utility.copy allocates `new Utility(true)`, Utility.java:99-100), declared copy: true and cited, so the page says \"Return a copy of the SDK utility object.\"",
-  "f30b7d4864": "java's direct takes no abort signal: no `signal` is read on the direct path (the cancel absence, cited over the whole java runtime, finds none outside the stream); ref.facts.direct.signal is not declared",
-  "ea3964d6ba": "java's prepare throws (SdkClient.java:145 `throw ctx.makeError(\"spec_method_allow\", ...)`, prepare.fails \"style\"); it prints \"It throws on failure.\"",
-  "abe923e0b2": "java's client has no `tester` alias of its test constructor: the public members of Main.fragment.java and SdkClient.java are the constructors, testSDK, optionsMap, getUtility, getRootCtx, prepare, direct, graphql (the guard's member check finds no other)",
-  "9efa1b3a1e": "java operations cannot be cancelled: no operation reads an abort signal (ref.facts.cancel false, a cited absence over the whole java runtime; only the stream reads callopts.signal, EntityBase.fragment.java:214)",
-  "bb93495ee9": "as 9efa1b3a1e: no cancel paragraph for java",
-  "d86e9841eb": "as 9efa1b3a1e",
-  "cad5dfc5f6": "as 9efa1b3a1e",
-  "9f6d56f5fb": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the entity, and throws on failure.\"",
-  "4c93659f14": "java's stream returns a `Stream<Object>` (EntityBase.fragment.java:206, kind streamLazy, derived): \"return a sequence of its result items\", not an async iterator",
-  "5003b705ca": "java's stream runs the operation before it returns (`runOp` at EntityBase.fragment.java:246 before the Stream is built at :278-314; runs: call, derived): \"The operation runs before the call returns.\"",
-  "2d65ce1465": "a java entity has no public client getter: `client` is a protected field (EntityBase.fragment.java:31), and the guard's member check finds no public client member",
-  "74dc5866b7": "a java entity has no public entity-options getter: `entopts` is a protected field (EntityBase.fragment.java:33)",
-  "f1bcce31a0": "java's entity name is read through a method, `public String getName()` (EntityBase.fragment.java:80; the field `name` is protected, :30), so the page says \"Return the entity name.\"",
-  "a32ec5077c": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns a `List` of entities, one per record, and throws on failure.\"",
-  "d6fd5c15c3": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the created entity, and throws on failure.\"",
-  "863f603c11": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the updated entity, and throws on failure.\"",
-  "b1666a52ac": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the entity, marked as deleted, and throws on failure.\"",
-  "b7eb8b0b55": "java operations return (async: false, derived: EntityLoadOp.fragment.java:22 `public Object load(...)` returns the entity, no future); the shared \"returns\" form is printed: \"Returns the patched entity, and throws on failure.\""
+ "f348eeaeba": {
+  "outcome": "restored:shared",
+  "why": "the \"Fields to update\" note",
+  "n": 1
  },
- "facts": {
-  "named": {
-   "value": "call",
-   "why": "java writes a call with parentheses (calls.args paren, derived), and OLD named operations as calls (`load()`, `list(null, null)`); with facts.arity 2 the shared opName names operations bare in tutorial prose (`load`), since a Java call must pass both arguments, so the minimal pair against bare finds no OLD unit that differs",
-   "evidence": "OLD B/java/README.md tutorial: \"`load()` returns the ENTITY — call data() for the record — and raises on error.\"; OLD crud-bare/java/README.md: \"`list(null, null)` returns a list of entities ...\""
-  },
-  "ref.noun": {
-   "value": "Methods",
-   "why": "the noun OLD java used for the client's and an entity's members (\"Instance Methods\", \"Static Methods\", \"Common Methods\"); held for the entity's members; the new context is the shared heading \"Client Methods\", decided once for all twenty; java's client members are instance methods of DemoSDK and SdkClient",
-   "evidence": "OLD B/java/REFERENCE.md \"### Instance Methods\", \"### Common Methods\""
-  }
+ "1070ff1f72": {
+  "outcome": "restored:shared",
+  "why": "the update and patch notes",
+  "n": 1
  },
- "c56f7ac39f": {
-  "outcome": "defect",
-  "why": "the remove sentence as java prints it: ts/src/helpers/runtimeprose.ts (opText, the remove sentence) fills only {var} in ref.facts.deleted, so the java page can print the cast only as `((EntityBase) result).deleted()`. EntityBase is in the entity subpackage (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`), which no java page imports or names: the tutorial imports only core types, and javac reports cannot find symbol without the import and compiles it with the import or with the class named in full (ran against the crud SDK). The true, compilable span casts to the class named with its package (voxgig.demosdk.entity in the B model); it needs runtimeprose.ts to fill {module} and {names.<role>} in the deleted template, then a names.entity role from Naming_java.ts and the template in Syntax_java.ts. kotlin and scala cast the same way.",
+ "54d103011e": {
+  "outcome": "restored:shared",
+  "why": "the \"Only the fields to change\" note",
+  "n": 1
+ },
+ "0856872351": {
+  "outcome": "restored:shared",
+  "why": "the patch note",
+  "n": 1
+ },
+ "3a03a66ea9": {
+  "outcome": "restored:shared",
+  "why": "the patch note",
+  "n": 1
+ },
+ "0ca8d83ae7": {
+  "outcome": "restored:shared",
+  "why": "the constructor's options type is stated in the parameters table row `options` | `Map<String, Object>` (the container fact, cited Main.fragment.java:16)",
+  "n": 17
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19
+ },
+ "3f329031a9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "7bf9c2f8d2": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "2061945a0b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "5f5bb3e680": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "c601d54b55": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "6bc85eabaf": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "356d1582fc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "897205fd36": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "20e6c8dde9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "8b65a53c90": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "78333f7015": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "05892bf152": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "b440a40732": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "e748d61f95": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "dc563305c5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "e6685f3a5e": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "766d31b2c7": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18
+ },
+ "c209a51ec5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "0100eff743": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18
+ },
+ "0bf51a1c12": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
+ },
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94
+ },
+ "578c11b09a": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: java's deleted read names EntityBase by its package, which the hook gives from the generator's JAVA_ENTITY (EntityBase_java.ts and Entity_java.ts write it in that folder: `package JAVAPACKAGE.entity;`), because no example imports it; the java fixer compiled it with javac: without an import or the full name it does not compile, with the full name it does",
   "n": 15
+ },
+ "e710557629": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ },
+ "f5e43d74c9": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the package names java's deleted read now prints (`voxgig.demosdk.entity.EntityBase`): the module the hook gives (javaPackage) and the generator's JAVA_ENTITY subpackage",
+  "n": 1
+ },
+ "fb41c2d7ae": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the package names java's deleted read now prints (`voxgig.demosdk.entity.EntityBase`): the module the hook gives (javaPackage) and the generator's JAVA_ENTITY subpackage",
+  "n": 1
  }
 }

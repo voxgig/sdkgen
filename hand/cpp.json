@@ -4,17 +4,64 @@
   "why": "the reference names its values the same for every entity (`results`, `item`), as OLD did for the list (`results`) but not its item; the same loop and print",
   "n": 83
  },
+ "absent": {
+  "ed44d07e36": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "5e178e9588": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "6d459aa83b": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "64560e9dff": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "78dac4093d": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "99a8153c15": "printed where facts.listOf names the class (ts); cpp's load returns `SdkEntityPtr`, a handle typed as the base SdkEntity, not the entity class, so cpp declares no listOf and its comment says the entity",
+  "7ab5ba644d": "printed in the root README's primary Quickstart, which only ts has; cpp's root block sits under Quickstart in other languages, which prints blocks only, and cpp's own tutorial prints this sentence in its lead",
+  "a0b269a293": "printed where facts.listOf names the class (ts `{Class}[]`); cpp's list returns `std::vector<SdkEntityPtr>` of base handles, so cpp declares no listOf and its comment names the `std::vector` collection",
+  "f3e421e046": "cpp's getUtility returns a new object (`return utility->copy();`, whose copy allocates `new Utility(NoRegister{})`, types.hpp), so it prints the copy sentence instead (cited)",
+  "f30b7d4864": "cpp's direct takes no abort signal (no direct.signal: the cancel absence is cited over the whole runtime), so no ctrl.signal row",
+  "ea3964d6ba": "cpp's prepare throws on failure (prepare.fails style, cited at `throw ctx->makeError(\"spec_method_allow\",`), so it prints It throws on failure",
+  "abe923e0b2": "cpp's client has no tester alias: Main.fragment.cpp declares only testSDK and create, and the runtime table lists no tester member",
+  "9efa1b3a1e": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
+  "bb93495ee9": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
+  "d86e9841eb": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
+  "cad5dfc5f6": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
+  "9f6d56f5fb": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "4c93659f14": "cpp's stream returns a `std::vector<Value>` of items already read (streamList), not an async iterator, and prints the streamList sentence",
+  "5003b705ca": "cpp's stream runs its operation before it returns (runs call, derived from types.hpp EntityBase::stream), so it prints the runs-at-call sentence",
+  "2d65ce1465": "cpp's entity holds its client in a public field, `SdkClient* client` (types.hpp EntityBase), the base client type, with no member returning the `DemoSDK` instance, so the client sentence would be false",
+  "74dc5866b7": "cpp's entity holds its options in a public field, `Value entopts` (types.hpp EntityBase), not a getter returning a copy, so the sentence would be false",
+  "f1bcce31a0": "cpp's entity name is read through a method, `std::string getName() override { return name_; }` (types.hpp), so it prints Return the entity name.",
+  "a32ec5077c": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "d6fd5c15c3": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "863f603c11": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "b1666a52ac": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "b7eb8b0b55": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "28235772cb": "cpp's stream reads no signal: streamSignal false, an absence cited over the whole cpp runtime"
+ },
+ "facts": {
+  "named": {
+   "value": "call",
+   "why": "OLD cpp named operations and members as calls with parentheses; with arity 2 an operation is now named bare by shared code (`load`, as swift), and a member is still named called (`data()`, `direct()`), which call selects",
+   "evidence": "OLD B/cpp/README.md tutorial: \"`load()` returns the entity and throws on error; `data()` reads its record.\""
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD cpp used for the client's members (Instance Methods, Static Methods); the new context is the shared heading Client Methods, decided once for every language; cpp's client members are called with `->` on the client handle",
+   "evidence": "OLD B/cpp/REFERENCE.md: \"### Instance Methods\""
+  },
+  "ref.valueType.OBJECT": {
+   "value": "Value",
+   "why": "every map option and fetcharg is a `Value` in cpp (`vmap` returns `Value`, core/struct.hpp:32); OLD cpp's options and fetchargs tables gave `Value` for headers, feature, system, params, query, headers and body",
+   "evidence": "OLD B/cpp/REFERENCE.md options table: the headers, feature and system rows give the type `Value`; core/struct.hpp:32 `inline Value vmap() { return Value::map(); }`"
+  }
+ },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match: the README options table row for `base` names the API server; that table does not list `server`, so it states nothing about the server variables",
   "n": 15
  },
- "316fb70214": {
+ "83977380d8": {
   "outcome": "restored:shared",
   "why": "the shared load sentence: same facts as OLD (returns the entity, throws on failure, `data()` reads its record); `load` is named without parentheses because a call takes two arguments (arity 2, the runtime's load(reqmatch, ctrl) has no defaults), and the record's type `Value` is added (types.hpp `Value data(const Value& arg = Value::undef()) override;`)",
   "n": 16
  },
- "b4c2479efb": {
+ "c379ac110f": {
   "outcome": "restored:shared",
   "why": "the shared list sentence: same facts as OLD (a `std::vector` of entities, one per record, throws on failure, `data()` reads an entity's record), `list` named bare (arity 2) and the record's type `Value` added; the thrown type OLD named, sdk::SdkErrorPtr, is in the catch clause of the block under it (`catch (const SdkErrorPtr& err)`)",
   "n": 7
@@ -214,7 +261,7 @@
   "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
   "n": 6
  },
- "84678beea9": {
+ "a50b67ddd7": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
   "n": 7
@@ -566,8 +613,8 @@
  },
  "584b977023": {
   "outcome": "same-meaning",
-  "why": "the `Value` type cell of the options row, as OLD's table had it",
-  "n": 35
+  "why": "the `Value` type cell of the options row, as OLD's table had it [v3.4 re-count: x90 to x90, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 90
  },
  "bd420dcfaf": {
   "outcome": "correction:direct-truth-test",
@@ -583,6 +630,11 @@
   "outcome": "restored:shared",
   "why": "the shared load clause: returns the entity, throws on failure",
   "n": 28
+ },
+ "ea3d2bd9d5": {
+  "outcome": "restored:shared",
+  "why": "v3.4, one shared edit: the record clause every single-entity operation's sentence ends with; the port recorded it as defect for its 15 remove copies, false for cpp (remove absorbs only resmatch); those now print the removeKeeps sentence instead (ref.facts.removeKeeps, cited to EntityRemoveOp.fragment.cpp), and the copies left follow load, create, update and patch, which absorb the response's record (true of cpp, as the port read) [v3.4 re-count: x64 to x64, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 64
  },
  "f196c5678a": {
   "outcome": "restored:shared",
@@ -614,7 +666,7 @@
   "why": "the call without a match is printed from the operation's facts: two arguments, each `Value::undef()` (arity 2; list(const Value& reqmatch, const Value& ctrl) has no defaults)",
   "n": 82
  },
- "bcaa9cc9b0": {
+ "2829afdd30": {
   "outcome": "restored:shared",
   "why": "the shared list return clause",
   "n": 83
@@ -856,56 +908,144 @@
   "why": "the list example's loop variable is `item` for every entity",
   "n": 1
  },
- "absent": {
-  "ed44d07e36": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "5e178e9588": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "6d459aa83b": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "64560e9dff": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "78dac4093d": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "9f6d56f5fb": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "a32ec5077c": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "d6fd5c15c3": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "863f603c11": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "b1666a52ac": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "b7eb8b0b55": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
-  "99a8153c15": "printed where facts.listOf names the class (ts); cpp's load returns `SdkEntityPtr`, a handle typed as the base SdkEntity, not the entity class, so cpp declares no listOf and its comment says the entity",
-  "a0b269a293": "printed where facts.listOf names the class (ts `{Class}[]`); cpp's list returns `std::vector<SdkEntityPtr>` of base handles, so cpp declares no listOf and its comment names the `std::vector` collection",
-  "7ab5ba644d": "printed in the root README's primary Quickstart, which only ts has; cpp's root block sits under Quickstart in other languages, which prints blocks only, and cpp's own tutorial prints this sentence in its lead",
-  "f3e421e046": "cpp's getUtility returns a new object (`return utility->copy();`, whose copy allocates `new Utility(NoRegister{})`, types.hpp), so it prints the copy sentence instead (cited)",
-  "f30b7d4864": "cpp's direct takes no abort signal (no direct.signal: the cancel absence is cited over the whole runtime), so no ctrl.signal row",
-  "ea3964d6ba": "cpp's prepare throws on failure (prepare.fails style, cited at `throw ctx->makeError(\"spec_method_allow\",`), so it prints It throws on failure",
-  "abe923e0b2": "cpp's client has no tester alias: Main.fragment.cpp declares only testSDK and create, and the runtime table lists no tester member",
-  "9efa1b3a1e": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
-  "bb93495ee9": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
-  "d86e9841eb": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
-  "cad5dfc5f6": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
-  "4c93659f14": "cpp's stream returns a `std::vector<Value>` of items already read (streamList), not an async iterator, and prints the streamList sentence",
-  "5003b705ca": "cpp's stream runs its operation before it returns (runs call, derived from types.hpp EntityBase::stream), so it prints the runs-at-call sentence",
-  "28235772cb": "cpp's stream reads no signal: streamSignal false, an absence cited over the whole cpp runtime",
-  "2d65ce1465": "cpp's entity holds its client in a public field, `SdkClient* client` (types.hpp EntityBase), the base client type, with no member returning the `DemoSDK` instance, so the client sentence would be false",
-  "74dc5866b7": "cpp's entity holds its options in a public field, `Value entopts` (types.hpp EntityBase), not a getter returning a copy, so the sentence would be false",
-  "f1bcce31a0": "cpp's entity name is read through a method, `std::string getName() override { return name_; }` (types.hpp), so it prints Return the entity name."
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18
  },
- "facts": {
-  "named": {
-   "value": "call",
-   "why": "OLD cpp named operations and members as calls with parentheses; with arity 2 an operation is now named bare by shared code (`load`, as swift), and a member is still named called (`data()`, `direct()`), which call selects",
-   "evidence": "OLD B/cpp/README.md tutorial: \"`load()` returns the entity and throws on error; `data()` reads its record.\""
-  },
-  "ref.noun": {
-   "value": "Methods",
-   "why": "the noun OLD cpp used for the client's members (Instance Methods, Static Methods); the new context is the shared heading Client Methods, decided once for every language; cpp's client members are called with `->` on the client handle",
-   "evidence": "OLD B/cpp/REFERENCE.md: \"### Instance Methods\""
-  },
-  "ref.valueType.OBJECT": {
-   "value": "Value",
-   "why": "every map option and fetcharg is a `Value` in cpp (`vmap` returns `Value`, core/struct.hpp:32); OLD cpp's options and fetchargs tables gave `Value` for headers, feature, system, params, query, headers and body",
-   "evidence": "OLD B/cpp/REFERENCE.md options table: the headers, feature and system rows give the type `Value`; core/struct.hpp:32 `inline Value vmap() { return Value::map(); }`"
-  }
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19
  },
- "ea3d2bd9d5": {
-  "outcome": "defect",
-  "why": "waits on shared code, ts/src/helpers/runtimeprose.ts opText (the record sentence every single-entity operation ends with). False in the 15 remove copies of this class, true in its 64 load, create, update and patch copies (the class key is the text, so one class holds all 79). cpp's remove absorbs only resmatch (EntityRemoveOp.fragment.cpp:12-18) and never replaces data_, which the entity constructor sets to an empty map (types.hpp:1317); load, create, update and patch replace data_ with the response's resdata. So on the page's remove example, a fresh entity, data() reads an empty map, not the removed record. True statement: a removed entity keeps the data it held; remove reads no record from the response. Needs an optional cited fact (remove keeps the data) and that sentence written once in shared code; cpp alone of the twenty runtimes keeps it (survey Q6). RUN (fix workspace work/probe/remove-main.cpp, B generated whole, g++ -iquote cpp): with a system.fetch that answers every request with the record id p1, name Mars, load then data() prints that record, and remove then data() prints {} with deleted() 1",
-  "n": 79
+ "761c6d484c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "698f390733": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "d0145f6c85": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "1fac1cf55c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "f8a8fd01f9": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "052a7f401b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "dd6016aa7d": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "93dc6c7898": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "6528a2408e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "eb1c690d35": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "1cac3697e0": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "73f17f9d92": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "c5d3b0e2bc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "4ebe439395": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "2e2ea2f618": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "733031c9b8": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "53e790dd17": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18
+ },
+ "9b440c2085": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "b3e7de27cd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18
+ },
+ "1054f62797": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
+ },
+ "fc814cdcc9": {
+  "outcome": "correction:v34-remove-keeps",
+  "why": "v3.4, one shared edit: cpp's remove absorbs only the response's match (EntityRemoveOp.fragment.cpp: `if (ctx->result->resmatch.is_map()) { this->match_ = ctx->result->resmatch; }`), so the page no longer says data() reads the removed record (its fixer ran it: remove then data() gives {} although the response carried a record); it says no record is read and data() keeps what the entity held (ref.facts.removeKeeps, cited)",
+  "n": 15
+ },
+ "5788fca383": {
+  "outcome": "correction:v34-remove-keeps",
+  "why": "v3.4, one shared edit: cpp's remove absorbs only the response's match (EntityRemoveOp.fragment.cpp: `if (ctx->result->resmatch.is_map()) { this->match_ = ctx->result->resmatch; }`), so the page no longer says data() reads the removed record (its fixer ran it: remove then data() gives {} although the response carried a record); it says no record is read and data() keeps what the entity held (ref.facts.removeKeeps, cited)",
+  "n": 15
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
  }
 }

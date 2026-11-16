@@ -17,16 +17,31 @@
   }
  },
  "absent": {
-  "663f4dd150": "clojure prints ';; Create \u2014 returns the created entity; ((:data-get created)) reads its record' (crud-bare/clojure/README.md:88); the record read is printed inside the comment in clojure's own form, masked differently",
   "f616466503": "clojure ships the test feature whatever the model (ref.facts.testMock 'always', cited: tm/clojure/src/sdk/features.clj make-feature maps \"test\" to test-feature; clojure is not trimmed); its no-test page says 'Create a test client with mock features active.', true there",
   "dd74ff9ab6": "clojure ships the test feature whatever the model (testMock 'always'), so the sentence would be false for clojure",
   "b5ebb46b27": "h3fix, one shared edit: S13's residue sentence, printed only where the client has no mock; this runtime ships the test feature whatever the model (ref.facts.testMock 'always', cited in its forms), so its no-test page keeps 'Create a test client with mock features active.' and the arguments sentence that calls the first argument the test feature's options, which is true here",
-  "60714446ae": "h3fix, one shared edit: S13's residue sentence, printed only where the client has no mock; this runtime ships the test feature whatever the model (ref.facts.testMock 'always', cited in its forms), so its no-test page keeps 'Create a test client with mock features active.' and the arguments sentence that calls the first argument the test feature's options, which is true here"
+  "60714446ae": "h3fix, one shared edit: S13's residue sentence, printed only where the client has no mock; this runtime ships the test feature whatever the model (ref.facts.testMock 'always', cited in its forms), so its no-test page keeps 'Create a test client with mock features active.' and the arguments sentence that calls the first argument the test feature's options, which is true here",
+  "663f4dd150": "clojure prints ';; Create \u2014 returns the created entity; ((:data-get created)) reads its record' (crud-bare/clojure/README.md:88); the record read is printed inside the comment in clojure's own form, masked differently"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
   "n": 15
+ },
+ "b31c974005": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 15
+ },
+ "a65ba4a33f": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 2
+ },
+ "bef2b8f986": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 3
  },
  "6713332576": {
   "outcome": "restored:shared",
@@ -48,9 +63,29 @@
   "why": "the write results as one sentence; true of clojure (each op returns the entity and throws through sdk-throw)",
   "n": 5
  },
+ "cdfbb6475b": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1
+ },
+ "c9c9426cd8": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1
+ },
+ "79233d47ba": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: it now says where the parent id goes (the match, as the example passes it); same fact",
+  "n": 1
+ },
  "9562ae8fc5": {
   "outcome": "correction:U45",
   "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
+ "ec589bf68a": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
   "n": 1
  },
  "c2358342da": {
@@ -61,6 +96,16 @@
  "325b1911ed": {
   "outcome": "same-meaning",
   "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
+  "n": 1
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1
  },
  "f6f21dc984": {
@@ -86,441 +131,6 @@
  "db3cf06cf7": {
   "outcome": "correction:S49",
   "why": "ref-issues root: server variable given; the namespace of an entity no step calls is not required (imports follow the steps)",
-  "n": 1
- },
- "9980e9e173": {
-  "outcome": "same-meaning",
-  "why": "README:7 and :173 say options is a voxgig.struct map, or nil; same",
-  "n": 19
- },
- "f7aa0fdb13": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
-  "n": 16
- },
- "9c82c9fc37": {
-  "outcome": "same-meaning",
-  "why": "README:973 says sdk.api is the public surface to require; consistent with the note that the utility is reached through sdk.client, which sdk.api does not re-export",
-  "n": 19
- },
- "c679f2d6a0": {
-  "outcome": "same-meaning",
-  "why": "README:228 calls the argument fetchargs too",
-  "n": 19
- },
- "b5e9f92943": {
-  "outcome": "same-meaning",
-  "why": "README:278 says on error ok is false and err contains the error; same keys",
-  "n": 19
- },
- "2f2794265d": {
-  "outcome": "same-meaning",
-  "why": "README:10 lists create among the operations; the action runs through create",
-  "n": 11
- },
- "f64ae2f4fc": {
-  "outcome": "same-meaning",
-  "why": "a word match on log in console.log; the README says nothing about log's default",
-  "n": 19
- },
- "e8d21858da": {
-  "outcome": "same-meaning",
-  "why": "moved into the Returns sentence; the README reads the same keys",
-  "n": 19
- },
- "3bf831e413": {
-  "outcome": "restored:shared",
-  "why": "the client section is headed by the client namespace, sdk.api, the page's name for the client (clojure's client has no type name)",
-  "n": 19
- },
- "c7ee4c1d3e": {
-  "outcome": "restored:shared",
-  "why": "the make-sdk function is under Constructor with its call",
-  "n": 19
- },
- "41fd9a4847": {
-  "outcome": "restored:shared",
-  "why": "the options are the Constructor's parameter table",
-  "n": 19
- },
- "d389e7085e": {
-  "outcome": "restored:shared",
-  "why": "restored as 'both may be `nil`'",
-  "n": 19
- },
- "345905e403": {
-  "outcome": "restored:shared",
-  "why": "the client functions are under Client Functions",
-  "n": 19
- },
- "09ca6bd48f": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data ((api/ambient client data)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText); restored as 5ca02aaa87 under the module heading",
-  "n": 94
- },
- "423809a525": {
-  "outcome": "correction:clojure-utility",
-  "why": "false: sdk.api has no get-utility (Main_clojure.ts generates sdk.api without it; the guard reads its re-exports). The route that exists, sdk.client/get-utility, is in the instance note",
-  "n": 19
- },
- "c557a8942d": {
-  "outcome": "restored:note",
-  "why": "the instance note says (sdk.client/get-utility client) returns a copy of it (core.clj:227 utility-copy)",
-  "n": 19
- },
- "7433a6d16d": {
-  "outcome": "restored:shared",
-  "why": "restored as the Returns sentence with the same keys",
-  "n": 19
- },
- "a6d7cbc021": {
-  "outcome": "restored:shared",
-  "why": "restored as 'A failed request is reported in the result, not as an error, so branch on (vs/getprop result \"ok\")'",
-  "n": 19
- },
- "7fd0cb6715": {
-  "outcome": "restored:shared",
-  "why": "restored as '**Parameters (`fetchargs` map keys):**'",
-  "n": 19
- },
- "c115f99e12": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Path parameter values for `{param}` substitution.'",
-  "n": 19
- },
- "7b71a17a53": {
-  "outcome": "restored:shared",
-  "why": "the Returns line names the map and its keys",
-  "n": 19
- },
- "c41a606d0c": {
-  "outcome": "restored:shared",
-  "why": "restored as the prepare Returns sentence: the fetch definition, and it raises on failure",
-  "n": 19
- },
- "8cf64fe4e8": {
-  "outcome": "correction:sentence-review-list-match",
-  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
-  "n": 1
- },
- "2f38082332": {
-  "outcome": "correction:S09",
-  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
-  "n": 19
- },
- "0ccd61dc70": {
-  "outcome": "dropped",
-  "why": "the header of the make-sdk options table, which became the Constructor's table under the shared page (its own header names Name/Type/Description)",
-  "n": 38
- },
- "ac1eac6be0": {
-  "outcome": "correction:S09",
-  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
-  "n": 19
- },
- "b5b91fba23": {
-  "outcome": "restored:shared",
-  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
-  "n": 19
- },
- "f6e03b47ff": {
-  "outcome": "restored:note",
-  "why": "the route to the utility, true per tm/clojure/src/sdk/client.clj:69 (the check's misclassified 2)",
-  "n": 19
- },
- "fbfbaaa041": {
-  "outcome": "restored:note",
-  "why": "as bb1005dc6f: core.clj:227 get-utility returns utility-copy",
-  "n": 19
- },
- "5ca02aaa87": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
-  "n": 94
- },
- "55a8b68a1f": {
-  "outcome": "restored:fact",
-  "why": "data-get returns a copy: Entity.fragment.clj:21 (vs/clone (deref (:_data ent)))",
-  "n": 94
- },
- "71cbb92746": {
-  "outcome": "restored:fact",
-  "why": "stream is a real member (Entity.fragment.clj :stream, a lazy-seq at :185); the kind sentence now names only what the call returns (a lazy sequence: the type is a clojure LazySeq, walked over items realised before the call returns, which the runs sentence beside it says); nothing in it says when items arrive",
-  "n": 94
- },
- "169ee4e438": {
-  "outcome": "restored:fact",
-  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.clj (run-op at :164 before the lazy-seq is built); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
-  "n": 94
- },
- "c2467756ac": {
-  "outcome": "correction:ref-6",
-  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
-  "n": 16
- },
- "8dc7a55eb9": {
-  "outcome": "correction:ref-6",
-  "why": "the Call cell carries the route's path parameter id",
-  "n": 16
- },
- "066a083189": {
-  "outcome": "same-meaning",
-  "why": "the README direct example passes method GET; consistent with GET as the default",
-  "n": 1
- },
- "f09662fec4": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (clojure/README.md:173 uses nil for no options, ent-none)",
-  "n": 1
- },
- "3344d6d2fb": {
-  "outcome": "same-meaning",
-  "why": "the type word string, as the README's options table uses it",
-  "n": 4
- },
- "e59066a2d8": {
-  "outcome": "same-meaning",
-  "why": "moved into the test sentence ('both may be `nil`'); README:173 uses nil for no options the same way",
-  "n": 1
- },
- "ce1c1aa923": {
-  "outcome": "same-meaning",
-  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
-  "n": 1
- },
- "91baf1b4b6": {
-  "outcome": "same-meaning",
-  "why": "README:217 shows the test-sdk call; it does not claim a mock transport in this SDK. No disagreement",
-  "n": 1
- },
- "46dc1a3462": {
-  "outcome": "correction:S13",
-  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
-  "n": 1
- },
- "dac11a1691": {
-  "outcome": "correction:G27",
-  "why": "ref-issues: the field description is escaped into one cell",
-  "n": 1
- },
- "d7495fe92f": {
-  "outcome": "correction:G27",
-  "why": "ref-issues: the description's pipe broke the table; escaped now",
-  "n": 1
- },
- "0b29ec4944": {
-  "outcome": "restored:shared",
-  "why": "the update data sentence names the id the route needs; same fact, other words",
-  "n": 1
- },
- "c53de85c6e": {
-  "outcome": "correction:S25",
-  "why": "ref-issues turns remove off: an inactive operation is not documented",
-  "n": 1
- },
- "9b3a3864f9": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: remove inactive",
-  "n": 1
- },
- "f010700f70": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: remove inactive",
-  "n": 1
- },
- "961804c407": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
-  "n": 1
- },
- "618096b4cc": {
-  "outcome": "same-meaning",
-  "why": "README:217 calls (api/test-sdk testopts sdkopts); same parameters",
-  "n": 19
- },
- "1948d9eee5": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the accessor passes its argument on as the entity options (Entity.fragment.clj:54 make -> :32 new-entity [client entopts]); options, not initial data",
-  "n": 94
- },
- "b31c974005": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
-  "n": 15
- },
- "a65ba4a33f": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
-  "n": 2
- },
- "bef2b8f986": {
-  "outcome": "unification:write-title-entity",
-  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
-  "n": 3
- },
- "cdfbb6475b": {
-  "outcome": "unification:write-title-entity",
-  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
-  "n": 1
- },
- "c9c9426cd8": {
-  "outcome": "unification:write-title-entity",
-  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
-  "n": 1
- },
- "79233d47ba": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: it now says where the parent id goes (the match, as the example passes it); same fact",
-  "n": 1
- },
- "ec589bf68a": {
-  "outcome": "unification:write-title-entity",
-  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
-  "n": 1
- },
- "275db80f77": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
-  "n": 1
- },
- "f5ea3ada1b": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
-  "n": 1
- },
- "b67e90270b": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
-  "n": 19
- },
- "89672a79c6": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19
- },
- "940b78cf67": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19
- },
- "bd00b51781": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
-  "n": 93
- },
- "3903428a4f": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
-  "n": 93
- },
- "5d7dfb08e2": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "4a52fad3f8": {
-  "outcome": "correction:sentence-review-update-id",
-  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
-  "n": 19
- },
- "8d8ece97fa": {
-  "outcome": "correction:sentence-review-list-match",
-  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
-  "n": 82
- },
- "43dd422fa5": {
-  "outcome": "correction:sentence-review-test",
-  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
-  "n": 19
- },
- "6cf747c744": {
-  "outcome": "unification:client-heading",
-  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
-  "n": 19
- },
- "65160f6e35": {
-  "outcome": "correction:sentence-review-ctrl",
-  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
-  "n": 19
- },
- "251d7318e6": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "ac937e958b": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "fc8cef4f46": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "cd6e4db5f1": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "d51d922508": {
-  "outcome": "correction:sentence-review-stream",
-  "why": "the stream sentence fixed once (sentence review): a lazy sequence over items already read misled (clojure Entity.fragment.clj:164,180,185 realises every item before returning; elixir entity_base.ex:150,160,172 a Stream over a list), and 'one list' was false for rust's IntoIter; the sentence names what is returned, the runs sentence when the operation runs",
-  "n": 94
- },
- "a9081dcdc4": {
-  "outcome": "correction:sentence-review-action",
-  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
-  "n": 16
- },
- "6fcc39ea14": {
-  "outcome": "correction:sentence-review-secret",
-  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
-  "n": 2
- },
- "8c54e41b7e": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
-  "n": 1
- },
- "c74047383d": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
-  "n": 1
- },
- "9c6d819441": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
-  "n": 19
- },
- "c5bf30cf23": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
-  "n": 19
- },
- "e8e8cc2723": {
-  "outcome": "correction:freeze-direct-wording",
-  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
-  "n": 19
- },
- "429cdfbc35": {
-  "outcome": "correction:freeze-direct-wording",
-  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
-  "n": 19
- },
- "0918d10148": {
-  "outcome": "correction:decision-7-match-copy",
-  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
-  "n": 94
- },
- "80f77307dc": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
-  "n": 94
- },
- "eea38408c0": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
   "n": 1
  },
  "c9601209b9": {
@@ -633,6 +243,56 @@
   "why": "the README states the same of log's options (the table's `active` default true); no disagreement",
   "n": 19
  },
+ "9980e9e173": {
+  "outcome": "same-meaning",
+  "why": "README:7 and :173 say options is a voxgig.struct map, or nil; same",
+  "n": 19
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16
+ },
+ "b67e90270b": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19
+ },
+ "9c82c9fc37": {
+  "outcome": "same-meaning",
+  "why": "README:973 says sdk.api is the public surface to require; consistent with the note that the utility is reached through sdk.client, which sdk.api does not re-export",
+  "n": 19
+ },
+ "c679f2d6a0": {
+  "outcome": "same-meaning",
+  "why": "README:228 calls the argument fetchargs too",
+  "n": 19
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "c5bf30cf23": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "2f2794265d": {
+  "outcome": "same-meaning",
+  "why": "README:10 lists create among the operations; the action runs through create",
+  "n": 11
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log; the README says nothing about log's default",
+  "n": 19
+ },
+ "e8d21858da": {
+  "outcome": "same-meaning",
+  "why": "moved into the Returns sentence; the README reads the same keys",
+  "n": 19
+ },
  "83803533d5": {
   "outcome": "correction:X3",
   "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
@@ -738,15 +398,120 @@
   "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
   "n": 19
  },
+ "bd00b51781": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93
+ },
+ "3903428a4f": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93
+ },
+ "5d7dfb08e2": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "4a52fad3f8": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 19
+ },
  "45da5a1c7e": {
   "outcome": "correction:S09-residue-on-by-default",
   "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
   "n": 19
  },
+ "8d8ece97fa": {
+  "outcome": "correction:sentence-review-list-match",
+  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
+  "n": 82
+ },
+ "3bf831e413": {
+  "outcome": "restored:shared",
+  "why": "the client section is headed by the client namespace, sdk.api, the page's name for the client (clojure's client has no type name)",
+  "n": 19
+ },
+ "c7ee4c1d3e": {
+  "outcome": "restored:shared",
+  "why": "the make-sdk function is under Constructor with its call",
+  "n": 19
+ },
+ "41fd9a4847": {
+  "outcome": "restored:shared",
+  "why": "the options are the Constructor's parameter table",
+  "n": 19
+ },
+ "d389e7085e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `nil`'",
+  "n": 19
+ },
+ "345905e403": {
+  "outcome": "restored:shared",
+  "why": "the client functions are under Client Functions",
+  "n": 19
+ },
+ "09ca6bd48f": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data ((api/ambient client data)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText); restored as 5ca02aaa87 under the module heading",
+  "n": 94
+ },
+ "423809a525": {
+  "outcome": "correction:clojure-utility",
+  "why": "false: sdk.api has no get-utility (Main_clojure.ts generates sdk.api without it; the guard reads its re-exports). The route that exists, sdk.client/get-utility, is in the instance note",
+  "n": 19
+ },
+ "c557a8942d": {
+  "outcome": "restored:note",
+  "why": "the instance note says (sdk.client/get-utility client) returns a copy of it (core.clj:227 utility-copy)",
+  "n": 19
+ },
+ "7433a6d16d": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns sentence with the same keys",
+  "n": 19
+ },
+ "a6d7cbc021": {
+  "outcome": "restored:shared",
+  "why": "restored as 'A failed request is reported in the result, not as an error, so branch on (vs/getprop result \"ok\")'",
+  "n": 19
+ },
+ "7fd0cb6715": {
+  "outcome": "restored:shared",
+  "why": "restored as '**Parameters (`fetchargs` map keys):**'",
+  "n": 19
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Path parameter values for `{param}` substitution.'",
+  "n": 19
+ },
+ "c41a606d0c": {
+  "outcome": "restored:shared",
+  "why": "restored as the prepare Returns sentence: the fetch definition, and it raises on failure",
+  "n": 19
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19
+ },
+ "0ccd61dc70": {
+  "outcome": "dropped",
+  "why": "the header of the make-sdk options table, which became the Constructor's table under the shared page (its own header names Name/Type/Description)",
+  "n": 38
+ },
  "689587aa26": {
   "outcome": "correction:X3",
   "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
   "n": 18
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19
  },
  "e1a075f227": {
   "outcome": "correction:D26",
@@ -783,6 +548,86 @@
   "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
   "n": 90
  },
+ "43dd422fa5": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 19
+ },
+ "6cf747c744": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19
+ },
+ "f6e03b47ff": {
+  "outcome": "restored:note",
+  "why": "the route to the utility, true per tm/clojure/src/sdk/client.clj:69 (the check's misclassified 2)",
+  "n": 19
+ },
+ "fbfbaaa041": {
+  "outcome": "restored:note",
+  "why": "as bb1005dc6f: core.clj:227 get-utility returns utility-copy",
+  "n": 19
+ },
+ "5ca02aaa87": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
+  "n": 94
+ },
+ "65160f6e35": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 19
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "429cdfbc35": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "cd6e4db5f1": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "data-get returns a copy: Entity.fragment.clj:21 (vs/clone (deref (:_data ent)))",
+  "n": 94
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "d51d922508": {
+  "outcome": "correction:sentence-review-stream",
+  "why": "the stream sentence fixed once (sentence review): a lazy sequence over items already read misled (clojure Entity.fragment.clj:164,180,185 realises every item before returning; elixir entity_base.ex:150,160,172 a Stream over a list), and 'one list' was false for rust's IntoIter; the sentence names what is returned, the runs sentence when the operation runs",
+  "n": 94
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.clj (run-op at :164 before the lazy-seq is built); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16
+ },
+ "8dc7a55eb9": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "a9081dcdc4": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
+  "n": 16
+ },
  "e94011ef3f": {
   "outcome": "correction:residue-escaped-backticks",
   "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
@@ -803,6 +648,76 @@
   "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
   "n": 19
  },
+ "6fcc39ea14": {
+  "outcome": "correction:sentence-review-secret",
+  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
+  "n": 2
+ },
+ "8cf64fe4e8": {
+  "outcome": "correction:sentence-review-list-match",
+  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
+  "n": 1
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 4
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `nil`'); README:173 uses nil for no options the same way",
+  "n": 1
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1
+ },
+ "8c54e41b7e": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1
+ },
+ "c74047383d": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1
+ },
+ "c53de85c6e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
  "37b4c175e7": {
   "outcome": "correction:D26",
   "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
@@ -812,5 +727,95 @@
   "outcome": "correction:D26",
   "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
   "n": 1
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1
+ },
+ "961804c407": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1
+ },
+ "b5e9f92943": {
+  "outcome": "same-meaning",
+  "why": "README:278 says on error ok is false and err contains the error; same keys",
+  "n": 19
+ },
+ "7b71a17a53": {
+  "outcome": "restored:shared",
+  "why": "the Returns line names the map and its keys",
+  "n": 19
+ },
+ "b5b91fba23": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "71cbb92746": {
+  "outcome": "restored:fact",
+  "why": "stream is a real member (Entity.fragment.clj :stream, a lazy-seq at :185); the kind sentence now names only what the call returns (a lazy sequence: the type is a clojure LazySeq, walked over items realised before the call returns, which the runs sentence beside it says); nothing in it says when items arrive",
+  "n": 94
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (clojure/README.md:173 uses nil for no options, ent-none)",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "same-meaning",
+  "why": "README:217 shows the test-sdk call; it does not claim a mock transport in this SDK. No disagreement",
+  "n": 1
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1
+ },
+ "618096b4cc": {
+  "outcome": "same-meaning",
+  "why": "README:217 calls (api/test-sdk testopts sdkopts); same parameters",
+  "n": 19
+ },
+ "1948d9eee5": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the accessor passes its argument on as the entity options (Entity.fragment.clj:54 make -> :32 new-entity [client entopts]); options, not initial data",
+  "n": 94
+ },
+ "89672a79c6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "940b78cf67": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "251d7318e6": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "ac937e958b": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "fc8cef4f46": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94
+ },
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94
  }
 }

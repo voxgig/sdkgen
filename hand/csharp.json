@@ -1,42 +1,76 @@
 {
+ "absent": {
+  "ed44d07e36": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form (crud-bare/csharp/README.md: '`Load` returns the entity and throws on failure; `Data()` reads its record.')",
+  "5e178e9588": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('`List` returns a list of entities, one per record, and throws on failure; ...')",
+  "6d459aa83b": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Each write returns the entity it wrote (a removed one is marked as deleted), and throws on failure.')",
+  "64560e9dff": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Create \u2014 returns the created entity; Data() reads its record')",
+  "78dac4093d": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form (ref-issues: '`Update` returns the entity it wrote, and throws on failure.')",
+  "99a8153c15": "ts declares listOf, so its step comment names the entity class ('the entity, an AmbientEntity'); C#'s Load returns `object?` and names no entity type (EntityLoadOp.fragment.cs), so csharp declares no listOf and prints the same comment without it ('Load an ambient: the entity; throws on failure')",
+  "7ab5ba644d": "printed after the root README's primary quick start, which the root README gives to TypeScript alone; csharp's root quick start is under 'Quickstart in other languages', where no language prints prose (auth-query README.md:282)",
+  "a0b269a293": "as 99a8153c15: ts's list comment names its list type ('a PlanetEntity[]'); C#'s List returns `object?` (a List<object?> of entities, MakeResult.cs), no named type, so csharp prints 'List planet records: a list of entities, one per record; throws on failure'",
+  "f3e421e046": "csharp's GetUtility returns a new object (`Utility.Copy(_utility)`, Main.fragment.cs:105; `var u = new Utility(true)`, tm/csharp/core/Utility.cs:56; cited, copy: true), so csharp prints 'Return a copy of the SDK utility object.'; ts's utility() hands back the live object",
+  "f30b7d4864": "C#'s Direct reads no abort signal: nothing in Main.fragment.cs's Direct/RawRequest reads ctrl.signal (the cancel absence searched over the whole runtime finds only the stream); ts's direct takes ctrl.signal (direct.signal)",
+  "ea3964d6ba": "csharp's Prepare throws on failure (Main.fragment.cs:141 `throw ctx.MakeError(\"spec_method_allow\", ...)`, prepare.fails 'style'), so it prints 'It throws on failure.'; ts's prepare returns the error",
+  "abe923e0b2": "C#'s client has no tester member (Main.fragment.cs declares TestSDK only, static); ts's tester() is an alias of test()",
+  "9efa1b3a1e": "C#'s operations read no abort signal (ref.facts.cancel false, an absence searched over the whole csharp runtime; only the stream reads callopts.signal and its own token): there is no cancelling a call to document",
+  "bb93495ee9": "as 9efa1b3a1e",
+  "d86e9841eb": "as 9efa1b3a1e",
+  "cad5dfc5f6": "as 9efa1b3a1e",
+  "9f6d56f5fb": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the entity, and throws on failure.')",
+  "2d65ce1465": "C#'s entity has no public client getter: `client` is a protected field (EntityBase.fragment.cs:16); ts's entity has client()",
+  "74dc5866b7": "C#'s entity has no public entity-options getter: `entopts` is a protected field and CloneOpts is protected (EntityBase.fragment.cs:18, :70); ts's entity has entopts()",
+  "f1bcce31a0": "C#'s entity name is the method GetName() (EntityBase.fragment.cs:66 `public string GetName() => name;`; the field `name` is protected), so csharp prints 'Return the entity name.'; ts's name is a field",
+  "a32ec5077c": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns a list of entities, one per record, and throws on failure.')",
+  "d6fd5c15c3": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the created entity, and throws on failure.')",
+  "863f603c11": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the updated entity, and throws on failure.')",
+  "b1666a52ac": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the entity, marked as deleted, and throws on failure.')",
+  "b7eb8b0b55": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the patched entity, and throws on failure.')"
+ },
+ "facts": {
+  "named": {
+   "value": "call",
+   "why": "C# writes every call with parentheses; its operations require their match (arity 1), so the shared prose names them bare whatever `named` says, and the value selects no unit (NOT JUDGED: 0 blocks and no OLD counterpart). 'call' is the value every C# member call takes",
+   "evidence": "OLD B/csharp/README.md tutorial: '`Load()` returns the entity'; OLD REFERENCE '`List(null)`'; NEW names `Load`, `List`"
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD csharp used for the client's and the entity's members ('Instance Methods', 'Static Methods', 'Common Methods'); the new context is the shared heading 'Client Methods', decided once for all twenty; C#'s client members are instance methods of DemoSDK (Main.fragment.cs)",
+   "evidence": "OLD B/csharp/REFERENCE.md: '### Static Methods', '### Instance Methods', '### Common Methods'"
+  }
+ },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match: the README options table's `base` cell says 'Base URL of the API server'; the csharp README options table states nothing about the server variables",
   "n": 15
  },
- "325b1911ed": {
-  "outcome": "same-meaning",
-  "why": "as 360f66a3d2, server-mixed (account)",
-  "n": 1
- },
- "832e8b7a93": {
+ "e32a07f8c7": {
   "outcome": "correction:decision-14-bare-name",
   "why": "the shared load sentence. `Load` takes a match it may not leave out (EntityLoadOp.fragment.cs: `Load(Dictionary<string, object?>? reqmatch, ... ctrl = null)`, arity 1), so prose names it bare, not as the call `Load()` that does not compile; 'throws on failure' is the throw style's verb (C# throws); OLD's '(as `object?`)' is the declared return, now in the REFERENCE signature",
   "n": 16
  },
- "4fafcfa72b": {
+ "919a7236d6": {
   "outcome": "same-meaning",
   "why": "the README's unported operations table states the same of Load (returns it, raises on error); no disagreement",
   "n": 6
  },
- "ada07548f8": {
+ "5ddb18b81f": {
   "outcome": "correction:decision-14-bare-name",
   "why": "the shared list sentence: `List` named bare (its match is required, arity 1); the REFERENCE says the no-match call is `List(null)`; 'throws' is the throw style's verb",
   "n": 7
  },
  "d4414a1523": {
   "outcome": "restored:shared",
-  "why": "restored as 'Create — returns the created entity; Data() reads its record' (the shared create comment)",
+  "why": "restored as 'Create \u2014 returns the created entity; Data() reads its record' (the shared create comment)",
   "n": 5
  },
  "77832f0697": {
   "outcome": "restored:shared",
-  "why": "restored as 'Update — the id comes off the created entity's record': the id is now read off the created entity instead of supplied as a literal",
+  "why": "restored as 'Update \u2014 the id comes off the created entity's record': the id is now read off the created entity instead of supplied as a literal",
   "n": 4
  },
  "691bdc9ddb": {
   "outcome": "restored:shared",
-  "why": "restored as 'Patch — sends only the fields given; the id comes off the created entity's record'",
+  "why": "restored as 'Patch \u2014 sends only the fields given; the id comes off the created entity's record'",
   "n": 3
  },
  "cd43169d87": {
@@ -59,17 +93,17 @@
   "why": "ref-issues: the shared write sentence for one operation (Update returns the entity, EntityBase.fragment.cs:235-242)",
   "n": 1
  },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "as 360f66a3d2, server-mixed (account)",
+  "n": 1
+ },
  "6fb3670380": {
   "outcome": "unification:client-env-sentence",
   "why": "DEMO_APIKEY in the shared client sentence; the OLD block's code read the same variable",
   "n": 1
  },
  "275db80f77": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the client sentence says the example passes the key from the environment variable as the option (no PrepareAuth reads the environment); the option names are those the block passes",
-  "n": 1
- },
- "f5ea3ada1b": {
   "outcome": "correction:sentence-review-env",
   "why": "the client sentence says the example passes the key from the environment variable as the option (no PrepareAuth reads the environment); the option names are those the block passes",
   "n": 1
@@ -94,19 +128,24 @@
   "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
   "n": 1
  },
- "a12e1f1e52": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
  "e5e05eb7a6": {
   "outcome": "correction:S50",
   "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
   "n": 1
  },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the client sentence says the example passes the key from the environment variable as the option (no PrepareAuth reads the environment); the option names are those the block passes",
+  "n": 1
+ },
  "b8d591c7b2": {
   "outcome": "same-meaning",
   "why": "the method name Update in the write sentence (ref-issues)",
+  "n": 1
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
   "n": 1
  },
  "d4f99aa149": {
@@ -123,11 +162,6 @@
   "outcome": "correction:S49",
   "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
   "n": 10
- },
- "9aa20d3d59": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
  },
  "58f00ae3c5": {
   "outcome": "correction:S50",
@@ -154,14 +188,14 @@
   "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
   "n": 1
  },
- "57e004f551": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
-  "n": 1
- },
  "a3282ee028": {
   "outcome": "unification:wide-load-match",
   "why": "doc-nested: a load match of more than one member is laid out a member per line (the shared `wide` rule), the same two members in the same order",
+  "n": 1
+ },
+ "57e004f551": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
   "n": 1
  },
  "252eb5f5ee": {
@@ -174,17 +208,17 @@
   "why": "ref-issues: a write's data is laid out a member per line (the shared `wide` rule for writes), the same member",
   "n": 1
  },
+ "9aa20d3d59": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
  "87aafab844": {
   "outcome": "correction:S49",
   "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
   "n": 1
  },
  "37b37bdcf2": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
- "bc883ce38e": {
   "outcome": "correction:S49",
   "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
   "n": 1
@@ -224,6 +258,21 @@
   "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
   "n": 1
  },
+ "3749784cab": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "5fffdab795": {
+  "outcome": "unification:write-comment-style",
+  "why": "OLD's create comment said '(as object?)'; the shared create comment says how the record is read instead",
+  "n": 1
+ },
  "3805b111d7": {
   "outcome": "unification:write-comment-style",
   "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
@@ -237,16 +286,6 @@
  "3db5a488a6": {
   "outcome": "unification:write-comment-style",
   "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
-  "n": 1
- },
- "3749784cab": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
-  "n": 1
- },
- "5fffdab795": {
-  "outcome": "unification:write-comment-style",
-  "why": "OLD's create comment said '(as object?)'; the shared create comment says how the record is read instead",
   "n": 1
  },
  "f9713683ba": {
@@ -264,7 +303,7 @@
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
   "n": 10
  },
- "919a37d61a": {
+ "284abe9b99": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
   "n": 7
@@ -273,6 +312,51 @@
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
   "n": 6
+ },
+ "adc1e71751": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 5
+ },
+ "156fbb5a60": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1
+ },
+ "4673958cd7": {
+  "outcome": "correction:S49",
+  "why": "auth-off: the client now passes the required server variable; OLD constructed it with no options",
+  "n": 1
+ },
+ "ebd00e4cc6": {
+  "outcome": "correction:S49",
+  "why": "doc-list: the client passes the required server variable; the list is bound to the plural and each item to the entity variable (consoles/console), the shared example names; `console` is not the type `Console` (C# names are case-sensitive)",
+  "n": 1
+ },
+ "f85b064b55": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the root quick start loads the nested entity the tutorial loads (satellite, with its parent id), under the shared example names; item `planet` and loaded `satellite` do not share a name",
+  "n": 1
+ },
+ "4c75075013": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 2
+ },
+ "daf6451597": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
  },
  "4a3209e8d9": {
   "outcome": "unification:step-comment-runtime-fact",
@@ -287,6 +371,21 @@
  "41e8b6808d": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
   "n": 1
  },
  "b1989358a0": {
@@ -317,66 +416,6 @@
  "cdee2a5b5d": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
-  "n": 1
- },
- "adc1e71751": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 5
- },
- "ebd00e4cc6": {
-  "outcome": "correction:S49",
-  "why": "doc-list: the client passes the required server variable; the list is bound to the plural and each item to the entity variable (consoles/console), the shared example names; `console` is not the type `Console` (C# names are case-sensitive)",
-  "n": 1
- },
- "daf6451597": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
- "4c75075013": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 2
- },
- "ff935caa13": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
- "fe936330a5": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
- "d22dabf866": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
- "156fbb5a60": {
-  "outcome": "correction:S50",
-  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
-  "n": 1
- },
- "797ec8d55d": {
-  "outcome": "correction:S50",
-  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
-  "n": 1
- },
- "5ac10c03c6": {
-  "outcome": "correction:S50",
-  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
-  "n": 1
- },
- "4673958cd7": {
-  "outcome": "correction:S49",
-  "why": "auth-off: the client now passes the required server variable; OLD constructed it with no options",
-  "n": 1
- },
- "f85b064b55": {
-  "outcome": "unification:root-load-nested",
-  "why": "doc-nested: the root quick start loads the nested entity the tutorial loads (satellite, with its parent id), under the shared example names; item `planet` and loaded `satellite` do not share a name",
   "n": 1
  },
  "31a80d54a8": {
@@ -429,57 +468,22 @@
   "why": "the options and fetchargs value type, now the declared container `Dictionary<string, object?>` (Main.fragment.cs:26 `Dictionary<string, object?>? options`); OLD abbreviated it `Dictionary`",
   "n": 76
  },
- "e9793b5771": {
-  "outcome": "restored:fact",
-  "why": "as 9a3614f623: the type cell names the whole type",
-  "n": 57
- },
- "042e8c9fbb": {
-  "outcome": "restored:fact",
-  "why": "as 9a3614f623",
-  "n": 90
- },
  "55e0b0d3ac": {
   "outcome": "unification:entity-heading",
   "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
   "n": 16
  },
- "993924c4c6": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
-  "n": 77
- },
- "861a2bfee4": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
-  "n": 76
- },
- "d245316c2e": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
-  "n": 1
- },
- "99e505dfce": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
-  "n": 1
- },
- "5d21515960": {
-  "outcome": "unification:entity-heading",
-  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
-  "n": 9
+ "79337316f8": {
+  "outcome": "restored:fact",
+  "why": "as 94997f80de [v3.4 re-count: x19 to x19, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 19
  },
  "b2f8d161db": {
   "outcome": "unification:member-sentences",
   "why": "the shared member sentences: make names the class and says it keeps the client (Make() returns new EntyClass(client, CloneOpts()), Entity.fragment.cs:14-17)",
   "n": 92
  },
- "5d54345ff5": {
-  "outcome": "unification:member-sentences",
-  "why": "the shared member sentences: make names the class and says it keeps the client (Make() returns new EntyClass(client, CloneOpts()), Entity.fragment.cs:14-17)",
-  "n": 1
- },
- "94eba098bf": {
+ "6685194ffe": {
   "outcome": "unification:result-style-words",
   "why": "the shared return clause of result style throw: 'throws on failure'. C# operations throw (EntityBase.fragment.cs: Helpers.UnsupportedOp, MakeError under RunOp); OLD said 'raises on error', the same fact in another word",
   "n": 83
@@ -488,16 +492,6 @@
   "outcome": "unification:result-style-words",
   "why": "the shared return clause of result style throw: 'throws on failure'. C# operations throw (EntityBase.fragment.cs: Helpers.UnsupportedOp, MakeError under RunOp); OLD said 'raises on error', the same fact in another word",
   "n": 15
- },
- "94997f80de": {
-  "outcome": "restored:fact",
-  "why": "OLD's sentence that `options` is a `Dictionary<string, object?>`; NEW states it in the options table's first row, `options` | `Dictionary<string, object?>` (the container fact)",
-  "n": 17
- },
- "79337316f8": {
-  "outcome": "restored:fact",
-  "why": "as 94997f80de",
-  "n": 2
  },
  "1d5f2874ab": {
   "outcome": "restored:shared",
@@ -509,15 +503,10 @@
   "why": "OLD wrote `TestSDK(testopts = null, sdkopts = null)`, but neither parameter has a default (Main.fragment.cs:414-415: `public static ProjectNameSDK TestSDK(Dictionary<string, object?>? testopts, Dictionary<string, object?>? sdkopts)`): a call must pass both; NEW writes the declaration, on the class",
   "n": 19
  },
- "74addb7cf9": {
-  "outcome": "correction:testsdk-no-defaults",
-  "why": "as 087a6d0de8",
-  "n": 19
- },
  "d553096f96": {
   "outcome": "restored:shared",
-  "why": "restored in the shared test sentence: 'both may be `null`'",
-  "n": 19
+  "why": "restored in the shared test sentence: 'both may be `null`' [v3.4 re-count: x18 to x18, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 18
  },
  "aa6c3feb8f": {
   "outcome": "unification:client-heading",
@@ -529,30 +518,10 @@
   "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
   "n": 93
  },
- "6e28ac9cd9": {
-  "outcome": "restored:fact",
-  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
-  "n": 1
- },
- "5d9fc715bf": {
-  "outcome": "restored:fact",
-  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
-  "n": 93
- },
- "6c2e94bab3": {
-  "outcome": "restored:fact",
-  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
-  "n": 1
- },
  "dae78da098": {
   "outcome": "restored:shared",
   "why": "the accessor sentence 'Create a new `AmbientEntity` instance. Pass `null` for no initial options.' (MainEntity_csharp.ts:25-28 makes a new entity on every call); its return type `DemoEntityBase`, which OLD gave in the sentence, is in the signature heading",
   "n": 93
- },
- "badde432a5": {
-  "outcome": "restored:shared",
-  "why": "as dae78da098, ref-issues",
-  "n": 1
  },
  "b57bd5370a": {
   "outcome": "restored:fact",
@@ -564,9 +533,54 @@
   "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
   "n": 19
  },
+ "595e0793c6": {
+  "outcome": "correction:direct-no-default",
+  "why": "OLD wrote `Direct(fetchargs = null)`, but the parameter has no default (Main.fragment.cs:205 `Direct(Dictionary<string, object?>? fetchargs)`); NEW writes the declaration",
+  "n": 19
+ },
+ "4f545407f2": {
+  "outcome": "restored:shared",
+  "why": "restored as the direct Returns paragraph: the keys `ok`, `status`, `headers`, `data`, and when `err` is there",
+  "n": 19
+ },
+ "c6998cc942": {
+  "outcome": "restored:shared",
+  "why": "restored as 'A failure is reported in the result, not as an error, so branch on `result[\"ok\"] is true`.' OLD's `result[\"ok\"]` is an `object?`, which C# cannot use as a condition; `is true` can",
+  "n": 19
+ },
+ "e9793b5771": {
+  "outcome": "restored:fact",
+  "why": "as 9a3614f623: the type cell names the whole type",
+  "n": 57
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Path parameter values for `{param}` substitution.'",
+  "n": 19
+ },
+ "5c979da39a": {
+  "outcome": "restored:shared",
+  "why": "restored in the direct Returns paragraph: '**Returns:** `Dictionary<string, object?>`, a result map'",
+  "n": 19
+ },
+ "d668e7ef06": {
+  "outcome": "correction:direct-no-default",
+  "why": "OLD wrote `Prepare(fetchargs = null)`; Main.fragment.cs:113 declares `Prepare(Dictionary<string, object?>? fetchargs)` with no default",
+  "n": 19
+ },
+ "c41a606d0c": {
+  "outcome": "restored:shared",
+  "why": "the prepare Returns sentence: the fetch definition, and it throws on failure (Main.fragment.cs:141 `throw ctx.MakeError(\"spec_method_allow\", ...)`)",
+  "n": 19
+ },
  "d5ecc12768": {
   "outcome": "restored:fact",
   "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 28
+ },
+ "835d004ad7": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns the entity, and throws on failure. `Data()` reads its record.'",
   "n": 28
  },
  "65f7e0948c": {
@@ -589,14 +603,29 @@
   "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
   "n": 94
  },
+ "993924c4c6": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 77
+ },
  "e35cbb95f0": {
   "outcome": "restored:fact",
   "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
   "n": 83
  },
+ "7b3e29f6ea": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional; a call without one is `List(null)`.' The sentence review dropped 'to list all records' (the entity's stored match still applies, and an endpoint may page)",
+  "n": 83
+ },
  "96b1098bf1": {
   "outcome": "restored:fact",
   "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 16
+ },
+ "8bf4334a4c": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns the created entity, and throws on failure.'",
   "n": 16
  },
  "e380aab252": {
@@ -609,64 +638,44 @@
   "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
   "n": 16
  },
- "13e89cd14f": {
-  "outcome": "restored:fact",
-  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
-  "n": 4
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update and patch keep it, as 'The data must include the entity id, `id`, unless the entity already holds it.'",
+  "n": 20
  },
- "c9c09b4698": {
-  "outcome": "restored:fact",
-  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
-  "n": 94
- },
- "83dd8c33c0": {
-  "outcome": "restored:fact",
-  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
-  "n": 94
- },
- "595e0793c6": {
-  "outcome": "correction:direct-no-default",
-  "why": "OLD wrote `Direct(fetchargs = null)`, but the parameter has no default (Main.fragment.cs:205 `Direct(Dictionary<string, object?>? fetchargs)`); NEW writes the declaration",
-  "n": 19
- },
- "d668e7ef06": {
-  "outcome": "correction:direct-no-default",
-  "why": "OLD wrote `Prepare(fetchargs = null)`; Main.fragment.cs:113 declares `Prepare(Dictionary<string, object?>? fetchargs)` with no default",
-  "n": 19
- },
- "4f545407f2": {
+ "e1e40527b4": {
   "outcome": "restored:shared",
-  "why": "restored as the direct Returns paragraph: the keys `ok`, `status`, `headers`, `data`, and when `err` is there",
+  "why": "restored as 'Returns the updated entity, and throws on failure.'",
+  "n": 16
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log, which is active by default (model/feature/log.aontu active: true); restored as 'inactive until switched on, except `log`'",
   "n": 19
  },
- "c6998cc942": {
-  "outcome": "restored:shared",
-  "why": "restored as 'A failure is reported in the result, not as an error, so branch on `result[\"ok\"] is true`.' OLD's `result[\"ok\"]` is an `object?`, which C# cannot use as a condition; `is true` can",
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line now says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
   "n": 19
+ },
+ "042e8c9fbb": {
+  "outcome": "restored:fact",
+  "why": "as 9a3614f623 [v3.4 re-count: x128 to x128, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 128
+ },
+ "74addb7cf9": {
+  "outcome": "correction:testsdk-no-defaults",
+  "why": "as 087a6d0de8",
+  "n": 19
+ },
+ "5d9fc715bf": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 93
  },
  "599e6c7589": {
   "outcome": "restored:shared",
   "why": "as c6998cc942",
-  "n": 19
- },
- "fa8ee0c3e6": {
-  "outcome": "restored:shared",
-  "why": "the `is` of the branch condition `result[\"ok\"] is true` (the read printer's truth test), as c6998cc942",
-  "n": 1
- },
- "c115f99e12": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Path parameter values for `{param}` substitution.'",
-  "n": 19
- },
- "5c979da39a": {
-  "outcome": "restored:shared",
-  "why": "restored in the direct Returns paragraph: '**Returns:** `Dictionary<string, object?>`, a result map'",
-  "n": 19
- },
- "c41a606d0c": {
-  "outcome": "restored:shared",
-  "why": "the prepare Returns sentence: the fetch definition, and it throws on failure (Main.fragment.cs:141 `throw ctx.MakeError(\"spec_method_allow\", ...)`)",
   "n": 19
  },
  "e41bde5d5b": {
@@ -679,75 +688,20 @@
   "why": "restored from 'raises on error': prepare throws (Main.fragment.cs:141)",
   "n": 19
  },
- "8928fd2128": {
-  "outcome": "restored:shared",
-  "why": "the prepare Returns sentence calls it the fetch definition rather than fetchdef",
-  "n": 1
- },
- "835d004ad7": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Returns the entity, and throws on failure. `Data()` reads its record.'",
-  "n": 28
+ "861a2bfee4": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 76
  },
  "80d61d1816": {
   "outcome": "restored:shared",
   "why": "as 835d004ad7",
   "n": 28
  },
- "8bf4334a4c": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Returns the created entity, and throws on failure.'",
-  "n": 16
- },
- "a6c40f43b6": {
-  "outcome": "restored:shared",
-  "why": "as 8bf4334a4c",
-  "n": 16
- },
- "e1e40527b4": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Returns the updated entity, and throws on failure.'",
-  "n": 16
- },
- "caabc79e5a": {
-  "outcome": "restored:shared",
-  "why": "as e1e40527b4",
-  "n": 16
- },
- "50d6ad1e73": {
-  "outcome": "restored:shared",
-  "why": "restored as 'Returns the patched entity, and throws on failure.'",
-  "n": 4
- },
- "0c361e13cd": {
-  "outcome": "restored:shared",
-  "why": "as 50d6ad1e73",
-  "n": 4
- },
- "7b3e29f6ea": {
-  "outcome": "restored:shared",
-  "why": "restored as 'The match is optional; a call without one is `List(null)`.' The sentence review dropped 'to list all records' (the entity's stored match still applies, and an endpoint may page)",
-  "n": 83
- },
- "f991db05d7": {
-  "outcome": "restored:shared",
-  "why": "as 7b3e29f6ea",
-  "n": 82
- },
- "0b29ec4944": {
-  "outcome": "correction:sentence-review-update-id",
-  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update and patch keep it, as 'The data must include the entity id, `id`, unless the entity already holds it.'",
-  "n": 20
- },
- "2f38082332": {
-  "outcome": "correction:S09",
-  "why": "false for log, which is active by default (model/feature/log.aontu active: true); restored as 'inactive until switched on, except `log`'",
-  "n": 19
- },
- "ac1eac6be0": {
-  "outcome": "correction:S09",
-  "why": "the per-feature line now says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
-  "n": 19
+ "c9c09b4698": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 94
  },
  "28d0569a0d": {
   "outcome": "unification:member-sentences",
@@ -764,25 +718,177 @@
   "why": "the shared match sentence: Match works as Data does (EntityBase.fragment.cs:88-99)",
   "n": 94
  },
- "9bc20385ee": {
+ "83dd8c33c0": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 94
+ },
+ "206ad4e683": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 94
+ },
+ "f991db05d7": {
+  "outcome": "restored:shared",
+  "why": "as 7b3e29f6ea",
+  "n": 82
+ },
+ "590771adbd": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions table's Call cell: the call that selects the action with `$action` beside the route's path parameter (`id`)",
+  "n": 16
+ },
+ "a6c40f43b6": {
+  "outcome": "restored:shared",
+  "why": "as 8bf4334a4c",
+  "n": 16
+ },
+ "caabc79e5a": {
+  "outcome": "restored:shared",
+  "why": "as e1e40527b4",
+  "n": 16
+ },
+ "482def0a4d": {
   "outcome": "same-meaning",
-  "why": "the README's examples call Data(); this sentence says Match works the same; no disagreement",
-  "n": 30
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2
  },
  "89a23b0fd1": {
   "outcome": "same-meaning",
   "why": "the README's examples read the record with Data(), as this sentence says",
   "n": 33
  },
+ "9bc20385ee": {
+  "outcome": "same-meaning",
+  "why": "the README's examples call Data(); this sentence says Match works the same; no disagreement",
+  "n": 30
+ },
  "e826dd6ae2": {
   "outcome": "same-meaning",
   "why": "OLD's load sentence (removed), the same fact the new sentence states",
   "n": 9
  },
- "206ad4e683": {
-  "outcome": "correction:stream-member",
-  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
-  "n": 94
+ "13e89cd14f": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 4
+ },
+ "50d6ad1e73": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns the patched entity, and throws on failure.'",
+  "n": 4
+ },
+ "0c361e13cd": {
+  "outcome": "restored:shared",
+  "why": "as 50d6ad1e73",
+  "n": 4
+ },
+ "bd4b298802": {
+  "outcome": "same-meaning",
+  "why": "the README's test-mode section says both arguments may be null; the same",
+  "n": 2
+ },
+ "d4af1f09d0": {
+  "outcome": "same-meaning",
+  "why": "OLD's sentence (removed); the README says the same",
+  "n": 2
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "where": "no-test csharp/README.md:226, the unported README's test-client line: 'Creates a test-mode client with mock transport. Both arguments may be `null`.', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "read, not run (no dotnet here): Config_csharp.ts MakeFeature falls back to `return new Feature.BaseFeature();` for a feature the SDK lacks; TestSDK sets Mode = \"test\" (Main.fragment.cs:426-429); Fetcher.cs refuses a request in test mode with no transport (fetch_mode_block)",
+  "n": 1
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so (Config_csharp.ts MakeFeature falls back to BaseFeature)",
+  "n": 1
+ },
+ "7f188f33e8": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the planet class is PlanetEntityClient (entityClassName renames it on a collision with the PlanetEntity type); the sentence names it",
+  "n": 1
+ },
+ "5d54345ff5": {
+  "outcome": "unification:member-sentences",
+  "why": "the shared member sentences: make names the class and says it keeps the client (Make() returns new EntyClass(client, CloneOpts()), Entity.fragment.cs:14-17)",
+  "n": 1
+ },
+ "035bdeb70d": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description with | is escaped into one cell",
+  "n": 1
+ },
+ "6e28ac9cd9": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 1
+ },
+ "badde432a5": {
+  "outcome": "restored:shared",
+  "why": "as dae78da098, ref-issues",
+  "n": 1
+ },
+ "92e45cf378": {
+  "outcome": "correction:G27",
+  "why": "as 035bdeb70d",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "as 035bdeb70d",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove is inactive on that entity; the page documents the operations the entity has",
+  "n": 1
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove is inactive on that entity; the page documents the operations the entity has",
+  "n": 1
+ },
+ "d245316c2e": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 1
+ },
+ "6c2e94bab3": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 1
+ },
+ "99e505dfce": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 1
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "fa8ee0c3e6": {
+  "outcome": "restored:shared",
+  "why": "the `is` of the branch condition `result[\"ok\"] is true` (the read printer's truth test), as c6998cc942",
+  "n": 1
  },
  "866c43bbc6": {
   "outcome": "correction:stream-member",
@@ -829,11 +935,6 @@
   "why": "brief 7 decision 6: the token `signal` of the stream's sentence, the key the stream reads (`callopts[\"signal\"]`, a CancellationToken, read at EntityBase.fragment.cs:267-270); the sentence spells the key in another language's form, recorded as a defect (80f77307dc)",
   "n": 1
  },
- "590771adbd": {
-  "outcome": "correction:ref-6",
-  "why": "the Actions table's Call cell: the call that selects the action with `$action` beside the route's path parameter (`id`)",
-  "n": 16
- },
  "9c792a9893": {
   "outcome": "correction:ref-6",
   "why": "the action name in the Call cell",
@@ -854,79 +955,9 @@
   "why": "brief 7 decision 11: the remove sentence names how the mark is read, `result.Deleted()` (IEntity declares it, tm/csharp/core/Types.cs:19; the example binds result as IEntity)",
   "n": 1
  },
- "482def0a4d": {
-  "outcome": "same-meaning",
-  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
-  "n": 2
- },
- "bd4b298802": {
-  "outcome": "same-meaning",
-  "why": "the README's test-mode section says both arguments may be null; the same",
-  "n": 2
- },
- "d4af1f09d0": {
-  "outcome": "same-meaning",
-  "why": "OLD's sentence (removed); the README says the same",
-  "n": 2
- },
- "46dc1a3462": {
-  "outcome": "correction:S13",
-  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so (Config_csharp.ts MakeFeature falls back to BaseFeature)",
-  "n": 1
- },
- "7f188f33e8": {
-  "outcome": "correction:U34",
-  "why": "ref-issues: the planet class is PlanetEntityClient (entityClassName renames it on a collision with the PlanetEntity type); the sentence names it",
-  "n": 1
- },
- "57048dc63c": {
-  "outcome": "correction:U34",
-  "why": "ref-issues: the class PlanetEntityClient named in the heading and sentences",
-  "n": 1
- },
- "035bdeb70d": {
-  "outcome": "correction:G27",
-  "why": "ref-issues: the field description with | is escaped into one cell",
-  "n": 1
- },
- "92e45cf378": {
-  "outcome": "correction:G27",
-  "why": "as 035bdeb70d",
-  "n": 1
- },
- "dac11a1691": {
-  "outcome": "correction:G27",
-  "why": "as 035bdeb70d",
-  "n": 1
- },
- "9b3a3864f9": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: remove is inactive on that entity; the page documents the operations the entity has",
-  "n": 1
- },
- "f010700f70": {
-  "outcome": "correction:S25",
-  "why": "ref-issues: remove is inactive on that entity; the page documents the operations the entity has",
-  "n": 1
- },
- "b4523a5362": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
- "fd1c2f8fd4": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
- "e231e4d0f8": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
-  "n": 1
- },
- "05e95df417": {
-  "outcome": "correction:S49",
-  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
   "n": 1
  },
  "a9e4808c74": {
@@ -934,25 +965,25 @@
   "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
   "n": 1
  },
- "045e555fdd": {
-  "outcome": "correction:S50",
-  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+ "8928fd2128": {
+  "outcome": "restored:shared",
+  "why": "the prepare Returns sentence calls it the fetch definition rather than fetchdef",
+  "n": 1
+ },
+ "5d21515960": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 9
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class PlanetEntityClient named in the heading and sentences",
   "n": 1
  },
  "c1b55b9c24": {
   "outcome": "dropped",
   "why": "the constructor block's `using Voxgig.Struct;`: the block calls only `new DemoSDK(options)`, which needs the SDK namespace alone (`using DemoSdk;`, kept); no line of the block names Voxgig.Struct, so the page stays true and the block compiles as before",
   "n": 19
- },
- "16fed272aa": {
-  "outcome": "dropped",
-  "why": "as c1b55b9c24",
-  "n": 1
- },
- "34b283aa62": {
-  "outcome": "dropped",
-  "why": "as c1b55b9c24",
-  "n": 1
  },
  "8898ed5bef": {
   "outcome": "unification:csharp-entity-cast",
@@ -1004,6 +1035,21 @@
   "why": "ref-issues: a pairing artefact. OLD headed entities by Name (Planet, PlanetEntity, Utility), NEW by class (PlanetEntityClient, PlanetEntityEntity, UtilityEntity), so the pairing by heading matches different entities; every OLD instance block `var <var> = client.<Accessor>();` is printed unchanged in NEW under its entity's class heading",
   "n": 1
  },
+ "16fed272aa": {
+  "outcome": "dropped",
+  "why": "as c1b55b9c24",
+  "n": 1
+ },
+ "34b283aa62": {
+  "outcome": "dropped",
+  "why": "as c1b55b9c24",
+  "n": 1
+ },
+ "94997f80de": {
+  "outcome": "restored:fact",
+  "why": "OLD's sentence that `options` is a `Dictionary<string, object?>`; NEW states it in the options table's first row, `options` | `Dictionary<string, object?>` (the container fact)",
+  "n": 17
+ },
  "8c5a4fbe41": {
   "outcome": "defect",
   "why": "shared code names the list's item and the loaded entity alike (ts/src/helpers/example.ts refOf: 'item' and 'one' both take entity.sym.var), and the root quick start prints both in one block (ts/src/cmp/ReadmeQuick.ts topQuickText, `bare` drops the try blocks): `foreach (var planet in planets)` then `var planet = (IEntity)...` at the same level. C# puts a local's scope over its whole block, so the later `var planet` conflicts with the loop variable (CS0136, C# spec 'local variable declaration space ... includes any nested blocks'); OLD named them planetItem and planet and compiled. The provider cannot rename: the names are decided once in shared code. Needs an additive shared fact (see report)",
@@ -1024,50 +1070,164 @@
   "why": "the stream sentence 'It ends early once `callopts.signal` reports an abort.' is one literal in shared code (ts/src/cmp/ReadmeRef.ts STREAM_SIGNAL), so C# prints a code span C# cannot write: callopts is a Dictionary<string, object?>, whose key is written `callopts[\"signal\"]`, and only a CancellationToken there ends the stream (EntityBase.fragment.cs:267-270; any other value becomes CancellationToken.None). The provider cannot respell a shared sentence: needs the key printed through ref.key and the signal type as a fact (see report)",
   "n": 94
  },
- "bff341cf32": {
-  "outcome": "contradiction",
-  "where": "no-test csharp/README.md:226, the unported README's test-client line: 'Creates a test-mode client with mock transport. Both arguments may be `null`.', true only with the test feature",
-  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
-  "evidence": "read, not run (no dotnet here): Config_csharp.ts MakeFeature falls back to `return new Feature.BaseFeature();` for a feature the SDK lacks; TestSDK sets Mode = \"test\" (Main.fragment.cs:426-429); Fetcher.cs refuses a request in test mode with no transport (fetch_mode_block)",
+ "73a0ac608a": {
+  "outcome": "correction:v34-block-scope",
+  "why": "v3.4, one shared edit: the root quick start's list item is named `item` in the five variations whose quick start lists and loads one entity in one block (crud-bare, crud-basic, crud-noupdate, doc-crud, ex-readonly): C# scopes a local over its whole block, so `foreach (var planet in planets)` before `var planet = ...` is CS0136; csharp declares blockScope (RuntimeFacts, a language fact), and shared code names the item apart (example.ts listBlock). OLD named it planetItem; the other lines are the shared root quick start, as in the other variations (the step comments, the client options, the list named by the entity's plural)",
   "n": 1
  },
- "absent": {
-  "ed44d07e36": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form (crud-bare/csharp/README.md: '`Load` returns the entity and throws on failure; `Data()` reads its record.')",
-  "5e178e9588": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('`List` returns a list of entities, one per record, and throws on failure; ...')",
-  "6d459aa83b": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Each write returns the entity it wrote (a removed one is marked as deleted), and throws on failure.')",
-  "64560e9dff": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Create — returns the created entity; Data() reads its record')",
-  "78dac4093d": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form (ref-issues: '`Update` returns the entity it wrote, and throws on failure.')",
-  "9f6d56f5fb": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the entity, and throws on failure.')",
-  "a32ec5077c": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns a list of entities, one per record, and throws on failure.')",
-  "d6fd5c15c3": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the created entity, and throws on failure.')",
-  "863f603c11": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the updated entity, and throws on failure.')",
-  "b1666a52ac": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the entity, marked as deleted, and throws on failure.')",
-  "b7eb8b0b55": "ts resolves (async); C# operations return (no async on any op, EntityLoadOp.fragment.cs etc.; facts.async false, derived), so csharp prints the same shared sentence in its 'returns' form ('Returns the patched entity, and throws on failure.')",
-  "99a8153c15": "ts declares listOf, so its step comment names the entity class ('the entity, an AmbientEntity'); C#'s Load returns `object?` and names no entity type (EntityLoadOp.fragment.cs), so csharp declares no listOf and prints the same comment without it ('Load an ambient: the entity; throws on failure')",
-  "a0b269a293": "as 99a8153c15: ts's list comment names its list type ('a PlanetEntity[]'); C#'s List returns `object?` (a List<object?> of entities, MakeResult.cs), no named type, so csharp prints 'List planet records: a list of entities, one per record; throws on failure'",
-  "7ab5ba644d": "printed after the root README's primary quick start, which the root README gives to TypeScript alone; csharp's root quick start is under 'Quickstart in other languages', where no language prints prose (auth-query README.md:282)",
-  "f3e421e046": "csharp's GetUtility returns a new object (`Utility.Copy(_utility)`, Main.fragment.cs:105; `var u = new Utility(true)`, tm/csharp/core/Utility.cs:56; cited, copy: true), so csharp prints 'Return a copy of the SDK utility object.'; ts's utility() hands back the live object",
-  "f30b7d4864": "C#'s Direct reads no abort signal: nothing in Main.fragment.cs's Direct/RawRequest reads ctrl.signal (the cancel absence searched over the whole runtime finds only the stream); ts's direct takes ctrl.signal (direct.signal)",
-  "ea3964d6ba": "csharp's Prepare throws on failure (Main.fragment.cs:141 `throw ctx.MakeError(\"spec_method_allow\", ...)`, prepare.fails 'style'), so it prints 'It throws on failure.'; ts's prepare returns the error",
-  "abe923e0b2": "C#'s client has no tester member (Main.fragment.cs declares TestSDK only, static); ts's tester() is an alias of test()",
-  "9efa1b3a1e": "C#'s operations read no abort signal (ref.facts.cancel false, an absence searched over the whole csharp runtime; only the stream reads callopts.signal and its own token): there is no cancelling a call to document",
-  "bb93495ee9": "as 9efa1b3a1e",
-  "d86e9841eb": "as 9efa1b3a1e",
-  "cad5dfc5f6": "as 9efa1b3a1e",
-  "2d65ce1465": "C#'s entity has no public client getter: `client` is a protected field (EntityBase.fragment.cs:16); ts's entity has client()",
-  "74dc5866b7": "C#'s entity has no public entity-options getter: `entopts` is a protected field and CloneOpts is protected (EntityBase.fragment.cs:18, :70); ts's entity has entopts()",
-  "f1bcce31a0": "C#'s entity name is the method GetName() (EntityBase.fragment.cs:66 `public string GetName() => name;`; the field `name` is protected), so csharp prints 'Return the entity name.'; ts's name is a field"
+ "5f6b123387": {
+  "outcome": "correction:v34-block-scope",
+  "why": "v3.4, one shared edit: the root quick start's list item is named `item` in the five variations whose quick start lists and loads one entity in one block (crud-bare, crud-basic, crud-noupdate, doc-crud, ex-readonly): C# scopes a local over its whole block, so `foreach (var planet in planets)` before `var planet = ...` is CS0136; csharp declares blockScope (RuntimeFacts, a language fact), and shared code names the item apart (example.ts listBlock). OLD named it planetItem; the other lines are the shared root quick start, as in the other variations (the step comments, the client options, the list named by the entity's plural)",
+  "n": 1
  },
- "facts": {
-  "named": {
-   "value": "call",
-   "why": "C# writes every call with parentheses; its operations require their match (arity 1), so the shared prose names them bare whatever `named` says, and the value selects no unit (NOT JUDGED: 0 blocks and no OLD counterpart). 'call' is the value every C# member call takes",
-   "evidence": "OLD B/csharp/README.md tutorial: '`Load()` returns the entity'; OLD REFERENCE '`List(null)`'; NEW names `Load`, `List`"
-  },
-  "ref.noun": {
-   "value": "Methods",
-   "why": "the noun OLD csharp used for the client's and the entity's members ('Instance Methods', 'Static Methods', 'Common Methods'); the new context is the shared heading 'Client Methods', decided once for all twenty; C#'s client members are instance methods of DemoSDK (Main.fragment.cs)",
-   "evidence": "OLD B/csharp/REFERENCE.md: '### Static Methods', '### Instance Methods', '### Common Methods'"
-  }
+ "51b41efc80": {
+  "outcome": "correction:v34-block-scope",
+  "why": "v3.4, one shared edit: the root quick start's list item is named `item` in the five variations whose quick start lists and loads one entity in one block (crud-bare, crud-basic, crud-noupdate, doc-crud, ex-readonly): C# scopes a local over its whole block, so `foreach (var planet in planets)` before `var planet = ...` is CS0136; csharp declares blockScope (RuntimeFacts, a language fact), and shared code names the item apart (example.ts listBlock). OLD named it planetItem; the other lines are the shared root quick start, as in the other variations (the step comments, the client options, the list named by the entity's plural)",
+  "n": 3
+ },
+ "c86500c71b": {
+  "outcome": "correction:v34-block-scope",
+  "why": "v3.4, one shared edit: the list item's name in the five root quick starts that list and load one entity in one block (csharp blockScope)",
+  "n": 1
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19
+ },
+ "3f329031a9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "7bf9c2f8d2": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "2061945a0b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "5f5bb3e680": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "c601d54b55": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "6bc85eabaf": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "356d1582fc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "897205fd36": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "20e6c8dde9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "8b65a53c90": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "78333f7015": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "05892bf152": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "b440a40732": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "e748d61f95": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "dc563305c5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "e6685f3a5e": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "766d31b2c7": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18
+ },
+ "c209a51ec5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "0100eff743": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18
+ },
+ "0bf51a1c12": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
+ },
+ "5e0c033421": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94
+ },
+ "e710557629": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
  }
 }

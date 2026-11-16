@@ -16,6 +16,9 @@
    "evidence": "OLD B/swift/REFERENCE.md:41 \"### Instance Methods\""
   }
  },
+ "absent": {
+  "3bb5d3a968": "swift's results are wrapped: every record sentence names the unwrap first, '`asNative as? Entity` takes the entity out, and `result.data()` reads its record' (brief 7 decision 12), in the same variations; the plain '`…` reads its record.' would name data() on a Value, which has none"
+ },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match: the README options table's `base` cell says \"Base URL of the API server\"; the swift README options table does not list `server`, so it states nothing about the server variables",
@@ -26,19 +29,19 @@
   "why": "restored as the shared load sentence, now naming the unwrap in words (brief 7 decision 12) and the operation bare (decision 14): \"`load` returns a value holding the entity, and throws on failure; `asNative as? Entity` takes it out, and `ambient.data()` reads its record\" (1ede05e640)",
   "n": 16
  },
- "1ede05e640": {
-  "outcome": "restored:shared",
-  "why": "the wrapped style's load sentence (runtimeprose loadSentence) with swift's cited unwrap and derived record; replaces the OLD \"`load()` returns the ENTITY — call data() for the record — and throws on error\", same facts",
+ "e868c93710": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
   "n": 16
  },
- "2ab61ac902": {
+ "bb09ec54d3": {
   "outcome": "same-meaning",
-  "why": "a word match on VList: the README options table says `extend` is a `VList`; nothing about what list returns",
+  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
   "n": 7
  },
- "28f0ea9b7a": {
-  "outcome": "restored:shared",
-  "why": "the wrapped style's list sentence: same facts (a list of entities one per record, throws, asNative as? Entity unwraps an item, data() reads the record); the value is named as the VList it holds (Value.swift: case list(VList)); OLD named the call with its arguments list(nil, nil), the shared sentence names it list()",
+ "46de314a64": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
   "n": 7
  },
  "454d326c2d": {
@@ -61,24 +64,19 @@
   "why": "the wrapped style's write sentence (writeSentence); OLD said only, in the create comment, that create returns the entity; true: every op returns .native(NativeRef(self)) on success and remove marks it deleted (EntityBase.fragment.swift:167-171)",
   "n": 5
  },
- "fec65e4929": {
-  "outcome": "restored:shared",
-  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as fec65e4929): the shared create comment in the wrapped style, with swift's record expression; replaces \"Create — returns the ENTITY (call data() for the record)\"",
+ "6fac2dabd5": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
   "n": 5
- },
- "9af3164c6e": {
-  "outcome": "restored:shared",
-  "why": "as fec65e4929: the shared create comment, doc-nested",
-  "n": 1
  },
  "9562ae8fc5": {
   "outcome": "correction:U45",
   "why": "ref-issues has update only: the step is headed \"2. Update\", as the operations it runs",
   "n": 1
  },
- "76f72279eb": {
-  "outcome": "restored:shared",
-  "why": "the write sentence for one write (ref-issues: update only), in the wrapped style",
+ "5b9af17b7e": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
   "n": 1
  },
  "325b1911ed": {
@@ -89,6 +87,11 @@
  "6fb3670380": {
   "outcome": "unification:client-env-sentence",
   "why": "DEMO_APIKEY in the shared client sentence; the OLD block's code read the same variable",
+  "n": 1
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1
  },
  "1a135d465d": {
@@ -114,6 +117,11 @@
  "e5e05eb7a6": {
   "outcome": "correction:S50",
   "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_swift reads options secret",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1
  },
  "74f9c34cef": {
@@ -176,14 +184,14 @@
   "why": "the entity is taken out of the returned Value under the same name (if let x = x.asNative as? Entity) instead of an <name>Entity variable, because a provider may not concatenate onto a description name; same calls, same printed record",
   "n": 5
  },
- "27793e952b": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+ "c4f2d04f4a": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
   "n": 3
  },
- "557ea2b7a9": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+ "c089cf077f": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
   "n": 1
  },
  "c49ed11762": {
@@ -191,9 +199,9 @@
   "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
   "n": 1
  },
- "389912065e": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+ "9de8faf2d3": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
   "n": 1
  },
  "7c35ce5a01": {
@@ -254,6 +262,26 @@
  "14eb5dfde1": {
   "outcome": "unification:write-comment-style",
   "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1
+ },
+ "24a51da904": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `takes` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1
+ },
+ "6a03279ab9": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `it` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1
+ },
+ "6b913f8580": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `out` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1
+ },
+ "2920034cd9": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `and` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
   "n": 1
  },
  "70ac6b6b08": {
@@ -326,7 +354,7 @@
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
   "n": 10
  },
- "a34e47004d": {
+ "e678cc17ee": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
   "n": 7
@@ -476,19 +504,34 @@
   "why": "the parent id's example value",
   "n": 1
  },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19
+ },
  "066a083189": {
   "outcome": "same-meaning",
   "why": "the README direct example passes method GET; consistent with GET as the default",
   "n": 19
  },
- "c3df4bebb5": {
+ "391ed7dd04": {
   "outcome": "same-meaning",
   "why": "a word match on VList: the README options table says `extend` is a `VList`; nothing about list",
   "n": 83
  },
- "ef00c80d4a": {
+ "9c6d819441": {
   "outcome": "same-meaning",
-  "why": "the README direct example reads headers/status/data off the result; the same keys",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "b2d0f18ca8": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
   "n": 19
  },
  "f64ae2f4fc": {
@@ -511,14 +554,14 @@
   "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_swift.ts writes cls = entityClassName), OLD headed it with the data type's name; this pair is the ledger pairing Ambient with PlanetEntity across the renamed headings",
   "n": 16
  },
- "1e254c64d9": {
-  "outcome": "restored:fact",
-  "why": "the signature as the runtime declares it: one unlabelled VMap? parameter and throws (Main.fragment.swift:96); OLD named the parameter without its type",
-  "n": 19
+ "83803533d5": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
+  "n": 18
  },
- "e7a36e162e": {
-  "outcome": "restored:fact",
-  "why": "the signature as declared (Main.fragment.swift:162), parameter typed",
+ "d90bf25f1c": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
   "n": 19
  },
  "b2f8d161db": {
@@ -526,6 +569,101 @@
   "why": "the make sentence names the class; printed once per entity (16 + 77 + 1 = 94 units across the three classes d5b8571b7f, b2f8d161db, 1cf2aacb90): the ledger pairs the first OLD entity with another entity under the renamed headings, so the count split is a pairing artifact, not a dropped sentence. make() returns a new instance with cloneOpts() and the same client (Entity.fragment.swift:10-12) | the make sentence names the class and says it keeps the client: make() returns EntyClass(client, cloneOpts()) (Entity.fragment.swift:11); see d5b8571b7f for the count",
   "n": 92,
   "rekeyed": "d5b8571b7f+b2f8d161db"
+ },
+ "ce54cf657b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "a49b459dfe": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "e205efbc48": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "adec0de37c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "48c4b58206": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "844abea2fa": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "d06b4a2f2c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "dcda7fa79b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "5b42dc539b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "bf850a8cfd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "9ee5606e12": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "936a8c364a": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "e7d3c3a634": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "cd5e2606b3": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "4a981cc770": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "bf581a386f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "928f1deb7a": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18
+ },
+ "e4523e933a": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "6b4c91167d": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
  },
  "d31e05e59e": {
   "outcome": "correction:matchv-arg",
@@ -557,7 +695,7 @@
   "why": "as 9d3daf5913, update",
   "n": 16
  },
- "cfa055cffe": {
+ "9ebd31cf78": {
   "outcome": "restored:shared",
   "why": "the wrapped style's return clause for list: a value holding a VList of entities, throws on failure; same facts",
   "n": 83
@@ -592,11 +730,21 @@
   "why": "h3fix, one shared edit: OLD's 'Both arguments may be <none>.' is said in the test client's argument sentence ('both may be <none>', or without the test feature 'Both may be <none>.'), as decided at v3.3; the class is re-split because no-test now prints the S13-residue sentence, so the OLD units pair one variation fewer",
   "n": 18
  },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19
+ },
  "051347e851": {
   "outcome": "restored:fact",
   "why": "the accessor heading is its declared signature, Ambient(_ entopts: VMap? = nil) -> DemoEntityBase (MainEntity_swift.ts:25)",
   "n": 93,
   "rekeyed": "051347e851"
+ },
+ "cd6620080a": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as e7a36e162e): the signature as declared (Main.fragment.swift:162), parameter typed",
+  "n": 19
  },
  "ffa2ed1994": {
   "outcome": "restored:shared",
@@ -616,6 +764,11 @@
  "3932ebe961": {
   "outcome": "restored:shared",
   "why": "restored in the Returns paragraph: **Returns:** `VMap`, a result map ...",
+  "n": 19
+ },
+ "f97fbb188d": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 1e254c64d9): the signature as the runtime declares it: one unlabelled VMap? parameter and throws (Main.fragment.swift:96); OLD named the parameter without its type",
   "n": 19
  },
  "245210ccea": {
@@ -654,6 +807,11 @@
   "why": "the wrapped return clause for create",
   "n": 16
  },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update and patch keep it, as \"The data must include the entity id, `id`, unless the entity already holds it.\" (the sentence round's wording). Re-read at v33m: the correction stands",
+  "n": 20
+ },
  "1d8136f602": {
   "outcome": "restored:shared",
   "why": "the wrapped return clause for update",
@@ -664,15 +822,60 @@
   "why": "false for log, which is active by default (model/feature/log.aontu active: true); restored as \"inactive until switched on, except `log`\"",
   "n": 19
  },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18
+ },
  "ac1eac6be0": {
   "outcome": "correction:S09",
   "why": "the per-feature line now says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
+  "n": 19
+ },
+ "d742744bfa": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 17
+ },
+ "fb53c2b222": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 17
+ },
+ "49b4da0d68": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19
+ },
+ "d265844143": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19
+ },
+ "4ffa491cf2": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19
+ },
+ "c2066e4a9e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
   "n": 19
  },
  "75daf54ae9": {
   "outcome": "restored:fact",
   "why": "the test constructor's declared signature (Main.fragment.swift:330, static)",
   "n": 19
+ },
+ "640b39740e": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
  },
  "3cfb131ab0": {
   "outcome": "restored:fact",
@@ -685,19 +888,19 @@
   "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
   "n": 90
  },
- "976fbd4577": {
-  "outcome": "unification:direct-table",
-  "why": "the shared fetchargs table documents ctrl, with the explain example printed by swift's expr printer; prepare reads ctrl (Main.fragment.swift:101)",
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
   "n": 19
  },
- "8e3a5d6365": {
-  "outcome": "restored:shared",
-  "why": "the shared direct Returns paragraph, with okFalse cited (r.entries[\"ok\"] = .bool(false))",
+ "824d11833c": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
   "n": 19
  },
- "3942dce840": {
-  "outcome": "restored:shared",
-  "why": "restored from \"This escape hatch never throws — branch on result.entries[\"ok\"]\"",
+ "b9b1eb40e3": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19
  },
  "6ae77474cd": {
@@ -721,9 +924,9 @@
   "why": "the wrapped return clause for load",
   "n": 28
  },
- "773dbe24f2": {
-  "outcome": "restored:shared",
-  "why": "the record sentence of every single-entity op: the record is read through the unwrap; OLD said \"whose record `data()` reads ... that `asNative as? Entity` unwraps\" for load only",
+ "19021dc95b": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
   "n": 79
  },
  "944b3637d3": {
@@ -741,6 +944,16 @@
   "why": "the matchv declared signature, see b58a1c7936",
   "n": 94
  },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "b44a06006a": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 82
+ },
  "3974a1f572": {
   "outcome": "correction:ref-6",
   "why": "the Actions table Call cell: the call routed through create with $action and the route's id beside it; the result is discarded with _ = as in the tutorial writes",
@@ -755,6 +968,36 @@
   "outcome": "restored:shared",
   "why": "the wrapped return clause for update",
   "n": 16
+ },
+ "e94011ef3f": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19
+ },
+ "05a7710dde": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: a wrapping feature whose model also declares active hooks says so, as the catalogue's X3 fix asks (cost: hook PrePoint, PreDone, PreUnexpected; secrets: hook PreSpec); the wrap sentence above it is unchanged",
+  "n": 38
+ },
+ "9a5ba18db4": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19
+ },
+ "2c3647ff67": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19
+ },
+ "f88d62ac3d": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2
  },
  "2e9cd7c427": {
   "outcome": "restored:fact",
@@ -771,9 +1014,9 @@
   "why": "the wrapped return clause for patch",
   "n": 4
  },
- "f09662fec4": {
+ "515b3d5cc0": {
   "outcome": "same-meaning",
-  "why": "the README's test line says the same of the two arguments (both may be nil); nothing disagrees",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
   "n": 1
  },
  "e59066a2d8": {
@@ -781,17 +1024,26 @@
   "why": "moved into the test sentence (\"both may be `nil`\"); the README test line says the same",
   "n": 1
  },
- "91baf1b4b6": {
+ "bff341cf32": {
   "outcome": "contradiction",
-  "why": "",
-  "n": 1,
-  "where": "swift/README.md:229 (no-test): testSDK \"Creates a test-mode client with mock transport\" (ReadmeOptions_swift, unported)",
-  "true": "REFERENCE: without the test feature its source does not ship, so testSDK builds a client in test mode with no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features; catalogue S13"
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
+  "n": 1
+ },
+ "b05babb8f4": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
   "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1
+ },
+ "a2f5d538a4": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
   "n": 1
  },
  "7f188f33e8": {
@@ -841,11 +1093,6 @@
   "why": "as 8d90bfc7cb",
   "n": 1
  },
- "0b29ec4944": {
-  "outcome": "correction:sentence-review-update-id",
-  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update and patch keep it, as \"The data must include the entity id, `id`, unless the entity already holds it.\" (the sentence round's wording). Re-read at v33m: the correction stands",
-  "n": 20
- },
  "d245316c2e": {
   "outcome": "unification:entity-heading",
   "why": "the section is headed by the entity class (ConsoleEntity), see 68c1ea7fd6",
@@ -863,6 +1110,16 @@
   "why": "the heading names the class AmbientEntity, see 68c1ea7fd6",
   "n": 1,
   "rekeyed": "861a2bfee4"
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
  },
  "b4523a5362": {
   "outcome": "correction:S49",
@@ -894,16 +1151,6 @@
   "why": "the accessor returns DemoEntityBase (MainEntity_swift.ts:25 `-> ${Name}EntityBase`)",
   "n": 1
  },
- "48311e623e": {
-  "outcome": "unification:direct-table",
-  "why": ".map in the ctrl example",
-  "n": 1
- },
- "abb698049e": {
-  "outcome": "unification:direct-table",
-  "why": "explain in the ctrl example",
-  "n": 1
- },
  "d790e8abf9": {
   "outcome": "unification:direct-table",
   "why": ".bool in the ctrl example",
@@ -932,6 +1179,11 @@
  "a200bcc7e9": {
   "outcome": "restored:fact",
   "why": "stream returns AsyncStream<Value> (EntityBase.fragment.swift:189)",
+  "n": 1
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
   "n": 1
  },
  "78d7493a3c": {
@@ -1049,14 +1301,102 @@
   "why": "the entity is taken out of the returned Value under the same name (if let x = x.asNative as? Entity) instead of an <name>Entity variable, because a provider may not concatenate onto a description name; same calls, same printed record",
   "n": 1
  },
- "275db80f77": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+ "1ede05e640": {
+  "outcome": "restored:shared",
+  "why": "the wrapped style's load sentence (runtimeprose loadSentence) with swift's cited unwrap and derived record; replaces the OLD \"`load()` returns the ENTITY — call data() for the record — and throws on error\", same facts",
+  "n": 16
+ },
+ "2ab61ac902": {
+  "outcome": "same-meaning",
+  "why": "a word match on VList: the README options table says `extend` is a `VList`; nothing about what list returns",
+  "n": 7
+ },
+ "28f0ea9b7a": {
+  "outcome": "restored:shared",
+  "why": "the wrapped style's list sentence: same facts (a list of entities one per record, throws, asNative as? Entity unwraps an item, data() reads the record); the value is named as the VList it holds (Value.swift: case list(VList)); OLD named the call with its arguments list(nil, nil), the shared sentence names it list()",
+  "n": 7
+ },
+ "9af3164c6e": {
+  "outcome": "restored:shared",
+  "why": "as fec65e4929: the shared create comment, doc-nested",
   "n": 1
  },
- "f5ea3ada1b": {
-  "outcome": "correction:sentence-review-env",
-  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+ "76f72279eb": {
+  "outcome": "restored:shared",
+  "why": "the write sentence for one write (ref-issues: update only), in the wrapped style",
+  "n": 1
+ },
+ "27793e952b": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 3
+ },
+ "557ea2b7a9": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1
+ },
+ "389912065e": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1
+ },
+ "ef00c80d4a": {
+  "outcome": "same-meaning",
+  "why": "the README direct example reads headers/status/data off the result; the same keys",
+  "n": 19
+ },
+ "1e254c64d9": {
+  "outcome": "restored:fact",
+  "why": "the signature as the runtime declares it: one unlabelled VMap? parameter and throws (Main.fragment.swift:96); OLD named the parameter without its type",
+  "n": 19
+ },
+ "e7a36e162e": {
+  "outcome": "restored:fact",
+  "why": "the signature as declared (Main.fragment.swift:162), parameter typed",
+  "n": 19
+ },
+ "976fbd4577": {
+  "outcome": "unification:direct-table",
+  "why": "the shared fetchargs table documents ctrl, with the explain example printed by swift's expr printer; prepare reads ctrl (Main.fragment.swift:101)",
+  "n": 19
+ },
+ "8e3a5d6365": {
+  "outcome": "restored:shared",
+  "why": "the shared direct Returns paragraph, with okFalse cited (r.entries[\"ok\"] = .bool(false))",
+  "n": 19
+ },
+ "3942dce840": {
+  "outcome": "restored:shared",
+  "why": "restored from \"This escape hatch never throws — branch on result.entries[\"ok\"]\"",
+  "n": 19
+ },
+ "773dbe24f2": {
+  "outcome": "restored:shared",
+  "why": "the record sentence of every single-entity op: the record is read through the unwrap; OLD said \"whose record `data()` reads ... that `asNative as? Entity` unwraps\" for load only",
+  "n": 79
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be nil); nothing disagrees",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "where": "swift/README.md:229 (no-test): testSDK \"Creates a test-mode client with mock transport\" (ReadmeOptions_swift, unported)",
+  "true": "REFERENCE: without the test feature its source does not ship, so testSDK builds a client in test mode with no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features; catalogue S13"
+ },
+ "48311e623e": {
+  "outcome": "unification:direct-table",
+  "why": ".map in the ctrl example",
+  "n": 1
+ },
+ "abb698049e": {
+  "outcome": "unification:direct-table",
+  "why": "explain in the ctrl example",
   "n": 1
  },
  "89672a79c6": {
@@ -1069,359 +1409,19 @@
   "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
   "n": 19
  },
- "aa6c3feb8f": {
-  "outcome": "unification:client-heading",
-  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
-  "n": 19
- },
- "cd6620080a": {
-  "outcome": "restored:fact",
-  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as e7a36e162e): the signature as declared (Main.fragment.swift:162), parameter typed",
-  "n": 19
- },
- "f97fbb188d": {
-  "outcome": "restored:fact",
-  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 1e254c64d9): the signature as the runtime declares it: one unlabelled VMap? parameter and throws (Main.fragment.swift:96); OLD named the parameter without its type",
-  "n": 19
- },
  "58c6715c33": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19
- },
- "b9b1eb40e3": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19
- },
- "482def0a4d": {
-  "outcome": "same-meaning",
-  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
-  "n": 2
- },
- "515b3d5cc0": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
-  "n": 1
- },
- "bff341cf32": {
-  "outcome": "contradiction",
-  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
-  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
-  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
-  "n": 1
- },
- "bc59087427": {
-  "outcome": "correction:decision-14-bare-name",
-  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
-  "n": 16
- },
- "9d80e50c20": {
-  "outcome": "same-meaning",
-  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
-  "n": 7
- },
- "44fa0dabac": {
-  "outcome": "correction:decision-14-bare-name",
-  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
-  "n": 7
- },
- "5fd9f16c2d": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
-  "n": 5
- },
- "5b9af17b7e": {
-  "outcome": "correction:decision-14-bare-name",
-  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
-  "n": 1
- },
- "9c6d819441": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
-  "n": 19
- },
- "b2d0f18ca8": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
-  "n": 19
- },
- "e8e8cc2723": {
-  "outcome": "correction:freeze-direct-wording",
-  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
-  "n": 19
- },
- "824d11833c": {
-  "outcome": "correction:freeze-direct-wording",
-  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
-  "n": 19
- },
- "2fc026d092": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
-  "n": 79
- },
- "0918d10148": {
-  "outcome": "correction:decision-7-match-copy",
-  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
-  "n": 94
  },
  "80f77307dc": {
   "outcome": "correction:decision-6-stream-signal",
   "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
   "n": 94
  },
- "b44a06006a": {
-  "outcome": "correction:decision-14-list-call",
-  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
-  "n": 82
- },
- "eea38408c0": {
-  "outcome": "correction:decision-6-stream-signal",
-  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
-  "n": 1
- },
- "c4f2d04f4a": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
-  "n": 3
- },
- "c089cf077f": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
-  "n": 1
- },
- "9de8faf2d3": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
-  "n": 1
- },
- "24a51da904": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "the word `takes` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
-  "n": 1
- },
- "6a03279ab9": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "the word `it` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
-  "n": 1
- },
- "6b913f8580": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "the word `out` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
-  "n": 1
- },
- "2920034cd9": {
-  "outcome": "correction:decision-12-unwrap",
-  "why": "the word `and` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
-  "n": 1
- },
- "absent": {
-  "3bb5d3a968": "swift's results are wrapped: every record sentence names the unwrap first, '`asNative as? Entity` takes the entity out, and `result.data()` reads its record' (brief 7 decision 12), in the same variations; the plain '`…` reads its record.' would name data() on a Value, which has none"
- },
- "c9601209b9": {
-  "outcome": "same-meaning",
-  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
-  "n": 18
- },
- "b04f3b7718": {
-  "outcome": "same-meaning",
-  "why": "the README's feature table names cost and cache; no disagreement",
-  "n": 19
- },
- "83803533d5": {
-  "outcome": "correction:X3",
-  "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
-  "n": 18
- },
- "d90bf25f1c": {
-  "outcome": "correction:residue-escaped-backticks",
-  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
-  "n": 19
- },
- "ce54cf657b": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "a49b459dfe": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "e205efbc48": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "adec0de37c": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "48c4b58206": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "844abea2fa": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "d06b4a2f2c": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "dcda7fa79b": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "5b42dc539b": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "bf850a8cfd": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "9ee5606e12": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "936a8c364a": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "e7d3c3a634": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "cd5e2606b3": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "4a981cc770": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "bf581a386f": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "928f1deb7a": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 18
- },
- "e4523e933a": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "6b4c91167d": {
-  "outcome": "correction:S09-residue-usage",
-  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
-  "n": 19
- },
- "8a25c3888a": {
-  "outcome": "correction:S09-residue-on-by-default",
-  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
-  "n": 19
- },
- "689587aa26": {
-  "outcome": "correction:X3",
-  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
-  "n": 18
- },
- "d742744bfa": {
-  "outcome": "correction:D26",
-  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
-  "n": 17
- },
- "fb53c2b222": {
-  "outcome": "correction:D26",
-  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
-  "n": 17
- },
- "49b4da0d68": {
-  "outcome": "correction:D26",
-  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
-  "n": 19
- },
- "d265844143": {
-  "outcome": "correction:D26",
-  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
-  "n": 19
- },
- "4ffa491cf2": {
-  "outcome": "correction:D26",
-  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
-  "n": 19
- },
- "c2066e4a9e": {
-  "outcome": "correction:D26",
-  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
-  "n": 19
- },
- "640b39740e": {
-  "outcome": "correction:sentence-review-test",
-  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
-  "n": 18
- },
- "e94011ef3f": {
-  "outcome": "correction:residue-escaped-backticks",
-  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
-  "n": 19
- },
- "05a7710dde": {
-  "outcome": "correction:X3",
-  "why": "h3fix, one shared edit: a wrapping feature whose model also declares active hooks says so, as the catalogue's X3 fix asks (cost: hook PrePoint, PreDone, PreUnexpected; secrets: hook PreSpec); the wrap sentence above it is unchanged",
-  "n": 38
- },
- "9a5ba18db4": {
-  "outcome": "correction:S09-residue-on-by-default",
-  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
-  "n": 19
- },
- "2c3647ff67": {
-  "outcome": "correction:S09-residue-on-by-default",
-  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
-  "n": 19
- },
- "f88d62ac3d": {
-  "outcome": "correction:S09-residue-on-by-default",
-  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
-  "n": 19
- },
- "b05babb8f4": {
-  "outcome": "correction:S13-residue",
-  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
-  "n": 1
- },
- "a2f5d538a4": {
-  "outcome": "correction:S13-residue",
-  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
-  "n": 1
- },
- "37b4c175e7": {
-  "outcome": "correction:D26",
-  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
-  "n": 1
- },
- "8adeed6967": {
-  "outcome": "correction:D26",
-  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
-  "n": 1
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94
  }
 }

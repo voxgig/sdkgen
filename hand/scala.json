@@ -1,4 +1,48 @@
 {
+ "facts": {
+  "named": {
+   "value": "call",
+   "why": "OLD scala names an operation with parentheses in prose (`load()` returns the ENTITY ..., `list(null, null)` returns ...); with facts.arity 2 the shared sentences name an operation bare (`load`) and print the no-match call with its arguments, `list(null, null)`, which needs named call; bare would drop that call. The tool pairs no OLD unit because every sentence carrying it was reworded",
+   "evidence": "out/old/B/scala/README.md:42 OLD said `load()` returns the ENTITY"
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD scala used for the client's and the entity's members (Static Methods, Instance Methods, Common Methods); the new context is the shared heading Client Methods, decided once for all twenty; scala's client members are methods of the DemoSDK class and its SdkClient base",
+   "evidence": "out/old/B/scala/REFERENCE.md:41 OLD said ### Instance Methods"
+  }
+ },
+ "absent": {
+  "ed44d07e36": "ts resolves (async); scala's operations return (no Future: EntityLoadOp.fragment.scala:12 returns Object), so scala prints the same shared sentence in the sync form, `load` returns the entity and throws on failure, in the same variations",
+  "5e178e9588": "the async form of the list sentence; scala prints the sync form, `list` returns an `ArrayList` of entities ..., in the same variations",
+  "6d459aa83b": "the async form of the write sentence; scala prints Each write returns the entity it wrote ... in the same variations",
+  "64560e9dff": "the async form of the create comment; scala prints Create \u2014 returns the created entity; created.data() reads its record in the same variations",
+  "78dac4093d": "the async form; scala prints `update` returns the entity it wrote, and throws on failure. in ref-issues",
+  "99a8153c15": "ts names its entity class in the comment because it declares facts.listOf; scala's list resolves to an ArrayList of Object (EntityListOp.fragment.scala:11 returns Object), so no typed list fact is declared and scala prints Load an ambient: the entity; throws on failure in the same variations",
+  "7ab5ba644d": "printed after the lead language's block of the root README only, and ts is the lead language; scala prints it in its own tutorial in the same variations",
+  "a0b269a293": "as 99a8153c15: scala prints List planet records: an ArrayList of entities, one per record; throws on failure",
+  "0071df96c2": "entityBy is Name for scala (OLD headed each entity by its Name: ## Planet), so the accessor sentence is Create a new `Ambient` entity.; the class form names AmbientEntity, which ts prints",
+  "f3e421e046": "ts's utility getter returns the live object (copy false); scala's getUtility returns this.utility.copy(), a new Utility (SdkClient.scala:88, Utility.scala:54-55 new Utility(true)), cited as copy true: scala prints Return a copy of the SDK utility object.",
+  "f30b7d4864": "the fetchargs ctrl.signal row: scala's direct takes no abort signal (ref.facts.direct has no signal; the cancel absence searched over the whole scala runtime finds the word only in the stream and in comments)",
+  "ea3964d6ba": "ts's prepare resolves to the error on failure (fails value); scala's prepare throws (SdkClient.scala:113), prepare.fails style, cited: scala prints It throws on failure.",
+  "abe923e0b2": "ts has a tester() member; the scala client declares none (the runtime table lists no tester for scala)",
+  "9efa1b3a1e": "the cancel paragraph: scala's operations read no abort signal (ref.facts.cancel false, a cited absence over the whole runtime)",
+  "bb93495ee9": "as 9efa1b3a1e",
+  "d86e9841eb": "as 9efa1b3a1e",
+  "cad5dfc5f6": "as 9efa1b3a1e",
+  "9f6d56f5fb": "the async form; scala prints Returns the entity, and throws on failure. in the same variations",
+  "f6b8425ed5": "as 0071df96c2: the make sentence for an entity named by its Name, Create another `Ambient` entity with the same client and options.",
+  "4c93659f14": "ts's stream is an async iterator run at iteration; scala's is a synchronous Iterator[Object] (EntityBase.fragment.scala:163), streamSync: scala prints ... return an iterator over its result items.",
+  "5003b705ca": "scala's stream runs the operation before it returns (runOp at EntityBase.fragment.scala:192, the Iterator built at :218), runs call: scala prints The operation runs before the call returns.",
+  "2d65ce1465": "ts has a client() getter on the entity; the scala entity holds its client in a protected var (EntityBase.fragment.scala:14) and declares no getter",
+  "74dc5866b7": "ts has an entopts() getter; the scala entity holds entopts in a protected var (EntityBase.fragment.scala:16) and declares no getter",
+  "f1bcce31a0": "ts's name is a field; scala's is a method, getName() (EntityBase.fragment.scala:39), field false: scala prints Return the entity name.",
+  "a32ec5077c": "the async form; scala prints Returns an `ArrayList` of entities, one per record, and throws on failure.",
+  "d6fd5c15c3": "the async form; scala prints Returns the created entity, and throws on failure.",
+  "863f603c11": "the async form; scala prints Returns the updated entity, and throws on failure.",
+  "b1666a52ac": "the async form; scala prints Returns the entity, marked as deleted, and throws on failure.",
+  "808ab9f422": "scala's deleted() is declared on EntityBase (EntityBase.fragment.scala:72) but not on SdkEntity (core/Contracts.scala:16-27), the type every example binds (the accessor returns SdkEntity), so ref.facts.deleted is left undeclared, as for swift and java; the remove sentence still says the entity is marked as deleted",
+  "b7eb8b0b55": "the async form; scala prints Returns the patched entity, and throws on failure."
+ },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match: the README options table cell for base says Base URL of the API server; the scala README options table does not list server, so it says nothing about the server variables",
@@ -9,34 +53,34 @@
   "why": "OLD said `load()` returns the ENTITY, call data() for the record, and raises on error; restored as the shared load sentence, `load` returns the entity and throws on failure; `ambient.data()` reads its record (scala throws: EntityBase.fragment.scala:136)",
   "n": 10
  },
- "86e8fd7a10": {
+ "fdb50bfb65": {
   "outcome": "restored:shared",
   "why": "the shared load sentence in the sync throw form: load returns the entity (EntityBase.fragment.scala:122 returns this) and throws on failure; the record is read with data() on the cast entity, which the block binds",
   "n": 10
  },
- "d0b1cd2953": {
+ "ba4510dba9": {
   "outcome": "restored:shared",
   "why": "the shared list sentence: list returns the ArrayList makeResult builds (utility/Make.scala:647,655, cited for facts.collection), one entity per record, and throws on failure; OLD named the call `list(null, null)` and the static type Object; the operation is named bare because scala has no default arguments (facts.arity 2)",
   "n": 7
  },
- "2a3d0090c9": {
+ "0532150209": {
   "outcome": "restored:shared",
   "why": "as ab76c4efa0, for planet",
   "n": 6
  },
  "454d326c2d": {
   "outcome": "restored:shared",
-  "why": "restored as the create comment: Create — returns the created entity; created.data() reads its record (the block now casts the result to SdkEntity so that the record read compiles)",
+  "why": "restored as the create comment: Create \u2014 returns the created entity; created.data() reads its record (the block now casts the result to SdkEntity so that the record read compiles)",
   "n": 5
  },
  "77832f0697": {
   "outcome": "restored:shared",
-  "why": "restored as Update — the id comes off the created entity's record: the id is now read off the created entity instead of supplied as a literal",
+  "why": "restored as Update \u2014 the id comes off the created entity's record: the id is now read off the created entity instead of supplied as a literal",
   "n": 4
  },
  "691bdc9ddb": {
   "outcome": "restored:shared",
-  "why": "restored as Patch — sends only the fields given; the id comes off the created entity's record",
+  "why": "restored as Patch \u2014 sends only the fields given; the id comes off the created entity's record",
   "n": 3
  },
  "cd43169d87": {
@@ -149,10 +193,20 @@
   "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem; same calls and casts",
   "n": 7
  },
+ "4d83ae4f86": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 3,
+  "why": "the write block: the shared write comments and the id read off the created entity, as before (unification write-comment-style); and a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ },
  "a9c36e9508": {
   "outcome": "unification:write-comment-style",
   "why": "the shared write comments: Create says what it returns and how its record is read, Update and Patch say the id comes off the created entity's record, and the id is read off the created entity (chainsId) instead of a literal",
   "n": 1
+ },
+ "f698b35c73": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 1,
+  "why": "the write block: the shared write comments and the id read off the created entity, as before (unification write-comment-style); and a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
  },
  "fe0029bce3": {
   "outcome": "correction:S49",
@@ -219,6 +273,21 @@
   "why": "the id read off the created entity: created.data() cast to a java.util.Map and its get(\"id\") (Scala reads a java map key with get); chainsId",
   "n": 1
  },
+ "43e425fea5": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 1,
+  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ },
+ "72150b9927": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 1,
+  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ },
+ "206a3563f7": {
+  "outcome": "correction:scala-boxed-literal",
+  "n": 1,
+  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ },
  "bc883ce38e": {
   "outcome": "correction:S49",
   "why": "the server URL is templated (tenant, or account in server-mixed): the client now passes the required server variable as the server option, a map built first; the shared sentence names it and says region defaults to eu",
@@ -269,7 +338,7 @@
   "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure)",
   "n": 10
  },
- "b4eef38093": {
+ "3c2a62b45d": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "the root list comment in the shared form, naming the collection fact (ArrayList, cited) and that it throws",
   "n": 7
@@ -409,6 +478,11 @@
   "why": "the parent id's example value",
   "n": 1
  },
+ "549ebf24ea": {
+  "outcome": "same-meaning",
+  "n": 19,
+  "why": "the README direct how-to agrees: it branches on the boxed TRUE and reads status and data, or err for a failure; this sentence says ok is the boxed FALSE (SdkClient.scala:175,307) unless the status is 2xx; no disagreement"
+ },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "a word match on log in console.log (the shared Error handling section's TypeScript block, unported); the README says nothing about log's default",
@@ -471,8 +545,8 @@
  },
  "d553096f96": {
   "outcome": "restored:shared",
-  "why": "restored in the shared test sentence: both may be `null`",
-  "n": 19
+  "why": "restored in the shared test sentence: both may be `null` [v3.4 re-count: x18 to x18, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 18
  },
  "aa6c3feb8f": {
   "outcome": "unification:client-heading",
@@ -619,6 +693,16 @@
   "why": "the accessor's declared signature (MainEntity_scala.ts:31)",
   "n": 93
  },
+ "10d826fbfb": {
+  "outcome": "restored:shared",
+  "n": 19,
+  "why": "the shared Returns paragraph: err only for an unreadable body (SdkClient.scala:311) or a request that cannot be made (:261,:268,:272), read with get; ok then holds java.lang.Boolean.FALSE, the token SdkClient.scala writes at each"
+ },
+ "a2c8963138": {
+  "outcome": "restored:shared",
+  "n": 19,
+  "why": "OLD said never raises and to branch on the ok key; the shared sentence, with the truth test a Scala reader writes on the Object the map returns: compared with java.lang.Boolean.TRUE, as ReadmeHowto_scala and the runtime compare"
+ },
  "c692d85a6d": {
   "outcome": "restored:shared",
   "why": "restored from OLD raises on error: prepare throws (SdkClient.scala:113)",
@@ -649,7 +733,7 @@
   "why": "the no-match call printed from the facts: `list(null, null)`, both arguments the none value (facts.arity 2, as OLD wrote it)",
   "n": 82
  },
- "adae605f6f": {
+ "8d1033ec5f": {
   "outcome": "restored:shared",
   "why": "the shared list Returns sentence with the collection fact, ArrayList (cited)",
   "n": 83
@@ -693,6 +777,11 @@
   "outcome": "same-meaning",
   "why": "the README test-client line says both arguments may be null, as this sentence does; no disagreement on that point (its mock claim is bff341cf32)",
   "n": 1
+ },
+ "3c5844c600": {
+  "outcome": "same-meaning",
+  "n": 1,
+  "why": "the README says err holds the error for a transport failure; this sentence says when err is there (SdkClient.scala:311 an unreadable body; :261,:268,:272 a request that cannot be made) and that ok is then the boxed FALSE the runtime writes; no disagreement"
  },
  "d4af1f09d0": {
   "outcome": "same-meaning",
@@ -785,6 +874,21 @@
   "outcome": "correction:S49",
   "why": "the server URL is templated (tenant, or account in server-mixed): the client now passes the required server variable as the server option, a map built first; the shared sentence names it and says region defaults to eu",
   "n": 1
+ },
+ "08fe31cfce": {
+  "outcome": "correction:scala-boxed-boolean",
+  "n": 1,
+  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
+ },
+ "70e7193725": {
+  "outcome": "correction:scala-boxed-boolean",
+  "n": 1,
+  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
+ },
+ "f58d94f4bf": {
+  "outcome": "correction:scala-boxed-boolean",
+  "n": 1,
+  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
  },
  "07b6a683db": {
   "outcome": "restored:fact",
@@ -926,108 +1030,149 @@
   "why": "the patch note",
   "n": 1
  },
- "facts": {
-  "named": {
-   "value": "call",
-   "why": "OLD scala names an operation with parentheses in prose (`load()` returns the ENTITY ..., `list(null, null)` returns ...); with facts.arity 2 the shared sentences name an operation bare (`load`) and print the no-match call with its arguments, `list(null, null)`, which needs named call; bare would drop that call. The tool pairs no OLD unit because every sentence carrying it was reworded",
-   "evidence": "out/old/B/scala/README.md:42 OLD said `load()` returns the ENTITY"
-  },
-  "ref.noun": {
-   "value": "Methods",
-   "why": "the noun OLD scala used for the client's and the entity's members (Static Methods, Instance Methods, Common Methods); the new context is the shared heading Client Methods, decided once for all twenty; scala's client members are methods of the DemoSDK class and its SdkClient base",
-   "evidence": "out/old/B/scala/REFERENCE.md:41 OLD said ### Instance Methods"
-  }
- },
- "absent": {
-  "ed44d07e36": "ts resolves (async); scala's operations return (no Future: EntityLoadOp.fragment.scala:12 returns Object), so scala prints the same shared sentence in the sync form, `load` returns the entity and throws on failure, in the same variations",
-  "5e178e9588": "the async form of the list sentence; scala prints the sync form, `list` returns an `ArrayList` of entities ..., in the same variations",
-  "6d459aa83b": "the async form of the write sentence; scala prints Each write returns the entity it wrote ... in the same variations",
-  "64560e9dff": "the async form of the create comment; scala prints Create — returns the created entity; created.data() reads its record in the same variations",
-  "78dac4093d": "the async form; scala prints `update` returns the entity it wrote, and throws on failure. in ref-issues",
-  "99a8153c15": "ts names its entity class in the comment because it declares facts.listOf; scala's list resolves to an ArrayList of Object (EntityListOp.fragment.scala:11 returns Object), so no typed list fact is declared and scala prints Load an ambient: the entity; throws on failure in the same variations",
-  "a0b269a293": "as 99a8153c15: scala prints List planet records: an ArrayList of entities, one per record; throws on failure",
-  "7ab5ba644d": "printed after the lead language's block of the root README only, and ts is the lead language; scala prints it in its own tutorial in the same variations",
-  "0071df96c2": "entityBy is Name for scala (OLD headed each entity by its Name: ## Planet), so the accessor sentence is Create a new `Ambient` entity.; the class form names AmbientEntity, which ts prints",
-  "f6b8425ed5": "as 0071df96c2: the make sentence for an entity named by its Name, Create another `Ambient` entity with the same client and options.",
-  "f3e421e046": "ts's utility getter returns the live object (copy false); scala's getUtility returns this.utility.copy(), a new Utility (SdkClient.scala:88, Utility.scala:54-55 new Utility(true)), cited as copy true: scala prints Return a copy of the SDK utility object.",
-  "f30b7d4864": "the fetchargs ctrl.signal row: scala's direct takes no abort signal (ref.facts.direct has no signal; the cancel absence searched over the whole scala runtime finds the word only in the stream and in comments)",
-  "ea3964d6ba": "ts's prepare resolves to the error on failure (fails value); scala's prepare throws (SdkClient.scala:113), prepare.fails style, cited: scala prints It throws on failure.",
-  "abe923e0b2": "ts has a tester() member; the scala client declares none (the runtime table lists no tester for scala)",
-  "9efa1b3a1e": "the cancel paragraph: scala's operations read no abort signal (ref.facts.cancel false, a cited absence over the whole runtime)",
-  "bb93495ee9": "as 9efa1b3a1e",
-  "d86e9841eb": "as 9efa1b3a1e",
-  "cad5dfc5f6": "as 9efa1b3a1e",
-  "9f6d56f5fb": "the async form; scala prints Returns the entity, and throws on failure. in the same variations",
-  "a32ec5077c": "the async form; scala prints Returns an `ArrayList` of entities, one per record, and throws on failure.",
-  "d6fd5c15c3": "the async form; scala prints Returns the created entity, and throws on failure.",
-  "863f603c11": "the async form; scala prints Returns the updated entity, and throws on failure.",
-  "b1666a52ac": "the async form; scala prints Returns the entity, marked as deleted, and throws on failure.",
-  "b7eb8b0b55": "the async form; scala prints Returns the patched entity, and throws on failure.",
-  "4c93659f14": "ts's stream is an async iterator run at iteration; scala's is a synchronous Iterator[Object] (EntityBase.fragment.scala:163), streamSync: scala prints ... return an iterator over its result items.",
-  "5003b705ca": "scala's stream runs the operation before it returns (runOp at EntityBase.fragment.scala:192, the Iterator built at :218), runs call: scala prints The operation runs before the call returns.",
-  "2d65ce1465": "ts has a client() getter on the entity; the scala entity holds its client in a protected var (EntityBase.fragment.scala:14) and declares no getter",
-  "74dc5866b7": "ts has an entopts() getter; the scala entity holds entopts in a protected var (EntityBase.fragment.scala:16) and declares no getter",
-  "f1bcce31a0": "ts's name is a field; scala's is a method, getName() (EntityBase.fragment.scala:39), field false: scala prints Return the entity name.",
-  "808ab9f422": "scala's deleted() is declared on EntityBase (EntityBase.fragment.scala:72) but not on SdkEntity (core/Contracts.scala:16-27), the type every example binds (the accessor returns SdkEntity), so ref.facts.deleted is left undeclared, as for swift and java; the remove sentence still says the entity is marked as deleted"
- },
- "549ebf24ea": {
+ "c9601209b9": {
   "outcome": "same-meaning",
-  "n": 19,
-  "why": "the README direct how-to agrees: it branches on the boxed TRUE and reads status and data, or err for a failure; this sentence says ok is the boxed FALSE (SdkClient.scala:175,307) unless the status is 2xx; no disagreement"
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18
  },
- "3c5844c600": {
+ "b04f3b7718": {
   "outcome": "same-meaning",
-  "n": 1,
-  "why": "the README says err holds the error for a transport failure; this sentence says when err is there (SdkClient.scala:311 an unreadable body; :261,:268,:272 a request that cannot be made) and that ok is then the boxed FALSE the runtime writes; no disagreement"
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19
  },
- "10d826fbfb": {
-  "outcome": "restored:shared",
-  "n": 19,
-  "why": "the shared Returns paragraph: err only for an unreadable body (SdkClient.scala:311) or a request that cannot be made (:261,:268,:272), read with get; ok then holds java.lang.Boolean.FALSE, the token SdkClient.scala writes at each"
+ "3f329031a9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "a2c8963138": {
-  "outcome": "restored:shared",
-  "n": 19,
-  "why": "OLD said never raises and to branch on the ok key; the shared sentence, with the truth test a Scala reader writes on the Object the map returns: compared with java.lang.Boolean.TRUE, as ReadmeHowto_scala and the runtime compare"
+ "7bf9c2f8d2": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "08fe31cfce": {
-  "outcome": "correction:scala-boxed-boolean",
-  "n": 1,
-  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
+ "2061945a0b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "70e7193725": {
-  "outcome": "correction:scala-boxed-boolean",
-  "n": 1,
-  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
+ "5f5bb3e680": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "f58d94f4bf": {
-  "outcome": "correction:scala-boxed-boolean",
-  "n": 1,
-  "why": "direct's ok holds the boxed java.lang.Boolean.FALSE the runtime writes (SdkClient.scala:175,261,268,272,314; Boolean.valueOf at :307), and a branch compares the Object that get returns with java.lang.Boolean.TRUE: Scala 3 refuses an Object compared with the primitive true (Boolean has a reflexive CanEqual and Object is no subtype of it), and the runtime compares only with the boxed constants (EntityBase.fragment.scala:211, sdktest/ConcurrencyTest.scala:168); read, not compiled: no scala compiler here"
+ "c601d54b55": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "4d83ae4f86": {
-  "outcome": "correction:scala-boxed-literal",
-  "n": 3,
-  "why": "the write block: the shared write comments and the id read off the created entity, as before (unification write-comment-style); and a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ "6bc85eabaf": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "f698b35c73": {
-  "outcome": "correction:scala-boxed-literal",
-  "n": 1,
-  "why": "the write block: the shared write comments and the id read off the created entity, as before (unification write-comment-style); and a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ "356d1582fc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "43e425fea5": {
-  "outcome": "correction:scala-boxed-literal",
-  "n": 1,
-  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ "897205fd36": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "72150b9927": {
-  "outcome": "correction:scala-boxed-literal",
-  "n": 1,
-  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ "20e6c8dde9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
  },
- "206a3563f7": {
-  "outcome": "correction:scala-boxed-literal",
-  "n": 1,
-  "why": "a number literal the update and patch maps of Object hold directly is boxed, java.lang.Double.valueOf(1.0), as the runtime boxes its own (TelemetryFeature.scala:49 Long.valueOf, NetsimFeature.scala:42 Boolean.TRUE): Scala tries no implicit conversion to Object, so a bare 1.0 in a Map.of passed as java.util.Map[String, Object] is refused (utility_scala scalaObjectLit); read, not compiled: no scala compiler here"
+ "8b65a53c90": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "78333f7015": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "05892bf152": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "b440a40732": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "e748d61f95": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "dc563305c5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "e6685f3a5e": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "766d31b2c7": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18
+ },
+ "c209a51ec5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "0100eff743": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19
+ },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18
+ },
+ "415e667026": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
+  "n": 90
+ },
+ "0bf51a1c12": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
+ },
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94
+ },
+ "e710557629": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
  }
 }
