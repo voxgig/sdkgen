@@ -123,6 +123,9 @@ type ActionContext = {
   fetchPackage?: (pkgname: string, actx: ActionContext) => Promise<void>
 
   copyGuarded?: boolean
+
+  // Set by the copy guard: copies an add recognised as a released version.
+  released?: Set<string>
 }
 
 

@@ -1,0 +1,821 @@
+{
+ "sdkgen": {
+  "retired": 1
+ },
+ "releases": [
+  "v0.0.1",
+  "v4.44.0"
+ ],
+ "files": {
+  "src/cmp/c/ReadmeQuick_c.ts": [
+   "3e8965ea87a141e1",
+   "66c9288bb9a9a5fa",
+   "ad7dc9670664ea9e",
+   "efa2820fa0add77e",
+   "f015aeb180090225",
+   "f8506caabbfc8b4a"
+  ],
+  "src/cmp/c/ReadmeRef_c.ts": [
+   "2e909372ad55540a",
+   "376bbfebbab95649",
+   "429865784db3fa4f",
+   "4bc2d95c75e2df55",
+   "6b664b77cdbcd60f",
+   "6b9e322cb07bacec",
+   "aeb72c6a92cf93e0",
+   "b35e1a53640dbd57",
+   "eb71278aeba213bf"
+  ],
+  "src/cmp/c/ReadmeTopQuick_c.ts": [
+   "2bfd2610215f648e",
+   "38971de7faf5cdd1",
+   "421cdbda1c4debd4",
+   "5d1058f26c887b2d",
+   "5e060c08df647985",
+   "b15495efa3ff0bd3",
+   "b558eb52d4baa8e2"
+  ],
+  "src/cmp/clojure/ReadmeQuick_clojure.ts": [
+   "2be718555ff7d46f",
+   "353538999687de45",
+   "5d85a64f09705d88",
+   "607e1d64ec027bde",
+   "6c4b040396e18188",
+   "718c7079bc28053a"
+  ],
+  "src/cmp/clojure/ReadmeRef_clojure.ts": [
+   "12bf379ff47b1ff7",
+   "33632ab4f9e4548c",
+   "418170373e720fef",
+   "5ceef10da7587c98",
+   "706febf6bf799cdb",
+   "748d7f425d2caf05",
+   "797563266b060750",
+   "ee6777aab8cd5b78",
+   "f42ffbc6362dade5"
+  ],
+  "src/cmp/clojure/ReadmeTopQuick_clojure.ts": [
+   "2198264b5f347397",
+   "3a62aed0a504cc00",
+   "3b71ae9a1b4498e0",
+   "8ec041215dfd376f",
+   "c3fed4d0208bbcac",
+   "de9d83438a1ab5ec"
+  ],
+  "src/cmp/dart/Config_dart.ts": [
+   "105d89ff4b4c1d2e",
+   "237717e19e6d7d0e",
+   "4891a3b53049a130",
+   "7c9dcf4293a99f36",
+   "82a5674c323b1bd2",
+   "9013e40595a8ef10",
+   "b72a6ed4f2365bc1",
+   "d5029fa506fbe379",
+   "e5d84e91c1c45997"
+  ],
+  "src/cmp/dart/EntityBase_dart.ts": [
+   "a088777685611f2f"
+  ],
+  "src/cmp/dart/EntityOperation_dart.ts": [
+   "943876175932a747"
+  ],
+  "src/cmp/dart/EntityTypes_dart.ts": [
+   "157786d40452285d",
+   "4eb37e4183a9c488",
+   "5fcd2eb965b1352c",
+   "73e3ad824eaf358c"
+  ],
+  "src/cmp/dart/Entity_dart.ts": [
+   "1357b2633a4edc30",
+   "c4f0e337cf87d26c",
+   "e7f2b08ad43437b4"
+  ],
+  "src/cmp/dart/Gitignore_dart.ts": [
+   "95f4724c4e23bf40"
+  ],
+  "src/cmp/dart/MainEntity_dart.ts": [
+   "0bec5a964c907e3f",
+   "100d2b3de88bfafe"
+  ],
+  "src/cmp/dart/Main_dart.ts": [
+   "ae87a3f784084154",
+   "baeb2cbd34faadeb",
+   "dacbd6203a36e0d8"
+  ],
+  "src/cmp/dart/Package_dart.ts": [
+   "141a707c076f1569",
+   "74dc51c027194240",
+   "b9361c08478c99e4"
+  ],
+  "src/cmp/dart/ReadmeEntity_dart.ts": [
+   "23103203cba5028c",
+   "2a104f8ce001e748",
+   "d095620bf3b90207",
+   "ee9f53c660ddff49"
+  ],
+  "src/cmp/dart/ReadmeExamplesTest_dart.ts": [
+   "ec84403998dbb0f5"
+  ],
+  "src/cmp/dart/ReadmeExplanation_dart.ts": [
+   "eac59c979b3e2963"
+  ],
+  "src/cmp/dart/ReadmeHowto_dart.ts": [
+   "95860d8feb2fdc80",
+   "bdd08a0b61087a53",
+   "ce96860db8e7aa20",
+   "fb6fdff5307abb50"
+  ],
+  "src/cmp/dart/ReadmeInstall_dart.ts": [
+   "85c6be91385bae3e",
+   "aa6705161d865ccc"
+  ],
+  "src/cmp/dart/ReadmeIntro_dart.ts": [
+   "fc50f26ebbcdd29e"
+  ],
+  "src/cmp/dart/ReadmeModel_dart.ts": [
+   "16499c3774585192",
+   "59d416c6de60e066"
+  ],
+  "src/cmp/dart/ReadmeOptions_dart.ts": [
+   "46390b4a4438f8ae"
+  ],
+  "src/cmp/dart/ReadmeQuick_dart.ts": [
+   "1e91b7411b8397e1",
+   "4111d246016c914e",
+   "4e328329c66ee8b2",
+   "af173aa8e2942ea9"
+  ],
+  "src/cmp/dart/ReadmeRef_dart.ts": [
+   "0db745539b0cdeba",
+   "0f8dc06f855ec191",
+   "1cd2b43f1f236cd0",
+   "d238b4a8406efc0b",
+   "da6d38ea475bc98c"
+  ],
+  "src/cmp/dart/ReadmeTopHowto_dart.ts": [
+   "f8d15d29913fe369"
+  ],
+  "src/cmp/dart/ReadmeTopQuick_dart.ts": [
+   "2182e1533a248fc9",
+   "58c1dafb6f17ec9a",
+   "84435b520ec24380",
+   "f37ea275a0f9d7fa"
+  ],
+  "src/cmp/dart/ReadmeTopTest_dart.ts": [
+   "7b630874fbc3be81",
+   "aaa0d0e2f6c87e81",
+   "acdabbdd634db960"
+  ],
+  "src/cmp/dart/SdkError_dart.ts": [
+   "6411a73a546062b4"
+  ],
+  "src/cmp/dart/TestDirect_dart.ts": [
+   "054609dbe26a1c0f",
+   "2a172a30bd0570c6",
+   "6ead1bd6047cd052",
+   "99a1451fd69ff42e",
+   "c52cfae915c86405"
+  ],
+  "src/cmp/dart/TestEntity_dart.ts": [
+   "4616731a8cc7a9f9",
+   "7c6ef4130b794c85",
+   "7e4d281f36417c52",
+   "a8288a57ab57d565",
+   "e8058f30087f8e32"
+  ],
+  "src/cmp/dart/Test_dart.ts": [
+   "136a5ebf2a83672f",
+   "6da635a297cbc3b2",
+   "a212e1497b4cce0e",
+   "d2b40f0b917a8ac1",
+   "d40bfe97c225ce52"
+  ],
+  "src/cmp/dart/fragment/Config.data.fragment.dart": [
+   "a492040235c9db79",
+   "f48f9ad4df82e9db"
+  ],
+  "src/cmp/dart/fragment/Config.fragment.dart": [
+   "04bc66d76ca8c827",
+   "4b0800d7ef1e79b6",
+   "500c30c35ad8f515",
+   "cfe7a0cf02953286"
+  ],
+  "src/cmp/dart/fragment/Direct.test.fragment.dart": [
+   "5ef5002db0f9bc24"
+  ],
+  "src/cmp/dart/fragment/Entity.fragment.dart": [
+   "4bd371cd9a053f6b",
+   "facb5d2b6a56ea68"
+  ],
+  "src/cmp/dart/fragment/Entity.test.fragment.dart": [
+   "c801682b60ba445d",
+   "e038b7a9afba3f2d"
+  ],
+  "src/cmp/dart/fragment/EntityBase.fragment.dart": [
+   "0a3fa76fe03ffd9a",
+   "d04ca703b47516d6"
+  ],
+  "src/cmp/dart/fragment/EntityCreateOp.fragment.dart": [
+   "17bc3e0274444b0e",
+   "75c02f0d85e89e9a"
+  ],
+  "src/cmp/dart/fragment/EntityListOp.fragment.dart": [
+   "7f2880c6832bcb66"
+  ],
+  "src/cmp/dart/fragment/EntityLoadOp.fragment.dart": [
+   "31d948277fd4c6c2",
+   "4b334db45803df99"
+  ],
+  "src/cmp/dart/fragment/EntityRemoveOp.fragment.dart": [
+   "ea4b1b098873a0af",
+   "fe9b11886e9476fe"
+  ],
+  "src/cmp/dart/fragment/EntityUpdateOp.fragment.dart": [
+   "ba582fe9f2ae26ab",
+   "ff11e005faede43e"
+  ],
+  "src/cmp/dart/fragment/Main.fragment.dart": [
+   "0a9e6dcd5f4f7a51",
+   "3db016e27f05fabe",
+   "89dc75cfa4bacbc4",
+   "d828bb1e94f13dd5",
+   "ea3ab5e2b2114394"
+  ],
+  "src/cmp/dart/fragment/SdkError.fragment.dart": [
+   "0501ebf759f5d7a3",
+   "bbbec0cb67398662"
+  ],
+  "src/cmp/dart/tsconfig.json": [
+   "720a3f2290197a91"
+  ],
+  "src/cmp/dart/utility_dart.ts": [
+   "67eed2c345f640ac",
+   "aca51c8ef6c491e2",
+   "afcca70cd685a473"
+  ],
+  "src/cmp/elixir/ReadmeQuick_elixir.ts": [
+   "4421e4a8f3002893",
+   "6decaee1c021f3bc",
+   "8dc0ee928db96a5e",
+   "a68e9392357a4b46",
+   "bad17ea8d0b292d6"
+  ],
+  "src/cmp/elixir/ReadmeRef_elixir.ts": [
+   "33610b13c9c51d48",
+   "353423b444f712bb",
+   "58de9ba2c1ee61b0",
+   "59df171cd3dfc9a9",
+   "7e9ed299e121f251",
+   "a5c4965a95fe786f",
+   "a7c720bcacc6241b",
+   "c230a8bfa42d85f9",
+   "e7cff7bc6f80abef"
+  ],
+  "src/cmp/elixir/ReadmeTopQuick_elixir.ts": [
+   "076794d8d4e17c7a",
+   "0e2fb36306a9635f",
+   "22d38cfca38ec55d",
+   "a13ff1874c329604",
+   "ab77802ac89cceb1",
+   "be134e7e41c1beb2"
+  ],
+  "src/cmp/go/ReadmeQuick_go.ts": [
+   "3eb12ab04d691fd8",
+   "56fc8bb639f9d7ab",
+   "6073ce6723aa80c6",
+   "686fd9bfff1ed559",
+   "70eedea21ceb80ac",
+   "77e7f722f46e2771",
+   "90d45bcb83dccc97",
+   "cae9f37a0edd81d2",
+   "ed5dbc512626fc3e",
+   "f7068f50e6e3fef9"
+  ],
+  "src/cmp/go/ReadmeRef_go.ts": [
+   "057dcaa00f384698",
+   "178fe532dee8186f",
+   "3b0f7fa3de8e6f9c",
+   "408993d3edbee804",
+   "49fe7ac2ca03e835",
+   "630068042b48e76a",
+   "64e2ccd9ac1a0b69",
+   "6917409d3ad475ee",
+   "a9f499266c28140a",
+   "c8146726581f9337",
+   "d89187d0b28344b3"
+  ],
+  "src/cmp/go/ReadmeTopQuick_go.ts": [
+   "13d3036bf5b76e84",
+   "3d167ad9c2364627",
+   "5a5cb0a3ffe89500",
+   "625000ab80ebd18b",
+   "b54a238bc0221a03",
+   "e3c6afe27b63997e",
+   "fae7ec32036b4002",
+   "ff401ecac05c28db"
+  ],
+  "src/cmp/go/fragment/SdkError.fragment.go": [
+   "36c2cc9cf5584d5c"
+  ],
+  "src/cmp/haskell/Config_haskell.ts": [
+   "0d1be30723db7371",
+   "aeecf840ac7fe2cc",
+   "ccf20ad99a96db46"
+  ],
+  "src/cmp/haskell/Entity_haskell.ts": [
+   "85c8d545f127035e"
+  ],
+  "src/cmp/haskell/Gitignore_haskell.ts": [
+   "fa73d449fc124b5f"
+  ],
+  "src/cmp/haskell/Main_haskell.ts": [
+   "900eeb2bbbbdf13d"
+  ],
+  "src/cmp/haskell/Package_haskell.ts": [
+   "2d186270cda26679",
+   "5b163b9cbeff042c",
+   "a979e2e3af92971b"
+  ],
+  "src/cmp/haskell/ReadmeEntity_haskell.ts": [
+   "5ed436435e4237d9",
+   "a99e8eb1035951e8"
+  ],
+  "src/cmp/haskell/ReadmeExamplesTest_haskell.ts": [
+   "2d44708bc4e0b672",
+   "585646ff792fd058"
+  ],
+  "src/cmp/haskell/ReadmeExplanation_haskell.ts": [
+   "26d95d4362a3b0e7"
+  ],
+  "src/cmp/haskell/ReadmeHowto_haskell.ts": [
+   "078d31cacb3fb04a"
+  ],
+  "src/cmp/haskell/ReadmeInstall_haskell.ts": [
+   "2a267d291bda1183"
+  ],
+  "src/cmp/haskell/ReadmeIntro_haskell.ts": [
+   "b7e567acdb7d4d9f"
+  ],
+  "src/cmp/haskell/ReadmeModel_haskell.ts": [
+   "31fd56e8120e5028",
+   "7c7c1742e5768126"
+  ],
+  "src/cmp/haskell/ReadmeOptions_haskell.ts": [
+   "4c1776ea85a10495"
+  ],
+  "src/cmp/haskell/ReadmeQuick_haskell.ts": [
+   "67a6f36e34be8330",
+   "69df39f0c9cd431f"
+  ],
+  "src/cmp/haskell/ReadmeRef_haskell.ts": [
+   "9ab30e1f8e61e435",
+   "f7d4677b7f3b284a"
+  ],
+  "src/cmp/haskell/ReadmeTopHowto_haskell.ts": [
+   "2f33427f5ca87a58"
+  ],
+  "src/cmp/haskell/ReadmeTopQuick_haskell.ts": [
+   "0964a73c5ae72faa",
+   "40e1152c60f45a47"
+  ],
+  "src/cmp/haskell/ReadmeTopTest_haskell.ts": [
+   "a8bada6d622589c6"
+  ],
+  "src/cmp/haskell/Test_haskell.ts": [
+   "0b36f2368ef0dc9e",
+   "62c91d7d4a416670",
+   "a90b7711e4e4f70e",
+   "da9c00ba809228e2",
+   "f251f7e21ca54194"
+  ],
+  "src/cmp/haskell/tsconfig.json": [
+   "720a3f2290197a91"
+  ],
+  "src/cmp/haskell/utility_haskell.ts": [
+   "36331208007f3386",
+   "49172191cd2e1d69",
+   "586463ad44f3a7d6"
+  ],
+  "src/cmp/lean/Config_lean.ts": [
+   "3dd4b09fd1e8a0cc",
+   "5baaa45065c7fd4a",
+   "a6aebaa155d0af49",
+   "d131c927b204c1ec"
+  ],
+  "src/cmp/lean/Entity_lean.ts": [
+   "8f1a57a3ed36b47a"
+  ],
+  "src/cmp/lean/Gitignore_lean.ts": [
+   "b5631e71c626f9b4"
+  ],
+  "src/cmp/lean/Main_lean.ts": [
+   "2a7a4e82aad6df0c"
+  ],
+  "src/cmp/lean/Package_lean.ts": [
+   "05bb226b714c039e",
+   "8999c6247c9b64ac",
+   "a3fc265ecd186e3b"
+  ],
+  "src/cmp/lean/ReadmeEntity_lean.ts": [
+   "916c5e3593485b88"
+  ],
+  "src/cmp/lean/ReadmeExplanation_lean.ts": [
+   "745c059e8ab7c309"
+  ],
+  "src/cmp/lean/ReadmeHowto_lean.ts": [
+   "539fd026a16ed92a"
+  ],
+  "src/cmp/lean/ReadmeInstall_lean.ts": [
+   "35dc7763363671b0",
+   "6fdd890c14a315b9"
+  ],
+  "src/cmp/lean/ReadmeIntro_lean.ts": [
+   "485542486639cde5"
+  ],
+  "src/cmp/lean/ReadmeModel_lean.ts": [
+   "1e61400f4c1ddf2d"
+  ],
+  "src/cmp/lean/ReadmeOptions_lean.ts": [
+   "074f824635cea8ed"
+  ],
+  "src/cmp/lean/ReadmeQuick_lean.ts": [
+   "fb9bba0fd6c965b9"
+  ],
+  "src/cmp/lean/ReadmeRef_lean.ts": [
+   "3bb251a8fb8fefc4",
+   "76b17817a01ef9d3"
+  ],
+  "src/cmp/lean/ReadmeTopHowto_lean.ts": [
+   "c07b68e3c3ab4449"
+  ],
+  "src/cmp/lean/ReadmeTopQuick_lean.ts": [
+   "a6a574833e670199"
+  ],
+  "src/cmp/lean/ReadmeTopTest_lean.ts": [
+   "5fb0334e355ad9e8",
+   "93f1e87473cfe484"
+  ],
+  "src/cmp/lean/Test_lean.ts": [
+   "09a528c7d32c8890",
+   "24388a0ca7a24c21",
+   "ab4eeaa4d8067c7f"
+  ],
+  "src/cmp/lean/utility_lean.ts": [
+   "3aafb9fb42983d90",
+   "c8d93dcba2dae4f5"
+  ],
+  "src/cmp/lua/ReadmeQuick_lua.ts": [
+   "0b811694d176ca73",
+   "16ea6c48802cb77b",
+   "32d6ae5ec0b0f15b",
+   "39150836b7cbcd99",
+   "4b9d29b1ba32d554",
+   "5100026956f0972b",
+   "569f94610a123a6b",
+   "6f8610b6b0b4a76c",
+   "76afd7563eb8b4f2",
+   "8f0c15f7f8e76045",
+   "d17a15148a250638",
+   "ec356160118dfc80",
+   "fef8323cb9e1c909"
+  ],
+  "src/cmp/lua/ReadmeRef_lua.ts": [
+   "15a3a1539519d5ae",
+   "37d354a238b27ba3",
+   "469ac1d5b8458f4e",
+   "4937a79882d2e767",
+   "5344f593ff4b6b9e",
+   "7297bc0305bcab4c",
+   "7b58efe66864061c",
+   "7c59dbbce90f404e",
+   "7e016c05749ff1ed",
+   "8f43adf3da45faee",
+   "bb5b86b973ea3260",
+   "cfe05cd45705d613",
+   "f328f42dae895fc7"
+  ],
+  "src/cmp/lua/ReadmeTopQuick_lua.ts": [
+   "108238f2e3743af7",
+   "15629f4c762df72e",
+   "1b94cb7d3aef0de3",
+   "317e30c784e289d7",
+   "324c0290044465c4",
+   "6835f2fd1f561e2d",
+   "85d0dcdf6981efa7",
+   "b52daf8169626c3a",
+   "cc0f6253615dd590",
+   "f5e0a0d312b87890"
+  ],
+  "src/cmp/lua/fragment/SdkError.fragment.lua": [
+   "2e90a2f94e8312d2",
+   "dd1669f801e716d1"
+  ],
+  "src/cmp/ocaml/ReadmeQuick_ocaml.ts": [
+   "04e828abf5f0ea19",
+   "0520f018b411be3e",
+   "2a449eb1b604cdfb",
+   "87d3899d275180aa",
+   "a5eac655b7b99ee4",
+   "b83aa1c71f63ac8a",
+   "f5616b9609019a15"
+  ],
+  "src/cmp/ocaml/ReadmeRef_ocaml.ts": [
+   "062a7895afba0322",
+   "179a56eb72a943fe",
+   "315a93ee0c7bd1ca",
+   "51c39b1cfd7af219",
+   "5849670e35cea828",
+   "73c4d599b6984a0f",
+   "740ae276ac9019bb",
+   "9ad0305b2e58695b",
+   "b8399371c6643fe0",
+   "f31239708e6f53f7"
+  ],
+  "src/cmp/ocaml/ReadmeTopQuick_ocaml.ts": [
+   "145826e324e058dc",
+   "2fd9002bc592b5aa",
+   "84453da46f2dd1f2",
+   "8ef0e24a75a9e45d",
+   "cf101b8cd3c1d1b9",
+   "f19e6297a929ffbb"
+  ],
+  "src/cmp/perl/ReadmeQuick_perl.ts": [
+   "1285bb12b2332d99",
+   "1723bab592dc9b98",
+   "48cf84612d415a13",
+   "4b9bbd90b3f978a3",
+   "b751a8c76c314599",
+   "c2da98cc241a8319",
+   "efed28976d57ec59"
+  ],
+  "src/cmp/perl/ReadmeRef_perl.ts": [
+   "7418ea09204a7a9b",
+   "7c1df92d64b8dfe8",
+   "8109ce61df0a1083",
+   "8e73b188c7ce0952",
+   "a9e5c2ddfa95fdfe",
+   "ab16430c9d40f32d",
+   "c66971b30df88ef2",
+   "caa777aec9de04b4",
+   "f2a51188ab35a415"
+  ],
+  "src/cmp/perl/ReadmeTopQuick_perl.ts": [
+   "0b824d07dc97da56",
+   "0db2a86c9b472f4d",
+   "292e04935a5a549b",
+   "60a9f013e5715bb5",
+   "bf09e7094ad702e7",
+   "d74d39d93f7bfc5a",
+   "dce0aa218d24913c",
+   "ed8db68c6e114922"
+  ],
+  "src/cmp/perl/fragment/SdkError.fragment.pm": [
+   "315041c5422f556c"
+  ],
+  "src/cmp/php/fragment/SdkError.fragment.php": [
+   "0c73a9a0251d1852",
+   "ec06488cd6d96628"
+  ],
+  "src/cmp/py/ReadmeQuick_py.ts": [
+   "0d61f69561acd8d9",
+   "1124c668979a38fd",
+   "17ebc9b58f61a127",
+   "2b9adb7fe12488d1",
+   "310a5c0440ebfcf2",
+   "4a18e5be5ec085f5",
+   "4a23b32950bb959d",
+   "aba72365ef266329",
+   "c4ba106bc518d9d3",
+   "e2e4b42bffadc3df",
+   "e7eaf3a32751f43f",
+   "f7f74b5606806939"
+  ],
+  "src/cmp/py/ReadmeRef_py.ts": [
+   "0acc3bd84aa4b59c",
+   "1b2a5f15ebf83af2",
+   "20c7ed6fc39486fd",
+   "2f5fbfea95348390",
+   "300c7c574a9c49e9",
+   "388ede987ed18635",
+   "59d94e5b2d8d1d19",
+   "5cbd7346727469a9",
+   "61110e05e6c52abf",
+   "65d4818139c98c38",
+   "ba7cd29b9dd960d3",
+   "c92e6b0d56a4f0a0",
+   "c9bcf3f386fc3c48"
+  ],
+  "src/cmp/py/ReadmeTopQuick_py.ts": [
+   "068e438a99937b46",
+   "247c99d7c6bb4731",
+   "26683ae97ed09a3b",
+   "2cf1cb8dbf5ea593",
+   "4261f7841ddabc2e",
+   "44790daff08df151",
+   "818bb0fcd95045b0",
+   "b9490236edc58073",
+   "bfc689c3ade66386",
+   "ea8e22778b5dea4b",
+   "fb809bbe064efd4d"
+  ],
+  "src/cmp/py/fragment/SdkError.fragment.py": [
+   "74a3ce0522373547",
+   "d1c40bae885a48e6"
+  ],
+  "src/cmp/rb/ReadmeQuick_rb.ts": [
+   "28e522ea035eb5a8",
+   "5e314d71ba0c215a",
+   "70f969f8737d2436",
+   "873a3f645c8709ff",
+   "98df98eb6d0e1735",
+   "a0e5f2f56f68db6b",
+   "b7593ddc87ee5322",
+   "bd80307503fc823e",
+   "d21a3142986bd4ed",
+   "dab84d8633fe95c5",
+   "e4729633f06fc990",
+   "ee76786ef83cde2e"
+  ],
+  "src/cmp/rb/ReadmeRef_rb.ts": [
+   "0d1ea3aafd528014",
+   "1340563b2378b1b6",
+   "2e521c2b9620ae36",
+   "944ee8005076df0b",
+   "a0419ad0ebdeef2c",
+   "a29ade134e0c6e82",
+   "be52120639bf1835",
+   "cf6d2fb1f0f7e443",
+   "d084941554794d47",
+   "d2073acf4d518a81",
+   "dfc8cdf254a6c35b",
+   "e86e444b225ffa36"
+  ],
+  "src/cmp/rb/ReadmeTopQuick_rb.ts": [
+   "6099626c5c127897",
+   "75ffdbd2e40dc1a6",
+   "7e39d8924dfcddd3",
+   "85766d74310c1a29",
+   "8ca9e680843ac7fa",
+   "8e5daa11994d24c6",
+   "94ea94a42c4a12e7",
+   "d2b676da467f73fc",
+   "d39b16c615eccae0",
+   "ef63760e8ff6133c",
+   "f650d4b08ac120fb"
+  ],
+  "src/cmp/rb/fragment/SdkError.fragment.rb": [
+   "59599ded99988803",
+   "951c6e5bc8b2b13c"
+  ],
+  "src/cmp/rust/ReadmeQuick_rust.ts": [
+   "53d1394ef13f751b",
+   "8afe5eac3a988095",
+   "931034ec30e6591d",
+   "971f679ad98bc54a",
+   "bef4467cf16232f3",
+   "befcf3a68572848c",
+   "df4f3f489ba051e2",
+   "f3c0d8f38b601963"
+  ],
+  "src/cmp/rust/ReadmeRef_rust.ts": [
+   "1054182936415955",
+   "13e06e3db08da80c",
+   "38c8a70595d86135",
+   "3db4534de3bbbe98",
+   "63bcd937292998d9",
+   "6ce9b8f37ba0e8a3",
+   "6dca767033ad2bc2",
+   "821cb8a956ca8fbb",
+   "88c5bc8dc4d03362",
+   "a513a90eccb68b12",
+   "bd6e5bd289519b61",
+   "e57d5b3c90721b21"
+  ],
+  "src/cmp/rust/ReadmeTopQuick_rust.ts": [
+   "229d1b11a72e2d57",
+   "24ed96cb40c810eb",
+   "2b1101208f75d4cd",
+   "6caa77d7c5fe5c86",
+   "71e7aa0734e866e8",
+   "b6319450ec602f15",
+   "f343d6298d11c2b3",
+   "fd5cbe8999567341"
+  ],
+  "src/cmp/seneca-provider/Extras_seneca-provider.ts": [
+   "5515abe8e3ed8051",
+   "68924545a64572fb",
+   "9f8cc6602cf79072",
+   "a16faae406308a1f",
+   "b66a4671a34d4b5f",
+   "dd3ac77a7ff8fe92"
+  ],
+  "src/cmp/seneca-provider/Gitignore_seneca-provider.ts": [
+   "188e88524e59db33"
+  ],
+  "src/cmp/seneca-provider/Main_seneca-provider.ts": [
+   "0f481ee43fc72cb8",
+   "1da14a4be43cfe55",
+   "5ab7542df87d4c1a",
+   "79332b01995293b2",
+   "7cc233b8ac741cfb",
+   "c92ab76ab983c2ea"
+  ],
+  "src/cmp/swift/ReadmeQuick_swift.ts": [
+   "128820f3ba5c9dba",
+   "6fed139f2dc0bdc3",
+   "8ba90e3c9ddb784e",
+   "98110fac52538616",
+   "b1a10c912bbf4dde",
+   "e544c4f417c25848",
+   "f82ee5f27145e749"
+  ],
+  "src/cmp/swift/ReadmeRef_swift.ts": [
+   "5f72e1f9fa8221b1",
+   "7930b9af19389a9e",
+   "7dbce98f9e6fa762",
+   "8ab67f9e8e0f6aad",
+   "c0c9207f60f5c3f2",
+   "cd65c4db54da6fcb",
+   "cdf7d7f888518d51",
+   "cf6c33504a9870c5",
+   "d76a7374867d8777",
+   "ee3d2c5515f54faa"
+  ],
+  "src/cmp/swift/ReadmeTopQuick_swift.ts": [
+   "46a29dd1c7203735",
+   "9410b968c34d7877",
+   "b0d732b8858638e5",
+   "b2ee349237518681",
+   "e1d29f95ed90486d"
+  ],
+  "src/cmp/ts/ReadmeQuick_ts.ts": [
+   "0c4690a5c583bc80",
+   "132d4993e2c52ac7",
+   "397d34b81217aaca",
+   "4596630c79f825be",
+   "4931280c7e01138b",
+   "5b77eedf3c917a2f",
+   "5d136d08f3232bd9",
+   "6badcac43209c644",
+   "8588413a29a2e815",
+   "959dc51764669954",
+   "ed557ed0eee404d2",
+   "f6f6549ac29c33ea",
+   "fc2e608767691d2f"
+  ],
+  "src/cmp/ts/ReadmeRef_ts.ts": [
+   "193040d071901e7b",
+   "24102ac8165bb090",
+   "3117a651ff3677cf",
+   "3d86db423c32a410",
+   "67fbd352afd98604",
+   "813c44e84b5a37d7",
+   "9681c5f9f77c57ad",
+   "bec511ec06e02f6d",
+   "ca4e4c1a8fd00330",
+   "d3b002de9b94e23a",
+   "e1752802f7f75574",
+   "ece61597c034355e"
+  ],
+  "src/cmp/ts/ReadmeTopQuick_ts.ts": [
+   "31fe83d6fee1c227",
+   "6d63aac9f5324ecd",
+   "70e2258c2b242d8b",
+   "74b733b901e76f29",
+   "b27260ae01e1a440",
+   "b5732f4195c02b0f",
+   "b6d2f5f16387349e",
+   "c1b85d04f7e7140e",
+   "eb811926ce8b7a72",
+   "fe326858df07f752"
+  ],
+  "src/cmp/zig/ReadmeQuick_zig.ts": [
+   "4606229f2cf68e6f",
+   "4b2400cb373ae280",
+   "627253f0065c8cc0",
+   "9ebcde3116ce476a",
+   "9ec92e2bcb81b247",
+   "b02c86d8483a373a",
+   "df79bf79a2bd9577"
+  ],
+  "src/cmp/zig/ReadmeRef_zig.ts": [
+   "30ed612799f95257",
+   "874e6f01d55963b7",
+   "932dc4f01a203090",
+   "a17b55d1bd26328a",
+   "baa7eb0a1783cae3",
+   "d0289ca5c6e4b942",
+   "d0d9425b62d21c49",
+   "e4e9cb12b4c5fd89",
+   "f7c5c6ea82060868"
+  ],
+  "src/cmp/zig/ReadmeTopQuick_zig.ts": [
+   "3842318a13c0cd63",
+   "417f033cc16857f8",
+   "58ed0ebcdbe030a4",
+   "776ba29ec29154ac",
+   "fc9d512f8e2b1b91",
+   "fe9985bfbd1d6ed6"
+  ]
+ }
+}

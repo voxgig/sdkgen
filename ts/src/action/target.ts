@@ -65,7 +65,7 @@ import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 import type { Source } from './resolve'
 
 import {
-  recordCopies, guardCopies, readCopies, unchangedCopy, projectCopyMode,
+  recordCopies, guardCopies, readCopies, unchangedCopy, untouched, projectCopyMode,
 } from './copies'
 import type { CopyRecord } from './copies'
 
@@ -500,6 +500,7 @@ function pruneRetired(
     record: readCopies(ctx$.fs(), ctx$.folder ?? '.'),
     kind,
     source,
+    released: actx?.released,
     rename: origname === name ? undefined :
       (rel: string) => aliasCmpName(rel, origname, name),
     discard: true === actx?.flags?.force || OVERWRITE === projectCopyMode(actx),
@@ -511,6 +512,8 @@ type RetiredCopies = {
   record: CopyRecord
   kind: string
   source: Source
+  // The copy guard's set of released copies, which it then lets go.
+  released?: Set<string>
   rename?: (rel: string) => string
   // Overwrite mode or --force: a changed copy goes too, as it would be
   // overwritten if the source still shipped it.
@@ -530,6 +533,10 @@ function retiredCopies(
     const file = toRel + '/' + rel
     const same = unchangedCopy(fs, folder, copies.record, copies.kind,
       copies.source, file)
+
+    if (true === same && true !== untouched(fs, folder, copies.record, file)) {
+      copies.released?.add(file)
+    }
 
     if (true === same || (false === same && true === copies.discard)) {
       out.push(rel)

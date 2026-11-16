@@ -317,3 +317,18 @@ describe('a damaged copy record', () => {
     ok(Object.keys(record.files).some((rel: string) => rel.startsWith('src/cmp/go/')))
   })
 })
+
+
+describe('the shipped retired list', () => {
+
+  test('names only files the scaffold no longer ships, each with fingerprints', () => {
+    const Fs = require('node:fs')
+    const list = JSON.parse(Fs.readFileSync(PACKAGE_ROOT + '/project/' + RETIRED_FILE, 'utf8'))
+    const files = Object.keys(list.files)
+    ok(0 < files.length)
+    for (const rel of files) {
+      ok(!Fs.existsSync(PACKAGE_ROOT + '/project/.sdk/' + rel), rel + ' is still shipped')
+      ok(list.files[rel].every((p: string) => /^[0-9a-f]{16}$/.test(p)), rel)
+    }
+  })
+})
