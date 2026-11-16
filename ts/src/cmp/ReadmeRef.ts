@@ -10,7 +10,7 @@ import { mdCell, mdInline, spans } from '../helpers/markdown'
 import { bodyNoteText } from '../helpers/media'
 import type { DescEntity, SdkDescription } from '../helpers/sdkdesc'
 import {
-  actionBlock, entOf, featureBlock, newScope, note, printBlock, refOpBlock,
+  actionBlock, entOf, featureBlock, fillLayout, newScope, note, printBlock, refOpBlock,
 } from '../helpers/example'
 import type { CtorKind, Ent, Member, MemberKind, OpName, RefSyntax, Stmt, StreamRuns, Syntax } from '../helpers/example'
 import { failsSentence, opText } from '../helpers/runtimeprose'
@@ -122,11 +122,16 @@ const STREAM_RUNS: Record<StreamRuns, string> = {
 function streamText(what: string, m: Member, r: RefSyntax): string {
   if (null == m.runs) throw new Error(`ReadmeRef: stream member ${m.sig} needs runs`)
   return wrap(`Run an operation through the pipeline and ${what} ${STREAM_RUNS[m.runs].replace(/\n/g, ' ')}` +
-    (r.facts.streamSignal ? ' ' + STREAM_SIGNAL : ''))
+    (r.facts.streamSignal ? ' ' + streamSignalText(r) : ''))
 }
 
-// A stream that reads `callopts.signal` (ReadmeRef's streamSignal fact).
-const STREAM_SIGNAL = 'It ends early once `callopts.signal` reports an abort.'
+// A stream that reads a signal from its call options (the streamSignal fact):
+// named in words, since each language writes the key its own way, with the
+// one form the runtime reads where it ignores any other value.
+function streamSignalText(r: RefSyntax): string {
+  return 'It ends early once the `signal` in `callopts` reports an abort' +
+    (r.facts.streamSignalForm ? `; the signal is read only as ${r.facts.streamSignalForm}, and any other value is ignored.` : '.')
+}
 
 // What a getter hands back: a copy where the runtime clones, which its member
 // declares (Member.copy).
@@ -400,7 +405,8 @@ record — check the API definition for its shape.
       const block = refOpBlock(desc, p.facts, ent, op)
       out += `#### ${code(fill(sig, desc, ent))}\n\n` +
         `${wrap(opText(p.facts, op.name, op.needs, op.idInData, boundOf(block, desc),
-          { none: r.facts.none, deleted: r.facts.deleted }))}\n\n`
+          { none: r.facts.none, deleted: null == r.facts.deleted ? undefined : fillLayout(r.facts.deleted, desc.layout),
+            removeKeeps: r.facts.removeKeeps }))}\n\n`
       if (null != block) out += printBlock(p, block, desc, newScope(true)) + '\n'
       out += bodyNoteText(op.body, r.facts.body)
     }

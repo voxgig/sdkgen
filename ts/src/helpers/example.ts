@@ -89,6 +89,11 @@ type RuntimeFacts = {
   // language has no default arguments (`list(nil, nil)`). A sentence then
   // names an operation by a call that compiles.
   arity?: number
+  // A local's scope is its whole block, nested blocks included, so one block
+  // may not declare a name twice even where the first is a loop's (C#,
+  // CS0136). The root quick start then names its list item apart from the
+  // entity it loads.
+  blockScope?: boolean
   prints: Prints
 }
 
@@ -175,11 +180,19 @@ type RefFacts = {
   // The stream reads `callopts.signal` and ends early once it reports an
   // abort, whether or not the operations can be cancelled.
   streamSignal?: boolean
+  // What the stream takes as that signal, where the runtime reads one form
+  // only and ignores any other value: 'a `CancellationToken`'.
+  streamSignalForm?: string
   // How prose names a member: 'call', `direct()` (the default), or 'bare',
   // `direct`, where a call is not written with parentheses.
   memberNamed?: 'call' | 'bare'
-  // How a removed entity's mark is read, {var} the entity: '{var}.deleted()'.
+  // How a removed entity's mark is read, {var} the entity: '{var}.deleted()';
+  // {module}, {client}, {ctor} and {names.<role>} are filled from the layout,
+  // as in a note.
   deleted?: string
+  // remove reads no record from the response: the removed entity keeps the
+  // data it held (cpp), where every other runtime replaces it.
+  removeKeeps?: boolean
 }
 
 
@@ -277,7 +290,12 @@ function listBlock(desc: SdkDescription, facts: RuntimeFacts, where: ShowPlace =
   if (null == q || null == q.list) return null
   const entity = entOf(desc, q.entity)
   const many = refOf(desc, 'many', entity, 'entity')
-  const item = refOf(desc, 'item', entity, 'entity')
+  let item = refOf(desc, 'item', entity, 'entity')
+  // The root quick start's list and load share one block: where a local is
+  // in scope over its whole block, the item takes the generic name.
+  if (facts.blockScope && 'top' === where && null != q.load && q.load.entity === q.entity) {
+    item = { ...item, name: (desc.layout.vars || {})[GENERIC.item] ?? GENERIC.item }
+  }
   return [{
     k: 'attempt', what: 'list', body: [
       call(entity, 'list', 0 < q.list.length ? argEntries(q.list, null) : null, many),
@@ -577,12 +595,16 @@ function newScope(standalone = false, place?: ShowPlace): Scope {
 function note(p: Syntax, slot: NoteSlot, desc?: SdkDescription): string {
   const text = p.notes && Object.prototype.hasOwnProperty.call(p.notes, slot) ? p.notes[slot] : undefined
   if (null == text || '' === text) return ''
-  const layout: any = desc ? desc.layout : {}
-  const filled = text.replace(/\{(module|client|ctor|names\.\w+)\}/g, (m, k: string) => {
+  return fillLayout(text, desc ? desc.layout : {}) + '\n\n'
+}
+
+// {module}, {client}, {ctor} and {names.<role>} filled from the layout the
+// naming hook decided; any other brace is left as it is.
+function fillLayout(text: string, layout: any): string {
+  return text.replace(/\{(module|client|ctor|names\.\w+)\}/g, (m, k: string) => {
     const v = k.startsWith('names.') ? (layout.names || {})[k.slice(6)] : layout[k]
     return 'string' === typeof v ? v : m
   })
-  return filled + '\n\n'
 }
 
 
@@ -623,6 +645,7 @@ export {
   clientBlock,
   entOf,
   featureBlock,
+  fillLayout,
   refOpBlock,
   indent,
   listBlock,

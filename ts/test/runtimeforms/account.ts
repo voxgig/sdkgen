@@ -70,6 +70,12 @@ const DEFAULTS: [RegExp, Category][] = [
   [NEW_FACTS.importPlace, 'cited'],
   // Whether a stream reads callopts.signal between items, apart from cancel.
   [/^ref\.facts\.streamSignal$/, 'cited'],
+  // The one form a stream's signal is read as: pinned prose, cited to the read.
+  [/^ref\.facts\.streamSignalForm$/, 'cited'],
+  // remove reads no record from the response (cpp): cited to the remove fragment.
+  [/^ref\.facts\.removeKeeps$/, 'cited'],
+  // A local's scope is its whole block (C#): no runtime file shows it.
+  [/^facts\.blockScope$/, 'language'],
   [/^notes\./, 'cited'],
 ]
 

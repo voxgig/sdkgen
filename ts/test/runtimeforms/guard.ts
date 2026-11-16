@@ -564,10 +564,24 @@ function check(t: string, S: any, forms: Forms): Result {
       const path = 'ref.facts.' + k
       if (!NEW_FACTS.deleted.test(path)) continue
       // The member is the last name the read applies to the entity ({var}).
-      const ids = [...spell(String(v)).replace(/\$?\{\w+\}/g, ' ').matchAll(/[A-Za-z_]\w*/g)].map((m) => m[0])
+      const ids = [...String(v).replace(/\$?\{[\w.]+\}/g, ' ').matchAll(/[A-Za-z_]\w*/g)].map((m) => m[0])
       const n = ids[ids.length - 1]
-      if (null != n && (0 < findDecls(forms, entity, esc(n)).length || fieldInRuntime(t, n))) verified.add(path)
-      else add('deleted', `${path} names ${v}, which the entity does not declare`)
+      let good = true
+      if (!(null != n && (0 < findDecls(forms, entity, esc(n)).length || fieldInRuntime(t, n)))) {
+        good = false
+        add('deleted', `${path} names ${v}, which the entity does not declare`)
+      }
+      // Every other name it writes (a cast's type) is declared in the runtime,
+      // and every layout name it fills is one the naming hook gives.
+      for (const x of ids.slice(0, -1)) {
+        if (!declaredInRuntime(t, x)) { good = false; add('deleted', `${path} names ${x}, which the ${t} runtime does not declare`) }
+      }
+      const layout: any = namingOf(t).layout || {}
+      for (const m of String(v).matchAll(/\{(module|client|ctor|names\.\w+)\}/g)) {
+        const got = m[1].startsWith('names.') ? (layout.names || {})[m[1].slice(6)] : layout[m[1]]
+        if ('string' !== typeof got) { good = false; add('deleted', `${path} fills {${m[1]}}, which the naming hook does not give`) }
+      }
+      if (good) verified.add(path)
     }
   }
 
@@ -731,7 +745,7 @@ function fieldInRuntime(t: string, name: string): boolean {
 function declaredInRuntime(t: string, name: string): boolean {
   const n = esc(name)
   const re = new RegExp(
-    '(^|\\n)[ \\t]*(?:(?:pub|public|open|static|export|private|internal|final|override|inline|extern|const|async|mutable|@discardableResult)\\s+)*' +
+    '(^|\\n)[ \\t]*(?:(?:pub|public|open|static|export|private|internal|final|override|inline|extern|const|async|mutable|abstract|sealed|@discardableResult)\\s+)*' +
     '(?:func|fn|def|defn|defp|function|sub|let|val|var|const|class|struct|interface|protocol|enum|type|module|defmodule|mutable)\\s+(?:[\\w.]+[.:])?' + n + '\\b' +
     '|[\\w*]\\s+\\*?' + n + '\\s*;|^\\s*:' + n + '\\s', 'm')
   return runtimeFiles(t).some((f) => re.test(Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')))
@@ -1274,6 +1288,24 @@ const CONTROLS: Control[] = [
       S.ref = { ...S.ref, instance: (e: any, d: any) => inst(e, d).map((l: string) =>
         l.replace(new RegExp('\\$?\\bclient\\s*(?:' + isep.map(esc).join('|') + ')\\s*(?=' + esc(e.sym.accessor) + '\\b)'),
           forms.tokens.client + tsep)) }
+      return true
+    },
+  },
+  {
+    name: 'a name in the deleted read (a cast type, a struct member) the runtime does not declare', check: 'deleted', mutate: (S) => {
+      const v = S.ref?.facts?.deleted
+      if (null == v) return false
+      const ids = [...String(v).replace(/\$?\{[\w.]+\}/g, ' ').matchAll(/[A-Za-z_]\w*/g)].map((m) => m[0])
+      if (ids.length < 2) return false
+      S.ref.facts.deleted = String(v).replace(new RegExp('\\b' + ids[0] + '\\b'), ids[0] + 'X')
+      return true
+    },
+  },
+  {
+    name: 'a layout name in the deleted read the naming hook does not give', check: 'deleted', mutate: (S) => {
+      const v = S.ref?.facts?.deleted
+      if (null == v || !/\{names\.\w+\}/.test(v)) return false
+      S.ref.facts.deleted = String(v).replace(/\{names\.(\w+)\}/, '{names.$1x}')
       return true
     },
   },

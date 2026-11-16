@@ -249,7 +249,7 @@ function returnClause(f: RuntimeFacts, value: string): string {
 // `ref`: what the reference page knows besides: the none value, and how a
 // removed entity's mark is read ({var} the entity).
 function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string | null, bound: string,
-  ref: { none?: string, deleted?: string } = {}): string {
+  ref: { none?: string, deleted?: string, removeKeeps?: boolean } = {}): string {
   const parts = [OP_DOES[op]]
   if ('list' === op) {
     parts.push(0 === needs.length
@@ -265,7 +265,10 @@ function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string |
   }
   // Every single-entity result says how its record is read: the reference's
   // examples print none of them (the majority shape), so the sentence keeps it.
-  if ('list' !== op) parts.push(readsRecord(f, bound) + '.')
+  if ('remove' === op && ref.removeKeeps) {
+    parts.push(`It reads no record from the response: ${code(record(f, bound))} still reads the data the entity held.`)
+  }
+  else if ('list' !== op) parts.push(readsRecord(f, bound) + '.')
   return parts.join(' ')
 }
 
