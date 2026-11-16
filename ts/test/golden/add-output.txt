@@ -679,7 +679,7 @@ src/cmp/java/ReadmeTopHowto_java.ts c3befccf0daa
 src/cmp/java/ReadmeTopTest_java.ts 145149d54b4b
 src/cmp/java/Schema_java.ts 1695e2237594
 src/cmp/java/SdkError_java.ts 2957202451b0
-src/cmp/java/Syntax_java.ts 5b9a30bac583
+src/cmp/java/Syntax_java.ts 3ef72b71e819
 src/cmp/java/TestClean_java.ts f8de8e6f89f4
 src/cmp/java/TestDirect_java.ts c2f28fbc6d2e
 src/cmp/java/TestEntity_java.ts 1c8bf4ad5359
