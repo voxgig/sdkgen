@@ -798,7 +798,7 @@ src/cmp/js/ReadmeTopHowto_js.ts 1fd0efc85561
 src/cmp/js/ReadmeTopTest_js.ts 58f6a02f2a39
 src/cmp/js/Schema_js.ts 557790433a08
 src/cmp/js/SdkError_js.ts c3c526f2b624
-src/cmp/js/Syntax_js.ts 1d333593a40e
+src/cmp/js/Syntax_js.ts b1d500d79448
 src/cmp/js/TestClean_js.ts 0fb89a1170e3
 src/cmp/js/TestDefinition_js.ts 9bd45df6b9d9
 src/cmp/js/TestDirect_js.ts 46fc3fefb5d4
