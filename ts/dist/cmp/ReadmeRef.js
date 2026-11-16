@@ -26,7 +26,13 @@ const ReadmeRef = (0, component_1.cmp)(function ReadmeRef(props) {
         (0, jostraca_1.File)({ name: 'REFERENCE.md' }, () => {
             (0, jostraca_1.Content)(refText(provider.Syntax, desc));
             if (0 < desc.ref.features.length) {
-                (0, ReadmeRefFeatures_1.ReadmeRefFeatures)({ target });
+                const r = provider.Syntax.ref;
+                (0, ReadmeRefFeatures_1.ReadmeRefFeatures)({
+                    target, spell: {
+                        key: (path) => r.key('options', path),
+                        on: provider.Syntax.expr({ k: 'lit', type: 'BOOLEAN', text: '' }, (0, example_1.newScope)(), desc),
+                    },
+                });
             }
         });
         return;
@@ -250,16 +256,20 @@ function testText(p, desc) {
     if (null == r.facts.testMock)
         throw new Error('ReadmeRef: the test constructor needs ref.facts.testMock');
     let out = '\n### Test client\n\n';
-    const mock = desc.ref.test || 'always' === r.facts.testMock
+    const mock = desc.ref.test || 'always' === r.facts.testMock;
+    const lead = mock
         ? 'Create a test client with mock features active.'
         : 'Create a test client. This SDK is generated without the `test` feature, so the client has no ' +
             'mock transport and refuses every request.';
     for (const t of r.facts.test) {
-        out += `#### ${code(fill(t.sig, desc))}\n\n` + wrap(mock + ' ' +
+        out += `#### ${code(fill(t.sig, desc))}\n\n` + wrap(lead + ' ' +
             (t.args
-                ? 'The first argument holds the test feature\'s options, which the call switches on, and replaces ' +
-                    `any ${code(r.key('options', ['feature', 'test']))} in the second, which holds the other client ` +
-                    `options; both may be ${code(r.facts.none)}.`
+                ? (mock
+                    ? 'The first argument holds the test feature\'s options, which the call switches on, and replaces ' +
+                        `any ${code(r.key('options', ['feature', 'test']))} in the second, which holds the other client ` +
+                        `options; both may be ${code(r.facts.none)}.`
+                    : `The first argument is set, switched on, as ${code(r.key('options', ['feature', 'test']))} in the ` +
+                        `second, which holds the other client options. Both may be ${code(r.facts.none)}.`)
                 : 'It takes no arguments.') +
             altText(t.alts || [], desc)) + `\n\n${fenced(p, [fill(t.call, desc)])}\n`;
     }

@@ -56,6 +56,8 @@ function featureDocs(model, target) {
             name: k,
             value: renderValue(opts[k]),
         }));
+        const hooks = Object.keys(f.hook || {})
+            .filter((h) => null != f.hook[h] && false !== f.hook[h].active).sort();
         const extra = (f.config && f.config.optspec) || {};
         const extras = Object.keys(extra)
             .filter((k) => null == opts[k])
@@ -67,6 +69,7 @@ function featureDocs(model, target) {
             title: f.title || '',
             transport: f.transport || 'none',
             wraps: isWrapping(f),
+            hooks,
             options,
             extras,
         };
