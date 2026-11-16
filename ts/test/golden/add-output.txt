@@ -1762,7 +1762,7 @@ src/cmp/scala/ReadmeOptions_scala.ts 6c961d32294b
 src/cmp/scala/ReadmeTopHowto_scala.ts 1169e3db1008
 src/cmp/scala/ReadmeTopTest_scala.ts a9ffb6404c1b
 src/cmp/scala/Schema_scala.ts 98d756d85e8c
-src/cmp/scala/Syntax_scala.ts 604f275fd5e0
+src/cmp/scala/Syntax_scala.ts 51a88d6758e5
 src/cmp/scala/TestClean_scala.ts 8fe9eddddd97
 src/cmp/scala/TestDirect_scala.ts 07de948be724
 src/cmp/scala/TestEntity_scala.ts a075c6549a8d
@@ -1777,7 +1777,7 @@ src/cmp/scala/fragment/EntityRemoveOp.fragment.scala b2b382ba8af4
 src/cmp/scala/fragment/EntityUpdateOp.fragment.scala e7b5cdee3a50
 src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
-src/cmp/scala/utility_scala.ts 5a5d445885e6
+src/cmp/scala/utility_scala.ts 5fd110e79e79
 tm/scala/LICENSE 52acd47c245f
 tm/scala/Makefile 53420e3d4296
 tm/scala/VERSION e6635045e1d2
