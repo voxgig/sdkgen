@@ -11,6 +11,7 @@ import { TestEntity } from './TestEntity_php'
 import { TestDirect } from './TestDirect_php'
 import { TestClean } from './TestClean_php'
 import { ReadmeExamplesTest } from './ReadmeExamplesTest_php'
+import { phpSdkFile } from './utility_php'
 
 
 const Test = cmp(function Test(props: any) {
@@ -30,7 +31,7 @@ declare(strict_types=1);
 
 // ${model.const.Name} SDK exists test
 
-require_once __DIR__ . '/../${model.const.Name.toLowerCase()}_sdk.php';
+require_once __DIR__ . '/../${phpSdkFile(model)}';
 
 use PHPUnit\\Framework\\TestCase;
 

@@ -10,6 +10,8 @@ import {
   authorInfo,
 } from '@voxgig/sdkgen'
 
+import { phpSdkFile } from './utility_php'
+
 
 import type {
   Model,
@@ -66,7 +68,7 @@ const Package = cmp(async function Package(props: any) {
     "phpunit/phpunit": "^11.0"
   },
   "autoload": {
-    "files": ["${model.const.Name.toLowerCase()}_sdk.php"],
+    "files": ["${phpSdkFile(model)}"],
     "classmap": ["core/", "entity/", "feature/", "types/", "utility/", "config.php", "schema.php", "features.php"]
   },
   "autoload-dev": {

@@ -1,10 +1,14 @@
 
+import * as Path from 'node:path'
+
 import { cmp, File, Content } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
+
+import { phpSdkFile } from './utility_php'
 
 
 // A PHP single-quoted literal: no interpolation, whatever the name holds.
@@ -17,8 +21,8 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const sdkbase = model.const.Name.toLowerCase() + '_sdk'
-  const sdkfile = sdkbase + '.php'
+  const sdkfile = phpSdkFile(model)
+  const sdkbase = Path.parse(sdkfile).name
 
   // Entity accessor ($client->Name()) => fixture storage key (lowercase name),
   // derived from the model so fixtures seed under the key the mock expects.

@@ -6,6 +6,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { phpSdkFile } from './utility_php'
+
 
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { target, ctx$: { model } } = props
@@ -38,7 +40,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   Content(`### ${model.const.Name}SDK
 
 \`\`\`php
-require_once '${model.const.Name.toLowerCase()}_sdk.php';
+require_once '${phpSdkFile(model)}';
 $client = new ${model.const.Name}SDK($options);
 \`\`\`
 

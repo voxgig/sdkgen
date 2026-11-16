@@ -36,7 +36,7 @@ import {
   liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
-import { formatPhpValue } from './utility_php'
+import { formatPhpValue, phpSdkFile } from './utility_php'
 
 
 // The live prologue of a flow built from offline fixtures: blocked without
@@ -182,7 +182,7 @@ declare(strict_types=1);
 
 // ${entity.Name} entity test
 
-require_once __DIR__ . '/../${model.const.Name.toLowerCase()}_sdk.php';
+require_once __DIR__ . '/../${phpSdkFile(model)}';
 require_once __DIR__ . '/Runner.php';
 
 use PHPUnit\\Framework\\TestCase;

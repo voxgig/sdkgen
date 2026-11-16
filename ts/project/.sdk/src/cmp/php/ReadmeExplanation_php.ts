@@ -1,6 +1,8 @@
 
 import { cmp, Content } from '@voxgig/sdkgen'
 
+import { phpSdkFile } from './utility_php'
+
 
 const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const { target, ctx$: { model } } = props
@@ -18,7 +20,7 @@ Use \`Helpers::to_map()\` to safely validate that a value is an array.
 
 \`\`\`
 php/
-├── ${model.const.Name.toLowerCase()}_sdk.php          -- Main SDK class
+├── ${phpSdkFile(model)}          -- Main SDK class
 ├── config.php                     -- Configuration
 ├── schema.php                     -- Generated option + entity specs
 ├── features.php                   -- Feature factory
@@ -29,7 +31,7 @@ php/
 └── test/                          -- Test suites
 \`\`\`
 
-The main class (\`${model.const.Name.toLowerCase()}_sdk.php\`) exports the SDK class
+The main class (\`${phpSdkFile(model)}\`) exports the SDK class
 and test helper. Import entity or utility modules directly only
 when needed.
 
