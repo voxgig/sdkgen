@@ -75,6 +75,8 @@ const forms: Forms = {
   cite: {
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
     'ref.facts.streamSignal': { value: true, file: 'src/cmp/csharp/fragment/EntityBase.fragment.cs', quote: ['StructUtils.GetProp(callopts, "signal") is CancellationToken sigTok', 'signal.IsCancellationRequested'] },
+    // Any other value stands in as CancellationToken.None, which never reports a cancel.
+    'ref.facts.streamSignalForm': { value: 'a `CancellationToken`', file: 'src/cmp/csharp/fragment/EntityBase.fragment.cs', quote: ['StructUtils.GetProp(callopts, "signal") is CancellationToken sigTok', ': CancellationToken.None;'] },
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/csharp/fragment/Main.fragment.cs", quote: "[\"ok\"] = false," },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/csharp/Config_csharp.ts", quote: "return new Feature.BaseFeature();" },

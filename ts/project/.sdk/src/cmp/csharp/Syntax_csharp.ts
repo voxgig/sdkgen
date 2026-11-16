@@ -10,6 +10,7 @@ const facts: RuntimeFacts = {
   collection: 'list',
   record: 'Data()',
   arity: 1,
+  blockScope: true,
   prints: 'record',
 }
 
@@ -64,6 +65,7 @@ const refFacts: RefFacts = {
   cancel: false,
   deleted: '{var}.Deleted()',
   streamSignal: true,
+  streamSignalForm: 'a `CancellationToken`',
 }
 
 // A double-quoted C# string literal: JSON's escapes mean the same in C#, and
