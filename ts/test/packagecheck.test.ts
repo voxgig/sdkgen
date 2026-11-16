@@ -520,10 +520,18 @@ describe('package check: a target\'s syntax provider and naming hook', () => {
     ok(points(dir).includes('provider-without-hook'))
   })
 
-  test('a provider on the previous interface, or none, is a warning; an older one an error', () => {
-    ok(points(makePackage((d) => { syntax(d, '3.2'); naming(d) })).includes('provider-interface-previous'))
-    ok(points(makePackage((d) => { syntax(d); naming(d) })).includes('provider-interface-previous'))
-    ok(points(makePackage((d) => { syntax(d, '3.1'); naming(d) })).includes('provider-interface'))
+  test('the declared interface is not read from the source text: generate reads the loaded value', () => {
+    // A constant, an alias or a literal: package check says nothing of any of
+    // them, so it cannot call a provider that declares one 'none'.
+    for (const iface of ['3.2', undefined, '3.1', '3.3']) {
+      deepStrictEqual(points(makePackage((d) => { syntax(d, iface); naming(d) }))
+        .filter((p: string) => /interface/.test(p)), [], String(iface))
+    }
+    const dir = makePackage((d) => { naming(d) })
+    Fs.writeFileSync(Path.join(cmp(dir), 'Syntax_iotgo.ts'),
+      "import { SYNTAX_INTERFACE } from '@voxgig/sdkgen/dist/helpers/syntaxversion'\n" +
+      'const Syntax = { interface: SYNTAX_INTERFACE }\nexport { Syntax }\n')
+    ok(!checkPackage(dir, actx()).findings.some((f: any) => /declares interface none/.test(f.note)))
   })
 
   test('a hook alone is a warning', () => {

@@ -472,14 +472,17 @@ function readRetired(fs: any, sdkfolder: string): Record<string, string[]> | und
 }
 
 
-// An unshipped copy is unchanged when the record says so or when it is a
-// released version; otherwise the record's verdict stands.
+// An unshipped copy is unchanged when the record says so. With no record of
+// it, a released version is unchanged too, unless the model declares the copy
+// as the project's override. A record that says changed always stands: a
+// copy edited back to an earlier release's text is still the project's edit.
 function unchangedCopy(
   fs: any, folder: string, record: CopyRecord, kind: string, source: Source,
-  rel: string,
+  rel: string, declared = false,
 ): boolean | undefined {
   const same = untouched(fs, folder, record, rel)
-  return true !== same && releasedCopy(fs, folder, kind, source, rel) ? true : same
+  if (undefined !== same || declared) return same
+  return releasedCopy(fs, folder, kind, source, rel) ? true : same
 }
 
 
@@ -504,5 +507,6 @@ export {
   untouched,
   unchangedCopy,
   releasedCopy,
+  readRetired,
   isCopy,
 }

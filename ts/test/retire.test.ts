@@ -197,8 +197,8 @@ describe('a retired copy recognised without the record', () => {
     project.fs.writeFileSync(LIST, JSON.stringify({ files: { [RETIRED]: prints } }))
   }
 
-  async function unrecorded(rel = RETIRED, text = TEXT, alias?: string): Promise<any> {
-    const project = makeProject()
+  async function unrecorded(rel = RETIRED, text = TEXT, alias?: string, opts: any = {}): Promise<any> {
+    const project = makeProject(opts)
     await target_add([targetRef('ts') + (null == alias ? '' : '~' + alias)], project.actx)
     project.fs.writeFileSync(ROOT + '/' + rel, text)
     released(project)
@@ -224,11 +224,43 @@ describe('a retired copy recognised without the record', () => {
     ok(!exists(project, RETIRED))
   })
 
-  test('a record that calls it changed does not outweigh the release', async () => {
+  // A copy edited back to an earlier release's text is still the project's
+  // edit: the record that says changed stands, and the copy is kept.
+  test('a record that calls it changed outweighs the release', async () => {
     const project = await unrecorded()
     project.fs.appendFileSync(ROOT + '/' + COPY_LOG,
       JSON.stringify({ op: 'add', files: { [RETIRED]: 'feedfacefeedface' } }) + '\n')
-    deepStrictEqual(((await doctor(project.actx)).report as any).retired, [RETIRED])
+    const report: any = (await doctor(project.actx)).report
+    deepStrictEqual(report.retired, [])
+    deepStrictEqual(report.override, [RETIRED])
+    project.actx.flags = { nofetch: true }
+    await package_update(['@voxgig/sdkgen'], project.actx)
+    ok(exists(project, RETIRED), 'a merge-mode update deleted the project\'s edit')
+  })
+
+  test('an override the model declares outweighs the release', async () => {
+    const project = await unrecorded(RETIRED, TEXT, undefined, { target: { ts: { override: { ReadmeGone: true } } } })
+    const report: any = (await doctor(project.actx)).report
+    deepStrictEqual(report.retired, [])
+    await target_add([targetRef('ts')], project.actx)
+    ok(exists(project, RETIRED), 'an add deleted a declared override')
+  })
+
+  // The sections a shared component writes follow what the source retires:
+  // an optional component the list names is one, without a hand-kept list.
+  test('a changed copy of an optional component the list names fails doctor until declared', async () => {
+    const OWN = 'src/cmp/ts/ReadmeFeatures_ts.ts'
+    const project = makeProject()
+    await target_add([targetRef('ts')], project.actx)
+    project.fs.writeFileSync(ROOT + '/' + OWN, '// this project\'s own\n')
+    const before: any = (await doctor(project.actx)).report
+    deepStrictEqual(before.additive, [OWN])
+    deepStrictEqual(before.undeclared, [], 'a component the source never shipped is the project\'s own')
+    released(project, [fingerprint(TEXT)])
+    project.fs.writeFileSync(LIST, JSON.stringify({ files: { [OWN]: [fingerprint('// as released\n')] } }))
+    const after: any = (await doctor(project.actx)).report
+    deepStrictEqual(after.undeclared, [OWN])
+    strictEqual(after.ok, false)
   })
 
   test('an aliased copy is read back through the alias', async () => {
@@ -320,6 +352,18 @@ describe('a damaged copy record', () => {
 
 
 describe('the shipped retired list', () => {
+
+  // Where the release tags are at hand, the committed list is exactly what
+  // they give: a release that forgot `npm run retired` fails here.
+  test('is complete: the release tags give the committed list', (t) => {
+    const CP = require('node:child_process')
+    let tags = ''
+    try { tags = String(CP.execFileSync('git', ['tag', '-l', 'v*'], { cwd: PACKAGE_ROOT })).trim() }
+    catch (e) { tags = '' }
+    if ('' === tags) return t.skip('no release tags in this checkout')
+    const r = CP.spawnSync(process.execPath, [Path.join(PACKAGE_ROOT, 'build', 'retired.js'), '--check'], { cwd: PACKAGE_ROOT, encoding: 'utf8' })
+    strictEqual(r.status, 0, r.stdout + r.stderr)
+  })
 
   test('names only files the scaffold no longer ships, each with fingerprints', () => {
     const Fs = require('node:fs')

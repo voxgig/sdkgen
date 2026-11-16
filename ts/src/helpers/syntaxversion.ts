@@ -92,20 +92,11 @@ function checkSyntaxInterface(target: string, declared: unknown): never | string
 }
 
 
-// The declaration as a provider's source writes it. The constant is not
-// exported, so a literal is the only declaration that compiles, and this
-// reads the same value the loaded provider carries.
-function declaredInterface(src: string): string | undefined {
-  return src.match(/^\s*interface:\s*['"]([^'"]+)['"]/m)?.[1]
-}
-
-
 export {
   SYNTAX_INTERFACE,
   SYNTAX_PREVIOUS,
   servedInterface,
   serveSyntax,
-  declaredInterface,
   SYNTAX_CHANGES,
   checkSyntaxInterface,
 }

@@ -38,13 +38,13 @@ import { findFeatureSources, featureExcludes } from '../helpers/featureSource'
 import { isJunk } from '../helpers/junk'
 
 import {
-  readCopies, untouched, unchangedCopy, itemKey, ignoredLog, IGNORED_LOG, projectCopyMode,
+  readCopies, readRetired, untouched, unchangedCopy, itemKey, ignoredLog, IGNORED_LOG, projectCopyMode,
 } from './copies'
 import type { CopyRecord } from './copies'
 
 import { MERGE, OVERWRITE } from '../helpers/copymerge'
 
-import { SYNTAX_SECTIONS, undeclaredOverride } from '../helpers/optional'
+import { SYNTAX_SECTIONS, declaredOverride, undeclaredOverride } from '../helpers/optional'
 
 import {
   CMP_DIST, COMPILED_EXTS, parseComponent, sourceStem,
@@ -1012,10 +1012,11 @@ function noteDrift(
 
   return (category: Category, label: string) => {
     if ('unshipped' === category) {
-      const same = unchangedCopy(fs, actx.folder, copies, kind, source, label)
+      const same = unchangedCopy(fs, actx.folder, copies, kind, source, label,
+        declaredOverride(actx.model, label))
       if (true !== same) {
         report[false === same ? 'override' : 'additive'].push(label)
-        if (undeclaredOverride(actx.model, label)) {
+        if (undeclaredOverride(actx.model, label, readRetired(fs, source.folder))) {
           report.undeclared.push(label)
         }
         return

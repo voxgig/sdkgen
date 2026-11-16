@@ -59,13 +59,13 @@ import {
   aliasCmpName, aliasCmpText, compiledFiles, compiledStem, parseComponent,
 } from '../helpers/cmpfile'
 
-import { undeclaredOverride } from '../helpers/optional'
+import { declaredOverride, undeclaredOverride } from '../helpers/optional'
 
 import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 import type { Source } from './resolve'
 
 import {
-  recordCopies, guardCopies, readCopies, unchangedCopy, untouched, projectCopyMode,
+  recordCopies, guardCopies, readCopies, readRetired, unchangedCopy, untouched, projectCopyMode,
 } from './copies'
 import type { CopyRecord } from './copies'
 
@@ -532,7 +532,7 @@ function retiredCopies(
   for (const rel of unwanted) {
     const file = toRel + '/' + rel
     const same = unchangedCopy(fs, folder, copies.record, copies.kind,
-      copies.source, file)
+      copies.source, file, declaredOverride(ctx$.model, file))
 
     if (true === same && true !== untouched(fs, folder, copies.record, file)) {
       copies.released?.add(file)
@@ -548,7 +548,7 @@ function retiredCopies(
           'project changed it, so it is kept and still used in place of the ' +
           'shared one. To use the shared one, delete it and its compiled ' +
           'output under ' + compiledStem(file) + '.js' +
-          (undeclaredOverride(ctx$.model, file) ?
+          (undeclaredOverride(ctx$.model, file, readRetired(fs, copies.source.folder)) ?
             '. Doctor fails until the model declares it as main: kit: target: ' +
             parseComponent(file)?.target + ': override: ' +
             parseComponent(file)?.name + ': true' : '')

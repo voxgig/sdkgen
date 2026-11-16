@@ -46,13 +46,32 @@ type OptionalComponent = keyof typeof OPTIONAL_COMPONENTS
 const SYNTAX_SECTIONS: string[] = ['ReadmeQuick', 'ReadmeRef', 'ReadmeTopQuick']
 
 
-// A target's own copy of a section the shared component writes from the
-// syntax provider, which the model does not name as the project's choice
-// under `main.kit.target.<t>.override.<Name>`.
-function undeclaredOverride(model: any, file: string): boolean {
+// The sections a shared component writes in place of a target's own
+// component: the three it writes from the provider, and every optional
+// component the source's retired list names. A release that retires one
+// lists it there, so the set follows what is retired and is never extended by
+// hand (test/retire.test.ts checks the list against the release tags).
+function sharedSections(retired?: Record<string, unknown>): string[] {
+  const out = new Set(SYNTAX_SECTIONS)
+  for (const rel of Object.keys(retired || {})) {
+    const name = parseComponent(rel)?.name
+    if (null != name && Object.prototype.hasOwnProperty.call(OPTIONAL_COMPONENTS, name)) out.add(name)
+  }
+  return [...out]
+}
+
+// The model names this component as the project's choice, under
+// `main.kit.target.<t>.override.<Name>`.
+function declaredOverride(model: any, file: string): boolean {
   const own = parseComponent(file)
-  return null != own && SYNTAX_SECTIONS.includes(own.name) &&
-    true !== model?.main?.kit?.target?.[own.target]?.override?.[own.name]
+  return null != own && true === model?.main?.kit?.target?.[own.target]?.override?.[own.name]
+}
+
+// A target's own copy of a section a shared component writes, which the
+// model does not declare.
+function undeclaredOverride(model: any, file: string, retired?: Record<string, unknown>): boolean {
+  const own = parseComponent(file)
+  return null != own && sharedSections(retired).includes(own.name) && !declaredOverride(model, file)
 }
 
 
@@ -96,4 +115,6 @@ export {
   SYNTAX_SECTIONS,
   optionalComponent,
   undeclaredOverride,
+  declaredOverride,
+  sharedSections,
 }
