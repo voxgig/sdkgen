@@ -54,7 +54,7 @@ const forms: Forms = {
     self: 'the shared handle the operations return',
     runOp: 'protected: drives one operation through the pipeline (the reader does not see C++ access sections)',
     markDeleted: 'set by remove itself; the entity reports it through deleted',
-    deleted: 'whether remove succeeded on this instance',
+    deleted: 'the mark remove sets after the operation, whatever its outcome (markDeleted() follows runOp in EntityRemoveOp.fragment.cpp, also under ctrl throw: false)',
   },
   members: {
     options: 'optionsMap', utility: 'getUtility', direct: 'direct', prepare: 'prepare',
