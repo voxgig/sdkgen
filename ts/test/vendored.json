@@ -5622,6 +5622,118 @@
     }
    }
   },
+  "struct/swift": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.1.3",
+   "tag": "sdk-local-nof",
+   "file": {
+    "tm/swift/Sources/ProjectNameSDK/Struct/Condense.swift": {
+     "sha256": "f2caa884b684229f785f6f501d016d97b1c18f9f30f8e3b00b513c0676309c1f",
+     "upstream": "swift/Sources/VoxgigStruct/Condense.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift": {
+     "sha256": "baf786b758890392761c37361bcf91938d8a8c2eff2c65a50195f5924d84203e",
+     "upstream": "swift/Sources/VoxgigStruct/Constants.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift": {
+     "sha256": "8ffb88b4b16ff652b2a5991b565f731f5f171064fb9a50f4c3dd6f423a1d2390",
+     "upstream": "swift/Sources/VoxgigStruct/Inject.swift",
+     "adapt": [
+      {
+       "from": "        case .function: out += \"<function>\"\n",
+       "to": "        case .function, .native: out += \"<function>\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+      }
+     ]
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift": {
+     "sha256": "c36bdb5557331599b94b50ad63972ae20cbb08f17d16ad4cb37a93f4987b4a88",
+     "upstream": "swift/Sources/VoxgigStruct/Injection.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift": {
+     "sha256": "ffde35c3cd94119e0553317a76bb72e1f5c2e37c33f42af81abf8893ed0cd0c5",
+     "upstream": "swift/Sources/VoxgigStruct/JSON.swift",
+     "adapt": [
+      {
+       "from": "    case .function: out += \"\\\"<function>\\\"\"\n",
+       "to": "    case .function, .native: out += \"\\\"<function>\\\"\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+      }
+     ]
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Merge.swift": {
+     "sha256": "b506a30855920ccd736648625db0f245e3a23d6036fb515b2731b5c949c8ab0f",
+     "upstream": "swift/Sources/VoxgigStruct/Merge.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift": {
+     "sha256": "c7f4b07044f4b59b4c1ea03cdda6068ee0fc92a7e9d91e64a8b26aa8c9507d7f",
+     "upstream": "swift/Sources/VoxgigStruct/Minor.swift",
+     "adapt": [
+      {
+       "from": "  case .function: return T_scalar | T_function\n",
+       "to": "  case .function, .native: return T_scalar | T_function  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+      },
+      {
+       "from": "  case .function: s = \"<function>\"\n",
+       "to": "  case .function, .native: s = \"<function>\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+      },
+      {
+       "from": "  case .function: out += \"\\\"<function>\\\"\"\n",
+       "to": "  case .function, .native: out += \"\\\"<function>\\\"\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+      }
+     ]
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/OrderedDictionary.swift": {
+     "sha256": "2a70282241af11a2cbac8fa043a788d5fa398cb322c8b1704918d3c8f04dd21a",
+     "upstream": "swift/Sources/VoxgigStruct/OrderedDictionary.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Path.swift": {
+     "sha256": "0c346d07e04045dbf217b05fec96eafa1f25f3eaa6cf62e391fd4b91965de9ff",
+     "upstream": "swift/Sources/VoxgigStruct/Path.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Select.swift": {
+     "sha256": "e852b7b9f231261e0fbf012d46b490047db92d609149387bcf1564ff57e691a5",
+     "upstream": "swift/Sources/VoxgigStruct/Select.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Transform.swift": {
+     "sha256": "ad56193a74c6942c05050177b4182b02fe696842546ccac340bf2a29064d3a4f",
+     "upstream": "swift/Sources/VoxgigStruct/Transform.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Validate.swift": {
+     "sha256": "79ba8f9eafd3fb5e1abcb65fd04bcae45edf12bb046dea7ed9f80af9f37bdfec",
+     "upstream": "swift/Sources/VoxgigStruct/Validate.swift"
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Value.swift": {
+     "sha256": "0aeb564c083ccce22fdc0a8791c3c3749b9646984a6e6810270fbb11607d6c25",
+     "upstream": "swift/Sources/VoxgigStruct/Value.swift",
+     "adapt": [
+      {
+       "from": "public let DELETE = Sentinel(tag: \"DELETE\", marker: \"`$DELETE`\")\n\n// MARK: - Collection wrappers (reference-stable lists and maps)\n",
+       "to": "public let DELETE = Sentinel(tag: \"DELETE\", marker: \"`$DELETE`\")\n\n// PATCH (the SDK's opaque native case, pending upstream fix): a `.native`\n// Value carries a runtime value that is not JSON data, such as an SDK\n// closure. It compares by reference and clones by sharing the reference.\npublic final class NativeRef: @unchecked Sendable {\n  public let value: Any\n  public init(_ value: Any) { self.value = value }\n}\n\n// MARK: - Collection wrappers (reference-stable lists and maps)\n"
+      },
+      {
+       "from": "  case sentinel(Sentinel)\n\n  // MARK: Convenience constructors\n\n",
+       "to": "  case sentinel(Sentinel)\n  case native(NativeRef)  // PATCH (the SDK's opaque native case, pending upstream fix)\n\n  // MARK: Convenience constructors\n\n  public static func nat(_ v: Any) -> Value { .native(NativeRef(v)) }\n"
+      },
+      {
+       "from": "  public var isFunction: Bool { if case .function = self { return true } else { return false } }\n",
+       "to": "  public var isFunction: Bool {  // PATCH (the SDK's opaque native case, pending upstream fix)\n    if case .function = self { return true }\n    if case .native = self { return true }\n    return false\n  }\n  public var isNative: Bool { if case .native = self { return true } else { return false } }\n"
+      },
+      {
+       "from": "  public var asSentinel: Sentinel? {\n    if case .sentinel(let s) = self { return s } else { return nil }\n  }\n\n",
+       "to": "  public var asSentinel: Sentinel? {\n    if case .sentinel(let s) = self { return s } else { return nil }\n  }\n  public var asNative: Any? {  // PATCH (the SDK's opaque native case, pending upstream fix)\n    if case .native(let n) = self { return n.value } else { return nil }\n  }\n\n"
+      },
+      {
+       "from": "    case (.sentinel(let a), .sentinel(let b)): return a === b\n    case (.function, .function): return false\n",
+       "to": "    case (.sentinel(let a), .sentinel(let b)): return a === b\n    case (.native(let a), .native(let b)): return a === b  // PATCH (the SDK's opaque native case, pending upstream fix)\n    case (.function, .function): return false\n"
+      }
+     ]
+    },
+    "tm/swift/Sources/ProjectNameSDK/Struct/Walk.swift": {
+     "sha256": "f810611f05e1108f8a8a80050dd0335339e46a8c21c02bcf9b6b77c9d65d2c06",
+     "upstream": "swift/Sources/VoxgigStruct/Walk.swift"
+    }
+   }
+  },
   "struct/typescript": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",

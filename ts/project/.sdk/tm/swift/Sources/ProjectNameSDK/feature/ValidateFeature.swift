@@ -213,7 +213,7 @@ public final class ValidateFeature: BaseFeature {
                      _ direction: String) -> [String] {
     let inj = Injection(val: .noval, parent: .noval)
     inj.errs = VList()
-    _ = validate(data, spec, inj)
+    _ = try? validate(data, spec, inj)
 
     let errs = inj.errs.items.map { $0.asString ?? stringify($0) }
 

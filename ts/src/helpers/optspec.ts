@@ -19,9 +19,7 @@ const S_NIL = sentinel('NIL')
 
 // Bundled targets whose struct copy no vendoring route produces, and which
 // therefore still reads a union as `$ONE`.
-const ONE_UNION_TARGETS = [
-  'swift',
-]
+const ONE_UNION_TARGETS: string[] = []
 
 
 function optional(spec: any): any[] {

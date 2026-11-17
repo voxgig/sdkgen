@@ -2280,6 +2280,83 @@
   },
   {
    "lib": "struct",
+   "port": "swift",
+   "lang": "swift",
+   "version": "0.1.3",
+   "dir": [
+    "tm/swift/Sources/ProjectNameSDK/Struct"
+   ],
+   "file": {
+    "swift/Sources/VoxgigStruct/Condense.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Condense.swift",
+    "swift/Sources/VoxgigStruct/Constants.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift",
+    "swift/Sources/VoxgigStruct/Inject.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift",
+    "swift/Sources/VoxgigStruct/Injection.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift",
+    "swift/Sources/VoxgigStruct/JSON.swift": "tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift",
+    "swift/Sources/VoxgigStruct/Merge.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Merge.swift",
+    "swift/Sources/VoxgigStruct/Minor.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift",
+    "swift/Sources/VoxgigStruct/OrderedDictionary.swift": "tm/swift/Sources/ProjectNameSDK/Struct/OrderedDictionary.swift",
+    "swift/Sources/VoxgigStruct/Path.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Path.swift",
+    "swift/Sources/VoxgigStruct/Select.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Select.swift",
+    "swift/Sources/VoxgigStruct/Transform.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Transform.swift",
+    "swift/Sources/VoxgigStruct/Validate.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Validate.swift",
+    "swift/Sources/VoxgigStruct/Value.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Value.swift",
+    "swift/Sources/VoxgigStruct/Walk.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Walk.swift"
+   },
+   "adapt": [
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "public let DELETE = Sentinel(tag: \"DELETE\", marker: \"`$DELETE`\")\n\n// MARK: - Collection wrappers (reference-stable lists and maps)\n",
+     "to": "public let DELETE = Sentinel(tag: \"DELETE\", marker: \"`$DELETE`\")\n\n// PATCH (the SDK's opaque native case, pending upstream fix): a `.native`\n// Value carries a runtime value that is not JSON data, such as an SDK\n// closure. It compares by reference and clones by sharing the reference.\npublic final class NativeRef: @unchecked Sendable {\n  public let value: Any\n  public init(_ value: Any) { self.value = value }\n}\n\n// MARK: - Collection wrappers (reference-stable lists and maps)\n"
+    },
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "  case sentinel(Sentinel)\n\n  // MARK: Convenience constructors\n\n",
+     "to": "  case sentinel(Sentinel)\n  case native(NativeRef)  // PATCH (the SDK's opaque native case, pending upstream fix)\n\n  // MARK: Convenience constructors\n\n  public static func nat(_ v: Any) -> Value { .native(NativeRef(v)) }\n"
+    },
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "  public var isFunction: Bool { if case .function = self { return true } else { return false } }\n",
+     "to": "  public var isFunction: Bool {  // PATCH (the SDK's opaque native case, pending upstream fix)\n    if case .function = self { return true }\n    if case .native = self { return true }\n    return false\n  }\n  public var isNative: Bool { if case .native = self { return true } else { return false } }\n"
+    },
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "  public var asSentinel: Sentinel? {\n    if case .sentinel(let s) = self { return s } else { return nil }\n  }\n\n",
+     "to": "  public var asSentinel: Sentinel? {\n    if case .sentinel(let s) = self { return s } else { return nil }\n  }\n  public var asNative: Any? {  // PATCH (the SDK's opaque native case, pending upstream fix)\n    if case .native(let n) = self { return n.value } else { return nil }\n  }\n\n"
+    },
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "    case (.sentinel(let a), .sentinel(let b)): return a === b\n    case (.function, .function): return false\n",
+     "to": "    case (.sentinel(let a), .sentinel(let b)): return a === b\n    case (.native(let a), .native(let b)): return a === b  // PATCH (the SDK's opaque native case, pending upstream fix)\n    case (.function, .function): return false\n"
+    },
+    {
+     "match": "Struct/Minor\\.swift$",
+     "from": "  case .function: return T_scalar | T_function\n",
+     "to": "  case .function, .native: return T_scalar | T_function  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    },
+    {
+     "match": "Struct/Minor\\.swift$",
+     "from": "  case .function: s = \"<function>\"\n",
+     "to": "  case .function, .native: s = \"<function>\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    },
+    {
+     "match": "Struct/Minor\\.swift$",
+     "from": "  case .function: out += \"\\\"<function>\\\"\"\n",
+     "to": "  case .function, .native: out += \"\\\"<function>\\\"\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    },
+    {
+     "match": "Struct/JSON\\.swift$",
+     "from": "    case .function: out += \"\\\"<function>\\\"\"\n",
+     "to": "    case .function, .native: out += \"\\\"<function>\\\"\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    },
+    {
+     "match": "Struct/Inject\\.swift$",
+     "from": "        case .function: out += \"<function>\"\n",
+     "to": "        case .function, .native: out += \"<function>\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    }
+   ]
+  },
+  {
+   "lib": "struct",
    "port": "python",
    "lang": "py",
    "version": "0.1.1",

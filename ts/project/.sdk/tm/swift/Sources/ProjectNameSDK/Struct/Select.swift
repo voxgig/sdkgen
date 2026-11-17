@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Select.swift)
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Select — MongoDB-style query/filter over a list or map of children.
 // Each operator (`$AND` / `$OR` / `$NOT` / `$CMP` family) runs as an
 // injector in M_KEYPRE mode and modifies the grandparent slot to
@@ -22,7 +25,7 @@ public func select_AND(_ inj: Injection, _ val: Value, _ ref: String, _ store: V
       subInj.extra = vstore
       subInj.errs = terrs
       subInj.meta = inj.meta
-      _ = validate(point, term, subInj)
+      _ = validateCollect(point, term, subInj, terrs)
       if !terrs.items.isEmpty {
         inj.errs.items.append(
           .string("AND:" + pathify(ppath) + S_VIZ + stringify(point) + " fail:" + stringify(terms)))
@@ -31,7 +34,7 @@ public func select_AND(_ inj: Injection, _ val: Value, _ ref: String, _ store: V
   }
   let gkey = getelem(.list(VList(inj.path.map { Value.string($0) })), .int(-2))
   let gp = inj.nodes.count >= 2 ? inj.nodes[inj.nodes.count - 2] : .noval
-  setprop(gp, gkey, point)
+  _setprop(gp, gkey, point)
   return .noval
 }
 
@@ -52,11 +55,11 @@ public func select_OR(_ inj: Injection, _ val: Value, _ ref: String, _ store: Va
       subInj.extra = vstore
       subInj.errs = terrs
       subInj.meta = inj.meta
-      _ = validate(point, term, subInj)
+      _ = validateCollect(point, term, subInj, terrs)
       if terrs.items.isEmpty {
         let gkey = getelem(.list(VList(inj.path.map { Value.string($0) })), .int(-2))
         let gp = inj.nodes.count >= 2 ? inj.nodes[inj.nodes.count - 2] : .noval
-        setprop(gp, gkey, point)
+        _setprop(gp, gkey, point)
         return .noval
       }
     }
@@ -81,20 +84,24 @@ public func select_NOT(_ inj: Injection, _ val: Value, _ ref: String, _ store: V
   subInj.extra = vstore
   subInj.errs = terrs
   subInj.meta = inj.meta
-  _ = validate(point, term, subInj)
+  _ = validateCollect(point, term, subInj, terrs)
   if terrs.items.isEmpty {
     inj.errs.items.append(
       .string("NOT:" + pathify(ppath) + S_VIZ + stringify(point) + " fail:" + stringify(term)))
   }
   let gkey = getelem(.list(VList(inj.path.map { Value.string($0) })), .int(-2))
   let gp = inj.nodes.count >= 2 ? inj.nodes[inj.nodes.count - 2] : .noval
-  setprop(gp, gkey, point)
+  _setprop(gp, gkey, point)
   return .noval
 }
 
 // MARK: - $CMP family
 
 public func select_CMP(_ inj: Injection, _ val: Value, _ ref: String, _ store: Value) -> Value {
+  // The list form of $LIKE is validate's checker; the key form is this operator.
+  if inj.mode == M_VAL && "$LIKE" == ref {
+    return validate_LIKE(inj, val, ref, store)
+  }
   guard inj.mode == M_KEYPRE else { return .noval }
   let term = lookup(inj.parent, .string(inj.key))
   let gkey = getelem(.list(VList(inj.path.map { Value.string($0) })), .int(-2))
@@ -143,7 +150,7 @@ public func select_CMP(_ inj: Injection, _ val: Value, _ ref: String, _ store: V
   }
   if pass {
     let gp = inj.nodes.count >= 2 ? inj.nodes[inj.nodes.count - 2] : .noval
-    setprop(gp, gkey, point)
+    _setprop(gp, gkey, point)
   } else {
     inj.errs.items.append(
       .string(
@@ -161,12 +168,12 @@ public func select(_ children: Value, _ query: Value) -> Value {
   switch children {
   case .map(let m):
     for (k, v) in m.entries {
-      setprop(v, .string(S_DKEY), .string(k))
+      _setprop(v, .string(S_DKEY), .string(k))
       childList.append(v)
     }
   case .list(let l):
     for (i, v) in l.items.enumerated() {
-      setprop(v, .string(S_DKEY), .int(Int64(i)))
+      _setprop(v, .string(S_DKEY), .int(Int64(i)))
       childList.append(v)
     }
   default: break
@@ -183,27 +190,37 @@ public func select(_ children: Value, _ query: Value) -> Value {
   extra.entries["$GTE"] = .function(select_CMP)
   extra.entries["$LTE"] = .function(select_CMP)
   extra.entries["$LIKE"] = .function(select_CMP)
-  // Walk the query and add $OPEN flag to every map (allows extra keys).
   let q = clone(query)
-  _ = walk(
-    q,
-    { _, v, _, _ in
-      if case .map(let m) = v {
-        let existing = m.entries[S_BOPEN] ?? .bool(true)
-        m.entries[S_BOPEN] = existing
-      }
-      return v
-    })
+  _openquery(q)
   for child in childList {
     let errs = VList()
     let inj = Injection(val: .noval, parent: .noval)
     inj.meta = meta
     inj.extra = .map(extra)
     inj.errs = errs
-    _ = validate(child, clone(q), inj)
+    _ = validateCollect(child, clone(q), inj, errs)
     if errs.items.isEmpty { results.append(child) }
   }
   return .list(results)
+}
+
+// Open every map in a select query, so a child may hold keys the query does
+// not name, but leave a directive's literals as written: what $EXACT
+// compares, and the count or bound of $NOF, $LEN and $RANGE.
+private func _openquery(_ q: Value) {
+  if ismap(q) {
+    _setprop(q, .string(S_BOPEN), getprop(q, .string(S_BOPEN), .bool(true)))
+    for key in keysof(q) {
+      _openquery(lookup(q, .string(key)))
+    }
+  } else if case .list(let l) = q {
+    let head = l.items.first?.asString ?? ""
+    let exact = S_BEXACT == head
+    let bounded = ["`$NOF`", "`$LEN`", "`$RANGE`"].contains(head)
+    for (i, item) in l.items.enumerated() where 0 == i || !(exact || (bounded && 1 == i)) {
+      _openquery(item)
+    }
+  }
 }
 
 // MARK: - re_* helper wrappers (uniform API across ports)

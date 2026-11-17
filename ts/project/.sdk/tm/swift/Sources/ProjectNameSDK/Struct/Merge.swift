@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Merge.swift)
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // merge — deep-merge a list of values. Later values win; nodes deep-
 // merge; scalars overwrite. The first element is modified in place
 // (matches canonical).

@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Injection.swift)
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Injection state — passed through every recursive `inject` call as a
 // reference type so command handlers (`transform_*`, `validate_*`,
 // `select_*`) can mutate `keyI`, `keys`, `path`, `dparent`, `dpath`,
@@ -20,7 +23,30 @@ public final class Injection: @unchecked Sendable {
   public var path: [String] = [S_DTOP]
   public var nodes: [Value] = []
   public var handler: Injector = _injecthandler
-  public var errs: VList = VList()
+  // Canonical gates throwing on `collect = null != injdef?.errs` - "the caller
+  // supplied a sink, so hand the errors back instead of throwing". A plain
+  // non-optional `VList` cannot carry that distinction, and reading it off
+  // `errs.items.isEmpty` is wrong too: `validate/special#18` passes an injdef
+  // carrying only `meta` and still expects a throw. So keep the sink optional
+  // behind a non-optional accessor - ASSIGNING `errs` supplies a sink, while
+  // merely reading it (which the collecting internals do constantly) does not.
+  private var _errs: VList? = nil
+  private var _errssupplied: Bool = false
+  public var errs: VList {
+    get {
+      if let e = _errs { return e }
+      let e = VList()
+      _errs = e
+      return e
+    }
+    set {
+      _errs = newValue
+      _errssupplied = true
+    }
+  }
+  /// Canonical's `null != injdef?.errs`: did the caller hand over a sink to
+  /// collect into, rather than expecting a throw?
+  public var errssupplied: Bool { _errssupplied }
   public var meta: VMap = VMap()
   public var dparent: Value = .noval
   public var dpath: [String] = [S_DTOP]
@@ -89,16 +115,17 @@ public final class Injection: @unchecked Sendable {
   // higher ancestor when |ancestor| >= 2). NONE deletes the slot.
   @discardableResult
   public func setval(_ v: Value, ancestor: Int = 0) -> Value {
-    // Canonical is `if (null == ancestor || ancestor < 2)`, so a NEGATIVE
-    // ancestor takes the parent branch. Taking abs() first sent
-    // validate_ONE's `setval(vcurrent, -2)` up two nodes instead, writing
-    // the match back over the wrong slot ($TOP leaked into the result).
-    let absAnc = ancestor
-    if absAnc < 2 {
+    // Canonical branches on the RAW ancestor (`null == ancestor || ancestor <
+    // 2`), not its magnitude: a NEGATIVE ancestor writes through `parent` /
+    // `key` like the default. This port took `abs()` first, so `setval(v, -2)`
+    // walked two nodes up instead, which no entry could notice while every
+    // `err:` entry was skipped.
+    let absAnc = abs(ancestor)
+    if ancestor < 2 {
       if v.isNoval {
-        parent = delprop(parent, .string(key))
+        parent = _delprop(parent, .string(key))
       } else {
-        parent = setprop(parent, .string(key), v)
+        parent = _setprop(parent, .string(key), v)
       }
       return parent
     }
@@ -108,8 +135,8 @@ public final class Injection: @unchecked Sendable {
     let target = nodes[nlen - absAnc]
     let tkey = path[plen - absAnc]
     if v.isNoval {
-      return delprop(target, .string(tkey))
+      return _delprop(target, .string(tkey))
     }
-    return setprop(target, .string(tkey), v)
+    return _setprop(target, .string(tkey), v)
   }
 }

@@ -18,9 +18,7 @@ const S_OPEN = (0, canonSpec_1.sentinel)('OPEN');
 const S_NIL = (0, canonSpec_1.sentinel)('NIL');
 // Bundled targets whose struct copy no vendoring route produces, and which
 // therefore still reads a union as `$ONE`.
-const ONE_UNION_TARGETS = [
-    'swift',
-];
+const ONE_UNION_TARGETS = [];
 exports.ONE_UNION_TARGETS = ONE_UNION_TARGETS;
 function optional(spec) {
     return (0, canonSpec_1.anyOf)([spec, S_NIL]);

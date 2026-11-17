@@ -380,32 +380,12 @@ describe('optionSpec: the union each target reads', () => {
     return JSON.stringify(node).includes(JSON.stringify(name))
   }
 
-  test('a target whose struct predates `$NOF` is handed `$ONE`', () => {
-    const spec = optionSpec(modelWith(feature), 'swift')
-    ok(has(spec, ONE) && !has(spec, NOF))
-    deepStrictEqual(spec, oneUnionSpec(optionSpec(modelWith(feature))))
-  })
-
   test('every other target is handed `$NOF`', () => {
     const spec = optionSpec(modelWith(feature), 'ts')
     ok(has(spec, NOF) && !has(spec, ONE))
   })
 
-  test('an alias reads as the target it was installed from', () => {
-    const model: any = modelWith(feature)
-    model.main.kit.target = {
-      swift2: { origname: 'swift', base: 'node_modules/@voxgig/sdkgen/project/.sdk' },
-    }
-    ok(has(optionSpec(model, 'swift2'), ONE))
-  })
-
-  test('a target of that name from another package keeps `$NOF`', () => {
-    const model: any = modelWith(feature)
-    model.main.kit.target = { swift: { base: 'node_modules/@acme/sdkgen-pack/.sdk' } }
-    ok(has(optionSpec(model, 'swift'), NOF))
-  })
-
-  test('entity specs are lowered the same way', () => {
+  test('entity specs are handed `$NOF` too', () => {
     const model = {
       main: {
         kit: {
@@ -420,7 +400,7 @@ describe('optionSpec: the union each target reads', () => {
         },
       },
     }
-    ok(has(entitySpecMap(model, 'swift'), ONE) && !has(entitySpecMap(model, 'swift'), NOF))
+    ok(has(entitySpecMap(model, 'swift'), NOF) && !has(entitySpecMap(model, 'swift'), ONE))
     ok(has(entitySpecMap(model, 'py'), NOF))
   })
 
@@ -432,7 +412,7 @@ describe('optionSpec: the union each target reads', () => {
       },
     })
     throws(() => optionSpec(model, 'go'), /go: the struct spec names .* at feature\.old\.2\.mode/)
-    ok(has(optionSpec(model, 'swift'), ONE), 'a struct that reads `$ONE` can take it')
+    throws(() => optionSpec(model, 'swift'), /swift: the struct spec names/)
   })
 
   function treeHas(dir: string, needle: string): boolean {

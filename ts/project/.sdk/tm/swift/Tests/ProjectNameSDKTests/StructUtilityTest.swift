@@ -228,13 +228,13 @@ final class StructUtilityTest: XCTestCase {
     // minor.setpath asserts exactly that through `match: {args: ...}`, so
     // the argument crosses by identity - no clone.
     runStruct("minor", "setprop", true) {
-      setprop(gp($0, "parent"), gp($0, "key"), lookup($0, .string("val")))
+      try setprop(gp($0, "parent"), gp($0, "key"), lookup($0, .string("val")))
     }
     runStruct("minor", "delprop", true) {
-      delprop(gp($0, "parent"), gp($0, "key"))
+      try delprop(gp($0, "parent"), gp($0, "key"))
     }
     runStruct("minor", "setpath", false) {
-      setpath(gp($0, "store"), gp($0, "path"), lookup($0, .string("val")))
+      try setpath(gp($0, "store"), gp($0, "path"), lookup($0, .string("val")))
     }
   }
 
@@ -313,20 +313,20 @@ final class StructUtilityTest: XCTestCase {
     for name in ["paths", "cmds", "each", "pack", "ref"] {
       runStruct("transform", name, true) {
         let (inj, errs) = self.errCollector()
-        let out = transform(gp($0, "data"), gp($0, "spec"), inj)
+        let out = try transform(gp($0, "data"), gp($0, "spec"), inj)
         try self.raiseErrs(errs)
         return out
       }
     }
     runStruct("transform", "format", false) {
       let (inj, errs) = self.errCollector()
-      let out = transform(gp($0, "data"), gp($0, "spec"), inj)
+      let out = try transform(gp($0, "data"), gp($0, "spec"), inj)
       try self.raiseErrs(errs)
       return out
     }
     runStruct("transform", "apply", true) {
       let (inj, errs) = self.errCollector()
-      let out = transform(gp($0, "data"), gp($0, "spec"), inj)
+      let out = try transform(gp($0, "data"), gp($0, "spec"), inj)
       try self.raiseErrs(errs)
       return out
     }
@@ -334,10 +334,10 @@ final class StructUtilityTest: XCTestCase {
       let inj = Injection(val: .noval, parent: .noval)
       inj.modify = { val, key, parent, _, _ in
         if case .string(let s) = val, !s.isEmpty {
-          setprop(parent, key, .string("@" + s))
+          _ = try? setprop(parent, key, .string("@" + s))
         }
       }
-      return transform(gp($0, "data"), gp($0, "spec"), inj)
+      return try transform(gp($0, "data"), gp($0, "spec"), inj)
     }
   }
 
@@ -353,7 +353,7 @@ final class StructUtilityTest: XCTestCase {
         if case .map(let im) = gp($0, "inj"), let meta = im.entries["meta"]?.asMap {
           inj.meta = meta
         }
-        let out = validate(self.raw($0, "data"), self.raw($0, "spec"), inj)
+        let out = try validate(self.raw($0, "data"), self.raw($0, "spec"), inj)
         try self.raiseErrs(errs)
         return out
       }

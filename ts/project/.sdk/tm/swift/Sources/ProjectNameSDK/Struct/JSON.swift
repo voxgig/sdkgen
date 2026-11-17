@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/JSON.swift)
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Insertion-order-preserving JSON parser and serialiser.
 //
 // `JSONSerialization` (Foundation) returns plain `[String: Any]` whose
@@ -297,7 +300,7 @@ public enum JSON {
         }
         out += "}"
       }
-    case .function, .native: out += "\"<function>\""
+    case .function, .native: out += "\"<function>\""  // PATCH (the SDK's opaque native case, pending upstream fix)
     case .sentinel(let s): out += quoted(s.marker)
     }
   }

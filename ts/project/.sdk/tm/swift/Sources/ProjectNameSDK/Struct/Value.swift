@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Value.swift)
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 // Voxgig Struct — Swift port of the canonical TypeScript implementation.
 // See ../REPORT.md for cross-language parity.
@@ -24,17 +27,9 @@ public final class Sentinel: @unchecked Sendable {
 public let SKIP = Sentinel(tag: "SKIP", marker: "`$SKIP`")
 public let DELETE = Sentinel(tag: "DELETE", marker: "`$DELETE`")
 
-// MARK: - Native (SDK opaque) box
-//
-// A `.native` Value carries a language-runtime value the loose object model
-// must transport but which is NOT JSON data: an SDK closure (the transport
-// `json` thunk, `system.fetch`, injectable now/sleep/keygen/idgen, feature
-// callbacks) or, occasionally, a typed object. It is the Swift twin of the
-// rust port's `Value::Func`. The struct corpus never produces `.native`, so
-// treating it like a scalar/function leaf in the core functions leaves corpus
-// behaviour unchanged. Compared by reference identity; cloned by sharing the
-// reference (a function is shallow-copied, never deep-cloned).
-
+// PATCH (the SDK's opaque native case, pending upstream fix): a `.native`
+// Value carries a runtime value that is not JSON data, such as an SDK
+// closure. It compares by reference and clones by sharing the reference.
 public final class NativeRef: @unchecked Sendable {
   public let value: Any
   public init(_ value: Any) { self.value = value }
@@ -55,6 +50,17 @@ public final class VMap: @unchecked Sendable {
     for (k, v) in pairs { d[k] = v }
     self.entries = d
   }
+}
+
+// MARK: - Errors
+
+/// The exception thrown on an unrecoverable structure error - today, the
+/// errors `transform` and `validate` collect when the caller did not ask for
+/// them to be collected. Canonical throws `new Error(join(errs, ' | '))`.
+public struct StructError: Error, CustomStringConvertible {
+  public let message: String
+  public init(_ message: String) { self.message = message }
+  public var description: String { return message }
 }
 
 // MARK: - Injector / Modify function types
@@ -80,7 +86,7 @@ public indirect enum Value: @unchecked Sendable {
   case map(VMap)
   case function(Injector)
   case sentinel(Sentinel)
-  case native(NativeRef)
+  case native(NativeRef)  // PATCH (the SDK's opaque native case, pending upstream fix)
 
   // MARK: Convenience constructors
 
@@ -102,13 +108,13 @@ public indirect enum Value: @unchecked Sendable {
   public var isString: Bool { if case .string = self { return true } else { return false } }
   public var isList: Bool { if case .list = self { return true } else { return false } }
   public var isMap: Bool { if case .map = self { return true } else { return false } }
-  public var isFunction: Bool {
+  public var isFunction: Bool {  // PATCH (the SDK's opaque native case, pending upstream fix)
     if case .function = self { return true }
     if case .native = self { return true }
     return false
   }
-  public var isSentinel: Bool { if case .sentinel = self { return true } else { return false } }
   public var isNative: Bool { if case .native = self { return true } else { return false } }
+  public var isSentinel: Bool { if case .sentinel = self { return true } else { return false } }
   public var isNode: Bool { isList || isMap }
 
   // MARK: Unwrap helpers
@@ -131,7 +137,7 @@ public indirect enum Value: @unchecked Sendable {
   public var asSentinel: Sentinel? {
     if case .sentinel(let s) = self { return s } else { return nil }
   }
-  public var asNative: Any? {
+  public var asNative: Any? {  // PATCH (the SDK's opaque native case, pending upstream fix)
     if case .native(let n) = self { return n.value } else { return nil }
   }
 
@@ -176,7 +182,7 @@ extension Value: Equatable {
       }
       return true
     case (.sentinel(let a), .sentinel(let b)): return a === b
-    case (.native(let a), .native(let b)): return a === b
+    case (.native(let a), .native(let b)): return a === b  // PATCH (the SDK's opaque native case, pending upstream fix)
     case (.function, .function): return false
     default: return false
     }

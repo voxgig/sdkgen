@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Path.swift)
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // getpath / setpath — descend / set along a dotted path. getpath
 // supports the canonical injection extensions: `$KEY` substitution,
 // `$REF:` / `$GET:` / `$META:` meta-path syntax, consecutive-dot
@@ -7,8 +10,10 @@ import Foundation
 
 // MARK: - setpath
 
+/// Throws a `StructError` when `store`, or a node on the path, is condensed.
 @discardableResult
-public func setpath(_ store: Value, _ pathIn: Value, _ val: Value) -> Value {
+public func setpath(_ store: Value, _ pathIn: Value, _ val: Value) throws -> Value {
+  if iscondensed(store) { throw StructError(S_condimmutable) }
   // Keep each segment's original Value so the int-vs-string distinction
   // (which decides list-vs-map for an intermediate node) is preserved.
   var parts: [Value] = []
@@ -32,12 +37,12 @@ public func setpath(_ store: Value, _ pathIn: Value, _ val: Value) -> Value {
     var child = lookup(node, k)
     if !isnode(child) {
       child = nxtIsInt ? .list(VList()) : .map(VMap())
-      setprop(node, k, child)
+      try setprop(node, k, child)
     }
     node = child
   }
   // Canonical setpath returns the leaf key's PARENT node, not the whole store.
-  setprop(node, parts.last!, val)
+  try setprop(node, parts.last!, val)
   return node
 }
 
@@ -46,17 +51,38 @@ public func setpath(_ store: Value, _ pathIn: Value, _ val: Value) -> Value {
 public func getpath(_ store: Value, _ pathIn: Value, _ inj: Injection? = nil) -> Value {
   var parts: [String] = []
   switch pathIn {
-  case .list(let l): parts = l.items.map { strkey($0) }
+  case .list(let l):
+    // A number part reads as JavaScript prints it, and a part that is neither
+    // a string nor a number misses the whole path.
+    for part in l.items {
+      switch part {
+      case .string(let s): parts.append(s)
+      case .int, .double: parts.append(numtext(part))
+      default: return .noval
+      }
+    }
   case .string(let s):
     if s.isEmpty {
       parts = [""]
     } else {
       parts = s.split(separator: ".", omittingEmptySubsequences: false).map(String.init)
     }
-  case .int(let n): parts = [String(n)]
-  case .double(let d): parts = [JSON.formatDouble(d)]
+  case .int, .double: parts = [numtext(pathIn)]
   default:
     return .noval
+  }
+
+  // A condensed store reads like its source node. Injection options change
+  // what the walk below resolves against, so only a plain call reads fast.
+  var store = store
+  if iscondensed(store) {
+    if nil == inj?.base {
+      let partlist = Value.list(parts.map { Value.string($0) })
+      let val = condenseMaterialise(store, condenseResolve(store, condenseRoot(store), partlist))
+      // Group A: a stored null reads as absent.
+      return val.isNull ? .noval : val
+    }
+    store = expand(store)
   }
 
   let base = inj?.base
@@ -107,8 +133,11 @@ public func getpath(_ store: Value, _ pathIn: Value, _ inj: Injection? = nil) ->
             part = stringify(getpath(.map(inj.meta), .string(sub), inj))
           }
         }
-        // $$ → $ escape.
-        part = part.replacingOccurrences(of: "$$", with: "$")
+        // $$ → $ escape (skip Foundation's replacingOccurrences for the common
+        // no-`$$` segment).
+        if part.contains("$$") {
+          part = part.replacingOccurrences(of: "$$", with: "$")
+        }
         if part == S_MT {
           var ascends = 0
           while pI + 1 < numparts && parts[pI + 1] == S_MT {

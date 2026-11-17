@@ -59,6 +59,7 @@ const VENDOR_DIRS = [
   'tm/elixir/lib/utility/struct',
   'tm/ocaml/utility',
   'tm/scala/utility/struct',
+  'tm/swift/Sources/ProjectNameSDK/Struct',
   'tm/perl/t/vendor/omni/Voxgig/Omni',
   'tm/kotlin/test/vendor/omni',
   'tm/kotlin/utility/struct',
@@ -382,6 +383,10 @@ describe('vendored', () => {
     const patched: Record<string, number> = {
       'tm/c/utility/struct/utility.c': 1,
       'tm/cpp/utility/voxgigstruct/voxgig_struct.hpp': 1,
+      'tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift': 1,
+      'tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift': 1,
+      'tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift': 3,
+      'tm/swift/Sources/ProjectNameSDK/Struct/Value.swift': 5,
     }
 
     for (const [rel, count] of Object.entries(patched)) {

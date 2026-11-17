@@ -507,9 +507,9 @@ enum OmniResolver {
   static let nullModifier: Modify = { val, key, parent, _, _ in
     guard case .string(let text) = val else { return }
     if NULLMARK == text {
-      setprop(parent, key, .null)
+      _ = try? setprop(parent, key, .null)
     } else if text.contains(NULLMARK) {
-      setprop(parent, key, .string(text.replacingOccurrences(of: NULLMARK, with: "null")))
+      _ = try? setprop(parent, key, .string(text.replacingOccurrences(of: NULLMARK, with: "null")))
     }
   }
 }
