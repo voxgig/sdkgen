@@ -116,7 +116,7 @@ const Main = cmp(function Main(props: any) {
   ex.push(`./${bin} --help`)
   ex.push('')
   ex.push('# 3. Provide credentials once, via the environment')
-  ex.push(`export ${apiKeyEnv}=sk_live_xxx`)
+  ex.push(`export ${apiKeyEnv}=apikey_xxx`)
   ex.push('')
   ex.push('# 4. Each command line is ONE boru expression, run against the API:')
   if (firstHas('list')) ex.push(`./${bin} list ${firstEntity}`)
@@ -172,7 +172,7 @@ record is printed back.`)
 Configuration is read from the environment — nothing is written to disk:
 
 \`\`\`sh
-export ${apiKeyEnv}=sk_live_xxx            # API key
+export ${apiKeyEnv}=apikey_xxx             # API key
 export ${baseEnv}=https://api.example.com  # optional: override the API base URL
 ./${bin} ${cliExampleExpr}
 \`\`\`
@@ -233,7 +233,7 @@ ${exampleBlock}
 2. **Set your API key** (read from the environment):
 
    \`\`\`sh
-   export ${apiKeyEnv}=sk_live_xxx
+   export ${apiKeyEnv}=apikey_xxx
    \`\`\`
 
 3. **Run a query.** Evaluate an boru expression against the API (or run with no

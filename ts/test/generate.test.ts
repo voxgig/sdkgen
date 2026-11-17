@@ -5976,6 +5976,21 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   })
 
 
+  // A key shown in the README is an example in no vendor's format, so it
+  // cannot be read as a real key or as another vendor's.
+  test('go-cli, go-mcp: every example API key starts apikey_', async () => {
+    const out = await generate(['go', 'go-cli', 'go-mcp'])
+    for (const target of ['go-cli', 'go-mcp']) {
+      const readme = findFile(out, target + '/README.md')
+      ok(null != readme, target + ': no README generated')
+      const keys = [...readme!.matchAll(/_APIKEY=(\S+)/g)].map((m) => m[1])
+      ok(0 < keys.length, target + ': the README shows no example key')
+      deepStrictEqual(keys.filter((key) => !key.startsWith('apikey_')), [],
+        target + ': an example key does not start apikey_')
+    }
+  })
+
+
   // ROUTING_MODEL's `signal` loads but lists only through actions, `ambient`
   // only loads, and `planet` alone creates, updates and removes.
   const mcpRegistered = (tools: string) =>

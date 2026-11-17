@@ -278,7 +278,7 @@ ${writeText}
 make build
 
 # 2. Provide credentials via the environment
-export ${apiKeyEnv}=sk_live_xxx
+export ${apiKeyEnv}=apikey_xxx
 
 # 3a. Install into Claude Code over stdio (most common)
 claude mcp add --scope user ${slugLower} \\
@@ -303,7 +303,7 @@ ${callText}> The rest of this guide follows the [Diátaxis](https://diataxis.fr)
 2. **Set your API key:**
 
    \`\`\`sh
-   export ${apiKeyEnv}=sk_live_xxx
+   export ${apiKeyEnv}=apikey_xxx
    \`\`\`
 
 3. **Install it into Claude Code** (stdio transport):
@@ -322,7 +322,7 @@ ${restart}
 Configuration is read from the environment — nothing is written to disk:
 
 \`\`\`sh
-export ${apiKeyEnv}=sk_live_xxx            # API key
+export ${apiKeyEnv}=apikey_xxx             # API key
 export ${baseEnv}=https://api.example.com  # optional: override the API base URL
 \`\`\`
 
