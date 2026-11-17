@@ -52,6 +52,17 @@ class StructUtilityTest extends TestCase
     }
 
     /** One corpus section, asserted present. */
+    private static function vin(mixed $v, string $key, mixed $alt = null): mixed
+    {
+        if (is_array($v)) {
+            return array_key_exists($key, $v) ? $v[$key] : $alt;
+        }
+        if (is_object($v)) {
+            return property_exists($v, $key) ? $v->{$key} : $alt;
+        }
+        return $alt;
+    }
+
     private function sect(string ...$path): array
     {
         $cur = self::R()['spec'];
@@ -329,8 +340,8 @@ class StructUtilityTest extends TestCase
                     : Struct::undef();
 
                 // 2) TS does: path = (vin.path === NULLMARK ? undefined : vin.path)
-                //    Our "undefined" is PHP null, so:
-                $path = ($raw === Struct::undef()) ? null : $raw;
+                //    The port reads PHP null as JSON null, so both pass no value.
+                $path = ($raw === Struct::undef() || null === $raw) ? Struct::undef() : $raw;
 
                 // 3) Optional slice offset
                 $from = property_exists($entry, 'from')
@@ -804,26 +815,30 @@ class StructUtilityTest extends TestCase
     // ——— validate tests ———
     public function testValidateBasic(): void
     {
-        // TODO: Deep inject bug - validate returns spec instead of data for scalars
-        $this->assertTrue(true);
+        $this->runsection($this->sect('validate', 'basic'), function ($input) {
+            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'));
+        });
     }
 
     public function testValidateChild(): void
     {
-        // TODO: Deep inject bug - $CHILD validator not expanding children
-        $this->assertTrue(true);
+        $this->runsection($this->sect('validate', 'child'), function ($input) {
+            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'));
+        });
     }
 
     public function testValidateNof(): void
     {
-        // The struct this port carries predates $NOF.
-        $this->assertTrue(true);
+        $this->runsection($this->sect('validate', 'nof'), function ($input) {
+            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'));
+        });
     }
 
     public function testValidateExact(): void
     {
-        // TODO: Deep inject bug - $EXACT validator not resolving
-        $this->assertTrue(true);
+        $this->runsection($this->sect('validate', 'exact'), function ($input) {
+            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'));
+        });
     }
 
     public function testValidateInvalid(): void
@@ -844,8 +859,9 @@ class StructUtilityTest extends TestCase
 
     public function testValidateSpecial(): void
     {
-        // TODO: Deep inject bug - validate path resolution against wrong source
-        $this->assertTrue(true);
+        $this->runsection($this->sect('validate', 'special'), function ($input) {
+            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'), self::vin($input, 'inj'));
+        });
     }
 
     public function testValidateCustom(): void
@@ -1234,88 +1250,36 @@ class StructUtilityTest extends TestCase
         $this->assertTrue(true);
     }
 
-    // ——— Validate: empty array treated as map when spec expects map ———
+    // ——— Validate: an empty [] is a LIST, and a map spec rejects it ———
 
-    public function testValidateEmptyArrayAsMap(): void
+    public function testValidateEmptyArrayAgainstMapSpec(): void
     {
-        // PHP [] is ambiguous (list vs map). When the spec expects a map,
-        // an empty [] in the data should not cause a type-mismatch error.
-
-        // Case 1: empty [] against a flat map spec — no validation errors
+        // An empty map is written as stdClass, which is what the generated
+        // config and makeOptions hand struct.
         $spec = (object) ['allow' => (object) ['method' => 'GET', 'op' => 'create']];
-        $data = (object) ['allow' => []];
-        $errs = [];
-        $injdef = (object) ['errs' => &$errs];
-        $result = Struct::validate($data, $spec, $injdef);
-        $this->assertEmpty($errs, 'empty [] should not cause type-mismatch against map spec');
-        // validate() delegates to transform(), which now returns associative
-        // arrays at the public boundary.
+        $validate = function ($data, $spec) {
+            $errs = [];
+            $injdef = (object) ['errs' => &$errs];
+            $result = Struct::validate($data, $spec, $injdef);
+            return [$errs, $result];
+        };
+
+        [$errs, $result] = $validate((object) ['allow' => []], $spec);
+        $this->assertSame(
+            ['Expected field allow to be map, but found list: [].'],
+            $errs,
+            'an empty [] is a list, and a map spec rejects it'
+        );
         $this->assertIsArray($result);
 
-        // Case 2: nested empty arrays against nested map spec
-        $spec2 = (object) [
-            'config' => (object) [
-                'db' => (object) ['host' => 'localhost'],
-                'cache' => (object) ['ttl' => 300],
-            ],
-        ];
-        $data2 = (object) ['config' => (object) ['db' => [], 'cache' => []]];
-        $errs2 = [];
-        $injdef2 = (object) ['errs' => &$errs2];
-        $result2 = Struct::validate($data2, $spec2, $injdef2);
-        $this->assertEmpty($errs2, 'nested empty [] should not cause type-mismatch');
+        [$errs2] = $validate((object) ['allow' => (object) []], $spec);
+        $this->assertEmpty($errs2, 'an empty stdClass is a map and validates');
 
-        // Case 3: stdClass (correct convention) still works
-        $data3 = (object) ['allow' => (object) []];
-        $errs3 = [];
-        $injdef3 = (object) ['errs' => &$errs3];
-        $result3 = Struct::validate($data3, $spec, $injdef3);
-        $this->assertEmpty($errs3, 'stdClass empty map should validate fine');
-
-        // Case 4: non-empty list against map spec — still produces type-mismatch
-        // (only EMPTY arrays get the ambiguity pass, non-empty lists remain errors)
-        $data4 = (object) ['allow' => [1, 2, 3]];
-        $errs4 = [];
-        $injdef4 = (object) ['errs' => &$errs4];
-        Struct::validate($data4, $spec, $injdef4);
-        // Non-empty list [1,2,3] has integer keys, so it IS a list with children;
-        // the validate engine will process its children against the spec, but the
-        // structural mismatch at the container level may or may not produce an error
-        // depending on injection navigation. The key assertion is that case 1-3 pass.
-
-        // Case 5: merge-then-validate SDK flow
-        $optspec = (object) [
-            'allow' => (object) [
-                'method' => 'GET,PUT,POST',
-                'op' => 'create,update,load',
-            ],
-            'timeout' => 30000,
-        ];
-        $merged = Struct::merge([
-            (object) ['allow' => (object) ['method' => 'GET', 'op' => 'create'], 'timeout' => 30000],
-            (object) ['allow' => [], 'timeout' => 5000],
-            (object) [],
-        ]);
-        $errs5 = [];
-        $injdef5 = (object) ['errs' => &$errs5];
-        $result5 = Struct::validate($merged, $optspec, $injdef5);
-        $this->assertEmpty($errs5, 'merge-then-validate SDK flow should produce no errors');
-        $this->assertIsArray($result5);
-        $this->assertTrue(
-            array_key_exists('allow', $result5) && is_array($result5['allow']),
-            'result.allow should be a map'
+        [$errs3] = $validate((object) ['allow' => [1, 2, 3]], $spec);
+        $this->assertSame(
+            ['Expected field allow to be map, but found list: [1,2,3].'],
+            $errs3,
+            'a non-empty list against a map spec is the same mismatch'
         );
-        $this->assertEquals(
-            'create,update,load',
-            $result5['allow']['op'] ?? null,
-            'result.allow.op should have spec default'
-        );
-
-        // Case 6: empty ListRef against map spec
-        $data6 = (object) ['allow' => new ListRef([])];
-        $errs6 = [];
-        $injdef6 = (object) ['errs' => &$errs6];
-        $result6 = Struct::validate($data6, $spec, $injdef6);
-        $this->assertEmpty($errs6, 'empty ListRef should not cause type-mismatch against map spec');
     }
 }

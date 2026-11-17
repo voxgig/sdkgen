@@ -115,9 +115,9 @@ end
   },
   {
     target: 'php',
-    stamp: 'unstamped',
+    stamp: '0.1.3',
     needs: 'php',
-    answers: { getprop: 'null', haskey: 'true', validate: 'throws' },
+    answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
       const php = toolchain('php')
       if (null == php) return null

@@ -1345,7 +1345,7 @@ tm/php/test/OmniSmokeTest.php cad939a73897
 tm/php/test/PipelineTest.php 544f3446b5f1
 tm/php/test/PrimaryUtilityTest.php 2cf1ca929598
 tm/php/test/Runner.php df683b0bb54e
-tm/php/test/StructUtilityTest.php 77ee27f0f2e5
+tm/php/test/StructUtilityTest.php 21e5a62883ca
 tm/php/test/sdk-test-control.json 0ef7278caec2
 tm/php/test/vendor/omni/Runner.php cb0ff5a5c312
 tm/php/test/vendor/omni/Util.php 1814a6ecd9d1
@@ -1359,7 +1359,7 @@ tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 708cebcf9353
 tm/php/utility/MakeFetchDef.php 8f8141558539
-tm/php/utility/MakeOptions.php 23ef5c4f3250
+tm/php/utility/MakeOptions.php 601bdaa73810
 tm/php/utility/MakePoint.php 9a2ad864d1bb
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
@@ -1368,7 +1368,7 @@ tm/php/utility/MakeSpec.php 895baa9fc9d2
 tm/php/utility/MakeUrl.php 35ebdbe5cb33
 tm/php/utility/Media.php 858e9b55f1cc
 tm/php/utility/Param.php 9040137e8d48
-tm/php/utility/PrepareBody.php d401d3455d62
+tm/php/utility/PrepareBody.php 10d306915431
 tm/php/utility/PrepareHeaders.php d7d6a7c38839
 tm/php/utility/PrepareMethod.php 9f01f9595681
 tm/php/utility/PrepareParams.php cb242a1ea1ea
@@ -1380,7 +1380,7 @@ tm/php/utility/ResultBody.php cd1ef6dc2a6c
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
 tm/php/utility/TransformRequest.php 6532e5142cc8
 tm/php/utility/TransformResponse.php 4dc432711490
-tm/php/utility/struct/Struct.php de1d4f5ae7d7
+tm/php/utility/struct/Struct.php 8fc1f0c81c20
 
 ## target py
 model/feature/feature-index.aontu 0351fe150e6a

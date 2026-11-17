@@ -184,7 +184,7 @@ function keys_of($SRC, $d) {
   sort($k);
   return implode(',', $k);
 }
-echo 'absent=' . keys_of($SRC, []) . PHP_EOL;
+echo 'absent=' . keys_of($SRC, new \\stdClass()) . PHP_EOL;
 echo 'supplied=' . keys_of($SRC, ['feature' => ['log' => ['active' => true]]]) . PHP_EOL;
 `])
     },

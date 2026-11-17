@@ -50,6 +50,7 @@ const VENDOR_DIRS = [
   'tm/java/utility/struct',
   'tm/perl/t/vendor/omni',
   'tm/perl/t/vendor/omni/Voxgig',
+  'tm/php/utility/struct',
   'tm/perl/t/vendor/omni/Voxgig/Omni',
   'tm/kotlin/test/vendor/omni',
   'tm/kotlin/utility/struct',
@@ -368,9 +369,8 @@ describe('vendored', () => {
 
 
   test('local deviations from vendored code stay marked', () => {
-    // php and rb are not routed, so they stay hand-patched.
+    // rb is not routed, so it stays hand-patched.
     const patched: Record<string, number> = {
-      'tm/php/utility/struct/Struct.php': 4,
       'tm/rb/utility/struct/voxgig_struct.rb': 1,
     }
 

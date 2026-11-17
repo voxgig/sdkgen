@@ -420,7 +420,7 @@ describe('optionSpec: the union each target reads', () => {
         },
       },
     }
-    ok(has(entitySpecMap(model, 'php'), ONE) && !has(entitySpecMap(model, 'php'), NOF))
+    ok(has(entitySpecMap(model, 'c'), ONE) && !has(entitySpecMap(model, 'c'), NOF))
     ok(has(entitySpecMap(model, 'py'), NOF))
   })
 
