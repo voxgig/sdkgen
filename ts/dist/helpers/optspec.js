@@ -1,18 +1,49 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ONE_UNION_TARGETS = void 0;
 exports.optionSpec = optionSpec;
 exports.featureOptionSpec = featureOptionSpec;
 exports.entitySpecMap = entitySpecMap;
+exports.targetSpec = targetSpec;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const resolve_1 = require("../action/resolve");
+const utility_1 = require("../utility");
 const applicability_1 = require("./applicability");
 const canonSpec_1 = require("./canonSpec");
+const kindCollection_1 = require("./kindCollection");
+const packageMeta_1 = require("./packageMeta");
 const S_CHILD = (0, canonSpec_1.sentinel)('CHILD');
 const S_OPEN = (0, canonSpec_1.sentinel)('OPEN');
-const S_ONE = (0, canonSpec_1.sentinel)('ONE');
 const S_NIL = (0, canonSpec_1.sentinel)('NIL');
+// Bundled targets whose struct copy no vendoring route produces, and which
+// therefore still reads a union as `$ONE`.
+const ONE_UNION_TARGETS = [
+    'c', 'clojure', 'cpp', 'elixir', 'ocaml', 'php', 'rb', 'rust', 'scala', 'swift',
+];
+exports.ONE_UNION_TARGETS = ONE_UNION_TARGETS;
 function optional(spec) {
-    return [S_ONE, spec, S_NIL];
+    return (0, canonSpec_1.anyOf)([spec, S_NIL]);
+}
+function readsOneUnion(model, targetname) {
+    const declared = (0, kindCollection_1.kindCollection)(model, 'target')[targetname];
+    return (null == declared || (0, resolve_1.resolvesBundled)(declared, targetname)) &&
+        ONE_UNION_TARGETS.includes((0, packageMeta_1.originName)(model, targetname));
+}
+// A spec in the form the target's own struct copy reads.
+function targetSpec(model, targetname, spec) {
+    if (null != targetname && readsOneUnion(model, targetname)) {
+        return (0, canonSpec_1.oneUnionSpec)(spec);
+    }
+    const at = (0, canonSpec_1.oneUnionPaths)(spec);
+    if (0 < at.length) {
+        throw new utility_1.SdkGenError((null == targetname ? '' : targetname + ': ') +
+            'the struct spec names ' + (0, canonSpec_1.sentinel)('ONE') + ' at ' + at.join(', ') +
+            ', which validate refuses, so every client would fail at construction. ' +
+            'Write [' + (0, canonSpec_1.sentinel)('ONE') + ', a, b] as [' + (0, canonSpec_1.sentinel)('NOF') +
+            ', {min: 1}, a, b].');
+    }
+    return spec;
 }
 function featureOptionSpec(feat) {
     const config = (feat && feat.config) || {};
@@ -54,7 +85,7 @@ function optionSpec(model, targetname) {
         feature[f.name] = optional(featureOptionSpec(f));
     });
     spec.feature = feature;
-    return spec;
+    return targetSpec(model, targetname, spec);
 }
 function entitySpecMap(model, targetname) {
     const feats = (0, applicability_1.targetFeatures)(model, null == targetname ? undefined : targetname);
@@ -70,6 +101,6 @@ function entitySpecMap(model, targetname) {
         }
         specs[ent.name] = (0, canonSpec_1.entitySpecs)(ent);
     });
-    return specs;
+    return targetSpec(model, targetname, specs);
 }
 //# sourceMappingURL=optspec.js.map

@@ -1,15 +1,18 @@
 
 import { test, describe } from 'node:test'
-import { strictEqual, deepStrictEqual, ok } from 'node:assert'
+import { strictEqual, deepStrictEqual, ok, throws } from 'node:assert'
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
-import * as struct from '@voxgig/struct'
 
-import { optionSpec, featureOptionSpec, entitySpecMap } from '../dist/helpers/optspec'
-import { sentinel } from '../dist/helpers/canonSpec'
+import {
+  optionSpec, featureOptionSpec, entitySpecMap, ONE_UNION_TARGETS,
+} from '../dist/helpers/optspec'
+import { oneUnionSpec, sentinel } from '../dist/helpers/canonSpec'
+
+import { struct } from './featureharness'
 
 
 const MODEL = Path.resolve(__dirname, '..', 'model', 'sdkgen.aontu')
@@ -273,7 +276,9 @@ describe('optionSpec: what the spec may contain', () => {
   }
 
   test('strings and booleans only, so the JSON round-trip is lossless', () => {
-    const spec = optionSpec(modelWith(shippedFeatures()))
+    // A union's count is the one number allowed: `$NOF` takes nothing else.
+    // Lowered to `$ONE`, the spec has no count left to find.
+    const spec = oneUnionSpec(optionSpec(modelWith(shippedFeatures())))
 
     const found: Array<{ path: string, value: any }> = []
     scalars(spec, '', found)
@@ -356,6 +361,107 @@ describe('optionSpec: the shipped feature set', () => {
     for (const name of Object.keys(fmodel)) {
       ok(accepts({ feature: { [name]: { active: true } } }, spec),
         name + ': ' + check({ feature: { [name]: { active: true } } }, spec).join('; '))
+    }
+  })
+})
+
+
+describe('optionSpec: the union each target reads', () => {
+
+  const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
+  const NOF = sentinel('NOF')
+  const ONE = sentinel('ONE')
+
+  const feature = {
+    log: { name: 'log', active: true, config: { options: { active: false, level: 'info' } } },
+  }
+
+  function has(node: any, name: string): boolean {
+    return JSON.stringify(node).includes(JSON.stringify(name))
+  }
+
+  test('a target whose struct predates `$NOF` is handed `$ONE`', () => {
+    const spec = optionSpec(modelWith(feature), 'rb')
+    ok(has(spec, ONE) && !has(spec, NOF))
+    deepStrictEqual(spec, oneUnionSpec(optionSpec(modelWith(feature))))
+  })
+
+  test('every other target is handed `$NOF`', () => {
+    const spec = optionSpec(modelWith(feature), 'ts')
+    ok(has(spec, NOF) && !has(spec, ONE))
+  })
+
+  test('an alias reads as the target it was installed from', () => {
+    const model: any = modelWith(feature)
+    model.main.kit.target = {
+      rb2: { origname: 'rb', base: 'node_modules/@voxgig/sdkgen/project/.sdk' },
+    }
+    ok(has(optionSpec(model, 'rb2'), ONE))
+  })
+
+  test('a target of that name from another package keeps `$NOF`', () => {
+    const model: any = modelWith(feature)
+    model.main.kit.target = { rb: { base: 'node_modules/@acme/sdkgen-pack/.sdk' } }
+    ok(has(optionSpec(model, 'rb'), NOF))
+  })
+
+  test('entity specs are lowered the same way', () => {
+    const model = {
+      main: {
+        kit: {
+          optspec: baseModel().main.kit.optspec,
+          feature: { validate: { name: 'validate', active: true, config: { options: {} } } },
+          entity: {
+            widget: {
+              name: 'widget',
+              fields: { note: { n: 'note', t: sentinel('STRING'), r: false } },
+            },
+          },
+        },
+      },
+    }
+    ok(has(entitySpecMap(model, 'php'), ONE) && !has(entitySpecMap(model, 'php'), NOF))
+    ok(has(entitySpecMap(model, 'py'), NOF))
+  })
+
+  test('a spec that still names `$ONE` is refused at generation', () => {
+    const model = modelWith({
+      old: {
+        name: 'old', active: true,
+        config: { options: {}, optspec: { mode: [ONE, sentinel('STRING'), sentinel('NUMBER')] } },
+      },
+    })
+    throws(() => optionSpec(model, 'go'), /go: the struct spec names .* at feature\.old\.2\.mode/)
+    ok(has(optionSpec(model, 'c'), ONE), 'a struct that reads `$ONE` can take it')
+  })
+
+  function treeHas(dir: string, needle: string): boolean {
+    for (const ent of readdirSync(dir, { withFileTypes: true })) {
+      const path = Path.join(dir, ent.name)
+      if (ent.isDirectory() ? treeHas(path, needle) :
+        readFileSync(path, 'utf8').includes(needle)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  test('ONE_UNION_TARGETS is exactly the targets whose struct implements `$ONE`', () => {
+    const cmp = Path.join(SDK, 'src', 'cmp')
+    const schema = readdirSync(cmp)
+      .filter((t) => existsSync(Path.join(cmp, t, 'Schema_' + t + '.ts')))
+      .sort()
+    ok(10 < schema.length, 'found only ' + schema.length + ' targets with a Schema component')
+
+    const one = schema.filter((t) => treeHas(Path.join(SDK, 'tm', t), 'The $ONE validator'))
+    deepStrictEqual([...ONE_UNION_TARGETS].sort(), one,
+      'ONE_UNION_TARGETS in helpers/optspec.ts must list exactly the targets ' +
+      'whose struct copy still implements `$ONE`. A target resynced to a struct ' +
+      'with `$NOF` leaves the list.')
+
+    for (const t of schema.filter((t) => !one.includes(t))) {
+      ok(treeHas(Path.join(SDK, 'tm', t), '$NOF'),
+        t + ': its struct implements neither `$ONE` nor `$NOF`')
     }
   })
 })

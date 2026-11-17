@@ -7,6 +7,8 @@ import Os from 'node:os'
 import Path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
+import { targetSpec } from '../dist/helpers/optspec'
+
 import { rubyEnv, pythonEnv } from './generateharness'
 
 
@@ -29,16 +31,20 @@ function run(cmd: string, args: string[], cwd?: string, env?: NodeJS.ProcessEnv)
 }
 
 
-const SPEC_JSON = JSON.stringify({
+const anyOf = (...alts: any[]) => ['`$NOF`', { min: 1 }, ...alts]
+
+// Each port is handed this in the union its own struct reads, as the
+// generator hands it the option spec.
+const SPEC = {
   feature: {
     '`$CHILD`': { '`$OPEN`': true, active: false },
-    log: ['`$ONE`', {
+    log: anyOf({
       '`$OPEN`': true,
-      active: ['`$ONE`', '`$BOOLEAN`', '`$NIL`'],
-      level: ['`$ONE`', '`$STRING`', '`$NIL`'],
-    }, '`$NIL`'],
+      active: anyOf('`$BOOLEAN`', '`$NIL`'),
+      level: anyOf('`$STRING`', '`$NIL`'),
+    }, '`$NIL`'),
   },
-})
+}
 
 
 type Answers = {
@@ -382,12 +388,9 @@ public class Probe {
 describe('vendored struct optional-key absence', () => {
 
   let tmp = ''
-  let spec = ''
 
   before(() => {
     tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-oneabsence-'))
-    spec = Path.join(tmp, 'spec.json')
-    Fs.writeFileSync(spec, SPEC_JSON)
   })
 
   after(() => {
@@ -398,6 +401,9 @@ describe('vendored struct optional-key absence', () => {
   for (const port of PORTS) {
 
     test(port.target + ': an omitted optional entry stays omitted', (t) => {
+      const spec = Path.join(tmp, 'spec-' + port.target + '.json')
+      Fs.writeFileSync(spec, JSON.stringify(targetSpec({}, port.target, SPEC)))
+
       const ran = port.exec(tmp, spec)
       if (null == ran) {
         return t.skip('no usable ' + port.target + ' toolchain here (' +
@@ -419,7 +425,7 @@ describe('vendored struct optional-key absence', () => {
       strictEqual(
         JSON.stringify({ absent: got.absent, supplied: got.supplied }),
         JSON.stringify(EXPECTED),
-        port.target + ": an optional `['`$ONE`', <spec>, '`$NIL`'] entry no " +
+        port.target + ": an optional `[<union>, <spec>, '`$NIL`'] entry no " +
         'longer behaves like the ts reference. `absent` must be empty — a ' +
         'feature the caller did not name must not appear in options.feature, ' +
         'because makeOptions derives the feature add order from those keys. ' +

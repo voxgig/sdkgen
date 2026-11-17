@@ -232,7 +232,7 @@ tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj d87d54a57f03
 tm/clojure/src/sdk/core.clj efe22aeafbb9
-tm/clojure/src/sdk/features.clj 45a624028649
+tm/clojure/src/sdk/features.clj d36ce8927f97
 tm/clojure/src/voxgig/struct.clj e11f03d1c544
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
@@ -1148,7 +1148,7 @@ src/cmp/ocaml/utility_ocaml.ts c7b75b60e39c
 tm/ocaml/LICENSE 7a036af3f8a4
 tm/ocaml/Makefile 8d078f54d655
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml be2b76a3332f
+tm/ocaml/sdk_features.ml c7d45c71124f
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
 tm/ocaml/sdk_runtime.ml e3f0e8690ccb
@@ -1218,7 +1218,7 @@ tm/perl/Makefile fa0c8f05682c
 tm/perl/core/context.pm 44f4c0eaa3f0
 tm/perl/core/control.pm cb6185bbc19f
 tm/perl/core/error.pm d1bec69c8ee7
-tm/perl/core/helpers.pm 8f2c49fcbb46
+tm/perl/core/helpers.pm 9d8821e6e5bf
 tm/perl/core/operation.pm c15d6df50079
 tm/perl/core/response.pm 64d699bb70d4
 tm/perl/core/result.pm c8daeffb69ad
@@ -1826,7 +1826,7 @@ tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala b1bf710a5667
 tm/scala/feature/TestFeature.scala 4beda610ed9b
 tm/scala/feature/TimeoutFeature.scala 007550fa7e00
-tm/scala/feature/ValidateFeature.scala 9b6d56f5f601
+tm/scala/feature/ValidateFeature.scala 4ef01bf58cf5
 tm/scala/feature/secrets/plugin/Capability.scala 7e9f7fa859ba
 tm/scala/feature/secrets/plugin/Config.scala 24a7ae845bc0
 tm/scala/feature/secrets/plugin/Depend.scala b1ddcfd629bf
@@ -2259,7 +2259,7 @@ tm/zig/feature/support.zig 0151996e9aab
 tm/zig/feature/telemetry.zig a1284e6f3d25
 tm/zig/feature/test.zig 8347363f4faf
 tm/zig/feature/timeout.zig 098ad542880b
-tm/zig/feature/validate.zig 51b300758835
+tm/zig/feature/validate.zig a089ba7def67
 tm/zig/src/feature/README.md f623e5e15340
 tm/zig/src/feature/audit/.gitkeep e3b0c44298fc
 tm/zig/src/feature/base/.gitkeep e3b0c44298fc

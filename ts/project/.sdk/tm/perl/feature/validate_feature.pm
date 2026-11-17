@@ -5,11 +5,10 @@
 #
 # The specs are NOT written here and not written in the model either: every
 # entity field already carries a canonical type sentinel ($STRING, $INTEGER,
-# the $ONE union for an OpenAPI multi-type), which is the same vocabulary
-# Voxgig::Struct::validate speaks. The generator maps them once
-# (helpers/canonSpec) and emits ProjectNameSchema::entityspec(), so a field
-# whose type changes in the API spec changes what this feature enforces with
-# no edit anywhere.
+# a union for an OpenAPI multi-type). The generator maps them once
+# (helpers/canonSpec) into the vocabulary Voxgig::Struct::validate speaks
+# and emits ProjectNameSchema::entityspec(), so a field whose type changes
+# in the API spec changes what this feature enforces with no edit anywhere.
 #
 # WHAT IS CHECKED
 #   outbound (PreSpec)  the payload the caller asked to send, against

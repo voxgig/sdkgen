@@ -1,4 +1,5 @@
 import { featureApplies } from '../helpers/applicability'
+import { alternatives, isAnyOf } from '../helpers/canonSpec'
 
 import { each } from 'jostraca'
 
@@ -30,8 +31,8 @@ function isWrapping(feat: any): boolean {
 // whole path exists to fix.
 function sentinelName(v: any): string {
   if (Array.isArray(v)) {
-    const members = v.slice(1).map((m: any) => sentinelName(m))
-      .filter((m: string) => 'one' !== m)
+    const members = (isAnyOf(v) ? alternatives(v) : v.slice(1))
+      .map((m: any) => sentinelName(m))
     return 0 === members.length ? 'any' : members.join(' | ')
   }
 

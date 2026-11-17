@@ -5,6 +5,7 @@ exports.renderValue = renderValue;
 exports.sentinelName = sentinelName;
 exports.honoursActivationOrder = honoursActivationOrder;
 const applicability_1 = require("../helpers/applicability");
+const canonSpec_1 = require("../helpers/canonSpec");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 function isWrapping(feat) {
@@ -17,8 +18,8 @@ function isWrapping(feat) {
 // whole path exists to fix.
 function sentinelName(v) {
     if (Array.isArray(v)) {
-        const members = v.slice(1).map((m) => sentinelName(m))
-            .filter((m) => 'one' !== m);
+        const members = ((0, canonSpec_1.isAnyOf)(v) ? (0, canonSpec_1.alternatives)(v) : v.slice(1))
+            .map((m) => sentinelName(m));
         return 0 === members.length ? 'any' : members.join(' | ');
     }
     if ('string' !== typeof v) {

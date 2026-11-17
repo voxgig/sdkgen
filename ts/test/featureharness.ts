@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs'
 import Path from 'node:path'
 
 import { transform } from 'sucrase'
-import * as struct from '@voxgig/struct'
 
 
 const FEATURE_DIR = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm', 'ts', 'src', 'feature')
@@ -52,6 +51,10 @@ function sandboxLoad(file: string, shims: Record<string, any>): any {
   fn(mod.exports, req, mod, Path.dirname(file), file)
   return mod.exports
 }
+
+
+// The vendored struct a generated ts SDK carries; the npm peer can lag it.
+const struct: any = sandboxLoad(Path.join(UTILITY_DIR, 'StructUtility.ts'), {})
 
 
 // The real BaseFeature template, loaded once and shared as the superclass.
@@ -421,6 +424,7 @@ function makeClient(spec: {
 
 export {
   CLEAN_DEFAULTS,
+  struct,
   sandboxLoad,
   loadFeature,
   loadFeatureModule,
