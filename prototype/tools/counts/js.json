@@ -1,0 +1,30 @@
+{
+ "tutorial": {
+  "corrected": 18,
+  "unified": 0,
+  "used": {
+   "js-esm-import": 18,
+   "secret-option": 2,
+   "server-required-given": 15
+  }
+ },
+ "rootquick": {
+  "corrected": 4,
+  "unified": 1,
+  "used": {
+   "js-esm-import": 5,
+   "root-load-step": 1,
+   "server-required-given": 2,
+   "step-comment-runtime-fact": 3,
+   "trailing-blank": 2
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 98,
+  "used": {
+   "ref-list-printed": 82,
+   "ref-type-comments": 16
+  }
+ }
+}

@@ -1,0 +1,9 @@
+review/
+runs/
+out-stage2/
+inject/
+before/work/
+gen/mstage-*/
+node_modules/
+legacy/*/gen/mstage-*/
+legacy/*/review/

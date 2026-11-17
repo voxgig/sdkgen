@@ -1,0 +1,31 @@
+{
+ "tutorial": {
+  "corrected": 41,
+  "unified": 0,
+  "used": {
+   "c-err-placement": 35,
+   "c-err-reset": 23,
+   "c-stdlib": 17,
+   "secret-option:c": 2,
+   "server-required-given:c": 15
+  }
+ },
+ "rootquick": {
+  "corrected": 2,
+  "unified": 0,
+  "used": {
+   "c-err-placement": 2,
+   "c-stdlib": 2,
+   "server-required-given:c": 2,
+   "trailing-blank": 2
+  }
+ },
+ "reference": {
+  "corrected": 143,
+  "unified": 19,
+  "used": {
+   "c-err-declared": 162,
+   "ref-update-note": 19
+  }
+ }
+}

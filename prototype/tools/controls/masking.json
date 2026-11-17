@@ -1,0 +1,53 @@
+[
+ {
+  "id": "record-to-item-rb",
+  "lang": "rb",
+  "section": "reference",
+  "file": "B/rb/REFERENCE.md",
+  "from": "of entities, one per record, and raises on failure.",
+  "to": "of entities, one per item, and raises on failure.",
+  "note": "a shared word the v3.2 mask hid (B has an entity named record): a wrong word there must be left open",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+ },
+ {
+  "id": "record-to-planet-rb",
+  "lang": "rb",
+  "section": "reference",
+  "file": "B/rb/REFERENCE.md",
+  "from": "of entities, one per record, and raises on failure.",
+  "to": "of entities, one per planet, and raises on failure.",
+  "note": "the same shared word replaced by another entity name: still a word, not a model slot",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+ },
+ {
+  "id": "record-to-utility-go",
+  "lang": "go",
+  "section": "reference",
+  "file": "B/go/REFERENCE.md",
+  "from": "Returns a `[]any` of entities, one per\nrecord;",
+  "to": "Returns a `[]any` of entities, one per\nutility;",
+  "note": "as above in a language whose result style differs",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
+ },
+ {
+  "id": "reads-its-utility-ts",
+  "lang": "ts",
+  "section": "reference",
+  "file": "B/ts/REFERENCE.md",
+  "from": "`.data()` reads its record.",
+  "to": "`.data()` reads its utility.",
+  "note": "the record noun after the record accessor"
+ },
+ {
+  "id": "headers-and-body-py",
+  "lang": "py",
+  "section": "reference",
+  "file": "B/py/REFERENCE.md",
+  "from": "`headers` and `data`, and\n`ok` is `False`",
+  "to": "`headers` and `body`, and\n`ok` is `False`",
+  "note": "a shared literal that equals py's own fact value (accessor.param `data`) in v3.2 was masked as that fact",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
+ }
+]

@@ -1,0 +1,211 @@
+[
+ {
+  "id": "note-names-feature",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "from": "no error is sent.'",
+  "to": "no error is sent. With the retry feature on, a failed item is retried first.'"
+ },
+ {
+  "id": "note-names-option",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "from": "no error is sent.'",
+  "to": "no error is sent. The apikey is not sent on a stream.'"
+ },
+ {
+  "id": "note-names-entity",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "from": "no error is sent.'",
+  "to": "no error is sent. A planet stream is ordered by id.'"
+ },
+ {
+  "id": "note-names-op",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "from": "no error is sent.'",
+  "to": "no error is sent. Unlike load, it never fails early.'"
+ },
+ {
+  "id": "note-model-claim",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "from": "no error is sent.'",
+  "to": "no error is sent. The server always returns at most 100 items per page.'"
+ },
+ {
+  "id": "hook-concat",
+  "lang": "ts",
+  "file": "ts/Naming_ts.ts",
+  "from": "client: tm('ProjectNameSDK'),",
+  "to": "client: tm('ProjectName') + 'SDK',"
+ },
+ {
+  "id": "hook-plural",
+  "lang": "ts",
+  "file": "ts/Naming_ts.ts",
+  "from": "var: exampleVarName(e.name, 'ts') })",
+  "to": "var: exampleVarName(e.name, 'ts'), vars: e.name + 's' } as any)"
+ },
+ {
+  "id": "hook-reserved",
+  "lang": "ts",
+  "file": "ts/Naming_ts.ts",
+  "from": "ident: (name) => exampleVarName(name, 'ts'),",
+  "to": "ident: (name) => ['delete', 'class'].includes(name) ? name + '_' : exampleVarName(name, 'ts'),"
+ },
+ {
+  "id": "printer-op-literal",
+  "lang": "py",
+  "file": "py/Syntax_py.ts",
+  "from": "const call = `client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${argOf(s)})`",
+  "to": "const call = 'load' === s.op ? `client.${s.entity.sym.accessor}().load()` : `client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${argOf(s)})`"
+ },
+ {
+  "id": "printer-desc-condition",
+  "lang": "py",
+  "file": "py/Syntax_py.ts",
+  "from": "`from ${desc.layout.module} import ${desc.layout.client}`,",
+  "to": "`from ${desc.layout.module} import ${desc.layout.client}` + ((desc as any).features && (desc as any).features.length ? '  # features on' : ''),"
+ },
+ {
+  "id": "printer-model-read",
+  "lang": "c",
+  "file": "c/Syntax_c.ts",
+  "from": "const str = (s: string): string =>",
+  "to": "const modelName = (m: any) => m.main.kit.info.name\nconst str = (s: string): string =>"
+ },
+ {
+  "id": "printer-case-change",
+  "lang": "py",
+  "file": "py/Syntax_py.ts",
+  "from": "`from ${desc.layout.module} import ${desc.layout.client}`,",
+  "to": "`from ${desc.layout.module.toLowerCase()} import ${desc.layout.client}`,"
+ },
+ {
+  "id": "fact-prose-names-feature",
+  "lang": "ts",
+  "file": "ts/Syntax_ts.ts",
+  "from": "once: 'a stream' }",
+  "to": "once: 'a stream, unless the cache feature is on' }"
+ },
+ {
+  "id": "note-number-claim",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "from": "no error is sent.'",
+  "to": "no error is sent. It returns at most 100 items per page.'"
+ },
+ {
+  "id": "printer-desc-alias",
+  "lang": "py",
+  "file": "py/Syntax_py.ts",
+  "from": "`from ${desc.layout.module} import ${desc.layout.client}`,",
+  "to": "`from ${desc.layout.module} import ${desc.layout.client}` + (() => { const d = desc as any; return d.auth ? '' : '' })(),"
+ },
+ {
+  "id": "printer-desc-bracket",
+  "lang": "py",
+  "file": "py/Syntax_py.ts",
+  "from": "`from ${desc.layout.module} import ${desc.layout.client}`,",
+  "to": "`from ${desc.layout.module} import ${desc.layout.client}` + (desc['features'] ? '' : ''),"
+ },
+ {
+  "id": "printer-desc-destructure",
+  "lang": "py",
+  "file": "py/Syntax_py.ts",
+  "from": "const str = ",
+  "to": "const shown = (desc: any) => { const { quick } = desc; return quick ? 1 : 0 }\nconst str = "
+ },
+ {
+  "id": "printer-model-param-kit",
+  "lang": "zig",
+  "file": "zig/Syntax_zig.ts",
+  "from": "const str = ",
+  "to": "const ents = (x: any) => Object.keys(x.main['kit'].entity)\nconst str = "
+ },
+ {
+  "id": "hook-reserved-eq",
+  "lang": "py",
+  "file": "py/Naming_py.ts",
+  "from": "ident: (name) => exampleVarName(name, 'py'),",
+  "to": "ident: (name) => name === 'class' ? 'klass' : exampleVarName(name, 'py'),"
+ },
+ {
+  "id": "recheck-notes-renamed-const",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "edits": [
+   {
+    "from": "  notes: {\n    'member:stream':",
+    "to": "  notes: streamText,\n  _unused: {\n    'member:stream':"
+   },
+   {
+    "from": "const Syntax",
+    "to": "const streamText = { 'member:stream': 'It sends the items on the returned channel, which closes when the stream\\nends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\\nended the stream: the error the operation itself would return, sent as the\\nlast value. Under `throw: false` in `callopts[\"ctrl\"]`, no error is sent.' }\n\nconst Syntax"
+   }
+  ]
+ },
+ {
+  "id": "recheck-note-tail-from-const",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "edits": [
+   {
+    "from": "`callopts[\"ctrl\"]`, no error is sent.',",
+    "to": "`callopts[\"ctrl\"]`, no error is sent.' + TAIL,"
+   },
+   {
+    "from": "const Syntax",
+    "to": "const TAIL = ' With the retry feature on, a failed planet load is retried 3 times.'\n\nconst Syntax"
+   }
+  ]
+ },
+ {
+  "id": "recheck-note-in-ref-notes",
+  "lang": "go",
+  "file": "go/Syntax_go.ts",
+  "edits": [
+   {
+    "from": "    read: (value, key, truth) => `${value}[${str(key)}]` + (truth ? ' == true' : ''),\n  },",
+    "to": "    read: (value, key, truth) => `${value}[${str(key)}]` + (truth ? ' == true' : ''),\n    notes: { 'member:direct': 'With the retry feature on, the apikey is resent.' },\n  },"
+   }
+  ]
+ },
+ {
+  "id": "v32-note-joined-literals",
+  "lang": "rust",
+  "file": "rust/Syntax_rust.ts",
+  "edits": [
+   {
+    "from": "    'member:direct': 'The result map always comes back inside `Ok`.',",
+    "to": "    'member:direct': 'The result map always comes back' +\n      ' inside `Ok`.',"
+   }
+  ]
+ },
+ {
+  "id": "perl-scalar-helper-depluralise",
+  "lang": "perl",
+  "file": "perl/Syntax_perl.ts",
+  "from": "const scalar = (name: string): string => '$' + name",
+  "to": "const scalar = (name: string): string => '$' + name.replace(/s$/, '')",
+  "why": "T3: the perl reviewer's a17: a depluralising rule inside a helper the provider defines; purity reported 0 open"
+ },
+ {
+  "id": "go-hook-helper-depluralise",
+  "lang": "go",
+  "file": "go/utility_go.ts",
+  "from": "  const pascal = camelify(name)\n",
+  "to": "  const pascal = camelify(name.replace(/s$/, ''))\n",
+  "why": "T3: the same rule inside goVarName in utility_go.ts, a helper only the naming hook calls: purity follows what the hook imports from its own language's directory"
+ },
+ {
+  "id": "perl-scalar-helper-slice",
+  "lang": "perl",
+  "file": "perl/Syntax_perl.ts",
+  "from": "const scalar = (name: string): string => '$' + name",
+  "to": "const scalar = (name: string): string => '$' + (name.endsWith('s') ? name.slice(0, -1) : name)",
+  "why": "T3: the same rule written as a suffix test and a negative slice"
+ }
+]

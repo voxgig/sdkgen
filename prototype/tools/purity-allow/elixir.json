@@ -1,0 +1,32 @@
+[
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "exampleVarName (from @voxgig/sdkgen)",
+  "why": "An example variable is not a name the code generator makes. The hook adapts the shared example names (results, item, result, the entity plural) to the language identifier rules with the sdkgen function the language's other README families use; no code generator has an equivalent."
+ },
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "nom (from @voxgig/apidef)",
+  "why": "Derives the entity Name the generator's entities already carry (Name is derived lazily, so the hook derives it before calling elixirEntityModule, which MainEntity_elixir also calls)."
+ },
+ {
+  "file": "Syntax",
+  "check": "note names option \"options\"",
+  "text": "Build `options` from a native map with `{names.helpers}.deep/1`.",
+  "why": "`options` here is the constructor argument every elixir client takes (Main.fragment.ex), not a model option; the note says how to build it (Helpers.deep/1, helpers.ex:40)."
+ },
+ {
+  "file": "Syntax",
+  "check": "note names operation \"list\"",
+  "text": "tutorial:list",
+  "why": "The note names the operation of the tutorial slot it is attached to (tutorial:list / tutorial:load) and prints only where that slot prints; it states elixir's function arity (EntityListOp.fragment.ex / EntityLoadOp.fragment.ex define list/load with two defaulted arguments), which no model changes."
+ },
+ {
+  "file": "Syntax",
+  "check": "note names operation \"load\"",
+  "text": "tutorial:load",
+  "why": "The note names the operation of the tutorial slot it is attached to (tutorial:list / tutorial:load) and prints only where that slot prints; it states elixir's function arity (EntityListOp.fragment.ex / EntityLoadOp.fragment.ex define list/load with two defaulted arguments), which no model changes."
+ }
+]

@@ -1,0 +1,2425 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:step-numbers",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "ff4863a314": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "33bcc396d7": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "0538108a37": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 18,
+  "by": "rule:entities-contract",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "b31c974005": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "9363faf207": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "a65ba4a33f": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "bef2b8f986": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 3,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "5a3859e529": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 3,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "416e391bd7": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "71f88e02e1": {
+  "outcome": "restored:shared",
+  "why": "restored in the list sentence and the printed loop (asEntity().data(null) on each item)",
+  "n": 7,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "d9e4a5888b": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as d9e4a5888b): restored as the comment 'Create — .ok is the created entity' and the write sentence",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "9a132de632": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update — the id comes off the created entity's record'",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch — sends only the fields given; ...'",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "6c43ff2d59": {
+  "outcome": "restored:fact",
+  "why": "the write results as one sentence: .ok the written entity, .err on failure (EntityCreateOp.fragment.zig returns EntResult)",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "9917af5f8a": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 9917af5f8a): restored:fact",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "0ed7dc127d": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 4,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "aeabe4bdf1": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 3,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "29bba9e03f": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "cdfbb6475b": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "1fa815677a": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "c9c9426cd8": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "79233d47ba": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: it now says where the parent id goes (the match, as the example passes it); same fact",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "defb73bfd8": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "9cbb8e3add": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "a9a5835832": {
+  "outcome": "same-meaning",
+  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "c44f65ddeb": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "3528a38f43": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "ec589bf68a": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "5e2c7ec6bb": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "6fb3670380": {
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-apikey",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "09532cf246": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-keys",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "84f11343be": {
+  "outcome": "dropped",
+  "why": "the instruction to switch on .ok: the union sentence states .ok and .err and the code shows the switch (stage 3 decision)",
+  "n": 1,
+  "by": "rule:tok-zig-switch",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "fbf79e412d": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "ec3f31b885": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "38b2554fdd": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "7d676e4951": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "f2304656af": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "0502261efc": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6817fe1610": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "a3f75871e8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "92fe0b08b8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "48938d9e89": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "a2f617f5aa": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "2559b4363c": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "aeb3c8328d": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "2cd95e7b3e": {
+  "outcome": "unification:zig-bind-outside",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-zig-return",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "536ead6583": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "0e42bedae3": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "cd8353f0bc": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "75054b67b9": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "38b6bc8ef0": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "1e0d444246": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "a4e0a05587": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "561bcf923d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
+  "n": 10,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "b84b13bb30": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "92371be8b1": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "1129cb4ff5": {
+  "outcome": "correction:S49",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as d311c218ae): the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "bf586106dd": {
+  "outcome": "unification:root-load-nested",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 1f79a9926d): doc-nested: the root quick start loads the nested satellite with its parent id (root-load-nested), binds results outside error handling (zig-bind-outside), gives the server tenant (S49) and reads the environment through Io (zig-env-io); each part as in the other root blocks",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "92bd7646e3": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "6a12b6ba57": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7241b4d238": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4cfd5b01ab": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5eceb7d78e": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "26cb169e58": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "72356f26e6": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "45812b9db4": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e92b6d9d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "'holds': the root quick start's union step comments now say '.err holds the failure' (sentence review: the failure clause had no verb)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "bdc58e4d73": {
+  "outcome": "unification:zig-bind-outside",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-zig-return",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "295504858a": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7851b353c0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5f9251f640": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fa825fd8f8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "4261ee6d6b": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "d413390699": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "1d7f4a3f68": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "'on': the comment's old '.err on failure' clause, now '.err holds the failure'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9385a196ed": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "707ea8429d": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9fba36969f": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "ddb9b56d33": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "50193ed359": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "49ed0c86f4": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b7013c9cd4": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "84889ee8d5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "0bcb8a50bc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "79528e1b0f": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f5407c9d47": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "0e0ef3e013": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "17744595a0": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "1e3e853fb8": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "5b6a2172c2": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "8cf56ce7ec": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "fbd90189d9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "5138c3c3ea": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "7bd829bd32": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b986bf9641": {
+  "outcome": "same-meaning",
+  "why": "the README states the same of log's options (the table's `active` default true); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "4f06c74f01": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 34,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c691e3ba6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "74e67fc6cf": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "zig/README.md:77-86 (Error handling, printed by the shared ReadmeErrors.ts for 16 languages, unported): 'Entity operations reject on failure, so wrap them in `try` / `catch`', with TypeScript code",
+  "true": "REFERENCE for prepare (E!Value, for try/catch) and the operation sentences (result unions); README's claim that entity operations reject is false for zig",
+  "evidence": "Main.fragment.zig: pub fn prepare(...) E!Value; EntityLoadOp.fragment.zig returns EntResult"
+ },
+ "c2408b4f0a": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read; no disagreement",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log; the README says nothing about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bd94a4de30": {
+  "outcome": "same-meaning",
+  "why": "the OLD direct Returns line, restored in the shared Returns sentence (its keys, and err when the body cannot be read or the request cannot be made); the README statement shown agrees",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "fb1d09486d": {
+  "outcome": "same-meaning",
+  "why": "the OLD prepare line, restored in zig's note on prepare (on failure it returns the error of its error union, for try or catch); the README's try/catch wording is the contradiction recorded on that note",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f23290592f": {
+  "outcome": "same-meaning",
+  "why": "README:242's stream row says the same: .ok with its result items, or .err; the REFERENCE says the items are returned, every one already read, and .err reports failure",
+  "n": 94,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "97b7dcdc97": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "83803533d5": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "correction:ref-features-escape",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ecbec8ff68": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "f1fe9e36a7": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "91f630de69": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b0daefde4c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "a73e9ad6b3": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "a6052d1920": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "e74163daf3": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c29e7e21ff": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "444a64bd19": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "18a8559d82": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "edbb915fb6": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b9fc5e6329": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "457b3bcb9e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5ff33e9654": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "4ec39dfdd7": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c9afdf6937": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5537776350": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "98c1401bb5": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "fc34c11dd5": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d90bf25f1c": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d8344ee7f8": {
+  "outcome": "restored:note",
+  "why": "",
+  "n": 94,
+  "by": "rule:zig-stream-note",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "866403b722": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 15,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c937cc2865": {
+  "outcome": "correction:sentence-review-stream",
+  "why": "the stream sentence fixed once (sentence review): a lazy sequence over items already read misled (clojure Entity.fragment.clj:164,180,185 realises every item before returning; elixir entity_base.ex:150,160,172 a Stream over a list), and 'one list' was false for rust's IntoIter; the sentence names what is returned, the runs sentence when the operation runs",
+  "n": 94,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "a873a97030": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 82,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92ce533dbd": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "43fb1efe69": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:page-structure2",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "45da5a1c7e": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b59f0b4edf": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 17,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6ee52056d9": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 27,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "4161b14aa1": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 81,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b9ce12aabb": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 15,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "0ec50e4f5b": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 15,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "4d9b0e63f2": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0bb5114a4e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `h.vnull()`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3faf36caf8": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 3e8ca55bc9): restored:shared",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c0b2f77dfd": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 982790f322): restored:shared",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "unification:direct-table",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as ef8774be7c): unification:direct-table",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a2fe5d33d2": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f300e8ebee): restored:shared",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1942272f09": {
+  "outcome": "restored:shared",
+  "why": "restored as 'return its result items, every one already read. Its `.err` reports failure.' with the throw:false note (v3.3: 'as one list', sentence review)",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e1a075f227": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fb53c2b222": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "22addc4e6e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d265844143": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "192e8fbb23": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2066e4a9e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "4033f23e2d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "b22a4fd4cf": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
+  "n": 90,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b2a89584dc": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "509f8ee353": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "35ea4c3e84": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "55901c7ad8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "06e0e1b2b7": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "a986258b72": {
+  "outcome": "unification:ref-test-heading",
+  "why": "",
+  "n": 19,
+  "by": "rule:test-heading",
+  "type": "added",
+  "section": "reference"
+ },
+ "9f0d13f4f1": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "cd00ec9b2a": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6979eaacb4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 34,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "92238dc9df": {
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7d64fb6cb3"
+  ],
+  "unreviewed": 0
+ },
+ "f25ed95c66": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-ctrl-row",
+  "type": "added",
+  "section": "reference"
+ },
+ "65160f6e35": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d080651bee": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "29096232c3": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "e0280db03c": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "927fd64229": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "3bf8b6fd45": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "5942751ca4": {
+  "outcome": "restored:note",
+  "why": "zig's note on member:prepare, unchanged, re-paired under the client heading: prepare returns E!Value (Main.fragment.zig), so a failure is the error of its error union; OLD said 'use catch/try to handle the error union'; kept a note, not a style: zig alone returns a native error union beside its operations' result union",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "10a8506f99": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 28,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "55a8b68a1f": {
+  "outcome": "shared:py:55a8b68a1f",
+  "why": "masked, it is the py unit of class 55a8b68a1f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f2901d9293"
+  ],
+  "unreviewed": 0
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "65ab1c1cb3": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 94,
+  "by": "rule:add-fails",
+  "type": "added",
+  "section": "reference"
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.zig (make_point and the operation before streamItems returns the slice); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "0f10166e63": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 0
+ },
+ "d3f3b82555": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "7615c6fe93": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "6356afc86b": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "193859bf79": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "28d337e733": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "9023782dca": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:add-action-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "3d50058045": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "a4fe2f9b08": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b1c24c8130": {
+  "outcome": "restored:fact",
+  "why": "the record read on every single-entity operation (asEntity().data(null)), true of zig's entity",
+  "n": 52,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "290fb0c986": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "1095fa7261": {
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-log",
+  "type": "added",
+  "section": "reference"
+ },
+ "e94011ef3f": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "05a7710dde": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: a wrapping feature whose model also declares active hooks says so, as the catalogue's X3 fix asks (cost: hook PrePoint, PreDone, PreUnexpected; secrets: hook PreSpec); the wrap sentence above it is unchanged",
+  "n": 38,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9a5ba18db4": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f88d62ac3d": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "2d7cc08deb": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:add-secret",
+  "type": "added",
+  "section": "reference"
+ },
+ "6fcc39ea14": {
+  "outcome": "correction:sentence-review-secret",
+  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0c3424f5ce": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 3,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6a59b75c3e": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 2,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "reference"
+ },
+ "676e50e089": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `h.vnull()`'); README:170 uses h.vnull() for no options the same way",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "dc7d8b5035": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the stream note's callopts.ctrl",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "da08f7e7bd": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "41f428548f": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1,
+  "by": "rule:class-collision",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1fe25d7aac": {
+  "outcome": "correction:U34",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f183d44666): correction:U34",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "30b274a911": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d245316c2e": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "63ba6de054": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the create sentence says .ok is the entity it wrote",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3423454dfc": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the list sentence says .ok is a slice of entities, one per record",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "877e51dc62": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the load sentence with the record read",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3055aad6aa": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the patch sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a28311853e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "96847801df": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1cbc5f74da": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the update sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "386c0af687": {
+  "outcome": "correction:U34",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f183d44666): correction:U34",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7393140c1f": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1,
+  "by": "rule:class-collision",
+  "type": "added",
+  "section": "reference"
+ },
+ "7dd340f0f1": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "added",
+  "section": "reference"
+ },
+ "c6f1ed0430": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a5f2ead13d": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "70c81c22c1": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "6da904adba": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "8cb718da4a": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "69edf77de5": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "5153f403d8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "c5847965f4": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result; zig reads a key with h.getp and branches on h.get_bool(...) orelse false, as its README example does",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "933dac37ed": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result; zig reads a key with h.getp and branches on h.get_bool(...) orelse false, as its README example does",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1,
+  "by": "rule:actions-table",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8983d1f7dc": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-action-call",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "409b8ce3b8": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "bf0c84e3b2": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "4028fbfb63": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e2ff8cd316": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "2efb8a38e8": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "13907fcf88": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "dcf6897c17": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "18e2f9a575": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7cd766d572": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "f40e4c8a30": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: this language's true, as its literal printer writes it (Syntax lit BOOLEAN), now named in each Usage sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1,
+  "by": "rule:class-collision",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "53b0392a00": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "ab1bb38b53": {
+  "outcome": "unification:zig-bind-outside",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-zig-return",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-generic-names",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-generic-names",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

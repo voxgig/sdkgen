@@ -1,0 +1,15 @@
+{
+ "note": "A control hand file for selftest.js part facts (reviewed mode); never copied to hand/.",
+ "facts": {
+  "ref.none": {
+   "value": "nil",
+   "why": "CONTROL ONLY: stands for the porter's record of the true value, so that a wrong value is the only thing left unattested; not a review",
+   "evidence": "the unmutated provider at v31-frozen"
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "CONTROL ONLY: stands for the porter's record of the true value (v3.3: the shared heading 'Client Methods' is a context OLD has not), so that a wrong value is the only thing left unattested; not a review",
+   "evidence": "the unmutated provider at v33s"
+  }
+ }
+}

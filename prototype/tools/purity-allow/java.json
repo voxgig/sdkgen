@@ -1,0 +1,38 @@
+[
+ {
+  "file": "Syntax",
+  "check": "import of a non-printing helper",
+  "text": "javaMap",
+  "why": "A printing helper of Java that purity's list does not know: it lays a map literal out as Map.of(k, v, ...) up to the ten pairs Map.of takes and as Map.ofEntries(Map.entry(k, v), ...) past them (ts/src/helpers/opExample.ts javaMap). It reads no model and decides nothing shown; the old java components used the same helper (through javaMapOf)."
+ },
+ {
+  "file": "Naming",
+  "check": "name surgery in helper JAVA_CORE (java/utility_java.ts)",
+  "text": ".replace(/-sdk$/, '')",
+  "why": "Not in JAVA_CORE: JAVA_CORE is the constant 'core' (utility_java.ts, the subpackage Main_java's Folder writes). purity's fnBody looks for the first '{' after a const that is not an arrow function, so it reads the body of mavenGroupId, the next function in the file, as JAVA_CORE's. The line is mavenGroupId's own (the Maven group id, which the hook does not use)."
+ },
+ {
+  "file": "Naming",
+  "check": "name surgery in helper JAVA_ENTITY (java/utility_java.ts)",
+  "text": ".replace(/-sdk$/, '')",
+  "why": "Not in JAVA_ENTITY: JAVA_ENTITY is the constant 'entity' (utility_java.ts, the subpackage EntityBase_java's and Entity_java's Folder writes, which the hook gives as names.entity at v3.4). As for JAVA_CORE above, purity's fnBody reads the body of mavenGroupId, the next function in the file, as the constant's; the line is mavenGroupId's own, which the hook does not use."
+ },
+ {
+  "file": "Naming",
+  "check": "name surgery in helper mavenGroupId (java/utility_java.ts)",
+  "text": ".replace(/-sdk$/, '')",
+  "why": "The hook neither imports nor calls mavenGroupId: purity reached it through the misread body of the constant JAVA_CORE (see the entry above). It is Package_java's Maven group id (com.<org>), which no page prints."
+ },
+ {
+  "file": "Syntax",
+  "check": "import of a non-printing helper",
+  "text": "javaMapItems",
+  "why": "The java generator's own rule for a Map.of argument (ts/src/helpers/opExample.ts javaMapItems: a member whose type is NULL is left out, because Map.of throws NullPointerException on a null value). ReadmeEntity_java, ReadmeHowto_java, ReadmeTopTest_java and utility_java's javaListMatch call it, and so did the three old components. The provider passes it the literal type of each entry the statement already holds; it reads no model and adds nothing to what is shown: get() on the map reads the left-out member as null."
+ },
+ {
+  "file": "Syntax",
+  "check": "import from outside the printing helpers",
+  "text": "import { javaLit } from './utility_java'",
+  "why": "The java generator's one table of example literals (utility_java.ts javaLit), which ReadmeEntity_java, ReadmeHowto_java and ReadmeTopTest_java also call. ts/test/generate.test.ts ('java and scala write example literals from one table each') fails while any other java file holds such a table, and the provider's own copy had lost the rule that keeps a null-only member out of Map.of. javaLit takes the canonical type key and the placeholder the statement already holds; it reads no model."
+ }
+]

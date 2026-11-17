@@ -1,0 +1,3279 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README options table's `base` cell (\"Base URL of the API server\"); that table (ReadmeOptions_java, unported) does not list `server`, so it states nothing about its variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "shared:ts:63dbaa39ec",
+  "why": "masked, it is the ts unit of class 63dbaa39ec (correction:S28, by rule:step-numbers)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "cb33d087c0"
+  ],
+  "unreviewed": 0
+ },
+ "ff4863a314": {
+  "outcome": "shared:ts:ff4863a314",
+  "why": "masked, it is the ts unit of class ff4863a314 (correction:S28, by rule:tutorial-leadin)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "ebfc2354cd"
+  ],
+  "unreviewed": 0
+ },
+ "ab76c4efa0": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared throw-style load sentence \"`load` returns the entity and throws on failure; `data()` reads its record\": load returns the entity (EntityBase.fragment.java:162 `return this;`) and a failure is thrown (RuntimeException, :176-182); \"raises\" was not Java's word",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "0538108a37": {
+  "outcome": "shared:ts:0538108a37",
+  "why": "masked, it is the ts unit of class 0538108a37 (restored:shared, by rule:entities-contract)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "9ca694d427"
+  ],
+  "unreviewed": 0
+ },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 0
+ },
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "86f6a4de0b": {
+  "outcome": "restored:shared",
+  "why": "the shared throw-style load sentence, in place of OLD's \"`load()` returns the ENTITY — call data() for the record — and raises on error\"; `load` is named without parentheses because a Java call must pass both arguments (facts.arity 2, derived)",
+  "n": 10,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 0
+ },
+ "6de940147a": {
+  "outcome": "same-meaning",
+  "why": "OLD and NEW both say list returns a list of entities, one per record, and how a record is read; \"throws\" for \"raises\". OLD said \"(as `Object`)\": the declared return type, which no shared sentence can state (an interface gap: an optional fact for the declared return, read by the list and load sentences of ts/src/helpers/runtimeprose.ts; java, kotlin, scala and csharp declare Object, Any?, Object and object?). The page is not false without it: the `(List<?>)` cast in the block under it and the REFERENCE heading `Object list(...)` show the declared type. OLD's call `list(null, null)` is the call the block makes and the REFERENCE list sentence names",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "21fc35c768"
+  ],
+  "unreviewed": 0
+ },
+ "5a3859e529": {
+  "outcome": "shared:ts:5a3859e529",
+  "why": "masked, it is the ts unit of class 5a3859e529 (correction:S28, by rule:tutorial-leadin)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "836725aec1"
+  ],
+  "unreviewed": 0
+ },
+ "368df803c0": {
+  "outcome": "same-meaning",
+  "why": "OLD: load returns the entity, data() reads the record, raises on error; NEW says the same in the shared sentence with Java's verb, throws",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "454d326c2d": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared create comment \"Create — returns the created entity; data() reads its record\"",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "77832f0697": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Update — the id comes off the created entity's record\": the example now reads the id off the created entity instead of supplying a literal",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Patch — sends only the fields given; the id comes off the created entity's record\"",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "cd43169d87": {
+  "outcome": "restored:shared",
+  "why": "the shared write sentence: each write returns the entity (EntityBase.fragment.java:158-162 returns this on success) and remove marks it (:159-160 markDeleted); a failure throws",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "1c1ea35e18": {
+  "outcome": "shared:py:d0874922f8",
+  "why": "masked, it is the py unit of class d0874922f8 (restored:fact, by hand)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "663f4dd150"
+  ],
+  "unreviewed": 0
+ },
+ "0ed7dc127d": {
+  "outcome": "shared:ts:079a339ba7",
+  "why": "masked, it is the ts unit of class 079a339ba7 (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "a102512ba9"
+  ],
+  "unreviewed": 0
+ },
+ "aeabe4bdf1": {
+  "outcome": "shared:ts:b7c60b65eb",
+  "why": "masked, it is the ts unit of class b7c60b65eb (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "e3dc10a6b7"
+  ],
+  "unreviewed": 0
+ },
+ "29bba9e03f": {
+  "outcome": "shared:ts:29bba9e03f",
+  "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "728df7c1c3"
+  ],
+  "unreviewed": 0
+ },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 0
+ },
+ "1fa815677a": {
+  "outcome": "shared:ts:1fa815677a",
+  "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "1760a2d205"
+  ],
+  "unreviewed": 0
+ },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 0
+ },
+ "79233d47ba": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 0
+ },
+ "defb73bfd8": {
+  "outcome": "shared:ts:defb73bfd8",
+  "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "3ab3fb2b2e"
+  ],
+  "unreviewed": 0
+ },
+ "9cbb8e3add": {
+  "outcome": "shared:ts:9cbb8e3add",
+  "why": "masked, it is the ts unit of class 9cbb8e3add (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "bcbefa9d5b"
+  ],
+  "unreviewed": 0
+ },
+ "c44f65ddeb": {
+  "outcome": "shared:ts:c44f65ddeb",
+  "why": "masked, it is the ts unit of class c44f65ddeb (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "0416b3a5e1"
+  ],
+  "unreviewed": 0
+ },
+ "3528a38f43": {
+  "outcome": "shared:ts:3528a38f43",
+  "why": "masked, it is the ts unit of class 3528a38f43 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "787064e0dd"
+  ],
+  "unreviewed": 0
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed \"2. Update a gauge\", not \"4. Create, update, and remove\"",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "b83e95bec6"
+  ],
+  "unreviewed": 0
+ },
+ "fdd288e4f2": {
+  "outcome": "restored:shared",
+  "why": "ref-issues: the shared write sentence for the one write the step makes",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README options table's `base` cell (\"Base URL of the API server\"), server-mixed; that table does not list `server`",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "shared:ts:8848495678",
+  "why": "masked, it is the ts unit of class 8848495678 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "DEMO_APIKEY in the tutorial's client sentence, which OLD's block also read (System.getenv(\"DEMO_APIKEY\"))",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the client sentence says the example passes the key from the environment as the `apikey` option; no client reads the environment itself (PrepareAuth_java reads only the options)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the client sentence names the secret option the example passes from the environment",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "17c5ab9d21": {
+  "outcome": "restored:fact",
+  "why": "facts.collection `List`, cited (MakeResult.java builds `List<Object> entities`): what list returns, in the shared list sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence (ref-issues)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them (server-mixed: account)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "5a5008f076": {
+  "outcome": "same-meaning",
+  "why": "OLD's prose named `list(null, null)`; NEW's tutorial prose names the operation `list` (a Java call passes both arguments, so the call is not named with empty parentheses); the block still calls list(null, null)",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "39a9cc2d2c": {
+  "outcome": "same-meaning",
+  "why": "OLD said \"(as `Object`)\": the declared return type, which no shared sentence can state (the interface gap recorded on 3b6556a083: an optional fact for the declared return, ts/src/helpers/runtimeprose.ts). Shown on the page by the `(List<?>)` cast in the block and by the REFERENCE signature `Object list(...)`",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "b591b930ea": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets / planet), not planetList / planetItem; the call and the cast are unchanged",
+  "n": 7,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "b4ab2ad4c9": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "ff1c629891": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal (crud-noupdate: create and remove)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "f143373bc5": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal (doc-nested: no patch)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "02cbd69daa": {
+  "outcome": "correction:S49",
+  "why": "ent-none: no entity, so nothing is cast to SdkEntity and its import is not printed; region has a default and is left out (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "14eb5dfde1": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "c76072420b": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "2a3f051b73": {
+  "outcome": "unification:write-comment-style",
+  "why": "the id is read off the created entity's record, `((Map<?, ?>) created.data()).get(\"id\")`: data() returns Object (EntityBase.fragment.java:85), a Map for an entity's record",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "20694d565b": {
+  "outcome": "correction:S49",
+  "why": "region has a default (`eu`) and is no longer passed; only required server variables are",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "fa99929817": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "39cd96730f": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "3805b111d7": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "3bcb548528": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "c4f1ef9b16": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: \"Create — returns the created entity; data() reads its record\", \"Update — the id comes off the created entity's record\", \"Patch — sends only the fields given; the id comes off the created entity's record\"; the id is read off the created entity (bound as SdkEntity, since the block reads it) instead of a literal",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "f9713683ba": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: a list is bound to the entity plural (planets, consoles)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "tutorial"
+ },
+ "2eb69fa8a2": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "rootquick"
+ },
+ "5eae1ff183": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 10,
+  "by": "hand",
+  "type": "added",
+  "section": "rootquick"
+ },
+ "df5011037a": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows); the list comment names the List it returns",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "9f62ed0ac0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "fe29b3e385": {
+  "outcome": "unification:java-imports",
+  "why": "the imports are printed once for the page, so java.util.List is imported whether or not the block lists (an unused import compiles: javac compiled the B root block, my/compileblocks.js); region has a default and is left out (S49); the step comment in the shared form",
+  "n": 7,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "b9e3d52f70": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50; the List import, region and step comment as fe29b3e385",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "607b56b792": {
+  "outcome": "unification:example-names",
+  "why": "crud-bare: the shared example names (planets / planet) and step comments; the calls are unchanged. The loop variable `planet` ends with the loop, so the later `SdkEntity planet` compiles (javac, crud model)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "9c279469e2": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50; region, names and step comments as 607b56b792",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "6488c17fe9": {
+  "outcome": "correction:S49",
+  "why": "region left out (S49); the shared example names and step comments as 607b56b792",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "0d677e39b3": {
+  "outcome": "correction:S49",
+  "why": "doc-list: region left out (S49); the shared example names and step comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "24b3f5e4cd": {
+  "outcome": "correction:S49",
+  "why": "doc-nested: region left out (S49); the shared example names and step comments",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "be87dc214e": {
+  "outcome": "unification:java-imports",
+  "why": "as fe29b3e385: the page's imports include java.util.List; region left out (S49)",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "055d34199b": {
+  "outcome": "unification:java-imports",
+  "why": "the page's imports include java.util.List; the shared step comments",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "cdb707579b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e8b6808d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "9abb7b4c63": {
+  "outcome": "correction:S49",
+  "why": "region has a default (`eu`) and is no longer passed",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "ac19dca525": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows); \"raises\" was not Java's word",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "5524296637": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\"): a java operation throws a RuntimeException (EntityBase.fragment.java:167-183 unexpected rethrows); \"List all\" overstated: the match and the endpoint may page",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id of the nested entity the root now loads",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id's example value",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3f329031a9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "7bf9c2f8d2": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "2061945a0b": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "5f5bb3e680": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c601d54b55": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6bc85eabaf": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "356d1582fc": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "897205fd36": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "20e6c8dde9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "8b65a53c90": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "78333f7015": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "05892bf152": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b440a40732": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e748d61f95": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "dc563305c5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e6685f3a5e": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "766d31b2c7": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c209a51ec5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "0100eff743": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README's direct section says the same of the result (its keys; ok false on a failure, err holding the error); this sentence says when err is there: SdkClient.java:370-377 puts err only for an unreadable body, :314-336 ok false and err for a request that cannot be made",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "afe39b8d17": {
+  "outcome": "same-meaning",
+  "why": "as 9c6d819441: the README states the result's keys; this sentence says when `err` is present (SdkClient.java:370-377, :314-336)",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "the README feature table names log and says nothing about its default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6afa2db482": {
+  "outcome": "same-meaning",
+  "why": "OLD's direct sentence, still stated in the README's direct section; the REFERENCE now says it in the shared Returns paragraph",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "48d12b9b75": {
+  "outcome": "same-meaning",
+  "why": "the README binds `Map<String, Object> fetchdef = client.prepare(...)`; the prepare Returns sentence names the same fetch definition, and that it throws",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "8124ae79db": {
+  "outcome": "correction:runtime-forms",
+  "why": "the options type cells give the declared type `Map<String, Object>` (the generator's java column; Main.fragment.java:16), not the raw `Map`",
+  "n": 76,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "55e0b0d3ac": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "83803533d5": {
+  "outcome": "shared:ts:83803533d5",
+  "why": "masked, it is the ts unit of class 83803533d5 (correction:X3, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a90f4e8394"
+  ],
+  "unreviewed": 1
+ },
+ "6aced21d71": {
+  "outcome": "shared:ts:6aced21d71",
+  "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4fb872e54f"
+  ],
+  "unreviewed": 0
+ },
+ "d90bf25f1c": {
+  "outcome": "shared:ts:d90bf25f1c",
+  "why": "masked, it is the ts unit of class d90bf25f1c (correction:residue-escaped-backticks, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "6828ec0405"
+  ],
+  "unreviewed": 1
+ },
+ "cba00db955": {
+  "outcome": "shared:go:cba00db955",
+  "why": "masked, it is the go unit of class cba00db955 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "5b0ec68709": {
+  "outcome": "shared:go:5b0ec68709",
+  "why": "masked, it is the go unit of class 5b0ec68709 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "08965ffbb4": {
+  "outcome": "shared:go:08965ffbb4",
+  "why": "masked, it is the go unit of class 08965ffbb4 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "889d332d0b": {
+  "outcome": "shared:go:889d332d0b",
+  "why": "masked, it is the go unit of class 889d332d0b (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "27149099a9": {
+  "outcome": "shared:go:27149099a9",
+  "why": "masked, it is the go unit of class 27149099a9 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "6fe270b550": {
+  "outcome": "shared:go:6fe270b550",
+  "why": "masked, it is the go unit of class 6fe270b550 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "f7233aa3b6": {
+  "outcome": "shared:go:f7233aa3b6",
+  "why": "masked, it is the go unit of class f7233aa3b6 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "ea4cb13a1e": {
+  "outcome": "shared:go:ea4cb13a1e",
+  "why": "masked, it is the go unit of class ea4cb13a1e (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "dcc70a03de": {
+  "outcome": "shared:go:dcc70a03de",
+  "why": "masked, it is the go unit of class dcc70a03de (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "d6472618ac": {
+  "outcome": "shared:go:d6472618ac",
+  "why": "masked, it is the go unit of class d6472618ac (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "d8de8bd95e": {
+  "outcome": "shared:go:d8de8bd95e",
+  "why": "masked, it is the go unit of class d8de8bd95e (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "f69eeecf59": {
+  "outcome": "shared:go:f69eeecf59",
+  "why": "masked, it is the go unit of class f69eeecf59 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "be02bc7506": {
+  "outcome": "shared:go:be02bc7506",
+  "why": "masked, it is the go unit of class be02bc7506 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "88cae6ce16": {
+  "outcome": "shared:go:88cae6ce16",
+  "why": "masked, it is the go unit of class 88cae6ce16 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "1ff9b11568": {
+  "outcome": "shared:go:1ff9b11568",
+  "why": "masked, it is the go unit of class 1ff9b11568 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "5ceb6ac376": {
+  "outcome": "shared:go:5ceb6ac376",
+  "why": "masked, it is the go unit of class 5ceb6ac376 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "88e2a0c24b": {
+  "outcome": "shared:go:88e2a0c24b",
+  "why": "masked, it is the go unit of class 88e2a0c24b (correction:S09-residue-usage, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "d7c526f4cb": {
+  "outcome": "shared:go:d7c526f4cb",
+  "why": "masked, it is the go unit of class d7c526f4cb (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "a6ea738079": {
+  "outcome": "shared:go:a6ea738079",
+  "why": "masked, it is the go unit of class a6ea738079 (correction:S09-residue-usage, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "8aeb9cdb81"
+  ],
+  "unreviewed": 1
+ },
+ "042740d448": {
+  "outcome": "shared:go:042740d448",
+  "why": "masked, it is the go unit of class 042740d448 (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "5ddee20721"
+  ],
+  "unreviewed": 0
+ },
+ "b2f8d161db": {
+  "outcome": "unification:member-sentences",
+  "why": "make's sentence names the class make() instantiates (Entity.fragment.java:21-24 `return new EntyClass(this.client, opts);` with a copy of the options) and that it keeps the client; the ledger pairs the first OLD entity with another under the renamed headings, a pairing artefact",
+  "n": 92,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d50241e758": {
+  "outcome": "restored:shared",
+  "why": "ent-none: as 0ca8d83ae7, the options type is in the table row [v3.4 re-count: x19 to x19, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92ce533dbd": {
+  "outcome": "shared:py:92ce533dbd",
+  "why": "masked, it is the py unit of class 92ce533dbd (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "3cd4c3ecdc"
+  ],
+  "unreviewed": 0
+ },
+ "91234b31f0": {
+  "outcome": "same-meaning",
+  "why": "the same remove sentence with Java's verb, throws (a RuntimeException)",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9a110f7104": {
+  "outcome": "same-meaning",
+  "why": "the same list sentence with the collection named (`List`, cited MakeResult.java) and Java's verb",
+  "n": 83,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client; testSDK is still described as static, in its heading (`static DemoSDK testSDK(...)`, Main.fragment.java:24,28)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5e882342e7": {
+  "outcome": "restored:fact",
+  "why": "the test constructor's headings are its two declared overloads, `static DemoSDK testSDK()` and `static DemoSDK testSDK(Map<String, Object> testopts, Map<String, Object> sdkopts)` (Main.fragment.java:24,28)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d553096f96": {
+  "outcome": "restored:shared",
+  "why": "restored in the shared test sentence: \"... both may be `null`\" (SdkClient.java:386-401 treats null as none) [v3.4 re-count: x18 to x18, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed \"Client Methods\" in every language (the shared heading Client <noun>); java's are instance methods of DemoSDK and its SdkClient base",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "051347e851": {
+  "outcome": "restored:fact",
+  "why": "the accessor heading is its declared signature, `SdkEntity ambient(Map<String, Object> entopts)` (MainEntity_java.ts:31)",
+  "n": 76,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "183dea1a01": {
+  "outcome": "unification:accessor-sentence",
+  "why": "the accessor sentence names the class the accessor instantiates, `AmbientEntity` (MainEntity_java.ts:32 `new ${javapackage}.entity.${cls}`), with \"Pass `null` for no initial options\"; the `SdkEntity` it returns is in the heading `SdkEntity ambient(Map<String, Object> entopts)`",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d0d999496b": {
+  "outcome": "restored:fact",
+  "why": "the accessor heading is its declared signature, `SdkEntity record_(Map<String, Object> entopts)` (MainEntity_java.ts:31; record_ is javaVarName's escape of the keyword record)",
+  "n": 17,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b99648bc3d": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Map<String, Object> optionsMap()` (SdkClient.java:99)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ea046341d8": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Utility getUtility()` (SdkClient.java:107)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5d58522590": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Map<String, Object> direct(Map<String, Object> fetchargs)` (SdkClient.java:201)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9e2fec681f": {
+  "outcome": "restored:shared",
+  "why": "restored in the shared Returns paragraph: the keys `ok`, `status`, `headers`, `data` for a read body, `err` when the body cannot be read or the request cannot be made (SdkClient.java:314-377)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5cae18f518": {
+  "outcome": "restored:shared",
+  "why": "restored as \"A failure is reported in the result, not as an error, so branch on `Boolean.TRUE.equals(result.get(\"ok\"))`\": direct catches every RuntimeException (SdkClient.java:313-327) and returns ok false; the branch is written as a Java truth test, since `result.get(\"ok\")` is an Object",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "cb54e2d2ed": {
+  "outcome": "correction:runtime-forms",
+  "why": "the type cell is the declared type `Map<String, Object>` (SdkClient.java:115,201 take Map<String, Object> fetchargs), derived from the code generator's java column; OLD wrote `Map`",
+  "n": 57,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "unification:direct-table",
+  "why": "the shared direct table cell \"Path parameter values for `{param}` substitution.\"",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ba2cbbb72b": {
+  "outcome": "restored:shared",
+  "why": "restored as \"**Returns:** `Map<String, Object>`, a result map. ...\"",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ab9b48548f": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Map<String, Object> prepare(Map<String, Object> fetchargs)` (SdkClient.java:115)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c41a606d0c": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared prepare Returns sentence: the fetch definition, and \"It throws on failure.\" (SdkClient.java:145 throws spec_method_allow)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0aeda469e7": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object load(Map<String, Object> reqmatch, Map<String, Object> ctrl)`",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "957163de8e": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared op sentence \"Returns the entity, and throws on failure. `data()` reads its record.\"",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f4eb119497": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object data(Object... args)` (EntityBase.fragment.java:85)",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "86206ede5b": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object match(Object... args)` (EntityBase.fragment.java:98)",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "23aa32ee94": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Entity make()` (Entity.fragment.java:21)",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "61862bd04a": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `String getName()` (EntityBase.fragment.java:80)",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "993924c4c6": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
+  "n": 77,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f0dcff770a": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object list(Map<String, Object> reqmatch, Map<String, Object> ctrl)`",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3469c940f0": {
+  "outcome": "restored:shared",
+  "why": "restored as \"The match is optional; a call without one is `list(null, null)`\": the no-match call (facts.arity 2). OLD's \"to list all records\" overstated (the entity's stored match still applies, and an endpoint may page)",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "562e90457c": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object create(Map<String, Object> reqdata, Map<String, Object> ctrl)`",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8bf4334a4c": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Returns the created entity, and throws on failure.\"",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "bc68fdd493": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object remove(Map<String, Object> reqmatch, Map<String, Object> ctrl)`",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b491a4c1aa": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object update(Map<String, Object> reqdata, Map<String, Object> ctrl)`",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "the update sentence says the id must be in the data unless the entity already holds it (the path parameter is read from the entity's match and data too, Param.java:56-77)",
+  "n": 20,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e1e40527b4": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Returns the updated entity, and throws on failure.\"",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); the shared sentence says \"except `log`\"",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d8fb46805d": {
+  "outcome": "restored:fact",
+  "why": "ctorAlts: the no-argument constructor `public ProjectNameSDK()` (Main.fragment.java:12-14, chains to this(null)), which OLD did not document",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d742744bfa": {
+  "outcome": "shared:go:d742744bfa",
+  "why": "masked, it is the go unit of class d742744bfa (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "34a4c51a24"
+  ],
+  "unreviewed": 1
+ },
+ "fb53c2b222": {
+  "outcome": "shared:ts:fb53c2b222",
+  "why": "masked, it is the ts unit of class fb53c2b222 (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e60e58a4c1"
+  ],
+  "unreviewed": 1
+ },
+ "49b4da0d68": {
+  "outcome": "shared:go:49b4da0d68",
+  "why": "masked, it is the go unit of class 49b4da0d68 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "87e15b60f5"
+  ],
+  "unreviewed": 1
+ },
+ "d265844143": {
+  "outcome": "shared:ts:d265844143",
+  "why": "masked, it is the ts unit of class d265844143 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "896aadddc1"
+  ],
+  "unreviewed": 1
+ },
+ "4ffa491cf2": {
+  "outcome": "shared:go:4ffa491cf2",
+  "why": "masked, it is the go unit of class 4ffa491cf2 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "538178cf46"
+  ],
+  "unreviewed": 1
+ },
+ "d89ec369a4": {
+  "outcome": "correction:runtime-forms",
+  "why": "the fetchargs type cells give the declared `Map<String, Object>` (the generator's java column) [v3.4 re-count: x128 to x128, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 128,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2066e4a9e": {
+  "outcome": "shared:ts:c2066e4a9e",
+  "why": "masked, it is the ts unit of class c2066e4a9e (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "67f823c461"
+  ],
+  "unreviewed": 1
+ },
+ "aa731f856a": {
+  "outcome": "shared:go:aa731f856a",
+  "why": "masked, it is the go unit of class aa731f856a (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6afe3f6b0d"
+  ],
+  "unreviewed": 0
+ },
+ "b2a89584dc": {
+  "outcome": "shared:ts:b2a89584dc",
+  "why": "masked, it is the ts unit of class b2a89584dc (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4eea983832"
+  ],
+  "unreviewed": 0
+ },
+ "ae8fd518c8": {
+  "outcome": "shared:go:ae8fd518c8",
+  "why": "masked, it is the go unit of class ae8fd518c8 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e61813ee66"
+  ],
+  "unreviewed": 0
+ },
+ "35ea4c3e84": {
+  "outcome": "shared:ts:35ea4c3e84",
+  "why": "masked, it is the ts unit of class 35ea4c3e84 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7247de945f"
+  ],
+  "unreviewed": 0
+ },
+ "ac200e5023": {
+  "outcome": "shared:go:ac200e5023",
+  "why": "masked, it is the go unit of class ac200e5023 (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8a90021109"
+  ],
+  "unreviewed": 0
+ },
+ "06e0e1b2b7": {
+  "outcome": "shared:ts:06e0e1b2b7",
+  "why": "masked, it is the ts unit of class 06e0e1b2b7 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c7c471a05"
+  ],
+  "unreviewed": 0
+ },
+ "a986258b72": {
+  "outcome": "shared:ts:a986258b72",
+  "why": "masked, it is the ts unit of class a986258b72 (unification:ref-test-heading, by rule:test-heading)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ffe4eb970b"
+  ],
+  "unreviewed": 0
+ },
+ "80a19e889c": {
+  "outcome": "restored:fact",
+  "why": "the no-argument test constructor overload (Main.fragment.java:24), which OLD did not document",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b86211ab60": {
+  "outcome": "shared:go:b86211ab60",
+  "why": "masked, it is the go unit of class b86211ab60 (correction:sentence-review-test, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "1f08cc692d"
+  ],
+  "unreviewed": 0
+ },
+ "de14fb5612": {
+  "outcome": "restored:fact",
+  "why": "the two-argument test constructor overload, its declaration (Main.fragment.java:28)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "10b2b1c0f3": {
+  "outcome": "shared:go:10b2b1c0f3",
+  "why": "masked, it is the go unit of class 10b2b1c0f3 (correction:sentence-review-test, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0daa28353f"
+  ],
+  "unreviewed": 0
+ },
+ "0bf51a1c12": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 0
+ },
+ "5141830e1c": {
+  "outcome": "restored:fact",
+  "why": "the accessor heading is its declared signature (MainEntity_java.ts:31)",
+  "n": 76,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fcc86222b8": {
+  "outcome": "shared:ts:cce9e8691a",
+  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 92,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "b931f79ecf": {
+  "outcome": "restored:fact",
+  "why": "the accessor heading is its declared signature (MainEntity_java.ts:31)",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "ccb0cbaefa": {
+  "outcome": "shared:c:d04a960684",
+  "why": "masked, it is the c unit of class d04a960684 (restored:fact, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "475c89eecd"
+  ],
+  "unreviewed": 0
+ },
+ "3b2a38b685": {
+  "outcome": "shared:c:31334dded1",
+  "why": "masked, it is the c unit of class 31334dded1 (restored:fact, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fb0d7d681d"
+  ],
+  "unreviewed": 0
+ },
+ "23a1b5f8bf": {
+  "outcome": "shared:elixir:4b8feb4091",
+  "why": "masked, it is the elixir unit of class 4b8feb4091 (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "78e12a7505"
+  ],
+  "unreviewed": 0
+ },
+ "92238dc9df": {
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7d64fb6cb3"
+  ],
+  "unreviewed": 0
+ },
+ "132238e7e0": {
+  "outcome": "shared:py:132238e7e0",
+  "why": "masked, it is the py unit of class 132238e7e0 (unification:direct-table, by rule:add-ctrl-row)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "107a756204"
+  ],
+  "unreviewed": 0
+ },
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 0
+ },
+ "8164d4b1a9": {
+  "outcome": "shared:ts:b82912bd60",
+  "why": "masked, it is the ts unit of class b82912bd60 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0a6358906c"
+  ],
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "shared:ts:e8e8cc2723",
+  "why": "masked, it is the ts unit of class e8e8cc2723 (correction:freeze-direct-wording, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "42aedb7ce3"
+  ],
+  "unreviewed": 1
+ },
+ "165ed4ede9": {
+  "outcome": "restored:shared",
+  "why": "the shared direct Returns sentence: when the body cannot be read ok is false and err is set (SdkClient.java:361-377); a request that cannot be made gives ok false and err only (:314-336)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c239b5e084": {
+  "outcome": "restored:shared",
+  "why": "as 5cae18f518: branch on a truth test of `ok`, written as Java tests an Object",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9bba7aefa5": {
+  "outcome": "shared:elixir:9702f02e8d",
+  "why": "masked, it is the elixir unit of class 9702f02e8d (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4fd58b94dc"
+  ],
+  "unreviewed": 0
+ },
+ "927fd64229": {
+  "outcome": "shared:py:927fd64229",
+  "why": "masked, it is the py unit of class 927fd64229 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "581898e092"
+  ],
+  "unreviewed": 0
+ },
+ "1502dedc90": {
+  "outcome": "shared:py:fc4313d211",
+  "why": "masked, it is the py unit of class fc4313d211 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c8f458658"
+  ],
+  "unreviewed": 0
+ },
+ "c692d85a6d": {
+  "outcome": "restored:shared",
+  "why": "prepare throws (SdkClient.java:145)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "861a2bfee4": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
+  "n": 76,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6e43bcb1ea": {
+  "outcome": "shared:ts:723eefda19",
+  "why": "masked, it is the ts unit of class 723eefda19 (correction:runtime-forms, by rule:op-signature)",
+  "n": 28,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4388aa476d"
+  ],
+  "unreviewed": 0
+ },
+ "80d61d1816": {
+  "outcome": "restored:shared",
+  "why": "the shared load sentence: \"Returns the entity, and throws on failure.\"",
+  "n": 28,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "ea3d2bd9d5": {
+  "outcome": "shared:ts:89c5ef9c6d",
+  "why": "masked, it is the ts unit of class 89c5ef9c6d (restored:shared, by hand)",
+  "n": 79,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3bb5d3a968"
+  ],
+  "unreviewed": 0
+ },
+ "f76b65843c": {
+  "outcome": "restored:fact",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object data(Object... args)`",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "28d0569a0d": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence: data(x) sets the data (EntityBase.fragment.java:86-90) and returns the current data (:94)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "486e9a1df9": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence: with no argument it returns a copy, `Struct.clone(this.data)` (:94; Struct.java builds a new LinkedHashMap)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c99c46e701": {
+  "outcome": "shared:py:783b0eefd7",
+  "why": "masked, it is the py unit of class 783b0eefd7 (correction:guard-param-name, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "440d837326"
+  ],
+  "unreviewed": 0
+ },
+ "46661fe900": {
+  "outcome": "restored:shared",
+  "why": "the shared match sentence: match works as data does (EntityBase.fragment.java:97-107)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0918d10148": {
+  "outcome": "shared:ts:0918d10148",
+  "why": "masked, it is the ts unit of class 0918d10148 (correction:decision-7-match-copy, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3c04f33c"
+  ],
+  "unreviewed": 0
+ },
+ "5f4f29598c": {
+  "outcome": "restored:fact",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Entity make()`",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0f229db3a8": {
+  "outcome": "shared:ts:39135c73d0",
+  "why": "masked, it is the ts unit of class 39135c73d0 (restored:fact, by rule:stream-member)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7034f074ec"
+  ],
+  "unreviewed": 0
+ },
+ "d51d922508": {
+  "outcome": "shared:clojure:d51d922508",
+  "why": "masked, it is the clojure unit of class d51d922508 (correction:sentence-review-stream, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "72922e3782"
+  ],
+  "unreviewed": 0
+ },
+ "169ee4e438": {
+  "outcome": "shared:c:169ee4e438",
+  "why": "masked, it is the c unit of class 169ee4e438 (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e866dc0d3c"
+  ],
+  "unreviewed": 0
+ },
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "4a8f5b4fa2": {
+  "outcome": "shared:rb:d8065d07cb",
+  "why": "masked, it is the rb unit of class d8065d07cb (correction:runtime-forms, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7bebc239a6"
+  ],
+  "unreviewed": 0
+ },
+ "f24a1942fc": {
+  "outcome": "shared:ts:42c3636ef9",
+  "why": "masked, it is the ts unit of class 42c3636ef9 (correction:runtime-forms, by rule:op-signature)",
+  "n": 83,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fa8637c0bd"
+  ],
+  "unreviewed": 0
+ },
+ "424b447659": {
+  "outcome": "restored:shared",
+  "why": "as 3469c940f0",
+  "n": 82,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "shared:go:393056d0c1",
+  "why": "masked, it is the go unit of class 393056d0c1 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "185f26bc68"
+  ],
+  "unreviewed": 0
+ },
+ "0f10166e63": {
+  "outcome": "shared:go:0f10166e63",
+  "why": "masked, it is the go unit of class 0f10166e63 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "abe9546ee3"
+  ],
+  "unreviewed": 0
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 0
+ },
+ "d3f3b82555": {
+  "outcome": "shared:go:d3f3b82555",
+  "why": "masked, it is the go unit of class d3f3b82555 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2b8bc511e9"
+  ],
+  "unreviewed": 0
+ },
+ "7615c6fe93": {
+  "outcome": "shared:ts:7615c6fe93",
+  "why": "masked, it is the ts unit of class 7615c6fe93 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c151802d4a"
+  ],
+  "unreviewed": 0
+ },
+ "6356afc86b": {
+  "outcome": "shared:go:6356afc86b",
+  "why": "masked, it is the go unit of class 6356afc86b (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "120aec2437"
+  ],
+  "unreviewed": 0
+ },
+ "193859bf79": {
+  "outcome": "shared:go:193859bf79",
+  "why": "masked, it is the go unit of class 193859bf79 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "22bdd0ff18"
+  ],
+  "unreviewed": 0
+ },
+ "28d337e733": {
+  "outcome": "shared:go:28d337e733",
+  "why": "masked, it is the go unit of class 28d337e733 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a8d9aa773"
+  ],
+  "unreviewed": 0
+ },
+ "9023782dca": {
+  "outcome": "shared:ts:9023782dca",
+  "why": "masked, it is the ts unit of class 9023782dca (correction:ref-6, by rule:add-action-op)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e3081c2053"
+  ],
+  "unreviewed": 0
+ },
+ "3d50058045": {
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ebea8de27f"
+  ],
+  "unreviewed": 0
+ },
+ "b1fe96103a": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions table's Call cell: the action is selected with `$action` beside the route's path parameter, through the operation it is routed by (create)",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 0
+ },
+ "aa24875f48": {
+  "outcome": "shared:ts:fc4eb8cd66",
+  "why": "masked, it is the ts unit of class fc4eb8cd66 (correction:runtime-forms, by rule:op-signature)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "03f31979fa"
+  ],
+  "unreviewed": 0
+ },
+ "a6c40f43b6": {
+  "outcome": "restored:shared",
+  "why": "the shared create sentence with Java's verb",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b753c6d30f": {
+  "outcome": "shared:ts:a0555bdf8e",
+  "why": "masked, it is the ts unit of class a0555bdf8e (correction:runtime-forms, by rule:op-signature)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0bd42bc9da"
+  ],
+  "unreviewed": 0
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 0
+ },
+ "caabc79e5a": {
+  "outcome": "restored:shared",
+  "why": "the shared update sentence with Java's verb",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "53d7c50411": {
+  "outcome": "shared:c:53d7c50411",
+  "why": "masked, it is the c unit of class 53d7c50411 (restored:shared, by rule:add-update-note)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "847a5afbe6"
+  ],
+  "unreviewed": 0
+ },
+ "d57c62c2e8": {
+  "outcome": "shared:ts:b2cf6be514",
+  "why": "masked, it is the ts unit of class b2cf6be514 (correction:runtime-forms, by rule:op-signature)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "21516a568c"
+  ],
+  "unreviewed": 0
+ },
+ "578c11b09a": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: java's deleted read names EntityBase by its package, which the hook gives from the generator's JAVA_ENTITY (EntityBase_java.ts and Entity_java.ts write it in that folder: `package JAVAPACKAGE.entity;`), because no example imports it; the java fixer compiled it with javac: without an import or the full name it does not compile, with the full name it does",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "717c04afe8": {
+  "outcome": "shared:ts:6979eaacb4",
+  "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
+  "n": 34,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea66aefd24"
+  ],
+  "unreviewed": 0
+ },
+ "1095fa7261": {
+  "outcome": "shared:ts:1095fa7261",
+  "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8d6016d7e2"
+  ],
+  "unreviewed": 0
+ },
+ "e94011ef3f": {
+  "outcome": "shared:ts:e94011ef3f",
+  "why": "masked, it is the ts unit of class e94011ef3f (correction:residue-escaped-backticks, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "93576f381a"
+  ],
+  "unreviewed": 1
+ },
+ "05a7710dde": {
+  "outcome": "shared:ts:05a7710dde",
+  "why": "masked, it is the ts unit of class 05a7710dde (correction:X3, by hand)",
+  "n": 38,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "30f77ee4fa"
+  ],
+  "unreviewed": 1
+ },
+ "9a5ba18db4": {
+  "outcome": "shared:ts:9a5ba18db4",
+  "why": "masked, it is the ts unit of class 9a5ba18db4 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a0fa8a325e"
+  ],
+  "unreviewed": 1
+ },
+ "2c3647ff67": {
+  "outcome": "shared:go:2c3647ff67",
+  "why": "masked, it is the go unit of class 2c3647ff67 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3013abd4"
+  ],
+  "unreviewed": 1
+ },
+ "f88d62ac3d": {
+  "outcome": "shared:ts:f88d62ac3d",
+  "why": "masked, it is the ts unit of class f88d62ac3d (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5d6d1a8aee"
+  ],
+  "unreviewed": 1
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6aeea92fca": {
+  "outcome": "shared:go:6aeea92fca",
+  "why": "masked, it is the go unit of class 6aeea92fca (correction:S50, by rule:add-secret)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dc97559d3c"
+  ],
+  "unreviewed": 0
+ },
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "05a5a62f89"
+  ],
+  "unreviewed": 0
+ },
+ "4568f32934": {
+  "outcome": "correction:runtime-forms",
+  "why": "the heading is the member's Java declaration (return type, name, typed parameters), derived by the guard from the runtime; OLD wrote name(params) -> Type: `Object patch(Map<String, Object> reqdata, Map<String, Object> ctrl)`",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "50d6ad1e73": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Returns the patched entity, and throws on failure.\"",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9aa3b32cd3": {
+  "outcome": "shared:ts:df0db6061e",
+  "why": "masked, it is the ts unit of class df0db6061e (correction:runtime-forms, by rule:op-signature)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a5e47cfb6f"
+  ],
+  "unreviewed": 0
+ },
+ "0c361e13cd": {
+  "outcome": "restored:shared",
+  "why": "the shared patch sentence with Java's verb",
+  "n": 4,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fde65c4f2c": {
+  "outcome": "shared:c:fde65c4f2c",
+  "why": "masked, it is the c unit of class fde65c4f2c (restored:shared, by rule:add-update-note)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6c805e005d"
+  ],
+  "unreviewed": 0
+ },
+ "cbcdf6e5f9": {
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d3d603d612"
+  ],
+  "unreviewed": 0
+ },
+ "bd4b298802": {
+  "outcome": "same-meaning",
+  "why": "ent-none: the README's testSDK line says both arguments may be null; this sentence says the same and what each holds (SdkClient.testOptions, SdkClient.java:386-401)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "d4af1f09d0": {
+  "outcome": "same-meaning",
+  "why": "OLD's \"Both arguments may be `null`\", still in the README; the REFERENCE now says it in the shared test sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "the unported README's testSDK line (its Reference section: \"Creates a test-mode client with mock transport\") and its \"Use test mode\" how-to (\"Create a mock client for unit testing\"), printed by java's own README components, true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "read, not run: Config_java.ts:205-208 makeFeature falls back to `new ${javapackage}.feature.BaseFeature()` for test when the SDK has no TestFeature; Fetcher.java:272-273 throws fetch_mode_block when the client mode is not live, and testSDK sets mode \"test\" (Main.fragment.java:31)"
+ },
+ "e710557629": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so testSDK builds a client with no mock transport (Config_java.ts:208 falls back to BaseFeature) that refuses every request (Fetcher.java:272-273 fetch_mode_block); the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f616466503"
+  ],
+  "unreviewed": 0
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 0
+ },
+ "a2f5d538a4": {
+  "outcome": "shared:go:a2f5d538a4",
+  "why": "masked, it is the go unit of class a2f5d538a4 (correction:S13-residue, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "b5ebb46b27"
+  ],
+  "unreviewed": 1
+ },
+ "7f188f33e8": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; make() returns it",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5d54345ff5": {
+  "outcome": "unification:member-sentences",
+  "why": "ref-issues: make's sentence names the class PlanetEntityEntity (entityClassName of planet_entity)",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "035bdeb70d": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is one table cell; its pipe is escaped and the relative link text kept without a link that would break from REFERENCE.md",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "032adf5867": {
+  "outcome": "restored:fact",
+  "why": "ref-issues: the accessor heading is its declared signature, `SdkEntity planetEntity(Map<String, Object> entopts)`",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ed3da20ea2": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class the accessor instantiates is PlanetEntityClient where the entity type PlanetEntity collides (entityClassName)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "92e45cf378": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the unescaped pipe split OLD's cell; the description is one escaped cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove is inactive, so it is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove is inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d245316c2e": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1f11d95d03": {
+  "outcome": "shared:ts:10f0d238e2",
+  "why": "masked, it is the ts unit of class 10f0d238e2 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "d89f31f1f5": {
+  "outcome": "restored:fact",
+  "why": "ref-issues: the accessor heading, `SdkEntity planetEntity(Map<String, Object> entopts)`",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "73324231a5": {
+  "outcome": "shared:ts:e35271001c",
+  "why": "masked, it is the ts unit of class e35271001c (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "7393140c1f": {
+  "outcome": "shared:ts:7393140c1f",
+  "why": "masked, it is the ts unit of class 7393140c1f (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9fe8f9d917"
+  ],
+  "unreviewed": 0
+ },
+ "7dd340f0f1": {
+  "outcome": "shared:ts:7dd340f0f1",
+  "why": "masked, it is the ts unit of class 7dd340f0f1 (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "99e505dfce": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename (ref-issues: the entity named planet_entity has the class PlanetEntityEntity)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d2af3edbca": {
+  "outcome": "shared:go:d2af3edbca",
+  "why": "masked, it is the go unit of class d2af3edbca (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "799b8582a8"
+  ],
+  "unreviewed": 0
+ },
+ "c2d76ec109": {
+  "outcome": "restored:fact",
+  "why": "ctorAlts: `new DemoSDK()` (Main.fragment.java:12)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fc7ff3ec21": {
+  "outcome": "restored:fact",
+  "why": "the test constructors are static (Main.fragment.java:24,28), as their headings declare",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "08fe31cfce": {
+  "outcome": "restored:shared",
+  "why": "the truth test of ok, `Boolean.TRUE.equals(result.get(\"ok\"))`",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "f58d94f4bf": {
+  "outcome": "restored:shared",
+  "why": "the truth test of ok",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "364e290dca": {
+  "outcome": "restored:shared",
+  "why": "the truth test of ok",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "data and match's parameter `args` and stream's parameter `args`, as declared",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "d2db1c52b0": {
+  "outcome": "restored:fact",
+  "why": "the stream member, `Stream<Object> stream(...)` (EntityBase.fragment.java:206), which OLD did not document",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd48acdf84": {
+  "outcome": "restored:fact",
+  "why": "the stream member (EntityBase.fragment.java:206)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter action (and the action name in the Actions table)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter callopts",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "the stream sentence \"It ends early once the `signal` in `callopts` reports an abort\" (EntityBase.fragment.java:214-216, 285)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "352437f6ea": {
+  "outcome": "restored:fact",
+  "why": "facts.collection `List` in the list sentence (cited MakeResult.java)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the action name in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "the client receiver in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "f5482334ef": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell's `Map.of`",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "f5e43d74c9": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the package names java's deleted read now prints (`voxgig.demosdk.entity.EntityBase`): the module the hook gives (javaPackage) and the generator's JAVA_ENTITY subpackage",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fb41c2d7ae": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the package names java's deleted read now prints (`voxgig.demosdk.entity.EntityBase`): the module the hook gives (javaPackage) and the generator's JAVA_ENTITY subpackage",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "2fc5c0888f": {
+  "outcome": "correction:v34-deleted-layout",
+  "why": "v3.4, one shared edit: the cast type of java's deleted read, which the port recorded as defect because no page names EntityBase's package; it is now printed in full, `((voxgig.demosdk.entity.EntityBase) result).deleted()`, from the hook's module and JAVA_ENTITY (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "the remove sentence names how the mark is read: ((EntityBase) result).deleted() (the deleted old component's wording) (EntityBase.fragment.java:47; runOp marks it, :159-160)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the example passes the secret the runtime reads (PrepareAuth_java: options \"secret\"), S50",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server option and its required variables, which the client must pass (a templated server URL; region has a default and is left out); the client sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8928fd2128": {
+  "outcome": "same-meaning",
+  "why": "OLD's \"Returns the `fetchdef`\" is the shared \"the fetch definition\"; the README's prepare example binds it as fetchdef",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "51be247ee2": {
+  "outcome": "correction:runtime-forms",
+  "why": "data's parameter is `Object... args` in the runtime (EntityBase.fragment.java:85), not newdata",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "7c0b860ae4": {
+  "outcome": "correction:runtime-forms",
+  "why": "match's parameter is `Object... args` in the runtime (EntityBase.fragment.java:98), not newmatch",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "5d21515960": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): Entity_java.ts:29,41 writes the class <Name>Entity (entityClassName) and MainEntity_java.ts:32 instantiates it; OLD headed it with the Name. The ledger pairs OLD and NEW headings by order across the rename",
+  "n": 9,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class PlanetEntityClient named in the accessor sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "532eee5659": {
+  "outcome": "unification:java-client-block",
+  "why": "the client printer declares `options` first and builds each map-valued option just before it is put (as OLD's tutorial did); OLD's features block built `feature` first. The same statements; javac compiled it (B reference, my/compileblocks.js)",
+  "n": 19,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "fde030938b": {
+  "outcome": "restored:shared",
+  "why": "the update example closes with the shared note \"// Fields to update\" inside the map; the call is unchanged",
+  "n": 16,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "d4a7f67a9c": {
+  "outcome": "unification:entity-heading",
+  "why": "a pairing artefact: NEW adds the no-argument test constructor block (`DemoSDK client = DemoSDK.testSDK();`), so blocks pair one place off; OLD's `SdkEntity ambient = client.ambient(null);` is unchanged under AmbientEntity",
+  "n": 18,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "69d4c36d51": {
+  "outcome": "unification:entity-heading",
+  "why": "a pairing artefact across the renamed entity headings: each instance block (`SdkEntity <var> = client.<accessor>(null);`) is printed unchanged, one place off",
+  "n": 41,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "c14083449d": {
+  "outcome": "unification:entity-heading",
+  "why": "as 69d4c36d51: the instance blocks are unchanged, paired one place off",
+  "n": 16,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "03b28127df": {
+  "outcome": "unification:entity-heading",
+  "why": "as 69d4c36d51",
+  "n": 16,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "e74eb8b869": {
+  "outcome": "unification:entity-heading",
+  "why": "as 69d4c36d51: the last instance block, OLD's `SdkEntity utility = client.utility(null);` unchanged, has no partner after the shift",
+  "n": 17,
+  "by": "hand",
+  "type": "block-new-only",
+  "section": "reference"
+ },
+ "a5c010c994": {
+  "outcome": "restored:shared",
+  "why": "the patch example closes with \"// Only the fields to change\"; the call is unchanged",
+  "n": 4,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "be53355376": {
+  "outcome": "restored:fact",
+  "why": "ent-none: the no-argument test constructor overload's example (Main.fragment.java:24)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-new-only",
+  "section": "reference"
+ },
+ "566e6fed6d": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the planet remove example is gone (remove is inactive); the tool pairs OLD's remove block with the next block, the PlanetEntity instance block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "f348eeaeba": {
+  "outcome": "restored:shared",
+  "why": "the \"Fields to update\" note",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "1070ff1f72": {
+  "outcome": "restored:shared",
+  "why": "the update and patch notes",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "54d103011e": {
+  "outcome": "restored:shared",
+  "why": "the \"Only the fields to change\" note",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "0856872351": {
+  "outcome": "restored:shared",
+  "why": "the patch note",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "3a03a66ea9": {
+  "outcome": "restored:shared",
+  "why": "the patch note",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

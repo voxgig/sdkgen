@@ -1,0 +1,2813 @@
+{
+ "3804708696": {
+  "outcome": "unification:ref-generic-names",
+  "why": "the reference names its values the same for every entity (`results`, `item`), as OLD did for the list (`results`) but not its item; the same loop and print",
+  "n": 83,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match: the README options table row for `base` names the API server; that table does not list `server`, so it states nothing about the server variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "shared:ts:63dbaa39ec",
+  "why": "masked, it is the ts unit of class 63dbaa39ec (correction:S28, by rule:step-numbers)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "cb33d087c0"
+  ],
+  "unreviewed": 0
+ },
+ "83977380d8": {
+  "outcome": "restored:shared",
+  "why": "the shared load sentence: same facts as OLD (returns the entity, throws on failure, `data()` reads its record); `load` is named without parentheses because a call takes two arguments (arity 2, the runtime's load(reqmatch, ctrl) has no defaults), and the record's type `Value` is added (types.hpp `Value data(const Value& arg = Value::undef()) override;`)",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "ff4863a314": {
+  "outcome": "shared:ts:ff4863a314",
+  "why": "masked, it is the ts unit of class ff4863a314 (correction:S28, by rule:tutorial-leadin)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "ebfc2354cd"
+  ],
+  "unreviewed": 0
+ },
+ "0538108a37": {
+  "outcome": "shared:ts:0538108a37",
+  "why": "masked, it is the ts unit of class 0538108a37 (restored:shared, by rule:entities-contract)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "9ca694d427"
+  ],
+  "unreviewed": 0
+ },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 0
+ },
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 0
+ },
+ "c379ac110f": {
+  "outcome": "restored:shared",
+  "why": "the shared list sentence: same facts as OLD (a `std::vector` of entities, one per record, throws on failure, `data()` reads an entity's record), `list` named bare (arity 2) and the record's type `Value` added; the thrown type OLD named, sdk::SdkErrorPtr, is in the catch clause of the block under it (`catch (const SdkErrorPtr& err)`)",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "21fc35c768"
+  ],
+  "unreviewed": 0
+ },
+ "5a3859e529": {
+  "outcome": "shared:ts:5a3859e529",
+  "why": "masked, it is the ts unit of class 5a3859e529 (correction:S28, by rule:tutorial-leadin)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "836725aec1"
+  ],
+  "unreviewed": 0
+ },
+ "7259466560": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 4,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "8774ce7ec3": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared create comment, which also says how its record is read (`data()`)",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared patch comment, which also says where the id comes from",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "cd43169d87": {
+  "outcome": "restored:shared",
+  "why": "the shared write sentence: each write returns the entity it wrote and throws on failure, which OLD cpp said only in its create comment",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "1c1ea35e18": {
+  "outcome": "shared:py:d0874922f8",
+  "why": "masked, it is the py unit of class d0874922f8 (restored:fact, by hand)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "663f4dd150"
+  ],
+  "unreviewed": 0
+ },
+ "aeabe4bdf1": {
+  "outcome": "shared:ts:b7c60b65eb",
+  "why": "masked, it is the ts unit of class b7c60b65eb (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "e3dc10a6b7"
+  ],
+  "unreviewed": 0
+ },
+ "29bba9e03f": {
+  "outcome": "shared:ts:29bba9e03f",
+  "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "728df7c1c3"
+  ],
+  "unreviewed": 0
+ },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 0
+ },
+ "1fa815677a": {
+  "outcome": "shared:ts:1fa815677a",
+  "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "1760a2d205"
+  ],
+  "unreviewed": 0
+ },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 0
+ },
+ "79233d47ba": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 0
+ },
+ "defb73bfd8": {
+  "outcome": "shared:ts:defb73bfd8",
+  "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "3ab3fb2b2e"
+  ],
+  "unreviewed": 0
+ },
+ "9cbb8e3add": {
+  "outcome": "shared:ts:9cbb8e3add",
+  "why": "masked, it is the ts unit of class 9cbb8e3add (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "bcbefa9d5b"
+  ],
+  "unreviewed": 0
+ },
+ "c44f65ddeb": {
+  "outcome": "shared:ts:c44f65ddeb",
+  "why": "masked, it is the ts unit of class c44f65ddeb (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "0416b3a5e1"
+  ],
+  "unreviewed": 0
+ },
+ "3528a38f43": {
+  "outcome": "shared:ts:3528a38f43",
+  "why": "masked, it is the ts unit of class 3528a38f43 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "787064e0dd"
+  ],
+  "unreviewed": 0
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update a gauge",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "b83e95bec6"
+  ],
+  "unreviewed": 0
+ },
+ "fdd288e4f2": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the shared write sentence for one write, named bare (arity 2)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match: the README options table row for `base` names the API server; that table does not list `server`, so it states nothing about the server variables (server-mixed)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "shared:ts:8848495678",
+  "why": "masked, it is the ts unit of class 8848495678 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "DEMO_APIKEY in the tutorial's client sentence; OLD cpp's block already read it with `std::getenv`",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the shared client sentence says the example passes the key from the environment; no PrepareAuth of the twenty reads the environment, and OLD cpp's block already read it with `std::getenv` and passed it as `apikey`",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f570f0c695": {
+  "outcome": "restored:fact",
+  "why": "the record's type, `Value` (facts.recordType, cited at types.hpp `Value data(const Value& arg = Value::undef()) override;`), in the list and load sentences",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "b1fa625954": {
+  "outcome": "same-meaning",
+  "why": "OLD named the thrown type as sdk::SdkErrorPtr; every block opens `using namespace sdk;`, so the qualifier is not needed, and the catch clause names the type",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "61ddd5c2dc": {
+  "outcome": "restored:printer",
+  "why": "the thrown type is named by the catch clause the attempt printer writes under the sentence (`catch (const SdkErrorPtr& err)`), as OLD's block did",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "8415dfcf46": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49), and the block includes `<iostream>` itself because it prints (iostream-include: OLD reached it only through the log feature's header)",
+  "n": 10,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "5772a4ca63": {
+  "outcome": "correction:S50",
+  "why": "Basic auth: the secret is held from DEMO_SECRET and passed (S50), the server variables are passed (S49), and `<iostream>` is included (iostream-include)",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "4e46c3ee17": {
+  "outcome": "correction:S49",
+  "why": "auth-off: OLD built the client with `DemoSDK::create()`, which passes no options, so the templated server had no tenant; the client now passes `server` (S49), and `<iostream>` is included (iostream-include)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "39fd7fb6ab": {
+  "outcome": "correction:iostream-include",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "65d6271ee4": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); this section prints nothing, so no `<iostream>`",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "fdb25e8822": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable `account` (server-mixed, S49), and `<iostream>` is included (iostream-include)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "20e1f83164": {
+  "outcome": "correction:iostream-include",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "61a74bcbb2": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "c8351e588e": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 10,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "84cce9c048": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "a50b67ddd7": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "7a5a0031df": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); `<iostream>` included (iostream-include); the step comments are the shared ones",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "0ea8e96b6c": {
+  "outcome": "correction:S50",
+  "why": "Basic auth: the secret is passed (S50), the server variables are passed (S49), `<iostream>` included; the step comments are the shared ones",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "02a35690c9": {
+  "outcome": "correction:S49",
+  "why": "auth-off: OLD built the client with `DemoSDK::create()`, passing no server variables to a templated server; the client now passes `server` (S49); `<iostream>` included; shared step comments",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "4e3e036aa2": {
+  "outcome": "correction:iostream-include",
+  "why": "crud-bare: the block prints, so it includes `<iostream>` itself rather than reaching it through the log feature's header; the step comments are the shared ones",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "bd5dfa3c63": {
+  "outcome": "correction:S50",
+  "why": "Basic auth: the secret is passed (S50), the server variables are passed (S49), `<iostream>` included; shared step comments",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "b248888d1e": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); `<iostream>` included; shared step comments",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "8f003bd94c": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); `<iostream>` included; shared step comments",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "00a445458f": {
+  "outcome": "unification:quick-load-nested",
+  "why": "doc-nested: the root quick start loads the entity the tutorial loads (the nested satellite, with its parent key `planet_id`), as every ported language does; also S49 and iostream-include",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "42dde030df": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); the block prints nothing, so no `<iostream>`",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "6388e81bd1": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable `account` (server-mixed, S49); `<iostream>` included; shared step comments",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "a3b59084f6": {
+  "outcome": "correction:iostream-include",
+  "why": "no templated server here: only `<iostream>` (the block prints) and the shared step comment change",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "2b7c065103": {
+  "outcome": "correction:iostream-include",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e8b6808d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7851b353c0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5f9251f640": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "5524296637": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:quick-load-nested",
+  "why": "doc-nested: the root quick start loads the nested satellite, whose match gives its parent key `planet_id`",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:quick-load-nested",
+  "why": "doc-nested: the placeholder for the parent key the nested load passes",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; `ok` false on a failure, `err` holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bed0669016": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (`ok` false on a failure, `err` holding the error); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log inside an unported README block; the README says nothing about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "7c8b3a1c8e": {
+  "outcome": "same-meaning",
+  "why": "OLD's direct sentence; its facts are now the shared Returns paragraph, and the README states the same keys",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9641d970df": {
+  "outcome": "same-meaning",
+  "why": "the README prepare example binds fetchdef; the new Returns sentence calls it the fetch definition; nothing disagrees",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6ae5c02c41": {
+  "outcome": "same-meaning",
+  "why": "the options row; the type cell beside it says `Value`, and the shared constructor sentence gives no separate map sentence for keys: member",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "97b7dcdc97": {
+  "outcome": "shared:c:97b7dcdc97",
+  "why": "masked, it is the c unit of class 97b7dcdc97 (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "38db57bb5d"
+  ],
+  "unreviewed": 0
+ },
+ "83803533d5": {
+  "outcome": "shared:ts:83803533d5",
+  "why": "masked, it is the ts unit of class 83803533d5 (correction:X3, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a90f4e8394"
+  ],
+  "unreviewed": 1
+ },
+ "6aced21d71": {
+  "outcome": "shared:ts:6aced21d71",
+  "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4fb872e54f"
+  ],
+  "unreviewed": 0
+ },
+ "6738d1d568": {
+  "outcome": "shared:py:6738d1d568",
+  "why": "masked, it is the py unit of class 6738d1d568 (unification:member-sentences, by rule:make-sentence)",
+  "n": 92,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "f6b8425ed5"
+  ],
+  "unreviewed": 0
+ },
+ "e71c59f467": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 93,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "549566830a": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 93,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d90bf25f1c": {
+  "outcome": "shared:ts:d90bf25f1c",
+  "why": "masked, it is the ts unit of class d90bf25f1c (correction:residue-escaped-backticks, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "6828ec0405"
+  ],
+  "unreviewed": 1
+ },
+ "aa47f18dea": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 82,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "42882d1dfe": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 27,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "882b9aa574": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6ff05c6d3f": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1710a76655": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "fd5353fde3": {
+  "outcome": "same-meaning",
+  "why": "the shared return clause: the same facts, failure worded as in every language",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "shared:go:042740d448",
+  "why": "masked, it is the go unit of class 042740d448 (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "5ddee20721"
+  ],
+  "unreviewed": 0
+ },
+ "761c6d484c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "698f390733": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d0145f6c85": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1fac1cf55c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "f8a8fd01f9": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "052a7f401b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dd6016aa7d": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "93dc6c7898": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6528a2408e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "eb1c690d35": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1cac3697e0": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "73f17f9d92": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c5d3b0e2bc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "4ebe439395": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "2e2ea2f618": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "733031c9b8": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "53e790dd17": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9b440c2085": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b3e7de27cd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92ce533dbd": {
+  "outcome": "shared:py:92ce533dbd",
+  "why": "masked, it is the py unit of class 92ce533dbd (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "3cd4c3ecdc"
+  ],
+  "unreviewed": 0
+ },
+ "d9fa60f1b3": {
+  "outcome": "same-meaning",
+  "why": "the shared return clause: the same facts, failure worded as in every language",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "86be21c15d": {
+  "outcome": "same-meaning",
+  "why": "the shared return clause: the same facts, failure worded as in every language",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b27dc0e28e": {
+  "outcome": "same-meaning",
+  "why": "the shared Returns line for direct: the same type, `Value`, a result map",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92976876f8": {
+  "outcome": "same-meaning",
+  "why": "the shared accessor sentence; the entity is bound to the client either way (MainEntity_cpp passes `this` to the entity constructor), and the next sentence says what to pass for no options",
+  "n": 92,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "8c4aaeefee": {
+  "outcome": "restored:shared",
+  "why": "the options table's first row says `options` is a `Value`, and the README's own reference says it is an `sdk::Value` map",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client; both testSDK overloads (Main.fragment.cpp:23,27) are its members, declared static and printed on the class with `::`",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2a1b3be00a": {
+  "outcome": "restored:shared",
+  "why": "the heading is the runtime declaration with types and return, `DemoSDK::testSDK(Value testopts, Value sdkopts) -> std::shared_ptr<DemoSDK>` (Main.fragment.cpp:27)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e77908c16f": {
+  "outcome": "restored:shared",
+  "why": "both arguments may be `Value::undef()` is the shared test sentence's last clause; the no-arg overload is documented as its own entry, `DemoSDK::testSDK()` (Main.fragment.cpp:23), with the shared sentence that it takes no arguments",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed Client <noun> in every language (decided once, the sentence round); cpp's are called with `->` on the shared handle",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c30707d319": {
+  "outcome": "correction:typed-signatures",
+  "why": "the accessor heading is MainEntity_cpp's declaration with its parameter type, `Value entopts = Value::undef()`; OLD wrote the name only",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "28ab760c3d": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "cafac3e3bf": {
+  "outcome": "restored:shared",
+  "why": "the shared Returns paragraph states the keys (`ok`, `status`, `headers`, `data`) and when `err` is there, which OLD said in one clause",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a6d6f7b357": {
+  "outcome": "correction:direct-truth-test",
+  "why": "OLD said to branch on getp(result, \"ok\"), which is a `Value` with no conversion to bool (value.hpp declares no operator bool), so it cannot stand as an if condition; the shared sentence says a failure is in the result and branches on `is_true(getp(result, \"ok\"))` (core/struct.hpp:81 `inline bool is_true(const Value& v)`)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "the shared params row says the same, with what the values are for (`{param}` substitution)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "88dc9b435c": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "245210ccea": {
+  "outcome": "restored:shared",
+  "why": "the shared prepare Returns: the fetch definition, and It throws on failure",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f0c6b07501": {
+  "outcome": "restored:shared",
+  "why": "the shared load clause and record sentence: returns the entity, throws on failure, `data()` reads its record",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "35c259d340": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence: get or set, and with no argument a copy (`return Struct::clone(data_);`, types.hpp)",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ca125addeb": {
+  "outcome": "restored:shared",
+  "why": "the shared match sentence: works the same as `data()`, and returns a copy (`return Struct::clone(match_);`, types.hpp)",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8790812725": {
+  "outcome": "correction:list-no-match-call",
+  "why": "OLD said a call without a match lists all records; the shared sentence names the call that compiles, `list(Value::undef(), Value::undef())`, and does not claim every record (the entity's stored match still applies, and an endpoint may page)",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5ca86a3aba": {
+  "outcome": "restored:shared",
+  "why": "the shared list return clause: a `std::vector` of entities, one per record, and throws on failure",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the shared update/patch sentence: the data must include the entity id, unless the entity already holds it",
+  "n": 20,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "restored:shared",
+  "why": "the shared features sentence that replaced it says each feature is inactive until switched on except `log` (model/feature/log.aontu has active: true); OLD said no feature runs, which log contradicts",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "restored:shared",
+  "why": "replaced by the shared feature sentence on what runs by default; OLD said every feature costs nothing until switched on, false for log",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "327f56492c": {
+  "outcome": "restored:fact",
+  "why": "the static `create()` (Main.fragment.cpp:34, `return std::make_shared<ProjectNameSDK>(Value::undef());`), which OLD's tutorial used and its reference did not document",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d742744bfa": {
+  "outcome": "shared:go:d742744bfa",
+  "why": "masked, it is the go unit of class d742744bfa (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "34a4c51a24"
+  ],
+  "unreviewed": 1
+ },
+ "fb53c2b222": {
+  "outcome": "shared:ts:fb53c2b222",
+  "why": "masked, it is the ts unit of class fb53c2b222 (correction:D26, by hand)",
+  "n": 17,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e60e58a4c1"
+  ],
+  "unreviewed": 1
+ },
+ "49b4da0d68": {
+  "outcome": "shared:go:49b4da0d68",
+  "why": "masked, it is the go unit of class 49b4da0d68 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "87e15b60f5"
+  ],
+  "unreviewed": 1
+ },
+ "d265844143": {
+  "outcome": "shared:ts:d265844143",
+  "why": "masked, it is the ts unit of class d265844143 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "896aadddc1"
+  ],
+  "unreviewed": 1
+ },
+ "4ffa491cf2": {
+  "outcome": "shared:go:4ffa491cf2",
+  "why": "masked, it is the go unit of class 4ffa491cf2 (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "538178cf46"
+  ],
+  "unreviewed": 1
+ },
+ "c2066e4a9e": {
+  "outcome": "shared:ts:c2066e4a9e",
+  "why": "masked, it is the ts unit of class c2066e4a9e (correction:D26, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "67f823c461"
+  ],
+  "unreviewed": 1
+ },
+ "aa731f856a": {
+  "outcome": "shared:go:aa731f856a",
+  "why": "masked, it is the go unit of class aa731f856a (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6afe3f6b0d"
+  ],
+  "unreviewed": 0
+ },
+ "b2a89584dc": {
+  "outcome": "shared:ts:b2a89584dc",
+  "why": "masked, it is the ts unit of class b2a89584dc (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4eea983832"
+  ],
+  "unreviewed": 0
+ },
+ "ae8fd518c8": {
+  "outcome": "shared:go:ae8fd518c8",
+  "why": "masked, it is the go unit of class ae8fd518c8 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e61813ee66"
+  ],
+  "unreviewed": 0
+ },
+ "35ea4c3e84": {
+  "outcome": "shared:ts:35ea4c3e84",
+  "why": "masked, it is the ts unit of class 35ea4c3e84 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7247de945f"
+  ],
+  "unreviewed": 0
+ },
+ "ac200e5023": {
+  "outcome": "shared:go:ac200e5023",
+  "why": "masked, it is the go unit of class ac200e5023 (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8a90021109"
+  ],
+  "unreviewed": 0
+ },
+ "06e0e1b2b7": {
+  "outcome": "shared:ts:06e0e1b2b7",
+  "why": "masked, it is the ts unit of class 06e0e1b2b7 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c7c471a05"
+  ],
+  "unreviewed": 0
+ },
+ "a986258b72": {
+  "outcome": "shared:ts:a986258b72",
+  "why": "masked, it is the ts unit of class a986258b72 (unification:ref-test-heading, by rule:test-heading)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ffe4eb970b"
+  ],
+  "unreviewed": 0
+ },
+ "0406c64e47": {
+  "outcome": "restored:shared",
+  "why": "the test constructor's declaration with types and return (Main.fragment.cpp:27)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "1054f62797": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "938b372716": {
+  "outcome": "restored:fact",
+  "why": "the no-argument overload, Main.fragment.cpp:23, which OLD mentioned in a sentence",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "10b2b1c0f3": {
+  "outcome": "shared:go:10b2b1c0f3",
+  "why": "masked, it is the go unit of class 10b2b1c0f3 (correction:sentence-review-test, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0daa28353f"
+  ],
+  "unreviewed": 0
+ },
+ "b86211ab60": {
+  "outcome": "shared:go:b86211ab60",
+  "why": "masked, it is the go unit of class b86211ab60 (correction:sentence-review-test, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "1f08cc692d"
+  ],
+  "unreviewed": 0
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 0
+ },
+ "2357f19cec": {
+  "outcome": "shared:ts:82b6e219ea",
+  "why": "masked, it is the ts unit of class 82b6e219ea (correction:guard-accessor-arg, by hand)",
+  "n": 92,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4af20ce756"
+  ],
+  "unreviewed": 0
+ },
+ "74a09195ec": {
+  "outcome": "shared:elixir:352c3544e1",
+  "why": "masked, it is the elixir unit of class 352c3544e1 (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fef59d5955"
+  ],
+  "unreviewed": 0
+ },
+ "6bb14872a5": {
+  "outcome": "shared:elixir:4b8feb4091",
+  "why": "masked, it is the elixir unit of class 4b8feb4091 (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "78e12a7505"
+  ],
+  "unreviewed": 0
+ },
+ "09a8c34273": {
+  "outcome": "shared:ts:6979eaacb4",
+  "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
+  "n": 34,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea66aefd24"
+  ],
+  "unreviewed": 0
+ },
+ "584b977023": {
+  "outcome": "same-meaning",
+  "why": "the `Value` type cell of the options row, as OLD's table had it [v3.4 re-count: x90 to x90, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 90,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "92238dc9df": {
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7d64fb6cb3"
+  ],
+  "unreviewed": 0
+ },
+ "132238e7e0": {
+  "outcome": "shared:py:132238e7e0",
+  "why": "masked, it is the py unit of class 132238e7e0 (unification:direct-table, by rule:add-ctrl-row)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "107a756204"
+  ],
+  "unreviewed": 0
+ },
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "shared:ts:e8e8cc2723",
+  "why": "masked, it is the ts unit of class e8e8cc2723 (correction:freeze-direct-wording, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "42aedb7ce3"
+  ],
+  "unreviewed": 1
+ },
+ "36e25ebab7": {
+  "outcome": "shared:c:36e25ebab7",
+  "why": "masked, it is the c unit of class 36e25ebab7 (correction:freeze-direct-wording, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fe4d5d27e7"
+  ],
+  "unreviewed": 1
+ },
+ "bd420dcfaf": {
+  "outcome": "correction:direct-truth-test",
+  "why": "the shared direct sentence branches on `is_true(getp(result, \"ok\"))`, which compiles; OLD named `getp(result, \"ok\")`, a `Value` with no bool conversion",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6b28fd4f2e": {
+  "outcome": "shared:elixir:9702f02e8d",
+  "why": "masked, it is the elixir unit of class 9702f02e8d (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4fd58b94dc"
+  ],
+  "unreviewed": 0
+ },
+ "927fd64229": {
+  "outcome": "shared:py:927fd64229",
+  "why": "masked, it is the py unit of class 927fd64229 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "581898e092"
+  ],
+  "unreviewed": 0
+ },
+ "911ca33c6e": {
+  "outcome": "shared:py:fc4313d211",
+  "why": "masked, it is the py unit of class fc4313d211 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c8f458658"
+  ],
+  "unreviewed": 0
+ },
+ "c692d85a6d": {
+  "outcome": "restored:shared",
+  "why": "the shared failure sentence for prepare and stream: prepare throws (types.hpp `throw ctx->makeError(\"spec_method_allow\",`), and stream rethrows what makeError raises",
+  "n": 113,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "80d61d1816": {
+  "outcome": "restored:shared",
+  "why": "the shared load clause: returns the entity, throws on failure",
+  "n": 28,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "ea3d2bd9d5": {
+  "outcome": "restored:shared",
+  "why": "v3.4, one shared edit: the record clause every single-entity operation's sentence ends with; the port recorded it as defect for its 15 remove copies, false for cpp (remove absorbs only resmatch); those now print the removeKeeps sentence instead (ref.facts.removeKeeps, cited to EntityRemoveOp.fragment.cpp), and the copies left follow load, create, update and patch, which absorb the response's record (true of cpp, as the port read) [v3.4 re-count: x64 to x64, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 64,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f196c5678a": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence (kind data: the argument may be left out)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "28d0569a0d": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence: with data it sets and returns the current data (types.hpp EntityBase::data)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "486e9a1df9": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence: no argument returns a copy (`return Struct::clone(data_);`)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9e2755ab01": {
+  "outcome": "restored:shared",
+  "why": "the shared match sentence (kind match)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "46661fe900": {
+  "outcome": "restored:shared",
+  "why": "the shared match sentence: works the same as `data()`",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0918d10148": {
+  "outcome": "shared:ts:0918d10148",
+  "why": "masked, it is the ts unit of class 0918d10148 (correction:decision-7-match-copy, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3c04f33c"
+  ],
+  "unreviewed": 0
+ },
+ "38a13728b1": {
+  "outcome": "shared:ts:39135c73d0",
+  "why": "masked, it is the ts unit of class 39135c73d0 (restored:fact, by rule:stream-member)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7034f074ec"
+  ],
+  "unreviewed": 0
+ },
+ "4a998871fe": {
+  "outcome": "shared:c:4a998871fe",
+  "why": "masked, it is the c unit of class 4a998871fe (correction:sentence-review-stream, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "aa27f7dd7e"
+  ],
+  "unreviewed": 0
+ },
+ "169ee4e438": {
+  "outcome": "shared:c:169ee4e438",
+  "why": "masked, it is the c unit of class 169ee4e438 (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e866dc0d3c"
+  ],
+  "unreviewed": 0
+ },
+ "f37b7d5e54": {
+  "outcome": "correction:list-no-match-call",
+  "why": "the call without a match is printed from the operation's facts: two arguments, each `Value::undef()` (arity 2; list(const Value& reqmatch, const Value& ctrl) has no defaults)",
+  "n": 82,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "2829afdd30": {
+  "outcome": "restored:shared",
+  "why": "the shared list return clause",
+  "n": 83,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "shared:go:393056d0c1",
+  "why": "masked, it is the go unit of class 393056d0c1 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "185f26bc68"
+  ],
+  "unreviewed": 0
+ },
+ "0f10166e63": {
+  "outcome": "shared:go:0f10166e63",
+  "why": "masked, it is the go unit of class 0f10166e63 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "abe9546ee3"
+  ],
+  "unreviewed": 0
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 0
+ },
+ "d3f3b82555": {
+  "outcome": "shared:go:d3f3b82555",
+  "why": "masked, it is the go unit of class d3f3b82555 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2b8bc511e9"
+  ],
+  "unreviewed": 0
+ },
+ "7615c6fe93": {
+  "outcome": "shared:ts:7615c6fe93",
+  "why": "masked, it is the ts unit of class 7615c6fe93 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c151802d4a"
+  ],
+  "unreviewed": 0
+ },
+ "6356afc86b": {
+  "outcome": "shared:go:6356afc86b",
+  "why": "masked, it is the go unit of class 6356afc86b (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "120aec2437"
+  ],
+  "unreviewed": 0
+ },
+ "193859bf79": {
+  "outcome": "shared:go:193859bf79",
+  "why": "masked, it is the go unit of class 193859bf79 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "22bdd0ff18"
+  ],
+  "unreviewed": 0
+ },
+ "28d337e733": {
+  "outcome": "shared:go:28d337e733",
+  "why": "masked, it is the go unit of class 28d337e733 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a8d9aa773"
+  ],
+  "unreviewed": 0
+ },
+ "9023782dca": {
+  "outcome": "shared:ts:9023782dca",
+  "why": "masked, it is the ts unit of class 9023782dca (correction:ref-6, by rule:add-action-op)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e3081c2053"
+  ],
+  "unreviewed": 0
+ },
+ "3d50058045": {
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ebea8de27f"
+  ],
+  "unreviewed": 0
+ },
+ "d88c01aac2": {
+  "outcome": "restored:shared",
+  "why": "the Call cell of the Actions table: the action selected with `$action` beside the route's path parameter, printed by the call printer (OLD cpp documented no action)",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 0
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 0
+ },
+ "298c8b35c1": {
+  "outcome": "shared:ts:b23edb42bc",
+  "why": "masked, it is the ts unit of class b23edb42bc (correction:decision-11-deleted, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "808ab9f422"
+  ],
+  "unreviewed": 0
+ },
+ "fc814cdcc9": {
+  "outcome": "correction:v34-remove-keeps",
+  "why": "v3.4, one shared edit: cpp's remove absorbs only the response's match (EntityRemoveOp.fragment.cpp: `if (ctx->result->resmatch.is_map()) { this->match_ = ctx->result->resmatch; }`), so the page no longer says data() reads the removed record (its fixer ran it: remove then data() gives {} although the response carried a record); it says no record is read and data() keeps what the entity held (ref.facts.removeKeeps, cited)",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "5788fca383": {
+  "outcome": "correction:v34-remove-keeps",
+  "why": "v3.4, one shared edit: cpp's remove absorbs only the response's match (EntityRemoveOp.fragment.cpp: `if (ctx->result->resmatch.is_map()) { this->match_ = ctx->result->resmatch; }`), so the page no longer says data() reads the removed record (its fixer ran it: remove then data() gives {} although the response carried a record); it says no record is read and data() keeps what the entity held (ref.facts.removeKeeps, cited)",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "1095fa7261": {
+  "outcome": "shared:ts:1095fa7261",
+  "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8d6016d7e2"
+  ],
+  "unreviewed": 0
+ },
+ "e94011ef3f": {
+  "outcome": "shared:ts:e94011ef3f",
+  "why": "masked, it is the ts unit of class e94011ef3f (correction:residue-escaped-backticks, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "93576f381a"
+  ],
+  "unreviewed": 1
+ },
+ "05a7710dde": {
+  "outcome": "shared:ts:05a7710dde",
+  "why": "masked, it is the ts unit of class 05a7710dde (correction:X3, by hand)",
+  "n": 38,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "30f77ee4fa"
+  ],
+  "unreviewed": 1
+ },
+ "9a5ba18db4": {
+  "outcome": "shared:ts:9a5ba18db4",
+  "why": "masked, it is the ts unit of class 9a5ba18db4 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a0fa8a325e"
+  ],
+  "unreviewed": 1
+ },
+ "2c3647ff67": {
+  "outcome": "shared:go:2c3647ff67",
+  "why": "masked, it is the go unit of class 2c3647ff67 (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3013abd4"
+  ],
+  "unreviewed": 1
+ },
+ "f88d62ac3d": {
+  "outcome": "shared:ts:f88d62ac3d",
+  "why": "masked, it is the ts unit of class f88d62ac3d (correction:S09-residue-on-by-default, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5d6d1a8aee"
+  ],
+  "unreviewed": 1
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "auth-basic: the options row for `secret`; the README block passes `apikey` as the user name, which this sentence says",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6aeea92fca": {
+  "outcome": "shared:go:6aeea92fca",
+  "why": "masked, it is the go unit of class 6aeea92fca (correction:S50, by rule:add-secret)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dc97559d3c"
+  ],
+  "unreviewed": 0
+ },
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "05a5a62f89"
+  ],
+  "unreviewed": 0
+ },
+ "cec4895b0c": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 3,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "84f0495962": {
+  "outcome": "same-meaning",
+  "why": "the shared return clause: the same facts, failure worded as in every language",
+  "n": 4,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d3d603d612"
+  ],
+  "unreviewed": 0
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "no-test cpp/README.md, the unported README (Use test mode; testSDK): 'The test feature installs an in-memory mock transport' and 'Creates a test-mode client with mock transport', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "Config_cpp.ts falls back to return std::make_shared<BaseFeature>(); testSDK sets sdk->mode = \"test\" (Main.fragment.cpp:29), and fetcher throws fetch_mode_block when mode is not live (pipeline.hpp:589-591). RUN: the no-test README's own test-mode block (Use test mode), compiled from the root of a generated no-test SDK (g++ -iquote cpp, linked with its libsdkfeature.a) and run, throws SdkError fetch_mode_block: DemoSDK: load: Request blocked by mode: test (fix workspace work/probe/notest-main.cpp)"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:test-without-feature",
+  "why": "no-test: OLD said the test client has mock features active, false without the test feature: Config_cpp.ts falls back to `std::make_shared<BaseFeature>()`, so the client has no mock transport and refuses every request, which the shared sentence says (testMock generated)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f616466503"
+  ],
+  "unreviewed": 0
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 0
+ },
+ "a2f5d538a4": {
+  "outcome": "shared:go:a2f5d538a4",
+  "why": "masked, it is the go unit of class a2f5d538a4 (correction:S13-residue, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "b5ebb46b27"
+  ],
+  "unreviewed": 1
+ },
+ "6d4558798f": {
+  "outcome": "shared:ts:ea987959c3",
+  "why": "masked, it is the ts unit of class ea987959c3 (correction:S13-residue, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "60714446ae"
+  ],
+  "unreviewed": 1
+ },
+ "da08f7e7bd": {
+  "outcome": "shared:ts:da08f7e7bd",
+  "why": "masked, it is the ts unit of class da08f7e7bd (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "21401b4fdc": {
+  "outcome": "shared:py:21401b4fdc",
+  "why": "masked, it is the py unit of class 21401b4fdc (unification:member-sentences, by rule:make-sentence)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "f6b8425ed5"
+  ],
+  "unreviewed": 0
+ },
+ "1fb62647bb": {
+  "outcome": "shared:py:1fb62647bb",
+  "why": "masked, it is the py unit of class 1fb62647bb (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "f6b8425ed5"
+  ],
+  "unreviewed": 0
+ },
+ "ef465d48da": {
+  "outcome": "same-meaning",
+  "why": "ref-issues: the shared accessor sentence for the planet_entity accessor",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9a6e89074f": {
+  "outcome": "correction:class-name",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides (entityClassName, which MainEntity_cpp names the accessor's return by)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "53a2dff719": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:md-cell",
+  "why": "ref-issues: OLD printed the field description raw, so its pipe and line break split the table row; the shared cell writer escapes the pipe and keeps the description on the row",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:md-cell",
+  "why": "ref-issues: the rest of the same description, which OLD's raw newline pushed off the table row; NEW keeps it in the cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d245316c2e": {
+  "outcome": "correction:class-name",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides (entityClassName)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "63b090bb0f": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0dc4d771b3": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ea83ad9199": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "373fc5b25d": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "61a59d8ff8": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is inactive in the model, and is no longer documented (S25)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is inactive in the model, and is no longer documented (S25)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3e76d82226": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is inactive in the model, and is no longer documented (S25)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "fa1c621d69": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "766c5b971d": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f15a7299f5": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5f34f62ffc": {
+  "outcome": "shared:ts:82b6e219ea",
+  "why": "masked, it is the ts unit of class 82b6e219ea (correction:guard-accessor-arg, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4af20ce756"
+  ],
+  "unreviewed": 0
+ },
+ "1f11d95d03": {
+  "outcome": "shared:ts:10f0d238e2",
+  "why": "masked, it is the ts unit of class 10f0d238e2 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "dd8a336870": {
+  "outcome": "shared:ts:82b6e219ea",
+  "why": "masked, it is the ts unit of class 82b6e219ea (correction:guard-accessor-arg, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4af20ce756"
+  ],
+  "unreviewed": 0
+ },
+ "7393140c1f": {
+  "outcome": "shared:ts:7393140c1f",
+  "why": "masked, it is the ts unit of class 7393140c1f (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9fe8f9d917"
+  ],
+  "unreviewed": 0
+ },
+ "7dd340f0f1": {
+  "outcome": "shared:ts:7dd340f0f1",
+  "why": "masked, it is the ts unit of class 7dd340f0f1 (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "6200f2d97c": {
+  "outcome": "shared:ts:42c3636ef9",
+  "why": "masked, it is the ts unit of class 42c3636ef9 (correction:runtime-forms, by rule:op-signature)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fa8637c0bd"
+  ],
+  "unreviewed": 0
+ },
+ "ef2af692a0": {
+  "outcome": "shared:ts:723eefda19",
+  "why": "masked, it is the ts unit of class 723eefda19 (correction:runtime-forms, by rule:op-signature)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4388aa476d"
+  ],
+  "unreviewed": 0
+ },
+ "ba272a5201": {
+  "outcome": "shared:ts:fc4eb8cd66",
+  "why": "masked, it is the ts unit of class fc4eb8cd66 (correction:runtime-forms, by rule:op-signature)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "03f31979fa"
+  ],
+  "unreviewed": 0
+ },
+ "a08e573ba3": {
+  "outcome": "shared:ts:a0555bdf8e",
+  "why": "masked, it is the ts unit of class a0555bdf8e (correction:runtime-forms, by rule:op-signature)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0bd42bc9da"
+  ],
+  "unreviewed": 0
+ },
+ "c089646a9f": {
+  "outcome": "shared:ts:df0db6061e",
+  "why": "masked, it is the ts unit of class df0db6061e (correction:runtime-forms, by rule:op-signature)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a5e47cfb6f"
+  ],
+  "unreviewed": 0
+ },
+ "ef4689efc3": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "1ec55a038c": {
+  "outcome": "shared:py:783b0eefd7",
+  "why": "masked, it is the py unit of class 783b0eefd7 (correction:guard-param-name, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "440d837326"
+  ],
+  "unreviewed": 0
+ },
+ "d2af3edbca": {
+  "outcome": "shared:go:d2af3edbca",
+  "why": "masked, it is the go unit of class d2af3edbca (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "799b8582a8"
+  ],
+  "unreviewed": 0
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "5b26e7db96": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "93774815b8": {
+  "outcome": "correction:direct-truth-test",
+  "why": "is_true in the direct sentence: the truth test on a `Value` (core/struct.hpp:81)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd48acdf84": {
+  "outcome": "restored:shared",
+  "why": "the stream member, which OLD cpp did not document: EntityBase::stream (types.hpp), declared with its parameters and return",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:shared",
+  "why": "the stream member's parameter `action` (types.hpp EntityBase::stream), and the Actions table's `$action`",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "restored:shared",
+  "why": "the stream member's parameter `args` (types.hpp EntityBase::stream)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:shared",
+  "why": "the stream member's parameter `callopts` (types.hpp EntityBase::stream)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "restored:shared",
+  "why": "the action name in the Actions table (OLD cpp documented no action)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "restored:shared",
+  "why": "the Call cell names the client handle, `client->planet()`",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "5832152546": {
+  "outcome": "restored:shared",
+  "why": "the Call cell builds its argument with `vmap`, as every cpp example does",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "restored:fact",
+  "why": "remove's mark: `result->deleted()` reads it (ref.facts.deleted; `virtual bool deleted() = 0;` on Entity, types.hpp:418, which SdkEntityPtr reaches)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "2a87675fd3": {
+  "outcome": "same-meaning",
+  "why": "OLD said `options` is an `sdk::Value` map; the type cell says `Value` and every block opens `using namespace sdk;`",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "8928fd2128": {
+  "outcome": "same-meaning",
+  "why": "OLD named the prepare result fetchdef; the shared Returns calls it the fetch definition, and the README prepare example still binds `fetchdef`",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:class-name",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides (entityClassName, which MainEntity_cpp names the accessor's return by)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "dfd47eedbf": {
+  "outcome": "unification:ref-examples-print-none",
+  "why": "the reference's single-entity examples print nothing, as most OLD pages did; the sentence above each says `data()` reads its record. OLD cpp printed the record with `Struct::jsonify(result->data())`: weaker, decided once in shared code (refOpBlock)",
+  "n": 43,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "9c1e8685c4": {
+  "outcome": "restored:fact",
+  "why": "the two-argument test constructor's own example, `DemoSDK::testSDK(Value::undef(), Value::undef())`; OLD showed only the no-argument call",
+  "n": 18,
+  "by": "hand",
+  "type": "block-new-only",
+  "section": "reference"
+ },
+ "19e9588d47": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: a pairing shift: Planet's inactive remove block is gone (S25), so the tool pairs the next blocks one place out",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "8087c15c00": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: a pairing shift: Planet's inactive remove block is gone (S25), so the tool pairs it with the next block, the planet_entity instance block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-generic-names",
+  "why": "the list example's loop variable is `item` for every entity",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

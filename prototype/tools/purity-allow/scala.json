@@ -1,0 +1,8 @@
+[
+ {
+  "file": "Syntax",
+  "check": "import from outside the printing helpers",
+  "text": "import { scalaLit, scalaObjectLit } from './utility_scala'",
+  "why": "scalaLit is the scala generator's own literal table (a canonical type to a Scala literal: 1L, 1.0, true, java.util.List.of(), java.util.Map.of(), null, a quoted string), and scalaObjectLit the same table's literal boxed for a map of Object (java.lang.Long.valueOf, java.lang.Double.valueOf, java.lang.Boolean.TRUE, as the runtime boxes): printing helpers of scala's that read no model. The shared suite requires that table to stand in utility_scala.ts alone (generate.test.ts: java and scala write example literals from one table each); a copy in the provider fails that test."
+ }
+]

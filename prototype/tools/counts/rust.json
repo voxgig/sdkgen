@@ -1,0 +1,32 @@
+{
+ "tutorial": {
+  "corrected": 22,
+  "unified": 0,
+  "used": {
+   "S49:rust": 16,
+   "S50/M12:rust": 2,
+   "trailing-blank": 1,
+   "write-comment-style": 5,
+   "write-comments:rust": 4
+  }
+ },
+ "rootquick": {
+  "corrected": 18,
+  "unified": 0,
+  "used": {
+   "S49:rust": 15,
+   "S50/M12:rust": 2,
+   "blank-lines": 10,
+   "getp-import": 18,
+   "step-comment-runtime-fact": 16,
+   "trailing-blank": 2
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 83,
+  "used": {
+   "ref-loop-item": 83
+  }
+ }
+}

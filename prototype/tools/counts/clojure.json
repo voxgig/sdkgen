@@ -1,0 +1,29 @@
+{
+ "tutorial": {
+  "corrected": 21,
+  "unified": 0,
+  "used": {
+   "secret-option:clojure": 2,
+   "server-required-given:clojure": 15,
+   "trailing-blank": 1,
+   "write-comment-style": 5
+  }
+ },
+ "rootquick": {
+  "corrected": 16,
+  "unified": 0,
+  "used": {
+   "blank-lines": 9,
+   "secret-option:clojure": 2,
+   "server-required-given:clojure": 13,
+   "step-comment-runtime-fact": 15
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 83,
+  "used": {
+   "ref-loop-item": 83
+  }
+ }
+}

@@ -1,0 +1,35 @@
+{
+ "tutorial": {
+  "corrected": 16,
+  "unified": 12,
+  "used": {
+   "list-plural": 1,
+   "server-required-only": 15,
+   "trailing-blank": 1,
+   "tutorial-list-attempt": 7,
+   "tutorial-write-unbound": 5,
+   "write-comment-style": 5
+  }
+ },
+ "rootquick": {
+  "corrected": 13,
+  "unified": 5,
+  "used": {
+   "list-plural": 1,
+   "root-load-step": 5,
+   "server-required-only": 15,
+   "step-comment-runtime-fact": 16,
+   "trailing-blank": 2
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 118,
+  "used": {
+   "ref-list-printed": 83,
+   "ref-type-comments": 16,
+   "ts-single-quote": 1,
+   "ts-trailing-comma": 19
+  }
+ }
+}

@@ -1,0 +1,2883 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match: the README options table's `base` cell says \"Base URL of the API server\"; the swift README options table does not list `server`, so it states nothing about the server variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "shared:ts:63dbaa39ec",
+  "why": "masked, it is the ts unit of class 63dbaa39ec (correction:S28, by rule:step-numbers)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "cb33d087c0"
+  ],
+  "unreviewed": 0
+ },
+ "ff4863a314": {
+  "outcome": "shared:ts:ff4863a314",
+  "why": "masked, it is the ts unit of class ff4863a314 (correction:S28, by rule:tutorial-leadin)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "ebfc2354cd"
+  ],
+  "unreviewed": 0
+ },
+ "713f77bec7": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared load sentence, now naming the unwrap in words (brief 7 decision 12) and the operation bare (decision 14): \"`load` returns a value holding the entity, and throws on failure; `asNative as? Entity` takes it out, and `ambient.data()` reads its record\" (1ede05e640)",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "0538108a37": {
+  "outcome": "shared:ts:0538108a37",
+  "why": "masked, it is the ts unit of class 0538108a37 (restored:shared, by rule:entities-contract)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "9ca694d427"
+  ],
+  "unreviewed": 0
+ },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 0
+ },
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "e868c93710": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 0
+ },
+ "bb09ec54d3": {
+  "outcome": "same-meaning",
+  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
+  "n": 7,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "21fc35c768"
+  ],
+  "unreviewed": 0
+ },
+ "46de314a64": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "5a3859e529": {
+  "outcome": "shared:ts:5a3859e529",
+  "why": "masked, it is the ts unit of class 5a3859e529 (correction:S28, by rule:tutorial-leadin)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "836725aec1"
+  ],
+  "unreviewed": 0
+ },
+ "454d326c2d": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the units decided at v33p as 454d326c2d): restored as the create comment, which now names the unwrap in words (brief 7 decision 12): \"Create — returns a value holding the created entity; asNative as? Entity takes it out, and created.data() reads its record\"",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "77832f0697": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Update — the id comes off the created entity's record\": the id is now read off the created entity instead of supplied as a literal",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Patch — sends only the fields given; the id comes off the created entity's record\"",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "8331b0f6e3": {
+  "outcome": "restored:shared",
+  "why": "the wrapped style's write sentence (writeSentence); OLD said only, in the create comment, that create returns the entity; true: every op returns .native(NativeRef(self)) on success and remove marks it deleted (EntityBase.fragment.swift:167-171)",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "6fac2dabd5": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "0ed7dc127d": {
+  "outcome": "shared:ts:079a339ba7",
+  "why": "masked, it is the ts unit of class 079a339ba7 (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "a102512ba9"
+  ],
+  "unreviewed": 0
+ },
+ "aeabe4bdf1": {
+  "outcome": "shared:ts:b7c60b65eb",
+  "why": "masked, it is the ts unit of class b7c60b65eb (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "e3dc10a6b7"
+  ],
+  "unreviewed": 0
+ },
+ "29bba9e03f": {
+  "outcome": "shared:ts:29bba9e03f",
+  "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "728df7c1c3"
+  ],
+  "unreviewed": 0
+ },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 0
+ },
+ "1fa815677a": {
+  "outcome": "shared:ts:1fa815677a",
+  "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "1760a2d205"
+  ],
+  "unreviewed": 0
+ },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 0
+ },
+ "79233d47ba": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 0
+ },
+ "defb73bfd8": {
+  "outcome": "shared:ts:defb73bfd8",
+  "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "3ab3fb2b2e"
+  ],
+  "unreviewed": 0
+ },
+ "9cbb8e3add": {
+  "outcome": "shared:ts:9cbb8e3add",
+  "why": "masked, it is the ts unit of class 9cbb8e3add (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "bcbefa9d5b"
+  ],
+  "unreviewed": 0
+ },
+ "c44f65ddeb": {
+  "outcome": "shared:ts:c44f65ddeb",
+  "why": "masked, it is the ts unit of class c44f65ddeb (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "0416b3a5e1"
+  ],
+  "unreviewed": 0
+ },
+ "3528a38f43": {
+  "outcome": "shared:ts:3528a38f43",
+  "why": "masked, it is the ts unit of class 3528a38f43 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "787064e0dd"
+  ],
+  "unreviewed": 0
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed \"2. Update\", as the operations it runs",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "b83e95bec6"
+  ],
+  "unreviewed": 0
+ },
+ "5b9af17b7e": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "as 360f66a3d2, server-mixed (account)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "shared:ts:8848495678",
+  "why": "masked, it is the ts unit of class 8848495678 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "6fb3670380": {
+  "outcome": "unification:client-env-sentence",
+  "why": "DEMO_APIKEY in the shared client sentence; the OLD block's code read the same variable",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_swift reads options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "74f9c34cef": {
+  "outcome": "restored:fact",
+  "why": "facts.collection, cited (Value.swift `case list(VList)`): the list value is a VList, which OLD called a `Value` list",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence (ref-issues)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "112bb41320": {
+  "outcome": "restored:shared",
+  "why": "the shared sentence names the call list() rather than list(nil, nil); the code still passes nil, nil",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "ef3ed36f67": {
+  "outcome": "restored:fact",
+  "why": "\"a `Value` list\" is now \"a value holding a `VList`\": the value is still a Value (the wrapped sentence), the list it holds is named by its type",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "8f33ee43c0": {
+  "outcome": "unification:swift-unwrap-shadow",
+  "why": "the entity is taken out of the returned Value under the same name (if let x = x.asNative as? Entity) instead of an <name>Entity variable, because a provider may not concatenate onto a description name; same calls, same printed record",
+  "n": 4,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "717386f07b": {
+  "outcome": "correction:S49",
+  "why": "the client passes the required server option (tenant) the templated URL needs, and imports Foundation for ProcessInfo (correction:swift-foundation-import, see af41b6100a)",
+  "n": 12,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "5455206323": {
+  "outcome": "unification:swift-unwrap-shadow",
+  "why": "the entity is taken out of the returned Value under the same name (if let x = x.asNative as? Entity) instead of an <name>Entity variable, because a provider may not concatenate onto a description name; same calls, same printed record",
+  "n": 11,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "64ffab4e36": {
+  "outcome": "correction:S50",
+  "why": "auth-basic: the secret the runtime reads is passed, the required server option too (S49), and Foundation is imported (see af41b6100a)",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "81d44e38de": {
+  "outcome": "correction:S49",
+  "why": "auth-off: no API key, but the URL is still templated, so the client passes server (tenant); OLD built a client with no server and so no base URL",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "09e20446bd": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 6,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "013771aa22": {
+  "outcome": "unification:swift-unwrap-shadow",
+  "why": "the entity is taken out of the returned Value under the same name (if let x = x.asNative as? Entity) instead of an <name>Entity variable, because a provider may not concatenate onto a description name; same calls, same printed record",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "c4f2d04f4a": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "c089cf077f": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "c49ed11762": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "9de8faf2d3": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "7c35ce5a01": {
+  "outcome": "correction:S49",
+  "why": "server-mixed: the required server variable is account; Foundation imported (see af41b6100a)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "6ba2536103": {
+  "outcome": "correction:swift-foundation-import",
+  "why": "ProcessInfo is a Foundation type; a file that reads an environment variable must import Foundation, which `import DemoSdk` does not re-export (no @_exported import in tm/swift). OLD omitted it. Not compiled here: swift is absent",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "af41b6100a": {
+  "outcome": "correction:swift-foundation-import",
+  "why": "ProcessInfo is a Foundation type; a file that reads an environment variable must import Foundation, which `import DemoSdk` does not re-export (no @_exported import in tm/swift). OLD omitted it. Not compiled here: swift is absent",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "44f27bfcee": {
+  "outcome": "correction:S49",
+  "why": ".map(server): the server option is a map built as its own VMap, the same layout the OLD features block used",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_swift reads options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_swift reads options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "af67773c51": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "509f4fda92": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "46b20ec521": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "14eb5dfde1": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "24a51da904": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `takes` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6a03279ab9": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `it` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6b913f8580": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `out` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "2920034cd9": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `and` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "c76072420b": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "d1a3e64ecb": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6ef28e7dd4": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "fa99929817": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "39cd96730f": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "3805b111d7": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "c4f1ef9b16": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "f9713683ba": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "tutorial"
+ },
+ "c8351e588e": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 10,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "e678cc17ee": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "84cce9c048": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "10c5679544": {
+  "outcome": "correction:S49",
+  "why": "the server option (S49), Foundation for ProcessInfo (swift-foundation-import), the shared step comment, and the unwrap under the same name (unification:swift-unwrap-shadow)",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "40fb260931": {
+  "outcome": "correction:S50",
+  "why": "as 10c5679544, auth-basic: the secret is passed too",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "af62fcf5eb": {
+  "outcome": "correction:S49",
+  "why": "auth-off: the client passes the server option; the shared step comment and the unwrap under the same name",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "e26c86a8ae": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the root quick start lists then loads, as the tutorial does, with the shared step comments and names",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "e980fbdede": {
+  "outcome": "correction:S49",
+  "why": "as 10c5679544 (server, Foundation, step comment, unwrap name)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "7f9b7cec19": {
+  "outcome": "correction:S49",
+  "why": "as 10c5679544, with the list step: shared names (planets/planet) and comment",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "8a2b8e9033": {
+  "outcome": "correction:S49",
+  "why": "as 10c5679544 (server, Foundation, step comment, unwrap name)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "8c5a9905bc": {
+  "outcome": "correction:S49",
+  "why": "as 10c5679544 (server, Foundation, step comment, unwrap name)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "f5a0c13586": {
+  "outcome": "correction:S49",
+  "why": "ent-none: the client alone, with the server option and Foundation",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "3331115cce": {
+  "outcome": "correction:S49",
+  "why": "as 10c5679544 (server, Foundation, step comment, unwrap name)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "3b1c0c5216": {
+  "outcome": "correction:swift-foundation-import",
+  "why": "ProcessInfo is a Foundation type; a file that reads an environment variable must import Foundation, which `import DemoSdk` does not re-export (no @_exported import in tm/swift). OLD omitted it. Not compiled here: swift is absent",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "049897d198": {
+  "outcome": "correction:swift-foundation-import",
+  "why": "ProcessInfo is a Foundation type; a file that reads an environment variable must import Foundation, which `import DemoSdk` does not re-export (no @_exported import in tm/swift). OLD omitted it. Not compiled here: swift is absent",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7399b18e07": {
+  "outcome": "correction:S49",
+  "why": ".map(server): the server option built as its own VMap",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e8b6808d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_swift reads options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_swift reads options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "26c4ec2d48": {
+  "outcome": "restored:fact",
+  "why": "the list comment names the collection fact VList (cited) instead of \"a Value list\"",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "5524296637": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "ebba5bc094": {
+  "outcome": "restored:fact",
+  "why": "as 26c4ec2d48",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id of the nested entity the root now loads",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id's example value",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "391ed7dd04": {
+  "outcome": "same-meaning",
+  "why": "a word match on VList: the README options table says `extend` is a `VList`; nothing about list",
+  "n": 83,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b2d0f18ca8": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log (the shared Error handling section's TypeScript block, unported); the README says nothing about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "38ae810847": {
+  "outcome": "same-meaning",
+  "why": "the removed OLD sentence's keys are in the new Returns paragraph and in the README direct example; nothing disagrees",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9641d970df": {
+  "outcome": "same-meaning",
+  "why": "the README prepare example binds fetchdef; the new Returns sentence calls it the fetch definition; nothing disagrees",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "55e0b0d3ac": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_swift.ts writes cls = entityClassName), OLD headed it with the data type's name; this pair is the ledger pairing Ambient with PlanetEntity across the renamed headings",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "83803533d5": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "shared:ts:6aced21d71",
+  "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4fb872e54f"
+  ],
+  "unreviewed": 0
+ },
+ "d90bf25f1c": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b2f8d161db": {
+  "outcome": "unification:member-sentences",
+  "why": "the make sentence names the class; printed once per entity (16 + 77 + 1 = 94 units across the three classes d5b8571b7f, b2f8d161db, 1cf2aacb90): the ledger pairs the first OLD entity with another entity under the renamed headings, so the count split is a pairing artifact, not a dropped sentence. make() returns a new instance with cloneOpts() and the same client (Entity.fragment.swift:10-12) | the make sentence names the class and says it keeps the client: make() returns EntyClass(client, cloneOpts()) (Entity.fragment.swift:11); see d5b8571b7f for the count",
+  "n": 92,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "cce9e8691a": {
+  "outcome": "shared:ts:cce9e8691a",
+  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 92,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "ce54cf657b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "a49b459dfe": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "e205efbc48": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "adec0de37c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "48c4b58206": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "844abea2fa": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d06b4a2f2c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dcda7fa79b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5b42dc539b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bf850a8cfd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9ee5606e12": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "936a8c364a": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "e7d3c3a634": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "cd5e2606b3": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "4a981cc770": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bf581a386f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "928f1deb7a": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "e4523e933a": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6b4c91167d": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "shared:go:042740d448",
+  "why": "masked, it is the go unit of class 042740d448 (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "5ddee20721"
+  ],
+  "unreviewed": 0
+ },
+ "92ce533dbd": {
+  "outcome": "shared:py:92ce533dbd",
+  "why": "masked, it is the py unit of class 92ce533dbd (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "3cd4c3ecdc"
+  ],
+  "unreviewed": 0
+ },
+ "d31e05e59e": {
+  "outcome": "correction:matchv-arg",
+  "why": "matchv(_ newmatch: Value?) has no default (EntityBase.fragment.swift:58): passing a value sets, nil gets; \"Get or set\" became \"Get the entity match criteria. Returns a copy of the current match criteria. Pass a `Value` to set it.\" (the copy clause is brief 7 decision 7)",
+  "n": 94,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9d3daf5913": {
+  "outcome": "restored:fact",
+  "why": "the op signature as declared (EntityLoadOp.fragment.swift:8): both parameters VMap?, no default, throws",
+  "n": 28,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1bbcc8b57f": {
+  "outcome": "restored:fact",
+  "why": "as 9d3daf5913, list",
+  "n": 83,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "20356df5b9": {
+  "outcome": "restored:fact",
+  "why": "as 9d3daf5913, create",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b113444a5a": {
+  "outcome": "restored:fact",
+  "why": "as 9d3daf5913, remove",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "a2f4461148": {
+  "outcome": "restored:fact",
+  "why": "as 9d3daf5913, update",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9ebd31cf78": {
+  "outcome": "restored:shared",
+  "why": "the wrapped style's return clause for list: a value holding a VList of entities, throws on failure; same facts",
+  "n": 83,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "40b252d54e": {
+  "outcome": "correction:data-arg",
+  "why": "data(_ newdata: Value?) (EntityBase.fragment.swift:48): nil gets, a value sets; the new sentence says so and that the getter returns a clone (return clone(data))",
+  "n": 94,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ca77a8844b": {
+  "outcome": "restored:shared",
+  "why": "the wrapped style's return clause for remove; the value holds the entity (EntityBase.fragment.swift:171)",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "99d9f7d2a7": {
+  "outcome": "dropped",
+  "why": "the constructor sentence no longer restates the container: the options table's first row says `options` is a `VMap` (keys member); \"of Value\" is the entries type, OrderedDictionary<String, Value> (Value.swift:51)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client; testSDK is its member, static on the class (Main.fragment.swift:330)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5e882342e7": {
+  "outcome": "restored:fact",
+  "why": "the test constructor's heading is its declared signature, DemoSDK.testSDK(_ testopts: VMap?, _ sdkopts: VMap?) -> DemoSDK",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d389e7085e": {
+  "outcome": "restored:shared",
+  "why": "h3fix, one shared edit: OLD's 'Both arguments may be <none>.' is said in the test client's argument sentence ('both may be <none>', or without the test feature 'Both may be <none>.'), as decided at v3.3; the class is re-split because no-test now prints the S13-residue sentence, so the OLD units pair one variation fewer",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "051347e851": {
+  "outcome": "restored:fact",
+  "why": "the accessor heading is its declared signature, Ambient(_ entopts: VMap? = nil) -> DemoEntityBase (MainEntity_swift.ts:25)",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "cd6620080a": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as e7a36e162e): the signature as declared (Main.fragment.swift:162), parameter typed",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ffa2ed1994": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns paragraph: a result map holding ok, status, headers and data; on a failure ok is false and err holds the error",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f20168b066": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared sentence 'A failure is reported in the result, not as an error, so branch on' `result.entries[\"ok\"] == .bool(true)` (the sentence round's wording, with swift's truth read); direct is not throws (Main.fragment.swift:162), so the branch on the result is the whole of failure handling. Re-read at v33m: still restored",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as \"Path parameter values for `{param}` substitution.\"",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3932ebe961": {
+  "outcome": "restored:shared",
+  "why": "restored in the Returns paragraph: **Returns:** `VMap`, a result map ...",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f97fbb188d": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 1e254c64d9): the signature as the runtime declares it: one unlabelled VMap? parameter and throws (Main.fragment.swift:96); OLD named the parameter without its type",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "245210ccea": {
+  "outcome": "restored:shared",
+  "why": "restored as \"**Returns:** `VMap`, the fetch definition ... It throws on failure.\"",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "50a4172e64": {
+  "outcome": "restored:shared",
+  "why": "the wrapped return clause plus the record sentence: \"Returns a value holding the entity, and throws on failure. `asNative as? Entity` takes the entity out, and `result.data()` reads its record.\" (the unwrap named in words, brief 7 decision 12)",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4cba1de5c3": {
+  "outcome": "restored:fact",
+  "why": "the data member heading is its declared signature data(_ newdata: Value?) -> Value: one parameter, no default (EntityBase.fragment.swift:48); OLD wrote newdata? as if optional. The protocol extension Entity.data() (core/Types.swift:16) gives a no-argument form on an Entity",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b58a1c7936": {
+  "outcome": "restored:fact",
+  "why": "as 4cba1de5c3, matchv(_ newmatch: Value?) -> Value (EntityBase.fragment.swift:58)",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "993924c4c6": {
+  "outcome": "unification:entity-heading",
+  "why": "the section is headed by the entity class (ConsoleEntity), see 68c1ea7fd6",
+  "n": 77,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9946af9a45": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared sentence \"The match is optional.\" (the sentence round cut 'without one, every record is listed', which overstated); the example still passes nil, nil. Re-read at v33m: still restored",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "97825096da": {
+  "outcome": "restored:shared",
+  "why": "the wrapped return clause for create",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update and patch keep it, as \"The data must include the entity id, `id`, unless the entity already holds it.\" (the sentence round's wording). Re-read at v33m: the correction stands",
+  "n": 20,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1d8136f602": {
+  "outcome": "restored:shared",
+  "why": "the wrapped return clause for update",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log, which is active by default (model/feature/log.aontu active: true); restored as \"inactive until switched on, except `log`\"",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line now says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d742744bfa": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fb53c2b222": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "49b4da0d68": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d265844143": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "4ffa491cf2": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2066e4a9e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "aa731f856a": {
+  "outcome": "shared:go:aa731f856a",
+  "why": "masked, it is the go unit of class aa731f856a (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6afe3f6b0d"
+  ],
+  "unreviewed": 0
+ },
+ "b2a89584dc": {
+  "outcome": "shared:ts:b2a89584dc",
+  "why": "masked, it is the ts unit of class b2a89584dc (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4eea983832"
+  ],
+  "unreviewed": 0
+ },
+ "ae8fd518c8": {
+  "outcome": "shared:go:ae8fd518c8",
+  "why": "masked, it is the go unit of class ae8fd518c8 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e61813ee66"
+  ],
+  "unreviewed": 0
+ },
+ "35ea4c3e84": {
+  "outcome": "shared:ts:35ea4c3e84",
+  "why": "masked, it is the ts unit of class 35ea4c3e84 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7247de945f"
+  ],
+  "unreviewed": 0
+ },
+ "ac200e5023": {
+  "outcome": "shared:go:ac200e5023",
+  "why": "masked, it is the go unit of class ac200e5023 (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8a90021109"
+  ],
+  "unreviewed": 0
+ },
+ "06e0e1b2b7": {
+  "outcome": "shared:ts:06e0e1b2b7",
+  "why": "masked, it is the ts unit of class 06e0e1b2b7 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c7c471a05"
+  ],
+  "unreviewed": 0
+ },
+ "a986258b72": {
+  "outcome": "shared:ts:a986258b72",
+  "why": "masked, it is the ts unit of class a986258b72 (unification:ref-test-heading, by rule:test-heading)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ffe4eb970b"
+  ],
+  "unreviewed": 0
+ },
+ "75daf54ae9": {
+  "outcome": "restored:fact",
+  "why": "the test constructor's declared signature (Main.fragment.swift:330, static)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "640b39740e": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 0
+ },
+ "3cfb131ab0": {
+  "outcome": "restored:fact",
+  "why": "the accessor's declared signature (MainEntity_swift.ts:25)",
+  "n": 93,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "4fdf639d1b": {
+  "outcome": "shared:elixir:4b8feb4091",
+  "why": "masked, it is the elixir unit of class 4b8feb4091 (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "78e12a7505"
+  ],
+  "unreviewed": 0
+ },
+ "7d2f6b74b6": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
+  "n": 90,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "92238dc9df": {
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7d64fb6cb3"
+  ],
+  "unreviewed": 0
+ },
+ "132238e7e0": {
+  "outcome": "shared:py:132238e7e0",
+  "why": "masked, it is the py unit of class 132238e7e0 (unification:direct-table, by rule:add-ctrl-row)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "107a756204"
+  ],
+  "unreviewed": 0
+ },
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 0
+ },
+ "a112cd49f2": {
+  "outcome": "shared:ts:b82912bd60",
+  "why": "masked, it is the ts unit of class b82912bd60 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0a6358906c"
+  ],
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "824d11833c": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b9b1eb40e3": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9688f8a264": {
+  "outcome": "shared:elixir:9702f02e8d",
+  "why": "masked, it is the elixir unit of class 9702f02e8d (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4fd58b94dc"
+  ],
+  "unreviewed": 0
+ },
+ "927fd64229": {
+  "outcome": "shared:py:927fd64229",
+  "why": "masked, it is the py unit of class 927fd64229 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "581898e092"
+  ],
+  "unreviewed": 0
+ },
+ "6ae77474cd": {
+  "outcome": "restored:shared",
+  "why": "restored from \"Returns the `fetchdef`\"",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c692d85a6d": {
+  "outcome": "restored:shared",
+  "why": "restored from \"and throws on error\": prepare is throws (Main.fragment.swift:96)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "861a2bfee4": {
+  "outcome": "unification:entity-heading",
+  "why": "the heading names the class AmbientEntity, see 68c1ea7fd6",
+  "n": 76,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f9cf3c0a24": {
+  "outcome": "restored:shared",
+  "why": "the wrapped return clause for load",
+  "n": 28,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "19021dc95b": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
+  "n": 79,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "944b3637d3": {
+  "outcome": "restored:fact",
+  "why": "the data member's declared signature, see 4cba1de5c3",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "55a8b68a1f": {
+  "outcome": "shared:py:55a8b68a1f",
+  "why": "masked, it is the py unit of class 55a8b68a1f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f2901d9293"
+  ],
+  "unreviewed": 0
+ },
+ "d69d22366b": {
+  "outcome": "correction:data-arg",
+  "why": "setArg cited (data(_ newdata: Value?)): a Value sets, nil gets",
+  "n": 188,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fe498c931d": {
+  "outcome": "restored:fact",
+  "why": "the matchv declared signature, see b58a1c7936",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "eb7ab37481": {
+  "outcome": "shared:ts:39135c73d0",
+  "why": "masked, it is the ts unit of class 39135c73d0 (restored:fact, by rule:stream-member)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7034f074ec"
+  ],
+  "unreviewed": 0
+ },
+ "50dcec911f": {
+  "outcome": "shared:ts:50dcec911f",
+  "why": "masked, it is the ts unit of class 50dcec911f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4c93659f14"
+  ],
+  "unreviewed": 0
+ },
+ "169ee4e438": {
+  "outcome": "shared:c:169ee4e438",
+  "why": "masked, it is the c unit of class 169ee4e438 (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e866dc0d3c"
+  ],
+  "unreviewed": 0
+ },
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b44a06006a": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 82,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "shared:go:393056d0c1",
+  "why": "masked, it is the go unit of class 393056d0c1 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "185f26bc68"
+  ],
+  "unreviewed": 0
+ },
+ "0f10166e63": {
+  "outcome": "shared:go:0f10166e63",
+  "why": "masked, it is the go unit of class 0f10166e63 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "abe9546ee3"
+  ],
+  "unreviewed": 0
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 0
+ },
+ "d3f3b82555": {
+  "outcome": "shared:go:d3f3b82555",
+  "why": "masked, it is the go unit of class d3f3b82555 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2b8bc511e9"
+  ],
+  "unreviewed": 0
+ },
+ "7615c6fe93": {
+  "outcome": "shared:ts:7615c6fe93",
+  "why": "masked, it is the ts unit of class 7615c6fe93 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c151802d4a"
+  ],
+  "unreviewed": 0
+ },
+ "6356afc86b": {
+  "outcome": "shared:go:6356afc86b",
+  "why": "masked, it is the go unit of class 6356afc86b (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "120aec2437"
+  ],
+  "unreviewed": 0
+ },
+ "193859bf79": {
+  "outcome": "shared:go:193859bf79",
+  "why": "masked, it is the go unit of class 193859bf79 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "22bdd0ff18"
+  ],
+  "unreviewed": 0
+ },
+ "28d337e733": {
+  "outcome": "shared:go:28d337e733",
+  "why": "masked, it is the go unit of class 28d337e733 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a8d9aa773"
+  ],
+  "unreviewed": 0
+ },
+ "9023782dca": {
+  "outcome": "shared:ts:9023782dca",
+  "why": "masked, it is the ts unit of class 9023782dca (correction:ref-6, by rule:add-action-op)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e3081c2053"
+  ],
+  "unreviewed": 0
+ },
+ "3d50058045": {
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ebea8de27f"
+  ],
+  "unreviewed": 0
+ },
+ "3974a1f572": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions table Call cell: the call routed through create with $action and the route's id beside it; the result is discarded with _ = as in the tutorial writes",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 0
+ },
+ "e6a78931f2": {
+  "outcome": "restored:shared",
+  "why": "the wrapped return clause for create",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 0
+ },
+ "31327a7525": {
+  "outcome": "restored:shared",
+  "why": "the wrapped return clause for update",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "53d7c50411": {
+  "outcome": "shared:c:53d7c50411",
+  "why": "masked, it is the c unit of class 53d7c50411 (restored:shared, by rule:add-update-note)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "847a5afbe6"
+  ],
+  "unreviewed": 0
+ },
+ "717c04afe8": {
+  "outcome": "shared:ts:6979eaacb4",
+  "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
+  "n": 34,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea66aefd24"
+  ],
+  "unreviewed": 0
+ },
+ "1095fa7261": {
+  "outcome": "shared:ts:1095fa7261",
+  "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8d6016d7e2"
+  ],
+  "unreviewed": 0
+ },
+ "e94011ef3f": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "05a7710dde": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: a wrapping feature whose model also declares active hooks says so, as the catalogue's X3 fix asks (cost: hook PrePoint, PreDone, PreUnexpected; secrets: hook PreSpec); the wrap sentence above it is unchanged",
+  "n": 38,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9a5ba18db4": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "2c3647ff67": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f88d62ac3d": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6aeea92fca": {
+  "outcome": "shared:go:6aeea92fca",
+  "why": "masked, it is the go unit of class 6aeea92fca (correction:S50, by rule:add-secret)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dc97559d3c"
+  ],
+  "unreviewed": 0
+ },
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "05a5a62f89"
+  ],
+  "unreviewed": 0
+ },
+ "2e9cd7c427": {
+  "outcome": "restored:fact",
+  "why": "as 9d3daf5913, patch",
+  "n": 4,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "66c2b03971": {
+  "outcome": "restored:shared",
+  "why": "the wrapped return clause for patch",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "299ec071b2": {
+  "outcome": "restored:shared",
+  "why": "the wrapped return clause for patch",
+  "n": 4,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fde65c4f2c": {
+  "outcome": "shared:c:fde65c4f2c",
+  "why": "masked, it is the c unit of class fde65c4f2c (restored:shared, by rule:add-update-note)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6c805e005d"
+  ],
+  "unreviewed": 0
+ },
+ "cbcdf6e5f9": {
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d3d603d612"
+  ],
+  "unreviewed": 0
+ },
+ "515b3d5cc0": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence (\"both may be `nil`\"); the README test line says the same",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)"
+ },
+ "b05babb8f4": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f616466503"
+  ],
+  "unreviewed": 0
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 0
+ },
+ "a2f5d538a4": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "10f0d238e2": {
+  "outcome": "shared:ts:10f0d238e2",
+  "why": "masked, it is the ts unit of class 10f0d238e2 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "e35271001c": {
+  "outcome": "shared:ts:e35271001c",
+  "why": "masked, it is the ts unit of class e35271001c (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "7f188f33e8": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the planet class is PlanetEntityClient (entityClassName renames it on a collision with the PlanetEntity type); the sentence names it",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5d54345ff5": {
+  "outcome": "unification:member-sentences",
+  "why": "the make sentence names the class and says it keeps the client: make() returns EntyClass(client, cloneOpts()) (Entity.fragment.swift:11); see d5b8571b7f for the count",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "035bdeb70d": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description with | is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "032adf5867": {
+  "outcome": "restored:fact",
+  "why": "the accessor heading is its declared signature, Ambient(_ entopts: VMap? = nil) -> DemoEntityBase (MainEntity_swift.ts:25)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "92e45cf378": {
+  "outcome": "correction:G27",
+  "why": "as 035bdeb70d",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "as 035bdeb70d",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8d90bfc7cb": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is active: false; it is no longer documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "as 8d90bfc7cb",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3e76d82226": {
+  "outcome": "correction:S25",
+  "why": "as 8d90bfc7cb",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d245316c2e": {
+  "outcome": "unification:entity-heading",
+  "why": "the section is headed by the entity class (ConsoleEntity), see 68c1ea7fd6",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8342f9e964": {
+  "outcome": "restored:fact",
+  "why": "the accessor's declared signature (MainEntity_swift.ts:25)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7393140c1f": {
+  "outcome": "shared:ts:7393140c1f",
+  "why": "masked, it is the ts unit of class 7393140c1f (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9fe8f9d917"
+  ],
+  "unreviewed": 0
+ },
+ "7dd340f0f1": {
+  "outcome": "shared:ts:7dd340f0f1",
+  "why": "masked, it is the ts unit of class 7dd340f0f1 (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "99e505dfce": {
+  "outcome": "unification:entity-heading",
+  "why": "the heading names the class AmbientEntity, see 68c1ea7fd6",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d2af3edbca": {
+  "outcome": "shared:go:d2af3edbca",
+  "why": "masked, it is the go unit of class d2af3edbca (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "799b8582a8"
+  ],
+  "unreviewed": 0
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "da55616659": {
+  "outcome": "restored:fact",
+  "why": "the declared signatures write each parameter as Swift declares it, an unlabelled `_` then name and type (`_ testopts: VMap?`, `_ entopts: VMap? = nil`); re-read at v33m: unchanged",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "baab4708d6": {
+  "outcome": "restored:fact",
+  "why": "the accessor returns DemoEntityBase (MainEntity_swift.ts:25 `-> ${Name}EntityBase`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "d790e8abf9": {
+  "outcome": "unification:direct-table",
+  "why": ".bool in the ctrl example",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd48acdf84": {
+  "outcome": "restored:fact",
+  "why": "the stream member (EntityBase.fragment.swift:188), which OLD did not document",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter action, and the action name column of the Actions table",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter args",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter callopts",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a200bcc7e9": {
+  "outcome": "restored:fact",
+  "why": "stream returns AsyncStream<Value> (EntityBase.fragment.swift:189)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "78d7493a3c": {
+  "outcome": "restored:fact",
+  "why": "the list value named by its type VList (cited)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the action name in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db4075b274": {
+  "outcome": "correction:ref-6",
+  "why": "try in the Call cell: create throws (EntityCreateOp.fragment.swift:9)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "the client receiver in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8ada5591c0": {
+  "outcome": "correction:ref-6",
+  "why": ".string values in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_swift reads options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8928fd2128": {
+  "outcome": "restored:shared",
+  "why": "the prepare Returns sentence calls it the fetch definition rather than fetchdef",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "5d21515960": {
+  "outcome": "unification:entity-heading",
+  "why": "the class name <Name>Entity (entityClassName), as 68c1ea7fd6",
+  "n": 9,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class PlanetEntityClient named in the heading and sentences",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "f1b19a19fa": {
+  "outcome": "unification:swift-unwrap-shadow",
+  "why": "the entity is taken out of the returned Value under the same name (if let x = x.asNative as? Entity) instead of an <name>Entity variable, because a provider may not concatenate onto a description name; same calls, same printed record",
+  "n": 83,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "fde030938b": {
+  "outcome": "restored:shared",
+  "why": "the update example closes with the shared note \"Fields to update\"; the call is unchanged",
+  "n": 15,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "a5c010c994": {
+  "outcome": "restored:shared",
+  "why": "the patch example closes with \"Only the fields to change\"; the call is unchanged",
+  "n": 4,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "fa4d3db545": {
+  "outcome": "unification:empty-map",
+  "why": "ref-issues: an update with no data members passes VMap() on one line; OLD printed an empty VMap([\\n]) over two lines; the same empty map",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "a974ebba52": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the planet remove example is gone (remove is active: false); the tool pairs the OLD remove block with the next block, the PlanetEntity instance block, which is unchanged",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "bcb4cb876b": {
+  "outcome": "unification:entity-heading",
+  "why": "ref-issues: a pairing across the renamed headings (PlanetEntity -> PlanetEntityEntity): the instance blocks let planetEntity = client.PlanetEntity() and let record = client.Record() are both in NEW unchanged",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "9e4a311fc1": {
+  "outcome": "unification:entity-heading",
+  "why": "ref-issues: let utility = client.Utility() is in NEW unchanged, under the heading UtilityEntity; the pairing by heading misses it",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "f348eeaeba": {
+  "outcome": "restored:shared",
+  "why": "the \"Fields to update\" note",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "1070ff1f72": {
+  "outcome": "restored:shared",
+  "why": "the update/patch notes",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "54d103011e": {
+  "outcome": "restored:shared",
+  "why": "the \"Only the fields to change\" note",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "0856872351": {
+  "outcome": "restored:shared",
+  "why": "the patch note",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "3a03a66ea9": {
+  "outcome": "restored:shared",
+  "why": "the patch note",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "ada2580c07": {
+  "outcome": "unification:swift-unwrap-shadow",
+  "why": "the entity is taken out of the returned Value under the same name (if let x = x.asNative as? Entity) instead of an <name>Entity variable, because a provider may not concatenate onto a description name; same calls, same printed record",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "reference"
+ }
+}

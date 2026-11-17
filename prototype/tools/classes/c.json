@@ -1,0 +1,2205 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:step-numbers",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "ff4863a314": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "f36f70d366": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 16,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "0538108a37": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 18,
+  "by": "rule:entities-contract",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "b31c974005": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "9363faf207": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "a65ba4a33f": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "bef2b8f986": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 3,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "8e6aaf2c0a": {
+  "outcome": "correction:runtime-forms",
+  "why": "",
+  "n": 7,
+  "by": "rule:op-signature",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "5a3859e529": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 3,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "435c93be2f": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 5,
+  "by": "rule:write-comments",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "723a4e550e": {
+  "outcome": "restored:shared",
+  "why": "restored in the list sentence and the printed loop (`vt->data` on each item)",
+  "n": 7,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "9a132de632": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update — the id comes off the created entity's record'",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch — sends only the fields given; ...'",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "374c28c871": {
+  "outcome": "restored:fact",
+  "why": "the write results as one sentence: the written entity, or NULL with *err set (EntityCreateOp.fragment.c returns NULL on *err); the check asked for the err check per call, which the sentence now names",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "0ed7dc127d": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 4,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "aeabe4bdf1": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 3,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "29bba9e03f": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "cdfbb6475b": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "1fa815677a": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "c9c9426cd8": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "79233d47ba": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: it now says where the parent id goes (the match, as the example passes it); same fact",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "defb73bfd8": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "9cbb8e3add": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "c44f65ddeb": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "3528a38f43": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "ec589bf68a": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "c4975e4b2e": {
+  "outcome": "restored:fact",
+  "why": "the write sentence for the one write ref-issues has",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables (server-mixed)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "6fb3670380": {
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-apikey",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "81a09d8cf6": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "487377ad3f": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "b4b66556bc": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "5b32f0dc83": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "1af3b9ca32": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README); ref-issues has update only, so the block declares err itself",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "0afd2531b0": {
+  "outcome": "correction:c-stdlib",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-c-stdlib",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6b9fc5bc40": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 10,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "65a0fe8142": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 6,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "6351f6484f": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 7,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "5bbfe54955": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ed4b554680": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "af098243e5": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "b20cd43c61": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "31e1469668": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "5d9d9b18da": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "59570b4eb5": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "37a83b9746": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "a56c959d33": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "bab79a7465": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "429dec79da": {
+  "outcome": "correction:c-stdlib",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-c-stdlib",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b7edec76ca": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "0070cc262b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "13c982079d": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (fprintf)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "bc57fc9f69": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (stderr)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "93215155ec": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (the word failed in the message)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "3e1d601376": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (err->msg)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "0ca279dc4d": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (else)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "c39207e459": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "c60144e129": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7851b353c0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5f9251f640": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "4199db29e1": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "17aa0e4660": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3edc6a8aa9": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "83f3ea7ff5": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "33bd1b5073": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "36a9fb7b65": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "74cb3f1df4": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "82f81078f0": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "06c73f5691": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9de831277d": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e106ad7267": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "4e2f5ac1e4": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "600463c042": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e0bfed621d": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3cd0c35e55": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9dc7b0ce25": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "1311dbcb04": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b0e9cbcda2": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f92b380d90": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "5b77577db2": {
+  "outcome": "same-meaning",
+  "why": "the README's own examples set a feature's `active` to the same true value this sentence names; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b986bf9641": {
+  "outcome": "same-meaning",
+  "why": "the README states the same of log's options (the table's `active` default true); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "5dfbaf3d11": {
+  "outcome": "same-meaning",
+  "why": "the README's test-mode text names the same arguments and feature.test option, with the test feature present in these variations; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 34,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bed0669016": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b88d063ce9": {
+  "outcome": "same-meaning",
+  "why": "the README calls sdk_direct with the same fetchargs map",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "af7dd8de26": {
+  "outcome": "same-meaning",
+  "why": "the README calls sdk_direct; the fetch definition is the request it would send",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in a code comment (console.log); the README says nothing else about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "97b7dcdc97": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "83803533d5": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "correction:ref-features-escape",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c1329bb5b7": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "a0c3c384c0": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b70b56b44a": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "0bd54a6b19": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "0fa6ff3bbc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "413a41a764": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "600104556e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "455b6ec44f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "74877040e6": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "536728e00a": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "0c325368a0": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "65b16710e6": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dbdc6a2266": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "51189a1bbc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "36b8a44f30": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "61a6143f6d": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "fda4223a89": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "71ce9fb339": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "05a0901d83": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d90bf25f1c": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "24d0da080f": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 28,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "3903428a4f": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92ce533dbd": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "45da5a1c7e": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b59f0b4edf": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bd00b51781": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "a059e52e2d": {
+  "outcome": "correction:sentence-review-list-match",
+  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
+  "n": 82,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ffa2f87e8a": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4f08cd5dd9": {
+  "outcome": "restored:shared",
+  "why": "h3fix, one shared edit: OLD's 'Both arguments may be <none>.' is said in the test client's argument sentence ('both may be <none>', or without the test feature 'Both may be <none>.'), as decided at v3.3; the class is re-split because no-test now prints the S13-residue sentence, so the OLD units pair one variation fewer",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "457eed3bf3": {
+  "outcome": "restored:shared",
+  "why": "the accessors are under Client Functions, each headed by its signature",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a1848760f9": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns sentence: a result map; for a response, 2xx or not, the keys ok, status, headers and data; err when the body cannot be read or the request cannot be made (v3.3, sentence review)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "74cdbb7125": {
+  "outcome": "restored:shared",
+  "why": "restored as 'A failure is reported in the result, not as an error, so branch on `voxgig_as_bool(getp(result, \"ok\"))`'; true: sdk_raw_request only sets *err to NULL and returns err_map(...) for every failure (Main.fragment.c:196-275); v3.3 reads the key as a truth test (getp alone is a pointer)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Path parameter values for `{param}` substitution.'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b1cb2968c2": {
+  "outcome": "restored:shared",
+  "why": "restored as 'the fetch definition ... It returns `NULL` with `*err` set on failure.'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "287a14befa": {
+  "outcome": "restored:shared",
+  "why": "the heading is Common Functions in c (the page's noun for c members); the members are all there",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e1a075f227": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fb53c2b222": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "22addc4e6e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d265844143": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "192e8fbb23": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2066e4a9e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "4033f23e2d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "b22a4fd4cf": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
+  "n": 90,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b2a89584dc": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "509f8ee353": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "35ea4c3e84": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "55901c7ad8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "06e0e1b2b7": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "a986258b72": {
+  "outcome": "unification:ref-test-heading",
+  "why": "",
+  "n": 19,
+  "by": "rule:test-heading",
+  "type": "added",
+  "section": "reference"
+ },
+ "bc5cf12387": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6cf747c744": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d04a960684": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The options heading.",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "92841846e3": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The copy sentence rests on Member.copy, cited at utility.c:70 (voxgig_clone).",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "31334dded1": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The utility heading.",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "5482f10770": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). Kind utility (a copy), cited at utility.c:72 (utility_copy).",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6979eaacb4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 34,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "92238dc9df": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "added",
+  "section": "reference"
+ },
+ "f25ed95c66": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-ctrl-row",
+  "type": "added",
+  "section": "reference"
+ },
+ "65160f6e35": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "55c5d39e13": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "36e25ebab7": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "43941d64f9": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "243b374ef7": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "303f9e9351": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "e8cf949d5a": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 113,
+  "by": "rule:add-fails",
+  "type": "added",
+  "section": "reference"
+ },
+ "85dfe8d1e8": {
+  "outcome": "restored:fact",
+  "why": "how the record is read, now under every single-entity operation (the check's output_defects 2: the c load example's read of vt->data went with the majority shape)",
+  "n": 79,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "39c84e60ea": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 94,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "vt->data returns a copy: Entity.fragment.c:249 `return voxgig_clone(self->data);`",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "88dff1bb13": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 93,
+  "by": "rule:add-stream-sig",
+  "type": "added",
+  "section": "reference"
+ },
+ "4a998871fe": {
+  "outcome": "correction:sentence-review-stream",
+  "why": "the stream sentence fixed once (sentence review): a lazy sequence over items already read misled (clojure Entity.fragment.clj:164,180,185 realises every item before returning; elixir entity_base.ex:150,160,172 a Stream over a list), and 'one list' was false for rust's IntoIter; the sentence names what is returned, the runs sentence when the operation runs",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.c (PrePoint hook and the operation before the list is built and returned); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "0f10166e63": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d3f3b82555": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "7615c6fe93": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "6356afc86b": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "193859bf79": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "28d337e733": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "9023782dca": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:add-action-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "3d50058045": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "22b21469ff": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "53d7c50411": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 15,
+  "by": "rule:add-update-note",
+  "type": "added",
+  "section": "reference"
+ },
+ "aad2bd854a": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "1095fa7261": {
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-log",
+  "type": "added",
+  "section": "reference"
+ },
+ "e94011ef3f": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "05a7710dde": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: a wrapping feature whose model also declares active hooks says so, as the catalogue's X3 fix asks (cost: hook PrePoint, PreDone, PreUnexpected; secrets: hook PreSpec); the wrap sentence above it is unchanged",
+  "n": 38,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9a5ba18db4": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f88d62ac3d": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "2d7cc08deb": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:add-secret",
+  "type": "added",
+  "section": "reference"
+ },
+ "6fcc39ea14": {
+  "outcome": "correction:sentence-review-secret",
+  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fde65c4f2c": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 4,
+  "by": "rule:add-update-note",
+  "type": "added",
+  "section": "reference"
+ },
+ "18d10f8549": {
+  "outcome": "correction:sentence-review-list-match",
+  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "reference"
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)"
+ },
+ "0b29ac0038": {
+  "outcome": "same-meaning",
+  "why": "the README names the same `feature.test` switch (its feature row or its test-mode text); this sentence says the call sets it, switched on; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "54046c5d59": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "81aa9cecf9": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "dbdce4bb0e": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9db58b0cc1": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "da08f7e7bd": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c74047383d": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "8c54e41b7e": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "30b274a911": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "6be9ac7d6e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "01da88105b": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7dd340f0f1": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "added",
+  "section": "reference"
+ },
+ "64ba28e2e9": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-stream-sig",
+  "type": "added",
+  "section": "reference"
+ },
+ "5153f403d8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fb33f90173": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The new token is the function name.",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "badf75c874": {
+  "outcome": "correction:c-branch-read",
+  "why": "c's branch read is a truth test (sentence review: getp returns a pointer, true whenever the key is there); c's own README example branches on voxgig_as_bool(getp(result, \"ok\"))",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1,
+  "by": "rule:actions-table",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "39c56f1616": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e894f75da6": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "959d5c5123": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: this language's true, as its literal printer writes it (Syntax lit BOOLEAN), now named in each Usage sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e1f6800b0b": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The new token is the function name.",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "c70f589702": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 10,
+  "by": "rule:tok-c-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a5772bf845": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "8395badbc9": {
+  "outcome": "correction:c-err-declared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-c-err",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "f348eeaeba": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-update-note",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "1070ff1f72": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "54d103011e": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-update-note",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "0856872351": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "3a03a66ea9": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-update-note",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

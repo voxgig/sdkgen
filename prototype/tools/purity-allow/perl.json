@@ -1,0 +1,14 @@
+[
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "exampleVarName (from @voxgig/sdkgen)",
+  "why": "An example variable is not a name the code generator makes. The hook adapts the shared example names (results, item, result, created, the entity plural) to Perl's identifier rules with the sdkgen function the other README families use (it suffixes client, which the examples bind); the perl code generator names no example variables."
+ },
+ {
+  "file": "Syntax",
+  "check": "concatenation on a description name",
+  "text": "return [`use lib '${'top' === place ? desc.layout.dir + '/lib' : 'lib'}';`, `use ${desc.layout.module};`]",
+  "why": "Not a name: the library path `use lib` adds, the target's directory (layout.dir, from the naming hook) joined to lib for the root quick start, `lib` elsewhere (brief 7 decision 1; the perl lane runs each block from the directory its page addresses). It renames nothing."
+ }
+]

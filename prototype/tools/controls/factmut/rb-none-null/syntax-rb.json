@@ -1,0 +1,119 @@
+{
+ "facts": {
+  "method": {
+   "list": "list",
+   "load": "load",
+   "create": "create",
+   "update": "update",
+   "patch": "patch",
+   "remove": "remove"
+  },
+  "named": "bare",
+  "async": false,
+  "result": "raise",
+  "collection": "`Array`",
+  "record": "data_get",
+  "recordType": "Hash",
+  "prints": "listFields"
+ },
+ "ref": {
+  "facts": {
+   "entityBy": "class",
+   "noun": "Methods",
+   "none": "null",
+   "keys": "member",
+   "maps": "hashes",
+   "container": "Hash",
+   "valueType": {
+    "STRING": "String",
+    "OBJECT": "Hash",
+    "ANY": "any"
+   },
+   "ctor": [
+    "require_relative '{module}'",
+    "",
+    "client = {ctor}(options)"
+   ],
+   "test": [
+    {
+     "sig": "{client}.test(testopts = nil, sdkopts = nil)",
+     "call": "client = {client}.test",
+     "args": true
+    }
+   ],
+   "accessor": {
+    "sig": "{accessor}(data = nil)",
+    "arg": "entopts"
+   },
+   "op": {
+    "list": "list(reqmatch = nil, ctrl = nil) -> Array<{Class}>",
+    "load": "load(reqmatch = nil, ctrl = nil) -> {Class}",
+    "create": "create(reqdata, ctrl = nil) -> {Class}",
+    "update": "update(reqdata, ctrl = nil) -> {Class}",
+    "patch": "patch(reqdata, ctrl = nil) -> {Class}",
+    "remove": "remove(reqmatch = nil, ctrl = nil) -> {Class}"
+   },
+   "client": [
+    {
+     "kind": "options",
+     "sig": "options_map -> Hash"
+    },
+    {
+     "kind": "utility",
+     "sig": "get_utility -> Utility"
+    },
+    {
+     "kind": "direct",
+     "sig": "direct(fetchargs = {}) -> Hash"
+    },
+    {
+     "kind": "prepare",
+     "sig": "prepare(fetchargs = {}) -> Hash"
+    }
+   ],
+   "entity": [
+    {
+     "kind": "dataGet",
+     "sig": "data_get -> Hash",
+     "copy": true
+    },
+    {
+     "kind": "dataSet",
+     "sig": "data_set(data)"
+    },
+    {
+     "kind": "matchGet",
+     "sig": "match_get -> Hash"
+    },
+    {
+     "kind": "matchSet",
+     "sig": "match_set(match)"
+    },
+    {
+     "kind": "make",
+     "sig": "make -> {Class}"
+    },
+    {
+     "kind": "streamSync",
+     "sig": "stream(action, args = nil, callopts = nil) -> Enumerator"
+    },
+    {
+     "kind": "name",
+     "sig": "get_name -> String"
+    }
+   ],
+   "direct": {
+    "returns": "Hash"
+   },
+   "prepare": {
+    "returns": "Hash",
+    "fails": "style"
+   },
+   "body": {
+    "values": "a `String`, or an IO that responds to `read`",
+    "once": "an IO"
+   },
+   "cancel": false
+  }
+ }
+}

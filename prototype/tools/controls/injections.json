@@ -1,0 +1,235 @@
+[
+ {
+  "id": "type-cell-zig",
+  "lang": "zig",
+  "section": "reference",
+  "what": "a field Type cell i64 -> f64",
+  "file": "B/zig/REFERENCE.md",
+  "from": "| `year` | `i64` |",
+  "to": "| `year` | `f64` |"
+ },
+ {
+  "id": "type-cell-any-zig",
+  "lang": "zig",
+  "section": "reference",
+  "what": "a field Type cell i64 -> any",
+  "file": "B/zig/REFERENCE.md",
+  "from": "| `year` | `i64` |",
+  "to": "| `year` | `any` |"
+ },
+ {
+  "id": "sentence-removed-go",
+  "lang": "go",
+  "section": "reference",
+  "what": "a shared direct() sentence removed (the freeze reworded direct's Returns: the key read now stands in the sentence about an unreadable body, which is removed whole; go's branch read is its own, its class open from scratch)",
+  "file": "doc-crud/go/REFERENCE.md",
+  "from": " When\nthe body cannot be read, `ok` is `false` and the key `err` holds the\nerror, read as `result[\"err\"]`; a request that cannot be made gives only\n`ok` (`false`) and `err`.",
+  "to": "",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
+ },
+ {
+  "id": "sentence-removed-go-branch",
+  "lang": "go",
+  "section": "reference",
+  "what": "the direct() branch sentence removed: v3.2's intent of sentence-removed-go, restored beside its retargeted copy (the sentence round's check, required fix 3)",
+  "file": "doc-crud/go/REFERENCE.md",
+  "from": " A failure is reported in the result, not as an\nerror, so branch on `result[\"ok\"] == true`.",
+  "to": "",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
+ },
+ {
+  "id": "false-sentence-py",
+  "lang": "py",
+  "section": "reference",
+  "what": "raises -> returns None (false)",
+  "file": "doc-crud/py/REFERENCE.md",
+  "from": "per record,\nand raises on failure.",
+  "to": "per record,\nand returns `None` on failure.",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
+ },
+ {
+  "id": "false-sentence-added-ts",
+  "lang": "ts",
+  "section": "reference",
+  "what": "a false sentence appended to the client ctor paragraph",
+  "file": "doc-crud/ts/REFERENCE.md",
+  "from": "Create a new SDK client instance.",
+  "to": "Create a new SDK client instance. It retries three times before failing."
+ },
+ {
+  "id": "optional-required-py",
+  "lang": "py",
+  "section": "reference",
+  "what": "'The match is optional' -> required",
+  "file": "doc-crud/py/REFERENCE.md",
+  "from": "The match is optional;",
+  "to": "The match is required;",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text",
+  "adapted2": "v3.3 freeze (second half): the text re-wrapped or reworded by the freeze's direct and list sentences and brief 7's decisions; the same intent on the new text"
+ },
+ {
+  "id": "negation-go",
+  "lang": "go",
+  "section": "reference",
+  "what": "'even for a non-2xx' -> 'except for a non-2xx'",
+  "file": "doc-crud/go/REFERENCE.md",
+  "from": "unless the status is 2xx",
+  "to": "when the status is 2xx",
+  "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
+ },
+ {
+  "id": "code-comment-ts",
+  "lang": "ts",
+  "section": "tutorial",
+  "what": "a comment inside a block changed",
+  "file": "doc-crud/ts/README.md",
+  "from": "// Update — the id comes off the created entity's record",
+  "to": "// Update — the id comes from the server"
+ },
+ {
+  "id": "var-renamed-c",
+  "lang": "c",
+  "section": "tutorial",
+  "what": "a variable renamed in one use (planets[i] -> planet[i])",
+  "file": "doc-crud/c/README.md",
+  "from": "voxgig_to_json(planets[i]->vt->data(planets[i], NULL))",
+  "to": "voxgig_to_json(planet[i]->vt->data(planet[i], NULL))"
+ },
+ {
+  "id": "err-reset-removed-c",
+  "lang": "c",
+  "section": "tutorial",
+  "what": "err = NULL; removed after a failed list (stage-2 defect A6)",
+  "file": "doc-crud/c/README.md",
+  "from": "    fprintf(stderr, \"list failed: %s\\n\", err->msg);\n    err = NULL;",
+  "to": "    fprintf(stderr, \"list failed: %s\\n\", err->msg);"
+ },
+ {
+  "id": "restructure-py",
+  "lang": "py",
+  "section": "reference",
+  "what": "loop removed: print(results.data_get())",
+  "file": "doc-crud/py/REFERENCE.md",
+  "from": "results = client.Planet().list()\nfor item in results:\n    print(item.data_get())",
+  "to": "results = client.Planet().list()\nprint(results.data_get())"
+ },
+ {
+  "id": "number-retries-ts",
+  "lang": "ts",
+  "section": "reference",
+  "what": "a default 2 -> 3 (numbers are masked)",
+  "file": "B/ts/REFERENCE.md",
+  "from": "| `retries` | `2` |",
+  "to": "| `retries` | `3` |"
+ },
+ {
+  "id": "number-ms-ts",
+  "lang": "ts",
+  "section": "reference",
+  "what": "a default 30000 -> 3000",
+  "file": "B/ts/REFERENCE.md",
+  "from": "| `ms` | `30000` |",
+  "to": "| `ms` | `3000` |"
+ },
+ {
+  "id": "op-swap-root-ts",
+  "lang": "ts",
+  "section": "rootquick",
+  "what": "root quick start list() -> load() (wrong op)",
+  "file": "doc-crud/README.md",
+  "from": "const planets = await client.Planet().list()",
+  "to": "const planets = await client.Planet().load()"
+ },
+ {
+  "id": "entity-swap-root-ts",
+  "lang": "ts",
+  "section": "rootquick",
+  "what": "root quick start: a comment names the wrong class (Planet -> Record)",
+  "file": "doc-crud/README.md",
+  "from": "// Load a planet: the entity, a PlanetEntity;",
+  "to": "// Load a planet: the entity, a RecordEntity;"
+ },
+ {
+  "id": "field-swap-go",
+  "lang": "go",
+  "section": "tutorial",
+  "what": "a field name in an example changed to another entity field",
+  "file": "doc-crud/go/README.md",
+  "from": "\"title\": \"example_title\",",
+  "to": "\"name\": \"example_title\","
+ },
+ {
+  "id": "id-literal-c",
+  "lang": "c",
+  "section": "tutorial",
+  "what": "the load id literal changed",
+  "file": "doc-crud/c/README.md",
+  "from": "cmap(1, \"id\", v_str(\"example_id\"))",
+  "to": "cmap(1, \"id\", v_num(1))"
+ },
+ {
+  "id": "global-zig",
+  "lang": "zig",
+  "section": "reference",
+  "what": "one sentence changed in every variation",
+  "file": "*/zig/REFERENCE.md",
+  "from": "a failed stream is `.ok` with",
+  "to": "a failed stream is `.err` with",
+  "all": true
+ },
+ {
+  "id": "row-removed-zig",
+  "lang": "zig",
+  "section": "reference",
+  "what": "an options table row removed",
+  "file": "B/zig/REFERENCE.md",
+  "from": "| `headers` | `map` | Custom headers for all requests. |\n",
+  "to": ""
+ },
+ {
+  "id": "zig-switch-arm",
+  "lang": "zig",
+  "section": "reference",
+  "what": "a switch arm changed (.ok => |e| e -> .err => |e| e)",
+  "file": "B/zig/REFERENCE.md",
+  "from": "    .ok => |e| e,",
+  "to": "    .err => |e| e,"
+ },
+ {
+  "id": "clj-block",
+  "lang": "clojure",
+  "section": "tutorial",
+  "what": "data-get called on the wrong var",
+  "file": "doc-crud/clojure/README.md",
+  "from": "((:data-get planet))",
+  "to": "((:data-get planets))"
+ },
+ {
+  "id": "elixir-block",
+  "lang": "elixir",
+  "section": "reference",
+  "what": "a block's function changed",
+  "file": "B/elixir/REFERENCE.md",
+  "from": ".load(",
+  "to": ".list("
+ },
+ {
+  "id": "sentence-dup-ts",
+  "lang": "ts",
+  "section": "reference",
+  "what": "an existing unit duplicated into another variation where it appears already (multiset count)",
+  "file": "B/ts/REFERENCE.md",
+  "from": "Create a new SDK client instance.",
+  "to": "Create a new SDK client instance.\n\nCreate a new SDK client instance."
+ },
+ {
+  "id": "region-required-ref-ts",
+  "lang": "ts",
+  "section": "reference",
+  "what": "region default -> Required",
+  "file": "B/ts/REFERENCE.md",
+  "from": "| `options.server.region` | `string` | Defaults to `eu`. |",
+  "to": "| `options.server.region` | `string` | Required. |"
+ }
+]

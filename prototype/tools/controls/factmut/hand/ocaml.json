@@ -1,0 +1,19 @@
+{
+ "facts": {
+  "ref.maps": {
+   "value": "maps",
+   "why": "OLD wrote the same word capitalised inside the parenthesis: 'Request body (Maps are JSON-serialized).'",
+   "evidence": "out/old/B/ocaml/REFERENCE.md, the direct table's body row"
+  },
+  "ref.valueType.ANY": {
+   "value": "value",
+   "why": "held where OLD has the same place (the direct table's body row typed `value`); the other contexts are units carrying the same token `value` for recordType (the record e_data_get returns) and container (the options map), which are `value` too",
+   "evidence": "sdk_types.ml `mutable e_data_get : unit -> value;`; Main_ocaml.ts `let make (options : value)`; OLD B/ocaml/REFERENCE.md `| body | value |`"
+  },
+  "ref.keys": {
+   "value": "bare",
+   "why": "control: the true value, recorded so that the unmutated output passes in the reviewed mode",
+   "evidence": "the provider at v33p declares it"
+  }
+ }
+}

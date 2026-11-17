@@ -1,0 +1,2805 @@
+{
+ "1736630712": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 12e5096244): restored in each step's sentence: '`list` returns `value, err`', '`load` returns `value, err`', 'Each write returns `value, err` too'. The pair is written without parentheses: Lua returns two values, and `(f())` would keep only the first",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "2091187604": {
+  "outcome": "unification:show-fields",
+  "why": "lua prints chosen fields (prints 'fields'): the entity's display fields from the description (sdkdesc showFields: the id and the first other string field), read off `local rec = x:data_get()`. OLD lua printed chosen fields too, but its display-field pick never fired (rec[\"id\"] only), and printed a key-value loop where it had no column; the record print with no chosen field is still that loop",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "the echo is the word 'server' in the README options table's `base` cell ('Base URL of the API server'); that table does not list `server`, so it states nothing about its variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "shared:ts:63dbaa39ec",
+  "why": "masked, it is the ts unit of class 63dbaa39ec (correction:S28, by rule:step-numbers)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "cb33d087c0"
+  ],
+  "unreviewed": 0
+ },
+ "ff4863a314": {
+  "outcome": "shared:ts:ff4863a314",
+  "why": "masked, it is the ts unit of class ff4863a314 (correction:S28, by rule:tutorial-leadin)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "ebfc2354cd"
+  ],
+  "unreviewed": 0
+ },
+ "539c3b9501": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared pair load sentence: '`load` returns `value, err`: the value is the entity, and a non-nil `err` reports failure; `data_get()` reads its record'",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "0538108a37": {
+  "outcome": "shared:ts:0538108a37",
+  "why": "masked, it is the ts unit of class 0538108a37 (restored:shared, by rule:entities-contract)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "9ca694d427"
+  ],
+  "unreviewed": 0
+ },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 0
+ },
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "7dbedc2d90": {
+  "outcome": "restored:shared",
+  "why": "the shared pair load sentence (go's; go prints it after a bold step lead, which the splitter keeps in one unit, hence the count). It replaces OLD's '`load` returns the entity; `data_get()` reads its record' and adds how a failure shows: EntityLoadOp.fragment.lua returns `self, nil` or `nil, sdk_err` (Entity.fragment.lua:437, make_error.lua:86)",
+  "n": 10,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 0
+ },
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "21fc35c768"
+  ],
+  "unreviewed": 0
+ },
+ "5a3859e529": {
+  "outcome": "shared:ts:5a3859e529",
+  "why": "masked, it is the ts unit of class 5a3859e529 (correction:S28, by rule:tutorial-leadin)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "836725aec1"
+  ],
+  "unreviewed": 0
+ },
+ "41566321e1": {
+  "outcome": "same-meaning",
+  "why": "OLD said the load returns the entity and data_get() reads its record; NEW says both, and adds the pair and the failure",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "c9542a950a": {
+  "outcome": "same-meaning",
+  "why": "OLD: list's value is an array of entities, one per record, no wrapper, data_get() reads each. NEW says the same across the list sentence ('the value is an array of entities, one per record') and the next ('`data_get()` reads an entity's record'); OLD's 'there is no wrapper' is the clause the sentence round dropped from the pair style once, for go and lua alike, as old go wording the review found awkward ('Every operation returns entities' says it); 'iterate it directly' is what the loop under it shows. Re-read at v33m: same meaning",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "eabbf7f956": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Create — the value is the created entity; data_get() reads its record'",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "9a132de632": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update — the id comes off the created entity's record'",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch — sends only the fields given; the id comes off the created entity's record'",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "622cf95295": {
+  "outcome": "restored:shared",
+  "why": "the shared pair write sentence (go's): each write returns value, err like the reads (Entity.fragment.lua:437 `return self, nil`; make_error.lua:86 `return nil, sdk_err`); OLD lua's write step had no sentence",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "000565160c": {
+  "outcome": "shared:go:71d4afd3c1",
+  "why": "masked, it is the go unit of class 71d4afd3c1 (unification:step-comment-runtime-fact, by rule:go-load-comment-pairing)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "ac5867f66c"
+  ],
+  "unreviewed": 1
+ },
+ "0ed7dc127d": {
+  "outcome": "shared:ts:079a339ba7",
+  "why": "masked, it is the ts unit of class 079a339ba7 (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "a102512ba9"
+  ],
+  "unreviewed": 0
+ },
+ "aeabe4bdf1": {
+  "outcome": "shared:ts:b7c60b65eb",
+  "why": "masked, it is the ts unit of class b7c60b65eb (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "e3dc10a6b7"
+  ],
+  "unreviewed": 0
+ },
+ "29bba9e03f": {
+  "outcome": "shared:ts:29bba9e03f",
+  "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "728df7c1c3"
+  ],
+  "unreviewed": 0
+ },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 0
+ },
+ "1fa815677a": {
+  "outcome": "shared:ts:1fa815677a",
+  "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "1760a2d205"
+  ],
+  "unreviewed": 0
+ },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 0
+ },
+ "79233d47ba": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 0
+ },
+ "defb73bfd8": {
+  "outcome": "shared:ts:defb73bfd8",
+  "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "3ab3fb2b2e"
+  ],
+  "unreviewed": 0
+ },
+ "9cbb8e3add": {
+  "outcome": "shared:ts:9cbb8e3add",
+  "why": "masked, it is the ts unit of class 9cbb8e3add (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "bcbefa9d5b"
+  ],
+  "unreviewed": 0
+ },
+ "c44f65ddeb": {
+  "outcome": "shared:ts:c44f65ddeb",
+  "why": "masked, it is the ts unit of class c44f65ddeb (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "0416b3a5e1"
+  ],
+  "unreviewed": 0
+ },
+ "3528a38f43": {
+  "outcome": "shared:ts:3528a38f43",
+  "why": "masked, it is the ts unit of class 3528a38f43 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "787064e0dd"
+  ],
+  "unreviewed": 0
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "b83e95bec6"
+  ],
+  "unreviewed": 0
+ },
+ "f5e8e05fbb": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "as 360f66a3d2, server-mixed",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "shared:ts:8848495678",
+  "why": "masked, it is the ts unit of class 8848495678 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "DEMO_APIKEY in the tutorial's client sentence, which the old block's code also read",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence (ref-issues)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "cb5a15341e": {
+  "outcome": "unification:show-fields",
+  "why": "lua prints chosen fields (prints 'fields'): the entity's display fields from the description (sdkdesc showFields: the id and the first other string field), read off `local rec = x:data_get()`. OLD lua printed chosen fields too, but its display-field pick never fired (rec[\"id\"] only), and printed a key-value loop where it had no column; the record print with no chosen field is still that loop",
+  "n": 10,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "b379167310": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "d21b44c83d": {
+  "outcome": "unification:show-fields",
+  "why": "the list loop names its variable after the entity (`planet`), as the shared list step does (rb-loop-var), prints chosen fields (show-fields), and loses OLD's blank line before the loop",
+  "n": 7,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "eaae7e1c20": {
+  "outcome": "unification:show-fields",
+  "why": "lua prints chosen fields (prints 'fields'): the entity's display fields from the description (sdkdesc showFields: the id and the first other string field), read off `local rec = x:data_get()`. OLD lua printed chosen fields too, but its display-field pick never fired (rec[\"id\"] only), and printed a key-value loop where it had no column; the record print with no chosen field is still that loop",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "1b96f8944b": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "5e4daf738f": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "a2c87edd4e": {
+  "outcome": "unification:show-fields",
+  "why": "lua prints chosen fields (prints 'fields'): the entity's display fields from the description (sdkdesc showFields: the id and the first other string field), read off `local rec = x:data_get()`. OLD lua printed chosen fields too, but its display-field pick never fired (rec[\"id\"] only), and printed a key-value loop where it had no column; the record print with no chosen field is still that loop",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "c752f2707f": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "0b97301712": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "509f4fda92": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — the value is the created entity; data_get() reads its record', 'Update/Patch — ... the id comes off the created entity's record'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70401f4c5a": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — the value is the created entity; data_get() reads its record', 'Update/Patch — ... the id comes off the created entity's record'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "14eb5dfde1": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — the value is the created entity; data_get() reads its record', 'Update/Patch — ... the id comes off the created entity's record'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — the value is the created entity; data_get() reads its record', 'Update/Patch — ... the id comes off the created entity's record'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — the value is the created entity; data_get() reads its record', 'Update/Patch — ... the id comes off the created entity's record'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — the value is the created entity; data_get() reads its record', 'Update/Patch — ... the id comes off the created entity's record'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — the value is the created entity; data_get() reads its record', 'Update/Patch — ... the id comes off the created entity's record'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "c76072420b": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — the value is the created entity; data_get() reads its record', 'Update/Patch — ... the id comes off the created entity's record'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "12eb0eb41f": {
+  "outcome": "unification:show-fields",
+  "why": "lua prints chosen fields (prints 'fields'): the entity's display fields from the description (sdkdesc showFields: the id and the first other string field), read off `local rec = x:data_get()`. OLD lua printed chosen fields too, but its display-field pick never fired (rec[\"id\"] only), and printed a key-value loop where it had no column; the record print with no chosen field is still that loop",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "20b94b3139": {
+  "outcome": "unification:show-fields",
+  "why": "lua prints chosen fields (prints 'fields'): the entity's display fields from the description (sdkdesc showFields: the id and the first other string field), read off `local rec = x:data_get()`. OLD lua printed chosen fields too, but its display-field pick never fired (rec[\"id\"] only), and printed a key-value loop where it had no column; the record print with no chosen field is still that loop",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "d3922e5206": {
+  "outcome": "unification:rb-loop-var",
+  "why": "the loop names its variable after the entity (planet), as the shared list step does",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "218287b1bf": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; err is non-nil on failure'); same facts as OLD's '(returns the entity; err on failure)'",
+  "n": 10,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "7a50f1e4de": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "as 218287b1bf: 'an array of entities, one per record; err is non-nil on failure', OLD's facts in the shared form",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "3505f38e6f": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "as 218287b1bf",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "7691f72ee0": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "76d7d9857a": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "945b33096f": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "c2a6a6db26": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "f5d3fa5b5c": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "410c4b13e0": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "9a8ef6d1ab": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "45ffb26a71": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "313855b3cb": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "16cc32544c": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b7edec76ca": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "'err is non-nil on failure' in the shared step comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "c9f1002753": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "as b7edec76ca",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "0f8800c618": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "as b7edec76ca",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "f04635c4ea": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "c26a509b44": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "367d614857": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; err is non-nil on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "as b1989358a0",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "3ea68d88c4": {
+  "outcome": "unification:show-fields",
+  "why": "the root quick start prints chosen fields, as the tutorial does (prints 'fields'), so it needs no JSON encoder: OLD required dkjson for json.encode(x:data_get()); NEW prints `local rec = x:data_get()` / `print(rec[...])` and imports only the SDK. Also the root step comments in the shared form (step-comment-runtime-fact) and, where the server is templated, the server option (S49)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "as b1989358a0",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id of the nested entity the root now loads",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id's example value",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b231c49579": {
+  "outcome": "same-meaning",
+  "why": "the README states the same of log's options (the table's `active` default true); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b65a95a1e5": {
+  "outcome": "same-meaning",
+  "why": "the echo is the word 'server' in the README options table's `base` cell; that table (ReadmeModel_lua, not ported) does not list `server`, so it says nothing that disagrees",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "05ce2654d0": {
+  "outcome": "same-meaning",
+  "why": "the README's test-mode text names the same arguments and feature.test option, with the test feature present in these variations; no disagreement",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "282d4750fe": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "47c258dd35": {
+  "outcome": "same-meaning",
+  "why": "the README's test-mode comment says data_get() reads the entity's record (lua/README.md:123); the same",
+  "n": 79,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "655e314529": {
+  "outcome": "same-meaning",
+  "why": "the echo is the word `error` in the README's error-handling example `if err then error(err) end` (lua/README.md:254): there it raises an operation's err, here the stream raises its own; they agree that an operation returns err and a stream raises",
+  "n": 94,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names log as Logging and says nothing about its default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "2527467e02": {
+  "outcome": "same-meaning",
+  "why": "the echo of OLD's own load sentence (the README's test-mode comment says data_get() reads the record, lua/README.md:123); NEW says the same in two sentences",
+  "n": 28,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "83803533d5": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: ReadmeRefFeatures lists as order-free hook features only those whose model declares transport 'none' and active hooks (FeatureDocs reads f.hook); `test` declares transport 'base' (model/feature/test.aontu `transport: 'base'`) and installs the transport the wrappers wrap, so it is no longer listed among features whose order does not matter. With one hook feature the sentence is singular (U53)",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "shared:ts:6aced21d71",
+  "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4fb872e54f"
+  ],
+  "unreviewed": 0
+ },
+ "630b93b404": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "638e6bf8c8": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bec71fd3ed": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bd75a6c916": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "525c043584": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "04d9decbcd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "68fa66027f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9578f954c3": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "81d19a3b94": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bb4fb6eecf": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1eac1e568f": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ce48696dcd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1c87f432bc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "45d9ef79df": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "198312a77c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5d9dc8ba29": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b1d4ccff9e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6957a19f18": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b464f5c04e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d1093fdf0b": {
+  "outcome": "correction:runtime-forms",
+  "why": "the operation returns its entity class (Entity.fragment.lua:437 `return self, nil`; the op comments `---@return EntyClass`), not any; list returns the array of entities make_result built (make_result.lua:32-38)",
+  "n": 27,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1a111f1c49": {
+  "outcome": "shared:rb:6b5de0a2d5",
+  "why": "masked, it is the rb unit of class 6b5de0a2d5 (correction:runtime-forms, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "03f31979fa"
+  ],
+  "unreviewed": 0
+ },
+ "7fd862b7ee": {
+  "outcome": "correction:runtime-forms",
+  "why": "the operation returns its entity class (Entity.fragment.lua:437 `return self, nil`; the op comments `---@return EntyClass`), not any; list returns the array of entities make_result built (make_result.lua:32-38)",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "db99290b04": {
+  "outcome": "shared:rb:6414adddb5",
+  "why": "masked, it is the rb unit of class 6414adddb5 (correction:runtime-forms, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0bd42bc9da"
+  ],
+  "unreviewed": 0
+ },
+ "e984ad7782": {
+  "outcome": "shared:rb:d8065d07cb",
+  "why": "masked, it is the rb unit of class d8065d07cb (correction:runtime-forms, by hand)",
+  "n": 92,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "7bebc239a6"
+  ],
+  "unreviewed": 0
+ },
+ "d90bf25f1c": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "947fe9e1d7": {
+  "outcome": "correction:runtime-forms",
+  "why": "the operation returns its entity class (Entity.fragment.lua:437 `return self, nil`; the op comments `---@return EntyClass`), not any; list returns the array of entities make_result built (make_result.lua:32-38)",
+  "n": 81,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "shared:go:042740d448",
+  "why": "masked, it is the go unit of class 042740d448 (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "5ddee20721"
+  ],
+  "unreviewed": 0
+ },
+ "0ee35d2611": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9fbe2759e6": {
+  "outcome": "unification:op-failure-clause",
+  "why": "the failure clause in the shared pair form ('; `err` is non-nil on failure'); the same fact as OLD's 'or `nil` and an error on failure' (make_error.lua:86 `return nil, sdk_err`)",
+  "n": 83,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client; sdk.test is its member, on the module table (Main.fragment.lua:432 `function ProjectNameSDK.test(`)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a5d8dcb2a0": {
+  "outcome": "restored:shared",
+  "why": "'both may be `nil`' in the shared test sentence, which also says what each argument holds; true: Main.fragment.lua:432-444 defaults each to {}",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d24cc5aafa": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "09ca6bd48f": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as e72c9d98eb): at v33p these units matched go's class e72c9d98eb as a shared sentence, which go decided correction:guard-accessor-arg (hand); the same decision is taken for them here, by hand",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b3ebb3afdd": {
+  "outcome": "correction:runtime-forms",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 6b1ca96f1d): direct's second value is always nil (Main.fragment.lua:267,300,315,368,371: every return is `..., nil`), so the signature shows the table, and a note says the second value is always nil; OLD's `table, err` suggested an error can come back there",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "34c77adf3c": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e31715514a": {
+  "outcome": "restored:shared",
+  "why": "direct: '**Returns:** `table`, a result map holding ...' and the note on the second value; prepare: '**Returns:** `table, err`, the fetch definition ...'. Prepare's pair is true: `return nil, err` (Main.fragment.lua:255) and make_fetch_def's `return fetchdef, nil`",
+  "n": 38,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa93828c84": {
+  "outcome": "restored:shared",
+  "why": "the load sentence in the shared form: 'Returns the entity; `err` is non-nil on failure. `data_get()` reads its record.'",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "72d297cb21": {
+  "outcome": "restored:shared",
+  "why": "as 'Returns the created entity; `err` is non-nil on failure.' (9f8b986637)",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1ab936a183": {
+  "outcome": "restored:shared",
+  "why": "as 'Returns the entity, marked as deleted; `err` is non-nil on failure.' (fcd6511f9a)",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 20,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e1bcc06cbe": {
+  "outcome": "restored:shared",
+  "why": "as 'Returns the updated entity; `err` is non-nil on failure.' (6afa2d3a82)",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c6cf58dde1": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fb53c2b222": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 17,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "306bf09289": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d265844143": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "63ce60fad7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2066e4a9e": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the constructor table takes its rows from main.kit.optspec (sdkdesc describeRef): a row for each schema key the model applies. auth (gated, as apikey, on auth being active), allow and clean are schema keys that had no row; their text says what the schema slot is (docs/reference/model.md 'Credential scheme', 'Comma-separated allow-lists', 'Redaction of everything the SDK emits'); every ported runtime reads them (PrepareAuth_<lang> auth.*, make_options/make_spec allow.method and allow.op, the clean utility)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7ddccf533d": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a constructor-table key cell for a row that now follows the schema (allow, auth, clean added; server and the others re-ordered, the text table's order); printed by this language's key printer as every other row",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b2a89584dc": {
+  "outcome": "shared:ts:b2a89584dc",
+  "why": "masked, it is the ts unit of class b2a89584dc (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4eea983832"
+  ],
+  "unreviewed": 0
+ },
+ "dc3093e4cd": {
+  "outcome": "shared:ts:dc3093e4cd",
+  "why": "masked, it is the ts unit of class dc3093e4cd (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c71a59923"
+  ],
+  "unreviewed": 0
+ },
+ "35ea4c3e84": {
+  "outcome": "shared:ts:35ea4c3e84",
+  "why": "masked, it is the ts unit of class 35ea4c3e84 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7247de945f"
+  ],
+  "unreviewed": 0
+ },
+ "45067a17c1": {
+  "outcome": "shared:ts:45067a17c1",
+  "why": "masked, it is the ts unit of class 45067a17c1 (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6c3aa41f7c"
+  ],
+  "unreviewed": 0
+ },
+ "06e0e1b2b7": {
+  "outcome": "shared:ts:06e0e1b2b7",
+  "why": "masked, it is the ts unit of class 06e0e1b2b7 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c7c471a05"
+  ],
+  "unreviewed": 0
+ },
+ "a986258b72": {
+  "outcome": "shared:ts:a986258b72",
+  "why": "masked, it is the ts unit of class a986258b72 (unification:ref-test-heading, by rule:test-heading)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ffe4eb970b"
+  ],
+  "unreviewed": 0
+ },
+ "466798fb0c": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 0
+ },
+ "ef6e4f695b": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 92,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "bf4ca985aa": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "dce8243b59": {
+  "outcome": "shared:elixir:4b8feb4091",
+  "why": "masked, it is the elixir unit of class 4b8feb4091 (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "78e12a7505"
+  ],
+  "unreviewed": 0
+ },
+ "6979eaacb4": {
+  "outcome": "shared:ts:6979eaacb4",
+  "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
+  "n": 34,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea66aefd24"
+  ],
+  "unreviewed": 0
+ },
+ "d2b1853b85": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: a bare value-type cell (this language's own valueType word): the constructor table gained rows typed as maps (allow, auth, clean), so the number of such cells moved and the tools pair them with OLD's cells elsewhere on the page; no type cell changed",
+  "n": 71,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 0
+ },
+ "104448b83f": {
+  "outcome": "shared:ts:b82912bd60",
+  "why": "masked, it is the ts unit of class b82912bd60 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0a6358906c"
+  ],
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "11da65611b": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "33ee785ed0": {
+  "outcome": "shared:ts:33ee785ed0",
+  "why": "masked, it is the ts unit of class 33ee785ed0 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "010ab525bc"
+  ],
+  "unreviewed": 0
+ },
+ "e93eb54667": {
+  "outcome": "restored:note",
+  "why": "lua's note on direct: the second value is always nil (Main.fragment.lua:267 `return self:_op_denied(\"direct\"), nil`, :300 `return { ok = false, err = err }, nil`, :368 `return out, nil`); OLD's `-> table, err` and README suggested otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "223bbc9549": {
+  "outcome": "shared:py:fc4313d211",
+  "why": "masked, it is the py unit of class fc4313d211 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c8f458658"
+  ],
+  "unreviewed": 0
+ },
+ "ce004682ea": {
+  "outcome": "shared:go:ce004682ea",
+  "why": "masked, it is the go unit of class ce004682ea (unification:op-failure-clause, by rule:add-fails)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ab92519649"
+  ],
+  "unreviewed": 0
+ },
+ "cfc5b3ad1d": {
+  "outcome": "shared:go:66054d0498",
+  "why": "masked, it is the go unit of class 66054d0498 (unification:op-sentences, by rule:op-sentences)",
+  "n": 28,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0bf479489c"
+  ],
+  "unreviewed": 0
+ },
+ "a1d07d2746": {
+  "outcome": "shared:ts:89c5ef9c6d",
+  "why": "masked, it is the ts unit of class 89c5ef9c6d (restored:shared, by hand)",
+  "n": 79,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3bb5d3a968"
+  ],
+  "unreviewed": 0
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f8ffb2b296": {
+  "outcome": "shared:py:593ef47de1",
+  "why": "masked, it is the py unit of class 593ef47de1 (restored:fact, by rule:stream-member)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "957a8c7efa"
+  ],
+  "unreviewed": 0
+ },
+ "5fad7afa79": {
+  "outcome": "restored:fact",
+  "why": "the stream member, which the runtime has (Entity.fragment.lua:130 `function EntyClass:stream(action, args, callopts)`) and OLD did not document: it returns a function (:229 `return function()`) that returns nil once the coroutine is dead (:230-232)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "91bc59ac7f": {
+  "outcome": "shared:ts:91bc59ac7f",
+  "why": "masked, it is the ts unit of class 91bc59ac7f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5003b705ca"
+  ],
+  "unreviewed": 0
+ },
+ "1d5ec19f64": {
+  "outcome": "correction:v34-stream-signal-words",
+  "why": "v3.4, one shared edit: the stream sentence names the signal in words, 'the `signal` in `callopts`', where it printed `callopts.signal`, TypeScript's notation, in every language (C# and Kotlin write callopts[\"signal\"], and a reader of those pages cannot write the span as printed); where the runtime reads one form only it says which, from the provider's cited streamSignalForm (csharp a CancellationToken, EntityBase.fragment.cs `is CancellationToken sigTok ? sigTok : CancellationToken.None`; kotlin a Function0 that returns true, EntityBase.fragment.kt `is Function0<*> -> {` / `{ false }`). Each runtime that declares streamSignal reads the signal key of its call options (cited per language as at v3.3, decision 6)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "482c4e7ba9": {
+  "outcome": "restored:note",
+  "why": "lua's note on stream: unlike an operation's value, err, the returned function raises a failure with `error` (Entity.fragment.lua:238 `error(item, 0)`, :254 `error(err, 0)`)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "17e455f4a3": {
+  "outcome": "shared:c:a059e52e2d",
+  "why": "masked, it is the c unit of class a059e52e2d (correction:sentence-review-list-match, by hand)",
+  "n": 82,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4cc33fe3da"
+  ],
+  "unreviewed": 0
+ },
+ "393056d0c1": {
+  "outcome": "shared:go:393056d0c1",
+  "why": "masked, it is the go unit of class 393056d0c1 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "185f26bc68"
+  ],
+  "unreviewed": 0
+ },
+ "0f10166e63": {
+  "outcome": "shared:go:0f10166e63",
+  "why": "masked, it is the go unit of class 0f10166e63 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "abe9546ee3"
+  ],
+  "unreviewed": 0
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 0
+ },
+ "d3f3b82555": {
+  "outcome": "shared:go:d3f3b82555",
+  "why": "masked, it is the go unit of class d3f3b82555 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2b8bc511e9"
+  ],
+  "unreviewed": 0
+ },
+ "7615c6fe93": {
+  "outcome": "shared:ts:7615c6fe93",
+  "why": "masked, it is the ts unit of class 7615c6fe93 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c151802d4a"
+  ],
+  "unreviewed": 0
+ },
+ "6356afc86b": {
+  "outcome": "shared:go:6356afc86b",
+  "why": "masked, it is the go unit of class 6356afc86b (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "120aec2437"
+  ],
+  "unreviewed": 0
+ },
+ "193859bf79": {
+  "outcome": "shared:go:193859bf79",
+  "why": "masked, it is the go unit of class 193859bf79 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "22bdd0ff18"
+  ],
+  "unreviewed": 0
+ },
+ "28d337e733": {
+  "outcome": "shared:go:28d337e733",
+  "why": "masked, it is the go unit of class 28d337e733 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a8d9aa773"
+  ],
+  "unreviewed": 0
+ },
+ "9023782dca": {
+  "outcome": "shared:ts:9023782dca",
+  "why": "masked, it is the ts unit of class 9023782dca (correction:ref-6, by rule:add-action-op)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e3081c2053"
+  ],
+  "unreviewed": 0
+ },
+ "3d50058045": {
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ebea8de27f"
+  ],
+  "unreviewed": 0
+ },
+ "2af0b29b9e": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 0
+ },
+ "9f8b986637": {
+  "outcome": "unification:op-failure-clause",
+  "why": "the failure clause in the shared pair form ('; `err` is non-nil on failure'); the same fact as OLD's 'or `nil` and an error on failure' (make_error.lua:86 `return nil, sdk_err`)",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7b4b41d6fa": {
+  "outcome": "shared:ts:7b4b41d6fa",
+  "why": "masked, it is the ts unit of class 7b4b41d6fa (unification:ref-type-comments, by rule:add-type-comment)",
+  "n": 32,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "bced6e2f5f"
+  ],
+  "unreviewed": 0
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 0
+ },
+ "6afa2d3a82": {
+  "outcome": "unification:op-failure-clause",
+  "why": "the failure clause in the shared pair form ('; `err` is non-nil on failure'); the same fact as OLD's 'or `nil` and an error on failure' (make_error.lua:86 `return nil, sdk_err`)",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fcd6511f9a": {
+  "outcome": "unification:op-failure-clause",
+  "why": "the failure clause in the shared pair form ('; `err` is non-nil on failure'); the same fact as OLD's 'or `nil` and an error on failure' (make_error.lua:86 `return nil, sdk_err`)",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f64dc915fc": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "1095fa7261": {
+  "outcome": "shared:ts:1095fa7261",
+  "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8d6016d7e2"
+  ],
+  "unreviewed": 0
+ },
+ "e94011ef3f": {
+  "outcome": "correction:residue-escaped-backticks",
+  "why": "h3fix, one shared edit: the cost and cache ordering note printed the feature names as escaped backticks (\\`cost\\`) in every language; they are code spans now. The tools split the paragraph at its first full stop now that no backslash stands before it; the words are unchanged",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "05a7710dde": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: a wrapping feature whose model also declares active hooks says so, as the catalogue's X3 fix asks (cost: hook PrePoint, PreDone, PreUnexpected; secrets: hook PreSpec); the wrap sentence above it is unchanged",
+  "n": 38,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9a5ba18db4": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f88d62ac3d": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: a feature whose `active` option defaults to true (log: model/feature/log.aontu `options: active: true`) is no longer told to be switched on (the same defect as S09, in the Usage sentence S09's fix did not reach); the switch-off sentence names no literal, which the TypeScript `active: false` did in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "5c591f3d19": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "05a5a62f89"
+  ],
+  "unreviewed": 0
+ },
+ "7229636aa2": {
+  "outcome": "shared:rb:385b2d16af",
+  "why": "masked, it is the rb unit of class 385b2d16af (correction:runtime-forms, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a5e47cfb6f"
+  ],
+  "unreviewed": 0
+ },
+ "6c8e425de0": {
+  "outcome": "restored:shared",
+  "why": "as 'Returns the patched entity; `err` is non-nil on failure.' (cc530bb7ce)",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "cc530bb7ce": {
+  "outcome": "unification:op-failure-clause",
+  "why": "the failure clause in the shared pair form ('; `err` is non-nil on failure'); the same fact as OLD's 'or `nil` and an error on failure' (make_error.lua:86 `return nil, sdk_err`)",
+  "n": 4,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d3d603d612"
+  ],
+  "unreviewed": 0
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "db7b5e5da1": {
+  "outcome": "same-meaning",
+  "why": "the echo is the word `nil` in the README's test line ('Both arguments may be `nil`'); unrelated to direct's second value",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "7e86a932db": {
+  "outcome": "same-meaning",
+  "why": "the README's accessor call passes nil the same way; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9cb2039c55": {
+  "outcome": "same-meaning",
+  "why": "the echo is the word `nil` in the README's test line; unrelated to the stream's end",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "91647d57e6": {
+  "outcome": "same-meaning",
+  "why": "the removed sentence 'Pass `nil` for no initial data.' is said again by the accessor sentence that replaced it ('Its `data` argument holds the entity options: pass `nil` for none.'); the echo is the README's test line ('Both arguments may be `nil`'), which uses nil as the null value too: no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)"
+ },
+ "5b46edebf3": {
+  "outcome": "same-meaning",
+  "why": "the README names the same `feature.test` switch (its feature row or its test-mode text); this sentence says the call sets it, switched on; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f616466503"
+  ],
+  "unreviewed": 0
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 0
+ },
+ "f4e8df935f": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b41862bb96": {
+  "outcome": "correction:S13-residue",
+  "why": "h3fix, one shared edit: without the test feature the test client's first argument is not 'the test feature's options, which the call switches on' (there is no such feature): the call sets it, switched on, as feature.test in the options, which is all the sentence now says (ts Main.fragment.ts `setprop(testopts, 'active', true)` and `setpath(sdkopts, 'feature.test', testopts)`; py Main.fragment.py `vs.setpath(sdkopts, \"feature.test\", testopts)`); where the runtime ships the test feature whatever the model (testMock 'always') the old sentence stays",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "da08f7e7bd": {
+  "outcome": "shared:ts:da08f7e7bd",
+  "why": "masked, it is the ts unit of class da08f7e7bd (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "042396fde4": {
+  "outcome": "shared:rb:d8065d07cb",
+  "why": "masked, it is the rb unit of class d8065d07cb (correction:runtime-forms, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "7bebc239a6"
+  ],
+  "unreviewed": 0
+ },
+ "a22f841d95": {
+  "outcome": "correction:runtime-forms",
+  "why": "the operation returns its entity class (Entity.fragment.lua:437 `return self, nil`; the op comments `---@return EntyClass`), not any; list returns the array of entities make_result built (make_result.lua:32-38)",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "fe06e05f78": {
+  "outcome": "shared:ts:fe06e05f78",
+  "why": "masked, it is the ts unit of class fe06e05f78 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "f6b8425ed5"
+  ],
+  "unreviewed": 0
+ },
+ "34e0a041ba": {
+  "outcome": "shared:rb:6b5de0a2d5",
+  "why": "masked, it is the rb unit of class 6b5de0a2d5 (correction:runtime-forms, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "03f31979fa"
+  ],
+  "unreviewed": 0
+ },
+ "9f6ef49a2d": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides (entityClassName, which Entity_lua names the class by)",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5ca24e7bcf": {
+  "outcome": "shared:rb:385b2d16af",
+  "why": "masked, it is the rb unit of class 385b2d16af (correction:runtime-forms, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "a5e47cfb6f"
+  ],
+  "unreviewed": 0
+ },
+ "dfaaa7b057": {
+  "outcome": "shared:rb:6414adddb5",
+  "why": "masked, it is the rb unit of class 6414adddb5 (correction:runtime-forms, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0bd42bc9da"
+  ],
+  "unreviewed": 0
+ },
+ "2e5cf0c464": {
+  "outcome": "correction:U34",
+  "why": "as 7217a4bed3, for list",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c57c0ef5c6": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d245316c2e": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2b34ad7e96": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "23aa32ee94": {
+  "outcome": "correction:runtime-forms",
+  "why": "make returns a new instance of the same entity class (Entity.fragment.lua:70-75 `return EntyClass.new(self._client, opts)`), not a generic Entity",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "671a0cd356": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0fd244b2e3": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7393140c1f": {
+  "outcome": "shared:ts:7393140c1f",
+  "why": "masked, it is the ts unit of class 7393140c1f (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9fe8f9d917"
+  ],
+  "unreviewed": 0
+ },
+ "7dd340f0f1": {
+  "outcome": "shared:ts:7dd340f0f1",
+  "why": "masked, it is the ts unit of class 7dd340f0f1 (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "40b461d15b": {
+  "outcome": "shared:rb:d8065d07cb",
+  "why": "masked, it is the rb unit of class d8065d07cb (correction:runtime-forms, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7bebc239a6"
+  ],
+  "unreviewed": 0
+ },
+ "0ef48843b0": {
+  "outcome": "shared:ts:0ef48843b0",
+  "why": "masked, it is the ts unit of class 0ef48843b0 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "74c9db4d88"
+  ],
+  "unreviewed": 0
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "0bc6a97a37": {
+  "outcome": "restored:shared",
+  "why": "the keys of the direct result map in the shared return sentence (ok, status, headers, data), and `result.ok`",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a345bb4bf9": {
+  "outcome": "restored:shared",
+  "why": "as 0bc6a97a37",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8e4dd2dd04": {
+  "outcome": "restored:shared",
+  "why": "`result.ok`, what to branch on, in the shared direct sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd48acdf84": {
+  "outcome": "restored:fact",
+  "why": "the stream member, as 5fad7afa79",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter action (and the action name in the Actions table)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter args",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter callopts",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "0a67fac978": {
+  "outcome": "restored:fact",
+  "why": "what stream returns: a function (Entity.fragment.lua:229)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8eed77596a": {
+  "outcome": "restored:note",
+  "why": "the `error` the stream note names, as 482c4e7ba9",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the action name in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "45e5abdb9e": {
+  "outcome": "correction:ref-6",
+  "why": "the binding in the Call cell (`local _, err = ...`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "da55616659": {
+  "outcome": "correction:ref-6",
+  "why": "as 45e5abdb9e",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "the client receiver in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a4bdeb5891": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "b178332f86": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements on one line (`local _, err = client:Planet():create({...}); if err then error(err) end`): the sentence round's fix of the cell (zig's unclosed switch, c's undeclared variables), lua's pair check printed by its own printer",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "1873ad789f": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements on one line (`... if err then error(err) end`), as b178332f86",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the required server variables, and the sentence names them (server-required-given)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "3f4da3a957": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example OLD printed, explain set to true, was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "053d666657": {
+  "outcome": "correction:runtime-forms",
+  "why": "the token Entity went with make -> Entity; make returns the entity class (Entity.fragment.lua:70-75)",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class PlanetEntityClient named in the accessor sentence and headings",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "1883e46669": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 10,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "ba0e501f34": {
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `rec[\"maker\"]`) or, where the entity has none, the id alone (Record, whose other field `fields` is a table that printed table: 0x...); the rest of the block (the err check, ipairs over the results, `local rec = item:data_get()`) is as decided for the other reference list blocks",
+  "n": 64,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "bc48bd2de6": {
+  "outcome": "correction:ref-create-runnable",
+  "why": "the reference create example passes typed literals with the type as a comment (`id = \"example_id\", -- string`); OLD wrote `id = --[[ string ]],`, a placeholder that does not parse, which the README test counts as an illustration and never runs",
+  "n": 16,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "df92d642c3": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 32,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "f29aee61a7": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 20,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "e12ef1cf85": {
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `rec[\"maker\"]`) or, where the entity has none, the id alone (Record, whose other field `fields` is a table that printed table: 0x...); the rest of the block (the err check, ipairs over the results, `local rec = item:data_get()`) is as decided for the other reference list blocks",
+  "n": 18,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "498b113f1e": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "cbc5489fcd": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "22c26fcbf9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive, so no remove example",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "f2c68179d1": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "a288d5b6f5": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "4b30b97930": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "ceca47f557": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "2b4c3292d8": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "ce6dcdccb7": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "a5f9afaf5a": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "81b5ca4c52": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "e95d9549ec": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "6a8837b248": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "2075e25f1e": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "85d8a940f7": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "4b29f05581": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "e7b80cfdc5": {
+  "outcome": "correction:ref-create-runnable",
+  "why": "the reference create example passes typed literals with the type as a comment (`id = \"example_id\", -- string`); OLD wrote `id = --[[ string ]],`, a placeholder that does not parse, which the README test counts as an illustration and never runs",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "14e3ab3f99": {
+  "outcome": "correction:ref-create-runnable",
+  "why": "the reference create example passes typed literals with the type as a comment (`id = \"example_id\", -- string`); OLD wrote `id = --[[ string ]],`, a placeholder that does not parse, which the README test counts as an illustration and never runs",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

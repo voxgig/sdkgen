@@ -1,0 +1,1080 @@
+{
+ "360f66a3d2": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 17,
+  "rekeyed": "360f66a3d2+e1b0d2d30d"
+ },
+ "ff4863a314": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 12
+ },
+ "b6ef0e9023": {
+  "rule": "page-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 21
+ },
+ "3291b1acc6": {
+  "rule": "go-program-lead",
+  "outcome": "same-meaning",
+  "why": "",
+  "n": 21
+ },
+ "fea443712e": {
+  "rule": "go-pair-paragraph",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 21
+ },
+ "c5005c09ca": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 13
+ },
+ "0538108a37": {
+  "rule": "entities-contract",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 20
+ },
+ "227d62e867": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 12,
+  "rekeyed": "4ee5b3632c"
+ },
+ "c0831e892a": {
+  "rule": "add-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 12
+ },
+ "5a3859e529": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 3
+ },
+ "71d4afd3c1": {
+  "rule": "go-load-comment-pairing",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 5
+ },
+ "7fea879178": {
+  "rule": "step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 7
+ },
+ "2ccfaa74d1": {
+  "rule": "go-write-comments",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 5
+ },
+ "defc60cc77": {
+  "rule": "go-write-comments",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 5
+ },
+ "d7a0eed553": {
+  "rule": "go-write-comments",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 3
+ },
+ "df6795c232": {
+  "rule": "go-write-comments",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 5
+ },
+ "8a0c441967": {
+  "rule": "add-go-pair",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 7,
+  "rekeyed": "14f5b323fe"
+ },
+ "73e14658e4": {
+  "rule": "add-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 7
+ },
+ "82a4bb6823": {
+  "rule": "add-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 6
+ },
+ "0ed7dc127d": {
+  "rule": "add-write-comment",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 4
+ },
+ "aeabe4bdf1": {
+  "rule": "add-write-comment",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 3
+ },
+ "e3989ad2af": {
+  "rule": "add-write-comment",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 5
+ },
+ "29bba9e03f": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "1fa815677a": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "defb73bfd8": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "9cbb8e3add": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "c44f65ddeb": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "3528a38f43": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "d371d2e0ec": {
+  "rule": "add-write-comment",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 1
+ },
+ "325b1911ed": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "8848495678": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "6fb3670380": {
+  "rule": "tok-apikey",
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 1
+ },
+ "1a135d465d": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "dc963c4a40": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "c22c8885c9": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "f7d7dc68ab": {
+  "rule": "tok-region",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1
+ },
+ "e3046569c7": {
+  "rule": "tok-go-load",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1
+ },
+ "e5e05eb7a6": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "a12e1f1e52": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "15bacfa9a4": {
+  "rule": "tok-go-nested",
+  "outcome": "unification:tutorial-nested-load",
+  "why": "",
+  "n": 1
+ },
+ "1a964b9b39": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "82fcc21684": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "0242a9e32e": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "f259e59a94": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "f4629e37f4": {
+  "rule": "tok-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "642f81e303": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "431e9ea0d5": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "4e30f7a270": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "c76072420b": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "448bd65283": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "20694d565b": {
+  "rule": "tok-region",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1
+ },
+ "b019e52982": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "fd44142fb6": {
+  "rule": "tok-go-program",
+  "outcome": "restored:printer",
+  "why": "",
+  "n": 1
+ },
+ "d3922e5206": {
+  "rule": "tok-generic-names",
+  "outcome": "unification:ref-generic-names",
+  "why": "",
+  "n": 1
+ },
+ "38b6bc8ef0": {
+  "rule": "tok-chain",
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1
+ },
+ "49972c467f": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "9caf244239": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "1e0d444246": {
+  "rule": "tok-chain",
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1
+ },
+ "a4e0a05587": {
+  "rule": "tok-chain",
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1
+ },
+ "8aa9c9a70d": {
+  "rule": "tok-nested-load",
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1
+ },
+ "c434e3cf1b": {
+  "rule": "tok-nested-load",
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1
+ },
+ "4d8de8edbd": {
+  "rule": "root-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 13
+ },
+ "89c4f1f1a9": {
+  "rule": "root-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 7
+ },
+ "3f4b0793e9": {
+  "rule": "add-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 5
+ },
+ "116a40e0f4": {
+  "rule": "root-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "80a2607e03": {
+  "rule": "tok-go-program",
+  "outcome": "restored:printer",
+  "why": "",
+  "n": 1
+ },
+ "6291d5b577": {
+  "rule": "tok-go-program",
+  "outcome": "restored:printer",
+  "why": "",
+  "n": 1
+ },
+ "a3a0fb515c": {
+  "rule": "tok-go-program",
+  "outcome": "restored:printer",
+  "why": "",
+  "n": 1
+ },
+ "4a3209e8d9": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "797ec8d55d": {
+  "rule": "tok-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "5ac10c03c6": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "7851b353c0": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "5f9251f640": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "9abb7b4c63": {
+  "rule": "tok-region",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1
+ },
+ "b1989358a0": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "61d073347b": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "7160d3a6d4": {
+  "rule": "tok-go-program",
+  "outcome": "restored:printer",
+  "why": "",
+  "n": 1
+ },
+ "0c5db6b150": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "f64ae2f4fc": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 21
+ },
+ "6aced21d71": {
+  "rule": "features-escape",
+  "outcome": "correction:ref-features-escape",
+  "why": "",
+  "n": 21
+ },
+ "66054d0498": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 32
+ },
+ "cce9e8691a": {
+  "rule": "accessor-sentence",
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 106,
+  "rekeyed": "bde0d2283c+cce9e8691a"
+ },
+ "8c7bd8c1cf": {
+  "rule": "stream-member",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 107
+ },
+ "042740d448": {
+  "rule": "direct-rows",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 21
+ },
+ "1d5f2874ab": {
+  "rule": "test-heading",
+  "outcome": "unification:ref-test-heading",
+  "why": "",
+  "n": 21
+ },
+ "2127bd9037": {
+  "rule": "go-test-ctors",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "127e7211ac": {
+  "rule": "go-test-ctors",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "d389e7085e": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 20
+ },
+ "52e4c4a2ee": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 42
+ },
+ "2f38082332": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 21
+ },
+ "ac1eac6be0": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 21
+ },
+ "aa731f856a": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 18
+ },
+ "b2a89584dc": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 18
+ },
+ "ae8fd518c8": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 17
+ },
+ "35ea4c3e84": {
+  "rule": "server-required-cell",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 18
+ },
+ "ac200e5023": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 18
+ },
+ "06e0e1b2b7": {
+  "rule": "server-required-cell",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 18
+ },
+ "a986258b72": {
+  "rule": "test-heading",
+  "outcome": "unification:ref-test-heading",
+  "why": "",
+  "n": 21
+ },
+ "10b2b1c0f3": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 40
+ },
+ "6979eaacb4": {
+  "rule": "add-type-cells",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 38
+ },
+ "e4434a1e1c": {
+  "rule": "add-type-cells",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 79
+ },
+ "ce004682ea": {
+  "rule": "add-fails",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 21
+ },
+ "891d0381c7": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 89
+ },
+ "bc487a4d6a": {
+  "rule": "stream-member",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 108
+ },
+ "393056d0c1": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "0f10166e63": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "d3f3b82555": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "7615c6fe93": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "6356afc86b": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "193859bf79": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "28d337e733": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "f6a99bb171": {
+  "rule": "add-action-op",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "3d50058045": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "7b4b41d6fa": {
+  "rule": "add-type-comment",
+  "outcome": "unification:ref-type-comments",
+  "why": "",
+  "n": 36
+ },
+ "1095fa7261": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 21
+ },
+ "6aeea92fca": {
+  "rule": "add-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2
+ },
+ "cbcdf6e5f9": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1
+ },
+ "066a083189": {
+  "rule": "direct-rows",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1
+ },
+ "da08f7e7bd": {
+  "rule": "field-escape",
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1
+ },
+ "fe06e05f78": {
+  "rule": "class-collision",
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1
+ },
+ "10f0d238e2": {
+  "rule": "class-collision",
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1
+ },
+ "e35271001c": {
+  "rule": "accessor-sentence",
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 1,
+  "rekeyed": "cce9e8691a"
+ },
+ "dac11a1691": {
+  "rule": "field-escape",
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "rule": "field-escape",
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1
+ },
+ "0b29ec4944": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 3
+ },
+ "d245316c2e": {
+  "rule": "class-collision",
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1
+ },
+ "059d2f6a5c": {
+  "rule": "stream-member",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1
+ },
+ "7393140c1f": {
+  "rule": "class-collision",
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1
+ },
+ "7dd340f0f1": {
+  "rule": "field-escape",
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1
+ },
+ "b9c2920888": {
+  "rule": "add-note-go",
+  "outcome": "restored:note",
+  "why": "",
+  "n": 1
+ },
+ "d2af3edbca": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "b4523a5362": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "fd1c2f8fd4": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "e231e4d0f8": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "05e95df417": {
+  "rule": "tok-region",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1
+ },
+ "0bc6a97a37": {
+  "rule": "tok-direct-keys",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1
+ },
+ "a345bb4bf9": {
+  "rule": "tok-direct-keys",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1
+ },
+ "8e4dd2dd04": {
+  "rule": "tok-generic-names",
+  "outcome": "unification:ref-generic-names",
+  "why": "",
+  "n": 1
+ },
+ "9c792a9893": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1
+ },
+ "da55616659": {
+  "rule": "tok-direct-explain",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1
+ },
+ "7e7f66c823": {
+  "rule": "tok-action-call",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1
+ },
+ "045e555fdd": {
+  "rule": "tok-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "a9e4808c74": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "57048dc63c": {
+  "rule": "class-collision",
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1
+ },
+ "bcc241e7db": {
+  "rule": "tok-testsdk",
+  "outcome": "correction:go-testsdk-args",
+  "why": "",
+  "n": 1
+ },
+ "5715f195d7": {
+  "rule": "tok-testsdk",
+  "outcome": "correction:go-testsdk-args",
+  "why": "",
+  "n": 1
+ },
+ "294b0211d8": {
+  "rule": "add-go-a5",
+  "outcome": "correction:A5",
+  "why": "",
+  "n": 20
+ },
+ "3320e33aa5": {
+  "rule": "apikey-env",
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 17,
+  "rekeyed": "9b8d1fdca3"
+ },
+ "769cd94ade": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 18,
+  "rekeyed": "bc4fcddb1f+4ee5b3632c+1d764de090"
+ },
+ "b98c5c1370": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "rekeyed": "7b051ea3b0"
+ },
+ "6145dede90": {
+  "rule": "add-go-pair",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 7,
+  "rekeyed": "14f5b323fe"
+ },
+ "84a20c16fc": {
+  "rule": "add-go-pair",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 7
+ },
+ "14d7ad06dd": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 3
+ },
+ "d0cd23d2c9": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 1
+ },
+ "306a9286fc": {
+  "rule": "add-nested-sentence",
+  "outcome": "unification:tutorial-nested-load",
+  "why": "",
+  "n": 1,
+  "rekeyed": "d4e96cf680"
+ },
+ "64340cef2b": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 1
+ },
+ "bf79e174b6": {
+  "rule": "add-go-a5",
+  "outcome": "correction:A5",
+  "why": "",
+  "n": 1
+ },
+ "2ff6ebd59a": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 1
+ },
+ "3d6fd1c6b5": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "92bc6e303b": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 21
+ },
+ "9046cca3ee": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "379985ad51": {
+  "rule": "add-go-test",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 20
+ },
+ "7e13c0a95a": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 42
+ },
+ "adfaa5e79e": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "17ac2b3403": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "566d3ef425": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 94
+ },
+ "3c49d29119": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "916036b165": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 21
+ },
+ "3e1ef005aa": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2
+ },
+ "60c6b0b417": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1
+ },
+ "91201b47e3": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 2
+ },
+ "e188d78214": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1
+ },
+ "f878d6c74a": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1
+ },
+ "618096b4cc": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "fbf2304915": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "31d8b2afcb": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ }
+}

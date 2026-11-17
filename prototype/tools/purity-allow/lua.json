@@ -1,0 +1,20 @@
+[
+ {
+  "file": "Syntax",
+  "check": "import of a non-printing helper",
+  "text": "luaKey",
+  "why": "Quotes a table key: a key that is a Lua identifier and not a reserved word is written bare, any other as [\"...\"]. It is lua's jsKey (which the printing helpers list holds), and it carries the shared reserved-word list a provider may not hold itself (naming.ts LUA_RESERVED); ts/test/lua-table-keys.test.ts requires every lua component that writes a key to import it rather than define its own."
+ },
+ {
+  "file": "Syntax",
+  "check": "import of a non-printing helper",
+  "text": "luaString",
+  "why": "Quotes a Lua string literal (escapes backslash, quote and newlines), as jsQuote does for js; a provider-local quoter would be a second copy. JSON.stringify is not a substitute: its \\uXXXX escapes are not Lua syntax."
+ },
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "exampleVarName (from @voxgig/sdkgen)",
+  "why": "An example variable is not a name the code generator makes. The hook adapts the shared example names (results, item, result, the entity name and plural) to lua's identifier rules with the sdkgen function the language's other README components use (ReadmeEntity_lua.ts:62 exampleVarName(entity.name, 'lua')); no code generator has an equivalent."
+ }
+]

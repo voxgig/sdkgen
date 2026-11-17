@@ -1,0 +1,25 @@
+// rb: normalizers whose pattern is Ruby syntax.
+const { onNew, onOld } = require('../normalizers.js')
+module.exports = [
+  { id: 'rb-root-require-place', order: 5, kind: 'correction', keys: /^root/,
+    undoes: 'the root quick start requires the SDK by its path from the repository root (brief 7 decision 1; ran from the root: OLD\'s require_relative "Demo_sdk" fails with LoadError, NEW loads): NEW\'s "rb/<file>" read as OLD\'s "<file>"',
+    undo: onNew((t) => t.replace(/^require_relative "rb\/(\w+)"$/m, 'require_relative "$1"')) },
+  { id: 'server-required-given:rb', order: 9, kind: 'correction', keys: /^(tutorial|root)/,
+    undoes: 'the client now gives the server variables that have no default (S50/D23): the Ruby hash entry "server" => { ... } is removed from NEW where OLD had none',
+    undo: onNew((t, old) => /"server"/.test(old || '') ? t : t.replace(/\n {2}"server" => \{\n( {4}"\w+" => "<\w+>",\n)+ {2}\},(?=\n)/, '')) },
+  { id: 'rb-create-comment', order: 165, kind: 'correction', keys: /^(tutorial|root)/,
+    undoes: 'the write comments are the shared ones (write-comment-style), which name the operation capitalised: OLD\'s lower-case "# create returns the ENTITY ..." read as "# Create"',
+    undo: onOld((t) => t.replace(/^(\s*)# create returns the ENTITY\b.*$/gm, '$1# Create')) },
+  { id: 'rb-display-field', order: 175, kind: 'correction', keys: /^tutorial/,
+    undoes: 'the tutorial list prints the record id and the entity\'s chosen display field, its first string field (showFields now compares the canonical type; OLD fell back to the first other field after the backtick miss): NEW\'s second field read as OLD\'s',
+    undo: onNew((t, old) => { const m = /record\["id"\]\} #\{record\["(\w+)"\]\}/.exec(old || ''); return null == m ? t : t.replace(/(record\["id"\]\} #\{record\[")\w+("\]\})/, '$1' + m[1] + '$2') }) },
+  { id: 'rb-op-comment', order: 190, kind: 'unification', keys: /^tutorial/,
+    undoes: 'the tutorial states what an operation returns in the shared sentence above the block, not in a comment inside it: OLD\'s "# load returns ..." / "# list returns ..." comment line removed',
+    undo: onOld((t) => t.replace(/^\s*# (load|list) returns [^\n]*\n/gm, '')) },
+  { id: 'rb-noarg-call', order: 195, kind: 'unification', keys: /^(tutorial|root|ref:op)/,
+    undoes: 'the Ruby printer calls a method with no arguments without parentheses (client.Ambient.load): OLD\'s empty () removed',
+    undo: onOld((t) => t.replace(/\.(\w+)\(\)/g, '.$1')) },
+  { id: 'rb-loop-var', order: 235, kind: 'unification', keys: /^(tutorial|root)/,
+    undoes: 'the loop names its variable after the entity, as the shared list step does: OLD\'s |item| read as NEW\'s name',
+    undo: onOld((t, other) => { const m = /each (?:do|\{) \|(\w+)\|/.exec(other || ''); return null == m || !/\|item\|/.test(t) ? t : t.replace(/\bitem\b/g, m[1]) }) },
+]

@@ -1,0 +1,19 @@
+{
+ "facts": {
+  "ref.valueType.OBJECT": {
+   "value": "hashref",
+   "why": "the type word for a map value (options, fetchargs, the record): OLD perl wrote `hashref` for every map-valued option and fetcharg (headers, feature, system, params, query) and for data_get's return; the three contexts the sheet calls contradicted are the tutorial's record clause '(a `hashref`)', a new clause OLD did not have, whose masked OLD unit is a different sentence",
+   "evidence": "OLD B/perl/REFERENCE.md: `$options` `hashref`, `$options->{headers}` `hashref`, `data_get() -> hashref`; runtime Entity.fragment.pm:99 '(hashref)'"
+  },
+  "prints": {
+   "value": "fields",
+   "why": "control: the true value, recorded so that the unmutated output passes in the reviewed mode",
+   "evidence": "the provider at v33p declares it"
+  },
+  "ref.entityBy": {
+   "value": "class",
+   "why": "control: the true value, recorded so that the unmutated output passes in the reviewed mode",
+   "evidence": "the provider at v33p declares it"
+  }
+ }
+}

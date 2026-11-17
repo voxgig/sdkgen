@@ -1,0 +1,1044 @@
+{
+ "360f66a3d2": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15
+ },
+ "63dbaa39ec": {
+  "rule": "step-numbers",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10
+ },
+ "db968fff29": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 16
+ },
+ "ff4863a314": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10
+ },
+ "0538108a37": {
+  "rule": "entities-contract",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 18
+ },
+ "9363faf207": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15
+ },
+ "5a3859e529": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 3
+ },
+ "ebd7ea7979": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 7
+ },
+ "114fbf9035": {
+  "rule": "write-comment-id2",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 4
+ },
+ "6713332576": {
+  "rule": "record-sentence",
+  "outcome": "same-meaning",
+  "why": "",
+  "n": 7
+ },
+ "7fe2bb62d9": {
+  "rule": "write-comments",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 5
+ },
+ "691bdc9ddb": {
+  "rule": "write-comment-id",
+  "outcome": "same-meaning",
+  "why": "",
+  "n": 3
+ },
+ "429c6b7122": {
+  "rule": "write-comments",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 5
+ },
+ "aeabe4bdf1": {
+  "rule": "add-write-comment",
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 3
+ },
+ "29bba9e03f": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "1fa815677a": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "defb73bfd8": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "9cbb8e3add": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "c44f65ddeb": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "3528a38f43": {
+  "rule": "tutorial-leadin",
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "9562ae8fc5": {
+  "rule": "write-heading",
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1
+ },
+ "325b1911ed": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "8848495678": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "6fb3670380": {
+  "rule": "tok-apikey",
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 1
+ },
+ "1a135d465d": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "dc963c4a40": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "c22c8885c9": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "f7d7dc68ab": {
+  "rule": "tok-region",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1
+ },
+ "e5e05eb7a6": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "a12e1f1e52": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "87aafab844": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "37b37bdcf2": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "f4629e37f4": {
+  "rule": "tok-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "642f81e303": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "70ac6b6b08": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "431e9ea0d5": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "4e30f7a270": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "bc883ce38e": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "fd6cd48aa4": {
+  "rule": "tok-chain",
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1
+ },
+ "85fb47a0e2": {
+  "rule": "root-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 10
+ },
+ "2f3f41f76b": {
+  "rule": "root-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 7
+ },
+ "f4498c7104": {
+  "rule": "root-step-comment",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 6
+ },
+ "ff935caa13": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "fe936330a5": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "4a3209e8d9": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "41e8b6808d": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "797ec8d55d": {
+  "rule": "tok-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "5ac10c03c6": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "d22dabf866": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "b1989358a0": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "61d073347b": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "5524296637": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "0c5db6b150": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "31a80d54a8": {
+  "rule": "tok-nested-load",
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1
+ },
+ "bda1b97c0c": {
+  "rule": "tok-nested-load",
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1
+ },
+ "f7aa0fdb13": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16
+ },
+ "f64ae2f4fc": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19
+ },
+ "e8d21858da": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "6aced21d71": {
+  "rule": "features-escape",
+  "outcome": "correction:ref-features-escape",
+  "why": "",
+  "n": 19
+ },
+ "c18fb65ad4": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 83
+ },
+ "3780da62e4": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 15
+ },
+ "e007bd9e31": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 16
+ },
+ "62d13e0a33": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 16
+ },
+ "042740d448": {
+  "rule": "direct-rows",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19
+ },
+ "92ce533dbd": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "37cc3a5142": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 28
+ },
+ "0c31903ae8": {
+  "rule": "page-structure2",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "3bf831e413": {
+  "rule": "page-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "c7ee4c1d3e": {
+  "rule": "page-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "41fd9a4847": {
+  "rule": "page-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "d389e7085e": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "345905e403": {
+  "rule": "page-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "423809a525": {
+  "rule": "clojure-utility",
+  "outcome": "dropped",
+  "why": "sdk.api does not export get-utility (Main_clojure.ts writes only make-sdk, test-sdk, direct, graphql, prepare and options-map), so OLD documented a function the namespace lacks; the guard now checks the public namespace",
+  "n": 19
+ },
+ "c557a8942d": {
+  "rule": "clojure-utility",
+  "outcome": "dropped",
+  "why": "sdk.api does not export get-utility (Main_clojure.ts writes only make-sdk, test-sdk, direct, graphql, prepare and options-map), so OLD documented a function the namespace lacks; the guard now checks the public namespace",
+  "n": 19
+ },
+ "7433a6d16d": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "a6d7cbc021": {
+  "rule": "direct-escape",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "7fd0cb6715": {
+  "rule": "page-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "c115f99e12": {
+  "rule": "direct-rows",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19
+ },
+ "c41a606d0c": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 19
+ },
+ "2f38082332": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19
+ },
+ "0ccd61dc70": {
+  "rule": "page-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 38
+ },
+ "ac1eac6be0": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19
+ },
+ "d177508b5b": {
+  "rule": "add-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "c393538548": {
+  "rule": "add-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "eee9e984cd": {
+  "rule": "add-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "9a230f563a": {
+  "rule": "add-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 38
+ },
+ "4033f23e2d": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16
+ },
+ "b22a4fd4cf": {
+  "rule": "add-type-cells",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 90
+ },
+ "b2a89584dc": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16
+ },
+ "509f8ee353": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15
+ },
+ "35ea4c3e84": {
+  "rule": "server-required-cell",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16
+ },
+ "55901c7ad8": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16
+ },
+ "06e0e1b2b7": {
+  "rule": "server-required-cell",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16
+ },
+ "8765f0df0e": {
+  "rule": "add-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "6979eaacb4": {
+  "rule": "add-type-cells",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 34
+ },
+ "92238dc9df": {
+  "rule": "direct-rows",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19
+ },
+ "f25ed95c66": {
+  "rule": "add-ctrl-row",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19
+ },
+ "3b7bee4991": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "fdfd098acd": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "d3f87f869d": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 19
+ },
+ "a36cfc5046": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 28
+ },
+ "b40453110e": {
+  "rule": "add-stream-sig",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94
+ },
+ "393056d0c1": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "0f10166e63": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "d3f3b82555": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "7615c6fe93": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "6356afc86b": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "193859bf79": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "28d337e733": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "9023782dca": {
+  "rule": "add-action-op",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "3d50058045": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "1095fa7261": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19
+ },
+ "2d7cc08deb": {
+  "rule": "add-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2
+ },
+ "b8d8f44805": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 4
+ },
+ "8cf64fe4e8": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1
+ },
+ "cbcdf6e5f9": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1
+ },
+ "066a083189": {
+  "rule": "direct-rows",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1
+ },
+ "da08f7e7bd": {
+  "rule": "field-escape",
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1
+ },
+ "dac11a1691": {
+  "rule": "field-escape",
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "rule": "field-escape",
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1
+ },
+ "0b29ec4944": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1
+ },
+ "c53de85c6e": {
+  "rule": "remove-inactive",
+  "outcome": "correction:S25",
+  "why": "",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1
+ },
+ "f010700f70": {
+  "rule": "op-failure-clause",
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 1
+ },
+ "7dd340f0f1": {
+  "rule": "field-escape",
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1
+ },
+ "5153f403d8": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "b4523a5362": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "fd1c2f8fd4": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "e231e4d0f8": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "05e95df417": {
+  "rule": "tok-region",
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1
+ },
+ "fd48acdf84": {
+  "rule": "tok-stream",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1
+ },
+ "057b5775f7": {
+  "rule": "tok-stream",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1
+ },
+ "07b6a683db": {
+  "rule": "tok-stream",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1
+ },
+ "7a9d5874ad": {
+  "rule": "tok-stream",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1
+ },
+ "095040cca0": {
+  "rule": "tok-stream",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1
+ },
+ "9c792a9893": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1
+ },
+ "4028fbfb63": {
+  "rule": "tok-direct-explain",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1
+ },
+ "5653bbb40e": {
+  "rule": "tok-direct-explain",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1
+ },
+ "045e555fdd": {
+  "rule": "tok-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1
+ },
+ "a9e4808c74": {
+  "rule": "server-vars",
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1
+ },
+ "8928fd2128": {
+  "rule": "tok-direct-keys",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1
+ },
+ "6a8837b248": {
+  "rule": "tok-generic-names",
+  "outcome": "unification:ref-generic-names",
+  "why": "",
+  "n": 1
+ },
+ "3320e33aa5": {
+  "rule": "apikey-env",
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 15
+ },
+ "b98c5c1370": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2
+ },
+ "849816779b": {
+  "rule": "write-heading2",
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 3
+ },
+ "732bb80f3d": {
+  "rule": "write-heading2",
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1
+ },
+ "4555bd17b9": {
+  "rule": "write-heading",
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1
+ },
+ "b5e9f92943": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "92bc6e303b": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 19
+ },
+ "d5b8571b7f": {
+  "rule": "make-sentence",
+  "outcome": "unification:member-sentences",
+  "why": "",
+  "n": 93,
+  "rekeyed": "d5b8571b7f"
+ },
+ "bde0d2283c": {
+  "rule": "accessor-sentence",
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 93,
+  "rekeyed": "bde0d2283c"
+ },
+ "7b71a17a53": {
+  "rule": "direct-escape",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "7e13c0a95a": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "2cf0cc299b": {
+  "rule": "add-structure",
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19
+ },
+ "a47006aa8d": {
+  "rule": "direct-rows",
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19
+ },
+ "a1b1ba7a35": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "2680c1e934": {
+  "rule": "direct-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "566d3ef425": {
+  "rule": "op-sentences",
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 82
+ },
+ "3c49d29119": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "916036b165": {
+  "rule": "features-log",
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19
+ },
+ "3e1ef005aa": {
+  "rule": "basic-secret",
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2
+ },
+ "91baf1b4b6": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1
+ },
+ "46dc1a3462": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1
+ },
+ "91201b47e3": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1
+ },
+ "f878d6c74a": {
+  "rule": "test-nofeature",
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1
+ },
+ "9e4d9398f9": {
+  "rule": "make-sentence",
+  "outcome": "unification:member-sentences",
+  "why": "",
+  "n": 1,
+  "rekeyed": "d5b8571b7f"
+ },
+ "a1595da12b": {
+  "rule": "accessor-sentence",
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 1,
+  "rekeyed": "bde0d2283c"
+ },
+ "618096b4cc": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "1b01d75892": {
+  "rule": "clojure-keyword-note",
+  "outcome": "dropped",
+  "why": "the signatures ((:data-get ent)) show the keyword call; a sentence saying so would be clojure-only prose",
+  "n": 94
+ },
+ "fbf2304915": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "6573e9e210": {
+  "rule": "stream-member",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "a578c7a1f8": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ }
+}

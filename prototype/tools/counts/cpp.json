@@ -1,0 +1,20 @@
+{
+ "tutorial": {
+  "corrected": 6,
+  "unified": 0,
+  "used": {
+   "trailing-blank": 1,
+   "write-comment-style": 5
+  }
+ },
+ "rootquick": {
+  "corrected": 0,
+  "unified": 0,
+  "used": {}
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 0,
+  "used": {}
+ }
+}

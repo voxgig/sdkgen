@@ -1,0 +1,26 @@
+[
+ {
+  "file": "Syntax",
+  "check": "condition on what the description shows",
+  "text": "...desc.entities.filter((e) => used.entities.includes(e.name)).map((e) => `         '[${e.sym.module} :as ${e.sym.alias}]`),",
+  "why": "The require list is a function of the statements the section prints (Uses.entities), looked up for each entity's namespace and alias; it decides no content, only which namespaces the printed calls need."
+ },
+ {
+  "file": "Syntax",
+  "check": "note names entity \"Utility\"",
+  "text": "The SDK utility object is reached through `sdk.client`, which `{module}`\\ndoes not re-export: `(sdk.client/get-utility c",
+  "why": "The word names the SDK utility object (get-utility, sdk.client), which every client has; it is the same word as the Utility entity of model B only by coincidence. The note is static, shown at the instance slot whatever the model, and true of the runtime (client.clj:69, core.clj:227). Re-keyed at v3.2: the note is now one plain string (it was two concatenated literals); the decision and its reason are unchanged."
+ },
+ {
+  "file": "Syntax",
+  "check": "note names entity \"utility\"",
+  "text": "The SDK utility object is reached through `sdk.client`, which `{module}`\\ndoes not re-export: `(sdk.client/get-utility c",
+  "why": "The word names the SDK utility object (get-utility, sdk.client), which every client has; it is the same word as the Utility entity of model B only by coincidence. The note is static, shown at the instance slot whatever the model, and true of the runtime (client.clj:69, core.clj:227). Re-keyed at v3.2: the note is now one plain string (it was two concatenated literals); the decision and its reason are unchanged."
+ },
+ {
+  "file": "Syntax",
+  "check": "note names entity \"UTILITY\"",
+  "text": "The SDK utility object is reached through `sdk.client`, which `{module}`\\ndoes not re-export: `(sdk.client/get-utility c",
+  "why": "The word names the SDK utility object (get-utility, sdk.client), which every client has; it is the same word as the Utility entity of model B only by coincidence. The note is static, shown at the instance slot whatever the model, and true of the runtime (client.clj:69, core.clj:227). Re-keyed at v3.2: the note is now one plain string (it was two concatenated literals); the decision and its reason are unchanged."
+ }
+]

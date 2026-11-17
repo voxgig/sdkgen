@@ -1,0 +1,14 @@
+{
+ "facts": {
+  "named": {
+   "value": "call",
+   "why": "OLD swift names an operation with parentheses: \"`load()` returns the ENTITY \u2014 call data() for the record \u2014 and throws on error\" (tutorial), and spells the list call with its arguments, \"`list(nil, nil)` returns ...\"; the shared sentences name it as `load()` and `list()`. `list()` names the operation; it is not a call Swift can make (EntityBase.fragment.swift:71 list has two parameters and no defaults), and the shared REFERENCE sentence no longer gives the working no-match call OLD gave: weaker than OLD, recorded as a shared change. The tool pairs no OLD unit because every sentence carrying it was reworded",
+   "evidence": "out/old/B/swift/README.md:55 \"`load()` returns the ENTITY\""
+  },
+  "ref.facts.entityBy": {
+   "value": "class",
+   "why": "Decided by hand; the tool marks it ATTESTED by enumeration pairing only. OLD headed each entity section by the entity Name (## Ambient). The generated class is <Name>Entity, or PlanetEntityClient on a collision (Entity_swift.ts uses entityClassName), so the class names the type a reader holds; OLD named the data type",
+   "evidence": "out/old/B/swift/REFERENCE.md headings; src/cmp/swift/Entity_swift.ts entityClassName"
+  }
+ }
+}

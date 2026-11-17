@@ -1,0 +1,35 @@
+{
+ "tutorial": {
+  "corrected": 22,
+  "unified": 10,
+  "used": {
+   "S49:elixir": 16,
+   "S50/M12:elixir": 2,
+   "trailing-blank": 1,
+   "unify:no-match-load": 10,
+   "write-comment-style": 5,
+   "write-comments:elixir": 4
+  }
+ },
+ "rootquick": {
+  "corrected": 18,
+  "unified": 0,
+  "used": {
+   "S49:elixir": 15,
+   "S50/M12:elixir": 2,
+   "handle-with-step:elixir": 17,
+   "step-comment-runtime-fact": 16,
+   "trailing-blank": 1
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 162,
+  "used": {
+   "elixir-handle-bound": 162,
+   "elixir-no-match": 10,
+   "ref-generic-names": 162,
+   "ref-list-printed": 83
+  }
+ }
+}

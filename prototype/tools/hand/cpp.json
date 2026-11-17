@@ -1,0 +1,1051 @@
+{
+ "3804708696": {
+  "outcome": "unification:ref-generic-names",
+  "why": "the reference names its values the same for every entity (`results`, `item`), as OLD did for the list (`results`) but not its item; the same loop and print",
+  "n": 83
+ },
+ "absent": {
+  "ed44d07e36": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "5e178e9588": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "6d459aa83b": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "64560e9dff": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "78dac4093d": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "99a8153c15": "printed where facts.listOf names the class (ts); cpp's load returns `SdkEntityPtr`, a handle typed as the base SdkEntity, not the entity class, so cpp declares no listOf and its comment says the entity",
+  "7ab5ba644d": "printed in the root README's primary Quickstart, which only ts has; cpp's root block sits under Quickstart in other languages, which prints blocks only, and cpp's own tutorial prints this sentence in its lead",
+  "a0b269a293": "printed where facts.listOf names the class (ts `{Class}[]`); cpp's list returns `std::vector<SdkEntityPtr>` of base handles, so cpp declares no listOf and its comment names the `std::vector` collection",
+  "f3e421e046": "cpp's getUtility returns a new object (`return utility->copy();`, whose copy allocates `new Utility(NoRegister{})`, types.hpp), so it prints the copy sentence instead (cited)",
+  "f30b7d4864": "cpp's direct takes no abort signal (no direct.signal: the cancel absence is cited over the whole runtime), so no ctrl.signal row",
+  "ea3964d6ba": "cpp's prepare throws on failure (prepare.fails style, cited at `throw ctx->makeError(\"spec_method_allow\",`), so it prints It throws on failure",
+  "abe923e0b2": "cpp's client has no tester alias: Main.fragment.cpp declares only testSDK and create, and the runtime table lists no tester member",
+  "9efa1b3a1e": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
+  "bb93495ee9": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
+  "d86e9841eb": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
+  "cad5dfc5f6": "cpp operations read no abort signal: the cancel absence is cited over the whole cpp runtime (cancel false), so the cancelling paragraph is not printed",
+  "9f6d56f5fb": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "4c93659f14": "cpp's stream returns a `std::vector<Value>` of items already read (streamList), not an async iterator, and prints the streamList sentence",
+  "5003b705ca": "cpp's stream runs its operation before it returns (runs call, derived from types.hpp EntityBase::stream), so it prints the runs-at-call sentence",
+  "2d65ce1465": "cpp's entity holds its client in a public field, `SdkClient* client` (types.hpp EntityBase), the base client type, with no member returning the `DemoSDK` instance, so the client sentence would be false",
+  "74dc5866b7": "cpp's entity holds its options in a public field, `Value entopts` (types.hpp EntityBase), not a getter returning a copy, so the sentence would be false",
+  "f1bcce31a0": "cpp's entity name is read through a method, `std::string getName() override { return name_; }` (types.hpp), so it prints Return the entity name.",
+  "a32ec5077c": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "d6fd5c15c3": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "863f603c11": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "b1666a52ac": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "b7eb8b0b55": "cpp operations return synchronously (async false: `SdkEntityPtr load(const Value& reqmatch, const Value& ctrl)`, types.hpp:703), so cpp prints the returns form of this sentence",
+  "28235772cb": "cpp's stream reads no signal: streamSignal false, an absence cited over the whole cpp runtime"
+ },
+ "facts": {
+  "named": {
+   "value": "call",
+   "why": "OLD cpp named operations and members as calls with parentheses; with arity 2 an operation is now named bare by shared code (`load`, as swift), and a member is still named called (`data()`, `direct()`), which call selects",
+   "evidence": "OLD B/cpp/README.md tutorial: \"`load()` returns the entity and throws on error; `data()` reads its record.\""
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD cpp used for the client's members (Instance Methods, Static Methods); the new context is the shared heading Client Methods, decided once for every language; cpp's client members are called with `->` on the client handle",
+   "evidence": "OLD B/cpp/REFERENCE.md: \"### Instance Methods\""
+  },
+  "ref.valueType.OBJECT": {
+   "value": "Value",
+   "why": "every map option and fetcharg is a `Value` in cpp (`vmap` returns `Value`, core/struct.hpp:32); OLD cpp's options and fetchargs tables gave `Value` for headers, feature, system, params, query, headers and body",
+   "evidence": "OLD B/cpp/REFERENCE.md options table: the headers, feature and system rows give the type `Value`; core/struct.hpp:32 `inline Value vmap() { return Value::map(); }`"
+  }
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match: the README options table row for `base` names the API server; that table does not list `server`, so it states nothing about the server variables",
+  "n": 15
+ },
+ "83977380d8": {
+  "outcome": "restored:shared",
+  "why": "the shared load sentence: same facts as OLD (returns the entity, throws on failure, `data()` reads its record); `load` is named without parentheses because a call takes two arguments (arity 2, the runtime's load(reqmatch, ctrl) has no defaults), and the record's type `Value` is added (types.hpp `Value data(const Value& arg = Value::undef()) override;`)",
+  "n": 16
+ },
+ "c379ac110f": {
+  "outcome": "restored:shared",
+  "why": "the shared list sentence: same facts as OLD (a `std::vector` of entities, one per record, throws on failure, `data()` reads an entity's record), `list` named bare (arity 2) and the record's type `Value` added; the thrown type OLD named, sdk::SdkErrorPtr, is in the catch clause of the block under it (`catch (const SdkErrorPtr& err)`)",
+  "n": 7
+ },
+ "7259466560": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 4
+ },
+ "8774ce7ec3": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared create comment, which also says how its record is read (`data()`)",
+  "n": 5
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared patch comment, which also says where the id comes from",
+  "n": 3
+ },
+ "cd43169d87": {
+  "outcome": "restored:shared",
+  "why": "the shared write sentence: each write returns the entity it wrote and throws on failure, which OLD cpp said only in its create comment",
+  "n": 5
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update a gauge",
+  "n": 1
+ },
+ "fdd288e4f2": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the shared write sentence for one write, named bare (arity 2)",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match: the README options table row for `base` names the API server; that table does not list `server`, so it states nothing about the server variables (server-mixed)",
+  "n": 1
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "DEMO_APIKEY in the tutorial's client sentence; OLD cpp's block already read it with `std::getenv`",
+  "n": 1
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the shared client sentence says the example passes the key from the environment; no PrepareAuth of the twenty reads the environment, and OLD cpp's block already read it with `std::getenv` and passed it as `apikey`",
+  "n": 1
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "f570f0c695": {
+  "outcome": "restored:fact",
+  "why": "the record's type, `Value` (facts.recordType, cited at types.hpp `Value data(const Value& arg = Value::undef()) override;`), in the list and load sentences",
+  "n": 1
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "b1fa625954": {
+  "outcome": "same-meaning",
+  "why": "OLD named the thrown type as sdk::SdkErrorPtr; every block opens `using namespace sdk;`, so the qualifier is not needed, and the catch clause names the type",
+  "n": 1
+ },
+ "61ddd5c2dc": {
+  "outcome": "restored:printer",
+  "why": "the thrown type is named by the catch clause the attempt printer writes under the sentence (`catch (const SdkErrorPtr& err)`), as OLD's block did",
+  "n": 1
+ },
+ "8415dfcf46": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49), and the block includes `<iostream>` itself because it prints (iostream-include: OLD reached it only through the log feature's header)",
+  "n": 10
+ },
+ "5772a4ca63": {
+  "outcome": "correction:S50",
+  "why": "Basic auth: the secret is held from DEMO_SECRET and passed (S50), the server variables are passed (S49), and `<iostream>` is included (iostream-include)",
+  "n": 2
+ },
+ "4e46c3ee17": {
+  "outcome": "correction:S49",
+  "why": "auth-off: OLD built the client with `DemoSDK::create()`, which passes no options, so the templated server had no tenant; the client now passes `server` (S49), and `<iostream>` is included (iostream-include)",
+  "n": 1
+ },
+ "39fd7fb6ab": {
+  "outcome": "correction:iostream-include",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
+  "n": 3
+ },
+ "65d6271ee4": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); this section prints nothing, so no `<iostream>`",
+  "n": 2
+ },
+ "fdb25e8822": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable `account` (server-mixed, S49), and `<iostream>` is included (iostream-include)",
+  "n": 1
+ },
+ "20e1f83164": {
+  "outcome": "correction:iostream-include",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
+  "n": 1
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1
+ },
+ "b3e1a90434": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1
+ },
+ "4e30f7a270": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "61a74bcbb2": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: create says what it returns and how its record is read (`data()`), update and patch say where the id comes from; the same facts OLD cpp's comments gave",
+  "n": 1
+ },
+ "c8351e588e": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 10
+ },
+ "84cce9c048": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 6
+ },
+ "a50b67ddd7": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 7
+ },
+ "7a5a0031df": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); `<iostream>` included (iostream-include); the step comments are the shared ones",
+  "n": 5
+ },
+ "0ea8e96b6c": {
+  "outcome": "correction:S50",
+  "why": "Basic auth: the secret is passed (S50), the server variables are passed (S49), `<iostream>` included; the step comments are the shared ones",
+  "n": 1
+ },
+ "02a35690c9": {
+  "outcome": "correction:S49",
+  "why": "auth-off: OLD built the client with `DemoSDK::create()`, passing no server variables to a templated server; the client now passes `server` (S49); `<iostream>` included; shared step comments",
+  "n": 1
+ },
+ "4e3e036aa2": {
+  "outcome": "correction:iostream-include",
+  "why": "crud-bare: the block prints, so it includes `<iostream>` itself rather than reaching it through the log feature's header; the step comments are the shared ones",
+  "n": 1
+ },
+ "bd5dfa3c63": {
+  "outcome": "correction:S50",
+  "why": "Basic auth: the secret is passed (S50), the server variables are passed (S49), `<iostream>` included; shared step comments",
+  "n": 1
+ },
+ "b248888d1e": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); `<iostream>` included; shared step comments",
+  "n": 3
+ },
+ "8f003bd94c": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); `<iostream>` included; shared step comments",
+  "n": 1
+ },
+ "00a445458f": {
+  "outcome": "unification:quick-load-nested",
+  "why": "doc-nested: the root quick start loads the entity the tutorial loads (the nested satellite, with its parent key `planet_id`), as every ported language does; also S49 and iostream-include",
+  "n": 1
+ },
+ "42dde030df": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49); the block prints nothing, so no `<iostream>`",
+  "n": 2
+ },
+ "6388e81bd1": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable `account` (server-mixed, S49); `<iostream>` included; shared step comments",
+  "n": 1
+ },
+ "a3b59084f6": {
+  "outcome": "correction:iostream-include",
+  "why": "no templated server here: only `<iostream>` (the block prints) and the shared step comment change",
+  "n": 2
+ },
+ "2b7c065103": {
+  "outcome": "correction:iostream-include",
+  "why": "a block that prints with `std::cout` now includes `<iostream>` itself. OLD's block compiled without it only through a feature's header: core/sdk.hpp includes config.hpp, which includes the log feature's header, and log.hpp includes <iostream> (tm/cpp/feature/log.hpp:12); log is generated in every variation (active by default), so the include held only while log is generated. The README lane also adds the include itself (generatedcompile.test.ts cppExamples)",
+  "n": 1
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1
+ },
+ "41e8b6808d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1
+ },
+ "7851b353c0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1
+ },
+ "5f9251f640": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1
+ },
+ "5524296637": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (listComment/loadComment), as every ported language prints them; same facts as OLD: one entity per record, returns the entity, throws on failure",
+  "n": 1
+ },
+ "31a80d54a8": {
+  "outcome": "unification:quick-load-nested",
+  "why": "doc-nested: the root quick start loads the nested satellite, whose match gives its parent key `planet_id`",
+  "n": 1
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:quick-load-nested",
+  "why": "doc-nested: the placeholder for the parent key the nested load passes",
+  "n": 1
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; `ok` false on a failure, `err` holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "bed0669016": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (`ok` false on a failure, `err` holding the error); no disagreement",
+  "n": 19
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log inside an unported README block; the README says nothing about log's default",
+  "n": 19
+ },
+ "7c8b3a1c8e": {
+  "outcome": "same-meaning",
+  "why": "OLD's direct sentence; its facts are now the shared Returns paragraph, and the README states the same keys",
+  "n": 19
+ },
+ "9641d970df": {
+  "outcome": "same-meaning",
+  "why": "the README prepare example binds fetchdef; the new Returns sentence calls it the fetch definition; nothing disagrees",
+  "n": 19
+ },
+ "6ae5c02c41": {
+  "outcome": "same-meaning",
+  "why": "the options row; the type cell beside it says `Value`, and the shared constructor sentence gives no separate map sentence for keys: member",
+  "n": 19
+ },
+ "e71c59f467": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 93
+ },
+ "549566830a": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 93
+ },
+ "aa47f18dea": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 82
+ },
+ "42882d1dfe": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 27
+ },
+ "882b9aa574": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 15
+ },
+ "6ff05c6d3f": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 15
+ },
+ "1710a76655": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 15
+ },
+ "fd5353fde3": {
+  "outcome": "same-meaning",
+  "why": "the shared return clause: the same facts, failure worded as in every language",
+  "n": 15
+ },
+ "d9fa60f1b3": {
+  "outcome": "same-meaning",
+  "why": "the shared return clause: the same facts, failure worded as in every language",
+  "n": 16
+ },
+ "86be21c15d": {
+  "outcome": "same-meaning",
+  "why": "the shared return clause: the same facts, failure worded as in every language",
+  "n": 16
+ },
+ "b27dc0e28e": {
+  "outcome": "same-meaning",
+  "why": "the shared Returns line for direct: the same type, `Value`, a result map",
+  "n": 19
+ },
+ "92976876f8": {
+  "outcome": "same-meaning",
+  "why": "the shared accessor sentence; the entity is bound to the client either way (MainEntity_cpp passes `this` to the entity constructor), and the next sentence says what to pass for no options",
+  "n": 92
+ },
+ "8c4aaeefee": {
+  "outcome": "restored:shared",
+  "why": "the options table's first row says `options` is a `Value`, and the README's own reference says it is an `sdk::Value` map",
+  "n": 19
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client; both testSDK overloads (Main.fragment.cpp:23,27) are its members, declared static and printed on the class with `::`",
+  "n": 19
+ },
+ "2a1b3be00a": {
+  "outcome": "restored:shared",
+  "why": "the heading is the runtime declaration with types and return, `DemoSDK::testSDK(Value testopts, Value sdkopts) -> std::shared_ptr<DemoSDK>` (Main.fragment.cpp:27)",
+  "n": 19
+ },
+ "e77908c16f": {
+  "outcome": "restored:shared",
+  "why": "both arguments may be `Value::undef()` is the shared test sentence's last clause; the no-arg overload is documented as its own entry, `DemoSDK::testSDK()` (Main.fragment.cpp:23), with the shared sentence that it takes no arguments",
+  "n": 19
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed Client <noun> in every language (decided once, the sentence round); cpp's are called with `->` on the shared handle",
+  "n": 19
+ },
+ "c30707d319": {
+  "outcome": "correction:typed-signatures",
+  "why": "the accessor heading is MainEntity_cpp's declaration with its parameter type, `Value entopts = Value::undef()`; OLD wrote the name only",
+  "n": 93
+ },
+ "28ab760c3d": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 19
+ },
+ "cafac3e3bf": {
+  "outcome": "restored:shared",
+  "why": "the shared Returns paragraph states the keys (`ok`, `status`, `headers`, `data`) and when `err` is there, which OLD said in one clause",
+  "n": 19
+ },
+ "a6d6f7b357": {
+  "outcome": "correction:direct-truth-test",
+  "why": "OLD said to branch on getp(result, \"ok\"), which is a `Value` with no conversion to bool (value.hpp declares no operator bool), so it cannot stand as an if condition; the shared sentence says a failure is in the result and branches on `is_true(getp(result, \"ok\"))` (core/struct.hpp:81 `inline bool is_true(const Value& v)`)",
+  "n": 19
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "the shared params row says the same, with what the values are for (`{param}` substitution)",
+  "n": 19
+ },
+ "88dc9b435c": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 19
+ },
+ "245210ccea": {
+  "outcome": "restored:shared",
+  "why": "the shared prepare Returns: the fetch definition, and It throws on failure",
+  "n": 19
+ },
+ "f0c6b07501": {
+  "outcome": "restored:shared",
+  "why": "the shared load clause and record sentence: returns the entity, throws on failure, `data()` reads its record",
+  "n": 28
+ },
+ "35c259d340": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence: get or set, and with no argument a copy (`return Struct::clone(data_);`, types.hpp)",
+  "n": 94
+ },
+ "ca125addeb": {
+  "outcome": "restored:shared",
+  "why": "the shared match sentence: works the same as `data()`, and returns a copy (`return Struct::clone(match_);`, types.hpp)",
+  "n": 94
+ },
+ "8790812725": {
+  "outcome": "correction:list-no-match-call",
+  "why": "OLD said a call without a match lists all records; the shared sentence names the call that compiles, `list(Value::undef(), Value::undef())`, and does not claim every record (the entity's stored match still applies, and an endpoint may page)",
+  "n": 83
+ },
+ "5ca86a3aba": {
+  "outcome": "restored:shared",
+  "why": "the shared list return clause: a `std::vector` of entities, one per record, and throws on failure",
+  "n": 83
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the shared update/patch sentence: the data must include the entity id, unless the entity already holds it",
+  "n": 20
+ },
+ "2f38082332": {
+  "outcome": "restored:shared",
+  "why": "the shared features sentence that replaced it says each feature is inactive until switched on except `log` (model/feature/log.aontu has active: true); OLD said no feature runs, which log contradicts",
+  "n": 19
+ },
+ "ac1eac6be0": {
+  "outcome": "restored:shared",
+  "why": "replaced by the shared feature sentence on what runs by default; OLD said every feature costs nothing until switched on, false for log",
+  "n": 19
+ },
+ "327f56492c": {
+  "outcome": "restored:fact",
+  "why": "the static `create()` (Main.fragment.cpp:34, `return std::make_shared<ProjectNameSDK>(Value::undef());`), which OLD's tutorial used and its reference did not document",
+  "n": 19
+ },
+ "0406c64e47": {
+  "outcome": "restored:shared",
+  "why": "the test constructor's declaration with types and return (Main.fragment.cpp:27)",
+  "n": 19
+ },
+ "938b372716": {
+  "outcome": "restored:fact",
+  "why": "the no-argument overload, Main.fragment.cpp:23, which OLD mentioned in a sentence",
+  "n": 19
+ },
+ "584b977023": {
+  "outcome": "same-meaning",
+  "why": "the `Value` type cell of the options row, as OLD's table had it [v3.4 re-count: x90 to x90, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 90
+ },
+ "bd420dcfaf": {
+  "outcome": "correction:direct-truth-test",
+  "why": "the shared direct sentence branches on `is_true(getp(result, \"ok\"))`, which compiles; OLD named `getp(result, \"ok\")`, a `Value` with no bool conversion",
+  "n": 19
+ },
+ "c692d85a6d": {
+  "outcome": "restored:shared",
+  "why": "the shared failure sentence for prepare and stream: prepare throws (types.hpp `throw ctx->makeError(\"spec_method_allow\",`), and stream rethrows what makeError raises",
+  "n": 113
+ },
+ "80d61d1816": {
+  "outcome": "restored:shared",
+  "why": "the shared load clause: returns the entity, throws on failure",
+  "n": 28
+ },
+ "ea3d2bd9d5": {
+  "outcome": "restored:shared",
+  "why": "v3.4, one shared edit: the record clause every single-entity operation's sentence ends with; the port recorded it as defect for its 15 remove copies, false for cpp (remove absorbs only resmatch); those now print the removeKeeps sentence instead (ref.facts.removeKeeps, cited to EntityRemoveOp.fragment.cpp), and the copies left follow load, create, update and patch, which absorb the response's record (true of cpp, as the port read) [v3.4 re-count: x64 to x64, the same text; the units the nine-reference matching took as shared join it under twenty]",
+  "n": 64
+ },
+ "f196c5678a": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence (kind data: the argument may be left out)",
+  "n": 94
+ },
+ "28d0569a0d": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence: with data it sets and returns the current data (types.hpp EntityBase::data)",
+  "n": 94
+ },
+ "486e9a1df9": {
+  "outcome": "restored:shared",
+  "why": "the shared data sentence: no argument returns a copy (`return Struct::clone(data_);`)",
+  "n": 94
+ },
+ "9e2755ab01": {
+  "outcome": "restored:shared",
+  "why": "the shared match sentence (kind match)",
+  "n": 94
+ },
+ "46661fe900": {
+  "outcome": "restored:shared",
+  "why": "the shared match sentence: works the same as `data()`",
+  "n": 94
+ },
+ "f37b7d5e54": {
+  "outcome": "correction:list-no-match-call",
+  "why": "the call without a match is printed from the operation's facts: two arguments, each `Value::undef()` (arity 2; list(const Value& reqmatch, const Value& ctrl) has no defaults)",
+  "n": 82
+ },
+ "2829afdd30": {
+  "outcome": "restored:shared",
+  "why": "the shared list return clause",
+  "n": 83
+ },
+ "d88c01aac2": {
+  "outcome": "restored:shared",
+  "why": "the Call cell of the Actions table: the action selected with `$action` beside the route's path parameter, printed by the call printer (OLD cpp documented no action)",
+  "n": 16
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "auth-basic: the options row for `secret`; the README block passes `apikey` as the user name, which this sentence says",
+  "n": 2
+ },
+ "cec4895b0c": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 3
+ },
+ "84f0495962": {
+  "outcome": "same-meaning",
+  "why": "the shared return clause: the same facts, failure worded as in every language",
+  "n": 4
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "where": "no-test cpp/README.md, the unported README (Use test mode; testSDK): 'The test feature installs an in-memory mock transport' and 'Creates a test-mode client with mock transport', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "Config_cpp.ts falls back to return std::make_shared<BaseFeature>(); testSDK sets sdk->mode = \"test\" (Main.fragment.cpp:29), and fetcher throws fetch_mode_block when mode is not live (pipeline.hpp:589-591). RUN: the no-test README's own test-mode block (Use test mode), compiled from the root of a generated no-test SDK (g++ -iquote cpp, linked with its libsdkfeature.a) and run, throws SdkError fetch_mode_block: DemoSDK: load: Request blocked by mode: test (fix workspace work/probe/notest-main.cpp)",
+  "n": 2
+ },
+ "46dc1a3462": {
+  "outcome": "correction:test-without-feature",
+  "why": "no-test: OLD said the test client has mock features active, false without the test feature: Config_cpp.ts falls back to `std::make_shared<BaseFeature>()`, so the client has no mock transport and refuses every request, which the shared sentence says (testMock generated)",
+  "n": 1
+ },
+ "ef465d48da": {
+  "outcome": "same-meaning",
+  "why": "ref-issues: the shared accessor sentence for the planet_entity accessor",
+  "n": 1
+ },
+ "9a6e89074f": {
+  "outcome": "correction:class-name",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides (entityClassName, which MainEntity_cpp names the accessor's return by)",
+  "n": 1
+ },
+ "53a2dff719": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:md-cell",
+  "why": "ref-issues: OLD printed the field description raw, so its pipe and line break split the table row; the shared cell writer escapes the pipe and keeps the description on the row",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:md-cell",
+  "why": "ref-issues: the rest of the same description, which OLD's raw newline pushed off the table row; NEW keeps it in the cell",
+  "n": 1
+ },
+ "d245316c2e": {
+  "outcome": "correction:class-name",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides (entityClassName)",
+  "n": 1
+ },
+ "63b090bb0f": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "0dc4d771b3": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "ea83ad9199": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "373fc5b25d": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "61a59d8ff8": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is inactive in the model, and is no longer documented (S25)",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is inactive in the model, and is no longer documented (S25)",
+  "n": 1
+ },
+ "3e76d82226": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is inactive in the model, and is no longer documented (S25)",
+  "n": 1
+ },
+ "fa1c621d69": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "766c5b971d": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "f15a7299f5": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "ef4689efc3": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "5b26e7db96": {
+  "outcome": "correction:typed-signatures",
+  "why": "the heading is the runtime declaration with its parameter types (`const Value&`, types.hpp:703-708 and the Entity<Op>Op fragments); OLD wrote only parameter names, which the guard cannot compare",
+  "n": 1
+ },
+ "93774815b8": {
+  "outcome": "correction:direct-truth-test",
+  "why": "is_true in the direct sentence: the truth test on a `Value` (core/struct.hpp:81)",
+  "n": 1
+ },
+ "fd48acdf84": {
+  "outcome": "restored:shared",
+  "why": "the stream member, which OLD cpp did not document: EntityBase::stream (types.hpp), declared with its parameters and return",
+  "n": 1
+ },
+ "057b5775f7": {
+  "outcome": "restored:shared",
+  "why": "the stream member's parameter `action` (types.hpp EntityBase::stream), and the Actions table's `$action`",
+  "n": 1
+ },
+ "07b6a683db": {
+  "outcome": "restored:shared",
+  "why": "the stream member's parameter `args` (types.hpp EntityBase::stream)",
+  "n": 1
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:shared",
+  "why": "the stream member's parameter `callopts` (types.hpp EntityBase::stream)",
+  "n": 1
+ },
+ "9c792a9893": {
+  "outcome": "restored:shared",
+  "why": "the action name in the Actions table (OLD cpp documented no action)",
+  "n": 1
+ },
+ "7e7f66c823": {
+  "outcome": "restored:shared",
+  "why": "the Call cell names the client handle, `client->planet()`",
+  "n": 1
+ },
+ "5832152546": {
+  "outcome": "restored:shared",
+  "why": "the Call cell builds its argument with `vmap`, as every cpp example does",
+  "n": 1
+ },
+ "db819a027f": {
+  "outcome": "restored:fact",
+  "why": "remove's mark: `result->deleted()` reads it (ref.facts.deleted; `virtual bool deleted() = 0;` on Entity, types.hpp:418, which SdkEntityPtr reaches)",
+  "n": 1
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (`PrepareAuth_cpp.ts` reads `secret` from the options), held from DEMO_SECRET as the key is from DEMO_APIKEY (S50/D23)",
+  "n": 1
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server URL is templated: the client now passes the server variables that have no default, and the tutorial sentence names them; OLD cpp built the client without them (server-required-given)",
+  "n": 1
+ },
+ "2a87675fd3": {
+  "outcome": "same-meaning",
+  "why": "OLD said `options` is an `sdk::Value` map; the type cell says `Value` and every block opens `using namespace sdk;`",
+  "n": 1
+ },
+ "8928fd2128": {
+  "outcome": "same-meaning",
+  "why": "OLD named the prepare result fetchdef; the shared Returns calls it the fetch definition, and the README prepare example still binds `fetchdef`",
+  "n": 1
+ },
+ "57048dc63c": {
+  "outcome": "correction:class-name",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides (entityClassName, which MainEntity_cpp names the accessor's return by)",
+  "n": 1
+ },
+ "dfd47eedbf": {
+  "outcome": "unification:ref-examples-print-none",
+  "why": "the reference's single-entity examples print nothing, as most OLD pages did; the sentence above each says `data()` reads its record. OLD cpp printed the record with `Struct::jsonify(result->data())`: weaker, decided once in shared code (refOpBlock)",
+  "n": 43
+ },
+ "9c1e8685c4": {
+  "outcome": "restored:fact",
+  "why": "the two-argument test constructor's own example, `DemoSDK::testSDK(Value::undef(), Value::undef())`; OLD showed only the no-argument call",
+  "n": 18
+ },
+ "19e9588d47": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: a pairing shift: Planet's inactive remove block is gone (S25), so the tool pairs the next blocks one place out",
+  "n": 1
+ },
+ "8087c15c00": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: a pairing shift: Planet's inactive remove block is gone (S25), so the tool pairs it with the next block, the planet_entity instance block",
+  "n": 1
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-generic-names",
+  "why": "the list example's loop variable is `item` for every entity",
+  "n": 1
+ },
+ "c9601209b9": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names the same features; this sentence says which of them attach to hooks; no disagreement",
+  "n": 18
+ },
+ "b04f3b7718": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names cost and cache; no disagreement",
+  "n": 19
+ },
+ "761c6d484c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "698f390733": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "d0145f6c85": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "1fac1cf55c": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "f8a8fd01f9": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "052a7f401b": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "dd6016aa7d": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "93dc6c7898": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "6528a2408e": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "eb1c690d35": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "1cac3697e0": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "73f17f9d92": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "c5d3b0e2bc": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "4ebe439395": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "2e2ea2f618": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "733031c9b8": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "53e790dd17": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 18
+ },
+ "9b440c2085": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "b3e7de27cd": {
+  "outcome": "correction:S09-residue-usage",
+  "why": "h3fix, one shared edit: the Usage sentence names the option with this language's own key printer (RefSyntax.key, as the constructor table does) and the value with its own literal printer (Syntax.expr of a BOOLEAN literal, as the activation snippet above prints it), where it printed `feature.<name>.active` and the TypeScript word `true` in every language",
+  "n": 19
+ },
+ "8a25c3888a": {
+  "outcome": "correction:S09-residue-on-by-default",
+  "why": "h3fix, one shared edit: OLD's 'Set `feature.log.active` to true ...' told the reader to switch on a feature that runs by default (log: model/feature/log.aontu `options: active: true`), the defect S09 names, in the Usage sentence; NEW says it runs without being switched on, and how to stop it",
+  "n": 19
+ },
+ "689587aa26": {
+  "outcome": "correction:X3",
+  "why": "h3fix, one shared edit: the base transport's section no longer says it attaches to hooks 'not the transport' (false: it installs the transport); only a transport-'none' feature with hooks says so",
+  "n": 18
+ },
+ "1054f62797": {
+  "outcome": "correction:sentence-review-test",
+  "why": "h3fix, one shared edit: the same sentence, unchanged, as decided at v3.3 for this class (sentence round: the arguments sentence says what the code does); its class covers one variation fewer, because no-test now prints the S13-residue sentence in its place",
+  "n": 18
+ },
+ "fc814cdcc9": {
+  "outcome": "correction:v34-remove-keeps",
+  "why": "v3.4, one shared edit: cpp's remove absorbs only the response's match (EntityRemoveOp.fragment.cpp: `if (ctx->result->resmatch.is_map()) { this->match_ = ctx->result->resmatch; }`), so the page no longer says data() reads the removed record (its fixer ran it: remove then data() gives {} although the response carried a record); it says no record is read and data() keeps what the entity held (ref.facts.removeKeeps, cited)",
+  "n": 15
+ },
+ "5788fca383": {
+  "outcome": "correction:v34-remove-keeps",
+  "why": "v3.4, one shared edit: cpp's remove absorbs only the response's match (EntityRemoveOp.fragment.cpp: `if (ctx->result->resmatch.is_map()) { this->match_ = ctx->result->resmatch; }`), so the page no longer says data() reads the removed record (its fixer ran it: remove then data() gives {} although the response carried a record); it says no record is read and data() keeps what the entity held (ref.facts.removeKeeps, cited)",
+  "n": 15
+ },
+ "37b4c175e7": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ },
+ "8adeed6967": {
+  "outcome": "correction:D26",
+  "why": "h3fix, one shared edit: the option names of the new rows (allow, clean, auth)",
+  "n": 1
+ }
+}
