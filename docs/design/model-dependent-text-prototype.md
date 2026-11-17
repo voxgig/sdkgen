@@ -21,6 +21,10 @@ freeze check, read every changed sentence that no one but its author had
 read, and attacked the new ports. Where those two disagree with the
 integration, this record follows them, and says so.
 
+Added after the fourth version was checked: where the prototype is kept
+(below), and what the repository's comment gate reports on its source
+(section 8). Neither changes a figure or a verdict.
+
 What is genuinely not done is in section 8. In short: seven of the twenty
 languages were never compiled; the shared changes the integration recorded
 and did not make; the fix for the shared sentence the attack found false
@@ -30,11 +34,16 @@ everything an adoption on `main` would still have to build.
 
 The design note this answers is `docs/design/model-dependent-text.md`; the
 issues it was measured against are in
-`docs/design/model-dependent-text-issues.md`. The prototype's clones,
-records, review tools and scripts are working files and are not in this
-repository. Paths of sdkgen's own files are given as they are in the
-repository; line numbers are at the commit the record names, which is
-usually not `main`.
+`docs/design/model-dependent-text-issues.md`. The prototype is kept on the
+branch `claude/write-once-prototype` of this repository, not on `main`: the
+code as frozen, the review tools with their history, the working records
+(briefs, prompts, every stage's report, guides and logs), and every sdkgen
+and tools commit this record or those reports cite. Its
+`prototype/README.md` gives each named state's commit; the tags were not
+pushed, because a pushed `v*` tag starts the publish workflow. Generated
+output was not kept, since the tools regenerate it. Paths of sdkgen's own
+files are given as they are in the repository; line numbers are at the
+commit the record names, which is usually not `main`.
 
 Who did what is given by role. The **builder** built a stage. The
 **porter** ported one language by following the porting guide. The
@@ -285,10 +294,10 @@ demonstration model and 21 variations of it. Seven languages were never
 compiled. Nothing was measured over time: whether a shared change stays
 cheap once the tools stop needing re-aimed controls is unknown. The guard,
 the forms, the review tools and the hand records are working files of the
-prototype, not code a maintainer could run today; an adoption would have
-to bring the guard and the forms into the repository's tests and replace
-the review tools with something its CI can run. Nothing was merged on
-`main`, and no pack was carried across a real release.
+prototype, kept on its branch and run by nothing on `main`; an adoption
+would have to bring the guard and the forms into the repository's tests
+and replace the review tools with something its CI can run. Nothing was
+merged on `main`, and no pack was carried across a real release.
 
 ---
 
@@ -2723,10 +2732,12 @@ would still have to do. Nothing in this list is in progress.
   (the deleted read's layout fill, the rule that a declared call factory
   occurs in the runtime, the csharp and java citation pins). The container
   fact of java, kotlin and scala still has no value pin.
-- Seventeen of the prototype's earlier commits (fifteen in sdkgen, two in
-  the tools) end in an attribution trailer and a session link that the
-  prototype's own rules forbid; none is on `main`, and none should be
-  carried there as it stands.
+- Seventeen of the frozen states' commits (fifteen in sdkgen, two in the
+  tools), and three more in the tools' side histories, end in an
+  attribution trailer and a session link that the prototype's own rules
+  forbid. The branch that keeps the prototype holds all twenty, and its
+  own three commits end in the same lines; none is on `main`, and none
+  should be carried there as it stands.
 
 **Recorded at the integration and not made** (the integrator's record says
 what each would take)
@@ -2841,6 +2852,16 @@ what each would take)
   twenty providers and naming hooks, and the extracted naming functions
   onto `main`, and retire sixty per-language components there; and the
   migration machinery with its release step.
+- Bring the prototype's source to the repository's comment policy. Run on
+  the branch that keeps it (ran), the comment gate
+  (`tools/comment-gate.cjs`) reports 87 findings in 53 files at
+  `v34-frozen`: 32 in `ts/src`, 30 in `ts/test`, 24 in the components and
+  1 in the model. By rule: 34 files over the comment density limit, 22
+  narrative comments, 19 count claims, 7 over-long blocks, 4 blocks of
+  commented-out code and 1 stale path. The gate's own test, that the
+  repository satisfies the policy, fails with them, and so does the
+  workflow that runs the gate on every push; on the branch this record is
+  on, the same gate passes.
 - Bring the guard and the twenty forms files into the repository's tests,
   and decide what replaces the review tools and the hand records, which
   are working files of the prototype and not code its CI can run. Without
