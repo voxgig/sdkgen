@@ -30,7 +30,7 @@ defmodule ProjectName.StructCorpusTest do
   # Under `{null: true}` the runner normalises both to NULLMARK and the
   # distinction never arises; the `{null: false}` groups are where it bites,
   # and the corpus is lopsided - reading a bare nil as ABSENT (test/support/
-  # omni.ex decision 5) costs the four entries below, reading it as null costs
+  # omni.ex decision 5) costs the five entries below, reading it as null costs
   # 43. Each drop is GUARDED on the entry's exact JSON: corpus indexes are
   # positional, so a corpus that gains or reorders an entry fails loudly here
   # instead of quietly skipping a different one.
@@ -40,7 +40,10 @@ defmodule ProjectName.StructCorpusTest do
       {50, ~s({"in":{"alt":null,"key":"x","val":{}},"out":null})},
       {51, ~s({"in":{"alt":null,"key":null,"val":{}},"out":null})}
     ],
-    {"validate", "basic"} => [{13, ~s({"in":{"data":null,"spec":"`$NULL`"},"out":null})}]
+    {"validate", "basic"} => [
+      {14, ~s({"in":{"data":null,"spec":"`$NULL`"},"out":null})},
+      {53, ~s({"in":{"data":null,"spec":"`$NULL`"},"out":null})}
+    ]
   }
 
   setup_all do
@@ -557,9 +560,9 @@ defmodule ProjectName.StructCorpusTest do
     IO.puts("\nSTRUCT CORPUS: CASES #{ran} (vendored omni)")
 
     # A run that executes nothing is not a pass. The floor is the corpus as
-    # measured at the vendoring tag, less the four guarded drops above; it is
+    # measured at the vendoring tag, less the five guarded drops above; it is
     # deliberately a FLOOR, so the corpus can grow without editing this line,
     # and a section that stopped running trips it.
-    assert ran >= 1208, "the struct corpus executed only #{ran} cases"
+    assert ran >= 1317, "the struct corpus executed only #{ran} cases"
   end
 end

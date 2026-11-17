@@ -5370,6 +5370,18 @@
     }
    }
   },
+  "struct/elixir": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.1.1",
+   "tag": "sdk-local-nof",
+   "file": {
+    "tm/elixir/lib/utility/struct/voxgig_struct.ex": {
+     "sha256": "a32b86d8652a3bf79621d437d4883e6de815ed41062b256545dc9d894a8f416b",
+     "upstream": "elixir/lib/voxgig_struct.ex"
+    }
+   }
+  },
   "struct/go": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",

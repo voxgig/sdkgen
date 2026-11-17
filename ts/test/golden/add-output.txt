@@ -499,7 +499,7 @@ tm/elixir/lib/projectname/feature/test.ex 3ed981b7a867
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
 tm/elixir/lib/projectname/utility.ex f180ae24a153
-tm/elixir/lib/utility/struct/voxgig_struct.ex 6cf834c5da52
+tm/elixir/lib/utility/struct/voxgig_struct.ex a32b86d8652a
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
 tm/elixir/src/feature/test/.gitkeep e3b0c44298fc
@@ -510,9 +510,9 @@ tm/elixir/test/omni_smoke_test.exs d79d4e7faab8
 tm/elixir/test/pipeline_test.exs 11b7151723a4
 tm/elixir/test/primary_utility_test.exs 809ab087b792
 tm/elixir/test/stream_test.exs adcaa6598d60
-tm/elixir/test/struct_corpus_test.exs 7f52c6c4a405
+tm/elixir/test/struct_corpus_test.exs 1aa5d5979c4d
 tm/elixir/test/support/feature_harness.ex 9b26420ea50d
-tm/elixir/test/support/omni.ex 030d256627ce
+tm/elixir/test/support/omni.ex fb422237542f
 tm/elixir/test/test_helper.exs b086ec47f0c6
 tm/elixir/test/vendor/omni/json.ex 9d4938171ec7
 tm/elixir/test/vendor/omni/runner.ex 241232766668

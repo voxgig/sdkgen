@@ -2089,6 +2089,18 @@
   },
   {
    "lib": "struct",
+   "port": "elixir",
+   "lang": "elixir",
+   "version": "0.1.1",
+   "dir": [
+    "tm/elixir/lib/utility/struct"
+   ],
+   "file": {
+    "elixir/lib/voxgig_struct.ex": "tm/elixir/lib/utility/struct/voxgig_struct.ex"
+   }
+  },
+  {
+   "lib": "struct",
    "port": "go",
    "lang": "go",
    "version": "0.2.0",
