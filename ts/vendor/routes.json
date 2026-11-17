@@ -74,7 +74,11 @@
   "`plugins/index.ts` and `Plugins.java` above, and the same reason.",
   "",
   "examples/, tests/ and cli/ under a swept container are upstream's own,",
-  "not library code an SDK vendors."
+  "not library code an SDK vendors.",
+  "",
+  "ruby keeps its port at the top of ruby/, beside its Gemfile and lockfile",
+  "(its dependency manifest), omni.rb (the bridge its own test runner",
+  "loads) and walk_bench.rb (a benchmark). None of them is library code."
  ],
  "ignore": [
   "(^|/)(Makefile|Dockerfile|LICENSE|VERSION)$",
@@ -99,7 +103,10 @@
   "(^|/)plugins/all/",
   "(^|/)examples?/",
   "(^|/)tests?/",
-  "(^|/)cli/"
+  "(^|/)cli/",
+  "(^|/)Gemfile(\\.lock)?$",
+  "^ruby/omni\\.rb$",
+  "(^|/)[^/]*_bench\\.[a-z]+$"
  ],
  "repo": {
   "struct": {
