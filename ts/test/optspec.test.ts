@@ -381,7 +381,7 @@ describe('optionSpec: the union each target reads', () => {
   }
 
   test('a target whose struct predates `$NOF` is handed `$ONE`', () => {
-    const spec = optionSpec(modelWith(feature), 'rb')
+    const spec = optionSpec(modelWith(feature), 'swift')
     ok(has(spec, ONE) && !has(spec, NOF))
     deepStrictEqual(spec, oneUnionSpec(optionSpec(modelWith(feature))))
   })
@@ -394,15 +394,15 @@ describe('optionSpec: the union each target reads', () => {
   test('an alias reads as the target it was installed from', () => {
     const model: any = modelWith(feature)
     model.main.kit.target = {
-      rb2: { origname: 'rb', base: 'node_modules/@voxgig/sdkgen/project/.sdk' },
+      swift2: { origname: 'swift', base: 'node_modules/@voxgig/sdkgen/project/.sdk' },
     }
-    ok(has(optionSpec(model, 'rb2'), ONE))
+    ok(has(optionSpec(model, 'swift2'), ONE))
   })
 
   test('a target of that name from another package keeps `$NOF`', () => {
     const model: any = modelWith(feature)
-    model.main.kit.target = { rb: { base: 'node_modules/@acme/sdkgen-pack/.sdk' } }
-    ok(has(optionSpec(model, 'rb'), NOF))
+    model.main.kit.target = { swift: { base: 'node_modules/@acme/sdkgen-pack/.sdk' } }
+    ok(has(optionSpec(model, 'swift'), NOF))
   })
 
   test('entity specs are lowered the same way', () => {

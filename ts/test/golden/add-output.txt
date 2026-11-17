@@ -1620,7 +1620,7 @@ tm/rb/utility/register.rb 5a1b1e2d26aa
 tm/rb/utility/result_basic.rb 90d9f4bfb77a
 tm/rb/utility/result_body.rb a60b44e6ad7f
 tm/rb/utility/result_headers.rb ee4460e396f5
-tm/rb/utility/struct/voxgig_struct.rb c40c9e5bea78
+tm/rb/utility/struct/voxgig_struct.rb 0b42ab1de04f
 tm/rb/utility/transform_request.rb 0f21de00236b
 tm/rb/utility/transform_response.rb 13e4100890d3
 

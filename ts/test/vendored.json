@@ -5404,6 +5404,18 @@
     }
    }
   },
+  "struct/ruby": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.1.1",
+   "tag": "sdk-local-nof",
+   "file": {
+    "tm/rb/utility/struct/voxgig_struct.rb": {
+     "sha256": "0b42ab1de04f0e674fb430ea4f04ba61d3895c3f9152541d12b615fcc435c627",
+     "upstream": "ruby/voxgig_struct.rb"
+    }
+   }
+  },
   "struct/typescript": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",

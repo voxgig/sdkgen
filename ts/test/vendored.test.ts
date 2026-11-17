@@ -51,6 +51,7 @@ const VENDOR_DIRS = [
   'tm/perl/t/vendor/omni',
   'tm/perl/t/vendor/omni/Voxgig',
   'tm/php/utility/struct',
+  'tm/rb/utility/struct',
   'tm/perl/t/vendor/omni/Voxgig/Omni',
   'tm/kotlin/test/vendor/omni',
   'tm/kotlin/utility/struct',
@@ -369,10 +370,9 @@ describe('vendored', () => {
 
 
   test('local deviations from vendored code stay marked', () => {
-    // rb is not routed, so it stays hand-patched.
-    const patched: Record<string, number> = {
-      'tm/rb/utility/struct/voxgig_struct.rb': 1,
-    }
+    // Every vendored file is upstream's as it stands; a deviation is added
+    // here with its count.
+    const patched: Record<string, number> = {}
 
     for (const [rel, count] of Object.entries(patched)) {
       const src = readFileSync(Path.join(SDK, rel), 'utf8')

@@ -2129,6 +2129,18 @@
   },
   {
    "lib": "struct",
+   "port": "ruby",
+   "lang": "rb",
+   "version": "0.1.1",
+   "dir": [
+    "tm/rb/utility/struct"
+   ],
+   "file": {
+    "ruby/voxgig_struct.rb": "tm/rb/utility/struct/voxgig_struct.rb"
+   }
+  },
+  {
+   "lib": "struct",
    "port": "python",
    "lang": "py",
    "version": "0.1.1",

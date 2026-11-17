@@ -93,9 +93,9 @@ print 'validate=', ($@ ? 'throws' : 'default'), "\\n";
   },
   {
     target: 'rb',
-    stamp: 'unstamped',
+    stamp: '0.1.1',
     needs: 'ruby',
-    answers: { getprop: 'null', haskey: 'true', validate: 'default' },
+    answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
       const rb = toolchain('ruby')
       if (null == rb) return null
