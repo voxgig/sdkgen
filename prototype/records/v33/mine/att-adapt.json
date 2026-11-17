@@ -1,0 +1,65 @@
+[
+ {
+  "id": "G8-swift-cast-dropped-adapted",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "const recordOf = (v: string): string => entityRecord(`(${v}.${unwrap})?`)",
+  "to": "const recordOf = (v: string): string => entityRecord(`(${v}.asNative)?`)"
+ },
+ {
+  "id": "G8-swift-asEntity-adapted",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "record: `{var}.${read}`,",
+  "to": "record: `{var}.asEntity().${read}`,"
+ },
+ {
+  "id": "G5-ocaml-arrow-signatures-adapted",
+  "lang": "ocaml",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+    "from": "    list: 'e_list (value) (value) : entity_obj list',\n    load: 'e_load (value) (value) : entity_obj',\n    create: 'e_create (value) (value) : entity_obj',\n    update: 'e_update (value) (value) : entity_obj',\n    patch: 'e_patch (value) (value) : entity_obj',\n    remove: 'e_remove (value) (value) : entity_obj',",
+    "to": "    list: 'e_list : value -> value -> entity_obj list',\n    load: 'e_load : value -> value -> entity_obj',\n    create: 'e_create : value -> value -> entity_obj',\n    update: 'e_update : value -> value -> entity_obj',\n    patch: 'e_patch : value -> value -> entity_obj',\n    remove: 'e_remove : value -> value -> entity_obj',"
+   },
+   {
+    "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+    "from": "    { kind: 'dataGet', sig: 'e_data_get () : value', copy: true },\n    { kind: 'dataSet', sig: 'e_data_set (value) : unit' },\n    { kind: 'matchGet', sig: 'e_match_get () : value', copy: true },\n    { kind: 'matchSet', sig: 'e_match_set (value) : unit' },\n    { kind: 'make', sig: 'e_make () : entity_obj' },\n    { kind: 'streamSync', sig: 'e_stream (string) (value) (value) : value Seq.t', runs: 'call' },",
+    "to": "    { kind: 'dataGet', sig: 'e_data_get : unit -> value', copy: true },\n    { kind: 'dataSet', sig: 'e_data_set : value -> unit' },\n    { kind: 'matchGet', sig: 'e_match_get : unit -> value', copy: true },\n    { kind: 'matchSet', sig: 'e_match_set : value -> unit' },\n    { kind: 'make', sig: 'e_make : unit -> entity_obj' },\n    { kind: 'streamSync', sig: 'e_stream : string -> value -> value -> value Seq.t', runs: 'call' },"
+   }
+  ]
+ },
+ {
+  "id": "clj-member-removed-adapted",
+  "lang": "clojure",
+  "kind": "member removed",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "    { kind: 'matchGet', sig: '((:match-get ent)) -> map', copy: true },\n",
+  "to": ""
+ },
+ {
+  "id": "ts-utility-kind-adapted",
+  "lang": "ts",
+  "kind": "member kind (utility copy->live)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "{ kind: 'utility', sig: 'utility()', returns: 'object', copy: false }",
+  "to": "{ kind: 'utilityBase', sig: 'utility()', returns: 'object', copy: false }"
+ },
+ {
+  "id": "forms-vacuous-ts-adapted",
+  "lang": "ts",
+  "kind": "forms weakened: public patterns match nothing",
+  "edits": [
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "client: /^  (?:static |async \\*?)?((?!constructor\\b)[a-z]\\w*)\\(/gm,\n    entity: /^  (?:static |async \\*?)?((?!constructor\\b)[a-z]\\w*)(?:\\(|\\s*(?::[^=\\n(]+)?=\\s)/gm,",
+    "to": "client: /$NEVER^(x)/gm,\n    entity: /$NEVER^(x)/gm,"
+   },
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "    graphql: 'a GraphQL request through the pipeline; no reference page documents it (old pages neither)',\n",
+    "to": ""
+   }
+  ]
+ }
+]

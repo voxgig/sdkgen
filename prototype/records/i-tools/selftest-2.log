@@ -1,0 +1,190 @@
+[selftest 0s] injections: 24 regressions, 7 false sentences, 19 of the re-check's, 3 dropped sentences; modes reviewed, scratch (106 runs)
+[selftest 0s] mode reviewed
+  ok   ledger type-cell-zig: flagged: 2 new open class(es), unclassified 0 -> 2 (1/106, 1%)
+  ok   ledger type-cell-any-zig: flagged: 1 new open class(es), unclassified 0 -> 1 (2/106, 2%)
+  ok   ledger sentence-removed-go: flagged: 1 new open class(es), unclassified 0 -> 1 (3/106, 3%)
+  ok   ledger false-sentence-py: flagged: 3 new open class(es), unclassified 0 -> 3 (4/106, 4%)
+  ok   ledger false-sentence-added-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (5/106, 5%)
+  ok   ledger optional-required-py: flagged: 2 new open class(es), unclassified 0 -> 2 (6/106, 6%)
+  ok   ledger negation-go: flagged: 4 new open class(es), unclassified 0 -> 4 (7/106, 7%)
+  ok   ledger code-comment-ts: flagged: 3 new open class(es), unclassified 0 -> 3 (8/106, 8%)
+  ok   ledger var-renamed-c: flagged: 1 new open class(es), unclassified 0 -> 2 (9/106, 8%)
+  ok   ledger err-reset-removed-c: flagged: 0 new open class(es), unclassified 0 -> 1 (10/106, 9%)
+  ok   ledger restructure-py: flagged: 1 new open class(es), unclassified 0 -> 2 (11/106, 10%)
+  ok   ledger number-retries-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (12/106, 11%)
+  ok   ledger number-ms-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (13/106, 12%)
+  ok   ledger op-swap-root-ts: flagged: 1 new open class(es), unclassified 0 -> 2 (14/106, 13%)
+  ok   ledger entity-swap-root-ts: flagged: 2 new open class(es), unclassified 0 -> 2 (15/106, 14%)
+  ok   ledger field-swap-go: flagged: 2 new open class(es), unclassified 0 -> 2 (16/106, 15%)
+  ok   ledger id-literal-c: flagged: 1 new open class(es), unclassified 0 -> 2 (17/106, 16%)
+  ok   ledger global-zig: flagged: 2 new open class(es), unclassified 0 -> 2 (18/106, 17%)
+  ok   ledger row-removed-zig: flagged: 4 new open class(es), unclassified 0 -> 4 (19/106, 18%)
+  ok   ledger zig-switch-arm: flagged: 1 new open class(es), unclassified 0 -> 2 (20/106, 19%)
+  ok   ledger clj-block: flagged: 4 new open class(es), unclassified 0 -> 4 (21/106, 20%)
+  ok   ledger elixir-block: flagged: 1 new open class(es), unclassified 0 -> 2 (22/106, 21%)
+  ok   ledger sentence-dup-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (23/106, 22%)
+  ok   ledger region-required-ref-ts: flagged: 2 new open class(es), unclassified 0 -> 2 (24/106, 23%)
+  ok   recheck rb-load-returns-nil: flagged: 3 new open class(es), unclassified 4 -> 7 (25/106, 24%)
+  ok   recheck rb-list-reqmatch-required: flagged: 4 new open class(es), unclassified 4 -> 8 (26/106, 25%)
+  ok   recheck rb-match-optional-required: flagged: 2 new open class(es), unclassified 4 -> 6 (27/106, 25%)
+  ok   recheck rb-direct-sentence-dropped: flagged: 1 new open class(es), unclassified 4 -> 5 (28/106, 26%)
+  ok   recheck rb-retries-number: flagged: 1 new open class(es), unclassified 4 -> 5 (29/106, 27%)
+  ok   recheck rb-get-utility-return: flagged: 1 new open class(es), unclassified 4 -> 5 (30/106, 28%)
+  ok   recheck rb-utility-live: flagged: 1 new open class(es), unclassified 4 -> 5 (31/106, 29%)
+  ok   recheck rb-tut-list-hash: flagged: 2 new open class(es), unclassified 2 -> 4 (32/106, 30%)
+  ok   recheck rb-tut-write-record: flagged: 2 new open class(es), unclassified 2 -> 4 (33/106, 31%)
+  ok   recheck rb-region-required: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 4 -> 6 (34/106, 32%)
+  ok   recheck rb-dataget-nocopy: flagged: 1 new open class(es), unclassified 4 -> 5 (35/106, 33%)
+  ok   recheck py-list-sig-required: flagged: 4 new open class(es), unclassified 0 -> 4 (36/106, 34%)
+  ok   recheck py-load-returns-none: flagged: 3 new open class(es), unclassified 0 -> 3 (37/106, 35%)
+  ok   recheck py-tut-dict: flagged: 2 new open class(es), unclassified 0 -> 2 (38/106, 36%)
+  ok   recheck py-dataget-nocopy: flagged: 2 new open class(es), unclassified 0 -> 2 (39/106, 37%)
+  ok   recheck go-list-map: flagged: 1 new open class(es), unclassified 0 -> 1 (40/106, 38%)
+  ok   recheck go-err-nil: flagged: 2 new open class(es), unclassified 0 -> 2 (41/106, 39%)
+  ok   recheck go-stream-dropped: flagged: 1 new open class(es), unclassified 0 -> 1 (42/106, 40%)
+  ok   recheck go-tut-step4-dropped: flagged: 2 new open class(es), unclassified 0 -> 2 (43/106, 41%)
+  ok   accept region-required-ref-ts: 2 new class(es) left for a person; accepted automatically: none (44/106, 42%)
+  ok   accept ok-true-py: 4 new class(es) left for a person; accepted automatically: none (45/106, 42%)
+  ok   accept raises-returns-py: 3 new class(es) left for a person; accepted automatically: none (46/106, 43%)
+  ok   accept negation-go: 4 new class(es) left for a person; accepted automatically: none (47/106, 44%)
+  ok   accept type-cell-zig: 2 new class(es) left for a person; accepted automatically: none (48/106, 45%)
+  ok   accept ok-true-rb-new-language: 4 new class(es) left for a person; accepted automatically: none (49/106, 46%)
+  ok   accept raises-returns-rb-new-language: 3 new class(es) left for a person; accepted automatically: none (50/106, 47%)
+  ok   missing missing-direct-one-variation: flagged: 1 new open class(es), 1 printed less often than its reference, 0 new absent sentence(s), unclassified 4 -> 5 (51/106, 48%)
+  ok   missing missing-direct-every-variation: flagged: 1 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 4 -> 5 (52/106, 49%)
+  ok   missing missing-table-row: flagged: 2 new open class(es), 2 printed less often than its reference, 0 new absent sentence(s), unclassified 4 -> 6 (53/106, 50%)
+[selftest 115s] mode scratch
+  ok   ledger type-cell-zig [scratch]: flagged: 2 new open class(es), unclassified 64 -> 66 (54/106, 51%)
+  ok   ledger type-cell-any-zig [scratch]: flagged: 1 new open class(es), unclassified 64 -> 65 (55/106, 52%)
+  ok   ledger sentence-removed-go [scratch]: flagged: 1 new open class(es) (1 printed less often than its reference), unclassified 48 -> 49 (56/106, 53%)
+  ok   ledger false-sentence-py [scratch]: flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 61 -> 64 (57/106, 54%)
+  ok   ledger false-sentence-added-ts [scratch]: flagged: 1 new open class(es), unclassified 98 -> 99 (58/106, 55%)
+  ok   ledger optional-required-py [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 61 -> 63 (59/106, 56%)
+  ok   ledger negation-go [scratch]: flagged: 2 new open class(es), unclassified 48 -> 50 (60/106, 57%)
+  ok   ledger code-comment-ts [scratch]: flagged: 2 new open class(es), unclassified 45 -> 47 (61/106, 58%)
+  ok   ledger var-renamed-c [scratch]: flagged: 1 new open class(es), unclassified 30 -> 32 (62/106, 58%)
+  ok   ledger err-reset-removed-c [scratch]: flagged: 0 new open class(es), unclassified 30 -> 31 (63/106, 59%)
+  ok   ledger restructure-py [scratch]: flagged: 1 new open class(es), unclassified 61 -> 63 (64/106, 60%)
+  ok   ledger number-retries-ts [scratch]: flagged: 1 new open class(es), unclassified 98 -> 99 (65/106, 61%)
+  ok   ledger number-ms-ts [scratch]: flagged: 1 new open class(es), unclassified 98 -> 99 (66/106, 62%)
+  ok   ledger op-swap-root-ts [scratch]: flagged: 1 new open class(es), unclassified 21 -> 23 (67/106, 63%)
+  ok   ledger entity-swap-root-ts [scratch]: flagged: 1 new open class(es), unclassified 21 -> 22 (68/106, 64%)
+  ok   ledger field-swap-go [scratch]: flagged: 2 new open class(es), unclassified 75 -> 76 (69/106, 65%)
+  ok   ledger id-literal-c [scratch]: flagged: 1 new open class(es), unclassified 30 -> 32 (70/106, 66%)
+  ok   ledger global-zig [scratch]: flagged: 2 new open class(es), unclassified 64 -> 64 (71/106, 67%)
+  ok   ledger row-removed-zig [scratch]: flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 64 -> 67 (72/106, 68%)
+  ok   ledger zig-switch-arm [scratch]: flagged: 1 new open class(es), unclassified 64 -> 66 (73/106, 69%)
+  ok   ledger clj-block [scratch]: flagged: 3 new open class(es), unclassified 28 -> 31 (74/106, 70%)
+  ok   ledger elixir-block [scratch]: flagged: 1 new open class(es), unclassified 94 -> 96 (75/106, 71%)
+  ok   ledger sentence-dup-ts [scratch]: flagged: 1 new open class(es), unclassified 98 -> 99 (76/106, 72%)
+  ok   ledger region-required-ref-ts [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 98 -> 100 (77/106, 73%)
+  ok   recheck rb-load-returns-nil [scratch]: flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 73 -> 76 (78/106, 74%)
+  ok   recheck rb-list-reqmatch-required [scratch]: flagged: 2 new open class(es), unclassified 73 -> 75 (79/106, 75%)
+  ok   recheck rb-match-optional-required [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 73 -> 75 (80/106, 75%)
+  ok   recheck rb-direct-sentence-dropped [scratch]: flagged: 1 new open class(es) (1 printed less often than its reference), unclassified 73 -> 74 (81/106, 76%)
+  ok   recheck rb-retries-number [scratch]: flagged: 1 new open class(es), unclassified 73 -> 74 (82/106, 77%)
+  ok   recheck rb-get-utility-return [scratch]: flagged: 1 new open class(es), unclassified 73 -> 74 (83/106, 78%)
+  ok   recheck rb-utility-live [scratch]: flagged: 1 new open class(es), unclassified 73 -> 74 (84/106, 79%)
+  ok   recheck rb-tut-list-hash [scratch]: flagged: 1 new open class(es), unclassified 53 -> 54 (85/106, 80%)
+  ok   recheck rb-tut-write-record [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 53 -> 55 (86/106, 81%)
+  ok   recheck rb-region-required [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 73 -> 75 (87/106, 82%)
+  ok   recheck rb-dataget-nocopy [scratch]: flagged: 1 new open class(es), unclassified 73 -> 74 (88/106, 83%)
+  ok   recheck py-list-sig-required [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 61 -> 63 (89/106, 84%)
+  ok   recheck py-load-returns-none [scratch]: flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 61 -> 64 (90/106, 85%)
+  ok   recheck py-tut-dict [scratch]: flagged: 1 new open class(es), unclassified 27 -> 28 (91/106, 86%)
+  ok   recheck py-dataget-nocopy [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 61 -> 63 (92/106, 87%)
+  ok   recheck go-list-map [scratch]: flagged: 1 new open class(es), unclassified 48 -> 49 (93/106, 88%)
+  ok   recheck go-err-nil [scratch]: flagged: 1 new open class(es), unclassified 48 -> 49 (94/106, 89%)
+  ok   recheck go-stream-dropped [scratch]: flagged: 1 new open class(es), unclassified 48 -> 49 (95/106, 90%)
+  ok   recheck go-tut-step4-dropped [scratch]: flagged: 1 new open class(es), unclassified 75 -> 76 (96/106, 91%)
+  ok   accept region-required-ref-ts [scratch]: 2 new class(es) left for a person; accepted automatically: none (97/106, 92%)
+  ok   accept ok-true-py [scratch]: 2 new class(es) left for a person; accepted automatically: none (98/106, 92%)
+  ok   accept raises-returns-py [scratch]: 3 new class(es) left for a person; accepted automatically: none (99/106, 93%)
+  ok   accept negation-go [scratch]: 2 new class(es) left for a person; accepted automatically: none (100/106, 94%)
+  ok   accept type-cell-zig [scratch]: 2 new class(es) left for a person; accepted automatically: none (101/106, 95%)
+  ok   accept ok-true-rb-new-language [scratch]: 2 new class(es) left for a person; accepted automatically: none (102/106, 96%)
+  ok   accept raises-returns-rb-new-language [scratch]: 2 new class(es) left for a person; accepted automatically: none (103/106, 97%)
+  ok   missing missing-direct-one-variation [scratch]: flagged: 1 new open class(es), 1 printed less often than its reference, 0 new absent sentence(s), unclassified 73 -> 74 (104/106, 98%)
+  ok   missing missing-direct-every-variation [scratch]: flagged: 1 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 73 -> 74 (105/106, 99%)
+  ok   missing missing-table-row [scratch]: flagged: 2 new open class(es), 2 printed less often than its reference, 0 new absent sentence(s), unclassified 73 -> 75 (106/106, 100%)
+[selftest 194s] fact mutations (controls/factmut)
+  ok   facts rb-none-null: ref.facts.none 'nil' -> 'null': fact sheet fails, unattested ref.none (names ref.none: 2 context(s): held 0, contradicted 1, new 1; 113 units; OLD says otherwise in 1); unmutated: none (1/12)
+  ok   facts rb-none-null [scratch]: ref.facts.none 'nil' -> 'null': fact sheet fails, unattested ref.none (names ref.none: 2 context(s): held 0, contradicted 1, new 1; 113 units; OLD says otherwise in 1); unmutated: ref.none (the true value is itself unattested in this mode) (2/12)
+  ok   facts clojure-entitynoun-fields: ref.facts.entityNoun 'Members' -> 'Fields': fact sheet fails, unattested ref.entityNoun (names ref.entityNoun: 2 context(s): held 1, contradicted 0, new 1; 188 units); unmutated: none (3/12)
+  ok   facts clojure-entitynoun-fields [scratch]: ref.facts.entityNoun 'Members' -> 'Fields': fact sheet fails, unattested ref.noun, ref.entityNoun, ref.heading, ref.none, ref.valueType.OBJECT (names ref.entityNoun: 2 context(s): held 1, contradicted 0, new 1; 188 units); unmutated: ref.noun, ref.heading, ref.none, ref.valueType.OBJECT (4/12)
+  ok   facts rb-maps-arrays: ref.facts.maps 'hashes' -> 'arrays': fact sheet fails, unattested ref.maps (names ref.maps: 1 context(s): held 0, contradicted 1, new 0; 19 units; OLD says otherwise in 1); unmutated: none (5/12)
+  ok   facts rb-maps-arrays [scratch]: ref.facts.maps 'hashes' -> 'arrays': fact sheet fails, unattested ref.none, ref.maps (names ref.maps: 1 context(s): held 0, contradicted 1, new 0; 19 units; OLD says otherwise in 1); unmutated: ref.none (6/12)
+  ok   facts clojure-heading-client: ref.facts.heading '{module}' -> '{client}': fact sheet fails, unattested ref.heading (names ref.heading: 1 context(s): held 0, contradicted 0, new 1; 19 units; OLD has no such sentence); unmutated: none (7/12)
+  ok   facts clojure-heading-client [scratch]: ref.facts.heading '{module}' -> '{client}': fact sheet fails, unattested ref.noun, ref.heading, ref.none, ref.valueType.OBJECT (names ref.heading: 1 context(s): held 0, contradicted 0, new 1; 19 units; OLD has no such sentence); unmutated: ref.noun, ref.heading, ref.none, ref.valueType.OBJECT (the true value is itself unattested in this mode) (8/12)
+  ok   facts rb-noun-functions: ref.facts.noun 'Methods' -> 'Functions': fact sheet fails, unattested ref.noun (names ref.noun: 2 context(s): held 0, contradicted 0, new 2; 113 units; OLD has no such sentence); unmutated: none (9/12)
+  ok   facts rb-noun-functions [scratch]: ref.facts.noun 'Methods' -> 'Functions': fact sheet fails, unattested ref.noun, ref.none (names ref.noun: 2 context(s): held 0, contradicted 0, new 2; 113 units; OLD has no such sentence); unmutated: ref.none (10/12)
+  ok   facts py-keys-bare: ref.facts.keys 'member' -> 'bare' (an enumeration): fact sheet fails, unattested ref.keys (names ref.keys: 197 units it selects (the sentences of c, zig, clojure, rust, elixir); 121 paire); unmutated: none (11/12)
+  ok   facts py-keys-bare [scratch]: ref.facts.keys 'member' -> 'bare' (an enumeration): fact sheet fails, unattested ref.none, ref.lits.false, ref.keys (names ref.keys: 197 units it selects (the sentences of c, zig, clojure, rust, elixir); 121 paire); unmutated: ref.none, ref.lits.false (12/12)
+[selftest 319s] sentence verdicts
+  ok   sentences shared-records-verdict: 38 shared matches, each records its reference sentences and how many have no verdict
+  ok   sentences false-never-matched: class 2910759209 (shared:elixir:f63c3a660b) with its sentence marked false: left open
+[selftest 334s] purity mutations and the real notes
+  ok   purity note-names-feature: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names feature "retry": 1; Syntax: note names opti
+  ok   purity note-names-option: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names option "apikey": 1
+  ok   purity note-names-entity: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names entity "Planet": 1; Syntax: note names enti
+  ok   purity note-names-op: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names operation "load": 1
+  ok   purity note-model-claim: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note states a number: 1; Syntax: note names option "se
+  ok   purity hook-concat: FLAGGED rc=1 | Naming: concatenation onto a generator name: 1
+  ok   purity hook-plural: FLAGGED rc=1 | Naming: pluralisation: 1
+  ok   purity hook-reserved: FLAGGED rc=1 | Naming: inline reserved-word test: 1
+  ok   purity printer-op-literal: FLAGGED rc=1 | Syntax: operation name outside the fact table: 1
+  ok   purity printer-desc-condition: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-model-read: FLAGGED rc=1 | Syntax: model read: 1
+  ok   purity printer-case-change: FLAGGED rc=1 | Syntax: case change on a name: 1
+  ok   purity fact-prose-names-feature: FLAGGED rc=1 | Syntax: fact prose names feature "cache": 1; Syntax: fact prose names option "feature": 1
+  ok   purity note-number-claim: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note states a number: 1
+  ok   purity printer-desc-alias: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-desc-bracket: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-desc-destructure: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-model-param-kit: FLAGGED rc=1 | Syntax: model read: 1
+  ok   purity hook-reserved-eq: FLAGGED rc=1 | Naming: inline reserved-word test: 1
+  ok   purity recheck-notes-renamed-const: FLAGGED rc=1 | Syntax: notes declared but no notes region found by the lint: 1
+  ok   purity recheck-note-tail-from-const: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note is not plain string literals: 1
+  ok   purity recheck-note-in-ref-notes: FLAGGED rc=1 | Syntax: note names feature "retry": 1; Syntax: note names option "apikey": 1; Syntax: note names option "feature": 1
+  ok   purity notes:clojure: 2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 6 accepted
+  ok   purity notes:elixir: 4 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 3 accepted
+  ok   purity notes:go: 1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:rust: 1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:zig: 2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+[selftest 343s] block tables
+  ok   blocks ts tutorial:  identical 19, corrected 16, unified 12, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks ts rootquick:  identical 0, corrected 13, unified 5, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks ts reference:  identical 195, corrected 0, unified 118, otherwise 0, oldOnly 17, newOnly 0
+  ok   blocks go tutorial:  identical 0, corrected 12, unified 1, otherwise 8, oldOnly 0, newOnly 0
+  ok   blocks go rootquick:  identical 0, corrected 14, unified 4, otherwise 4, oldOnly 0, newOnly 0
+  ok   blocks go reference:  identical 337, corrected 21, unified 18, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks py tutorial:  identical 26, corrected 22, unified 0, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks py rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks py reference:  identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks c tutorial:  identical 0, corrected 47, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks c rootquick:  identical 0, corrected 17, unified 0, otherwise 2, oldOnly 0, newOnly 0
+  ok   blocks c reference:  identical 151, corrected 100, unified 62, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks zig tutorial:  identical 24, corrected 17, unified 0, otherwise 7, oldOnly 0, newOnly 0
+  ok   blocks zig rootquick:  identical 0, corrected 2, unified 15, otherwise 2, oldOnly 0, newOnly 0
+  ok   blocks zig reference:  identical 151, corrected 0, unified 162, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks clojure tutorial:  identical 26, corrected 21, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks clojure rootquick:  identical 0, corrected 16, unified 0, otherwise 3, oldOnly 0, newOnly 0
+  ok   blocks clojure reference:  identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks rust tutorial:  identical 26, corrected 22, unified 0, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks rust rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks rust reference:  identical 187, corrected 0, unified 126, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks elixir tutorial:  identical 16, corrected 22, unified 10, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks elixir rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks elixir reference:  identical 151, corrected 0, unified 162, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks rb tutorial:  identical 3, corrected 21, unified 23, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks rb rootquick:  identical 0, corrected 2, unified 15, otherwise 2, oldOnly 0, newOnly 0
+  ok   blocks rb reference:  identical 303, corrected 0, unified 10, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks unexplained-block: otherwise 1 -> 2
+[selftest 344s] recall on the stage-2 worklists
+  ok   recall stage2-worklists: 49 of 51 flagged (floor 49)
+
+selftest: 176 controls, 0 failed (ledger 24/24, recheck 19/19, accept 7/7, missing 3/3, ledger scratch 24/24, recheck scratch 19/19, accept scratch 7/7, missing scratch 3/3, facts 6/6, facts scratch 6/6, sentences 2/2, purity 27/27, blocks 28/28, recall 1/1) in 348s; scratch /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-tools/tmp/selftest-7wdYFb
+
+real	5m48.941s
+user	7m15.593s
+sys	0m33.626s

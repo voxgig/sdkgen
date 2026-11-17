@@ -1,0 +1,238 @@
+{
+ "ok": true,
+ "summary": "H5 measured on the real structure. P/h5/sdkgen is branch h5 = v33-frozen + 4.45.0 bump + 5 commits; P/h5/today is the same tree with the lifecycle change reverted. Projects were made by the unmodified 4.44.0 (ts go py perl lua js php; plus edited, no-record, alias, owned and 20-target variants) and upgraded. Without the lifecycle change, retiring the components is unsafe in 8 rows: stale copies keep writing all three sections while doctor says \"matches (15 additive)\", and remove refuses files add wrote. With it, every stage-1 row is safe on the real mix. One exception: a project with no copy record. Re-added with --force, it keeps 15 retired copies that still write its pages while doctor exits 0. They are labelled \"(used instead of the shared X)\". This row is NOT OK both today and after. Stage 1's NOT OK row (a stale compiled component) is fixed: doctor now has an ORPHAN COMPILED finding that fails the check, generate warns, and `doctor prune` deletes it and honours -y. Twenty targets: package update removes 39 copies (13 x 3) and their compiled output. After it, all 40 per-target pages and the root README are byte-identical to a project made fresh on the new build. The 7 unported languages differ from 4.44.0 by one shared ReadmeRefFeatures line only. Language pack: suite 74/76 (2 skipped) on both builds. 10/12 .md files are identical; dart and lean REFERENCE differ by that same shared line. A 3.2 provider (lua, ocaml) held as a pack against 3.3 showed 2 type errors and 4 silent page changes, with no version check. I built a provider interface version: a required `interface: '3.3'` in the Syntax type, a check at load that lists the breaking changes, and a package check rule. With it, all 6 applicable cases surface as a type error and a thrown list. Full suite 2636 pass / 0 fail / 5 skipped of 2641 (without generatedcompile); action tests 318/318.",
+ "verdict": "H5 is NOT refuted: confirmed with conditions. Retiring per-language documentation components can be made safe for doctor, remove, target add and package update, and the language pack keeps generating. The conditions:\n(1) The record-gated lifecycle change must ship. It is already in v33-frozen as 1fcc1ef5/9481257f/61e8b338. Without it, 8 rows are unsafe.\n(2) The orphan-compiled doctor finding built here (0e99e799) must ship. Without it, a component deleted by hand keeps being loaded.\n(3) Projects with no copy record stay unsafe (R5b NOT OK, today and after): their retired copies are kept and used while doctor exits 0. This needs a structure that does not exist yet, for example the package shipping fingerprints of every retired file so an unrecorded but unchanged copy can be recognised. Not built. That would decide the last row.\n(4) A pack provider written for an older interface changes pages silently unless the interface is versioned. Built here; it holds only until an author declares the new version without acting on the listed changes.",
+ "setup": "P = /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2.\n- Cloned P/v33/sdkgen into P/h5/sdkgen, branch h5 at v33-frozen 0065f1e2. node_modules copied from P/v33. old, bin and langpack copied from P/migrate; old/node_modules and langpack's @voxgig links repointed into P/h5.\n- Finding at set-up: the lifecycle change is already in v33-frozen as 1fcc1ef5, 9481257f, 61e8b338. `git diff c193a603 HEAD` over doctor.ts, target.ts, edition.ts, remove.ts and retire.test.ts is empty.\n- a0318794 sets version 4.45.0 (package.json, bin VERSION, scaffold manifest via build/version.js), so a copy record's from/to differ.\n- \"Today\" (v33 without the lifecycle change) is branch `today`: a0318794 + revert of the three commits + Build. It was built (exit 0) and packaged as P/h5/today (bin dist model project package.json testkit.js, with node_modules symlinked).\n- `new` is P/h5/sdkgen/ts. Every build was exit 0 (build-*.log).\n- Commits on h5: 0e99e799 orphan compiled; e53586e2 prune honours -y; b0896a75 interface version; 9deb6441 package check rule; 29175771 refusal wording.\n- Driver: bin/tool.js (mk, use old|today|new, cli, build, gen [outdir] [full]); bin/cls.js classifies sections as NEW/OLD/SAME/OTHER(+EDITED).",
+ "conflicts": [
+  "Cherry-pick of a49fddc0 onto v33-frozen conflicted in ts/dist/action/doctor.js(.map), ts/dist/action/target.js(.map), ts/src/action/doctor.ts, ts/src/action/target.ts and ts/test/retire.test.ts (add/add). The cause: the same change is already in v33-frozen (1fcc1ef5, 9481257f, 61e8b338), with identical source. Settled by `git cherry-pick --abort` and taking v33's copy as the lifecycle change. 7bb5161b and c193a603 were therefore not picked either.",
+  "98f87b2b (version 4.45.0) was not cherry-picked: it also carries stand-in ReadmeQuick dist changes. The same version bump was made by hand in a0318794.",
+  "Building 'today' needed a revert of the three commits: clean, no conflicts."
+ ],
+ "action_tests": "Files under ts/dist-test whose names contain doctor, remove, target, package, copies, retire, action or cli: action, actionstrip, cli, copies, doctor, package, packagecheck, php-live-client (matches 'cli' by name), remove, retire, target. All were run with --test-concurrency=2.\n- At h5 before my changes (v33 + version bump): 312/312 pass (action-tests-h5.log).\n- At the final h5: 318/318 pass (action-tests-final.log). That includes retire.test 9/9 (7 lifecycle + 2 orphan-compiled) and packagecheck 32/32 (4 new).\n- Full suite without generatedcompile at the final head: 2641 tests, 2636 pass, 0 fail, 5 skipped (suite-h5-final.log).\n- The interface change first failed only the characterize golden: 13 provider hash lines. It was refreshed with SDKGEN_GOLDEN_UPDATE=1, and exactly those 13 lines changed.\n- Not run on the today build: the action tests (today has no dist-test).",
+ "rows": [
+  {
+   "row": "1",
+   "what": "4.44.0 project (ts go py perl lua js php), package upgraded, nothing else run, then tsc + generate + doctor",
+   "today": "Pages OLD for ts go py perl lua (all three sections); js/php unchanged. Doctor exit 1, from 10 MISSING Syntax_/Naming_. The 15 retired copies show as 'additive (project-owned, not drift)'. Generate warns '10 file(s) \u2026 differ \u2026 changed in this project', though those are the MISSING files.",
+   "after": "Same pages until an add runs. Doctor exit 1: '10 missing, 11 outdated, 15 retired', each retired copy listed as RETIRED. Generate warns '26 file(s) \u2026 unchanged copies from 4.44.0'.",
+   "safe": "yes (both: doctor does not say matches); today mislabels the copies",
+   "rule": "doctor compares what add writes; copy record tells outdated from edited"
+  },
+  {
+   "row": "2a",
+   "what": "re-add ts, then the rest",
+   "today": "Copies kept. All 5 ported languages still OLD. After re-adding all: doctor 'matches the scaffold (15 additive)', exit 0.",
+   "after": "Each re-add removes ReadmeQuick/Ref/TopQuick_<t>.ts and their dist .js. Pages NEW for all 5. Doctor matches (0 additive), exit 0.",
+   "safe": "today NOT OK (stale components write pages while doctor matches); after yes",
+   "rule": "add is overwrite (resync); doctor must compare what add writes"
+  },
+  {
+   "row": "2b",
+   "what": "package update @voxgig/sdkgen --no-fetch",
+   "today": "Exit 0. All 15 kept and used (OLD). Doctor matches, 15 additive.",
+   "after": "Removes 15 sources plus compiled output without --force. Pages NEW. Doctor ok.",
+   "safe": "today NOT OK; after yes",
+   "rule": "package update checks before it fetches; outdated refreshed without --force"
+  },
+  {
+   "row": "2c",
+   "what": "dry run of target add (all 7) and of package update",
+   "today": "Tree unchanged (sha1 over every .sdk file).",
+   "after": "'would remove \u2026' logged per file. Tree unchanged.",
+   "safe": "yes",
+   "rule": "dry run honoured everywhere"
+  },
+  {
+   "row": "3",
+   "what": "ReadmeQuick_ts edited under 4.44.0 (CUSTOMIZED there), upgrade, re-add all",
+   "today": "The edit becomes 'additive' like the other 14, with no message. All kept. ts quick shows the edit; the other 14 sections stay OLD. Doctor matches, 15 additive.",
+   "after": "The edit is reported 'override \u2026 (used instead of the shared ReadmeQuick)' and kept, with a target-component-override warning. The other 14 are pruned. ts ref/top NEW, quick EDITED. Doctor ok, exit 0.",
+   "safe": "today NOT OK (14 stale); after yes",
+   "rule": "never lose a project edit without the mode that says so"
+  },
+  {
+   "row": "3b",
+   "what": "edited, package update",
+   "today": "Everything kept.",
+   "after": "Override kept and warned; the rest pruned.",
+   "safe": "today NOT OK; after yes",
+   "rule": "same"
+  },
+  {
+   "row": "3c/3d",
+   "what": "edited, re-add --force / main.kit.copies 'overwrite'",
+   "today": "Edited copy kept and still used (src/cmp never pruned).",
+   "after": "Edited copy and its compiled output deleted; ts NEW.",
+   "safe": "yes (the mode says so; the edit is lost with no backup, as for any overwritten copy)",
+   "rule": "overwrite mode / --force"
+  },
+  {
+   "row": "4a/4b",
+   "what": "target remove ts, right after the upgrade / after a re-add",
+   "today": "Refuses with 'refusing to delete what `target add` did not write' on the 3 retired files, exit 1, though the record shows add wrote them.",
+   "after": "Exit 0.",
+   "safe": "today NOT OK (a verb refuses what it wrote); after yes",
+   "rule": "remove plans from doctor's findings"
+  },
+  {
+   "row": "4c",
+   "what": "remove ts with the edited override",
+   "today": "Refuses on the 3 files.",
+   "after": "Refuses on ReadmeQuick_ts.ts only, with --force offered. The wording 'did not write' is inaccurate for an override.",
+   "safe": "yes",
+   "rule": "remove refuses customized/additive"
+  },
+  {
+   "row": "4d",
+   "what": "remove js (unported), upgraded",
+   "today": "Exit 0.",
+   "after": "Exit 0.",
+   "safe": "yes",
+   "rule": "-"
+  },
+  {
+   "row": "5",
+   "what": "copies.jsonl deleted, upgrade, re-add all",
+   "today": "Doctor: 11 FORKED (the other changed scaffold files) + 10 missing, exit 1. Re-add refuses entirely ('11 locally changed file(s) cannot take the incoming copy'). OLD pages.",
+   "after": "Same, with each of the 15 labelled additive '(used instead of the shared X)'.",
+   "safe": "yes in the strict sense (doctor fails), but the project is stuck until --force",
+   "rule": "no record \u2192 cannot tell edited from outdated"
+  },
+  {
+   "row": "5b",
+   "what": "no record, re-add with --force",
+   "today": "11 forked files overwritten. The 15 retired copies kept and used (OLD). Doctor 'matches (15 additive)', exit 0.",
+   "after": "Same; the lines say '(used instead of the shared X)', but exit 0.",
+   "safe": "NOT OK both (stale components write pages while doctor says matches)",
+   "rule": "a file the record does not name is never deleted"
+  },
+  {
+   "row": "6",
+   "what": "go~go2 js~js2 added by 4.44.0, upgrade, re-add",
+   "today": "go2's 3 old copies kept (additive) and used; Syntax_go2 missing until the add.",
+   "after": "3 RETIRED for go2 (js2 none). Re-add removes them. go2 pages == a fresh alias project.",
+   "safe": "today NOT OK; after yes",
+   "rule": "an alias is a name; aliasCmpName before compare"
+  },
+  {
+   "row": "7a",
+   "what": "language pack against 4.44.0 and the new build",
+   "today": "Suite 74/76 pass, 2 skipped.",
+   "after": "74/76, 2 skipped. 10/12 .md byte-identical; dart and lean REFERENCE differ by one shared ReadmeRefFeatures line (a backslash fix).",
+   "safe": "yes",
+   "rule": "the shared section calls a target's own component first"
+  },
+  {
+   "row": "7b",
+   "what": "pack installs old-style lua~lp (v0.1.0), then moves to provider+hook (v0.2.0), re-add",
+   "today": "not run",
+   "after": "Doctor: 3 RETIRED, 2 MISSING, 2 OUTDATED, exit 1. Re-add removes the 3; generate ok; doctor ok.",
+   "safe": "yes",
+   "rule": "same path as 2a"
+  },
+  {
+   "row": "8",
+   "what": "project-owned target mine with only ReadmeQuick_mine.ts",
+   "today": "Own quick start used; doctor ok.",
+   "after": "Same.",
+   "safe": "yes",
+   "rule": "target-owned files stay as they are"
+  },
+  {
+   "row": "15 (stage 1 NOT OK)",
+   "what": "override kept by an add, then deleted by hand",
+   "today": "dist/cmp/ts/ReadmeQuick_ts.js still loaded (ts quick EDITED); nothing names it.",
+   "after": "With 0e99e799: doctor 'ORPHAN COMPILED COMPONENT \u2026 dist/cmp/ts/ReadmeQuick_ts.js', counted, exit 1. Generate warns that it still loads it. `doctor prune -y` reports and keeps it; `doctor prune` deletes it; ts NEW.",
+   "safe": "today NOT OK; after yes (the run before the prune still uses it, with a warning)",
+   "rule": "leans on 'doctor is the check'; doctor now reads .sdk/dist, a tree it never read"
+  }
+ ],
+ "not_ok": [
+  "Row 5b, today AND after: a project with no copy record, re-added with --force, keeps the 15 retired copies, which still write all three sections, while doctor exits 0. After the change each line says '(used instead of the shared X)', but nothing fails. Needs fingerprints of retired files shipped by the package (not built).",
+  "Today only (fixed by the lifecycle change already in v33): rows 2a, 2a2, 2b, 3, 3b, 4a, 4b, 6. Stale copies write pages while doctor matches, or remove refuses files add wrote.",
+  "Row 15 today: a stale compiled component is used silently (fixed here by the orphan-compiled finding).",
+  "Row 11 before the interface version: 4 silent page changes from a 3.2 provider on 3.3, plus 6 silent omissions from non-breaking opt-ins."
+ ],
+ "twenty_targets": "Made by 4.44.0 with all 20 bundled SDK targets: 60 old-style component files, 39 of them in the 13 ported languages. Timings are the minimum of 3 runs on a shared machine: docs-only generate and doctor through the CLI, and full generate through a Root built from the installed package's components (tool.js gen full), not npm run generate.\n- **4.44.0:** doctor 1252 ms (matches, exit 0); full generate 3704 ms; docs-only ~1055 ms.\n- **Upgraded, nothing run:** tsc exit 0. Doctor 1369 ms: '26 missing, 25 outdated, 39 retired', exit 1. The CLI summary prints only '0 forked, 0 edited, 0 stale, 26 missing'. Generate 4093 ms, warning '64 file(s) \u2026 unchanged copies from 4.44.0' and '26 file(s) \u2026 differ \u2026'; the ported pages are OLD.\n- **package update --no-fetch:** 4117 / 4563 / 5251 ms over three copies. It removes 39 files (13 ReadmeQuick, 13 ReadmeRef, 13 ReadmeTopQuick) and their compiled output.\n- **After the update:** doctor 1336 ms, matches, exit 0; full generate 3599 ms. 21 old-style files (7 unported x 3) remain, sources and compiled.\n- **Pages:** after vs fresh-on-new for the 13 ported: 26/26 identical. For the 7 unported: 14/14 identical, and their READMEs are identical to 4.44.0's. Their REFERENCE.md differs from 4.44.0's by one line, a shared ReadmeRefFeatures fix (\\`feature\\` \u2192 `feature`). Root README after == fresh.\n- Log: rows-all.log, section 'row 9'.",
+ "skew": "**(a) Package upgraded, copies not refreshed** (R1/R10a):\n- tsc exit 0 and nothing throws.\n- Generate writes the OLD three sections for every ported target from the kept copies; unported pages are the new ones.\n- No optional-component warning. Two generate-copies warnings: 26 unchanged copies, and 10 'differ \u2026 changed in this project', which are really the MISSING providers. Doctor exit 1.\n\n**(b) Copies refreshed on the new build, then the package rolled back to 4.44.0.**\n- (b1) With the compiled output from the new build still in dist, `tsc --build src` against 4.44.0 reports up to date (exit 0). Incremental build does not notice that the package's types changed.\n- Generate then THROWS 'TypeError: (0 , sdkgen_1.readsSecret) is not a function at ReadmeHowto (.sdk/dist/cmp/ts/ReadmeHowto_ts.js)'. This is an outdated copy refreshed by the update, not one of the three components.\n- Before the throw, 4.44.0's shared sections warn optional-component-missing for each retired section: tutorial empty, REFERENCE.md not written, root quick start missing. 4.44.0 does not know Syntax.\n- The generate-copies warning reads '11 file(s) are unchanged copies from 4.45.0, but 4.44.0 is installed, so this run generates from older templates'. The direction is backwards, but it is a signal.\n- (b2/b4) With a clean dist (a second machine): tsc exit 1 with 187 errors. 12 distinct missing exports: Syntax, Naming, RefFacts, RuntimeFacts, Ref, Expr, Entry, Stmt, Scope, indentLines, readsSecret, uses. The errors are in the 10 Syntax_/Naming_ files and ReadmeHowto_ts.\n- With noEmitOnError, nothing is emitted. The scaffold's `npm run generate` (`tsc --build src && voxgig-model \u2026`) stops there. Clear about the file, line and missing name; silent about the cause (an older sdkgen than the copies).\n- (b3) Doctor on 4.44.0: Syntax_/Naming_ show as additive; ReadmeQuick/Ref/TopQuick are MISSING; exit 1.",
+ "interface_version": {
+  "cases": [
+   {
+    "change": "[1] ref.facts.testMock required (3.3)",
+    "author_sees": "lua and ocaml: TS2741 'Property testMock is missing' in the project's own tsc --build (noEmitOnError stops generation). If the type error is bypassed (a pack shipping JS), generate throws 'ReadmeRef: the test constructor needs ref.facts.testMock'.",
+    "kind": "1 (and 2 if bypassed)"
+   },
+   {
+    "change": "[14] utility getter sentence follows Member.copy (3.3)",
+    "author_sees": "lua: nothing. The REFERENCE line goes from 'Return a copy of the SDK utility object.' (3.2 page, true) to 'Return the SDK utility object.' The 3.3 lua provider prints 'a copy'.",
+    "kind": "3 (silent regression)"
+   },
+   {
+    "change": "[8] RefFacts.streamSignal (3.3)",
+    "author_sees": "lua and ocaml: nothing. Every stream operation lacks 'It ends early once `callopts.signal` reports an abort.', which the 3.3 provider of the same language prints.",
+    "kind": "3 (silent omission) x2"
+   },
+   {
+    "change": "[0] RefSyntax.read(value, key, truth?) (3.3)",
+    "author_sees": "ocaml: nothing. The direct Returns paragraph keeps 'branch on `getp result \"ok\"`', which is wrong for OCaml (a value, not a bool); the 3.3 provider prints '= Bool true'. lua: no effect.",
+    "kind": "3 (silent, wrong page persists)"
+   },
+   {
+    "change": "[13] wrapped style unwrap; [17][18] FORMS (guard)",
+    "author_sees": "Not applicable to lua/ocaml at generate. FORMS changes act only in sdkgen's own guard, never on a pack.",
+    "kind": "n/a"
+   },
+   {
+    "change": "non-breaking opt-ins [7] cached, [9] match copy, [10] memberNamed, [11] Member.field, [12] deleted",
+    "author_sees": "Nothing. lua lacks the cached-accessor and deleted sentences (its 3.2 'Create a new \u2026 instance' is false for lua). ocaml prints `direct()` instead of bare `direct`, lacks 'Returns a copy' on match and lacks deleted.",
+    "kind": "3 x6 (not counted as breaking)"
+   },
+   {
+    "change": "AFTER the version check (b0896a75), all of the above",
+    "author_sees": "tsc: TS2741 'Property interface is missing' in Syntax_<t>.ts (one per provider). Bypassed: generate throws SdkGenError '<t>: the syntax provider \u2026 is written for an interface before 3.3 (it declares none), and this sdkgen calls interface 3.3. An unchanged copy from a package is refreshed by `voxgig-sdkgen package update` \u2026 Otherwise, check each change \u2026', listing the 5 breaking changes. package check: error provider-interface.",
+    "kind": "1 and 2"
+   }
+  ],
+  "counts": "Breaking changes since 3.2 (s3c-freeze33 interface_changes): 7. Of these, 5 act at generation and 2 are guard-only (FORMS). Applicable: lua 3 ([1],[8],[14]), ocaml 3 ([0],[1],[8]); 6 in all.\n\nWithout a version:\n- kind 1 (type error): 2\n- kind 2 (throw): 0 as installed, 2 if the type error is bypassed (the same change)\n- kind 3 (silent): 4\n- plus 6 silent differences from non-breaking opt-ins\n\nWith the version check: 6/6 applicable cases are kind 1 (one TS2741 per provider) and kind 2 (one throw listing all 5 changes); 0 silent on first contact.\n\nPage measurements (lines differing): REFERENCE 3.2-on-3.2 vs 3.2-on-3.3: lua 95, ocaml 95; 3.2-on-3.3 vs 3.3 provider: lua 62, ocaml 80. Tutorial: lua 0, ocaml 4 (rewrap). Root README: 0.",
+  "needed": "An interface version the provider declares beside itself (in the Syntax export), checked by the shared code at load, with a table of what each raise asks of a provider.\n\nWhy not the manifest's engines.sdkgen: it is a range of sdkgen package versions, which do not track the provider interface. Bundled and project-owned targets have no manifest. One pack can hold providers on different versions.\n\nWhat the check does not do: a version turns silent drift into one loud refusal, but it is only as good as the author's reading of the list. Once '3.3' is declared without acting on [8]/[14]/[0], those pages are silent again.\n\nTo make each change individually kind 1: the opt-in facts must be required with an explicit absent value (streamSignal: false | {...}, copy on the utility getter required, read's truth handled), so tsc names each one. Not built.",
+  "built": "b0896a75 + 29175771:\n- ts/src/helpers/syntaxversion.ts (+51): SYNTAX_INTERFACE '3.3', SYNTAX_CHANGES (5 entries), checkSyntaxInterface.\n- Syntax type gains a required `interface: typeof SYNTAX_INTERFACE` (example.ts +3).\n- The check runs where optionalComponent loads 'Syntax' (optional.ts +4); SYNTAX_INTERFACE is exported from sdkgen.ts.\n- 13 bundled providers declare interface: '3.3' (+1 line each).\n- test/syntaxversion.test.ts: 4 tests.\n- Golden refreshed: 13 lines.\n- Package check rule in 9deb6441 (below).\n- Side effect, measured: a project whose Syntax_ts copy predates the field (same package version) is refused at generate until package update refreshes the OUTDATED copy. That is why the message names the refresh."
+ },
+ "langpack": "P/h5/langpack (c6069bb) with node_modules/@voxgig/sdkgen linked to 4.44.0, then to the final h5 build.\n- Suite (`node --enable-source-maps --test --test-concurrency=2 test/*.test.js`): 76 tests, 74 pass, 0 fail, 2 skipped, on both.\n- bin/lpgen.js wrote 12 .md files under each. 10 are byte-identical.\n- dart/REFERENCE.md and lean/REFERENCE.md each differ by one line: '\\`feature\\`' became '`feature`', from the shared ReadmeRefFeatures. The same line changes for the 7 unported bundled targets.\n- The pack's own ReadmeQuick/Ref/TopQuick_<lang> are still called first.\n- package check on the langpack with the new rule: no findings.\n- Log: rows12.log; diff in out/lp-md.diff.",
+ "aliases": "go~go2 (ported) and js~js2 (not ported).\n\n**Made by 4.44.0 and re-added on the new build:**\n- src/cmp/go2 loses ReadmeQuick_go2.ts, ReadmeRef_go2.ts and ReadmeTopQuick_go2.ts (3 prune lines) and gains Syntax_go2.ts and Naming_go2.ts. Imports are renamed (`./utility_go2`).\n- src/cmp/js2 keeps its 3 old-style files.\n- go2 and js2 README and REFERENCE are byte-identical to an alias project made fresh on the new build.\n\n**Field types** (REFERENCE Fields tables):\n- go2 now prints go's own types (3 float64, 1 int, 1 map[string]any, 10 string), the same as go. go2's REFERENCE with 'go2' read as 'go' is identical to go's.\n- In 4.44.0, go2 AND js2 printed `any` for all 15 fields. The port fixes go2.\n- js2 is still all `any`: unported, a pre-existing defect.\n\n**Doctor and remove:**\n- Doctor on the fresh alias project matches, exit 0; on the upgraded one, nothing for go2/js2 after the re-add.\n- `target remove go2` and `js2`: exit 0 in both projects.\n\n**Pre-existing, not caused by this work:**\n- go2's README differs from go's outside the tutorial: Error handling, Entities, Features and Advanced print ts code for an alias, in 4.44.0 too.\n- The root README labels both go and go2 'Golang' (and js/js2 'JavaScript').\n\nLog: rows13.log.",
+ "overrides": "Project r14 was made on the new build (ts go js). It edited Syntax_ts.ts (comment printer \u2192 '// NOTE: ', testMock 'always') and Naming_ts.ts (client: 'MyClient').\n- **Doctor:** 'CUSTOMIZED (an add merges its updates into it)' for both files, ok, exit 0.\n- **target add ts (merge mode):** 'copy-merge-merged \u2026 2 locally changed file(s)'; the edits are kept. The page has 1 NOTE comment and 13 'MyClient'.\n- **package update --no-fetch:** keeps them.\n- **main.kit.copies 'overwrite' + target add:** both edits gone (0/0), doctor matches. That is what the mode says.\n- **Can an edit make a page say what the model does not?** Yes, measured:\n  - The Naming edit names a client class 'MyClient' that the generated code does not have, 13 times across README and REFERENCE.\n  - Editing the declared fact async: true \u2192 false changes 'load() resolves to the entity' into 'load() returns the entity' for an async runtime.\n  - Doctor stays 'CUSTOMIZED', ok.\n- The testMock edit showed no change, because this project has the test feature: that sentence prints only without it.\n- **What the structure offers against this:** only the generated SDK's own readme_examples test, for languages with a toolchain. It catches a printer edit that breaks compilation, not a false fact or a prose claim. The guard that checks facts against the runtime (forms, citations) runs only in sdkgen's repository, never in a project. Doctor reports the edit and does not judge it.\n- **Project-owned target with only ReadmeQuick_mine.ts:** still generates its own quick start (row 8, both builds).\n\nLog: rows14.log.",
+ "stale_output": "**Fix** (0e99e799 + e53586e2), in ts/src/action/doctor.ts (+62 \u22126):\n- New report category `orphanCompiled`: every .js under .sdk/dist/cmp/<target>/ whose .ts or .js source under .sdk/src/cmp/<target>/ is gone. Only targets the model declares are walked: a removed target's dist is never loaded, and target remove leaves it behind.\n- It counts against `ok`, so doctor exits 1, with the finding 'ORPHAN COMPILED COMPONENT (its source is gone, but generate still loads it; `doctor prune` deletes it)'.\n- copyWarnings adds a generate warning naming the files.\n- `doctor prune` deletes the .js, .js.map, .d.ts and .d.ts.map, and honours -y. The existing superseded prune ignored the dry run and deleted anyway (found by reading the code, not run). It now honours it too.\n- Tests in retire.test.ts: fails doctor and is in copyWarnings; prune -y keeps it, prune deletes it, and a compiled file beside its source is not flagged.\n\n**Row 15 after the fix** (rows-all.log R15/R15b): generate warns '1 compiled component(s) in .sdk have no source, and this run still loads them: dist/cmp/ts/ReadmeQuick_ts.js'. Doctor exits 1 with the ORPHAN finding. `doctor prune -y` reports 'would prune \u2026 DRY RUN' and keeps the file; `doctor prune` deletes it; the next generate is NEW.\n\n**Rules:**\n- It leans on 'doctor is the check that keeps all of this true', and on the existing orphanModel precedent (a file on disk that nothing reads counts against ok).\n- It bends doctor's scope: doctor now reads .sdk/dist, a build output rather than a tree add writes.\n- I chose it over a loader rule (ignore a dist module with no source). That rule would bend 'requirePath swallows only genuine module-not-found' and would change what generation loads without telling anyone.\n- The generation that runs before the prune still uses the stale file, with a warning.",
+ "package_check": "`voxgig-sdkgen package check` on four packs, each holding one lua target. Before my rule:\n- provider + hook (both): no findings, exit 0; generate ok.\n- provider without hook: no findings, exit 0. Generate THROWS 'lp: a syntax provider needs a Naming hook (cmp/lp/Naming_lp)'.\n- hook without provider: no findings, exit 0. Generate warns optional-component-missing three times (tutorial empty, REFERENCE.md not written, no root quick start), with no error.\n- neither (old style, 4.44.0's components): no findings; generates.\n- The 3.2 lua and ocaml packs: no findings.\n\nWith 9deb6441 (check.ts +44, packagecheck.test.ts +4 tests, 32/32 pass; reads the files as text, since components compile only inside a project):\n- both: no findings.\n- provider: error provider-without-hook, exit 1.\n- hook: warning hook-without-provider, exit 0.\n- neither: no findings.\n- lua32 and ocaml32: error provider-interface ('declares interface none, and this sdkgen calls 3.3'), exit 1.\n- The langpack and the bundled scaffold: no findings.\n\nLogs: rows16.log, rows16-after.log.",
+ "cost": "**The lifecycle change** (already in v33-frozen; 1fcc1ef5^..61e8b338, net):\n- target.ts +85 \u22123, doctor.ts +45 \u221210, edition.ts +5 \u22121, remove.ts +1.\n- retire.test.ts +143 (7 tests).\n- Documentation-specific parts: replacesShared in doctor.ts (about 5 lines; it reads OPTIONAL_COMPONENTS, a list of README component names, to print '(used instead of the shared X)') and the override note's wording 'used in place of the shared one'. Everything else (record-gated prune, retired/override categories, removeCompiled) is generic to any per-target component.\n\n**This round** (a0318794..HEAD, source and tests, excluding dist):\n- doctor.ts +62 \u22126: orphanCompiled and the prune dry run. Generic.\n- retire.test.ts +38 (2 tests).\n- helpers/syntaxversion.ts +51, example.ts +3, optional.ts +4, sdkgen.ts +2 \u22121, 13 providers +1 each, syntaxversion.test.ts +36 (4 tests).\n- check.ts +44, packagecheck.test.ts +29 (4 tests).\n- Golden: 13 lines changed.\n- Documentation-specific: the interface version and the package-check rule are specific to the Syntax/Naming providers by nature. The orphan-compiled finding is not.\n\n**Total tests added this round: 10.**",
+ "rows_script": "P/h5/bin/rows.sh re-runs every row: rows1.sh today and rows1.sh new (section 1), then rows9, rows10, rows11, rows12, rows13, rows14 and rows16. Final log: P/h5/rows-all.log (75 row headers, about 6 minutes).\n- Helpers: bin/lib.sh, bin/tool.js, bin/cls.js, bin/edit.sh, bin/lpgen.js.\n- Fixtures made by 4.44.0 under work/: base, base-edited, base-norecord, base-alias, base-owned, all20.\n- References: out/fresh7-new and out/oldcmp. Packs: packs/lua32, ocaml32, chk-both, chk-provider, chk-hook, chk-neither.\n- Earlier logs: rows1-today.log, rows1-new.log, rows9.log, rows10.log, rows11.log (before the interface version), rows11-after.log, rows12.log, rows13.log, rows14.log, rows16.log, rows16-after.log.\n- PROGRESS.md records each step, decision and commit.",
+ "not_done": [
+  "Row 7b on the today build (pack retiring its own component) was not run; only after.",
+  "Edition component retirement (edition.ts pruneRetired) was not exercised end to end.",
+  "Generation used tool.js's Roots (docs-only, and a full Root modelled on generateharness makeRoot built from the installed package), not `npm run generate` in a create-sdkgen-scaffolded project. 'Full generate' timings are that approximation.",
+  "No toolchain compile or run of the generated examples: H4 territory, not repeated here.",
+  "Projects without a copy record (row 5b) are not fixed. The proposed remedy, the package shipping fingerprints of every retired file so an unrecorded but unchanged copy can be recognised, was not built.",
+  "The CLI drift summary still prints only forked/edited/stale/missing; retired, outdated and orphan counts appear only in doctor-end.",
+  "`target remove` leaves .sdk/dist/cmp/<t> behind (seen, not changed).",
+  "Row 11 used only the lua and ocaml 3.2 providers. swift's [13] change and the FORMS changes were not exercised against a pack. The 6 non-breaking silent cases are not covered by the version check.",
+  "The 4.44.0 project from rows was not re-run through the old CLI's own doctor after rollback beyond row 10b.",
+  "Timings are minimum of 3 on a shared 4-CPU machine with two other engineers' jobs running."
+ ],
+ "ran": "Every command ran with PATH=/opt/node24/bin first.\n- Builds: `npm run build` in P/h5/sdkgen/ts on branch today and on h5 after each source change, all exit 0 (build-*.log).\n- Packaging P/h5/today.\n- Action tests (312/312 before, 318/318 final) and the full suite without generatedcompile (2631/1 golden fail/5 skipped before the refresh; 2636/0/5 of 2641 final), all with --test-concurrency=2.\n- SDKGEN_GOLDEN_UPDATE=1 for characterize.\n- All row scripts above against real .sdk projects: target add / remove, package update --no-fetch, doctor, doctor prune (-y), package check, project `tsc --build src`, and in-memory generation.\n- The langpack suite twice (old and new) and lpgen twice.\n- Timings in row 9 (3 runs each).\n- Row 11 against P/ports/lua/sdkgen/ts and P/ports/ocaml/sdkgen/ts used read-only as the installed package for the 3.2-on-3.2 baseline.\n- Nothing was written outside P/h5. No push, publish or download.",
+ "read": "- P/prompts/k-h5.md, P/brief.md, P/stage1.md section 4.\n- /home/user/sdkgen AGENTS.md (CLAUDE.md symlink) sections 'Content can come from OUTSIDE this package' and 'Sharp edges'.\n- P/results/s3c-freeze33.txt: summary, interface_changes (the 7 breaking entries since 3.2 used for row 11), for_guide.\n- Code read in P/h5/sdkgen/ts:\n  - src/helpers/optional.ts, src/utility.ts (loadOptional, resolvePath)\n  - src/cmp/ReadmeQuick.ts, ReadmeRef.ts (testText), ReadmeTop.ts (topQuick)\n  - src/action/doctor.ts, target.ts (removeCompiled, aliasCmpTree), check.ts\n  - test/retire.test.ts, test/packagecheck.test.ts, test/generateharness.ts (makeRoot), build/version.js\n- docs/reference/cli.md (ref forms).\n- /home/user/create-sdkgen/project/standard/.sdk/package.json: the generate script is `node build/docgen.js && tsc --build src && voxgig-model \u2026`, so a tsc failure stops generation.\n- The superseded-prune dry-run defect was found by reading cmd_doctor_prune. It was fixed, but the old behaviour was not run.",
+ "commits": [
+  "a0318794 Version 4.45.0, so a copy record's from and to differ",
+  "0e99e799 Doctor: a compiled component whose source is gone fails the check, generate warns, and doctor prune deletes it",
+  "e53586e2 Doctor prune honours a dry run, for superseded files too",
+  "b0896a75 Syntax provider interface version: a provider declares the interface it is written for, and the shared code refuses another with the breaking changes since it",
+  "9deb6441 Package check: a syntax provider needs its naming hook and the current interface; a hook alone is a warning",
+  "29175771 Interface refusal names the refresh for an unchanged copy",
+  "branch today: a0318794 + reverts 259c8cd8 f4b1a706 d430ab88 + Build (the frozen state without the lifecycle change)"
+ ],
+ "surprises": [
+  "The lifecycle change the coordinator asked me to cherry-pick is already in v33-frozen. 'Today' had to be built by reverting it.",
+  "A no-record project cannot even be re-added on the real structure. The other 11 scaffold files that changed upstream read as FORKED, and target add refuses entirely. Stage 1's stand-in changed only 3 files, so it could not show this.",
+  "`tsc --build src` treats a project as up to date after the installed @voxgig/sdkgen changes underneath it. On a rollback, the stale dist from the newer build runs and throws a TypeError at generate, instead of the type errors a clean build gives.",
+  "4.44.0 printed `any` for every field of an aliased target's REFERENCE (go2 and js2). The shared page fixes go2 for free; js2 stays wrong.",
+  "Existing `doctor prune` ignored -y and deleted superseded files in a dry run (read; fixed).",
+  "Adding the interface field to the 13 bundled providers without a version bump makes projects whose copies came from the same version refuse at generate. Doctor does list those copies as OUTDATED, and package update fixes them. In a real release the version would also move."
+ ]
+}

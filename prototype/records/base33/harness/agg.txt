@@ -1,0 +1,95 @@
+{
+ "c": {
+  "rows": 17,
+  "pi": 83,
+  "pc": 60,
+  "pa": 33,
+  "pr": 0,
+  "bi": 22,
+  "bc": 21,
+  "why": {
+   "S28/U45 lead-in follows the steps written": 62,
+   "S28 steps numbered as written": 20,
+   "D25/S49/G01 client prose states the env vars and server variables from the description": 43,
+   "S49 c constructor carries the required server variables": 68,
+   "DEFECT c-getenv: getenv without <stdlib.h> fails -Werror=implicit-function-declaration (the c DOC lane, OLD and NEW, on basic-server)": 15,
+   "S50/D23/M12 secret exactly when the runtime reads it": 2,
+   "S28/U45 lead-in: the placement sentence reflows with it": 2,
+   "unified wording: list/load step prose": 18,
+   "U45 write heading names the operations present": 8,
+   "unified wording: write-step comments": 24
+  }
+ },
+ "go": {
+  "rows": 19,
+  "pi": 19,
+  "pc": 146,
+  "pa": 29,
+  "pr": 6,
+  "bi": 0,
+  "bc": 47,
+  "why": {
+   "S28/U45 lead-in follows the steps written": 68,
+   "structure: go's one program split into the shared steps (drift: 18 of 20 use steps; go's README harness compiles fragments)": 329,
+   "D25/S49/G01 client prose states the env vars and server variables from the description": 49,
+   "S28 steps numbered as written": 23,
+   "unified wording: list/load step prose": 46,
+   "structure: go's one program split into the shared steps (drift: 18 of 20 use steps; go's README harness compiles fragments) (imports become single lines a fragment can carry)": 38,
+   "structure: go program split into steps (re-indented)": 434,
+   "S49/G01/M13/D55 server block lists only required variables": 16,
+   "structure: go's one program split into the shared steps (drift: 18 of 20 use steps; go's README harness compiles fragments) (its in-code commentary became the shared step prose)": 23,
+   "S50/D23/M12 secret exactly when the runtime reads it": 2,
+   "S28/U45 lead-in: the placement sentence reflows with it": 2,
+   "U45 write heading names the operations present": 5,
+   "unified wording: write-step comments": 34,
+   "structure: write results are not printed (ts, py and c did not print them; go did)": 17,
+   "unified: the description decides id chaining once (go never chained)": 24,
+   "unified: the nested-entity choice is made once (go never made it)": 5
+  }
+ },
+ "py": {
+  "rows": 17,
+  "pi": 53,
+  "pc": 69,
+  "pa": 54,
+  "pr": 0,
+  "bi": 24,
+  "bc": 19,
+  "why": {
+   "S28/U45 lead-in follows the steps written": 62,
+   "S28 steps numbered as written": 20,
+   "unified wording: list/load step prose": 57,
+   "D25/S49/G01 client prose states the env vars and server variables from the description": 43,
+   "S49/G01/M13/D55 server block lists only required variables": 14,
+   "S50/D23/M12 secret exactly when the runtime reads it": 2,
+   "S28/U45 lead-in: the placement sentence reflows with it": 2,
+   "U45 write heading names the operations present": 8,
+   "unified wording: write-step comments": 24
+  }
+ },
+ "ts": {
+  "rows": 17,
+  "pi": 47,
+  "pc": 81,
+  "pa": 48,
+  "pr": 0,
+  "bi": 18,
+  "bc": 25,
+  "why": {
+   "S28/U45 lead-in follows the steps written": 77,
+   "S28 steps numbered as written": 20,
+   "unified wording: list/load step prose": 60,
+   "D25/S49/G01 client prose states the env vars and server variables from the description": 43,
+   "S49/G01/M13/D55 server block lists only required variables": 28,
+   "S28/U45 lead-in: the placement sentence reflows with it": 2,
+   "S50/D23/M12 secret exactly when the runtime reads it": 1,
+   "U45 write heading names the operations present": 8,
+   "structure: ts list wrapped in error handling (re-indented)": 36,
+   "structure: ts list wrapped in error handling like every other language": 30,
+   "unified wording: write-step comments": 24,
+   "structure: unused write results are not bound (py and c did not bind them; ts and go did)": 14
+  }
+ }
+}
+old: quick-start prose sentences across ts/go/py/c, all variations: 468; identical in all four 144 (30.8%); identical once code spans and runtime words are masked 144 (30.8%)
+new: quick-start prose sentences across ts/go/py/c, all variations: 544; identical in all four 460 (84.6%); identical once code spans and runtime words are masked 544 (100.0%)

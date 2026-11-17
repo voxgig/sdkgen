@@ -1,0 +1,972 @@
+summary: |
+  Interface version 3 is built in P/v3/sdkgen, HEAD db5e5915, a linear history on c66142da. The eight ported providers (ts go py c zig clojure rust elixir) are moved onto it. Every check I ran passes after the last source change, but one guard was only extended in that change, so read the verification line before trusting it.
+  
+  What changed:
+  - **Example variables.** Shared code now chooses every example variable name. The reference uses results, item and result, as most of the old pages did. The tutorial uses the entity's plural, taken from apidef's own pluralize. A naming hook only adapts a name to its language through an ident function, so the 'v + s' plural is gone from all eight hooks.
+  - **Template names.** These now come from the same ProjectName substitution map that generation applies (ctx$.stdrep).
+  - **Imports.** A provider declares the page's imports once.
+  - **Runtime notes.** These exist as a mechanism. Go's channel paragraph, zig's error union and stream clause, rust's Ok envelope and elixir's live utility node now live in the provider that owns them, not in shared code.
+  - **Result styles.** Two styles were added: die (perl) and wrapped (swift).
+  - **Reference examples.** They now take the shape most of the twenty old pages had: no error handling, the result bound, list items printed, create fields commented with their types, and a "Fields to update" comment on update and patch.
+  
+  Results:
+  - **Blocks.** Across 9 variations, of 1,372 ported block pairs: 734 are byte-identical to OLD, 179 are identical once named corrections are undone, 382 once named unifications are also undone, 69 changed otherwise (each kind explained), and 8 were removed.
+  - **Unported languages.** All twelve are byte-identical to stage-2 output. Against OLD, their only differences are 4 lines from ReadmeRefFeatures, which stage 2 changed, not this stage.
+  - **Lanes.** All five lanes pass: ts 16/16, go 12/12, py 12/12 under real pytest, c 6/6, rust 6/6.
+  - **Suite.** The full suite passed at 21d40b96..9d2e1994: 2,532 pass, 0 fail. After the last change (de8a3c41) I re-ran generate.test (205/205), characterize, runtimefacts and all five lanes, but not the whole suite. In that same change I widened the load-wording regex in generate.test, so generate.test's 205/205 there partly reflects my own edit to the guard. The regex is still checked by hand against three sample sentences (part 6).
+  
+  Two thresholds are crossed:
+  - **H1, breaking changes.** Breaking interface changes since the first four languages now total about 11, against the line of about 10: stage 2's ~6 plus 5 of mine. Each of my 5 was elective; three could have been kept additive with deprecated aliases.
+  - **H1, language-supplied prose.** Go's stream note is printed once per entity, so notes are 20.5% of go's REFERENCE prose with the feature section excluded. That is over the 15% line. Zig is 12.2%.
+  
+  Clojure's REFERENCE remains unported: the heading fact exists, but the guard and the page port were left for the next engineer.
+stopped_at: |
+  All six parts were done to the depth reported. The tree is clean at db5e5915.
+  
+  Commit order:
+  - 21d40b96: shared source and tests.
+  - a76cad4a: per-language files.
+  - c0e40d5f: build.
+  - 9d2e1994: golden.
+  - de8a3c41 and db5e5915: a small shared fix and its build, after the golden; the golden was unaffected (characterize passes).
+  
+  Verification:
+  - Full suite (excluding generatedcompile): passed at 9d2e1994 with 2,532 pass, 0 fail.
+  - After de8a3c41 I re-ran generate.test (205/205), characterize and runtimefacts (18/18), and all five lanes: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6. The whole suite was not re-run at db5e5915.
+  - de8a3c41 also replaced the load-wording regex in generate.test. Its first widening, at 21d40b96, failed 4 targets in the 9d2e1994 suite run because it could not cross code spans. So that run's 2,532 pass includes the version that still failed; the replacement regex has only been checked by hand on three sample sentences and by the 205/205 re-run.
+  
+  Not done: the guard rebuild (the next engineer's job), clojure's REFERENCE port, and the ledger-tool measures.
+clone: |
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3/sdkgen (HEAD db5e5915, on c66142da)
+  
+  Harness: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3/harness. New files there:
+  - blocks3.js: per-block OLD/NEW comparison.
+  - corrections.js: the normalizers, as reusable data.
+  
+  My scripts and logs: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3/my
+  - opblocks.js, notewords.js, suite.sh, lanes.sh, final.sh
+  - suite.log, lane-*.log, blocks3.txt, detail.txt
+interface_now: |
+  // ===== sdkdesc.ts
+  type DescLayout = { module, client, ctor, names?: Record<string,string>, vars?: Record<string,string> /* shared names (results,item,result,created) as the language spells them */ }
+  type DescSymbols = { accessor, var, plural /* ident(apidef pluralize(e.name)), set by shared code */, module?, alias?, fields? }   // `vars` and `type` removed
+  type Naming = (model, target, tm: (templateName: string) => string) => { layout, symbols: (e) => Omit<DescSymbols,'plural'>, ident?: (name: string) => string }
+  type SdkDescription = { ...as v2, template: Record<string,string> /* ProjectName-family substitutions = ctx$.stdrep */ }
+  sdkDescription(model, target, naming?, stdrep?); templateName(map, name)
+  
+  // ===== example.ts
+  type Ref = { role: 'many'|'item'|'one'|'created', entity: Ent, name: string, list?: string }   // name decided by shared code
+  type Entry = { key, value: Expr, type?: Scalar }                      // type: comment a write member with its type
+  type Stmt = ... | { k:'call', entity, op, arg, bind, wide, note?: string } | ...   // note: closing comment of a wide arg
+  type ResultStyle = 'throw'|'raise'|'die'|'pair'|'errslot'|'union'|'wrapped'
+  type RuntimeFacts = { ...v2, record: string /* may hold {var} */, pairForm?, unwrap?, unusedError?: boolean, listOf?: string /* '{Class}[]' */ }
+  type MemberKind = 'options'|'utility'|'utilityBase'|'direct'|'prepare'|'tester'|'data'|'match'|'dataGet'|'dataSet'|'matchGet'|'matchSet'|'dataArg'|'matchArg'|'make'|'name'|'client'|'entopts'|'stream'|'streamIterator'|'streamGenerator'|'streamList'|'streamLazy'
+  type Member = { kind, sig, returns?: string }
+  type CtorKind = 'defaults'|'explicit'
+  type RefFacts = { entityBy: 'class'|'Name'|'module', noun: string, entityNoun?: string, heading?: string, none, lits?: {true,false}, setArg?: string,
+    keys, maps, container, valueType, ctor: string[], ctorAlts?: {call, kind: CtorKind}[], test: {sig, call, args, alts?: {call, kind}[]}[],
+    accessor, op, opMatched?: Partial<Record<OpName,string>>, client: Member[], entity: Member[], direct: {returns, signal?},
+    prepare: {returns, fails: 'style'|'value'|'note'}, body, cancel }
+  type Scope = { declared, local, stmts, section, standalone: boolean }
+  type Syntax = { fence, facts,
+    client(s, desc, sc), call(s, desc, sc, cx),
+    each(s, inner, sc, desc, cx), print(s, sc, desc), attempt(s, inner, sc, desc), comment(text), expr(e, sc, desc),
+    imports?: (desc, used: Uses) => string[],            // the page's imports; printed once, ahead of the tutorial's and root's client block, never in a standalone block
+    notes?: Partial<Record<NoteSlot, string>>,
+    before?, program?, ref?: RefSyntax }
+  type RefSyntax = { facts: RefFacts, type(t), key(container, path) /* [] = the container */, instance(ent, desc), read(value, key) /* result["ok"] */ }
+  type NoteSlot = `member:${MemberKind}` | 'ctor'|'test'|'instance'|'entity'|'operations'|'features'|'tutorial'|'tutorial:list'|'tutorial:load'|'tutorial:write'|'top'
+  Builders: refOpBlock (no attempt; bound result/results; list prints items; create typed; update/patch note; a print where facts.unusedError), actionBlock (one call with $action, shown inline in the table's Call column), note(p, slot), newScope(standalone)
+  
+  Rule for imports (j): a block never decides its own imports. The provider declares the page's import lines once (imports). The shared page prints them ahead of the tutorial's client block and the root quick start's client block, and nowhere else. A standalone block (any REFERENCE example) never prints them, because the page's lanes compile such blocks with the page's imports.
+interface_changes:
+  - [0]
+    change: RefFacts.classes replaced by entityBy ('class'|'Name'|'module'); DescSymbols.type removed (elixir names entities by sym.module)
+    breaking: True
+    why: Part 1e asks for one mechanism. A provider that declared classes no longer compiles.
+    rework_forced_in: ts go py c zig rust elixir (refFacts), elixir (hook)
+  - [1]
+    change: DescSymbols.vars removed; plural computed by shared code from apidef pluralize; Naming gains ident(name)
+    breaking: True
+    why: No English pluralisation in a hook; utilitys/historys/console_s are gone. Shared code chooses the names; the hook only adapts them.
+    rework_forced_in: all 8 Naming hooks and all 8 Syntax name() functions
+  - [2]
+    change: RefSyntax.read(value, key) required
+    breaking: True
+    why: Part 1m. direct()'s result is read with result["ok"], getp(result, "ok"), h.get_bool(result, "ok") and so on.
+    rework_forced_in: ts go py c zig rust elixir
+  - [3]
+    change: RefFacts.prepare.fails 'errorunion' replaced by 'note'
+    breaking: True
+    why: Zig's error-union sentence was single-runtime prose in shared code; it is now zig's note on member:prepare.
+    rework_forced_in: zig
+  - [4]
+    change: MemberKind 'streamChannel' and 'utilityShared' removed; 'stream' and 'utilityBase' (neutral sentences) plus a note take their place
+    breaking: True
+    why: Part 2: a single-runtime sentence moves to that runtime's notes.
+    rework_forced_in: go, elixir
+  - [5]
+    change: MemberKind adds dataArg and matchArg ('Pass a map / setArg to set it'); RefFacts.setArg
+    breaking: False
+    why: The argument is always passed in c, zig and rust (A5). Shared by 3 runtimes.
+    rework_forced_in: c zig rust (declared)
+  - [6]
+    change: Naming third parameter tm(name); SdkDescription.template; fill() substitutes template spellings (ProjectNameError)
+    breaking: False
+    why: Part 1i: one source for template names, the ctx$.stdrep map generation applies.
+    rework_forced_in: 8 hooks (optional; all moved), rust signatures
+  - [7]
+    change: each/print/attempt/expr receive desc as a trailing parameter; each also receives the CallContext
+    breaking: False
+    why: Part 1f. Elixir's attempt can now read layout, so its pre-qualified accessor is gone. C's each guards an unchecked list.
+    rework_forced_in: elixir, c (used)
+  - [8]
+    change: Scope.standalone
+    breaking: False
+    why: Part 1g. Replaces elixir's peek at sc.declared.has('H').
+    rework_forced_in: elixir
+  - [9]
+    change: Syntax.imports(desc, used)
+    breaking: False
+    why: Part 1j. Imports are a fact of the page; feature snippets no longer print them (OLD shape).
+    rework_forced_in: ts py c zig rust elixir clojure (moved out of client printers)
+  - [10]
+    change: Syntax.notes and NoteSlot; note(p, slot)
+    breaking: False
+    why: Part 2. ('constructor' was renamed 'ctor': it collided with Object.prototype.)
+    rework_forced_in: go zig rust elixir
+  - [11]
+    change: ResultStyle adds 'die' and 'wrapped'; RuntimeFacts adds pairForm and unwrap
+    breaking: False
+    why: Part 1b: perl, swift, lua.
+    rework_forced_in: none (shared switches only)
+  - [12]
+    change: RuntimeFacts.unusedError and listOf; record may contain {var}
+    breaking: False
+    why: unusedError (go, zig): print a bound value, or the build fails. listOf: ts names PlanetEntity[] (fact B). {var}: clojure names the bound variable (A3).
+    rework_forced_in: go zig ts clojure (declared)
+  - [13]
+    change: RefFacts adds noun widened to string, entityNoun, heading, lits, ctorAlts, test.alts, opMatched; Member.returns
+    breaking: False
+    why: Parts 1c, 1d, 1h and 1m, A10 (py list signature), fact B (ts options/utility return object).
+    rework_forced_in: py elixir (opMatched), py (lits), ts (returns)
+  - [14]
+    change: Ref.name/list, Entry.type, call.note; refOpBlock reshaped; actionBlock
+    breaking: False
+    why: Part 3 shapes and part 4 names. Consumers only read these.
+    rework_forced_in: c (print guard), go (instance uses its handle)
+  - [15]
+    change: Cumulative since stage 1's first commit
+    breaking: True
+    why: Stage 2 left about 6 breaking changes after the first four languages. These add 5, for about 11 against H1's line of about 10. Three of my five (read required, kind removal, prepare 'errorunion') could have been additive with deprecated aliases; I chose clean removal.
+    rework_forced_in: see rows above
+result_styles:
+  - [0]
+    lang: js
+    style: throw (async)
+    evidence: ts/project/.sdk/src/cmp/js/fragment/EntityLoadOp.fragment.js:12 'async load(reqmatch, ctrl)', :44 'return error(ctx, ctx.out.point)'; old README states no failure word
+  - [1]
+    lang: php
+    style: throw
+    evidence: php/fragment/EntityLoadOp.fragment.php:13 'throws ProjectNameError on failure', :15 'public function load('; old B README/REFERENCE 'throws on error' x22
+  - [2]
+    lang: rb
+    style: raise
+    evidence: rb/fragment/EntityLoadOp.fragment.rb:13 'raises ProjectNameError on failure'; old 'raises on error' x16
+  - [3]
+    lang: lua
+    style: pair, pairForm 'value, err'
+    evidence: lua/fragment/EntityLoadOp.fragment.lua:10-12 '---@return EntyClass / ---@return string? err / function EntyClass:load'; old tutorial 'Entity operations return (value, err)'
+  - [4]
+    lang: csharp
+    style: throw (old page said 'raises'; corrected)
+    evidence: csharp/fragment/EntityBase.fragment.cs:150 'throw utility.Clean(ctx, cause) as Exception ?? cause;'
+  - [5]
+    lang: java
+    style: throw (old page said 'raises'; corrected)
+    evidence: java/fragment/EntityBase.fragment.java:176 'throw err;', :182 'throw thrown == ctx.ctrl.err ? thrown : cleanError(ctx, thrown);'
+  - [6]
+    lang: kotlin
+    style: throw (old page said 'raises'; corrected)
+    evidence: kotlin/fragment/EntityBase.fragment.kt:148 'throw err', :153
+  - [7]
+    lang: scala
+    style: throw (old page said 'raises'; corrected)
+    evidence: scala/fragment/EntityBase.fragment.scala:136 'if (e eq ctx.ctrl.err) throw e'
+  - [8]
+    lang: swift
+    style: wrapped, unwrap 'asNative as? Entity'
+    evidence: swift/fragment/EntityLoadOp.fragment.swift:8 'throws -> Value'; EntityBase.fragment.swift:171 'return .native(NativeRef(self))'; old ReadmeQuick_swift 'asNative as? Entity'
+  - [9]
+    lang: cpp
+    style: throw
+    evidence: cpp/fragment/EntityLoadOp.fragment.cpp:3 'SdkEntityPtr load(...)'; tm/cpp/core/types.hpp:1382 'throw;'; old 'throws on error' x14
+  - [10]
+    lang: perl
+    style: die
+    evidence: perl/fragment/EntityLoadOp.fragment.pm:8-10 'dies with ProjectNameError on failure / sub load'; old 'dies on error' x14
+  - [11]
+    lang: ocaml
+    style: raise
+    evidence: ocaml/fragment/RunOp.fragment.ml:17 'else raise (clean_exn ctx e)'; old 'raises on error' x12
+notes:
+  mechanism: |
+    Syntax.notes: Partial<Record<NoteSlot, string>>, static text in the provider. The shared page calls note(p, slot) wherever it prints that slot and appends the text as its own paragraph. The slots are member:<kind> (after the member's sentence, on the client or on each entity), ctor, test, instance, entity, operations, features, tutorial, tutorial:list, tutorial:load and tutorial:write. A note cannot see the model.
+    
+    The count it produces is uncomfortable. A note on an entity member is printed once per entity. So go's stream note is 5,508 of 26,917 REFERENCE prose words, 20.5% with features excluded, summed over 19 variations (my/notewords.js). Zig is 12.2%, rust 2.4% and elixir 1.0%. Go crosses H1's 15% line; it would not if member notes were printed once per page.
+  moved:
+    - [0]
+      lang: go
+      slot: member:stream
+      text: It sends the items on the returned channel, which closes when the stream ends. A StreamItem holds one item in Item, or in Err the error that ended the stream ... Under throw: false in callopts["ctrl"], no error is sent.
+      was: ReadmeRef.ts memberText 'streamChannel' (shared)
+    - [1]
+      lang: zig
+      slot: member:prepare
+      text: On failure it returns the error of its error union, for try or catch.
+      was: ReadmeRef.ts clientMember prepare.fails 'errorunion' (shared)
+    - [2]
+      lang: zig
+      slot: member:streamList
+      text: Under throw: false in callopts.ctrl, a failed stream is .ok with whatever data the failure left; otherwise .err holds the branded error.
+      was: lost in stage 2 (fact B, restored as a note)
+    - [3]
+      lang: rust
+      slot: member:direct
+      text: The result map comes back inside Ok even for a non-2xx response; Err is reserved for a request that could not be made.
+      was: lost in stage 2 (fact B / worklist D12, restored as a note)
+    - [4]
+      lang: elixir
+      slot: member:utilityBase
+      text: It is the client's own node, not a copy.
+      was: ReadmeRef.ts memberText 'utilityShared' (shared)
+  shared_single_language_now:
+    - The cancel paragraph and prepare.fails 'value': only ts prints them today. js shares both (old js REFERENCE has 'Cancelling a call').
+    - streamIterator (async generator): only ts prints it. js shares it (js/fragment 'async *stream').
+    - streamGenerator: only py prints it. php shares it (php 'function stream(...): \Generator').
+    - pair style sentences: only go prints them. lua shares them (pairForm 'value, err').
+    - raise: py, elixir and clojure print it. rb and ocaml share it.
+    - streamLazy: only elixir prints it. No unported runtime was confirmed to share it; scala and clojure were not checked. It stays as a kind on the runtime evidence.
+    - errslot style sentences: only c prints them, and no unported language shares them (cpp throws). By the rule this is one runtime's prose in shared code; it stays because part 1b puts every result style in runtimeprose. This crosses the rule.
+    - 'die' (perl) and 'wrapped' (swift): added per part 1b. Each is one runtime's, so they cross the same rule.
+    - listOf: only ts declares it ('a PlanetEntity[], one entity per record'). It is a token, not a sentence.
+    - Stream member kinds: by OLD output alone, only go and zig document stream at all, so every stream shape is single by that test. The kinds are kept on runtime evidence instead: streamList is shared by zig, rust and c; streamIterator by ts and js; streamGenerator by py and php. I report this tension rather than resolve it.
+shapes:
+  - [0]
+    section: REFERENCE list
+    majority_shape: Bound to `results`, outside error handling, items looped and the record printed. The loop variable is `item` (plurality of 7).
+    unified_languages: ts, elixir (OLD unprinted; js, php and lua too); py, rust and zig loop variable to item; zig switch to bind-outside
+    evidence: node my/opblocks.js old doc-crud list (20 languages): printed in 15, not in ts js php lua elixir
+  - [1]
+    section: REFERENCE load and remove
+    majority_shape: Bound to `result`, outside error handling, not printed. It is printed only where an unused binding fails the build (go, zig: RuntimeFacts.unusedError).
+    unified_languages: rust, c, cpp, ocaml printed it in OLD; zig switch
+    evidence: opblocks.js load/remove: 14 of 20 unprinted
+  - [2]
+    section: REFERENCE create
+    majority_shape: Bound to `result`, outside error handling, each data member commented with its type.
+    unified_languages: ts, js, go (no type comments in OLD)
+    evidence: opblocks.js create: type comments in 17 of 20
+  - [3]
+    section: REFERENCE update and patch
+    majority_shape: Bound, the id member, then a comment ('Fields to update' or 'Only the fields to change').
+    unified_languages: c (also java, kotlin, scala, swift, which lacked it)
+    evidence: opblocks.js update: comment in 15 of 20
+  - [4]
+    section: Instance example
+    majority_shape: A binding only.
+    unified_languages: none. Go keeps `fmt.Println(x.GetName())`: its printer must use the binding or it does not compile.
+    evidence: awk over old/doc-crud/*/REFERENCE.md: 19 of 20 a bare binding
+  - [5]
+    section: Feature snippet
+    majority_shape: The client constructed with feature.<n>.active; no imports.
+    unified_languages: none. Stage 2's added imports are removed by Scope.standalone.
+    evidence: old/doc-crud/*/REFERENCE.md, 20 of 20 without imports
+  - [6]
+    section: Test constructor
+    majority_shape: One call line.
+    unified_languages: none
+    evidence: ref:test identical in ts py c zig rust elixir; go corrected (nil, nil)
+  - [7]
+    section: Root quick start
+    majority_shape: Client, then commented list and load steps, outside error handling, bound and printed.
+    unified_languages: ts and go listed only in OLD (load added)
+    evidence: out/old/doc-crud/README.md root subsections: py php lua rb c ... list+load
+  - [8]
+    section: Tutorial list and load
+    majority_shape: Inside error handling, bound to the entity's plural or name, printed.
+    unified_languages: ts list (OLD bare)
+    evidence: harness/survey.js old doc-crud
+  - [9]
+    section: Tutorial writes
+    majority_shape: Not bound unless a later call reads the id, not printed.
+    unified_languages: ts (OLD bound updated and patched), zig and go (OLD printed each)
+    evidence: survey.js old doc-crud: py php lua csharp c unbound
+blocks:
+  - [0]
+    lang: ts
+    section: tutorial
+    identical: 8
+    after_named_corrections: 7 (server-required-only)
+    by_named_unification: 8 (tutorial-list-attempt, tutorial-write-unbound)
+    changed_otherwise: 2: doc-list's `console_s` plural (list-plural correction, not reached by the normalizer pairing), and one tutorial client with the Basic secret
+    verified_by: ts README lane 16/16 (ran)
+  - [1]
+    lang: ts
+    section: root
+    identical: 0
+    after_named_corrections: 5
+    by_named_unification: 2 (root-load-step)
+    changed_otherwise: 2: the list comment now names the class ('a PlanetEntity[]'), and the doc-list root's load step
+    verified_by: ts README lane
+  - [2]
+    lang: ts
+    section: reference
+    identical: 97
+    after_named_corrections: 0
+    by_named_unification: 50 (ref-list-printed, ref-type-comments)
+    changed_otherwise: 10: 9 feature snippets close `},` where OLD closed `}` (printer layout), and 1 nested list quotes 'example' where OLD used "example". Plus 8 removed: OLD's action block is now an inline Call cell, because the action's payload can be neither type-checked nor run.
+    verified_by: ts README lane (REFERENCE blocks are type-checked and run)
+  - [3]
+    lang: go
+    section: tutorial (program)
+    identical: 0
+    after_named_corrections: 4
+    by_named_unification: 1
+    changed_otherwise: 4: tutorial write data laid out one member per line (stage 2's wide writes), and the loop variable is now the entity (tutorial-loop-entity applied where it matched)
+    verified_by: go README lane 12/12 (compiled and run)
+  - [4]
+    lang: go
+    section: root
+    identical: 0
+    after_named_corrections: 5 (go-root-program, go-indent, ...)
+    by_named_unification: 3
+    changed_otherwise: 1: doc-nested's load match is laid out wide where OLD broke its argument line
+    verified_by: go README lane
+  - [5]
+    lang: go
+    section: reference
+    identical: 149
+    after_named_corrections: 9 (go-testsdk-args)
+    by_named_unification: 8
+    changed_otherwise: 0
+    verified_by: no go REFERENCE lane; read only
+  - [6]
+    lang: py
+    section: tutorial
+    identical: 13
+    after_named_corrections: 12
+    by_named_unification: 0
+    changed_otherwise: 0
+    verified_by: py lane 12/12, real pytest
+  - [7]
+    lang: py
+    section: root
+    identical: 0
+    after_named_corrections: 8
+    by_named_unification: 0
+    changed_otherwise: 1 (the Basic secret line in a root block the normalizer missed)
+    verified_by: py lane
+  - [8]
+    lang: py
+    section: reference
+    identical: 114
+    after_named_corrections: 0
+    by_named_unification: 43 (ref-loop-item)
+    changed_otherwise: 0
+    verified_by: py lane runs REFERENCE blocks
+  - [9]
+    lang: c
+    section: tutorial
+    identical: 0
+    after_named_corrections: 23 (c-err-placement, c-err-reset, c-stdlib, server-required-given, ...)
+    by_named_unification: 0
+    changed_otherwise: 2 (Basic secret plus server in one cmap the normalizer did not reduce)
+    verified_by: c DOC lane 6/6 (compiled)
+  - [10]
+    lang: c
+    section: root
+    identical: 0
+    after_named_corrections: 6
+    by_named_unification: 0
+    changed_otherwise: 3: doc-nested root loads the nested entity, and handle placement
+    verified_by: c DOC lane
+  - [11]
+    lang: c
+    section: reference
+    identical: 65
+    after_named_corrections: 51 (c-err-declared)
+    by_named_unification: 32 (ref-load-unprinted, ref-update-note)
+    changed_otherwise: 9: the feature snippet closes `))));` on one line where OLD put `));` on its own
+    verified_by: c DOC lane
+  - [12]
+    lang: zig
+    section: tutorial
+    identical: 13
+    after_named_corrections: 8
+    by_named_unification: 0
+    changed_otherwise: 4: 3 write steps (stage 2's id chaining, results not printed, create bound outside its switch) and 1 client with the secret. UNVERIFIED: no zig toolchain here.
+    verified_by: none (zig missing)
+  - [13]
+    lang: zig
+    section: root
+    identical: 0
+    after_named_corrections: 0
+    by_named_unification: 0
+    changed_otherwise: 9: the bind-outside-switch shape after a comment line, which my zigSwitch normalizer does not reach. UNVERIFIED.
+    verified_by: none
+  - [14]
+    lang: zig
+    section: reference
+    identical: 74
+    after_named_corrections: 0
+    by_named_unification: 83 (zig-bind-outside, ref-loop-item). UNVERIFIED: the new `return std.debug.print(...)` arm has never been compiled.
+    changed_otherwise: 0
+    verified_by: none
+  - [15]
+    lang: clojure
+    section: tutorial
+    identical: 13
+    after_named_corrections: 10
+    by_named_unification: 0
+    changed_otherwise: 2 (Basic secret). UNVERIFIED.
+    verified_by: none (clojure missing)
+  - [16]
+    lang: clojure
+    section: root
+    identical: 0
+    after_named_corrections: 3
+    by_named_unification: 0
+    changed_otherwise: 6: OLD fused (doseq [planet (e-planet/list ...)]); NEW prints (def planets ...) and then doseq. The provider sees one statement at a time outside an attempt, so it cannot fuse them. This is an interface limit. UNVERIFIED.
+    verified_by: none
+  - [17]
+    lang: rust
+    section: tutorial
+    identical: 13
+    after_named_corrections: 11
+    by_named_unification: 0
+    changed_otherwise: 1 (secret)
+    verified_by: rust DOC lane 6/6 (compiled)
+  - [18]
+    lang: rust
+    section: root
+    identical: 0
+    after_named_corrections: 7
+    by_named_unification: 0
+    changed_otherwise: 2 (doc-nested loads the nested entity; secret)
+    verified_by: rust DOC lane
+  - [19]
+    lang: rust
+    section: reference
+    identical: 92
+    after_named_corrections: 0
+    by_named_unification: 65 (ref-load-unprinted, ref-loop-item)
+    changed_otherwise: 0
+    verified_by: rust DOC lane
+  - [20]
+    lang: elixir
+    section: tutorial
+    identical: 9
+    after_named_corrections: 10
+    by_named_unification: 4 (elixir-no-match)
+    changed_otherwise: 2 (server in an inline map variant). UNVERIFIED.
+    verified_by: none (elixir missing)
+  - [21]
+    lang: elixir
+    section: root
+    identical: 0
+    after_named_corrections: 0
+    by_named_unification: 0
+    changed_otherwise: 9: server inline; the handle bound after the step comment with a blank line; doc-nested loads the nested entity. UNVERIFIED.
+    verified_by: none
+  - [22]
+    lang: elixir
+    section: reference
+    identical: 74
+    after_named_corrections: 0
+    by_named_unification: 83 (elixir-handle-bound, ref-generic-names, ref-list-printed)
+    changed_otherwise: 0
+    verified_by: none
+  - [23]
+    lang: all ported
+    section: total
+    identical: 734
+    after_named_corrections: 179
+    by_named_unification: 382
+    changed_otherwise: 69 plus 8 removed
+    verified_by: command: cd P/v3/harness && node blocks3.js (9 variations: B doc-crud doc-nested doc-list crud-basic ex-readonly no-test server-mixed auth-basic); --detail all prints each remaining diff
+defects:
+  - [0]
+    item: A1 zig create comment false
+    lang: zig
+    outcome: fixed
+    where: runtimeprose.ts createComment/carries: union -> 'Create — .ok carries the created entity; asEntity().data(null) reads its record'
+  - [1]
+    item: A2 ts root loses the returned class
+    lang: ts
+    outcome: fixed
+    where: RuntimeFacts.listOf '{Class}[]' -> root comment 'List planet records: a PlanetEntity[], one entity per record; throws on failure' and 'the entity, a PlanetEntity'
+  - [2]
+    item: A3 clojure accessor names an unbound `entity`
+    lang: clojure
+    outcome: fixed
+    where: record '((:data-get {var}))'; sentences receive the bound name -> '((:data-get planet))'
+  - [3]
+    item: A4 go two comments in a row; imprecise create comment
+    lang: go
+    outcome: fixed
+    where: ReadmeQuick.quickText: a step whose statements open with a comment gets no title comment; createComment 'pair' -> 'the value is the created entity'
+  - [4]
+    item: A5 go 'The steps are one program, shown whole after them.'
+    lang: go
+    outcome: fixed
+    where: now 'The program after these N steps runs them in order.' / 'The program after this step runs it.'
+  - [5]
+    item: A6 c err never reset
+    lang: c
+    outcome: fixed in the provider
+    where: Syntax_c attempt adds 'err = NULL;' after reporting (the runtime returns NULL while *err is set). The PNError is not freed; no free function exists in core/sdk.h.
+  - [6]
+    item: A7 ts README: region defaulted vs options table 'Required'; secret shown
+    lang: ts
+    outcome: not fixed: the contradicting section is an unported README section (options table, how-to). Not ported, per the rules.
+    where: listed in gaps
+  - [7]
+    item: A8 ts create 'returns' beside 'resolves'
+    lang: ts
+    outcome: fixed
+    where: createComment follows async: 'Create — resolves to the created entity; .data() reads its record'
+  - [8]
+    item: A9 zig and clojure unverifiable
+    lang: zig, clojure
+    outcome: not fixable here (no toolchain); counted as UNVERIFIED in the block table
+    where: command -v zig clojure: missing
+  - [9]
+    item: ref-1 zig field types `any`
+    lang: zig
+    outcome: fixed
+    where: Syntax_zig zigType table as old ReadmeRef_zig.ts (zig emits no typed models, so no code-generator map exists): []const u8, f64, i64, bool, Value (array)/(object)
+  - [10]
+    item: ref-2 bad plurals (utilitys, historys, console_s)
+    lang: all ported
+    outcome: fixed
+    where: example.ts refOf: the reference uses results/item/result; the tutorial uses apidef pluralize(e.name) adapted by the hook's ident; no '+ s' in any hook (grep: 0)
+  - [11]
+    item: ref-3 py 'ok is false'
+    lang: py
+    outcome: fixed
+    where: RefFacts.lits {True, False}
+  - [12]
+    item: ref-4 direct() keys lost; idiom lost
+    lang: go py c zig
+    outcome: fixed
+    where: shared sentence: '... a result map holding ok, status, headers and data, even for a non-2xx response ... branch on <read(result, ok)>'
+  - [13]
+    item: ref-5 c/zig data 'called without arguments'
+    lang: c zig (rust)
+    outcome: fixed
+    where: MemberKind dataArg/matchArg: 'Get the entity data. Pass a map to set it.' (rust: setArg '`Some(&map)`')
+  - [14]
+    item: ref-6 ts actions no longer show the call
+    lang: ts (and all ported)
+    outcome: fixed, differently from OLD
+    where: Actions table gains a Call column printed by the provider's call printer, e.g. `await client.Planet().create({ $action: 'terraform' })`. A block was tried first; it failed the ts lane (TS2739: the action payload lacks id, title) and the py lane (test mode: action not valid), so it went inline.
+  - [15]
+    item: ref-7 REFERENCE log on-by-default vs README 'inactive until switched on'
+    lang: ts go py c zig
+    outcome: not fixed: the README Features section is unported. Listed.
+    where: gaps
+  - [16]
+    item: ref-8 REFERENCE omits the test constructor without the test feature
+    lang: all ported
+    outcome: fixed
+    where: testText always prints it; without the test feature: 'This SDK is generated without the `test` feature, so it has no mock transport'
+  - [17]
+    item: ref-9 REFERENCE region defaults vs README 'Required'
+    lang: ts
+    outcome: not fixed: the README options table is unported. Listed.
+    where: gaps
+  - [18]
+    item: ref-10 py list(reqmatch=None) beside 'must include planet_id'
+    lang: py (and elixir)
+    outcome: fixed
+    where: RefFacts.opMatched: 'list(reqmatch, ctrl=None) -> list[SatelliteEntity]' when op.needs is non-empty
+  - [19]
+    item: ref-11 zig stream throw:false lost
+    lang: zig
+    outcome: fixed as a note
+    where: notes['member:streamList']
+  - [20]
+    item: ref-12 go TestSDK(testopts, sdkopts) undefined
+    lang: go
+    outcome: fixed
+    where: call 'client := sdk.TestSDK(nil, nil)'
+  - [21]
+    item: ref-13 'whose record .data() reads' awkward
+    lang: all ported
+    outcome: fixed
+    where: opText: 'Resolves to the entity, and throws on failure. `.data()` reads its record.' (generate.test regex updated to accept it)
+  - [22]
+    item: Rule: field-type printer is total
+    lang: zig
+    outcome: zig's table restored. The other providers use canonToType, the code generators' map.
+    where: Syntax_zig.ts zigType
+  - [23]
+    item: Rule: no pluralisation per language
+    lang: all
+    outcome: done
+    where: grep "+ 's'" in Naming_*/Syntax_*: 0
+  - [24]
+    item: Unported README sections that contradict ported ones (not ported)
+    lang: ts go py c zig
+    outcome: listed, not ported
+    where: README options table (region Required; secret under query Basic); README Features ('no logging' vs log on by default); README how-to (test constructor and secret uses)
+facts:
+  - [0]
+    item: direct() result holds ok, status, headers, data (or err)
+    lang: go py c zig (all)
+    outcome: shared sentence
+    where: ReadmeRef.clientMember direct
+  - [1]
+    item: how to read ok: result["ok"], getp(result, "ok"), h.get_bool(result, "ok")
+    lang: py c zig go rust elixir ts
+    outcome: printer (RefSyntax.read)
+    where: each Syntax_<lang>.ref.read
+  - [2]
+    item: never sets *err / resolves to Ok even for non-2xx
+    lang: c / rust
+    outcome: c: covered by the shared 'even for a non-2xx response ... reported in the result'. rust: note.
+    where: rust notes['member:direct']
+  - [3]
+    item: every operation resolves to entities, not raw records
+    lang: all
+    outcome: shared sentence
+    where: tutorial lead: 'Every operation returns entities, not raw records.'
+  - [4]
+    item: testopts / sdkopts meaning; returns a client in test mode
+    lang: ts (all)
+    outcome: shared sentence
+    where: ReadmeRef.testText
+  - [5]
+    item: options() and utility() return object
+    lang: ts
+    outcome: printer-level fact: Member.returns 'object' -> '**Returns:** `object`.'
+    where: Syntax_ts refFacts.client
+  - [6]
+    item: accessor parameter table and 'Returns: PlanetEntity instance'
+    lang: ts
+    outcome: dropped: the accessor sentence 'Create a new PlanetEntity instance. Pass undefined for no initial data.' carries the same facts
+    where: ReadmeRef.instanceText
+  - [7]
+    item: how to call a custom action
+    lang: ts
+    outcome: printer (Call column, the provider's call printer)
+    where: ReadmeRef.actionCall
+  - [8]
+    item: '// Fields to update' / 'Only the fields to change'
+    lang: ts go py zig
+    outcome: shared statement (call.note), printed by every provider
+    where: example.ts refOpBlock
+  - [9]
+    item: go instance GetName print
+    lang: go
+    outcome: printer (go's instance printer uses its binding)
+    where: Syntax_go ref.instance
+  - [10]
+    item: py '# str', c '// char*', zig '// []const u8' type comments on create
+    lang: py c zig
+    outcome: shared statement (Entry.type), with the type named by each printer
+    where: refOpBlock argEntries typed
+  - [11]
+    item: prepare returns the fetchdef
+    lang: py c (all)
+    outcome: shared sentence
+    where: '**Returns:** `X`, the fetch definition: the request `direct()` would send.'
+  - [12]
+    item: c and zig data(): 'Pass a map to set it'
+    lang: c zig
+    outcome: enumerated fact (dataArg/matchArg, 3 runtimes)
+    where: ReadmeRef.memberText
+  - [13]
+    item: rust 'Pass Some(&map) to set it'
+    lang: rust
+    outcome: enumerated fact with token setArg
+    where: Syntax_rust refFacts.setArg
+  - [14]
+    item: c '`if (result)` guard after load'
+    lang: c
+    outcome: printer (c print guards a value bound outside error handling)
+    where: Syntax_c print/UNCHECKED
+  - [15]
+    item: zig StreamResult under throw:false; .err is the branded error
+    lang: zig
+    outcome: note
+    where: notes['member:streamList']
+  - [16]
+    item: zig field types
+    lang: zig
+    outcome: printer (type table)
+    where: Syntax_zig zigType
+  - [17]
+    item: zig create '.ok carries the created entity'
+    lang: zig
+    outcome: enumerated fact (union style) via runtimeprose
+    where: createComment
+  - [18]
+    item: zig 'switch on .ok'
+    lang: zig
+    outcome: dropped: the union sentence states .ok and .err; the code shows the switch
+    where: listSentence union
+  - [19]
+    item: ts root class names
+    lang: ts
+    outcome: enumerated fact token listOf
+    where: listComment/loadComment
+  - [20]
+    item: go '(value, error)' for every operation, writes included
+    lang: go
+    outcome: enumerated fact (pair, shared with lua) in the create comment 'the value is the created entity' and the list/load items
+    where: runtimeprose carries/listSentence
+  - [21]
+    item: py create '(call data_get() for the record)'
+    lang: py
+    outcome: shared sentence in createComment ('; data_get() reads its record')
+    where: runtimeprose.createComment
+  - [22]
+    item: clojure bound variable in the accessor
+    lang: clojure
+    outcome: printer token {var}
+    where: Syntax_clojure facts.record
+  - [23]
+    item: elixir arity naming list/2, load/2
+    lang: elixir
+    outcome: dropped: RuntimeFacts.named is 'bare'; adding an arity form is a new enumerated value with no second runtime
+    where: -
+  - [24]
+    item: elixir getelem/2 and Helpers.deep/1 sentences
+    lang: elixir
+    outcome: dropped (the code shows both); a note slot exists if wanted
+    where: -
+  - [25]
+    item: elixir get_utility returns the live node
+    lang: elixir
+    outcome: note
+    where: notes['member:utilityBase']
+unported_identical: |
+  Ran:
+  
+  ```
+  cd P/v3/harness/out && for v in $(ls new); do for l in <12>; do cmp new/$v/$l/{README,REFERENCE}.md against old and new-probe-ref; done; done
+  ```
+  
+  - Against stage-2 NEW (new-probe-ref): 0 of 456 files differ, so my changes touched no unported output.
+  - Against OLD: every README.md and root subsection is identical (diff2.js: 0). 228 REFERENCE.md files differ, all by the same 4 lines from ReadmeRefFeatures.ts, an already-shared component stage 2 changed:
+    - 'Each feature is inactive until switched on, except `log`, which / runs unless disabled.'
+    - The escaped '\\`feature\\`' fix.
+    - '- Active by default: set `active: false` to switch it off.'
+    - Each counted 228 times, by `diff | sort | uniq -c`.
+  - I changed no already-shared component that unported languages render.
+prose: |
+  Ran:
+  
+  ```
+  LANGS=ts,go,py,c,zig,rust,elixir node proseref.js new --nofeat
+  ```
+  
+  This covers REFERENCE prose without the feature reference, over 19 variations. Two figures per language:
+  - **Shared by all seven:** the share of sentences common to all seven ported languages (the script's 'all-four' column).
+  - **Standalone words:** sentences no other ported language prints.
+  
+  | Language | Shared by all seven | Standalone words | Declared-fact words |
+  | --- | --- | --- | --- |
+  | ts | 74.3% | 27.1% | 0.4% |
+  | go | 73.7% | 31.3% | 0.1% |
+  | py | 78.7% | 14.4% | 0.1% |
+  | c | 77.6% | 15.5% | 1.0% |
+  | zig | 77.0% | 17.7% | 0.5% |
+  | rust | 76.7% | 14.3% | 0.1% |
+  | elixir | 78.1% | 15.1% | 0.6% |
+  
+  'Standalone' here includes sentences only one ported language prints but an unported one shares (ts cancel and stream with js, go pair with lua).
+  
+  Language-supplied prose = declared-fact words plus notes (node my/notewords.js, prose outside code blocks, features excluded):
+  
+  | Language | REFERENCE notes | Facts + notes | Tutorial |
+  | --- | --- | --- | --- |
+  | go | 5,508 of 26,917 words (20.5%) | 20.6% | 0% |
+  | zig | 12.2% | 12.7% | 0% |
+  | rust | 2.4% | 2.5% | 0% |
+  | elixir | 1.0% | 1.6% | 0% |
+  | c | 0% | 1.0% | 0% |
+  | ts | 0% | 0.4% | 0% |
+  | py | 0% | 0.1% | 0% |
+  
+  Go crosses the 15% line because the stream note repeats per entity.
+  
+  Purity (`node purity.js <clone>/ts`): 0 model reads in all 8 providers. The only imports are canonToType and canonKey. 0 pluralisation and 0 `Name +` concatenation in the hooks (grep).
+source_lines: |
+  wc -l, now against c66142da; the bracketed figure is non-blank, non-comment lines now.
+  
+  Shared files:
+  
+  | File | Now | At c66142da | Code lines now |
+  | --- | --- | --- | --- |
+  | example.ts | 537 | 432 | 372 |
+  | runtimeprose.ts | 219 | 164 | 169 |
+  | sdkdesc.ts | 503 | 460 | 403 |
+  | ReadmeRef.ts | about 395 | 340 | 303 at 9d2e1994 |
+  | ReadmeQuick.ts | 254 | 212 | 192 |
+  | ReadmeTop.ts | 756 | 756 | 562 |
+  | markdown.ts | 31 | 31 | 20 |
+  
+  The shared total grew by about 270 lines.
+  
+  Providers, Syntax plus Naming:
+  
+  | Language | Now | At c66142da |
+  | --- | --- | --- |
+  | ts | 140+22 | 138+24 |
+  | go | 191+24 | 175+23 |
+  | py | 149+24 | 135+26 |
+  | c | 230+28 | 201+27 |
+  | zig | 196+22 | 173+21 |
+  | clojure | 106+27 | 109+27 |
+  | rust | 176+24 | 162+26 |
+  | elixir | 183+34 | 181+34 |
+  
+  That is +100 across the eight.
+  
+  Projection (arithmetic, not a measurement): stage 2's both-sections figure was 14,896 to 5,437 (2.74x). Adding about +270 shared and about +13 per provider for 20 languages gives about 5,970, or about 2.5x. At the stage-2 '1.5 times provider size' assumption it is about 1.9x, under H2's 2x.
+lanes: |
+  Ran at the final HEAD (de8a3c41 source plus db5e5915 build), with node24 and real pytest:
+  
+  | Lane | Result | What it does |
+  | --- | --- | --- |
+  | ts README | 16/16 | type-checks and runs every block, REFERENCE included |
+  | go README | 12/12 | compiled and run |
+  | py README | 12/12 | real pytest, runs blocks |
+  | c DOC | 6/6 | compiled |
+  | rust DOC | 6/6 | compiled |
+  
+  The earlier run, at 9d2e1994, had ts 11/16 and py 9/12 failing. All failures were the custom-action example block: ts TS2739, '{ $action: string }' missing id and title; py 'Operation create action terraform is not valid'. That led to moving the call into the table.
+  
+  Suite without toolchain lanes, at 9d2e1994: 2,538 tests, 2,532 pass, 0 fail, 6 not run as passes (the remainder; I did not inspect them). In the run before it, generate.test failed one check: my first widening of the load-wording regex rejected the c, go, rust and zig sentences because it could not cross code spans. The regex was replaced in de8a3c41 and generate.test re-run there: 205/205. The replacement has only been checked against three sample sentences by hand. The guard checks I re-ran at de8a3c41 were characterize.test and runtimefacts.test: 18/18. The whole suite was not re-run at db5e5915.
+measurements:
+  - [0]
+    name: stage-2 reproduction before changes
+    value: 0 UNEXPLAINED; stage-2 NEW regenerated byte-identical
+    command: cd P/v3/harness && node gen.js new $(cd ../sdkgen/ts; pwd) && diff -r out/new out/new-probe-ref && node diff2.js
+  - [1]
+    name: blocks, ported languages, 9 variations
+    value: 734 identical, 179 identical after corrections, 382 after unifications, 69 otherwise, 8 removed
+    command: cd P/v3/harness && node blocks3.js
+  - [2]
+    name: unported vs stage-2 NEW
+    value: 0 of 456 files differ
+    command: cmp loop over out/new vs out/new-probe-ref for js php rb lua csharp java kotlin scala swift cpp perl ocaml
+  - [3]
+    name: unported vs OLD
+    value: README 0 differ; REFERENCE 228 differ, by 4 ReadmeRefFeatures lines each
+    command: diff old/new REFERENCE.md | grep '^[<>]' | sort | uniq -c
+  - [4]
+    name: note words / REFERENCE prose (features excluded), 19 variations
+    value: go 20.5%, zig 12.2%, rust 2.4%, elixir 1.0%, others 0
+    command: node P/v3/my/notewords.js
+  - [5]
+    name: REFERENCE prose shared by all 7 ported (features excluded)
+    value: 73.7% (go) to 78.7% (py) of sentences
+    command: LANGS=ts,go,py,c,zig,rust,elixir node proseref.js new --nofeat
+  - [6]
+    name: provider purity
+    value: 0 model reads; imports canonToType/canonKey only
+    command: node purity.js <clone>/ts
+  - [7]
+    name: suite
+    value: 2,538 tests, 2,532 pass, 0 fail (at 9d2e1994)
+    command: P/v3/my/suite.sh
+  - [8]
+    name: lanes at final HEAD
+    value: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6
+    command: node --test --test-name-pattern '<lane>' dist-test/generatedcompile.test.js
+  - [9]
+    name: build time (incremental)
+    value: about 2.3 s, one run, not min of 3
+    command: time npm run build
+gaps:
+  - Guard not rebuilt (out of scope). runtimefacts.test was only extended: utilityBase maps to utility. The new kinds (dataArg, stream, die and wrapped) are not checked against the runtimes.
+  - Clojure REFERENCE not ported. RefFacts.heading and entityNoun exist for it but are untested on a real page.
+  - Not ported, because each contradicts a ported section: the README options table (region Required; secret under query Basic, A7 and ref-9), the README Features section (log, ref-7) and the README how-to (test constructor and secret).
+  - The full suite was not re-run after de8a3c41. That change also replaced the generate.test load-wording regex; generate.test (205), characterize, runtimefacts and the five lanes were re-run.
+  - Part 1l: shapes were checked in OLD output and runtime fragments, but 'streamLazy is shared' was not verified for scala or clojure, and no utility-copy claim was checked semantically.
+  - Part 6: no sentence ledger. The ledger tool belongs to the other engineer. Prose was measured with proseref.js and my notewords.js only.
+  - The 69 'otherwise' blocks are explained by kind, from reading the diffs in my/detail.txt. Each was not individually annotated in data. Zig, clojure and elixir blocks remain unverifiable (no toolchain).
+  - Timings were not taken three times (build only, once).
+  - js's 'Direct API Access' decision (1k) is recorded but js is unported, so nothing was printed or removed.
+  - h: ocaml's make0 and test_with and cpp's no-argument overload can now be declared (ctorAlts, test.alts, args:false), but no ported language uses ctorAlts yet, so those sentences are unexercised.
+surprises:
+  - Every REFERENCE operation block across the twenty OLD pages bound `result` or `results`. The 'bad plural' was a stage-2 invention (vars: v + 's'). The tutorial plural now comes from apidef's own pluralize, which also fixes OLD's `console_s`.
+  - Two runtimes share 'an unused binding fails the build' (go, zig). That one fact lets shared code decide when an example prints its result. It reproduces OLD go blocks byte for byte (149 identical).
+  - The OLD reference pages say csharp, java, kotlin and scala 'raise'. Their runtimes `throw` (EntityBase fragments). Settled as throw: a correction those ports will carry.
+  - A note on an entity member repeats per entity. Moving go's channel paragraph out of shared code made it countable, and it is 20% of go's page: over H1's line. The principle relocates the prose; it does not remove it.
+  - NoteSlot 'constructor' collided with Object.prototype.constructor in TypeScript's Record check. Renamed to 'ctor' and reads guarded with hasOwnProperty.
+  - A custom-action example cannot be a block in any language with a toolchain lane: the ts payload type rejects it, and py's test mode rejects the action. OLD ts got away with it only because its block differed. The call now lives in an inline table cell, which no lane executes.
+  - Clojure fused its list call into doseq only inside an attempt. Outside one, a provider sees one statement at a time and cannot fuse, so the root quick start lost the idiom (6 blocks). The interface cannot express look-ahead without hidden state.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: partly
+    evidence: Providers read the model 0 times (purity.js); names come from shared choices adapted by hooks. Crossed: (a) breaking interface changes since the first four languages are about 11 against about 10 (5 mine, all elective); (b) go's runtime notes are 20.5% of its REFERENCE prose, over 15% (notewords.js), because member notes print per entity. Shared sentences that one runtime alone prints remain for errslot (c), die (perl) and wrapped (swift), because part 1b required styles in runtimeprose.
+  - [1]
+    id: H2
+    verdict: partly
+    evidence: Shared code grew about 270 lines and providers about 13 each. Projection only: about 2.5x for both sections at measured provider sizes, about 1.9x at 1.5 times provider size. The 2x line holds only if the remaining twelve providers stay near the measured size.
+  - [2]
+    id: H3
+    verdict: supported
+    evidence: Of the stage-2 defects, all fixed in shared code except A6 (a c printer line) and the zig type table (provider). Not fixed: 3 README contradictions, by rule (unported sections). Zig and clojure fixes are unverified.
+  - [3]
+    id: H4
+    verdict: supported
+    evidence: ts 16/16, go 12/12, py 12/12 (real pytest), c 6/6 and rust 6/6 at the final HEAD. The one intrinsic failure found (an action block that cannot type-check or run) was resolved by not emitting it as a block.
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: The lifecycle change was not touched. The golden manifest was regenerated (SDKGEN_GOLDEN_UPDATE=1) and characterize passes. No upgrade walk was rerun.
+reproduce: |
+  Everything below runs from P = /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2.
+  
+  ```
+  export PATH=/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH
+  cd P/v3/sdkgen/ts && npm run build
+  cd ../../harness && node gen.js new "$(cd ../sdkgen/ts; pwd)"
+  node blocks3.js [--detail all]
+  node diff2.js
+  LANGS=ts,go,py,c,zig,rust,elixir node proseref.js new --nofeat
+  node ../my/notewords.js
+  node purity.js "$(cd ../sdkgen/ts; pwd)"
+  ```
+  
+  The suite and the lanes run with P/v3/my/suite.sh and P/v3/my/lanes.sh. Golden: SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js.
+handoff: |
+  For the next engineer (guard rebuild, clojure REFERENCE port, interface freeze), starting from HEAD db5e5915.
+  
+  Guard:
+  - runtimefacts.test knows the v3 kinds only through kindOf (stream* -> stream, utility* -> utility).
+  - It needs form tables for dataArg/matchArg (c, zig, rust), the 'die' style (perl `sub load`), 'wrapped' (swift `throws -> Value`) and lua's pair.
+  - It also needs a check that a note slot names a member the provider declares.
+  
+  Clojure REFERENCE:
+  - Set refFacts with entityBy 'Name', noun and entityNoun 'Members' or 'Functions', heading '{module}', and read `(vs/getprop result "ok")`.
+  - Use imports(desc, used): its requires are already there.
+  - Its ref printers need `ref.instance` and `ref.read`.
+  
+  Before freezing, decide:
+  - (1) Whether member notes print once per page instead of per entity. This decides go's 20.5%.
+  - (2) Whether to re-add deprecated aliases (classes, utilityShared, streamChannel, prepare 'errorunion', optional read) to bring the breaking count under the line.
+  - (3) Whether errslot, die and wrapped stay as styles or become notes.
+  - (4) Whether clojure's doseq fusion needs a look-ahead slot.
+  
+  Harness:
+  - corrections.js normalizers take (block, side, lang, other) and are ordered.
+  - blocks3.js recognises OLD test headings 'Test Constructor', 'Static Functions' and 'Static constructors'.
+  - My scripts are in P/v3/my.

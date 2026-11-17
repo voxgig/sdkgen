@@ -1,0 +1,14 @@
+[lanes frz] ts start 12:20:48
+[lanes frz] ts done in 40s: ℹ tests 16 ℹ pass 16 ℹ fail 0 ℹ skipped 0 
+[lanes frz] go start 12:21:28
+[lanes frz] go done in 55s: ℹ tests 12 ℹ pass 12 ℹ fail 0 ℹ skipped 0 
+[lanes frz] py start 12:22:23
+[lanes frz] py done in 20s: ℹ tests 12 ℹ pass 12 ℹ fail 0 ℹ skipped 0 
+[lanes frz] c start 12:22:43
+[lanes frz] c done in 36s: ℹ tests 6 ℹ pass 6 ℹ fail 0 ℹ skipped 0 
+[lanes frz] rust start 12:23:19
+[lanes frz] rust done in 28s: ℹ tests 6 ℹ pass 6 ℹ fail 0 ℹ skipped 0 
+[lanes frz] rb start 12:23:47
+[lanes frz] rb done in 64s: ℹ tests 49 ℹ pass 49 ℹ fail 0 ℹ skipped 0 
+[lanes frz] zigdoc start 12:24:51
+[lanes frz] zigdoc done in 9s: ℹ tests 6 ℹ pass 6 ℹ fail 0 ℹ skipped 0 

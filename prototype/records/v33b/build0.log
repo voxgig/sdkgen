@@ -1,0 +1,25 @@
+
+> @voxgig/sdkgen@4.44.0 build
+> tsc --build src test && npm run prune-dist-test && npm run check-scaffold && npm run check-fixture && npm run stage-scaffold
+
+
+> @voxgig/sdkgen@4.44.0 prune-dist-test
+> node build/prune-dist-test.js
+
+
+> @voxgig/sdkgen@4.44.0 check-scaffold
+> tsc -p tsconfig.scaffold.json
+
+
+> @voxgig/sdkgen@4.44.0 check-fixture
+> tsc -p tsconfig.fixture.json
+
+
+> @voxgig/sdkgen@4.44.0 stage-scaffold
+> node build/scaffold-stage.js && tsc -p tsconfig.scaffold-emit.json
+
+staged scaffold -> dist-test-scaffold
+
+real	0m6.103s
+user	0m7.904s
+sys	0m2.056s

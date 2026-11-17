@@ -1,0 +1,254 @@
+{
+ "summary": "I reproduced the architect's main numbers independently, and most of their claims hold. My copy is /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-claims/: I rebuilt both clones there, regenerated OLD from the pristine oldclone and NEW from the clone, and compared them with my own script (mycmp.js). My counts match theirs exactly once headings are counted as prose. The 16 unported languages are byte-identical in all 272 READMEs, and nothing outside the quick start changed. My own scan (mymodelreads.js) finds 0 model reads in the four providers. A structural check of every quick start (checks.js) finds no defects in NEW across all 19 variations: no step-number gaps, no lead-in promising an operation that is not called, no wrong write heading, no getenv without stdlib.h, no defaulted variable shown as required. OLD has 30, 47, 12, 15 and 45 of those respectively. The full suite passes: 2514 tests, 2509 pass, 5 skipped, 0 fail. The lanes: ts 16/16, go 12/12, c 5/6, where the one failure is the root README, which was not ported and fails on OLD too.\n\nFive things are wrong or missing in their report:\n(1) **py was runnable.** pytest 9.1.1 is installed as a uv tool at /root/.local/share/uv/tools/pytest/bin. With that on PATH, the real generatedcompile py README lanes ran: 12/12 pass on NEW and 12/12 on OLD. Their \"not runnable, used a stand-in\" was an environment check that failed, not a fact about the machine.\n(2) **go regressed for readers and for verification.** The OLD go quick start was one complete program (package main, func main, grouped imports including fmt). The go README harness compiled it AND ran a test-mode variant against the seeded mock. NEW go is fragments with no package, no main and no fmt import, so a user cannot copy and run it. The harness now only type-checks the fragments (wrapFragment) and executes none. The per-target go README has 0 `func main` blocks against 1 before. The architect tagged this as \"structure\" rather than as a cost. It is also the one idiom the provider interface could not express; it was dropped rather than modelled.\n(3) **The \"100% shared prose\" comes partly from deleting language-specific facts.** Examples: c's \"returns the created entity, or NULL with *err set\" and \"check `err` after the call\"; go's paragraph on `(value, error)` and \"there is no {ok, data} wrapper\"; py's \"returns the ENTITY \u2014 call data_get()\".\n(4) **Upgrading projects keep the old text.** Commit f9d408a5 makes a leftover ReadmeQuick_<lang> win over the provider. I re-ran their h5.js: doctor reports the leftover as additive with ok: true, and target add never prunes src/cmp. So an upgraded project silently keeps the OLD, defective quick start. The code comment in ReadmeQuick.ts says \"until doctor's stale finding has it removed\", but no such finding exists.\n(5) **The ts README now contradicts itself.** Only one section was ported. In B the quick start says `region` defaults to `eu` while the options table says **Required** `tenant`, `region`. In auth-basic-query the quick start drops `secret` while four later ts sections still print it.\n\nSmaller points:\n- Syntax_c copies C_RESERVED, cVarName and cIdent (the last inline three times) instead of importing them, because the model-read metric counts imports from utility_c. That duplicates naming rules and goes against the repository's one-rule-one-place convention.\n- The variation op-absent-readonly exercises nothing in the quick start: the example entity stays `ambient`, so its output is identical to B.\n- In the c examples `err` is never reset, so after one failure every later step reports a failure. OLD did the same.\n\nVerdicts:\n- **H1: supported for 4 languages, with a caveat.** 0 model reads; per-language prose is 4 runtime words; no interface change after the first commit (git confirms example.ts and sdkdesc.ts are unchanged since f21e6fe1). The 3 changes made before the commit are unverifiable. The caveat is that go's idiom was dropped, not expressed.\n- **H2: refuted for the quick start.** 945 to 1069 lines across the four languages. Their 20-language projection is 1.66x, and it is optimistic: with c-sized providers (142 lines) it is 1.36x, and even with no shared code at all it only reaches 2.19x. Reaching 2x depends on reuse by the REFERENCE page or the root README quick start (ReadmeTopQuick, 2000 lines), which is not measured.\n- **H3: supported for the 4 ported languages.** The quick-start parts of S28, U45, S49, S50, G01, M13, M14 and M12 are fixed by the shared code, and so is the go part of X6, which the architect did not list. Two fixes are per-language provider facts: M14 and c-getenv. D23, D25 and D55 are fixed only in part. The lean items M19 and U10 are not addressed.\n- **H4: no failure intrinsic to the approach.** But the go quick start is no longer executed by any test.\n- **H5: partly supported, as they say.** As built, the upgrade path does not deliver the fixes.",
+ "claims": [
+  {
+   "claim": "Across 19 variations, ts prose identical 47 / changed 81 / added 48; code blocks identical 18 / changed 25 (and go 19/146/29/6, 0/47; py 53/69/54/0, 24/19; c 83/60/33/0, 22/21)",
+   "verdict": "imprecise",
+   "what_i_ran": "node probe-claims/mycmp.js (my own LCS line comparison of the quick-start section, OLD from oldclone vs NEW from my clone copy), all 19 variations, with headings counted separately",
+   "what_is_true": "Reproduced exactly once headings count as prose: ts headings 46 identical plus 1 prose line = 47; blocks 18 of 43. go 19 identical, all of them headings. py 46+7=53. c 46+37=83. But almost all the 'identical prose' is headings: actual sentence lines identical were ts 1 of 68, go 0 of 133, py 7 of 62, c 37 of 83. On the 8 variations the task names (B, auth-basic, auth-query, auth-off, server-none, op-absent-readonly, ent-only-ambient, ent-none): ts prose 0/23 identical (45 new), headings 16/23, blocks 8/15; go prose 0/56 (45 new), headings 8/16, blocks 0/8 old vs 15 new; py prose 0/23, headings 16/23, blocks 8/15; c prose 14/30 (45 new), headings 16/23, blocks 7/15."
+  },
+  {
+   "claim": "The 16 unported languages are byte-identical to the old output in every variation (0 of 272 whole READMEs differ)",
+   "verdict": "confirmed",
+   "what_i_ran": "node mycmp.js (compares whole README.md for js php rb lua csharp java kotlin scala swift rust cpp zig perl clojure elixir ocaml, OLD vs NEW, every variation)",
+   "what_is_true": "unported files 272, differ 0. For the four ported languages, the README outside the quick start is unchanged in every variation (0 outside-section changes)."
+  },
+  {
+   "claim": "The providers read the model 0 times",
+   "verdict": "confirmed",
+   "what_i_ran": "node probe-claims/mymodelreads.js (own scan for model, ctx$, getModelPath/nom/KIT, @voxgig/apidef or struct, utility_ imports, model members, model helpers; lists every desc.* and conditional line)",
+   "what_is_true": "0 hits in all four. Description fields read: ts Name and package; go package and Name; py Name only (it derives the import module as Name.toLowerCase()+'_sdk' itself rather than taking it from the description); c Name and name. Every conditional is syntax-level. But Syntax_c copies C_RESERVED and cVarName from utility_c, and cIdent inline three times, rather than importing them: the scan counts a utility_c import as a model read, so the rules were duplicated to stay at 0."
+  },
+  {
+   "claim": "100% of quick-start prose sentences are the same text across ts/go/py/c once the 4 runtime words are masked; no idiom notes were needed",
+   "verdict": "imprecise",
+   "what_i_ran": "read src/cmp/ReadmeQuick.ts and the four Syntax files; read OLD vs NEW quick starts for B, doc-crud and doc-nested",
+   "what_is_true": "True by construction: every sentence is in ReadmeQuick.ts. But it was reached partly by deleting language-specific facts the old text carried: c 'returns the created entity, or NULL with *err set' and '\u2014 check `err` after the call'; go's paragraph '(value, error) ... there is no {ok, data} wrapper'; py 'returns the ENTITY'. go's idiom of one complete program could not be expressed through the interface and was dropped."
+  },
+  {
+   "claim": "All 11 catalogued quick-start issues are fixed for all four languages by the shared code",
+   "verdict": "imprecise",
+   "what_i_ran": "node probe-claims/checks.js over all 19 variations OLD and NEW; read the S28, U45, S49, S50, G01, M13, M14, D23, D55, M12, D25, X6, M19 and U10 entries in /home/user/sdkgen/docs/design/model-dependent-text-issues.md and the exposing variations",
+   "what_is_true": "NEW has 0 non-consecutive step numbers (OLD 30), 0 lead-ins promising list with no list call (OLD 47), 0 wrong write headings (OLD 12), 0 defaulted region printed as required (OLD 45), 0 getenv without stdlib.h (OLD 15). S28 is fixed on ent-only-ambient and U45 on crud-noupdate ('### 4. Create and remove' in all four). S49, S50, G01, M13, M14 and M12 are fixed on the variations that expose them. M14 and c-getenv are provider fixes, not shared ones. D23, D25 and D55 are fixed only in part, as they say. X6 (go prose about list when there is none) is also fixed and was not listed. The lean items M19 and U10 are not touched. Side effect: the ts README now contradicts itself. In B the quick start says region defaults to eu while the ts options table (line 224) still says Required: tenant, region. In auth-basic-query the quick start omits secret while lines 143, 180, 216 and 230 of the same README still show it."
+  },
+  {
+   "claim": "ts README lanes 16/16 pass",
+   "verdict": "confirmed",
+   "what_i_ran": "cd probe-claims/sdkgen/ts && node --test --test-name-pattern 'typescript: the README example tests type-check and run' dist-test/generatedcompile.test.js",
+   "what_is_true": "16/16 pass on NEW, including the added Basic + templated-server lane. OLD (oldclone): 16/16 pass."
+  },
+  {
+   "claim": "go README lanes 12/12 pass",
+   "verdict": "imprecise",
+   "what_i_ran": "node --test --test-name-pattern '^(go|py): (every README example|the README examples run)' dist-test/generatedcompile.test.js; read ReadmeExamplesTest_go.ts",
+   "what_is_true": "12/12 pass on NEW and 12/12 on OLD. But the check is now weaker. The OLD go quick start was a func main program, which the harness compiled and then ran as a test-mode variant (runProgs). NEW go quick-start blocks are fragments, which wrapFragment only compiles, with unused variables blanked by applyFixes. No NEW go quick-start code is executed. The per-target go README has 0 func main blocks against 1 before."
+  },
+  {
+   "claim": "py could not be run with real pytest (pytest absent); a stand-in ran the README example test: 9 passed, 1 skipped on 4 models",
+   "verdict": "wrong",
+   "what_i_ran": "command -v pytest -> /root/.local/bin/pytest (a uv tool, pytest 9.1.1); PATH=/root/.local/share/uv/tools/pytest/bin:$PATH node --test --test-name-pattern '^(go|py): ...' dist-test/generatedcompile.test.js",
+   "what_is_true": "pytest is installed as a uv tool, just not importable from the system python3. With its venv first on PATH, the real py README lanes ran: 12/12 pass on NEW (including 'the README examples run with Basic auth and a templated server') and 12/12 on OLD. Each lane asserts /[1-9]\\d* passed/, so these were real runs, not skips. The mypy part was not checked."
+  },
+  {
+   "claim": "c DOC lane 5/6 on NEW; the basic-server failure is only the root README (ReadmeTopQuick_c, not ported); OLD fails in both the root README and c/README.md",
+   "verdict": "confirmed",
+   "what_i_ran": "node --test --test-name-pattern '^c: every documented example compiles' dist-test/generatedcompile.test.js in my NEW and OLD copies",
+   "what_is_true": "NEW: 5/6; the failure is ../README.md:53, implicit declaration of getenv. OLD: 5/6, failing at both ../README.md:53 and README.md:50."
+  },
+  {
+   "claim": "Source grows: before 945 / 717, after 1069 / 826 (0.88x); 20-language projection 4537 to 2729 (1.66x)",
+   "verdict": "confirmed",
+   "what_i_ran": "bash probe-claims/loc.sh (wc -l and non-blank non-comment counts for both trees, and all 20 ReadmeQuick_<lang>)",
+   "what_is_true": "Counts identical: 945/717 before, 1069/826 after; all 20 ReadmeQuick_<lang> = 4503/3458, plus 34 shared = 4537. The projection assumes the 16 unported providers average 103.75 lines (the mean of ts 89, go 103, py 81, c 142) and that the shared 654 lines do not grow. c is the only measured port in the closed-Value-union family (rust, zig, cpp and ocaml are likely closer to it). At c's 142 lines for the other 16: 4537/(654+415+2272) = 1.36x. Even with no shared code at all: 4537/2075 = 2.19x. ReadmeTopQuick_<lang> (20 files, 2000 lines) is another candidate for reuse and is not counted."
+  },
+  {
+   "claim": "Full suite without toolchain lanes: 2514 tests, 2508 pass, 5 skipped, 1 golden fail, fixed by npm run golden",
+   "verdict": "confirmed",
+   "what_i_ran": "cd probe-claims/sdkgen/ts && node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)",
+   "what_is_true": "At HEAD (golden already updated): 2514 tests, 2509 pass, 0 fail, 5 skipped. npm run build in my copy left the committed dist unchanged."
+  },
+  {
+   "claim": "H5: doctor reports a leftover ReadmeQuick_<lang> as additive with ok:true; target add never prunes src/cmp; an alias gets Syntax_go2.ts",
+   "verdict": "confirmed",
+   "what_i_ran": "node probe-claims/harness/h5.js; read ReadmeQuick.ts (f9d408a5)",
+   "what_is_true": "Reproduced: ok true, additive ['src/cmp/go/ReadmeQuick_go.ts'], stale []. Combined with f9d408a5, where the target's own ReadmeQuick wins, an upgraded project keeps generating the OLD defective quick start, and doctor reports it as fine. The ReadmeQuick.ts comment says the leftover stays only 'until doctor's stale finding has it removed', but no such finding exists."
+  },
+  {
+   "claim": "Provider interface: 3 changes after the first provider, all before the first commit, none after c",
+   "verdict": "could-not-check",
+   "what_i_ran": "git diff f21e6fe1 HEAD -- ts/src/helpers/example.ts ts/src/helpers/sdkdesc.ts; git show --stat for the later commits",
+   "what_is_true": "No interface change in git after f21e6fe1. Later commits touch only the providers, ReadmeQuick.ts, tests and docs. The 3 changes said to come before the commit are not in history, so I cannot check them."
+  }
+ ],
+ "own_measurements": [
+  {
+   "name": "Quick-start comparison, 8 named variations (B auth-basic auth-query auth-off server-none op-absent-readonly ent-only-ambient ent-none), sums",
+   "value": "ts: prose lines old 23 / new 45 / identical 0; headings 23/23/16; blocks 15/15/8. go: prose 56/45/0; headings 16/23/8; blocks 8/15/0. py: prose 23/45/0; headings 23/23/16; blocks 15/15/8. c: prose 30/45/14; headings 23/23/16; blocks 15/15/7",
+   "command": "node probe-claims/mycmp.js B auth-basic auth-query auth-off server-none op-absent-readonly ent-only-ambient ent-none"
+  },
+  {
+   "name": "Unported languages differing from OLD (whole README)",
+   "value": "0 of 272 (16 languages x 17 variations); ported README outside the quick start changed: 0",
+   "command": "node probe-claims/mycmp.js"
+  },
+  {
+   "name": "Structural defects in quick starts, all 19 variations, OLD vs NEW",
+   "value": "OLD: non-consecutive steps 30, lead-in promises listing with no list call 47, lead-in promises loading with no load 8, write heading/op mismatch 12, defaulted region printed as required 45, c getenv without stdlib.h 15. NEW: 0 in every category",
+   "command": "node probe-claims/checks.js"
+  },
+  {
+   "name": "Model reads in providers (own scan)",
+   "value": "ts 0, go 0, py 0, c 0; C_RESERVED, cVarName and cIdent copied into Syntax_c rather than imported",
+   "command": "node probe-claims/mymodelreads.js"
+  },
+  {
+   "name": "ts README lanes",
+   "value": "NEW 16/16 pass; OLD 16/16 pass",
+   "command": "node --test --test-name-pattern 'typescript: the README example tests type-check and run' dist-test/generatedcompile.test.js (log: probe-claims/lanes-new.log, lanes-old.log)"
+  },
+  {
+   "name": "go README lanes",
+   "value": "NEW 12/12 pass (fragments compiled only, none executed); OLD 12/12 pass (the quick-start program compiled and run)",
+   "command": "node --test --test-name-pattern '^(go|py): (every README example|the README examples run)' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "py README lanes with real pytest 9.1.1",
+   "value": "NEW 12/12 pass, OLD 12/12 pass",
+   "command": "PATH=/opt/node24/bin:/root/.local/share/uv/tools/pytest/bin:$PATH node --test --test-name-pattern '^(go|py): ...' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "c DOC lane",
+   "value": "NEW 5/6 (basic-server fails only at ../README.md:53, getenv in the root README); OLD 5/6 (basic-server fails at ../README.md:53 and README.md:50)",
+   "command": "node --test --test-name-pattern '^c: every documented example compiles' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "Full suite without generatedcompile, NEW HEAD",
+   "value": "2514 tests, 2509 pass, 0 fail, 5 skipped (272.8 s, one run)",
+   "command": "node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)"
+  },
+  {
+   "name": "Source lines (total / non-blank non-comment)",
+   "value": "before 945/717; after 1069/826; all 20 ReadmeQuick_<lang> 4503/3458 (+34 shared = 4537); ReadmeTopQuick_<lang> 20 files 2000/1422",
+   "command": "bash probe-claims/loc.sh"
+  },
+  {
+   "name": "Alternative 20-language projection",
+   "value": "providers at the 4-language mean (103.75): 1.66x; providers at c's 142 for the other 16: 1.36x; shared code at zero: 2.19x upper bound",
+   "command": "arithmetic on loc.sh counts (read, not run)"
+  },
+  {
+   "name": "H5 probe",
+   "value": "fresh add ok; leftover ReadmeQuick_go.ts survives re-add; doctor ok:true, additive [src/cmp/go/ReadmeQuick_go.ts], stale []; alias go~go2 writes Syntax_go2.ts",
+   "command": "node probe-claims/harness/h5.js"
+  },
+  {
+   "name": "go complete programs in the per-target README (doc-crud)",
+   "value": "OLD 1 func main block, NEW 0",
+   "command": "grep -c 'func main' harness/out/{old,new}/doc-crud/go/README.md"
+  },
+  {
+   "name": "go quick-start blocks wrapped in a main program parse with gofmt",
+   "value": "B, doc-crud, doc-nested, crud-basic: parse; the only gofmt differences are tabs for spaces (OLD has the same); server and apikey lines at equal indentation (M14)",
+   "command": "probe-claims/gofmt/*.go via gofmt -e / gofmt -d"
+  }
+ ],
+ "output_defects": [
+  {
+   "lang": "go",
+   "variation": "all variations with entities (e.g. doc-crud, B)",
+   "defect": "The quick start is no longer a complete program. There is no package main, no func main, and no fmt import although every step calls fmt.Println; imports are separate single lines. A reader cannot copy and run it. OLD gave one runnable program, and the README harness executed it; NEW fragments are only type-checked.",
+   "evidence": "harness/out/new/doc-crud/go/README.md vs harness/out/old/doc-crud/go/README.md; ReadmeExamplesTest_go.ts runs only func main blocks (runProgs) and wraps the rest with wrapFragment"
+  },
+  {
+   "lang": "c",
+   "variation": "doc-crud, doc-nested, crud-noupdate",
+   "defect": "Language-specific facts were dropped to make the prose shared: the create comment lost 'or NULL with *err set', and the list prose lost 'check `err` after the call'. A failure also leaves err set for every later step, which OLD shares.",
+   "evidence": "OLD c doc-crud '// Create \u2014 returns the created entity, or NULL with *err set' vs NEW '// Create \u2014 returns the created entity'"
+  },
+  {
+   "lang": "go",
+   "variation": "all",
+   "defect": "The explanatory paragraph was lost: '(value, error) \u2014 the value is the entity ... there is no {ok, data} wrapper'. NEW keeps only 'reports failure in a non-nil `err`'.",
+   "evidence": "harness/out/old/B/go/README.md lines under '### Quickstart'"
+  },
+  {
+   "lang": "ts",
+   "variation": "B, server-mixed",
+   "defect": "The README contradicts itself. The new quick start says '`region` defaults to `eu`' and shows only tenant, while the unported options table in the same README still says '**Required.** ... `tenant`, `region`' (G01 is fixed in one place only).",
+   "evidence": "harness/out/new/B/ts/README.md lines 35 and 224"
+  },
+  {
+   "lang": "ts",
+   "variation": "auth-basic-query",
+   "defect": "The README contradicts itself. The quick start correctly omits secret (Basic in the query string), but lines 143, 180, 192, 216 and 230 of the same README still show secret / DEMO_SECRET.",
+   "evidence": "grep -n -i secret harness/out/new/auth-basic-query/ts/README.md"
+  },
+  {
+   "lang": "ts, go, py, c",
+   "variation": "upgrade of an existing project",
+   "defect": "A ReadmeQuick_<lang> left behind by an upgrade wins over the provider (f9d408a5), and doctor reports ok:true. Upgraded projects therefore keep the OLD, defective quick start with no warning. The comment in ReadmeQuick.ts says a doctor 'stale finding' will remove it, but none exists.",
+   "evidence": "node harness/h5.js: additive [src/cmp/go/ReadmeQuick_go.ts], stale []; ts/src/cmp/ReadmeQuick.ts lines 18-21"
+  },
+  {
+   "lang": "c",
+   "variation": "source",
+   "defect": "Naming rules are duplicated: Syntax_c copies C_RESERVED and cVarName from utility_c and inlines cIdent three times, so drift from utility_c is possible and the repository's one-rule-one-place convention is broken.",
+   "evidence": "ts/project/.sdk/src/cmp/c/Syntax_c.ts lines 5-20, 86, 89, 98 vs utility_c.ts cVarName and cIdent"
+  },
+  {
+   "lang": "all",
+   "variation": "op-absent-readonly",
+   "defect": "Not an output defect but a harness gap: the variation does not reach the quick start, because the example entity is ambient. Its output equals B, so it says nothing about a read-only example entity.",
+   "evidence": "diff of the quick starts in new/B and new/op-absent-readonly: identical"
+  }
+ ],
+ "toolchain": [
+  {
+   "lang": "ts",
+   "what_ran": "generatedcompile 'typescript: the README example tests type-check and run' (tsc type-check plus execution), NEW and OLD",
+   "result": "NEW 16/16 pass, including Basic + templated server; OLD 16/16"
+  },
+  {
+   "lang": "go",
+   "what_ran": "generatedcompile '^go: (every README example|the README examples run)' with go1.24.7, NEW and OLD; gofmt -e on the quick-start blocks wrapped in main",
+   "result": "NEW 12/12, OLD 12/12. The NEW quick start is compiled as fragments and not executed; OLD's quick-start program was executed. The wrapped blocks parse with gofmt."
+  },
+  {
+   "lang": "py",
+   "what_ran": "generatedcompile '^py: (every README example|the README examples run)' with real pytest 9.1.1 from /root/.local/share/uv/tools/pytest/bin, NEW and OLD",
+   "result": "NEW 12/12 pass, OLD 12/12 pass. mypy not run."
+  },
+  {
+   "lang": "c",
+   "what_ran": "generatedcompile '^c: every documented example compiles' with gcc 13.3, 6 models, NEW and OLD",
+   "result": "NEW 5/6 (basic-server fails only at the root README ../README.md:53, getenv, unported ReadmeTopQuick_c); OLD 5/6 failing at the root README and c/README.md:50"
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "supported",
+   "evidence": "For ts, go, py and c: 0 model reads (own scan); per-language prose is 4 runtime words per provider; no interface change in git after the first commit. Caveats: go's complete-program idiom could not be expressed (the interface has no section-level wrapper) and was dropped, not modelled. Some language-specific facts were deleted to reach 100% shared prose. Syntax_c duplicates naming rules to keep the model-read count at 0. The 3 changes said to come before the commit are unverifiable. Four languages cannot show the 20-language case, especially the closed-Value-union targets."
+  },
+  {
+   "id": "H2",
+   "verdict": "refuted",
+   "evidence": "Four languages: 945 to 1069 lines (0.88x, the source grew). The 20-language projection is 1.66x, below 2x even under its own assumption. With c-sized providers for the other 16 it is 1.36x, and even with no shared code at all it only reaches 2.19x. 2x for this section depends on sdkdesc, example.ts and the providers being reused by REFERENCE or ReadmeTopQuick (2000 lines), which is not measured."
+  },
+  {
+   "id": "H3",
+   "verdict": "supported",
+   "evidence": "For the 4 ported languages, checks.js finds 0 instances of the S28, U45, G01, M13 and c-getenv patterns across 19 variations (OLD: 30/47/12/45/15). S49, S50 and M12 are fixed on their variations, and so is X6's go part, which was not listed. Per-language edits were needed only for M14 (go provider) and c-getenv (c provider), 2 of about 12 items: at or just over the 10% line. D23, D25 and D55 are fixed only in part. The lean pack items M19 and U10 are untouched. Fixing only the quick start introduced in-document contradictions in ts (region, secret)."
+  },
+  {
+   "id": "H4",
+   "verdict": "supported",
+   "evidence": "No example failure intrinsic to the approach: ts 16/16, go 12/12, py 12/12 (real pytest) and c 5/6, where the one failure is the unported root README, which fails on OLD too. But the go quick start lost its runtime execution: it is now compiled only."
+  },
+  {
+   "id": "H5",
+   "verdict": "partly",
+   "evidence": "An alias gets Syntax_go2.ts and generates through the provider. But a leftover ReadmeQuick_<lang> is reported additive with ok:true, is never pruned by target add, and wins over the provider (f9d408a5), so upgraded projects keep the old text. A doctor or prune rule is needed and was not built. Pack targets were not generated by me."
+  }
+ ]
+}

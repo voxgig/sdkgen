@@ -1,0 +1,94 @@
+[selftest 0s] injections: 24 regressions, 7 false sentences
+  ok   ledger type-cell-zig: flagged: 2 new open class(es), unclassified 0 -> 2 (1/24, 3%)
+  ok   ledger type-cell-any-zig: flagged: 1 new open class(es), unclassified 0 -> 1 (2/24, 6%)
+  ok   ledger sentence-removed-go: flagged: 1 new open class(es), unclassified 0 -> 1 (3/24, 10%)
+  ok   ledger false-sentence-py: flagged: 3 new open class(es), unclassified 0 -> 3 (4/24, 13%)
+  ok   ledger false-sentence-added-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (5/24, 16%)
+  ok   ledger optional-required-py: flagged: 2 new open class(es), unclassified 0 -> 2 (6/24, 19%)
+  ok   ledger negation-go: flagged: 4 new open class(es), unclassified 0 -> 4 (7/24, 23%)
+  ok   ledger code-comment-ts: flagged: 3 new open class(es), unclassified 0 -> 3 (8/24, 26%)
+  ok   ledger var-renamed-c: flagged: 1 new open class(es), unclassified 0 -> 2 (9/24, 29%)
+  ok   ledger err-reset-removed-c: flagged: 0 new open class(es), unclassified 0 -> 1 (10/24, 32%)
+  ok   ledger restructure-py: flagged: 1 new open class(es), unclassified 0 -> 2 (11/24, 35%)
+  ok   ledger number-retries-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (12/24, 39%)
+  ok   ledger number-ms-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (13/24, 42%)
+  ok   ledger op-swap-root-ts: flagged: 1 new open class(es), unclassified 0 -> 2 (14/24, 45%)
+  ok   ledger entity-swap-root-ts: flagged: 2 new open class(es), unclassified 0 -> 2 (15/24, 48%)
+  ok   ledger field-swap-go: flagged: 2 new open class(es), unclassified 0 -> 2 (16/24, 52%)
+  ok   ledger id-literal-c: flagged: 1 new open class(es), unclassified 0 -> 2 (17/24, 55%)
+  ok   ledger global-zig: flagged: 2 new open class(es), unclassified 0 -> 2 (18/24, 58%)
+  ok   ledger row-removed-zig: flagged: 4 new open class(es), unclassified 0 -> 4 (19/24, 61%)
+  ok   ledger zig-switch-arm: flagged: 1 new open class(es), unclassified 0 -> 2 (20/24, 65%)
+  ok   ledger clj-block: flagged: 4 new open class(es), unclassified 0 -> 4 (21/24, 68%)
+  ok   ledger elixir-block: flagged: 1 new open class(es), unclassified 0 -> 2 (22/24, 71%)
+  ok   ledger sentence-dup-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (23/24, 74%)
+  ok   ledger region-required-ref-ts: flagged: 2 new open class(es), unclassified 0 -> 2 (24/24, 77%)
+  ok   accept region-required-ref-ts: 2 new class(es) left for a person; accepted automatically: none (25/31)
+  ok   accept ok-true-py: 4 new class(es) left for a person; accepted automatically: none (26/31)
+  ok   accept raises-returns-py: 3 new class(es) left for a person; accepted automatically: none (27/31)
+  ok   accept negation-go: 4 new class(es) left for a person; accepted automatically: none (28/31)
+  ok   accept type-cell-zig: 2 new class(es) left for a person; accepted automatically: none (29/31)
+  ok   accept ok-true-rb-new-language: 4 new class(es) left for a person; accepted automatically: none (30/31)
+  ok   accept raises-returns-rb-new-language: 3 new class(es) left for a person; accepted automatically: none (31/31)
+[selftest 84s] purity mutations and the real notes
+  ok   purity note-names-feature: FLAGGED rc=1 | Syntax: note names feature "retry": 1; Syntax: note names option "feature": 1
+  ok   purity note-names-option: FLAGGED rc=1 | Syntax: note names option "apikey": 1
+  ok   purity note-names-entity: FLAGGED rc=1 | Syntax: note names entity "Planet": 1; Syntax: note names entity "planet": 1; Syntax: note names entity "PLANET": 1
+  ok   purity note-names-op: FLAGGED rc=1 | Syntax: note names operation "load": 1
+  ok   purity note-model-claim: FLAGGED rc=1 | Syntax: note states a number: 1; Syntax: note names option "server": 1
+  ok   purity hook-concat: FLAGGED rc=1 | Naming: concatenation onto a generator name: 1
+  ok   purity hook-plural: FLAGGED rc=1 | Naming: pluralisation: 1
+  ok   purity hook-reserved: FLAGGED rc=1 | Naming: inline reserved-word test: 1
+  ok   purity printer-op-literal: FLAGGED rc=1 | Syntax: operation name outside the fact table: 1
+  ok   purity printer-desc-condition: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-model-read: FLAGGED rc=1 | Syntax: model read: 1
+  ok   purity printer-case-change: FLAGGED rc=1 | Syntax: case change on a name: 1
+  ok   purity fact-prose-names-feature: FLAGGED rc=1 | Syntax: fact prose names feature "cache": 1; Syntax: fact prose names option "feature": 1
+  ok   purity note-number-claim: FLAGGED rc=1 | Syntax: note states a number: 1
+  ok   purity printer-desc-alias: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-desc-bracket: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-desc-destructure: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-model-param-kit: FLAGGED rc=1 | Syntax: model read: 1
+  ok   purity hook-reserved-eq: FLAGGED rc=1 | Naming: inline reserved-word test: 1
+  ok   purity notes:clojure: 2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 6 accepted
+  ok   purity notes:elixir: 4 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 3 accepted
+  ok   purity notes:go: 1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:rust: 1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:zig: 2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+[selftest 92s] block tables
+  ok   blocks ts tutorial:  identical 19, corrected 16, unified 12, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks ts rootquick:  identical 0, corrected 13, unified 5, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks ts reference:  identical 195, corrected 0, unified 118, otherwise 0, oldOnly 17, newOnly 0
+  ok   blocks go tutorial:  identical 0, corrected 12, unified 1, otherwise 8, oldOnly 0, newOnly 0
+  ok   blocks go rootquick:  identical 0, corrected 14, unified 4, otherwise 4, oldOnly 0, newOnly 0
+  ok   blocks go reference:  identical 337, corrected 21, unified 18, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks py tutorial:  identical 26, corrected 22, unified 0, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks py rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks py reference:  identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks c tutorial:  identical 0, corrected 47, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks c rootquick:  identical 0, corrected 17, unified 0, otherwise 2, oldOnly 0, newOnly 0
+  ok   blocks c reference:  identical 151, corrected 100, unified 62, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks zig tutorial:  identical 24, corrected 17, unified 0, otherwise 7, oldOnly 0, newOnly 0
+  ok   blocks zig rootquick:  identical 0, corrected 2, unified 15, otherwise 2, oldOnly 0, newOnly 0
+  ok   blocks zig reference:  identical 151, corrected 0, unified 162, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks clojure tutorial:  identical 26, corrected 21, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks clojure rootquick:  identical 0, corrected 16, unified 0, otherwise 3, oldOnly 0, newOnly 0
+  ok   blocks clojure reference:  identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks rust tutorial:  identical 26, corrected 22, unified 0, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks rust rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks rust reference:  identical 187, corrected 0, unified 126, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks elixir tutorial:  identical 16, corrected 22, unified 10, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks elixir rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks elixir reference:  identical 151, corrected 0, unified 162, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks rb tutorial:  identical 3, corrected 21, unified 23, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks rb rootquick:  identical 0, corrected 2, unified 15, otherwise 2, oldOnly 0, newOnly 0
+  ok   blocks rb reference:  identical 303, corrected 0, unified 10, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks unexplained-block: otherwise 1 -> 2
+[selftest 93s] recall on the stage-2 worklists
+  ok   recall stage2-worklists: 49 of 51 flagged (floor 49)
+
+selftest: 84 controls, 0 failed (ledger 24/24, accept 7/7, purity 24/24, blocks 28/28, recall 1/1) in 98s; scratch /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-tools/tmp/selftest-i2M4U6
+
+real	1m38.069s
+user	1m59.237s
+sys	0m9.198s

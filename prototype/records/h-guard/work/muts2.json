@@ -1,0 +1,240 @@
+[
+ {
+  "id": "my-cite-quote-gone-ts",
+  "lang": "ts",
+  "kind": "a cited quote removed from the runtime (Control.ts)",
+  "edits": [
+   {
+    "file": "project/.sdk/tm/ts/src/Control.ts",
+    "from": "signal?: AbortSignal",
+    "to": "signal?: any"
+   }
+  ]
+ },
+ {
+  "id": "my-cite-quote-gone-go",
+  "lang": "go",
+  "kind": "utility made the live node: the cited copy line goes",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/fragment/Main.fragment.go",
+    "from": "return CopyUtility(sdk.utility)",
+    "to": "return sdk.utility"
+   }
+  ]
+ },
+ {
+  "id": "my-cite-token-ts",
+  "lang": "ts",
+  "kind": "cited code token changed: direct.signal AbortSignal -> AbortController",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+    "from": "signal: 'AbortSignal'",
+    "to": "signal: 'AbortController'"
+   }
+  ]
+ },
+ {
+  "id": "my-cite-token-rust",
+  "lang": "rust",
+  "kind": "cited code token changed: none Value::Noval -> Value::Null",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+    "from": "none: 'Value::Noval',",
+    "to": "none: 'Value::Null',"
+   }
+  ]
+ },
+ {
+  "id": "my-method-swap-go",
+  "lang": "go",
+  "kind": "list and load methods swapped (go)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "method: { list: 'List', load: 'Load',",
+    "to": "method: { list: 'Load', load: 'List',"
+   }
+  ]
+ },
+ {
+  "id": "my-method-swap-elixir",
+  "lang": "elixir",
+  "kind": "create and update methods swapped (elixir)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/elixir/Syntax_elixir.ts",
+    "from": "create: 'create', update: 'update'",
+    "to": "create: 'update', update: 'create'"
+   }
+  ]
+ },
+ {
+  "id": "my-method-swap-clojure",
+  "lang": "clojure",
+  "kind": "list and load methods swapped (clojure)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+    "from": "method: { list: 'list', load: 'load',",
+    "to": "method: { list: 'load', load: 'list',"
+   }
+  ]
+ },
+ {
+  "id": "my-rt-op-file-swap-ts",
+  "lang": "ts",
+  "kind": "RUNTIME: EntityListOp defines load instead of list",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ts/fragment/EntityListOp.fragment.ts",
+    "from": "  async list(this: any,",
+    "to": "  async load(this: any,"
+   }
+  ]
+ },
+ {
+  "id": "my-param-renamed-rust",
+  "lang": "rust",
+  "kind": "load parameter renamed reqmatch -> query (rust)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+    "from": "load: 'load(reqmatch: Value, ctrl: Value)",
+    "to": "load: 'load(query: Value, ctrl: Value)"
+   }
+  ]
+ },
+ {
+  "id": "my-param-renamed-rb",
+  "lang": "rb",
+  "kind": "load parameter renamed reqmatch -> query (rb)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/rb/Syntax_rb.ts",
+    "from": "load: 'load(reqmatch = nil, ctrl = nil) -> {Class}',",
+    "to": "load: 'load(query = nil, ctrl = nil) -> {Class}',"
+   }
+  ]
+ },
+ {
+  "id": "my-param-type-go",
+  "lang": "go",
+  "kind": "load parameter type map[string]any -> string (go)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "load: 'Load(reqmatch, ctrl map[string]any) (any, error)',",
+    "to": "load: 'Load(reqmatch, ctrl string) (any, error)',"
+   }
+  ]
+ },
+ {
+  "id": "my-member-client-to-entity-go",
+  "lang": "go",
+  "kind": "client member Direct moved to the entity (go)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "    { kind: 'direct', sig: 'Direct(fetchargs map[string]any) (map[string]any, error)' },\n",
+    "to": ""
+   },
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "    { kind: 'name', sig: 'GetName() string' },\n",
+    "to": "    { kind: 'name', sig: 'GetName() string' },\n    { kind: 'direct', sig: 'Direct(fetchargs map[string]any) (map[string]any, error)' },\n"
+   }
+  ]
+ },
+ {
+  "id": "my-member-entity-to-client-rust",
+  "lang": "rust",
+  "kind": "entity member get_name moved to the client (rust)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+    "from": "    { kind: 'name', sig: 'get_name() -> String' },\n",
+    "to": ""
+   },
+   {
+    "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+    "from": "    { kind: 'direct', sig: 'direct(fetchargs: Value) -> Result<Value, ProjectNameError>' },\n",
+    "to": "    { kind: 'direct', sig: 'direct(fetchargs: Value) -> Result<Value, ProjectNameError>' },\n    { kind: 'name', sig: 'get_name() -> String' },\n"
+   }
+  ]
+ },
+ {
+  "id": "my-wrong-exception-removed-ts",
+  "lang": "ts",
+  "kind": "the WRONG exception for accessor.arg removed (ts forms)",
+  "edits": [
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "    'ref.facts.accessor.arg': 'WRONG:",
+    "to": "    'zz.not.a.fact': 'WRONG:"
+   }
+  ]
+ },
+ {
+  "id": "my-types-reason-dropped-zig",
+  "lang": "zig",
+  "kind": "zig forms: type column null with its reason removed",
+  "edits": [
+   {
+    "file": "test/runtimeforms/zig.ts",
+    "from": "types: { column: null, reason:",
+    "to": "types: { column: null, zzreason:"
+   }
+  ]
+ },
+ {
+  "id": "my-reader-ocaml-op-renamed",
+  "lang": "ocaml",
+  "kind": "RUNTIME (unported): entity_obj field e_load renamed e_fetch",
+  "edits": [
+   {
+    "file": "project/.sdk/tm/ocaml/sdk_types.ml",
+    "from": "  mutable e_load : value -> value -> entity_obj;",
+    "to": "  mutable e_fetch : value -> value -> entity_obj;"
+   }
+  ]
+ },
+ {
+  "id": "my-reader-perl-style",
+  "lang": "perl",
+  "kind": "RUNTIME (unported): perl forms told the style is throw",
+  "edits": [
+   {
+    "file": "test/runtimeforms/perl.ts",
+    "from": "style: { exception: 'die', raises: /\\bdie\\b/ },",
+    "to": "style: { exception: 'die', raises: /zz-never/ },"
+   }
+  ]
+ },
+ {
+  "id": "my-undocumented-member-ts",
+  "lang": "ts",
+  "kind": "RUNTIME: a new public entity member nobody documents (ts)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ts/fragment/EntityBase.fragment.ts",
+    "from": "  entopts() {",
+    "to": "  secretHelper() {\n    return 1\n  }\n\n  entopts() {"
+   }
+  ]
+ },
+ {
+  "id": "my-new-provider-php",
+  "lang": "php",
+  "kind": "a new provider (copy of ts) for php, whose forms file exists",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/php/Syntax_php.ts",
+    "create": true,
+    "content": "import { canonToType, indentLines, jsKey, jsProp, jsQuote } from '@voxgig/sdkgen'\nimport type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'\n\n\nconst facts: RuntimeFacts = {\n  method: { list: 'list', load: 'load', create: 'create', update: 'update', patch: 'patch', remove: 'remove' },\n  named: 'call',\n  async: true,\n  result: 'throw',\n  collection: 'array',\n  record: '.data()',\n  listOf: '{Class}[]',\n  prints: 'record',\n}\n\n// The fixed API the reference page documents: EntityBase.fragment.ts,\n// Entity.fragment.ts and Main.fragment.ts.\nconst refFacts: RefFacts = {\n  entityBy: 'class',\n  noun: 'Methods',\n  none: 'undefined',\n  keys: 'member',\n  maps: 'objects',\n  container: 'object',\n  valueType: { STRING: 'string', OBJECT: 'object', ANY: 'any' },\n  ctor: ['new {ctor}(options?: object)'],\n  test: [{ sig: '{client}.test(testopts?, sdkopts?)', call: 'const client = {client}.test()', args: true }],\n  accessor: { sig: '{accessor}(data?: object)', arg: 'data' },\n  op: {\n    list: 'list(match?: object, ctrl?: object)',\n    load: 'load(match?: object, ctrl?: object)',\n    create: 'create(data?: object, ctrl?: object)',\n    update: 'update(data?: object, ctrl?: object)',\n    patch: 'patch(data?: object, ctrl?: object)',\n    remove: 'remove(match?: object, ctrl?: object)',\n  },\n  client: [\n    { kind: 'options', sig: 'options()', returns: 'object' },\n    { kind: 'utility', sig: 'utility()', returns: 'object' },\n    { kind: 'direct', sig: 'direct(fetchargs?: object)' },\n    { kind: 'prepare', sig: 'prepare(fetchargs?: object)' },\n    { kind: 'tester', sig: 'tester(testopts?, sdkopts?)' },\n  ],\n  entity: [\n    { kind: 'data', sig: 'data(data?: object)' },\n    { kind: 'match', sig: 'match(match?: object)' },\n    { kind: 'make', sig: 'make()' },\n    { kind: 'streamIterator', sig: 'stream(action: string, args?: object, callopts?: object)' },\n    { kind: 'client', sig: 'client()' },\n    { kind: 'entopts', sig: 'entopts()' },\n  ],\n  direct: { returns: 'Promise<{ ok, status, headers, data }>', signal: 'AbortSignal' },\n  prepare: { returns: 'Promise<{ url, method, headers, body } | Error>', fails: 'value' },\n  body: { values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string', once: 'a stream' },\n  cancel: true,\n}\n\nconst name = (r: Ref): string => r.name\n\nconst lit = (e: Extract<Expr, { k: 'lit' }>): string => ({\n  INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '[]', OBJECT: '{}', NULL: 'null',\n} as Record<string, string>)[e.type] ?? jsQuote(e.text)\n\nconst expr = (e: Expr): string => {\n  switch (e.k) {\n    case 'lit': return lit(e)\n    case 'str': return jsQuote(e.text)\n    case 'env': return 'process.env.' + e.name\n    case 'record': return name(e.of) + '.data()'\n    case 'field': return jsProp(name(e.of) + '.data()', e.field) + '!'\n    case 'fields': return e.fields.map((f) => jsProp(name(e.of) + '.data()', f)).join(', ')\n    case 'map': return '{ ' + e.entries.map(pair).join(', ') + ' }'\n  }\n}\n\nconst pair = (en: Entry): string => `${jsKey(en.key)}: ${expr(en.value)}`\n\n// One member per line, closed with a trailing comma and its type where it\n// has one; a map two levels down stays on its member's line.\nconst members = (entries: Entry[], pad: string, depth = 0): string[] =>\n  entries.flatMap((en) => 'map' === en.value.k && 0 === depth\n    ? [`${pad}${jsKey(en.key)}: {`, ...members(en.value.entries, pad + '  ', depth + 1), `${pad}},`]\n    : [`${pad}${pair(en)},` + (null == en.type ? '' : ' // ' + canonToType(en.type, 'ts'))])\n\nconst argOf = (arg: Entry[] | null, wide: boolean, note?: string): string =>\n  null == arg ? '' : (0 === arg.length && null == note ? '{}' :\n    wide ? '{\\n' + [...members(arg, '  '), ...(null == note ? [] : ['  // ' + note])].join('\\n') + '\\n}'\n      : '{ ' + arg.map(pair).join(', ') + ' }')\n\n\nconst Syntax: SyntaxType = {\n  fence: 'ts',\n  facts,\n\n  imports: (desc) => [`import { ${desc.layout.client} } from '${desc.layout.module}'`],\n\n  client: (s, desc) => [\n    0 === s.options.length\n      ? `const client = new ${desc.layout.ctor}()`\n      : `const client = new ${desc.layout.ctor}({\\n${members(s.options, '  ').join('\\n')}\\n})`,\n  ],\n\n  call: (s) => {\n    const call = `await client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${argOf(s.arg, s.wide, s.note)})`\n    return (null == s.bind ? call : `const ${name(s.bind)} = ${call}`).split('\\n')\n  },\n\n  each: (s, inner) => [\n    `for (const ${name(s.item)} of ${name(s.of)}) {`,\n    ...indentLines(inner(s.body), '  '),\n    '}',\n  ],\n\n  print: (s) => [`console.log(${expr(s.what)})`],\n\n  attempt: (s, inner) => [\n    'try {',\n    ...indentLines(inner(s.body), '  '),\n    '} catch (err) {',\n    `  console.error('${s.what} failed:', err)`,\n    '}',\n  ],\n\n  comment: (text) => '// ' + text,\n\n  expr: (e) => expr(e),\n\n  ref: {\n    facts: refFacts,\n    type: (t) => canonToType(t, 'ts'),\n    key: (container, path) => [container, ...path].join('.'),\n    instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}()`],\n    read: (value, key) => jsProp(value, key),\n  },\n}\n\n\nexport {\n  Syntax\n}\n"
+   }
+  ]
+ }
+]

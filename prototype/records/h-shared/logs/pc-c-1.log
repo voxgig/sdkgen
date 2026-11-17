@@ -1,0 +1,53 @@
+[portcheck c] sections: tutorial,rootquick,reference
+[portcheck c] ledger
+ledger c       tutorial  vars 19 | units OLD 137 NEW 187: same 61 reworded 61 missing 15 added 65 | classes 38 (echo 2, reworded 14, added 10, missing 4, novel-token 8) | unclassified 3, defect 0 -> tools/review/c/tutorial.ledger.txt
+ledger c       rootquick vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 | classes 3 (reworded 3) | unclassified 0, defect 0 -> tools/review/c/rootquick.ledger.txt
+ledger c       reference vars 19 | units OLD 15539 NEW 16465: same 14872 reworded 312 missing 355 added 1281 | classes 100 (echo 10, reworded 9, missing 18, added 49, novel-token 14) | unclassified 4, defect 0 -> tools/review/c/reference.ledger.txt
+[portcheck c] blocks
+blocks c       tutorial  vars 19 | OLD 48 NEW 48: identical 0, after corrections 0, changed 48, OLD-only 0, NEW-only 0 | classes 22 (changed 12, novel-token 10) | unclassified 0, defect 0 -> tools/review/c/tutorial.blocks.txt
+blocks c       rootquick vars 19 | OLD 19 NEW 19: identical 0, after corrections 0, changed 19, OLD-only 0, NEW-only 0 | classes 30 (changed 11, novel-token 13, vanished-token 4, novel-shape 2) | unclassified 0, defect 0 -> tools/review/c/rootquick.blocks.txt
+blocks c       reference vars 19 | OLD 314 NEW 313: identical 151, after corrections 0, changed 162, OLD-only 1, NEW-only 0 | classes 12 (changed 4, old-only 1, novel-token 6, vanished-token 1) | unclassified 0, defect 0 -> tools/review/c/reference.blocks.txt
+[portcheck c] sharing (NEW, then OLD), over the languages ported for the section
+new: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   c          187 units  46.5%  35.3%     0%  18.2% |   1663 words  44.5%  22.9%     0%  32.6% | language words at output 542 (5 distinct units) | at source: fact/notes tables facts,refFacts 159 words (8 in prose literals), other prose literals 0 words
+old: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   c          137 units  29.2%  45.3%   5.1%  20.4% |    972 words  39.2%  24.1%   2.9%  33.8% | language words at output 329 (3 distinct units) | at source: fact/notes tables facts,refFacts 159 words (8 in prose literals), other prose literals 0 words
+new: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   c           42 units  45.2%     0%     0%  54.8% |    291 words   6.5%     0%     0%  93.5% | language words at output 272 (3 distinct units) | at source: fact/notes tables facts,refFacts 159 words (8 in prose literals), other prose literals 0 words
+old: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   c           42 units  45.2%     0%     0%  54.8% |    272 words     7%     0%     0%    93% | language words at output 253 (2 distinct units) | at source: fact/notes tables facts,refFacts 159 words (8 in prose literals), other prose literals 0 words
+new: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   c        16465 units  90.7%   3.7%   3.8%   1.9% |  50707 words  82.1%     6%   6.8%   5.1% | language words at output 2585 (8 distinct units) | at source: fact/notes tables facts,refFacts 159 words (8 in prose literals), other prose literals 0 words
+old: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   c        15539 units  89.5%     4%   4.7%   1.9% |  45670 words  80.5%   4.7%   9.1%   5.7% | language words at output 2591 (12 distinct units) | at source: fact/notes tables facts,refFacts 159 words (8 in prose literals), other prose literals 0 words
+[portcheck c] purity
+purity over c (vocabulary: 20 features, 10 option keys, 36 entity name forms, 6 operations)
+  c       Syntax 233 lines, Naming present: 0 open, 0 accepted
+     naming calls cAccessorName (./utility_c); also called by: MainEntity_c.ts
+     naming calls cVarName (./utility_c); also called by: EntityBase_c.ts, EntityTypes_c.ts, Entity_c.ts, MainEntity_c.ts, TestClean_c.ts, TestDirect_c.ts, TestEntity_c.ts, utility_c.ts
+[portcheck c] guard: node --test --test-name-pattern c ts/dist-test/runtimefacts.test.js
+ℹ tests 29
+ℹ pass 29
+ℹ fail 0
+ℹ skipped 0
+[portcheck c] summary
+  ledger c       tutorial  vars 19 | units OLD 137 NEW 187: same 61 reworded 61 missing 15 added 65 
+        classes 38 (echo 2, reworded 14, added 10, missing 4, novel-token 8) | unclassified 3, defect 0
+  ledger c       rootquick vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 
+        classes 3 (reworded 3) | unclassified 0, defect 0
+  ledger c       reference vars 19 | units OLD 15539 NEW 16465: same 14872 reworded 312 missing 355 added 1281 
+        classes 100 (echo 10, reworded 9, missing 18, added 49, novel-token 14) | unclassified 4, defect 0
+  blocks c       tutorial  vars 19 | OLD 48 NEW 48: identical 0, after corrections 0, changed 48, OLD-only 0, NEW-only 0 
+        classes 22 (changed 12, novel-token 10) | unclassified 0, defect 0
+  blocks c       rootquick vars 19 | OLD 19 NEW 19: identical 0, after corrections 0, changed 19, OLD-only 0, NEW-only 0 
+        classes 30 (changed 11, novel-token 13, vanished-token 4, novel-shape 2) | unclassified 0, defect 0
+  blocks c       reference vars 19 | OLD 314 NEW 313: identical 151, after corrections 0, changed 162, OLD-only 1, NEW-only 0 
+        classes 12 (changed 4, old-only 1, novel-token 6, vanished-token 1) | unclassified 0, defect 0
+  worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/review/c/*.ledger.txt, *.blocks.txt, *.blocks.diff; templates *.template.json -> fill into /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/classes/c.json
+PORTCHECK c: FAIL

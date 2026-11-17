@@ -1,0 +1,721 @@
+{
+ "ok": true,
+ "summary": "I measured at v34-frozen (sdkgen 89387a4f, tools e55846e), working in P/m20. Both clones were clean at the end.\n\n- **H2:** documentation code shrank 2.06x (15,038 to 7,285 lines), 1.54x counting the forms and 1.20x counting the guard. The 2.06x is the first measured figure over 2x, and only on documentation code alone; it is 2.14x without the 259 lines of H5 machinery.\n- **H1 prose:** by source, go is highest at 7.1%. By \"printed by this language alone\" against all twenty, go is highest at 14.8%, so no language is over 15% by either measure.\n- **H1 purity:** 0 open findings in all twenty; 41 accepted with reasons.\n- **H1 interface, re-counted from the code history:** 25 breaking provider-interface changes and 19 breaking forms-framework changes, 44 in all, against a limit of about 10. The record says about 25 to 27, and 31 to 33 with forms.\n- **H1, caused by newly ported languages:** 0 for every port before the first wave. The first wave (perl, swift, ocaml, lua) caused 6 to 7 (2 or 3 provider, 4 forms). The second wave (the seven) caused 3 guard/forms changes and 1 changed shared sentence, with 0 changes to the provider types.\n- **Sentences:** 385 distinct, 221 with a verdict and 164 without; 190 printed by one language only.\n- **H3:** the checker over all 26 variations (alias-go2 included for the first time) exits 0, with nothing showing on NEW in any of the twenty. The per-language share is 2.8% to 5.6% by the brief's rule.\n- **H5:** rebuilt from scratch, because the fixtures and builds were gone. Every row has the same verdict as before. F6 and F6b are now safe, and F11 is now caught both at release and by doctor. c5 is still open.",
+ "lines": "RAN.\nCommands:\n- `node tools/lines.js --clone sdkgen --rev HEAD` (and `--json`), with the registry listing all twenty (logs/lines20.txt and lines20.json).\n- `python3 mine/lines20.py logs/lines20.json sdkgen` (logs/lines20-arith.txt). This is the base builder's own arithmetic (v33b/mine/lines.py), unchanged: ReadmeTop is left out; ReadmeQuick, ReadmeRef and ReadmeRefFeatures are counted whole; other changed files under cmp/ and helpers/ are counted by their delta. Forms are ts/test/runtimeforms/<lang>.ts. The shared guard is counted with wc -l over runtimefacts.test, runtimereader.test, forms, account, guard and calls.\n\nBefore: 15,038 checks. The families of twenty are 4,503 + 2,000 + 8,330 = 14,833 lines, plus the shared files of the time without ReadmeTop (ReadmeQuick 34, ReadmeRef 29, ReadmeRefFeatures 142 = 205).\n\nInputs at v34-frozen:\n- Shared documentation code: 2,840 lines (2,473 at base33). ReadmeQuick 267, ReadmeRef 527, ReadmeRefFeatures 176, example 663, sdkdesc 552, runtimeprose 300, markdown 57, media +30, optional +44, FeatureDocs +14, ReadmeFeatures +11, and three new files: cmpfile 86, syntaxversion 102, manifest +11.\n- Of that, 259 net lines are the H5 migration machinery: syntaxversion 102, cmpfile 86, optional +40, manifest 11, example +8, ReadmeRef +7, runtimeprose +5. That is the git numstat of commits 45fc740c, d096aa0a, ced3b72c, 1873c7bc, 6cab3a71, 7697500b and c2361edd.\n- Providers, hooks and other touched files: 4,445 (mean 222). The nine: 1,984 (mean 220). The four: 949 (mean 237). The seven: 1,512 (mean 216).\n- Forms: 2,495 (mean 125). The seven's forms: 855 (mean 122). The base builder's projection had used their pre-port forms, 492 lines.\n- Shared guard: 2,740 (2,650 at base33).\n\nMeasured, twenty languages (same method):\n\n| What is counted | Lines | Ratio |\n| --- | --- | --- |\n| Documentation code only | 7,285 | 2.06x |\n| + forms | 9,780 | 1.54x |\n| + shared guard | 12,520 | 1.20x |\n\nWithout the 259 H5 lines: 2.14x, 1.58x and 1.23x.\n\nProjected earlier for twenty at the measured provider size: base33 gave 2.16x, 1.65x and 1.28x; v32 gave 2.26x, 1.80x and 1.47x. The measurement is lower on every column. The shared code grew by 367 lines, and the seven's forms are 855 lines where the projection took 492. Their providers came in smaller than assumed (mean 216, against 225 assumed).\n\nRecomputed at this state, beside the earlier figures:\n\n| Languages | Before | At v34-frozen | Earlier figures |\n| --- | --- | --- | --- |\n| Thirteen | 9,887 | 5,773 / 7,413 / 10,153: 1.71x, 1.33x, 0.97x | base33: 1.83x, 1.41x, 1.02x |\n| Nine | 6,916 | 4,824 / 5,888 / 8,628: 1.43x, 1.17x, 0.80x | base33: 1.55x, 1.25x, 0.85x; v32: 1.61x, 1.33x, 0.98x |\n\nBoth fell because the shared code they now carry grew.\n\nThe tool's own headline (ReadmeTop kept in, the guard left out, forms included): 15,783 to 10,538, 1.50x. It was 1.36x at thirteen and 1.29x at nine.\n\nWhere the method had to change: it did not. I kept the base builder's rule that every changed file under cmp/ and helpers/ counts, and give the figure without the H5 machinery beside it, because those 259 lines version and retire providers rather than print documentation.",
+ "lines_per_language": [
+  {
+   "lang": "js",
+   "deleted": "734 (ReadmeQuick 179, ReadmeRef 445, ReadmeTopQuick 110)",
+   "provider": "148 (Syntax_js)",
+   "hook": "22",
+   "forms": "+116/-13 (165 total)",
+   "other": "ReadmeModel_js +1/-1 (the utility README row, made at integration). The S13 runtime fix in Config.fragment.js and Config.data.fragment.js (+3/-2 each) predates the port (b09502f1, sentence round). Ratio without forms 4.3x"
+  },
+  {
+   "lang": "php",
+   "deleted": "734 (224, 420, 90)",
+   "provider": "169",
+   "hook": "26",
+   "forms": "+49/-3 (110)",
+   "other": "+36/-17 in 10 files (Main, Package, ReadmeExamplesTest, ReadmeExplanation, ReadmeModel, TestClean, TestDirect, TestEntity, Test, utility_php +7): phpSdkFile used everywhere. Net 19. Ratio 3.4x"
+  },
+  {
+   "lang": "csharp",
+   "deleted": "741 (232, 413, 96)",
+   "provider": "179",
+   "hook": "25",
+   "forms": "+60/-4 (121)",
+   "other": "0. Ratio 3.6x"
+  },
+  {
+   "lang": "java",
+   "deleted": "746 (242, 398, 106)",
+   "provider": "201",
+   "hook": "25",
+   "forms": "+38/-0 (103)",
+   "other": "+15/-6: EntityBase, Entity and Main_java 2/2 each, utility_java +9 (JAVA_ENTITY, javaLit). Net 9. Ratio 3.2x"
+  },
+  {
+   "lang": "kotlin",
+   "deleted": "753 (241, 408, 104)",
+   "provider": "190",
+   "hook": "23",
+   "forms": "+44/-4 (112)",
+   "other": "+12/-2: Config_kotlin, Schema_kotlin, utility_kotlin +8. Net 10. Ratio 3.4x"
+  },
+  {
+   "lang": "scala",
+   "deleted": "709 (226, 396, 87)",
+   "provider": "204",
+   "hook": "25",
+   "forms": "+42/-2 (112)",
+   "other": "+24/-2: Config_scala, Schema_scala, utility_scala +20. Net 22. Ratio 2.8x"
+  },
+  {
+   "lang": "cpp",
+   "deleted": "734 (233, 406, 95)",
+   "provider": "189",
+   "hook": "24",
+   "forms": "+41/-1 (132)",
+   "other": "0. Ratio 3.4x"
+  }
+ ],
+ "prose": "RAN: `node tools/sharewords.js --clone ../sdkgen --root ../out/new --lang <all twenty>` from tools/ (logs/sharewords20.txt and .json). It covers three sections and 21 variations, and \"alone\" is measured against all twenty.\n\n| Language | By source | Alone | Notes |\n| --- | --- | --- | --- |\n| ts | 0.4% | 0.4% (root quick start 93.3%, the lead-language sentences) | 0% |\n| js | 0.4% | 0.0% | 0% |\n| go | 7.1% (REFERENCE 7.4%) | 14.8% (tutorial 33.5%, REFERENCE 14.2%) | 6.9% |\n| py | 0.2% | 0.1% | 0% |\n| php | 0.4% | 0.5% (tutorial 18.1%) | 0% |\n| rb | 0.2% | 0.0% | 0% |\n| lua | 4.1% | 0.0% | 3.6% |\n| csharp | 2.2% (REFERENCE 2.3%: streamSignalForm 94 words) | 0.1% | 1.6% |\n| java | 0.2% | 0.0% | 0% |\n| kotlin | 2.7% (REFERENCE 2.8%: streamSignalForm 1,316 words) | 0.1% | 0% |\n| scala | 0.2% | 0.0% | 0% |\n| swift | 0.6% | 5.9% (tutorial 35.2%) | 0% |\n| rust | 0.5% | 0.0% | 0.2% |\n| c | 1.2% | 6.2% (root quick start 93.5%) | 0% |\n| cpp | 0.2% | 0.9% (tutorial 17.8%) | 0% |\n| zig | 4.3% | 0.1% | 3.3% |\n| perl | 1.7% | 3.9% (root quick start 92.0%) | 1.5% |\n| clojure | 2.7% | 0.4% | 2.3% |\n| elixir | 0.8% | 0.5% | 0.4% |\n| ocaml | 5.5% | 0.2% | 5.1% |\n\nHighest by each measure:\n- By source: go, 7.1% overall and 7.4% of its REFERENCE. At thirteen it was 7.2%, and 7.4% at v32.\n- Alone: go, 14.8% overall. That is 17.0% against thirteen and 22.6% against nine; comparing against more languages lowers it.\n- Notes: go, 6.9%.\n\nNo language is over 15% overall by either measure, and this is the first time the \"alone\" measure is under the line for go. By section, \"alone\" is still far over 15% in places: go's tutorial 33.5%, swift's tutorial 35.2%, php 18.1%, cpp 17.8%, and the root quick starts of c (93.5%), ts (93.3%) and perl (92.0%). These are shared result-style or lead-language sentences that one runtime's declared style selects (see sentences).\n\nAt the source, the shared templates hold 1,062 prose-literal words (980 at base33). Provider notes run from 0 to 45 words: go 45, lua 40, ocaml 31, zig and clojure 29, elixir 18, csharp 10, perl 9, rust 7, the rest 0. The seven add fact-table prose literals of 0 (java, scala) to 14 (kotlin) words.",
+ "purity": "RAN: `node tools/purity.js --providers ../sdkgen/ts/project/.sdk/src/cmp --lang <twenty> --root ../out/new --allow purity-allow` (logs/purity20.txt and .json). The same run without `--allow` gives the same counts: the tool reads its allow directory by default.\n\nOpen findings: 0 in all twenty.\n\nAccepted: 41.\n- The thirteen are exactly as at base33: ts 1, go 1, py 1, c 2, zig 1, clojure 4, rust 3, elixir 4, rb 2, perl 2, swift 2, ocaml 1, lua 1.\n- The seven: js 1, php 2, csharp 1, java 8, kotlin 1, scala 2, cpp 1.\n\nThe reasons for the new ones:\n- js and php: `exampleVarName` is called by no non-README component (\"an example variable is not a name the code generator makes\").\n- php: a `require_once` path joined from `layout.dir` and `layout.module` (\"not a name\").\n- csharp and cpp: a reserved-word list inside csVarName and cppVarName (\"which a non-README component also calls: the code generator names things by this rule too\").\n- kotlin and scala: `.replace(/-sdk$/, '')` inside kotlinPackage and scalaPackage, for the same reason. scala also imports `scalaLit` and `scalaObjectLit` from utility_scala (\"the scala generator's own literal table\").\n- java, 8 entries:\n  - imports `javaMap` and `javaMapItems`, the generator's rule for a Map.of argument that leaves a NULL-typed member out;\n  - imports `javaLit` from utility_java, the generator's one table of example literals;\n  - 4 entries where purity misreads the constants JAVA_CORE and JAVA_ENTITY as functions (`.replace(/-sdk$/, '')` attributed to the wrong body), accepted with that explanation;\n  - javaPackage, accepted as shared with the generator.\n\nJudgement (read, not ran): java and scala are the first providers to import example-literal helpers from outside the printing helpers. Each is the language generator's own table, which the code generators call too, so no provider reads the model. H1's purity criterion (3 or more providers reading model facts) is not crossed.",
+ "interface_recount": [
+  {
+   "n": "P1",
+   "round": "v2 (af89a54e)",
+   "change": "English RuntimeWords replaced by the declared RuntimeFacts table (Syntax.words -> Syntax.facts; prints required)",
+   "kind": "provider, type",
+   "cause": "stage-1 requirements (the probe found English fragments)",
+   "new_language": "no",
+   "forced": "c clojure go py ts zig (6)"
+  },
+  {
+   "n": "P2",
+   "round": "v2 (af89a54e)",
+   "change": "Expr kind 'fields' that every printer's expr() must render",
+   "kind": "provider, type",
+   "cause": "stage-1 requirements",
+   "new_language": "no",
+   "forced": "6 (all rewritten in af89a54e)"
+  },
+  {
+   "n": "P3",
+   "round": "stage 3 (a93e754f)",
+   "change": "RefFacts.container required",
+   "kind": "provider, type",
+   "cause": "REFERENCE page",
+   "new_language": "no",
+   "forced": "ts go py c (4; the record says five, but zig's REFERENCE came at 8c8fd163, after this commit)"
+  },
+  {
+   "n": "P4",
+   "round": "v3 (21d40b96)",
+   "change": "RefFacts.classes removed for entityBy (noun widened to string)",
+   "kind": "provider, type",
+   "cause": "elective interface rewrite",
+   "new_language": "no",
+   "forced": "c elixir go py rust ts zig (7)"
+  },
+  {
+   "n": "P5",
+   "round": "v3 (21d40b96)",
+   "change": "DescSymbols.vars and .type removed, plural from apidef; the hook's symbols() typed Omit<DescSymbols,'plural'>",
+   "kind": "provider + hook, type",
+   "cause": "elective (names chosen once)",
+   "new_language": "no",
+   "forced": "8 providers read sym.vars; 8 hooks returned vars"
+  },
+  {
+   "n": "P6",
+   "round": "v3 (21d40b96)",
+   "change": "RefSyntax.read(value, key) required",
+   "kind": "provider, type",
+   "cause": "elective",
+   "new_language": "no",
+   "forced": "7 REFERENCE providers (ts go py c zig rust elixir); the record says all 8, but clojure had no REFERENCE yet"
+  },
+  {
+   "n": "P7",
+   "round": "v3 (21d40b96)",
+   "change": "prepare.fails 'errorunion' replaced by 'note'",
+   "kind": "provider, type",
+   "cause": "elective",
+   "new_language": "no",
+   "forced": "zig"
+  },
+  {
+   "n": "P8",
+   "round": "v3 (21d40b96)",
+   "change": "MemberKind utilityShared renamed utilityBase; streamChannel removed",
+   "kind": "provider, type",
+   "cause": "elective (removes kinds that rust/elixir's port had just added)",
+   "new_language": "no",
+   "forced": "elixir, go"
+  },
+  {
+   "n": "P9",
+   "round": "3.1 (eed7d7db)",
+   "change": "DescQuick.show removed for DescEntity.show",
+   "kind": "description type",
+   "cause": "shared fixes",
+   "new_language": "no",
+   "forced": "0 (no provider read quick.show)"
+  },
+  {
+   "n": "P10",
+   "round": "3.2 (b8a4a101)",
+   "change": "RefFacts.lits removed; direct.okFalse required",
+   "kind": "provider, type",
+   "cause": "shared code stops supplying runtime values",
+   "new_language": "no",
+   "forced": "9 (py also used lits)"
+  },
+  {
+   "n": "P11",
+   "round": "3.2 (b8a4a101)",
+   "change": "accessor.param required",
+   "kind": "provider, type",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "9"
+  },
+  {
+   "n": "P12",
+   "round": "3.2 (b8a4a101)",
+   "change": "Member.runs required for stream kinds (throws at generate)",
+   "kind": "provider, generate-time",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "9"
+  },
+  {
+   "n": "P13",
+   "round": "3.2 (b8a4a101)",
+   "change": "setArg required with dataArg/matchArg (throws)",
+   "kind": "provider, generate-time",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "c, zig (rust already declared it)"
+  },
+  {
+   "n": "P14",
+   "round": "3.2 (b8a4a101)",
+   "change": "pairForm and noError required for the pair style (throws)",
+   "kind": "provider, generate-time",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "go"
+  },
+  {
+   "n": "P15",
+   "round": "3.2 (b8a4a101)",
+   "change": "direct.abortCode required with signal (throws)",
+   "kind": "provider, generate-time",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "ts"
+  },
+  {
+   "n": "P16",
+   "round": "3.2 (b8a4a101)",
+   "change": "the error-slot style's checked statement shapes",
+   "kind": "provider, generate-time",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "c"
+  },
+  {
+   "n": "P17",
+   "round": "3.2 (b8a4a101)",
+   "change": "shared lookups throw instead of guessing; a Naming hook becomes mandatory (optional with a generic fallback since v2)",
+   "kind": "provider, generate-time",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "0"
+  },
+  {
+   "n": "P18",
+   "round": "3.2 (70814346)",
+   "change": "getter text follows Member.copy for options and entopts (without copy, the sentence changes)",
+   "kind": "provider, semantic",
+   "cause": "a sentence resting on no fact",
+   "new_language": "no",
+   "forced": "9 (options copy declared and cited in 9 commits; ts entopts)"
+  },
+  {
+   "n": "P19",
+   "round": "sentence fix (2608dd45)",
+   "change": "RefFacts.testMock required",
+   "kind": "provider, type",
+   "cause": "the sentence review",
+   "new_language": "no",
+   "forced": "9 providers; citations in all 20 forms (65a16aef); the 4 first-wave ports at merge (904fd0d2)"
+  },
+  {
+   "n": "P20",
+   "round": "sentence fix (2608dd45)",
+   "change": "RefSyntax.read(value, key, truth?) must honour truth",
+   "kind": "provider, semantic",
+   "cause": "the sentence review",
+   "new_language": "no",
+   "forced": "c go rust zig; swift and ocaml at merge"
+  },
+  {
+   "n": "P21",
+   "round": "sentence fix (6a347c76)",
+   "change": "testMock value 'model' renamed 'generated'",
+   "kind": "provider, type",
+   "cause": "the sentence review",
+   "new_language": "no",
+   "forced": "7 providers (c elixir go py rb rust ts) and 18 forms (f8dcd446). Not in the record: its row 29 covers only the requirement"
+  },
+  {
+   "n": "P22",
+   "round": "3.3 (38a8d2d1)",
+   "change": "RefFacts.streamSignal; the cancel paragraph no longer names the stream unless declared",
+   "kind": "provider, semantic",
+   "cause": "perl, lua and ocaml reviews",
+   "new_language": "yes (wave 1)",
+   "forced": "ts must declare it to keep its sentence; 9 opt in (4990c27a)"
+  },
+  {
+   "n": "P23",
+   "round": "3.3 (38a8d2d1)",
+   "change": "the wrapped style names its unwrap; the record fact is the plain accessor",
+   "kind": "provider, semantic",
+   "cause": "swift review",
+   "new_language": "yes (wave 1)",
+   "forced": "swift"
+  },
+  {
+   "n": "P24",
+   "round": "3.3 (38a8d2d1, 3cb248f8)",
+   "change": "the utility sentence follows Member.copy",
+   "kind": "provider, semantic",
+   "cause": "the survey that wave 1's copy findings prompted",
+   "new_language": "arguable (wave 1, through the survey)",
+   "forced": "9 declare copy; ts copy:false"
+  },
+  {
+   "n": "P25",
+   "round": "H5, merged at 3.4 (45fc740c, 6cab3a71, settlements e38f0c1a..195abe71)",
+   "change": "a provider declares `interface` '3.3'. The type made it optional again, but without it the provider is served as 3.2 with a warning and loses 3.3 sentences",
+   "kind": "provider, semantic",
+   "cause": "the migration round (versioning for packs)",
+   "new_language": "no",
+   "forced": "13 providers in 45fc740c, 7 in the settlement commits. s6 counts 0 provider-type changes; it forced a line in all 20"
+  },
+  {
+   "n": "F1",
+   "round": "v3 freeze (98fa964e, 0b61c236)",
+   "change": "guard on declared forms: every ported language supplies a forms file",
+   "kind": "forms framework",
+   "cause": "the rebuilt guard",
+   "new_language": "no",
+   "forced": "8 forms (c clojure elixir go py rust ts zig)"
+  },
+  {
+   "n": "F2",
+   "round": "3.1 (f2c4b95f)",
+   "change": "each method tied to its operation; parameter names and types compared; every declared fact accounted for",
+   "kind": "forms framework",
+   "cause": "stage-5 rule: every fact checked",
+   "new_language": "no",
+   "forced": "all 9 forms (91c01164..f37465a9). Not in the record"
+  },
+  {
+   "n": "F3",
+   "round": "3.1 (39b8dc2b)",
+   "change": "a declaration reader with file parts and returns on a later line",
+   "kind": "forms framework",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "c rust clojure forms (0beca305, 7bd8ae42, 0b9e533a). Not in the record"
+  },
+  {
+   "n": "F4",
+   "round": "3.1 (a321926f)",
+   "change": "a citation pins the value it audited",
+   "kind": "forms framework",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "9 forms (51651360..905130db). Not in the record"
+  },
+  {
+   "n": "F5",
+   "round": "3.1 (1ac66964)",
+   "change": "a getter's copy-or-live fact must be cited",
+   "kind": "forms framework",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "9 forms and providers (0cfcaf6b..7f97852a). Not in the record"
+  },
+  {
+   "n": "F6",
+   "round": "3.2 (3fa99737)",
+   "change": "the reader requires a test constructor and a stream record",
+   "kind": "forms framework",
+   "cause": "reader sees every dimension",
+   "new_language": "no",
+   "forced": "all 20 forms (record row 24)"
+  },
+  {
+   "n": "F7",
+   "round": "3.2 (3fa99737)",
+   "change": "`none` and literals move from 'language' to cited",
+   "kind": "forms framework",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "9 forms (row 25)"
+  },
+  {
+   "n": "F8",
+   "round": "3.2 (3fa99737)",
+   "change": "rules for unquoted excuses, note tokens and runtime files",
+   "kind": "forms framework",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "7 forms (row 26)"
+  },
+  {
+   "n": "F9",
+   "round": "3.2 (b8fd4fc2)",
+   "change": "the reader table marks members a runtime lacks; a members exception per family",
+   "kind": "forms framework",
+   "cause": "same",
+   "new_language": "no",
+   "forced": "c, scala, cpp and kotlin forms (534a600c, 81883c6e, 8d62799d, 13602d40). Not in the record"
+  },
+  {
+   "n": "F10",
+   "round": "3.2 (757938f4)",
+   "change": "DEFAULTS move: runs and accessor.param derived; okFalse, abortCode and noError cited",
+   "kind": "forms framework",
+   "cause": "meeting the shared facts",
+   "new_language": "no",
+   "forced": "all 20 forms (row 27)"
+  },
+  {
+   "n": "F11",
+   "round": "3.3 (9e1c8dc8, G6)",
+   "change": "an absence is searched over the whole runtime",
+   "kind": "forms framework",
+   "cause": "wave-1 reviews (ocaml and lua cancel absences; brief7: the guard must fail in each case the reviewers ran)",
+   "new_language": "yes (wave 1)",
+   "forced": "12 forms. Part of record row 33"
+  },
+  {
+   "n": "F12",
+   "round": "3.3 (d6f8d593, G7)",
+   "change": "type words checked against the generator's column, or pinned",
+   "kind": "forms framework",
+   "cause": "wave-1 reviews",
+   "new_language": "yes (wave 1)",
+   "forced": "c clojure ocaml perl zig forms. Part of row 33"
+  },
+  {
+   "n": "F13",
+   "round": "3.3 (5e233e9e, G8)",
+   "change": "the record expression is checked whole",
+   "kind": "forms framework",
+   "cause": "swift review (record with the cast dropped passed)",
+   "new_language": "yes (wave 1)",
+   "forced": "swift forms. Part of row 33"
+  },
+  {
+   "n": "F14",
+   "round": "3.3 (38f49d36, G2-G5)",
+   "change": "printed calls read in the runtime's notation; call notation required",
+   "kind": "forms framework",
+   "cause": "wave-1 reviews (swift load(nil), ocaml arrows)",
+   "new_language": "yes (wave 1)",
+   "forced": "13 forms, and the 7 unported had to add calls. Part of row 33"
+  },
+  {
+   "n": "F15",
+   "round": "3.3 (93060a64)",
+   "change": "the deleted read names its member last; facts.arity re-derived",
+   "kind": "forms framework",
+   "cause": "the freeze",
+   "new_language": "no",
+   "forced": "not separable: 3cb248f8 touched 12 forms mixed with the utility-copy citations. Part of row 34"
+  },
+  {
+   "n": "F16",
+   "round": "3.3 (0065f1e2)",
+   "change": "no ahead exemption once a provider prints; the field flag checked when omitted",
+   "kind": "forms framework",
+   "cause": "freeze attacks K-c-match-copy-dropped and K-ocaml-name-not-field",
+   "new_language": "no",
+   "forced": "0 at the freeze (a later port that cites ahead fails). Row 34"
+  },
+  {
+   "n": "F17",
+   "round": "3.4 (b2f43d0b)",
+   "change": "the accessor declaration found by its token as written; ref.instance judged; the factory reader",
+   "kind": "guard / forms framework",
+   "cause": "php, cpp, kotlin and java reviews and verifications",
+   "new_language": "yes (wave 2)",
+   "forced": "cpp forms (six languages' accessor calls judged for the first time)"
+  },
+  {
+   "n": "F18",
+   "round": "3.4 (bee58e2b)",
+   "change": "NOT_RUNTIME names sdktest/",
+   "kind": "guard / forms framework",
+   "cause": "scala port",
+   "new_language": "yes (wave 2)",
+   "forced": "scala forms"
+  },
+  {
+   "n": "F19",
+   "round": "3.4 (498ba3ec guard part)",
+   "change": "the deleted read checked name by name, with layout roles",
+   "kind": "guard / forms framework",
+   "cause": "java review",
+   "new_language": "yes (wave 2)",
+   "forced": "java (b5f98fa3: utility, EntityBase, Entity, Naming and Syntax_java)"
+  }
+ ],
+ "interface_summary": "RAN and READ. I extracted every top-level type of example.ts, sdkdesc.ts, runtimeprose.ts and syntaxversion.ts at each commit from f21e6fe1 (the first four languages) to v34-frozen, and diffed consecutive versions (mine/typediff.js, logs/typediff.txt: 18 commits with type changes). I blamed every `throw` in the shared files (logs/throws.txt). For each commit I listed which Syntax_, Naming_, forms and guard-framework files it touched (logs/commit-touch.txt). I then read the commit messages and the diffs where needed.\n\nA change counts as breaking when a provider, hook or forms file that worked before it must change to keep type-checking, generating or printing its own page. The forced lists come from the commits that followed each change.\n\n**Totals:**\n- Provider interface: 25 at v34-frozen (24 at v33-frozen). By round: v2 2, stage 3 1, v3 5, 3.1 1, 3.2 9, sentence fix 3, 3.3 3, H5's interface field 1. It is 24 if the testMock rename is merged with its requirement.\n- Forms framework: 19 (16 up to 3.3). By round: v3 freeze 1, 3.1 4, 3.2 5, 3.3 6, 3.4 3. It is 17 if 3fa99737's three requirements count as one row.\n- Together: 44 (42 on the merges). The limit is about 10. Changed shared sentences are not in these counts.\n\n**Where I differ from the earlier reports** (appendix B and section 6.1: about 25 to 27, or 31 to 33 with forms, at 3.3; s6: 4 by new languages at 3.4 and 0 provider-type):\n1. The four 3.1 guard tightenings are in no record's forms count: f2c4b95f, 39b8dc2b, a321926f and 1ac66964. Each forced every then-ported forms file; the commit series show it.\n2. b8fd4fc2 (the reader marks members a runtime lacks) forced the c, scala, cpp and kotlin forms, and has no row.\n3. Record row 33 bundles four guard commits (G6, G7, G8, G2-G5) and row 34 two. One row each gives 6 where the record has 2.\n4. The testMock value rename 'model' to 'generated' (6a347c76) forced 7 providers and 18 forms, and has no row.\n5. H5's `interface` field forced a line in all 20 providers. s6 calls the interface unchanged at '3.3' with 0 provider-type changes. The type allows omission, but an omitting provider is served as 3.2 and loses sentences, so I count 1.\n6. Forced sets: `container` forced 4 providers, not 5; `read` required forced 7, not 8.\n7. The record's v2 rows 4 and 5 are shared-only and touch no provider. Row 6, the naming hook, was optional with a generic fallback at v2 (additive by type); it became mandatory at 3.2 (b8a4a101), forcing 0. Row 1 predates the first commit and is not visible in history.\n8. The record attributes only provider changes to wave 1. Brief7 states its guard items G1 to G8 had to fail \"in each case the reviewers ran\", so the 3.3 forms changes F11 to F14 were caused by wave 1 too.\n\nH1's line is crossed on every reading.",
+ "breaking_by_new_language_per_wave": "From the re-count rows marked new_language:\n- **Stage-1 probe (zig, clojure):** 0. Scope.section and RuntimeWords.one were additive.\n- **rust and elixir (stage 3):** 0. utilityShared, streamLazy, layout.names and sym.type were additive; v3 later removed utilityShared electively (P8).\n- **clojure REFERENCE and the rb pilot:** 0. 0d9e72c3 relaxes a rule.\n- **Wave 1 (perl, swift, ocaml, lua; 3.3):** 6, or 7 counting the utility copy (P24) the survey prompted.\n  - Provider: 2 (P22 streamSignal, P23 wrapped unwrap).\n  - Forms: 4 (F11 to F14, the G items).\n  - Plus changed shared sentences (direct's Returns, the list call). They came from the sentence review, not from the ports.\n- **Wave 2 (js, php, csharp, java, kotlin, scala, cpp; 3.4):** 3 interface and forms changes, 0 to the provider types. Guard/forms: F17 accessor lookup and factory, F18 sdktest, F19 deleted read name by name. All seven new facts were optional: factory, blockScope, streamSignalForm, removeKeeps and the deleted layout fill. Adding the stream-signal sentence changed on every page gives 4, as s6 counts; adding the ts/js README utility row gives 5. The interface '3.3' declaration the seven had to add came from H5, not from them.\n\nNewly ported languages caused 9 to 11 breaking changes in all (wave 1 6 to 7, wave 2 3 to 4). That alone is about H1's line of 10. The second wave was smaller than the first and touched no provider type, but the guard still tightened three times.",
+ "sentences": "RAN: `node tools/sentences.js --clone ../sdkgen --old ../out/old --new ../out/new --refs <all twenty> --out ../sent20` (47 s), then the same with `--match` (13 min 15 s; logs/sentences20-match.log, sent20m/).\n\n**Distinct shared sentences:** 385. Tutorial 84, root quick start 12, REFERENCE 289. Earlier: 312 against thirteen references, 235 against nine.\n\n**Verdicts:** 221 ok (tutorial 57, root 8, REFERENCE 156), 0 false, 0 awkward, 164 none. The 164 split as:\n- 128 printed only by the eleven later-port languages, never keyed in reviewed/sentences.json.\n- 36 printed by a nine-reference language, but changed or re-masked since the review:\n  - 8 h3fix features sentences;\n  - 2 S13-residue test-client sentences;\n  - 12 D26 constructor-table cells;\n  - 2 type cells/returns (`object`);\n  - 2 direct's Returns (3.3);\n  - 1 list call;\n  - 1 ts name heading;\n  - 1 stream signal (3.4);\n  - 7 go and lua pair-style tutorial sentences whose masked text or id moved when lua joined the reference set.\n- No independent reader has given these 164 a verdict.\n\n**Matched from scratch against a sentence with no verdict:** every language matches some classes. Fewest zig 14, perl and c and rust 15; most java 64, scala 59, kotlin 57, csharp 56. So STRICT_SENTENCES=1 would fail all twenty.\n\n**Printed by one language alone:** 190 of 385. By the tool's reason: shared-condition 68, code 67, unexplained 40, note 13, provider-literal 2. By language: perl 24, ts 22, go 21, swift 18, c 17, elixir 13, php 13, cpp 9, lua 9, clojure 6, rb 5, csharp 5, java 5, ocaml 4, kotlin 4, scala 4, py 3, zig 3, rust 3, js 2.\n\nI read the 40 \"unexplained\" (logs/sent20-unexplained.txt):\n- Result-style sentences one runtime's style selects: ts \"On failure it resolves to the error instead\"; go's and lua's pair sentences; c's NULL/*err sentences; perl's \"dies on failure\" (5); rb's raise comment.\n- go's bold step leads and step comments (9).\n- Headings: c \"Common Functions\", clojure \"sdk.api\" and \"Constructor\", js's two step headings.\n- Table headers and cells: elixir 4, ocaml 1.\n- elixir \"Pass `nil` for no initial options.\", swift \"Pass a `Value` to set it.\", and the ts and perl root comments.\n\nThey are the kinds base33 found at thirteen. I read them; I did not trace each to its template.",
+ "h3": "RAN.\n1. Copied P/h3fix/h3gen and issuecheck-h3fix.js into P/m20/h3. The generator stages an alias only for a clone inside its own workspace, so placed under P/m20 it could generate alias-go2. The integration had to skip that variation.\n2. `node h3/h3gen/gen.js h3out/new sdkgen/ts`: 26/26 variations, 16 s. The clone was clean after the alias staging. The 21 variations shared with out/new are byte-identical to it, which confirms the copied out/new is v34-frozen's output.\n3. `node h3/issuecheck-h3fix.js h3out --ported <twenty> --json logs/h3check20.json` (old = P/h3fix/h3out/old): exit 0, and 0 cells true on NEW for any of the twenty, across all 26 variations, the narrow checks, the broader 'any' variants and the post-attack ones (S22 any2, S13r2, bt2). lit, S13r and S13r2 have no OLD signal, as before.\n\nNew at twenty:\n- N04, U06 and M04 (aliased go2 typing every field `any`) are now checked and clean on NEW. They were \"X?\" at the integration.\n- N11 and M35 (a ts fence on js pages) are clean for js. js gets its fence from the provider's `fence` value, a syntax printer value.\n\nLines the seven ports added for a catalogued entry:\n- S13 (testMock): 1 provider line each, 7 in all.\n- Their forms citations were already present from the sentence round (65a16aef) in five of them. php and scala re-quoted theirs: 1 line each.\n- js's S13 runtime fix (Config.fragment.js and Config.data.fragment.js, +3/-2 each) predates its port (b09502f1).\n- No other catalogued entry needed a line in the seven. They carry no U44-style exception, and D26's open half (extend and utility rows need a per-language fact) is still done for no language.\n- U44's two leftover exceptions remain in py.ts:93 and elixir.ts:97.\n\nThe ratio over the 36 in-scope entries at twenty. Each range runs from D26's open half counted for the proposal to it counted against:\n\n| Reading | Per entry (of 36) | Per distinct defect (of 29) |\n| --- | --- | --- |\n| By the brief's rule (S13; D26) | 1/36 = 2.8% to 2/36 = 5.6% | 1/29 = 3.4% to 2/29 = 6.9% |\n| Strict (+U44) | 2/36 = 5.6% to 3/36 = 8.3% | 6.9% to 10.3% |\n| Strictest (+N04 U06 M04, M14: the type printers, now 20, and go's printer) | 6/36 = 16.7% to 7/36 = 19.4% | 4/29 = 13.8% to 5/29 = 17.2% |\n\nThese are unchanged from the record's thirteen-language figures. N11/M35, outside the 36, is now fixed for js through shared code; over 38 the brief's rule gives 2.6% to 5.3%.\n\nNot re-done: the checker's 17 put-back attacks, and an independent reading of the sentences the catalogue round changed.",
+ "h5_rows": [
+  {
+   "row": "R1 upgraded, nothing run (base: ts go py perl lua js php, made by 4.44.0, rebuilt by me)",
+   "before": "h5fix after-1 (beebf7f1, 4.45.0): js/php SAME; 5 languages OLD; doctor 10 missing, 11 outdated, 15 retired, exit 1",
+   "after": "all 7 OLD (js and php now retire too); doctor 14 missing, 22 outdated, 21 retired, exit 1; generate warns",
+   "safe": "yes (loud), same verdict"
+  },
+  {
+   "row": "R2a, R2a2 re-add ts, then the rest; R2b package update; R2c dry runs",
+   "before": "prunes 3 per language; pages NEW; doctor matches, exit 0; dry runs leave the tree unchanged",
+   "after": "same; all 7 NEW; doctor matches, exit 0; dry runs unchanged",
+   "safe": "yes"
+  },
+  {
+   "row": "R3, R3b edited retired copy (re-add, package update)",
+   "before": "kept with an override warning, used (OTHER+EDITED); doctor 1 undeclared override, exit 1",
+   "after": "same",
+   "safe": "yes (loud)"
+  },
+  {
+   "row": "R3c --force; R3d overwrite mode",
+   "before": "edit replaced; ts NEW",
+   "after": "same",
+   "safe": "yes"
+  },
+  {
+   "row": "R4a, R4b, R4d remove; R4c remove with the edited copy",
+   "before": "exit 0, exit 0, exit 0; R4c refuses ('did not write'), exit 1",
+   "after": "same",
+   "safe": "yes (R4c's wording inaccurate, as before)"
+  },
+  {
+   "row": "R5 no copy record, re-add; R5b with --force",
+   "before": "R5 refuses (11 forked, conflicts in log/conflict), pages OLD; R5b all NEW, doctor matches",
+   "after": "R5 refuses (22 forked); R5b all NEW, doctor matches",
+   "safe": "yes"
+  },
+  {
+   "row": "R6 alias go~go2 js~js2 made by 4.44.0",
+   "before": "re-add exit 0; go2 and js2 OTHER (a 4.44.0 alias defect in other components); doctor exit 1",
+   "after": "same",
+   "safe": "as before"
+  },
+  {
+   "row": "R8 project-owned target mine",
+   "before": "mine's own quick start kept (1 line), doctor matches",
+   "after": "same (my rebuilt `mine` fixture approximates theirs)",
+   "safe": "yes"
+  },
+  {
+   "row": "R15, R15b override deleted by hand, then doctor prune",
+   "before": "1 orphan compiled finding, exit 1; prune -y unchanged; prune; ts NEW",
+   "after": "same",
+   "safe": "yes"
+  },
+  {
+   "row": "R9 twenty targets made by 4.44.0, package update",
+   "before": "39 retired (13x3); after the update == fresh for the ported; 7 unported differ by 1 shared line",
+   "after": "60 retired (20x3), 60 pruned; all 40 per-target pages and the root README == fresh; doctor matches",
+   "safe": "yes"
+  },
+  {
+   "row": "R10a, R10b roll back to 4.44.0 with the new dist",
+   "before": "R10b generate THROWS (readsSecret is not a function)",
+   "after": "same",
+   "safe": "yes (loud)"
+  },
+  {
+   "row": "R11 3.2 providers (lua32, ocaml32) served on this build: L, D, B",
+   "before": "L and D tsc 0, one warning, doctor matches; REFERENCE L->B lua 63, ocaml 80",
+   "after": "identical (63, 80). A not reproducible: P/ports/lua and P/ports/ocaml are gone",
+   "safe": "yes (packs keep generating)"
+  },
+  {
+   "row": "R13 aliases upgraded vs fresh",
+   "before": "go2 and js2 pages upgraded == fresh; js2 REFERENCE vs js 30 lines",
+   "after": "go2 and js2 upgraded == fresh; js2 REFERENCE vs js 0 lines (js now ported); root README differs 47 lines (38 before: go and js not re-added in this row)",
+   "safe": "yes"
+  },
+  {
+   "row": "R14 project edits printer, fact and hook",
+   "before": "merge keeps (2 customized); overwrite drops; async edit customized 1",
+   "after": "same",
+   "safe": "yes"
+  },
+  {
+   "row": "R16 package check both/provider/hook/neither; R7b pack retires its own components",
+   "before": "0 / 1 error (hook missing; generate throws) / 1 warning / 0; R7b RETIRED then pruned, matches",
+   "after": "same",
+   "safe": "yes"
+  },
+  {
+   "row": "S1, S1b legacy and old-release records",
+   "before": "update refreshes; pages NEW; doctor matches",
+   "after": "same",
+   "safe": "yes"
+  },
+  {
+   "row": "S2a, S2b, S2r, S2n damaged record lines",
+   "before": "loud: damaged-record and forked/undeclared findings; remove refuses in S2b and S2r",
+   "after": "same",
+   "safe": "yes (loud)"
+  },
+  {
+   "row": "S3a, S3b, S3c revert, CRLF, trailing space",
+   "before": "S3a and S3b retired and matched; S3c kept, undeclared, exit 1",
+   "after": "same",
+   "safe": "yes"
+  },
+  {
+   "row": "S5a, S5b, S5b2 target removed or deleted by hand",
+   "before": "orphan compiled 3 / 34 findings; prune clears",
+   "after": "same",
+   "safe": "yes (loud)"
+  },
+  {
+   "row": "S7a, S7b, S8 aliases with the base removed, two aliases",
+   "before": "alias model kept; go2 OTHER; S8 go2 == go3 modulo name; matches",
+   "after": "same",
+   "safe": "as before"
+  },
+  {
+   "row": "S9 overwrite mode, edited retired copy",
+   "before": "doctor warns before the delete (undeclared), exit 1",
+   "after": "same",
+   "safe": "yes"
+  },
+  {
+   "row": "S10a, S10b repeated update; update with nothing newer",
+   "before": "-y unchanged; second update changes the tree; S10b changes the tree",
+   "after": "same",
+   "safe": "as before"
+  },
+  {
+   "row": "S11, S12 feature add before target add; pack lua~lp beside lua",
+   "before": "S12: lp README unchanged, REFERENCE 2 lines",
+   "after": "S12: lp README unchanged, REFERENCE 7 lines (the catalogue round's shared feature edits reach the pack); matches",
+   "safe": "yes (pack generates)"
+  },
+  {
+   "row": "S13a stale dist after update; S13b dist deleted",
+   "before": "S13a: sections ABSENT while doctor matches; S13b tsc 1",
+   "after": "same",
+   "safe": "as before (the real flow compiles first)"
+  },
+  {
+   "row": "S14, S14b gitignored log and dist, second machine",
+   "before": "refuses (forked); --force matches",
+   "after": "same (22 forked)",
+   "safe": "yes"
+  },
+  {
+   "row": "S16, S17, S18 dry remove; git restore; junk files",
+   "before": "unchanged; 11 customized after; junk ignored",
+   "after": "unchanged; 22 customized; junk ignored",
+   "safe": "yes"
+  },
+  {
+   "row": "S19, S19b, S20 edited copy, no record, --force; declared; forgotten copy",
+   "before": "S19 undeclared exit 1; S19b matches; S20 matches",
+   "after": "same",
+   "safe": "yes"
+  },
+  {
+   "row": "F6 copy edited to equal v4.34.1's text (37 lines from 4.44.0), record says changed, merge mode",
+   "before": "(s4-h5fixcheck) RETIRED and deleted by a plain package update; doctor then matches. NOT OK",
+   "after": "-y unchanged; the real update KEEPS it unchanged, with an override warning, and uses it; doctor 'OVERRIDE NOT DECLARED', exit 1",
+   "safe": "yes now (loud; the F6 fix c2361edd)"
+  },
+  {
+   "row": "F6b the same, override declared in the model",
+   "before": "deleted the same way; the declaration ignored. NOT OK",
+   "after": "KEPT unchanged and used; doctor matches, exit 0",
+   "safe": "yes now"
+  },
+  {
+   "row": "c5 provider takes `interface` from a deep import of SYNTAX_INTERFACE (project-owned myts; pack c5pack)",
+   "before": "compiles and generates with no warning; package check misreads it as declaring none. NOT OK",
+   "after": "tsc 0; GEN ok with 0 warnings; doctor matches; package check exit 0, 'no findings'. The misreading is gone, but the bypass stays: the provider claims the current interface whatever it was written for",
+   "safe": "NO: still open. A raise build to show the effect could not be built here (next2 is gone)"
+  },
+  {
+   "row": "F11 release retires ReadmeTopHowto_ts and skips the retired list; project with no record (simulated by removing the file from my clone's scaffold, then restored; clone clean after)",
+   "before": "kept and used; root README +12 old lines; doctor 'matches (1 additive)', exit 0. NOT OK",
+   "after": "`build/retired.js --check` exit 1 ('differs from the release history; run npm run retired'). publish.yml runs npm test with fetch-depth 0, so retire.test.ts 'is complete' would block the release. If skipped: kept after --force and still used (+12 root README lines against a correctly retired copy); doctor 'OVERRIDE NOT DECLARED ... ReadmeTopHowto_ts.ts', exit 1",
+   "safe": "yes now (caught at release; loud at doctor), though the stale page is written until the project acts"
+  },
+  {
+   "row": "Not re-run: S4, S4b, S4g, S17b, st2n; row 12 langpack; row 11 A; r11own m1-m9; the attack's F1-F5, F7-F10, F12-F15; rows1 'today'",
+   "before": "see after-1.log, st2n.log, s4-h5fixcheck",
+   "after": "not run: the next, next2, nocheck and today builds, the langpack copy, P/ports/lua and ocaml, and the attacker's scripts no longer exist",
+   "safe": "not tested here"
+  }
+ ],
+ "hypotheses": [
+  {
+   "h": "H1",
+   "criterion": "Refuted if 3 or more providers read model facts or carry model-dependent conditions; or per-language prose that cannot be shared exceeds about 15%; or the provider interface needs more than about 10 breaking changes after the first four languages",
+   "figure": "Purity: 0 open findings in 20 (41 accepted with reasons). Prose by source: at most 7.1% (go). Alone, against twenty: at most 14.8% (go); 33.5% in go's tutorial and up to 93.5% in single root quick starts. Interface re-counted: 25 provider plus 19 forms-framework breaking changes, 44 in all. Newly ported languages caused 9 to 11 of them (wave 1 6 to 7, wave 2 3 to 4, with 0 provider-type changes in wave 2)",
+   "side": "Refuted on the breaking-change criterion, which is crossed 2.5 to 4 times over (more than the record's 25 to 33). Holds on model reads. Holds on prose by both measures overall; the 'alone' measure crosses 15% only within single sections"
+  },
+  {
+   "h": "H2",
+   "criterion": "Refuted if less than 2x fewer lines for those sections",
+   "figure": "At twenty, measured: 2.06x documentation code only (2.14x without the H5 machinery), 1.54x with forms, 1.20x with the shared guard. Tool headline 1.50x. Thirteen at this state: 1.71x, 1.33x, 0.97x; nine: 1.43x, 1.17x, 0.80x",
+   "side": "Over the line only for documentation code alone, by 3% (2.06x). Under it on every count that includes what a port must write (forms, guard)"
+  },
+  {
+   "h": "H3",
+   "criterion": "Refuted if more than about 10% of the catalogued issues in those sections still need a per-language edit",
+   "figure": "Checker over 26 variations and twenty languages: exit 0, nothing shows on NEW. The seven added 7 lines for S13 and none for any other entry. Per entry: 2.8% to 5.6% (brief's rule), 5.6% to 8.3% (strict), 16.7% to 19.4% (strictest). Per distinct defect: 3.4% to 6.9%, 6.9% to 10.3%, 13.8% to 17.2%",
+   "side": "Not refuted by the brief's rule or the strict reading (the strict per-defect upper bound is 10.3%, at the line). Crossed only on the strictest reading, which counts the type printers the brief exempts"
+  },
+  {
+   "h": "H4",
+   "criterion": "Refuted if an example test fails, in a language with a toolchain here, for a reason intrinsic to the approach",
+   "figure": "Not run by me. The integration's lanes (read) were all NEW-green at 89387a4f",
+   "side": "Not measured in this job"
+  },
+  {
+   "h": "H5",
+   "criterion": "Refuted if retiring per-language components cannot be made safe for doctor, remove, target add and package update without breaking their rules, or a pack's targets stop generating",
+   "figure": "Every re-run row and state has the earlier verdict. F6 and F6b are now safe; F11 is now caught at release (retired.js --check) and loudly by doctor; c5 is still open (a deep import of SYNTAX_INTERFACE compiles, generates and passes package check silently). Packs keep generating: row 11 L, D and B; row 16; S12; R7b",
+   "side": "Not refuted: confirmed with conditions. One of the attack's three unsafe states (c5) remains. It is latent until the next interface raise, which I could not build here"
+  }
+ ],
+ "not_done": [
+  "H5 states needing release builds that no longer exist: S4, S4b and S4g (st2n), and S17b. They need `next` or `next2`; P/h5fix's own copies and P/h5fixcheck are gone.",
+  "H5 row 12 (langpack): its copy is gone.",
+  "H5 row 11 A: needs P/ports/lua and P/ports/ocaml, which are deleted.",
+  "H5 r11own m1 to m9: needs the `nocheck` build. I ran c5's deep-import variant only, on the new build.",
+  "The attack's other F states (F1-F5, F7-F10, F12-F15): its scripts were deleted and I did not rebuild them. I rebuilt only the three that were unsafe (F6/F6b, F11, c5).",
+  "rows1 for the 'today' build, which is gone. Before values come from h5fix's after-1.log.",
+  "My H5 fixtures were rebuilt with 4.44.0 from h5's description. base-owned's `mine` target is my approximation. The new build reports version 4.44.0, not 4.45.0 as in h5fix (the integration left out the version commit).",
+  "c5's actual effect (a provider claiming a raised interface it was not written for) needs a raise build, which I could not make within the two-clone limit.",
+  "H4 example lanes: not run.",
+  "No independent reading of the 164 sentences without a verdict, or of the 40 'unexplained' single-language sentences beyond my own read. I did not trace each to its template.",
+  "Interface re-count judgements are mine. For F15 (93060a64) the forced forms cannot be separated from the utility-copy citations in 3cb248f8. I did not re-count changed shared sentences round by round; I list them separately.",
+  "H3's put-back attacks were not re-run; only the checker with its broad and post-attack variants was.",
+  "The language pack (dart, haskell, lean) was not generated at this state.",
+  "Timings are single runs on shared CPUs."
+ ],
+ "ran": "All runs used the brief's PATH (node 24.22.1) in P/m20, one heavy command at a time.\n\n**Setup**\n- Cloned v34/sdkgen at v34-frozen (89387a4f) and ran `npm run build`: exit 0, 2.8 s.\n- Cloned tools at v34-frozen-tools (e55846e).\n- out/old links base33/out/old; out/new was copied from v34.\n\n**Measures**\n- lines.js, text and JSON, plus mine/lines20.py.\n- git numstat of the seven ports, and of the H5 commits in shared files.\n- sharewords.js over all twenty.\n- purity.js with and without `--allow`.\n- sentences.js with twenty references, without and with `--match`.\n\n**Interface re-count**\n- mine/typediff.js, which diffs every top-level type at each commit from f21e6fe1 to v34-frozen.\n- A per-commit table of the Syntax, Naming, forms and guard files each commit touched.\n- `git blame` on every throw in the shared files.\n- git grep for which providers used each removed or required fact before and after each change.\n\n**H3**\n- h3gen gen.js over 26 variations (alias-go2 included).\n- diff -rq of the 21 shared variations against out/new: 21 of 21 identical.\n- issuecheck-h3fix.js with all twenty ported: exit 0.\n- grep for testMock lines and forms citations in the seven, against v33-frozen.\n\n**H5**\n- h5/bin/mkfix.sh: the fixtures and the NEW and OLD references at this build, made by 4.44.0 (old = v34/oldcopy/ts, with node_modules linked).\n- run1.sh: section 1 and rows 9, 10, 13, 14 and 16, in 2 min 39 s.\n- run2.sh: S1 to S18, st3, st5 (F6, F6b, c5), st6 (F11, including `build/retired.js --check`) and row 11 L, D and B, in 2 min 36 s.\n- A doctor re-run in the F11 state, to name the flagged file, with the scaffold restored after.\n- Both clones are clean at the end (git status 0 lines).",
+ "read": "**Read in full or in the parts that mattered**\n- prompts/k-measure20.md and P/brief.md.\n- results/s6-integrate.txt in full.\n- results/s3fix2-final.txt: measures, interface_changes, breaking_counts and hypotheses.\n- results/s3c-base33.txt: measures and hypotheses.\n- results/s3c-freeze33.txt: interface_changes, lines and hypotheses.\n- results/s4-h5fixcheck.txt: summary, rows_differ and states.\n- The committed record: sections 1 to 2.1, 3.1, 3.2, 3.3 and the end of 3.5, 6.1, and appendix B.\n- brief7.md: its opening, and the guard items G1 to G8.\n\n**Code read**\n- The tool headers of lines, sharewords, sentences and purity.\n- v33b/mine/lines.py.\n- h5fix bin and checkbin scripts: tool.js, lib.sh, rows1, rows9 to rows16, st.sh, rows11fix.sh, r11own.sh.\n- h3gen gen.js and lib2.js; the issuecheck header.\n- build/retired.js; the 'is complete' test in retire.test.ts; publish.yml's checkout depth and test step.\n- h5/PROGRESS.md and h5fix/PROGRESS.md.\n\n**Taken as read, not re-run**\n- The integration's lane results (H4).\n- The before columns of H5, from h5fix after-1.log, st2n.log and s4-h5fixcheck's report.\n- The causes of wave-1 changes, from brief7 and the freeze report.",
+ "surprises": [
+  "H2 measured at twenty (2.06x documentation code only) is lower than both earlier projections (2.16x, 2.26x). It is still over 2x on that one count, and only because the seven ports came in smaller than assumed.",
+  "The 'alone' prose measure for go fell under 15% (14.8%) only because the reference set grew to twenty. The sentences did not change.",
+  "The re-count finds more breaking changes than any record: four 3.1 guard tightenings and b8fd4fc2 forced every then-ported forms file and are in no count. The testMock value rename forced 7 providers and 18 forms and has no row. H5's interface field forced a line in all 20 providers although s6 reports 0 provider-type changes.",
+  "With the generator copy placed under P/m20, alias-go2 generates, so N04, U06 and M04 are checked on the aliased go2 for the first time, and are clean.",
+  "All of P/h5fix's own fixtures and builds (work, old, today, next, next2, nocheck, langpack) and the attacker's directory were gone. H5 had to be rebuilt from scripts and descriptions. The rebuilt rows reproduce every earlier verdict.",
+  "The frozen clone's package version is 4.44.0, the same number as the old build: the integration left out h5fix's 4.45.0 version commit. The rows still behaved as at 4.45.0, because the copy logic works on fingerprints.",
+  "F11 is now loud at doctor even without the list naming the file ('OVERRIDE NOT DECLARED'), where the attack saw doctor match. The stale page is still written until the project acts.",
+  "c5's deep import now passes package check with no finding. The misreading is fixed, but the bypass is silent."
+ ]
+}

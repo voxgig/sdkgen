@@ -1,0 +1,92 @@
+
+##### [new] R11own build new
+   [new base] TSC EXIT 0
+   mutated lines vs scaffold: 1
+   [new m1-req-removed] TSC EXIT 0
+      gen: GENERATE THREW: Error: ReadmeRef: the test constructor needs ref.facts.testMock |     at testText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/sdkgen/ts/dist/cmp/ReadmeRef.js:255:15) |     at refText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/
+   mutated lines vs scaffold: 2
+   [new m2-req-misnamed] TSC EXIT 1 (emitted anyway, as a pack shipping JS would)
+      tsc:       1 error TS2561: Object literal may only specify known properties, but 'testmock' does not exist in type 'RefFacts'. Did you mean to write 'testMock'?
+      gen: GENERATE THREW: Error: ReadmeRef: the test constructor needs ref.facts.testMock |     at testText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/sdkgen/ts/dist/cmp/ReadmeRef.js:255:15) |     at refText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/
+   mutated lines vs scaffold: 1
+   [new m3-opt-removed] TSC EXIT 0
+      page myts/REFERENCE.md: 3 line(s) differ from the unmutated provider
+         < marked as deleted, and throws on failure. `result.deleted()` reads the
+         < mark. `.data()` reads its record.
+         > marked as deleted, and throws on failure. `.data()` reads its record.
+   mutated lines vs scaffold: 2
+   [new m4-opt-misnamed] TSC EXIT 1 (emitted anyway, as a pack shipping JS would)
+      tsc:       1 error TS2561: Object literal may only specify known properties, but 'streamsignal' does not exist in type 'RefFacts'. Did you mean to write 'streamSignal'?
+      page myts/REFERENCE.md: 14 line(s) differ from the unmutated provider
+         < call returns. It ends early once `callopts.signal` reports an abort.
+         > call returns.
+         < call returns. It ends early once `callopts.signal` reports an abort.
+         > call returns.
+   mutated lines vs scaffold: 2
+   [new m5-arity-less] TSC EXIT 0
+      page myts/REFERENCE.md: 6 line(s) differ from the unmutated provider
+         < holds the error, read as `result.err`; a request that cannot be made
+         < gives only `ok` (`false`) and `err`. A failure is reported in the
+         < result, not as an error, so branch on `result.ok`.
+         > holds the error, read as `result`; a request that cannot be made gives
+   mutated lines vs scaffold: 2
+   [new m6-arity-more] TSC EXIT 1 (emitted anyway, as a pack shipping JS would)
+      tsc:       1 error TS2322: Type '(value: string, key: string, truth: boolean, extra: string) => string' is not assignable to type '(value: string, key: string, truth?: boolean |
+   mutated lines vs scaffold: 6
+   [new m7-cast-req-removed] TSC EXIT 0
+      gen: GENERATE THREW: Error: ReadmeRef: the test constructor needs ref.facts.testMock |     at testText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/sdkgen/ts/dist/cmp/ReadmeRef.js:255:15) |     at refText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/
+   mutated lines vs scaffold: 9
+   [new m8-iface-const] TSC EXIT 1 (emitted anyway, as a pack shipping JS would)
+      tsc:       1 error TS2305: Module '"@voxgig/sdkgen"' has no exported member 'SYNTAX_INTERFACE'.
+      gen-warn:   syntax-interface-previous: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts is written for interface 3.2 (it declares none), which this sdkgen still serves until its next interface raise. 
+      page myts/REFERENCE.md: 2 line(s) differ from the unmutated provider
+         < result, not as an error, so branch on `result.ok`.
+         > result, not as an error.
+   mutated lines vs scaffold: 2
+   [new m9-iface-older] TSC EXIT 0
+      gen-warn:   syntax-interface-previous: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts is written for interface 3.2, which this sdkgen still serves until its next interface raise. Its pages leave out
+      page myts/REFERENCE.md: 2 line(s) differ from the unmutated provider
+         < result, not as an error, so branch on `result.ok`.
+         > result, not as an error.
+
+##### [new] R11own build loud
+   [loud base] TSC EXIT 0
+   mutated lines vs scaffold: 1
+   [loud m1-req-removed] TSC EXIT 0
+      gen: GENERATE THREW: Error: ReadmeRef: the test constructor needs ref.facts.testMock |     at testText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/dev/ts/dist/cmp/ReadmeRef.js:252:15) |     at refText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/pro
+   mutated lines vs scaffold: 2
+   [loud m2-req-misnamed] TSC EXIT 1 (emitted anyway, as a pack shipping JS would)
+      tsc:       1 error TS2561: Object literal may only specify known properties, but 'testmock' does not exist in type 'RefFacts'. Did you mean to write 'testMock'?
+      gen: GENERATE THREW: Error: ReadmeRef: the test constructor needs ref.facts.testMock |     at testText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/dev/ts/dist/cmp/ReadmeRef.js:252:15) |     at refText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/pro
+   mutated lines vs scaffold: 1
+   [loud m3-opt-removed] TSC EXIT 0
+      gen: GENERATE THREW: SdkGenError: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts leaves out what interface 3.3 asks it to declare: |   - ref.facts.deleted (declare false if none) |     at checkDeclared (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/dev/ts/dist/helpers/syntaxv
+      gen-warn: GENERATE THREW: SdkGenError: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts leaves out what interface 3.3 asks it to declare: |   - ref.facts.deleted (declare false if none) |     at check
+   mutated lines vs scaffold: 2
+   [loud m4-opt-misnamed] TSC EXIT 1 (emitted anyway, as a pack shipping JS would)
+      tsc:       1 error TS2561: Object literal may only specify known properties, but 'streamsignal' does not exist in type 'RefFacts'. Did you mean to write 'streamSignal'?
+      gen: GENERATE THREW: SdkGenError: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts leaves out what interface 3.3 asks it to declare: |   - ref.facts.streamSignal (declare false if none) |     at checkDeclared (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/dev/ts/dist/helpers/sy
+      gen-warn: GENERATE THREW: SdkGenError: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts leaves out what interface 3.3 asks it to declare: |   - ref.facts.streamSignal (declare false if none) |     at 
+   mutated lines vs scaffold: 2
+   [loud m5-arity-less] TSC EXIT 0
+      gen: GENERATE THREW: SdkGenError: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts leaves out what interface 3.3 asks it to declare: |   - ref.read takes 3 parameters, and declares 1 |     at checkDeclared (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/dev/ts/dist/helpers/synta
+      gen-warn: GENERATE THREW: SdkGenError: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts leaves out what interface 3.3 asks it to declare: |   - ref.read takes 3 parameters, and declares 1 |     at che
+   mutated lines vs scaffold: 2
+   [loud m6-arity-more] TSC EXIT 1 (emitted anyway, as a pack shipping JS would)
+      tsc:       1 error TS2322: Type '(value: string, key: string, truth: boolean, extra: string) => string' is not assignable to type '(value: string, key: string, truth?: boolean |
+   mutated lines vs scaffold: 6
+   [loud m7-cast-req-removed] TSC EXIT 0
+      gen: GENERATE THREW: Error: ReadmeRef: the test constructor needs ref.facts.testMock |     at testText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/dev/ts/dist/cmp/ReadmeRef.js:252:15) |     at refText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/pro
+   mutated lines vs scaffold: 9
+   [loud m8-iface-const] TSC EXIT 1 (emitted anyway, as a pack shipping JS would)
+      tsc:       1 error TS2305: Module '"@voxgig/sdkgen"' has no exported member 'SYNTAX_INTERFACE'.
+      gen-warn:   syntax-interface-previous: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts is written for interface 3.2 (it declares none), which this sdkgen still serves until its next interface raise. 
+      page myts/REFERENCE.md: 2 line(s) differ from the unmutated provider
+         < result, not as an error, so branch on `result.ok`.
+         > result, not as an error.
+   mutated lines vs scaffold: 2
+   [loud m9-iface-older] TSC EXIT 0
+      gen-warn:   syntax-interface-previous: myts: the syntax provider .sdk/src/cmp/myts/Syntax_myts.ts is written for interface 3.2, which this sdkgen still serves until its next interface raise. Its pages leave out
+      page myts/REFERENCE.md: 2 line(s) differ from the unmutated provider
+         < result, not as an error, so branch on `result.ok`.
+         > result, not as an error.

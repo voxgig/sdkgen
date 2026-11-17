@@ -1,0 +1,22 @@
+▶ the README examples run for a slug carrying the word client
+  ✔ go: every README example is classified, and run (11369.415534ms)
+  ✔ go: every README example is classified, and run, with a patch (3427.909731ms)
+  ✔ go: the README examples run with Basic auth and a templated server (3530.788482ms)
+  ✔ go: the README examples run where a list requires parameters (3730.962804ms)
+  ✔ go: the README examples run where a list's parameters are a keyword and __proto__ (3593.54731ms)
+  ✔ go: the README examples run where a load's points each need a selector of their own (4217.161468ms)
+  ✔ go: the README examples run where an optional query parameter shadows a route parameter (3860.31757ms)
+  ✔ go: the README examples run where an entity lists only through actions (3984.905825ms)
+  ✔ go: the README examples run where a create's routes each need a parent of their own (3642.459598ms)
+  ✔ go: the README examples run where a record is keyed by _id (4091.919051ms)
+  ✔ go: the README examples run where an update's request carries no id (3686.199565ms)
+  ✔ go: the README examples run where a load parameter and a create field hold a quote and a backslash (3568.73369ms)
+✔ the README examples run for a slug carrying the word client (52799.959261ms)
+ℹ tests 12
+ℹ suites 1
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 54761.676572

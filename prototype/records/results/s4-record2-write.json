@@ -1,0 +1,84 @@
+{
+ "summary": "All seven reports were there at the start (s4-h3check, s4-h5, s4-h5check, s4-general-sum, s4-general-blind, s3c-base33, s3c-guide33), plus the working table. I read each one in full, along with the brief, the k-record rules, the committed record and the H3 builder's report where the check refers to it. I updated a copy of the record and wrote the classification file beside it. Nothing under /home/user was modified.\n\nWhat changed in the record:\n- **Status and standings.** The status line now lists the four new results and what is still out: the seven ports (js, java, php and cpp being ported; csharp, scala and kotlin queued), integration at twenty, the measures at twenty, H3's seven shared edits (being made, result to 3.3), H5's two structures (being built and to be attacked, result to 3.5), and the verdict.\n- **H1 and H2.** Both now carry the thirteen-language figures beside the nine-language ones.\n- **H3.** Rewritten around the check: what it confirmed, what it corrected, why a clean result rests on reading and not on the pattern checks alone, and the recomputed table.\n- **H5.** Rewritten from the real-structure measurement and the independent attack.\n- **New section 4.** How far the proposal reaches across the 329 catalogue entries; it points to the classes file for the rows.\n- **Other updates.** Cost, limits, not-done and appendices are updated: tools merged at base33, self-test 266 controls, guard size, guide 3.3, a sampled classification, the H5 limits, and the remaining list. The sections that followed the old section 3 are renumbered.\n\nAnswer for the maintainers' question, as written in section 4:\n- The mechanism reaches T+S: 66 of 329 entries (20%), 50 of 263 distinct.\n- 81 entries (25%) are already written once. 46 of those need derivations the proposal does not supply.\n- 175 entries (53%) it does nothing for.\n- Of the 46 work packages, 2 disappear, 9 shrink and 35 stay.\n- The record says plainly that the proposal is not a general solution to the catalogue. It is a general mechanism for the per-language documentation text.",
+ "record_path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/record2/model-dependent-text-prototype.md",
+ "classes_path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/record2/model-dependent-text-classes.md",
+ "record_lines": "1785 lines (about 119 KB); the committed version was 1124 lines",
+ "classes_lines": "595 lines (about 66 KB): 6 sections, ending in the full 329-row table",
+ "changes": [
+  {
+   "what": "s4-h3check (independent check of H3)",
+   "sections": "Status; Where each hypothesis stands (H3 row); 3.3 rewritten (lead, corrected count table with builder and checker columns, ratio table builder/checker, per-distinct figures, U37 sensitivity, what the check confirmed, what it corrected, what a clean result rests on, limits, standing); 5.8 (log 'set to true' reading kept, referenced); 7 (new limit: catalogue checks are patterns); 8 (H3 seven shared edits, unscored readings); Appendix C (new row: a catalogued defect brought back in other words, 6 of 6 passed)",
+   "result": "Confirmed: scope (blind sample of 66, two arguable cases, U37 and S46, stand outside by the rule), reproduction byte for byte, every check fires on OLD, six unfixed show on NEW, broader variants clean. Corrected: D26 fixed only in part (fixed by shared code alone 29 -> 28); U44 has per-language lines under a strict reading; the six unfixed were within reach, since two prototype commits edited ReadmeRefFeatures.ts and FeatureDocs.ts; an extractor defect with no effect. Per-language edit ratio over 36 entries: brief's rule 2.8%, strict 5.6%, strictest 16.7%. Counted against the proposal: 22.2%, 25.0%, 36.1%. Per distinct defect (29): 3.4/27.6, 6.9/31.0, 13.8/37.9. Standing: not decided."
+  },
+  {
+   "what": "s4-h5 and s4-h5check (H5 on the real structure, then the independent attack)",
+   "sections": "Status; Where each hypothesis stands (H5 row); 2.1 (stage 12 row; the H5 branch is not in the base); 3.1 (pending interface field as one more breaking change if adopted); 3.5 rewritten (method, row table 1 to 15 without and with the lifecycle change, twenty targets with timings, version skew both ways, the provider written for an older interface and the interface version, stale compiled output and its fix, overrides, cost, the attack's findings, rules bent, earlier stand-in evidence condensed, what neither measured, standing); 5.2 (a declared fact is checked only in sdkgen's repository); 5.8 (alias defects; a new tools sub-list); 6.1 (rows for the base and the H5 branch); 7 (new limits: H5's generation roots and synthetic damage; prevalence of record-less projects unknown); 8 (H5 two structures and unmeasured items)",
+   "result": "Without the lifecycle change, 8 rows are unsafe. With it plus the orphan-compiled finding, every row is safe except 5b (no record, re-add with --force), which is unsafe with or without the changes. Twenty targets: update removes 39 copies; pages equal a fresh project. Language pack: 74 of 76 pass both ways; 10 of 12 pages identical. A 3.2 provider on 3.3 gave 2 type errors, 4 silent page changes and 6 silent omissions; the interface version makes all 6 loud. The attack re-ran all 75 rows with the same outcomes and tried 22 new states, 16 safe. Two new unsafe states belong to 5b's class: a truncated record line, and retired files restored from git. The attack also showed: an interface raise breaks tsc project-wide; the version check is defeated by declaring the imported constant; it adds nothing for a provider that declares the current version; and it makes a pack that ships providers stop generating at every raise. Standing: not decided."
+  },
+  {
+   "what": "s4-general-sum, s4-general-blind and general/catalogue-classes.md (reach across the catalogue)",
+   "sections": "New section 4 (4.1 classes, 4.2 three numbers, 4.3 the 46 packages, 4.4 how it was checked and the open borders, 4.5 what this means); status lead; 7 (new limit: classification checked by samples); 8 (open borders); new file model-dependent-text-classes.md",
+   "result": "Classes T 38/26, S 28/24, L 6/6, O 81/67 (46 needing a derivation), C 33/28, G 40/29, K 83/65, P 13/12, N 7/6; ranges carried. Three numbers: T+S 66 (20%), range 58 to 70; O 81 (25%), range 78 to 81; does nothing for 175 (53%), range 174 to 183. Packages: 2 disappear, 9 shrink, 35 stay. Check: first sample (not blind) 61 of 65; blind sample 95 of 100 on class, 93 of 100 with sub-class; no class error in the table; U15 sub-class corrected; up to about 7 of 229 could still be wrong. The classes file reworks the working table without its working names. It fixes the reasons for S22, X3, V27 and WP18, which said 'untouched' and were refuted by the H3 check. It annotates D26, U44 and U37."
+  },
+  {
+   "what": "s3c-base33 and s3c-guide33 (base for the last seven; measures at thirteen; guide 3.3)",
+   "sections": "Status; Where each hypothesis stands (H1, H2 rows); 2.1 (stage 11 row; the base described: v33-frozen plus tools tag base33 a3fd3b8); 2.3 (absent/dropped per variation and the page check); 2.4 (guide writer's toolchain check; php lane strips require_once); 3.1 (purity row; prose table at thirteen by source and alone; notes; sentence counts 235/231/107 and 312/81/174; criterion-3 row; standing); 3.2 (measured table at thirteen; nine at the base; port and forms sizes; new projection table; standing); 3.4 (lanes not re-run at the base); 5.2 (runtime table omissions; ahead citations); 5.3 (tools round merged, opened nothing); 6.1 (guide content and expected trouble spots); 6.3 (page check merged; self-test at the base; guard and forms sizes); Appendix A (re-run at the base identical); Appendix C (rows referring to the separate branch updated)",
+   "result": "Measured at thirteen: doc code 1.83x, with forms 1.41x, with guard 1.02x (tools' headline 1.36x); nine at the base 1.55x, 1.25x, 0.85x. Projected to twenty: 2.16x, 1.65x, 1.28x (at 1.5x provider size 1.94x). Prose by source at most 7.2% (go); alone against thirteen go 17.0%, lua 11.0%. Purity 0 open in all thirteen. Self-test 266 controls, 0 failed, 1 moved, 1,723 s alone. Shared guard 2,650 lines. Guide 3.3 is 957 lines; read-throughs found 8 gaps; the runtime table missed three facts (kotlin and scala no-argument constructors, js name field)."
+  }
+ ],
+ "standings_changed": [
+  {
+   "hypothesis": "H2",
+   "was": "Refuted at nine languages (3.2); not re-measured at thirteen",
+   "now": "Refuted at nine and at thirteen on every measured count (1.83x, 1.41x, 1.02x); over 2x only as a projection to twenty for documentation code alone at the measured provider size (2.16x)",
+   "why": "The base builder ran the line count at thirteen languages under the merged tools (s3c-base33)."
+  },
+  {
+   "hypothesis": "H3",
+   "was": "Not decided; builder's figures 2.8% by rule, 13.9% strictest; 6 not fixed; independent check running",
+   "now": "Still not decided. Per-language share 2.8% by the brief's rule, 5.6% strict, 16.7% strictest. 7 of 36 not fixed or only partly fixed (D26 added). Counted against the proposal: 22.2% to 36.1%. The 7 shared edits are being made.",
+   "why": "The independent check corrected D26 and U44, and found the six unfixed entries within reach. It also showed that the pattern checks can be fooled, so a clean result rests on reading."
+  },
+  {
+   "hypothesis": "H5",
+   "was": "Not measured on the current structure (stand-in: safe in 14 of 15 rows after the change)",
+   "now": "Not decided. Safe on the real structure wherever the copy record holds the retired copy as unchanged, given the lifecycle change and the orphan-compiled finding. Unsafe, with or without the changes, for copies the record does not hold: no record, a damaged line, or files restored after an update. A pack that ships providers changes pages silently without an interface version, or stops generating at each raise with one.",
+   "why": "The builder measured every row on real projects (s4-h5); the independent attack found two more unsafe states and the cost of the interface version (s4-h5check). The builder said 'confirmed with conditions' and the checker 'not decided'; the record states what the evidence supports."
+  },
+  {
+   "hypothesis": "H1",
+   "was": "Refuted on breaking changes; holds on model reads; prose under 15% by source, over for go by 'alone' (18.6% at v33s)",
+   "now": "Unchanged standing; prose by source at thirteen at most 7.2% (go), go 17.0% 'alone' against thirteen; breaking-change count not re-counted (base made no change); H5's interface field would add one if adopted",
+   "why": "Base builder's measures at thirteen; the H5 branch adds a required provider field."
+  }
+ ],
+ "contradictions": [
+  "Section 3.3 table: 'Fixed by shared code alone 29 (22 distinct)' was contradicted by the check. D26 is fixed only in part: its rows are a hand list gated on the option spec, not derived from it. Now 28 fixed plus 1 partly fixed, and the ratios are recomputed (rule against 19.4% -> 22.2%; strictest 13.9% -> 16.7%; strictest against 30.6% -> 36.1%).",
+  "Section 3.3 passed on the builder's account that the six unfixed entries sit in components the prototype 'never took into scope as a section'. The check found that the builder's 'never touched' claim was false: two prototype commits edited ReadmeRefFeatures.ts and FeatureDocs.ts. The record now says the six were within reach and unfixed because nothing scheduled them.",
+  "Section 3.3 counted per-language lines only for S13. Under the strict reading the check adds U44 (two leftover guard exceptions in the py and elixir forms files); a new strict row was added.",
+  "Section 3.5 'Not fixed: a component deleted by hand keeps running from stale compiled output'. The new orphan-compiled doctor finding fixes it on the H5 branch, which is not in the base.",
+  "Section 3.5's stage-1 'safe in 14 of 15 rows' came from a stand-in that changed only three files. On the real structure a project with no copy record cannot even be re-added (11 files read as forked). With --force it stays unsafe with or without the change, and the attack found two more such states.",
+  "Section 3.5 'No round from stage 3 to 3.3 ran a doctor, remove, target add, package update, pack or alias walk' and 'Standing: not measured on the current structure' are superseded.",
+  "Sections 2.1, 4.3 (now 5.3), 5.3 (now 6.3), 7 (now 8) and Appendix C described the tools round beside the freeze as not in the frozen tools and being brought onto them. It is now merged as tag base33 (a3fd3b8); its sixth commit was left out and the classes regenerated instead.",
+  "Section 3.2 'Not re-measured at 3.3' and the 3.2 projection to twenty (2.26x, 1.80x, 1.47x) are replaced by the thirteen-language measure and a new projection (2.16x, 1.65x, 1.28x). The working classification table's row reasons for S22, X3 and V27 ('component untouched') and WP18 ('untouched by the prototype') are contradicted by the H3 check, and were corrected in the classes file."
+ ],
+ "new_section_numbers": "A new section 4, 'How far the proposal reaches across the catalogue', with subsections 4.1 The classes, 4.2 The three numbers, 4.3 The 46 work packages, 4.4 How it was checked and what the check could not settle, and 4.5 What this means. The later sections were renumbered: old 4 is now 5 (5.1 to 5.8, and 5.8 is retitled 'Defects of the pages, tests and tools of main'), old 5 is 6 (cost), old 6 is 7 (limits) and old 7 is 8 (not done). All cross-references were renumbered. Section 3 keeps 3.1 to 3.5, and the appendices keep A to C. The new section's numbers as written: T+S 66 entries (20%), 50 of 263 distinct (19%), range 58 to 70 entries (44 to 53 distinct); tested T 38 (12%), 26 distinct (10%), of which 28 fixed by shared code, 1 per-language (S13), 1 partly (D26), 6 not fixed and 2 js-only. O 81 (25%), 67 distinct, range 78 to 81, with 46 entries (39 distinct, give or take 3) needing a derivation and 35 plain. Does nothing for (L, C, G, K, P) 175 (53%), 140 distinct, range 174 to 183 (53 to 56%); 182 (55%) with the N entries. Packages: 2 disappear, 9 shrink, 35 stay (10 and 34 if the O/S border falls to S). Checks: first sample 61 of 65 (94%, not blind); blind sample 95 of 100 on class, 93 of 100 with sub-class, 60 of 65 on the overlap, 33 of 35 on the new entries; about 7 of the 229 entries outside the samples could still be wrong.",
+ "unanswered": [
+  "What landing the proposal on main would cost in effort and calendar time, including porting the other ten README families. Only three sections were built, and the per-port times are uneven and partly doubted.",
+  "How many distinct derivations (targetSurface, targetPlace, docLink, featureOnByDefault and others) the 46 'needs a derivation' entries require, and how much of the remaining catalogue one answer per fact would reach. The classification says where text is written, not how many derivations fix how many entries.",
+  "Whether the S entries would really be fixed by writing their families once. No family beyond the three was built, and the analyst found part of them to be about one language.",
+  "How common projects without an intact copy record are in practice. That decides how much the unsafe H5 class matters.",
+  "Whether interface churn settles once the twentieth language is in. If it does not, a versioned interface stops packs that ship providers at every raise.",
+  "Whether csharp, kotlin and scala examples compile. There is no toolchain for them, and the same is true for clojure, elixir, swift, ocaml and lua.",
+  "How the language pack (dart, haskell, lean) would adopt the structure. Its own components keep working, but its 14 catalogue issues stay with it (WP41).",
+  "Behaviour on real specifications rather than the one demonstration model and its 21 variations."
+ ],
+ "not_done": [
+  "I did not re-open the run logs or the prototype clones behind the reports. Every number in the record comes from the seven reports, the working table and the earlier record, as attributed.",
+  "I read the H3 builder's report (s4-h3.txt) only in the parts the check refers to: summary, verdict and the distinct counts.",
+  "The row reasons in the classes file are the working table's, with only the working names and the refuted 'untouched' claims changed (S22, X3, V27, WP18), plus notes on D26, U44 and U37. They were not re-read against the catalogue.",
+  "Plan identifiers such as 'DQ1' and 'appendix A' (meaning the plan's appendix) remain in the work-package fate texts.",
+  "Not run on either file: the repository's prose gates (vale, tools/check_prose.py). docs/design/ is outside their page set, but the files were not linted.",
+  "Neither file was committed or copied into the repository, as instructed."
+ ]
+}

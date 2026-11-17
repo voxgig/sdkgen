@@ -1,0 +1,63 @@
+{
+ "c": [
+  [
+   "facts.collection",
+   "`NULL`-terminated array"
+  ],
+  [
+   "ref.facts.body.values",
+   "a string value holding the bytes, such as `voxgig_new_string_n`"
+  ]
+ ],
+ "clojure": [
+  [
+   "ref.facts.body.values",
+   "a byte array, a `String` or an `InputStream`"
+  ],
+  [
+   "ref.facts.body.once",
+   "an `InputStream`"
+  ]
+ ],
+ "elixir": [
+  [
+   "facts.collection",
+   "`Voxgig.Struct` list"
+  ]
+ ],
+ "go": [
+  [
+   "ref.facts.body.values",
+   "a `[]byte`, a `string` or an `io.Reader`"
+  ],
+  [
+   "ref.facts.body.once",
+   "an `io.Reader`"
+  ]
+ ],
+ "py": [
+  [
+   "ref.facts.body.values",
+   "`bytes`, `bytearray`, `memoryview`, a `str` or a file object"
+  ]
+ ],
+ "rb": [
+  [
+   "ref.facts.body.values",
+   "a `String`, or an IO that responds to `read`"
+  ]
+ ],
+ "rust": [
+  [
+   "ref.facts.body.values",
+   "a string, or bytes as `bytes_value(&[u8])`"
+  ]
+ ],
+ "ts": [
+  [
+   "ref.facts.body.values",
+   "a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string"
+  ]
+ ],
+ "zig": []
+}

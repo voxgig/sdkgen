@@ -1,0 +1,226 @@
+{
+ "committable": true,
+ "summary": "I checked the record against P/results and corrected it in place at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/record/model-dependent-text-prototype.md. My notes, one line per finding with the deciding record, are in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/record/CHECK.md.\n\n**The biggest error: H3 was out of date.** The document said H3 had not been measured and the measurement was still running. But results/s4-h3.txt is a builder's full measurement at v33-frozen:\n- 1 of 36 in-scope entries needed per-language lines: 2.8% under the brief's rule, 13.9% under the strictest reading.\n- 6 entries are not fixed at all. They sit in ReadmeRefFeatures.ts and FeatureDocs.ts and show in all twenty languages. Counted against the proposal, that gives 19.4%.\n\nSection 3.3, the status line and section 7 now say: not decided, and the independent check is still running.\n\n**H1, breaking changes.** The record had the running count wrong:\n- It said the count included forms-file changes. It does not: the six breaking changes to the forms framework are left out. With them, my arithmetic gives about 31 to 33, not 25 to 27.\n- v2's 4 and stage 3's about 6 cover different spans and different changes, not the same span read two ways.\n\n**H1, prose.** \"Under 15% by source at every version\" was false. At version 3 the notes alone were 20.5% of go's REFERENCE prose, and the builder called the criterion crossed.\n\n**Other corrections.** A range of hand-decision counts, the migration result (14 of 15 behaviour rows, not 13 of 14), the cause of the 40 failed self-test controls, the perl HASH variation counts, fourteen (not sixteen) runtimes that cannot be cancelled, and the \"half an hour\" reading of port times.\n\n**Wrong attributions fixed.** Several claims named the wrong person or treated a builder's measurement as independent. The staleness-check attacks are one example.\n\n**Defect of main, re-cited.** The entries for main's feature pages cited line numbers from the prototype, and one described text that does not exist on main. Both now cite main's own lines.\n\n**House rules.** These hold. I marked `ts/test/runtimeforms` as the prototype's own path (it is not in the repository) and defined v33s, OLD and NEW.\n\nThe document can be committed as a record in progress. Before it is quoted as final, H3 needs its independent check.",
+ "numbers_checked": "About 120 figures checked against the records; 22 mismatched (several of them attributions or what a figure counts rather than the value); 1 quoted as current and superseded (H3 'not measured', replaced by results/s4-h3.txt); 0 not found. The per-port H2 ratios and the 'about 31 to 33' count are arithmetic from record figures and are marked as such.",
+ "mismatches": [
+  {
+   "where": "2.3 What ported means",
+   "document": "every ported language has between 18 and 28 tutorial, 3 root and 61 to 73 reference hand decisions",
+   "record": "tutorial hand 14 to 28; root hand 0 to 3 (rule-only for ts, go, py, c, clojure, elixir); reference hand 36 to 73",
+   "source": "s3c-freeze33.txt table",
+   "fixed": "14 to 28, 0 to 3, 36 to 73, plus rule records carried for the nine languages ported earlier"
+  },
+  {
+   "where": "3.1 H1 criterion 3 table, stage 2 row",
+   "document": "4 (v2's count); about 6 (stage 3's count, which includes the naming hook); checker agreed on about 6",
+   "record": "stage-2 checker counted 4; about 6 is stage 3's count from stage 1's first commit, adding block->before, Ent.sym and RefFacts.container and leaving out the sdkDescription signature",
+   "source": "s2-check_v2.txt:287; s2-ref.txt:660; s2-check_ref.txt:321",
+   "fixed": "split into a stage-2 row (4) and a stage-3 row (about 6), each with what it counts"
+  },
+  {
+   "where": "5.1 text",
+   "document": "v2 counted 4 and stage 3 counted about 6 for the same span, because they differ on whether the naming hook was breaking",
+   "record": "different spans and different change sets",
+   "source": "s2-ref.txt:660; s2-v2.txt:634",
+   "fixed": "states the spans and the changes that differ"
+  },
+  {
+   "where": "3.1 H1 'what the criterion measured'",
+   "document": "it counts changes that force a provider (or, from 3.2, a forms file) to change",
+   "record": "20 to 22 at 3.2 counts provider changes only (11 to 13 + 8 + 1); 3.3's 25 to 27 adds 3 shared changes; the 6 forms-framework breaking changes are outside the count",
+   "source": "s3fix2-final.txt:1029-1034; s3c-freeze33.txt:36 and interface_changes",
+   "fixed": "states the count excludes the forms framework; adds about 31 to 33 with it (this record's arithmetic); standing, 5.1 and the Appendix B footer updated"
+  },
+  {
+   "where": "3.1 H1",
+   "document": "through 3.2 every breaking change turned something shared code had guessed into a declared fact",
+   "record": "true of the 3.2 changes; the version-3 changes were elective removals, 3 avoidable with aliases",
+   "source": "s3fix2-final.txt:1104; s3a-shape.txt:161",
+   "fixed": "split by version"
+  },
+  {
+   "where": "3.1 H1 criterion 2",
+   "document": "The by-source figure stayed under 15% for every language at every version",
+   "record": "at version 3 go's notes were 20.5% of its REFERENCE prose (builder, who called the criterion crossed); 18.9% by the checker",
+   "source": "s3a-shape.txt:918; s3a-check.txt:40",
+   "fixed": "under 15% at 3.2 and stage 9; crossed for go's REFERENCE at version 3; headline qualified"
+  },
+  {
+   "where": "3.1 H1 criterion 1 table",
+   "document": "3.1, 3.2: builder, confirmed by checker",
+   "record": "no checker at 3.2",
+   "source": "s3fix-check.txt; s3fix2-final.txt",
+   "fixed": "confirmed by the 3.1 checker"
+  },
+  {
+   "where": "3.2 H2 history",
+   "document": "1.39x and 1.24x with the guard (version 3, builder and checker)",
+   "record": "1.39x builder, reproduced by checker; 1.24x is the checker's alone",
+   "source": "s3a-check.txt:148; s3a-freeze.txt:596",
+   "fixed": "attributed separately"
+  },
+  {
+   "where": "3.2 H2 history",
+   "document": "1.13x ... (stage 2, independent)",
+   "record": "builder's figure, reproduced by the checker",
+   "source": "s2-v2.txt:551; s2-check_v2.txt:154",
+   "fixed": "builder, reproduced by the checker"
+  },
+  {
+   "where": "3.3 H3 'For'",
+   "document": "corrections came through shared code with no per-language edit; stage-2 checks incl. c getenv 30 and M14 16",
+   "record": "c-getenv and M14 were provider fixes",
+   "source": "s2-check_v2.txt:295",
+   "fixed": "says so"
+  },
+  {
+   "where": "3.3 H3",
+   "document": "Stage 3: 17 REFERENCE issue checks fixed in all five (independent, ran)",
+   "record": "the builder's 17 checks (U34 n/a for c); the checker confirmed the listed fixes by grep",
+   "source": "s2-ref.txt:591; s2-check_ref.txt:98-103",
+   "fixed": "builder ran, checker confirmed by grep, where the check applies"
+  },
+  {
+   "where": "3.4 H4",
+   "document": "the same counts were reproduced at 3.1 and 3.2 by checkers",
+   "record": "3.1 checker reproduced them; 3.2 had no checker; the stage-9 verifier reproduced them",
+   "source": "s3fix-check.txt:61; s3c-sfix-verify.txt:200",
+   "fixed": "corrected"
+  },
+  {
+   "where": "3.4 H4 perl HASH",
+   "document": "printed HASH(0x...) in 17 variations (reviewer, ran)",
+   "record": "reviewer ran it and counted 14; the verifier counted 17 by grep",
+   "source": "s3b-review-perl.txt:8,32; s3b-verify-perl.txt:37",
+   "fixed": "both counts attributed"
+  },
+  {
+   "where": "3.5 H5",
+   "document": "made retirement safe in 13 of 14 behaviour rows",
+   "record": "15 rows, 14 acceptable (the override deleted by hand is not)",
+   "source": "s1-migrate.json behaviours",
+   "fixed": "14 of 15, with the fifteenth named; added that the upgrade walk also reported 12 missing and 5 outdated, and that the lifecycle change has been in the prototype since version 2"
+  },
+  {
+   "where": "4.1 and 5.3",
+   "document": "40 self-test controls failed only because their text had changed",
+   "record": "run 1 failed 40; 22 controls were re-aimed (16 injections, 6 identity); the run also exposed two tool defects",
+   "source": "s3c-sfix-shared.txt summary and :462",
+   "fixed": "corrected in both places"
+  },
+  {
+   "where": "4.2",
+   "document": "six wrong declared facts (guard builder, ran)",
+   "record": "found by reading, then confirmed by the guard",
+   "source": "s3fix-guard.txt summary",
+   "fixed": "read, then confirmed by the guard"
+  },
+  {
+   "where": "4.7",
+   "document": "sixteen runtimes: the stream reads callopts.signal although their operations cannot be cancelled",
+   "record": "sixteen read a signal; ts and js can cancel, so fourteen cannot",
+   "source": "s3c-survey-short.md Q3, Q4",
+   "fixed": "fourteen"
+  },
+  {
+   "where": "4.8",
+   "document": "ts/src/cmp/ReadmeRefFeatures.ts:111,138 prints `active: false`; ReadmeTop.ts:259-261 says no feature is active",
+   "record": "these line numbers are at prototype commits; on main the text is ReadmeRefFeatures.ts:107 ('to true') and :24, ReadmeTop.ts:245-246 and ReadmeFeatures.ts:29 ('inactive until switched on')",
+   "source": "s3fix2-shared.txt:276; s3fix-shared.txt:155; /home/user/sdkgen at 7f3fc9c3",
+   "fixed": "re-cited to main and reworded"
+  },
+  {
+   "where": "5.3",
+   "document": "5,215 calls across thirteen languages at 3.3",
+   "record": "counted on the 3.3 round's tools before the freeze",
+   "source": "s3c-n-tools.txt:145,480",
+   "fixed": "qualified"
+  },
+  {
+   "where": "5.4",
+   "document": "'half an hour' fits writing the provider and hook, not a port end to end",
+   "record": "perl and lua took 30 min for the whole port by the clock (both porters doubt it); swift and ocaml about 2 h 15; provider and hook 3 to 25 min",
+   "source": "s3b-port-lua.txt:459-473; s3b-port-perl.txt:551; s3b-port-swift.txt:388; s3b-port-ocaml.txt:453; brief7.md:30",
+   "fixed": "corrected; the source is brief 7; perl's doubt and the missing step times added"
+  },
+  {
+   "where": "7 Not done",
+   "document": "open required fixes from the stage-9 verifier: the staleness checks can be beaten (staged file deleted, source time set back, OLD quoted as NEW)",
+   "record": "the verifier's fixes 4 and 5 were made at 3.3 and pass its attacks; the separate tools branch's builder beat them with 5 of 6 attacks of its own",
+   "source": "s3c-t7.txt:15,194-220,336",
+   "fixed": "attributed correctly, with all five attacks listed"
+  },
+  {
+   "where": "4.5",
+   "document": "the proposal's three sections are the ones where sharing is highest",
+   "record": "not stated; the entity family shares 88% of units against the quick start's 77%; the 72%/42% figures include the quick start",
+   "source": "s2-restanatomy.txt:225",
+   "fixed": "replaced with what the record says, including 8% of units / 19% of words genuinely per-language"
+  }
+ ],
+ "not_found": [],
+ "superseded": [
+  "H3 'Not yet measured against the catalogue; that measurement is running' (status line, section 3.3, section 7). Superseded by results/s4-h3.txt, a builder's measurement of the whole catalogue at v33-frozen: 38 entries in scope; 29 fixed once; 1 per-language (S13); 6 not fixed (X3 S22 U52 U53 V27 U102); 2 shown only in unported languages. Ratios: 2.8%, 13.9%, 19.4% and 30.6%. Rewritten from the record; the independent check is running."
+ ],
+ "standing_changes": [
+  {
+   "hypothesis": "H3",
+   "was": "Not measured; running",
+   "now": "Not decided. By the builder's measurement at 3.3 (no independent check yet), 1/36 = 2.8% needed per-language lines under the brief's rule (under 10%) and 13.9% under the strictest reading (over 10%). Six in-scope entries are not fixed at all, which gives 19.4% when counted against the proposal.",
+   "why": "results/s4-h3.txt is a completed record the document did not use"
+  },
+  {
+   "hypothesis": "H1 (breaking-change criterion)",
+   "was": "refuted at about 25 to 27, described as counting providers and forms files",
+   "now": "refuted at about 25 to 27 on the records' own count, which leaves out the six forms-framework changes; about 31 to 33 with them (arithmetic)",
+   "why": "s3fix2-final.txt:1029-1034 and s3c-freeze33.txt:36 build the count from provider and shared changes only"
+  },
+  {
+   "hypothesis": "H1 (prose criterion)",
+   "was": "not crossed by source at any version",
+   "now": "not crossed by source at 3.2 and stage 9; crossed for go's REFERENCE at version 3 (20.5% builder, 18.9% checker); the 'alone' measure still crosses for go",
+   "why": "s3a-shape.txt:918; s3a-check.txt:40"
+  }
+ ],
+ "ran_read_changes": [
+  "4.2 six wrong declared facts: 'guard builder, ran' -> read, then confirmed by the guard (s3fix-guard.txt)",
+  "3.3 H3 stage-3 REFERENCE checks: 'independent, ran' -> builder ran, checker confirmed by grep",
+  "3.2 H2 1.13x: 'independent' -> builder, reproduced by the checker",
+  "3.4 H4 lane counts at 3.2: 'checkers' -> the merging builder's own; independent reproductions at 3.1 (checker) and stage 9 (verifier)",
+  "3.4 H4 perl HASH: one reviewer's ran count of 14 and the verifier's grep count of 17, both attributed",
+  "3.4 H4 root quick starts: attributed to the 3.3 round's shared builder (ran)",
+  "3.2 H2 per-port ratios and H1's 'about 31 to 33': marked as this record's arithmetic, not a builder's measurement",
+  "5.3 printed-call count: measured before the freeze, not at it"
+ ],
+ "defect_list_changes": [
+  "4.7: 'sixteen runtimes ... cannot be cancelled' -> fourteen (sixteen read a signal; ts and js can cancel)",
+  "4.7: full repository paths for the lua EntityLoadOp fragment and make_error.lua, the c EntityListOp fragment, php Context.php and Done.php, zig utility.zig, and ts StreamingFeature.ts (:52-53)",
+  "4.8: the ReadmeRefFeatures entry re-cited to main's line 107 ('to true' printed as a TypeScript literal); the prototype's own `active: false` noted as having the same fault; added that log's REFERENCE section says to set it to true although log is on by default (H3 builder)",
+  "4.8: the ReadmeTop entry re-cited to main's ReadmeTop.ts:245-246, ReadmeFeatures.ts:29 and ReadmeRefFeatures.ts:24 ('inactive until switched on')",
+  "4.8: escaped-backtick leak marked as partly fixed; the feature-ordering note still leaks in all twenty (H3 builder, ran)",
+  "4.8: py root quick-start entry qualified ('as written'; it imports with the package on the path)",
+  "4.8: full paths for ReadmeExplanation.ts, ReadmeQuick_lua.ts, ReadmeExamplesTest_perl.ts and ReadmeExamplesTest_swift.ts",
+  "All other entries were found in a record with the stated language and file; none was moved between the two lists"
+ ],
+ "house": [
+  "No AI model or tool named; no temporary path; no dash used as punctuation; no first person (checked by grep after the edits)",
+  "`ts/test/runtimeforms/<lang>.ts` was given as a repository path but exists only in the prototype; now marked as such",
+  "The tag `v33s` was used undefined; now defined as the frozen state of the sentence fix round",
+  "OLD and NEW were used undefined; now defined in the opening section",
+  "Every other repository path checked to exist in /home/user/sdkgen (7f3fc9c3), including ts/src/cmp/FeatureDocs.ts and ReadmeFeatures.ts, now cited",
+  "Line numbers in 4.8 that were prototype line numbers are now main's"
+ ],
+ "still_ask": [
+  "Which parts of the guard, forms and review tools would ship in sdkgen, and at what size? H2's counts that include them assume a final cost no record gives.",
+  "What does a later change to a shared sentence cost once the porting is done? Only the 22 and 16 re-aimed controls and the 376 reopened classes after the sentence fixes are recorded.",
+  "Would a partial adoption be acceptable: three sections ported, ten README families not? The only evidence is the contradictions in 4.6.",
+  "Are the six unfixed H3 entries (ReadmeRefFeatures/FeatureDocs) in scope for the proposal, and does fixing them change the H3 reading? The H3 record says one shared edit each.",
+  "Does the approach hold on a real API's model rather than Demo and its variations? No run used one.",
+  "Will the seven remaining languages (js, php, csharp, java, kotlin, scala, cpp) need new breaking changes? The 3.3 round shows that new ports' reviews can cause them.",
+  "H5 on the current structure, and the independent check of H3, have no record yet."
+ ],
+ "must_change": [
+  "Nothing more blocks committing it as a record in progress. These corrections are already applied: H3 rewritten from s4-h3, the breaking-change count definition, the stage-2 and stage-3 breaking counts, the hand-decision ranges, 14 of 15 migration rows, the 40-controls cause, fourteen runtimes, main's line numbers in 4.8, and the attributions.",
+  "Before the H3 result is quoted as final, add the independent check of s4-h3 when it lands. Its working notes (not yet a record) question the H3 record's 'never touched ReadmeRefFeatures.ts' and report a fence bug in its checks; the document already says the prototype changed a few of those lines."
+ ]
+}

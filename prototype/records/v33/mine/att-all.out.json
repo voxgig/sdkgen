@@ -1,0 +1,559 @@
+[
+ {
+  "id": "G1-lua-okfalse-nil",
+  "lang": "lua",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ lua: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.direct.okFalse: the fact is \"nil\"; the citation pins \"false\""
+  ]
+ },
+ {
+  "id": "G1-ocaml-okfalse-false",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ocaml: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.direct.okFalse: the fact is \"false\"; the citation pins \"Bool false\""
+  ]
+ },
+ {
+  "id": "G6-lua-A1-run-op-cancel",
+  "lang": "lua",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ lua: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.cancel: the absence of /\\\\b(cancel\\\\w*|abort(?!\\\\(\\\\))\\\\w*|signal|signalled\\\\??)\\\\b|AbortController|isCancelled|CancellationToken|WithContext|context\\\\.Context/i no longer holds: src/cmp/lua/fragment/Entity.fragment.lua:327 has \"signal\""
+  ]
+ },
+ {
+  "id": "G6-ocaml-run-op-cancel",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ocaml: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.cancel: the absence of /\\\\b(cancel\\\\w*|abort(?!\\\\(\\\\))\\\\w*|signal|signalled\\\\??)\\\\b|AbortController|isCancelled|CancellationToken|WithContext|context\\\\.Context/i no longer holds: src/cmp/ocaml/fragment/RunOp.fragment.ml:6 has \"abort\""
+  ]
+ },
+ {
+  "id": "G6-go-new-file",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ go: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.cancel: the absence of /\\\\b(cancel\\\\w*|abort(?!\\\\(\\\\))\\\\w*|signal|signalled\\\\??)\\\\b|AbortController|isCancelled|CancellationToken|WithContext|context\\\\.Context/i no longer holds: tm/go/utility/cancel.go:3 has \"CancelRequest\""
+  ]
+ },
+ {
+  "id": "G6-swift-op-cancel",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.cancel: the absence of /\\\\b(cancel\\\\w*|abort(?!\\\\(\\\\))\\\\w*|signal|signalled\\\\??)\\\\b|AbortController|isCancelled|CancellationToken|WithContext|context\\\\.Context/i no longer holds: src/cmp/swift/fragment/EntityBase.fragment.swift:223 has \"isCancelled\""
+  ]
+ },
+ {
+  "id": "G6-lua-reason-empty",
+  "lang": "lua",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ lua: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.cancel: the region left out of tm/lua/feature/timeout_feature.lua gives no reason"
+  ]
+ },
+ {
+  "id": "G7-perl-V1-integer-int",
+  "lang": "perl",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types"
+  ],
+  "fails": [
+   "✖ perl: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "INTEGER prints int; the forms pin the type word integer"
+  ]
+ },
+ {
+  "id": "G7-ocaml-a2-int-float",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types"
+  ],
+  "fails": [
+   "✖ ocaml: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "INTEGER prints float; the forms pin the type word int"
+  ]
+ },
+ {
+  "id": "zig-type-integer",
+  "lang": "zig",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types"
+  ],
+  "fails": [
+   "✖ zig: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "INTEGER prints f64; the forms pin the type word i64"
+  ]
+ },
+ {
+  "id": "clj-type-integer",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "INTEGER prints string; the forms pin the type word long"
+  ]
+ },
+ {
+  "id": "c-type-string",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines"
+  ],
+  "whats": []
+ },
+ {
+  "id": "G7-elixir-column-claimed",
+  "lang": "elixir",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types",
+   "reader"
+  ],
+  "fails": [
+   "✖ elixir: the declared facts are what its runtime defines",
+   "✖ elixir: the forms read the runtime"
+  ],
+  "whats": [
+   "types: the forms give column ts; src/cmp/elixir/EntityTypes_elixir.ts uses elixir",
+   "the forms give type column ts; src/cmp/elixir/EntityTypes_elixir.ts uses elixir"
+  ]
+ },
+ {
+  "id": "G8-swift-cast-dropped",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ swift: the declared facts are what its runtime defines",
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.record ({var}.asNative)?.data() does not unwrap with facts.unwrap, `asNative as? Entity`, as cited"
+  ]
+ },
+ {
+  "id": "G8-swift-asEntity",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ swift: the declared facts are what its runtime defines",
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.record {var}.asEntity().data() does not unwrap with facts.unwrap, `asNative as? Entity`, as cited",
+   "facts.record {var}.asEntity().data() names asEntity, which the swift runtime does not declare (cite it in recordParts where a declaration reads otherwise)"
+  ]
+ },
+ {
+  "id": "G8-zig-member-typo",
+  "lang": "zig",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "members",
+   "account"
+  ],
+  "fails": [
+   "✖ zig: the declared facts are what its runtime defines",
+   "✖ zig: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.record asEntty().data(null) names asEntty, which the zig runtime does not declare (cite it in recordParts where a declaration reads otherwise)",
+   "the provider prints a record as \"h.stringify(planet.asEntity().data(null))\", which is not facts.record whole (asEntty().data(null))"
+  ]
+ },
+ {
+  "id": "G8-c-member-typo",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines",
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "record accessor vtab->data (from vtab->data) is not an entity member",
+   "the provider prints a record as \"voxgig_to_json(loaded->vt->data(loaded, NULL))\", which does not call vtab->data"
+  ]
+ },
+ {
+  "id": "G2-lua-ctor-create",
+  "lang": "lua",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "ctor",
+   "account"
+  ],
+  "fails": [
+   "✖ lua: the declared facts are what its runtime defines",
+   "✖ lua: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.ctor[1]: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "G2-lua-ctor-unbound",
+  "lang": "lua",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "ctor"
+  ],
+  "fails": [
+   "✖ lua: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "lib.new is called on lib, which the imports the provider prints do not bind (\"local sdk = require(\\\\\"demo_sdk\\\\\")\")"
+  ]
+ },
+ {
+  "id": "G2-lua-receiver-dot",
+  "lang": "lua",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "on"
+  ],
+  "fails": [
+   "✖ lua: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "op list accessor: Planet is declared on the instance, called through :; \"local planet, err = client.Planet():list()\\\\nif err then error(err) end\" calls it through .",
+   "op list accessor: Planet is declared on the instance, called through :; \"local planet, err = client.Planet():list({ id = \\\\\"x\\\\\" })\\\\nif err then error(err) end\" calls it through .",
+   "op list accessor: Planet is declared on the instance, called through :; \"local planet, err = client.Planet():list({ id = \\\\\"x\\\\\", name = \\\\\"n\\\\\", size = 1 })\\\\nif err then error(err) end\" calls it through ."
+  ]
+ },
+ {
+  "id": "G2-lua-test-on-instance",
+  "lang": "lua",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "on",
+   "account"
+  ],
+  "fails": [
+   "✖ lua: the declared facts are what its runtime defines",
+   "✖ lua: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.test[0].call: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "test: test is declared on the type; \"local client = client:test()\" calls it on client (instance)"
+  ]
+ },
+ {
+  "id": "G3-ocaml-a1-test-with-one-arg",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "arity",
+   "account"
+  ],
+  "fails": [
+   "✖ ocaml: the declared facts are what its runtime defines",
+   "✖ ocaml: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.test[1].call: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "test: test_with takes 2 argument(s) in the runtime; \"let client = Sdk_client.test_with Noval\" passes 1"
+  ]
+ },
+ {
+  "id": "G3-swift-load-nil",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "arity"
+  ],
+  "fails": [
+   "✖ swift: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "op list: list takes 2 argument(s) in the runtime; \"let planet = try client.Planet().list(nil)\" passes 1",
+   "op list: list takes 2 argument(s) in the runtime; \"let planet = try client.Planet().list(VMap([(\\\\\"id\\\\\", .string(\\\\\"x\\\\\"))]))\" passes 1",
+   "op list: list takes 2 argument(s) in the runtime; \"let planet = try client.Planet().list(VMap([(\\\\\"id\\\\\", .string(\\\\\"x\\\\\")), (\\\\\"name\\\\\", .string(\\\\\"n\\\\\")), (\\\\\"size\\\\\", .int(1))]))\" passes 1"
+  ]
+ },
+ {
+  "id": "G3-go-ctor-two-args",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "arity"
+  ],
+  "fails": [
+   "✖ go: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "ctor: NewProjectNameSDK takes 1 argument(s) in the runtime; \"client := sdk.NewProjectNameSDK(nil, nil)\" passes 2"
+  ]
+ },
+ {
+  "id": "G4-perl-a10-test-sig-instance",
+  "lang": "perl",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "on",
+   "account"
+  ],
+  "fails": [
+   "✖ perl: the declared facts are what its runtime defines",
+   "✖ perl: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.test[0].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.test[0].args: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "test: the signature writes test on $client ($client->test($testopts, $sdkopts)); the runtime declares it on the type"
+  ]
+ },
+ {
+  "id": "G5-ocaml-arrow-signatures",
+  "lang": "ocaml",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "G5-ocaml-E1-arrow-callable-as-field",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "field",
+   "account"
+  ],
+  "fails": [
+   "✖ ocaml: the declared facts are what its runtime defines",
+   "✖ ocaml: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[4].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.entity[4].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "entity make: e_make is called in the runtime, declared as a field (e_make : entity_obj)"
+  ]
+ },
+ {
+  "id": "swift-unwrap-and-pin-changed",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite facts.unwrap: the quote does not contain \"asNative as! Entity\", which the fact states"
+  ]
+ },
+ {
+  "id": "swift-print-as-EntityBase",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ swift: the declared facts are what its runtime defines",
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "the print printer shows a record as \"if let planet = planet.asNative as? EntityBase {\\\\n    print(planet.data())\\\\n}\", which does not unwrap with facts.unwrap (asNative as? Entity)"
+  ]
+ },
+ {
+  "id": "perl-V2-flat-map",
+  "lang": "perl",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "arity"
+  ],
+  "fails": [
+   "✖ perl: the declared facts are what its runtime defines"
+  ],
+  "whats": []
+ },
+ {
+  "id": "my-types-reason-blanked-zig-adapted2",
+  "lang": "zig",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types"
+  ],
+  "fails": [
+   "✖ zig: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "the forms give no type column and no reason: say why the type words are pinned instead"
+  ]
+ },
+ {
+  "id": "ocaml-m07-data-copy-removed",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ocaml: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.entity[0].copy: the provider declares no such fact"
+  ]
+ },
+ {
+  "id": "ocaml-m11-keys-member",
+  "lang": "ocaml",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "ocaml-m21-ctrl-match-swapped",
+  "lang": "ocaml",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "swift-entityBy-Name",
+  "lang": "swift",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "perl-a07-prints-record",
+  "lang": "perl",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "perl-none-cites-a-comment",
+  "lang": "perl",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ }
+]

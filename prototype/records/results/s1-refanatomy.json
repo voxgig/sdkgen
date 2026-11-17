@@ -1,0 +1,453 @@
+{
+ "summary": "I analysed the REFERENCE page as it stands today, using the 20 stored baseline outputs and the 20 ReadmeRef_<lang>.ts generators (8,330 lines, counted with wc). Nothing was built, so every verdict here is as far as analysis can go.\n\nThe page has one structure. All 20 languages print the same blocks in the same order. The exceptions are a few blocks present in some languages only: cancel and tester in ts/js, stream in go/zig, custom actions in ts only, options()/utility() absent in c and ocaml, and Field Usage by Operation absent in elixir. The model logic in every generator is the same skeleton: the same helpers (matchExampleItems, requestExampleItems, entityIdField, opNeedsAction, bodyNote), the same id-first sort, the same opcols filter. The only conditions specific to one language are maps from a canonical type to a type name or a literal (swift:18-23, rust:18-22, ocaml:16-34, clojure:16-33, zig:16-33, c:13-35). Those are syntax from a neutral value.\n\nProse sharing, counted per block with blocks.py: 80% of 2,461 normalised prose units are the same sentence in at least 15 languages. Most of that is the feature reference, which is already shared. Of the part each language writes itself, 67% is shared (1,026 of 1,521 units); leaving out the features summary too, it is 54% (586 of 1,081).\n\nThe gap is not idiom. It comes from one language-API fact written out as free text in every file: the error and return convention (\"raises/throws/dies on error\", \"`err` is non-nil\", \"`NULL` with `*err` set\", \"`Ok` is \u2026 `Err` a failure\", \"Resolves to\"). When that is replaced by a token (tokenized.py), sharing in the load, create, update and remove descriptions rises from 48-62% to 88-92%. The rest is drift, about 20 items. Prose that genuinely belongs to one language comes to about 18 distinct sentences (2% of the non-feature units). That is a hand classification of the 165 sentences found in at most three languages, so it is an estimate.\n\nThe model variations show the cost of 20 copies. With an operation switched off (op-off-planet-*, op-readonly), only go's REFERENCE changes. With HTTP Basic auth (auth-basic), only ts changes. With auth-query, server-none or server-static, no REFERENCE changes in any language. These are counted from the stored outputs, which keep only files that differ from the baseline.\n\nThe proposal survives this page on paper, with one condition. A provider has to declare a small table of facts about its own runtime: the error style, the collection noun, the fixed method signatures and capability flags. Those facts must be enums that the shared component writes sentences for, not phrases the provider writes. If providers return phrases, about 10 short clauses per language become per-language prose. That is still well under 15%, but it breaks \"a provider is a printer\".\n\nThe real risks:\n- **Hand-declared tables are already wrong.** The method table written by hand in each file disagrees with the runtime today: stream() is documented in 2 languages but exists in at least 6, and py reads fetchargs.ctrl but does not document it.\n- **Example code holds the most per-language logic,** such as result consumption, error handling and literal construction. It is where H4 will be decided.\n- **lean has no entity layer.** A shared page needs every entity block to be absent by data for it.\n\nOnly building can show whether the interface stays stable after the first four languages, the real line counts (H2) and compile results (H4).",
+ "blocks": [
+  {
+   "block": "title + intro",
+   "languages_with_it": "20/20",
+   "prose_shared": "100% (20/20 units, 1 distinct after setting aside SDK name and language title)",
+   "what_differs": "Only the language title (TypeScript, Golang, C#...).",
+   "classes": "SYNTAX 1 (title)",
+   "needs_from_description": "sdk.name",
+   "needs_from_provider": "title"
+  },
+  {
+   "block": "client h2",
+   "languages_with_it": "20/20",
+   "prose_shared": "n/a (heading only)",
+   "what_differs": "DemoSDK in 17; 'Client' in clojure; 'Demo' in elixir; 'Sdk_client' in ocaml.",
+   "classes": "SYNTAX 1 (client type name)",
+   "needs_from_description": "sdk.name",
+   "needs_from_provider": "clientTypeName"
+  },
+  {
+   "block": "constructor (code, sentence, options table)",
+   "languages_with_it": "20/20",
+   "prose_shared": "84% (191/227). The 7 option rows are the same sentence in 20 (system 16/20).",
+   "what_differs": "Signature code. Option key spelling: options.apikey, options[\"apikey\"] or a bare key. Type names: object, map[string]any, map. A sentence on what options is, in 12 languages, with 7 variants ('\u00a7 is a \u00a7 map (\u00a7 for none)' rust/c/zig; elixir 'struct value node'). Table caption: Parameters, Options or 'Parameters (\u00a7 map keys)'. 'System overrides (e.g. custom fetch).' against 'System overrides.' in rust/c/cpp/zig. Rows are hand-written in each file, not taken from optspec. apikey depends on isAuthActive in 20 files; secret depends on isHttpBasicAuth in ts only.",
+   "classes": "SYNTAX 5 (signature, key spelling, type names, null literal, caption); LANGUAGE-API-FACT 1 (options container kind); IDIOM-PROSE 1 (elixir 'build one from a native map'); DRIFT 2 (system row, caption); DEFECT S50, D23, D26, D55 (server variables are never listed: server-none and server-static change no REFERENCE)",
+   "needs_from_description": "ctor.options[] from optspec, each {name, type, description, required}, including apikey/secret from requiredOptions and server variables",
+   "needs_from_provider": "ctorSignature, optionKey(container,key), typeName(canonical), nullLiteral, optionsContainerNoun"
+  },
+  {
+   "block": "test client (static test / TestSDK / test_sdk)",
+   "languages_with_it": "20/20 (go has two entries: Test() and TestSDK)",
+   "prose_shared": "71% (34/48)",
+   "what_differs": "Heading signature. 'Both arguments may be \u00a7' in 16; lua 'are optional'; cpp adds 'a no-arg overload'; ocaml adds a parenthesis; go 'Test client with options.' replaces the shared sentence. ts/js have a parameter table and Returns line, the others an example. ts/js also document tester() as an alias.",
+   "classes": "SYNTAX 2 (signature, call example); LANGUAGE-API-FACT 2 (number of overloads, tester alias); IDIOM-PROSE 3 (go Test(), cpp overload, ocaml Noval); DRIFT 2 (go sentence, ts/js table against example); DEFECT S13 (unconditional when the test feature is absent)",
+   "needs_from_description": "testClient.available (test feature shipped)",
+   "needs_from_provider": "testSignatures[], testCall(), nullLiteral"
+  },
+  {
+   "block": "entity accessors (one per entity)",
+   "languages_with_it": "20/20",
+   "prose_shared": "0% at the 15-language threshold (44 units, 12 distinct)",
+   "what_differs": "'Create a new \u00a7 entity instance.' against 'Create a new \u00a7 instance.', '(returns \u00a7)', 'handle', 'accessor', 'bound to this client'. 'Pass \u00a7 for no initial data' in 9 against 'options' in 9; the parameter really is data or entopts depending on the language. ts/js add a parameter table and Returns line. Accessor names: Planet / planet / demo_planet / (api/planet ...) / Demo.planet; java escapes record_.",
+   "classes": "SYNTAX 3 (accessor call, identifier escaping, return type); LANGUAGE-API-FACT 1 (argument is data or entopts); DRIFT 3 (entity/instance/handle wording, table or not, returns placement); DEFECT U34 (class name built by hand)",
+   "needs_from_description": "entities[] (active only) with name, className (entityClassName), varName",
+   "needs_from_provider": "accessorSignature(ent), accessorArgKind ('data'|'entopts'), entityTypeName(className)"
+  },
+  {
+   "block": "options() / utility()",
+   "languages_with_it": "18/20 (missing in c and ocaml)",
+   "prose_shared": "90% and 85%",
+   "what_differs": "Method names (options, OptionsMap, options_map, optionsMap, options-map). Return type. elixir 'Return the SDK utility node.'",
+   "classes": "SYNTAX 2; LANGUAGE-API-FACT 1 (method exists or not); DRIFT 1 (elixir wording)",
+   "needs_from_description": "none",
+   "needs_from_provider": "fixedClient.options, fixedClient.utility (signature or absent)"
+  },
+  {
+   "block": "direct()",
+   "languages_with_it": "20/20",
+   "prose_shared": "57% (135/238); 65% after the fact tokens",
+   "what_differs": "Seven parameter rows, of which 'Path parameter values for \u00a7 substitution.' (6) against 'Path parameter values.' (14). The ctrl row appears in ts js go php rb lua only, yet py reads fetchargs.ctrl (py/fragment/Main.fragment.py, _raw_request). ts/js add a signal row. The container noun in 'Request body (X are JSON-serialized)' takes 9 values. 'Returns a result \u00a7 with ok, status...' plus a no-throw sentence in 8 variants (raises/throws/dies/sets *err/resolves to Ok/returns a map); php has a three-sentence variant. Caption takes 4 variants.",
+   "classes": "SYNTAX 3 (key spelling, container noun, ok-branch expression); LANGUAGE-API-FACT 3 (error convention, signal support, ctrl support); IDIOM-PROSE 1 (php); DRIFT 3 (path row, caption, returns wording)",
+   "needs_from_description": "none from the model (fixed transport API)",
+   "needs_from_provider": "directSignature, fetchargKey(k), containerNoun, okBranchExpr, capabilities.directCtrl, capabilities.cancel"
+  },
+  {
+   "block": "prepare()",
+   "languages_with_it": "20/20",
+   "prose_shared": "0% (47 units, 14 distinct)",
+   "what_differs": "'without sending the request' (6) against 'without sending' (14). 'Accepts the same parameters as \u00a7' in 5 only. The error clause takes 9 variants.",
+   "classes": "SYNTAX 1; LANGUAGE-API-FACT 1 (error convention); DRIFT 2",
+   "needs_from_description": "none",
+   "needs_from_provider": "prepareSignature, errorStyle"
+  },
+  {
+   "block": "Cancelling a call",
+   "languages_with_it": "ts js only",
+   "prose_shared": "4 sentences, shared by ts and js only",
+   "what_differs": "The whole paragraph depends on AbortSignal.",
+   "classes": "LANGUAGE-API-FACT (capability); IDIOM-PROSE 4 sentences",
+   "needs_from_description": "none",
+   "needs_from_provider": "capabilities.cancel {param, type} or absent"
+  },
+  {
+   "block": "entity h2 + description + create-an-instance example",
+   "languages_with_it": "20/20",
+   "prose_shared": "n/a (heading and code; the description is ent.short)",
+   "what_differs": "Heading: '## PlanetEntity' in ts js go py php rb lua rust cpp zig; '## Planet' in csharp java kotlin scala swift c clojure ocaml; '## Planet entity' in perl; '## Demo.Entity.Planet' in elixir. The example is one accessor call; go adds GetName(), clojure a require, elixir names the client 'sdk' instead of 'client'.",
+   "classes": "SYNTAX 2 (type name, accessor call); DRIFT 3 (heading in 6 class languages, perl, elixir 'sdk'); DEFECT U36 (reads ent.short and skips main.kit.text), U34, G27/G29 (the description is not escaped)",
+   "needs_from_description": "entity.className, entity.description (entityDescription: entity_desc, then short, then desc), entity.varName",
+   "needs_from_provider": "entityTypeName(className), instanceExample(ent)"
+  },
+  {
+   "block": "fields table",
+   "languages_with_it": "20/20",
+   "prose_shared": "100% of header prose; descriptions come from the model",
+   "what_differs": "Type cell only: canonToType(field.t, target.name) in 14; a local type map in c, zig, clojure, ocaml, swift and rust (for example c cType at ReadmeRef_c.ts:13).",
+   "classes": "SYNTAX 1 (typeName); DEFECT N04/U06/M04 (target.name breaks aliased targets), G27/M38/D69 (no cell escaping)",
+   "needs_from_description": "fields[] {name, canonicalType, required, description (cell-escaped)}",
+   "needs_from_provider": "typeName(canonical)"
+  },
+  {
+   "block": "Field Usage by Operation",
+   "languages_with_it": "19 generators carry it (absent in elixir); not printed for the baseline model (no field.op)",
+   "prose_shared": "heading and table only",
+   "what_differs": "go filters columns through entityOps; the others use opnames plus op.active. The logic is otherwise identical.",
+   "classes": "DRIFT 1 (elixir omission)",
+   "needs_from_description": "fields[].ops (active ops only)",
+   "needs_from_provider": "none"
+  },
+  {
+   "block": "Actions (custom $action routes)",
+   "languages_with_it": "ts only (ReadmeRef_ts.ts:273-301)",
+   "prose_shared": "5 sentences, ts only",
+   "what_differs": "Missing in 19 languages, although every runtime takes $action.",
+   "classes": "DEFECT (uncatalogued: 19 REFERENCEs omit custom actions)",
+   "needs_from_description": "entity.actions[] {action, op, path} (entityActions)",
+   "needs_from_provider": "actionCall(ent, op, action)"
+  },
+  {
+   "block": "operations: heading signature + description + example (load, list, create, update, patch, remove)",
+   "languages_with_it": "20/20 (order: go canonical through entityOps, 19 in model-key order)",
+   "prose_shared": "load 49%, list 33%, create 50%, update 62%, remove 49%. After tokenising the error clause and return verb: 90/33/92/88/90%.",
+   "what_differs": "Description = shared verb sentence + return phrase + error clause (10 styles: promise; raise; throw; die; go err; lua nil,err; c NULL+*err; rust Ok/Err; zig .ok/.err; swift Value+asNative). list adds the collection noun (array, list, vector, slice, arrayref, NULL-terminated array, Vec) and 'The match is optional...' in 14 languages (missing in ts js go lua; php/rb inline it). Examples: same items from the shared helpers, printed per language; whether the result is consumed varies (go, c, rust and perl lists print it, ts does not). perl's list example prints ->{id} whatever the id field (ReadmeRef_perl.ts:293). c/rust/zig say 'entity id' without a code span.",
+   "classes": "SYNTAX 6 (signature, method case, map literal, scalar literal, comment, call); LANGUAGE-API-FACT 3 (error style, collection noun, op return type); IDIOM-PROSE 1 (swift asNative); DRIFT 5 (op order, 'match is optional' presence, ocaml 'Resolves', ocaml remove extra clause, c missing update comment); DEFECT S25/D10 (19 languages document inactive ops: only go reacts to op-off-*), U43, U44, perl {id} (uncatalogued, read not run)",
+   "needs_from_description": "entity.ops[] (active, canonical order) each {name, kind match|data, needsAction, idField, matchItems[{name, scalarKind, placeholder}], requestItems[...], listArg, bodyNote facts}",
+   "needs_from_provider": "opSignature(op), errorStyle, collectionNoun, mapLiteral(items), scalarLiteral(kind,placeholder), comment(text), opExample(kind, ent, args) incl. result consumption"
+  },
+  {
+   "block": "common methods",
+   "languages_with_it": "20/20 (h3 label: Methods 17, Members clojure, Functions elixir, Fields ocaml)",
+   "prose_shared": "data 0%, match 0%, make 0%, name 89%, client and entopts in ts/js only",
+   "what_differs": "Accessor shape: one get/set method (ts js go csharp java kotlin scala swift cpp rust c zig) against a get/set pair (py php rb lua perl clojure elixir ocaml): 4 wording variants each. make: 'same client and options' (6) against 'same options' (12); zig has no make (verified: no make in zig/fragment/Entity.fragment.zig). stream documented in go and zig only, yet the runtime defines it in ts (EntityBase.fragment.ts:111), py (Entity.fragment.py:74), rb (Entity.fragment.rb:104) and java (EntityBase.fragment.java:206); the rest were not checked. client() and entopts() documented in ts/js only.",
+   "classes": "SYNTAX 2 (signatures, call); LANGUAGE-API-FACT 4 (accessor shape, make exists, stream return kind, name is property or method); IDIOM-PROSE 7 (go stream 3, zig stream 3, clojure keyword lookup 1); DRIFT 3 (make wording, data/match wording, h3 label); DEFECT stream omission (uncatalogued)",
+   "needs_from_description": "entity.className, sdk.clientTypeName",
+   "needs_from_provider": "fixedEntity table (below)"
+  },
+  {
+   "block": "features: summary table + activation snippet",
+   "languages_with_it": "20/20 (written in each per-language file)",
+   "prose_shared": "100% (440/440); per-language content is only the code fence",
+   "what_differs": "The activation snippet's syntax. Every file hard-codes the '0.0.1' default.",
+   "classes": "SYNTAX 1 (feature config literal); DEFECT D04 (truthy-active filter in each file), N11 (js fenced ts)",
+   "needs_from_description": "features[] from featureDocs(model, target)",
+   "needs_from_provider": "featureActivationExample(names[]), fence"
+  },
+  {
+   "block": "features: Configuring, Ordering, per-feature (ReadmeRefFeatures)",
+   "languages_with_it": "20/20 (already shared)",
+   "prose_shared": "100% (940/940)",
+   "what_differs": "Nothing per language except honoursActivationOrder(target). The literal backslash-backtick leak ('The array form of \\`feature\\`', ReadmeRefFeatures.ts:26) prints in all 20; found by grep and not in the catalogue. Being shared, it is fixable once.",
+   "classes": "DEFECT S09, S22, U52, U53, X3, U102, V27 (each fixed once, already shared); escaped-backtick leak (uncatalogued)",
+   "needs_from_description": "features[], wraps, honoursActivationOrder",
+   "needs_from_provider": "none"
+  }
+ ],
+ "drift": [
+  {
+   "what": "Entity section heading",
+   "variants": "'## PlanetEntity': ts js go py php rb lua rust cpp zig (10). '## Planet': csharp java kotlin scala swift c clojure ocaml (8). '## Planet entity': perl. '## Demo.Entity.Planet': elixir.",
+   "recommendation": "Print the type the language actually exposes, from entity.className through a provider: PlanetEntity for every class language. csharp, java, kotlin, scala, swift and perl declare class/package EntyClass = entityClassName, which is PlanetEntity (Entity_csharp.ts:26, java fragment line 14, perl fragment line 15), so their '## Planet' is drift. c (Entity* handle), clojure (namespace) and ocaml (entity_obj record) legitimately print 'Planet'; elixir prints its module.",
+   "lines_changed": "7 headings per language in csharp java kotlin scala swift perl (42 lines in all); 0 elsewhere"
+  },
+  {
+   "what": "Test-client h3 label",
+   "variants": "'Static Methods' (14), 'Static Functions' (rust zig), 'Test Constructor' (c), 'Test client' (clojure), 'Constructors' (elixir), 'Static constructors' (ocaml)",
+   "recommendation": "'### Test client' for all: the section holds only test constructors, and 'Static' is false for 6 languages.",
+   "lines_changed": "1 per language in 19 languages"
+  },
+  {
+   "what": "Client-member and common-member h3 labels",
+   "variants": "'Instance Methods' 16, 'Entity Accessors' c (also holds direct/prepare), 'Client functions' clojure, 'Functions' elixir, 'Instance functions' ocaml; 'Common Methods' 17, 'Common Members' clojure, 'Common Functions' elixir, 'Common Fields' ocaml",
+   "recommendation": "'Instance {Methods|Functions}' and 'Common {Methods|Functions}', with the noun as a provider fact",
+   "lines_changed": "c 1, elixir 1, clojure 8, ocaml 8"
+  },
+  {
+   "what": "Operation order",
+   "variants": "go: CANON_OP_ORDER through entityOps (list load create update patch remove). The other 19: Object.keys(ent.op) order (create list load patch remove update in the fixture).",
+   "recommendation": "Canonical order from the description",
+   "lines_changed": "Planet's 5-6 op subsections move in 19 languages; no text changes"
+  },
+  {
+   "what": "'The match is optional' sentence in list",
+   "variants": "Absent: ts js go lua. Inline parenthesis: php rb. 'call with \u00a7 to list all records': clojure. 'pass \u00a7': rust c cpp zig ocaml. 'call \u00a7': csharp java kotlin scala swift elixir. 'call \u00a7 with no argument': py perl.",
+   "recommendation": "One sentence, written only when list has no required match (U44)",
+   "lines_changed": "1 per language in 20"
+  },
+  {
+   "what": "Return verb",
+   "variants": "'Resolves to' in ts js (promise) and ocaml; 'Returns' elsewhere; '\u00a7 is' rust; '\u00a7 carries' zig",
+   "recommendation": "Take it from errorStyle. ocaml 'Resolves' looks like drift (its ops are not promises), but that was not verified.",
+   "lines_changed": "ocaml 6 op descriptions"
+  },
+  {
+   "what": "Accessor sentence",
+   "variants": "'Create a new \u00a7 entity instance.' (ts js go rb lua perl clojure swift c) / 'Create a new \u00a7 instance.' (py php rust zig) / '(returns \u00a7)' (csharp java kotlin scala) / 'bound to this client' (cpp) / 'handle' (elixir) / 'accessor' (ocaml)",
+   "recommendation": "One sentence, plus the type name from the provider",
+   "lines_changed": "7 per language in about 11 languages"
+  },
+  {
+   "what": "data()/match() descriptions",
+   "variants": "4 wordings for the same two accessor shapes (single get/set method against a get/set pair); cpp adds a parenthetical; ts/js/go add two long sentences",
+   "recommendation": "Two shared sentences selected by the accessorShape fact",
+   "lines_changed": "2-4 lines per entity in most languages"
+  },
+  {
+   "what": "make() description",
+   "variants": "'with the same client and options' (ts js go php rb lua) against 'with the same options' (12)",
+   "recommendation": "One sentence",
+   "lines_changed": "1 per entity in 6 or 12 languages"
+  },
+  {
+   "what": "prepare() description",
+   "variants": "'without sending the request' (ts js go php rb lua) / 'without sending' (14); 'Accepts the same parameters as \u00a7' in ts js go rb lua only",
+   "recommendation": "One sentence plus the error clause",
+   "lines_changed": "1-2 per language"
+  },
+  {
+   "what": "direct() table rows",
+   "variants": "Path row with 'for \u00a7 substitution' (6) / without (14). The ctrl row only in ts js go php rb lua, although py reads it. The caption takes 4 variants.",
+   "recommendation": "Rows from one list, with ctrl conditioned on a capability fact that is checked against the runtime",
+   "lines_changed": "2-3 per language"
+  },
+  {
+   "what": "Constructor 'system' row",
+   "variants": "'System overrides (e.g. custom fetch).' (16) against 'System overrides.' (rust c cpp zig)",
+   "recommendation": "One row from optspec",
+   "lines_changed": "1 in 4 languages"
+  },
+  {
+   "what": "go test sentence",
+   "variants": "go 'Test client with options.' against 19 'Create a test client with mock features active.'",
+   "recommendation": "The shared sentence",
+   "lines_changed": "1"
+  },
+  {
+   "what": "Fixed-method coverage",
+   "variants": "stream documented only in go and zig (the runtime has it in at least ts py rb java); client() and entopts() only in ts/js; options() and utility() missing in c and ocaml",
+   "recommendation": "A per-language fixed-method table, checked by a test against the runtime templates",
+   "lines_changed": "Adds 5-20 lines per language"
+  },
+  {
+   "what": "Small example drift",
+   "variants": "elixir instance example names the client 'sdk'; c's update example drops the 'Fields to update' comment; c, rust and zig write 'entity id' without a code span",
+   "recommendation": "Shared",
+   "lines_changed": "1-2 per language"
+  }
+ ],
+ "language_api_facts": "What each language would have to declare about its own fixed runtime API. It is written from the signatures each generator prints today (sigs.txt, counted from patch-on/B headings) and from opening the templates for stream, make and ctrl.\n\nPer-language FACT TABLE, the same columns for every language:\n- client: ctorSignature, testSignatures[] (1 or 2: go and cpp have overloads), accessorArgKind (data|entopts), options, utility (signature or absent: c and ocaml have neither documented), directSignature, prepareSignature, tester (ts/js only)\n- capabilities: cancel {param, type} (ts/js), directCtrl (ts js go php rb lua documented; py reads it), stream {returnKind: async-iterator|channel|materialised|...} or absent, make (absent in zig)\n- errorStyle, one of 10: promise (ts js), raise (py rb csharp java kotlin scala clojure elixir ocaml), throw (php swift cpp), die (perl), go-err, lua-nil-err, c-null-errptr, rust-result, zig-union, plus swift's Value/asNative wrapper on load\n- opSignature for the 6 ops (fixed except the op name's case)\n- collectionNoun for list: array, list, vector, slice, arrayref, NULL-terminated array, Vec, or a Value list\n- accessorShape: single get/set (12 languages) or get/set pair (8); nameAccessor: method, property (kotlin) or record field (ocaml)\n- fixedEntity: data, match, make, stream, name, client, entopts (signature or absent)\n- optionsContainerNoun and nullLiteral (nil, null, NULL, None, Value::Noval, undef, Noval...)\n\nSize (counted rows in the printed headings per language): 15-23 signature rows. c 15; cpp, csharp, rust, swift and zig 16; ts, js, go, py, php, rb, lua, perl and ocaml 18; java, kotlin and scala 20; clojure 23. Each generator already holds OP_SIGNATURES today: 27-33 lines in every file, 636 lines in all.\n\nDoes \"a fixed runtime method's signature is a fact about the language's own template, not about the model\" hold in every block?\n- Mostly yes. No model reading is needed to print any fixed signature.\n- **Model decides whether a fixed method exists:** test() exists only when the test feature ships (S13). The description must carry that, not the provider.\n- **Model decides a name inside a fixed signature:** java record_ (keyword escape), class-name collision renames (U34), and rust's Result<Rc<Self>, DemoError> carries the SDK name. These are syntax over values from the description.\n- **The table is itself drifting from the runtime it describes,** so \"fact\" does not mean \"correct\": stream is undocumented in at least 4 languages that have it, and py's direct takes ctrl but does not document it. A declared table needs a test that re-derives it from tm/<lang> and fragment/*. naming.ts does that for SDK names.\n- **Facts must be data, not phrases.** errorStyle and collectionNoun change sentences. If a provider returns 'and dies on error', that is provider prose. The rule holds only if the shared component owns about 10 error-style clauses and the provider returns an enum. This is the one place where \"a runtime difference is data\" sounds like a switch on the language under another name.",
+ "idiom_prose": [
+  {
+   "lang": "ts, js",
+   "where": "client.cancel (ReadmeRef_ts.ts:185-192)",
+   "text": "Every entity operation takes an optional ctrl \u2026 AbortSignal in ctrl.signal cancels the request \u2026 rejects with \u2026 request_aborted \u2026 stream() takes the signal as callopts.signal (4 sentences)",
+   "shareable": "Partly: shared only if cancellation becomes a capability record {param, type, errorCode}. The AbortSignal and stream wording stays ts/js-specific."
+  },
+  {
+   "lang": "go",
+   "where": "common.stream (ReadmeRef_go.ts, the Stream entry)",
+   "text": "\u2026send its result items on the returned channel, which closes when the stream ends. A StreamItem holds one item in Item, or in Err\u2026 Under throw: false \u2026 no error is sent.",
+   "shareable": "No: channel semantics are go's own"
+  },
+  {
+   "lang": "zig",
+   "where": "common.stream",
+   "text": "\u2026materialise its result items. StreamResult is .ok with the items, or .err \u2026 Under throw: false \u2026 a failed stream is .ok\u2026",
+   "shareable": "No"
+  },
+  {
+   "lang": "clojure",
+   "where": "common h3",
+   "text": "State accessors are stored on the entity map and called via keyword lookup.",
+   "shareable": "No (1 sentence)"
+  },
+  {
+   "lang": "elixir",
+   "where": "constructor",
+   "text": "\u00a7 is a struct value node \u2014 build one from a native map with \u00a7.",
+   "shareable": "The first half is shareable with an optionsContainerNoun; the second is idiom"
+  },
+  {
+   "lang": "swift",
+   "where": "op.load",
+   "text": "\u2026as a native Value that `asNative as? Entity` unwraps",
+   "shareable": "No, but it applies to every op, not only load (drift inside the idiom)"
+  },
+  {
+   "lang": "go",
+   "where": "client.test0",
+   "text": "No-arg convenience constructor for the common no-options test case.",
+   "shareable": "Yes if overloads are a fact; otherwise no"
+  },
+  {
+   "lang": "cpp",
+   "where": "client.test",
+   "text": "\u2026; a no-arg overload is also provided.",
+   "shareable": "As go"
+  },
+  {
+   "lang": "ocaml",
+   "where": "client.test / ctor",
+   "text": "(\u00a7 uses defaults, \u00a7 takes explicit options); Use \u00a7 for defaults.",
+   "shareable": "Yes with nullLiteral"
+  },
+  {
+   "lang": "kotlin",
+   "where": "common.name",
+   "text": "The entity name (read-only property).",
+   "shareable": "Yes with a nameAccessor fact"
+  },
+  {
+   "lang": "php",
+   "where": "direct",
+   "text": "This is the raw-HTTP escape hatch: it does **not** throw. \u2026 Branch on \u00a7.",
+   "shareable": "Yes: it is the shared no-throw sentence written differently"
+  },
+  {
+   "lang": "ocaml",
+   "where": "op.remove",
+   "text": "\u2026marked as deleted (\u00a7); it keeps the data it held.",
+   "shareable": "Yes: it is true of every language, so it is drift rather than idiom"
+  }
+ ],
+ "proposed_description_fields": "Per target, resolved once from the model:\n- **sdk:** name, clientTypeName input (Name + 'SDK'), title\n- **ctor.options[]:** from main.kit.optspec plus requiredOptions(model) (apikey when auth is active; secret only for Basic in a header and not suppressed; server variables with required = referenced and no default). Each option is {name, canonicalType, description (cell-escaped), required, default}.\n- **testClient:** {available} (test feature shipped)\n- **entities[]:** active only, in key order, each with:\n  - name, className (entityClassName against entityCollection, U34)\n  - varName input\n  - description (entityDescription: text.entity_desc, then short, then desc; cell- and link-safe)\n  - fields[]: {name, canonicalType, scalarKind, required, description(escaped), ops[] (active ops only)}\n  - idField (entityIdField, or null)\n  - ops[]: active only, CANON_OP_ORDER. Each op is {name, kind: match|data, needsAction, matchItems[{name, scalarKind, placeholder}], requestItems[{name, scalarKind, placeholder, optional}], listRequiresMatch + requiredListParams (U44), idInData (U43), bodyNote facts {values, once}}.\n  - actions[]: {action, op, path}\n- **features[]:** featureDocs(model, target), with {name, version, title, wraps}, plus honoursActivationOrder\n- **No model fact goes to the provider.** Every model fact the REFERENCE uses is on this list. Each of these is what today's 20 files re-derive, and among those reads are S25/D10, U43, U44, U34, U36, S50/D23, D04 and N04.",
+ "proposed_provider_additions": "interface RefSyntax {\n  fence: string                                   // N11: js gets 'js'\n  title: string                                   // language title\n  clientTypeName(sdkName: string): string         // DemoSDK | Demo | Sdk_client\n  entityTypeName(className: string, entName: string): string  // PlanetEntity | Planet | Demo.Entity.Planet\n  memberNoun: 'Methods' | 'Functions'\n  typeName(canonical: string): string             // replaces the 6 local type maps and canonToType(..., target.name)\n  scalarLiteral(kind: string, placeholder: string): string\n  mapLiteral(items: { key: string, value: string }[], multiline: boolean): string  // c: NULL or cmap(n,...)\n  nullLiteral: string\n  comment(text: string): string\n  optionKey(container: 'options' | 'fetchargs', key: string): string  // options.apikey | options[\"apikey\"] | apikey\n  containerNoun: string                           // maps | dicts | hashes | tables | arrays | hashrefs ...\n  ctorExample(sdkName: string): string\n  testCall(sdkName: string): string\n  accessorCall(ent: { name: string, varName: string }): string\n  opCall(op: OpDesc, ent: EntDesc, arg: string): string        // the call alone\n  opExample(op: OpDesc, ent: EntDesc, arg: string): string     // call + language's result consumption / error check\n  actionCall(ent: EntDesc, op: string, action: string): string\n  featureActivation(names: string[]): string\n  facts: LangApiFacts                             // the table above: signatures, errorStyle enum, collectionNoun, accessorShape, capabilities\n}",
+ "proposed_structure": "One scheme, in document order:\n\n```\n# {Name} {Lang} SDK Reference\n## {clientTypeName}\n### Constructor\n### Test client\n### Instance {memberNoun}\n#### `{accessor}` \u2026  #### `{options}`  #### `{utility}`  #### `{direct}`  #### `{prepare}`  [#### Cancelling a call, by capability]\n---\n## {entityTypeName}\n### Fields\n[### Field Usage by Operation]\n[### Actions]\n### Operations\n#### `{opSignature}` (canonical order)\n### Common {memberNoun}\n---\n## Features\n### Configuring features\n#### Ordering\n#### `{feature}`\n```\n\nHeading lines that change per language under it, counted on the B output by headings.py, against 105-121 heading lines per page:\n- 1 each: ts js go py php rb lua rust cpp zig\n- 2 each: c, elixir\n- 8 each: csharp java kotlin scala swift perl (7 entity h2s + 1)\n- 9 each: clojure, ocaml (7 Common h3s + 2)\n- Added: Actions and missing fixed methods. Moved: the op order in 19 languages.\n\nThe h4 signature text is printed by the provider and changes only where drift is fixed.",
+ "hard_cases": [
+  "**c (handles, no objects).** It has no options()/utility() entries. Accessors are free functions (demo_planet(client, NULL)) and ops are vtable calls with an explicit self and PNError** (ReadmeRef_c.ts:60-75, 270-330). The examples carry their own result-consumption loops (NULL-terminated array, printf of voxgig_to_json). It is a mapLiteral provider case rather than a model condition (an empty create prints NULL, ReadmeRef_c.ts:298). It holds the largest local helper set: 22 lines of type and literal maps. Prose fits the shared form once errorStyle is c-null-errptr; examples are all provider. It is in the compiled README/REFERENCE lanes (generatedcompile.test.ts), so H4 will show here first.",
+  "**go (two return values).** It is the only language whose ops follow entityOps and canonical order (ReadmeRef_go.ts:166-169), so it is the one that is right on S25. Each example adds an err check and a print, with a type assertion result.(sdk.Entity). It has two test constructors and the channel-based Stream paragraph (idiom). The difference is easy to express as data (go-err style); go is not hard.",
+  "**swift.** Ops return Value: the load description carries 'asNative as? Entity' (ReadmeRef_swift.ts:32) and the list example unwraps item.asNative. The return phrase is a third value shape (Value-wrapped entity), beyond the 10 error styles. A provider can supply it as a fact, but the shared sentence then needs a slot for 'as a native Value that \u2026 unwraps'.",
+  "**clojure, ocaml, elixir (no classes).** The prose fits the shared sentences once memberNoun, accessorShape and nameAccessor are facts. Their real hardness is code. clojure's example needs a (require \u2026) alias per entity (e-planet/load). ocaml's ops are record fields called with a receiver expression ((Sdk_client.planet client Noval).e_load). elixir passes the entity as the first argument and rebinds it (planet = Demo.Entity.Planet.update(planet, \u2026)), with a Helpers.deep map wrapper. None of the three has a toolchain here, so the H4 test for them is byte equality only.",
+  "**perl.** Its list example hard-codes `->{id}` (ReadmeRef_perl.ts:293): a model fact (the id field) hidden inside example code. The pattern is examples that consume the result by reading a field, and each provider wants it. Unless opExample receives idField from the description, perl's provider will read the model: the first H1 violation to watch for.",
+  "**rust and zig.** Their result types (Result<Vec<Rc<Self>>, DemoError>, StreamResult) put the SDK name inside fixed signatures, and their prose subject is the Ok/.ok variant rather than 'Returns'. The shared sentence needs a subject slot. Both are in the compile lanes.",
+  "**ts/js.** They carry content no other language has: Cancelling, tester(), client() and entopts(), and the Actions block (ts only). Actions is a model-dependent block present in 1 of 20 languages, the exact class the proposal claims to fix. Building it for all 20 adds actionCall to every provider.",
+  "**Language pack: lean.** It has no entity layer (ReadmeRef_lean.ts emits only a module table plus ReadmeRefFeatures). A shared page must make every client and entity block absent by data, or lean keeps a component of its own. dart and haskell (394 and 413 lines) are a second copy of the full skeleton outside this repo (H5).",
+  "**The fixed-method table.** Documented methods already disagree with the runtimes (stream, ctrl, client/entopts). If providers declare the table by hand, the drift moves rather than disappears, unless a guard re-derives it from tm/<lang> and fragment/*."
+ ],
+ "measurements": [
+  {
+   "name": "ReadmeRef_<lang>.ts lines, 20 bundled languages",
+   "value": "8,330 in all (350 elixir to 473 ts)",
+   "command": "wc -l /home/user/sdkgen/ts/project/.sdk/src/cmp/*/ReadmeRef_*.ts"
+  },
+  {
+   "name": "REFERENCE.md lines, baseline B",
+   "value": "24,447 in all (1,168-1,312 per language)",
+   "command": "wc -l spike/out/B/md/*/REFERENCE.md"
+  },
+  {
+   "name": "Prose units shared by at least 15 languages, whole page",
+   "value": "80% (1,966/2,461); 5% of units found in one language only",
+   "command": "python3 refanatomy/blocks.py spike/out/B/md --json B.json"
+  },
+  {
+   "name": "Same, excluding ReadmeRefFeatures output (the part each language writes)",
+   "value": "67% (1,026/1,521); lone 8%",
+   "command": "python3 over B.json, excluding features.configuring/ordering/each"
+  },
+  {
+   "name": "Same, excluding all feature blocks",
+   "value": "54% (586/1,081); lone 11% (117)",
+   "command": "python3 over B.json, excluding features.*"
+  },
+  {
+   "name": "Op description sharing at 15 or more languages, before and after tokenising the error and return clause",
+   "value": "load 49%->90%, create 50%->92%, update 62%->88%, remove 49%->90%, list 33%->33%, direct 57%->65%, prepare 0%->0%",
+   "command": "python3 refanatomy/tokenized.py spike/out/B/md"
+  },
+  {
+   "name": "Sentences found in at most 3 languages (non-feature blocks)",
+   "value": "165 (block, sentence) pairs. Hand classification: about 18 distinct are idiom, the rest are error-style, syntax or drift (estimated, not counted).",
+   "command": "inline python over blocks.py (the 'rare' listing)"
+  },
+  {
+   "name": "REFERENCE reaction to model switches (lines differing from B, per language)",
+   "value": "auth-off: 1 line in each of 20. auth-basic: ts only. auth-query, server-none, server-static: no REFERENCE changed in any language. op-off-planet-{create,update,list,load,remove} and op-readonly: go only. patch-on: all 20 (9-15 lines). feat-none: about 707 lines in all 20.",
+   "command": "diff B/md/<l>/REFERENCE.md <v>/md/<l>/REFERENCE.md | grep -c '^[<>]' (a file missing under <v> means byte-identical: the spike stores changed files only)"
+  },
+  {
+   "name": "Heading lines changed under the proposed scheme",
+   "value": "1 in ts js go py php rb lua rust cpp zig; 2 in c and elixir; 8 in csharp java kotlin scala swift perl; 9 in clojure and ocaml (of 105-121 heading lines each)",
+   "command": "python3 refanatomy/headings.py spike/out/B/md"
+  },
+  {
+   "name": "Operation order",
+   "value": "go canonical; the other 19 in model-key order",
+   "command": "awk over patch-on/md/<l>/REFERENCE.md Planet #### headings"
+  },
+  {
+   "name": "Per-file content a provider would keep (code-template lines + OP_SIGNATURES + local helper functions + signature headings)",
+   "value": "77 (elixir) to 114 (clojure) per file; 1,914 in all. A rough split, so this is estimated.",
+   "command": "inline python over ReadmeRef_<lang>.ts (code fences in template strings, OP_SIGNATURES block, top-level functions)"
+  },
+  {
+   "name": "Model-reading lines and conditions per generator",
+   "value": "modelref 21-47, conditions 20-37 per file. The conditions specific to one language are all type to literal or type-name maps.",
+   "command": "grep -cE over each ReadmeRef_<lang>.ts (shown in the run) and grep of non-skeleton if/ternary lines in swift rust ocaml clojure elixir zig"
+  },
+  {
+   "name": "Fixed signature rows per language",
+   "value": "15-23 (c 15; cpp, csharp, rust, swift, zig 16; ts, js, go, py, php, rb, lua, perl, ocaml 18; java, kotlin, scala 20; clojure 23)",
+   "command": "awk over patch-on/B REFERENCE headings -> refanatomy/sigs.txt"
+  },
+  {
+   "name": "H2 shrink estimate",
+   "value": "About 3,000-3,500 lines after (shared about 450 + 20 providers of about 130-150) against 8,330 before: about 2.4-2.8x. Estimated, not counted. Only building measures it.",
+   "command": "read, not run (derived from the per-file provider-content count above)"
+  },
+  {
+   "name": "stream() in runtime but not documented",
+   "value": "Defined in ts (EntityBase.fragment.ts:111), py (Entity.fragment.py:74), rb (Entity.fragment.rb:104) and java (EntityBase.fragment.java:206); documented only in go and zig. Other languages not checked.",
+   "command": "grep over src/cmp/<lang>/fragment"
+  },
+  {
+   "name": "py direct reads ctrl, REFERENCE omits it",
+   "value": "py/fragment/Main.fragment.py _raw_request: ctrl = helpers.to_map(vs.getprop(fetchargs, \"ctrl\"))",
+   "command": "sed/grep over py/fragment/Main.fragment.py"
+  },
+  {
+   "name": "Escaped-backtick leak in shared ReadmeRefFeatures",
+   "value": "1 occurrence in each of 20 REFERENCEs ('of \\`feature\\`'); not in the catalogue",
+   "command": "grep -c 'of \\\\`feature\\\\`' B/md/*/REFERENCE.md; grep catalogue for 'array form' -> none"
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "partly",
+   "evidence": "Analysis supports it for this page, with conditions; the threshold is not crossed on paper.\n- **Per-language prose:** genuinely idiomatic prose is about 18 distinct sentences, about 2% of the page's non-feature prose units (hand-classified estimate), well under 15%.\n- **Model conditions:** every model-dependent branch in the 20 generators is the same skeleton over shared helpers. The only conditions specific to one language map canonical types to literals or type names, which is syntax.\n- **Risk 1, prose as data:** sharing reaches 88-92% in op descriptions only if the error convention, collection noun, accessor shape and capabilities are enums in a provider fact table, with the shared component owning the 10 error-style clauses. Leave them as phrases and every provider writes prose.\n- **Risk 2, examples:** perl's list example reads the id field (ReadmeRef_perl.ts:293), so opExample must receive idField from the description, or perl's provider reads the model.\n- **Not known:** the 10-breaking-changes criterion cannot be judged by reading; only porting the first four languages and then the rest shows it."
+  },
+  {
+   "id": "H2",
+   "verdict": "not-tested",
+   "evidence": "Estimate only: providers keep about 77-114 lines of syntax per file today (1,914 in all, counted roughly), plus interface overhead. With a shared component of about 450 lines, that gives about 3,000-3,500 against 8,330, roughly 2.4-2.8x.\n- **Downside:** adding the missing blocks (Actions, stream, client/entopts) and a fact-table guard pushes this toward the 2x line.\n- **Upside:** sharing example printers with the README quick-start provider pulls it the other way.\n- Only building counts it."
+  },
+  {
+   "id": "H3",
+   "verdict": "partly",
+   "evidence": "Of the catalogued issues touching this page:\n- **Fixed once by the description:** S25/D10, U43, U44, U34, U36, S50/D23/D55, D26, D04, G27/G29/M38/D69, S13. Each is a model read duplicated in 20 files. The variation diffs confirm the duplication costs: op-off-* changes only go, auth-basic only ts, server-* nothing.\n- **Per-language by nature:** N04/U06/M04 (alias types) become a provider keyed by language, not target, which is fixed once if the registry is per language. N11 (js fence) is a one-line provider value. The features-section issues are already shared.\n- **Count:** about 2 of about 20 need a per-language edit, under the 10% threshold, by this classification. Not executed."
+  },
+  {
+   "id": "H4",
+   "verdict": "not-tested",
+   "evidence": "Nothing was compiled. The hard examples are c, cpp, rust and zig: their README/REFERENCE blocks run in generatedcompile.test.ts, and their toolchains are present here. clojure, ocaml, elixir, swift and kotlin can only be checked by byte equality."
+  },
+  {
+   "id": "H5",
+   "verdict": "not-tested",
+   "evidence": "Not analysed beyond observing the language pack. dart and haskell hold full ReadmeRef copies (394 and 413 lines), and lean has no entity layer (ReadmeRef_lean.ts emits only modules plus features). The shared page must render lean with every entity block absent by data, and the pack's components must keep working or be retired."
+  }
+ ]
+}

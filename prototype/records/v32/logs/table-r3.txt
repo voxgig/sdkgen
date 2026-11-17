@@ -1,0 +1,38 @@
+| lang | section | units same | classes | shared | rule records | by hand | missing | contradictions | identical | corrected | unified | otherwise | changed blocks compiled by nothing |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ts | tutorial | 61 | 43 | 0 | 30 | 8 | 5 | 0 | 19 | 16 | 12 | 1 | 29 (node on PATH) |
+| ts | rootquick | 21 | 6 | 0 | 5 | 0 | 1 | 0 | 0 | 13 | 5 | 1 | 19 (node on PATH) |
+| ts | reference | 15470 | 112 | 1 | 57 | 19 | 34 | 1 | 195 | 0 | 118 | 0 | 118 (node on PATH) |
+| go | tutorial | 23 | 58 | 0 | 40 | 9 | 9 | 0 | 0 | 12 | 1 | 8 | 21 (go on PATH) |
+| go | rootquick | 22 | 4 | 0 | 4 | 0 | 0 | 0 | 0 | 14 | 4 | 4 | 22 (go on PATH) |
+| go | reference | 17481 | 89 | 0 | 64 | 11 | 12 | 2 | 337 | 21 | 18 | 0 | 39 (go on PATH) |
+| py | tutorial | 61 | 40 | 0 | 31 | 5 | 4 | 0 | 26 | 22 | 0 | 0 | 22 (python3 on PATH) |
+| py | rootquick | 19 | 3 | 0 | 3 | 0 | 0 | 0 | 0 | 18 | 0 | 1 | 19 (python3 on PATH) |
+| py | reference | 14958 | 117 | 1 | 77 | 19 | 19 | 1 | 230 | 0 | 83 | 0 | 83 (python3 on PATH) |
+| c | tutorial | 61 | 38 | 0 | 29 | 5 | 4 | 0 | 0 | 41 | 0 | 7 | 48 (gcc on PATH) |
+| c | rootquick | 19 | 3 | 0 | 3 | 0 | 0 | 0 | 0 | 2 | 0 | 17 | 19 (gcc on PATH) |
+| c | reference | 14872 | 106 | 0 | 67 | 21 | 18 | 0 | 151 | 143 | 19 | 0 | 162 (gcc on PATH) |
+| zig | tutorial | 61 | 43 | 0 | 32 | 5 | 5 | 1 | 24 | 17 | 0 | 7 | 24 (zig on PATH) |
+| zig | rootquick | 19 | 3 | 0 | 3 | 0 | 0 | 0 | 0 | 2 | 15 | 2 | 19 (zig on PATH) |
+| zig | reference | 15019 | 113 | 2 | 76 | 15 | 19 | 1 | 151 | 0 | 162 | 0 | 162 (zig on PATH) |
+| clojure | tutorial | 61 | 38 | 0 | 29 | 5 | 4 | 0 | 26 | 21 | 0 | 1 | 22 (no compiler on PATH) |
+| clojure | rootquick | 19 | 3 | 0 | 3 | 0 | 0 | 0 | 0 | 16 | 0 | 3 | 19 (no compiler on PATH) |
+| clojure | reference | 14983 | 124 | 1 | 75 | 23 | 25 | 0 | 230 | 0 | 83 | 0 | 83 (no compiler on PATH) |
+| rust | tutorial | 61 | 46 | 0 | 32 | 9 | 5 | 0 | 26 | 22 | 0 | 0 | 22 (cargo on PATH) |
+| rust | rootquick | 19 | 3 | 0 | 3 | 0 | 0 | 0 | 0 | 18 | 0 | 1 | 19 (cargo on PATH) |
+| rust | reference | 15019 | 126 | 0 | 83 | 25 | 18 | 0 | 230 | 0 | 83 | 0 | 83 (cargo on PATH) |
+| elixir | tutorial | 61 | 40 | 0 | 29 | 7 | 4 | 0 | 16 | 22 | 10 | 0 | 32 (no compiler on PATH) |
+| elixir | rootquick | 19 | 3 | 0 | 3 | 0 | 0 | 0 | 0 | 18 | 0 | 1 | 19 (no compiler on PATH) |
+| elixir | reference | 14802 | 130 | 0 | 86 | 21 | 22 | 1 | 151 | 0 | 162 | 0 | 162 (no compiler on PATH) |
+| rb | tutorial | 61 | 47 | 23 | 0 | 19 | 5 | 0 | 3 | 21 | 23 | 1 | 45 (ruby on PATH) |
+| rb | rootquick | 19 | 3 | 0 | 0 | 3 | 0 | 0 | 0 | 2 | 15 | 2 | 19 (ruby on PATH) |
+| rb | reference | 15059 | 119 | 48 | 0 | 51 | 19 | 1 | 303 | 0 | 10 | 0 | 10 (ruby on PATH) |
+ts shared matched 1 unreviewed 1
+go shared matched 0 unreviewed 0
+py shared matched 1 unreviewed 1
+c shared matched 0 unreviewed 0
+zig shared matched 2 unreviewed 2
+clojure shared matched 1 unreviewed 1
+rust shared matched 0 unreviewed 0
+elixir shared matched 0 unreviewed 0
+rb shared matched 71 unreviewed 71

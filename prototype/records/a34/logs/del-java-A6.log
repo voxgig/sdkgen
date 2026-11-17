@@ -1,0 +1,8 @@
+page read: ((voxgig.demosdk.model.EntityBase) result).deleted()
+lanes/java/new-crud-A6-java-deleted-wrong-package/del/D.java:4: error: package voxgig.demosdk.model does not exist
+  System.out.println("deleted read: " + ((voxgig.demosdk.model.EntityBase) result).deleted()); } }
+                                                              ^
+1 error
+javac exit 1
+Error: Could not find or load main class D
+Caused by: java.lang.ClassNotFoundException: D

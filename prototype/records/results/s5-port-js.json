@@ -1,0 +1,475 @@
+{
+ "lang": "js",
+ "ok": true,
+ "summary": "I ported js by the version 3.3 guide. It touches only js's own files: Syntax_js.ts (145 lines), Naming_js.ts (22) and runtimeforms/js.ts (+88 -11). The three old components are deleted (734 lines) and the golden carries only js's lines. My final check was `npm run build` (exit 0), then `REGEN=1 tools/portcheck.sh sdkgen out js` with my hand records: it exits 0 and prints PORTCHECK js: PASS. No class is recorded as defect and no shared file was touched. The from-scratch run (SCRATCH=1) exits 1 by design. The guard for js passes 4 of 4, the guard and reader together pass 81 of 81, and the suite without the toolchain lanes passed 2630 of 2635 tests, with 0 failures and 5 skipped. js has no README example test and no lane, so I ran the examples by hand with node 24 against generated SDKs (my/runblocks.js). The tutorial, the root quick start run from the repository root, and every REFERENCE code block ran. On the new code, 24 of 24 programs ran in the default model, 17 of 17 in crud and 17 of 17 in basic-server. On the old code the figures were 24 of 24, 17 of 17 and 15 of 17: in basic-server the old client constructor, run live as written, throws because it gives no server tenant. A control with three injected faults was caught (21 of 24 ran, and the one fault inside a try block was counted). js is the nearest port to ts. Its own decisions are these: the entity name is a field (the table said js has no `name`; it does, at EntityBase.fragment.js:7). utility() is copy: false, which I ran: utility() returns the live object. listOf is left undeclared. The import is package-addressed. The interface needed no change.",
+ "workspace": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js (sdkgen clone, tools, out, PROGRESS.md, my/ scripts: mk.py decisions, fill.py merge, runblocks.js example runner; run/ generated OLD and NEW SDKs; oldcopy = copy of the pristine old clone; logs final.log, scratch-final.log, suite.log, run/*.blocks.log)",
+ "commits": [
+  "sdkgen a9649daa 'js: README tutorial, root quick start and REFERENCE from shared code' (body: 'Adds the js naming hook and syntax provider, completes the js guard forms (the entity's name field, calls, citations) and removes the three js README components they replace.'): +Naming_js.ts 22, +Syntax_js.ts 145, -ReadmeQuick_js.ts 179, -ReadmeRef_js.ts 445, -ReadmeTopQuick_js.ts 110, runtimeforms/js.ts +88 -11",
+  "sdkgen 6062b88a 'golden: js components' (no body): ts/test/golden/add-output.txt +2 -3, only js lines",
+  "tools eba7a82 'js: hand records, classes, normalizer counts and the purity acceptance for the js port' (no body): hand/js.json, classes/js.json, counts/js.json, purity-allow/js.json",
+  "No commit carries a trailer (checked with git log --format=%B). After `npm run build` (exit 0), `git status --short` is empty in both sdkgen and tools."
+ ],
+ "portcheck": "Final reviewed run (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js/final.log): `npm run build` exit 0, then `REGEN=1 tools/portcheck.sh sdkgen out js`, exit 0, 265 s.\n== portcheck js ==\nsection    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions\ntutorial                   21 |      59     25        0      27       7     0       0 | 0\nrootquick                  19 |       5      0        0       4       1     0       0 | 0\nreference               15259 |     142     73        0      30      37     0       0 | 2\nsection    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH\ntutorial                   3        15       0        30 |      54    0      0 | yes (node); 45 changed blocks compiled by nothing\nrootquick                  0         4       1        14 |      19    0      0 | yes (node); 19 changed blocks compiled by nothing\nreference                195         0      98        20 |       8    0      0 | yes (node); 118 changed blocks compiled by nothing\ncontradictions (2; counted, not failed): reference [9c6d819441] ...; reference [bff341cf32] ...\npurity: 0 open, 1 accepted | notes declared 0, note regions found 0\npage numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1461 articles checked (0 not judged); findings 0\nprinted calls (callcheck, no compiler): 374 calls of 25 runtime members checked; ARITY/RECEIVER/MEMBER findings 0\nguard: pass (pass 4 fail 0 )\nbuild: 1813 sources checked, current\nhand records: 194, 43 quote text (81 quotations); STALE 0\nfacts (language and convention, against the OLD page): attested 5, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 22, pinned prose 12 (the reviewer audits each)\nshared sentences: matched 98, of which against a sentence nobody reviewed 4 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0; absent here but printed by every reference of this result style 3 (3 explained)\nfact sheet: factsheet js: 72 facts, 0 with no account, 0 unattested\nPORTCHECK js: PASS",
+ "scratch": "`SCRATCH=1 tools/portcheck.sh sdkgen out js` after the final build and regeneration: exit 1, 104 s (scratch-final.log). The first run, `SCRATCH=1 REGEN=1` before any record existed (scratch1.log), gave the same numbers. Ledger OPEN: tutorial 34, rootquick 5, reference 69 (units same 21 / 19 / 15259; shared 25 / 0 / 73). Blocks OPEN: tutorial 54, rootquick 19, reference 8. Facts: UNATTESTED or NOT JUDGED 2 (NOT JUDGED named = \"call\": OLD reads as call in 0 and as another value in 0; UNATTESTED ref.noun = \"Methods\"). ABSENT, NO REASON 3, all in rootquick: [99a8153c15] 'Load a \u24ba: the entity, a \u24baEntity; throws on failure' (16 variations), [7ab5ba644d] 'The client sends the API key as the \u27e6\u27e7 query parameter.' (2), [a0b269a293] 'List \u24ba records: a \u27e6\u27e7, one entity per record; throws on failure' (7). DROPPED: 0. The parts that read no hand record were clean in both runs: build current, 21 of 21 variations regenerated, guard 4 of 4, purity 0 open, pagecheck 0 findings, callcheck 0 findings.",
+ "guard": "`node --test --test-name-pattern '^js: ' dist-test/runtimefacts.test.js`: 4 of 4 pass. `node --test --test-concurrency=2 dist-test/runtimefacts.test.js dist-test/runtimereader.test.js`: 81 of 81 pass. Account line (`SDKGEN_GUARD_REPORT=1 ... 'account, per language'`): js: derived 50, cited 23, language 1, convention 6, excepted 0; types: column js (derived from the generator). Reaching a passing guard took three changes to the forms. (1) The js forms were given `bare: true` and the ts-style `decl` and `public.entity` that read a class property `name = ''` as a field. (2) `optional` now reads a page signature's `?` or default, and treats a bare runtime identifier as optional. With the shipped `optional: () => true`, the negative control 'an optional parameter shown required' failed. (3) One exception, 'optional:entity streamIterator', with its reason: js lets any argument be left out, but stream passes action on as the operation name. Full suite, no lanes: `node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name generatedcompile.test.js | sort)` gave tests 2635, pass 2630, fail 0, skipped 5 (755 s).",
+ "facts": [
+  {
+   "path": "facts.method.{list,load,create,update,patch,remove}",
+   "value": "list/load/create/update/patch/remove",
+   "account": "derived",
+   "evidence": "EntityListOp.fragment.js:12 `async list(reqmatch, ctrl)` and the five other op fragments"
+  },
+  {
+   "path": "facts.named",
+   "value": "call",
+   "account": "convention, recorded by hand (NOT JUDGED by the minimal pair: OLD reads as neither value)",
+   "evidence": "OLD B/js/README.md 'Use `client.direct()` ...'; OLD B/js/REFERENCE.md '`stream()` takes the signal'"
+  },
+  {
+   "path": "facts.async / facts.result",
+   "value": "true / throw",
+   "account": "derived",
+   "evidence": "`async` op methods; `throw err` in each op"
+  },
+  {
+   "path": "facts.collection",
+   "value": "array",
+   "account": "cited, pinned prose",
+   "evidence": "tm/js/src/utility/MakeResultUtility.js: \"if ('list' == op.name) {\" / 'result.resdata = []' / 'result.resdata.push(ent)'"
+  },
+  {
+   "path": "facts.record",
+   "value": ".data()",
+   "account": "derived",
+   "evidence": "EntityBase.fragment.js:65 data(data)"
+  },
+  {
+   "path": "facts.arity",
+   "value": "0",
+   "account": "derived",
+   "evidence": "every js parameter may be left out"
+  },
+  {
+   "path": "facts.prints",
+   "value": "record",
+   "account": "convention, ATTESTED by the minimal pair",
+   "evidence": "OLD prints ambient.data() whole"
+  },
+  {
+   "path": "facts.listOf",
+   "value": "(undeclared)",
+   "account": "decided by hand",
+   "evidence": "js names no type: list resolves to a plain array of entities"
+  },
+  {
+   "path": "ref.facts.none",
+   "value": "undefined",
+   "account": "cited",
+   "evidence": "EntityBase.fragment.js:268 'return undefined'"
+  },
+  {
+   "path": "ref.facts.container / valueType.OBJECT / client[0].returns",
+   "value": "object",
+   "account": "cited",
+   "evidence": "tm/js/src/utility/MakeOptionsUtility.js:43 'const layer = (b) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {}'"
+  },
+  {
+   "path": "ref.facts.valueType.STRING / ANY",
+   "value": "string / any",
+   "account": "derived / convention",
+   "evidence": "as the OLD js option table"
+  },
+  {
+   "path": "ref.facts.entityBy, keys",
+   "value": "class, member",
+   "account": "convention, attested",
+   "evidence": "OLD js page"
+  },
+  {
+   "path": "ref.facts.noun",
+   "value": "Methods",
+   "account": "convention, recorded by hand",
+   "evidence": "OLD B/js/REFERENCE.md '### Instance Methods', '### Static Methods'"
+  },
+  {
+   "path": "ref.facts.maps",
+   "value": "objects",
+   "account": "language, attested",
+   "evidence": "OLD js page"
+  },
+  {
+   "path": "ref.facts.ctor[0] / test[0]",
+   "value": "new {ctor}(options?: object) / {client}.test(testopts?, sdkopts?), call 'const client = {client}.test()'",
+   "account": "derived",
+   "evidence": "Main.fragment.js:27 constructor(options); :334 static test(testoptsarg, sdkoptsarg)"
+  },
+  {
+   "path": "ref.facts.accessor",
+   "value": "sig {accessor}(entopts?: object), arg entopts, param entopts",
+   "account": "derived",
+   "evidence": "MainEntity_js.ts:23 `${entity.Name}(entopts) {`"
+  },
+  {
+   "path": "ref.facts.op.*",
+   "value": "list/load/remove(match?: object, ctrl?: object); create/update/patch(data?: object, ctrl?: object)",
+   "account": "derived (names through renames; types uncompared because js declares none)",
+   "evidence": "op fragments"
+  },
+  {
+   "path": "ref.facts.client[0] options",
+   "value": "returns object, copy true",
+   "account": "cited, pinned",
+   "evidence": "Main.fragment.js:99 'return this._utility.struct.clone(this._options)'; run: options() !== internal"
+  },
+  {
+   "path": "ref.facts.client[1] utility",
+   "value": "returns object, copy false",
+   "account": "cited, pinned",
+   "evidence": "Main.fragment.js:104 'return this._utility.struct.clone(this._utility)' plus StructUtility.js:687-690 (a non-plain object is handed back by reference) and Utility.js 'class Utility {'; run: utility() === internal is true"
+  },
+  {
+   "path": "ref.facts.entity[0] data / [1] match / [5] entopts",
+   "value": "copy true",
+   "account": "cited, pinned",
+   "evidence": "EntityBase.fragment.js:75 'let out = struct.clone(this._data)', :91 match, :57 merge([{}, this._entopts]); run: copies"
+  },
+  {
+   "path": "ref.facts.entity[3] stream",
+   "value": "streamIterator, runs 'iterate'",
+   "account": "derived",
+   "evidence": "EntityBase.fragment.js:107 `async *stream(action, args, callopts)`, run at :138"
+  },
+  {
+   "path": "ref.facts.entity[6] name",
+   "value": "name: string, field true",
+   "account": "derived",
+   "evidence": "EntityBase.fragment.js:7 `name = ''`, set in Entity.fragment.js:12; run: p.name is the string 'planet'"
+  },
+  {
+   "path": "ref.facts.direct.returns",
+   "value": "Promise<{ ok, status, headers, data }>",
+   "account": "cited, with Promise excused as unquoted",
+   "evidence": "Main.fragment.js:183, 267-271"
+  },
+  {
+   "path": "ref.facts.direct.okFalse",
+   "value": "false",
+   "account": "cited, pinned (cited ahead of the provider)",
+   "evidence": "Main.fragment.js:208"
+  },
+  {
+   "path": "ref.facts.direct.signal / abortCode",
+   "value": "AbortSignal / request_aborted",
+   "account": "cited",
+   "evidence": "MakeRequestUtility.js:33-34, 79; MakeFetchDefUtility.js:36; EntityBase.fragment.js:105 comment; run: direct with an aborted signal gives err.code request_aborted"
+  },
+  {
+   "path": "ref.facts.prepare.returns / fails",
+   "value": "Promise<{ url, method, headers, body } | Error> / value",
+   "account": "cited (Error and Promise excused as unquoted); fails is pinned",
+   "evidence": "Main.fragment.js:110, 133, 176; MakeFetchDefUtility.js; Context.js:121"
+  },
+  {
+   "path": "ref.facts.body.values / once",
+   "value": "a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string / a stream",
+   "account": "pinned prose (Buffer excused; `once` cites only a comment)",
+   "evidence": "MediaUtility.js:121, 129-130; MakeRequestUtility.js:37"
+  },
+  {
+   "path": "ref.facts.cancel",
+   "value": "true",
+   "account": "cited, pinned",
+   "evidence": "MakeFetchDefUtility.js:36; run: a load with an aborted signal rejects with code request_aborted and cause 'stop'"
+  },
+  {
+   "path": "ref.facts.deleted",
+   "value": "{var}.deleted()",
+   "account": "derived",
+   "evidence": "EntityBase.fragment.js:51; run: remove resolves the entity and deleted() is true"
+  },
+  {
+   "path": "ref.facts.streamSignal",
+   "value": "true",
+   "account": "cited, pinned (ahead)",
+   "evidence": "EntityBase.fragment.js:117-118, 147, 156"
+  },
+  {
+   "path": "ref.facts.testMock",
+   "value": "generated",
+   "account": "cited, pinned (ahead)",
+   "evidence": "Config.fragment.js:32"
+  }
+ ],
+ "optional_facts_read": [
+  {
+   "fact": "accessor.cached",
+   "file_line": "MainEntity_js.ts:23-26 `return new ${cls}(self, entopts)`",
+   "runtime_shows": "a new entity on every call (run: c.Planet() !== c.Planet(), also when called with undefined)",
+   "declared": "not declared"
+  },
+  {
+   "fact": "streamSignal",
+   "file_line": "EntityBase.fragment.js:117-118, 147, 156",
+   "runtime_shows": "reads callopts.signal and returns early once it is aborted",
+   "declared": "true"
+  },
+  {
+   "fact": "copy on the match getter",
+   "file_line": "EntityBase.fragment.js:91",
+   "runtime_shows": "a clone",
+   "declared": "copy: true"
+  },
+  {
+   "fact": "copy on the utility getter",
+   "file_line": "Main.fragment.js:104; StructUtility.js:687-690",
+   "runtime_shows": "the live instance",
+   "declared": "copy: false"
+  },
+  {
+   "fact": "memberNamed",
+   "file_line": "calls are written with parentheses",
+   "runtime_shows": "call",
+   "declared": "default (not declared)"
+  },
+  {
+   "fact": "field flag",
+   "file_line": "EntityBase.fragment.js:7 `name = ''`",
+   "runtime_shows": "name is a field",
+   "declared": "entity name: field true, sig 'name: string'"
+  },
+  {
+   "fact": "deleted",
+   "file_line": "EntityBase.fragment.js:51 deleted()",
+   "runtime_shows": "the mark is reachable on the bound entity (js has no static types)",
+   "declared": "'{var}.deleted()'"
+  },
+  {
+   "fact": "arity",
+   "file_line": "EntityListOp.fragment.js:12",
+   "runtime_shows": "0 required parameters",
+   "declared": "0"
+  },
+  {
+   "fact": "layout.dir / place-aware imports",
+   "file_line": "Naming_js.ts (packageName)",
+   "runtime_shows": "the import is package-addressed (require of the package name)",
+   "declared": "not declared; the same require line in every place"
+  },
+  {
+   "fact": "notes.top",
+   "file_line": "-",
+   "runtime_shows": "no runtime-only fact to add",
+   "declared": "none"
+  }
+ ],
+ "table_rows_wrong": [
+  {
+   "row": "Members the runtime does not have: name.",
+   "file_line": "src/cmp/js/fragment/EntityBase.fragment.js:7 `name = ''` (and name_ :8), set in Entity.fragment.js:12",
+   "runtime_shows": "the entity has a public `name` field",
+   "forms_change": "decl and public.entity now read a class property at the class-body indent as a field, and `bare: true` is set; name_ is added to undocumented"
+  },
+  {
+   "row": "Calls: not stated yet",
+   "file_line": "runtimeforms/js.ts",
+   "runtime_shows": "`.` separator for instance and type",
+   "forms_change": "calls: { on: { instance: ['.'], type: ['.'] } }"
+  },
+  {
+   "row": "parameters: every operation parameter [optional]",
+   "file_line": "EntityBase.fragment.js:107 stream(action, args, callopts)",
+   "runtime_shows": "true syntactically, but stream without action names no operation (opname: action)",
+   "forms_change": "exception 'optional:entity streamIterator' with its reason; no table change"
+  }
+ ],
+ "notes": [],
+ "interface_gaps": [
+  {
+   "construct": "One `fence` per provider. OLD js fenced its REFERENCE in ```ts because its signature blocks are TypeScript notation (`new DemoSDK(options?: object)`) and its tutorial in ```js. NEW prints the signature block under ```js, where it is not valid JavaScript.",
+   "file_line": "ts/src/helpers/example.ts:440 (fence); OLD B/js/REFERENCE.md:10",
+   "smallest_change": "an optional fence for signature blocks (`sigFence`)",
+   "breaking": false,
+   "providers_forced": "none (optional)",
+   "made": false,
+   "worked_around": "no: kept fence 'js' and recorded nothing as a defect, because the examples are true JavaScript and the signature is notation"
+  },
+  {
+   "construct": "The shared root sentence 'The client sends the API key as the `x` query parameter.' prints only after the lead language's quick start (ts), so every non-lead throw-style port meets it as ABSENT",
+   "file_line": "ts/src/cmp/ReadmeQuick.ts:70",
+   "smallest_change": "none needed for truth; the tools could know which language is the lead",
+   "breaking": false,
+   "providers_forced": "none",
+   "made": false,
+   "worked_around": "recorded in absent with its reason"
+  }
+ ],
+ "defects_recorded": [],
+ "shared_files_touched": [],
+ "hand_decisions": [
+  {
+   "id": "named, ref.noun",
+   "kind": "fact",
+   "outcome": "recorded call / Methods",
+   "why": "OLD reads as neither value for named; Methods is the noun OLD used for the client's members"
+  },
+  {
+   "id": "9c6d819441",
+   "kind": "contradiction",
+   "outcome": "the REFERENCE is the true side",
+   "why": "the README's Error handling and DirectResult text says err holds the error on failure, but a readable non-2xx response has no err (Main.fragment.js:259-273)"
+  },
+  {
+   "id": "bff341cf32",
+   "kind": "contradiction",
+   "outcome": "the REFERENCE is the true side",
+   "why": "the no-test README's 'Create a mock client for unit testing' is false without the test feature (Config.fragment.js:32)"
+  },
+  {
+   "id": "9b1549ef5e 9c1038b6ae 8f13c5f9a3 (+ tokens)",
+   "kind": "dropped",
+   "outcome": "dropped",
+   "why": "OLD's tutorial 'Direct API Access' is said elsewhere on the same page (Error handling, and the how-to 'Make a direct HTTP request')"
+  },
+  {
+   "id": "tutorial attempt classes",
+   "kind": "unification:tutorial-attempt",
+   "outcome": "same calls, now wrapped in try/catch",
+   "why": "shared throw-style shape, as ts prints"
+  },
+  {
+   "id": "write step classes",
+   "kind": "unification:write-step-one-block / write-comment-style",
+   "outcome": "the create, update and patch records are no longer printed",
+   "why": "shared one-block write step (as ts); a weaker page, recorded openly"
+  },
+  {
+   "id": "server/secret classes",
+   "kind": "correction:server-required-given / secret-option",
+   "outcome": "corrections",
+   "why": "the OLD live constructor throws without the tenant (run: old-basic)"
+  },
+  {
+   "id": "absent 99a8153c15, a0b269a293, 7ab5ba644d",
+   "kind": "absent",
+   "outcome": "explained",
+   "why": "the first two exist because ts declares listOf and js does not; the third prints only after the lead language's quick start"
+  }
+ ],
+ "review_counts": [
+  {
+   "section": "tutorial",
+   "same": "21",
+   "shared_matched": "25",
+   "matched_unreviewed": "4 for the whole page (one figure, not split by section)",
+   "by_hand": "27",
+   "missing": "7",
+   "contradictions": "0",
+   "blocks": "identical 3 / corrected 15 / unified 0 / otherwise 30; 54 classes; 45 changed blocks compiled by nothing in the 21 variations; callcheck 0, pagecheck 0"
+  },
+  {
+   "section": "rootquick",
+   "same": "19",
+   "shared_matched": "0",
+   "matched_unreviewed": "-",
+   "by_hand": "4",
+   "missing": "1",
+   "contradictions": "0",
+   "blocks": "0 / 4 / 1 / 14; 19 classes; 19 changed blocks compiled by nothing"
+  },
+  {
+   "section": "reference",
+   "same": "15259",
+   "shared_matched": "73",
+   "matched_unreviewed": "-",
+   "by_hand": "30",
+   "missing": "37",
+   "contradictions": "2",
+   "blocks": "195 / 0 / 98 / 20; 8 classes; 118 changed blocks compiled by nothing"
+  }
+ ],
+ "optional_facts_read_note": "see optional_facts_read",
+ "absent": [
+  {
+   "sentence": "[99a8153c15] Load a \u24ba: the entity, a \u24baEntity; throws on failure",
+   "reason": "ts names the class because it declares listOf; js declares none and prints 'Load an ambient: the entity; throws on failure'"
+  },
+  {
+   "sentence": "[a0b269a293] List \u24ba records: a \u27e6\u27e7, one entity per record; throws on failure",
+   "reason": "same: js prints the comment with 'an array of entities'"
+  },
+  {
+   "sentence": "[7ab5ba644d] The client sends the API key as the \u27e6\u27e7 query parameter.",
+   "reason": "printed only after the root README's lead quick start (ts); other languages' root blocks carry no sentences"
+  }
+ ],
+ "purity": "`node tools/purity.js` (inside portcheck): 0 open, 1 accepted (purity-allow/js.json). The accepted finding: Naming uses exampleVarName, which no non-README component calls. An example variable is not a name the code generator makes; ReadmeEntity_js.ts:48 uses the same function, and ts, go and lua carry the same acceptance. Notes declared 0, note regions 0.",
+ "prose": "`node tools/sharewords.js --clone sdkgen --root out/new --lang js`:\n- tutorial: 1638 words, 100.0% shared sentence, 0 printed by js alone, notes 0, provider literals 7 (collection).\n- rootquick: 238 words, 19 (8.0%) shared sentence, 219 (92.0%) only js, notes 0, provider literals 7.\n- reference: 57060 words, 100.0% shared, notes 0, provider literals 234 (ref.noun 113, collection 102, ref.maps 19).\n- ALL: 58936 words, only js 219 (0.4%), notes 0, provider literals 248 (0.4%).\nAt the source, js has 0 note words and 4 fact-table prose literals. The rootquick 'only js' words are shared-code step comments ('Load an ambient: the entity; throws on failure'). They count as js-only because ts's version adds the class name (listOf). No provider prose is involved.",
+ "lines": "From `git diff --numstat v33-frozen..HEAD`:\n- deleted: ReadmeQuick_js.ts 179, ReadmeRef_js.ts 445, ReadmeTopQuick_js.ts 110 (734 in all)\n- added: Syntax_js.ts +145, Naming_js.ts +22\n- changed: runtimeforms/js.ts +88 -11, golden +2 -3\nFrom `wc -l`: Syntax_js.ts 145, Naming_js.ts 22, js.ts 139. The provider and hook total 167 lines against 734 removed (4.4x). With the forms' added lines it is 255 against 734 (2.9x).",
+ "other_languages_unchanged": "I ran `diff -rq out/new P/base33/out/new`. Every differing file outside js/ is a root README.md (19 variations). A script that removes the `### JavaScript` block under 'Quickstart in other languages' from both sides then finds 21 of 21 root READMEs identical. No file of another language's directory differs.",
+ "old_vs_new": "As the tools counted (reviewed run): missing units 7 (tutorial), 1 (rootquick), 37 (reference). Every one is restored or dropped with a reason. Absent 3, all explained; contradictions 2.\n\nWhat OLD said that NEW does not, as I decided it:\n- the tutorial's 'Direct API Access' section (dropped; the same page shows direct() twice);\n- the create, update and patch result prints in the write examples (a shared one-block step; weaker);\n- the parameter tables for the accessor and the test client (now sentences);\n- the false 'Return a copy of the SDK utility object' (now 'Return the SDK utility object.'; run: live object);\n- the false accessor parameter `data` and 'Initial entity data.';\n- the false 'Each feature is inactive ...' (log is active);\n- the false ctrl example `explain: true`.\n\nWhat NEW says that OLD did not:\n- the server variables (tenant required, region defaults to eu) and Basic `secret`, in the tutorial, the root block and the options rows;\n- the client-step sentence;\n- the documented stream member with 'runs when iteration starts' and its signal;\n- the Actions table;\n- `name: string` 'The entity name.';\n- `result.deleted()` reads the mark;\n- 'Returns a copy of the current match criteria.';\n- a fuller direct Returns sentence;\n- the test client's argument semantics;\n- list examples that print each item.\n\nTwo document disagreements remain. The README's Error handling and DirectResult text (both in sections no port has converted yet) still claim err on any failure; recorded as a contradiction. The README methods table says utility() is a 'Deep copy of the SDK utility object'. The REFERENCE says, and a run shows, the live object. No tool flagged this second one and no class carries it.",
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "holds for js",
+   "evidence": "The provider reads no model (purity 0 open). It holds 0 notes and 0 provider prose besides 4 fact literals. Language-supplied prose is 0.4% of words (sharewords). The interface needed 0 changes."
+  },
+  {
+   "id": "H2",
+   "verdict": "holds for js",
+   "evidence": "734 component lines became 167 (provider plus hook), 4.4x; 255 counting the forms' added lines, 2.9x. These figures leave out the shared code each language reuses."
+  },
+  {
+   "id": "H3",
+   "verdict": "holds in what I checked; not re-measured against the catalogue",
+   "evidence": "Catalogued corrections reached js through shared code with no js edit: S09, S13, S25, U34, G27, server-required-given, secret-option, the ctrl example, decision 6 and decision 11."
+  },
+  {
+   "id": "H4",
+   "verdict": "holds (run by hand; no lane exists)",
+   "evidence": "my/runblocks.js on node 24. NEW: 24 of 24, 17 of 17, 17 of 17 (default, crud, basic-server). OLD: 24 of 24, 17 of 17, 15 of 17 (the basic-server live constructor throws without a tenant). Control: 21 of 24 with three injected faults, all caught."
+  }
+ ],
+ "guide_problems": [
+  {
+   "section": "9, js row",
+   "problem": "It says only that decl and public must be extended as ts's were. The guard also needs `bare: true`, otherwise findDecls skips a declaration with no parameter list. The guard's message ('name is not defined by the runtime's entity') does not say so."
+  },
+  {
+   "section": "6 / 3.6",
+   "problem": "The shipped js forms have `optional: () => true`. Once a provider exists, the negative control 'an optional parameter shown required' fails, and the guide does not mention it. A forms `optional` must read the page signature's `?`. Stream's action then needs an exception."
+  },
+  {
+   "section": "9, js row",
+   "problem": "`node tools/before/gensdk.js sdkgen/ts <root> js default` fails with MODULE_NOT_FOUND: the sdkgen path must be absolute."
+  },
+  {
+   "section": "9 / 2.5",
+   "problem": "Silent on two things a run by hand needs. The generated js SDK will not load without its peer dependency pino (LogFeature.js requires it); I installed pino and pino-pretty under ports/js/run. The js blocks mix require (CommonJS) with top-level await (ES modules only), so no block runs as a file exactly as written, OLD or NEW. I wrapped each in an async function."
+  },
+  {
+   "section": "9",
+   "problem": "Test mode hides constructor faults. OLD's missing server tenant throws only in the live constructor, which no lane executes. Section 6 says so in general, but the guide gives no way to check it."
+  },
+  {
+   "section": "5",
+   "problem": "The root sentence printed only after the lead language's quick start (ts) shows as ABSENT for every non-lead throw-style port. The guide could say so ahead."
+  }
+ ],
+ "unverified": "No tool compiles the 182 changed blocks of the 21 variations: 45 tutorial, 19 rootquick, 118 reference. Only the three models I generated were run. The constructor options run only through `DemoSDK.test(seed, options)` and the separate live-construction check. The tutorial and REFERENCE were run through a node_modules link at the generated repository root, i.e. installed as the Install section says, not from inside js/. A reader must also place the blocks in an async function or an ES module, because of the require plus top-level await mix.",
+ "not_done": [
+  "No independent reviewer's attacks: I did not mutate my own facts or signatures beyond the guard's own negative controls.",
+  "No catalogue-wide H3 re-measure for js.",
+  "The utility() contradiction between the README methods table and the REFERENCE could not be recorded through any class (the tools did not flag it); it is only reported here.",
+  "The ```js fence over TypeScript-notation signature blocks is reported as an additive gap, not recorded as a defect.",
+  "No STRICT_SENTENCES=1 run (4 matches are against sentences nobody gave a verdict)."
+ ],
+ "surprises": [
+  "The table said js has no `name` member; the runtime has a `name` field.",
+  "OLD js was an older copy of the ts components: no server variables, no secret, no Actions table, the false utility copy sentence, and ```ts fences in its REFERENCE.",
+  "The OLD tutorial and root quick start in the basic-server model throw on a live constructor: 'the server variable 'tenant' is required'.",
+  "About 57 of the 77 reference open-class ids were the same ids ts had decided, because OLD js and OLD ts share text. I re-read and re-wrote each reason with js files."
+ ],
+ "time": "About 2 h 45 min wall time (15:00 to 17:45):\n- reading briefs, guide and runtime: about 15 min\n- table check: about 8 min\n- forms and provider: about 20 min, including three guard iterations\n- review and classification: about 55 min, including portcheck runs of 32 s to 4.5 min\n- running the examples by hand: about 30 min\n- final build, REGEN and SCRATCH runs, line counts and diffs: about 20 min\n- suite: 12.5 min, in the background",
+ "lanes": "No lane exists for js. `tools/before/run.sh` prints NOT RUN for js, and nothing in generatedcompile.test.ts covers js README examples. I ran them by hand with my/runblocks.js on node v24.22.1, with these results:\n- NEW default 24 of 24, NEW crud 17 of 17, NEW basic-server 17 of 17 (each about 3 s)\n- OLD default 24 of 24, OLD crud 17 of 17, OLD basic-server 15 of 17: the tutorial and root constructors fail when run live as written (server variable 'tenant' is required)\n- the root quick start ran from the repository root on both OLD and NEW.",
+ "doubtful_lines": []
+}

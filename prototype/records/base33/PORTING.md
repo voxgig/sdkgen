@@ -1,0 +1,957 @@
+# Porting a language to the shared README tutorial, root quick start and REFERENCE page (version 3.3)
+
+This replaces `P/base32/PORTING.md` (version 3.2). It assumes you have read
+`brief.md`, `brief3.md`, `brief4.md`, `brief5.md`, `brief6.md` and
+`brief7.md`, and nothing else. `P` is
+`/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2`.
+
+Everything you start from is in `P/base33/`:
+
+| path | what |
+| --- | --- |
+| `P/base33/sdkgen` | the clone at tag `v33-frozen` (0065f1e2), built (`node_modules`, `ts/dist`, `ts/dist-test`, `ts/dist-test-scaffold`), `git status` empty |
+| `P/base33/tools` | the review tools, under git, with the thirteen ported languages' records; the nine of `ported.json` (ts go py c zig clojure rust elixir rb) are the **reference set** your page is compared with |
+| `P/base33/harness` | the generator of the 21 model variations (the tools carry their own copy in `tools/gen`) |
+| `P/base33/out/old` | OLD output: every variation, generated from the pristine code (9aebaf9e) |
+| `P/base33/out/new` | NEW output at `v33-frozen` |
+| `P/base33/oldclone` | a link to `P/freeze/oldclone`, the pristine old code, built. Read-only: never build in it, never let a tool write into it (section 9 says how to run its lanes) |
+| `P/base33/runtime-table.md` | what the guard reads from each of the twenty runtimes, regenerated at the tag |
+| `P/base33/newport.sh` | makes your workspace: `P/base33/newport.sh <lang> <dir>` |
+
+Ported (all three sections): ts go py c zig clojure rust elixir rb, then
+perl swift ocaml lua. To port, one engineer each: **js php csharp java
+kotlin scala cpp**.
+
+## 0. Your environment, and one rule about it
+
+At the top of every shell:
+
+```sh
+export PATH=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang:/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH
+```
+
+Do not download, install or unpack a compiler or a tool. Fetching a declared
+dependency through a build tool that is already here (npm, mvn, composer,
+make) inside your own directory is fine. What is on the PATH is a fact about
+the machine you are on, never about the repository: run this before you say
+anything about a toolchain, and put its output in your report.
+
+```sh
+for c in node npm php composer javac java mvn gradle kotlinc kotlin scala scala-cli sbt dotnet g++ make; do
+  command -v $c >/dev/null && echo "$c $($c --version 2>&1 | head -1)" || echo "$c MISSING"; done
+```
+
+When this guide was written: node 24, php 8.3 with composer, javac, java, mvn
+and gradle, g++ and make present; kotlinc, kotlin, scala, scala-cli, sbt and
+dotnet missing.
+
+Never rebuild while a suite or a lane runs in the same clone. Regenerate the
+output after every source change before you measure anything. The machine is
+shared: one heavy command at a time, the suite with `--test-concurrency=2`.
+
+## 1. Make your workspace
+
+```sh
+P/base33/newport.sh <lang> <dir>      # e.g. P/base33/newport.sh php P/ports
+cd <dir>/<lang>
+REGEN=1 tools/portcheck.sh sdkgen out <lang>
+```
+
+`newport.sh` copies `P/base33/sdkgen` and `P/base33/tools` (with its git
+history, without `review/`) into `<dir>/<lang>/`, links `out/old` to the OLD
+output (never copied) and makes `out/new`. Before you change anything the
+one command prints exactly these two lines and exits 1; that is the expected
+start:
+
+```
+<lang>: NOT PORTED. No section is ported for it: ported.json does not list it, and the clone has no Syntax_<lang>.ts in ts/project/.sdk/src/cmp/<lang>/. Nothing to classify yet.
+PORTCHECK <lang>: NOT PORTED
+```
+
+From the moment `Syntax_<lang>.ts` exists, the one command treats your
+language as ported. `ported.json` is shared and stays as it is (the nine
+references); do not edit it.
+
+`REGEN=1` regenerates all 21 variations, `alias-go2` included (the clone sits
+inside the workspace). It fails, before any number, when the generator
+throws (`REGENERATION FAILED`) or regenerates fewer variations than `old/`
+holds (`REGENERATION SHORT`). Every run, with or without `REGEN`, also
+checks that the build is current (`build: N sources checked, current`, or
+`STALE BUILD ...`), including the staged copy of `.sdk/model` and `.sdk/src`
+that generation reads. It does **not** rebuild:
+after every source change run `cd sdkgen/ts && npm run build` and read its
+exit code yourself. A failed build leaves the previous build in place.
+
+**State.** Your only decisions are in `tools/hand/<lang>.json` (plus
+`normalizers/<lang>.js`, `counts/<lang>.json`, `purity-allow/<lang>.json`,
+which you write). Everything under `tools/review/<lang>/`, the
+`*.open.json` worklists included, is **rewritten on every run**: a script
+that fills `hand/<lang>.json` from an `*.open.json` must merge, never
+replace, or the next run empties your classification (this happened once in
+the first four ports). `classes/<lang>.json` is generated by every reviewed
+run; it is tracked in git, so commit it with your records (section 10).
+
+## 2. What a language supplies, and what it never does
+
+**The rule: every fact the page prints is checked by something other than
+the person who wrote it, and the kind of check follows from the kind of
+fact.** Shared code supplies no runtime value of its own: every literal, key,
+word or name that differs between runtimes is a fact your provider declares,
+and where a fact the page needs is missing, shared code throws at
+generation. That error is the interface asking for a value, not a bug.
+
+**The rule this round adds (brief 7): what a porter can decide by hand is
+not a check.** For you this means three things:
+
+1. **Declare each fact with the value the runtime shows**, read from the
+   runtime's code, and cite it where it is cited. The guard compares a
+   citation's pinned `value:` with your declaration, always (a token that
+   merely stands somewhere in the quote no longer passes).
+2. **A page that is wrong because shared code cannot say the true thing is a
+   `defect`, never `dropped`.** Record the class as `defect` in
+   `hand/<lang>.json` with the reason, report it as an interface gap
+   (section 4), and leave the one command failing. Do not work around it in
+   the provider and do not call it a choice. `dropped` is only for a
+   sentence that was false, or is said elsewhere on the same page, and whose
+   loss leaves the page true (give the reason).
+3. **Read the runtime for every optional fact of section 2.1**, whether or
+   not your old page stated it. The first four ports showed that a fact one
+   language needs is usually true of others (the stream's signal is read in
+   sixteen runtimes; php caches its accessor as lua does).
+
+A language supplies five things, all in its own files:
+
+1. **A naming hook**, `ts/project/.sdk/src/cmp/<lang>/Naming_<lang>.ts`:
+   `Naming(model, target, tm) -> { layout, symbols(entity), ident? }`. It is
+   the only per-language documentation file that may read the model, and it
+   holds no rule the language's code generator does not also use: it calls
+   the functions the generator calls (`utility_<lang>.ts`,
+   `ts/src/helpers/naming.ts`). Where the generator spells a name inline (in
+   a template, a component or a generated file name), extract a function or
+   a constant into `utility_<lang>.ts`, make the generator call it, and call
+   it from the hook (c's `cAccessorName`, ocaml's `ocamlQualified` and its
+   module-name constants are the examples). The hook concatenates nothing
+   onto a generator name.
+   - `layout`: `module`, `client`, `ctor`, optional `dir` (the target's
+     directory, `target.name`: only for a path the root README needs, see
+     2.5), optional `names` (by role), optional `vars`.
+   - `symbols(e)`: `accessor`, `var`, optional `module`, `alias`, `fields`.
+   - `ident(name)`: adapts a shared example name through the function the
+     language's other README components use.
+   - Template names go through `tm('ProjectNameSDK')` with the template's
+     whole spelling, never `tm(...) + '.new'`.
+2. **Printers**, `Syntax_<lang>.ts`: `client`, `call`, `each`, `print`,
+   `attempt`, `comment`, `expr`, optional `imports(desc, used, place)`,
+   `before`, `program`, and `ref.{type, key, instance, read(value, key,
+   truth)}`. Each is a pure function of the statement, the description and
+   the scope. `read` with `truth` set is the condition of a branch: write it
+   as the language tests that key (c `voxgig_as_bool(...)`, go `== true`,
+   swift `== .bool(true)`, ocaml `= Bool true`; a read that already is a
+   truth test, as ts `result.ok`, needs nothing).
+3. **Declared runtime facts**, in the same file: `facts: RuntimeFacts` and
+   `ref.facts: RefFacts`. Data only. Every one is accounted for (section 6).
+4. **Runtime notes**, optional: `notes: { [slot]: text }`. Each note is one
+   plain string literal in the notes table (not a constant, not a call, not
+   literals joined with `+`). A note may name `{module}`, `{client}`,
+   `{ctor}` and `{names.<role>}`. Every note is cited, every backticked code
+   token in it must be in its citation's quote, and it is linted (section 8).
+   A note is for what one runtime alone does; a fact two runtimes share is a
+   fact (2.1) or an interface gap, never a note.
+5. **Guard forms**, `ts/test/runtimeforms/<lang>.ts`: written from the
+   runtime before any port, and yours to complete and correct (section 3).
+
+### 2.1 Every fact you may declare, and where its value is read from
+
+None has a shared default. "Account" is how the guard checks it (section 6).
+Optional facts change the page only where declared; leaving one out where
+the runtime has the behaviour leaves a true sentence off the page, and the
+reviewer reads the runtime for each of them.
+
+**Required (version 3.2, still required):**
+
+| fact | how to tell it from the runtime | account | the page |
+| --- | --- | --- | --- |
+| `facts.result`, `async`, `method.*`, `record`, `listOf` | the operations' declarations and the record accessor | derived | how a call is made, what it returns, how the record is read |
+| `facts.named`, `prints` | your old page (`prints`: below) | convention, judged by the minimal pair (section 5) | `load()` or `load`; which values an example prints |
+| `facts.collection`, `recordType` | what `list` resolves to, the record's type | cited | "Returns a list of ..." |
+| `ref.facts.direct.okFalse` | the literal `direct` puts in `ok` on a failure, **as a reader compares with it**: perl `0`, ocaml `Bool false`, most runtimes `false` | cited; your forms already carry it with `value:`, and a different declaration fails | "on a failure `ok` is `<okFalse>`" |
+| `ref.facts.direct.signal`, `abortCode` | a runtime whose `direct` takes `ctrl.signal` and the error code an abort leaves (ts and js only) | cited | the cancel paragraph |
+| `ref.facts.cancel` | whether an operation reads an abort signal: `true` (ts, js) or `false` as an absence searched over the whole runtime (section 6) | cited / cited absence | the cancel paragraph, operations only |
+| `ref.facts.testMock` | `'generated'` where the test feature's factory falls back to a base feature (the client then refuses every request), `'always'` where the runtime ships the mock whatever the model (zig, clojure). Every one of the seven is `'generated'`, cited ahead in your forms | cited | the test client's sentence without the test feature |
+| `ref.facts.accessor.{sig, param, arg}` | the accessor's signature; `param` the name it gives its argument (php: `data`); `arg` what it is passed to (`entopts` in all twenty) | derived | "Its `data` argument holds the entity options" where `param` is not the options' name |
+| `runs` on the stream member | when the stream's operation runs, from the order of statements (2.4) | derived from the forms' stream quotes | "The operation runs before the call returns." / as the caller iterates |
+| `ref.facts.none`, `setArg`, `container`, `valueType.*`, `body.*`, `prepare.*`, `direct.returns` | the runtime's null literal, how a map is passed to a setter, the options container, and so on | cited (`none`: the token must stand in a line that **means** none: a citation of an unrelated line that happens to hold the token passes the guard and only the reviewer finds it) | as before |
+| `facts.pairForm`, `noError`, `errVar`, `unwrap` ... | only for the pair, errslot, union and wrapped styles: none of the seven | cited | |
+| `ref.facts.noun`, `entityNoun`, `heading`, `keys`, `entityBy`, `maps` | your old page and the language's conventions | convention / language (section 5, "Facts the OLD page cannot show") | headings and table wording |
+| `ref.facts.ctor[i]`, `test[i]`, `ctorAlts[i]` | the constructor, the test constructor (each overload a separate entry) | derived: the call must exist, on what the runtime declares it on, with as many arguments as the declaration takes; a line that is not a `{ctor}` call (an import, a `using`) is cited (2.5) | the Constructor and Test client sections |
+| `copy` on a getter member | a getter (data, match, options, entopts, **utility**) that returns a new object | cited, pinned to `true`; a getter that returns the live value declares `copy: false`, cited too | "Returns a copy of the current ..."; without `copy` the page says no copy |
+
+**Optional (version 3.3):**
+
+| fact | when it applies; how to tell from the runtime | account | with it, the page says | without it |
+| --- | --- | --- | --- | --- |
+| `ref.facts.accessor.cached: true` | the accessor, called with the none value, returns one instance the client keeps (made by the first such call); with options, a new one. Read the accessor's generator (`MainEntity_<lang>.ts`). lua and **php** do (`MainEntity_php.ts:43-46`); the other eighteen make a new entity on every call | cited (php: already cited ahead in your forms) | "Called with `null`, return the `X` instance the client keeps, made by the first such call; called with entity options, create a new one." | "Create a new `X` instance." (false where the runtime caches) |
+| `ref.facts.streamSignal: true` | the stream reads `callopts.signal` and ends early when it reports an abort, whether or not the operations can be cancelled. Read the stream function. Sixteen runtimes do; c, rust and zig do not; cpp has no signal at all | cited, two quotes (the read and the early end); `false` is a cited absence (cpp) | "It ends early once `callopts.signal` reports an abort." on the stream member | nothing about the stream's signal (the cancel paragraph speaks of operations only) |
+| `copy` on a **match** getter | the match getter returns a clone (every runtime read so far) | cited | "Returns a copy of the current match criteria." | nothing |
+| `copy` on the **utility** getter | the getter returns a new object. Quote the getter AND the copy function's allocation line: a `clone(...)` call is not proof of a copy (ts and js `struct.clone` hands a class instance back by reference: ts declares `copy: false`) | cited | "Return a copy of the SDK utility object." | "Return the SDK utility object." |
+| `ref.facts.memberNamed: 'bare'` | prose cannot name a member as `direct()` because a call is not written with parentheses (ocaml, clojure). Every one of the seven writes calls with parentheses: leave it out (`'call'` is the default) | derived from your forms' `calls.args` | `direct` | `direct()` |
+| `field: true` on a member | the runtime member is a field or property read without a call: kotlin `name` (`override var name`), js `name = ''`, ocaml `e_name`, ts `name` | derived; **leaving the flag out on a runtime field fails** (`declared without the field flag (called)`) | "The entity name." | "Return the entity name." |
+| `ref.facts.deleted` | how a removed entity's mark is read, a template on `{var}`: `'{var}.deleted()'`; write the language's sigil where `{var}` carries none (perl `'${var}->deleted'`). Declare it only where the **type the examples bind** has that member: swift, elixir and clojure leave it out because their bound type or module cannot reach it | derived: the last member name must be declared on the entity (a method, a field, a C function pointer) | "`result.deleted()` reads the mark." in the remove sentence | nothing about the mark. No page says what happens to the data: every runtime read replaces it with the response's record when there is one |
+| `facts.arity` | the number of **required** parameters of the runtime's `list` (0 where every argument may be left out, 2 where neither may) | derived: must equal the runtime's count | the no-match call `list(null, null)`, and operations named bare in tutorial prose where arity > 0 | `list()` |
+| `layout.dir` (from the hook), and `imports(desc, used, place)` | the root quick start's import is a path that depends on where the reader stands (perl `use lib`, rb `require_relative`; php `require_once` is the same kind of path) | a layout role, not a fact; checked by blocks, by your run from the repository root (2.5) and by the reviewer | `use lib 'perl/lib';` at the root, `use lib 'lib';` in the tutorial | the same import in both places |
+| `notes.top` | a runtime note after the root quick start | cited | the note | |
+
+**What the client's members are called on** is not a fact you declare. The
+heading over them is `Client <noun>` for every language (instance, type or
+module alike), and each member's `on` is derived from the runtime's
+declaration and checked against your signatures and your printed calls
+(2.2, 2.3). `ref.facts.heading` remains only for a client with no type name
+(clojure).
+
+**`prints`**, the one enumerated fact every porter chooses: `'record'`
+prints the whole record everywhere; `'listFields'` prints chosen fields of
+each item the tutorial lists and the whole record everywhere else;
+`'fields'` prints chosen fields everywhere. A chosen field is the id plus
+one display field, a scalar: the first string field, else an integer,
+number or boolean; with none, the id alone. Read the OLD tutorial list,
+tutorial load, root quick start and REFERENCE list, choose, then read the
+facts line of the one command: it judges your value against the others by a
+minimal pair (section 5) and says ATTESTED, UNATTESTED or NOT JUDGED.
+
+### 2.2 Signatures carry every dimension the table shows
+
+A signature string states what the runtime declaration states, and the guard
+compares each dimension:
+
+- **how a failure shows** (`fails`): swift `throws`, go's second `error`, c
+  `PNError**`, lua's second value. The forms' `failure.shows` token must be
+  something a signature string can contain (lua uses `err`, not "second
+  value"), and the printed call must carry `failure.call`. All seven are
+  `throw` style: a failure shows by the style, and no signature carries a
+  marker.
+- **what it is called on** (`on`): instance, type, or module, read from the
+  declaration (`static`, a companion object, a dot function) and from the
+  receiver your signature writes. A signature written on an instance for a
+  member the runtime declares on the type fails, and so does the reverse.
+  A member declared on the type is not listed among the instance members.
+- **callable or field** (`field`): a field takes no parameter list in your
+  signature (ts and kotlin write `name: string` / `name: String`); a
+  callable is never written as a field. The default signature reader finds
+  a name only before a `(`: a field signature needs the forms' own
+  `sigName` (`runtimeforms/ts.ts` reads `name: type` as a field). Where the runtime's own notation
+  has no parentheses, the forms' `called(sig, name)` says how a call is
+  written (ocaml's arrows), so the check stays on.
+- **a return read from a comment** (`from`): where the code says otherwise,
+  the code wins and the forms cite it (`shows`).
+- **parameters**: names, types, which may be left out, and the return. A
+  name or type the page writes otherwise goes in `renames`/`typeNames` with
+  `namesWhy`.
+
+### 2.3 How a call is written: `calls` in your forms (new)
+
+Your forms file must state `calls: { on, args?, parenless?, ctor? }`; the
+guard fails until it does (`the forms do not say how a call is written`).
+`on` maps what a member is declared on to the separators a call uses
+(ts `{ instance: ['.'], type: ['.'] }`; lua `{ instance: [':'], type: ['.'],
+module: ['.'] }`; php will be `->` and `::`; cpp `->`, `.` and `::`);
+`args` is `'paren'` (default), `'space'` (ocaml) or `'lisp'`; `ctor` maps a
+printed constructor name to the declaration it runs (rb `new` ->
+`initialize`). With it the guard renders your constructor, test constructor,
+accessor and every operation call through your own printers and checks:
+the declaration exists; it is called on what the runtime declares it on,
+through the right separator; its qualifier is bound by the imports you
+print (or is the client type or module); it passes as many arguments as the
+declaration takes (list, load and remove are probed with no argument and
+with 1- and 3-member maps, so a printer that spreads a map into arguments
+fails). If the call reader cannot read a construct of your language (a
+template call such as `std::make_shared<X>(...)`, a cast in front of the
+call), that is a shared change to `calls.ts`/`guard.ts`, which are not
+yours: record it as an interface gap (section 4) with the exact failing
+message.
+
+### 2.4 Streams: what is returned, and when the operation runs
+
+A stream kind names what the call returns (`streamIterator` an async
+iterator, `streamGenerator` a generator, `streamLazy` a lazy sequence,
+`streamSync` a synchronous iterator, `streamList` one list, `streamFunction`
+a function returning the next item, `stream` a channel). `runs` says when
+the operation runs: `iterate` (at the first pull), `call` (before the call
+returns), `background`. Record `runs` from the order of statements, never
+from the type (a `Stream`, `Sequence` or `Iterator` can be built over items
+already read); your forms' `stream` block quotes `construct`, `run` and
+`draw`, and the guard derives `runs` from their positions. No sentence says
+when items arrive. The stream's signal is its own fact (`streamSignal`,
+2.1), apart from `cancel`.
+
+### 2.5 Imports, and lines no runtime file spells
+
+The imports printer receives the place it prints for (`'tutorial'`, `'top'`
+for the root quick start, `'reference'`) and prints once ahead of the first
+client block of the tutorial and of the root quick start; a REFERENCE
+example gets a fresh standalone scope and prints none. A root quick start
+must run where its reader stands, **the repository root**:
+
+- a path-relative import (perl `use lib`, rb `require_relative`, php
+  `require_once 'x.php'`) takes `layout.dir` from the hook and prints the
+  target's directory for `'top'` only (perl's and rb's providers are the
+  model; they throw when `place` is `'top'` and `dir` is missing);
+- a package-addressed import (ts and js `require`/`import` of the package
+  name, java/kotlin/scala `import`, csharp `using`) needs the package
+  installed or built, which the Install section says; keep it, and say in
+  your report that it was not run from the root, or run it with the package
+  installed;
+- an include path (c, cpp `#include "core/sdk.hpp"`) needs the compiler's
+  include flags; c keeps its own form.
+
+**Run the root quick start from the repository root of a generated SDK**,
+on OLD and on NEW, wherever a toolchain is here, and report both (the first
+four ports found perl's and rb's broken on OLD as well). A language's example
+lane can hide a wrong import: perl's lane used to prepend its own `use lib`,
+and php's lane (`ReadmeExamplesTest_php.ts:304-318`) still deletes the
+block's `require_once` and requires the SDK by absolute path. So the lane
+passing says nothing about the import line.
+
+**A line with no runtime spelling.** The REFERENCE constructor block
+(`ref.facts.ctor[i]`) may hold lines that are not a `{ctor}` call: an import,
+a `using`, a blank line. The guard derives only `{ctor}` call lines; any
+other non-empty line must be cited: quote the runtime or generator line
+that shows the module, file or package name (`Main_<lang>.ts` naming the
+file it writes, a generator comment saying what callers write), and excuse
+each language keyword the quote cannot hold with `unquoted` (`require`,
+`local`, `using`), with the reason. The reviewer reads every excuse.
+
+### 2.6 Examples may not walk past a failure
+
+Decided once in shared code (`ts/src/helpers/example.ts`, `interrupts()`,
+`checksItself()`), by result style. The seven are all `throw`: a failure
+interrupts, so examples keep the bare shape. A cast a typed language needs
+on an operation's result (java `(SdkEntity)`, kotlin `as SdkEntity`, scala
+`.asInstanceOf[SdkEntity]`, csharp `(IEntity)`) is printer output, as go's
+`.(sdk.Entity)` is: nothing mechanical checks the type it names, so name a
+type the runtime declares and cite nothing false about it.
+
+### 2.7 What a language never does
+
+Decide what is shown; read the model in a printer; hold a sentence whose
+truth depends on the model; hold a reserved-word list, a pluralisation, a
+suffix rule or a concatenation on a name (in the provider, the hook, or any
+helper either defines or the hook imports from its own directory: purity
+follows them); name an operation outside its fact tables.
+
+## 3. Order of work: the table first, then the guard, then the page
+
+1. **Read every row of your section of `P/base33/runtime-table.md` against
+   the runtime, before you write any fact, and report each row that is wrong
+   or missing**, with file and line. Open the files each row cites:
+   `src/cmp/<lang>/fragment/`, `Main_<lang>.ts`, `MainEntity_<lang>.ts`,
+   `tm/<lang>/`. Correct the forms file where a row that a page fact rests
+   on is wrong (it is your file; the reader test must still pass for your
+   language). A wrong row about a member the page does not document (one in
+   `undocumented`) is reported; correct it in the forms only if the
+   correction is local and the reader still passes, and say which you did.
+   Section 9 has what is known for your language; the table is the starting
+   point, not the authority.
+2. **Read the lines of your section headed "cited ahead of a provider".**
+   Each is a fact already cited in your forms with its `value:`. The moment
+   `Syntax_<lang>.ts` exists, each must be declared with exactly that value
+   (`cite <path>: the provider declares no such fact` otherwise; `the fact
+   is X; the citation pins Y` for a different value). If you find the pinned
+   value wrong, correct the citation from the runtime and report it.
+3. **Read what the page prints**: `ts/src/cmp/ReadmeQuick.ts`,
+   `ts/src/cmp/ReadmeRef.ts` (`memberText`, `accessorText`, `testText`,
+   `STREAM_RUNS`, `STREAM_SIGNAL`), `ts/src/helpers/runtimeprose.ts`
+   (`opText`, `opName`, the return clauses), the types in
+   `ts/src/helpers/example.ts` and `ts/src/helpers/sdkdesc.ts`, and your
+   language's lanes (`ts/test/generatedcompile.test.ts`: `README_LANES`,
+   `DOC_LANES`; `ReadmeExamplesTest_<lang>.ts`). Then your old components
+   `ReadmeQuick_<lang>.ts`, `ReadmeTopQuick_<lang>.ts`, `ReadmeRef_<lang>.ts`,
+   and your OLD pages in `out/old/B/<lang>/`.
+4. **For each optional fact of 2.1, read the runtime** and write down
+   whether it applies, with file and line, before you write the provider.
+5. **Write the provider's facts** (`Syntax_<lang>.ts`), copying the shape
+   from the nearest ported language: `Syntax_ts.ts` (exceptions, async,
+   cancel: the model for js), `Syntax_py.ts` and `Syntax_rb.ts` (raise),
+   `Syntax_perl.ts` (a sigil language with place-aware imports: the model
+   for php's root import), `Syntax_lua.ts` (a cached accessor),
+   `Syntax_go.ts` (a typed language with a cast and a `program` printer),
+   `Syntax_c.ts` (errslot, `before`), `Syntax_swift.ts` (no default
+   arguments, `arity`), `Syntax_rust.ts` and `Syntax_zig.ts` (a closed value
+   union; zig's `deleted` is a field).
+6. **Complete the forms file**: `calls` (2.3), `sigName`, `sigParams`,
+   `sigReturns` where the default reader does not fit; `renames` and
+   `typeNames` with `namesWhy`; `uncompared` with a reason; `types` (a
+   `column` the generator uses, or `null` with a reason and every word
+   pinned in `words`); `cite` for every cited fact (section 6). Never edit
+   `forms.ts`, `calls.ts`, `account.ts`, `guard.ts`, `runtimefacts.test.ts`
+   or `runtimereader.test.ts`.
+7. **Write the naming hook and the printers.**
+8. **Delete** `ReadmeQuick_<lang>.ts`, `ReadmeTopQuick_<lang>.ts` and
+   `ReadmeRef_<lang>.ts` with `rm` (section 4 lists the shared tests that
+   name them: none for the seven).
+9. Build (`cd sdkgen/ts && npm run build`, read the exit code), run the
+   guard and the reader for your language, regenerate, and run the one
+   command, first from scratch (`SCRATCH=1`) to see what is open, then
+   normally (section 5); classify until the normal run passes.
+10. Run your toolchain lane or command where the toolchain is here, and the
+    root quick start from the repository root (sections 2.5, 9); where none
+    is here, read every distinct changed block as a compiler would.
+11. Commit (section 10) and report (section 12).
+
+## 4. What a port may touch
+
+Only these, and only for your language:
+
+- `ts/project/.sdk/src/cmp/<lang>/Syntax_<lang>.ts` and `Naming_<lang>.ts`
+  (new)
+- `ts/project/.sdk/src/cmp/<lang>/ReadmeQuick_<lang>.ts`,
+  `ReadmeTopQuick_<lang>.ts`, `ReadmeRef_<lang>.ts` (deleted)
+- `ts/project/.sdk/src/cmp/<lang>/utility_<lang>.ts`, and a generator
+  component of your language that now calls a function you extracted
+- `ts/test/runtimeforms/<lang>.ts` (your language's forms, the reader part
+  included where you correct a wrong row)
+- the shared test files that name your deleted components, only in the
+  lines that name your own language. Searched again at `v33-frozen` with
+  `grep -rnE 'Readme(Quick|TopQuick|Ref)_<lang>\b' ts/test ts/src --include=*.ts`
+  (forms files aside):
+
+  | lang | shared test files naming its components |
+  | --- | --- |
+  | js php csharp java kotlin scala cpp | none |
+
+  Tests that check every target generically keep running on your page and
+  are not yours to edit: `ts/test/media.test.ts:375` (finds a REFERENCE by
+  `ReadmeRef_<lang>` or `Syntax_<lang>`), `ts/test/vendored.test.ts:425`
+  (loops over the `ReadmeRef_*` files that exist), `ts/test/generate.test.ts`
+  (every target's REFERENCE, its operation headings and returns),
+  `ts/test/optional.test.ts:45` (a synthetic `ReadmeQuick_zz`). If one of
+  them fails on your port, that is a finding: record it.
+- `ts/test/golden/add-output.txt`: only your language's lines, regenerated
+- in your tools copy: `hand/<lang>.json`, `normalizers/<lang>.js`,
+  `counts/<lang>.json`, `purity-allow/<lang>.json`, and the generated
+  `classes/<lang>.json`
+
+Nothing else: not `ts/src/**`, not another language's directory, not the
+shared guard files, not `ts/dist`, not a shared file of the tools, not your
+language's example-test component (`ReadmeExamplesTest_<lang>.ts`) unless
+it calls a function you extracted.
+
+### When shared code cannot say the true thing
+
+1. Stop. Do not work around it in the provider (a note restating a shared
+   sentence, a printer that hides prose, a branch on an entity or an
+   operation).
+2. Record the affected classes as `defect` in `hand/<lang>.json`, the
+   reason naming the shared file and the true statement.
+3. Record, in your report, the interface gap: the construct, with the file
+   and line of the runtime or old component; the smallest change that would
+   express it; whether it is BREAKING (a new required fact, a new
+   `Expr`/`Stmt` kind, a changed sentence) or ADDITIVE (an optional fact or
+   member, a new `MemberKind`, `NoteSlot`, `ResultStyle` or stream kind
+   with its sentence written once); and which providers it would force work
+   in (name them, after reading their runtimes).
+4. Do not make the shared change. The one command keeps failing on the
+   `defect` classes, and your report says so. That is a correct port.
+
+A fact key with no category (`no default category in the shared account`)
+is such a gap (`ts/test/runtimeforms/account.ts`, `DEFAULTS`).
+
+## 5. The review: one command
+
+```sh
+cd <dir>/<lang> && SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out <lang>   # from scratch: reported, exits 1 by design
+cd <dir>/<lang> && tools/portcheck.sh sdkgen out <lang>                      # with your records: must exit 0
+```
+
+**What "the one command passes" means.** The port passes when the second
+command, run with your hand records after a regeneration from a fresh build,
+exits 0 and prints `PORTCHECK <lang>: PASS`. The first command, from scratch,
+ignores every hand record, rule record and hand-recorded fact, so for a newly
+ported language it **always** leaves classes open, facts unattested and
+absent sentences unexplained, and exits 1. That is its design: you run it,
+you report its numbers (ledger OPEN per section, blocks OPEN, UNATTESTED or
+NOT JUDGED, ABSENT and DROPPED), and they are not expected to be zero. The
+parts of it that read no hand record must be clean in both runs: build
+current, regeneration complete, guard, purity, page numbers and articles
+(`pagecheck`), printed calls (`callcheck`). A port with recorded `defect`
+classes (section 4) does not pass, by design; report it as such.
+
+The reviewed run exits 0 only when every number below holds:
+
+| number | must be |
+| --- | --- |
+| build: `N sources checked, current` | no `STALE BUILD` |
+| regeneration | 21 variations, no `REGENERATION FAILED` or `SHORT` |
+| ledger, each section: `OPEN` (unclassified, RECOUNT and INVALID together) | 0 |
+| ledger, each section: `defect` | 0 |
+| blocks, each section: `OPEN` (classes, and a changed normalizer count: `RECOUNT <section>`) | 0 |
+| blocks, each section: `defect` | 0 |
+| purity: `open` | 0, every declared note found in a region |
+| page numbers and articles (`pagecheck`): findings | 0 (no hand record can accept one) |
+| printed calls (`callcheck`): ARITY/RECEIVER/MEMBER findings | 0 |
+| guard: `^<lang>: ` in `runtimefacts.test.js` | every test passes, more than 0 ran |
+| fact sheet: facts with no account | 0 |
+| facts: `UNATTESTED` or `NOT JUDGED` | 0 (a hand record decides it) |
+| shared sentences printed less often than their reference | 0 (open classes) |
+| `ABSENT, NO REASON` and `DROPPED, NO REASON` | 0 (a reason in `hand/<lang>.json absent`) |
+| hand records: `STALE` | 0 |
+
+It also prints, and you report: units same; classes matched as shared
+sentences, and how many of those match a sentence nobody gave a verdict
+(`STRICT_SENTENCES=1` makes them fail); by hand; missing; contradictions;
+the absent list with its reasons.
+
+### How to classify
+
+The worklists are `tools/review/<lang>/<section>.ledger.txt` and
+`<section>.blocks.txt`, with `*.open.json` as templates (rewritten on every
+run). Write outcomes into `tools/hand/<lang>.json`:
+`{ "<10-hex id>": { "outcome", "why", "n" } }`. Keep `n` from the template.
+
+- **Shared sentences are matched for you**, with your fact tokens masked. A
+  position is masked only where your text is the value of the fact the
+  references hold at that position; your own fact of another kind printed
+  there is a class for you to decide, not a match. Matching says nothing
+  about whether the fact in the sentence is true.
+- **Everything else is yours, one class at a time.** Outcomes:
+  `same-meaning` (needs `why`), `restored:shared|fact|printer|note`,
+  `correction:<catalogue id or name>`, `unification:<name>`, `dropped`
+  (needs `why`; never for a page shared code makes wrong), `defect` (fails
+  until shared code or your provider is fixed), `contradiction` (an echo
+  only: `where`, `true`, `evidence`).
+- **A missing unit is always by hand**, restored (where) or dropped (why).
+- **A class left open with "prints it in fewer variations, or fewer times,
+  than <ref> does"** is a dropped sentence until you show otherwise.
+- **Absent and dropped sentences.** The reference set is the nine. All seven
+  of you are `throw` style, whose only reference is ts: a sentence ts prints
+  in a variation and you print nowhere is `ABSENT`; a sentence every one of
+  the nine prints in a variation, which you print in other variations but
+  not in that one, is `DROPPED`. Each fails until `hand/<lang>.json` gives
+  `absent: { "<id>": "<why>" }` (absent) or `{ "<id>": { "why", "variations":
+  [...] } }` (dropped; it holds only while those are the variations), or
+  until you print it. An optional fact you did not declare shows here as
+  ABSENT ("Return the entity name." beside ts's "The entity name.", the
+  copy sentences): declare it, or say why it is false for your runtime.
+- **A hand record whose reason goes stale is your problem too.** A reason
+  that quotes text no NEW page and no file of the clone holds fails
+  (`STALE`); one that quotes the OLD page must say so (`OLD said ...`).
+  When shared text you depend on changes, re-read your records that quote it.
+
+### Facts the OLD page cannot show
+
+`tools/review/<lang>/facts.txt` lists every fact, its account and one OLD
+and NEW unit. A `language` or `convention` fact (`ref.maps`, `ref.noun`,
+`ref.entityNoun`, `ref.heading`, `ref.valueType.*`, `facts.errVar`,
+`facts.unusedError`) is compared with your OLD page; if a NEW unit carrying
+it does not pair with an OLD unit holding the same value in the same place,
+it is UNATTESTED until you record it: `hand/<lang>.json` ->
+`facts: { "<path>": { value, why, evidence } }`. Expect `ref.noun` (the
+heading is now `Client <noun>`, a context no OLD page had: every port
+recorded it).
+
+An **enumerated** fact (`named`, `prints`, `entityBy`, `keys`) is judged by a
+minimal pair: the tools regenerate your pages with that one fact set to each
+other value (`enumgen.js`, cached in `review/enum/`, about 16 s per value
+the first time), and compare the units and blocks that differ with OLD.
+ATTESTED when OLD reads as your value more often than as another;
+UNATTESTED or NOT JUDGED (no OLD counterpart) otherwise, and both fail until
+recorded with `why` and `evidence`. A recorded value that differs from the
+declared one fails. The OLD page is not the authority: ocaml's true `keys:
+'bare'` and swift's true `entityBy: 'class'` both contradict their OLD
+pages and are recorded by hand.
+
+### Blocks
+
+Every OLD code block is paired with NEW (by heading; a backticked signature
+heading without parentheses by its first identifier): identical; identical
+after named corrections; changed by a named unification; otherwise. The
+`classes` column counts the "otherwise" pairs grouped by their masked diff,
+plus OLD-only and NEW-only blocks, plus identifiers new to or gone from the
+code. **No tool compiles the changed blocks of these 21 variations**; the
+toolchain lanes compile their own models. `callcheck` checks each call of a
+runtime member for arity, receiver and member name, but sees no casts, no
+argument types or order, no standard-library calls and no property reads.
+Report the changed blocks as compiled by nothing unless a lane covered them.
+After reading the pairs, record the normalizer counts:
+`node tools/blocks.js --old out/old --new out/new --lang <lang> --section tutorial,rootquick,reference --record-counts`
+(otherwise the screen says `RECOUNT <section>: normalizer counts changed`).
+
+## 6. The guard, and the account of every fact
+
+Every leaf in `facts`, `ref.facts` and `notes` is one of:
+
+- **derived**: the guard re-derived it from the runtime (methods,
+  parameters, optionality, returns, style, async, record accessor, members
+  both ways, member shapes, `on`, `field`, `fails`, the accessor's argument
+  and parameter, `runs`, `arity`, `deleted`, `memberNamed`, the constructor
+  and test calls, the field types where the generator has a type column);
+- **cited**: your forms file names a runtime file and a quote that **shows
+  the value**: every code token of the value must be in the quote, and where
+  the citation pins `value:`, the declaration must equal it. A value that is
+  prose, a boolean or a note is pinned and counted as pinned prose, which
+  only the reviewer checks;
+- **cited, an absence**: `{ absent: { pattern, except }, value }` for a fact
+  that says something is not there (`cancel: false`, cpp's `streamSignal:
+  false`). The pattern is searched over **your language's whole runtime**
+  (every file under `src/cmp/<lang>/` and `tm/<lang>/` apart from
+  documentation components, test generators and test trees). Use the shared
+  word list the thirteen use (lua's `ref.facts.cancel` above is the model:
+  `cancel*`, `abort*` except a C `abort()`, `signal`, `AbortController`,
+  `isCancelled`, `CancellationToken`, `WithContext`, `context.Context`). A
+  region you leave out is an `except` entry quoting the lines exactly once
+  in their file, with `why`, and `fact` where the region shows a cited fact
+  instead (the stream's read of `callopts.signal` is
+  `fact: 'ref.facts.streamSignal'`). A region with no reason, a region that
+  holds no match, or a match outside every region fails, naming file, line
+  and word;
+- **type words**: the field type words come from the generator's
+  `canonToType` column, named in `types.column`, which must be the column
+  your `EntityTypes_<lang>.ts` passes; where the generator has none, every
+  word is pinned in `types.words` and the reviewer audits each;
+- **language** (only what no runtime file can show: how a map is called in
+  prose, the blank identifier) or **convention** (a noun, a heading, an
+  enumeration): compared with your OLD page by the tools (section 5).
+
+`unquoted: { <token>: <reason> }` excuses a code token missing from a quote
+only when the token stands nowhere within 3 lines of any quote of that
+citation. The guard report prints, for each excused token, how many runtime
+files hold it, and marks a citation that quotes only a comment. A citation
+may never quote a line that does not show its value: use an excuse or a
+pin, openly.
+
+```sh
+cd sdkgen/ts && SDKGEN_GUARD_REPORT=1 node --test --test-name-pattern 'account, per language' dist-test/runtimefacts.test.js
+node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js
+node --test --test-name-pattern '^<lang>: ' dist-test/runtimefacts.test.js
+```
+
+### What now fails that passed at version 3.2, and the message you will see
+
+| what | where | the message (abridged) |
+| --- | --- | --- |
+| a pinned citation value that differs from the declaration | guard | `cite ref.facts.direct.okFalse: the fact is "nil"; the citation pins "false"` |
+| a citation of a fact your provider does not declare (no "ahead" exemption once a provider exists) | guard | `cite ref.facts.entity[1].copy: the provider declares no such fact` |
+| a constructor, test constructor, accessor or operation call that does not exist, is made on the wrong thing or through the wrong separator, or passes the wrong number of arguments | guard | `the naming hook's constructor sdk.create runs create, which the lua runtime does not declare`; `test: test is declared on the type; "..." calls it on client (instance)`; `op list: list takes 2 argument(s) in the runtime; "..." passes 1` |
+| a signature written on an instance for a member on the type | guard | `the signature writes test on $client (...); the runtime declares it on the type` |
+| the forms state no call notation | guard | `the forms do not say how a call is written (calls: { on, args, parenless, ctor })` |
+| a runtime field declared without `field: true`, or a callable written as a field | guard | `entity name: declared without the field flag (called); the runtime's name is a field` |
+| `deleted` naming a member the entity lacks | guard | `ref.facts.deleted names {var}.IsDeleted(), which the entity does not declare` |
+| `arity` other than the runtime's list | guard | `facts.arity is 0; the runtime's list requires 2 of its 2 parameters` |
+| an absence that matches outside its quoted regions, or a region without a reason | guard | `cite ref.facts.cancel: the absence of /.../ no longer holds: <file>:<line> has "signal"`; `the region left out of <file> gives no reason` |
+| a type word other than the generator's column, or than its pin | guard | `INTEGER prints int; the forms pin the type word integer` |
+| a record expression naming a member or type the runtime lacks, or a print printer that drops the unwrap | guard | `facts.record ... names asEntty, which the zig runtime does not declare` |
+| a shared sentence you print nowhere that ts prints | tools | `ABSENT, NO REASON reference [id] in N variation(s): ...` |
+| a shared sentence dropped from some variations | tools | `DROPPED, NO REASON reference [id] from 1 variation(s) (B), printed in others: ...` |
+| an enumerated fact OLD contradicts or cannot judge; a value differing from your record | tools | `UNATTESTED ref.keys = "member": ...`; `NOT JUDGED prints = "record" ...` |
+| a wrong step count, heading or list number, or a/an | tools (pagecheck) | `STEPS says 3 step(s); the list that follows has 2 item(s)`; `ARTICLE "a" before "ambient", which takes "an"` |
+| a printed call with the wrong arity, receiver or member | tools (callcheck) | `ARITY B tutorial: load passes 1 argument(s); the runtime declares 2 ...` |
+| a suffix, slice or depluralising rule in the provider, hook or a helper | tools (purity) | `Syntax: name surgery: 1`; `Naming: name surgery in helper ...` |
+| a hand reason quoting text no page or file holds | tools | `STALE <section> [id]: quotes "...", on no page of <lang> and nowhere in the clone` |
+| a stale build, a throwing or short regeneration | tools | `STALE BUILD ...`; `REGENERATION FAILED`; `REGENERATION SHORT` |
+
+### What still fails nowhere mechanical (the reviewer's work)
+
+- shared prose that overstates (a reworded shared sentence has no verdict
+  until someone reads it);
+- a sigil or a cast missing or wrong inside a prose code span or a printed
+  line (perl `result->deleted`; a cast to a type the runtime lacks);
+- a citation whose quote holds the token but means something else (perl's
+  `none` once cited an unrelated line), and a citation that quotes only a
+  comment;
+- pinned prose that is false under some feature option (perl's stream note
+  with `chunkSize > 0`);
+- argument order and types, and anything only a compiler or a run shows, in
+  a language with no toolchain here;
+- whether an enumerated fact's value prints well;
+- an optional fact left undeclared where the runtime has the behaviour
+  (the sentence is then absent; the tools flag it only where ts prints it);
+- the constructor options of an example, which no lane executes (each lane
+  replaces the constructor with the test constructor);
+- the unported README sections' own claims (the README test-mode section
+  promises a mock without the test feature: recorded as a contradiction,
+  the REFERENCE the true side).
+
+## 7. What the independent reviewer and the verifier will do after you
+
+Report only what you ran. Your reviewer starts from your commits and your
+tools copy, works on a copy, and:
+
+1. audits every cited and pinned fact against the runtime: opens the file,
+   reads the quote, decides whether **the line shows the value** (not only
+   whether the token is there); reads every `unquoted` excuse, every
+   comment-only citation, every pinned type word and every hand-recorded
+   fact;
+2. reads the runtime for **every optional fact of 2.1** and says, for each,
+   whether you should have declared it;
+3. reads OLD and NEW side by side for four variations (`B`, one auth
+   variation, `ref-issues`, and the one where your language differs most):
+   README tutorial, root quick start and REFERENCE, and lists every
+   sentence false for your runtime, weaker than before, or gone;
+4. where a toolchain is here, runs the lane on OLD and NEW and **runs the
+   root quick start from the repository root of a generated SDK**; where
+   none is here, reads every distinct changed block of the four variations
+   **as a compiler would** (names, argument count and order, optionality,
+   what is returned, casts, what each member is called on) and lists each
+   doubtful line with the runtime line that shows the doubt;
+5. changes, one at a time on a copy, a fact of each kind (derived, cited
+   token, pinned prose, absence, language or convention, enumerated, and
+   each optional fact you declared), a signature (failure marker, receiver,
+   field shown as a call), a printed call, an example line, a note naming a
+   model word; drops a shared sentence from one variation and from all; and
+   says for each what failed, naming what, or that nothing did;
+6. re-runs the one command from a clean regeneration (reviewed mode must
+   pass; the scratch run's numbers are compared with yours), the guard, the
+   suite, the golden, and your line counts.
+
+The verifier then checks each of the reviewer's findings against the
+fixer's outcome by opening the file and the page, and makes two attacks of
+its own.
+
+## 8. Purity: what a provider and a hook must not do
+
+```sh
+node tools/purity.js --providers sdkgen/ts/project/.sdk/src/cmp --lang <lang> --root out/new
+```
+
+It flags in `Syntax_<lang>.ts` and every helper it defines: an import other
+than the printing helpers; a read of the model under any name; a reserved
+list; a case change, concatenation or name surgery (an anchored replace, a
+negative slice, a short suffix test) on a description name; an operation
+literal outside the fact tables; a condition on what the description shows.
+In notes: a note naming a feature, option, entity or operation (the fixture
+entities include ordinary words such as `record`: reword, or accept with
+why the note is true whatever the model says), or stating a number; a note
+that is not one plain string literal; a declared note that no region holds
+(the screen names the notes and those not found). In `Naming_<lang>.ts` and
+the helpers it imports from its own directory: concatenation onto a
+generator name, pluralisation, name surgery, an unimported reserved list,
+and for each function the hook calls whether a non-README component calls it
+too. A path built from `layout.dir` is a path, not a name: perl and rb
+carry purity-allow entries for it, with reasons. A printing helper of your
+language that purity does not know (it knows `indentLines`, `jsKey`, `jsProp`,
+`jsQuote`, `luaKey`, `luaString`, `uses`, `canonToType`, `canonKey`) is an accepted finding with the reason, and reported: a php
+string, for one, cannot be `JSON.stringify`'s output inside double quotes,
+where `$` interpolates. Accepted findings go in `purity-allow/<lang>.json`
+with the reason.
+
+## 9. The seven languages
+
+Read your row with your section of `P/base33/runtime-table.md` and the
+runtime, before writing a fact. Paths are under
+`ts/project/.sdk/` at `v33-frozen`; line numbers were read at the tag.
+To run a lane on OLD, never point a tool at `P/base33/oldclone`: copy it
+first (`cp -a "$(realpath P/base33/oldclone)" <dir>/oldcopy`, about 170 MB),
+then `tools/before/run.sh <dir>/oldcopy <lang>`; `run.sh` writes only under
+`tools/before/work/`.
+
+Every one of the seven is result style `throw`, writes calls with
+parentheses (`memberNamed` stays the default), declares
+`testMock: 'generated'` (cited ahead), and clones its data and match
+getters (`copy: true` on both: Q2 of the survey).
+
+| lang | stream (kind; `runs`; signal) | accessor, fields, `on` | `okFalse` as written | the root quick start's import | compile or run its examples here |
+| --- | --- | --- | --- | --- | --- |
+| **js** (async) | streamIterator (`async *stream`, EntityBase.fragment.js:107); `runs: 'iterate'` (run :138 after construct); `streamSignal: true` (`ctrl.signal = callopts.signal`, :118) | accessor `${entity.Name}(entopts)`, new entity every call; `name = ''` is a field (EntityBase.fragment.js:7): the js forms do not read class properties (the table lists `name` as missing), so declaring the name member needs the forms' `decl`/`public` extended as ts's were (`runtimeforms/ts.ts`), else 'The entity name.' is ABSENT; `test` static (Main.fragment.js:334); `cancel: true`, `direct.signal`, `abortCode` as ts; `utility()` returns the live instance (`struct.clone(this._utility)`, Main.fragment.js:104): `copy: false`, cited as ts's | `false` (Main.fragment.js `return { ok: false, err: ... }`) | `require('<package name>')`, the name from the shared `packageName` (`ts/src/helpers/packageMeta.ts:232`, which the hook may call): package-addressed (survey Q12: from the root, `require('./js')` would be the path form); decide and report | no README example test and no lane (`tools/before/run.sh` prints NOT RUN); node is here: run blocks by hand against a generated SDK (`node tools/before/gensdk.js sdkgen/ts <root> js default`), and report it as run by hand |
+| **php** | streamGenerator (Entity.fragment.php:148); `runs: 'iterate'` (run :195); `streamSignal: true` (`$signal = $callopts['signal'] ?? null;`, :152) | accessor `${accessor}($data = null)`: `param: 'data'`, and **`accessor.cached: true`** (MainEntity_php.ts:43-46, cited ahead); `get_name()`, `data_get`/`data_set`, `match_get`/`match_set`; `test` static (Main.fragment.php:393); `get_utility()` returns `ProjectNameUtility::copy(...)` (Main.fragment.php:135): `copy: true`, quote the copy function's allocation too; `deleted()` on the entity. Version 3.2 read `keys: 'bare'` and `prints: 'listFields'`: a starting point for the minimal pair, not a decision | `false` (Main.fragment.php:262 `return ["ok" => false, "err" => $err];`) | `require_once 'demo_sdk.php';` is path-relative and fails from the repository root (the file is `php/demo_sdk.php`): take `layout.dir` and print the directory for `'top'`, as perl does. The file name is spelled inline by the generator (`Main_php.ts:59`, `model.const.Name.toLowerCase() + '_sdk.'`): extract it into `utility_php.ts`, make `Main_php.ts` call it, and call it from the hook. To test the path, run the block with `php` from the root (`php -l` checks syntax, not the path) and read whether it fails at the `require_once` or later, at the live request | `tools/before/run.sh sdkgen php` (phpunit through `phpshim.php`), and the lanes `php: the root README test block`, `php: the README test-mode block`, `php: README output stays bounded`. The README test **removes the page's `require_once`** (ReadmeExamplesTest_php.ts:304-318): run the root quick start from the root yourself (`php` on a file holding the block) |
+| **csharp** | streamIterator (`async IAsyncEnumerable`, EntityBase.fragment.cs:257); `runs: 'iterate'` (run :306); `streamSignal: true` (`... is CancellationToken sigTok`, :268). `Stream` also takes `[EnumeratorCancellation] CancellationToken cancel = default`: your `cancel: false` absence will hit `CancellationToken` there; exclude that region with `fact: 'ref.facts.streamSignal'` and a reason, and read whether the token is a cancel of the stream only | accessor `${entity.Name}(Dictionary<string, object?>? entopts = null)` returns the entity base; `TestSDK(testopts, sdkopts)` static (Main.fragment.cs:414), **no optional parameters**: every test call passes two arguments; operations `Load(reqmatch, ctrl = null)`: `arity: 1`; `GetUtility()` returns `Utility.Copy(_utility)` (Main.fragment.cs:105): `copy: true`; `Deleted()` is on `IEntity` (tm/csharp/core/Types.cs:8-20), which the old examples cast to; the accessor writes `active` into the caller's map (survey Q1: a runtime defect, not a sentence) | `false` (Main.fragment.cs:228 `["ok"] = false,`) | `using DemoSdk;`: needs the project built and referenced | none: `dotnet` missing. Read every changed block as a compiler would |
+| **java** | streamLazy (`Stream<Object>`); `runs: 'call'` (`runOp` :246 before the Stream is built :278, EntityBase.fragment.java); `streamSignal: true` (`callopts.get("signal")`, :214; only a `BooleanSupplier` counts) | accessor `${accessor}(Map entopts)` returns `SdkEntity`; operations return `Object` with **both parameters required** (`arity: 2`, `list(null, null)`); `testSDK()` and `testSDK(a, b)` static overloads (Main.fragment.java:24,28), constructor `()` or `(Map)`; `getUtility()` returns `utility.copy()` (tm/java/core/SdkClient.java:108); **`deleted()` is on `EntityBase` only, not on `SdkEntity`** (tm/java/core/SdkEntity.java, Entity.java): an example bound as `SdkEntity` cannot call it, so leave `deleted` undeclared (as swift) or print the cast, and say which | `false` (tm/java/core/SdkClient.java:217 `out.put("ok", false);`) | package `import`s: need the SDK compiled on the classpath | `tools/before/run.sh sdkgen java` (`mvn -B test -Dtest=ReadmeExamplesTest`: structure checks, it does not run the examples); javac is here: compile a block by hand against a generated SDK where you doubt one |
+| **kotlin** | streamLazy (`Sequence`); `runs: 'call'` (run :213 before construct :245, EntityBase.fragment.kt); `streamSignal: true` (`opts["signal"]`, :187; only a `() -> Boolean`) | **`name` is a property** (`override var name`, EntityBase.fragment.kt:18; on the `Entity` interface): `field: true`, sig `name: String`; `testSDK` on the companion object (Main.fragment.kt:17,19): on the type; the client constructor has no return, and **the table misses its secondary `constructor() : this(null)`** (Main.fragment.kt:10): a printed `DemoSDK()` fails the guard's arity until the forms read it (or the printer passes `null`); the forms' `sigName` must read `name: String` (2.2); operations return `Any?`, both parameters required (`arity: 2`); `getUtility()` returns `util.copy()` (tm/kotlin/core/SdkClient.kt:98); `deleted()` is on `EntityBase` only (tm/kotlin/core/Interfaces.kt: `SdkEntity` lacks it): as java | `false` (tm/kotlin/core/SdkClient.kt:203 `out["ok"] = false`) | package `import`s: need a build | none: `kotlinc` missing. Read every changed block as a compiler would |
+| **scala** | streamSync (`Iterator[Object]`); `runs: 'call'` (run :192 before construct :218, EntityBase.fragment.scala); `streamSignal: true` (`opts.get("signal")`, :166; only a `Function0`) | `toString` is a `def` with no parameter list, a callable; **the table misses the secondary `def this() = this(null)`** (Main.fragment.scala:10): as kotlin; the match getter is `matchArgs`; `testSDK()`/`testSDK(a, b)` in the companion (Main.fragment.scala:20,22); `arity: 2`; `getUtility()` returns `utility.copy()` (tm/scala/core/SdkClient.scala:88); `deleted()` not on `SdkEntity` (tm/scala/core/Contracts.scala): as java; the accessor writes `active` into the caller's map (survey Q1: a runtime defect) | the runtime writes `java.lang.Boolean.FALSE` (tm/scala/core/SdkClient.scala:175); the forms cite `"false"` with an `unquoted` excuse: decide what a Scala reader compares with and say why | package `import`s: need a build | none: `scala`, `scala-cli`, `sbt` missing. Read every changed block as a compiler would |
+| **cpp** | streamList (`std::vector<Value>`); `runs: 'call'` (tm/cpp/core/types.hpp:1424 before :1454); **no signal anywhere**: `streamSignal: false`, cited ahead as an absence: declare it | constructor `std::make_shared<DemoSDK>(...)`, with a static `create()` (Main.fragment.cpp:34) and `testSDK()`/`testSDK(a, b)` (:23,27); `getName()` is a method, `name_` a public field: document `getName`; operations return `SdkEntityPtr`, both required (`arity: 2`); `getUtility()` returns `utility->copy()` (types.hpp:988); `deleted()` is on `Entity` (types.hpp:418); `markDeleted()` runs after `runOp` whatever the outcome (survey Q6: a runtime defect) | the runtime writes `Value(false)` (types.hpp:1085); `getp` returns a `Value`: decide what a reader compares with (as ocaml's `Bool false`) and write `read(..., truth)` as a real truth test (c's `getp` pointer was always true) | `#include "core/sdk.hpp"`: an include path, needs `-I<dir>` (c keeps its own form) | `node --test --test-name-pattern '^cpp: every documented example compiles' dist-test/generatedcompile.test.js` (g++ is here), and `tools/before/run.sh sdkgen cpp` |
+
+**What the first four ports suggest each of you will meet.**
+
+- **js**: the nearest port is ts, the reference: most sentences match
+  shared ones, and the ABSENT list is ts's own page against yours. The name
+  field and the live utility are the two places ts's facts must be
+  re-read rather than copied. No lane: whatever you do not run by hand is
+  unverified.
+- **php**: perl's and lua's problems at once: the root import that only a
+  run from the root shows, and the cached accessor (the sentence exists
+  now: declare the fact). Its unported page already prints "Create a new
+  `X` instance", which is false for a call with `null`.
+- **csharp**: the first port with no compiler and a typed cast; swift's and
+  ocaml's lesson applies: the reviewer is the compiler. The stream's own
+  `CancellationToken` parameter is the first word the cancel absence will
+  find.
+- **java**: a typed cast on every result and a mark (`deleted`) the bound
+  type cannot reach (swift's case). Its lane checks structure only.
+- **kotlin**: as java, plus the first property among the members (`name`,
+  ocaml's `e_name` precedent). No compiler.
+- **scala**: as java; its `ok` literal is a boxed `FALSE` (ocaml's
+  `Bool false` question). No compiler.
+- **cpp**: the only one with a real compile lane among the typed ones;
+  a constructor the call reader may not read (`std::make_shared<...>`), and
+  the truth read of a `Value` (c's lesson).
+
+## 10. How to commit
+
+In your clone, these kinds apart, in this order:
+
+1. shared source and tests: a port has none;
+2. per-language files, staged by explicit path (`git add <path>`; for a
+   deleted component `git add -u <path>`; never `git rm` followed by a plain
+   `git commit`);
+3. the build: a port changes no shared source, so `git status` after
+   `npm run build` must show nothing;
+4. the golden, on its own: `SDKGEN_GOLDEN_UPDATE=1 node --test
+   dist-test/characterize.test.js`, then once without the variable. Only
+   your language's lines change.
+
+In your tools copy, commit your language's files: `hand/<lang>.json`,
+`classes/<lang>.json` (generated by the last reviewed run; tracked, so
+commit it), and `normalizers/`, `counts/`, `purity-allow/` where you wrote
+them. `git -C tools status` then shows nothing, and `git -C tools log` shows
+your language's files only. **Commit messages name no tool and no model and
+carry no trailer of any kind** (no `Co-Authored-By`, no session line): check
+with `git log --format=%B <base>..HEAD` before you report.
+
+## 11. Baselines: the thirteen ported languages at `v33-frozen`
+
+Produced by `tools/portcheck.sh sdkgen out <lang>` at `v33-frozen` (0065f1e2),
+tools d3b258d, reviewed mode. Every language: OPEN 0, defect 0, guard pass,
+0 facts without an account, 0 unattested or not judged, every absent
+sentence explained, STALE 0. The tools of the base carry five later commits
+(slot matched by fact path; `pagecheck`; DROPPED): on the thirteen they
+opened and closed no class, and `pagecheck` finds nothing. These are what a
+port is compared with; the base's own proof run (a ported language's
+workspace from `newport.sh`, `REGEN=1`) must show the same.
+
+| lang | units same (tut / root / ref) | shared matches | by rule / by hand (tut; root; ref) | missing | contradictions | blocks ident/corr/unif/other, classes (tut; root; ref) |
+| --- | --- | --- | --- | --- | --- | --- |
+| ts | 59 / 21 / 15376 | 0/0/2 | 23,19; 4,0; 48,47 | 5/1/41 | 0/0/1 | 19/16/12/1 c19; 0/13/5/1 c15; 195/0/118/0 c12 |
+| go | 23 / 22 / 17439 | 1/0/1 | 27,26; 4; 51,36 | 9/0/15 | 0/0/1 | 0/12/1/8 c29; 0/14/4/4 c16; 337/21/18/0 c2 |
+| py | 59 / 19 / 14940 | 0/0/3 | 24,15; 3; 62,42 | 4/0/24 | 0/0/1 | 26/22/0/0 c9; 0/18/0/1 c12; 230/0/83/0 c2 |
+| c | 59 / 19 / 14872 | 0/0/0 | 24,14; 3; 52,43 | 4/0/18 | 0/0/1 | 0/41/0/7 c15; 0/2/0/17 c34; 151/143/19/0 c7 |
+| zig | 59 / 19 / 15001 | 0/0/3 | 23,18; hand 3; 60,45 | 5/0/24 | 0/0/1 | 24/17/0/7 c30; 0/2/15/2 c29; 151/0/162/0 c3 |
+| clojure | 59 / 19 / 14984 | 0/0/1 | 24,14; 3; 61,40 | 4/0/23 | 0/0/0 | 26/21/0/1 c10; 0/16/0/3 c16; 230/0/83/0 c2 |
+| rust | 59 / 19 / 15000 | 0/0/1 | 25,20; hand 3; 69,49 | 5/1/23 | 0/0/1 | 26/22/0/0 c12; 0/18/0/1 c20; 230/0/83/0 c2 |
+| elixir | 59 / 19 / 14803 | 0/0/0 | 22,17; 3; 71,42 | 4/0/22 | 0/0/1 | 16/22/10/0 c10; 0/18/0/1 c14; 151/0/162/0 c15 |
+| rb | 59 / 19 / 15021 | 17/0/43 | hand 28; hand 3; hand 67 | 5/0/23 | 0/0/1 | 3/21/23/1 c27; 0/2/15/2 c18; 303/0/10/0 c1 |
+| perl | 59 / 19 / 14891 | 21/0/46 | hand 20; hand 3; hand 61 | 4/0/23 | 0/0/1 | 3/6/0/39 c19; 0/0/0/19 c25; 227/0/0/86 c7 |
+| swift | 59 / 19 / 13994 | 21/0/51 | hand 22; hand 3; hand 71 | 5/0/32 | 0/0/1 | 1/1/0/46 c39; 0/0/0/19 c28; 207/0/0/106 c13 |
+| ocaml | 54 / 19 / 14073 | 24/0/63 | hand 21; hand 3; hand 73 | 8/0/35 | 0/0/1 | 19/0/0/29 c35; 0/0/0/19 c32; 151/0/0/163 c17 |
+| lua | 59 / 19 / 15053 | 22/0/56 | hand 18; hand 3; hand 66 | 5/0/24 | 0/0/2 | 3/15/0/30 c26; 0/2/0/17 c27; 151/0/0/162 c24 |
+
+The four ports of the last wave (perl swift ocaml lua) have no OLD-page
+rule records: everything not matched as shared is by hand, as yours will be.
+
+Lanes at the tag: ts README 16/16, go README 12/12, py README 12/12, c DOC
+6/6, rust DOC 6/6, `^rb: ` 49/49, zig documentation 6/6, perl 7/7 in each of
+the default, crud and basic-server models (and failing, as it should, with
+the root's `use lib` removed). No lane for lua, swift, ocaml, elixir or
+clojure here.
+
+**Lines of the four new ports** (`git diff --numstat v32-frozen v33-frozen`):
+
+| lang | old components deleted (Quick / Ref / TopQuick) | provider | hook | forms | other |
+| --- | --- | --- | --- | --- | --- |
+| perl | 735 (224 / 420 / 91) | 197 | 24 | +51 -2 | ReadmeExamplesTest_perl +47 -13 (a shared lane change) |
+| swift | 764 (246 / 409 / 109) | 184 | 24 | +69 -8 | 0 |
+| ocaml | 723 (213 / 423 / 87) | 240 | 24 | +74 -3 | Main_ocaml +5 -7, MainEntity +2 -4, SdkError +3 -1, utility_ocaml +19 |
+| lua | 749 (232 / 419 / 98) | 167 | 26 | +74 -8 | Main_lua +2 -1, utility_lua +7, lua-table-keys.test +1 -3 |
+
+Your starting point, by `wc -l` at the tag (Quick / Ref / TopQuick; forms):
+js 179 / 445 / 110, 62; php 224 / 420 / 90, 64; csharp 232 / 413 / 96, 65;
+java 242 / 398 / 106, 65; kotlin 241 / 408 / 104, 72; scala 226 / 396 / 87,
+72; cpp 233 / 406 / 95, 92.
+
+**Guard account at the tag** (derived / cited, with the fact sheet's cited
+and pinned counts / language / convention; type words where pinned):
+
+| lang | derived | cited (sheet cited/pinned) | language | convention | type words |
+| --- | --- | --- | --- | --- | --- |
+| ts | 48 | 15 (22/12) | 1 | 5 | column ts |
+| go | 46 | 12 (17/11) | 1 | 6 | column go |
+| py | 46 | 12 (17/10) | 1 | 6 | column |
+| c | 41 | 12 (14/10) | 1 | 9 | pinned |
+| zig | 39 | 15 (19/12) | 1 | 8 | pinned |
+| clojure | 42 | 14 (17/11) | 1 | 10 | pinned |
+| rust | 42 | 12 (16/9) | 1 | 8 | column |
+| elixir | 45 | 13 (17/12) | 1 | 5 | column |
+| rb | 46 | 12 (17/10) | 1 | 6 | column |
+| perl | 43 | 15 (12/8) | 1 | 8 | pinned |
+| swift | 43 | 10 (15/9) | 1 | 5 | column |
+| ocaml | 47 | 13 (16/13) | 1 | 10 | pinned |
+| lua | 46 | 15 (21/15) | 1 | 6 | column |
+
+Hand-recorded facts at the tag include `ref.noun` in every language (the
+`Client <noun>` heading), ocaml `keys: 'bare'`, perl and lua `prints:
+'fields'`, swift `entityBy: 'class'`, go `errVar`, c `errVar`, clojure
+`ref.heading` and `ref.valueType.OBJECT`. One contradiction is recorded in
+every language: the unported README test-mode section promises a mock
+without the test feature; the REFERENCE is the true side.
+
+## 12. What you report
+
+1. Your commits (hash, message, files), `git status --short` after a build
+   (empty), and the commit messages' bodies (no trailer); your tools commit.
+2. The one command's screen in the reviewed mode, final run with `REGEN=1`,
+   and its exit code (0, or 1 with only your recorded `defect` classes); and
+   the `SCRATCH=1` run's numbers per section (reported, not expected to be
+   zero), with the parts that read no hand record clean in both.
+3. Every row of your `runtime-table.md` section you found wrong or missing,
+   with file and line, and the forms change you made (or that you made none
+   because no page fact rests on it).
+4. Every declared fact: value, account (derived; cited with the quote;
+   absence with its regions; pinned prose; attested; decided by hand), and
+   **for each optional fact of 2.1, whether the runtime has the behaviour,
+   with file and line, and what you declared**.
+5. Per section: units same; shared sentences matched (and against
+   unreviewed sentences); by hand; missing (each with its reason);
+   contradictions (where, true side, evidence); every `defect` with the
+   shared file it waits on.
+6. Blocks per section: identical, after named corrections, by named
+   unification, otherwise; how many changed blocks nothing compiled; the
+   `callcheck` and `pagecheck` lines.
+7. The fact sheet's summary and the guard's account line; every
+   pinned-prose citation, every `unquoted` excuse, every comment-only
+   citation and every hand-recorded fact.
+8. The absent and dropped lists, each entry with its reason.
+9. Purity: open, accepted (each reason), notes declared and regions found.
+10. Toolchain: the `command -v` output; the lane or command on OLD and on
+    NEW with its pass/fail line and time; the root quick start run from the
+    repository root (OLD and NEW), or why it was not; for a language with no
+    toolchain, the number of distinct changed blocks you read and each line
+    you doubt, with the runtime line.
+11. The unported-language check: no other language's page changed
+    (`diff -r` against `P/base33/out/new`, leaving out your directories and
+    your lines of the root README).
+12. Every interface gap (section 4): file, line, smallest change, breaking or
+    additive, providers it would force; and that you made no shared change.
+13. Every place this guide was wrong, unclear or silent, with the section.
+14. What you did not run, and why.
+
+## 13. Traps
+
+- The old page is not the runtime, and neither is the table: read the code.
+- Shared code throws where a fact is missing. A generation error naming a
+  fact is the interface asking for a value.
+- A forms citation "ahead of a provider" becomes a live check the moment
+  your provider exists: declare its fact with its pinned value, or correct
+  the citation from the runtime.
+- A note is one plain string literal; a constant or a `+` is a finding. A
+  note that restates a shared sentence for one runtime is a finding too.
+- `copy: true` only where the runtime returns a new object, cited to the
+  allocation, not to a `clone(...)` call.
+- `runs` comes from the order of statements in the stream's code, never
+  from its type.
+- A null-argument form chosen per operation would need an operation literal
+  outside the fact tables, which purity flags; index `facts.method[s.op]`.
+- A REFERENCE example gets a fresh `Scope` (`standalone: true`) and prints
+  no imports; an action example is the Call cell of the Actions table, the
+  call's statements on one line, with the route's path parameters beside
+  `$action`.
+- The test constructors exist with or without the test feature; with
+  `testMock: 'generated'` the page says the client then has no mock
+  transport and refuses every request.
+- `ReadmeRefFeatures.ts` prints `active: false` and `feature.<name>.active`
+  in TypeScript form for every language (known, left for the integration).
+  Do not work around it in your provider; record what your page shows.
+- A lane that passes may not have run what the page says: perl's used to add
+  its own import, php's removes the page's `require_once`, and every lane
+  replaces the constructor with the test constructor, so constructor options
+  are never executed.
+- `SCRATCH=1` cannot pass for a newly ported language. Do not report the
+  port as failing because of it, and do not record decisions to make it
+  pass: it ignores them.
+- lean has no entity layer and keeps its own components (language pack).

@@ -1,0 +1,22 @@
+▶ the README examples run for a slug carrying the word client
+  ✔ py: every README example is classified, and run (1318.956558ms)
+  ✔ py: every README example is classified, and run, with a patch (1177.989963ms)
+  ✔ py: the README examples run with Basic auth and a templated server (1194.075211ms)
+  ✔ py: the README examples run where a list requires parameters (1093.006119ms)
+  ✔ py: the README examples run where a list's parameters are a keyword and __proto__ (1003.195232ms)
+  ✔ py: the README examples run where a load's points each need a selector of their own (1057.584467ms)
+  ✔ py: the README examples run where an optional query parameter shadows a route parameter (1127.639174ms)
+  ✔ py: the README examples run where an entity lists only through actions (1163.472881ms)
+  ✔ py: the README examples run where a create's routes each need a parent of their own (1126.549443ms)
+  ✔ py: the README examples run where a record is keyed by _id (1223.302484ms)
+  ✔ py: the README examples run where an update's request carries no id (1149.779771ms)
+  ✔ py: the README examples run where a load parameter and a create field hold a quote and a backslash (1097.24253ms)
+✔ the README examples run for a slug carrying the word client (13770.248284ms)
+ℹ tests 12
+ℹ suites 1
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15481.406059

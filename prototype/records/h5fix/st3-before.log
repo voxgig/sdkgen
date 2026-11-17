@@ -1,0 +1,56 @@
+
+##### [new] S2r realistic S2b: the copy is 4.44.0 content, the record holds an older release, the 4.44.0 add line is cut
+   doctor: doctor-finding       override (its source no longer ships it; changed h…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 14 retired, 0 orphan compiled, 0 unresolved
+   EXIT 1 (1399 ms)
+   target-component-override src/cmp/ts/ReadmeQuick_ts.ts: its source no longer ships this component, and this project changed it, so it is kept and still used in place of the shared one. To use the shared one, delete it and its compiled output under dist/cmp/ts/ReadmeQuick_ts.js
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (6620 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:QSN dist:Q] 
+   GEN ok=true ms=762
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=OLD ref=NEW top=NEW
+   doctor: doctor-finding       override (its source no longer ships it; changed h…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1860 ms)
+   remove: Voxgig SDK Generation Error: target remove: refusing to delete what `target add` did not write
+   remove: EXIT 1 (1615 ms)
+
+##### [new] S2n a cut line with no newline, then an add: is the next line joined to it
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2317 ms)
+   record lines: 4; unreadable: 1
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 12 retired, 0 orphan compiled, 0 unresolved
+   EXIT 1 (1642 ms)
+
+##### [new] S19 an EDITED retired copy with no record, re-added with --force: the case the list cannot decide
+   EXIT 0 (5312 ms)
+go[src:QRTSN dist:QRT] js[src:QRT dist:QRT] lua[src:QRTSN dist:QRT] perl[src:QRTSN dist:QRT] php[src:QRT dist:QRT] py[src:QRTSN dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=761
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OTHER+EDITED ref=OLD top=OLD
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts (used instead of the shared ReadmeRef)
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts (used instead of the shared ReadmeTopQuick)
+   doctor-end           .sdk matches the scaffold (15 additive, 0 customized)
+   EXIT 0 (1585 ms)
+
+##### [new] S19b the same, with the override declared in the model
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts (used instead of the shared ReadmeRef)
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts (used instead of the shared ReadmeTopQuick)
+   doctor-end           .sdk matches the scaffold (15 additive, 0 customized)
+   EXIT 0 (1558 ms)
+
+##### [new] S20 an unedited 4.44.0 copy whose record calls it additive: a later update forgot it, then a git restore
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 14 retired, 0 orphan compiled, 0 unresolved
+   EXIT 1 (2014 ms)
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (6422 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:QSN dist:Q] 
+   doctor-end           .sdk matches the scaffold (1 additive, 0 customized)
+   EXIT 0 (1865 ms)

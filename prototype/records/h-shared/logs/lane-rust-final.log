@@ -1,0 +1,16 @@
+▶ the documented c, cpp, rust, zig and ocaml examples compile
+  ✔ rust: every documented example compiles, singleton first (9667.541962ms)
+  ✔ rust: every documented example compiles, list first (2015.096244ms)
+  ✔ rust: every documented example compiles, crud first (2105.039637ms)
+  ✔ rust: every documented example compiles, nested first (1933.621782ms)
+  ✔ rust: every documented example compiles, quoted-name first (1996.53247ms)
+  ✔ rust: every documented example compiles, basic-server first (1847.921546ms)
+✔ the documented c, cpp, rust, zig and ocaml examples compile (19656.821324ms)
+ℹ tests 6
+ℹ suites 1
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21340.964585

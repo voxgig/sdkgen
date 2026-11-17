@@ -1,0 +1,238 @@
+lang: swift
+ok: True
+summary: |
+  I fixed all four swift-side items the reviewer required, in swift's own files. I checked each one against the runtime first, and the reviewer was right on all four.
+  
+  1. **matchv copy.** matchv now declares `copy: true`, cited to EntityBase.fragment.swift:64 `return clone(.map(match))`. The fact is true and checked, but the page does not print it yet: the shared matchArg sentence in ReadmeRef.ts:141 ignores `copy`. That part is recorded as a shared change.
+  2. **body.values.** It now names the `.nat` constructor a caller writes. It is cited to Value.swift:87, plus a call at MakeError.swift:34 and `case string(String)`, so the old `unquoted` excuse is gone.
+  3. **Printers.** The record, field and print printers build their code from facts.unwrap and facts.record instead of literals. The record and fields expressions now unwrap the Value before reading data(). The regenerated output is byte-identical: `diff -r` of out/new before and after shows 0 files.
+  4. **Types.swift extension.** The forms now read Types.swift, whose protocol extension gives data() and matchv() with no argument. They check the whole record expression: the unwrap must stand, word-bounded, in the runtime quote it is cited to, and the accessor is called with 0 arguments.
+     - Negative control: removing Types.swift fails the guard with 'record accessor data takes 1 parameters, 0 declared'.
+     - Five mutations on the compiled provider and forms now fail the guard. Three of them are the reviewer's attacks that only the hand records caught before: the record as `{var}.asEntity().data()`, the unwrap as `as!` changed in the provider and the pin together, and `as? EntityBase` in the provider and the pin together. The other two are new controls: matchv's copy dropped, and body.values set back to `.native`. All files were restored and checked with cmp.
+  
+  Final state:
+  - Build exits 0 and `git status --short` is empty.
+  - Guard and reader: 5/5. Golden: 2/2 (only swift's Syntax line changed).
+  - Suite without lanes: 2601 tests, 2596 pass, 0 fail, 5 skipped.
+  - `REGEN=1 tools/portcheck.sh sdkgen out swift`: PASS, exit 0. The `SCRATCH=1` run: FAIL as expected.
+  - Guard account: derived 45, cited 13, of which pinned prose 7. Unquoted excuses: 0.
+  
+  Six findings need a shared change, recorded below and not made by me:
+  - the matchArg copy sentence;
+  - the lost `list(nil, nil)` call in the list sentence;
+  - the portcheck pipefail and stale-build checks;
+  - the guard's whole-record check;
+  - a dropped-sentence net for a result style with no reference language;
+  - the unwrap in the wrapped-style sentences of runtimeprose.ts.
+  
+  There is no swift toolchain here (`command -v swift swiftc`: missing), so the 172 changed blocks are still compiled by nothing.
+outcomes:
+  - [0]
+    finding: R1 matchv returns a copy; no fact says so (Syntax_swift.ts:50)
+    outcome: fixed (fact); the sentence needs a shared change
+    how: Checked first: EntityBase.fragment.swift:64 `return clone(.map(match))`, so the reviewer is right. Declared `copy: true` on matchArg and cited it in swift.ts as 'ref.facts.entity[1].copy' with that quote; the guard counts it as pinned prose. The page still reads 'Get the entity match criteria. Pass a `Value` to set it.' because ReadmeRef.ts:141 (`case 'matchArg'`) ignores m.copy. That half is recorded under shared_changes_needed. Mutation check: dropping the copy fails the guard with 'cite ref.facts.entity[1].copy: the provider declares no such fact'.
+    commit: 824c5d41
+  - [1]
+    finding: R2 body.values names the `.native` case, not the `.nat(...)` constructor
+    outcome: fixed
+    how: Checked first: Value.swift:83 `case native(NativeRef)` and :87 `public static func nat(_ v: Any) -> Value { .native(NativeRef(v)) }`, so the reviewer is right. The value is now 'a `String`, or `Data` or `[UInt8]` wrapped with `.nat`'. The citation keeps the Fetcher.swift quote and adds `also` quotes: Value.swift `case string(String)` and the nat definition, and MakeError.swift:34 `_ = cleanUtil(ctx, .nat(sdkErr))`, a call that shows the token `.nat`. The `unquoted` excuse for String is removed (0 excuses now). Mutation check: setting the value back to `.native` fails the guard. Still printed in 0 of the 21 variations: no raw-body model.
+    commit: 824c5d41
+  - [2]
+    finding: R3 Printed unwrap hard-coded in the field and print printers (Syntax_swift.ts:83,142); the record and fields exprs printed `x.data()` on a Value
+    outcome: fixed
+    how: The provider defines `unwrap` and `read` once and builds `facts.record` from them. The expr 'record' and 'fields' cases now return recordOf(var) = facts.record with {var} filled, which unwraps first. The 'field' case is recordOf(var).asMap?.entries[...] ?? .null. The print printer is `if let x = x.${facts.unwrap} { print(x.data()) }`, with `data()` from the same constant as facts.record. The regenerated output is byte-identical: diff -rq of out/new before and after lists 0 files. The reviewer's attack (print printer `as? EntityBase` with the guard passing) can no longer be made in the printer alone, and changing it in the unwrap fact and the pin together now fails the guard (R4).
+    commit: 824c5d41
+  - [3]
+    finding: R4 The reader does not see Types.swift:15-18 (the no-argument data()/matchv() extension)
+    outcome: fixed in swift's forms (no shared change needed)
+    how: |
+      swift.ts now reads Types.swift as an entity file, and its decl regex accepts `@discardableResult func`. The record reader parses the whole expression, `^\(\{var\}\.(.+)\)\?\.(\w+)\(\)$`, and accepts it only when the unwrap stands, word-bounded, in the cited runtime quote 'if let ent = record.asNative as? Entity {'. It returns arity 0, so the guard requires a 0-parameter `data`, which only the extension declares.
+      - Negative control (Types.swift removed): the guard fails with 'record accessor data takes 1 parameters, 0 declared'.
+      - Attacks that now fail the guard: '{var}.asEntity().data()' ('is not an entity member'); unwrap 'as!' in the provider and the forms pin together; 'as? EntityBase' in both.
+      - Reader 1/1 pass.
+    commit: 824c5d41
+  - [4]
+    finding: R5 portcheck.sh: no pipefail; does not check that the build is current (shared tools)
+    outcome: needs a shared change (recorded)
+    how: Not made: tools/portcheck.sh is a shared tools file. I worked around it by hand: I read `npm run build`'s exit after every change (0 each time) and counted 'READMEs in' in review/swift/regen.log at each REGEN (21, SKIPPED none).
+    commit: 
+  - [5]
+    finding: R6 The guard checks only the trailing name of the record expression (shared forms.ts and guard.ts)
+    outcome: fixed for swift in its own forms; the shared change is still recorded for the other providers
+    how: Swift's forms.record now validates the whole expression (see R4), so '{var}.asEntity().data()' fails. The generic guard still trusts each language's record parser.
+    commit: 824c5d41
+  - [6]
+    finding: R7 No dropped-sentence net for a result style with no reference language (shared tools)
+    outcome: needs a shared change (recorded); the attacks are copied into not_caught_by_process
+    how: Not made: a shared tools file.
+    commit: 
+  - [7]
+    finding: R8 runtimeprose.ts wrapped returnClause/carries omit the unwrap (porter's gap 0)
+    outcome: needs a shared change (recorded)
+    how: Not made. The swift-side risk this workaround carried is closed: facts.record still carries the unwrap, but the guard now checks it whole (R4/R6). Once the shared sentence names the unwrap, facts.record could go back to '{var}.data()'.
+    commit: 
+  - [8]
+    finding: Reviewer false_or_missing: the list sentence lost OLD's working call `list(nil, nil)`; it now says `list()`
+    outcome: needs a shared change (recorded); the hand record updated
+    how: |
+      Checked: EntityBase.fragment.swift:71 `open func list(_ reqmatch: VMap?, _ ctrl: VMap?)` has no defaults, and OLD REFERENCE B:173 said 'call `list(nil, nil)` to list all records'.
+      - `list()` comes from runtimeprose.ts:17 opName (named: 'call'), a naming convention OLD itself used for `load()` (README.md:55), so I kept facts.named.
+      - The missing no-match call is a shared sentence ('The match is optional: without one, every record is listed.').
+      - hand/swift.json facts.named.why now states the loss.
+    commit: tools 0fa653a
+  - [9]
+    finding: Reviewer hand_records: entityBy was decided by hand but not recorded; the tool's ATTESTED is structural
+    outcome: fixed (recorded)
+    how: Added hand/swift.json facts['ref.facts.entityBy'] with value 'class', why and evidence (OLD REFERENCE headings name the entity; Entity_swift.ts:26 `entityClassName`). The factsheet reads hand facts only for UNATTESTED rows (factsheet.js:177-180), so the record is documentation and changes no number.
+    commit: tools 0fa653a
+  - [10]
+    finding: Reviewer doubtful_lines: `?? .null` in the VMap tuple literal, top-level `try`, `import Foundation`
+    outcome: not fixed: unverifiable here
+    how: No swift compiler (`command -v swift swiftc`: missing). These lines are unchanged and still compiled by nothing.
+    commit: 
+shared_changes_needed:
+  - [0]
+    file: ts/src/cmp/ReadmeRef.ts:141 (memberText, case 'matchArg'; also 'match' and 'matchGet')
+    change: Honour m.copy as dataArg does: 'Get the entity match criteria.' + (m.copy ? ' Returns a copy of the current match criteria.' : '') + ' Pass ... to set it.'
+    why: swift's matchv clones (EntityBase.fragment.swift:64 `return clone(.map(match))`). swift now declares and cites `copy: true`, but the shared sentence drops it, so a true runtime fact is not on the page.
+    breaking: False
+    providers_forced: none. The sentence changes only where a provider declares copy on a match member, which today only swift does. Other runtimes that clone match (rb, py, php, perl: to be checked) may then declare it.
+  - [1]
+    file: ts/src/cmp/ReadmeRef.ts list operation sentence / ts/src/helpers/runtimeprose.ts:14-18 (opName)
+    change: Have the list operation's 'match is optional' sentence give the no-match call, built from facts.method.list, ref.facts.none and the derived parameter count (swift: `list(nil, nil)`), or say plainly that the match argument is passed as the none value.
+    why: OLD swift REFERENCE (B:173) said 'call `list(nil, nil)` to list all records'. NEW says 'without one, every record is listed' and the tutorial names `list()`, which Swift cannot call (EntityBase.fragment.swift:71, two parameters, no defaults).
+    breaking: True
+    providers_forced: every ported provider's list sentence changes (a changed sentence); no new required fact if it is composed from method, none and the derived arity.
+  - [2]
+    file: tools/portcheck.sh:26-29 (shared tools)
+    change: `set -o pipefail` around `node gen.js | tee` (or check PIPESTATUS[0]); fail when the regenerated count is lower than the number of variations in old/; fail when ts/dist or ts/dist-test-scaffold is older than any source under ts/src or ts/project/.sdk/src, or rebuild and check the exit code.
+    why: From the reviewer's measurement: a provider that failed to compile (TS2820) left the stale build and portcheck reported PASS. A generation that threw printed 'regenerated 0 variations' and measured the stale out/new. In this job I read the build exit and the regen count by hand each time.
+    breaking: False
+    providers_forced: none
+  - [3]
+    file: ts/test/runtimeforms/guard.ts:218-232 (record check) and forms.ts Forms.record
+    change: Re-derive every member the record expression names, not only the trailing name. At the least, require each `.member(` and type name in facts.record to be a runtime member or type, or require forms.record to return the whole expression's parts.
+    why: Measured by the reviewer: '{var}.asEntity().data()' passed with the generic check. Swift now guards this in its own forms.record (824c5d41), but every other provider's record parser still checks only a trailing name.
+    breaking: False
+    providers_forced: none required; languages with a prefixed record expression would benefit.
+  - [4]
+    file: tools ledger/classify (shared)
+    change: For a result style with no reference language, add a from-scratch net: a sentence printed in fewer variations than its siblings or its own section (a per-sentence variation count), or compare against the language's own recorded NEW counts.
+    why: Measured by the reviewer: dropping 'A failed request is reported in the result...' from one variation or from all 19 left the SCRATCH OPEN count at 95, the baseline. The less-often and absent nets are empty for swift, the only wrapped-style language.
+    breaking: False
+    providers_forced: none
+  - [5]
+    file: ts/src/helpers/runtimeprose.ts:142 (carries) and :207-208 (returnClause, 'wrapped')
+    change: Have the wrapped branches name the unwrap ('returns a value holding the entity, which `asNative as? Entity` takes out'), so facts.record can go back to '{var}.data()'.
+    why: Porter's gap 0. Today the unwrap rides inside facts.record. Swift's own forms now check that whole expression, so this is a wording and simplicity change rather than a correctness gap.
+    breaking: True
+    providers_forced: none (swift is the only wrapped provider); breaking only as a changed sentence
+not_caught_by_process:
+  - [0]
+    attack: Shared sentence 'A failed request is reported in the result, not as an error...' removed from doc-crud's swift REFERENCE, run with SCRATCH=1
+    consequence: Reference OPEN 95, the same as the scratch baseline; less-often 1, the same as baseline (the make-sentence artifact). The only trace is 'x18 in 18 var' in a worklist. The normal mode caught it (OPEN 1) only through the porter's hand record.
+  - [1]
+    attack: The same sentence removed from all 19 variations, with SCRATCH=1
+    consequence: OPEN 95, unchanged. No number moved.
+  - [2]
+    attack: entityBy 'name' (an invalid enumerated value): the build failed with TS2820
+    consequence: portcheck REGEN reported PASS, exit 0, against the stale build. The one command does not check that the build is current.
+  - [3]
+    attack: cancel: true (absence flipped): generation throws 'cancel needs direct.signal'
+    consequence: The guard did fail. But portcheck printed 'regenerated 0 variations; SKIPPED: none' and measured the stale out/new from the previous run: the tee pipe drops gen.js's exit code. A mutation that throws during generation while the guard passes would be measured on old pages.
+  - [4]
+    attack: Pinned prose facts.unwrap changed in the provider and in the forms pin together ('asNative as! Entity')
+    consequence: Guard PASS. Caught only by tutorial OPEN 3 against hand records; a new port has none, so a person decides.
+  - [5]
+    attack: Print printer changed to `as? EntityBase` (no such type in the runtime)
+    consequence: Guard PASS, purity 0. Caught only by blocks OPEN 5/12/3 against hand records; nothing ties the printed code to facts.unwrap.
+  - [6]
+    attack: facts.record '{var}.asEntity().data()' (nonexistent member)
+    consequence: Guard PASS. Caught only by ledger OPEN 6/3 and blocks OPEN 4 against hand records.
+  - [7]
+    attack: entityBy 'class' -> 'Name' (a valid enumerated value)
+    consequence: Guard PASS, factsheet silent ('not printed 1'). Caught only by ledger OPEN 5 against hand records.
+commits:
+  - sdkgen 824c5d41 'Swift: printers read the unwrap and record facts; matchv copy and the nat constructor declared': ts/project/.sdk/src/cmp/swift/Syntax_swift.ts (+18/-9), ts/test/runtimeforms/swift.ts (+20/-6)
+  - sdkgen 55675fd5 'Golden follows the swift provider fixes': ts/test/golden/add-output.txt (+1/-1, the Syntax_swift.ts line only)
+  - build: no commit; `npm run build` exit 0, then `git status --short` is empty (no shared source changed)
+  - tools 0fa653a 'swift: the named record states what the list sentence lost; the entityBy decision recorded': hand/swift.json (+7/-2). classes/swift.json unchanged; `git -C tools status --short` is empty
+  - Earlier, the porter's (unchanged): sdkgen e2909323, db94e106; tools a19b52c, 997196b. The porter made no shared change.
+  - Note: my three commits end with the Co-Authored-By and Claude-Session lines that the session's attribution reminder requires. The briefs ask for no model name in commit messages, so the integrator may strip those two lines.
+final_state: |
+  RAN `REGEN=1 tools/portcheck.sh sdkgen out swift` in P/ports/swift: exit 0. It regenerated 21 variations, none skipped (counted with `grep -c 'READMEs in' tools/review/swift/regen.log`). Log: P/ports/swift/final-fix.log.
+  
+  | section | units same | classes | shared | rule-rec | by hand | missing | OPEN | defect | contradictions |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | tutorial | 61 | 45 | 19 | 0 | 21 | 5 | 0 | 0 | 0 |
+  | rootquick | 19 | 3 | 0 | 0 | 3 | 0 | 0 | 0 | 0 |
+  | reference | 14013 | 143 | 48 | 0 | 67 | 27 | 0 | 0 | 1 |
+  
+  | blocks | identical | corrected | unified | otherwise | classes | OPEN | defect | compiled by nothing |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | tutorial | 1 | 1 | 0 | 46 | 35 | 0 | 0 | 47 |
+  | rootquick | 0 | 0 | 0 | 19 | 28 | 0 | 0 | 19 |
+  | reference | 207 | 0 | 0 | 106 | 13 | 0 | 0 | 106 |
+  
+  - Contradiction 91baf1b4b6 (no-test variation): the REFERENCE is the true side (S13).
+  - Purity: 0 open, 1 accepted (the hook's `nom`). Notes declared 0, note regions 0.
+  - Guard: pass.
+  - Facts: attested 5, recorded by hand 1, UNATTESTED 0; cited 12, pinned prose 7.
+  - Shared sentences: matched 67, all 67 against sentences nobody reviewed. Printed less often than the reference: 0. Absent: 0.
+  - Fact sheet: 61 facts, 0 with no account. PORTCHECK swift: PASS.
+  
+  RAN `SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out swift`: exit 1, FAIL as expected (log: P/ports/swift/fix-scratch1.log). The numbers are identical to the porter's and the reviewer's:
+  - Ledger OPEN 26 / 3 / 95; defect 0.
+  - Blocks OPEN 35 / 28 / 13.
+  - UNATTESTED 1 (named); less often 1; absent 0; purity 0 open; guard pass.
+  
+  RAN, other checks:
+  - Guard and reader: `node --test --test-name-pattern '^swift: ' dist-test/runtimefacts.test.js dist-test/runtimereader.test.js` gives tests 5, pass 5, fail 0.
+  - Guard account (`SDKGEN_GUARD_REPORT=1`): derived 45, cited 13 (pinned prose 7: unwrap, client[0].copy, client[1].kind, entity[0].copy, entity[1].copy, prepare.fails, body.values), language 1, convention 5, excepted 0. The cited absence is cancel. Unquoted excuses: 0 (was 1).
+  - Golden: `node --test dist-test/characterize.test.js` gives 2/2.
+  - Suite: `node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)` gives 2601 tests, 2596 pass, 0 fail, 5 skipped, exit 0, 367 s.
+  - Build: `npm run build` exit 0; `git status --short` empty.
+  - Other languages: `diff -rq -x swift out/new base32/out/new` lists 19 files, the same 19 root READMEs as the porter's.
+  
+  Lines (wc -l): provider Syntax_swift.ts 180 (142 without blanks and comments); hook Naming_swift.ts 24 (15); forms runtimeforms/swift.ts 116 (102 before this job). Against 764 lines removed: 204 provider plus hook is 3.7x; with the forms delta since v32-frozen (+49/-8), 245 is 3.1x.
+  
+  Notes: 0 declared.
+  
+  Progress file: P/ports/swift/FIX-PROGRESS.md.
+lanes: There is no swift lane here. `command -v swift swiftc` finds neither, so no example was compiled or run. Swift also has no README lane in generatedcompile.test.ts, and ReadmeExamplesTest_swift.ts only checks structure. The suite without the toolchain lanes passes (2601 tests, 2596 pass, 0 fail, 5 skipped).
+unverified: |
+  172 changed swift code blocks in the 21 variations are compiled by nothing: 47 tutorial, 19 root, 106 reference. My fixes changed no generated byte (diff -rq of out/new before and after: 0 files), so the count is the same as before. The reviewer's three doubtful constructs are still unverified: `?? .null` inside the VMap tuple literal, top-level `try`, and the added `import Foundation`.
+  
+  Two of my fixes are not visible on any page yet:
+  - matchv's copy is declared and guarded, but the shared matchArg sentence does not print it.
+  - The new body.values text is printed in 0 of the 21 variations, so its rendered form has not been seen.
+not_done:
+  - No Swift compile or run: the toolchain is absent, and I installed nothing.
+  - None of the six shared changes was made; each is recorded in shared_changes_needed.
+  - The process gaps the reviewer measured (stale build, the pipe dropping gen.js's exit code, dropped-sentence blindness under SCRATCH) are copied unchanged into not_caught_by_process. I did not re-run those attacks: they belong to the shared tools, which I left untouched. Of the attacks that only hand records caught, I re-ran the three that swift's own forms now catch, the record expression and the unwrap in the provider and the pin together, as `as!` and as `as? EntityBase` (all fail the guard), and the entityBy 'Name' one (not re-run: still only the hand records).
+  - I did not re-run the reviewer's full 15-mutation set through REGEN portcheck. I ran 5 targeted guard mutations on the compiled provider and forms (then restored them and checked with cmp), plus one negative control on the forms source, rebuilt with tsc and restored.
+notes:
+  - [0]
+    slot: ran vs read
+    text: |
+      RAN, with logs in P/ports/swift:
+      - `npm run build` 4 times (exit 0 each; logs build1-3 and build-final);
+      - the guard and reader 4 times;
+      - a negative control rebuilt with `npx tsc --build test`;
+      - 5 compiled-file mutations;
+      - `SCRATCH=1 REGEN=1` portcheck, then a normal portcheck, then the final `REGEN=1` portcheck;
+      - the golden update and check;
+      - the suite;
+      - `diff -rq` of out/new before and after the fix, and against base32/out/new;
+      - `wc -l` and `git diff --numstat`.
+      
+      READ:
+      - k-fix.md, the briefs, PORTING.md v3.2 and the porter's report;
+      - Syntax_swift.ts and runtimeforms/swift.ts;
+      - forms.ts Citation and Forms, account.ts codeTokens and checkCitation, guard.ts:205-232 and :505-520;
+      - EntityBase.fragment.swift:30-95; Types.swift:1-25; Value.swift:76-92; Fetcher.swift:115-135;
+      - runtimeprose.ts:1-40; ReadmeRef.ts:120-160; media.ts:60-100; factsheet.js:134-195; portcheck.sh:1-45;
+      - OLD and NEW swift README and REFERENCE for B.
+  - [1]
+    slot: reviewer wrong?
+    text: I found no required fix where the reviewer was wrong; each one checked out against the runtime file and line they cited. One refinement: they proposed changing the shared guard to check the whole record. For swift alone that was possible inside its own forms file (Forms.record may return the name and arity it validates), so it is done there. The shared change is still recorded for the other languages.

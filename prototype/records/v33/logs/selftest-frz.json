@@ -1,0 +1,1647 @@
+[
+ {
+  "part": "ledger",
+  "id": "type-cell-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (1/124, 1%)"
+ },
+ {
+  "part": "ledger",
+  "id": "type-cell-any-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (2/124, 2%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-removed-go",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (3/124, 2%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-removed-go-branch",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (4/124, 3%)"
+ },
+ {
+  "part": "ledger",
+  "id": "false-sentence-py",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), unclassified 0 -> 3 (5/124, 4%)"
+ },
+ {
+  "part": "ledger",
+  "id": "false-sentence-added-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (6/124, 5%)"
+ },
+ {
+  "part": "ledger",
+  "id": "optional-required-py",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (7/124, 6%)"
+ },
+ {
+  "part": "ledger",
+  "id": "negation-go",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es), unclassified 0 -> 4 (8/124, 6%)"
+ },
+ {
+  "part": "ledger",
+  "id": "code-comment-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), unclassified 0 -> 3 (9/124, 7%)"
+ },
+ {
+  "part": "ledger",
+  "id": "var-renamed-c",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (10/124, 8%)"
+ },
+ {
+  "part": "ledger",
+  "id": "err-reset-removed-c",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), unclassified 0 -> 1 (11/124, 9%)"
+ },
+ {
+  "part": "ledger",
+  "id": "restructure-py",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (12/124, 10%)"
+ },
+ {
+  "part": "ledger",
+  "id": "number-retries-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (13/124, 10%)"
+ },
+ {
+  "part": "ledger",
+  "id": "number-ms-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (14/124, 11%)"
+ },
+ {
+  "part": "ledger",
+  "id": "op-swap-root-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (15/124, 12%)"
+ },
+ {
+  "part": "ledger",
+  "id": "entity-swap-root-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (16/124, 13%)"
+ },
+ {
+  "part": "ledger",
+  "id": "field-swap-go",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (17/124, 14%)"
+ },
+ {
+  "part": "ledger",
+  "id": "id-literal-c",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (18/124, 15%)"
+ },
+ {
+  "part": "ledger",
+  "id": "global-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (19/124, 15%)"
+ },
+ {
+  "part": "ledger",
+  "id": "row-removed-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es), unclassified 0 -> 4 (20/124, 16%)"
+ },
+ {
+  "part": "ledger",
+  "id": "zig-switch-arm",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (21/124, 17%)"
+ },
+ {
+  "part": "ledger",
+  "id": "clj-block",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es), unclassified 0 -> 4 (22/124, 18%)"
+ },
+ {
+  "part": "ledger",
+  "id": "elixir-block",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (23/124, 19%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-dup-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (24/124, 19%)"
+ },
+ {
+  "part": "ledger",
+  "id": "region-required-ref-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (25/124, 20%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-load-returns-nil",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), unclassified 5 -> 8 (26/124, 21%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-list-reqmatch-required",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es), unclassified 5 -> 9 (27/124, 22%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-match-optional-required",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 5 -> 7 (28/124, 23%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-direct-sentence-dropped",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 5 -> 6 (29/124, 23%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-retries-number",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 5 -> 6 (30/124, 24%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-get-utility-return",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 5 -> 7 (31/124, 25%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-utility-live",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 5 -> 6 (32/124, 26%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-tut-list-hash",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 1 -> 3 (33/124, 27%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-tut-write-record",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 1 -> 3 (34/124, 27%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-region-required",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 5 -> 7 (35/124, 28%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-dataget-nocopy",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 5 -> 7 (36/124, 29%)"
+ },
+ {
+  "part": "recheck",
+  "id": "py-list-sig-required",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es), unclassified 0 -> 4 (37/124, 30%)"
+ },
+ {
+  "part": "recheck",
+  "id": "py-load-returns-none",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), unclassified 0 -> 3 (38/124, 31%)"
+ },
+ {
+  "part": "recheck",
+  "id": "py-tut-dict",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (39/124, 31%)"
+ },
+ {
+  "part": "recheck",
+  "id": "py-dataget-nocopy",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (40/124, 32%)"
+ },
+ {
+  "part": "recheck",
+  "id": "go-list-map",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (41/124, 33%)"
+ },
+ {
+  "part": "recheck",
+  "id": "go-err-nil",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (42/124, 34%)"
+ },
+ {
+  "part": "recheck",
+  "id": "go-stream-dropped",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (43/124, 35%)"
+ },
+ {
+  "part": "recheck",
+  "id": "go-tut-step4-dropped",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (44/124, 35%)"
+ },
+ {
+  "part": "accept",
+  "id": "region-required-ref-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "2 new class(es) left for a person; accepted automatically: none (45/124, 36%)"
+ },
+ {
+  "part": "accept",
+  "id": "ok-true-py",
+  "ok": true,
+  "moved": false,
+  "detail": "5 new class(es) left for a person; accepted automatically: none (46/124, 37%)"
+ },
+ {
+  "part": "accept",
+  "id": "raises-returns-py",
+  "ok": true,
+  "moved": false,
+  "detail": "3 new class(es) left for a person; accepted automatically: none (47/124, 38%)"
+ },
+ {
+  "part": "accept",
+  "id": "negation-go",
+  "ok": true,
+  "moved": false,
+  "detail": "4 new class(es) left for a person; accepted automatically: none (48/124, 39%)"
+ },
+ {
+  "part": "accept",
+  "id": "type-cell-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "2 new class(es) left for a person; accepted automatically: none (49/124, 40%)"
+ },
+ {
+  "part": "accept",
+  "id": "ok-true-rb-new-language",
+  "ok": true,
+  "moved": false,
+  "detail": "4 new class(es) left for a person; accepted automatically: none (50/124, 40%)"
+ },
+ {
+  "part": "accept",
+  "id": "raises-returns-rb-new-language",
+  "ok": true,
+  "moved": false,
+  "detail": "3 new class(es) left for a person; accepted automatically: none (51/124, 41%)"
+ },
+ {
+  "part": "masking",
+  "id": "record-to-item-rb",
+  "ok": true,
+  "moved": false,
+  "detail": "2 new class(es) left for a person; accepted automatically: none (52/124, 42%)"
+ },
+ {
+  "part": "masking",
+  "id": "record-to-planet-rb",
+  "ok": true,
+  "moved": false,
+  "detail": "2 new class(es) left for a person; accepted automatically: none (53/124, 43%)"
+ },
+ {
+  "part": "masking",
+  "id": "record-to-utility-go",
+  "ok": true,
+  "moved": false,
+  "detail": "1 new class(es) left for a person; accepted automatically: none (54/124, 44%)"
+ },
+ {
+  "part": "masking",
+  "id": "reads-its-utility-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "4 new class(es) left for a person; accepted automatically: none (55/124, 44%)"
+ },
+ {
+  "part": "masking",
+  "id": "headers-and-body-py",
+  "ok": true,
+  "moved": false,
+  "detail": "4 new class(es) left for a person; accepted automatically: none (56/124, 45%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-one-variation",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 5 -> 6 (57/124, 46%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 5 -> 5 (58/124, 47%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-table-row",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), 2 printed less often than its reference, 0 new absent sentence(s), unclassified 5 -> 7 (59/124, 48%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-lua",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 21 -> 20 (60/124, 48%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-perl",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 8 -> 8 (61/124, 49%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-swift",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 14 -> 14 (62/124, 50%)"
+ },
+ {
+  "part": "ledger",
+  "id": "type-cell-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 78 -> 80 (63/124, 51%)"
+ },
+ {
+  "part": "ledger",
+  "id": "type-cell-any-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 78 -> 79 (64/124, 52%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-removed-go [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es) (1 printed less often than its reference), unclassified 58 -> 59 (65/124, 52%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-removed-go-branch [scratch]",
+  "ok": true,
+  "moved": true,
+  "detail": "NOT FLAGGED: 0 new open class(es), unclassified 58 -> 58 (66/124, 53%)"
+ },
+ {
+  "part": "ledger",
+  "id": "false-sentence-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 67 -> 70 (67/124, 54%)"
+ },
+ {
+  "part": "ledger",
+  "id": "false-sentence-added-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 113 -> 114 (68/124, 55%)"
+ },
+ {
+  "part": "ledger",
+  "id": "optional-required-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 67 -> 69 (69/124, 56%)"
+ },
+ {
+  "part": "ledger",
+  "id": "negation-go [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 58 -> 61 (70/124, 56%)"
+ },
+ {
+  "part": "ledger",
+  "id": "code-comment-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 47 -> 49 (71/124, 57%)"
+ },
+ {
+  "part": "ledger",
+  "id": "var-renamed-c [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 36 -> 38 (72/124, 58%)"
+ },
+ {
+  "part": "ledger",
+  "id": "err-reset-removed-c [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), unclassified 36 -> 37 (73/124, 59%)"
+ },
+ {
+  "part": "ledger",
+  "id": "restructure-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 67 -> 69 (74/124, 60%)"
+ },
+ {
+  "part": "ledger",
+  "id": "number-retries-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 113 -> 114 (75/124, 60%)"
+ },
+ {
+  "part": "ledger",
+  "id": "number-ms-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 113 -> 114 (76/124, 61%)"
+ },
+ {
+  "part": "ledger",
+  "id": "op-swap-root-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 20 -> 22 (77/124, 62%)"
+ },
+ {
+  "part": "ledger",
+  "id": "entity-swap-root-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 20 -> 21 (78/124, 63%)"
+ },
+ {
+  "part": "ledger",
+  "id": "field-swap-go [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 76 -> 77 (79/124, 64%)"
+ },
+ {
+  "part": "ledger",
+  "id": "id-literal-c [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 36 -> 38 (80/124, 65%)"
+ },
+ {
+  "part": "ledger",
+  "id": "global-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 78 -> 78 (81/124, 65%)"
+ },
+ {
+  "part": "ledger",
+  "id": "row-removed-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es) (1 printed less often than its reference), unclassified 78 -> 82 (82/124, 66%)"
+ },
+ {
+  "part": "ledger",
+  "id": "zig-switch-arm [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 78 -> 80 (83/124, 67%)"
+ },
+ {
+  "part": "ledger",
+  "id": "clj-block [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), unclassified 30 -> 33 (84/124, 68%)"
+ },
+ {
+  "part": "ledger",
+  "id": "elixir-block [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 97 -> 99 (85/124, 69%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-dup-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 113 -> 114 (86/124, 69%)"
+ },
+ {
+  "part": "ledger",
+  "id": "region-required-ref-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 113 -> 115 (87/124, 70%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-load-returns-nil [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 79 -> 82 (88/124, 71%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-list-reqmatch-required [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 79 -> 81 (89/124, 72%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-match-optional-required [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 79 -> 81 (90/124, 73%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-direct-sentence-dropped [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es) (1 printed less often than its reference), unclassified 79 -> 80 (91/124, 73%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-retries-number [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 79 -> 80 (92/124, 74%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-get-utility-return [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 79 -> 81 (93/124, 75%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-utility-live [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 79 -> 80 (94/124, 76%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-tut-list-hash [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 53 -> 54 (95/124, 77%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-tut-write-record [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 53 -> 55 (96/124, 77%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-region-required [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 79 -> 81 (97/124, 78%)"
+ },
+ {
+  "part": "recheck",
+  "id": "rb-dataget-nocopy [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 79 -> 80 (98/124, 79%)"
+ },
+ {
+  "part": "recheck",
+  "id": "py-list-sig-required [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 67 -> 69 (99/124, 80%)"
+ },
+ {
+  "part": "recheck",
+  "id": "py-load-returns-none [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 67 -> 70 (100/124, 81%)"
+ },
+ {
+  "part": "recheck",
+  "id": "py-tut-dict [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 28 -> 29 (101/124, 81%)"
+ },
+ {
+  "part": "recheck",
+  "id": "py-dataget-nocopy [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 67 -> 69 (102/124, 82%)"
+ },
+ {
+  "part": "recheck",
+  "id": "go-list-map [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 58 -> 59 (103/124, 83%)"
+ },
+ {
+  "part": "recheck",
+  "id": "go-err-nil [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 58 -> 59 (104/124, 84%)"
+ },
+ {
+  "part": "recheck",
+  "id": "go-stream-dropped [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 58 -> 59 (105/124, 85%)"
+ },
+ {
+  "part": "recheck",
+  "id": "go-tut-step4-dropped [scratch]",
+  "ok": true,
+  "moved": true,
+  "detail": "NOT FLAGGED: 0 new open class(es), unclassified 76 -> 76 (106/124, 85%)"
+ },
+ {
+  "part": "accept",
+  "id": "region-required-ref-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "2 new class(es) left for a person; accepted automatically: none (107/124, 86%)"
+ },
+ {
+  "part": "accept",
+  "id": "ok-true-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "4 new class(es) left for a person; accepted automatically: none (108/124, 87%)"
+ },
+ {
+  "part": "accept",
+  "id": "raises-returns-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "3 new class(es) left for a person; accepted automatically: none (109/124, 88%)"
+ },
+ {
+  "part": "accept",
+  "id": "negation-go [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "3 new class(es) left for a person; accepted automatically: none (110/124, 89%)"
+ },
+ {
+  "part": "accept",
+  "id": "type-cell-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "2 new class(es) left for a person; accepted automatically: none (111/124, 90%)"
+ },
+ {
+  "part": "accept",
+  "id": "ok-true-rb-new-language [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "3 new class(es) left for a person; accepted automatically: none (112/124, 90%)"
+ },
+ {
+  "part": "accept",
+  "id": "raises-returns-rb-new-language [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "3 new class(es) left for a person; accepted automatically: none (113/124, 91%)"
+ },
+ {
+  "part": "masking",
+  "id": "record-to-item-rb [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "2 new class(es) left for a person; accepted automatically: none (114/124, 92%)"
+ },
+ {
+  "part": "masking",
+  "id": "record-to-planet-rb [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "2 new class(es) left for a person; accepted automatically: none (115/124, 93%)"
+ },
+ {
+  "part": "masking",
+  "id": "record-to-utility-go [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "1 new class(es) left for a person; accepted automatically: none (116/124, 94%)"
+ },
+ {
+  "part": "masking",
+  "id": "reads-its-utility-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "3 new class(es) left for a person; accepted automatically: none (117/124, 94%)"
+ },
+ {
+  "part": "masking",
+  "id": "headers-and-body-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "3 new class(es) left for a person; accepted automatically: none (118/124, 95%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-one-variation [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), 1 printed less often than its reference, 0 new absent sentence(s), unclassified 79 -> 80 (119/124, 96%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 79 -> 79 (120/124, 97%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-table-row [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), 2 printed less often than its reference, 0 new absent sentence(s), unclassified 79 -> 81 (121/124, 98%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-lua [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 133 -> 132 (122/124, 98%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-perl [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 97 -> 96 (123/124, 99%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-swift [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 127 -> 125 (124/124, 100%)"
+ },
+ {
+  "part": "facts",
+  "id": "clojure-entitynoun-fields",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.entityNoun 'Members' -> 'Fields': fact sheet fails, unattested ref.entityNoun (names ref.entityNoun: 2 context(s): held 1, contradicted 0, new 1; 188 units); unmutated: none (1/16)"
+ },
+ {
+  "part": "facts",
+  "id": "clojure-entitynoun-fields [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.entityNoun 'Members' -> 'Fields': fact sheet fails, unattested ref.noun, ref.entityNoun, ref.heading, ref.valueType.OBJECT (names ref.entityNoun: 2 context(s): held 1, contradicted 0, new 1; 188 units); unmutated: ref.noun, ref.heading, ref.valueType.OBJECT (2/16)"
+ },
+ {
+  "part": "facts",
+  "id": "rb-maps-arrays",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.maps 'hashes' -> 'arrays': fact sheet fails, unattested named, ref.maps (names ref.maps: 1 context(s): held 0, contradicted 1, new 0; 19 units; OLD says otherwise in 1); unmutated: named (3/16)"
+ },
+ {
+  "part": "facts",
+  "id": "rb-maps-arrays [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.maps 'hashes' -> 'arrays': fact sheet fails, unattested named, ref.noun, ref.maps (names ref.maps: 1 context(s): held 0, contradicted 1, new 0; 19 units; OLD says otherwise in 1); unmutated: named, ref.noun (4/16)"
+ },
+ {
+  "part": "facts",
+  "id": "clojure-heading-client",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.heading '{module}' -> '{client}': fact sheet fails, unattested ref.heading (names ref.heading: hand/clojure.json decided \"{module}\" (CONTROL ONLY: stands for the porter's reco); unmutated: none (5/16)"
+ },
+ {
+  "part": "facts",
+  "id": "clojure-heading-client [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.heading '{module}' -> '{client}': fact sheet fails, unattested ref.noun, ref.heading, ref.valueType.OBJECT (names ref.heading: 1 context(s): held 0, contradicted 0, new 1; 19 units; OLD has no such sentence); unmutated: ref.noun, ref.heading, ref.valueType.OBJECT (the true value is itself unattested in this mode) (6/16)"
+ },
+ {
+  "part": "facts",
+  "id": "rb-noun-functions",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.noun 'Methods' -> 'Functions': fact sheet fails, unattested named, ref.noun (names ref.noun: hand/rb.json decided \"Methods\" (CONTROL ONLY: stands for the porter's record of ); unmutated: named (7/16)"
+ },
+ {
+  "part": "facts",
+  "id": "rb-noun-functions [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.noun 'Methods' -> 'Functions': fact sheet fails, unattested named, ref.noun (names ref.noun: 2 context(s): held 0, contradicted 0, new 2; 113 units; OLD has no such sentence); unmutated: named, ref.noun (the true value is itself unattested in this mode) (8/16)"
+ },
+ {
+  "part": "facts",
+  "id": "py-keys-bare",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.keys 'member' -> 'bare' (an enumeration): fact sheet fails, unattested ref.noun, ref.keys (names ref.keys: minimal pair against member: 133 prose units and 0 blocks differ; OLD reads as b); unmutated: ref.noun (9/16)"
+ },
+ {
+  "part": "facts",
+  "id": "py-keys-bare [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.keys 'member' -> 'bare' (an enumeration): fact sheet fails, unattested ref.noun, ref.keys (names ref.keys: minimal pair against member: 133 prose units and 0 blocks differ; OLD reads as b); unmutated: ref.noun (10/16)"
+ },
+ {
+  "part": "facts",
+  "id": "perl-prints-record",
+  "ok": true,
+  "moved": false,
+  "detail": "prints 'fields' -> 'record': fact sheet fails, unattested prints, ref.noun (names prints: hand/perl.json decided \"fields\" (control: the true value, recorded so that the u); unmutated: ref.noun (11/16)"
+ },
+ {
+  "part": "facts",
+  "id": "perl-prints-record [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "prints 'fields' -> 'record': fact sheet fails, unattested prints, ref.noun, ref.valueType.OBJECT (names prints: minimal pair against fields, listFields: 0 prose units and 130 blocks differ; OL); unmutated: prints, ref.noun, ref.valueType.OBJECT (the true value is itself unattested in this mode) (12/16)"
+ },
+ {
+  "part": "facts",
+  "id": "ocaml-keys-member",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.keys 'bare' -> 'member' (back to the OLD page's convention): fact sheet fails, unattested ref.noun, ref.keys (names ref.keys: hand/ocaml.json decided \"bare\" (control: the true value, recorded so that the un); unmutated: ref.noun (13/16)"
+ },
+ {
+  "part": "facts",
+  "id": "swift-entityby-name",
+  "ok": true,
+  "moved": false,
+  "detail": "ref.facts.entityBy 'class' -> 'Name' (back to the OLD page's convention): fact sheet fails, unattested ref.entityBy, ref.noun (names ref.entityBy: hand/swift.json decided \"class\" (Decided by hand; the tool marks it ATTESTED by ); unmutated: ref.noun (14/16)"
+ },
+ {
+  "part": "sentences",
+  "id": "shared-records-verdict",
+  "ok": true,
+  "moved": false,
+  "detail": "46 shared matches, each records its reference sentences and how many have no verdict"
+ },
+ {
+  "part": "sentences",
+  "id": "false-never-matched",
+  "ok": true,
+  "moved": false,
+  "detail": "class 2910759209 (shared:elixir:f63c3a660b) with its sentence marked false: left open"
+ },
+ {
+  "part": "regen",
+  "id": "generation-throws",
+  "ok": true,
+  "moved": false,
+  "detail": "exit 1: REGENERATION FAILED (exit 1): the generator threw; new/ holds the pages of an earlier run and nothing is measured"
+ },
+ {
+  "part": "regen",
+  "id": "regeneration-short",
+  "ok": true,
+  "moved": false,
+  "detail": "exit 1: REGENERATION SHORT: 21 variations regenerated, old/ holds 22 (skipped: none); a variation not regenerated keeps an earlier run's pages, so n"
+ },
+ {
+  "part": "calls",
+  "id": "clean:swift",
+  "ok": true,
+  "moved": false,
+  "detail": "0 finding(s) on the unchanged pages"
+ },
+ {
+  "part": "calls",
+  "id": "clean:lua",
+  "ok": true,
+  "moved": false,
+  "detail": "0 finding(s) on the unchanged pages"
+ },
+ {
+  "part": "calls",
+  "id": "clean:ocaml",
+  "ok": true,
+  "moved": false,
+  "detail": "0 finding(s) on the unchanged pages"
+ },
+ {
+  "part": "calls",
+  "id": "clean:perl",
+  "ok": true,
+  "moved": false,
+  "detail": "0 finding(s) on the unchanged pages"
+ },
+ {
+  "part": "calls",
+  "id": "swift-load-one-arg",
+  "ok": true,
+  "moved": false,
+  "detail": "1 finding(s): ARITY - load passes 1 argument(s); the runtime declares 2 (_ reqmatch: VMap?, _ ctrl: VMap?), 2 required"
+ },
+ {
+  "part": "calls",
+  "id": "lua-accessor-dot",
+  "ok": true,
+  "moved": false,
+  "detail": "2 finding(s): RECEIVER - the entity accessor Ambient is made on the client instance; '.' makes it on the module"
+ },
+ {
+  "part": "calls",
+  "id": "lua-ctor-create",
+  "ok": true,
+  "moved": false,
+  "detail": "1 finding(s): RECEIVER - create is declared on the instance; '.' calls it on the module"
+ },
+ {
+  "part": "calls",
+  "id": "ocaml-test-one-arg",
+  "ok": true,
+  "moved": false,
+  "detail": "1 finding(s): ARITY - test_with passes 1 argument(s); the runtime declares 2 (testopts : value, sdkopts : value), 2 requir"
+ },
+ {
+  "part": "calls",
+  "id": "swift-record-asentity",
+  "ok": true,
+  "moved": false,
+  "detail": "1 finding(s): MEMBER - ambient.asEntity(...): the runtime declares no member asEntity"
+ },
+ {
+  "part": "calls",
+  "id": "lua-load-three-args",
+  "ok": true,
+  "moved": false,
+  "detail": "1 finding(s): ARITY - load passes 3 argument(s); the runtime declares 2 (reqmatch, ctrl), 0 required"
+ },
+ {
+  "part": "identity",
+  "id": "template-two-langs",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: ts 010ab525bc \"A failure is reported in the result, not as an err\" | py 010ab525bc \"A failure is reported in the result, not as an err\" | rust 010ab525bc \"A failure is reported in the result, not as an err\""
+ },
+ {
+  "part": "identity",
+  "id": "member-name",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: ts 581898e092 \"Accepts the same parameters as `direct()`.\" | go 581898e092 \"Accepts the same parameters as `Direct()`.\" | c 581898e092 \"Accepts the same parameters as `sdk_direct()`.\""
+ },
+ {
+  "part": "identity",
+  "id": "label-none",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: ts 746a31db3f \"The first argument holds the test feature's option\" | go 746a31db3f \"The first argument holds the test feature's option\" | c 746a31db3f \"The first argument holds the test feature's option\""
+ },
+ {
+  "part": "identity",
+  "id": "article-and-class",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: ts 0071df96c2 \"Create a new `AmbientEntity` instance.\" | c 0071df96c2 \"Create a new `Ambient` instance.\" | elixir 0071df96c2 \"Create a new `Demo.Entity.Ambient` instance.\""
+ },
+ {
+  "part": "identity",
+  "id": "number",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: go b4e03207de \"The program below runs these 2 steps in order.\" | go b4e03207de \"The program below runs these 4 steps in order.\""
+ },
+ {
+  "part": "identity",
+  "id": "comment-fact",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: rust 23dc789f01 \"Load an ambient: Ok is the entity; Err holds the f\" | zig 23dc789f01 \"Load an ambient: .ok is the entity; .err holds the\""
+ },
+ {
+  "part": "identity",
+  "id": "comment-collection",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: py ae972576e9 \"List planet records: a list of entities, one per r\" | clojure ae972576e9 \"List planet records: a vector of entities, one per\""
+ },
+ {
+  "part": "identity",
+  "id": "vec-own-backticks",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: rust bea4cfb8e1 \"The result's `Ok` is a `Vec` of entities, one per \" | zig bea4cfb8e1 \"The result's `.ok` is a slice of entities, one per\""
+ },
+ {
+  "part": "identity",
+  "id": "shared-word-stays",
+  "ok": true,
+  "moved": false,
+  "detail": "different ids expected: ts a32ec5077c \"Resolves to an array of entities, one per record, \" | ts 3006eded11 \"Resolves to an array of entities, one per planet, \""
+ },
+ {
+  "part": "identity",
+  "id": "shared-literal-stays",
+  "ok": true,
+  "moved": false,
+  "detail": "different ids expected: ts 010ab525bc \"A failure is reported in the result, not as an err\" | ts 5ee363d15a \"A failure is reported in the result, not as an err\""
+ },
+ {
+  "part": "identity",
+  "id": "bold-step-lead",
+  "ok": true,
+  "moved": false,
+  "detail": "split into 2: \"**Create a client.**\" | \"The client reads its API key from the `D\""
+ },
+ {
+  "part": "identity",
+  "id": "returns-lead-kept",
+  "ok": true,
+  "moved": false,
+  "detail": "**Returns:** lead kept with its sentence (1 unit)"
+ },
+ {
+  "part": "identity",
+  "id": "model-text-left-out",
+  "ok": true,
+  "moved": false,
+  "detail": "the fixture model's descriptions are model text; a shared sentence is not"
+ },
+ {
+  "part": "identity",
+  "id": "build-current",
+  "ok": true,
+  "moved": false,
+  "detail": "the clone: 1815 sources, 0 stale"
+ },
+ {
+  "part": "identity",
+  "id": "stale-build",
+  "ok": true,
+  "moved": false,
+  "detail": "STALE BUILD: ts/src/helpers/x.ts is 794748665s newer than ts/dist/helpers/x.js"
+ },
+ {
+  "part": "identity",
+  "id": "stale-staged-model",
+  "ok": true,
+  "moved": false,
+  "detail": "STALE BUILD: ts/project/.sdk/model/feature/log.aontu differs from its staged copy ts/dist-test-scaffold/.sdk/model/feature/log.aontu, which generation reads"
+ },
+ {
+  "part": "identity",
+  "id": "stale-hand-record",
+  "ok": true,
+  "moved": false,
+  "detail": "1 stale: bbbbbbbbbb voxgig_branch_on_okay(result)"
+ },
+ {
+  "part": "identity",
+  "id": "old-only-quotation",
+  "ok": true,
+  "moved": false,
+  "detail": "1 stale: cccccccccc (a quotation only OLD holds, unmarked, is stale; marked OLD, it stands)"
+ },
+ {
+  "part": "identity",
+  "id": "rekey-idempotent",
+  "ok": true,
+  "moved": false,
+  "detail": "records keyed by this code: left alone, twice: left alone"
+ },
+ {
+  "part": "identity",
+  "id": "rekey-never-loses",
+  "ok": true,
+  "moved": false,
+  "detail": "clojure: 64 hand entries -> carried 55 (stale before 9, not carried 0, conflicts 0); re-keyed again: nothing to do"
+ },
+ {
+  "part": "purity",
+  "id": "note-names-feature",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names feature \"retry\": 1; Syntax: note names opti"
+ },
+ {
+  "part": "purity",
+  "id": "note-names-option",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names option \"apikey\": 1"
+ },
+ {
+  "part": "purity",
+  "id": "note-names-entity",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names entity \"Planet\": 1; Syntax: note names enti"
+ },
+ {
+  "part": "purity",
+  "id": "note-names-op",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names operation \"load\": 1"
+ },
+ {
+  "part": "purity",
+  "id": "note-model-claim",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note states a number: 1; Syntax: note names option \"se"
+ },
+ {
+  "part": "purity",
+  "id": "hook-concat",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Naming: concatenation onto a generator name: 1"
+ },
+ {
+  "part": "purity",
+  "id": "hook-plural",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Naming: pluralisation: 1"
+ },
+ {
+  "part": "purity",
+  "id": "hook-reserved",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Naming: inline reserved-word test: 1"
+ },
+ {
+  "part": "purity",
+  "id": "printer-op-literal",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: operation name outside the fact table: 1"
+ },
+ {
+  "part": "purity",
+  "id": "printer-desc-condition",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: condition on what the description shows: 1"
+ },
+ {
+  "part": "purity",
+  "id": "printer-model-read",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: model read: 1"
+ },
+ {
+  "part": "purity",
+  "id": "printer-case-change",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: case change on a name: 1"
+ },
+ {
+  "part": "purity",
+  "id": "fact-prose-names-feature",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: fact prose names feature \"cache\": 1; Syntax: fact prose names option \"feature\": 1"
+ },
+ {
+  "part": "purity",
+  "id": "note-number-claim",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note states a number: 1"
+ },
+ {
+  "part": "purity",
+  "id": "printer-desc-alias",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: condition on what the description shows: 1"
+ },
+ {
+  "part": "purity",
+  "id": "printer-desc-bracket",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: condition on what the description shows: 1"
+ },
+ {
+  "part": "purity",
+  "id": "printer-desc-destructure",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: condition on what the description shows: 1"
+ },
+ {
+  "part": "purity",
+  "id": "printer-model-param-kit",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: model read: 1"
+ },
+ {
+  "part": "purity",
+  "id": "hook-reserved-eq",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Naming: inline reserved-word test: 1"
+ },
+ {
+  "part": "purity",
+  "id": "recheck-notes-renamed-const",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: notes declared but no notes region found by the lint: 1"
+ },
+ {
+  "part": "purity",
+  "id": "recheck-note-tail-from-const",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note is not one plain string literal: 1"
+ },
+ {
+  "part": "purity",
+  "id": "recheck-note-in-ref-notes",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: note names feature \"retry\": 1; Syntax: note names option \"apikey\": 1; Syntax: note names option \"feature\": 1"
+ },
+ {
+  "part": "purity",
+  "id": "v32-note-joined-literals",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note is not one plain string literal: 1"
+ },
+ {
+  "part": "purity",
+  "id": "perl-scalar-helper-depluralise",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: name surgery: 1"
+ },
+ {
+  "part": "purity",
+  "id": "go-hook-helper-depluralise",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Naming: name surgery in helper goVarName (go/utility_go.ts): 1"
+ },
+ {
+  "part": "purity",
+  "id": "perl-scalar-helper-slice",
+  "ok": true,
+  "moved": false,
+  "detail": "FLAGGED rc=1 | Syntax: name surgery: 1"
+ },
+ {
+  "part": "purity",
+  "id": "notes:clojure",
+  "ok": true,
+  "moved": false,
+  "detail": "2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 3 accepted"
+ },
+ {
+  "part": "purity",
+  "id": "notes:elixir",
+  "ok": true,
+  "moved": false,
+  "detail": "3 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 2 accepted"
+ },
+ {
+  "part": "purity",
+  "id": "notes:go",
+  "ok": true,
+  "moved": false,
+  "detail": "1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted"
+ },
+ {
+  "part": "purity",
+  "id": "notes:lua",
+  "ok": true,
+  "moved": false,
+  "detail": "2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted"
+ },
+ {
+  "part": "purity",
+  "id": "notes:ocaml",
+  "ok": true,
+  "moved": false,
+  "detail": "2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted"
+ },
+ {
+  "part": "purity",
+  "id": "notes:perl",
+  "ok": true,
+  "moved": false,
+  "detail": "1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted"
+ },
+ {
+  "part": "purity",
+  "id": "notes:rust",
+  "ok": true,
+  "moved": false,
+  "detail": "1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted"
+ },
+ {
+  "part": "purity",
+  "id": "notes:zig",
+  "ok": true,
+  "moved": false,
+  "detail": "2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted"
+ },
+ {
+  "part": "blocks",
+  "id": "ts tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 19, corrected 16, unified 12, otherwise 1, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "ts rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 13, unified 5, otherwise 1, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "ts reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 195, corrected 0, unified 118, otherwise 0, oldOnly 17, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "go tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 12, unified 1, otherwise 8, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "go rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 14, unified 4, otherwise 4, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "go reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 337, corrected 21, unified 18, otherwise 0, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "py tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 26, corrected 22, unified 0, otherwise 0, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "py rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "py reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "c tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 41, unified 0, otherwise 7, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "c rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 2, unified 0, otherwise 17, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "c reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 151, corrected 143, unified 19, otherwise 0, oldOnly 1, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "zig tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 24, corrected 17, unified 0, otherwise 7, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "zig rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 2, unified 15, otherwise 2, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "zig reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 151, corrected 0, unified 162, otherwise 0, oldOnly 1, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "clojure tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 26, corrected 21, unified 0, otherwise 1, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "clojure rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 16, unified 0, otherwise 3, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "clojure reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "rust tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 26, corrected 22, unified 0, otherwise 0, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "rust rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "rust reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "elixir tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 16, corrected 22, unified 10, otherwise 0, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "elixir rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "elixir reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 151, corrected 0, unified 162, otherwise 0, oldOnly 1, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "rb tutorial",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 3, corrected 21, unified 23, otherwise 1, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "rb rootquick",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 0, corrected 2, unified 15, otherwise 2, oldOnly 0, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "rb reference",
+  "ok": true,
+  "moved": false,
+  "detail": " identical 303, corrected 0, unified 10, otherwise 0, oldOnly 1, newOnly 0"
+ },
+ {
+  "part": "blocks",
+  "id": "unexplained-block",
+  "ok": true,
+  "moved": false,
+  "detail": "otherwise 1 -> 2"
+ },
+ {
+  "part": "recall",
+  "id": "stage2-worklists",
+  "ok": true,
+  "moved": false,
+  "detail": "49 of 51 flagged (floor 49)"
+ }
+]

@@ -1,0 +1,504 @@
+{
+ "lang": "perl",
+ "ok": true,
+ "summary": "I ported perl to the shared README tutorial, root quick start and REFERENCE page by following PORTING v3.2. New files: Naming_perl.ts (22 lines), Syntax_perl.ts (191 lines) and the porter's part of ts/test/runtimeforms/perl.ts (+21 lines). The three old components (735 lines) are deleted. No shared source file changed.\n\nWhat I ran and what it gave:\n- `npm run build`: exit 0, and `git status` was clean afterwards.\n- The perl guard: 4/4. runtimefacts plus runtimereader: 65/65.\n- The repository suite without generatedcompile, `--test-concurrency=2`: 2601 tests, 2596 pass, 0 fail, 5 skipped.\n- The golden: only perl's 5 lines changed.\n- The one command: exit 0 with `REGEN=1` and again without it.\n- The `SCRATCH=1` run fails, as it must for a new language, because it ignores hand records.\n- The perl README example lane (`tools/before/run.sh <clone> perl`), on a copy of oldclone and on mine, gave identical results in all three models (default, crud, basic-server). Every run was 7/7 and exited 0. In the default model: README 18 blocks (17 run, 1 illustration), REFERENCE 21/21 run, root 3/3 run.\n\nOn \"both modes\": I read it as with and without `REGEN=1`. If it means `SCRATCH=1` as well, `ok` is false.\n\nInterface: one gap, additive, and I did not change shared code for it. The imports printer cannot tell the tutorial (read from perl/, OLD `use lib 'lib'`) from the root quick start (read from the repository root, OLD `use lib 'perl/lib'`). The provider therefore prints only `use DemoSDK;`, and I recorded the dropped lib lines by hand.\n\nPurity: 0 open, 1 accepted (exampleVarName). 67 facts, 0 without an account, 0 UNATTESTED after one hand-recorded fact. One runtime note, 9 words.\n\nAgainst the hypotheses, for perl:\n- H1 holds. The provider and hook read the model 0 times, and notes are 1.6% of the page's words. Breaking interface changes: 0.\n- H2 holds. 735 lines became 213 (3.45x), or 234 counting the forms additions.\n- H3, as far as I read: every catalogued correction perl shows came from shared code with no perl edit (S49, S50, S25, S13, U34, U45, ref-6, md-cell). I did not re-read the catalogue entries.\n- H4 holds on the lane: the same counts as OLD. Still, no tool compiled the 153 changed blocks of the 21 variations.",
+ "interface_gaps": [
+  {
+   "construct": "The page's imports are one printer, `Syntax.imports(desc, used)`, printed ahead of both the tutorial's client block and the root quick start. perl's import line depends on where the reader runs. OLD tutorial (ReadmeQuick_perl.ts:39 at v32-frozen) printed `use lib 'lib';` and OLD root (ReadmeTopQuick_perl.ts:265) printed `use lib '${target.name}/lib';`. The generator's own comment, Main_perl.ts:68-69, says callers write `use lib '<sdk>/lib'; use <Name>SDK;`. Nothing in `desc`, `used` or `Scope` tells the printer which section it is printing, and the provider may not read the target's directory.",
+   "file_line": "ts/src/helpers/example.ts:431 (imports signature), :497-500 (printStmts calls imports); ts/src/cmp/ReadmeQuick.ts:183 and :240 (quickText and topQuickText each make a Scope with no place)",
+   "smallest_change": "Add an optional `place?: ShowPlace` to Scope. quickText sets 'tutorial' and topQuickText sets 'top', and printStmts passes `sc.place` as a third, optional argument to `imports`. The root path also needs the target's directory: an optional `layout.names` role from the naming hook (`target.name` today; out-of-tree `output.path` targets would need the same). Two shared files (example.ts, ReadmeQuick.ts) plus one optional hook value.",
+   "breaking": false,
+   "providers_forced": "none (optional argument and optional Scope member; every existing provider ignores them)",
+   "made": false,
+   "worked_around": "Not worked around by branching. Syntax_perl.ts:144-147 prints only `use ${desc.layout.module};` in both places, with a comment saying why. OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped, recorded by hand: `dropped` 9b32484fa9, 33526951e8, 336fea9d3b, dc2822fe83, and named in the reason of every block class that also drops them. The first version printed `use lib 'lib'` in both places, which made the root README contradict its own `perl/lib` test block. I removed it as false. Cost: tutorial client blocks byte-identical to OLD went from 3 to 0."
+  }
+ ],
+ "shared_files_touched": [
+  "none of ts/src, ts/project other than perl's own directory, or the shared guard files",
+  "ts/test/golden/add-output.txt: perl's 5 lines only (golden commit 70f0be92)"
+ ],
+ "not_done": [
+  "Did not compile or run the 153 changed perl blocks of the 21 review variations (48 tutorial, 19 rootquick, 86 reference). Only the lane's own three models were executed, by the generated SDK's own README test. I did not write a `perl -c` loop over out/new.",
+  "Did not run the ts/js/go/py/rb lanes or any generatedcompile lane. No shared source changed, and the out/new diff shows no other language's page changed.",
+  "Wrote no perl normalizers (normalizers/perl.js). Every changed block is explained by a hand record, so 'corrected/unified' stay 6/0/0 and 'otherwise' is 42/19/86.",
+  "Did not open each catalogue entry (S13, S25, S49, S50, U34, U45, ref-6) in docs/design/model-dependent-text-issues.md. I reused the ids the reference languages' hand records give for the same classes.",
+  "Did not correct the reader rows I think are wrong (client TO_JSON on 'module'; optionality of $reqdata and $action). Those members are undocumented, or the page states no optionality for perl.",
+  "Did not measure per-step times (see time).",
+  "STRICT_SENTENCES=1 not run: all 66 shared matches are against sentences nobody has reviewed yet."
+ ],
+ "commits": [
+  "clone 2b8a241a perl: README tutorial, root quick start and REFERENCE through the shared page \u2014 adds ts/project/.sdk/src/cmp/perl/Naming_perl.ts and Syntax_perl.ts, modifies ts/test/runtimeforms/perl.ts, deletes ReadmeQuick_perl.ts, ReadmeRef_perl.ts and ReadmeTopQuick_perl.ts (staged by explicit path, git add -u for the deletions)",
+  "clone 70f0be92 Golden: perl's README components are its naming hook and syntax provider \u2014 ts/test/golden/add-output.txt (+2 -3, perl lines only)",
+  "clone: no build commit; `npm run build` exit 0, then `git status --short` empty (no ts/dist change)",
+  "tools 32529fe perl: hand classifications, normalizer counts and the accepted purity finding \u2014 hand/perl.json, counts/perl.json, purity-allow/perl.json, classes/perl.json",
+  "tools 61f5ba6 perl: the make sentence's count, read by hand \u2014 hand/perl.json",
+  "tools 8fc4f46 perl: classes after the final regeneration \u2014 classes/perl.json; then `git -C tools status --short` empty"
+ ],
+ "portcheck": "cd P/ports/perl && REGEN=1 tools/portcheck.sh sdkgen out perl  -> exit 0\n== portcheck perl ==\nsection    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions\ntutorial                   61 |      42     20        0      18       4     0       0 | 0\nrootquick                  19 |       3      0        0       3       0     0       0 | 0\nreference               14910 |     114     46        0      50      17     0       0 | 1\nsection    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH\ntutorial                   0         6       0        42 |      21    0      0 | yes (perl); 48 changed blocks compiled by nothing\nrootquick                  0         0       0        19 |      27    0      0 | yes (perl); 19 changed blocks compiled by nothing\nreference                227         0       0        86 |       7    0      0 | yes (perl); 86 changed blocks compiled by nothing\n  classes = \"otherwise\" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 9, novel-token 8, vanished-token 4; rootquick: changed 11, novel-token 6, vanished-token 8, novel-shape 2; reference: changed 5, old-only 1, novel-token 1)\n  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models\ncontradictions (1; counted, not failed):\n  reference [91baf1b4b6] This SDK is generated without the `test` feature, so it has no mock tr | other: perl/README.md:219 (no-test): 'Creates a test-mode client wi | true: REFERENCE: without the test feature its \npurity: 0 open, 1 accepted | notes declared 1, note regions found 1\nguard: pass (pass 4 fail 0 )\nfacts (language and convention, against the OLD page): attested 7, recorded by hand 1, UNATTESTED 0, not printed 0, not judged 1; cited 16, pinned prose 7 (the reviewer audits each)\nshared sentences: matched 66, of which against a sentence nobody reviewed 66 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 0 (0 explained; listed in <section>.absent.json, not failed)\nfact sheet: factsheet perl: 67 facts, 0 with no account, 0 unattested, guard report read: .../tools/review/perl/facts.txt (audit every fact a shared sentence carries)\nPORTCHECK perl: PASS\n(also without REGEN, after the same build: exit 0, PORTCHECK perl: PASS)",
+ "scratch": "SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out perl -> exit 1 (FAIL, expected: hand records ignored).\n\nLedger:\n- tutorial: same 61, classes 42, shared 20, OPEN 22, defect 0\n- rootquick: same 19, classes 3, shared 0, OPEN 3\n- reference: same 14910, classes 114, shared 46, OPEN 68, defect 0\n\nBlocks (identical / corrected / unified / otherwise, then OPEN):\n- tutorial: 0/6/0/42, OPEN 21\n- rootquick: 0/0/0/19, OPEN 27\n- reference: 227/0/0/86, OPEN 7\n\nOther checks:\n- Purity: 0 open, 1 accepted.\n- Guard: pass 4.\n- Facts: attested 7, UNATTESTED 1 (ref.valueType.OBJECT = hashref: 5 contexts, held 1, contradicted 3, new 1); not judged 1 (prints = fields).\n- Shared sentences: matched 66, all against unreviewed sentences. 1 is printed less often than its reference (d5b8571b7f, the make sentence, against c). That is a ledger split, not a drop: 94 make sentences over the 21 variations and 7 in B, as c prints.\n\nThe very first SCRATCH=1 run, before any hand record, gave the same ledger OPEN counts (22/3/68) and blocks OPEN 24/26/7, with purity 4 open (3 note-lint hits on the word \"record\", 1 exampleVarName).",
+ "table_rows_wrong": [
+  {
+   "row": "client member TO_JSON: on = module",
+   "file_line": "src/cmp/perl/fragment/Main.fragment.pm:122-124 (`sub TO_JSON { return { 'name' => 'ProjectName' }; }`, no `my (...) = @_`), :128 (`$self->TO_JSON`)",
+   "runtime_shows": "It is invoked as an instance method (`$self->TO_JSON`) and by JSON::PP convert_blessed on the object. The forms `on()` returns 'module' only because the body has no `my ($self)` line.",
+   "forms_change": "none: the member is undocumented (forms.undocumented), so no page fact rests on the row"
+  },
+  {
+   "row": "create/update/patch: $reqdata [optional]",
+   "file_line": "src/cmp/perl/fragment/EntityCreateOp.fragment.pm:5-6 (`reqdata: body data hashref (...). ctrl: optional per-call control.`); same in EntityUpdateOp and EntityPatchOp :5-6",
+   "runtime_shows": "Perl checks no arity, so the reader's `optional: () => true` is literally true. But the runtime's own comment calls only ctrl optional, and a create with no data posts nothing useful.",
+   "forms_change": "none: the perl page prints no optionality marker, and the forms' optional() sees only the parameter text"
+  },
+  {
+   "row": "entity stream: $action [optional]",
+   "file_line": "src/cmp/perl/fragment/Entity.fragment.pm:150,160 (`'opname' => $action`)",
+   "runtime_shows": "$action names the operation to run; without it the pipeline has no operation",
+   "forms_change": "none (same reason)"
+  },
+  {
+   "row": "missing: what a streamed item is",
+   "file_line": "src/cmp/perl/fragment/Entity.fragment.pm:141 ('# An entity is yielded as its record, the hashref its data_get returns.'), :179-188 (unwrap via data_get)",
+   "runtime_shows": "stream yields records (hashrefs), not entities, unlike the operations",
+   "forms_change": "cited as the runtime note member:streamFunction (forms cite 'notes.member:streamFunction')"
+  },
+  {
+   "row": "missing: copy on options_map and match_get",
+   "file_line": "Main.fragment.pm:105 (`Voxgig::Struct::clone($self->{options})`); Entity.fragment.pm:103 (data_get clone), :119 (match_get clone)",
+   "runtime_shows": "options_map, data_get and match_get all return clones",
+   "forms_change": "cited copy: true for client[0] (options) and entity[0] (dataGet). Not declared for matchGet, because no shared sentence states it."
+  },
+  {
+   "row": "Section 9 of PORTING.md, perl row: 'direct's ok is 0 or 1'; cited okFalse 0",
+   "file_line": "Main.fragment.pm:226,245,260,264,310 ('ok' => 0), :300 (`? 1 : 0`)",
+   "runtime_shows": "confirmed correct",
+   "forms_change": "none"
+  }
+ ],
+ "facts": [
+  {
+   "path": "facts.method.{list,load,create,update,patch,remove}",
+   "value": "list, load, create, update, patch, remove",
+   "account": "derived",
+   "evidence": "guard re-derives from Entity*Op.fragment.pm `sub <op> {`"
+  },
+  {
+   "path": "facts.named",
+   "value": "call",
+   "account": "convention, ATTESTED",
+   "evidence": "OLD tutorial '`list()` returns ...', '`load()` returns ...'"
+  },
+  {
+   "path": "facts.async",
+   "value": "false",
+   "account": "derived",
+   "evidence": "guard"
+  },
+  {
+   "path": "facts.result",
+   "value": "die",
+   "account": "derived",
+   "evidence": "guard: style.raises /\\bdie\\b/ over the runtime"
+  },
+  {
+   "path": "facts.collection",
+   "value": "`arrayref`",
+   "account": "cited",
+   "evidence": "EntityListOp.fragment.pm:8 '# Returns the matching EntityName items as an arrayref of entities, one per'"
+  },
+  {
+   "path": "facts.record",
+   "value": "${var}->data_get",
+   "account": "derived",
+   "evidence": "guard: data_get is an entity member with 0 params; the printer prints it"
+  },
+  {
+   "path": "facts.recordType",
+   "value": "hashref",
+   "account": "cited",
+   "evidence": "Entity.fragment.pm:99 '# Returns the current EntityName data (hashref).'"
+  },
+  {
+   "path": "facts.prints",
+   "value": "fields",
+   "account": "convention, 'not judged' (no reference language declares it)",
+   "evidence": "chosen as PORTING \u00a79 says. OLD printed ->{id} alone; NEW prints the shared show fields (id, then the first string field), which corrects OLD printing ->{id} on entities with no id field (ambient). I read the classes this selects: 3cd8281249, a3d3e18a58, d2255de953, 31a80d54a8, and the block classes."
+  },
+  {
+   "path": "ref.facts.entityBy",
+   "value": "class",
+   "account": "convention, ATTESTED",
+   "evidence": "OLD op signatures `load($reqmatch, $ctrl) -> PlanetEntity`"
+  },
+  {
+   "path": "ref.facts.noun",
+   "value": "Methods",
+   "account": "convention, ATTESTED",
+   "evidence": "OLD '### Instance Methods', '### Common Methods'"
+  },
+  {
+   "path": "ref.facts.none",
+   "value": "undef",
+   "account": "cited",
+   "evidence": "Entity.fragment.pm:237 'return undef unless @items;'"
+  },
+  {
+   "path": "ref.facts.keys",
+   "value": "member",
+   "account": "convention, ATTESTED",
+   "evidence": "OLD '| `$options->{apikey}` | `string` |'"
+  },
+  {
+   "path": "ref.facts.maps",
+   "value": "hashrefs",
+   "account": "language, ATTESTED",
+   "evidence": "OLD 'Request body (hashrefs are JSON-serialized).'"
+  },
+  {
+   "path": "ref.facts.container",
+   "value": "hashref",
+   "account": "cited with an unquoted excuse",
+   "evidence": "Main.fragment.pm:33 '$options = {} unless defined $options;'. unquoted hashref: 'a `{}` literal is a hash reference; the runtime never names the type' (the guard reports the token in 11 runtime files)"
+  },
+  {
+   "path": "ref.facts.valueType.STRING / OBJECT / ANY",
+   "value": "string / hashref / any",
+   "account": "convention: STRING and ANY ATTESTED; OBJECT decided by hand",
+   "evidence": "Hand record: OLD wrote `hashref` for every map option and fetcharg and for data_get's return. The 'contradicted' contexts are the new tutorial record clause '(a `hashref`)', which OLD did not have."
+  },
+  {
+   "path": "ref.facts.ctor[0]",
+   "value": "use lib 'lib';",
+   "account": "cited (weak: word tokens only)",
+   "evidence": "src/cmp/perl/Main_perl.ts:69 \"// callers write `use lib '<sdk>/lib'; use <Name>SDK;`.\" The quote shows `<sdk>/lib`, not `lib`; the check passes on the words use and lib."
+  },
+  {
+   "path": "ref.facts.ctor[1]",
+   "value": "use {module};",
+   "account": "cited",
+   "evidence": "tm/perl/t/feature.t:19 'use ProjectNameSDK;'"
+  },
+  {
+   "path": "ref.facts.ctor[2]",
+   "value": "(blank)",
+   "account": "convention (empty)",
+   "evidence": "-"
+  },
+  {
+   "path": "ref.facts.ctor[3]",
+   "value": "my $client = {ctor}($options);",
+   "account": "derived",
+   "evidence": "guard callOf: new($options) on the type (Main.fragment.pm:31-32)"
+  },
+  {
+   "path": "ref.facts.test[0]",
+   "value": "sig {client}->test($testopts, $sdkopts); call my $client = {client}->test(); args true",
+   "account": "derived",
+   "evidence": "Main.fragment.pm:364-365 `sub test { my ($class, $testopts, $sdkopts) = @_;`, on the type"
+  },
+  {
+   "path": "ref.facts.accessor",
+   "value": "sig {accessor}($data), arg entopts, param data",
+   "account": "derived",
+   "evidence": "MainEntity_perl.ts:21-24 `sub ${entity.Name} { my ($self, $data) = @_; ... ${cls}->new($self, $data)`; Entity.fragment.pm:17-18 `new { my ($class, $client, $entopts)`"
+  },
+  {
+   "path": "ref.facts.op.*",
+   "value": "list($reqmatch, $ctrl) -> arrayref; load/create/update/patch/remove(...) -> {Class}",
+   "account": "derived (returns uncompared: perl declares none)",
+   "evidence": "guard: 15 returns uncompared"
+  },
+  {
+   "path": "ref.facts.client[0..3] (kind, sig)",
+   "value": "options_map() -> hashref; get_utility() -> utility; direct($fetchargs) -> hashref; prepare($fetchargs) -> hashref",
+   "account": "derived (client[1].kind cited)",
+   "evidence": "guard; client[1].kind 'utility' pinned to Main.fragment.pm:111 'return ProjectNameUtility->copy($self->{_utility});'"
+  },
+  {
+   "path": "ref.facts.client[0].copy",
+   "value": "true",
+   "account": "cited, pinned prose",
+   "evidence": "Main.fragment.pm:105 'my $out = Voxgig::Struct::clone($self->{options});'"
+  },
+  {
+   "path": "ref.facts.entity[0..6] (kind, sig)",
+   "value": "data_get() -> hashref; data_set($data); match_get() -> hashref; match_set($match); make() -> {Class}; stream($action, $args, $callopts) -> coderef [streamFunction, runs call]; get_name() -> string",
+   "account": "derived; renames args -> data and match with namesWhy",
+   "evidence": "guard; the runtime parameter is $args (Entity.fragment.pm:91,107)"
+  },
+  {
+   "path": "ref.facts.entity[5].runs",
+   "value": "call",
+   "account": "derived",
+   "evidence": "stream quote positions: _run_op at Entity.fragment.pm:177 before `return sub` at :202/:235"
+  },
+  {
+   "path": "ref.facts.entity[0].copy",
+   "value": "true",
+   "account": "cited, pinned prose",
+   "evidence": "Entity.fragment.pm:103 'return Voxgig::Struct::clone($self->{_data});'"
+  },
+  {
+   "path": "ref.facts.direct.returns",
+   "value": "hashref",
+   "account": "cited with an unquoted excuse",
+   "evidence": "Main.fragment.pm:240-241 'it always returns a result hash ... ({ ok => ..., ... }) and never dies.' unquoted hashref: 'the result is a hash reference literal'"
+  },
+  {
+   "path": "ref.facts.direct.okFalse",
+   "value": "0",
+   "account": "cited (ahead, in the frozen forms)",
+   "evidence": "Main.fragment.pm:245 \"'ok' => 0,\""
+  },
+  {
+   "path": "ref.facts.prepare.returns",
+   "value": "hashref",
+   "account": "cited",
+   "evidence": "Main.fragment.pm:194 '# return just the fetchdef hashref (dying on error) so callers -'"
+  },
+  {
+   "path": "ref.facts.prepare.fails",
+   "value": "style",
+   "account": "cited, pinned prose",
+   "evidence": "Main.fragment.pm:198 'die $fd_err if $fd_err;'"
+  },
+  {
+   "path": "ref.facts.body.values",
+   "value": "a byte string, a character string, sent as UTF-8, or a filehandle",
+   "account": "cited, pinned prose",
+   "evidence": "tm/perl/utility/media.pm:95 '# A string of bytes, a character string (sent as UTF-8), or a filehandle. A'"
+  },
+  {
+   "path": "ref.facts.body.once",
+   "value": "a filehandle",
+   "account": "cited, pinned prose",
+   "evidence": "tm/perl/utility/media.pm:96 '# filehandle can be read once, so it is read here, before the first attempt,'"
+  },
+  {
+   "path": "ref.facts.cancel",
+   "value": "false",
+   "account": "cited absence",
+   "evidence": "pattern /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|alarm\\b/i over tm/perl/utility/fetcher.pm finds nothing"
+  },
+  {
+   "path": "notes.member:streamFunction",
+   "value": "Each item is the hashref `data_get` returns, not an entity.",
+   "account": "cited, pinned prose",
+   "evidence": "Entity.fragment.pm:141 '# An entity is yielded as its record, the hashref its data_get returns.'"
+  }
+ ],
+ "notes": [
+  {
+   "slot": "member:streamFunction",
+   "text": "Each item is the hashref `data_get` returns, not an entity.",
+   "claims": "(1) A streamed item is a hashref, the one data_get returns: Entity.fragment.pm:141 comment and :184-185 (`return $item->data_get if Scalar::Util::blessed($item) && $item->can('data_get')`). (2) It is not an entity: the same unwrap, :179-188, also recursing into chunk arrays. The fallback path (:231-234) maps every materialised item through the same unwrap. The first wording, 'Each item is a record, ...', was flagged by the note lint because the B model has an entity named `record`. I reworded it rather than accepting the finding."
+  }
+ ],
+ "hand_decisions": [
+  {
+   "id": "9b32484fa9 / 33526951e8 / 336fea9d3b / dc2822fe83",
+   "kind": "tutorial and root blocks",
+   "outcome": "dropped",
+   "why": "`use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped: one imports printer serves both places and cannot tell them apart (the interface gap)"
+  },
+  {
+   "id": "316d79799f, 0860511808, 0aaaeb0644, c891952d31, d0885cc8ba, ...",
+   "kind": "client and root blocks",
+   "outcome": "correction:S49 / correction:S50",
+   "why": "the client passes the server variables (and the Basic secret); each reason also names the lib-line drop, the shared root comments, and the display fields where present"
+  },
+  {
+   "id": "3cd8281249, a3d3e18a58, d2255de953, 31a80d54a8",
+   "kind": "blocks",
+   "outcome": "correction:display-field",
+   "why": "prints: 'fields' prints the shared show fields. OLD printed ->{id} even for ambient, which has no id field (fields flow, temperature)."
+  },
+  {
+   "id": "6e67cfc901, a2103afb97",
+   "kind": "blocks",
+   "outcome": "unification:noarg-parens",
+   "why": "no-argument calls are written with () everywhere; OLD wrote list bare and load()"
+  },
+  {
+   "id": "24d40b660d, 5a083e16cc, bafc700723, 6a8837b248",
+   "kind": "reference list blocks",
+   "outcome": "unification:ref-list-example",
+   "why": "the shared generic names results and item, plus the show fields"
+  },
+  {
+   "id": "8d4be337ab, 2166870af9, 1a12a51546",
+   "kind": "reference blocks (ref-issues)",
+   "outcome": "correction:S25",
+   "why": "a pairing shift after Planet's inactive remove was dropped. All five instance blocks are printed (NEW REFERENCE.md:122,193,321,386,452)."
+  },
+  {
+   "id": "94e4e0cb3d, 861a2bfee4, 6d946df107, d5b8571b7f, b2f8d161db, e98e84c0ec",
+   "kind": "reference headings and make",
+   "outcome": "correction:entity-class",
+   "why": "the page names the entity's package (entityClassName, MainEntity_perl.ts:17,24). make passes the same client and a copy of the options (Entity.fragment.pm:68-72). The make sentence is printed 94 times, once per entity."
+  },
+  {
+   "id": "91baf1b4b6",
+   "kind": "echo",
+   "outcome": "contradiction",
+   "why": "no-test: README:219 says the test client has a mock transport; true: the REFERENCE (S13)"
+  },
+  {
+   "id": "bbff8b945e",
+   "kind": "echo",
+   "outcome": "same-meaning",
+   "why": "README types `ok` as boolean 'True if 2xx'; the runtime writes 1/0 (Main.fragment.pm:300), Perl's truth values"
+  },
+  {
+   "id": "fef381b2a3, fd48acdf84, 057b5775f7, 07b6a683db, 7a9d5874ad, 122961dd71",
+   "kind": "reference added",
+   "outcome": "restored:fact",
+   "why": "stream is a public member OLD perl never documented (Entity.fragment.pm:149, coderef at :202,:235)"
+  },
+  {
+   "id": "846928d1e5",
+   "kind": "reference added",
+   "outcome": "restored:note",
+   "why": "the stream note"
+  },
+  {
+   "id": "2f38082332, ac1eac6be0",
+   "kind": "reference missing",
+   "outcome": "correction:S13",
+   "why": "log is active by default (model/feature/log.aontu); OLD's 'Inactive by default' was false"
+  },
+  {
+   "id": "d5ceec6bd5, 9b3a3864f9, 9833a073af",
+   "kind": "reference missing",
+   "outcome": "correction:S25",
+   "why": "ref-issues: inactive remove no longer documented"
+  },
+  {
+   "id": "1d5f2874ab",
+   "kind": "reference missing",
+   "outcome": "unification:test-client-heading",
+   "why": "'Static Methods' became the shared 'Test client' heading"
+  },
+  {
+   "id": "035bdeb70d, 92e45cf378, dac11a1691",
+   "kind": "reference",
+   "outcome": "correction:md-cell",
+   "why": "the field description's pipe is escaped; OLD's cell was split"
+  },
+  {
+   "id": "fact ref.valueType.OBJECT",
+   "kind": "fact",
+   "outcome": "recorded by hand: hashref",
+   "why": "OLD wrote hashref for every map option and fetcharg and for data_get's return"
+  },
+  {
+   "id": "(all)",
+   "kind": "count",
+   "outcome": "148 decisions",
+   "why": "Full set with reasons in P/ports/perl/tools/hand/perl.json, generated by P/ports/perl/my/hand.py. Ledger by hand: tutorial 18, rootquick 3, reference 50."
+  }
+ ],
+ "review_counts": [
+  {
+   "section": "tutorial",
+   "same": "61",
+   "shared_matched": "20",
+   "matched_unreviewed": "20",
+   "by_hand": "18",
+   "missing": "4 classes (old load sentence x10, create comment x4, patch comment x3: restored:shared; '4. Create, update, and remove' in ref-issues: correction:U45)",
+   "contradictions": "0",
+   "blocks": "identical 0, corrected 6 (write-comment-style 5, trailing-blank 1), unified 0, otherwise 42; 48 changed blocks compiled by nothing in these variations"
+  },
+  {
+   "section": "rootquick",
+   "same": "19",
+   "shared_matched": "0",
+   "matched_unreviewed": "0",
+   "by_hand": "3",
+   "missing": "0",
+   "contradictions": "0",
+   "blocks": "identical 0, corrected 0, unified 0, otherwise 19; 19 compiled by nothing in these variations"
+  },
+  {
+   "section": "reference",
+   "same": "14910",
+   "shared_matched": "46",
+   "matched_unreviewed": "46",
+   "by_hand": "50",
+   "missing": "17 classes (restored as shared sentences, or corrections S25/S13/md-cell/entity-class, each with a reason in hand/perl.json)",
+   "contradictions": "1 (91baf1b4b6, no-test: README:219 says mock transport; true: REFERENCE)",
+   "blocks": "identical 227, corrected 0, unified 0, otherwise 86; 1 OLD-only (pairing shift in ref-issues); 86 compiled by nothing in these variations"
+  }
+ ],
+ "guide_problems": [
+  {
+   "section": "2 / 13 (Imports are a fact of the page)",
+   "problem": "The guide says imports print once ahead of the tutorial and the root quick start. It does not say that the printer cannot tell which of the two it is in, so a language whose import depends on where the reader runs (perl's `use lib`) cannot express both. Not listed among known limits."
+  },
+  {
+   "section": "6 (cited) and account DEFAULTS ref.facts.ctor[i]",
+   "problem": "Every constructor line must be derived or cited, but a non-call line such as `use lib 'lib';` has no exact runtime spelling. The only quote is a comment saying `<sdk>/lib`, which passes on word tokens. The guide gives no rule for import lines in `ctor`."
+  },
+  {
+   "section": "5 (blocks, record-counts)",
+   "problem": "Before `--record-counts`, the one command showed blocks OPEN 1 in tutorial with no line naming the cause (a changed normalizer count). Only the README's table says 'and a changed normalizer count'. The screen should say it."
+  },
+  {
+   "section": "9 (perl row: prints: 'fields')",
+   "problem": "It does not say that 'fields' changes every print block from OLD's `->{id}` to id plus a display field (sdkdesc showFields). It also does not say that, with no perl normalizer and no reference language using 'fields', the fact is 'not judged' and every such block is a hand class."
+  },
+  {
+   "section": "3 step 1 / 4",
+   "problem": "It does not say whether reader rows for undocumented members (client TO_JSON on 'module') should be corrected in the forms, or only reported."
+  },
+  {
+   "section": "9 (run command on oldclone)",
+   "problem": "'P/base32/oldclone is read-only: the guide's command works on a copy' is ambiguous: tools/before/run.sh reads the clone's dist-test and chdirs into its scaffold. I used a full copy (P/ports/perl/oldcopy) to be safe."
+  },
+  {
+   "section": "task text vs section 5",
+   "problem": "The task's `ok` says the one command must pass 'in both modes'. SCRATCH=1 cannot pass for any newly ported language, because it ignores hand records by design. I read 'both modes' as with and without REGEN=1."
+  },
+  {
+   "section": "8 (note lint)",
+   "problem": "The note lint flags ordinary English words that happen to be entity names in the fixtures ('record'). The guide allows accepting it with a reason; rewording was simpler and is what I did."
+  }
+ ],
+ "old_vs_new": "Counted by the tools (ledger units, all 21 variations):\n- tutorial: OLD 130 units, NEW 187 (same 61, reworded 51, missing 18, added 75)\n- reference: same 14910, reworded 566, missing 404, added 1386\n- rootquick: same 19\nEvery missing and added class is decided in hand/perl.json.\n\nWhat OLD said that NEW does not, as I decided it:\n- `use lib 'lib'` in the tutorial and `use lib 'perl/lib'` in the root quick start: dropped, the interface gap.\n- The REFERENCE heading 'Static Methods': now 'Test client'.\n- The root comments' 'data_get reads its record': the tutorial and REFERENCE still state it.\n- The OLD wording 'Returns the `fetchdef`': now 'the fetch definition'.\n- 'Inactive by default: leaving it out costs nothing at runtime' under log: false, S13.\n- ref-issues' inactive Planet.remove: S25.\n- 'Pass `undef` for no initial data': now 'Its `data` argument holds the entity options: pass `undef` for none'. The runtime passes it as $entopts (MainEntity_perl.ts:24, Entity.fragment.pm:18), so OLD's 'data' was wrong.\n- `'GET'` quoted: now `GET`.\n- OLD's 'This escape hatch never dies': now the shared 'A failed request is reported in the result, not as an error'.\n\nWhat NEW says that OLD did not:\n- The server option rows and the client's server variables (S49).\n- The secret option (S50).\n- The fetchargs ctrl row with the explain example.\n- The stream member, its runs sentence and the note that items are hashrefs.\n- The record type '(a `hashref`)'.\n- The test client 'in test mode ... no mock transport' when the test feature is absent.\n- 'Returns a copy of the current data.' on data_get.\n- 'with the same client and options' on make.\n- The Actions table's Call cell with the path parameter.\n- The display field printed beside the id.\n- 'The data must include the entity id, `id`.'\n\nOne contradiction is counted: the no-test README test line.",
+ "lines": "From `git diff --numstat v32-frozen..HEAD` in the clone:\n- Deleted: ReadmeQuick_perl.ts 224, ReadmeRef_perl.ts 420, ReadmeTopQuick_perl.ts 91 (735 in all).\n- Added: Syntax_perl.ts 191, Naming_perl.ts 22, ts/test/runtimeforms/perl.ts +21 (94 lines in all by `wc -l`; 73 at v32-frozen).\n- Golden: +2 -3.\n\n735 lines became 213 for provider and hook (3.45x), or 234 with the forms additions (3.14x). `wc -l`: Syntax_perl.ts 191, Naming_perl.ts 22, perl.ts 94.",
+ "prose": "`node tools/sharewords.js --clone sdkgen --root out/new --lang perl` (21 variations), words outside code spans:\n\n| section | words | shared sentence | printed by perl alone | notes | provider literals |\n| --- | --- | --- | --- | --- | --- |\n| tutorial | 1553 | 1166 (75.1%) | 387 (24.9%) | 0 | 0 |\n| rootquick | 238 | 19 (8.0%) | 219 (92.0%) | 0 | 0 |\n| reference | 52584 | 47517 (90.4%) | 4221 (8.0%) | 846 (1.6%) | 978 (1.9%; facts 132: ref.noun 113, ref.maps 19) |\n| ALL | 54375 | | 4827 (8.9%) | 846 (1.6%) | 978 (1.8%) |\n\nAt the source: perl notes 9 words, fact-table prose literals 21, other prose literals 0.\n\nThe 'perl alone' units are shared sentences and comments carrying perl's tokens (arrayref, hashref, `$x->data_get`, the root step comments), not prose the provider wrote.",
+ "other_languages_unchanged": "- `diff -r -x perl -x README.md P/ports/perl/out/new P/base32/out/new` printed nothing: no other language's file and no other language's directory changed.\n- Root README.md: a python check that blanks every ```perl fenced block and diffs the rest against P/base32/out/new found 0 changed lines outside perl blocks, over all 21 variations. Raw diff lines per variation are 0 to 16, all inside perl blocks.",
+ "purity": "`node tools/purity.js` via portcheck: 0 open, 1 accepted.\n\nAccepted: Naming, 'naming function no non-README component calls: exampleVarName'. Reason in purity-allow/perl.json: it adapts the shared example names to Perl identifiers and suffixes `client`; the perl code generator names no example variables.\n\nNotes declared 1, regions found 1.\n\nNot flagged by the tool, so I declare it myself: Syntax_perl.ts `const scalar = (name) => '$' + name` adds Perl's scalar sigil to description names (Ref.name, sym.var, and the 'options'/'fetchargs' container word). It is used by name(), ref.key, ref.instance and ref.read. I count it as syntax (how Perl writes a variable), not a naming rule. A reviewer may read it as concatenation on a description name.\n\nThe attempt printer (Syntax_perl.ts, attempt) shapes its output on the statement: a body opening with a bound call becomes OLD's `my $x = eval { call }; if (my $err = $@) {...} else {...}`. That is a pure function of the statement; it reads no model and tests no operation name.",
+ "unverified": "- No tool compiled the 153 changed perl blocks of the 21 review variations; only the lane's three models ran.\n- The ctor[0] citation shows `use lib '<sdk>/lib'`, not `use lib 'lib'` (passes on word tokens).\n- The 7 pinned-prose citations rest on my reading: client[0].copy, client[1].kind, entity[0].copy, prepare.fails, body.values, body.once, and the stream note.\n- The catalogue ids used in hand reasons (S13, S25, S49, S50, U34, U45, ref-6) are taken from the reference languages' hand records for the same classes; I did not re-read the catalogue entries.",
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "holds for perl",
+   "evidence": "Ran:\n- purity: 0 open; Syntax_perl.ts has no model read, no operation literal outside the fact tables, and no condition on what the description shows.\n- sharewords: notes 846 of 54375 words (1.6%); provider literals 978 (1.8%).\nRead:\n- Interface changes: 0 breaking; 1 additive gap (imports place), not made.\n- The 'perl alone' share (tutorial 24.9%, rootquick 92%) is shared sentences carrying perl fact tokens, not provider prose.\n- One printer choice (the sigil concatenation) is declared openly in purity."
+  },
+  {
+   "id": "H2",
+   "verdict": "holds for perl",
+   "evidence": "git diff --numstat v32-frozen..HEAD: the 735 lines of the three components became 213 for provider and hook (3.45x), 234 with the forms additions (3.14x). Shared code is not counted here."
+  },
+  {
+   "id": "H3",
+   "verdict": "holds for what perl shows (read, not audited against the catalogue)",
+   "evidence": "Every catalogued correction in perl's classes came from shared code with no perl-specific edit: S49 server variables, S50 Basic secret, S25 inactive remove, S13 test client and log default, U34 class collision, U45 step heading, ref-6 action Call cell, the md-cell escape. One perl-specific loss is not a catalogued issue: the import lib line (interface gap)."
+  },
+  {
+   "id": "H4",
+   "verdict": "holds on the lane; 153 changed review-variation blocks not compiled",
+   "evidence": "Ran tools/before/run.sh (perl -Ilib t/readme_examples.t), OLD on a copy of oldclone and NEW on my clone.\nFor all three models, NEW = OLD: exit 0 on every run, 7/7 tests.\n- default: README 18 blocks (17 executed, 1 illustration), REFERENCE 21/21, root 3/3\n- crud and basic-server: README 16 (15 executed), REFERENCE 14/14, root 3/3\nMinimum of 3 runs, OLD vs NEW: default 4.50s vs 4.35s, crud 3.45s vs 3.53s, basic-server 3.62s vs 3.59s."
+  }
+ ],
+ "surprises": [
+  "The make sentence's 'printed less often than c' warning in SCRATCH mode came from the ledger splitting pairs by which OLD entity each NEW sentence met. A grep counts 94 make sentences in all, 7 in B, as c prints.",
+  "ref-issues block pairing shifted after the S25 removal and reported `my $utility = $client->Utility;` as OLD-only, although NEW prints it at REFERENCE.md:452.",
+  "OLD perl printed `->{id}` for ambient, which has no id field. The shared show fields correct this without a perl rule.",
+  "OLD perl's accessor sentence ('Pass `undef` for no initial data') was false: the argument is passed on as the entity options.",
+  "Without a `use lib` line in imports, no tutorial client block stays byte-identical to OLD (3 were before). That is the visible cost of the gap.",
+  "The clock: `date` read 02:01:03 UTC at the start and 02:31:46 at the end, yet the suite alone measured 8m01s and the two lanes 38s each. I cannot vouch for per-step times."
+ ],
+ "time": "Not measured per step. `date` read 02:01:03 UTC at the start (before reading) and 02:31:46 UTC after the last check.\n\nMeasured with `time` or by the tools:\n- the suite: 8m01s\n- each README lane run (3 models x 3 runs): about 38s\n- each REGEN=1 portcheck: about 17s\n- each incremental `npm run build`: 3 to 4s\n\nOrder of work: reading (briefs, guide, runtime table, runtime fragments), table check, provider/hook/forms, build and guard, three provider revisions (imports, attempt shape, note wording), classification, lane, commits, suite, measures. PROGRESS.md at P/ports/perl/PROGRESS.md records each step; its clock-like labels were estimates and are removed.",
+ "workspace": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/perl:\n- sdkgen/ (clone, HEAD 70f0be92 on v32-frozen 3d58cb46)\n- tools/ (HEAD 8fc4f46)\n- out/new\n- PROGRESS.md\n- my/hand.py\n- oldcopy/ (copy of the pristine old clone, for the OLD lane)\n- before-old-work/ and before-new-work/ (lane SDKs and logs)\n- logs: before-old-perl.log, before-new-perl.log, suite.log, pc-final.log, pc-final-plain.log, pc-scratch-final.log"
+}

@@ -1,0 +1,41 @@
+[
+ {
+  "id": "my-new-provider-php-adapted-33a-1",
+  "lang": "php",
+  "caught": null,
+  "error": "build failed: gig/sdkgen@4.44.0 prune-dist-test\n> node build/prune-dist-test.js\n\n\n> @voxgig/sdkgen@4.44.0 check-scaffold\n> tsc -p tsconfig.scaffold.json\n\nproject/.sdk/src/cmp/php/Syntax_php.ts(52,3): error TS2741: Property 'okFalse' is missing in type '{ returns: string; signal: string; }' but required in type '{ returns: string; signal?: string | undefined; abortCode?: string | undefined; okFalse: string; }'.\n",
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "my-new-provider-php-adapted-33a-2",
+  "lang": "php",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "async",
+   "listOf",
+   "record",
+   "types",
+   "optional",
+   "signature",
+   "accessor",
+   "calls",
+   "members",
+   "kind",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ php: the declared facts are what its runtime defines",
+   "✖ php: every declared fact is accounted for",
+   "✖ php: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "facts.async: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.collection: cite the runtime file and a quote that shows \"array\"",
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ }
+]

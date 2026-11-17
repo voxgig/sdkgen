@@ -1,0 +1,493 @@
+{
+ "summary": "I built the core of the write-once structure in a clone of sdkgen and tested it on the README quick start for ts, go, py and c. The pieces are: a resolved, JSON-serialisable SdkDescription per target (ts/src/helpers/sdkdesc.ts); a language-neutral example representation of 7 statement kinds and 6 expression kinds, with its builders (ts/src/helpers/example.ts); a shared ReadmeQuick.ts that writes every heading and sentence once; and four syntax providers, Syntax_<lang>.ts. The four retired ReadmeQuick_<lang>.ts files are deleted. Across 19 model variations, every changed line in the four ported languages is tagged with a reason (0 UNEXPLAINED), and the 16 unported languages are byte-identical to the old output in every variation. The providers read the model 0 times, as counted by a script. They needed no idiom notes: across ts/go/py/c, 100% of the quick-start prose sentences are the same text once each provider's 4 runtime words are masked (84.6% raw, against 30.8% in the old output). All 11 catalogued quick-start issues are fixed for all four languages by the shared code. Along the way I found and fixed one more defect: the c quick start calls getenv without including <stdlib.h>, so it does not compile, and the old code fails the same way. Examples compile and run: 16/16 ts README lanes, 12/12 go README lanes, py with a pytest stand-in on 4 models, and the c DOC lane on 5/6 models. The one c failure is the root README's ReadmeTopQuick_c, which I did not port; it has the same getenv defect and fails identically on the old code. H2 (source shrinks 2x) is refuted for this section: the four-language source grows (945 to 1069 lines, 0.88x), and the projection to 20 languages is 1.66x, below the 2x threshold. H5 is only partly supported: doctor reports a ReadmeQuick_<lang> left behind by an upgrade as 'additive' with ok: true, and `target add` never prunes src/cmp. So the migration needs a doctor rule I did not build.",
+ "stopped_at": "Finished, in the brief's order: (1) the description and the representation, designed against the 20 languages' output; (2) the shared quick start, the ts and go providers and the diff report; (3) the py and c providers; (4) the lanes; (5) the metrics. Also finished: the H5 probe (doctor, target add and an alias against a leftover component) and the full suite without the toolchain lanes. Not done: (a) py ran without real pytest. pytest is not installed and the brief forbids PyPI, so the generated test/test_readme_examples.py ran under harness/pyrun.py with a 10-line stand-in for pytest.skip and pytest.fail; it executed every block. (b) I fixed no doctor rule for retired components; I only measured the gap. (c) I did not port the root README quick start (ReadmeTopQuick_<lang>); it still carries the getenv defect in c and the old server and secret behaviour. (d) The language pack (dart, haskell, lean) was not generated. It takes the same fallback path as the 16 unported languages, which I checked; the pack itself was read, not run. (e) No timings were measured. (f) The REFERENCE page was not touched; it is the next agent's task.",
+ "clone": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen (branch detached from 9aebaf9e; commits f21e6fe1 'Prototype: SDK description, example representation, shared quick start, ts/go/py/c syntax providers', d4d99cd9 'Retire ReadmeQuick_ts/go/py/c...', ae38ac4b 'Golden and guide follow the retired components; ts list match stays inline', 0aef7328 'c quick start includes stdlib.h for getenv; lanes for Basic auth with a templated server', f9d408a5 'A target's own ReadmeQuick wins over its syntax provider', 950912e7 'Golden follows the providers'). A second pristine clone at 9aebaf9e, /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/oldclone, exists only to stage the go~go2 alias for OLD output and to run lanes on OLD code (its test/generatedcompile.test.ts carries the same added lanes).",
+ "built": [
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/src/helpers/sdkdesc.ts",
+   "lines": 245,
+   "what": "sdkDescription(model, targetName): the resolved description, memoised per model and target and deep-copied through JSON. It is built from envName, packageName, serverVariables, isAuthActive, isAuthSuppressed, isHttpBasicAuth, resolveAuthIn/Name, entityOps, entityIdField, entityDataIdField, opRequestShape, requiredItems, requestExampleItems, matchExampleItems and sendsId. Every quick start's selection logic lives here once: the example entity, the nested entity and its parent parameter, list, load, create, update, patch and remove arguments, the create/update field choice, and chaining on the created id."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/src/helpers/example.ts",
+   "lines": 244,
+   "what": "The example representation (Ent, Ref, Expr, Entry, Stmt), the builders clientBlock, listBlock, loadBlock, writeBlock and writeOps (they read only the description), uses(), the provider interface (Syntax, RuntimeWords, Scope), and the shared walker printStmts/printBlock."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/src/cmp/ReadmeQuick.ts",
+   "lines": 165,
+   "what": "The shared quick start. The lead-in is built from the steps actually written (S28), steps are numbered by a counter, and the write heading is built from the operations present (U45). The client prose names the environment variables (D25), the required server variables and the defaulted ones; the list and load sentences are filled from the provider's RuntimeWords. Precedence: a target's own ReadmeQuick_<lang>, else its Syntax_<lang>, else the old warning path."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/src/helpers/optional.ts",
+   "lines": 2,
+   "what": "Syntax added to OPTIONAL_COMPONENTS as null, so a target without a provider gets a debug log and no warning."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/src/sdkgen.ts",
+   "lines": 8,
+   "what": "Exports sdkDescription, the builders, printBlock, printStmts, newScope, uses and indentLines, and the description, representation and interface types."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/project/.sdk/src/cmp/ts/Syntax_ts.ts",
+   "lines": 89,
+   "what": "ts provider. Imports exampleVarName, indentLines, jsKey, jsProp and jsQuote."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/project/.sdk/src/cmp/go/Syntax_go.ts",
+   "lines": 103,
+   "what": "go provider. Prints fragments the go README harness compiles, tracks `err := / err =` per block, and panics on err."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/project/.sdk/src/cmp/py/Syntax_py.ts",
+   "lines": 81,
+   "what": "py provider."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/project/.sdk/src/cmp/c/Syntax_c.ts",
+   "lines": 142,
+   "what": "c provider. Hoists entity handles once per section through before(), hoists created_<field> by looking ahead in the block, includes <stdlib.h> when getenv is used, and copies utility_c's C_RESERVED because that module also holds helpers that read the model."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/docs/how-to/author-a-new-language.md",
+   "lines": 6,
+   "what": "A paragraph naming Syntax_<lang>, which optional.test requires of every optional component."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/sdkgen/ts/test/generatedcompile.test.ts",
+   "lines": 12,
+   "what": "BASIC_SERVER model (crud, HTTP Basic in the header, a server URL with required tenant and defaulted region), added to the ts README loop, every README_LANES lane and the DOC_LANES models."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/harness/gen.js",
+   "lines": 75,
+   "what": "Generates the READMEs of all 20 SDK targets for 19 variations with a docs-only Root, for OLD (/home/user/sdkgen/ts, read-only) or NEW; stages the go~go2 alias in a writable clone. Uses lib2.js, variations.js and qsect.js."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/harness/diff.js",
+   "lines": 160,
+   "what": "Quick-start diff per language and variation: prose lines identical, changed, added and removed; code blocks identical or changed; every changed line tagged with a reason or UNEXPLAINED; the 16 unported languages checked byte-identical over the whole README. Writes diff-report.txt, diff-report.json and diff-detail.txt (2236 tagged lines)."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/harness/metrics.js",
+   "lines": 110,
+   "what": "Source sizes before and after, the 20-language projection, a script count of model reads in the providers, provider interface size and the idiom-note count."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/harness/agg.js",
+   "lines": 45,
+   "what": "Per-language totals of the diff, and the prose-sharing measure across ts, go, py and c."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/harness/pylane.js",
+   "lines": 45,
+   "what": "Generates a py SDK per model as generateTo does, and runs its README example test under pyrun.py with the pystub/pytest.py stand-in."
+  },
+  {
+   "path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/harness/h5.js",
+   "lines": 40,
+   "what": "Probe of doctor, target add and an aliased add when a project still holds a retired ReadmeQuick_go.ts."
+  }
+ ],
+ "description_shape": "type Scalar = string\n\ntype DescServerVar = {\n  name: string\n  required: boolean // the URL references it and it has no default\n  dflt: string\n}\n\ntype DescOption =\n  | { name: 'apikey', env: string }\n  | { name: 'secret', env: string }\n  | { name: 'server', vars: { name: string, placeholder: string }[] }\n\n// One member of an example request: a typed placeholder, or the id read off\n// the record the example created.\ntype DescArg =\n  | { name: string, type: Scalar, placeholder: string }\n  | { name: string, fromCreated: string }\n\ntype DescEntity = {\n  name: string // model key, e.g. graph_ql\n  Name: string // class-name stem, e.g. GraphQl\n  ops: string[] // generated, callable, canonical order\n  id: string | null // the load-match id key\n  dataId: string | null // the id on the returned record\n  parents: string[] // required non-id load parameters of a nested entity\n}\n\ntype DescQuick = {\n  entity: string // the example entity (first active)\n  list: DescArg[] | null // null: no list step\n  load: { entity: string, args: DescArg[], nested: null | { parent: string, param: string } } | null\n  create: DescArg[] | null\n  update: DescArg[] | null\n  patch: DescArg[] | null\n  remove: DescArg[] | null\n  chainsId: boolean // update/patch/remove take the id off the created record\n}\n\ntype SdkDescription = {\n  target: string\n  name: string // model slug\n  Name: string // class-name stem\n  package: string // published package or module path of this target\n  env: { prefix: string }\n  auth: { active: boolean, in: string, name: string, basic: boolean, secret: boolean }\n  options: DescOption[] // what the quick start's constructor passes, in order\n  server: DescServerVar[] // variables the server URL references\n  entities: DescEntity[]\n  quick: DescQuick | null // null when no entity is active\n}\n\n// Rules computed in describe(): secret = auth active && basic && in === 'header' && !isAuthSuppressed (the condition under which every PrepareAuth_<lang> emits the Basic branch). options = apikey when auth is active, secret per that rule, and server with only the required variables. server = serverVariables() filtered to the variables the URL references.",
+ "example_representation": "type Ent = { name: string, Name: string }\n\n// A value an example names. `role` says what it holds, so a printer can\n// choose its identifier: the entities a list returned, one of them, the one a\n// load returned, the one a create returned.\ntype Ref = { role: 'many' | 'item' | 'one' | 'created', entity: Ent }\n\ntype Expr =\n  | { k: 'lit', type: Scalar, text: string } // a typed literal; `text` when it is a string\n  | { k: 'str', text: string } // a plain string\n  | { k: 'env', name: string } // an environment variable, read\n  | { k: 'record', of: Ref } // the record a returned entity holds\n  | { k: 'field', of: Ref, field: string } // one field of that record\n  | { k: 'map', entries: Entry[] }\n\ntype Entry = { key: string, value: Expr }\n\ntype Stmt =\n  | { k: 'client', options: Entry[] } // construct the client; [] for none\n  | { k: 'call', entity: Ent, op: string, arg: Entry[] | null, bind: Ref | null }\n  | { k: 'each', item: Ref, of: Ref, body: Stmt[] }\n  | { k: 'print', what: Expr }\n  | { k: 'attempt', what: string, body: Stmt[] } // report a failure of `what`\n  | { k: 'comment', text: string }\n  | { k: 'gap' }\n\n// A null arg on a call: the call takes no match. A create always takes data.\n\n// What a block uses, for a printer that declares imports.\ntype Uses = { env: boolean, field: boolean, entities: string[] }\n\n// Builders (read only an SdkDescription): clientBlock(desc), listBlock(desc), loadBlock(desc), writeBlock(desc), writeOps(desc).\n// List and load are each [attempt(call bound to many/one, then each+print or print)]. The write block is comment + call per op present, separated by gap; create binds `created`, and update/patch/remove bind nothing.\n// Comment texts are shared: 'Create \u2014 returns the created entity', 'Update \u2014 the id comes off the created entity's record' (when chained), 'Patch \u2014 sends only the fields given[; the id comes off the created entity's record]', 'Remove'.",
+ "provider_interface": "// What one section's printing has declared so far; a printer that hoists a\n// declaration (a handle, an error slot) records it here.\ntype Scope = { declared: Set<string>, local: Set<string>, stmts: Stmt[] }\n\n// The words the shared prose uses for this runtime's parts. Data, not text:\n// the sentences that hold them are written once.\ntype RuntimeWords = {\n  op: (name: string) => string // how the prose names an operation: `list()`\n  many: string // what a list returns: 'an array'\n  fails: string // how an operation reports failure: 'throws on failure'\n  data: string // what reads an entity's record: '`.data()`'\n}\n\ntype Syntax = {\n  fence: string // the code fence language\n  words: RuntimeWords\n  // Each printer returns lines; `inner` prints nested statements at one more level.\n  client: (s: Extract<Stmt, { k: 'client' }>, desc: SdkDescription, sc: Scope) => string[]\n  call: (s: Extract<Stmt, { k: 'call' }>, desc: SdkDescription, sc: Scope) => string[]\n  each: (s: Extract<Stmt, { k: 'each' }>, inner: (body: Stmt[]) => string[], sc: Scope) => string[]\n  print: (s: Extract<Stmt, { k: 'print' }>, sc: Scope) => string[]\n  attempt: (s: Extract<Stmt, { k: 'attempt' }>, inner: (body: Stmt[]) => string[], sc: Scope) => string[]\n  comment: (text: string) => string\n  expr: (e: Expr, sc: Scope) => string\n  // Optional: lines a block needs ahead of its statements (a hoisted handle).\n  before?: (stmts: Stmt[], desc: SdkDescription, sc: Scope) => string[]\n}\n\n// What each member prints:\n// fence   - the code fence language ('ts', 'go', 'python', 'c').\n// words   - the 4 runtime facts the shared list/load sentences are filled with.\n// client  - the imports or includes, and the constructor call with its options (env reads, the server map); c also declares `PNError* err`.\n// call    - one entity operation with its match/data argument and the binding of its result; go also prints its `if err != nil` check.\n// each    - iteration over a bound list of entities.\n// print   - printing a record (or field) of a bound entity.\n// attempt - error handling around a body: try/catch, try/except, `if (err) ... else`, or (go) the body alone, since each call carries its check.\n// comment - one comment line.\n// expr    - a literal, env read, record or field read, or map.\n// before  - (c only) declarations hoisted ahead of a block: an entity handle declared once per section.\n// A provider is found as `Syntax` exported by cmp/<target>/Syntax_<target> through optionalComponent(ctx$, target, 'Syntax').",
+ "survey": "Quick start of all 20 languages as of 9aebaf9e. Read from the stored spike outputs for B, auth-basic, auth-off, server-none, op-absent-readonly, ent-only-ambient and ent-none, and from my own OLD runs of doc-list, doc-crud, doc-nested, crud-noupdate, auth-basic-query, server-mixed and alias-go2. B's example entity is `ambient` (load only), so B shows only steps 1 and 3; doc-crud and doc-nested show the full shape.\nSHARED BY 18 (all but js and go): headings '### 1. Create a client', '### 2. List <e> records' (only with list), '### 3. Load a/an <e>' (the nested entity if any, else the example), '### 4. Create, update, and remove' (whenever any write op exists). The numbers are literal (S28: B prints 1 then 3) and the write heading is fixed (U45). All 18 pick the same example entity, nested entity, load/remove match and create/update fields. The lead-in 'creating a client, listing entities, and loading a specific record' is shared and unconditional.\nColumns: client constructor | list | load | writes | error idiom | id chaining in writes | server vars | Basic secret | other.\nts | import + new XSDK({apikey: process.env, server:{all vars} with a '// Required' comment}) | not in try; '.data()' | try/catch | multi-line object args; binds updated/patched | try/catch | chains, type-checked (`created.data().id!`) | all vars (G01) | yes, at any placement (M12) | 4 steps.\njs | require + new XSDK({apikey}) | after load; no error handling | first; literal 'planet_id' | one heading per op (Create a Planet...), each prints data() | none | no (literal ids) | no (S49) | no | Title-Case unnumbered headings; extra '### Direct API Access' section. DRIFT.\ngo | one '### Quickstart' program: package main, import block, func main, sdk.NewXSDK(map{apikey os.Getenv, server{all vars, mis-indented: M14}}) or sdk.New() | `.([]any)` range, item.(sdk.Entity).Data() | panic(err) | prints every write result | `if err != nil { panic(err) }` after every call | no (literal) | all vars | no | never chooses a nested entity; prose about (value, error). DRIFT in structure.\npy | import os + from x_sdk import XSDK({apikey os.environ.get, server{all}}) | try/except | try/except | inline dicts | try/except | chains, no type check | all vars | no | -\nphp | <?php require_once; new XSDK([apikey getenv]) | try/catch; prints id and radius fields | try/catch, comment in code | inline arrays | try/catch \\Throwable | chains | no | no | picks fields to print (a selection inside the component).\nrb | require_relative; XSDK.new({apikey ENV}) | begin/rescue; prints id and radius | begin/rescue | inline hashes | begin/rescue | chains | no | no | picks fields to print.\nlua | require; sdk.new({apikey os.getenv}) | `local v, err = ...; if err then error(err) end`; prints rec[\"id\"] | same | inline tables | value,err return | chains | no | no | prints one field.\ncsharp | using; new XSDK(new Dictionary{[apikey]=Environment.Get...}) | try/catch; (List<object?>) cast | (IEntity) cast | Dictionary literals, 1.0 numbers | try/catch | no ('supply the id') | no | no | -\njava | imports incl. SdkEntity; options.put(...) imperatively, server map via put | try/catch; (List<?>) cast | (SdkEntity) cast | Map.of(...), extra null arg | try/catch RuntimeException | no | all vars | no | -\nkotlin | imports; XSDK(mutableMapOf(apikey to System.getenv)) | try/catch; as List<*> | as SdkEntity | mutableMapOf | try/catch | no | no | no | -\nscala | imports; options.put | try/catch; asInstanceOf; forEach lambda | asInstanceOf | java.util.Map.of | catch case | no | no | no | -\nswift | import; VMap entries assignment | do/catch; asNative as? Entity | same | `_ = try` VMap([...]) | do/catch | no | no | no | -\nrust | use (getp, jo, ...); XSDK::new(jo(vec![...])) | match Ok/Err | match | `.unwrap()` per write | match on Result | chains (getp) | no | no | -\nc | #include \"core/api.h\" (no <stdlib.h>: getenv undeclared, my defect c-getenv); x_sdk_new(cmap(1, apikey)); PNError* err | hoisted `Entity* e = x_e(client, NULL)`; NULL-terminated array | `Entity* loaded`; `if (err) else` | cmap(n,...); hoisted `voxgig_value* created_id` | `if (err)` | chains via created_id | no (S49) | no | handle hoisting depends on earlier steps.\ncpp | includes, using namespace; getenv hoisted into `const char* apikey`; make_shared<XSDK>(vmap) | try/catch SdkErrorPtr; std::vector | same | vmap({{...}}) | try/catch | chains (getp) | no | no | -\nzig | @import consts; XSDK.new(h.jo(&.{...})) | switch .ok/.err | switch | a switch around every write, printing each result; remove prints 'removed' | switch on union | no | no | no | -\nperl | use lib, use X; X->new({apikey $ENV}) | eval/$@; prints ->{id} | eval/$@ | inline hashrefs | eval { } / $@ | chains | no | no | prints one field.\nclojure | (require ... entity namespace of the example entity ...); (api/make-sdk (vs/jm ...)) | (try (doseq ...) (catch ...)) | (try (let ...)) | (def created ...); vs/getprop | try/catch | chains | no | no | imports depend on which entities are used.\nelixir | alias H; X.new(H.deep(%{...})) | try/rescue; Voxgig.Struct.getelem loop | handle `e = X.e(sdk)` | handle reused; H.deep maps | try/rescue | chains (getprop) | no | no | -\nocaml | open modules; Sdk_client.make (jo [...]) | (try ... with Sdk_error.E) List.iter | same | `let created = ... in`; remove prints e_deleted | try ... with | chains (getp) | no | no | remove's result printed.\nConstructs the representation must cover across all 20 (each appears in at least one language): imports derived from what the block uses (env, entities, field reads); a constructor with an options map of env reads and a nested server map (imperative put form in java, scala and swift); a hoisted declaration (c handle and err, cpp apikey, elixir handle); an op call with a match/data map or none, a cast and trailing control args; result binding; iteration; printing a record or chosen fields; error handling (try, result match, error return, errno, eval); per-write handling or unwrap; comments; typed literals (string, number, boolean, empty list, empty map, null); a field read of the created record. My representation covers all of these except: 'print chosen fields' (perl, php, rb, lua), a printed remove result (ocaml, zig), and per-write error handling distinct from attempt (zig, rust unwrap, go) \u2014 see gaps.",
+ "decisions": [
+  {
+   "topic": "go structure: one program versus steps",
+   "decision": "go prints the shared four steps as fragments; there is no '### Quickstart' program.",
+   "why": "go does not need a whole compilable unit. Its README harness (ReadmeExamplesTest_go.ts:159-196) compiles fragments by wrapping each in a function, and 18 of 20 languages use steps. The single program is drift. The go README lanes pass (12/12, including the new Basic/templated-server lane).",
+   "lines_changed": "In go, every quick-start line in every variation: 346 lines tagged as the structure change, 434 re-indented, 40 import lines rewritten as single lines, 23 in-code comments moved into the step prose (diff-report.txt). Go code blocks: 0 identical / 47 changed across 19 variations."
+  },
+  {
+   "topic": "js headings, order and Direct API section",
+   "decision": "Not ported. js keeps its own ReadmeQuick_js and is byte-identical.",
+   "why": "Out of scope (four languages). It is drift to resolve when js gets a provider: Title-Case unnumbered headings, load before list, one heading per write op, no error handling, and an extra 'Direct API Access' section that belongs to the how-to.",
+   "lines_changed": "0"
+  },
+  {
+   "topic": "Prose wording: one sentence per fact",
+   "decision": "List: '<op> returns <many> of entities, one per record, and <fails>; <data> reads an entity's record.' Load: '<op> returns the entity and <fails>; <data> reads its record.' The 4 placeholders are the provider's RuntimeWords.",
+   "why": "ts, py and c each worded the same fact differently (ts: 'resolves to an array of Planet ENTITIES \u2014 every operation resolves to entities, not raw records. Iterate them directly...'; py: '... raises on error; ... (a `dict`)'; c: '... \u2014 check `err` after the call'). The extra clauses repeat the failure fact or restate the entity contract, so they were dropped rather than kept as idiom notes.",
+   "lines_changed": "183 prose lines tagged 'unified wording: list/load step prose' across the four languages."
+  },
+  {
+   "topic": "Client step prose",
+   "decision": "New shared sentences from the description: which environment variables the client reads (one or two), which server variables `server` must give, and the default of each defaulted one. ts's in-code comment '// Required: this API's server URL is templated on these.' is removed.",
+   "why": "D25 and G01/D55: the facts live once in the description, and the code block carries only the options the runtime requires.",
+   "lines_changed": "181 prose lines added (D25/S49/G01); 28 ts code lines (S49/G01)."
+  },
+  {
+   "topic": "Write-step comments",
+   "decision": "Shared comment texts in the representation, printed in each language's comment syntax.",
+   "why": "Each language wrote its own (ts: 'returns the created Planet ENTITY (.data() for the record)'; c: 'or NULL with *err set'; go: 'Create a planet.').",
+   "lines_changed": "106 code comment lines."
+  },
+  {
+   "topic": "Error handling of the list step",
+   "decision": "List is wrapped in attempt like load, in every language.",
+   "why": "py, c and go already handled list failure; ts alone did not. Unified.",
+   "lines_changed": "ts: 30 lines (try/catch) plus 36 re-indented."
+  },
+  {
+   "topic": "Write results",
+   "decision": "create binds `created`; update, patch and remove bind nothing and print nothing.",
+   "why": "py and c bound nothing; ts bound unused `updated`/`patched`; go bound and printed each. The variable is needed only where a later call reads it.",
+   "lines_changed": "ts and go: 14 binding lines; go: 17 print lines."
+  },
+  {
+   "topic": "Chaining on the created id",
+   "decision": "One rule, in the description: chain only when the data id's type equals the match key's (ts's rule). py and c used to chain without the type check; go never chained.",
+   "why": "A WHETHER decision belongs in the description. go now prints `created.(sdk.Entity).Data().(map[string]any)[\"id\"]` and its README lane runs it.",
+   "lines_changed": "go: 24 lines. py and c: 0 in these variations, because the fixture's id types match."
+  },
+  {
+   "topic": "Nested entity",
+   "decision": "Chosen once in the description; go now shows the nested load too.",
+   "why": "go's component never looked for a nested entity; the other 18 did.",
+   "lines_changed": "go: 5 lines (doc-nested)."
+  },
+  {
+   "topic": "ts argument layout",
+   "decision": "Multi-line for a write's data and for a load match of more than one member; inline otherwise. The list match stays inline.",
+   "why": "The old ts layout depended on whether the load was the nested one, which a printer cannot see. The list match had to stay inline: the generate suite's list-parameter test reads one following line, and my first rule (multi-line from two members) failed it.",
+   "lines_changed": "0 in the 19 variations (the old outputs coincide); a non-nested load with two members would change."
+  },
+  {
+   "topic": "Precedence between a target's own ReadmeQuick_<lang> and its Syntax_<lang>",
+   "decision": "The own component wins; then the provider; then the old warning.",
+   "why": "Provider-first would silently drop a project's fork. Component-first keeps a fork, but it also keeps an unmodified leftover from an upgrade writing the old tutorial, which doctor reports as 'additive' (h5.js). Neither is safe without a doctor rule; component-first loses nothing.",
+   "lines_changed": "0 in output (no leftovers in the harness)."
+  },
+  {
+   "topic": "Lead-in and placement sentence",
+   "decision": "The lead-in lists the steps written ('creating a client and loading an ambient', ...), wrapped at 72 columns. The placement sentence is rebuilt from desc.auth in credentialPlacement's words and reflows with the lead-in.",
+   "why": "S28/U45.",
+   "lines_changed": "272 prose lines plus 8 placement lines."
+  }
+ ],
+ "per_language": [
+  {
+   "lang": "ts",
+   "old_component_lines": 242,
+   "provider_lines": 89,
+   "prose_identical": 47,
+   "prose_changed": 81,
+   "prose_added": 48,
+   "prose_removed": 0,
+   "code_blocks_identical": 18,
+   "code_blocks_changed": 25,
+   "change_reasons": [
+    "S28/U45 lead-in follows the steps written (77)",
+    "S28 steps numbered as written (20)",
+    "U45 write heading names the operations present (8)",
+    "D25/S49/G01 client prose states the env vars and server variables (43)",
+    "S49/G01/M13/D55 server block lists only required variables (28)",
+    "S50/D23/M12 secret exactly when the runtime reads it (1: removed under Basic in the query)",
+    "unified wording: list/load step prose (60)",
+    "unified wording: write-step comments (24)",
+    "structure: ts list wrapped in error handling (30 + 36 re-indented)",
+    "structure: unused write results are not bound (14)",
+    "S28/U45 placement sentence reflows (2)"
+   ],
+   "unexplained": 0,
+   "toolchain": "ran-pass",
+   "toolchain_detail": "node --test --test-name-pattern 'typescript: the README example tests type-check and run' dist-test/generatedcompile.test.js: 16/16 pass, including the added 'with Basic auth and a templated server' (tsc type-check plus execution of every block). Counts are summed over 17 variations (lone-go and alias-go2 have no ts)."
+  },
+  {
+   "lang": "go",
+   "old_component_lines": 203,
+   "provider_lines": 103,
+   "prose_identical": 19,
+   "prose_changed": 146,
+   "prose_added": 29,
+   "prose_removed": 6,
+   "code_blocks_identical": 0,
+   "code_blocks_changed": 47,
+   "change_reasons": [
+    "structure: one program split into the shared steps (346 + 434 re-indented + 38 import lines + 23 comments moved into prose)",
+    "S28/U45 lead-in (68)",
+    "S28 step numbers (23)",
+    "U45 write heading (5)",
+    "D25/S49/G01 client prose (49)",
+    "S49/G01/M13/D55 only required server variables (16)",
+    "M14 server block indented with apikey (inside the re-indented lines)",
+    "S50 secret under Basic in the header (2)",
+    "unified wording: list/load prose (46), write comments (34)",
+    "unified: description decides chaining (24)",
+    "unified: nested-entity choice (5)",
+    "structure: write results not printed (17)"
+   ],
+   "unexplained": 0,
+   "toolchain": "ran-pass",
+   "toolchain_detail": "node --test --test-name-pattern '^go: (every README example|the README examples run)' dist-test/generatedcompile.test.js: 12/12 pass, including the added Basic/templated-server lane (go1.24.7). Counts are summed over 19 rows, including lone-go and alias-go2 (go and go2 identical in shape)."
+  },
+  {
+   "lang": "py",
+   "old_component_lines": 225,
+   "provider_lines": 81,
+   "prose_identical": 53,
+   "prose_changed": 69,
+   "prose_added": 54,
+   "prose_removed": 0,
+   "code_blocks_identical": 24,
+   "code_blocks_changed": 19,
+   "change_reasons": [
+    "S28/U45 lead-in (62)",
+    "S28 step numbers (20)",
+    "U45 write heading (8)",
+    "D25/S49/G01 client prose (43)",
+    "S49/G01/M13 only required server variables (14)",
+    "S50 secret under Basic in the header (2)",
+    "unified wording: list/load prose (57), write comments (24)",
+    "S28/U45 placement reflow (2)"
+   ],
+   "unexplained": 0,
+   "toolchain": "ran-pass",
+   "toolchain_detail": "Not the generatedcompile py lane: pytest is absent and cannot be installed (no PyPI). harness/pylane.js generated the py SDK (slug multifon-client) for baseline, crud, basic-server and nested, and ran test/test_readme_examples.py under pyrun.py with a stand-in pytest module: 9 passed, 0 failed, 1 skipped (mypy typecheck) on each model, every block executed. OLD gives the same result."
+  },
+  {
+   "lang": "c",
+   "old_component_lines": 241,
+   "provider_lines": 142,
+   "prose_identical": 83,
+   "prose_changed": 60,
+   "prose_added": 33,
+   "prose_removed": 0,
+   "code_blocks_identical": 22,
+   "code_blocks_changed": 21,
+   "change_reasons": [
+    "S28/U45 lead-in (62)",
+    "S28 step numbers (20)",
+    "U45 write heading (8)",
+    "D25/S49/G01 client prose (43)",
+    "S49 constructor carries the required server variables (68)",
+    "S50 secret under Basic in the header (2)",
+    "DEFECT c-getenv: #include <stdlib.h> (15)",
+    "unified wording: list/load prose (18), write comments (24)",
+    "S28/U45 placement reflow (2)"
+   ],
+   "unexplained": 0,
+   "toolchain": "ran-fail",
+   "toolchain_detail": "node --test --test-name-pattern '^c: every documented example compiles' dist-test/generatedcompile.test.js (gcc 13.3): 5/6 pass (singleton, list, crud, nested, quoted-name). basic-server fails only on ../README.md:53, the ROOT README quick start (ReadmeTopQuick_c, not ported), which calls getenv without <stdlib.h>. The ported c/README.md quick start compiles. The same lane on the OLD clone fails on both the root README and c/README.md:50. Cause: a pre-existing defect, not the approach; fixed in Syntax_c by an include."
+  }
+ ],
+ "unported_identical": "Yes. harness/diff.js compares the WHOLE README.md, not only the quick start, of each of the 16 unported languages (js php rb lua csharp java kotlin scala swift rust cpp zig perl clojure elixir ocaml), OLD against NEW, in every variation that generates it: 17 variations x 16 = 272 files. Result: 'unported languages differing from OLD (whole README): 0'. For the four ported languages, the README outside the quick start is also unchanged in every variation (outside_unchanged: true on every row). OLD came from /home/user/sdkgen/ts read-only; the alias variation came from a pristine clone at 9aebaf9e, whose B output is byte-identical to /home/user's for all 20 READMEs (cmp loop in the session).",
+ "issues": [
+  {
+   "id": "S28",
+   "fixed_by_shared_code": true,
+   "shown_on": "B and ent-only-ambient (example entity ambient, load only)",
+   "note": "OLD in all four: 'creating a client, listing entities, and loading a specific record', then steps 1 and 3 (go: no steps). NEW in all four: 'This tutorial walks through creating a client and loading an ambient.', then steps 1 and 2. The lead-in and the numbers come from the steps written, in one component."
+  },
+  {
+   "id": "U45",
+   "fixed_by_shared_code": true,
+   "shown_on": "crud-noupdate (create and remove only) and doc-crud",
+   "note": "OLD ts, py, c: '### 4. Create, update, and remove' over create+remove. NEW all four: '### 4. Create and remove'; with patch: 'Create, update, patch, and remove'."
+  },
+  {
+   "id": "S49",
+   "fixed_by_shared_code": true,
+   "shown_on": "B (tenant required) and server-mixed (account required)",
+   "note": "OLD c had no server option. NEW c: '\"server\", cmap(1, \"tenant\", v_str(\"<tenant>\"))', and the lane compiles it. ts, py and go already printed one (all variables)."
+  },
+  {
+   "id": "S50",
+   "fixed_by_shared_code": true,
+   "shown_on": "auth-basic and crud-basic",
+   "note": "OLD: secret only in ts. NEW: secret in ts, go, py and c, and the client prose names DEMO_SECRET."
+  },
+  {
+   "id": "G01",
+   "fixed_by_shared_code": true,
+   "shown_on": "B",
+   "note": "OLD ts listed defaulted `region` under '// Required'. NEW lists only `tenant`, and the prose says '`region` defaults to `eu`'."
+  },
+  {
+   "id": "M13",
+   "fixed_by_shared_code": true,
+   "shown_on": "B",
+   "note": "OLD go and py printed region. NEW prints only the required variables."
+  },
+  {
+   "id": "M14",
+   "fixed_by_shared_code": true,
+   "shown_on": "B (go)",
+   "note": "The go server block now sits at the apikey's indentation. Fixed by the go provider's single member printer, not by shared code as such. The defect was a duplicated literal indent that no longer exists."
+  },
+  {
+   "id": "D23",
+   "fixed_by_shared_code": true,
+   "shown_on": "auth-basic, B",
+   "note": "Quick-start part only: the four constructors are now built from desc.options. The ReadmeModel, ReadmeRef, ReadmeTop and docgen sites named in D23 are untouched."
+  },
+  {
+   "id": "D55",
+   "fixed_by_shared_code": true,
+   "shown_on": "B, server-mixed",
+   "note": "Quick-start part only: required = referenced and no default, computed once in sdkdesc from serverVariables(). go-cli, go-mcp, py-data and ReadmeModel_ts are untouched."
+  },
+  {
+   "id": "M12",
+   "fixed_by_shared_code": true,
+   "shown_on": "auth-basic-query",
+   "note": "OLD ts printed `secret: process.env.DEMO_SECRET` under Basic in the query, which no PrepareAuth reads. NEW: no secret in any of the four (desc.auth.secret = basic && header && not suppressed). ReadmeHowto_ts, ReadmeModel_ts, ReadmeRef_ts and ReadmeTopQuick_ts are untouched."
+  },
+  {
+   "id": "D25",
+   "fixed_by_shared_code": true,
+   "shown_on": "B, auth-basic",
+   "note": "Partly. The quick start's variable names come from one place (desc.options[].env, from envName), and the prose now names them. The whole-name helpers D25 proposes, and the go-cli, go-mcp and test-generator sites, are not touched."
+  },
+  {
+   "id": "DEFECT c-getenv (new)",
+   "fixed_by_shared_code": false,
+   "shown_on": "basic-server in the c DOC lane; every variation with auth active",
+   "note": "Found by the added lane, on OLD and NEW: the c quick start calls getenv with only core/api.h included, an error under -Werror=implicit-function-declaration. Fixed once in Syntax_c (a syntax fact), not shared. ReadmeTopQuick_c still has it."
+  }
+ ],
+ "idiom_notes": [],
+ "provider_model_reads": "0. Counted by harness/metrics.js, which scans each Syntax_<lang>.ts line, comments excepted, for: the word `model`; `ctx$`; getModelPath, nom( and KIT; imports from @voxgig/apidef, @voxgig/struct or ./utility_<lang>; model members (.op, .fields, .relations, .ancestors, .main, .kit, with the statement field s.op excepted); and the model-reading helpers (requiredItems, opRequestShape, entityOps, entityIdField, serverVariables, isAuthActive, isHttpBasicAuth, envName, packageName, goModule, listMatchArg, matchExampleItems). It also requires every import from @voxgig/sdkgen to be on a list of pure string helpers (exampleVarName, indentLines, jsKey, jsProp, jsQuote, camelify). Output: Syntax_ts 0, Syntax_go 0, Syntax_py 0, Syntax_c 0. Description fields the providers read: ts Name and package; go package and Name; py Name; c Name and name.",
+ "facts_that_leaked": [
+  "In each case below an old per-language component held a model-dependent condition; each now sits in the description. Server variables (which are required, which defaulted): now desc.server and desc.options. No provider reads them.",
+  "Basic secret: the old ts component tested isHttpBasicAuth alone. It is now desc.auth.secret (basic, header placement, not suppressed); providers only print the options list.",
+  "Chaining on the created id: three different rules (ts type-checked, py and c unchecked, go never). Now DescArg.fromCreated, decided in sdkdesc; the go provider prints whatever it is handed.",
+  "Nested entity and parent parameter: go never chose one. Now desc.quick.load.nested.",
+  "Which write operations appear, and the create/update field choice: copied into each component. Now desc.quick.create, update, patch and remove.",
+  "Borderline, a fact derived from description strings rather than read from the model: the py provider builds its import module as `${desc.Name.toLowerCase()}_sdk`, as the old component did. That is a layout fact of the py target. It belongs in the description (a per-target `module` field), but deriving it needs language knowledge the description builder does not have; this is the clearest pressure point.",
+  "Borderline: the c provider builds its identifier stem from desc.name (`toLowerCase().replace(/[^a-z0-9]/g,'')`), duplicating utility_c's cIdent(model). It also copies C_RESERVED and cVarName, because utility_c also exports helpers that read the model. A pure naming module per language would remove the copies.",
+  "Alias provenance: desc.package comes from packageName(model, target), which reads `origname` to know that go2 is a go target. The old go component called goModule(model, target) directly. With the model `target add go~go2` writes (origname: go) the output is the same. A hand-made alias model without origname would get 'voxgig-sdk-demo-sdk' as its go module. My first alias staging omitted origname and showed exactly this; fixed by staging as target add does.",
+  "Not a model fact but provider state across blocks: c hoists entity handles once per section, and go declares err once per block. Both are handled by Scope (declared, local, stmts), which is passed in, so the providers stay pure functions of what they are given."
+ ],
+ "measurements": [
+  {
+   "name": "source lines, four languages, before vs after (total / non-blank non-comment)",
+   "value": "before 945 / 717 (shared ReadmeQuick.ts 34 + ReadmeQuick_ts 242 + go 203 + py 225 + c 241); after 1069 / 826 (ReadmeQuick.ts 165 + sdkdesc.ts 245 + example.ts 244 + Syntax_ts 89 + go 103 + py 81 + c 142). Ratio 0.88x / 0.87x, so the source GREW. 0 utility_<lang> lines removed: every helper in them is still used by other components.",
+   "command": "node harness/metrics.js"
+  },
+  {
+   "name": "source lines, projection to 20 languages",
+   "value": "before 4537 / 3479 (measured: all 20 ReadmeQuick_<lang> plus the shared file); after 2729 / 2090, assuming the other 16 providers average the four measured (103.75 / 79 lines) and the shared code does not grow. Ratio 1.66x / 1.66x, below the 2x of H2. sdkdesc.ts holds more than the quick start needs (all entities, auth, server), meant to be reused by the REFERENCE page; counting only the quick-start share would help, but I did not split it.",
+   "command": "node harness/metrics.js"
+  },
+  {
+   "name": "changed lines in the four ported languages without a reason",
+   "value": "0 UNEXPLAINED, of 2236 tagged changed lines across 19 variations",
+   "command": "node harness/diff.js (report: harness/diff-report.txt; per-line: harness/diff-detail.txt)"
+  },
+  {
+   "name": "unported languages byte-identical",
+   "value": "0 of 272 whole README files differ (16 languages x 17 variations)",
+   "command": "node harness/diff.js"
+  },
+  {
+   "name": "quick-start prose shared across ts/go/py/c",
+   "value": "OLD: 144 of 468 sentences identical in all four (30.8%). NEW: 460 of 544 identical raw (84.6%), 544 of 544 (100%) once the providers' RuntimeWords strings are masked. Per-language prose that is not a shared sentence: 0.",
+   "command": "node harness/agg.js"
+  },
+  {
+   "name": "provider interface size",
+   "value": "Syntax: 10 members (fence, words, client, call, each, print, attempt, comment, expr, before?); RuntimeWords: 4 (op, many, fails, data); Stmt kinds 7; Expr kinds 6.",
+   "command": "node harness/metrics.js"
+  },
+  {
+   "name": "interface changes after the first provider (ts)",
+   "value": "3, all made while writing go and c, before the first commit, so git does not show them: Scope gained `local` (go: err declared once per block), Scope gained `stmts` (c: look ahead for field reads to hoist created_<field>), and an optional `block` post-processor became `before` (c: hoist handles). The third is the one breaking change. None after c.",
+   "command": "read, not run (from the session's own edits)"
+  },
+  {
+   "name": "idiom notes",
+   "value": "0. The interface has no member for one, and none was needed for ts, go, py or c.",
+   "command": "node harness/metrics.js"
+  },
+  {
+   "name": "model reads in providers",
+   "value": "0 (ts 0, go 0, py 0, c 0)",
+   "command": "node harness/metrics.js"
+  },
+  {
+   "name": "ts README lanes",
+   "value": "16/16 pass",
+   "command": "cd sdkgen/ts && node --test --test-name-pattern 'typescript: the README example tests type-check and run' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "go README lanes",
+   "value": "12/12 pass",
+   "command": "cd sdkgen/ts && node --test --test-name-pattern '^go: (every README example|the README examples run)' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "c DOC lanes",
+   "value": "NEW 5/6 pass; the basic-server failure is in the root README (ReadmeTopQuick_c), not the ported section. On OLD the same basic-server lane fails in both the root README and c/README.md.",
+   "command": "cd sdkgen/ts && node --test --test-name-pattern '^c: every documented example compiles' dist-test/generatedcompile.test.js; same in oldclone/ts"
+  },
+  {
+   "name": "py README examples (pytest stand-in)",
+   "value": "NEW and OLD: baseline, crud, basic-server and nested each 9 passed, 0 failed, 1 skipped (mypy)",
+   "command": "node harness/pylane.js <sdkgen/ts> <outdir>"
+  },
+  {
+   "name": "full suite without the toolchain lanes",
+   "value": "2514 tests: 2508 pass, 5 skipped, 1 fail (characterize golden, from a provider edit made after the previous golden). After `npm run golden`, characterize passes 2/2.",
+   "command": "cd sdkgen/ts && node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort); npm run golden"
+  },
+  {
+   "name": "H5 probe",
+   "value": "Fresh add of go: Syntax_go.ts present, no ReadmeQuick_go.ts, doctor ok. With the old ReadmeQuick_go.ts left in src/cmp/go and target add re-run: the file stays (src/cmp is never pruned), and doctor reports ok: true with additive ['src/cmp/go/ReadmeQuick_go.ts'], stale []. Aliased add go~go2: Syntax_go2.ts written, no ReadmeQuick_go2.ts; generation of go2 goes through the provider (alias-go2 variation).",
+   "command": "node harness/h5.js"
+  }
+ ],
+ "tests": "Build: `npm run build` passes, including check-scaffold, check-fixture and stage-scaffold (about 5 s). Suites run: readme, helpers, agentguide, optional, readmeintro, characterize and lua-table-keys (102 tests); then generate, optional and characterize (213; 1 fail at first, fixed in the provider); then the whole suite without generatedcompile, run cleanly (2514 tests, 2508 pass, 5 skipped, 1 golden fail, then `npm run golden` and characterize 2/2 pass). One run had about 120 spurious failures of under 1 ms because I rebuilt dist while it ran; I discarded it and reran without building.\n\nWhat changed and why: (1) optional.test 'the guide the warning links to lists every optional component' failed because Syntax joined OPTIONAL_COMPONENTS. I fixed the documentation (docs/how-to/author-a-new-language.md), not the test. (2) test/golden/add-output.txt was regenerated with `npm run golden`. The diff is exactly the four retired ReadmeQuick_<lang>.ts out and the four Syntax_<lang>.ts in. (3) generate.test 'a list example passes the parameters the list requires, in every target' failed when my ts provider printed a two-member list match on several lines; the test reads one following line. I fixed the provider (the list match stays inline), not the test. (4) generatedcompile.test.ts gained a BASIC_SERVER model and three kinds of lane: the ts README loop, every README_LANES lane, and the DOC_LANES models. That is how the c getenv defect was found.\n\nToolchain lanes run: ts README 16/16, go README 12/12, c DOC 5/6 (the one failure is the unported root README, and it fails on OLD as well). The py lane was not runnable (no pytest); its README example test ran under a stand-in instead. No test file was weakened.",
+ "gaps": [
+  "The representation has no statement for printing CHOSEN fields of a record. perl prints ->{id}, php and rb print id and radius, lua prints rec[\"id\"]. Today that choice is made inside those components; it needs a description field (which fields to show) and an Expr form for it.",
+  "A remove's result is shown by ocaml (`removed.e_deleted`) and zig ('removed'); there is no Stmt for 'show the deleted marker'.",
+  "Per-write error handling distinct from attempt (zig wraps each write in a switch, rust unwraps, go checks): go handles it inside call. zig would need either attempt around each write or a per-call handling mode; the builder emits writes without attempt.",
+  "Options built imperatively (java, scala and swift use put or entries) are printable from the same Entry list. Not tried.",
+  "Imports that depend on the entities used (clojure requires the entity namespace) are supported through uses(stmts), but no provider exercised it.",
+  "js's 'Direct API Access' section and its other drift are undecided; it is a how-to section living in the tutorial.",
+  "The description has no per-target layout facts (py import module, c identifier stem). Providers derive them from strings, which is borderline.",
+  "No retired-component rule in doctor: a ReadmeQuick_<lang> left by an upgrade is 'additive', so a migration cannot be reported or pruned (H5).",
+  "server-none: the description says nothing about `base` (the URL a spec without servers needs); the quick start shows no option.",
+  "The root README quick start (ReadmeTopQuick_<lang>) is still per-language, with the same S49, S50, G01 and M12 issues and the c getenv defect.",
+  "RuntimeWords are English fragments chosen to fit two sentence frames. A third sentence frame may need more words, and the interface would grow."
+ ],
+ "surprises": [
+  "The source grew for four languages (0.88x). The fixed cost of the description, the representation and the walker (about 650 lines) only pays back across many languages, and even 20 projects to 1.66x. Most of the old per-language code was selection logic that already called shared helpers; per language it was not as large as the brief's 36,000-line figure suggests for the whole documentation.",
+  "The c quick start never compiled with auth active (getenv without <stdlib.h>). Nothing caught it, because the DOC-lane models have auth off. The root README copy has the same defect, which illustrates the proposal's own point.",
+  "The go README harness compiles fragments, so go's whole-program form was a choice, not a need. No language among the four needs a compilable unit.",
+  "doctor's `known` check consults only the current scaffold, not the copy record. A component the scaffold stops shipping becomes 'additive (project-owned)', the same as a deliberate project extension.",
+  "packageName for an alias depends on `origname` in the target's model, while the old go component used goModule directly, so the description inherits a provenance dependency.",
+  "Masking the 4 runtime words makes 100% of the prose identical across four languages. The old prose was only 30.8% identical, and none of its extra clauses held a fact the others lacked.",
+  "Three interface changes were needed by the second and fourth providers (go err scoping, c lookahead and hoisting), all about cross-statement state rather than syntax of one statement."
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "partly",
+   "evidence": "Supported for the four ported languages, not tested for the other 16. Providers read the model 0 times (script count). Per-language prose that cannot be shared is 0% (100% shared once 4 runtime words are masked; 0 idiom notes), well under the 15% threshold. Interface changes after the first provider: 3, one of them breaking, under the threshold of about 10. Untested: the survey shows constructs the representation lacks for perl, php, rb, lua, ocaml and zig (chosen-field printing, a printed remove result, per-write handling), so more additive changes are expected. Whether those stay out of providers depends on putting 'which fields to print' in the description."
+  },
+  {
+   "id": "H2",
+   "verdict": "refuted",
+   "evidence": "Four languages: 945 to 1069 lines (0.88x, a growth). Projection to 20: 4537 to 2729 (1.66x), below the 2x threshold, assuming the other 16 providers average the four measured (103.75 lines; c alone is 142). Command: node harness/metrics.js."
+  },
+  {
+   "id": "H3",
+   "verdict": "supported",
+   "evidence": "All 11 catalogued quick-start issues (S28, U45, S49, S50, G01, M13, M14, D23, D55, M12, D25) are fixed for ts, go, py and c, shown on B, crud-noupdate, auth-basic, auth-basic-query and server-mixed. Ten are fixed by shared code; M14 is fixed by the go provider's single member printer, so no per-language EDIT was needed for any of them. D23, D55, M12 and D25 are fixed only in the quick start; their other sites (ReadmeModel, ReadmeRef, ReadmeHowto, ReadmeTop, go-cli) are outside this section. One new defect (c getenv) needed a provider edit, which is a syntax fact."
+  },
+  {
+   "id": "H4",
+   "verdict": "supported",
+   "evidence": "ts README lanes 16/16, go README lanes 12/12, py README test on 4 models with a pytest stand-in (all blocks executed), c DOC lane 5/6. The c failure is in the unported root README and fails identically on the OLD clone; the ported c section compiles on basic-server where OLD did not. No failure is intrinsic to the approach."
+  },
+  {
+   "id": "H5",
+   "verdict": "partly",
+   "evidence": "Supported: aliases (go~go2 copies Syntax_go2.ts; the alias variation generates through it); unported and packaged targets keep their own components through the fallback (272 unported READMEs byte-identical); the golden and doctor are clean on a fresh project. Not safe as built (node harness/h5.js): target add never prunes src/cmp, and doctor reports a leftover ReadmeQuick_<lang> as additive with ok: true. With component-first precedence the leftover silently keeps the old tutorial; with provider-first a real fork would be silently dropped. It looks fixable within doctor's rules: a retired-components list beside `superseded`, or using the copy record's fingerprint to tell a pristine leftover from a fork. I did not build it. The language pack was not generated (read, not run)."
+  }
+ ],
+ "reproduce": "export PATH=/opt/node24/bin:$PATH\nP=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core\ncd $P/sdkgen/ts && npm run build        # NEW dist and stage\ncd $P/oldclone/ts && npm run build      # pristine 9aebaf9e, for the alias staging only\ncd $P/harness\nnode gen.js old /home/user/sdkgen/ts                                   # OLD, 18 variations (alias skipped)\nnode gen.js oldclone $P/oldclone/ts --only alias && rm -rf out/old/alias-go2 && cp -r out/oldclone/alias-go2 out/old/\nnode gen.js new $P/sdkgen/ts                                           # NEW, 19 variations\nnode diff.js > diff-report.txt; node diff.js --json > diff-report.json; node diff.js --detail all > diff-detail.txt\nnode agg.js; node metrics.js; node h5.js\nnode survey.js new doc-crud ts go py c                                 # read any section\nnode pylane.js $P/sdkgen/ts $P/pyout-new; node pylane.js $P/oldclone/ts $P/pyout-old\ncd $P/sdkgen/ts && node --test --test-name-pattern 'typescript: the README example tests type-check and run' dist-test/generatedcompile.test.js\nnode --test --test-name-pattern '^go: (every README example|the README examples run)' dist-test/generatedcompile.test.js\nnode --test --test-name-pattern '^c: every documented example compiles' dist-test/generatedcompile.test.js\nnode --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)\nVariations are in $P/harness/variations.js (B, auth-basic, auth-basic-query, auth-query, auth-off, server-mixed, server-static, server-none, op-absent-readonly, ent-only-ambient, ent-none, doc-list, doc-crud, doc-nested, crud-basic, crud-bare, crud-noupdate, lone-go, alias-go2). B itself is the templated server with one required (tenant, default '') and one defaulted (region, 'eu') variable; server-mixed has a referenced, undeclared one.",
+ "handoff": "Everything is under /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/core/. The clone is sdkgen/ (commits f21e6fe1..950912e7 on 9aebaf9e); the harness is harness/ (README.txt lists the commands); stored outputs are in harness/out/{old,new}/<variation>/<target>/README.md.\n\nFor the REFERENCE page: extend SdkDescription (ts/src/helpers/sdkdesc.ts) rather than reading the model in the shared component. desc.entities already carries ops, id, dataId and parents per active entity; add the per-op argument lists the REFERENCE shows (requiredItems, matchExampleItems, requestExampleItems are the helpers) and the option rows. Reuse desc.options and desc.server for the constructor table, so S49, S50, G01 and M12 close there too. Find a provider with optionalComponent(ctx$, target, 'Syntax'). A section with a provider writes every sentence itself, conditioned on the description; a target with no provider must stay byte-identical (check it with harness/diff.js, adapting qsect.js to the REFERENCE section).\n\nRules a provider follows: pure functions of (statement or expression, desc, scope); no model, no ctx$, no import of utility_<lang> or @voxgig/apidef; only the pure helpers (exampleVarName, jsKey, jsProp, jsQuote, camelify, indentLines). It decides HOW, never WHETHER. Anything that decides whether a thing is shown goes in the description or the builder. State across blocks goes in Scope: declared is per section, local per block, stmts is the current block. Runtime facts the prose needs go in RuntimeWords, as phrases that fit the shared sentences. harness/metrics.js counts violations; keep it at 0.\n\nWatch for: (1) the survey's open constructs (chosen-field printing in perl, php, rb and lua; the printed remove result in ocaml and zig; per-write handling in zig and rust) need representation additions and a description field for the field choice; do not let a provider pick fields. (2) py's import module and c's identifier stem are derived in providers from desc strings; add per-target layout fields if a language needs more. (3) H5 is not closed: doctor needs a retired-components rule before a release could retire ReadmeQuick_<lang> for existing projects. ReadmeQuick.ts currently lets a project's own ReadmeQuick_<lang> win over its provider. (4) Alias packages depend on origname; stage aliases as target add writes them (harness/gen.js stageAlias). (5) The c DOC lane with auth active fails on ReadmeTopQuick_c (getenv without stdlib.h); port or patch it with the root quick start. (6) No pytest here: use harness/pylane.js. (7) Never rebuild dist while a suite runs; it produces about 120 spurious sub-millisecond failures.\n\nFor porters of the other 16: copy the shape of Syntax_ts.ts (simplest) or Syntax_c.ts (hoisting, lookahead). Expect structure decisions like go's to be counted in diff.js reasons, and add reason rules to diff.js rather than leaving UNEXPLAINED. Each port should also delete ReadmeQuick_<lang>.ts and refresh the golden (`npm run golden`)."
+}

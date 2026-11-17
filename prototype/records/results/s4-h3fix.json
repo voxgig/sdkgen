@@ -1,0 +1,285 @@
+{
+ "ok": true,
+ "summary": "I resumed a run that a machine restart had cut off, re-checked what it had done, and finished the job.\n\nThe six shared defects (X3, S22, U52, U53, V27, U102) are fixed by one shared edit each. D26 is half done. Each of the four residues is fixed or decided.\n\nOne sentence the earlier run wrote was false, and the tools could not have caught it. It was the S13-residue sentence \"with no `test` feature in this SDK, nothing reads it\". Every ported runtime reads feature.test.active: py Main.fragment.py:45, c Main.fragment.c:38, and go make_options.go:156 and fetcher.go:228. I reworded it to what the code shows and amended that commit (dc6dc844, now 9964094d).\n\nChanges:\n- Shared code only: ReadmeRefFeatures.ts, FeatureDocs.ts, ReadmeRef.ts, sdkdesc.ts and markdown.ts, plus tests. In all, 21 files: +462 -119 including the build.\n- No language's own file changed: `git diff v33-frozen h3fix -- ts/project ts/test/runtimeforms ts/model` is empty.\n- Each of the 10 commits has a test that fails with src at C^ and passes at C. This was run in a second copy of the clone.\n\nChecks:\n- The thirteen one commands all PASS. Pass 1 opened 752 classes; one written rule per changed sentence decided all of them, 0 by hand outside the rules.\n- The suite: 2642 tests, 2637 pass, 0 fail, 5 skipped.\n- Golden: regenerated once and passes. Nothing moved, so there is no golden commit.\n- Guard and reader: 77/77 across all twenty.\n- The H3 checker on the 26 variations from the clone exits 0 for the thirteen.\n- Every entry I fixed is clean in all 20 languages, because ReadmeRefFeatures serves the unported seven too. The exceptions are D26 and S13 in the unported seven, whose own old ReadmeRef components print them.\n\nOf 17 attempts to put a defect back in other words, the narrow checks were fooled in every place they were tried. The broad variants caught 10 and missed 7.\n\nH3, per entry over 36:\n- By the brief's rule: 2.8% (D26's open half counted for the proposal) to 5.6% (counted against).\n- Strict: 5.6% to 8.3%.\n- Strictest: 16.7% to 19.4%. This reading counts the type printers and go's printer, which the brief exempts.",
+ "verdict": "H3 is not refuted on its criterion, and is confirmed for the thirteen ported languages under the brief's rule.\n\nWhat the seven entries took:\n- Six (X3, S22, U52, U53, V27, U102) took one shared edit each, with no line in any language's file.\n- D26 took one shared edit for its in-section half. Its remaining half needs a per-language edit. The schema's `extend` and `utility` options mean different things per runtime: rust, c and ocaml do not read extend, and zig takes it as an argument of new_with. rust, c, zig, ocaml and cpp cannot carry a utility, because their options are a closed value union. A row for them is true only with a declared runtime fact in each provider; under the proposal a runtime difference is data. So D26 counts as a per-language entry.\n\nRatios:\n\n| Reading | Per entry (of 36) | Per distinct defect (of 29) |\n| --- | --- | --- |\n| Rule | 1/36 = 2.8% (S13 only) to 2/36 = 5.6% (S13, D26) | 3.4% to 6.9% |\n| Strict (+U44) | 5.6% to 8.3% | 6.9% to 10.3% |\n| Strictest (+N04, U06, M04, M14) | 16.7% to 19.4% | 13.8% to 17.2% |\n\nOnly the strictest reading crosses the 10% line. It counts printers the brief exempts. Strict per distinct defect sits at the line, at 10.3%.\n\nWhat \"fixed once\" now covers:\n- 35 of the 36 in-scope entries for the thirteen ported languages.\n- The REFERENCE's features half (all seven of my entries except D26) for all twenty.\n\nWhat remains:\n- D26's four excepted schema keys (entity, extend, utility, test) and the default column.\n- In the seven unported languages, D26 and S13 still show through their own old components. H3 for all twenty is not decided until those ports land.\n- No one other than the author has read the changed sentences.",
+ "entries": [
+  {
+   "id": "X3",
+   "fixed": "yes, for all 20 (ReadmeRefFeatures is shared; the unported pages change too)",
+   "commit": "fde936de",
+   "files": "ts/src/cmp/FeatureDocs.ts +5 (hooks[]: the hooks a feature declares active, read from f.hook); ts/src/cmp/ReadmeRefFeatures.ts +8 -2. The hook-feature list is now the features whose model declares transport 'none' and at least one active hook, so the base transport (test, transport 'base') is not in it. Its section no longer says 'Attaches to pipeline hooks'. A wrapper that declares hooks (cost, secrets) gets '- Also attaches to pipeline hooks.'",
+   "language_files": "none: no Syntax, Naming, forms or runtime template changed",
+   "test": "ts/test/readme.test.ts 'the base transport is neither a hook feature nor said to attach to hooks (X3)' (+70 lines, including the renderRefFeatures helper). It fails at fde936de^ and passes at fde936de (run)",
+   "breaking": "no: FeatureDoc gains an additive field; the props are unchanged"
+  },
+  {
+   "id": "S22",
+   "fixed": "yes, all 20",
+   "commit": "5e876130",
+   "files": "ts/src/cmp/ReadmeRefFeatures.ts +3 -2: the 'such as a cache serving a hit' clause only when the cache feature is present",
+   "language_files": "none",
+   "test": "readme.test.ts 'the ordering note names a cache only where the cache feature is present (S22)' +11; fails before, passes after (run)",
+   "breaking": "no"
+  },
+  {
+   "id": "U52",
+   "fixed": "yes, all 20",
+   "commit": "1bd79f55",
+   "files": "ReadmeRefFeatures.ts +18 -14. Wrappers are counted. With one: '`retry` is the one feature that wraps the transport: it wraps whatever transport is installed.', with no nesting claim. The array-form sentence prints only with two or more wrappers. With none there is no Ordering subsection",
+   "language_files": "none",
+   "test": "readme.test.ts 'one wrapping feature: singular wording and no nesting claim; none: no ordering at all (U52)' +12; fails before, passes after (run)",
+   "breaking": "no"
+  },
+  {
+   "id": "U53",
+   "fixed": "yes, all 20",
+   "commit": "e875ff1c",
+   "files": "ReadmeRefFeatures.ts +3 -4: the hook sentence only when a hook feature exists, singular for one ('`audit` attaches to pipeline hooks rather than the transport, so its order does not affect what it observes.')",
+   "language_files": "none",
+   "test": "readme.test.ts 'the hook sentence is written only when a hook feature exists, and agrees with one (U53)' +8; fails before, passes after (run)",
+   "breaking": "no"
+  },
+  {
+   "id": "V27",
+   "fixed": "yes, all 20",
+   "commit": "9ad60089",
+   "files": "ReadmeRefFeatures.ts +2 -1: the extras table's type cell goes through mdCell (helpers/markdown.ts). '| `shape` | number \\| map |' is now one row",
+   "language_files": "none",
+   "test": "readme.test.ts 'a union option type stays in its cell (V27)' +10; fails before, passes after (run)",
+   "breaking": "no"
+  },
+  {
+   "id": "U102",
+   "fixed": "yes, all 20",
+   "commit": "3919e234",
+   "files": "ts/src/helpers/markdown.ts +12 (mdCodeCell: a fence longer than any backtick run inside, padding where it meets a backtick, pipes escaped); ReadmeRefFeatures.ts +3 -3 (option name and default cells through it). Prints | `tag` | ``'a\\|b`c'`` |",
+   "language_files": "none",
+   "test": "readme.test.ts 'a pipe or a backtick in an option default stays in its code span and its row (U102)' +8; fails before, passes after (run)",
+   "breaking": "no"
+  },
+  {
+   "id": "D26",
+   "fixed": "partly. The REFERENCE constructor table now takes its rows from main.kit.optspec. Every schema key the model applies has a row, in OPTION_TEXT's order and then the rest sorted; a key the schema gains appears at once; one it loses goes. auth, allow and clean gained rows, and the type column prints each language's own valueType words (py dict/str, rust map/string). Four schema keys are excepted with reasons in OPTION_UNSTATED: extend, utility, entity and test. So 'every option the schema has gets a row' does not hold yet. There is no default column. The unported seven print their own old tables",
+   "commit": "b1bc9ee0",
+   "files": "ts/src/helpers/sdkdesc.ts +44 -25 (OPTION_TEXT as a keyed table, OPTION_UNSTATED, describeRef rows from optspec, gates: apikey and auth on auth active, secret on Basic, server on a templated URL)",
+   "language_files": "none changed. Completing it needs a per-language edit, which is the finding: an extend or utility row is true only with a declared runtime fact per provider. Read: zig takes extend as an argument of new_with (Main.fragment.zig:46-58); no extend handling in tm/c, tm/ocaml or tm/rust (grep); AGENTS.md names rust, c, zig, ocaml and cpp as unable to carry a utility. entity and test were not established either way",
+   "test": "ts/test/optspec.test.ts 'constructor option rows follow optspec' (2 tests, +47). 'every schema key has a row or a stated reason, and no row lacks a schema key' fails at b1bc9ee0^ and passes after; 'a gated key follows the model' already held (run)",
+   "breaking": "no for providers (optionRows keep their shape; the order changes)",
+   "note": "The commit message says 'both ways'; four keys are excepted. The message was not rewritten."
+  }
+ ],
+ "residues": [
+  {
+   "what": "The feature-ordering note printed escaped backticks (\\`cost\\` activated before \\`cache\\`) in all twenty",
+   "decided": "fixed in shared code: the same words as code spans",
+   "commit": "83f532ad",
+   "note": "ReadmeRefFeatures.ts +2 -2; readme.test.ts 'never as escaped backticks' +6, fails before and passes after (run). Clean on all 20 (bt row)."
+  },
+  {
+   "what": "log's REFERENCE section said 'Set `feature.log.active` to true' although log is on by default; the sentence printed the TypeScript `true` in every language",
+   "decided": "This is S09 in other words. S09's own fix reached ReadmeRefFeatures :24 and :133 but not the Usage sentence, and the sentence presumed every feature starts off. Fixed in shared code:\n- On by default: 'It runs without being switched on. Override any option above under <key> in the client options; switching its `active` option off stops it.'\n- Off by default: 'Set <key> to <true> ...', with the key from the provider's existing RefSyntax.key and the true literal from its existing Syntax.expr({k:'lit',type:'BOOLEAN'}). This gives py `True`, perl `1`, rust `Value::Bool(true)`, swift `.bool(true)`, c `v_bool(true)`, zig `h.vbool(true)`.\n- The Considerations line 'set `active: false`' now says 'switching its `active` option off stops it'.\n- The unported components pass no printers, so their pages name no literal: 'Switch it on with `feature.<f>.active` ...'.",
+   "commit": "e1055ef3",
+   "note": "ReadmeRef.ts +7 -1, ReadmeRefFeatures.ts +23 -4; readme.test.ts +14, fails before and passes after (run). No language file changed: the printers existed. The 'lit' row confirms that the Usage literal equals the literal on the activation snippet's active lines in every ported page. Not fixed and outside the list: the feature Configuration tables print every default in JavaScript spelling (`false`, `'anonymous'`, `['GET']`) for every language. This is the same class of defect, on far more lines."
+  },
+  {
+   "what": "S13's residue: without the test feature, the test client's argument sentence still called the first argument 'the test feature's options, which the call switches on'",
+   "decided": "Fixed in shared code. Where the runtime does not ship the mock (testMock 'generated'), the page now says: 'The first argument is set, switched on, as <feature.test> in the second, which holds the other client options. Both may be <none>.' The earlier run's version also said 'with no `test` feature in this SDK, nothing reads it'. That is false: every ported constructor or fetcher reads feature.test.active. I removed it and amended the commit.",
+   "commit": "9964094d (amended; was dc6dc844)",
+   "note": "ReadmeRef.ts +8 -4; refinterface.test.ts +14 ('the test client's first argument without the test feature is not called the feature's options', which also asserts no 'nothing reads'). It fails at e1055ef3 and passes at 9964094d (run). zig and clojure (testMock 'always') keep the mock sentence; their absent entries carry a reason."
+  },
+  {
+   "what": "U37: go's REFERENCE title says 'Golang' where some README text says 'Go'",
+   "decided": "Not changed: no single shared label rule fixes it within the sections.\n- In-section, the go README title ('# Demo Golang SDK', line 1) and the REFERENCE title ('# Demo Golang SDK Reference') agree; both come from target.title.\n- 'Go' appears in-section only for the language's own tooling ('the Go module proxy', 'standard Go conventions').\n- 'The Go SDK uses map[string]any' (README:997) comes from go's own ReadmeExplanation_go.ts, outside the sections.\n- LANG_LABEL 'Go' feeds only pkgDescription, which writes package manifests.\n- A shared rule that relabels the REFERENCE alone would make it disagree with its own README title. The catalogue's fix is go.aontu's title (a per-target model line, which changes every page's language list) or langLabel reading target.title (manifests, outside the sections).",
+   "commit": "none"
+  }
+ ],
+ "ported_pages": "The thirteen ported languages, REFERENCE only (out/new against base33/out/new: 383 files differ, every one a REFERENCE.md; no README or root README moved).\n\nPass 1 (hand records reset to the tools base a3fd3b8) opened 752 classes, all in the reference section:\n\n| lang | classes |\n| --- | --- |\n| ts | 65 |\n| go | 43 |\n| py | 66 |\n| c | 65 |\n| zig | 61 |\n| clojure | 60 |\n| rust | 64 |\n| elixir | 64 |\n| rb | 65 |\n| perl | 46 |\n| swift | 43 |\n| ocaml | 65 |\n| lua | 45 |\n\nThat total includes 2 ABSENT entries each for zig and clojure.\n\nAll 752 were decided by the 16 written rules of P/h3fix/mine/decide3.py (one per changed template, plus its echo and OLD-unit pairings), applied to every language alike, with 0 left. By rule:\n- s09-usage 418 (and s09-usage-tok 3): Usage sentence with the provider's key and literal; correction:S09-residue-usage.\n- s09-on 46 and old-log-usage 5: on-by-default sentences; correction:S09-residue-on-by-default.\n- d26-key 44, d26-text 39, d26-tok 26, d26-typecell 15: correction:D26 (echo cells same-meaning).\n- backticks 39: correction:residue-escaped-backticks.\n- s13-res 31: correction:S13-residue (echo: same-meaning, 'the README names the same feature.test switch').\n- s13-resplit 19: the v3.3 sentence, unchanged, one variation fewer.\n- x3-hooked 26, x3-test-hooks 13, x3-also 13: correction:X3.\n- old-both 11: restored:shared.\n- absent-s13 4: zig and clojure, testMock 'always'.\n\nEcho classes are same-meaning with a reason. The only contradiction is the one recorded at the base (the unported README's test-mode text): 1 per language, 0 in clojure, as at v33-frozen.\n\nPass 2: every language PASS. OPEN 0, defect 0, STALE 0, guard pass, purity 0 open, pagecheck findings 0, callcheck findings 0, build current. Units same (tut/root/ref):\n- ts 59/21/14994\n- go 23/22/16959\n- py 59/19/14506\n- c 59/19/14438\n- zig 59/19/14567\n- clojure 59/19/14550\n- rust 59/19/14566\n- elixir 59/19/14369\n- rb 59/19/14587\n- perl 59/19/14457\n- swift 59/19/13560\n- ocaml 54/19/13639\n- lua 59/19/14619\n\nThe reference units dropped from the baseline because the feature and constructor lines changed.",
+ "unported_lines": "The seven unported languages (js php csharp java kotlin scala cpp). Only REFERENCE.md changed: no README.md and no root README differ, over the 21 out/new variations against base33/out/new and the 26 H3 variations against P/h3/out/new. Every count is identical across the seven. Per language over the 26 variations (multiset line diff, feature names masked as <F>; P/h3fix/meas/unported-lines.txt):\n\n| change | lines per language |\n| --- | --- |\n| '- Set `feature.<F>.active` to true in the client options, and override any option above in the same entry.' | 449 |\n| '+ Switch it on with `feature.<F>.active` in the client options, and override any option above in the same entry.' | 426 |\n| '+ It runs without being switched on. Override any option above under `feature.<F>` in the client options; switching its `active` option off stops it.' (log) | 23 |\n| '- - Active by default: set `active: false` to switch it off.' / '+ - Active by default: switching its `active` option off stops it.' | 23 / 23 |\n| '+ - Also attaches to pipeline hooks.' (cost, secrets) | 46 |\n| '- - Attaches to pipeline hooks, not the transport, ...' (2 lines, test's section) | 22 each |\n| escaped-backtick ordering lines, '-' then '+' | 22 x 2 lines each |\n| the hook list loses `test` (12 names to 11), '-' then '+' | 21 / 21 |\n| '- call, such as a <F> serving a hit, stops ...' | 2 |\n| '- rather than the transport, so their order does not affect what they observe.' | 2 |\n| blank lines removed | 3 |\n\nOne line each per language:\n- one-wrap: '+ `<F>` is the one feature that wraps the transport: it wraps' / '+ whatever transport is installed.', with the array-form sentence (2 lines), the plural wrap sentence and the nesting lines removed.\n- one-wrap: '+ `<F>` attaches to pipeline hooks' / '+ rather than the transport, so its order does not affect what it observes.'.\n- only-wrap: '-  attach to pipeline hooks' (the empty subject).\n- no-cache: '+ call stops every feature nested inside it from'.\n- feat-text: '+ | `shape` | number \\| map |' and '+ | `tag` | ``'a\\|b`c'`` |', each replacing its broken row.\n\nNothing else moved (diff -rq and the multiset diff, both run).",
+ "suite": "Suite without the toolchain lanes, run at HEAD after pass 2: 2642 tests, 2637 pass, 0 fail, 5 skipped, 436 s, exit 0. The command was `node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)`; the log is P/h3fix/meas/suite.log.\n\nGolden: `SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js`, then once plain: 2/2 pass both times and test/golden is unchanged. It manifests the add output and provider hashes, which no shared README change touches, so there is no golden commit.\n\nGuard and reader: `node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js`, 77/77 pass, covering all twenty (5 tests each for the 13 ported, 1 each for the 7 unported).\n\nBuild: `npm run build` exit 0 after every source change. After the Build commit, a rebuild leaves `git status` clean.\n\nFail-before: P/h3fix/mine/failbefore2.sh in a second copy, since removed. Each of the 10 commits' tests fails with ts/src at C^ and passes at C (P/h3fix/meas/failbefore.txt).\n\nNo toolchain lane was run. My changes touch prose and table cells only; no code block changed.",
+ "thirteen": "The thirteen one commands, `tools/portcheck.sh sdkgen out <lang>`, with out/new regenerated once from the final source by REGEN=1 on ts. 21 variations, none skipped; identical to the pre-restart out/new.\n\nPass 2: all thirteen print `PORTCHECK <lang>: PASS`, exit 0:\n\n| lang | time |\n| --- | --- |\n| ts | 55 s |\n| go | 58 s |\n| py | 65 s |\n| c | 66 s |\n| zig | 54 s |\n| clojure | 57 s |\n| rust | 60 s |\n| elixir | 81 s |\n| rb | 82 s |\n| perl | 76 s |\n| swift | 69 s |\n| ocaml | 72 s |\n| lua | 68 s |\n\nLogs: P/h3fix/pc6-*.log and pc7-*.log.\n\nPass 1, with records reset to the base, failed in every language on the opened classes only (zig and clojure also on 2 ABSENT each). Every other part was clean: guard, purity, pagecheck, callcheck, build current, STALE 0. Logs: pc4-*.log and pc5-*.log.\n\nBefore the reset, a run of ts with the earlier run's decisions failed only on STALE 2. That run's reason had quoted two runtime lines joined by '; ', which stands on no single line anywhere; decide3.py was fixed.\n\nThe tools' records are committed in the tools git as 72b2a64 (hand and classes for the 13); `git -C tools status` is clean.",
+ "checker_before_after": "The checker is P/h3fix/issuecheck-h3fix.js: the fence-aware issuecheck33 plus the broad rows, run with --ported set to the thirteen.\n\nBefore, on P/h3/out (NEW at v33-frozen): exit 1, 193 cells. X3, S22, U52, U53, V27 and U102 show XX in all 20, as do their broad rows (X3 any, S22 any, U52 any, U53 any, V27 U102 any), D26 both, S09r and bt. S13r shows on NEW in the 11 testMock 'generated' ported languages.\n\nAfter, on P/h3fix/h3out (26 variations generated from the clone): exit 0. X3, S22, U52, U53, V27, U102 and every broad row of mine are X- (OLD shows, NEW clean) in all 20. D26 and D26 both are clean in the 13 and XX in the 7 unported, whose own ReadmeRef_<lang> prints the constructor table. S13 is XX in the 7 unported for the same reason. S13r is clean everywhere. bt is clean in all 20.\n\nD26 both's 'clean' exempts the four keys excepted in OPTION_UNSTATED, so it does not show the catalogue's full both-ways rule.\n\nI fixed one fault in the earlier run's checker. Its 'lit' row fired on swift, rust, c and zig because its snippet parser could not read `.bool(true)`, `Value::Bool(true)`, `v_bool(true)` or `h.vbool(true)`. The pages agree; the row now compares the Usage literal with the activation snippet's active lines.\n\n'lit', S13r and S13r2 have no OLD signal: OLD never printed those forms. S13r and S13r2 fire on v33-frozen NEW. lit fires only in the mutation lit-a.\n\nAfter the attacks I added three variants, flagged as post-attack and so not independent evidence:\n- S22 any2: any 'cach' word.\n- S13r2: an unquoted 'the test feature' in the test client section.\n- bt2: entity-coded backticks.\n\nEach catches the attack that fooled its check, is clean after, and fires before.",
+ "fooled": [
+  {
+   "check": "X3 (narrow) / X3 any",
+   "how": "X3-a, ts B: added '- It also hooks into the request pipeline, so where it sits does not matter.' to test's Considerations",
+   "result": "narrow fooled; X3 any fired"
+  },
+  {
+   "check": "X3 (narrow) / X3 any",
+   "how": "X3-b, go B: put `test` back among the order-free features as '... `test` are hooked into the pipeline, not the transport, so where they sit changes nothing.'",
+   "result": "narrow fooled; X3 any fired"
+  },
+  {
+   "check": "S22 / S22 any",
+   "how": "no-cache py: 'a feature that short-circuits the call, such as a cached reply returned early, stops ...'",
+   "result": "both fooled ('cached' does not match \\bcach(e|ing)\\b); post-attack S22 any2 fired"
+  },
+  {
+   "check": "U52 / U52 any",
+   "how": "U52-a, one-wrap c: the singular sentence replaced by '... and the other wrappers stack around the transport in the order listed.'",
+   "result": "both fooled"
+  },
+  {
+   "check": "U52 / U52 any",
+   "how": "U52-b, one-wrap rust: '`retry` wrap the transport, each around the one before.'",
+   "result": "both fired"
+  },
+  {
+   "check": "U53 / U53 any",
+   "how": "only-wrap zig: added ' hook into the pipeline instead of the transport.' with no subject",
+   "result": "narrow fooled; U53 any fired"
+  },
+  {
+   "check": "V27 / V27 U102 any",
+   "how": "feat-text clojure: '| `shape` | number, or | map |'",
+   "result": "narrow fooled; any fired (cell count)"
+  },
+  {
+   "check": "U102 / V27 U102 any",
+   "how": "feat-text rust: '| `tag` | `'a\\|b\\`c'` |' (a backslash before the inner backtick breaks the span)",
+   "result": "narrow fooled; any fired (stray backtick)"
+  },
+  {
+   "check": "D26 / D26 both",
+   "how": "D26-a, elixir B: the `allow` row deleted",
+   "result": "narrow fooled; D26 both fired"
+  },
+  {
+   "check": "D26 / D26 both",
+   "how": "D26-b, rb B: the allow row keeps its key, with the false text 'Origins allowed to call the API.'",
+   "result": "both fooled: no check reads what a row says"
+  },
+  {
+   "check": "D26 / D26 both",
+   "how": "D26-c, swift B: a row `retries` the schema lacks added",
+   "result": "narrow fooled; D26 both fired"
+  },
+  {
+   "check": "S09 / S09r",
+   "how": "perl B, log section: 'Turn it on through `$options->{feature}{log}{active}` before use.'",
+   "result": "both fooled"
+  },
+  {
+   "check": "lit",
+   "how": "lit-a, py B: every Usage literal `True` changed to `true`",
+   "result": "fired"
+  },
+  {
+   "check": "lit / S09r",
+   "how": "lit-b, ocaml B: every Usage literal written as a bare 'to true' outside a code span",
+   "result": "fooled: lit reads only a code-span literal and S09r only log's section"
+  },
+  {
+   "check": "S13r",
+   "how": "no-test go: 'The first argument carries the options of the test feature, which the call activates, and goes into ...'",
+   "result": "fooled; post-attack S13r2 fired"
+  },
+  {
+   "check": "bt",
+   "how": "bt-a, lua B: '&#96;cost&#96; activated before &#96;cache&#96;'",
+   "result": "fooled; post-attack bt2 fired"
+  },
+  {
+   "check": "bt",
+   "how": "bt-b, c B: backslash-escaped backticks back",
+   "result": "fired"
+  }
+ ],
+ "h3_table": "H3 again. In scope: 38 entries; 36 are fixed or should be (N11 and M35, unported-only, excluded); 29 distinct defects, as in s4-h3 and s4-h3check.\n\nSince the frozen state:\n- X3, S22, U52, U53, V27 and U102 moved from 'not fixed' to 'once' (shared code only; clean in all 20).\n- D26 moved from 'not fixed (partial)' to 'per-language to complete': its in-section half is done in shared code, and its rows for extend and utility need a runtime fact per provider.\n- S13 stays per-language (testMock). U44 counts per-language under the strict reading (guard exceptions in py and elixir). N04, U06, M04 and M14 count per-language only under the strictest reading (printers).\n- Still not fixed: D26's four excepted keys (and its default column), on the proposal's side or against it as below.\n\nPer entry, of 36:\n\n| Reading | D26's open half counted for the proposal | Counted against |\n| --- | --- | --- |\n| Rule | 1/36 = 2.8% (S13) | 2/36 = 5.6% (S13, D26) |\n| Strict | 2/36 = 5.6% (+U44) | 3/36 = 8.3% |\n| Strictest | 6/36 = 16.7% (+N04 U06 M04 M14) | 7/36 = 19.4% |\n\nPer distinct defect, of 29:\n\n| Reading | For | Against |\n| --- | --- | --- |\n| Rule | 1/29 = 3.4% | 2/29 = 6.9% |\n| Strict | 2/29 = 6.9% | 3/29 = 10.3% |\n| Strictest | 4/29 = 13.8% | 5/29 = 17.2% |\n\nAt v33-frozen the 'against' column read 22.2%, 25.0% and 36.1% per entry (s4-h3check).\n\nOnly the strictest reading crosses 10%, and it counts the type printers and go's printer, which the brief exempts. Strict per distinct defect against the proposal is at the line.\n\nThe residues do not change the count:\n- The S09 residue is S09 at a third site, fixed with existing printers; its literal half is uncatalogued.\n- The S13 residue is a sentence introduced by the sentence round.\n- The backtick residue is uncatalogued.",
+ "needs_reader": [
+  {
+   "old": "`audit`, `clienttrack`, `debug`, `idempotency`, `log`, `metrics`, `paging`, `rbac`, `streaming`, `telemetry`, `test`, `validate` attach to pipeline hooks rather than the transport, so their order does not affect what they observe.",
+   "now": "The same sentence without `test`. The list is the features whose model declares transport 'none' and an active hook. With one such feature: '`audit` attaches to pipeline hooks rather than the transport, so its order does not affect what it observes.' With none, no sentence.",
+   "true_because": "model/feature/test.aontu declares transport: 'base': test installs the transport the wrappers wrap, so its place matters. The listed features declare transport 'none' and hooks (audit.aontu hook PreDone, PreUnexpected; log.aontu PostConstruct and others)."
+  },
+  {
+   "old": "(test's Considerations) - Attaches to pipeline hooks, not the transport, so activation order does not change what it observes.",
+   "now": "not printed for transport 'base'; test keeps '- Installs the BASE transport that the wrapping features wrap, so it must be activated before them.'",
+   "true_because": "test.aontu transport 'base'"
+  },
+  {
+   "old": "(nothing)",
+   "now": "- Also attaches to pipeline hooks. (under a wrapping feature that declares an active hook: cost, secrets)",
+   "true_because": "cost.aontu: transport 'wrap' and hook PrePoint, PreDone, PreUnexpected active; secrets.aontu: transport 'wrap' and hook PreSpec active"
+  },
+  {
+   "old": "That decides behaviour, not just sequence: a feature that short-circuits the call, such as a cache serving a hit, stops every feature nested inside it from ever seeing that call.",
+   "now": "The same, without ', such as a cache serving a hit,' when the cache feature is absent.",
+   "true_because": "With no cache feature the example names nothing the SDK has; the general clause is true of any wrapper that returns without calling inward."
+  },
+  {
+   "old": "`retry` wrap the transport. Each wraps whatever is already installed, so activation order is nesting order ... (and 'The array form of `feature` is significant: several features wrap the transport ...')",
+   "now": "`retry` is the one feature that wraps the transport: it wraps whatever transport is installed. (The array-form sentence prints only with two or more wrappers.)",
+   "true_because": "With one wrapper there is no nesting order. It wraps ctx.utility.fetcher as installed (the base, or system.fetch)."
+  },
+  {
+   "old": "(no rows) auth, allow, clean",
+   "now": "`auth`: 'Settings for how the credential is sent.' (only when auth is active); `allow`: 'Comma-separated allow-lists of the HTTP methods and the operations the client may use.'; `clean`: 'Redaction of everything the SDK emits.'",
+   "true_because": "ts/model/sdkgen.aontu main.kit.optspec: auth { prefix, basic, in, name }; allow { method: 'GET,PUT,POST,PATCH,DELETE,OPTIONS', op: 'create,update,patch,load,list,remove,command,direct,graphql' }; clean, under the schema's comment 'Redaction of everything the SDK emits (ADR-003)'. That every runtime reads allow and clean rests on grep file counts across tm/<lang> (every one of the 20 has files naming them), not on reading each runtime."
+  },
+  {
+   "old": "Set `feature.audit.active` to true in the client options, and override any option above in the same entry.",
+   "now": "Ported: 'Set <the provider's key for options.feature.audit.active> to <the provider's true literal> in the client options, and override any option above in the same entry.' For example py 'Set `options[\"feature\"][\"audit\"][\"active\"]` to `True` ...', perl '... `$options->{feature}{audit}{active}` to `1` ...'. Unported: 'Switch it on with `feature.audit.active` in the client options, and override any option above in the same entry.'",
+   "true_because": "The key is printed by the provider's RefSyntax.key, as in the constructor table. The literal is printed by Syntax.expr of a BOOLEAN literal, the printer that wrote the activation snippet above, and the 'lit' row confirms it stands on that snippet's active lines in all 13."
+  },
+  {
+   "old": "(log) Set `feature.log.active` to true in the client options, and override any option above in the same entry.",
+   "now": "It runs without being switched on. Override any option above under <the provider's key for options.feature.log> in the client options; switching its `active` option off stops it.",
+   "true_because": "log.aontu `options: active: true` (log is on by default). The runtimes install a feature only when its merged options' active is true (py Main.fragment.py: `if fopts is not None and fopts.get(\"active\") is True`)."
+  },
+  {
+   "old": "- Active by default: set `active: false` to switch it off.",
+   "now": "- Active by default: switching its `active` option off stops it.",
+   "true_because": "as above, with no TypeScript literal"
+  },
+  {
+   "old": "That decides behaviour, not just sequence. \\`cost\\` activated before \\`cache\\` sits inside it, ...",
+   "now": "The same words with `cost` and `cache` as code spans.",
+   "true_because": "Unchanged meaning; only the escaping changed."
+  },
+  {
+   "old": "(no test feature, testMock 'generated') The first argument holds the test feature's options, which the call switches on, and replaces any `feature.test` in the second, which holds the other client options; both may be `None`.",
+   "now": "The first argument is set, switched on, as `options[\"feature\"][\"test\"]` in the second, which holds the other client options. Both may be `None`.",
+   "true_because": "Each 'generated' runtime's test constructor sets testopts active true, then setpath(sdkopts, feature.test, testopts):\n- ts Main.fragment.ts:334-335\n- py Main.fragment.py:366-368\n- go Main.fragment.go:400-402\n- c Main.fragment.c:349-351\n- rust Main.fragment.rs:419-427\n- rb Main.fragment.rb:333-335\n- perl Main.fragment.pm:373-375\n- swift Main.fragment.swift:334-336\n- lua Main.fragment.lua:444-446\n- elixir Main.fragment.ex:94-96\n- ocaml sdk_features.ml:1875-1876\n\nThe earlier version's 'nothing reads it' was false (py Main.fragment.py:45, c Main.fragment.c:38, go make_options.go:156 and fetcher.go:228 read feature.test.active) and was removed."
+  }
+ ],
+ "commits": [
+  "sdkgen fde936de: REFERENCE features: classify by the transport each feature declares; the base transport is no hook feature (X3)",
+  "sdkgen 5e876130: REFERENCE features: the ordering note names a cache only where the cache feature is present (S22)",
+  "sdkgen 1bd79f55: REFERENCE features: the ordering note counts the wrapping features; one wrapper gets singular wording and no nesting claim, none gets no array-order sentence (U52)",
+  "sdkgen e875ff1c: REFERENCE features: the hook-feature sentence only when a hook feature exists, singular for one (U53)",
+  "sdkgen 9ad60089: REFERENCE features: an option's type cell goes through the table-cell escaper, so a union stays in its row (V27)",
+  "sdkgen 3919e234: REFERENCE features: option names and defaults print through a code-span cell escaper, so a pipe or a backtick in a default keeps its span and its row (U102)",
+  "sdkgen b1bc9ee0: REFERENCE constructor table: rows from main.kit.optspec both ways (D26, the REFERENCE half); the message overstates, since four keys are excepted with reasons",
+  "sdkgen 83f532ad: REFERENCE features: the cost and cache ordering note prints the feature names as code spans, not escaped backticks",
+  "sdkgen e1055ef3: REFERENCE features: an on-by-default feature is not told to be switched on, and the true value is printed by the language's own key and literal printers (S09's REFERENCE residue)",
+  "sdkgen 9964094d: REFERENCE test client: without the test feature the first argument is not called the feature's options; the page says the call sets it, switched on, as feature.test in the options (S13's residue); amended in this run from dc6dc844, whose sentence was false",
+  "sdkgen f5a44660: Build (ts/dist on its own; tag h3fix here; the branch is also named h3fix, so git calls the name ambiguous: use refs/tags/h3fix)",
+  "no golden commit: the golden did not move",
+  "tools 72b2a64: Thirteen languages: the classes the shared feature-section, constructor-table and test-client edits opened ..., decided by one written rule per changed sentence (hand/ and classes/ for the 13)"
+ ],
+ "not_done": [
+  "D26's other half:\n- No rows for the schema keys extend, utility, entity and test. extend and utility need a declared runtime fact in each provider, because the runtimes differ; entity and test were not established. This would be the per-language edit that makes D26 a per-language entry.\n- No default column (the REFERENCE table has Name, Type and Description).\n- The README model section is not ported and is outside the sections.",
+  "The feature Configuration tables still print every default in JavaScript spelling for every language (`false`, `'anonymous'`, `['GET']`). This was observed and not fixed: it is outside the list, and the same class as the Usage literal.",
+  "No independent reader has read the changed sentences listed in needs_reader. I am their author.",
+  "No compiler lane run. No code block changed, so no example needs compiling, but nothing was compiled.",
+  "The seven unported languages were not touched. D26 and S13 still show on their pages through their own old components. Their pages were checked only by diff and by the checker.",
+  "The language pack (dart, haskell, lean) was not generated: whether its components calling ReadmeRefFeatures without the new optional prop still read well was not tested. FeatureDocs' FIXED_ORDER_TARGETS = ['lean'] (a shared branch on a target name, pre-existing) makes the '`cost` activated before `cache`' sentence false for lean; not fixed.",
+  "The checks the attempts fooled were not strengthened beyond the three post-attack variants: S09r, lit with a bare literal, U52 any, and D26 both against a false row text.",
+  "The D26 commit message ('both ways') was not rewritten. History was rewritten only by amending the last source commit.",
+  "U37: decided, not changed.",
+  "The claim that allow and clean are read by every runtime rests on grep file counts, not on reading each runtime."
+ ],
+ "ran": "All with PATH=<zigenv>:<pytest>:/opt/node24/bin:$PATH, in P/h3fix.\n\nResumption:\n- After the machine restart (uptime 3 min), compared PROGRESS.md with `git log` and `git status`.\n- `npm run build`: exit 0, ts/dist identical to before the restart.\n- Regenerated out/new (REGEN=1 on ts): identical to the pre-restart out/new (diff -rq).\n\nSource:\n- Edited ReadmeRef.ts and refinterface.test.ts (the S13 residue correction), `npm run build` exit 0, ran the test, amended HEAD.\n- Fixed mine/decide3.py (the s13 rule's reason and echo).\n- Reset tools/hand to a3fd3b8.\n\nThe thirteen one commands:\n- Pass 1: runpc2.sh 4 and 5 (REGEN with ts), each followed by `python3 mine/decide3.py <lang>`; 752 decided, 0 left.\n- Pass 2: runpc2.sh 6 and 7, all PASS.\n\nSuite and gates:\n- The suite with --test-concurrency=2: 2642/2637/0 fail/5 skipped.\n- Golden update, then plain: 2/2, nothing moved.\n- runtimefacts and runtimereader: 77/77.\n- `npm run build` after the Build commit: exit 0, tree clean.\n- mine/failbefore2.sh in a copy (fbclone, since removed): 10 of 10 fail before and pass after.\n\nH3 instrument:\n- `node h3gen/gen.js h3out/new <abs sdkgen/ts>`: 26/26, exit 0, 21 s.\n- `node issuecheck-h3fix.js` on P/h3/out (before, exit 1, 193 cells), on h3out (after, exit 0) and on h3mut (17 mutations from mine/mut.js); the post-attack variants were added and all three re-run.\n\nDiffs:\n- diff -rq base33/out/new out/new: 383 REFERENCE.md only.\n- unported-diff.py, and a multiset diff of the 26 variations for the seven unported (meas/unported-lines.txt).\n\nGreps over tm/<lang> and fragments: feature.test reads, test constructors, extend, utility, allow, clean, test and entity option reads.\n\nCommits: tools 72b2a64; sdkgen 9964094d (amend) and f5a44660; tag h3fix.",
+ "read": "Instructions and earlier records:\n- P/prompts/k-h3fix.md.\n- P/brief.md; the rule sections of brief5.md, brief6.md and brief7.md (and brief7's 'What is decided').\n- P/results/s4-h3.txt and s4-h3check.txt.\n\nThe catalogue: entries X3, S22, U52, U53, V27, U102, D26, S09, S13 and U37 (Fix and Check).\n\nGuides:\n- PORTING.md sections 5, 6, 10 and 11.\n- tools/README.md: commands, outcomes, checks, t7.\n\nThe earlier run's work:\n- PROGRESS.md, mine/decide3.py and issuecheck-h3fix.js.\n- Its full source and test diff against v33-frozen.\n\nSource and models:\n- ReadmeRefFeatures.ts and FeatureDocs.ts (honoursActivationOrder, FIXED_ORDER_TARGETS).\n- The optspec in ts/model/sdkgen.aontu, and the feature models (test, log, cost, secrets, audit).\n- Runtime code: go fetcher.go:215-245 and make_options.go:145-170; the test constructors of ts, py, go, c, rust and ocaml; py Main.fragment.py:40-80; c Main.fragment.c:30-48; zig Main.fragment.zig:46-58; ts Main.fragment.ts:320-340.\n- handstale.js's quotation rules, and the head of portcheck.sh.\n\nPages read:\n- py's B features section (audit, cache, test, log and cost sections).\n- The constructor tables of py, rust, ocaml and perl (B).\n- The Usage literals of swift, rust, c and zig against their activation snippets.\n- perl's ordering notes on one-wrap, only-wrap and no-cache; elixir's feat-text rows.\n- The S13-residue text of go and py on no-test.\n- The go README and REFERENCE titles (U37).",
+ "classes_decided": "752 classes in the 13 ported languages, all in the reference section (748 classes plus 4 ABSENT entries), decided by 16 written rules (P/h3fix/mine/decide3.py), the same rule for every language, 0 by hand outside the rules:\n\n| rule | classes |\n| --- | --- |\n| s09-usage | 418 |\n| s09-on | 46 |\n| d26-key | 44 |\n| d26-text | 39 |\n| backticks | 39 |\n| s13-res | 31 |\n| x3-hooked | 26 |\n| d26-tok | 26 |\n| s13-resplit | 19 |\n| d26-typecell | 15 |\n| x3-test-hooks | 13 |\n| x3-also | 13 |\n| old-both | 11 |\n| old-log-usage | 5 |\n| absent-s13 | 4 |\n| s09-usage-tok | 3 |",
+ "surprises": [
+  "The earlier run's S13-residue sentence ('with no `test` feature in this SDK, nothing reads it') was false in every ported runtime. The tools passed it as a decided class. It surfaced only because its reason quoted two runtime lines joined into one quotation (STALE), and the falsehood itself was found by reading the runtimes. A changed sentence really does need a reader other than its author.",
+  "The earlier run's checker row 'lit' was a false positive on swift, rust, c and zig (its snippet parser). The pages were right.",
+  "The golden does not move with any REFERENCE change: it manifests add output, not pages.",
+  "Of the 17 attempts, the narrow regex checks for my entries were fooled every time; the broad rows caught 10 and missed 7. The rows that read whole tables (cell counts, row keys) held best, and the rows that look for words held worst.",
+  "The name 'h3fix' is both the branch and the tag, so git reports it as ambiguous.",
+  "Shared FeatureDocs holds FIXED_ORDER_TARGETS = ['lean'], a branch on a target's name, and for that target the cost/cache ordering sentence it gates is false.",
+  "The machine restarted mid-run (batch-2 portcheck stopped in lua); the work resumed from PROGRESS.md and was re-verified."
+ ]
+}

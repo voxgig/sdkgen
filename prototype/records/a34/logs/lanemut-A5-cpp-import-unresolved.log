@@ -1,0 +1,14 @@
+applied A5-cpp-import-unresolved
+  ✖ cpp: every documented example compiles, singleton first (341.262104ms)
+  ✖ cpp: every documented example compiles, list first (295.502135ms)
+  ✖ cpp: every documented example compiles, crud first (228.889986ms)
+  ✖ cpp: every documented example compiles, nested first (226.644343ms)
+  ✖ cpp: every documented example compiles, quoted-name first (256.986948ms)
+  ✖ cpp: every documented example compiles, basic-server first (208.006266ms)
+✖ the documented c, cpp, rust, zig and ocaml examples compile (1583.193821ms)
+ℹ tests 6
+ℹ pass 0
+ℹ fail 6
+✖ failing tests:
+✖ cpp: every documented example compiles, singleton first (341.262104ms)
+lane exit 1

@@ -1,0 +1,1083 @@
+{
+ "key": "stage-1-and-2",
+ "what": "the first stage (the core on four languages, the probes, the migration measure) and the second (interface version 2 and the shared REFERENCE page)",
+ "digest": {
+  "part": "Stage 1 (the core on four languages, the two probes, the migration measure, the REFERENCE anatomy) and stage 2 (interface version 2 with the root quick start, the shared REFERENCE page, the rust and elixir ports, the anatomy of the other README families, and the two independent checks). Records read: brief.md, stage1.md, brief2.md, brief3.md, results/s2-restanatomy.txt, s2-v2.txt, s2-check_v2.txt, s2-ref.txt, s2-probe_ref.txt, s2-check_ref.txt. None was missing.",
+  "rounds": [
+   {
+    "round": "Stage 1, core",
+    "purpose": "Build the core of the write-once structure and test it on the README quick start for ts, go, py and c.",
+    "who": "1 builder (the architect)",
+    "produced": "A resolved SdkDescription per target (sdkdesc.ts), a language-neutral example representation (7 statement kinds, 6 expression kinds), a shared ReadmeQuick.ts, four syntax providers Syntax_ts/go/py/c; the four ReadmeQuick_<lang> deleted; 19 model variations with a reason-tagging diff; lanes; metrics; an H5 probe of doctor and target add.",
+    "changed": "Found and fixed a c getenv-without-stdlib.h defect. Decided go prints steps rather than one program, js left unported, a project's own ReadmeQuick_<lang> wins over the provider. Showed source grows for four languages (H2 refuted for this section) and that doctor needs a retired-component rule (H5 open)."
+   },
+   {
+    "round": "Stage 1, probe-claims",
+    "purpose": "Independently reproduce the architect's numbers and claims.",
+    "who": "1 independent checker; rebuilt both clones, regenerated OLD and NEW, own scripts (mycmp.js, mymodelreads.js, checks.js)",
+    "produced": "Confirmation of the counts, lanes, byte-identity and 0 model reads; five corrections: py was runnable with real pytest (12/12), go regressed (no longer executed), 100% shared prose came partly from deleting facts, upgraded projects keep old text, the ts README contradicts itself.",
+    "changed": "Its corrections became items 2, 3, 7 and 8 of brief2 (facts deleted, go program lost, upgrade keeps old text, porting one section makes a document contradict itself)."
+   },
+   {
+    "round": "Stage 1, probe-interface",
+    "purpose": "Attack the provider interface by porting two more languages (zig, clojure) and surveying the other 14.",
+    "who": "1 independent porter",
+    "produced": "Syntax_zig and Syntax_clojure (not compiled: no toolchain), two additive interface changes (Scope.section, RuntimeWords.one), a survey of all 16 unported languages, a list of recommended interface changes, facts found in providers.",
+    "changed": "Showed naming rules copied into providers (c, zig, py) and elixir's accessor needing the whole collection: brief2 item 1 and requirement A (naming hook). Recommended a call context and Scope.section, adopted in v2."
+   },
+   {
+    "round": "Stage 1, migrate",
+    "purpose": "Measure whether retiring per-language components is safe for doctor, remove, target add, package update, aliases and packs (H5).",
+    "who": "1 builder, using a stand-in shared component",
+    "produced": "A lifecycle change to the tool (136 added, 14 removed lines in target.ts, doctor.ts, edition.ts, remove.ts) plus a 143-line test (retire.test.ts, 7 cases), and a table of behaviours before and after across 14 rows including the language pack.",
+    "changed": "Brief2 requirement E: the lifecycle change (commits a49fddc0, 7bb5161b, c193a603) is part of the build. Two hazards left open: projects with no copy record, and stale compiled output after a hand deletion."
+   },
+   {
+    "round": "Stage 1, refanatomy",
+    "purpose": "Analyse the REFERENCE page as it is today, before building it.",
+    "who": "1 analyst; nothing built",
+    "produced": "Block-by-block sharing counts, classes of difference, drift list, a proposed fact table per language, proposed description fields and provider additions, an H2 estimate of 2.4-2.8x.",
+    "changed": "Set the shape of the shared REFERENCE page built in stage 2; its estimates were later replaced by measurements and some of its proposals proved unnecessary or wrong."
+   },
+   {
+    "round": "Stage 2 brief (brief2)",
+    "purpose": "Say what stage 1 meant and what must change before more languages are ported.",
+    "who": "The orchestrating brief",
+    "produced": "Eight problems from stage 1 and requirements A-F: names from the description through the code generator's own naming functions; a provider may present one complete program; runtime facts declared, structured and counted; decisions leave providers; the migration change is part of the build; count interface changes honestly.",
+    "changed": "Refined the proposal: a language supplies (1) naming rules shared with its code generator and (2) printers, and does not decide what is shown."
+   },
+   {
+    "round": "Stage 2, v2",
+    "purpose": "Build interface version 2 and port a second section (the root README quick start) through the same description and providers.",
+    "who": "1 builder",
+    "produced": "Naming_<lang> hooks for 6 languages, RuntimeFacts tables replacing RuntimeWords, runtimeprose.ts (sentences per result style), CallContext, Syntax.program, Expr 'fields', a runtimefacts guard test, the merged lifecycle change, an upgrade walk of a real 4.44.0 project; tutorial and root quick start for ts, go, py, c, zig, clojure.",
+    "changed": "go is one program again and runs; c DOC 6/6; providers hold 0 naming rules; H2 still refuted for the two quick-start sections (1.13x on six, projected 1.75x / 1.46x)."
+   },
+   {
+    "round": "Stage 2, check_v2",
+    "purpose": "Independently check v2.",
+    "who": "1 independent checker; rebuilt both clones, own scripts mycmp.js and mychecks.js, own lanes and own go run",
+    "produced": "Confirmation of byte-identity, block counts, lanes, the go programs running, the naming claim and the upgrade walk; corrections: provider total 680 not 580, a false zig create comment, lost ts class names, an unbound clojure `entity`, a weak facts guard.",
+    "changed": "Fed the stage-3 brief items 2 and 3 (sharing introduced false sentences; the guard checks names only)."
+   },
+   {
+    "round": "Stage 2, ref",
+    "purpose": "Build the shared REFERENCE page on the v2 description and providers.",
+    "who": "1 builder",
+    "produced": "Shared ReadmeRef.ts, DescRef and extended DescEntity, RefFacts/RefSyntax per provider, markdown.ts and media.ts; ports for ts, go, py, c, then zig; ReadmeRef_<lang> retired for those five; an extended guard; two new variations (ref-issues, no-test); fixes to the already-shared ReadmeRefFeatures; PORTING.md (205 lines).",
+    "changed": "Dropped the action example after it failed lanes (ts 5/16 and py 3/12 on first run). Added RefFacts.container (a breaking change). H2 supported for this page by total lines; clojure not ported (no client type name)."
+   },
+   {
+    "round": "Stage 2, probe-ref",
+    "purpose": "Port rust and elixir completely (tutorial, root quick start, REFERENCE) and survey the remaining 12 against interface v2.",
+    "who": "1 independent porter",
+    "produced": "Syntax and Naming for rust and elixir, three components retired in each, 5 additive interface changes, guard regexes extended for rust and elixir, a survey of 14 languages and a list of guide problems.",
+    "changed": "Showed the guard's regexes know only six language families; that one section's imports serve other sections on a page (rust); recommended a declared per-family form table for the guard and several additive facts."
+   },
+   {
+    "round": "Stage 2, check_ref",
+    "purpose": "Independently check the shared REFERENCE page.",
+    "who": "1 independent checker; rebuilt three clones, own scripts cmp.py, prose.py, prose2.py, uniq.py, lost.py, own lanes and negative controls",
+    "produced": "Confirmation of block counts, lanes, unported differences, source lines and catalogued fixes; corrections: '0 UNEXPLAINED' is structural and hid zig field types all `any`; guard checks names only; more facts lost; new defects (py `false`, `utilitys` plurals 338); README and REFERENCE contradict each other; per-language prose relocated into shared code.",
+    "changed": "Fed the stage-3 brief items 1-4 and 6, 8 and the new principle (runtime notes, a per-sentence and per-block review)."
+   },
+   {
+    "round": "Stage 2, restanatomy",
+    "purpose": "Analyse the other ten README documentation families before porting them.",
+    "who": "1 analyst; nothing built",
+    "produced": "Per-family sharing by units and by words, reaction to model switches, source lines (30,963 counted), fit per family, catalogue mapping, facts stated in several families, an after-estimate of 9,300-13,500 lines.",
+    "changed": "Stage-3 brief item 9: not all documentation is the same kind of thing (Install and Explanation are documents about one language)."
+   },
+   {
+    "round": "Stage 3 brief (brief3)",
+    "purpose": "State what stage 2 showed and define interface version 3.",
+    "who": "The orchestrating brief",
+    "produced": "A summary of stage 2 held-up and did-not-hold-up points, and a restated principle: 'The model decides what is said, once. A language supplies how its runtime spells it, and nothing a language supplies can see the model.' A language supplies naming functions, printers, declared runtime facts (enumerated where shared by two or more runtimes) and runtime notes (counted).",
+    "changed": "Replaced the original sentence 'a language supplies syntax, never facts' as too strong; added a sentence ledger, per-block classification, guard coverage and cumulative interface-change counts as required measures."
+   }
+  ],
+  "items": [
+   {
+    "topic": "cost",
+    "claim": "For the quick start on four languages the source grew rather than shrank.",
+    "numbers": "before 945 / 717 lines (total / non-blank non-comment), after 1069 / 826; ratio 0.88x / 0.87x",
+    "source": "stage1.md, section 1 Measurements, 'source lines, four languages'",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H2",
+    "claim": "The architect's 20-language projection for the quick start stays below 2x.",
+    "numbers": "4537 / 3479 -> 2729 / 2090 lines; 1.66x / 1.66x, assuming 16 providers average 103.75 / 79 lines and shared code does not grow",
+    "source": "stage1.md, section 1 Measurements, 'projection to 20 languages'",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H2",
+    "claim": "The independent check found the quick-start projection optimistic.",
+    "numbers": "1.36x with c-sized providers (142 lines); 2.19x even with no shared code at all",
+    "source": "stage1.md, section 2 Verdicts H2 and Claims checked",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H2",
+    "claim": "With six providers the quick-start projection to 20 languages is still under 2x.",
+    "numbers": "1.59x (against the architect's 1.66x from four providers)",
+    "source": "stage1.md, section 3 (probe-interface), H2 paragraph",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Every changed line in the four ported quick starts was tagged with a reason, and the 16 unported languages were byte-identical.",
+    "numbers": "0 UNEXPLAINED of 2236 tagged changed lines across 19 variations; 0 of 272 whole README files differ (16 languages x 17 variations)",
+    "source": "stage1.md, section 1 Measurements",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The independent check reproduced the byte-identity and found nothing changed outside the quick start.",
+    "numbers": "272 unported files, 0 differ; 0 outside-section changes in the four ported languages",
+    "source": "stage1.md, section 2 Claims checked",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "In stage 1 the four providers read the model 0 times by script count.",
+    "numbers": "model reads: ts 0, go 0, py 0, c 0",
+    "source": "stage1.md, section 1 Measurements 'model reads in providers'; section 2 confirmed",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "Stage 1's zero model reads was partly reached by copying naming rules into providers.",
+    "numbers": "Syntax_c copies C_RESERVED, cVarName and inlines cIdent three times; Syntax_zig copies ZIG_RESERVED; Syntax_py derives the module from desc.Name; under a strict reading three or more providers read model facts, which crosses H1's line",
+    "source": "stage1.md, sections 2 and 3 (Facts found in providers; On H1)",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Stage 1's quick-start prose was 100% shared once runtime words were masked, against 30.8% before, but partly because language-specific facts were deleted.",
+    "numbers": "OLD 144 of 468 sentences identical in all four (30.8%); NEW 460 of 544 raw (84.6%), 544 of 544 (100%) masked; deleted facts include c 'or NULL with *err set', 'check `err` after the call', go's (value, error) paragraph, py 'returns the ENTITY'",
+    "source": "stage1.md, section 1 Measurements 'quick-start prose shared'; section 2 point 3",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "By words, runtime phrases were per-language prose in the stage-1 quick start, over 15% for zig.",
+    "numbers": "7 to 15% of quick-start prose words for ts, py, c, go and clojure (go 14.9% in doc-crud); 19 to 23% for zig",
+    "source": "stage1.md, section 3 (probe-interface) and Facts found in providers",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Stage 1 needed few interface changes after the first provider.",
+    "numbers": "3 changes while writing go and c, before the first commit (1 breaking: block post-processor became `before`); none in git after f21e6fe1; probe-interface added 2 more, both additive (Scope.section, RuntimeWords.one)",
+    "source": "stage1.md, section 1 Measurements 'interface changes'; section 2 [could-not-check]; section 3",
+    "by": "builder",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "H3",
+    "claim": "Stage 1 fixed the catalogued quick-start issues in the ported languages, two of them by provider rather than shared code.",
+    "numbers": "OLD structural defect counts 30, 47, 12, 15 and 45 (step-number gaps, lead-in promising list, wrong write heading, getenv without stdlib.h, defaulted variable shown as required); NEW 0 for each; M14 and c-getenv are provider fixes; D23, D25, D55 fixed only in part; lean M19 and U10 untouched",
+    "source": "stage1.md, section 2 summary and Verdicts H3",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "Stage 1 examples compiled and ran where they did before, except that go's quick start stopped being executed.",
+    "numbers": "ts README lanes 16/16; go 12/12; py 12/12 real pytest NEW and OLD (independent); c DOC 5/6 NEW and 5/6 OLD (failure in the unported root README); go/README func main blocks 0 NEW against 1 OLD",
+    "source": "stage1.md, section 1 Measurements; section 2 points 1 and 2",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "The c quick start never compiled with auth active, in the README and in the root README, and no lane caught it.",
+    "numbers": "getenv used without #include <stdlib.h>; OLD c DOC basic-server lane fails at ../README.md:53 and README.md:50",
+    "source": "stage1.md, section 1 summary and Surprises; section 2 Claims checked",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "In the c examples err is never reset, so after one failure every later step reports a failure; OLD did the same.",
+    "numbers": "runtime returns NULL whenever *err is already set (EntityListOp.fragment.c)",
+    "source": "stage1.md, section 2 Smaller points; s2-check_v2.txt output_defects [5]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Porting one section made the ts README contradict itself.",
+    "numbers": "B: quick start says region defaults to eu, options table at line 224 says Required tenant, region; auth-basic-query: quick start omits secret while lines 143, 180, 192, 216, 230 still show it",
+    "source": "stage1.md, section 2 point 5; s2-check_v2.txt output_defects [6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H5",
+    "claim": "With the unmodified tool, an upgraded project silently keeps the old per-language quick start.",
+    "numbers": "doctor ok: true, additive ['src/cmp/go/ReadmeQuick_go.ts'], stale []; target add never prunes src/cmp; `target remove` refuses the copy as not written by target add (EXIT 1)",
+    "source": "stage1.md, section 1 Measurements 'H5 probe'; section 4 Behaviours rows 1, 2a, 4a",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H5",
+    "claim": "Retiring components is made safe for recorded copies, aliases and packs by a change to the tool that uses the copy record.",
+    "numbers": "136 added and 14 removed lines in 4 files (target.ts +85/-3, doctor.ts +45/-10, edition.ts +5/-1, remove.ts +1) plus a 143-line test with 7 cases; 13 of 14 behaviour rows ok",
+    "source": "stage1.md, section 4 (migrate), Changes to the tool and Behaviours",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H5",
+    "claim": "The language pack keeps generating identical output and passing its suite against the modified sdkgen.",
+    "numbers": "76 tests, 74 pass, 0 fail, 2 skipped before and after; all 12 generated .md files byte-identical",
+    "source": "stage1.md, section 4 Behaviours row 7a",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "limit",
+    "claim": "Two migration hazards are not fixed: a hand-deleted override keeps running from stale compiled output, and projects without a copy record cannot be cleaned automatically.",
+    "numbers": "row 'Override deleted by hand' marked NOT OK: generate still writes 'PROJECT-EDITED QUICK START', doctor exit 0; row 5 (no record): 3 additive, kept and still used",
+    "source": "stage1.md, section 4 Behaviours and Risks",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Deleting a component's .ts source is not enough, because tsc never deletes compiled output and the loader requires dist.",
+    "numbers": ".sdk/dist/cmp/<t>/ReadmeQuick_<t>.js remains and is called",
+    "source": "stage1.md, section 4 summary and Risks",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "The REFERENCE page has one structure in all 20 languages, and its language-specific conditions are only type-name and literal maps.",
+    "numbers": "8,330 lines in 20 ReadmeRef_<lang>.ts; model-reading lines 21-47 and conditions 20-37 per file",
+    "source": "stage1.md, section 5 (refanatomy) summary and Measurements",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "REFERENCE prose sharing before any build depends on what is counted, and the main gap is one free-text error and return convention.",
+    "numbers": "80% of 2,461 units shared by at least 15 languages; 67% (1,026 of 1,521) excluding ReadmeRefFeatures; 54% (586 of 1,081) excluding all feature blocks; op descriptions rise from 48-62% to 88-92% when the error clause is tokenised; about 18 distinct idiom sentences (estimate, of 165 found in at most three languages)",
+    "source": "stage1.md, section 5 summary and Measurements",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The REFERENCE generators of main react to model switches in only one language each, showing the cost of 20 copies.",
+    "numbers": "op-off-planet-* and op-readonly: only go changes; auth-basic: only ts; auth-query, server-none, server-static: no REFERENCE changes; auth-off: 1 line in each of 20",
+    "source": "stage1.md, section 5 Measurements 'REFERENCE reaction to model switches'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "Hand-written method tables in main's REFERENCE generators already disagree with the runtimes.",
+    "numbers": "stream() documented in 2 languages (go, zig), defined in at least ts, py, rb, java; py reads fetchargs ctrl but does not document it; escaped-backtick leak in all 20 REFERENCEs",
+    "source": "stage1.md, section 5 Measurements",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H2",
+    "claim": "The refanatomy estimated the REFERENCE would shrink 2.4-2.8x, without building.",
+    "numbers": "about 3,000-3,500 lines after against 8,330 before (estimated)",
+    "source": "stage1.md, section 5 Measurements 'H2 shrink estimate'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "In v2 the providers read the model 0 times and hold 0 naming rules, reached by moving names into naming hooks that call the code generator's own functions, not by copying.",
+    "numbers": "purity.js: 43 hits in the starting providers (ts 9, go 9, py 9, c 9, zig 5, clojure 2), 1 now (c array subscript `sym.vars + '[i]'`); naming hooks ts 24, go 23, py 26, c 27, zig 21, clojure 27 lines",
+    "source": "s2-v2.txt provider_purity and names; s2-check_v2.txt claims [5], [6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "finding",
+    "claim": "Sharing a naming function between docs and code required extracting functions the code generators did not have, and marks those generator files outdated in every existing project.",
+    "numbers": "pyPackageDir extracted (py rule still inline in 5 other components: Config_py:116, Entity_py:46, PrepareAuth_py:27, ReadmeExamplesTest_py:15, TestClean_py:36); cljEntityNs/cljEntityAlias extracted; upgrade walk: 5 OUTDATED (Main_py, utility_py, Main_clojure, MainEntity_clojure, utility_clojure)",
+    "source": "s2-v2.txt names, surprises, migration; s2-check_v2.txt claims [6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "In v2 go's tutorial and root quick start are each one complete program again, and both run.",
+    "numbers": "func main: go/README 1, root README 1 (OLD 1 and 0; stage 1 0); direct go run exit 0 for both (builder and independent); go README lanes 12/12",
+    "source": "s2-v2.txt program_unit, measurements [11]; s2-check_v2.txt claims [4]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The go README lane alone would not prove the program runs.",
+    "numbers": "runProgs tolerates a domain panic and skips a run variant that does not compile",
+    "source": "s2-check_v2.txt summary and claims [4]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "v2 lanes pass in every language with a toolchain, and c improved from 5/6 to 6/6.",
+    "numbers": "NEW: ts 16/16, go 12/12, py 12/12 (real pytest 9.1.1), c DOC 6/6; OLD: 16/16, 12/12, 12/12, c 5/6",
+    "source": "s2-v2.txt measurements [9]-[13]; s2-check_v2.txt claims [3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "In v2 the 14 unported languages are byte-identical and nothing changed outside the two quick-start sections.",
+    "numbers": "0 of 4,397 changed lines unexplained (builder); 238 unported per-target READMEs (14 x 17) differ 0 (independent); root README outside 6 subsections differs in 0 of 19 variations",
+    "source": "s2-v2.txt measurements [1]; s2-check_v2.txt claims [0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Code blocks in v2's two quick-start sections, identical to OLD against changed, were reproduced exactly; every root block changed.",
+    "numbers": "ts 18/43, go 0/39, py 25/36, c 7/54, zig 25/36, clojure 26/35; tutorial | root: ts 18/26 | 0/17; go 0/20 | 0/19; py 25/19 | 0/17; c 7/37 | 0/17; zig 25/19 | 0/17; clojure 26/18 | 0/17",
+    "source": "s2-v2.txt measurements [2]; s2-check_v2.txt own_measurements [2]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "Restoring the deleted facts made the tutorial prose less shared by sentence: H1's 15% line is crossed by that measure.",
+    "numbers": "sentences shared by all six: 49 of 71 (69.0%) for ts, py, c, zig, clojure; 49 of 95 (51.6%) for go; i.e. 31% and 48% not shared; OLD 35.8-45.2%",
+    "source": "s2-v2.txt hypotheses H1; s2-check_v2.txt own_measurements [3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "By words, provider-supplied runtime words are under 15% in the v2 tutorial but over it in zig's root comments.",
+    "numbers": "tutorial provider words: ts 5.3%, go 5.7%, py 7.4%, c 10.3%, zig 8.9%, clojure 7.6% (builder); root comments: ts 3.3%, go 11.4%, py 3.3%, c 13.7%, zig 20.0%, clojure 3.3% (builder); independent root-comment fact-token words ts 13.7%, go 11.3%, py 13.7%, c 13.7%, zig 20.0%, clojure 13.7%",
+    "source": "s2-v2.txt measurements [3], [4]; s2-check_v2.txt own_measurements [5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "v2 counted 4 breaking interface changes since stage 1's first commit, 2 to the provider interface and 2 to shared APIs only.",
+    "numbers": "breaking: words->facts (all 6 providers reworked), Expr 'fields' (all 6), builders take facts (shared only), sdkDescription(model, target, naming) (shared only); 8 additive changes listed",
+    "source": "s2-v2.txt interface_changes and hypotheses H1; s2-check_v2.txt hypotheses H1",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "cost",
+    "claim": "The second section (root quick start) cost little once the first existed, but both quick-start sections still shrink under 2x.",
+    "numbers": "54 shared lines (51 non-blank non-comment), 0 provider or hook lines; retired 659 lines in six languages (2,000 in twenty); both sections six languages 2,060 -> 1,818 (1.13x), 1,842 with uncounted extraction lines (about 1.12x); projection to 20: 6,550 -> 3,750 (1.75x) or 4,490 (1.46x) at c's size",
+    "source": "s2-v2.txt source_lines and measurements [6]-[8]; s2-check_v2.txt claims [7], [8]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "cost",
+    "claim": "The tutorial alone grew in v2 because fact tables, hooks and runtimeprose were added.",
+    "numbers": "1,388 -> 1,764 lines for six languages",
+    "source": "s2-v2.txt source_lines; s2-check_v2.txt hypotheses H2",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H3",
+    "claim": "In v2 the catalogued quick-start issues have zero instances in the ported sections, but several of the same ids also name unported sections that are not fixed.",
+    "numbers": "NEW 0 for every check; OLD G01/M13 89, S49 84, S28 lead-in 63, S28 numbering 45, c-getenv 30, S50 20, M14 16, M12 2, U45 1 real",
+    "source": "s2-check_v2.txt own_measurements [6] and hypotheses H3",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H5",
+    "claim": "A real 4.44.0 project upgraded cleanly to v2 with the lifecycle change.",
+    "numbers": "doctor first: '0 forked, 0 edited, 0 stale, 12 missing, 5 outdated, 12 retired', EXIT 1; package update --no-fetch removed 12 retired copies and their dist output; final doctor 'matches the scaffold (0 additive, 0 customized)', EXIT 0; retire.test 7/7",
+    "source": "s2-v2.txt migration; s2-check_v2.txt claims [12]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "v2's runtime-facts guard caught a changed result style but missed wrong collection and errVar values.",
+    "numbers": "guard 7/7; zig union->throw: 1 fail (caught); go collection `map[string]any` and errVar `e`: 7/7 pass (not caught); only load's style is checked",
+    "source": "s2-v2.txt measurements [15]; s2-check_v2.txt claims [10]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "v2 sharing lost some true facts and introduced a false one.",
+    "numbers": "zig create comment 'returns the created entity' (false for a union; OLD '.ok carries the created entity'); ts root lost PlanetEntity[] etc.; clojure prose names an unbound `entity`; py create comment lost '(call data_get() for the record)'",
+    "source": "s2-check_v2.txt output_defects and facts_lost",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "zig and clojure examples were neither compiled nor run in stages 1 and 2.",
+    "numbers": "command -v zig, clojure, clj, lein MISSING; no clojure jar on disk",
+    "source": "s2-check_v2.txt claims [14]; s2-v2.txt gaps",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "v2's full suite passed with no failures.",
+    "numbers": "2,528 tests, 2,523 pass, 0 fail, 5 skipped; runtimefacts plus retire 14/14",
+    "source": "s2-v2.txt measurements [14]; s2-check_v2.txt claims [11]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "cost",
+    "claim": "Generation time did not change measurably in v2, measured once under load.",
+    "numbers": "doc-crud, 21 READMEs, minimum of 3: OLD 894 ms, NEW 906 ms",
+    "source": "s2-v2.txt measurements [17]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H2",
+    "claim": "The shared REFERENCE page shrinks the source for five languages above 2x by total lines and just under 2x by non-blank non-comment lines.",
+    "numbers": "2,196 -> 967 total (2.27x); ncnb 1,542 -> 805 (1.92x, builder) or 1,520 -> 805 (1.89x, independent); four languages only 1,771 -> 917 (1.93x total, 1.62x ncnb)",
+    "source": "s2-ref.txt source_lines and measurements [8]; s2-check_ref.txt own_measurements [7]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "Projected to 20 languages, the REFERENCE and both quick-start sections together shrink above 2x unless providers are much larger than measured.",
+    "numbers": "both sections: 14,896 -> 5,437 (2.74x; 2.51x ncnb); 7,323 at 1.5x-sized providers (2.03x); 9,209 at 2x (1.62x); REFERENCE alone 8,359 -> 1,720 (4.86x), 3.76x at 1.5x, 3.07x at 2x",
+    "source": "s2-ref.txt measurements [9], [10]; s2-check_ref.txt own_measurements [8]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "cost",
+    "claim": "The REFERENCE reused the description, representation and quick-start printers, costing shared growth plus about 50 lines per language.",
+    "numbers": "+378 infrastructure lines (sdkdesc +160, example about +95, runtimeprose +63, markdown 31, media +30), shared ReadmeRef.ts 338; provider growth ts 50, go 51, py 50, c 53, zig 47; 418-473 lines removed per language",
+    "source": "s2-ref.txt source_lines",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "REFERENCE code blocks, identical against changed, were reproduced exactly.",
+    "numbers": "ts 120/192, go 82/292, py 120/192, c 131/181, zig 131/181, go2 4/18; NEW has fewer blocks than OLD: ts 312 vs 330, go 374/376, py 312/314",
+    "source": "s2-ref.txt measurements [1]; s2-check_ref.txt claims [1]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The '0 UNEXPLAINED' result for the REFERENCE was structural, and it hid a real regression.",
+    "numbers": "builder: 0 UNEXPLAINED; changed lines ts 4447, go 2675, py 3745, c 4886, zig 4761, go2 183; independent: reasons matched by section (one rule tags 2,553 lines); zig field types in B: OLD 10 `[]const u8`, 3 `f64`, 1 `i64`, 1 `Value (object)`, 1 `any`; NEW 16 `any`",
+    "source": "s2-ref.txt measurements [0] and gaps; s2-check_ref.txt claims [0], own_measurements [10]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H4",
+    "claim": "REFERENCE lanes pass in every language with a toolchain, and the ts and py lanes really execute REFERENCE blocks.",
+    "numbers": "NEW ts 16/16, go 12/12, py 12/12 (real pytest), c 6/6; OLD 16/16, 12/12, 12/12, c 5/6; first NEW run ts 11/16 and py 9/12, all failures the action example; negative control: an injected throwing block fails both the ts and the py lane",
+    "source": "s2-ref.txt measurements [12]-[15]; s2-check_ref.txt claims [4], own_measurements [12]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "finding",
+    "claim": "An action example cannot run in any test mode, so it was dropped and the Actions table names only the operation and route.",
+    "numbers": "test modes reject 'Operation \"create\" action \"terraform\" is not valid'; failures ts 5 and py 3 lanes on the first run",
+    "source": "s2-ref.txt surprises and interface_changes [17]; s2-check_ref.txt output_defects [5]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H3",
+    "claim": "Catalogued REFERENCE issues are fixed by shared code in all five ported languages on their exposing variations.",
+    "numbers": "17 checks (issuecheck.js); confirmed independently: S25/D10, U43, U44, U34, U36, S50, D23/D55, G27/G29/M38/D69, S13, N04/U06/M04 on go2; S09 and the backtick leak fixed in all 20; builder: about 3 of 25 need a per-language edit (N04 family literal, N11 js port, stream declaration)",
+    "source": "s2-ref.txt issues and hypotheses H3; s2-check_ref.txt claims [12]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Unported REFERENCE pages changed only by two fixes to the already-shared ReadmeRefFeatures.",
+    "numbers": "285 unported REFERENCE files differ, each by the same 8 lines (4 removed, 4 added); 2,280 lines in all; 0 of 404 README.md differ from v2",
+    "source": "s2-ref.txt unported_identical; s2-check_ref.txt claims [2], [3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "No REFERENCE sentence is written in a provider, and provider-declared words are a tiny share of the page.",
+    "numbers": "declared-fact words: ts 102 of 22,319 (0.5%), go 19 of 23,801 (0.1%), py 19 of 17,180 (0.1%), c 185 of 20,567 (0.9%), zig 102 of 19,656 (0.5%); independent plain-English phrase words ts 83 (0.5%), py 0, c 166 (1.1%), zig 83 (0.6%), go 0",
+    "source": "s2-ref.txt measurements [5]; s2-check_ref.txt own_measurements [6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "Per-language prose was relocated into the shared REFERENCE file rather than removed, and by one measure it is over 15% for go and ts.",
+    "numbers": "words in shared templates only one runtime of the 20 uses, as a share of the language-written part of the page: go 29.1%, ts 17.7%, py 13.5%, zig 1.6%, c 0%; whole page: go 10.7%, ts 6.1%, py 3.7%, zig 0.5%, c 0%",
+    "source": "s2-check_ref.txt own_measurements [5] and hypotheses H1",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Sentence sharing on the REFERENCE rose against OLD.",
+    "numbers": "builder, four languages excluding feature reference: OLD ts 66.7%, go 66.8%, py 71.2%, c 70.7%; NEW 76.8%, 76.9%, 80.8%, 78.2%; whole page NEW 89-91%, OLD 85.1-88.8%; independent, identical in all five: OLD 221 of 1430-1886 (11.7-15.5%), NEW 615 of 1643-1943 (31.7-37.4%)",
+    "source": "s2-ref.txt measurements [4], [6]; s2-check_ref.txt own_measurements [3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The REFERENCE guard checks only that a declared function name exists, not parameters, return types or nouns.",
+    "numbers": "py load given an extra parameter and `list[int]` return, data_set a bogus argument: guard passes (2/2); stream member removed: guard fails; builder's negative control: an undeclared 'remake()' fails",
+    "source": "s2-ref.txt measurements [17]; s2-check_ref.txt claims [6], own_measurements [13]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The guard's regular expressions know only six language families, so for most remaining languages it would not re-derive members at all.",
+    "numbers": "ts, go, py, c, zig, clojure forms only; rust failed until extended; PRESENT would have passed an undeclared rust stream, options_map, get_utility, make, get_name; read elixir `String.t()` as member `t`; no match for java, kotlin, csharp, php, perl, swift, cpp, ocaml; misses scala optionsMap",
+    "source": "s2-probe_ref.txt summary and guide_problems",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Naming hooks invent a plural rule no code generator uses, and restate the client and constructor names by concatenation.",
+    "numbers": "`vars: v + 's'` in all five hooks; utilitys 208, historys 124, planet_entitys 6 (+4 planetentitys), 338 occurrences (OLD 0); `Name + 'SDK'`, `'New' + Name + 'SDK'`, `Name + 'SDK.new'`",
+    "source": "s2-check_ref.txt claims [11], own_measurements [9], purity",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "The shared REFERENCE lost true language-specific facts and introduced false statements.",
+    "numbers": "direct() result keys status, headers, data no longer stated for go, py, c, zig; py, c, zig lost their `ok` read idiom; py says '`ok` is `false`' (Python False); c and zig told 'When called without arguments' (impossible there); zig stream throw:false clause lost; ts Returns lines, test parameter descriptions, action call example lost",
+    "source": "s2-check_ref.txt output_defects and facts_lost",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Porting the REFERENCE made the README and REFERENCE of the same SDK contradict each other.",
+    "numbers": "log on by default (REFERENCE) vs every feature inactive (README Features); no-test README uses DemoSDK.test() while REFERENCE omits it; region Required (README) vs defaults to eu (REFERENCE)",
+    "source": "s2-check_ref.txt output_defects [6]-[8]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "The REFERENCE examples needed no new provider printer, and some of the refanatomy's proposals were unnecessary or wrong.",
+    "numbers": "refOpBlock reuses attempt/call/each/print; proposed opExample/actionCall/featureActivation unnecessary; optspec holds no descriptions (row text held once in sdkdesc.ts OPTION_TEXT, D26 only partly fixed); c and zig also read fetchargs ctrl; c defines <evar>_stream",
+    "source": "s2-ref.txt surprises and issues D26",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "The ref round counted about 6 breaking interface changes since stage 1's first commit, only one after the first four reference languages.",
+    "numbers": "block->before, RuntimeWords->RuntimeFacts, Ent.sym, Expr 'fields', builders take facts, RefFacts.container (a93e754f, the only one after the first four reference languages, before zig)",
+    "source": "s2-ref.txt interface_changes and hypotheses H1; s2-check_ref.txt hypotheses H1",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The ref round's full suite passed with no failures.",
+    "numbers": "2534 tests, 2528 pass, 0 fail, 6 skipped",
+    "source": "s2-ref.txt measurements [16]; s2-check_ref.txt claims [5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "limit",
+    "claim": "The ref round did not re-run the upgrade walk or lifecycle rows, and clojure's REFERENCE was not ported.",
+    "numbers": "H5 'partly' (builder), 'not-tested' (independent); clojure's client has no type name, the shared h2 would print '## api'",
+    "source": "s2-ref.txt gaps and hypotheses H5; s2-check_ref.txt hypotheses H5",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "rust and elixir were ported through all three sections with additive interface changes only.",
+    "numbers": "5 additive, 0 breaking (DescSymbols.type, DescLayout.names, MemberKind utilityShared and streamLazy, fill() in direct/prepare returns, guard regex changes); 0 UNEXPLAINED; other 18 languages byte-identical; purity one allowed canonToType import each",
+    "source": "s2-probe_ref.txt summary, ported, interface_changes",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "cost",
+    "claim": "rust's and elixir's three components each shrank about 3-4x into one provider and one hook.",
+    "numbers": "rust 711 -> 162 + 26 lines (3.8x); elixir 645 -> 181 + 34 (3.0x); shared fixed cost not apportioned",
+    "source": "s2-probe_ref.txt hypotheses H2",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "rust's documented examples compile on NEW as on OLD; the one failure on the way came from trimming imports that other sections of the page depend on.",
+    "numbers": "rust DOC lane NEW 6/6, OLD 6/6; intermediate NEW 2/6 (E0425 getp not found in unported How-to blocks); compiled, not run",
+    "source": "s2-probe_ref.txt summary and ported [0]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "rust and elixir prose: provider words are low except rust's root comments, and elixir's REFERENCE has 15.4% of words in sentences only it prints.",
+    "numbers": "provider words rust: tutorial 8.5%, root comments 20% (53 of 265), REFERENCE 0.1%; elixir: 5.8%, 6.2%, 0.6%; REFERENCE words in sentences no other ported language prints: rust 6.8%, elixir 15.4%",
+    "source": "s2-probe_ref.txt ported and hypotheses H1",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "elixir output was not compiled or run; its restructured blocks are unverified.",
+    "numbers": "tutorial 17 identical and 31 identical after undoing listed corrections (S49 server 16, no-match load 10, write comments 4, created binding 4, S50 2, trailing blank 1), 0 otherwise; root 0/19 identical; REFERENCE 131 identical, 181 changed (162 op examples, 19 feature snippets)",
+    "source": "s2-probe_ref.txt summary and ported [1]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Restructuring examples into the shared form left almost no root or REFERENCE operation block byte-identical, which cannot be verified in languages without a toolchain.",
+    "numbers": "0 of 17-19 root blocks identical in every ported language; REFERENCE op examples changed 181-292 per language",
+    "source": "s2-check_v2.txt claims [1]; s2-probe_ref.txt ported; brief3.md item 5",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "The survey of the other 12 languages found none inexpressible, but most need additions to the interface or the guard.",
+    "numbers": "14 surveyed: none inexpressible; 13 need an extension (interface field or guard); rb and scala need nothing in the interface; 10 need an interface or fact addition, at least 8 guard extensions; all recommended additions additive",
+    "source": "s2-probe_ref.txt summary and hypotheses H1",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "Across the other ten README families, sharing by units is much higher than by words, and prose about one language is over 15% by words.",
+    "numbers": "3,572 units: 72% shared by 15+, 11% in one only; 18,038 words: 42% shared, 27% in one only; sentences: 56% units / 23% words shared; one-language residue about 8% of units and about 19% of words (hand classification); bounds 14-19% units, 26-40% words",
+    "source": "s2-restanatomy.txt summary, whole_documentation, measurements [5], [6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Install and Explanation are documents about one language, not shared sentences.",
+    "numbers": "Explanation 152 units: 0% shared by 15+, 50% in one only (54% of words); Install 57 units: 0% shared, 81% in one only (86% of words)",
+    "source": "s2-restanatomy.txt families [3], [4] and weakest",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H2",
+    "claim": "The whole documentation is estimated to shrink 2.3-3.3x, but much of that is dead-code deletion and deduplication available without the provider interface.",
+    "numbers": "30,963 lines before (counted); 9,300-13,500 after (estimated); 2.2x-3.2x without dead ReadmeOptions (29,757); about 1,200 lines dead code (ReadmeOptions 1,206 renders nothing), 4,000-5,500 deduplication",
+    "source": "s2-restanatomy.txt whole_documentation and hypotheses H2",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H3",
+    "claim": "For the other README families, the share of catalogue issues still needing a per-language edit is estimated over 10%.",
+    "numbers": "24 of 105 distinct ids (23%), 10 of them in the language pack; 14 of 95 without the pack (15%); classified from titles, not run; 25 of 105 are in already-shared components",
+    "source": "s2-restanatomy.txt measurements [10] and hypotheses H3",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "Existing shared components with a language table print TypeScript for 15 of 20 languages, and the root test example seeds the mock in only 4 of 20.",
+    "numbers": "ReadmeErrors.ts:212, ReadmeExplanation.ts:225, opExample.ts:16-21 fall back to ts (S05, X1); root test example seeds in ts, php, rb, perl only (4 of 20, read not run)",
+    "source": "s2-restanatomy.txt weakest and measurements [12]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The same fact is stated in many documentation families, so a fact must move in all of them together.",
+    "numbers": "error convention in 10 places (errors 20, howto 20, model 20, REFERENCE 20, quick 18, AGENTS 18, topquick 16, toptest 5, entity 4, explanation 2); data accessor in 10 families; apikey in quick, model, topquick, REFERENCE (20 each), howto 19",
+    "source": "s2-restanatomy.txt facts_stated_in_several_families and measurements [13]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H5",
+    "claim": "Retiring the other families would be another round of the migration for many more files.",
+    "numbers": "10 more components per language: 200 files in sdkgen, 30 in the pack (2,327 pack lines); lean has no entity layer",
+    "source": "s2-restanatomy.txt weakest (scale of retirement) and hypotheses H5",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   }
+  ],
+  "disagreements": [
+   {
+    "a": "py could not be run with real pytest; a 10-line stand-in ran the README example test: 9 passed, 1 skipped on 4 models",
+    "a_source": "stage1.md section 1 (architect), Measurements and Stopped at",
+    "b": "pytest 9.1.1 is installed as a uv tool at /root/.local/share/uv/tools/pytest/bin; the real py README lanes pass 12/12 on NEW and 12/12 on OLD",
+    "b_source": "stage1.md section 2 (probe-claims), point 1",
+    "stands": "b"
+   },
+   {
+    "a": "go's change from one program to fragments is a structure decision; go README lanes 12/12",
+    "a_source": "stage1.md section 1 Decisions 'go structure'",
+    "b": "go regressed: the program was compiled AND run before; NEW fragments are only type-checked and no go quick-start code is executed",
+    "b_source": "stage1.md section 2 point 2",
+    "stands": "b; v2 restored the program and both programs run (s2-v2.txt, s2-check_v2.txt)"
+   },
+   {
+    "a": "100% of quick-start prose sentences shared once 4 runtime words are masked; no idiom notes needed",
+    "a_source": "stage1.md section 1 Measurements",
+    "b": "True by construction but reached partly by deleting language-specific facts; after v2 restored them, sentences shared by all six are 69.0% (51.6% go)",
+    "b_source": "stage1.md section 2 point 3; s2-check_v2.txt own_measurements [3]",
+    "stands": "b"
+   },
+   {
+    "a": "Providers read the model 0 times (H1 supported for four languages)",
+    "a_source": "stage1.md section 1 and section 2 verdict",
+    "b": "Under a strict reading three or more providers carry model-dependent naming conditions (c and zig reserved sets, py module rule, elixir would need the collection), so H1's provider threshold is crossed",
+    "b_source": "stage1.md section 3 (probe-interface), On H1",
+    "stands": "b for stage 1's interface; resolved in v2 by naming hooks (independently confirmed 0 naming rules)"
+   },
+   {
+    "a": "Providers total 580 lines (ts 88, go 124, py 85, c 148, zig 126, clojure 109)",
+    "a_source": "s2-v2.txt summary and source_lines",
+    "b": "The per-file figures sum to 680; the 1,818 total and 1.13x ratio are right",
+    "b_source": "s2-check_v2.txt claims [7]",
+    "stands": "b"
+   },
+   {
+    "a": "The runtime-facts guard re-derives methods, record accessor and result style and fails when any is changed",
+    "a_source": "s2-v2.txt summary and measurements [15]",
+    "b": "It passed with go's collection and errVar wrong; only load's style is checked and the method regex is loose",
+    "b_source": "s2-check_v2.txt claims [10]",
+    "stands": "b"
+   },
+   {
+    "a": "H3 supported for the quick-start sections",
+    "a_source": "s2-v2.txt hypotheses H3",
+    "b": "H3 partly: S49, S50, G01 and M12 also name README options, how-to and REFERENCE sites that are unported, and the ts README still contradicts itself",
+    "b_source": "s2-check_v2.txt hypotheses H3",
+    "stands": "Both, in scope: fixed within the ported sections; not fixed for the catalogue ids as a whole"
+   },
+   {
+    "a": "Ent.sym and the naming hook are a non-breaking change",
+    "a_source": "s2-v2.txt interface_changes [4]",
+    "b": "Ent gains sym; names come from a per-language Naming hook: breaking",
+    "b_source": "s2-ref.txt interface_changes [6]",
+    "stands": "Unresolved in the records; the ref round's count of about 6 breaking changes includes it, v2's count of 4 does not"
+   },
+   {
+    "a": "v2 reported purity 0",
+    "a_source": "s2-ref.txt surprises ('v2's purity report of 0 was 1 by its own script')",
+    "b": "v2 recorded 1 hit (c array subscript), judged a false positive",
+    "b_source": "s2-v2.txt summary and provider_purity",
+    "stands": "b: v2's record states 1 hit"
+   },
+   {
+    "a": "REFERENCE: 0 UNEXPLAINED across 21 variations",
+    "a_source": "s2-ref.txt summary and measurements [0]",
+    "b": "The reasons are assigned by section, not content; this hid every zig field type becoming `any`",
+    "b_source": "s2-check_ref.txt claims [0]",
+    "stands": "b"
+   },
+   {
+    "a": "Guard: every declared reference signature must exist and every defined member must be declared",
+    "a_source": "s2-ref.txt summary and tests",
+    "b": "Only function names are matched (wrong parameters and return types pass); and the regexes know only six language families",
+    "b_source": "s2-check_ref.txt claims [6]; s2-probe_ref.txt guide_problems",
+    "stands": "b"
+   },
+   {
+    "a": "ts kept every runtime fact; lost only tester's Returns line, the accessor parameter table and the update comment",
+    "a_source": "s2-ref.txt runtime_facts [0]",
+    "b": "Also lost options()/utility() Returns lines, test parameter descriptions, the action call example and patch's comment",
+    "b_source": "s2-check_ref.txt claims [9]",
+    "stands": "b"
+   },
+   {
+    "a": "py kept 'never raises: branch on ok' as a shared sentence",
+    "a_source": "s2-ref.txt runtime_facts [2]",
+    "b": "The shared sentence says '`ok` is `false`' (Python False) and lost the result keys and the `result[\"ok\"]` idiom",
+    "b_source": "s2-check_ref.txt claims [10]",
+    "stands": "b"
+   },
+   {
+    "a": "H2 supported for the REFERENCE: 2.27x, 1.92x ncnb; 4.86x projected",
+    "a_source": "s2-ref.txt hypotheses H2",
+    "b": "H2 partly: 1.89x ncnb by the checker's count, below 2x; the page-only projection presumes providers 15 languages do not have; the fair figure is the combined 2.74x (2.03x at 1.5x, 1.62x at 2x)",
+    "b_source": "s2-check_ref.txt claims [7], [8], hypotheses H2",
+    "stands": "b on the qualification; both agree on 2.27x total and 2.74x combined"
+   },
+   {
+    "a": "H1 supported for the REFERENCE",
+    "a_source": "s2-ref.txt hypotheses H1",
+    "b": "H1 partly: per-language prose relocated into shared templates (go 29%, ts 18% of their language-written part), true facts deleted, hooks restate rules",
+    "b_source": "s2-check_ref.txt hypotheses H1",
+    "stands": "b"
+   },
+   {
+    "a": "Names: the code generator and the description call the same function",
+    "a_source": "s2-ref.txt names",
+    "b": "Confirmed for module, accessor and class, but every hook also invents `vars: v + 's'` and restates client/ctor by concatenation",
+    "b_source": "s2-check_ref.txt claims [11]",
+    "stands": "b"
+   },
+   {
+    "a": "REFERENCE estimate 2.4-2.8x shrink; option rows from optspec; py alone reads ctrl undocumented; providers need opExample/actionCall/featureActivation",
+    "a_source": "stage1.md section 5 (refanatomy)",
+    "b": "Measured 2.27x for five languages; optspec has no descriptions; c and zig also read ctrl; the examples needed no new provider printer",
+    "b_source": "s2-ref.txt source_lines and surprises",
+    "stands": "b (measured)"
+   }
+  ],
+  "superseded": [
+   {
+    "number": "Quick-start projection to 20 languages 1.66x (four providers)",
+    "replaced_by": "1.59x with six providers (probe-interface); then 1.75x / 1.46x for both quick-start sections (v2); then 2.74x / 2.03x / 1.62x for both quick-start sections plus REFERENCE (ref)",
+    "source": "stage1.md; s2-v2.txt; s2-ref.txt"
+   },
+   {
+    "number": "py README examples: 9 passed, 0 failed, 1 skipped under a stand-in, on 4 models",
+    "replaced_by": "12/12 real pytest lanes on NEW and OLD",
+    "source": "stage1.md sections 1 and 2"
+   },
+   {
+    "number": "c DOC lanes 5/6",
+    "replaced_by": "6/6 in v2 and at the ref HEAD",
+    "source": "s2-v2.txt measurements [13]; s2-ref.txt measurements [15]"
+   },
+   {
+    "number": "go/README func main blocks 0 (stage 1)",
+    "replaced_by": "1 in go/README and 1 in the root README, both run (v2)",
+    "source": "s2-v2.txt program_unit"
+   },
+   {
+    "number": "100% of quick-start prose sentences shared (masked), stage 1",
+    "replaced_by": "69.0% (ts, py, c, zig, clojure) and 51.6% (go) of tutorial sentences shared by all six after facts were restored",
+    "source": "s2-check_v2.txt own_measurements [3]"
+   },
+   {
+    "number": "Suite 2514 tests (2508 pass, 1 fail; 2509 pass, 0 fail after golden)",
+    "replaced_by": "2528 / 2523 pass (v2); 2534 / 2528 pass (ref); 2538 / 2532 pass (probe-ref)",
+    "source": "stage1.md; s2-v2.txt; s2-ref.txt; s2-probe_ref.txt"
+   },
+   {
+    "number": "Provider interface: Syntax 10 members, RuntimeWords 4, Stmt 7 kinds, Expr 6 kinds",
+    "replaced_by": "v2: RuntimeWords replaced by RuntimeFacts; Expr 7 kinds (fields); call takes CallContext; program?; ref round adds ref?: RefSyntax",
+    "source": "stage1.md; s2-v2.txt interface_now; s2-ref.txt interface_now"
+   },
+   {
+    "number": "Purity: 0 model reads in stage 1 (by copying); 43 hits at the probe's start",
+    "replaced_by": "1 hit (c index expression) in v2; ref: 0 model reads, 1 pre-existing hit plus allowed canonToType imports",
+    "source": "s2-v2.txt; s2-ref.txt"
+   },
+   {
+    "number": "v2 providers 580 lines",
+    "replaced_by": "680 lines",
+    "source": "s2-check_v2.txt claims [7]"
+   },
+   {
+    "number": "Both quick-start sections, six languages, 1.13x (1,818 lines)",
+    "replaced_by": "1.12x (1,842 lines) counting the uncounted extraction lines",
+    "source": "s2-check_v2.txt claims [7]"
+   },
+   {
+    "number": "REFERENCE estimate 2.4-2.8x (refanatomy, not built)",
+    "replaced_by": "2.27x total, 1.92x / 1.89x ncnb for five languages (measured)",
+    "source": "s2-ref.txt; s2-check_ref.txt"
+   },
+   {
+    "number": "Interface changes: stage-1 count 3 before commit plus 2 additive; v2 count 4 breaking",
+    "replaced_by": "about 6 breaking since stage 1's first commit (ref and check_ref), plus 5 additive and 0 breaking for rust and elixir",
+    "source": "s2-ref.txt; s2-check_ref.txt; s2-probe_ref.txt"
+   },
+   {
+    "number": "H5 'partly supported' (stage 1, architect and probe-claims)",
+    "replaced_by": "Supported for a real recorded 4.44.0 project after the lifecycle change (v2 upgrade walk, independently reproduced); the hand-deletion and no-record hazards remain",
+    "source": "s2-v2.txt migration; s2-check_v2.txt claims [12]"
+   },
+   {
+    "number": "REFERENCE '0 UNEXPLAINED'",
+    "replaced_by": "Structural only; a real regression (zig field types all `any`) was hidden",
+    "source": "s2-check_ref.txt claims [0]"
+   }
+  ],
+  "findings": [
+   {
+    "finding": "For the quick start alone, the source does not shrink 2x. Four languages grew from 945 to 1,069 lines, and both quick-start sections in six languages went from 2,060 to 1,818 (1.13x), projecting to 1.75x over 20 languages (1.46x with c-sized providers). H2 is refuted for those sections taken alone.",
+    "source": "stage1.md section 1; s2-v2.txt source_lines; s2-check_v2.txt claims [7], [8]"
+   },
+   {
+    "finding": "Reuse across sections is real and is what makes H2 reachable. The root quick start cost 54 shared lines and 0 provider lines while retiring 2,000 lines across 20 languages. The REFERENCE page for five languages went from 2,196 to 967 lines (2.27x total, 1.89-1.92x non-blank non-comment), and all three sections together project to 2.74x across 20 languages, falling to 2.03x if providers are 1.5 times the measured size and 1.62x at twice.",
+    "source": "s2-v2.txt; s2-ref.txt source_lines; s2-check_ref.txt own_measurements [7], [8]"
+   },
+   {
+    "finding": "Stage 1's '100% shared prose' was bought by deleting true language facts, and go's runnable program was dropped as 'structure'. When the facts were restored as declared data and go regained its program, only 69% of each language's tutorial sentences (51.6% for go) were shared by all six ported languages. That crosses H1's 15% line by sentence, even though each sentence is written once in shared code.",
+    "source": "stage1.md section 2; s2-check_v2.txt own_measurements [3]"
+   },
+   {
+    "finding": "Naming has to be shared with the code generator, not just kept out of providers. Stage 1 reached 'zero model reads' by copying reserved-word lists and naming rules into providers; v2's per-language naming hook calls the generator's own functions and the providers then held 0 naming rules (43 hits before, 1 false positive after). It required extracting naming functions the generators did not have (py, clojure, elixir), which marks those generator files outdated in existing projects.",
+    "source": "stage1.md section 3; s2-v2.txt names, provider_purity, migration; s2-check_v2.txt claims [5], [6]"
+   },
+   {
+    "finding": "Examples still compile and run in every language with a toolchain: ts 16/16, go 12/12 (both go programs executed, exit 0), py 12/12 with real pytest, c 6/6 (up from 5/6 on old code), rust 6/6. An independent negative control proved the ts and py lanes execute REFERENCE blocks. No failure intrinsic to the approach was found; zig, clojure and elixir were never compiled, and their restructured blocks are unverified.",
+    "source": "s2-check_v2.txt; s2-check_ref.txt claims [4]; s2-probe_ref.txt ported"
+   },
+   {
+    "finding": "Sharing sentences across twenty runtimes produced a new kind of defect: one sentence drifting from many runtimes. Examples measured: zig's create comment became false, py says `ok` is `false`, C and Zig are told about a call without arguments they cannot make, and direct()'s result keys vanished in four languages. Every zig field type became `any` and was hidden by a reason-tagger that explains a line by its section.",
+    "source": "s2-check_v2.txt output_defects; s2-check_ref.txt output_defects and claims [0]"
+   },
+   {
+    "finding": "The guard over declared runtime facts is weak. It checks function names only (wrong parameters and return types passed), not nouns or type names, and its regexes know only six language families; rust failed it until extended, and for java, kotlin, csharp, php, perl, swift, cpp and ocaml it would not match the load signature at all.",
+    "source": "s2-check_v2.txt claims [10]; s2-check_ref.txt claims [6]; s2-probe_ref.txt guide_problems"
+   },
+   {
+    "finding": "Porting one section or one document at a time makes generated documentation contradict itself. In stage 1 the ts README's quick start and options table disagreed about region; after the REFERENCE port, an SDK's README and REFERENCE disagree on whether log is on by default, whether the test constructor exists, and whether region is required. Facts are stated in up to ten documentation families and must move together.",
+    "source": "stage1.md section 2 point 5; s2-check_ref.txt output_defects [6]-[8]; s2-restanatomy.txt facts_stated_in_several_families"
+   },
+   {
+    "finding": "Per-language prose was partly relocated into shared code rather than removed. Shared REFERENCE templates selected by a member kind or style that only one of the 20 runtimes declares are 29% of go's and 18% of ts's words in the part of the page each language used to write (11% and 6% of the whole page). Provider-declared words themselves are only 0.1-1.1% of the page.",
+    "source": "s2-check_ref.txt own_measurements [5], [6]; s2-ref.txt measurements [5]"
+   },
+   {
+    "finding": "Breaking interface changes stayed under H1's line of about 10. The records count about 6 since stage 1's first commit, and rust and elixir needed 5 additive and 0 breaking changes. A survey of the 12 remaining languages found none inexpressible, but 10 need an interface or fact addition and at least 8 need guard extensions; v2 and the ref round disagree on whether the naming change was breaking.",
+    "source": "s2-ref.txt interface_changes; s2-check_ref.txt hypotheses H1; s2-probe_ref.txt summary and hypotheses H1; s2-v2.txt interface_changes [4]"
+   },
+   {
+    "finding": "Catalogued issues in the ported sections are fixed once for every ported language. Independent checks found 0 instances of the quick-start issues in new output against up to 89 in old, and 17 REFERENCE checks fixed in all five ported languages. Analysis of the other README families (read, not run) estimates 24 of 105 issue ids (23%, 15% without the language pack) would still need a per-language edit.",
+    "source": "s2-check_v2.txt own_measurements [6]; s2-ref.txt measurements [7]; s2-check_ref.txt claims [12]; s2-restanatomy.txt measurements [10]"
+   },
+   {
+    "finding": "Retiring per-language components is unsafe with the unmodified tool: an upgraded project silently keeps the old text and doctor reports ok. With a 136-line lifecycle change that uses the copy record, a real 4.44.0 project upgraded cleanly (12 retired copies and their compiled output removed, doctor exit 0, independently reproduced) and the language pack's output was unchanged. A component deleted by hand still runs from stale compiled output, and projects without a copy record cannot be cleaned automatically.",
+    "source": "stage1.md section 4; s2-v2.txt migration; s2-check_v2.txt claims [12]"
+   },
+   {
+    "finding": "Not all documentation is the same kind of thing. Install and Explanation have 0% of their prose shared by 15 or more languages (81% and 50% of units in one language only), and across the README families 72% of prose units but only 42% of words are shared. Much of the estimated 2.3-3.3x whole-documentation shrink is dead-code deletion (1,206 lines) and deduplication that needs no provider interface.",
+    "source": "s2-restanatomy.txt summary, families, whole_documentation"
+   },
+   {
+    "finding": "Restructuring examples into the shared form changes almost every block, which matters where no toolchain exists. 0 of 17-19 root quick-start blocks per language and 181-292 REFERENCE blocks per language differ from the old output. In zig, clojure and elixir those blocks were never compiled or run.",
+    "source": "s2-check_v2.txt claims [1]; s2-check_ref.txt claims [1]; s2-probe_ref.txt ported; brief3.md item 5"
+   },
+   {
+    "finding": "The principle was refined by the evidence. 'A language supplies syntax, never facts' proved too strong. By the stage-3 brief it reads: the model decides what is said, once; a language supplies naming functions shared with its code generator, printers, declared runtime facts, and counted runtime notes, and nothing a language supplies can see the model.",
+    "source": "brief2.md requirement A; brief3.md 'The principle as it now stands'"
+   }
+  ],
+  "missing": [
+   "No record in my set was missing.",
+   "Not measured in these records: compile or run of zig, clojure or elixir output (toolchains missing); the upgrade walk and the override, alias, no-record and pack rows on the ref and probe-ref builds; any timing beyond one v2 measurement under load.",
+   "s2-restanatomy.txt is analysis only: its after-figures, the 23% per-language issue share and the one-language prose estimate are estimates or hand classifications, not builds.",
+   "brief3.md cites stage2-worklists.md for full defect lists; it was not in my set and was not read."
+  ]
+ }
+}

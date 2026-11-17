@@ -1,0 +1,256 @@
+{
+ "summary": "I wrote the zig and clojure providers against the interface as it stands, then stopped wherever the interface forced a change. Both providers are in my copy, /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-interface/sdkgen. The commits are 0a4c0a06, caf89e8e, 455bbea6 and c74f7435 on top of 950912e7. Both ReadmeQuick_<lang>.ts components are deleted and the golden is refreshed. The output covers the architect's 19 variations; I generated it with `node gen.js probe3 <clone>/ts` and diffed it against OLD with harness/diff-probe.js, which is diff.js with PORTED extended to zig and clojure. Result: zig has 24 code blocks identical and 19 changed; clojure has 25 identical and 18 changed. Nothing is UNEXPLAINED, nothing changed outside the quick start, and the other 18 languages are byte-identical to the architect's output.\n\nEvery changed block has a stated reason:\n- The server option is now added (S49).\n- The shared write comments replace each language's own.\n- The description now decides id chaining. zig never chained before; it now binds create outside its switch so the id is still in scope afterwards.\n- zig no longer prints write results or the word 'removed'. I dropped these rather than add a representation construct, because which results get printed is a decision the builder should make, not a provider.\n\nclojure's list and load blocks came out byte-identical. Its let/doseq scoping fits inside attempt with lookahead, the same way the c provider does it.\n\nTwo interface changes were forced, and neither breaks anything. After each one, all 20 READMEs in all 19 variations were byte-identical to before (`diff -r`):\n- **Scope.section**: clojure has to require every entity namespace the later blocks use, from inside the client block. Without this field it could only find them by reading desc.quick itself, which is a whether-decision made in a provider.\n- **Optional RuntimeWords.one**: the shared load sentence, '`load()` returns the entity', is false for runtimes that return a result union (zig; rust too, by inspection).\n\n`npm run check-scaffold`, generate.test and characterize.test pass after the golden refresh. No zig or clojure toolchain is installed here (`command -v` reports MISSING), so neither port was compiled.\n\nThe survey of all 16 unported languages finds none that cannot be expressed at all. Nine of them need additions before they can be ported, and most of those additions are to the description, not to the interface:\n- **Field choice**: php, rb, lua and perl print chosen fields of a record, and the choice is made from the model.\n- **Write results**: ocaml prints the created record and `removed.e_deleted`; zig and js print write results.\n- **Names that need the whole model**: elixir's entity accessor depends on the whole entity collection, including inactive entities (elixirAccessor at elixir/ReadmeQuick_elixir.ts:50). A provider cannot compute it from the description at all.\n- **Identifiers derived from the model**: the rust crate identifier and method names, and the swift module name.\n- **js Direct API Access**: this section has no statement in the representation.\n\nThe four existing providers and my zig port also carry copies of model-name rules (the c and zig RESERVED sets, cIdent, the py package directory). That is a model-dependent condition held in a provider.\n\nOn H1: under a strict reading the providers-reading-model-facts threshold is crossed with the interface as it stands. c and zig carry reserved-name conditions, elixir would have to read the collection, and with py's module rule the count is three or more. Once naming facts move into the description as data, the count is zero. The breaking changes still undecided number 2 to 4, under the threshold of about 10.\n\nPer-language prose, measured as words outside code spans in the quick start, is 7 to 15% for ts, py, c, go and clojure, and 19 to 23% for zig. The share for zig is over the 15% line in this section, and a sentence frame that cannot say 'a result whose .ok is ...' would have been false there instead.\n\nFor H2, harness/metrics.js with the six providers projects the quick start's source shrinking 1.59x over 20 languages (the architect's projection from four providers was 1.66x). That is under 2x for this section alone.\n\nNot done:\n- the REFERENCE page;\n- H3 and H5;\n- compiling any zig or clojure example;\n- the other 14 ports.",
+ "per_language": [
+  {
+   "lang": "js",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "The 'Direct API Access' section is inside the quick start, a `client.direct({...})` call with an `if (result.ok)` envelope. No Stmt exists for it; it needs a `direct` Stmt or must move out of the section (js/ReadmeQuick_js.ts:156).",
+    "Write results are printed (`console.log(created.data())`, js:106,121,138). Expressible only as a builder decision, which is not made today; unify by dropping them.",
+    "Load comes before list, each write is its own titled step with its own prose ('Sends only the fields given.'), and headings are Title Case (js:25,76,87,102-145). These are structure drift that the shared component unifies, not missing constructs.",
+    "There is no try/catch at all. Unify."
+   ],
+   "evidence": "Read ts/project/.sdk/src/cmp/js/ReadmeQuick_js.ts and harness/out/old/{B,doc-crud}/js/README.md (node survey.js old doc-crud js)."
+  },
+  {
+   "lang": "php",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "The list prints CHOSEN fields: `echo $item[\"id\"] . \" \" . $item[\"radius\"]`, where the display field is the first non-id `$STRING` field picked from exampleEntity.fields (php/ReadmeQuick_php.ts:68-75,86). This needs a description field (fields to show) and an Expr form for a field list.",
+    "In-code commentary inside list/load (`// list() returns entity instances; data_get() reads each record.`, php:82). Unify.",
+    "The attempt message is 'Error: ' plus the message, not '<what> failed'. Unify.",
+    "The constructor ignores server variables (php:26-28). This is the S49 correction, not an inability."
+   ],
+   "evidence": "Read php/ReadmeQuick_php.ts; old doc-crud output shows `echo $item[\"id\"] . \" \" . $item[\"radius\"]`."
+  },
+  {
+   "lang": "rb",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "The list prints chosen fields via interpolation, `puts \"#{record[\"id\"]} #{record[\"radius\"]}\"`, with the display field chosen from model fields (rb/ReadmeQuick_rb.ts:72-79,90).",
+    "In-code commentary inside the begin block. Unify."
+   ],
+   "evidence": "Read rb/ReadmeQuick_rb.ts; old doc-crud output."
+  },
+  {
+   "lang": "lua",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "Chosen fields: `local rec = item:data_get()` then `print(rec[\"id\"])`, chosen from dataId plus a display field picked from exampleEntity.fields (lua/ReadmeQuick_lua.ts:74-88). It falls back to `for k, val in pairs(...)` when there is no column. Note that line 80 reads `.name` where php and rb read `.n`, so the display field is silently null.",
+    "`(value, err)` with `if err then error(err) end` after BOUND calls only (lua:99,134,156,193). This is expressible in a call printer keyed on `bind`, but it carries no attempt. There is no try form."
+   ],
+   "evidence": "Read lua/ReadmeQuick_lua.ts; old doc-crud and ent-only-ambient outputs."
+  },
+  {
+   "lang": "csharp",
+   "expressible": "yes",
+   "constructs_not_expressible": [],
+   "evidence": "Read csharp/ReadmeQuick_csharp.ts and old doc-crud. Casts `(IEntity)`, `(List<object?>)` and the `planetList`/`planetItem` names are role-based. NUMBER becomes `1.0` from Expr.lit.type. `using DemoSdk;` comes from desc.Name, which is a layout derivation like py's (csharp:39). The 'supply the id' wording and the missing server option are unification and corrections."
+  },
+  {
+   "lang": "java",
+   "expressible": "yes",
+   "constructs_not_expressible": [],
+   "evidence": "Read java/ReadmeQuick_java.ts:39-74. Options are built imperatively (`options.put`, plus a separate `server` LinkedHashMap variable), which a client printer can hoist from the Entry list. Imports are unconditional. `Map.of(...)` serves matches."
+  },
+  {
+   "lang": "kotlin",
+   "expressible": "yes",
+   "constructs_not_expressible": [],
+   "evidence": "Read kotlin/ReadmeQuick_kotlin.ts and old doc-crud: `mutableMapOf<String, Any?>(... to ...)`, `as SdkEntity` casts, NUMBER as `1.0`."
+  },
+  {
+   "lang": "scala",
+   "expressible": "yes",
+   "constructs_not_expressible": [],
+   "evidence": "Read scala/ReadmeQuick_scala.ts:42-43 and old output. Options are put imperatively, the list is a one-line `forEach(x => println(...))` lambda that an each printer can fold, and catch uses a `case` arm."
+  },
+  {
+   "lang": "swift",
+   "expressible": "yes",
+   "constructs_not_expressible": [
+    "The module name `${Name}Sdk` (swift/ReadmeQuick_swift.ts:17) is a layout fact a provider would derive from desc.Name, the same borderline case as py."
+   ],
+   "evidence": "Read swift/ReadmeQuick_swift.ts. The `if let xEntity = x.asNative as? Entity { print }` wrapper (swift:96,136,165) belongs to the print/each printers, `_ = try` covers unbound writes, and VMap/`.string(...)`/`.double(1.0)` literals are typed by Scalar."
+  },
+  {
+   "lang": "rust",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "The crate identifier comes from crateIdent(model) (rust/ReadmeQuick_rust.ts:16), and entity methods from rustMethodName (reserved-word rename) in utility_rust. These need description layout and symbol fields, or the provider copies rules.",
+    "Per-write `.unwrap()` (rust:179,186,193,205) while list/load use `match ... { Ok(x) => ..., Err(err) => ... }` (rust:76-77,113-114). A call printer cannot tell whether it is inside an attempt without a Scope flag convention or a call-context argument."
+   ],
+   "evidence": "Read rust/ReadmeQuick_rust.ts and old doc-crud. `match` on the call works like c's first/rest attempt."
+  },
+  {
+   "lang": "cpp",
+   "expressible": "yes",
+   "constructs_not_expressible": [],
+   "evidence": "Read cpp/ReadmeQuick_cpp.ts:34. The env var is hoisted as `const char* apikey = std::getenv(...)`, then `Value(apikey ? apikey : \"\")`; a client printer can hoist one per env option. try/catch on `SdkErrorPtr`, `getp(created->data(), \"id\")` chaining."
+  },
+  {
+   "lang": "zig",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "Each write is wrapped in its own switch that PRINTS the result (`.ok => |created| ...`, `.ok => |updated| ...`; zig/ReadmeQuick_zig.ts@9aebaf9e:173,183). There is no Ref role for update/patch results and no print statement after writes.",
+    "Remove prints the word 'removed' (`.ok => std.debug.print(\"removed\\n\", .{})`, :208). There is no Stmt for showing a remove's result.",
+    "Per-write handling outside attempt: the builder emits writes bare. My port handles this with a Scope.local flag set by attempt, which is a convention and not part of the interface.",
+    "Chaining: the old form scopes `created` to its switch arm, so the description's chainsId cannot be honoured without restructuring create into `const created = switch (...) { .ok => |e| e, .err => |e| return ... };`. The new form is not compiled (no zig here).",
+    "The shared load sentence ('returns the entity') is false for a result union. This forced RuntimeWords.one."
+   ],
+   "evidence": "PORTED. sdkgen/ts/project/.sdk/src/cmp/zig/Syntax_zig.ts in my copy; 24 blocks identical and 19 changed across 19 variations, 0 unexplained (SIDE=probe3 node harness/diff-probe.js)."
+  },
+  {
+   "lang": "perl",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "Prints a chosen field `$x->data_get->{id}` instead of the record (perl/ReadmeQuick_perl.ts:82,119,145).",
+    "The attempt is `my $x = eval { call }; if (my $err = $@) {...} else {...}` (perl:76-77). This is expressible as c-style first/rest."
+   ],
+   "evidence": "Read perl/ReadmeQuick_perl.ts and old doc-crud."
+  },
+  {
+   "lang": "clojure",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "The client block requires the namespace of every entity LATER blocks call (clojure/ReadmeQuick_clojure.ts@9aebaf9e:49-54). A client printer sees only its own statement. This forced Scope.section (non-breaking).",
+    "Bound results scope what follows: `(doseq [planet (call)] ...)` (:83) and `(let [planet (call)] ...)` (:117,142). Expressible only by lookahead inside attempt (fusing call+each or call+rest), as c does.",
+    "Old prose names the entity variable inside a runtime word (\"((:data-get planet))\"). RuntimeWords.data is a fixed string, so the wording became generic."
+   ],
+   "evidence": "PORTED. sdkgen/ts/project/.sdk/src/cmp/clojure/Syntax_clojure.ts; 25 blocks identical and 18 changed, 0 unexplained. List and load blocks are byte-identical in every variation."
+  },
+  {
+   "lang": "elixir",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "The entity accessor is `elixirAccessor(exampleEntity, entityCollection(model))` (elixir/ReadmeQuick_elixir.ts:50,81). Its name depends on collisions across the WHOLE entity collection, including inactive entities. It cannot be computed from SdkDescription, whose entities are active-only. It needs a per-entity, per-target symbol in the description; otherwise the provider must read the model.",
+    "A handle `planet = Demo.planet(sdk)` is declared inside each attempt for list/load (elixir:64,129) and once ahead of the writes (:167), then rebound by load (`planet = ...load(planet, ...)`). This is expressible with `before` plus per-block Scope.local.",
+    "The list is an indexed loop over Voxgig.Struct `for i <- 0..(size-1)//1` with getelem. Printer only."
+   ],
+   "evidence": "Read elixir/ReadmeQuick_elixir.ts and ts/src/helpers/naming.ts:301-320 (elixirAccessorNames uses entityNames over the collection)."
+  },
+  {
+   "lang": "ocaml",
+   "expressible": "with-extension",
+   "constructs_not_expressible": [
+    "Prints the created record after create (`print_endline (stringify (created.e_data_get ()));`, ocaml/ReadmeQuick_ocaml.ts:173). The builder emits no print after writes.",
+    "Remove binds and prints the deleted marker (`let removed = ... in Printf.printf \"deleted: %b\\n\" removed.e_deleted`, ocaml:198-200). There is no Ref role 'removed' and no Expr for the marker.",
+    "Sequencing: `let x = ... in` and `;` between unit expressions, with no `;` after the last. A call printer must know its position in the block. This is derivable only by searching sc.stmts by identity; no position argument exists."
+   ],
+   "evidence": "Read ocaml/ReadmeQuick_ocaml.ts:160-205 and old doc-crud output."
+  }
+ ],
+ "ported": [
+  {
+   "lang": "zig",
+   "provider_lines": 140,
+   "code_blocks_identical": 24,
+   "code_blocks_changed": 19,
+   "what_was_hard": "The builder emits writes with no attempt, but zig switches on every result union. I put the switch in the call printer and let attempt mark Scope.local so the inner call prints as the switched-on expression. That is a provider convention because no call context exists. Chaining forced a structure the old component never had: create is bound outside its switch (`.ok => |e| e`, `.err => |e| return ...`) so `h.getp(created.asEntity().data(null), \"id\")` is in scope for update, patch and remove. The old per-write printing of results and of 'removed' could not be represented without a provider deciding WHETHER to show something, so it was dropped (`.ok => {},`). The shared load sentence was false for a result union until RuntimeWords.one was added. ZIG_RESERVED had to be copied from utility_zig, because that module also reads the model. No zig toolchain, so the new create form is uncompiled.",
+   "interface_changes_needed": [
+    "RuntimeWords.one?: string (optional; done in c74f7435; the other 19 languages are byte-identical after it)",
+    "A call-context argument or flag (inside attempt / last in block), used today through a Scope.local convention",
+    "A description symbol for the entity accessor (instead of the copied ZIG_RESERVED rule)",
+    "A decision in the builder on printing write results (dropped here)"
+   ]
+  },
+  {
+   "lang": "clojure",
+   "provider_lines": 102,
+   "code_blocks_identical": 25,
+   "code_blocks_changed": 18,
+   "what_was_hard": "The client block must require the namespaces of entities that later blocks call. Under the interface as given, the only way was to read desc.quick in the client printer and re-derive which entities the section uses, which is a whether-decision in a provider. I stopped there and added Scope.section (all statements of the section, set before the first block is printed), then used uses(sc.section).entities. Lisp scoping fuses statements: attempt has to recognise [call bound to many, each over it] as one doseq form and [call bound to one, rest] as a let form. Closing parens are appended to the last line of the enclosed body. List and load blocks came out byte-identical; the changes are the server option (S49) and the shared write comments. The prose word for reading a record can no longer name the entity variable ('((:data-get planet))' became '((:data-get entity))'). No clojure toolchain here.",
+   "interface_changes_needed": [
+    "Scope.section: Stmt[] (non-breaking; done in caf89e8e; all 20 READMEs in 19 variations byte-identical before and after)",
+    "metrics.js should count `uses` as a pure helper; it reports 1 false-positive model read"
+   ]
+  }
+ ],
+ "interface_changes": [
+  {
+   "change": "Scope gains `section: Stmt[]`, every statement the section will print, set by the shared component before the first block is printed.",
+   "breaking": false,
+   "why": "Imports and requires that depend on later blocks (clojure entity namespaces; also rust's unconditional `getp` and the java/csharp import lists) otherwise make a provider re-derive from desc.quick which entities are used.",
+   "languages": "clojure (done), rust, java, csharp, kotlin, swift"
+  },
+  {
+   "change": "RuntimeWords gains optional `one` (what a load returns where it is not the entity), defaulting to 'the entity'. More generally, the sentence frames need a slot for how a result is carried.",
+   "breaking": false,
+   "why": "'`load()` returns the entity' is false for a result union (zig .ok, rust Result). Without the word the shared sentence states a falsehood. Even with it, zig's provider supplies 19-23% of the quick start's prose words.",
+   "languages": "zig (done), rust, possibly go and lua"
+  },
+  {
+   "change": "Per-target naming and layout facts in SdkDescription, computed by the generator's own naming functions: desc.layout (py package dir, c ident, rust crate ident, swift module, csharp namespace) and per entity a target `symbol` (accessor, handle or method name).",
+   "breaking": false,
+   "why": "elixir's accessor depends on the whole entity collection, inactive entities included (naming.ts:301-320); a provider cannot compute it from the description at all. Syntax_c and Syntax_zig copy the RESERVED sets and the cVarName/cIdent rules, and Syntax_py copies Main_py's package-dir rule. That is the same rule written twice, and it is a model-dependent condition held in a provider.",
+   "languages": "elixir (required), c, zig, py, rust, swift, csharp, ocaml, php"
+  },
+  {
+   "change": "A call-context argument to `call` (for example `{ inAttempt: boolean, last: boolean }`), or a per-call handling mode on the call statement.",
+   "breaking": false,
+   "why": "zig switches on, and rust unwraps, every write, but not calls inside an attempt. ocaml needs to know whether a statement is last to place `;` or `in`. Today this works only by Scope.local flags or by searching sc.stmts by identity.",
+   "languages": "zig, rust, ocaml, lua"
+  },
+  {
+   "change": "Decide ONCE in the builder whether write results and a remove's result are shown. If they are kept, Ref.role gains 'updated' | 'patched' | 'removed' and Expr gains a 'deleted' form.",
+   "breaking": true,
+   "why": "Adding a role or an Expr kind breaks every exhaustive switch in the providers (Syntax_c `name()` and every `expr()`), which fail to compile under strict without a default. Recommended: do not add them, and drop result printing as in the zig and go ports. Then no change is needed.",
+   "languages": "zig, ocaml, js (and go previously)"
+  },
+  {
+   "change": "Decide once whether records are printed whole or by chosen fields. If by fields: a DescEntity field `show: string[]` chosen in describe(), plus an Expr `{ k: 'fields', of: Ref, fields: string[] }`.",
+   "breaking": true,
+   "why": "php, rb, lua and perl choose display fields from the model inside their components. A provider must not choose fields. A new Expr kind breaks the six existing expr switches at compile time.",
+   "languages": "php, rb, lua, perl"
+  },
+  {
+   "change": "RuntimeWords.data becomes a function of the entity Ref, so prose can name the variable.",
+   "breaking": true,
+   "why": "clojure's and elixir's old prose names the entity variable ('((:data-get planet))'). Recommended: accept the generic wording instead; I did that in the clojure port, which avoids the break.",
+   "languages": "clojure, elixir, swift"
+  },
+  {
+   "change": "js 'Direct API Access': either a `direct` Stmt or (recommended) move it out of the tutorial into its own shared section.",
+   "breaking": false,
+   "why": "No statement represents `client.direct(...)` and its envelope. Moving it out needs no interface change; a new Stmt kind would be breaking.",
+   "languages": "js"
+  }
+ ],
+ "facts_in_providers": [
+  "Syntax_c.ts copies C_RESERVED and re-implements cVarName (entity handle `${ident}_${h}`) and cIdent (`desc.name.toLowerCase().replace(/[^a-z0-9]/g, '')`, written three times). These are the generator's own rules in utility_c.ts:21-30 and MainEntity_c.ts:16-17, so whether an entity name is reserved is a model-dependent condition held in the provider.",
+  "Syntax_py.ts derives the import module as `${desc.Name.toLowerCase()}_sdk`, a copy of Main_py.ts:48 (pkgdir). It is a layout fact disguised as string manipulation of a description value.",
+  "Syntax_go.ts chooses between two constructors on option count (`sdk.New()` when there are no options, `sdk.New${Name}SDK(...)` otherwise). It also prints `fmt.Println` without importing fmt, so the block relies on the README harness supplying it.",
+  "Syntax_ts.ts `argOf` hard-codes `WRITES = ['create','update','patch','remove']` and `'load' === op && 1 < arg.length` to choose multi-line layout: a list of model operation names, and a member-count condition, in the provider.",
+  "Syntax_c.ts prints `PNError* err = NULL;` in the client block unconditionally, even when no later block exists (ent-none). Declaring it is a whether-decision made without the section.",
+  "RuntimeWords in all four (go 'a `[]any`', c 'a `NULL`-terminated array' and 'sets `*err` on failure', ...) are runtime facts held as English fragments. They are per-language prose: 7 to 15% of the quick start's prose words for ts, py, c and go (go 14.9% in doc-crud), and 19 to 23% for zig.",
+  "My own Syntax_zig.ts copies ZIG_RESERVED, the same class as c. It also uses a Scope.local flag ('attempt') to learn its context, which is state the interface does not define.",
+  "Needed by unported languages and not in the description: the elixir accessor over the whole collection (elixir/ReadmeQuick_elixir.ts:50); display fields chosen from exampleEntity.fields (php:68-75, rb:72-79, lua:74-88, perl:82); the rust crate ident and method rename (rust:16); the swift module name (swift:17)."
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "partly",
+   "evidence": "RAN: two of the hardest languages (zig, clojure) were ported against the interface. The only forced changes were Scope.section and the optional RuntimeWords.one, both non-breaking: all 20 READMEs in all 19 variations were byte-identical before and after each (`diff -r out/probe out/probe2` returned nothing). There were 0 unexplained lines. READ: none of the 16 is impossible to express. Nine need additions, mostly to the description: chosen fields (php, rb, lua, perl), write-result printing (zig, ocaml, js), the elixir accessor computed over the whole collection, rust/swift layout, and js's direct section. Thresholds: under a strict reading, providers holding model-dependent conditions are already three or more as the interface stands (copied reserved-name rules in c and zig; py's package-dir rule; elixir would have to read entityCollection). That clause is crossed until naming and layout move into the description. With that non-breaking extension it is 0. The breaking changes still undecided number 2 to 4 (the field-choice Expr, roles or Expr for write results, words as functions), under the threshold of about 10. Per-language prose in the quick start (provider words outside code spans, node script over out/probe3) is 7-15% for ts, py, c, go and clojure, and 18.8-22.8% for zig. So the 15% clause is crossed for result-union runtimes in this section; aggregated across languages it is about 11%."
+  },
+  {
+   "id": "H2",
+   "verdict": "partly",
+   "evidence": "RAN harness/metrics.js with the six providers: the 20-language projection for the README quick start is before 4537 lines, after 2849, a ratio of 1.59x (code lines 1.60x). The architect's projection from four providers was 1.66x. Measured on the quick start alone this is below the 2x threshold. The REFERENCE page was not measured by me."
+  },
+  {
+   "id": "H3",
+   "verdict": "not-tested",
+   "evidence": "I did not check catalogue entries per language. The zig and clojure ports show S49 (the server option) fixed with no per-language edit beyond the provider."
+  },
+  {
+   "id": "H4",
+   "verdict": "not-tested",
+   "evidence": "zig and clojure toolchains are MISSING (`command -v`), so the new zig create form (`const created = switch ... .err => |e| return ...`) is uncompiled. clojure's list and load blocks are byte-identical to OLD. check-scaffold, generate.test and characterize.test pass after the golden refresh."
+  },
+  {
+   "id": "H5",
+   "verdict": "not-tested",
+   "evidence": "I did not probe doctor, remove or package update. characterize.test reported the expected add-output change (Syntax_<lang>.ts written, ReadmeQuick_<lang>.ts no longer written) until `npm run golden`."
+  }
+ ]
+}

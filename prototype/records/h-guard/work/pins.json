@@ -1,0 +1,168 @@
+{
+ "c": [
+  [
+   "ref.facts.prepare.fails",
+   "style"
+  ],
+  [
+   "ref.facts.cancel",
+   false
+  ]
+ ],
+ "clojure": [
+  [
+   "facts.collection",
+   "vector"
+  ],
+  [
+   "ref.facts.prepare.fails",
+   "style"
+  ],
+  [
+   "ref.facts.cancel",
+   false
+  ]
+ ],
+ "elixir": [
+  [
+   "ref.facts.client[1].kind",
+   "utilityBase"
+  ],
+  [
+   "ref.facts.prepare.fails",
+   "style"
+  ],
+  [
+   "ref.facts.body.values",
+   "a binary"
+  ],
+  [
+   "ref.facts.cancel",
+   false
+  ],
+  [
+   "notes.member:utilityBase",
+   "It is the client's own node, not a copy."
+  ]
+ ],
+ "go": [
+  [
+   "ref.facts.client[1].kind",
+   "utility"
+  ],
+  [
+   "ref.facts.prepare.fails",
+   "style"
+  ],
+  [
+   "ref.facts.cancel",
+   false
+  ],
+  [
+   "notes.member:stream",
+   "It sends the items on the returned channel, which closes when the stream\nends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: the error the operation itself would return, sent as the\nlast value. Under `throw: false` in `callopts[\"ctrl\"]`, no error is sent."
+  ]
+ ],
+ "py": [
+  [
+   "ref.facts.client[1].kind",
+   "utility"
+  ],
+  [
+   "ref.facts.prepare.fails",
+   "style"
+  ],
+  [
+   "ref.facts.body.once",
+   "a file object"
+  ],
+  [
+   "ref.facts.cancel",
+   false
+  ]
+ ],
+ "rb": [
+  [
+   "ref.facts.client[1].kind",
+   "utility"
+  ],
+  [
+   "ref.facts.prepare.fails",
+   "style"
+  ],
+  [
+   "ref.facts.body.once",
+   "an IO"
+  ],
+  [
+   "ref.facts.cancel",
+   false
+  ]
+ ],
+ "rust": [
+  [
+   "ref.facts.client[1].kind",
+   "utility"
+  ],
+  [
+   "ref.facts.prepare.fails",
+   "style"
+  ],
+  [
+   "ref.facts.cancel",
+   false
+  ]
+ ],
+ "ts": [
+  [
+   "facts.collection",
+   "array"
+  ],
+  [
+   "ref.facts.client[1].kind",
+   "utility"
+  ],
+  [
+   "ref.facts.prepare.fails",
+   "value"
+  ],
+  [
+   "ref.facts.body.once",
+   "a stream"
+  ],
+  [
+   "ref.facts.cancel",
+   true
+  ]
+ ],
+ "zig": [
+  [
+   "facts.collection",
+   "slice"
+  ],
+  [
+   "ref.facts.client[1].kind",
+   "utility"
+  ],
+  [
+   "ref.facts.prepare.fails",
+   "note"
+  ],
+  [
+   "ref.facts.body.values",
+   "a string value holding the bytes"
+  ],
+  [
+   "ref.facts.cancel",
+   false
+  ],
+  [
+   "notes.member:prepare",
+   "On failure it returns the error of its error union, for `try` or `catch`."
+  ],
+  [
+   "notes.member:streamList",
+   "Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with\nwhatever data the failure left; otherwise `.err` holds the branded error."
+  ]
+ ]
+}

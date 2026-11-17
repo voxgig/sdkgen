@@ -1,0 +1,245 @@
+{
+ "lang": "csharp",
+ "ok": false,
+ "summary": "The csharp check is finished. `ok` is false for one reason: the port still fails the one command on 4 classes it recorded as `defect`, and those wait for shared changes. Everything else stands at its last commits (sdkgen dc778914, tools 97783f2).\n\nThe fixer's three own-file fixes are made in the files:\n- Fix 3: hand record dae78da098 now cites MainEntity_csharp.ts:25-28, where the accessor is.\n- Fix 4: the body.once citation now quotes the code at Media.cs:116, 119 and 120.\n- Fix 5: the MarkDeleted and Deleted reasons now match EntityBase.fragment.cs:28, 233-240, 281 and 306, and Context.cs:207-208.\n\nThe four \"needs a shared change\" outcomes are true. The two that leave a page wrong are recorded as `defect`, not `dropped`:\n- CS0136 in 5 root quick starts: classes 8c5a4fbe41, 3d4aae6c8d and b2b5fd8804, 5 variations in all. My own scope checker finds exactly those 5 blocks in NEW and none of 660 in OLD.\n- The stream-signal sentence: class 80f77307dc, 94 occurrences.\n\nOne fixer claim is wrong. For finding 8 the fixer said csharp's own files could do nothing. They could: csharp's forms do not pin `value:` on its `none`, `container` and `ctor[0]` citations. I added that pin and the guard then failed the reviewer's swapped-type attack (B3), naming the fact.\n\nOn finding 6 the recorded change is correctly called breaking (it changes the sentence in ten other languages), but it is not the smallest: an additive optional fact would fix csharp alone.\n\nEvery number in part 2 matches the fixer's:\n- Build exits 0 with a clean tree, and a forced non-incremental scaffold type-check also exits 0.\n- Guard 4/4, guard plus reader 81/81, golden 2/2.\n- Suite 2,630 of 2,635 pass, 0 fail, 5 skipped.\n- The reviewed one command (REGEN=1, from an emptied out/new) exits 1. Its only failing numbers are reference ledger defect 1 and rootquick blocks defect 3.\n- SCRATCH=1 gives the same numbers as the fixer's, and its hand-free parts are clean.\n- My pages are byte-identical to the porter's and the reviewer's, and no other language's page changed.\n- The port touched only files section 4 allows, and no commit carries a body or trailer.\n\nMy attacks:\n- V2 (the stream's `runs` set to 'call'): caught, by name, in the guard and in the absent list.\n- V1 (the CS0136 defect worked around inside the provider with `r.name + 'Item'`, the concatenation the guide forbids): purity and the guard both passed it. The one command failed only through classes a porter decides by hand.\n- V3, an extra probe: relabelling the three CS0136 defect records as `same-meaning` and deleting the stream-signal one made the one command print PASS, with the 5 blocks that cannot compile still on the pages.\n\nSo the CS0136 defect is held failing only by an honest hand record.\n\nNo C# compiler is here (dotnet, csc and mono are missing). That leaves 30 distinct changed blocks (of 77 distinct NEW blocks), counted as 30/19/101 per-section pairs, compiled by nothing. The one csharp lane that reports a pass returns early without dotnet, so it ran nothing.",
+ "still_wrong": [
+  {
+   "file": "out/new/{crud-bare,crud-basic,crud-noupdate,doc-crud,ex-readonly}/README.md (root quick start, C#), from ts/src/helpers/example.ts:219-227 refOf and ts/src/cmp/ReadmeQuick.ts:236-246 bare/topQuickText",
+   "what": "`foreach (var planet in planets) {...}` is followed by `var planet = (IEntity)client.Planet().Load(...)!;` in the same top-level block (crud-basic lines 16 and 22 of the block).",
+   "why": "CS0136: a C# local's scope is its whole block, nested blocks included. OLD used planetItem/planet and compiled. Read, not compiled; mine/scope.js finds exactly these 5 of 659 NEW blocks and 0 of 660 OLD. Recorded as defect (8c5a4fbe41 n3, 3d4aae6c8d n1, b2b5fd8804 n1); waits on a shared change."
+  },
+  {
+   "file": "out/new/*/csharp/REFERENCE.md stream member (94 occurrences, 18 variations), from ts/src/cmp/ReadmeRef.ts:123 STREAM_SIGNAL",
+   "what": "'It ends early once `callopts.signal` reports an abort.'",
+   "why": "Not C#: the runtime reads `callopts[\"signal\"]`, and only a CancellationToken counts (EntityBase.fragment.cs:267-270). Recorded as defect 80f77307dc; waits on a shared change. When it lands, re-read token class eea38408c0 (`+ signal`, 94 times), now accepted as correction:decision-6-stream-signal."
+  },
+  {
+   "file": "ts/test/runtimeforms/csharp.ts (citations of ref.facts.none, ref.facts.container, ref.facts.ctor[0])",
+   "what": "Three code-valued citations carry no `value:` pin, so the guard checks them only as a set of word tokens.",
+   "why": "Ran: container 'Dictionary<object?, string>' (the reviewer's B3) passes the guard 4/4. With `value: 'Dictionary<string, object?>'` added to csharp's own citation, the guard fails 3/4 with `cite ref.facts.container: the fact is \"Dictionary<object?, string>\"; the citation pins \"Dictionary<string, object?>\"`, and the true value passes 4/4. So csharp could have closed B1/B3 for itself; the fixer's 'needs a shared change' covers only the general hole."
+  },
+  {
+   "file": "ts/test/generatedcompile.test.ts:2639-2643 (shared test, not the port's)",
+   "what": "'csharp: the project builds' does `return` when dotnet is missing.",
+   "why": "The lane reports a pass that ran nothing (0.66 ms) instead of skipping visibly; it is the only csharp lane counted as passing."
+  }
+ ],
+ "shared_changes": [
+  {
+   "file": "ts/src/helpers/example.ts (refOf :219-227, RuntimeFacts type) and ts/src/cmp/ReadmeQuick.ts (topQuickText :246, bare :236-239)",
+   "change": "Add an optional RuntimeFacts flag, e.g. `blockScope?: true`. Where it is set and VarNaming is 'entity', role 'item' takes the generic item name through layout.vars (`vars.item ?? 'item'`) instead of entity.sym.var. The simplest form applies it to every item where the flag is set; the fixer's form, only where the same section also binds 'one' or 'created' for that entity, needs refOf to see the section, which it does not today (it takes desc, role, entity, naming). Then csharp declares the flag and removes defect records 8c5a4fbe41, 3d4aae6c8d and b2b5fd8804.",
+   "why": "CS0136 in 5 of 21 root quick starts (crud-bare, crud-basic, crud-noupdate, doc-crud, ex-readonly). csharp's own files cannot rename the item without concatenating onto a description name, which the guide forbids.",
+   "breaking": false,
+   "providers_forced": "csharp only. Read, not compiled: java, kotlin, scala, cpp, js and php accept an outer declaration after a loop variable's scope has ended."
+  },
+  {
+   "file": "ts/src/cmp/ReadmeRef.ts (STREAM_SIGNAL :122-123, used in streamText :119); ts/src/helpers/example.ts (RefSyntax.key :473)",
+   "change": "Smallest form, additive: an optional cited RefFacts value (e.g. `streamSignalKey`, plus optionally `streamSignalType` = CancellationToken) printed in place of the literal `callopts.signal` where declared, which only csharp needs. The fixer's recorded form, breaking: print the key through r.key('callopts', ['signal']), widening key's container union to 'callopts'.",
+   "why": "csharp prints `callopts.signal`; the runtime key is `callopts[\"signal\"]` and only a CancellationToken ends the stream (EntityBase.fragment.cs:267-270). Class 80f77307dc (x94) is a defect until then. Shared code also supplies a runtime-dependent key by default here, against brief 5's rule.",
+   "breaking": true,
+   "providers_forced": "The breaking form changes the printed span wherever streamSignal is declared, eleven providers. Read: the key printers write `callopts[\"signal\"]` in go, py, rb and swift, `$callopts->{signal}` in perl, lua through its own index printer, and only `signal` in clojure, elixir and ocaml (Syntax_clojure.ts:214, Syntax_elixir.ts:171, Syntax_ocaml.ts:226), which would need new printers; ts is unchanged. The additive form forces csharp only."
+  },
+  {
+   "file": "tools/callcheck.js",
+   "change": "Attribute a chained call (receiver ending in `)`, e.g. `client.Planet().Lode(`) to the entity and report an undeclared member as MEMBER. Report an instance member or accessor called on the client type name (`DemoSDK.Planet()`) as RECEIVER in languages that use one separator for both, not only lua (SEP is `{ lua }` only, :28).",
+   "why": "Read: MEMBER requires `known.has(rv)` (:139), so a `)` receiver is skipped; RECEIVER needs `sep`, which only lua has. This matches the reviewer's L2/L4/A1/M2 runs.",
+   "breaking": false,
+   "providers_forced": "none (a tools check). csharp's pages call no undeclared member (mine/members.js over every csharp block: only operations, entity accessors, Data, Direct, Prepare, TestSDK on DemoSDK, and standard library)."
+  },
+  {
+   "file": "ts/test/runtimeforms/account.ts (codeTokens :113-127, checkCitation :299-306)",
+   "change": "Compare a code-valued cited fact with its quote as a contiguous sequence after whitespace normalisation and slot removal, not as word tokens each found anywhere (:126 splits on [^\\w]+, dropping order and `?`).",
+   "why": "B1 and B3 pass the guard (reproduced: B3 4/4). Meanwhile csharp can pin its three unpinned code citations (see still_wrong).",
+   "breaking": false,
+   "providers_forced": "No interface change; a forms file whose quote holds the tokens out of order would need a better quote."
+  },
+  {
+   "file": "tools/purity.js (:43, 'concatenation on a description name')",
+   "change": "Flag concatenation or a template suffix on any name a provider receives (`r.name + '...'`, `${name(r)}X`, `.name + `), not only receivers named desc|layout|sym|entity|e|ent.",
+   "why": "Attack V1: `const name = (r: Ref) => 'item' === r.role ? r.name + 'Item' : r.name` in Syntax_csharp.ts gave purity 0 open and guard 4/4, while it is the forbidden provider workaround of a shared defect.",
+   "breaking": false,
+   "providers_forced": "Not run on the other twelve providers; it may open findings where a provider concatenates onto a Ref name."
+  },
+  {
+   "file": "tools (new check beside callcheck), driven by a language property",
+   "change": "A mechanical scope check for languages whose local scope is the whole block (C#): flag a name declared in a nested block and again in an enclosing block, as mine/scope.js does (brace stack, `var x =` and `foreach (var x in`).",
+   "why": "Attack V3: with the three CS0136 records relabelled `same-meaning` and 80f77307dc deleted, PORTCHECK csharp prints PASS (exit 0) while 5 blocks cannot compile. mine/scope.js flags exactly those 5 and none of 660 OLD blocks.",
+   "breaking": false,
+   "providers_forced": "none"
+  },
+  {
+   "file": "ts/test/generatedcompile.test.ts:2639-2643",
+   "change": "Skip visibly (t.skip / test option) when dotnet is missing, instead of `return`.",
+   "why": "The lane counts as a pass having run nothing.",
+   "breaking": false,
+   "providers_forced": "none"
+  }
+ ],
+ "attacks": [
+  {
+   "by": "V1 (changed example): Syntax_csharp.ts line 74 `const name = (r: Ref): string => 'item' === r.role ? r.name + 'Item' : r.name`, which works the CS0136 defect around in the provider by concatenation",
+   "caught": false,
+   "change": "Build exit 0; guard 4/4; purity 0 open; callcheck 0; mine/scope.js: 0 collisions (the root block now reads `foreach (var planetItem in planets)`), and the REFERENCE's generic item became `itemItem` in 83 blocks. The REGEN=1 one command exits 1 only on hand-decidable numbers: ledger OPEN tutorial 2 / reference 3 (echo classes), blocks OPEN 1/5/3, and STALE 3 (the three defect records quote `foreach (var planet in planets)`); rootquick defect 3 -> 0. Nothing names the concatenation. Restored, rebuilt, regenerated: screen identical to baseline."
+  },
+  {
+   "by": "V2 (wrong derived fact): stream member `runs: 'iterate'` -> `runs: 'call'`",
+   "caught": true,
+   "change": "Guard fails 3 of 4: 'the code runs the stream's operation as the caller iterates (iterate); declared runs: call'. The one command (REGEN=1) exits 1 with `guard: FAILED (pass 1 fail 3)` and `ABSENT, NO REASON reference [5003b705ca] in 18 variation(s): The operation runs when iteration starts, not when the call returns.` The false replacement sentence ('runs before the call returns', 7x in B) was matched as shared without complaint. Restored."
+  },
+  {
+   "by": "V3 (extra, hand records): 8c5a4fbe41, 3d4aae6c8d and b2b5fd8804 relabelled `same-meaning` with a plain reason, and 80f77307dc deleted",
+   "caught": false,
+   "change": "`PORTCHECK csharp: PASS`, exit 0 in 48 s: rootquick blocks defect 0, reference shared 64, STALE 0. mine/scope.js on the same pages still finds 5 blocks with a CS0136 collision. The port is held failing only by the honesty of its hand records. Restored with git checkout; screen identical to baseline, tools tree clean."
+  },
+  {
+   "by": "Check of finding 8: the reviewer's B3 (container 'Dictionary<object?, string>'), then the same with `value: 'Dictionary<string, object?>'` added to csharp's own container citation",
+   "caught": true,
+   "change": "B3 alone: guard 4/4 (reproduced the hole). With the pin: guard 3/4, `cite ref.facts.container: the fact is \"Dictionary<object?, string>\"; the citation pins \"Dictionary<string, object?>\"`. The pin with the true provider value passes 4/4. Restored, rebuilt, status clean, guard 4/4."
+  }
+ ],
+ "fixes_checked": [
+  {
+   "finding": "1. Root quick start: list item and loaded entity share one name (CS0136), 5 of 21 variations",
+   "fixer_outcome": "needs a shared change",
+   "seen": "crud-basic root C# block: `foreach (var planet in planets)` at block line 16, `var planet = (IEntity)client.Planet().Load(...)!;` at line 22, both top-level. mine/scope.js: NEW 5 collisions of 659 blocks (crud-bare, crud-basic, crud-noupdate, doc-crud, ex-readonly), OLD 0 of 660; the control (sibling reuse not flagged, nested-then-outer flagged) behaved. refOf (example.ts:219-227) gives 'item' and 'one' entity.sym.var; bare() (ReadmeQuick.ts:236-239) flattens the try blocks. hand/csharp.json: 8c5a4fbe41 n3, 3d4aae6c8d n1, b2b5fd8804 n1, all `defect`, naming both shared files. csharp cannot rename without concatenation (V1 shows the workaround and that purity misses it).",
+   "right": true,
+   "evidence": "Correctly a shared change, classes `defect` not `dropped`, additive, csharp only. The fixer's section-aware condition needs refOf to see the section; the simpler variant (item always generic under the flag) is enough."
+  },
+  {
+   "finding": "2. After the shared fix: declare the fact, remove the three defect records, reach PASS",
+   "fixer_outcome": "not fixed",
+   "seen": "Correctly not done: the fact does not exist in RuntimeFacts. Left wrong on the page: the 5 root quick starts above do not compile (read, not compiled).",
+   "right": true,
+   "evidence": "waits on finding 1"
+  },
+  {
+   "finding": "3. Hand record dae78da098 cites MainEntity_csharp.ts:172-175 (the file has 36 lines)",
+   "fixer_outcome": "fixed",
+   "seen": "hand/csharp.json dae78da098 why: '... (MainEntity_csharp.ts:25-28 makes a new entity on every call) ...'. MainEntity_csharp.ts:25 `public ${model.const.Name}EntityBase ${entity.Name}(Dictionary<string, object?>? entopts = null)`, :27 `return new global::${model.const.Name}Sdk.Entity.${cls}(this, entopts);`. No '172' left in the hand file.",
+   "right": true,
+   "evidence": "tools 97783f2; wc -l MainEntity_csharp.ts = 36"
+  },
+  {
+   "finding": "4. body.once citation leaned on a comment",
+   "fixer_outcome": "fixed",
+   "seen": "runtimeforms/csharp.ts: quote ['if (body is Stream stream)', 'stream.CopyTo(buffer);', 'return buffer.ToArray();'], value 'a `Stream`'. Media.cs:116, :119, :120 hold them, in RawBodyOf, called from PrepareBody.cs:15. The guard account report prints the citation with code only (no comment mark). Guard 4/4, account derived 47 / cited 17 / language 1 / convention 6.",
+   "right": true,
+   "evidence": "sdkgen dc778914; the lines show a Stream copied whole into a byte array"
+  },
+  {
+   "finding": "5. undocumented.MarkDeleted reason 'set by Remove itself' was false",
+   "fixer_outcome": "fixed",
+   "seen": "Now: 'public, and called by the pipeline after any successful operation named remove (Remove, or Stream(\"remove\", ...))'. Runtime: EntityBase.fragment.cs:28 `public void MarkDeleted()`; :233-240 marks when Result.Ok and opname == \"remove\"; Stream puts `[\"opname\"] = action` (:281) and calls RunOp (:306); Context.cs:207-208 `Op = ResolveOp(opname)`. The Deleted reason was re-worded to match. The pages are unchanged.",
+   "right": true,
+   "evidence": "sdkgen dc778914"
+  },
+  {
+   "finding": "6. STREAM_SIGNAL prints `callopts.signal`; C# writes callopts[\"signal\"], and only a CancellationToken counts",
+   "fixer_outcome": "needs a shared change",
+   "seen": "ReadmeRef.ts:123 is one literal, used at :119. csharp's key printer (Syntax_csharp.ts:163) would print `callopts[\"signal\"]`. Class 80f77307dc is recorded as `defect`, n 94; the reviewed screen shows reference ledger defect 1. Eleven providers declare streamSignal: true; their key printers differ as the fixer says (read).",
+   "right": true,
+   "evidence": "Correctly a shared change and correctly called breaking for the form recorded. That form is not the smallest: an optional cited key fact would be additive and touch csharp alone. The reviewer had judged the sentence 'awkward, not false'; recording it as defect follows brief 7's rule and is defensible."
+  },
+  {
+   "finding": "7. callcheck drops calls to undeclared members (MEMBER 0) and misses an accessor on the type (RECEIVER 0)",
+   "fixer_outcome": "needs a shared change",
+   "seen": "Read callcheck.js: SEP = { lua } only (:28), so RECEIVER never applies to csharp; MEMBER requires a known receiver (:139), so `client.Planet().Lode(` (receiver `)`) is skipped. mine/members.js over every csharp block of the three sections finds no undeclared member: TestSDK only ever on DemoSDK; `Utility()` is a fixture entity's accessor (## UtilityEntity), not GetUtility.",
+   "right": true,
+   "evidence": "a shared tools file; no page carries such a call, so there is no class to mark"
+  },
+  {
+   "finding": "8. Guard compares a cited code value with its quote as a set of tokens (B1/B3 passed)",
+   "fixer_outcome": "needs a shared change",
+   "seen": "account.ts:126 splits a value with punctuation into word tokens, each looked up alone. Ran: B3 passes 4/4. But adding `value:` to csharp's own container citation makes the guard fail, naming the fact; the true value passes. csharp's none, container and ctor[0] citations carry no pin.",
+   "right": false,
+   "evidence": "The shared change is right for the general hole, but 'csharp's files can do nothing' is wrong: three pins in ts/test/runtimeforms/csharp.ts (the port's own file) close B1/B3 for csharp. Not taken."
+  }
+ ],
+ "state": [
+  {
+   "check": "npm run build in sdkgen/ts; git status --short",
+   "fixer_said": "exit 0, empty",
+   "result": "exit 0 (2.5 s, incremental), empty. Forced `tsc -p tsconfig.scaffold.json --incremental false`: exit 0, 614 component files including Syntax_csharp.ts and Naming_csharp.ts (tsc 7.0.2)."
+  },
+  {
+   "check": "guard `^csharp: ` (runtimefacts.test.js)",
+   "fixer_said": "4/4",
+   "result": "4 pass, 0 fail"
+  },
+  {
+   "check": "guard + reader",
+   "fixer_said": "81/81",
+   "result": "81 pass, 0 fail"
+  },
+  {
+   "check": "guard account (SDKGEN_GUARD_REPORT=1)",
+   "fixer_said": "derived 47, cited 17, language 1, convention 6",
+   "result": "derived 47, cited 17, language 1, convention 6, excepted 0; types column csharp; uncompared none"
+  },
+  {
+   "check": "golden (characterize.test.js)",
+   "fixer_said": "2/2",
+   "result": "2/2; golden diff v33-frozen..HEAD touches only csharp lines (+Naming_csharp, +Syntax_csharp, -3 deleted components)"
+  },
+  {
+   "check": "suite without generatedcompile, --test-concurrency=2",
+   "fixer_said": "2635 tests, 2630 pass, 0 fail, 5 skipped, 285 s",
+   "result": "2635 tests, 2630 pass, 0 fail, 5 skipped, exit 0, 276 s; status clean after"
+  },
+  {
+   "check": "REGEN=1 tools/portcheck.sh sdkgen out csharp (out/new emptied first)",
+   "fixer_said": "exit 1; only reference ledger defect 1 (80f77307dc) and rootquick blocks defect 3; 63 s",
+   "result": "exit 1 in 138 s (127 s on the re-run after the attacks). Screen identical to the fixer's: ledger same 59/19/13843, shared 22/0/63, by hand 20/3/66, missing 4/1/44, OPEN 0, defect 0/0/1, contradictions 0/0/1; blocks 18/0/0/30, 0/2/0/17, 212/0/0/101, classes 27/26/13, OPEN 0, defect 0/3/0; purity 0 open 1 accepted; pagecheck 0; callcheck 386 calls 0 findings; guard pass 4; build 1813 current; hand records 233, STALE 0; facts attested 4, hand 2, UNATTESTED 0; shared matched 85; absent 25 explained; fact sheet 63 facts, 0 unaccounted."
+  },
+  {
+   "check": "SCRATCH=1 tools/portcheck.sh sdkgen out csharp",
+   "fixer_said": "exit 1; ledger OPEN 24/4/111; shared 22/0/64; blocks OPEN 27/26/13; UNATTESTED/NOT JUDGED 2; ABSENT 25; hand-free parts clean; 44 s",
+   "result": "exit 1 in 46 s; the same numbers (named NOT JUDGED, ref.noun UNATTESTED). Build current, guard 4/4, purity 0 open, pagecheck 0, callcheck 0."
+  },
+  {
+   "check": "pages vs porter's and reviewer's",
+   "fixer_said": "byte-identical to the reviewer's",
+   "result": "diff -rq: 0 differences against P/ports/csharp/out/new and against P/reviews/csharp/ws/out/new"
+  },
+  {
+   "check": "other languages (diff -rq -x csharp out/new P/base33/out/new; root READMEs outside the C# quick start)",
+   "fixer_said": "only 19 root READMEs differ, 0 outside the C# quick start",
+   "result": "19 root READMEs listed, no other file; mine/rootcmp.js: 21 of 21 root READMEs identical once the C# quick start is cut (found in 19)"
+  },
+  {
+   "check": "csharp lanes: node --test --test-name-pattern '^csharp' dist-test/generatedcompile.test.js",
+   "fixer_said": "29 tests, 1 pass (empty), 0 fail, 28 skipped, 5.7 s",
+   "result": "29 tests, 1 pass, 0 fail, 28 skipped, 4.9 s. The pass 'csharp: the project builds' (0.66 ms) returns without dotnet (generatedcompile.test.ts:2639-2643)."
+  },
+  {
+   "check": "root quick start from the repository root of a generated SDK",
+   "fixer_said": "not run (no dotnet)",
+   "result": "not run: dotnet, csc and mono missing; `using DemoSdk;` needs the SDK project built and referenced"
+  },
+  {
+   "check": "what the port touched (git diff --stat v33-frozen..HEAD)",
+   "fixer_said": "provider, hook, forms, 3 deletions, golden",
+   "result": "7 files, all allowed by section 4: Naming_csharp.ts +25, Syntax_csharp.ts +176, ReadmeQuick_csharp.ts -232, ReadmeRef_csharp.ts -413, ReadmeTopQuick_csharp.ts -96, runtimeforms/csharp.ts +58 -4, golden +2 -3. Nothing outside csharp's own files."
+  },
+  {
+   "check": "commit messages and tools log",
+   "fixer_said": "no body, no trailer",
+   "result": "sdkgen 445b2b23, dbb9e169, dc778914 and tools 9d60029, 97783f2: subject only, empty body, no tool or model named, no trailer. Tools commits touch classes/, counts/ and hand/csharp.json only, on base a3fd3b8 (= base33 tools HEAD)."
+  },
+  {
+   "check": "line counts (wc -l)",
+   "fixer_said": "Syntax 176, Naming 25, forms 119 (65 at the tag); 741 deleted",
+   "result": "Syntax 176, Naming 25, forms 119 (65 at v33-frozen); 741 deleted"
+  },
+  {
+   "check": "distinct changed blocks (porter's work/distinct.js)",
+   "fixer_said": "77 distinct NEW, 30 not identical to any OLD",
+   "result": "77 distinct NEW, 30 not byte-identical to any OLD block"
+  }
+ ],
+ "ran": "All on the copy P/verify/csharp/ws, with PATH set per the guide; outputs are in P/verify/csharp/mine/ and the log is P/verify/csharp/PROGRESS.md.\n\nToolchain (`command -v`): node v24.22.1, npm 11.19.1, php 8.3.6, composer, javac, java, mvn, gradle, g++ 13.3.0 and make present. kotlinc, kotlin, scala, scala-cli, sbt, dotnet, csc and mono missing.\n\nPart 2:\n- `npm run build`, then `tsc -p tsconfig.scaffold.json --incremental false`.\n- Guard, guard plus reader, and the guard account report.\n- Golden, then the suite (`--test-concurrency=2`, generatedcompile excluded).\n- REGEN=1 reviewed one command from an emptied out/new, then SCRATCH=1.\n- The `^csharp` generatedcompile lanes.\n\nComparisons:\n- `diff -rq` against the porter's, the reviewer's and base33's pages.\n- mine/rootcmp.js (root READMEs outside the C# quick start).\n- mine/scope.js (CS0136 checker over OLD and NEW, with a synthetic control).\n- mine/members.js (every member call in the csharp blocks).\n- The porter's work/distinct.js.\n\nPart 3: `git diff --stat/--numstat v33-frozen..HEAD`, `git log --format` bodies, and `git -C tools log --stat`.\n\nPart 4, each attack applied, built, checked and restored:\n- V1: provider concatenation workaround. Build, guard, REGEN one command, scope check.\n- V2: `runs: 'call'`. Build, guard, REGEN one command.\n- V3: hand-record relabelling, then the one command without REGEN.\n- Finding-8 check: B3, then B3 with a pin, then the pin with the true value. Build and guard each time.\n\nAfter the attacks: rebuild, guard 4/4, a REGEN=1 baseline with a screen identical to the first run, a no-REGEN reviewed run identical again, and both trees clean.",
+ "read": "Read: brief.md, brief5.md, brief7.md, PORTING.md (all, with 2.1 and 4 to 7, 9 and 10 in full), and verify.md.\n\nPort sources: Syntax_csharp.ts, Naming_csharp.ts, the forms diff, and the fixer's two commits.\n\nRuntime:\n- MainEntity_csharp.ts:20-30.\n- EntityBase.fragment.cs:22-36, 120-130, 226-245 and 255-310.\n- Media.cs:100-124.\n- PrepareBody.cs:15 (the RawBodyOf caller).\n- Context.cs:83 and 207-208.\n- Main.fragment.cs:103 (GetUtility).\n\nShared code:\n- ReadmeRef.ts:100-130 (STREAM_SIGNAL, streamText).\n- example.ts:205-235 (refOf) and 465-480 (RefSyntax.key).\n- ReadmeQuick.ts:228-260 (bare, topQuickText).\n- The key printers and streamSignal declarations of all thirteen ported providers.\n- account.ts:105-127 (codeTokens) and 285-315 (checkCitation).\n- callcheck.js:1-30 and 100-150.\n- purity.js (the concatenation pattern :43; acceptance :263-295).\n- portcheck.sh.\n- generatedcompile.test.ts:2639-2649.\n\nTools records: hand/csharp.json records 8c5a4fbe41, 3d4aae6c8d, b2b5fd8804, 80f77307dc, eea38408c0 and dae78da098, plus the outcome counts (defect 4, dropped 3, same-meaning 21, correction 70, restored 50, unification 57, contradiction 1).\n\nPages: the crud-basic, B, auth-basic and doc-list root C# quick starts, the open worklists under V1, and the reference ledger lines for the stream-signal classes.",
+ "touched": "Only /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/verify/csharp/:\n- ws: the copy, restored after every attack; both trees clean at dc778914 / 97783f2, with pages byte-identical to the porter's;\n- mine: outputs and scripts scope.js, rootcmp.js, members.js, plus copies of the porter's pages and of the V1 review files;\n- PROGRESS.md.\n\nNothing under P/ports/csharp changed (its git status is empty and its HEADs are unchanged), and nothing under /home/user. No commit, push, install or download.",
+ "unverified": "No C# compiler is here (dotnet, csc and mono missing), so nothing compiled or ran any csharp block, OLD or NEW.\n\nCounted, compiled by nothing:\n- 30 distinct NEW blocks not byte-identical to any OLD block, of 77 distinct NEW blocks (work/distinct.js);\n- per section, 30 tutorial, 19 rootquick and 101 reference changed pairs (the one command).\n\nRead, not compiled:\n- CS0136 in the 5 root quick starts. mine/scope.js is a brace-and-declaration checker, not a compiler.\n- The claim that java, kotlin, scala, cpp, js and php accept the same shape.\n\nNot run:\n- The root quick start from the repository root of a generated SDK.\n- The README example test, which checks balanced delimiters only and would not see CS0136 even with dotnet.\n- The constructor options of the examples, which no lane executes.\n\nThe only csharp lane counted as passing ran nothing.\n\nI did not run purity over the other twelve providers with a widened concatenation rule, so its cost to them is unknown.",
+ "other_languages": "No other language's page changed. `diff -rq -x csharp` of my regenerated out/new against P/base33/out/new lists only the 19 root README.md files. mine/rootcmp.js finds all 21 root READMEs identical to base33's once the `### C#` subsection of 'Quickstart in other languages' is cut; alias-go2 and lone-go have no C# section. No shared source, guard or tools file was touched, by `git diff --stat v33-frozen..HEAD` and the tools log since a3fd3b8."
+}

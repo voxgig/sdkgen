@@ -1,0 +1,60 @@
+baseline findings: 0
+CAUGHT  derived: method.load renamed fetch :: method: load -> fetch, but src/cmp/js/fragment/EntityLoadOp.fragment.js defines load as load | signature: op load: the signature names load; load's method is fetch
+CAUGHT  derived: record .record() :: record: record accessor record (from .record()) is not an entity member | record: the provider prints a record as "planet.data()", which does not call record
+CAUGHT  derived: arity 1 :: arity: facts.arity is 1; the runtime's list requires 0 of its 2 parameters | account: facts.arity: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  derived: async false :: async: the runtime's load resolves; declared async: false | account: facts.async: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  derived: accessor param data :: accessor: the accessor's signature names its argument entopts; declared param: data | account: ref.facts.accessor.param: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  derived: stream runs call :: runs: the code runs the stream's operation as the caller iterates (iterate); declared runs: call | account: ref.facts.entity[3].runs: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  derived: test sig on instance :: on: test: the signature writes test on $client ($client.test(testopts?, sdkopts?)); the runtime declares it on the type | account: ref.facts.test[0].sig: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  derived: test call on instance :: on: test: test is declared on the type; "const client = new ProjectNameSDK().test()" calls it on ProjectNameSDK() (result) | account: ref.facts.test[0].call: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  derived: ctor wrong (create) :: ctor: ref.facts.ctor[0]: "ProjectNameSDK.create(options?: object)" does not call ProjectNameSDK | account: ref.facts.ctor[0]: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  cited token: okFalse null :: account: cite ref.facts.direct.okFalse: the quote does not contain "null", which the fact states
+CAUGHT  cited token: abortCode request_cancelled :: account: cite ref.facts.direct.abortCode: the quote does not contain "request_cancelled", which the fact states
+CAUGHT  cited token: none null :: account: cite ref.facts.none: the quote does not contain "null", which the fact states
+CAUGHT  cited token: direct.signal AbortController :: account: cite ref.facts.direct.signal: the fact is "AbortController"; the citation pins "AbortSignal"
+CAUGHT  cited token: container map :: account: cite ref.facts.container: the quote does not contain "map", which the fact states
+CAUGHT  cited token: valueType.OBJECT Object :: account: cite ref.facts.valueType.OBJECT: the guard re-derives this fact; drop the citation
+CAUGHT  cited token: client[0].returns Map :: account: cite ref.facts.client[0].returns: the quote does not contain "Map", which the fact states
+CAUGHT  cited token: direct.returns drops headers :: account: cite ref.facts.direct.returns: the fact is "Promise<{ ok, status, data }>"; the citation pins "Promise<{ ok, status, headers, data }>"
+CAUGHT  cited token: direct.returns adds err key :: account: cite ref.facts.direct.returns: the fact is "Promise<{ ok, status, headers, data, err }>"; the citation pins "Promise<{ ok, status, headers, data }>"
+CAUGHT  cited token: prepare.returns body->payload :: account: cite ref.facts.prepare.returns: the quote does not contain "payload", which the fact states
+CAUGHT  pinned: collection list :: account: cite facts.collection: the fact is "list"; the citation pins "array"
+CAUGHT  pinned: cancel false :: account: cite ref.facts.cancel: the fact is false; the citation pins true
+CAUGHT  pinned: streamSignal false :: account: cite ref.facts.streamSignal: the fact is false; the citation pins true
+CAUGHT  pinned: testMock always :: account: cite ref.facts.testMock: the fact is "always"; the citation pins "generated"
+CAUGHT  pinned: body.values adds Array :: account: cite ref.facts.body.values: the quote does not contain "Array", which the fact states
+CAUGHT  pinned: body.once a Blob :: account: cite ref.facts.body.once: the fact is "a Blob"; the citation pins "a stream"
+CAUGHT  pinned: prepare.fails throw :: account: cite ref.facts.prepare.fails: the fact is "throw"; the citation pins "value"
+CAUGHT  pinned: utility copy true :: account: cite ref.facts.client[1].copy: the fact is true; the citation pins false
+CAUGHT  pinned: options copy false :: account: cite ref.facts.client[0].copy: the fact is false; the citation pins true
+CAUGHT  pinned: data copy false :: account: cite ref.facts.entity[0].copy: the fact is false; the citation pins true
+MISSED  language: maps arrays
+MISSED  convention: noun Functions
+MISSED  convention: valueType.ANY unknown
+MISSED  enum: prints fields
+MISSED  enum: keys bare
+MISSED  enum: named bare
+MISSED  optional: deleted removed
+CAUGHT  optional: deleted isDeleted() :: deleted: ref.facts.deleted names {var}.isDeleted(), which the entity does not declare | account: ref.facts.deleted: the guard could not re-derive it from the runtime and the forms do not cite it
+MISSED  optional: deleted as field {var}.deleted
+CAUGHT  optional: streamSignal removed :: account: cite ref.facts.streamSignal: the provider declares no such fact
+CAUGHT  optional: name field flag removed :: field: entity name: declared without the field flag (called); the runtime's name is a field
+CAUGHT  optional: name shown as call name() :: field: entity name: name is a field of the runtime, declared as called (name()) | account: ref.facts.entity[6].kind: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  optional: name entry removed :: members: the runtime's entity defines name, which the reference neither declares nor lists as undocumented | members: the runtime defines name (name); the reference does not declare it
+CAUGHT  optional: accessor.cached true :: account: ref.facts.accessor.cached: cite the runtime file and a quote that shows true
+CAUGHT  optional: match copy removed :: account: cite ref.facts.entity[1].copy: the provider declares no such fact
+CAUGHT  optional: utility copy removed :: account: cite ref.facts.client[1].copy: the provider declares no such fact
+MISSED  optional: arity removed
+CAUGHT  optional: memberNamed bare :: named: ref.facts.memberNamed is bare; in this notation (paren) a member is named call | account: ref.facts.memberNamed: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  optional: listOf declared {Class}[] :: account: facts.listOf: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  signature: load match required :: optional: op load: load parameters !? declared, ?? in the runtime (load(match: object, ctrl?: object)) | account: ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  signature: stream args required :: optional: entity streamIterator: stream parameters !!? declared, !?? in the runtime (stream(action: string, args: object, callopts?: object)) | account: ref.facts.entity[3].kind: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  signature: stream action optional :: optional: entity streamIterator: stream parameters ??? declared, !?? in the runtime (stream(action?: string, args?: object, callopts?: object)) | account: ref.facts.entity[3].kind: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  signature: load params swapped :: paramNames: op load: parameter 1 is reqmatch in the runtime, ctrl declared | paramNames: op load: parameter 2 is ctrl in the runtime, match declared
+CAUGHT  signature: direct on type :: on: client direct: the signature writes direct on ProjectNameSDK ({client}.direct(fetchargs?: object)); the runtime declares it on the instance | account: ref.facts.client[2].kind: the guard could not re-derive it from the runtime and the forms do not cite it
+MISSED  signature: options() returns marked throws
+CAUGHT  printed call: call with spread args :: arity: op list: list takes 0 to 2 argument(s) in the runtime; "const planet = await client.Planet().list({ id: 'x' }, {}, {})" passes 3 | arity: op list: list takes 0 to 2 argument(s) in the runtime; "const planet = await client.Planet().list({ id: 'x', name: 'n', size: 1 }, {}, {})" passes 3
+MISSED  printed call: receiver wrong (accessor no parens)
+CAUGHT  printed call: test call extra arg :: arity: test: test takes 0 to 2 argument(s) in the runtime; "const client = ProjectNameSDK.test({}, {}, {})" passes 3 | account: ref.facts.test[0].call: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  note: top names an entity :: account: notes.top: cite the runtime file and a quote that shows "The Planet entity has 3 fields."
+CAUGHT  note: members numeric :: account: notes.members: cite the runtime file and a quote that shows "Every client keeps 2 caches."

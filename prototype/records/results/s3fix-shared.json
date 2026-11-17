@@ -1,0 +1,309 @@
+{
+ "summary": "I worked in P/h-shared/sdkgen, starting from 2a87287f with a clean tree. First I confirmed the handed state. `npm run build` left git status clean, and `REGEN=1 ./tools/portcheck.sh sdkgen out rb` gave PASS. I kept the regenerated NEW as out/new-handed; it is byte-identical to P/pilot-rb/out/new.\n\nI then fixed parts 1 and 2 in shared code. The new shared pieces are:\n- `showFields`, which now compares through `canonScalarKey` and falls back to the first other field.\n- Shown fields come from the entity being shown (`DescEntity.show`).\n- A third `prints` value, `listFields`, applied in one place (`show` in example.ts).\n- `Member.copy`, which drives one getter sentence.\n- A record clause on every single-entity operation sentence.\n- An action's Call cell that carries the route's path parameters (`DescAction.params`), with prose saying where the action's own arguments go.\n- `writeSentence`, one sentence per result style for the tutorial's write step.\n- `FeatureDocs.activeByDefault`, called by the README Features section, by REFERENCE \"Configuring features\" and by the root README's features line.\n- Notes can name layout modules (`{module}`, `{names.helpers}`), filled in by shared code.\n- A new note slot, `members`.\n\nThe per-language changes are data only:\n- `copy: true` on the data getter in all nine providers.\n- rb now declares `prints: 'listFields'`.\n- elixir gets three notes: the constructor's Helpers.deep/1 and the arities `list/2` and `load/2`. clojure gets two: the keyword-lookup sentence and the route to the utility through `sdk.client`.\n- zig's environment reader is one printer line.\n\nEverything I ran passes at final HEAD 11fff52d:\n- Suite: 2,561 tests, 2,556 pass, 0 fail, 5 skipped.\n- Golden: 2/2 after the update.\n- Lanes: ts README 16/16, go README 12/12, py README 12/12 (real pytest), c DOC 6/6, rust DOC 6/6, `^rb: ` 49/49, `^zig: ` 26 pass with 2 skipped (no transport here).\n- Zig documentation lane: 6/6 on the new code. On the pristine old clone it is 5/6, failing basic-server on `std.posix.getenv`.\n\nThe eleven unported languages differ from OLD only in lines from already-shared components. README.md and REFERENCE.md each differ in 209 of 209 files, by 4 shared lines in REFERENCE and 3 old lines becoming 4 new ones in README. The Features change now reaches all 381 README files of the twenty languages.\n\nThe thresholds, plainly:\n- Breaking interface changes go up by 1. Removing `DescQuick.show` forced work in 0 providers. The cumulative count is now about 11 to 13, at or over the line of about 10, as it already was.\n- The share tool's language-only words rose in tutorials: elixir 10.9% to 18.6%, ts 23.5% to 28.6%, c 26.6% to 32.6%. For ts and c this comes from the new shared write sentence, which only that result style prints. For elixir it comes from the notes, which by themselves are 10.5% of the elixir tutorial's prose words. By the tool's metric, elixir's tutorial crosses the 15% line.\n\nNot fixed:\n- The c root quick start's unchecked err.\n- go writes still discard the value.\n- Statements in unported README sections: ts region \"Required.\" in ReadmeModel_ts.ts:70, `secret` under Basic-in-query, and `utilitys` in ReadmeEntity_ts.ts.\n- c and rust REFERENCE load and remove examples stay bare, as a named unification: 44 old blocks each.",
+ "clone": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/sdkgen (copied from P/pilot-rb/sdkgen at 2a87287f, clean). Harness, tools and my copies are in P/h-shared/{harness,tools,my}. Outputs are in P/h-shared/out/{old (copy of harness/out/old), new-handed (regenerated at 2a87287f), new (final)}, and P/h-shared/outh links old to new-handed for baseline tool runs. Logs are in P/h-shared/logs. My one script is P/h-shared/mine/printlost.js. The alias-go2 variation is SKIPPED by tools/gen/gen.js in both new-handed and new: alias staging would write into the clone. So NEW has 20 variations, and OLD has 21.",
+ "commits": "Six commits on 2a87287f, in brief3 order. Parts 1 and 2 share the same files, so they share commits, and the ReadmeTop fix came after the first build:\n- eed7d7db 'Shared pages: chosen fields per entity and place, getter copy, write step, action path parameters, features on by default, note layout names'. Files: ts/src/helpers/{sdkdesc,example,runtimeprose}.ts, ts/src/cmp/{ReadmeQuick,ReadmeRef,ReadmeRefFeatures,ReadmeFeatures,FeatureDocs}.ts, ts/src/sdkgen.ts, plus the new test ts/test/sharedfacts.test.ts (7 tests).\n- 7d373311 'Providers: declare the getter copy; rb prints listFields; elixir and clojure notes; zig reads the environment through the global Io'. Nine Syntax_<lang>.ts files.\n- 037eadb4 'Build' (ts/dist).\n- 579a76dd 'Golden follows the provider changes' (ts/test/golden/add-output.txt: 9 hash lines, all Syntax_*).\n- 3e4a6796 'Root README: the features run by default, from the same decision as both feature sections' (ts/src/cmp/ReadmeTop.ts).\n- 11fff52d 'Build'.\n\nThe tree is clean after each build (`git status --short` showed 0 lines). I did not touch ts/test/runtimefacts.test.ts or ts/test/runtimeforms/.",
+ "items": [
+  {
+   "item": "1a showFields compared '$STRING' against backticked types",
+   "outcome": "Fixed. It now uses `canonScalarKey(f.t) === 'STRING'`. When there is no string field it falls back to the first other field. That is the majority of the old components I read: rb, php and lua fall back to any non-id field, while perl printed only the id. lua's fallback was dead because it read `.name`. Result: doc-crud rb tutorial list now prints `#{record[\"id\"]} #{record[\"title\"]}`. Handed printed id only; OLD printed radius, through the old fallback after the same backtick miss.",
+   "where": "ts/src/helpers/sdkdesc.ts showFields"
+  },
+  {
+   "item": "1b fields shown come from the shown entity, not the example entity",
+   "outcome": "Fixed. `DescEntity.show` is computed per entity, and `show()` reads the shown Ref's entity. `DescQuick.show` is removed. Tested in sharedfacts.test.ts ('the fields shown are the shown entity's own'). In doc-nested the satellite is no longer printed with planet's fields.",
+   "where": "ts/src/helpers/sdkdesc.ts describeEntity; ts/src/helpers/example.ts show"
+  },
+  {
+   "item": "1c prints:'fields' applied everywhere",
+   "outcome": "Fixed. I read the OLD outputs (doc-crud) for each place, in the order rb/php/lua/perl: tutorial list F/F/F/F; tutorial load R/R/F/F; root list R/R/R/F; root load R/R/R/F; REFERENCE list R/none/none/F. rb and php share a pattern, so it is now an enumerated value: `prints: 'record' | 'listFields' | 'fields'`. listFields means chosen fields only for an item the tutorial lists. fields (perl) means everywhere. `show(desc, facts, ref, where)` decides it once; the tutorial, root quick start and REFERENCE pass their place. rb now declares listFields. lua's pattern (fields in the tutorial load too) is shared by no other language and will be a unification when lua is ported.",
+   "where": "ts/src/helpers/example.ts (Prints, ShowPlace, show, listBlock/loadBlock/refOpBlock); ts/src/cmp/ReadmeQuick.ts quickSteps(where); rb/Syntax_rb.ts"
+  },
+  {
+   "item": "1d 'Returns a copy of the current data.' dropped",
+   "outcome": "Fixed. A new optional field `Member.copy` drives the sentence, written once in memberText for the data, dataArg and dataGet kinds. In the data kind the old 'When called without arguments, returns a copy' clause is now conditional, so ts and go output is unchanged. I read the runtimes and every one clones: ts EntityBase.fragment.ts:89 struct.clone; go Entity.fragment.go:105 vs.Clone; py Entity.fragment.py:63 vs.clone; rb Entity.fragment.rb:79 VoxgigStruct.clone; c Entity.fragment.c:249 voxgig_clone; zig Entity.fragment.zig:301 h.clone; rust Entity.fragment.rs:285 vs::clone; elixir tm/elixir/lib/projectname/entity_base.ex:88 S.clone; clojure Entity.fragment.clj:21 vs/clone. Unported: php Entity.fragment.php:114 Struct::clone; perl Entity.fragment.pm:103 Voxgig::Struct::clone. I declared `copy: true` in all nine providers. New page text: py, c, zig, rust, elixir and clojure gain the sentence (true facts); rb keeps it; ts and go are unchanged.",
+   "where": "ts/src/helpers/example.ts Member; ts/src/cmp/ReadmeRef.ts memberText; nine Syntax_*.ts"
+  },
+  {
+   "item": "2a c and rust REFERENCE load/remove examples (output_defects 2, 3; facts 17, 24; misclassified 6)",
+   "outcome": "Fixed in the sentences; the examples keep the majority shape. opText now adds the record clause to every non-list operation (it was load only). c says, for example, 'Returns the entity, marked as deleted, or `NULL` with `*err` set on failure. `vt->data` reads its record.' rust says '... `Err` reports failure. `data(None)` reads its record.' Named unification 'reference examples in the old majority shape', counted by mine/printlost.js over out/old against out/new. Old non-list op blocks whose print or check is gone in NEW: c 44 (load 28, remove 16); rust 44 (load 28, remove 16); go 0; zig 0. ts, py, clojure, elixir and rb printed none before. Excluded: alias-go2 (not generated in NEW) and ref-issues remove (turned off by a correction).",
+   "where": "ts/src/helpers/runtimeprose.ts opText"
+  },
+  {
+   "item": "2b action table Call cell (output_defects 1; defects 14; facts 10)",
+   "outcome": "Fixed once. `DescAction.params` holds the route's path parameters, typed from the point's g.params, with the id as `<entity>_id`. actionBlock passes `$action` plus those parameters. The Actions prose now says: 'Select one with `$action` in the call's argument, beside the route's path parameters, as the Call column shows; the action's own arguments go beside them too, and are sent as that action's payload.' ts cell: `await client.Planet().create({ $action: 'terraform', id: 'planet_id' })`. c, elixir and the others print the same through their own printers.",
+   "where": "ts/src/helpers/sdkdesc.ts actionParams; ts/src/helpers/example.ts actionBlock; ts/src/cmp/ReadmeRef.ts"
+  },
+  {
+   "item": "2c go tutorial write step has no sentence (output_defects 6; defects 3; facts 4)",
+   "outcome": "The sentence is fixed for every result style. writeSentence(f, ops) prints in step 4. For go: 'Each write returns `(value, error)` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure.' The other styles get their own versions: throw resolves/throws, raise, errslot (with 'so check `err` after each call'), and union. Not fixed: go's write results are still discarded with `_, err =`, which is printer code shape, not a sentence.",
+   "where": "ts/src/helpers/runtimeprose.ts writeSentence; ts/src/cmp/ReadmeQuick.ts"
+  },
+  {
+   "item": "2d README Features said no feature is active (output_defects 0; defects 15)",
+   "outcome": "Fixed. `activeByDefault(f)` in FeatureDocs.ts is called by ReadmeFeatures.ts, ReadmeRefFeatures.ts and ReadmeTop.ts. ReadmeTop is a third place I found stating it: '> inactive until switched on, and configured per client'. README lines changed, the same in all 20 languages:\n- Removed: 'switch it on**, so an SDK you have not configured behaves exactly as if none of', 'them existed \u2014 no retries, no cache, no logging, no measurable overhead.' and 'Set `feature.log.active` to enable it, then override any of the options above.'\n- Added: 'switch it on**, except `log`, which runs unless disabled. Every other', 'feature you have not configured behaves exactly as if it did not exist,', 'with no measurable overhead.' and 'It is active by default: set `feature.log.active` to false to switch it off, or override any of the options above.'\n\nFiles: all 381 language README.md files in out/new carry the new lines and none says 'no logging'. Root README: 20 of 20 now read 'inactive until switched on except `log`, which runs unless disabled, and configured per client'.",
+   "where": "ts/src/cmp/FeatureDocs.ts, ReadmeFeatures.ts, ReadmeRefFeatures.ts, ReadmeTop.ts"
+  },
+  {
+   "item": "2e elixir arity and Helpers.deep/1 (facts 26; misclassified 5)",
+   "outcome": "Restored as notes. 'ctor': 'Build `options` from a native map with `{names.helpers}.deep/1`.', which prints as `Demo.Helpers.deep/1`. To make that possible, a note's {module}/{client}/{ctor}/{names.X} are filled in by shared code from the hook's layout, so the provider still sees no model. 'tutorial:list': 'Named with its arity, it is `list/2`; `Voxgig.Struct.getelem/2` reads an item.' 'tutorial:load': 'Named with its arity, it is `load/2`.' These name operations. A working note lint would flag them; the existing purity.js does not run on notes (the check's finding), so it reported 0 open.",
+   "where": "elixir/Syntax_elixir.ts notes; ts/src/helpers/example.ts note()"
+  },
+  {
+   "item": "2e clojure keyword lookup and route to the utility (facts 27; misclassified 2)",
+   "outcome": "Restored as notes. A new slot 'members', printed after '### Common Members', reads: 'State accessors are stored on the entity map and called via keyword lookup.' The 'instance' note reads: 'The SDK utility object is reached through `sdk.client`, which `sdk.api` does not re-export: `(sdk.client/get-utility client)` returns a copy of it.' This is true per tm/clojure/src/sdk/client.clj:69 and core.clj:227 utility-copy. I did not add a member, because the guard checks members against sdk.api's re-exports. The word 'utility' is also an entity name in the B model, so a working lint would flag that note.",
+   "where": "clojure/Syntax_clojure.ts notes; NoteSlot 'members'"
+  },
+  {
+   "item": "2f zig std.posix.getenv (Zig 0.16)",
+   "outcome": "Fixed in the one printer. It now prints `h.vstr(std.Io.Threaded.global_single_threaded.environ.process_environ.getAlloc(h.A(), \"DEMO_APIKEY\") catch \"\")`, the same environment the runtime reads (tm/zig/feature/proxy.zig:172, core/utility.zig:2312, via core/mem.zig threaded()). Zig documentation lane: new 6/6, old (P/freeze/oldclone) 5/6, failing basic-server with 'root source file struct posix has no member named getenv'. The old idiom remains in the unported zig component ReadmeOptions_zig.ts:29. It printed 0 times across the 20 variations.",
+   "where": "zig/Syntax_zig.ts expr 'env'"
+  },
+  {
+   "item": "output_defects 4: c root quick start calls load after a failed list without checking or resetting err",
+   "outcome": "Not fixed. The root quick start prints calls outside error handling by design (bare()). A check or reset there would be a c printer decision for an errslot call outside an attempt, which is not one of my listed items. worse_than_old False.",
+   "where": "src/cmp/ReadmeQuick.ts topQuickText / c/Syntax_c.ts call"
+  },
+  {
+   "item": "output_defects 5: zig standalone REFERENCE snippet `.err => |e| return std.debug.print(...)` never compiled",
+   "outcome": "Now compiled. The zig documentation lane wraps every documented example in `fn exampleN() !void` and compiles them all: 6/6 models pass. So it compiles in that wrapper. Whether it reads well standing alone is not tested.",
+   "where": "zig doc lane"
+  },
+  {
+   "item": "output_defects 7 / defects 6, 17: ts README region 'Required.' against the tutorial's default eu; `secret` under Basic in query",
+   "outcome": "Not fixed. These are unported README sections: the options table in ReadmeModel_ts.ts:70 ('**Required.** Values for the server-URL variables'), and the `secret` lines in README configuration and how-to (ReadmeModel_ts.ts / ReadmeHowto_ts.ts; auth-basic-query ts README:144,181,193,217,231).",
+   "where": "ts/project/.sdk/src/cmp/ts/ReadmeModel_ts.ts, ReadmeHowto_ts.ts"
+  },
+  {
+   "item": "defects 5 (partly): c err never reset in the root quick start; the tutorial write chain on one err",
+   "outcome": "The sentence is fixed: errslot's write sentence says 'so check `err` after each call'. The code is not: the root quick start and the write step still have no per-call check. This is the c printer, not a listed item.",
+   "where": "c/Syntax_c.ts"
+  },
+  {
+   "item": "defects 8 (not-fixed): zig/clojure unverifiable",
+   "outcome": "zig is now verified with a real compiler: `^zig: ` 26 pass, 0 fail, 2 skipped; zig documentation lane 6/6. clojure and elixir have no toolchain here (missing), so their changed blocks remain unverified.",
+   "where": "lanes"
+  },
+  {
+   "item": "defects 10 (partly): utilitys/historys in unported sections",
+   "outcome": "Not fixed. They are in an unported README section, for example the ts entity examples ('Example: List' in ReadmeEntity_ts.ts; out/new/B/ts/README.md:586 `const utilitys`).",
+   "where": "ts/project/.sdk/src/cmp/ts/ReadmeEntity_ts.ts and siblings"
+  },
+  {
+   "item": "facts 4 (still-lost) go (value, error) for writes; write results printed",
+   "outcome": "The pair for writes is fixed by writeSentence. Printing the write results is not fixed.",
+   "where": "runtimeprose.ts"
+  },
+  {
+   "item": "pilot fact 10: rb README Reference table (unported) disagrees with REFERENCE on load's optional match and on make",
+   "outcome": "Not fixed: unported README section.",
+   "where": "rb README reference table component"
+  }
+ ],
+ "decisions": [
+  {
+   "question": "What is shown when an entity has no string field?",
+   "decision": "The record id, then the first other field of any type.",
+   "evidence": "Read the old components in P/freeze/oldclone ts/project/.sdk/src/cmp. rb ReadmeQuick_rb.ts:73-76, php ReadmeQuick_php.ts:69-72 and lua ReadmeQuick_lua.ts:77-80 fall back to the first non-id field; perl ReadmeQuick_perl.ts:82 prints only ->{id}. That is 3 of 4. lua's own fallback never fired because it reads `.name` on a field that has `n`."
+  },
+  {
+   "question": "Which `prints` values exist?",
+   "decision": "'record', 'listFields' (rb and php share it: chosen fields only for a tutorial list item) and 'fields' (perl: everywhere). lua's mix (fields in the tutorial list and load, the record in the root quick start) matches no other language, so its port records the tutorial load as a unification.",
+   "evidence": "OLD doc-crud outputs for each place, listed under item 1c."
+  },
+  {
+   "question": "Where do the c and rust REFERENCE facts go, now that examples keep the majority shape?",
+   "decision": "Into the sentence, for every result style and every single-entity operation: the failure clause (already there) plus '`<record>` reads its record'.",
+   "evidence": "out/new/doc-crud/c/REFERENCE.md: load, create, update, patch and remove all carry 'or `NULL` with `*err` set on failure. `vt->data` reads its record.'"
+  },
+  {
+   "question": "How can a static note name a project-named module (elixir's Demo.Helpers)?",
+   "decision": "note() fills {module}, {client}, {ctor} and {names.<role>} from desc.layout, which the naming hook decided. The provider still receives no model. A brace that is not one of these stays as written.",
+   "evidence": "sharedfacts.test.ts 'a note names the layout's modules, and stays as written otherwise'"
+  },
+  {
+   "question": "clojure's utility: a member or a note?",
+   "decision": "A note on 'instance'. sdk.api does not re-export get-utility, and the guard (owned by h-guard) checks members against sdk.api's re-exports.",
+   "evidence": "Main_clojure.ts:85-90; tm/clojure/src/sdk/client.clj:69; test/runtimeforms/clojure.ts public.client regex"
+  },
+  {
+   "question": "Should the Features fix stop at the README and REFERENCE?",
+   "decision": "No. The root README (ReadmeTop.ts:259-261) stated the same false fact, so it now calls activeByDefault too.",
+   "evidence": "out/new-handed/B/README.md:12 'inactive until switched on, and configured per client'"
+  }
+ ],
+ "interface_changes": [
+  {
+   "change": "RuntimeFacts.prints gains the value 'listFields' (new exported type Prints). show() takes the place (ShowPlace: tutorial | top | reference), and listBlock/loadBlock take an optional `where`.",
+   "breaking": false,
+   "why": "1c: say where chosen fields apply, once",
+   "rework_forced_in": "rb chose to change its value (one line); no other provider"
+  },
+  {
+   "change": "DescEntity.show added; DescQuick.show removed",
+   "breaking": true,
+   "why": "1b: fields come from the shown entity",
+   "rework_forced_in": "none: no provider or test read DescQuick.show (grep)"
+  },
+  {
+   "change": "DescEntity.actions elements typed DescAction, with `params: DescArg[]` (exported type DescAction)",
+   "breaking": false,
+   "why": "2b: the call carries the route's path parameters",
+   "rework_forced_in": "none"
+  },
+  {
+   "change": "Member.copy?: boolean",
+   "breaking": false,
+   "why": "1d: copy-or-live of the getter as declared data",
+   "rework_forced_in": "all nine providers declared it (one token each); optional, so an unported provider that omits it prints no copy sentence"
+  },
+  {
+   "change": "NoteSlot 'members' (after the Common Methods/Members heading)",
+   "breaking": false,
+   "why": "2e clojure keyword-lookup note",
+   "rework_forced_in": "clojure only (its own note)"
+  },
+  {
+   "change": "note(p, slot, desc?) fills {module}/{client}/{ctor}/{names.<role>} in note text",
+   "breaking": false,
+   "why": "2e elixir Helpers.deep/1 note needs the project's module name without the provider seeing the model",
+   "rework_forced_in": "none; no existing note contained braces"
+  },
+  {
+   "change": "New shared exports: writeSentence (runtimeprose), activeByDefault (FeatureDocs); types DescAction, Prints, ShowPlace re-exported from sdkgen.ts",
+   "breaking": false,
+   "why": "2c, 2d",
+   "rework_forced_in": "none"
+  }
+ ],
+ "facts_added_or_changed": [
+  {
+   "lang": "ts",
+   "fact": "ref.facts.entity data member copy",
+   "value": "copy: true",
+   "evidence": "ts/fragment/EntityBase.fragment.ts:89 `let out = struct.clone(this._data)`"
+  },
+  {
+   "lang": "go",
+   "fact": "ref.facts.entity Data member copy",
+   "value": "copy: true",
+   "evidence": "go/fragment/Entity.fragment.go:105 `out := vs.Clone(e.data)`"
+  },
+  {
+   "lang": "py",
+   "fact": "dataGet copy",
+   "value": "copy: true",
+   "evidence": "py/fragment/Entity.fragment.py:63 `return vs.clone(self._data)`"
+  },
+  {
+   "lang": "rb",
+   "fact": "dataGet copy",
+   "value": "copy: true",
+   "evidence": "rb/fragment/Entity.fragment.rb:79 `VoxgigStruct.clone(@_data)`"
+  },
+  {
+   "lang": "c",
+   "fact": "dataArg copy",
+   "value": "copy: true",
+   "evidence": "c/fragment/Entity.fragment.c:249 `return voxgig_clone(self->data);`"
+  },
+  {
+   "lang": "zig",
+   "fact": "dataArg copy",
+   "value": "copy: true",
+   "evidence": "zig/fragment/Entity.fragment.zig:301 `return h.clone(self.data);`"
+  },
+  {
+   "lang": "rust",
+   "fact": "dataArg copy",
+   "value": "copy: true",
+   "evidence": "rust/fragment/Entity.fragment.rs:285 `vs::clone(&self.data.borrow())`"
+  },
+  {
+   "lang": "elixir",
+   "fact": "dataGet copy",
+   "value": "copy: true",
+   "evidence": "tm/elixir/lib/projectname/entity_base.ex:88 `S.clone(S.getprop(ent, \"_data\"))`"
+  },
+  {
+   "lang": "clojure",
+   "fact": "dataGet copy",
+   "value": "copy: true",
+   "evidence": "clojure/fragment/Entity.fragment.clj:21 `(vs/clone (deref (:_data ent)))`"
+  },
+  {
+   "lang": "rb",
+   "fact": "RuntimeFacts.prints",
+   "value": "'listFields' (was 'fields')",
+   "evidence": "OLD rb: tutorial list `puts \"#{record[\"id\"]} #{record[\"radius\"]}\"`; tutorial load, root quick start and REFERENCE list print data_get whole"
+  },
+  {
+   "lang": "elixir",
+   "fact": "notes ctor, tutorial:list, tutorial:load",
+   "value": "Helpers.deep/1; list/2 and getelem/2; load/2",
+   "evidence": "OLD elixir REFERENCE:15 and README:58 sentences"
+  },
+  {
+   "lang": "clojure",
+   "fact": "notes instance, members",
+   "value": "sdk.client/get-utility returns a copy; keyword lookup",
+   "evidence": "tm/clojure/src/sdk/client.clj:69, core.clj:227 utility-copy; OLD REFERENCE Common Members sentence"
+  },
+  {
+   "lang": "php, perl (read only, not ported)",
+   "fact": "data_get copy",
+   "value": "both clone",
+   "evidence": "php/fragment/Entity.fragment.php:114 `Struct::clone($this->_data)`; perl/fragment/Entity.fragment.pm:103 `Voxgig::Struct::clone($self->{_data})`"
+  }
+ ],
+ "unported_changed_lines": "Unported languages: js php lua csharp java kotlin scala swift cpp perl ocaml. Command: a diff of out/old/<var>/<lang>/{README,REFERENCE}.md against out/new over 19 variations each, giving 209 files per document type.\n\nREADME.md: 209 of 209 differ, only by the ReadmeFeatures lines. Each of these occurs 209 times:\n- Removed: 'switch it on**, so an SDK you have not configured behaves exactly as if none of'; 'them existed \u2014 no retries, no cache, no logging, no measurable overhead.'; 'Set `feature.log.active` to enable it, then override any of the options above.'\n- Added: 'switch it on**, except `log`, which runs unless disabled. Every other'; 'feature you have not configured behaves exactly as if it did not exist,'; 'with no measurable overhead.'; 'It is active by default: set `feature.log.active` to false to switch it off, or override any of the options above.'\n\nREFERENCE.md: 209 of 209 differ, only by the 4 ReadmeRefFeatures lines that were already in the handed state. Each occurs 209 times:\n- Removed: 'Each feature is inactive until switched on, and an SDK with no feature'; 'configured does no feature work at all. Every option below keeps its default'; 'The array form of \\`feature\\` is significant\u2026'; '- Inactive by default: leaving it out costs nothing at runtime.'\n- Added: 'Each feature is inactive until switched on, except `log`, which'; 'runs unless disabled. Every option below keeps its default'; 'The array form of `feature` is significant: several features wrap the'; '- Active by default: set `active: false` to switch it off.'\n\nNothing else differs. The full list is in logs/unported-lines.txt (15 distinct lines). The root README also changes in 20 of 20 variations through the shared ReadmeTop features line.",
+ "lanes": "All run on my clone at final HEAD 11fff52d, using lanes.sh (PATH with zig 0.16.0, real pytest and node 24.22.1). Logs are logs/lane-<name>-final.log, with progress in logs/lanes-final.progress:\n- ts README ('typescript: the README example tests type-check and run'): 16 pass, 0 fail, 40 s.\n- go README ('^go: (every README example|the README examples run)'): 12/12, 53 s.\n- py README: 12/12, 16 s.\n- c DOC ('^c: every documented example compiles'): 6/6, 28 s.\n- rust DOC: 6/6, 21 s.\n- '^rb: ': 49/49, 49 s.\n- '^zig: ': 26 pass, 0 fail, 2 skipped, 73 s. The two skips are 'the probe has no live transport here' and 'no built-in transport here'.\n\nAn earlier run at 579a76dd, before the ReadmeTop prose change, gave the same counts (logs/lanes-new.progress).\n\nSuite (`node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name generatedcompile.test.js | sort)`): 2,561 tests, 2,556 pass, 0 fail, 5 skipped, 4 m 53 s. Golden: `SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js` gave 2/2, then 2/2 without the variable at both 579a76dd and 11fff52d.",
+ "zig": "Zig 0.16.0 (`zig version`). Documentation lane (`node --test --test-name-pattern '^zig: every documented example compiles' dist-test/generatedcompile.test.js`):\n- NEW (my clone): 6/6 (singleton, list, crud, nested, quoted-name, basic-server). Log: logs/lane-zigdoc-1.log.\n- OLD (P/freeze/oldclone, 9aebaf9e): 5/6. It fails 'basic-server first' on `_readme/examples.zig: error: root source file struct 'posix' has no member named 'getenv'`. Log: logs/lane-zigdoc-old.log. That clone already had ` M ts/test/generatedcompile.test.ts` before my run, and my run left it the same.\n\nFull '^zig: ' lane on NEW: 26 pass, 0 fail, 2 skipped.\n\nThe fix is one printer line in Syntax_zig.ts. Its zig expression reads `std.Io.Threaded.global_single_threaded.environ.process_environ.getAlloc(h.A(), name) catch \\\"\\\"`, mirroring tm/zig/feature/proxy.zig:172 and core/utility.zig:2312.\n\nThe old idiom remains in the unported component ts/project/.sdk/src/cmp/zig/ReadmeOptions_zig.ts:29 (`std.posix.getenv(\\\"${envName(model)}_APIKEY\\\")`). `grep -l std.posix.getenv out/new/*/zig/*.md` finds 0 files, so no generated variation prints it.",
+ "raw_counts": "Command: `./tools/portcheck.sh sdkgen out <lang>` with no REGEN; out/new is final. The baseline is the same command over outh (old against new-handed). Full lines are in logs/rawcounts.txt. I classified nothing. 'unclassified' counts the classes the existing tools/classes do not cover; each language now FAILs portcheck on these, as expected.\n\nLedger units, NEW now (handed in brackets), as OLD / NEW: same, reworded, missing, added:\n- ts: tutorial 153/187 (181): 61, 57, 35, 69 (63); unclassified 3 (0). rootquick 55/44: 21, 18, 16, 5, unchanged. reference 17180/16900 (16849): 15562 (15578), 482 (467), 1136 (1135), 856 (804); unclassified 7 (0).\n- go: tutorial 144/197: 22, 25, 97, 150; unclassified 17 (12). reference 17144/17895 (17841): 16686, 313, 145, 896 (842); unclassified 52 (52). go's handed unclassified come from alias-go2, present in OLD only.\n- py: tutorial 130/187 (181): 61, 51, 18, 75 (69); unclassified 3. reference 15880/16674 (16529): 15052, 592, 236, 1030 (885); unclassified 4.\n- c: tutorial 137/187: 61, 61, 15, 65 (59); unclassified 3. reference 15539/16465 (16320): 14872, 312, 355, 1281 (1136); unclassified 4.\n- zig: tutorial 137/187: 61, 57, 19, 69; unclassified 3. reference 15823/16448: 15019, 538, 266, 891 (746); unclassified 4.\n- clojure: tutorial 137/187: 61, 60, 16, 66; unclassified 3. reference 15936/16730 (16453): 15077 (14983), 446, 413 (507), 1207 (1024); unclassified 7. The keyword-lookup sentence is back as 'same', in 94 units.\n- rust: tutorial 137/187: 61, 56, 20, 70; unclassified 5. reference 15635/16561: 15019, 426, 190, 1116 (971); unclassified 4.\n- elixir: tutorial 130/210 (181): 61, 57, 12, 92 (63); unclassified 5. reference 15724/16674 (16510): 14802, 538 (519), 384 (403), 1334 (1189); unclassified 5.\n- rb: tutorial 130/187: 61, 47, 22, 79 (73); unclassified 3. reference 16050/16674 (16529): 15153 (15059), 497, 400 (494), 1024 (973); unclassified 4. 'Returns a copy' is back as 'same', in 94 units.\n- rootquick ledgers are unchanged in all nine languages.\n\nBlocks, as OLD/NEW identical, after corrections, changed, OLD-only:\n- Unchanged in count from handed for every language and section, except zig tutorial: identical 26 to 24, changed 22 to 24 (the env line in the basic-auth variations).\n- Unclassified block classes are new only for zig (tutorial 15, rootquick 20, from the new env token) and rb (tutorial 3, rootquick 5, from listFields and the new display field).\n\nFor reference, the per-language block counts:\n- ts: tutorial 19, 0, 29; rootquick 0, 0, 19; reference 195, 0, 118, 17.\n- go: 0, 0, 20; 0, 0, 20; 317, 0, 37.\n- py: 26, 0, 22; 0, 0, 19; 230, 0, 83, 1.\n- c: 0, 0, 48; 0, 0, 19; 151, 0, 162, 1.\n- zig: 24, 0, 24; 0, 0, 19; 151, 0, 162, 1.\n- clojure: 26, 0, 22; 0, 0, 19; 230, 0, 83, 1.\n- rust: 26, 17, 5; 0, 2, 17; 187, 0, 126, 1.\n- elixir: 16, 27, 5; 0, 1, 18; 151, 0, 162, 1.\n- rb: 3, 0, 45; 0, 0, 19; 303, 0, 10, 1.\n\nThe tool labels zig, clojure and elixir blocks UNVERIFIED because portcheck sets its own PATH without zig. zig was compiled separately by the lanes.\n\nLanguage-only words from share.js (`--root out/new` or `out/new-handed`, 9 languages), handed then now:\n- reference: ts 11.4 to 11.3%; go 13.2 to 13.1; py 5.4 to 5.3; c 5.2 to 5.1; zig 6.0 to 5.9; clojure 2.5 to 5.3 (language words 1203 to 2729); rust 4.5 to 4.4; elixir 2.9 to 3.0; rb 4.8 to 4.7.\n- tutorial: ts 23.5 to 28.6; go 62.7 to 65.0; py 10.8 to 10.1; c 26.6 to 32.6; zig 12.4 to 11.5; clojure 11.2 to 10.5; rust 12.0 to 11.1; elixir 10.9 to 18.6; rb 10.8 to 10.1.\n\nNotes alone (my count of note text over the prose words outside code): elixir tutorial 189 of 1804 words (10.5%); elixir reference 323 of 81229 (0.4%); clojure reference 1602 of 82100 (2.0%).",
+ "source_lines": "Lines as total/non-blank-non-comment, at 2a87287f and then at 11fff52d. Counted with wc -l and with `grep -v '^\\s*$' | grep -v '^\\s*//'`.\n\nShared files:\n- ts/src/helpers/sdkdesc.ts: 503/403 to 524/416\n- example.ts: 539/374 to 566/388\n- runtimeprose.ts: 219/169 to 247/191\n- ts/src/cmp/ReadmeQuick.ts: 254/192 to 255/193\n- ReadmeRef.ts: 394/312 to 401/316\n- ReadmeRefFeatures.ts: 146/108 to 146/108\n- ReadmeFeatures.ts: 104/78 to 115/87\n- FeatureDocs.ts: 108/77 to 117/81\n- ReadmeTop.ts: 756/562 to 758/564\n- sdkgen.ts: 1345/1034 to 1345/1034 (exports widened on the same lines)\n- New test ts/test/sharedfacts.test.ts: 0 to 105/84\n\nShared total, without the test: 4368/3309 to 4474/3378 (+106/+69).\n\nProviders:\n- Syntax_ts 140/114, Syntax_go 191/153, Syntax_py 149/120, Syntax_c 232/184, Syntax_rust 176/139 and Syntax_rb 154/121: all unchanged in count; each changed one token.\n- Syntax_zig: 196/155 to 198/155.\n- Syntax_clojure: 219/173 to 226/178.\n- Syntax_elixir: 183/141 to 186/144.\n\nNo Naming hook was touched.",
+ "gaps": [
+  "I did not fix the c root quick start (load after an unchecked, unreset err), go's discarded write values, or the c tutorial's write chain on one err. The sentence now says to check err, but the code does not.",
+  "Unported README sections that still contradict the ported pages: ts region 'Required.' (ReadmeModel_ts.ts:70); `secret` under Basic-in-query (ReadmeModel_ts/ReadmeHowto_ts); `utilitys`/`historys` (ReadmeEntity_ts and siblings); the rb README Reference table on load's optional match and on make.",
+  "I classified nothing. portcheck FAILs for all nine languages on the new classes: ts 10, go 5 new, py 7, c 7, zig 7 ledger and 35 block classes, clojure 10, rust 9, elixir 10, rb 7 ledger and 8 block classes. h-tools rebuilds the review tools; the classification of these classes is open.",
+  "The guard does not check any new declared fact (Member.copy in nine providers, rb's prints value, the elixir and clojure notes). I left them to h-guard, as instructed; each copy fact has a cited clone line under facts_added_or_changed.",
+  "The note lint still does not run on indented notes (the check's finding), so purity.js reports 0 open for elixir and clojure. My new notes name operations (`list/2`, `load/2`) and the word 'utility', which is also an entity name in the B model. A working lint would flag both.",
+  "The alias-go2 variation is skipped by gen.js in both NEW sets, so the go alias was not regenerated or compared.",
+  "Parts 1 and 2 share commits because they edit the same files; there is one shared commit, not one per part.",
+  "clojure and elixir have no toolchain here (both missing), so their changed blocks are unverified. The only changes to their blocks are the action Call cell and the copy and notes prose.",
+  "Timings were measured once, not three times. They are lane durations only and play no part in a hypothesis."
+ ],
+ "surprises": [
+  "The 'no feature is active' statement was in a third shared place, the root README's one-line features summary (ReadmeTop.ts). It had not been listed, and it now uses the same function.",
+  "rb's old display column was radius, not the string field title. The old components had the same backtick miss and printed only through their 'any non-id field' fallback. With the canonical comparison, rb now prints title. That differs from OLD and is the intended choice.",
+  "lua's old display-field fallback never fired: it read `displayFieldObj.name` on a field that has `n`. So lua printed the id alone, the same as perl, even though its code meant to print a second column.",
+  "The share tool counts a shared sentence as 'language-only' when only one ported result style prints it. The new write sentence therefore raises ts (async throw) from 23.5% to 28.6% and c (errslot) from 26.6% to 32.6% in the tutorial, although the sentence is written once in shared code.",
+  "P/freeze/oldclone already had an uncommitted modification to ts/test/generatedcompile.test.ts before I ran the old zig lane there."
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "partly",
+   "evidence": "- No provider reads the model. Notes stay static: shared code fills in layout names. Every fix landed in shared code with data-only provider changes (one token each for copy, one value for rb's prints, five notes, one zig printer line).\n- Interface: 1 breaking change (removing DescQuick.show), forcing work in 0 providers, plus 6 additive. That brings the cumulative breaking count to about 11 to 13, at or over the line of about 10, as it already was. None came from a new language.\n- Per-language prose rose. The elixir tutorial's language-only words went from 10.9% to 18.6% by share.js; that crosses the 15% line by that tool's metric. Its notes alone are 10.5%.\n- clojure's REFERENCE language words rose from 1203 to 2729 (5.3%), because the members note prints under every entity, as the old sentence did.\n- go's tutorial (65%) and REFERENCE (13.1%) are essentially unchanged; the check's go stream-note finding (18.9 to 20.4%) is untouched."
+  },
+  {
+   "id": "H3",
+   "verdict": "partly",
+   "evidence": "- Fixed once, in shared code, for every ported language: the README/REFERENCE/root README contradiction on log (all 381 language READMEs and 20 root READMEs); the action call; the write-step sentence; the getter copy; the record clause; the displayed fields.\n- Still needing per-language or unported-section edits: ts region and secret in README sections; c and go code shape (err checks, discarded writes); the rb README table."
+  },
+  {
+   "id": "H4",
+   "verdict": "supported",
+   "evidence": "- Every lane passes at final HEAD: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig 26 pass with 2 skipped.\n- The zig documentation lane went from 5/6 on the old code to 6/6 on the new.\n- Suite: 0 failures in 2,561 tests.\n- The one failure fixed (getenv) was a defect of today's main, not of the approach.\n- clojure and elixir remain unverifiable here."
+  },
+  {
+   "id": "H2",
+   "verdict": "not-tested",
+   "evidence": "Shared code grew by 106 lines (69 without blanks and comments) and providers by 13 lines (8). I did not rerun lines.js."
+  },
+  {
+   "id": "H5",
+   "verdict": "not-tested",
+   "evidence": "I did not touch the lifecycle actions (doctor, remove, target add, package update)."
+  }
+ ],
+ "reproduce": "export PATH=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang:/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH\nH=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared\ncd $H/sdkgen/ts && npm run build && git status --short    # clean at 11fff52d\ncd $H && node tools/gen/gen.js out/new $H/sdkgen/ts       # 20 variations (alias skipped)\ncd $H/sdkgen/ts && node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)\nnode --test dist-test/characterize.test.js\n$H/logs/lanes.sh $H/sdkgen/ts again                       # ts, go, py README; c, rust DOC; ^rb: ; ^zig:\nnode --test --test-name-pattern '^zig: every documented example compiles' dist-test/generatedcompile.test.js   # also in P/freeze/oldclone/ts for OLD\ncd $H && for l in ts go py c zig clojure rust elixir rb; do ./tools/portcheck.sh sdkgen out $l; done   # out = old + new; outh = old + new-handed\nnode mine/printlost.js out/old out/new c rust go zig      # old REFERENCE op blocks whose print or check went\nnode tools/share.js --root out/new --section tutorial --lang ts,go,py,c,zig,clojure,rust,elixir,rb --providers sdkgen/ts/project/.sdk/src/cmp"
+}

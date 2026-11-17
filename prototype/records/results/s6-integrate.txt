@@ -1,0 +1,456 @@
+ok: True
+summary: All twenty languages are in one state and frozen. sdkgen v34-frozen = 89387a4f on branch v34 (from v33-frozen 0065f1e2). tools v34-frozen-tools = e55846e (from base33). Both tags are local and both trees are clean. Merge: h3fix (10 source commits) and h5fix (10 source commits; the version commit a0318794 was not needed) went in, then the seven ports (js php cpp csharp java kotlin scala) and their tools commits. There were no textual conflicts. One settlement was needed per port: each provider now declares interface '3.3'. Shared decisions after the merge: 11 changes were made, each with a test that fails without it (guard accessor lookup and ref.instance; template-call factory; deleted read checked name by name with layout fill; NOT_RUNTIME sdktest; blockScope; stream signal in words plus streamSignalForm; removeKeeps; the ts/js README utility row; and the three H5 fixes F6, F11 and c5, with c5 made in part). The callcheck fixes for type arguments, the scala and java cast form and separators were made in tools. Everything else in the shared list is recorded with a reason, or shown not to be a gap. H1: newly ported languages caused 4 breaking shared changes, counted as v33 counted them (a changed shared sentence or a guard tightening counts as breaking), or 5 if the ts/js README row is counted. There were 0 breaking provider-type changes, and the interface stays '3.3'. All twenty one commands PASS at the frozen commits (OPEN 0, defect 0, STALE 0, calls 0, guard 4/4, every absent sentence explained, 0 unattested facts). The first rerun at the final commit failed java on one stale quotation: java's hand record quoted the old stream sentence, which survived only in a test that this freeze updated. The record was re-quoted (tools e55846e) and all twenty were rerun: 20 PASS. Freeze checks at 89387a4f: build exit 0 with a clean tree; suite 2702 tests, 0 failed, 5 skipped; golden 2/2; guard and reader 105/105; H3 checker exit 0 (alias-go2 skipped); self-test 285 controls, 0 failed, 0 moved; every example lane with a toolchain was run on NEW and OLD.
+merge: |
+  Clone P/v34/sdkgen, branch v34 at v33-frozen 0065f1e2. node_modules copied from base33. tools cloned from base33/tools, branch v34. Cherry-picked in this order, with a build (exit 0, clean tree) after each source:
+  (1) h3fix (refs/tags/h3fix): 10 source commits 0fc1a2ff..0c8bb7a6. Build f5a44660 left out; rebuilt as 90428fd4.
+  (2) h5fix: 10 source commits 89ad3832..7697500b, through mine/pick.sh, which drops ts/dist and ts/test/golden hunks. b0896a75 carried 13 golden lines, which were dropped. Left out: a0318794 (version 4.45.0; no test needs it, and the final suite has 0 failures without it), Build beebf7f1, Build d36954fc, and the optional h5fix-loud experiment. Rebuilt as 12737680.
+  (3) The seven ports, v33-frozen..HEAD of P/ports/<lang>/sdkgen, with 12 golden-only commits left out: js 2e4d7bf6 4ab97a72; php 9f8e47ae a6fa7bee 522ca5a3; cpp 1a33b098 296bac98; csharp c9aeded9 577ac20a; java baa7976c 88df6f04 f237f14a; kotlin 65e5cd96 8eecd224 ba874558; scala 5ca25630 4c4a44ec 3fd488af.
+  Then one settlement commit per language (e38f0c1a b55cf12b fd8d6e27 ffb45a3e 88427448 eb697780 195abe71): Syntax_<lang>.ts declares interface '3.3'.
+  Tools: the h3fix tools commit 72b2a64 (now cefc67d), then each port's tools commits base33..HEAD: js 53313aa 28a1063; php 82f5a03; cpp af647eb 295ead4; csharp 7c9db14 142ea51; java 238e255 6df7be7; kotlin c711104 11e441a; scala e75d159 79989f2.
+  After the merge, sdkgen: b2f43d0b guard (accessor, factory, binding), bee58e2b NOT_RUNTIME sdktest, 498ba3ec shared changes + integrate34.test.ts, cacd8f9e csharp, d889ed40 kotlin, 9a9e9365 cpp, b5f98fa3 java, 7c788d08 Build, c2361edd the H5 fixes, d9e9b78f retired list, c6118f6e Build, 4a4d10d4 ts/js README row, af10f70c csharp/java citation pins, c8e0e3f0 Golden (regenerated once), 89387a4f nshared test.
+  After the merge, tools: 740e3ef callcheck, 141e31e twenty registered in ported.json, c4c2381 re-key + decisions, 5701b50 classes + java purity-allow, 1abd7c7 fact-mutation control pages, e55846e java record re-quoted.
+  No commit message names a tool or a model, and none carries a trailer; checked with git log --format=%B over both ranges, no match.
+conflicts:
+  - No textual conflict in any cherry-pick, sdkgen or tools. ReadmeRef.ts was touched by both h3fix and h5fix and merged clean: testText keeps h3fix's S13 sentence and h5fix's served path.
+  - Settlement with h5fix's interface field: the seven port providers declared no `interface`, so h5fix (deb57713/acd232e9) would serve them as 3.2 with a warning and drop the clauses that 3.3 facts decide. They were written against 3.3 and declare testMock, so 3.3 is true of them. One commit per language declares interface '3.3'. testMock stays optional in the type and is required at generate from 3.3, which all seven already met.
+  - Settlement with the larger reference set (twenty instead of nine): class ids moved. Every language's records were re-keyed from the nine-reference identity with tools/rekey.js --code (a worktree of tools at 740e3ef): 0 conflicts, 0 unsourced, no hand entry lost (logs/rekey/*.log).
+decisions:
+  - [0]
+    item: Guard call reader: template calls (cpp std::make_shared<X>(...))
+    outcome: MADE (sdkgen b2f43d0b). New optional forms key calls.factory. readCalls reads <factory><X>(args) as a call of X's constructor. The guard requires each declared factory to occur as `<factory><` in the client files. cpp declares factory ['std::make_shared']. Its ctor[4] citation, a workaround for the constructor the reader could not read, is dropped because the constructor is now derived.
+    breaking: additive (optional forms key)
+    cause: cpp port gap 1; cpp review, fix and verify
+    providers_forced: cpp forms (declares factory, drops the ctor[4] citation)
+    test: guard CONTROL 'a call factory the runtime never calls'. Fail-before: the old reader fails cpp's constructor line (logs/guard-0.log). Guard 105/105 after.
+  - [1]
+    item: Guard call reader: generic type arguments inside an argument (kotlin mutableMapOf<String, Any?>(...))
+    outcome: NOT A GAP in the guard. forms.ts bracketed() (line 205) already counts a '<' after a word character as a bracket when reading a '(' list, so the guard reads this call. The gap was in the tools' callcheck (next item).
+    breaking: n/a
+    cause: kotlin port gap 1
+    providers_forced: none
+    test: read forms.ts:205; the kotlin guard passes on the block
+  - [2]
+    item: Tools printed-call check (callcheck): type arguments, binding overloads, the scala cast form, separators
+    outcome: MADE (tools 740e3ef and the commits after it). (1) argsAt brackets <...> after a word character. (2) A binding with no parameter list is not an overload, which removes kotlin's 6 false ARITY findings. (3) A variable bound through a cast to a type the runtime does not declare is not a runtime receiver (scala .asInstanceOf[java.util.List[SdkEntity]], java (List<...>), kotlin as List<*>). (4) The separator-to-receiver table is built from each language's forms calls.on (php '->'/'::'); a RECEIVER finding needs a mapped separator; overloads consider every 'on'. (5) The generated sdktest tree is excluded.
+    breaking: additive (tools)
+    cause: kotlin and scala port/review/fix/verify; php review/fix/verify; csharp review
+    providers_forced: none
+    test: Self-test calls group, controls kotlin-ctrl-dropped-typed-map, kotlin-list-one-arg, scala-list-one-arg, php-accessor-on-type, clean:kotlin, clean:scala. Old callcheck passed 13/17 (clean:kotlin had 6 findings, clean:scala 3, scala-list-one-arg and php-accessor-on-type failed); new callcheck 17/17. callcheck reports 0 findings on NEW for all twenty.
+  - [3]
+    item: csharp CS0136: the root quick start gives the list loop variable and the loaded entity one name in one block
+    outcome: MADE (sdkgen 498ba3ec + cacd8f9e). New optional RuntimeFacts.blockScope (a language fact). Where it is set, the top-level list item is named vars.item ('item') when the same block loads that entity. csharp declares it.
+    breaking: additive (optional fact; only csharp's root quick start code changes)
+    cause: csharp port gap and review
+    providers_forced: csharp (declares blockScope)
+    test: integrate34.test.ts 'a block-scoped language names the root quick start's list item apart from the entity it loads (CS0136)': fails with src at HEAD^, passes after
+  - [4]
+    item: What remove leaves (cpp: remove keeps the entity's data)
+    outcome: MADE (sdkgen 498ba3ec + 9a9e9365). New optional RefFacts.removeKeeps (cited). When set, opText's remove sentence says 'It reads no record from the response: `<record>` still reads the data the entity held.' instead of the record sentence. cpp declares it, cited to EntityRemoveOp.fragment.cpp (runOp; resmatch only). This closes cpp's defect class ea3d2bd9d5 (rule defect-closed).
+    breaking: additive
+    cause: cpp review, fix and verify
+    providers_forced: cpp (declares removeKeeps with a citation)
+    test: integrate34.test.ts 'a remove that keeps the entity's data says so instead of the record sentence'; account.ts DEFAULTS cites ref.facts.removeKeeps
+  - [5]
+    item: Operation return type that needs a cast (java Object, kotlin Any?, scala, csharp)
+    outcome: RECORDED. The pages are true without it: each example binds with the cast the runtime needs, and the lanes compile (java 24/19/19 blocks, kotlin 0 errors). Saying 'declared as `Object`; cast it' would take an optional fact facts.declared, one clause in runtimeprose's list and load sentences, a guard derivation from the op signature, then opt-in by the four providers and a re-run of their one commands.
+    breaking: would be additive
+    cause: java port gap 1, kotlin port gap 3, scala and csharp
+    providers_forced: none now (opt-in by 4 providers later)
+    test: 
+  - [6]
+    item: php case-folded entity class names (sdkdesc entityClassName does not fold case as the php runtime does)
+    outcome: RECORDED as latent. No variation or suite model has two entities whose names fold to one, so every php page names the class the runtime declares. Fixing it needs a hook symbol (naming hook className) or an sdkdesc override that passes fold=true for php, plus a fixture with a folding pair.
+    breaking: would be additive
+    cause: php port gap 1
+    providers_forced: none
+    test: 
+  - [7]
+    item: js import form (ES import with top-level await)
+    outcome: MADE in the js port (4ab97a72, kept): the tutorial and root quick start print `import { X } from '<pkg>'`. Lane runasis (run as written, ES modules, from the repository root): NEW 24/24, 17/17, 17/17; OLD 20/24, 13/17, 13/17. RECORDED: the guide correction (PORTING.md 2.5 and row 9), because P/base33 is read-only here; and the unported Advanced > Module structure section, which still prints require.
+    breaking: additive (js pages only)
+    cause: js review, fix and verify
+    providers_forced: js
+    test: js lanes runasis and runblocks, NEW and OLD
+  - [8]
+    item: The accessor's receiver, and the guard's accessor lookup
+    outcome: MADE (sdkgen b2f43d0b). The guard finds the accessor declaration by its token as written (esc, not pattern). Before, spell turned '${accessor}' into '$${accessor}' and found nothing, so the accessor calls of php, elixir, java, kotlin, scala and cpp were never judged. The guard also renders S.ref.instance(ent) and judges its accessor call, and reports an accessor declared nowhere. RECORDED: judging the receiver BY NAME where instance and type calls share '.' (java, kotlin, scala, csharp). The guard and callcheck judge receivers by separator only; this needs a classification of the call's head (client type token or bound variable).
+    breaking: BREAKING (guard tightening: six languages' accessor calls are now judged)
+    cause: php review/fix/verify, cpp review, kotlin verify, java verify, scala review
+    providers_forced: none at the provider level. Guard code only: ocaml's `let planet = ...` needed the reader to treat a space-mode name followed by = as a binding, not a call.
+    test: guard CONTROL 'the entity accessor called on the client type in the reference block'. Fail-before with the old lookup: 6 languages fail (logs/guard-failbefore-acc.log).
+  - [9]
+    item: Entity getter return types (php OLD `data_get(): array`; **Returns:** for entity members)
+    outcome: RECORDED. NEW prints the getter signature as the runtime declares it, with no return type (Entity.fragment.php:111,131), which is true. Printing **Returns:** for an entity member that declares returns needs entity-member code in ReadmeRef like clientMember's (ReadmeRef.ts:236), and would add a line on every language that declares returns.
+    breaking: would be breaking (adds sentences on every page with declared entity returns)
+    cause: php port gap 2; php review, fix and verify
+    providers_forced: none
+    test: 
+  - [10]
+    item: H5 F6: a released fingerprint must not outweigh a record that says changed, or a declared override
+    outcome: MADE (sdkgen c2361edd). copies.ts unchangedCopy(..., declared): the record's verdict or a declared override stands; the release fingerprint decides only where no record speaks.
+    breaking: Changes lifecycle behaviour (an add no longer refreshes a copy that the record says the project changed, even when the copy matches an old release's text); no provider change
+    cause: migration round (s4-h5fixcheck)
+    providers_forced: none
+    test: retire.test.ts 'a record that calls it changed outweighs the release' and 'an override the model declares outweighs the release' (both fail at the old source)
+  - [11]
+    item: H5 F11: the shared sections derived from what is retired, with a completeness check
+    outcome: MADE (sdkgen c2361edd + d9e9b78f). optional.ts sharedSections(retired) = SYNTAX_SECTIONS plus every OPTIONAL_COMPONENT the retired list names. doctor and target add read the source's retired list. The list was regenerated: 150 files, 21 more for the seven. A test runs build/retired.js --check against the release tags.
+    breaking: BREAKING for a project that holds an undeclared changed copy of a retired optional component (doctor now fails until it is declared)
+    cause: migration round
+    providers_forced: none
+    test: retire.test.ts 'a changed copy of an optional component the list names fails doctor until declared' and 'is complete: the release tags give the committed list'
+  - [12]
+    item: H5 c5: the declared interface read from the loaded value only
+    outcome: MADE in part (c2361edd). package check no longer reads the interface from the source text; generate reads the loaded provider's value. RECORDED: the deep import of SYNTAX_INTERFACE from dist/helpers/syntaxversion still bypasses it; closing that needs an exports map in package.json.
+    breaking: additive
+    cause: migration round
+    providers_forced: none
+    test: packagecheck.test.ts 'the declared interface is not read from the source text: generate reads the loaded value'
+  - [13]
+    item: The stream-signal sentence printed `callopts.signal` (TypeScript key notation) in every language; the form a runtime reads
+    outcome: MADE (sdkgen 498ba3ec + d889ed40 + cacd8f9e). STREAM_SIGNAL now uses words: 'It ends early once the `signal` in `callopts` reports an abort'. New optional RefFacts.streamSignalForm adds '; the signal is read only as <form>, and any other value is ignored.' kotlin (a Function0) and csharp (a CancellationToken) declare it, and kotlin's note member:streamLazy is removed. RECORDED: java (BooleanSupplier) and scala (Function0) do not declare it. Their sentence is true without it; each needs a cited declaration and a re-run of its one command.
+    breaking: BREAKING (a changed shared sentence on every page that prints the stream member), plus an additive fact
+    cause: csharp review and fix, kotlin fix and verify, php verify, java fix
+    providers_forced: kotlin (note removed, fact cited) and csharp (fact cited); the sentence changed on every language's page
+    test: integrate34.test.ts 'the stream signal is named in words, with the one form a runtime reads where it declares one'; nshared.test.ts updated (89387a4f); account.ts DEFAULTS cites ref.facts.streamSignalForm
+  - [14]
+    item: java's deleted read names EntityBase, which no page imports; the guard checked only the last identifier of ref.facts.deleted
+    outcome: MADE (sdkgen 498ba3ec + b5f98fa3). The deleted template fills {module} and {names.<role>} (fillLayout, as a note does). java's hook gives names.entity = JAVA_ENTITY, and the read is '(({module}.{names.entity}.EntityBase) {var}).deleted()'. The guard now checks every identifier (a cast type must be declared in the runtime) and every layout role the hook must give.
+    breaking: BREAKING (guard: every name is checked), plus an additive layout fill
+    cause: java port gap 3; java review, fix and verify
+    providers_forced: java (utility_java JAVA_ENTITY, EntityBase_java, Entity_java, Naming_java, Syntax_java)
+    test: integrate34.test.ts 'the deleted read fills layout names as a note does'. Guard CONTROLS 'a name in the deleted read (a cast type, a struct member) the runtime does not declare' and 'a layout name in the deleted read the naming hook does not give'; fail-before for c and java (logs/guard-7-failbefore.log). The java lane compiles 24/19/19 blocks with no EntityBase import.
+  - [15]
+    item: The guard's NOT_RUNTIME rule did not name scala's sdktest/ tree
+    outcome: MADE (sdkgen bee58e2b). NOT_RUNTIME is now (tests?|t|Tests|sdktest). scala's forms drop the region they had excepted for this reason.
+    breaking: BREAKING (guard rule; forced a forms change)
+    cause: scala port gap 2; scala review, fix and verify
+    providers_forced: scala forms
+    test: Guard 105/105; the scala guard passes without the except region
+  - [16]
+    item: ts/js README methods row for utility(): 'Deep copy of the SDK utility object.'
+    outcome: MADE (sdkgen 4a4d10d4): the row now says 'The SDK utility object itself, not a copy.' Both runtimes return the live object, as their REFERENCE copy fact says.
+    breaking: A changed sentence in two per-language (unported) components, not shared code
+    cause: js review, fix and verify
+    providers_forced: ts and js ReadmeModel
+    test: integrate34.test.ts 'the README methods row for the utility getter agrees with the provider's copy fact' (fails at the old rows)
+  - [17]
+    item: csharp and java code-valued citations without a value pin (csharp none, container, ctor[0]; java collection)
+    outcome: MADE per language (sdkgen af10f70c): the four citations pin the declared value. RECORDED: the shared rule (compare a cited code value with its quote as a sequence, or require a pin). It would force every provider with single-token cited facts.
+    breaking: per-language change; the shared rule would be breaking
+    cause: csharp verify, java verify
+    providers_forced: csharp and java forms
+    test: guard 105/105
+  - [18]
+    item: Optional fact liveTransport (no built-in HTTP transport: cpp, ocaml, zig)
+    outcome: RECORDED. The quick start shows a live client whose first request fails without system.fetch. Fixing it needs an optional cited fact, a sentence in ReadmeQuick and declarations in three providers.
+    breaking: would be additive
+    cause: cpp port gap 2; cpp review and verify
+    providers_forced: none
+    test: 
+  - [19]
+    item: Thrown type fact, and the catch type of the attempt printer (cpp)
+    outcome: RECORDED. 'throws on failure' is true. Naming the type needs RuntimeFacts.thrown and a guard check of the attempt printer's catch.
+    breaking: would be additive
+    cause: cpp port gap 3, cpp verify
+    providers_forced: none
+    test: 
+  - [20]
+    item: Signature fence (sigFence) for js
+    outcome: RECORDED as cosmetic: TypeScript signature notation prints under ```js. Fixing it needs an optional fence for signature blocks in example.ts.
+    breaking: would be additive
+    cause: js port, fix and verify
+    providers_forced: none
+    test: 
+  - [21]
+    item: Uses.ops for the imports printer (java imports java.util.List where nothing is listed)
+    outcome: RECORDED. An unused import compiles. Fixing it needs the section's operations in Uses.
+    breaking: would be additive
+    cause: java port gap 2
+    providers_forced: none
+    test: 
+  - [22]
+    item: Forms sigOn hook (static vs instance signature)
+    outcome: RECORDED. Needs an optional forms hook compared with the declaration's `on`.
+    breaking: would be additive
+    cause: java review, fix and verify
+    providers_forced: none
+    test: 
+  - [23]
+    item: Require facts.arity where the runtime's list has required parameters
+    outcome: RECORDED. The java verifier ran the probe: requiring it forces c, clojure, elixir and ocaml. The alternative is to judge the named call against the required parameter count.
+    breaking: would be BREAKING (c, clojure, elixir, ocaml)
+    cause: java review, fix and verify
+    providers_forced: none now
+    test: 
+  - [24]
+    item: Guard checks: key-set compare of direct/prepare returns; whole-identifier citation tokens; valueType derive-or-cite; failure marker on throw-style signatures; field type compare; ctor optionality; await check; copy required on every getter; parenless check; ctorAlts classCall; hook literals against the runtime; deleted against the bound type
+    outcome: RECORDED, each one. Where it mattered, the ports closed the case locally (js pins direct/prepare returns and reads action as required; csharp and java pin citations). Each would be a FORMS/guard tightening, counted as breaking, and would need every provider re-checked.
+    breaking: each would be breaking (guard)
+    cause: js, java, php, cpp, csharp, kotlin and scala reviews and verifications
+    providers_forced: none now
+    test: 
+  - [25]
+    item: Tools: enumerated facts attested per alternative; undeclared optional facts matched as shared; NEW-only heading masks; callcheck chained calls, MEMBER and block-argument calls; a C# scope checker; ledger class mixing true and false copies; purity concatenation suffixes
+    outcome: RECORDED (tools). Each needs a tools change and its own controls. None of them is a finding on any page the twenty one commands passed.
+    breaking: additive (tools)
+    cause: php, js, scala, csharp and cpp verifications
+    providers_forced: none
+    test: 
+  - [26]
+    item: Guide (PORTING.md) corrections: js import, the accessor-receiver note, listOf optional, getter copy
+    outcome: RECORDED. P/base33/PORTING.md is read-only here; the corrections are listed for the guide's owner.
+    breaking: n/a
+    cause: js, php, scala and java reports
+    providers_forced: none
+    test: 
+  - [27]
+    item: The generatedcompile csharp lane returns a pass when dotnet is missing
+    outcome: RECORDED. It should skip visibly (t.skip).
+    breaking: additive (test)
+    cause: csharp verify
+    providers_forced: none
+    test: 
+  - [28]
+    item: Unported README components: the direct how-to sentence 'On error, ok is false and err contains the error value' (12 languages); D26 extend/utility rows; FeatureDocs JavaScript default spelling; cpp's no-test mock promise; cpp's Error handling TypeScript examples; scala listMatch
+    outcome: RECORDED. These are outside the three shared sections; each is a per-language component still to be ported.
+    breaking: n/a
+    cause: kotlin fix and verify, H3 round, cpp verify, scala verify
+    providers_forced: none
+    test: 
+  - [29]
+    item: kotlin deleted (the mark is reachable only through EntityBase)
+    outcome: NOT A GAP in shared code. kotlin declares no deleted read, so its REFERENCE says the entity is 'marked as deleted' and prints no read of the mark, which is true. kotlin could now declare java's layout form if it chooses.
+    breaking: n/a
+    cause: kotlin port gap 4
+    providers_forced: none
+    test: 
+  - [30]
+    item: js lead-language root sentence ABSENT for the throw-style ports that are not the lead language
+    outcome: NOT A GAP. The sentence prints only after the lead language's quick start. Each port's absence is explained (the absent34.py rule).
+    breaking: n/a
+    cause: js port gap 2
+    providers_forced: none
+    test: 
+  - [31]
+    item: java null-only member Map.of("z", null); ctorAlts kind with a stale build
+    outcome: NOT A GAP now. java's kept() fix (f237f14a) is in, and a stale dist is caught by the one command's STALE BUILD check.
+    breaking: n/a
+    cause: java review
+    providers_forced: none
+    test: 
+  - [32]
+    item: kotlin core-package hook module '.core'; scala variable names for map-valued options
+    outcome: RECORDED as latent: no model reaches either. Each needs the hook or sdkdesc vars to carry the name.
+    breaking: would be additive
+    cause: kotlin verify, scala verify
+    providers_forced: none
+    test: 
+  - [33]
+    item: php ctor[0] file-name citation (NOT_RUNTIME refuses utility_php.ts); php test templates spell projectname_sdk.php
+    outcome: RECORDED. Needs account.ts to accept the generator's own naming function as citable, or a requirement to quote {module}. The templates are tests, not pages.
+    breaking: would be additive
+    cause: php port and verify
+    providers_forced: none
+    test: 
+breaking_by_new_language: |
+  4, counted the way v33 counted (a changed shared sentence or a guard/forms tightening is breaking; an optional fact is additive).
+  (1) The stream-signal sentence now uses words instead of the TypeScript key `callopts.signal`. Caused by the csharp review, the kotlin fix and the php verify. The sentence changes on every page that prints the stream member, in all twenty languages.
+  (2) The guard's accessor lookup by its token as written, plus ref.instance judged. Caused by the php review, fix and verify, the cpp review, and the kotlin and java verifications. Six languages' accessor calls are now judged; no provider had to change.
+  (3) The deleted read is checked name by name, including the cast type and the layout roles. Caused by the java review; forced java's own template change.
+  (4) NOT_RUNTIME names sdktest. Caused by the scala port; forced scala's forms.
+  It is 5 if the ts/js README utility row is counted (js review). That is a changed sentence in two per-language components, not shared code.
+  Provider-type breaking changes: 0. The interface stays '3.3', and every new fact (factory, blockScope, streamSignalForm, removeKeeps, the deleted layout fill) is optional.
+  Not caused by a new language: F11 (migration round) breaks a project that holds an undeclared changed copy of a retired optional component, and F6 changes an add's verdict where a record says changed.
+  Recorded and not made, but breaking if made: requiring facts.arity (would force c, clojure, elixir, ocaml) and printing **Returns:** for entity members.
+table:
+  - [0]
+    lang: ts
+    result: PASS (tag g: sdkgen 89387a4f, tools e55846e)
+    numbers: tutorial/rootquick/reference: same 59/21/14994; classes 47/5/197; shared 0/0/2; rule 23/4/45; by hand 19/0/107; missing 5/1/42; OPEN 0/0/0; defect 0/0/0; contradictions 0/0/1 | blocks (identical/corrected/unified/other) 19/16/12/1 c19, 0/13/5/1 c15, 195/0/118/0 c12, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 2 (2 explained); facts attested 5, by hand 1, unattested 0, cited 22, pinned prose 12
+  - [1]
+    lang: go
+    result: PASS
+    numbers: same 23/22/16959; classes 63/4/143; shared 1/0/1; rule 27/4/49; by hand 26/0/75; missing 9/0/17; OPEN 0; defect 0; contradictions 0/0/1 | blocks 0/12/1/8 c29, 0/14/4/4 c16, 337/21/18/0 c2, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 18 (18 explained); facts attested 4, by hand 3, unattested 0, cited 17, pinned 11
+  - [2]
+    lang: py
+    result: PASS
+    numbers: same 59/19/14506; classes 43/3/192; shared 0/0/3; rule 24/3/60; by hand 15/0/102; missing 4/0/26; OPEN 0; defect 0; contradictions 0/0/1 | blocks 26/22/0/0 c9, 0/18/0/1 c12, 230/0/83/0 c2, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 1 (1 explained); facts attested 6, by hand 1, unattested 0, cited 17, pinned 10
+  - [3]
+    lang: c
+    result: PASS
+    numbers: same 59/19/14438; classes 42/3/174; shared 0/0/0; rule 24/3/50; by hand 14/0/104; missing 4/0/19; OPEN 0; defect 0; contradictions 0/0/1 | blocks 0/41/0/7 c15, 0/2/0/17 c34, 151/143/19/0 c7, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0 (no reference shares its result style); facts attested 8, by hand 2, unattested 0, cited 14, pinned 10
+  - [4]
+    lang: zig
+    result: PASS
+    numbers: same 59/19/14567; classes 46/3/190; shared 0/0/3; rule 23/0/58; by hand 18/3/103; missing 5/0/25; OPEN 0; defect 0; contradictions 0/0/1 | blocks 24/17/0/7 c30, 0/2/15/2 c29, 151/0/162/0 c3, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 7 (7 explained); facts attested 8, by hand 1, unattested 0, cited 19, pinned 12
+  - [5]
+    lang: clojure
+    result: PASS
+    numbers: same 59/19/14550; classes 42/3/181; shared 0/0/1; rule 24/3/59; by hand 14/0/97; missing 4/0/24; OPEN 0; defect 0; contradictions 0/0/0 | blocks 26/21/0/1 c10, 0/16/0/3 c16, 230/0/83/0 c2, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 4 (4 explained); facts attested 8, by hand 3, unattested 0, cited 17, pinned 11
+  - [6]
+    lang: rust
+    result: PASS
+    numbers: same 59/19/14566; classes 50/4/202; shared 0/0/1; rule 25/0/67; by hand 20/3/109; missing 5/1/24; OPEN 0; defect 0; contradictions 0/0/1 | blocks 26/22/0/0 c12, 0/18/0/1 c20, 230/0/83/0 c2, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 3 (3 explained); facts attested 8, by hand 1, unattested 0, cited 16, pinned 9
+  - [7]
+    lang: elixir
+    result: PASS
+    numbers: same 59/19/14369; classes 43/3/195; shared 0/0/0; rule 22/3/69; by hand 17/0/102; missing 4/0/23; OPEN 0; defect 0; contradictions 0/0/1 | blocks 16/22/10/0 c10, 0/18/0/1 c14, 151/0/162/0 c15, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0; facts attested 4, by hand 2, unattested 0, cited 17, pinned 12
+  - [8]
+    lang: rb
+    result: PASS
+    numbers: same 59/19/14587; classes 50/3/193; shared 17/0/41; rule 0/0/0; by hand 28/3/126; missing 5/0/25; OPEN 0; defect 0; contradictions 0/0/1 | blocks 3/21/23/1 c27, 0/2/15/2 c18, 303/0/10/0 c1, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0; facts attested 5, by hand 2, unattested 0, cited 17, pinned 10
+  - [9]
+    lang: perl
+    result: PASS
+    numbers: same 59/19/14457; classes 45/3/171; shared 21/0/44; rule 0/0/0; by hand 20/3/101; missing 4/0/25; OPEN 0; defect 0; contradictions 0/0/1 | blocks 3/6/0/39 c19, 0/0/0/19 c25, 227/0/0/86 c7, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0 (result style no reference has); facts attested 6, by hand 3, unattested 0, cited 12, pinned 8
+  - [10]
+    lang: js
+    result: PASS
+    numbers: same 21/19/14877; classes 59/5/200; shared 25/0/105; rule 0/0/0; by hand 27/4/55; missing 7/1/38; OPEN 0; defect 0; contradictions 0/0/2 | blocks 0/18/0/30 c57, 0/4/1/14 c22, 195/0/98/20 c8, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0; facts attested 5, by hand 2, unattested 0, cited 23, pinned 13
+  - [11]
+    lang: php
+    result: PASS
+    numbers: same 59/19/14332; classes 50/4/206; shared 22/0/54; rule 0/0/0; by hand 22/3/115; missing 6/1/32; OPEN 0; defect 0; contradictions 0/0/5 | blocks 3/16/0/29 c27, 0/0/0/19 c30, 195/0/0/118 c13, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 6 (6 explained); facts attested 4, by hand 2, unattested 0, cited 20, pinned 10
+  - [12]
+    lang: lua
+    result: PASS
+    numbers: same 59/19/14619; classes 45/3/188; shared 22/0/53; rule 0/0/0; by hand 18/3/109; missing 5/0/25; OPEN 0; defect 0; contradictions 0/0/1 | blocks 3/15/0/30 c26, 0/2/0/17 c27, 151/0/0/162 c24, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 22 (22 explained); facts attested 4, by hand 3, unattested 0, cited 21, pinned 15
+  - [13]
+    lang: csharp
+    result: PASS
+    numbers: same 59/19/13409; classes 46/4/232; shared 22/0/94; rule 0/0/0; by hand 20/3/92; missing 4/1/45; OPEN 0; defect 0; contradictions 0/0/1 | blocks 18/0/0/30 c27, 0/2/0/17 c27, 212/0/0/101 c13, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0; facts attested 4, by hand 2, unattested 0, cited 17, pinned 11
+  - [14]
+    lang: java
+    result: PASS (at tools e55846e; FAIL at 1abd7c7 with 1 STALE quotation, see surprises)
+    numbers: same 59/19/13389; classes 47/4/241; shared 22/0/97; rule 0/0/0; by hand 20/3/97; missing 5/1/46; OPEN 0; defect 0; contradictions 0/0/1 | blocks 19/16/0/13 c21, 0/0/0/19 c22, 183/0/0/131 c15, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0; facts attested 4, by hand 2, unattested 0, cited 15, pinned 11
+  - [15]
+    lang: kotlin
+    result: PASS
+    numbers: same 59/19/13503; classes 46/4/219; shared 22/0/99; rule 0/0/0; by hand 19/3/77; missing 5/1/40; OPEN 0; defect 0; contradictions 0/0/3 | blocks 19/16/0/13 c22, 0/11/0/8 c21, 274/0/0/40 c11, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0; facts attested 6, by hand 2, unattested 0, cited 15, pinned 12
+  - [16]
+    lang: scala
+    result: PASS
+    numbers: same 59/19/13597; classes 48/4/221; shared 22/0/96; rule 0/0/0; by hand 21/3/84; missing 5/1/40; OPEN 0; defect 0; contradictions 0/0/1 | blocks 19/1/0/28 c31, 0/2/0/17 c26, 234/0/0/80 c14, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0; facts attested 5, by hand 2, unattested 0, cited 15, pinned 10
+  - [17]
+    lang: swift
+    result: PASS
+    numbers: same 59/19/13560; classes 48/3/194; shared 21/0/49; rule 0/0/0; by hand 22/3/110; missing 5/0/34; OPEN 0; defect 0; contradictions 0/0/1 | blocks 1/1/0/46 c39, 0/0/0/19 c28, 207/0/0/106 c13, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 1, explained (result style no reference has); facts attested 3, by hand 2, unattested 0, not printed 1, cited 15, pinned 9
+  - [18]
+    lang: cpp
+    result: PASS
+    numbers: same 59/19/13541; classes 44/3/204; shared 21/0/80; rule 0/0/0; by hand 20/3/85; missing 3/0/38; OPEN 0; defect 0; contradictions 0/0/1 | blocks 23/6/0/19 c17, 0/0/0/19 c27, 186/0/0/128 c6, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 0; facts attested 4, by hand 3, unattested 0, cited 15, pinned 10
+  - [19]
+    lang: ocaml
+    result: PASS
+    numbers: same 54/19/13639; classes 53/3/231; shared 24/0/60; rule 0/0/0; by hand 21/3/135; missing 8/0/35; OPEN 0; defect 0; contradictions 0/0/1 | blocks 19/0/0/29 c35, 0/0/0/19 c32, 151/0/0/163 c17, OPEN 0 | guard 4/4; calls 0; STALE 0; absent 2 (2 explained); facts attested 7, by hand 4, unattested 0, cited 16, pinned 13
+freeze_checks:
+  - [0]
+    check: build exits 0 and the tree is clean
+    command: cd P/v34/sdkgen/ts && npm run build; git -C P/v34/sdkgen status --short
+    result: exit 0 at 89387a4f; git status empty (logs/build-final.log)
+  - [1]
+    check: suite without the toolchain lanes
+    command: node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)
+    result: 2702 tests, 2697 pass, 0 fail, 0 cancelled, 5 skipped, 246 s (logs/suite-final.log). An earlier run at c8e0e3f0 failed 1 test (nshared.test.ts pinned the old stream sentence); fixed in 89387a4f.
+  - [2]
+    check: golden regenerated once and passing
+    command: golden regenerated once in c8e0e3f0; node --test dist-test/characterize.test.js
+    result: 2/2: matches the golden manifest; the manifest is machine-independent (logs/golden-final.log)
+  - [3]
+    check: guard and reader for all twenty
+    command: node --enable-source-maps --test --test-concurrency=2 dist-test/runtimefacts.test.js dist-test/runtimereader.test.js; plus each language's guard (4/4) inside its one command
+    result: 105/105 pass (logs/guard-final.log); guard pass 4/4 in each of the twenty one commands
+  - [4]
+    check: example lanes NEW (generatedcompile at 89387a4f, mine/lanes.sh)
+    command: node --test --test-name-pattern '<lane>' dist-test/generatedcompile.test.js for ts README, go README, py README, c DOC, rust DOC, ^rb: , zig doc, cpp DOC
+    result: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig doc 6/6, cpp DOC 6/6 (logs/lane-*-new.log)
+  - [5]
+    check: example lanes OLD (pristine old code, oldcopy 9aebaf9e)
+    command: same lanes from oldcopy/ts
+    result: ts 16/16, go 12/12, py 12/12, c 5/6 (basic-server: implicit getenv under -Werror), rust 6/6, rb 48/49 (README has no templated server), zig doc 5/6 (std.posix.getenv), cpp 6/6 (logs/lane-*-old.log)
+  - [6]
+    check: perl and php
+    command: tools/before/run.sh (3 models x 3 runs), NEW and OLD
+    result: perl NEW exit 0 on all runs, OLD exit 0 on all runs; php the same (logs/lanes-before.out)
+  - [7]
+    check: java: every documented block compiled with javac, as the java port did
+    command: mine/java/lane.sh <new|old> <model> (mvn -o compile, then javac on every block; no EntityBase import added)
+    result: NEW compiles 24/24, 19/19, 19/19 and runs 20/24, 14/19, 14/19 under the test constructor (the rest are mock 404s, as the port found). OLD compiles 23/23, 18/18, 18/18 and runs 19/23, 13/18, 13/18.
+  - [8]
+    check: kotlin with gradle --offline
+    command: mine/kotlin/lane.sh <new|old> <B|crud-basic|ref-issues> (gradle --offline -q compileKotlin)
+    result: NEW and OLD: exit 0, 0 errors for B, crud-basic and ref-issues. Nothing was downloaded.
+  - [9]
+    check: js: the port's runner and as-written
+    command: node mine/js/runblocks.js (the port's runner, P/ports/js/my/runblocks.js) and node mine/js/runasis.js, from the repository root of a generated SDK
+    result: runblocks NEW 20/24, 13/17, 13/17 (its wrapper cannot hold an ES import); OLD 24/24, 17/17, 15/17. runasis NEW 24/24, 17/17, 17/17; OLD 20/24, 13/17, 13/17 (the loader refuses require beside top-level await). The port's installed pino was linked in (lanes/js/node_modules).
+  - [10]
+    check: root quick start run from the repository root of a generated SDK
+    command: mine/root/run.sh <new|old> <lang> (default model), plus a ts run (sdkgen's tsc; the package linked as node_modules/@voxgig-sdk/demo-sdk, standing for an install) and a go run (a root go.mod with replace => ./go, GOPROXY=off)
+    result: NEW perl, rb, php, py, ts and go all get past their imports and constructor and then fail at the live request, since no server answers here: perl 404, rb load, php could not resolve host, py invalid URL, ts 'Failed to parse URL from ambient', go 'unsupported protocol scheme'. OLD perl, py and ts behave the same. OLD rb fails at require_relative, OLD php at require_once on line 2, and OLD go does not parse (the block is a fragment: no package, statements at top level). js and java run their root quick starts inside their lanes. c, rust, zig, cpp and kotlin root quick starts are compiled by their lanes but not run from the root.
+  - [11]
+    check: H3 catalogue checker over all twenty as ported
+    command: node mine/h3/issuecheck-h3fix.js (P/h3fix/issuecheck-h3fix.js) over 25 of 26 variations regenerated from this clone, with old = P/h3fix/h3out/old, --ported <all twenty>
+    result: exit 0: no check is true on NEW for a ported language (logs/h3check.log). The alias-go2 variation was skipped: it needs a workspace's own staging.
+  - [12]
+    check: tools self-test, every group
+    command: node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --v32 P/base32/tools --only <groups> [--modes reviewed|scratch], in batches under 30 min
+    result: 285 controls, 0 failed, 0 moved. pages 23/23 (scratch 3/3), facts 8/8 (scratch 6/6, after the control pages were regenerated from this clone), sentences 2/2, regen 2/2, calls 17/17, identity 20/20, purity 35/35, blocks 28/28, recall 1/1; ledger 25/25 (scratch 25/25), recheck 19/19 (scratch 19/19), accept 7/7 (scratch 7/7), missing 10/10 (scratch 10/10), masking 5/5 (scratch 5/5), samefact 4/4 (scratch 4/4). Run at tools 1abd7c7; the frozen tools commit e55846e differs only in the wording of one quote in java's record.
+  - [13]
+    check: the twenty one commands
+    command: mine/run20.sh g <10 langs> twice (tools/portcheck.sh sdkgen out <lang>, REGEN=1 on the first)
+    result: 20 PASS at sdkgen 89387a4f, tools e55846e (logs/pc/*.g.log). Tools and sdkgen trees clean after, so the classes are byte-identical. Numbers identical to the earlier a2/a3 runs.
+  - [14]
+    check: commit messages
+    command: git log --format=%B v33-frozen..HEAD (sdkgen) and base33..HEAD (tools), searched for trailers and tool/model names; the added code and comments searched the same way
+    result: no match
+frozen_commit: sdkgen 89387a4f (tag v34-frozen, branch v34, P/v34/sdkgen); tools e55846e (tag v34-frozen-tools, branch v34, P/v34/tools)
+not_done:
+  - streamSignalForm is not declared for java (BooleanSupplier) or scala (Function0). Their sentence is true without it, but it does not say which form the runtime reads.
+  - Root quick starts of c, rust, zig, cpp and kotlin were not run from a repository root. Their lanes compile them (the c, rust, zig and cpp DOC lanes compile root README blocks; the kotlin gradle lane compiles the root quick start), but nothing runs them.
+  - H3 checker: the alias-go2 variation was skipped because it needs a workspace's own staging.
+  - Every item marked RECORDED in decisions is not made; the list includes the reason and what each would take.
+  - The PORTING.md guide corrections were not made (P/base33 is read-only).
+  - No independent reader has read the changed sentences listed under no_verdict.
+  - The language pack (dart, haskell, lean) was not generated or checked against these shared changes.
+  - The self-test ran at tools 1abd7c7, one commit before the frozen e55846e, which changes only the wording of one quote in java's record. The lanes and the H3 checker ran at sdkgen 89387a4f, before that tools commit; they do not read tools records.
+  - Hand records of classes that no longer exist were not pruned (all twenty carry some, as in earlier rounds). They include four csharp and one kotlin defect records whose classes this round closed. They have no effect: the one command reads only classes that exist.
+  - The s5 reports were read through the shared-wave2.md digest and targeted look-ups of individual entries. Not every line of all 28 reports was re-read in full after the context was compacted.
+  - No push, publish or GitHub write; both tags are local.
+ran: |
+  Everything ran in P/v34 with the brief's PATH, one heavy command at a time, tests with --test-concurrency=2.
+  Merge and builds: cherry-picks (mine/pick.sh), npm run build after each source (exit 0 each time), build-final at 89387a4f.
+  Guard fail-before runs for the new controls (logs/guard-0.log, guard-failbefore-acc.log, guard-7-failbefore.log), then guard+reader 105/105.
+  integrate34.test.ts: fails 4/4 with src at HEAD^, passes after.
+  retire/packagecheck/syntaxversion/doctor/target tests: 4 fail at the old source, 102/102 pass after.
+  Suite at 89387a4f, twice (the second after the final build): 2702 tests, 0 failed.
+  Golden regenerated once (c8e0e3f0), check 2/2.
+  Twenty one commands: runs a1 (all FAIL on openings, decided by mine/decide34.py rules and re-keyed with rekey.js), a2/a3 (20 PASS), f at sdkgen 89387a4f / tools 1abd7c7 (19 PASS, java FAIL on 1 STALE quotation), and g at the frozen commits (20 PASS).
+  callcheck over twenty: 0 findings.
+  H3 checker over twenty: exit 0.
+  Lanes NEW and OLD: generatedcompile ts/go/py/c/rust/rb/zig/cpp, tools/before/run.sh for perl and php, java javac, kotlin gradle --offline, js runblocks and runasis.
+  Root quick starts from the repository root: perl, rb, php, py, ts, go, NEW and OLD.
+  Self-test in six batches: 285 controls.
+  mine/factmut.js regenerated the fact-mutation control pages.
+  Commit-message and code scans for trailers and tool names.
+read: |
+  Read in this job before the context compaction: P/brief.md, brief5.md, brief6.md, brief7.md, P/base33/PORTING.md, results/s4-h3fix.txt, s4-h5.txt, s4-h5check.txt, s4-h5fix.txt, s4-h5fixcheck.txt, s3c-freeze33.txt, P/v33/PROGRESS.md, and the s5 port/review/fix/verify reports, read through P/mine/shared-wave2.md and targeted entries.
+  Re-read after compaction: k-integrate34.md, shared-wave2.md in full (every SHARED, gap and STILL WRONG line), s4-h3fix's needs_reader sentences, and s3c-freeze33's table format.
+  All seven languages have all four reports: none was accepted without a fix report. Verify ok=True for js and php. Verify ok=False for java (5 still wrong), cpp (9), csharp (4), kotlin (8) and scala (10); each still-wrong entry is decided above as made, recorded or not a gap.
+  Not run, read only: the claim that kotlin generics were already read by the guard (forms.ts:205); that other languages read a reference record's outcome and not its why (classify.js:312); that java's deleted fact and kotlin's undeclared one print as shown (out/new/B/*/REFERENCE.md).
+no_verdict:
+  - Stream signal (all twenty, every page that prints the stream member). OLD: 'It ends early once `callopts.signal` reports an abort.' NEW: 'It ends early once the `signal` in `callopts` reports an abort.' In kotlin and csharp it adds '; the signal is read only as <a function of no arguments, a `Function0`, that returns `true` once the stream is to end | a `CancellationToken`>, and any other value is ignored.' What makes it true: each runtime's stream reads the signal key of callopts (the cited streamSignal fact). kotlin's EntityBase reads only a Function0 and csharp's only a CancellationToken (cited); any other value is skipped.
+  - cpp remove. OLD: the record sentence ('`data()` reads its record', as after load). NEW: 'It reads no record from the response: `<record>` still reads the data the entity held.' What makes it true: EntityRemoveOp.fragment.cpp runs runOp and takes only resmatch from the response; the entity's data is not replaced (cited, removeKeeps).
+  - java deleted read. OLD: '`((EntityBase) result).deleted()` reads the mark.' NEW: '`((voxgig.demosdk.entity.EntityBase) result).deleted()` reads the mark.' What makes it true: EntityBase is in package <module>.entity (the generator's JAVA_ENTITY), and javac compiles the block with no import (java lane 24/19/19).
+  - ts/js README methods table, utility() row. OLD: 'Deep copy of the SDK utility object.' NEW: 'The SDK utility object itself, not a copy.' What makes it true: both runtimes return the live utility object (this._utility), matching their REFERENCE's copy:false fact.
+  - csharp root quick start (code, not a sentence). OLD/NEW before this round: `foreach (var planet in planets)` followed by `var planet = ...` in one block. NEW: `foreach (var item in planets)`. What makes it right: a C# local's scope is its whole block (CS0136), so the loop variable needs its own name (blockScope).
+  - The catalogue round's changed sentences (s4-h3fix needs_reader [0]-[10]), now printed for the seven newly ported languages too and decided for them by decide3's h3fix rules: the hook-feature list without `test`, singular for one; test's Considerations line for transport 'base'; 'Also attaches to pipeline hooks.' under a wrapping feature with an active hook (cost, secrets); the short-circuit sentence without the cache example when cache is absent; the single wrapper's singular sentence with no nesting claim; the constructor-table rows auth/allow/clean from main.kit.optspec; the feature Usage sentence with the provider's key and true literal; log's on-by-default sentence and the 'Active by default' line without the TypeScript literal; `cost`/`cache` as code spans; the test client's first-argument sentence without the test feature. Each was checked against the true_because column of s4-h3fix (feature models, optspec, and the Main fragments that set feature.test).
+surprises:
+  - The guard's accessor lookup had never matched in six languages (php, elixir, java, kotlin, scala, cpp): spell rewrote '${accessor}' into '$${accessor}'. Every earlier freeze passed while those accessor calls were never judged.
+  - The first rerun at the frozen sdkgen commit failed java on one STALE quotation. Its hand record quoted the old stream sentence, which survived only in nshared.test.ts. The a3 PASS depended on that test still holding it, and updating the test (89387a4f) made the quotation stale. The record was re-quoted (tools e55846e) and all twenty were rerun.
+  - Growing the reference set from nine to twenty moved class ids for every language, so all twenty records had to be re-keyed (0 conflicts). Larger result-style groups also produced new ABSENT lists (for example go now compared with lua for the pair style).
+  - The self-test's fact controls failed (3) until their control pages were regenerated from this clone: they had been made from v33's clone.
+  - The two js runners disagree in opposite directions: the port's wrapping runner fails NEW's ES import (20/24), and the as-written runner fails OLD's require beside top-level await (20/24).
+  - OLD go's root quick start is not a program (no package, statements at top level), while NEW's runs up to the live request.
+  - The csharp generatedcompile lane counts a missing dotnet as a pass (recorded, not changed).

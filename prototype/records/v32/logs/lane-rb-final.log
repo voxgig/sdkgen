@@ -1,0 +1,83 @@
+▶ generated SDK compiles
+  ✔ rb: pooled HTTP connections do not replay unsafe requests (486.275792ms)
+  ✔ rb: a large compressed list is read whole, every gzip member (962.065229ms)
+  ✔ rb: operation controls are isolated (340.500004ms)
+  ✔ rb: the SDK builds where a list's parameters are a keyword, __proto__ and a quoted name (349.460033ms)
+  ✔ rb: the secrets feature runs with the feature active (1409.708267ms)
+  ✔ rb: the mock synthesises a multi-segment response envelope (434.161882ms)
+✔ generated SDK compiles (4004.551047ms)
+▶ auth null suppresses the credential
+  ✔ rb: auth null beats an explicit apikey (377.028572ms)
+✔ auth null suppresses the credential (382.894366ms)
+▶ the feature corpus runs from a generated SDK
+  ✔ rb: the feature corpus executes against the generated client (3050.926715ms)
+✔ the feature corpus runs from a generated SDK (3057.607136ms)
+▶ prepareAuth names, replaces and clears only its own credential
+  ✔ rb: a cookie credential (363.621408ms)
+  ✔ rb: a header credential (446.120277ms)
+  ✔ rb: a query credential (330.556808ms)
+✔ prepareAuth names, replaces and clears only its own credential (1151.512953ms)
+▶ generated auth tests discover the credential name
+  ✔ rb: a credential named by the API, not `authorization` (876.814384ms)
+  ✔ rb: an HTTP Basic API, whose config takes the Basic branch (844.463336ms)
+  ✔ rb: a credential carried as a cookie (798.388701ms)
+  ✔ rb: a credential carried in the query (850.588504ms)
+✔ generated auth tests discover the credential name (3377.019333ms)
+▶ the canary sweep runs from a generated SDK
+  ✔ rb: no credential leaves the SDK (header auth, no server variable) (1687.932965ms)
+  ✔ rb: no credential leaves the SDK (query auth, server variable with an empty default) (1642.980583ms)
+  ✔ rb: no credential leaves the SDK (basic auth, server variable with no declaration) (1782.325427ms)
+✔ the canary sweep runs from a generated SDK (5125.804796ms)
+▶ concurrent requests on one client share its state
+  ✔ rb: concurrent requests on one client share its operation cache and secret registry (4941.033682ms)
+✔ concurrent requests on one client share its state (4949.527899ms)
+▶ generated entity tests make only calls the runtime takes
+  ✔ rb: the entity tests pass, and the control file skips a flow (1020.767096ms)
+  ✔ rb: the moon, signal and planet entity tests pass (1197.896221ms)
+✔ generated entity tests make only calls the runtime takes (2411.179779ms)
+▶ a basic flow loads its listed record by the route that record fills
+  ✔ rb: the proverb and job flows pass (934.855938ms)
+✔ a basic flow loads its listed record by the route that record fills (1260.37835ms)
+▶ a basic flow loads an entity with no id by the values its record holds
+  ✔ rb: the slug and rate flows pass (816.82867ms)
+✔ a basic flow loads an entity with no id by the values its record holds (1036.766429ms)
+▶ a flow over an identity its live record may lack compiles and passes offline
+  ✔ rb: the entity and direct tests pass (5577.497079ms)
+✔ a flow over an identity its live record may lack compiles and passes offline (5907.638713ms)
+▶ the README examples run for a slug carrying the word client
+  ✔ rb: every README example is classified, and run (1546.339071ms)
+  ✔ rb: every README example is classified, and run, with a patch (1336.90341ms)
+  ✔ rb: the README examples run with Basic auth and a templated server (1276.477066ms)
+  ✔ rb: the README examples run where a list requires parameters (1124.901154ms)
+  ✔ rb: the README examples run where a list's parameters are a keyword and __proto__ (1072.705038ms)
+  ✔ rb: the README examples run where a load's points each need a selector of their own (1125.436616ms)
+  ✔ rb: the README examples run where an optional query parameter shadows a route parameter (1335.144541ms)
+  ✔ rb: the README examples run where an entity lists only through actions (1154.803195ms)
+  ✔ rb: the README examples run where a create's routes each need a parent of their own (1256.025051ms)
+  ✔ rb: the README examples run where a record is keyed by _id (1369.911472ms)
+  ✔ rb: the README examples run where an update's request carries no id (1238.53252ms)
+  ✔ rb: the README examples run where a load parameter and a create field hold a quote and a backslash (1245.052444ms)
+  ✔ rb: the README examples fail for an SDK that does not load (1087.538329ms)
+✔ the README examples run for a slug carrying the word client (16219.318802ms)
+▶ probes driven through a generated SDK
+  ✔ rb: the media types a point declares reach the wire (709.490062ms)
+  ✔ rb: an operation whose request cannot be sent raises (530.080511ms)
+  ✔ rb: an allow list names whole methods and operations, in any case (219.946662ms)
+  ✔ rb: a list reads the record each of its items wraps (136.656902ms)
+  ✔ rb: a list keeps each item that is not a record (137.608682ms)
+  ✔ rb: a list whose transform yields no list makes no entity (231.308555ms)
+  ✔ rb: a test-mode list answers only the seeds its required parameters match (188.218197ms)
+  ✔ rb: a body that is not JSON names its status, type, agent and preview (737.270296ms)
+  ✔ rb: a request carries the agent the model declares (718.066314ms)
+  ✔ rb: one failed operation fires PreUnexpected once (189.668682ms)
+  ✔ rb: a failed load's error says whether it was a 404 (231.785002ms)
+  ✔ rb: a path parameter of . or .. is refused before the transport (216.49387ms)
+✔ probes driven through a generated SDK (4264.216439ms)
+ℹ tests 49
+ℹ suites 13
+ℹ pass 49
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 55318.588726

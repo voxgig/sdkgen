@@ -1,0 +1,120 @@
+intro          langs=20 units=  66 distinct=  24 s15=   0 (  0%) lone=  12 ( 18%) | words= 1276 s15w   0% lonew  18% | prose_lines=   97 code_lines=    0
+    (lead)                                         n=20 u=  66 s15=  0% lone= 18% code=   0
+install        langs=20 units=  57 distinct=  51 s15=   0 (  0%) lone=  46 ( 81%) | words=  827 s15w   0% lonew  86% | prose_lines=   92 code_lines=  121
+    (lead)                                         n=20 u=  57 s15=  0% lone= 81% code= 121
+quick          langs=20 units=  99 distinct=  24 s15=  76 ( 77%) lone=  18 ( 18%) | words=  814 s15w  67% lonew  25% | prose_lines=  129 code_lines=  325
+    (lead)                                         n=20 u=  40 s15=100% lone=  0% code=   0
+    1. Create a client                             n=18 u=  18 s15=100% lone=  0% code= 135 missing:js,go
+    3. Load an ENT                                 n=18 u=  34 s15= 53% lone= 32% code= 147 missing:js,go
+    Create a Client                                n= 1 u=   1 s15=  0% lone=100% code=   6 only:js
+    Load an ENT                                    n= 1 u=   1 s15=  0% lone=100% code=   4 only:js
+    Direct API Access                              n= 1 u=   2 s15=  0% lone=100% code=  10 only:js
+    Quickstart                                     n= 1 u=   3 s15=  0% lone=100% code=  23 only:go
+errors         langs=20 units=  80 distinct=  16 s15=  65 ( 81%) lone=  10 ( 12%) | words=  857 s15w  81% lonew  10% | prose_lines=   99 code_lines=  350
+    (lead)                                         n=20 u=  80 s15= 81% lone= 12% code= 350
+howto          langs=20 units= 240 distinct=  65 s15= 165 ( 69%) lone=  44 ( 18%) | words= 1852 s15w  53% lonew  34% | prose_lines=  260 code_lines= 1116
+    (lead)                                         n=20 u=   0 s15=  0% lone=  0% code=   0
+    Make a direct HTTP request                     n=20 u=  43 s15= 86% lone=  9% code= 308
+    Prepare a request without sending it           n=20 u=  20 s15=100% lone=  0% code= 222
+    Use test mode                                  n=20 u=  45 s15= 84% lone=  7% code= 155
+    Retain entity state across calls               n= 2 u=   4 s15=  0% lone=  0% code=  16 only:ts,js
+    Add custom middleware                          n= 2 u=   4 s15=  0% lone=  0% code=  32 only:ts,js
+    Run live tests                                 n=19 u=  60 s15= 92% lone=  8% code= 133 missing:clojure
+    Use a custom fetch function                    n=15 u=  33 s15= 45% lone= 21% code= 233 missing:ts,js,rust,cpp,zig
+    Verify the server over HTTPS                   n= 1 u=   6 s15=  0% lone=100% code=   0 only:lua
+    Point at a different server                    n= 3 u=   6 s15=  0% lone=  0% code=  14 only:rust,c,zig
+    Send requests over HTTP and HTTPS              n= 1 u=  16 s15=  0% lone=100% code=   0 only:c
+    Run the test suite                             n= 1 u=   3 s15=  0% lone=100% code=   3 only:clojure
+model          langs=20 units=1983 distinct= 232 s15=1499 ( 76%) lone= 135 (  7%) | words= 7429 s15w  46% lonew  20% | prose_lines= 2137 code_lines=  173
+    (lead)                                         n=20 u=   0 s15=  0% lone=  0% code=   0
+    SDKSDK                                         n=16 u= 147 s15= 11% lone=  6% code=  55 missing:go,clojure,elixir,ocaml
+    Constructor                                    n= 2 u=  17 s15=  0% lone=  6% code=  14 only:ts,js
+    Methods                                        n= 2 u=  52 s15=  0% lone=  0% code=   0 only:ts,js
+    Static methods                                 n= 2 u=   6 s15=  0% lone=  0% code=   0 only:ts,js
+    Entity interface                               n=18 u= 215 s15= 23% lone= 16% code=   0 missing:go,c
+    Return values                                  n= 2 u=  14 s15=  0% lone=  0% code=   0 only:ts,js
+    DirectResult shape                             n= 2 u=   6 s15=  0% lone=  0% code=  16 only:ts,js
+    FetchDef shape                                 n= 2 u=   4 s15=  0% lone=  0% code=  16 only:ts,js
+    Entities                                       n=20 u=  20 s15=100% lone=  0% code=   0
+    ENT                                            n=20 u= 965 s15= 96% lone=  0% code=   0
+    NewSDKSDK                                      n= 1 u=  10 s15=  0% lone=100% code=   3 only:go
+    TestSDK                                        n= 2 u=   6 s15=  0% lone=  0% code=   6 only:go,csharp
+    SDKSDK methods                                 n=14 u= 182 s15=  0% lone=  4% code=   0 missing:ts,js,c,clojure,elixir,ocaml
+    Entity interface (SDKEntityBase)               n= 1 u=  12 s15=  0% lone=100% code=   0 only:go
+    Result shape                                   n=18 u= 184 s15= 53% lone= 25% code=   0 missing:ts,js
+    test                                           n= 6 u=  18 s15=  0% lone=  0% code=  18 only:py,php,rb,lua,perl,elixir
+    testSDK                                        n= 5 u=  15 s15=  0% lone=  7% code=  15 only:java,kotlin,scala,swift,cpp
+    test_sdk                                       n= 3 u=   9 s15=  0% lone=  0% code=  10 only:rust,c,zig
+    SDKSDK functions                               n= 1 u=  11 s15=  0% lone=100% code=   0 only:c
+    Entity interface (vtable)                      n= 1 u=  12 s15=  0% lone=100% code=   0 only:c
+    make-sdk                                       n= 1 u=  11 s15=  0% lone=100% code=   5 only:clojure
+    test-sdk                                       n= 1 u=   3 s15=  0% lone=100% code=   3 only:clojure
+    Client functions                               n= 1 u=  13 s15=  0% lone=100% code=   0 only:clojure
+    SDK                                            n= 1 u=  11 s15=  0% lone=100% code=   3 only:elixir
+    SDK functions                                  n= 1 u=  13 s15=  0% lone=100% code=   0 only:elixir
+    Sdk_client                                     n= 1 u=  11 s15=  0% lone=100% code=   6 only:ocaml
+    Sdk_client.test                                n= 1 u=   3 s15=  0% lone=100% code=   3 only:ocaml
+    Sdk_client functions                           n= 1 u=  13 s15=  0% lone=100% code=   0 only:ocaml
+entity         langs=20 units=1575 distinct=  33 s15=1421 ( 90%) lone=  56 (  4%) | words= 3936 s15w  67% lonew  17% | prose_lines= 1863 code_lines=  842
+    (lead)                                         n=20 u=  21 s15= 95% lone=  5% code=   0
+    ENT                                            n=20 u= 280 s15= 98% lone=  2% code=   0
+    Operations                                     n=20 u= 514 s15= 72% lone=  9% code=   0
+    Fields                                         n=20 u= 580 s15=100% lone=  0% code=   0
+    Example: Load                                  n=20 u=  40 s15=100% lone=  0% code= 156
+    Example: List                                  n=20 u= 120 s15=100% lone=  0% code= 552
+    Example: Create                                n=20 u=  20 s15=100% lone=  0% code= 134
+explanation    langs=20 units= 152 distinct=  93 s15=   0 (  0%) lone=  76 ( 50%) | words= 1904 s15w   0% lonew  54% | prose_lines=  230 code_lines=  226
+    (lead)                                         n=20 u=   0 s15=  0% lone=  0% code=   0
+    Module structure                               n= 9 u=  25 s15=  0% lone= 44% code= 118 missing:go,php,csharp,java,kotlin,scala,swift,rust,c,cpp,clojure
+    Data as maps                                   n= 4 u=  20 s15=  0% lone= 20% code=   0 only:go,java,kotlin,scala
+    Package structure                              n= 1 u=   3 s15=  0% lone=100% code=   9 only:go
+    Data as dicts                                  n= 1 u=   4 s15=  0% lone=100% code=   0 only:py
+    Data as arrays                                 n= 1 u=   4 s15=  0% lone=100% code=   0 only:php
+    Directory structure                            n= 2 u=   6 s15=  0% lone= 67% code=  22 only:php,cpp
+    Data as hashes                                 n= 1 u=   4 s15=  0% lone=100% code=   0 only:rb
+    Data as tables                                 n= 1 u=   4 s15=  0% lone=100% code=   0 only:lua
+    Data as dictionaries                           n= 1 u=   5 s15=  0% lone=100% code=   0 only:csharp
+    Project structure                              n= 6 u=  22 s15=  0% lone= 36% code=  57 only:csharp,java,kotlin,scala,swift,c
+    Data as loose values                           n= 1 u=   5 s15=  0% lone=100% code=   0 only:swift
+    Data as §                                      n= 5 u=  27 s15=  0% lone= 44% code=   0 only:rust,c,cpp,zig,ocaml
+    Crate structure                                n= 1 u=   3 s15=  0% lone=100% code=   8 only:rust
+    Error handling                                 n= 1 u=   4 s15=  0% lone=100% code=   0 only:c
+    Data as hashrefs                               n= 1 u=   4 s15=  0% lone=100% code=   0 only:perl
+    Data as struct value maps                      n= 1 u=   5 s15=  0% lone=100% code=   0 only:clojure
+    Namespace structure                            n= 1 u=   3 s15=  0% lone=100% code=  12 only:clojure
+    Data as struct value nodes                     n= 1 u=   4 s15=  0% lone=100% code=   0 only:elixir
+expl.shared    langs=20 units=1359 distinct=  72 s15=1350 ( 99%) lone=   2 (  0%) | words= 5300 s15w  98% lonew   1% | prose_lines=  940 code_lines=   60
+    (lead)                                         n=20 u=  60 s15=100% lone=  0% code=   0
+    The operation pipeline                         n=20 u= 360 s15=100% lone=  0% code=  60
+    Features and hooks                             n=20 u= 939 s15= 99% lone=  0% code=   0
+expl.table     langs=20 units= 215 distinct=  13 s15= 205 ( 95%) lone=   0 (  0%) | words= 2130 s15w  95% lonew   0% | prose_lines=  255 code_lines=  120
+    Entity state                                   n=20 u=  95 s15=100% lone=  0% code= 120
+    Direct vs entity access                        n=20 u= 120 s15= 92% lone=  0% code=   0
+features       langs=20 units=4040 distinct=  72 s15=4040 (100%) lone=   0 (  0%) | words=14660 s15w 100% lonew   0% | prose_lines= 4700 code_lines=    0
+    (lead)                                         n=20 u= 540 s15=100% lone=  0% code=   0
+    audit                                          n=20 u= 140 s15=100% lone=  0% code=   0
+    cache                                          n=20 u= 200 s15=100% lone=  0% code=   0
+    clienttrack                                    n=20 u= 120 s15=100% lone=  0% code=   0
+    cost                                           n=20 u= 300 s15=100% lone=  0% code=   0
+    debug                                          n=20 u= 140 s15=100% lone=  0% code=   0
+    idempotency                                    n=20 u= 160 s15=100% lone=  0% code=   0
+    log                                            n=20 u= 100 s15=100% lone=  0% code=   0
+    metrics                                        n=20 u= 100 s15=100% lone=  0% code=   0
+    netsim                                         n=20 u= 340 s15=100% lone=  0% code=   0
+    paging                                         n=20 u= 220 s15=100% lone=  0% code=   0
+    proxy                                          n=20 u= 200 s15=100% lone=  0% code=   0
+    ratelimit                                      n=20 u= 180 s15=100% lone=  0% code=   0
+    rbac                                           n=20 u= 160 s15=100% lone=  0% code=   0
+    retry                                          n=20 u= 240 s15=100% lone=  0% code=   0
+    secrets                                        n=20 u= 220 s15=100% lone=  0% code=   0
+    streaming                                      n=20 u= 140 s15=100% lone=  0% code=   0
+    telemetry                                      n=20 u= 100 s15=100% lone=  0% code=   0
+    test                                           n=20 u= 100 s15=100% lone=  0% code=   0
+    timeout                                        n=20 u= 160 s15=100% lone=  0% code=   0
+    validate                                       n=20 u= 180 s15=100% lone=  0% code=   0
+root:topquick  langs=20 units=   1 distinct=   1 s15=   0 (  0%) lone=   1 (100%) | words=    8 s15w   0% lonew 100% | prose_lines=    1 code_lines=  224
+    (lead)                                         n=20 u=   1 s15=  0% lone=100% code= 224
+root:toptest   langs=20 units=   0 distinct=   0 s15=   0 (  0%) lone=   0 (  0%) | words=    0 s15w   0% lonew   0% | prose_lines=    0 code_lines=  135
+    (lead)                                         n=20 u=   0 s15=  0% lone=  0% code= 135
+root:tophowto  langs=20 units=   0 distinct=   0 s15=   0 (  0%) lone=   0 (  0%) | words=    0 s15w   0% lonew   0% | prose_lines=    0 code_lines=  149
+    (lead)                                         n=20 u=   0 s15=  0% lone=  0% code= 149

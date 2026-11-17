@@ -1,0 +1,13 @@
+# scala port PROGRESS
+- 15:58 step 1 (workspace) done: newport.sh scala; clone 0065f1e2. Toolchain: scala/scala-cli/sbt/scalac MISSING; javac/mvn present.
+- 16:10 step 2 (reading briefs, guide, runtime table, runtime files) mostly done; next: table rows check, provider
+- 16:40 provider/hook/forms first draft written, old components deleted, build exit 0; iterating on guard
+- 16:55 guard 4/4 and reader 22/22 pass; build 0; first REGEN
+- 17:20 entityBy tried 'class' (234->143 identical ref blocks by heading pairing); back to 'Name' (OLD headings). callcheck MEMBER forEach false positive noted (tools heuristic: variable bound from client).
+- 17:50 hand records first pass written (work/decide.js merges into tools/hand/scala.json)
+- 18:05 reviewed run: all numbers clear except callcheck MEMBER forEach x3 (tool false positive, kept OLD form). Running SCRATCH.
+- 18:30 golden committed 479b7f02; running suite (no generatedcompile) in background
+- 18:45 sharewords, diff -r (0 other-language changes), line counts done; waiting for suite; then final REGEN reviewed run and tools commit
+- 19:15 suite found 3 generic failures (null-only members in Map.of; literal table outside utility_scala): provider now uses scalaLit and leaves null members out of Map.of; rebuilt
+- 19:45 generate.test 205/205; committed 3992a951 c5b9ce45; final REGEN reviewed run
+- 19:55 tools committed; report next. Remaining failure: callcheck MEMBER forEach x3 (tool false positive)

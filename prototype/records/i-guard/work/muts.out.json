@@ -1,0 +1,1289 @@
+[
+ {
+  "id": "ts-method-typo",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.method.update: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.op.update: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "update -> updat, but src/cmp/ts/fragment/EntityUpdateOp.fragment.ts defines update as update"
+  ]
+ },
+ {
+  "id": "ts-method-swap",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "facts.method.list: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.op.list: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "c-method-swap",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines",
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.method.update: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.patch: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.op.update: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "clj-method-typo",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines",
+   "✖ clojure: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.method.remove: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.op.remove: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "remove -> delete, but src/cmp/clojure/fragment/EntityRemoveOp.fragment.clj defines remove as remove"
+  ]
+ },
+ {
+  "id": "ts-param-required",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "optional",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op load: load parameters !? declared, ?? in the runtime (load(match: object, ctrl?: object))"
+  ]
+ },
+ {
+  "id": "ts-param-type",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "paramTypes",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op load: parameter match is EntityNameLoadMatch in the runtime, string declared"
+  ]
+ },
+ {
+  "id": "ts-param-renamed",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "paramNames",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op load: parameter 1 is reqmatch in the runtime, id declared"
+  ]
+ },
+ {
+  "id": "c-param-type",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "paramTypes",
+   "account"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines",
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op load: parameter reqmatch is voxgig_value* in the runtime, const char* declared"
+  ]
+ },
+ {
+  "id": "c-param-dropped",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "parameters",
+   "account"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines",
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.client[0].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.client[0].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "client direct: sdk_direct takes 3 parameters in the runtime, 2 declared (voxgig_value* sdk_direct({client}* client, voxgig_value* fetchargs))"
+  ]
+ },
+ {
+  "id": "clj-param-added",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "parameters",
+   "account"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines",
+   "✖ clojure: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.client[1].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.client[1].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "client direct: direct takes 2 parameters in the runtime, 3 declared (({client}/direct client fetchargs opts) -> map)"
+  ]
+ },
+ {
+  "id": "clj-return-changed",
+  "lang": "clojure",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "py-return-changed",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "returns",
+   "account"
+  ],
+  "fails": [
+   "✖ py: the declared facts are what its runtime defines",
+   "✖ py: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.list: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op list: list returns list[EntyClass] in the runtime, EntyClass declared"
+  ]
+ },
+ {
+  "id": "py-direct-return",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ py: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.direct.returns: the quote does not contain \"list\", which the fact states"
+  ]
+ },
+ {
+  "id": "ts-style-raise",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "style",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.result: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "c-style-pair",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "style",
+   "account"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines",
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.result: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "clj-style-throw",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "style",
+   "account"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines",
+   "✖ clojure: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.result: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "ts-collection",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite facts.collection: the fact is \"linked list\"; the citation audited \"array\""
+  ]
+ },
+ {
+  "id": "c-collection",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite facts.collection: the fact is \"vector\"; the citation audited \"`NULL`-terminated array\""
+  ]
+ },
+ {
+  "id": "clj-collection",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ clojure: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite facts.collection: the fact is \"lazy sequence\"; the citation audited \"vector\""
+  ]
+ },
+ {
+  "id": "ts-noun",
+  "lang": "ts",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "ts-type-integer",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines"
+  ],
+  "whats": []
+ },
+ {
+  "id": "zig-type-integer",
+  "lang": "zig",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "clj-type-integer",
+  "lang": "clojure",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "c-type-string",
+  "lang": "c",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "ts-type-comment",
+  "lang": "ts",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "ts-lit-none",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "cite ref.facts.none: the quote does not contain \"null\", which the fact states",
+   "an unquoted token that stands beside the quote (account): []"
+  ]
+ },
+ {
+  "id": "py-lit-false",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ py: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.lits.true: the quote does not contain \"true\", which the fact states",
+   "cite ref.facts.lits.false: the quote does not contain \"false\", which the fact states"
+  ]
+ },
+ {
+  "id": "ts-lit-int",
+  "lang": "ts",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "c-nullvalue",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite facts.nullValue: the quote does not contain \"nullptr\", which the fact states"
+  ]
+ },
+ {
+  "id": "ts-member-removed",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "members"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "the runtime defines tester (tester); the reference does not declare it"
+  ]
+ },
+ {
+  "id": "c-member-removed",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "members"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "the runtime defines name (get_name); the reference does not declare it"
+  ]
+ },
+ {
+  "id": "clj-member-removed",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "members",
+   "kind",
+   "account"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines",
+   "✖ clojure: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[2].kind: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "py-member-removed-pair",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "kind",
+   "account"
+  ],
+  "fails": [
+   "✖ py: the declared facts are what its runtime defines",
+   "✖ py: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[0].kind: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "ts-member-invented",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "parameters",
+   "kind",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[6].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.entity[6].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "entity make: clone takes 1 or 1 parameters in the runtime, 0 declared (clone())"
+  ]
+ },
+ {
+  "id": "ts-member-misplaced",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "signature",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[6].kind: cite the runtime file and a quote that shows \"utility\"",
+   "ref.facts.entity[6].sig: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "c-member-invented",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "signature",
+   "kind",
+   "account"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines",
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.client[1].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.client[1].sig: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "clj-member-invented",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ clojure: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.client[1].kind: cite the runtime file and a quote that shows \"utility\""
+  ]
+ },
+ {
+  "id": "ts-utility-kind",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.client[1].kind: the fact is \"utilityBase\"; the citation audited \"utility\""
+  ]
+ },
+ {
+  "id": "ts-cancel",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.cancel: the fact is false; the citation audited true"
+  ]
+ },
+ {
+  "id": "ts-async-false",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "async",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "facts.async: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "async flipped (async): []"
+  ]
+ },
+ {
+  "id": "py-record",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ py: the declared facts are what its runtime defines",
+   "✖ py: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "record accessor data (from data()) is not an entity member"
+  ]
+ },
+ {
+  "id": "ts-record-expr",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "the provider prints a record as \"planet.record()\", which does not call data"
+  ]
+ },
+ {
+  "id": "ts-ctor-sig",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "ctor",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.ctor[0]: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ctor: constructor takes 1 parameters, the call passes 2"
+  ]
+ },
+ {
+  "id": "py-test-sig",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "parameters",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ py: the declared facts are what its runtime defines",
+   "✖ py: every declared fact is accounted for",
+   "✖ py: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "ref.facts.test[0].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.test[0].call: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.test[0].args: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "rt-ts-load-renamed",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "facts.method.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "load -> load, but src/cmp/ts/fragment/EntityLoadOp.fragment.ts defines load as fetch"
+  ]
+ },
+ {
+  "id": "rt-ts-load-param-required",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "optional",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op load: load parameters ?? declared, !? in the runtime (load(match?: object, ctrl?: object))"
+  ]
+ },
+ {
+  "id": "rt-ts-load-sync",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "async",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "facts.async: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "async flipped (async): []"
+  ]
+ },
+ {
+  "id": "rt-clj-load-param",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "parameters",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines",
+   "✖ clojure: every declared fact is accounted for",
+   "✖ clojure: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "a parameter added to load (parameters): [{\"check\":\"paramNames\",\"what\":\"op load: parameter 1 is ent in the runtime, extra declared\"},{\"check\":\"paramNames\",\"what\":\"op load: parameter 2 is reqmatch in the runtime, ent declared\"},{\"check\":\"paramNames\",\"what\":\"op load: parameter 3 is ctrl in the runtime, reqmatch declared\"},{\"check\":\"paramNames\",\"what\":\"op load: parameter 4 is opts in the runtime, ctrl declared\"},{\"check\":\"account\",\"what\":\"ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it\"}]",
+   "a parameter of load renamed (paramNames): [{\"check\":\"parameters\",\"what\":\"op load: load takes 4 parameters in the runtime, 3 declared ((load ent reqmatch zzrenamed) -> entity)\"},{\"check\":\"account\",\"what\":\"ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it\"}]"
+  ]
+ },
+ {
+  "id": "rt-clj-getname-renamed",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "signature",
+   "members",
+   "account",
+   "reader"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines",
+   "✖ clojure: every declared fact is accounted for",
+   "✖ clojure: the forms read the runtime"
+  ],
+  "whats": [
+   "ref.facts.entity[6].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.entity[6].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "members.name get-name is not declared in the entity files"
+  ]
+ },
+ {
+  "id": "rt-c-fnptr-renamed",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "signature",
+   "members",
+   "account",
+   "reader"
+  ],
+  "fails": [
+   "✖ c: the declared facts are what its runtime defines",
+   "✖ c: every declared fact is accounted for",
+   "✖ c: the forms read the runtime"
+  ],
+  "whats": [
+   "ref.facts.entity[4].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.entity[4].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "members.name get_name is not declared in the entity files"
+  ]
+ },
+ {
+  "id": "no-forms-zig",
+  "lang": "zig",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "stale-forms",
+   "forms-missing",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ every compiled forms file has its source, and every provider a forms source",
+   "✖ zig: the language declares its runtime forms",
+   "✖ zig: the declared facts are what its runtime defines",
+   "✖ zig: every declared fact is accounted for",
+   "✖ zig: each check fails when its fact is changed (negative controls)",
+   "✖ forms files for every language"
+  ],
+  "whats": [
+   "zig"
+  ]
+ },
+ {
+  "id": "forms-vacuous-ts",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "members",
+   "account",
+   "controls",
+   "reader"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)",
+   "✖ ts: the forms read the runtime"
+  ],
+  "whats": [
+   "facts.method.list: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.create: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "my-cite-quote-gone-ts",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.direct.signal: tm/ts/src/Control.ts no longer contains \"signal?: AbortSignal\""
+  ]
+ },
+ {
+  "id": "my-cite-quote-gone-go",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ go: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.client[1].kind: src/cmp/go/fragment/Main.fragment.go no longer contains \"return CopyUtility(sdk.utility)\""
+  ]
+ },
+ {
+  "id": "my-cite-token-ts",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.direct.signal: the quote does not contain \"AbortController\", which the fact states"
+  ]
+ },
+ {
+  "id": "my-cite-token-rust",
+  "lang": "rust",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ rust: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.none: the quote does not contain \"Value::Null\", which the fact states"
+  ]
+ },
+ {
+  "id": "my-method-swap-go",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ go: the declared facts are what its runtime defines",
+   "✖ go: every declared fact is accounted for",
+   "✖ go: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "facts.method.list: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.op.list: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "my-method-swap-elixir",
+  "lang": "elixir",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account"
+  ],
+  "fails": [
+   "✖ elixir: the declared facts are what its runtime defines",
+   "✖ elixir: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.method.create: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.update: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.op.create: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "my-method-swap-clojure",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines",
+   "✖ clojure: every declared fact is accounted for",
+   "✖ clojure: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "facts.method.list: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.op.list: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "my-rt-op-file-swap-ts",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "signature",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.method.list: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "cite facts.collection: src/cmp/ts/fragment/EntityListOp.fragment.ts no longer contains \"async list(this: any, reqmatch?: EntityNameListMatch, ctrl?: Control): Promise<EntyClass[]>\"",
+   "ref.facts.op.list: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "my-param-renamed-rust",
+  "lang": "rust",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "paramNames",
+   "account"
+  ],
+  "fails": [
+   "✖ rust: the declared facts are what its runtime defines",
+   "✖ rust: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op load: parameter 1 is reqmatch in the runtime, query declared"
+  ]
+ },
+ {
+  "id": "my-param-renamed-rb",
+  "lang": "rb",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "paramNames",
+   "account"
+  ],
+  "fails": [
+   "✖ rb: the declared facts are what its runtime defines",
+   "✖ rb: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op load: parameter 1 is reqmatch in the runtime, query declared"
+  ]
+ },
+ {
+  "id": "my-param-type-go",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "paramTypes",
+   "account"
+  ],
+  "fails": [
+   "✖ go: the declared facts are what its runtime defines",
+   "✖ go: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.op.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "op load: parameter ctrl is map[string]any in the runtime, string declared"
+  ]
+ },
+ {
+  "id": "my-member-client-to-entity-go",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "signature",
+   "account"
+  ],
+  "fails": [
+   "✖ go: the declared facts are what its runtime defines",
+   "✖ go: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[5].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.entity[5].sig: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "my-member-entity-to-client-rust",
+  "lang": "rust",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "signature",
+   "account"
+  ],
+  "fails": [
+   "✖ rust: the declared facts are what its runtime defines",
+   "✖ rust: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.client[3].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.client[3].sig: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "v31-accessor-arg-data-ts",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "paramNames",
+   "accessor",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "ref.facts.accessor.sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.accessor.arg: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "an accessor argument shown as data when it is options (accessor): [{\"check\":\"paramNames\",\"what\":\"accessor: parameter 1 is entopts in the runtime, data declared\"},{\"check\":\"account\",\"what\":\"ref.facts.accessor.sig: the guard could not re-derive it from the runtime and the forms do not cite it\"}]"
+  ]
+ },
+ {
+  "id": "my-types-reason-dropped-zig",
+  "lang": "zig",
+  "caught": null,
+  "error": "build failed: kgen@4.44.0 build\n> tsc --build src test && npm run prune-dist-test && npm run check-scaffold && npm run check-fixture && npm run stage-scaffold\n\ntest/runtimeforms/zig.ts(48,26): error TS2561: Object literal may only specify known properties, but 'zzreason' does not exist in type '{ column: string | null; reason?: string | undefined; any?: string[] | undefined; }'. Did you mean to write 'reason'?\n",
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "my-reader-ocaml-op-renamed",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ ocaml: the forms read the runtime"
+  ],
+  "whats": [
+   "}",
+   "no load declaration",
+   "no result style in the load declaration"
+  ]
+ },
+ {
+  "id": "my-reader-perl-style",
+  "lang": "perl",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ perl: the forms read the runtime"
+  ],
+  "whats": [
+   "no result style in the load declaration"
+  ]
+ },
+ {
+  "id": "my-undocumented-member-ts",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "members"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines"
+  ],
+  "whats": []
+ },
+ {
+  "id": "my-new-provider-php",
+  "lang": "php",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "async",
+   "listOf",
+   "record",
+   "types",
+   "optional",
+   "signature",
+   "accessor",
+   "members",
+   "kind",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ php: the declared facts are what its runtime defines",
+   "✖ php: every declared fact is accounted for",
+   "✖ php: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "facts.async: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.collection: cite the runtime file and a quote that shows \"array\"",
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "v31-copy-false-go",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ go: every declared fact is accounted for",
+   "✖ go: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "cite ref.facts.entity[0].copy: the fact is false; the citation audited true",
+   "a cited prose value changed (account): []"
+  ]
+ },
+ {
+  "id": "v31-copy-cite-gone-rb",
+  "lang": "rb",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ rb: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[0].copy: cite the runtime file and a quote that shows true",
+   "cite ref.facts.entity[9].copy: the provider declares no such fact"
+  ]
+ },
+ {
+  "id": "v31-rust-direct-note-wrong",
+  "lang": "rust",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ rust: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite notes.member:direct: the fact is \"The result map comes back inside `Ok` even for a non-2xx response; `Err`\\\\nis reserved for a request that could not be made.\"; the citation audited \"The result map always comes back inside `Ok`, for a non-2xx response and\\\\nfor a request that could not be made alike; its `ok` key reports the failure.\""
+  ]
+ },
+ {
+  "id": "v31-py-dataset-keyword",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "paramNames",
+   "account"
+  ],
+  "fails": [
+   "✖ py: the declared facts are what its runtime defines",
+   "✖ py: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[1].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.entity[1].sig: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "entity dataSet: parameter 1 is args in the runtime, data declared"
+  ]
+ }
+]

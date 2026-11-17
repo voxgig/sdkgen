@@ -1,0 +1,327 @@
+lang: php
+ok: True
+summary: |
+  Status: the php fix is done. Every reviewer finding has an outcome, and the one command with the port's records exits 0.
+  
+  Fixed in php's own files (5 of 8 required fixes):
+  - prepare's return citation.
+  - The testMock branch.
+  - The stream signal's early end.
+  - The `none` pin.
+  - The SDK file name: 8 components now call phpSdkFile, the reviewer's 5 plus 3 more I found.
+  
+  Needs a shared change (3 of 8), recorded and not made:
+  - The guard and callcheck do not check the accessor receiver.
+  - The minimal pair of enumerated facts cannot tell `record` from `listFields`.
+  - The guide corrections.
+  
+  php's pages are right in all three cases, so no class is recorded as defect.
+  
+  Where the reviewer was wrong:
+  1. The suggested prepare quotes alone hold no `array` token, so the guard would refuse them (account.ts:301-305). I added Fetcher.php:349, `array $fetchdef`.
+  2. The guard already renders the accessor through the call printer (guard.ts:453-475). The real cause is guard.ts:79: `spell` rewrites the `{accessor}` inside php's own token `${accessor}` into `$${accessor}`. findDecls then finds 0 declarations, and the check at :475 is skipped. I probed it: this happens in 6 languages (php elixir java kotlin scala cpp), not php alone.
+  3. The enumerated verdict is computed in tools/factsheet.js attestEnums (ATTESTED at :388), not in enumgen.js.
+  
+  Results (all run):
+  - Pages of the 21 variations: byte-identical to the reviewed snapshot.
+  - Full php SDKs in 3 models: byte-identical before and after.
+  - Controls: `none: 'mixed'` now fails the guard, so attack a03 is caught. Changing the file-name rule changes 23 generated entries.
+  - Guard ^php: 4/4. Guard and reader: 81/81. Golden: 2/2.
+  - Suite: 2635 tests, 2630 pass, 0 fail, 5 skipped.
+  - README lane: 4 tests, 19 assertions, 0 failures in each of 3 models. Repository php README lanes: 5/5.
+  - Root quick start from the repository root: NEW passes the require_once in all 3 models; OLD fails at it in all 3.
+  - Commits: ce5c5c88, 9592d107, 06180373. No trailer. Trees clean after the build.
+outcomes:
+  - [0]
+    finding: R1 ts/test/runtimeforms/php.ts cite ref.facts.prepare.returns quotes the pair type `public static function call(ProjectNameContext $ctx): array` (MakeFetchDef.php:11)
+    outcome: fixed
+    how: |
+      Checked: the reviewer is right that :11 types the [fetchdef, err] pair. Their suggested quotes (MakeFetchDef.php:30 plus Main.fragment.php:216) hold no `array` token, though. codeTokens gives ['array'], so checkCitation (account.ts:301-305) would fail with 'the quote does not contain "array"' (read, not run). The citation now quotes:
+      - MakeFetchDef.php:30, the fetch definition literal `$fetchdef = ['url' => $url, ...]`;
+      - Main.fragment.php:212 and :216, where prepare takes it and returns it;
+      - Fetcher.php:349 `public static function call(ProjectNameContext $ctx, string $fullurl, array $fetchdef)`, the transport that types it as `array`.
+      Guard ^php 4/4.
+    commit: ce5c5c88
+  - [1]
+    finding: R2 cite ref.facts.testMock quote occurs twice in Main_php.ts (:134 case base, :147 default)
+    outcome: fixed
+    how: Checked: confirmed at Main_php.ts:133-134 and :146-147. The quote is now `default:\n                return new ${model.const.Name}BaseFeature();`, which matches only the fallback branch. Guard 4/4.
+    commit: ce5c5c88
+  - [2]
+    finding: R3 cite ref.facts.streamSignal second quote is the closure definition, not the early end
+    outcome: fixed
+    how: Checked: Entity.fragment.php:152 reads the signal. The early ends are at :205-207 (the streaming feature's generator) and :225-227 (the materialised items). The quotes are now the read and both early ends, each with its foreach line. Guard 4/4.
+    commit: ce5c5c88
+  - [3]
+    finding: R4 cite ref.facts.none has no value pin (attack a03)
+    outcome: fixed
+    how: Added value: 'null'. Control run: with Syntax_php.ts:22 set to none: 'mixed', the build exited 0 and the guard exited 1, naming it: `cite ref.facts.none: the fact is "mixed"; the citation pins "null"`. Restored and rebuilt; guard 4/4. Attack a03 now fails in the guard.
+    commit: ce5c5c88
+  - [4]
+    finding: R5 Package_php.ts:69, Test_php.ts:33, TestEntity_php.ts:185, TestDirect_php.ts:190, TestClean_php.ts:54 restate the SDK file name
+    outcome: fixed
+    how: |
+      Checked: confirmed. A search found three more sites: ReadmeExamplesTest_php.ts:20-21, ReadmeExplanation_php.ts:21,32 and ReadmeModel_php.ts:41. All 8 now call phpSdkFile:
+      - TestClean's render takes the file name as a parameter.
+      - ReadmeExamplesTest keeps its SDK_BASE as Path.parse(phpSdkFile(model)).name.
+      The only spelling left is utility_php.ts:12. I kept '.php' in phpSdkFile: 6 of the 7 original sites wrote the literal, and model/target/php.aontu:5 declares ext: php.
+      Ran gensdk.js for default, crud and basic-server before and after: diff -r shows no difference. Control: changing the rule to `_sdkX.php` changed 23 entries, among them composer.json, both READMEs and the tests.
+    commit: 9592d107 (golden 06180373)
+  - [5]
+    finding: R6 shared: the guard and callcheck do not check the entity accessor's receiver (b01, b02, a14)
+    outcome: needs a shared change
+    how: |
+      Reproduced a14 on this build: Syntax_php.ts:125 written as `$client::${...}()` gave build 0 and guard 4/4. Restored.
+      The reviewer's diagnosis is partly wrong. The guard already renders the accessor through the call printer and judges it (guard.ts:453-475), and readCalls reads `$client::Planet()` correctly (sep '::', kind instance). The check never runs because spell (guard.ts:79) turns the token `${accessor}` into `$${accessor}`. findDecls then finds 0 declarations, so :475 skips. Unspelled, it finds 1 declaration (on: instance).
+      Probe over every forms file: php, elixir, java, kotlin, scala and cpp find 0; ts, go, perl, lua and rb find 1.
+      b01: guard.ts never renders ref.instance.
+      callcheck.js:29: SEP holds lua alone, so :136 and :144 check no receiver for php.
+      With the declaration found, php's printed calls pass (sep '->', receiver, arity), and the a14 text fails on the separator. All 647 accessor calls on php's NEW pages use `->`. No php class is wrong, so nothing is recorded as defect.
+    commit: none (shared; recorded below)
+  - [6]
+    finding: R7 shared: an enumerated fact is called ATTESTED by a non-discriminating minimal pair (a25, prints 'record')
+    outcome: needs a shared change
+    how: Read: the verdict is in tools/factsheet.js attestEnums (:336-390), not enumgen.js (which only regenerates pages). It sums held and contra over all alternative values. It calls a value ATTESTED when held > contra (:388), marked only '(mixed)'. So 'record' wins on the blocks where it agrees with 'fields', although it is wrong exactly where it differs from 'listFields'. php declares listFields: 33 held, 0 contra, unaffected. No php class is recorded as defect.
+    commit: none (shared; recorded below)
+  - [7]
+    finding: R8 P/base33/PORTING.md: sections 2.3, 2.1, 9, 5, 2.5/6
+    outcome: needs a shared change
+    how: |
+      P/base33 is read-only.
+      - 2.3: its claim that the accessor's call is checked is false for six languages (R6 probe).
+      - 2.5/6: confirmed. No citable php runtime file spells the file name after the extraction; only utility_php.ts:12 does, and the guard refuses that file (b03).
+      - 2.1 (listOf), 9 (keys member 171/0) and 5 (echo outcomes): taken from the porter's and the reviewer's runs; not re-run here.
+    commit: none (shared; recorded below)
+  - [8]
+    finding: Gap (porter 2, judged needed): entity member returns not printed (ReadmeRef.ts:236)
+    outcome: needs a shared change
+    how: Additive. The page stays true: data_get's record type is stated in the tutorial ('(an `array`)'). The classes stay as recorded (correction:signature-from-runtime), since no sentence is false.
+    commit: none
+  - [9]
+    finding: Gap (porter 3, b03): the ctor[0] line cannot cite the SDK file name
+    outcome: needs a shared change
+    how: Confirmed by search: after R5 the name is spelled only in utility_php.ts:12, which account.ts NOT_RUNTIME (:245) refuses.
+    commit: none
+  - [10]
+    finding: Gap (porter 1): entity class name without case folding
+    outcome: not a defect
+    how: The reviewer computed the folded and unfolded names as equal for B and ref-issues, because guardModelNames renames case collisions. Latent; no change.
+    commit: none
+  - [11]
+    finding: Doubtful line: REFERENCE constructor block `$client = new DemoSDK($options);` with $options unbound
+    outcome: not a defect
+    how: The block is identical to OLD (out/old/B/php/REFERENCE.md). It is the same convention py, rb, perl and lua print in that block: the call illustrated with the options the parameter table under it defines. It is php's fact ref.facts.ctor[2], kept as is.
+    commit: none
+  - [12]
+    finding: Provider note: Syntax_php.ts:138 print printer writes a provider-chosen `$item`
+    outcome: not a defect
+    how: On the pages the loop variable is the entity variable (`foreach ($planets as $planet) { $item = $planet->data_get(); ... }`), so `$item` collides with nothing. A scoped name would need the print statement or the printer to receive one: Scope (example.ts:430) has no fresh-name function, so that would be a shared change.
+    commit: none
+  - [13]
+    finding: Page: crud-basic tutorial binds $created and $planet to one cached instance (awkward, not false)
+    outcome: not fixed
+    how: True as printed, and every step runs (reviewer ran it). The tutorial sentences are shared; saying it there would be a shared sentence, not a php edit.
+    commit: none
+  - [14]
+    finding: Page: 'It ends early once `callopts.signal` reports an abort' uses the shared key form (ReadmeRef.ts:123)
+    outcome: not fixed
+    how: Shared wording, not false. The reviewer judged it not needed.
+    commit: none
+  - [15]
+    finding: Page: Features section TS-form defaults (ReadmeRefFeatures.ts)
+    outcome: not fixed
+    how: A known shared item left for the integration (guide section 13).
+    commit: none
+shared_changes_needed:
+  - [0]
+    file: ts/test/runtimeforms/guard.ts (:79-82 spell/pattern; :453-475 the accessor check)
+    change: Look up the accessor declaration with the forms' token unspelled (esc(forms.tokens.accessor)), or make spell leave a token already in runtime spelling alone. Add a finding naming the accessor when no declaration is found, instead of skipping (`if (0 < accDecls.length)`). Render ref.instance(entity) and judge the accessor call in it as for the call printer (b01).
+    why: `$client::Planet()` passes the guard in php (a14, b02 reproduced; b01). spell rewrites `${accessor}` to `$${accessor}`, so the accessor check silently never runs in php, elixir, java, kotlin, scala and cpp (probe: 0 declarations found; 1 when unspelled). Guide 2.3 says this is checked.
+    breaking: False
+    providers_forced: php none: all 647 printed accessor calls use `->` and pass when probed with the declaration found. elixir (ported), java, kotlin, scala and cpp get the check for the first time; their printers are not yet checked against it.
+  - [1]
+    file: tools/callcheck.js (:29 SEP; :136, :144)
+    change: Build the separator-to-receiver table for every language from its forms' calls.on (php: '->' instance, '::' type), not a lua-only constant.
+    why: For php, callcheck checks no receiver at all: neither the accessor's (:136) nor any member's (:144). That is why a14 and b02 showed 0 findings on 386 calls.
+    breaking: False
+    providers_forced: php none expected, by reading (instances through `->`; DemoSDK::test is static, through `::`). Other languages not measured.
+  - [2]
+    file: tools/factsheet.js (attestEnums, :336-390; verdict :388)
+    change: Tally held and contra per alternative value. ATTESTED only when, against every alternative that selects anything, held > 0 and contra = 0 (or count only units where the declared value prints differently from every alternative). Any contradiction makes it UNATTESTED for a person to record.
+    why: a25: prints 'record' was ATTESTED (32 held, 2 contra, summed over alternatives), while the true 'listFields' is ATTESTED too (33/0).
+    breaking: False
+    providers_forced: php none (listFields 33/0). It may reopen enumerated facts now attested '(mixed)' in other languages; not measured.
+  - [3]
+    file: ts/src/cmp/ReadmeRef.ts:236
+    change: Print **Returns:** for an entity member that declares returns, as clientMember does for client members.
+    why: php's data_get and match_get cite returns 'array' (Entity.fragment.php:109,129), but the page prints it nowhere on the REFERENCE.
+    breaking: False
+    providers_forced: none forced; providers that declare entity returns gain a line
+  - [4]
+    file: ts/test/runtimeforms/account.ts (:245 NOT_RUNTIME / ownFile)
+    change: Accept utility_<lang>.ts as a citable file for a naming function the generator itself calls, or require the filled {module} token in some quote of a ref.facts.ctor line citation.
+    why: After the R5 extraction, the SDK file name is spelled only in utility_php.ts:12. The guard refuses that file (b03), so the ctor[0] line `require_once __DIR__ . '/{module}';` is cited without any quote holding the name.
+    breaking: False
+    providers_forced: php; rb and lua have the same shape (porter's reading, not re-read here)
+  - [5]
+    file: P/base33/PORTING.md
+    change: |
+      - 2.3: until the guard fix lands, state that the accessor's receiver is not checked in languages whose forms token is `${accessor}`.
+      - 2.1: move listOf to the optional table, with its account.
+      - 9 (php row): the minimal pair attests keys 'member' (171/0), not version 3.2's 'bare'.
+      - 5: an echo class may only be same-meaning, contradiction or defect.
+      - 2.5/6: a ctor line citing the SDK file cannot quote utility_<lang>.ts.
+      - 9 (php row): name every php component that spells the file name, not Main_php.ts alone.
+    why: Each was met by the porter or the reviewer; 2.3 is false (R6 probe), and 2.5/6 is confirmed (b03).
+    breaking: False
+    providers_forced: none
+not_caught_by_process:
+  - [0]
+    attack: a24: ref.facts.client[1].copy set to false, together with its pinned citation
+    consequence: PORTCHECK PASS, exit 0. The page prints 'Return the SDK utility object.', which is false for php: I ran it, and get_utility() returns a new DemoUtility on every call (UtilityType.php:58-60). By design (pinned prose is the reviewer's), so a reviewer who does not run it lets a false sentence through.
+  - [1]
+    attack: a06: ref.facts.body.once changed together with its pin
+    consequence: PASS. The body facts print on no page of the 21 variations, so neither a page nor a check can see them.
+  - [2]
+    attack: a08: accessor.cached fact and its citation both removed
+    consequence: The guard passes. OLD's false 'Create a new X instance.' returns and is counted 'same' with OLD (+93 units, 14766 to 14859). Only 1 unrelated open class remains, which a porter can decide by hand, and the page is then false for php (I ran it: `$client->Planet() === $client->Planet()` is true). The guard does not derive `cached` from MainEntity_php.ts.
+  - [3]
+    attack: a03: ref.facts.none set to a token that stands in the quoted line
+    consequence: The guard passes (the token is in the quote and there is no value pin); 6 open classes, decided by hand.
+  - [4]
+    attack: a14, b01, b02: entity accessor called through `::` (call printer, ref.instance)
+    consequence: Guard exit 0 and callcheck 0 findings in all three; only open block classes flag it. At run time it is a fatal error.
+  - [5]
+    attack: a23: root import place removed (root require back to 'demo_sdk.php')
+    consequence: The guard passes. Only `RECOUNT rootquick` (corrected 0 to 11) fails, and the porter clears it by re-recording the counts. The php lane strips require_once (ReadmeExamplesTest_php.ts:304-318), so it cannot see the import either. OLD's form fails from the repository root (I ran it).
+  - [6]
+    attack: a25: prints set to 'record'
+    consequence: Called ATTESTED by the minimal pair; only 3 open tutorial block classes, decided by hand.
+  - [7]
+    attack: a17 noun, a18 keys, a19 maps set to wrong values
+    consequence: UNATTESTED, so the run fails, but a hand record closes it by design (convention and language facts).
+  - [8]
+    attack: a09: deleted removed
+    consequence: ABSENT, NO REASON, so the run fails, but an absent reason closes it.
+commits:
+  - ce5c5c88 php: citations that show their values. File: ts/test/runtimeforms/php.ts (+11 -5). Body: prepare's return is cited to the fetch definition it builds and to the transport parameter that types it, not to the pair type of make_fetch_def. The test fallback is quoted with its default branch. The stream signal quotes the read and both early ends. The none value is pinned.
+  - 9592d107 php: every component takes the SDK file name from phpSdkFile. Files: Package_php.ts, ReadmeExamplesTest_php.ts, ReadmeExplanation_php.ts, ReadmeModel_php.ts, TestClean_php.ts, TestDirect_php.ts, TestEntity_php.ts, Test_php.ts (+27 -16). Body: The package manifest, the test generators and the README components no longer spell the entry file's name themselves. Generated output is unchanged.
+  - 06180373 php: golden for the components that call phpSdkFile. File: ts/test/golden/add-output.txt (8 php hash lines changed, nothing else).
+  - Tools copy: no commit. hand/php.json, classes/php.json, counts, normalizers and purity-allow are unchanged, and `git -C tools status` is empty after the reviewed runs. The tools head is still f010878.
+  - Checks: `git log --format=%B 0065f1e2..HEAD` in sdkgen and `a3fd3b8..HEAD` in tools give 0 matches for co-authored, session, signed-off or any tool or model name. After the final `npm run build` (exit 0), `git status --short` is empty in sdkgen and in tools.
+final_state: |
+  Final run: `REGEN=1 tools/portcheck.sh sdkgen out php` after a fresh build. Exit 0, 12:31:31 to 12:34:08 UTC. The screen is identical to the first reviewed run of this fix (fix/pc-reviewed1.txt), and out/new is byte-identical to reviews/php/newsnap. Lines over 240 characters are cut:
+  
+  == portcheck php ==
+  section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+  tutorial                   59 |      50     22        0      22       6     0       0 | 0
+  rootquick                  19 |       4      0        0       3       1     0       0 | 0
+  reference               14766 |     147     47        0      65      30     0       0 | 5
+  section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+  tutorial                   3        16       0        29 |      27    0      0 | yes (php); 45 changed blocks compiled by nothing
+  rootquick                  0         0       0        19 |      30    0      0 | yes (php); 19 changed blocks compiled by nothing
+  reference                195         0       0       118 |      13    0      0 | yes (php); 118 changed blocks compiled by nothing
+  contradictions (5; counted, not failed): 9a06a9079a (README.md:229), 8456c2ee6c (README.md:271), bff341cf32 (README.md:219 no-test), fdc80fe847 (README.md:225 ref-issues), ef282389f3 (README.md:226 ref-issues); REFERENCE is the true side in all five
+  purity: 0 open, 2 accepted | notes declared 0, note regions found 0
+  page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1314 articles checked; findings 0
+  printed calls (callcheck, no compiler): 386 calls of 23 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+  guard: pass (pass 4 fail 0 )
+  build: 1813 sources checked, current
+  hand records: 237, 5 quote text (10 quotations); STALE 0
+  facts: attested 4, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 20, pinned prose 10
+  shared sentences: matched 69, of which against a sentence nobody reviewed 2; printed less often than its reference 0; absent here but printed by every reference of this result style 33 (33 explained)
+  fact sheet: factsheet php: 72 facts, 0 with no account, 0 unattested
+  PORTCHECK php: PASS
+  Regeneration: 21 of 21 variations, none skipped.
+  
+  SCRATCH=1 run (exit 1, by design; it read the pages just regenerated):
+  - Ledger OPEN: tutorial 28, rootquick 4, reference 100. Shared matches: 22, 0, 47.
+  - Blocks OPEN: 27, 30, 13.
+  - Facts: NOT JUDGED named = "call"; UNATTESTED ref.noun = "Methods"; not judged 1; attested 4.
+  - ABSENT, NO REASON: 33 (0 explained). DROPPED: 0.
+  - The parts that read no hand record are clean in both runs: build current (1813 sources), guard 4/4, purity 0 open (2 accepted), pagecheck 0 findings, callcheck 0 findings on 386 calls.
+  These numbers equal the porter's scratch run.
+  
+  Counts per section are in review_counts. Guard account (SDKGEN_GUARD_REPORT=1): php: derived 49, cited 23, language 1, convention 6, excepted 0; types: column php.
+review_counts:
+  - [0]
+    section: tutorial
+    same: 59
+    shared_matched: 22 (classes 50)
+    matched_unreviewed: 2 page-wide (shared sentences with no verdict; STRICT_SENTENCES not run in this fix)
+    by_hand: 22
+    missing: 6
+    contradictions: 0
+    blocks: identical 3, corrected 16, unified 0, otherwise 29; 27 classes, OPEN 0, defect 0; 45 changed blocks compiled by nothing
+  - [1]
+    section: rootquick
+    same: 19
+    shared_matched: 0 (classes 4)
+    matched_unreviewed: 0
+    by_hand: 3
+    missing: 1
+    contradictions: 0
+    blocks: identical 0, corrected 0, unified 0, otherwise 19; 30 classes, OPEN 0, defect 0; 19 changed blocks compiled by nothing
+  - [2]
+    section: reference
+    same: 14766
+    shared_matched: 47 (classes 147)
+    matched_unreviewed: counted page-wide above (2)
+    by_hand: 65
+    missing: 30
+    contradictions: 5 (all against unported php README lines; REFERENCE the true side)
+    blocks: identical 195, corrected 0, unified 0, otherwise 118; 13 classes, OPEN 0, defect 0; 118 changed blocks compiled by nothing
+lanes: |
+  Toolchain (`command -v` at 12:09 UTC): node v24.22.1, npm 11.19.1, php 8.3.6, composer, javac, java, mvn, gradle, g++ 13.3.0 and make present. phpunit, kotlinc, kotlin, scala, scala-cli, sbt and dotnet MISSING.
+  
+  Ran on NEW (sdkgen 06180373):
+  - `bash tools/before/run.sh <ws>/sdkgen php`: the generated SDK's own ReadmeExamplesTest through phpshim.php.
+    - default: 4 tests, 19 assertions, 0 failures; root README 4/4, php README 20/20, php REFERENCE 21/21 executed; minimum of 3 runs 0.203 s.
+    - crud: 4 tests, 19 assertions, 0 failures; 4/4, 18/18, 14/14; minimum 0.134 s.
+    - basic-server: 4 tests, 19 assertions, 0 failures; 4/4, 18/18, 14/14; minimum 0.193 s.
+  - `node --test --test-concurrency=2 --test-name-pattern '^php: (the root README test block|the README test-mode block|README output stays bounded)' dist-test/generatedcompile.test.js`: 5 tests, 5 pass, 0 fail, 5.5 s.
+  
+  Root quick start, run from the repository root of each generated SDK. Each require_once block of the root README was saved and run with `php` with the working directory at the root (script: scratchpad/phpfix/rootq.sh):
+  - NEW, `require_once 'php/demo_sdk.php';`: the require passes in all three models.
+    - default stops at 'Uncaught DemoSDK: load: Could not resolve host: ambient'.
+    - crud stops at 'list: Could not resolve host: planet'.
+    - basic-server stops at option validation with DEMO_APIKEY and DEMO_SECRET unset (the example reads them with getenv). With them set, it stops at 'list: URL rejected: Bad hostname'.
+  - OLD (generated from oldcopy at 9aebaf9e), `require_once 'demo_sdk.php';`: 'Failed opening required demo_sdk.php' in all three models.
+  
+  The OLD README lane was not re-run here: generated output did not change. The porter's OLD run gave the same 4/19/0 in each model.
+lines: |
+  Line counts by `wc -l` at 06180373:
+  - Syntax_php.ts (provider): 168.
+  - Naming_php.ts (hook): 26.
+  - ts/test/runtimeforms/php.ts (forms): 110, up from 104.
+  
+  This fix (`git diff --numstat f06c5a1a..HEAD`):
+  - forms +11 -5;
+  - Package_php +3 -1, ReadmeExamplesTest_php +6 -2, ReadmeExplanation_php +4 -2, ReadmeModel_php +3 -1, TestClean_php +5 -5, TestDirect_php +2 -2, TestEntity_php +2 -2, Test_php +2 -1 (components +27 -16 in all);
+  - golden +8 -8.
+  
+  Whole port from the base (`git diff --numstat 0065f1e2..HEAD`):
+  - deleted: ReadmeQuick_php 224, ReadmeRef_php 420, ReadmeTopQuick_php 90 (734 lines);
+  - added: Syntax_php +168, Naming_php +26, forms +49 -3, utility_php +7, Main_php +2 -1, the 8 components above +27 -16, golden +12 -13.
+  
+  Notes: php declares none (0 notes, 0 note regions).
+notes:
+not_done:
+  - STRICT_SENTENCES=1 was not run in this fix. The reviewer ran it, and it fails only on the 2 matched shared sentences that nobody gave a verdict.
+  - The repository's other php lanes were not run: the feature corpus and four credential lanes, which skip because phpunit is not on PATH (reviewer: 33 pass, 5 skipped). Only the three README lanes were run.
+  - No shared file was changed: guard.ts, account.ts, callcheck.js, factsheet.js, ReadmeRef.ts and PORTING.md are recorded under shared_changes_needed and left as they are.
+  - The OLD README lane was not re-run: generated output is byte-identical before and after this fix in three models.
+  - The scratch run was made without REGEN, on the pages the reviewed REGEN=1 run had just written.
+unverified: |
+  Counted from the final screen: 182 changed blocks of the 21 variations are compiled or run by nothing (tutorial 45, rootquick 19, reference 118). The php lane covers only its own three models, and it strips each block's require_once and swaps the constructor for the test constructor.
+  
+  Also not shown by any run here:
+  - The constructor options of every example. No lane executes them, and no live request was made; the root quick start ran only up to the network.
+  - The REFERENCE constructor block as printed (illustrative, identical to OLD).
+  
+  Read, not run:
+  - The reviewer's suggested prepare quotes would fail the guard (account.ts:301-305).
+  - callcheck would pass php's `::` on DemoSDK::test once SEP is derived from the forms.
+  - rb and lua share the ctor-citation gap.
+  
+  No compiler is missing for php itself. phpunit is missing on PATH; the lane uses the repository's own shim.

@@ -1,0 +1,64 @@
+
+##### [new] R11 lua: A = the 3.2 provider on the 3.2 shared code
+   [r11a-lua] add: EXIT 0 (1259 ms)
+   [r11a-lua] TSC EXIT 0
+   [r11a-lua] GEN ok=true ms=107
+
+##### [new] R11 lua: X0 = the 3.2 provider as a pack on 3.3, as installed
+   [r11x-lua] add: EXIT 0 (887 ms)
+   [r11x-lua] src/cmp/lua32/Syntax_lua32.ts(20,7): error TS2741: Property 'testMock' is missing in type '{ entityBy: "class"; noun: string; none: string; keys: "member"; maps: string; container: string; valueType: 
+   [r11x-lua] TSC EXIT 1
+   [r11x-lua] doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [r11x-lua] EXIT 0 (746 ms)
+
+
+##### [new] R11 lua: X1 = the same, compiled with the type error ignored, as a pack shipping JS would run
+   [r11x-lua] TSC EXIT 2
+   [r11x-lua] GENERATE THREW: Error: ReadmeRef: the test constructor needs ref.facts.testMock |     at testText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/sdkgen/ts/dist/cmp/ReadmeRef.js:251:15) |     at refText (/tmp/claude-0
+   [r11x-lua] GEN ok=false ms=87
+
+##### [new] R11 lua: X = the author adds the one fact the type error names, testMock: generated
+   [r11x-lua] TSC EXIT 0
+   [r11x-lua] GEN ok=true ms=125
+
+##### [new] R11 lua: B = the 3.3 provider, bundled, on 3.3
+   [r11b-lua] add: EXIT 0 (964 ms)
+   [r11b-lua] TSC EXIT 0
+   [r11b-lua] GEN ok=true ms=93
+
+##### [new] R11 lua: compare
+   lua32/README.md        A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B    0 lines
+   lua32/REFERENCE.md     A->X1    0 lines  A->X   95 lines  X->B   62 lines  A->B  153 lines
+   README.md              A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B    0 lines
+
+##### [new] R11 ocaml: A = the 3.2 provider on the 3.2 shared code
+   [r11a-ocaml] add: EXIT 0 (1202 ms)
+   [r11a-ocaml] TSC EXIT 0
+   [r11a-ocaml] GEN ok=true ms=107
+
+##### [new] R11 ocaml: X0 = the 3.2 provider as a pack on 3.3, as installed
+   [r11x-ocaml] add: EXIT 0 (791 ms)
+   [r11x-ocaml] src/cmp/ocaml32/Syntax_ocaml32.ts(19,7): error TS2741: Property 'testMock' is missing in type '{ entityBy: "Name"; noun: string; entityNoun: string; heading: string; none: string; keys: "bare"; maps: 
+   [r11x-ocaml] TSC EXIT 1
+   [r11x-ocaml] doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [r11x-ocaml] EXIT 0 (713 ms)
+
+
+##### [new] R11 ocaml: X1 = the same, compiled with the type error ignored, as a pack shipping JS would run
+   [r11x-ocaml] TSC EXIT 2
+   [r11x-ocaml] GENERATE THREW: Error: ReadmeRef: the test constructor needs ref.facts.testMock |     at testText (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/sdkgen/ts/dist/cmp/ReadmeRef.js:251:15) |     at refText (/tmp/claude-0
+   [r11x-ocaml] GEN ok=false ms=79
+
+##### [new] R11 ocaml: X = the author adds the one fact the type error names, testMock: generated
+   [r11x-ocaml] TSC EXIT 0
+   [r11x-ocaml] GEN ok=true ms=111
+
+##### [new] R11 ocaml: B = the 3.3 provider, bundled, on 3.3
+   [r11b-ocaml] add: EXIT 0 (822 ms)
+   [r11b-ocaml] TSC EXIT 0
+   [r11b-ocaml] GEN ok=true ms=85
+
+##### [new] R11 ocaml: compare
+   ocaml32/README.md      A->X1    0 lines  A->X    4 lines  X->B    0 lines  A->B    4 lines
+   ocaml32/REFERENCE.md   A->X1    0 lines  A->X   95 lines  X->B   80 lines  A->B  173 lines
+   README.md              A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B    0 lines

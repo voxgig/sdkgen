@@ -1,0 +1,275 @@
+{
+ "lang": "cpp",
+ "ok": false,
+ "summary": "The cpp port does not pass yet (`ok` false), and that is by design. Every number of the fixer's I reproduced came out the same. Every required fix is either made or correctly recorded as a shared change. The port changed nothing outside what the guide allows.\n\n**Why the one command fails.** `REGEN=1 tools/portcheck.sh sdkgen out cpp` exits 1, on exactly two things, both waiting for a shared change:\n- the recorded `defect` class `ea3d2bd9d5`: the REFERENCE's remove sentence \"`data()` reads its record.\", false for cpp (waits on runtimeprose.ts);\n- the guard's `ctor` check (gap 1, calls.ts readCalls). This is a guard failure, not a defect class, but it is correctly reported as an interface gap.\n\nMy screen is identical to the fixer's final screen, and identical again after my attacks were restored.\n\n**The fixes, checked one by one at the last commit (229312e7, tools fcbd22a):**\n- **bff341cf32** is now a contradiction, as in ts, rb, lua, perl, swift, ocaml, go and c. Run: the no-test README's own test-mode block throws `fetch_mode_block`.\n- **The five iostream-include reasons** are now true. sdk.hpp:12 includes config.hpp, which includes each feature's header; log.hpp:12 includes `<iostream>`; every variation generates log. Run: OLD B's root block compiles with no `<iostream>`.\n- **cpp.ts:57** now says the mark is set whatever the outcome. Run: a failed remove under `throw: false` gives `deleted()` 1.\n- **guard.ts:454** is a shared defect, confirmed by a control on the compiled guard. With the one-word fix, `client.planet()` fails by name, cpp's real provider still fails only on `ctor`, and all 59 guard tests give the same results.\n- **The remove sentence** is recorded as `defect` (n 79), not `dropped`. Run: remove leaves `data()` `{}` although the response carried a record. cpp's remove fragment alone reads no `resdata`.\n- **Gap 1** (calls.ts) is confirmed.\n- **Gap 2** now names zig; c, clojure and rust ship a transport.\n\n**What I ran on the port:**\n- build exit 0, `git status --short` empty;\n- guard 3 pass, 1 fail (the two `ctor` messages); reader 22/22; golden 2/2;\n- suite 2,635 tests: 2,629 pass, 1 fail (the cpp `ctor` check), 5 skipped, 381 s;\n- `SCRATCH=1`: the fixer's numbers exactly;\n- cpp lane 6/6;\n- `run.sh` structural README test: 87, 69 and 69 checks, 0 failures;\n- root quick start from the repository root: needs `-iquote cpp`. NEW aborts with `fetch_no_transport`, OLD with `server_var_required` (S49).\n\n**My attacks: two of four not caught.**\n- **A, not caught.** The catch clause catches `std::exception`. It compiles, and the lane passes 6/6. Run: the example aborts on the first failure. The only trace is 6 open block classes, which a porter can close by hand.\n- **B and B2, not caught.** This is new. Setting `calls.parenless: true` in cpp's own forms, and dropping the citation the guard then asks to drop, makes the guard pass 4/4. That silences gap 1 with a false statement about how cpp writes calls. The constructor is then read as a call with zero arguments.\n- **C, caught by name.** A consistent wrong `std::list` pair.\n- **D, caught.** A lane control: the lane fails 0/6 on a member that does not exist.",
+ "still_wrong": [
+  {
+   "file": "out/new/*/cpp/REFERENCE.md, remove section (15 copies; e.g. B REFERENCE.md:451-453), printed by ts/src/helpers/runtimeprose.ts:263 (opText appends readsRecord to every op but list)",
+   "what": "\"Returns the entity, marked as deleted ... `result->deleted()` reads the mark. `data()` reads its record.\"",
+   "why": "cpp's remove absorbs only resmatch (src/cmp/cpp/fragment/EntityRemoveOp.fragment.cpp:12-18), so on the page's example, a fresh entity, data() is {}. Run on my regenerated B SDK: load data() {\"id\":\"p1\",\"name\":\"Mars\"}, remove data() {} with deleted() 1. Recorded as defect ea3d2bd9d5; waits on shared code"
+  },
+  {
+   "file": "ts/test/runtimeforms/calls.ts readCalls (the `'(' === text[i]` branch) and guard.ts:405-433",
+   "what": "the guard's constructor check fails on cpp's true constructor line `auto client = std::make_shared<DemoSDK>(...)` (2 ctor messages)",
+   "why": "readCalls reads arguments only where '(' follows the name; after DemoSDK comes '>'. The page line is the runtime's own spelling (Main.fragment.cpp:28, 35). Keeps the one command failing; waits on shared code"
+  },
+  {
+   "file": "out/new/*/README.md root Quickstart ### C++ and out/new/*/cpp/README.md tutorial client step",
+   "what": "a live client is shown whose first request can only fail: no page says the cpp runtime needs options[\"system\"][\"fetch\"]",
+   "why": "tm/cpp/utility/pipeline.hpp:608-613 throws fetch_no_transport. Run: NEW B root quick start aborts with that error. No class records it (every printed unit is true), so nothing in the port's records fails while it stays unsaid"
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts:454 (compiled dist-test/runtimeforms/guard.js:538)",
+   "what": "the per-operation accessor call check is skipped for cpp, elixir, java, kotlin, php and scala",
+   "why": "spell() (guard.ts:81) turns the token `${accessor}` into `$${accessor}`, so accDecls is empty and :475 skips. Run: `client.planet()` passes the frozen guard and fails the fixed one by name"
+  },
+  {
+   "file": "ts/test/runtimeforms/calls.ts readCalls (the parenless branch) and forms.ts calls.parenless",
+   "what": "a port's forms can declare `parenless: true` for a language that writes every call with parentheses, and the constructor check then passes vacuously",
+   "why": "Run (attack B2): with parenless set and the ctor[4] citation dropped, the cpp guard passes 4/4 and the one command fails only on the defect class. The reader reads `make_shared<DemoSDK>(` as a call with 0 arguments, whatever it passes. Nothing compares `parenless` with the runtime"
+  },
+  {
+   "file": "ts/project/.sdk/src/cmp/cpp/Syntax_cpp.ts attempt printer (lines 163-169); no mechanical check of the catch type",
+   "what": "a catch clause that never catches what the runtime throws passes every mechanical check",
+   "why": "Run (attack A): `catch (const std::exception& err)` compiles, so the lane passes 6/6, and the guard, callcheck and purity find nothing. The example aborts (exit 134, uncaught std::shared_ptr<sdk::SdkError>). The only trace is 6 open tutorial block classes, decidable by hand. The port's own printer is correct today (catch SdkErrorPtr; run: catches and continues)"
+  },
+  {
+   "file": "tools ledger.js:93 (class key = masked text); tools/hand/cpp.json ea3d2bd9d5",
+   "what": "the defect class ea3d2bd9d5 holds 79 copies of one sentence: 15 false (remove) and 64 true (load, create, update, patch)",
+   "why": "the class key is the text, so a port cannot mark only the false copies; when shared code fixes remove, the record must be re-decided. Reported by the fixer; a tools change, not made"
+  },
+  {
+   "file": "out/new/no-test/cpp/README.md:158-159, 218 (unported README components)",
+   "what": "promises an in-memory mock transport without the test feature",
+   "why": "recorded as contradiction bff341cf32; run: the block throws fetch_mode_block. Not the port's file"
+  },
+  {
+   "file": "out/new/B/cpp/README.md '## Error handling' (unported README component)",
+   "what": "the section's examples are TypeScript (`await client.Ambient().load()`)",
+   "why": "printed by cpp's unported components, the same on OLD; outside what the guide lets a port touch"
+  }
+ ],
+ "shared_changes": [
+  {
+   "file": "ts/test/runtimeforms/guard.ts:454",
+   "change": "`findDecls(forms, client, pattern(forms.tokens.accessor || ''))` becomes `findDecls(forms, client, esc(forms.tokens.accessor || ''))`",
+   "why": "spell() re-substitutes {accessor} inside the token ${accessor}, so the accessor call check is skipped for 6 languages. Run on the compiled guard: with the fix, all 59 guard tests give the same results, cpp's real provider still fails only on ctor, and a provider printing client.planet() fails ('planet is declared on the instance, called through ->; ... calls it through .')",
+   "breaking": false,
+   "providers_forced": "none: a defect in a shared check; cpp passes the live check"
+  },
+  {
+   "file": "ts/test/runtimeforms/calls.ts readCalls, guard.ts:405-433",
+   "change": "read `std::make_shared<X>(args)` and `std::make_unique<X>(args)`, where X is the declared class, as a call of X's constructor on the type with those arguments (or a forms `factory` pattern the guard maps to the constructor declaration)",
+   "why": "cpp's constructor line is the runtime's own form (Main.fragment.cpp:28, 35) and is true; readCalls needs '(' after the name",
+   "breaking": false,
+   "providers_forced": "cpp only"
+  },
+  {
+   "file": "ts/test/runtimeforms/calls.ts and guard.ts (calls.parenless)",
+   "change": "check a declared `parenless: true` against the runtime (e.g. require a quoted runtime call written without parentheses), and never read a name followed by `<` or `>` as a parenless call with 0 arguments",
+   "why": "attack B2: a port's own forms with parenless set (plus the ctor[4] citation dropped as the guard asks) silence gap 1 and pass the guard 4/4. That is a false call notation for cpp, and the arity check then counts 0 arguments",
+   "breaking": false,
+   "providers_forced": "none: no ported language should change; a language that truly writes calls without parentheses quotes one"
+  },
+  {
+   "file": "ts/src/helpers/runtimeprose.ts opText (line 263), RefFacts type, account.ts DEFAULTS; PORTING.md 2.1 'deleted' row; brief7 decision 11",
+   "change": "an optional cited fact that remove keeps the entity's data (e.g. ref.facts.removeKeeps: true); where declared, the remove description drops '`data()` reads its record' and says once that the removed entity keeps the data it held and reads no record from the response. Correct the guide's claim that every runtime replaces the data",
+   "why": "cpp's remove fragment alone reads no resdata (0 mentions; every other language's remove fragment 1-4; ocaml has none). Run: remove data() is {} after a response record. Then re-decide defect ea3d2bd9d5",
+   "breaking": false,
+   "providers_forced": "cpp only (survey s3c and my sweep of the remove fragments)"
+  },
+  {
+   "file": "ts/src/cmp/ReadmeQuick.ts (tutorial client step, root quick start), RuntimeFacts type, account.ts",
+   "change": "an optional cited fact that the runtime has no built-in HTTP transport (e.g. liveTransport: false), printing one shared sentence once, e.g. 'This SDK has no built-in HTTP transport: a live request needs options[\"system\"][\"fetch\"]' (key spelled through ref.key)",
+   "why": "Run: NEW B's root quick start, compiled from the repository root with -iquote cpp, aborts with fetch_no_transport. tm/cpp/utility/pipeline.hpp:608-613; tm/ocaml/sdk_runtime.ml:1574-1579; tm/zig/core/utility.zig:2328-2337 (fetch_transport)",
+   "breaking": false,
+   "providers_forced": "cpp, ocaml, zig (c http.c, clojure java.net.http and rust ureq ship transports)"
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts (a new check on the attempt printer), optionally RuntimeFacts.thrown",
+   "change": "render the attempt printer and require that its catch names the type the runtime throws (cpp: SdkErrorPtr, the type of `throw raised;` in pipeline.hpp), cited",
+   "why": "attack A: `catch (const std::exception& err)` compiles, passes the lane and every mechanical check, and never catches the thrown std::shared_ptr<SdkError> (run: abort 134). Today only an open block class, decidable by hand, marks it",
+   "breaking": false,
+   "providers_forced": "every throw-style language whose catch names a type (cpp, java, kotlin, scala, csharp, swift); optional where the catch is untyped"
+  }
+ ],
+ "fixes_checked": [
+  {
+   "finding": "R1: hand record bff341cf32 same-meaning, should be contradiction (no-test README promises a mock; REFERENCE says none)",
+   "fixer_outcome": "fixed (tools fcbd22a)",
+   "seen": "tools/hand/cpp.json bff341cf32: outcome contradiction, where/true/evidence, n 2. no-test cpp/README.md:158-159 and :218 promise the mock; REFERENCE.md:42, :54 say none. ts, rb, lua, perl, swift, ocaml, go and c all record the same id as contradiction. The one command prints 'contradictions (1)' with this id",
+   "right": true,
+   "evidence": "RUN: no-test generated whole from my clone (work/gensdkvar.js), libsdkfeature.a built, the README's test-mode block compiled with -iquote cpp and run: 'SdkError fetch_mode_block: DemoSDK: load: Request blocked by mode: \"test\"' (exit 2)"
+  },
+  {
+   "finding": "R2: five iostream-include reasons falsely say OLD blocks did not compile without <iostream>",
+   "fixer_outcome": "fixed (tools fcbd22a)",
+   "seen": "39fd7fb6ab, 20e1f83164, 2b7c065103, 8415dfcf46 and 4e3e036aa2 now say OLD reached <iostream> only through the log feature's header. No other record (14 more mention iostream) carries the false clause. STALE 0",
+   "right": true,
+   "evidence": "read: tm/cpp/core/sdk.hpp:12 `#include \"config.hpp\"`; Config_cpp.ts:291 emits `#include \"../feature/${f.name}.hpp\"`; tm/cpp/feature/log.hpp:12 `#include <iostream>`; tools/gen/variations.js: every variation has all features, no-test drops only test; generatedcompile.test.ts:9114 adds the include. RUN: OLD B root block (no <iostream> line) compiled from the root with -iquote cpp, exit 0"
+  },
+  {
+   "finding": "R3: forms undocumented.deleted 'whether remove succeeded' is false under throw:false",
+   "fixer_outcome": "fixed (sdkgen 229312e7)",
+   "seen": "ts/test/runtimeforms/cpp.ts:57 now reads 'the mark remove sets after the operation, whatever its outcome (markDeleted() follows runOp in EntityRemoveOp.fragment.cpp, also under ctrl throw: false)'",
+   "right": true,
+   "evidence": "EntityRemoveOp.fragment.cpp:12-18 runOp, :25 `this->markDeleted();`; pipeline.hpp `if (is_false(ctx->ctrl->throwing)) { return result->resdata; }`. RUN: failed remove (500, throw false) deleted() = 1; default ctrl throws request_status"
+  },
+  {
+   "finding": "R4: guard.ts accessor lookup re-spells ${accessor}; accessor call check skipped for 6 languages",
+   "fixer_outcome": "needs a shared change (recorded)",
+   "seen": "guard.ts:81 spell, :82 pattern, :454 lookup (the fixer's line number is right), :475 skip. Six forms carry accessor: '${accessor}' (cpp, elixir, java, kotlin, php, scala). The accessor SIGNATURE check (sig(), :333) spells once and works",
+   "right": true,
+   "evidence": "RUN on my copy's compiled guard.js:538 (saved, patched to esc, restored, cmp identical): frozen guard passes client.planet() (only ctor messages); the fixed guard fails it with 'op list accessor: planet is declared on the instance, called through ->'. The real cpp provider under the fixed guard fails only on ctor x2. The whole guard file gives 59 tests, 58 pass, the same per-test results both ways. cpp's files cannot express it: the token must equal the runtime's spelling in MainEntity_cpp.ts. No page is false, so no class is needed"
+  },
+  {
+   "finding": "R5: the shared remove sentence '`data()` reads its record' misleads for cpp (remove keeps data)",
+   "fixer_outcome": "needs a shared change; class recorded defect",
+   "seen": "hand/cpp.json ea3d2bd9d5 outcome defect, n 79, reason naming runtimeprose.ts opText and the true statement (not dropped). Page still prints it: out/new/B/cpp/REFERENCE.md:451-453. One command: reference defect 1",
+   "right": true,
+   "evidence": "runtimeprose.ts:263 appends readsRecord for every op but list; cpp's remove fragment has 0 resdata mentions, every other language's 1-4. RUN on my regenerated B: load data() {\"id\":\"p1\",\"name\":\"Mars\"}, remove data() {} deleted() 1. The recorded change (an optional cited fact in opText) is the smallest, and additive"
+  },
+  {
+   "finding": "R6: gap 1, the call reader cannot read std::make_shared<X>(args)",
+   "fixer_outcome": "needs a shared change (recorded); not fixed in cpp's files",
+   "seen": "calls.ts readCalls reads args only if '(' follows the name; guard.ts:418-421 and :435 produce the two ctor messages I see. No class recorded (the page line is true: Main.fragment.cpp:28, 35)",
+   "right": true,
+   "evidence": "Caveat found by my attack B2: cpp's own forms CAN make the check pass, with a false `calls.parenless: true` plus the ctor[4] citation dropped (guard 4/4). So 'cannot express it' holds for a true expression only, and the guard does not stop the false one (see shared_changes)"
+  },
+  {
+   "finding": "R7: gap 2 (no live transport) also holds for zig",
+   "fixer_outcome": "needs a shared change (recorded, zig added)",
+   "seen": "tm/zig/core/utility.zig:2328-2337 default_http_fetch returns fetch_transport 'live transport unavailable'",
+   "right": true,
+   "evidence": "grep over tm/*: c (utility/http.c 'The default live transport'), clojure (core.clj java.net.http), rust (fetcher.rs ureq) ship one; only cpp, ocaml and zig refuse. RUN: NEW B root quick start aborts with fetch_no_transport. No class recorded; every printed unit is true, so nothing in the port's records tracks it"
+  },
+  {
+   "finding": "Reviewer gap 3 (thrown type in the throw clause), judged not needed",
+   "fixer_outcome": "not a defect (agree)",
+   "seen": "the tutorial's catch clause names SdkErrorPtr (B cpp/README.md try blocks)",
+   "right": true,
+   "evidence": "agree it is optional for the page. But attack A shows the catch type itself is unchecked mechanically"
+  },
+  {
+   "finding": "Reviewer page note: unported README Error handling shows TypeScript",
+   "fixer_outcome": "not fixed: outside the port",
+   "seen": "out/new/B/cpp/README.md '## Error handling' prints ```ts blocks",
+   "right": true,
+   "evidence": "printed by unported components (not in section 4's list); same on OLD"
+  }
+ ],
+ "state": [
+  {
+   "check": "npm run build in sdkgen/ts; git status --short",
+   "fixer_said": "exit 0; empty",
+   "result": "exit 0 (6.8 s, incremental: tsc --build, prune, check-scaffold, check-fixture, stage-scaffold all ran); git status --short empty"
+  },
+  {
+   "check": "guard: node --test --test-name-pattern '^cpp: ' dist-test/runtimefacts.test.js",
+   "fixer_said": "3 pass, 1 fail (the two ctor messages)",
+   "result": "4 tests, 3 pass, 1 fail: 'the declared facts are what its runtime defines' with exactly the two ctor messages"
+  },
+  {
+   "check": "reader: node --test dist-test/runtimereader.test.js",
+   "fixer_said": "22/22",
+   "result": "22/22, cpp included"
+  },
+  {
+   "check": "golden: node --test dist-test/characterize.test.js",
+   "fixer_said": "2/2, no golden change",
+   "result": "2/2 pass (9.5 s); git diff shows only cpp's 3 lines (+Naming_cpp, +Syntax_cpp, -3 README components)"
+  },
+  {
+   "check": "suite without lanes, --test-concurrency=2",
+   "fixer_said": "2635 tests, 2629 pass, 1 fail, 5 skipped, 339 s",
+   "result": "2635 tests, 2629 pass, 1 fail (cpp: the declared facts are what its runtime defines), 5 skipped, 381 s"
+  },
+  {
+   "check": "REGEN=1 tools/portcheck.sh sdkgen out cpp (reviewed)",
+   "fixer_said": "exit 1; ledger 59/19/13975, shared 21/0/67, by hand 20/3/58, missing 3/0/36, OPEN 0, ref defect 1, contradictions 1; blocks 23/6/0/19 c17, 0/0/0/19 c27, 186/0/0/128 c6, OPEN 0; purity 0 open 1 accepted; pagecheck 0; callcheck 441/0; guard 3/1; 1813 sources current; 203 records STALE 0; facts attested 4 by hand 3; cited 15 pinned 9; matched 88 (2 unreviewed); absent 28 explained",
+   "result": "exit 1, identical screen, number for number; 21 of 21 variations regenerated. Fails only on defect ea3d2bd9d5 and the guard's ctor check. Run again after my attacks were restored: identical"
+  },
+  {
+   "check": "SCRATCH=1 REGEN=1 (reported, exits 1 by design)",
+   "fixer_said": "ledger OPEN 23/3/95; blocks OPEN 17/27/6; UNATTESTED or NOT JUDGED 3; absent 28, 0 explained, 10 ABSENT NO REASON lines; DROPPED 0",
+   "result": "identical: ledger OPEN 23/3/95, blocks OPEN 17/27/6, 3 (named NOT JUDGED, ref.noun and ref.valueType.OBJECT UNATTESTED), absent 28 with 0 explained, 10 'ABSENT, NO REASON' lines, DROPPED 0, matched 89. Parts reading no hand record: build current, 21 regenerated, purity 0 open, pagecheck 0, callcheck 0 of 441, fact sheet 0 without an account; guard fails on ctor only"
+  },
+  {
+   "check": "cpp documentation lane (g++ -fsyntax-only over every cpp block, 6 models), NEW",
+   "fixer_said": "6/6, 16 s",
+   "result": "6/6, 15.2 s. Negative control (attack D): one wrong member name fails 0/6 with a compile error naming it"
+  },
+  {
+   "check": "tools/before/run.sh sdkgen cpp (structural README test), NEW",
+   "fixer_said": "not re-run (porter: 87/69/69)",
+   "result": "87, 69, 69 checks, 0 failures (default, crud, basic-server); 30 s"
+  },
+  {
+   "check": "root quick start from the repository root of a generated B SDK (my rootrun.sh: whole SDK, make libsdkfeature.a, Quickstart ### C++ block as main)",
+   "fixer_said": "both need -iquote cpp; NEW aborts fetch_no_transport; OLD aborts server_var_required (S49)",
+   "result": "same. NEW: no flag -> 'core/sdk.hpp: No such file or directory'; -iquote cpp compiles (9 s), aborts 134; diagnostic catch: fetch_no_transport. OLD (oldcopy 9aebaf9e): same include need; compiles with no <iostream>; aborts 134; server_var_required tenant"
+  },
+  {
+   "check": "guard account: SDKGEN_GUARD_REPORT=1 'account, per language'",
+   "fixer_said": "derived 50, cited 18, language 1, convention 8, excepted 0",
+   "result": "identical; types column cpp; constructor ProjectNameSDK through tm"
+  },
+  {
+   "check": "node tools/sharewords.js --clone sdkgen --root out/new --lang cpp",
+   "fixer_said": "132 of 56,196 words (0.2%: ref.noun 113, ref.maps 19); tutorial 76.1%, rootquick 8.0%, reference 96.2%; notes 0; provider prose literals 10",
+   "result": "identical"
+  },
+  {
+   "check": "line counts: git diff --numstat v33-frozen..HEAD; wc -l",
+   "fixer_said": "Syntax 187, Naming 24, forms +42 -1 (133), deleted 734 (233/406/95), golden +2 -3",
+   "result": "identical"
+  },
+  {
+   "check": "what the port touched: git diff --stat v33-frozen..HEAD; git -C tools diff --stat a3fd3b8..HEAD; commit messages",
+   "fixer_said": "cpp files and cpp's golden lines only; no trailer",
+   "result": "7 files, all cpp's own plus 3 golden lines: no file outside section 4. tools: classes/cpp.json, counts/cpp.json, hand/cpp.json only. 5 messages (3 sdkgen, 2 tools): no trailer, no tool or model name"
+  },
+  {
+   "check": "other languages: diff -rq -x cpp P/base33/out/new out/new, and the root READMEs outside ### C++",
+   "fixer_said": "19 root README.md differ; 134 lines, 0 outside a C++ section",
+   "result": "diff -rq lists 19 files, all root README.md, nothing else; my rootcmp.js (fence-aware, removes each ### C++ section): 21 compared, 19 differ, 0 differ outside a ### C++ section"
+  }
+ ],
+ "attacks": [
+  {
+   "by": "A: changed example. The attempt printer catches `const std::exception& err` and prints `err.what()` (Syntax_cpp.ts:166-167). It compiles, but the runtime throws std::shared_ptr<SdkError> (types.hpp:46, pipeline.hpp `throw raised;`)",
+   "change": "guard: only the existing ctor x2. Lane 6/6 PASS. callcheck 0, purity 0, pagecheck 0. Only trace: tutorial blocks identical 23->0, otherwise 19->42, OPEN 6 (decidable by hand). RUN: the attacked tutorial block, compiled against my generated B SDK, aborts (exit 134, 'terminate called after throwing an instance of std::shared_ptr<sdk::SdkError>'); NEW's block catches and continues (exit 0)",
+   "caught": false
+  },
+  {
+   "by": "B: a port silencing gap 1 in its own forms: `calls: { ..., parenless: true }` in ts/test/runtimeforms/cpp.ts",
+   "change": "'the declared facts are what its runtime defines' now PASSES (the ctor gap is hidden). The only failure: account 'cite ref.facts.ctor[4]: the guard re-derives this fact; drop the citation'",
+   "caught": false
+  },
+  {
+   "by": "B2: B completed as the guard's message asks: parenless plus the ctor[4] citation dropped",
+   "change": "guard 4/4 PASS; the one command fails only on the defect ea3d2bd9d5. Nothing names the false call notation. readCalls (parenless branch) reads `make_shared<DemoSDK>(` as a 0-argument call",
+   "caught": false
+  },
+  {
+   "by": "C: a wrong derived fact pair, consistent with itself: facts.collection '`std::list`' and ref.facts.op.list '-> std::list<SdkEntityPtr>'",
+   "change": "guard: 'op list: list returns std::vector<SdkEntityPtr> in the runtime, std::list<SdkEntityPtr> declared'; account: 'facts.collection: cite the runtime file and a quote that shows \"`std::list`\"' and 'ref.facts.op.list: the guard could not re-derive it'; tools ledger OPEN 2/1/2, rootquick blocks OPEN 5",
+   "caught": true
+  },
+  {
+   "by": "D: lane negative control: the catch clause reads err->message (SdkError has msg, not message)",
+   "change": "cpp documentation lane fails 0/6, each with a g++ error naming the member",
+   "caught": true
+  },
+  {
+   "by": "control for R4: compiled guard.js:538 patched to esc(), then client.planet() injected into the compiled Syntax_cpp.js (both restored, cmp identical)",
+   "change": "frozen guard: passes (ctor only); fixed guard: 'op list accessor: planet is declared on the instance, called through ->; ... calls it through .'",
+   "caught": true
+  }
+ ],
+ "ran": "All in my copy, /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/verify/cpp/ws, with node v24.22.1 and g++ 13.3.0.\n\n**Builds and checks:**\n- `npm run build`: exit 0, before and after every attack.\n- The cpp guard; the reader; the golden.\n- The suite without lanes, at `--test-concurrency=2`.\n- `REGEN=1 tools/portcheck.sh sdkgen out cpp`: twice clean, plus once per attack A, B, B2 and C.\n- `SCRATCH=1 REGEN=1`.\n- The cpp documentation lane (NEW, and in attacks A and D).\n- `tools/before/run.sh sdkgen cpp` (NEW).\n- The guard account report; `tools/sharewords.js`.\n- `diff -rq -x cpp` against base33/out/new, and my `rootcmp.js`.\n\n**My scripts and runs:**\n- `rootrun.sh`: the root quick start, NEW and OLD B, from the root of an SDK generated with `work/gensdkvar.js` from my clone and from oldcopy (9aebaf9e).\n- Two probes of the fixer's, compiled and run against SDKs I regenerated: `remove-main.cpp` and `notest-main.cpp`.\n- A guard control: `guard.js:538` patched to `esc()`, with and without `client.planet()`.\n- `attack.sh` with four patches, each restored with `git checkout`, then a rebuild and a reset of `classes/cpp.json`.\n\nToolchain (`command -v`): node 24.22.1, npm 11.19.1, g++ 13.3.0, make 4.3, php 8.3.6, javac/java/mvn/gradle present; kotlinc, kotlin, scala, scala-cli, sbt and dotnet missing.\n\nLogs: verify/cpp/logs/, attacks/<name>/, ctl/, root/, probe/, and PROGRESS.md.",
+ "read": "- **The briefs and guide:** verify.md, brief.md, brief5.md, brief7.md, and PORTING.md sections 0-13.\n- **The port:**\n  - Syntax_cpp.ts and Naming_cpp.ts in full;\n  - runtimeforms/cpp.ts in full;\n  - hand/cpp.json: the changed records and every record that mentions iostream;\n  - the hand diff c6a61ab..fcbd22a;\n  - git diffs and commit messages.\n- **The shared code:** guard.ts (spell and pattern at :81-82, sig() at :119-160, the accessor checks at :243-250 and :333-352, the constructor and operation calls at :400-476); calls.ts readCalls; runtimeprose.ts opText and createComment.\n- **The runtime:**\n  - EntityRemoveOp and EntityLoadOp fragments;\n  - pipeline.hpp: the throw-false return, and the fetch at :600-616;\n  - types.hpp: SdkError at :106-125, SdkErrorPtr at :46, runOp;\n  - tm/cpp/core/sdk.hpp; tm/cpp/feature/log.hpp:1-15; the includes Config_cpp.ts emits; the generated cpp Makefile.\n- **Other runtimes:**\n  - tm/zig/core/utility.zig:2322-2340 and tm/ocaml/sdk_runtime.ml:1570-1581;\n  - a grep of tm/* for a missing transport (c, clojure and rust ship one);\n  - a sweep of every language's remove fragment for `resdata`.\n- **The survey's cpp Q6 entry**, tools/gen/variations.js, and portcheck.sh.\n- **Generated pages:** no-test README and REFERENCE (the mock lines), B REFERENCE remove, the crud-basic tutorial's remove step, B README error handling, the root README Quickstart.",
+ "touched": "I wrote only under `P/verify/cpp/`: PROGRESS.md, attack.sh, rootrun.sh, rootcmp.js, patches/, logs/, attacks/, ctl/, root/ and probe/.\n\n`ws/` is my copy of `P/ports/cpp`. I changed it only temporarily, one attack or control at a time:\n- each source change was restored with `git checkout -- .` and a rebuild;\n- the two compiled files of the guard control were restored and are byte-identical by `cmp`;\n- tools' `classes/cpp.json` was reset after each attacked run.\n\nAfter a final clean `REGEN=1` run, `git status --short` is empty in ws/sdkgen and ws/tools, and HEAD is 229312e7.\n\nI did not modify `P/ports/cpp`, `P/base33` or anything under `/home/user`. I did not commit, push or publish anything.\n\nThe lane and the suite create their own temporary folders under the system `/tmp` (`os.tmpdir()`, the repository's test behaviour). The `sdkgen-docex-*` folders of my lane runs were removed by the test.",
+ "unverified": "**For want of a compiler: none for cpp.** g++ is here.\n\n**Compiled by no tool, not for want of a compiler:**\n- The changed blocks of the 21 variations: the tool counts 25 tutorial, 19 root quick start and 146 reference. I did not compile them one by one.\n- What I compiled: the lane's own 6 models (every block), the B root quick start on NEW and OLD, and the two probes. The reviewer reports compiling 146 NEW blocks of 4 variations; I did not repeat that.\n\n**Not run against a working transport.** The cpp runtime has none without `system.fetch`, so:\n- the root quick start runs only as far as `fetch_no_transport` (NEW) or `server_var_required` (OLD);\n- the probes used an injected fetch.\n\n**Not run at all:**\n- the OLD cpp lane, and `run.sh` on OLD (no page or runtime has changed since the porter's OLD 6/6 and 85/67/67);\n- `STRICT_SENTENCES=1` (2 matched shared sentences have no verdict).\n\n**Read, not run:**\n- that ocaml's and zig's missing transport behaves at runtime as its code reads;\n- that `parenless` also hides a wrong argument count (from readCalls' code: it reads 0 arguments).",
+ "other_languages": "`diff -rq -x cpp P/base33/out/new verify/cpp/ws/out/new` lists 19 files, all of them root `README.md`, and nothing else.\n\n`rootcmp.js` is fence-aware: it removes every `### C++` section up to the next heading of level 1 to 3. It compared 21 root READMEs: 19 differ, 0 outside a `### C++` section.\n\nThe port's git diff touches no other language's directory and no other language's golden line."
+}

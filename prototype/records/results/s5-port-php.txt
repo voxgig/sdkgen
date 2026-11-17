@@ -1,0 +1,613 @@
+lang: php
+ok: True
+summary: The php port passes. I followed the version 3.3 guide and touched only php's own files. Final reviewed run (REGEN=1, after a fresh build, with my hand records) printed PORTCHECK php: PASS and exited 0, with 0 OPEN, 0 defect and 0 STALE. Its 5 contradictions all sit in the unported php README. The SCRATCH=1 run exits 1, as designed for a newly ported language. Guard ^php: 4/4 (forms, facts against runtime, account, negative controls). Suite without toolchain lanes: 2635 tests, 2630 pass, 0 fail, 5 skipped. The php README example lane passes the same on OLD and NEW in all three models (default, crud, basic-server: 4 tests, 19 assertions, 0 failures; root README 4/4, README 20/20 or 18/18, REFERENCE 21/21 or 14/14 executed). I also ran the root quick start from the repository root of each generated SDK: OLD fails at `require_once 'demo_sdk.php'` (Failed opening required) in all three; NEW (`require_once 'php/demo_sdk.php'`) gets past the require and stops only at the live request. No interface change was needed, breaking or additive, and no defect class was recorded. I found three small gaps or losses and describe them under interface_gaps. Lines: 734 old component lines deleted (224 Quick + 420 Ref + 90 TopQuick); added 168 provider, 26 hook, +40 forms, +7 utility_php, +2/-1 Main_php.
+interface_gaps:
+  - [0]
+    construct: Entity class name: the description computes it with entityClassName(e, coll) (no case folding, ts/src/helpers/sdkdesc.ts:272). The php runtime names its classes with entityClassName(entity, entityCollection(model), true), case-folded because PHP class names are case-insensitive (MainEntity_php.ts:20, Entity_php.ts:27, EntityOperation_php.ts:33).
+    file_line: ts/src/helpers/sdkdesc.ts:272; src/cmp/php/MainEntity_php.ts:20
+    smallest_change: an optional className in DescSymbols, from the naming hook, used over the shared derivation where present (or a fold flag on the description)
+    breaking: False
+    providers_forced: php only (no other component passes fold=true; grep over src/cmp/*/). No variation of the 21 shows a divergence: guardModelNames already renames case-folded collisions, so this is latent, not observed
+    made: False
+    worked_around: no
+  - [1]
+    construct: OLD wrote entity getter return types in the heading (`data_get(): array`, `match_get(): array`). The runtime declares none (Entity.fragment.php:111,131), so the true signature has none. ReadmeRef.ts prints Member.returns only for client members (clientMember, ReadmeRef.ts:236), never for entity members, so the cited returns:'array' on data_get and match_get is declared but not printed
+    file_line: ts/src/cmp/ReadmeRef.ts:236
+    smallest_change: print **Returns:** for an entity member that declares returns, as for a client member
+    breaking: False
+    providers_forced: none (optional field; providers that declare entity returns would gain a line)
+    made: False
+    worked_around: no; recorded as correction:signature-from-runtime, and the record type is still stated in the tutorial ('(an `array`)')
+  - [2]
+    construct: The `ref.facts.ctor[0]` citation of the line `require_once __DIR__ . '/demo_sdk.php';` cannot quote the file name. After extracting phpSdkFile into utility_php.ts, the only runtime-file quote is Main_php.ts `File({ name: phpSdkFile(model) }, ...)`. The guard rejects utility_php.ts as 'not one of the php runtime's files', yet it accepted the citation without the token demo_sdk/_sdk.php in any quote
+    file_line: ts/test/runtimeforms/php.ts (cite ref.facts.ctor[0]); src/cmp/php/utility_php.ts:11
+    smallest_change: count the language's utility_<lang>.ts as a runtime file for citations, or have the guard require the filled {module} token in some quote
+    breaking: False
+    providers_forced: rb and lua have the same shape (rbSdkFile, luaSdkModule)
+    made: False
+    worked_around: no
+shared_files_touched:
+not_done:
+  - No lane in generatedcompile.test.ts was run (`php: the root README test block`, `php: the README test-mode block`, `php: README output stays bounded`). I ran tools/before/run.sh (the generated SDK's own ReadmeExamplesTest via phpshim) on OLD and NEW instead.
+  - The 21 review variations were not compiled or run: 45 tutorial, 19 root and 118 reference changed blocks were compiled by nothing (the tool's count). The lane covers only its own three models, and it strips each block's require_once and swaps the constructor for the test constructor.
+  - I did not run the REFERENCE constructor block (`require_once __DIR__ . '/demo_sdk.php';`) or the tutorial client block as written from php/. Only the root quick start was run as printed.
+  - STRICT_SENTENCES=1 was not run: 2 matched shared sentences have no verdict.
+  - I did not correct the unported php README sections (README.md:219, 225-231, 271). They are out of scope and recorded as contradictions.
+  - Package_php.ts still spells the SDK file name inline (composer.json autoload files). Only Main_php.ts was switched to phpSdkFile.
+commits:
+  - 5a7c41e4 php: print the README tutorial, root quick start and REFERENCE through shared code. Files: Syntax_php.ts (new), Naming_php.ts (new), utility_php.ts, Main_php.ts, ts/test/runtimeforms/php.ts; deletes ReadmeQuick_php.ts, ReadmeRef_php.ts, ReadmeTopQuick_php.ts. No trailer in the body.
+  - f06c5a1a php: golden for the ported components. Only ts/test/golden/add-output.txt, php lines only (4 insertions, 5 deletions).
+  - tools f010878 php: hand records, purity allowances, normalizer counts and classes. Files: hand/php.json, purity-allow/php.json, counts/php.json, classes/php.json.
+  - After the commits, npm run build exits 0 and `git status --short` is empty in sdkgen and in tools. Bodies checked with `git log --format=%B 0065f1e2..HEAD`: no trailer.
+portcheck: |
+  Final screen of `REGEN=1 tools/portcheck.sh sdkgen out php`, exit 0 (wide lines trimmed by me at 240 characters):
+  == portcheck php ==
+  section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+  tutorial                   59 |      50     22        0      22       6     0       0 | 0
+  rootquick                  19 |       4      0        0       3       1     0       0 | 0
+  reference               14766 |     147     47        0      65      30     0       0 | 5
+  section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+  tutorial                   3        16       0        29 |      27    0      0 | yes (php); 45 changed blocks compiled by nothing
+  rootquick                  0         0       0        19 |      30    0      0 | yes (php); 19 changed blocks compiled by nothing
+  reference                195         0       0       118 |      13    0      0 | yes (php); 118 changed blocks compiled by nothing
+  contradictions (5; counted, not failed): 9a06a9079a (README.md:229), 8456c2ee6c (README.md:271), bff341cf32 (README.md:219 no-test), fdc80fe847 (README.md:225 ref-issues), ef282389f3 (README.md:226 ref-issues)
+  purity: 0 open, 2 accepted | notes declared 0, note regions found 0
+  page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1314 articles checked; findings 0
+  printed calls (callcheck, no compiler): 386 calls of 23 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+  guard: pass (pass 4 fail 0 )
+  build: 1813 sources checked, current
+  hand records: 237, 5 quote text (10 quotations); STALE 0
+  facts (language and convention, against the OLD page): attested 4, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 20, pinned prose 10
+  shared sentences: matched 69, of which against a sentence nobody reviewed 2 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0; absent here but printed by every reference of this result style 33 (33 explained)
+  fact sheet: factsheet php: 72 facts, 0 with no account, 0 unattested
+  PORTCHECK php: PASS
+  (exit 0)
+scratch: |
+  Command: `SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out php`. Exit 1, as designed.
+  - Ledger OPEN by section: tutorial 28, rootquick 4, reference 100. Shared matches: 22, 0, 47.
+  - Blocks OPEN: tutorial 27, rootquick 30, reference 13. Block outcomes are the same as in the reviewed run (3/16/0/29, 0/0/0/19, 195/0/0/118).
+  - Facts: NOT JUDGED named='call' and UNATTESTED ref.noun='Methods' (2 unattested); attested 4; not judged 1.
+  - ABSENT: 33 (0 explained): tutorial 5, rootquick 3, reference 25. DROPPED: 0.
+  - The parts that read no hand record were clean, the same as in the reviewed run: build current (1813 sources), 21 of 21 regenerated, guard 4/4, purity 0 open (2 accepted), pagecheck 0 findings, callcheck 0 findings on 386 calls.
+facts:
+  - [0]
+    path: facts.method.*
+    value: list/load/create/update/patch/remove
+    account: derived
+    evidence: Entity*Op.fragment.php public function list/load/...(...)
+  - [1]
+    path: facts.named
+    value: call
+    account: hand (convention, NOT JUDGED by the minimal pair)
+    evidence: OLD comments 'load() returns the ENTITY', OLD REFERENCE 'call with no argument to list all'
+  - [2]
+    path: facts.async
+    value: false
+    account: derived
+    evidence: plain returns, no promise
+  - [3]
+    path: facts.result
+    value: throw
+    account: derived
+    evidence: MakeError.php:74 throw $sdk_err
+  - [4]
+    path: facts.collection
+    value: array
+    account: cited, pinned prose
+    evidence: tm/php/utility/MakeResult.php: $entities = []; ... $entities[] = $ent; ... $result->resdata = $entities;
+  - [5]
+    path: facts.record
+    value: ${var}->data_get()
+    account: derived
+    evidence: Entity.fragment.php:111 public function data_get()
+  - [6]
+    path: facts.recordType
+    value: array
+    account: cited
+    evidence: Entity.fragment.php:109 '@return EntityName|array The current EntityName data as an assoc-array.'
+  - [7]
+    path: facts.arity
+    value: 0
+    account: derived
+    evidence: every operation parameter has a default (?array $reqmatch = null, $ctrl = null)
+  - [8]
+    path: facts.prints
+    value: listFields
+    account: convention, ATTESTED by the minimal pair (OLD reads listFields in 33, other 0)
+    evidence: OLD tutorial list echo $item["id"] . " " . ...; load print_r
+  - [9]
+    path: ref.facts.entityBy
+    value: class
+    account: convention, ATTESTED (187/0)
+    evidence: OLD '## AmbientEntity'
+  - [10]
+    path: ref.facts.noun
+    value: Methods
+    account: hand (UNATTESTED in the new context 'Client Methods')
+    evidence: OLD '### Instance Methods', '### Common Methods'
+  - [11]
+    path: ref.facts.none
+    value: null
+    account: cited
+    evidence: EntityLoadOp.fragment.php:15 'public function load(?array $reqmatch = null, $ctrl = null): mixed'
+  - [12]
+    path: ref.facts.keys
+    value: member
+    account: convention, ATTESTED (171/0). Version 3.2 read 'bare'; the minimal pair says member
+    evidence: OLD '$options["apikey"]'
+  - [13]
+    path: ref.facts.maps
+    value: arrays
+    account: language, ATTESTED (1 context held)
+    evidence: OLD 'arrays are JSON-serialized'
+  - [14]
+    path: ref.facts.container
+    value: array
+    account: cited
+    evidence: Main.fragment.php:34 'public function __construct(array $options = [])'
+  - [15]
+    path: ref.facts.valueType
+    value: STRING string, OBJECT array, ANY mixed
+    account: derived
+    evidence: canonToType column php
+  - [16]
+    path: ref.facts.ctor[0]
+    value: require_once __DIR__ . '/{module}';
+    account: cited
+    evidence: Main_php.ts 'File({ name: phpSdkFile(model) }, () => {' and Main.fragment.php "require_once __DIR__ . '/utility/struct/Struct.php';". The quotes do not hold the file name; see interface_gaps
+  - [17]
+    path: ref.facts.ctor[1]
+    value: (blank)
+    account: convention
+    evidence: 
+  - [18]
+    path: ref.facts.ctor[2]
+    value: $client = new {ctor}($options);
+    account: derived (__construct on the type, 0..1 arguments)
+    evidence: Main.fragment.php:34
+  - [19]
+    path: ref.facts.test[0]
+    value: sig '{client}::test(?array $testopts = null, ?array $sdkopts = null): self', call '$client = {client}::test();'
+    account: derived (static, on the type, through ::)
+    evidence: Main.fragment.php:393
+  - [20]
+    path: ref.facts.testMock
+    value: generated
+    account: cited ahead, pinned
+    evidence: Main_php.ts 'return new ${model.const.Name}BaseFeature();'
+  - [21]
+    path: ref.facts.accessor
+    value: sig '{accessor}($data = null)', arg entopts, param data, cached true
+    account: sig/arg/param derived; cached cited ahead, pinned
+    evidence: MainEntity_php.ts:40-49
+  - [22]
+    path: ref.facts.op.*
+    value: list|load|remove(?array $reqmatch = null, $ctrl = null): mixed; create|update|patch(?array $reqdata = null, $ctrl = null): mixed
+    account: derived
+    evidence: Entity*Op.fragment.php:12/15
+  - [23]
+    path: ref.facts.client[0]
+    value: options_map(): array, copy true
+    account: sig derived; copy cited, pinned
+    evidence: Main.fragment.php:116 '$out = Struct::clone($this->options);'
+  - [24]
+    path: ref.facts.client[1]
+    value: get_utility(), returns ProjectNameUtility, copy true, kind utility
+    account: sig derived; returns cited; copy cited to the allocation; kind cited, pinned
+    evidence: Main.fragment.php:135 'return ProjectNameUtility::copy($this->_utility);'; UtilityType.php:58-60 'public static function copy(ProjectNameUtility $src): ProjectNameUtility { $u = new ProjectNameUtility();'. The copy is shallow (closure members shared)
+  - [25]
+    path: ref.facts.client[2..3]
+    value: direct(array $fetchargs = []): mixed; prepare(array $fetchargs = []): mixed
+    account: derived
+    evidence: Main.fragment.php:143,222
+  - [26]
+    path: ref.facts.entity[0]
+    value: data_get(), returns array, copy true
+    account: sig derived; returns cited; copy cited, pinned
+    evidence: Entity.fragment.php:109,114 'return Struct::clone($this->_data);'
+  - [27]
+    path: ref.facts.entity[2]
+    value: match_get(), returns array, copy true
+    account: sig derived; returns cited; copy cited, pinned
+    evidence: Entity.fragment.php:129,134 'return Struct::clone($this->_match);'
+  - [28]
+    path: ref.facts.entity[1,3,4,6]
+    value: data_set($data): void, match_set($match): void, make(): self, get_name(): string
+    account: derived; renames args->data/match with namesWhy
+    evidence: Entity.fragment.php:48,90,99,120
+  - [29]
+    path: ref.facts.entity[5]
+    value: streamGenerator stream(string $action, ?array $args = null, ?array $callopts = null): \Generator, runs iterate
+    account: derived (runs from the forms' stream quotes)
+    evidence: Entity.fragment.php:148,195,205
+  - [30]
+    path: ref.facts.direct
+    value: returns array, okFalse false
+    account: returns cited; okFalse cited ahead, pinned
+    evidence: Main.fragment.php:237 'private function op_denied(string $op): array', :321-330 $out, :262 'return ["ok" => false, "err" => $err];'
+  - [31]
+    path: ref.facts.prepare
+    value: returns array, fails style
+    account: returns cited; fails cited, pinned
+    evidence: MakeFetchDef.php:11 '...call(ProjectNameContext $ctx): array'; Main.fragment.php:257 comment 'prepare() now raises on error'; MakeError.php:74 'throw $sdk_err;'
+  - [32]
+    path: ref.facts.body
+    value: values 'a string of bytes or text, or a stream', once 'a stream'
+    account: cited, pinned prose, comment only
+    evidence: tm/php/utility/Media.php:104-105 '// A string of bytes or text, or a stream, sent as it is. A stream can be' / '// read once, so it is read here, before the first attempt, and a retry'
+  - [33]
+    path: ref.facts.cancel
+    value: false
+    account: cited absence over the whole php runtime (137 files)
+    evidence: excluded regions, each with a reason: Entity.fragment.php stream signal lines (fact ref.facts.streamSignal); CostFeature.php:156,178 comments; SecretsFeature.php:37 comment ('to signal'); TimeoutFeature.php:10-11,60 comments saying php cannot abort a request
+  - [34]
+    path: ref.facts.streamSignal
+    value: true
+    account: cited ahead, pinned
+    evidence: Entity.fragment.php:152,179
+  - [35]
+    path: ref.facts.deleted
+    value: ${var}->deleted()
+    account: derived
+    evidence: Entity.fragment.php:85 'public function deleted(): bool'
+  - [36]
+    path: optional: accessor.cached
+    value: declared true
+    account: runtime has it
+    evidence: MainEntity_php.ts:43-47
+  - [37]
+    path: optional: streamSignal
+    value: declared true
+    account: runtime has it
+    evidence: Entity.fragment.php:152,179-190,206,226
+  - [38]
+    path: optional: copy on match getter
+    value: declared true
+    account: runtime has it
+    evidence: Entity.fragment.php:134
+  - [39]
+    path: optional: copy on utility getter
+    value: declared true
+    account: runtime has it, a new object
+    evidence: Main.fragment.php:135; UtilityType.php:60
+  - [40]
+    path: optional: memberNamed
+    value: not declared (default call)
+    account: php writes calls with parentheses
+    evidence: calls: { on: { instance: ['->'], type: ['::'] } }
+  - [41]
+    path: optional: field flag
+    value: not declared
+    account: no documented member is a field: get_name() is a method (Entity.fragment.php:48). The client's public properties $mode, $features, $options (Main.fragment.php:27-29) are not documented
+    evidence: 
+  - [42]
+    path: optional: deleted
+    value: declared
+    account: runtime has it
+    evidence: Entity.fragment.php:85
+  - [43]
+    path: optional: arity
+    value: declared 0
+    account: derived
+    evidence: all parameters have defaults
+  - [44]
+    path: optional: layout.dir + imports(place)
+    value: declared
+    account: path-relative require_once; run from the repository root
+    evidence: ran: OLD fails at require, NEW passes it
+  - [45]
+    path: optional: notes.top
+    value: not declared
+    account: no php-only fact to add
+    evidence: 
+table_rows_wrong:
+  - [0]
+    row: client members (php)
+    file_line: src/cmp/php/fragment/Main.fragment.php:27-29
+    runtime_shows: public properties $mode, $features, $options are part of the client's public surface. The forms' public regex reads functions only, so the table omits them
+    forms_change: none: no page fact rests on them (undocumented)
+  - [1]
+    row: Calls: not stated yet
+    file_line: ts/test/runtimeforms/php.ts
+    runtime_shows: -> on an instance, :: on the class, new runs __construct
+    forms_change: added calls: { on: { instance: ['->'], type: ['::'] } } (__construct reached through tokens.ctor)
+optional_facts_read:
+  - [0]
+    fact: ref.facts.accessor.cached
+    file_line: src/cmp/php/MainEntity_php.ts:43-47
+    runtime_shows: with null: returns the kept $this->_<field>, made on the first call; with options: new instance
+    declared: true
+  - [1]
+    fact: ref.facts.streamSignal
+    file_line: src/cmp/php/fragment/Entity.fragment.php:152,179-190,206,226
+    runtime_shows: reads callopts['signal'] and returns from the generator when aborted() between items
+    declared: true
+  - [2]
+    fact: copy on match getter
+    file_line: src/cmp/php/fragment/Entity.fragment.php:134
+    runtime_shows: return Struct::clone($this->_match);
+    declared: copy: true
+  - [3]
+    fact: copy on utility getter
+    file_line: Main.fragment.php:135; tm/php/core/UtilityType.php:58-60
+    runtime_shows: ProjectNameUtility::copy allocates new ProjectNameUtility() and copies member references (shallow)
+    declared: copy: true
+  - [4]
+    fact: ref.facts.memberNamed
+    file_line: n/a
+    runtime_shows: calls written with parentheses
+    declared: not declared (call)
+  - [5]
+    fact: field on a member
+    file_line: Entity.fragment.php:48
+    runtime_shows: get_name() is a method; no documented member is a field
+    declared: none
+  - [6]
+    fact: ref.facts.deleted
+    file_line: Entity.fragment.php:85; remove marks via markDeleted, Entity.fragment.php:399-401
+    runtime_shows: deleted(): bool. Note: the runtime comments at :70-72 and :394-395 say remove 'KEEPS the data it held', but EntityRemoveOp.fragment.php:31-33 replaces _data with resdata when present (half true, as brief 7 says)
+    declared: ${var}->deleted()
+  - [7]
+    fact: facts.arity
+    file_line: Entity*Op.fragment.php
+    runtime_shows: 0 required parameters
+    declared: 0
+  - [8]
+    fact: layout.dir / imports place
+    file_line: Syntax_php.ts imports
+    runtime_shows: require_once is path-relative
+    declared: dir: target.name; 'php/demo_sdk.php' for top
+  - [9]
+    fact: notes.top
+    file_line: n/a
+    runtime_shows: nothing php-only
+    declared: none
+notes:
+defects_recorded:
+review_counts:
+  - [0]
+    section: tutorial
+    same: 59
+    shared_matched: 22 (classes 50)
+    matched_unreviewed: 0 of the 2 page-wide
+    by_hand: 22
+    missing: 6 (all restored:shared or correction: the load/list/create/update comments moved into shared sentences, Patch comment, the ref-issues heading)
+    contradictions: 0
+    blocks: identical 3, corrected 16, unified 0, otherwise 29 (45 changed blocks compiled by nothing); 27 classes, all by hand
+  - [1]
+    section: rootquick
+    same: 19
+    shared_matched: 0 (classes 4)
+    matched_unreviewed: 0
+    by_hand: 3
+    missing: 1 (the root load comment, restored in shared form)
+    contradictions: 0
+    blocks: identical 0, corrected 0, unified 0, otherwise 19 (the require path changes in every block); 30 classes, by hand
+  - [2]
+    section: reference
+    same: 14766
+    shared_matched: 47 (classes 147)
+    matched_unreviewed: 2 page-wide (STRICT_SENTENCES not run)
+    by_hand: 65
+    missing: 30 (restored as shared sentences; corrections S25/S09/U34/decision 4; one dropped: '\Exception' as err's type)
+    contradictions: 5 (all against unported README lines; REFERENCE the true side)
+    blocks: identical 195, corrected 0, unified 0, otherwise 118, old-only 1 (ref-issues remove, S25); 13 classes, by hand
+hand_decisions:
+  - [0]
+    id: facts.named
+    kind: fact
+    outcome: call
+    why: OLD writes load(), list() in prose
+  - [1]
+    id: facts.ref.noun
+    kind: fact
+    outcome: Methods
+    why: OLD 'Instance Methods'/'Common Methods'
+  - [2]
+    id: rootquick e8bfeb55bb and 10 more
+    kind: block
+    outcome: correction:root-import-place
+    why: ran from the repository root: OLD fails at require_once, NEW passes
+  - [3]
+    id: 9a06a9079a, fdc80fe847, ef282389f3
+    kind: echo
+    outcome: contradiction
+    why: the unported README entity table says each accessor creates an instance; false for a call with null (MainEntity_php.ts:43-47)
+  - [4]
+    id: 8456c2ee6c
+    kind: echo
+    outcome: contradiction
+    why: README:271 says err is set on any error; a readable non-2xx response carries no err (Main.fragment.php:321-330)
+  - [5]
+    id: bff341cf32
+    kind: echo
+    outcome: contradiction
+    why: README:219 promises a mock transport without the test feature
+  - [6]
+    id: afc25ceae3/581230b3fb
+    kind: ledger
+    outcome: correction:php-accessor-graphql
+    why: the runtime accessor is GraphQl_. OLD's GraphQl() hits the client's graphql(string $q) because PHP method names are case-insensitive. Ran php -r: ArgumentCountError
+  - [7]
+    id: 393a02c223
+    kind: token
+    outcome: dropped
+    why: OLD typed err as \Exception; direct catches \Throwable (Main.fragment.php:261)
+  - [8]
+    id: 1c5d70bf03/54bfa12ec4
+    kind: ledger
+    outcome: restored:fact
+    why: DemoUtility moved from the heading to a cited Returns line
+  - [9]
+    id: signature rewords (11 classes)
+    kind: ledger
+    outcome: correction:signature-from-runtime
+    why: OLD made reqmatch and reqdata required and typed ctrl; the runtime does neither
+  - [10]
+    id: 40619d86b7, d4af1f09d0, 4e4b3fdc9c
+    kind: echo
+    outcome: same-meaning
+    why: the tool reports INVALID for an echo recorded as restored or correction, so these were reclassified
+  - [11]
+    id: 33 absent
+    kind: absent
+    outcome: reason given
+    why: ts async ('resolves'), ts cancel/signal/tester/data()/match()/client()/entopts()/name field, listOf class name, the lead Quickstart auth line, accessor cached, utility copy
+guide_problems:
+  - [0]
+    section: 9 (php row)
+    problem: It says 'Version 3.2 read keys: bare'. The minimal pair ATTESTS 'member' (OLD reads member in 171, bare in 0).
+  - [1]
+    section: 2.5 / 6 (ctor line citations)
+    problem: It says to quote 'Main_<lang>.ts naming the file it writes'. Once the name is extracted into utility_<lang>.ts as 4 asks, the name is no longer in any citable runtime file (the guard rejects utility_php.ts), and the guard passed the citation without the file name in any quote.
+  - [2]
+    section: 5
+    problem: It does not say that an echo class may only be same-meaning, contradiction or defect. The tool marks restored/correction on an echo INVALID, which I found only by running it.
+  - [3]
+    section: 2.1
+    problem: listOf is not in the optional-fact table, but it decides whether the root comment names the class ('the entity, an AmbientEntity'); see runtimeprose.ts:198. Without it, 2 ABSENT sentences for a throw-style language with typed docblocks.
+  - [4]
+    section: 5
+    problem: Running the one command without SCRATCH before any hand record prints much the same numbers as the SCRATCH run. The guide could say so, to save a run.
+absent:
+  - [0]
+    sentence: ed44d07e36 / 5e178e9588 / 6d459aa83b / 64560e9dff / 78dac4093d (tutorial 'resolves to ...')
+    reason: ts is async; php prints the same sentence with 'returns'
+  - [1]
+    sentence: 99a8153c15 / a0b269a293 (root comments naming AmbientEntity / PlanetEntity[])
+    reason: needs listOf; php operations declare mixed, so php prints 'the entity' / 'an array of entities'
+  - [2]
+    sentence: 7ab5ba644d api_key query parameter
+    reason: printed only in the ts-only lead Quickstart
+  - [3]
+    sentence: 0071df96c2 Create a new X instance; fef59d5955 Pass undefined
+    reason: php's accessor is cached; the cached sentence replaces both
+  - [4]
+    sentence: f3e421e046 Return the SDK utility object
+    reason: php's getter returns a copy
+  - [5]
+    sentence: f30b7d4864, 9efa1b3a1e, bb93495ee9, d86e9841eb, cad5dfc5f6
+    reason: no abort signal on direct or on operations (cited absence)
+  - [6]
+    sentence: ea3964d6ba
+    reason: php's prepare throws (fails style)
+  - [7]
+    sentence: abe923e0b2
+    reason: no tester member
+  - [8]
+    sentence: 9f6d56f5fb, a32ec5077c, d6fd5c15c3, 863f603c11, b1666a52ac, b7eb8b0b55
+    reason: async wording; php prints 'Returns ...'
+  - [9]
+    sentence: 10b1ab0918, 1bd6ec9f3b, cb12faf375, d3b38f1ebb, ef3253ead8
+    reason: ts combines getter and setter; php has data_get/data_set and match_get/match_set
+  - [10]
+    sentence: 4c93659f14
+    reason: php's stream is a Generator (streamGenerator)
+  - [11]
+    sentence: 2d65ce1465, 74dc5866b7
+    reason: the client and entopts are private fields in php, with no getter
+  - [12]
+    sentence: f1bcce31a0 The entity name.
+    reason: get_name() is a method; php prints 'Return the entity name.'
+doubtful_lines:
+old_vs_new: |
+  Counted by the tools: tutorial OLD 130 units, NEW 187 (same 59, reworded 41, missing 30, added 87); missing classes rootquick 1 and reference 30. My decisions follow.
+  
+  Lost on NEW:
+  - The `: array` return on data_get and match_get headings. The runtime declares none. The fact survives only in 'Returns a copy of the current data' and the tutorial's '(an `array`)'.
+  - '\Exception' as err's type. It was too narrow.
+  - 'call with no argument to list all', reworded as 'The match is optional.'
+  - The OLD 'Pass `null` for no initial data', which was false: the argument is the entity options.
+  
+  Gained on NEW:
+  - The stream member.
+  - The accessor's cached-instance sentence.
+  - The server option rows.
+  - The `$result->deleted()` mark.
+  - The stream signal sentence.
+  - The Actions Call cell.
+  - The utility copy, with DemoUtility as its Returns.
+  - The direct err sentence.
+  - Exact signatures: optional match and data, untyped ctrl.
+  - A root import that works from the repository root.
+  - The correct GraphQl_ accessor. OLD's GraphQl() calls the client's graphql method and fails with ArgumentCountError (shown with php -r).
+  - A list example that prints its items.
+  - Typed create placeholders.
+  
+  The OLD tutorial's missing step 2 is renumbered.
+other_languages_unchanged: Ran `diff -rq out/new P/base33/out/new -x php -x README.md`: no differences. For all 21 root README.md files, I removed the '### PHP' block of 'Quickstart in other languages' from both sides with awk and diffed the rest: 0 of 21 differ. The only root README change is inside php's block, e.g. B/README.md:331 `require_once 'php/demo_sdk.php';`.
+lines: |
+  From `git diff --numstat 0065f1e2..HEAD` (v33-frozen is not a tag in this clone; 0065f1e2 is its commit):
+  - Deleted: ReadmeQuick_php.ts 0/224, ReadmeRef_php.ts 0/420, ReadmeTopQuick_php.ts 0/90, so 734 lines removed.
+  - Added: Syntax_php.ts +168, Naming_php.ts +26, runtimeforms/php.ts +40 (now 104 by wc -l), utility_php.ts +7, Main_php.ts +2/-1, golden +4/-5.
+  - By `wc -l`: Syntax 168, Naming 26, forms 104.
+prose: |
+  Command: `node tools/sharewords.js --clone sdkgen --root out/new --lang php`.
+  
+  | section | words | shared-sentence words | only php | notes | provider literals |
+  | --- | --- | --- | --- | --- | --- |
+  | tutorial | 1627 | 1233 (75.8%) | 394 (24.2%) | 0 | 7 (0.4%; collection) |
+  | rootquick | 238 | 19 (8.0%) | 219 (92.0%) | 0 | 7 (2.9%) |
+  | reference | 54893 | 50536 (92.1%) | 4357 (7.9%) | 0 | 234 (0.4%; ref.noun 113, collection 102, ref.maps 19) |
+  | ALL | 56758 | | 4970 (8.8%) | 0 | 248 (0.4%) |
+  
+  At the source: php notes 0 words, fact-table prose literals 9, other prose literals 7.
+  
+  The high 'only php' shares are mostly shared sentences printed with 'returns' where ts, the only throw-style reference, says 'resolves to'. They are not provider prose.
+purity: |
+  0 open, 2 accepted (purity-allow/php.json):
+  1. Naming: exampleVarName, which no non-README component calls. It adapts example variable names, the same allowance perl and rb have.
+  2. Syntax: the concatenation `desc.layout.dir + '/' + desc.layout.module` in imports for 'top'. It is a path, not a name; perl and rb have the same allowance.
+  
+  Notes declared: 0.
+guard: |
+  Guard: `node --test --test-name-pattern '^php: ' dist-test/runtimefacts.test.js` gives 4/4 (forms; declared facts are what the runtime defines; every fact accounted for; negative controls).
+  
+  `SDKGEN_GUARD_REPORT=1` account line: php: derived 49, cited 22, language 1, convention 6, excepted 0; types: column php; constructor ProjectNameSDK (a template name, through tm); uncompared none. After the utility returns citation, the fact sheet counts cited 20 and pinned prose 10.
+  
+  Pinned-prose citations: collection, testMock, accessor.cached, client[0].copy, client[1].kind, client[1].copy, entity[0].copy, entity[2].copy, prepare.fails, body.values, body.once, streamSignal. body.values and body.once quote a comment only (Media.php:104-105). No `unquoted` excuses.
+  
+  Also ran: `node --test --test-concurrency=2 dist-test/runtimefacts.test.js dist-test/runtimereader.test.js`.
+unverified: |
+  - The constructor options of examples are never executed: the lane replaces them with DemoSDK::test(fixtures).
+  - The REFERENCE constructor block's `require_once __DIR__ . '/demo_sdk.php'` was not run.
+  - The 182 changed blocks of the 21 variations were compiled by nothing. Only the lane models (default, crud, basic-server) executed their own pages.
+  - The 2 matched shared sentences with no verdict were not read under STRICT_SENTENCES=1.
+surprises:
+  - The guard passed on the first build for every derived dimension: signatures, receivers, :: and ->, arity, the constructor, test, deleted. Only the citations were missing.
+  - The php accessor for GraphQl is GraphQl_ (phpEntityAccessor). OLD's REFERENCE and the unported README table still call GraphQl(), which in PHP calls the client's graphql(string $query) and throws ArgumentCountError (ran with php -r).
+  - The OLD php root quick start fails from the repository root, at require_once, in all three models. The lane cannot see it because it strips the page's require_once (ReadmeExamplesTest_php.ts:304-309).
+  - The display field changed from radius to title. OLD's pick compared t === '$STRING' without the backticks the model writes, never matched, and fell back to the first non-id field.
+  - The runtime's own comments (Entity.fragment.php:70-72, 394-395) say remove keeps the data; EntityRemoveOp.fragment.php:31-33 replaces it when the response carries a record.
+  - The unported php README states three things the REFERENCE now contradicts: every accessor call creates an instance (README.md:229); err is set on any error (README.md:271); a mock transport without the test feature (README.md:219, no-test).
+  - Time: by date(1) the whole job ran 15:00 to 15:44 UTC. That window looks too short for a 771 s suite plus three regenerations, so I do not trust the clock fully, and the clock times I first wrote in PROGRESS.md were guesses; I have marked them so there.
+time: |
+  By date(1): 15:00 to 15:44 UTC in all (see surprises). In order of the work, without exact per-step times:
+  - Reading the briefs and the guide: the first part.
+  - Table and runtime reading, then provider, hook and forms: shorter.
+  - Review: hand records, lane and root runs, suite (771 s by node's own duration), SCRATCH run and final run: most of the rest.
+  
+  Measured lane timings, minimum of 3 runs from tools/before/run.sh:
+  
+  | model | NEW | OLD |
+  | --- | --- | --- |
+  | default | 0.218 s | 0.194 s |
+  | crud | 0.177 s | 0.163 s |
+  | basic-server | 0.171 s | 0.193 s |
+workspace: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/php (sdkgen at f06c5a1a, tools at f010878, PROGRESS.md; screens pc3.txt, pcS.txt, pcF.txt and pcF-screen.txt; suite.txt, lane-new.txt, lane-old.txt; oldcopy/ is a copy of oldclone used for the OLD lane). The script that writes the hand records: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/phpscripts/hand.js
+lanes: |
+  I ran the generated SDK's own php README example test through phpshim (`tools/before/run.sh <clone> php`), on NEW and on OLD (oldcopy, a copy of oldclone at 9aebaf9e). NEW and OLD give the same result in every model:
+  
+  | model | result | root README | php README | php REFERENCE |
+  | --- | --- | --- | --- | --- |
+  | default | 4 tests, 19 assertions, 0 failures | 4/4 | 20/20 | 21/21 |
+  | crud | 4 tests, 19 assertions, 0 failures | 4/4 | 18/18 | 14/14 |
+  | basic-server | 4 tests, 19 assertions, 0 failures | 4/4 | 18/18 | 14/14 |
+  
+  Root quick start, run from the repository root of each generated SDK (block saved there, `php <file>`):
+  - OLD: 'Failed opening required demo_sdk.php' in all three models.
+  - NEW default: reaches 'Uncaught DemoSDK: load: Could not resolve host: ambient'.
+  - NEW crud: reaches 'list: Could not resolve host: planet'.
+  - NEW basic-server: with DEMO_APIKEY and DEMO_SECRET unset it stops at option validation (OLD's getenv behaves the same); with them set it reaches 'list: URL rejected: Bad hostname'.
+  
+  Toolchain from `command -v`: node v24.22.1, npm 11.19.1, php 8.3.6, composer, javac, java, mvn, gradle, g++ 13.3.0, make present; kotlinc, kotlin, scala, scala-cli, sbt, dotnet MISSING.

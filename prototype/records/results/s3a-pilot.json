@@ -1,0 +1,252 @@
+{
+ "summary": "Ruby is ported to the shared README tutorial, root quick start and REFERENCE page at interface v3. I worked in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/pilot-rb/sdkgen and started from v3-frozen (8d5ad97b). The one command passes: `REGEN=1 ./portcheck.sh <clone> <out> rb` gives `PORTCHECK rb: PASS`, with 0 unclassified and 0 defects in every section, purity at 0 open and 1 accepted, and the guard at 3/3. The Ruby README lane (`node --test --test-name-pattern '^rb: ' dist-test/generatedcompile.test.js`) went from 48/49 on OLD to 49/49 on NEW. The one OLD failure was 'the README examples run with Basic auth and a templated server' ('the README has no templated server'), and the shared S49 server option fixed it. before/run.sh ran every block on the default, crud and basic-server models: OLD and NEW each executed 4 root, 20 README and 21 REFERENCE blocks on default and 4/18/14 on crud and basic-server. Every run reported '4 runs, 20 assertions, 0 failures'. The repo suite without the toolchain lanes passed 2549 of 2554, with 5 skipped and 0 failures. The provider reads no model, and the hook calls only the generator's functions. I extracted rbSdkFile into utility_rb and Main_rb now calls it.\n\nContinuing needed one shared change, which is additive and touches only test tooling. The guard's forms reader could not find a Ruby method declared with no parameter list (`def options_map`), so I added an optional `bare` field to forms.ts. I found four more interface gaps and did not implement them:\n- `prints: 'fields'` cannot express Ruby's old choice of fields in the tutorial list and the whole record elsewhere.\n- The chosen fields come from the example entity but are applied to a different, nested load entity.\n- showFields compares types to '$STRING' while the model writes them with backticks, so it never picks a display field and prints only the id.\n- The shared dataGet sentence drops \"Returns a copy of the current data.\" That fact is true of the rb, py, php and perl runtimes.\n\nLines: the three old components were 745 lines (530 without blanks and comments). The provider plus hook is 178 lines (137), the guard forms 66 (57), and other rb files +11 (6). The worktree measurements (lines.js) still label rb 'not ported'. Ten catalogue issues were fixed with no Ruby-specific code. One old Ruby fact was dropped (data_get returns a copy), and Ruby's README Reference table (not ported) now disagrees with REFERENCE.",
+ "clone": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/pilot-rb/sdkgen (copied from P/freeze/sdkgen; `git rev-parse HEAD v3-frozen^{commit}` both 8d5ad97b158a942846bf135e344163ceb897a149 at start). Tools copy: P/pilot-rb/tools (classes/rb.json, purity-allow.json rb entry); harness copy P/pilot-rb/harness; classifier copy P/pilot-rb/my (manual.json rb entries); OLD clone P/pilot-rb/oldclone (9aebaf9e); outputs P/pilot-rb/out/{old,new}; logs P/pilot-rb/pc-rb-*.log, lanes/*.log, suite.log, golden-*.log.",
+ "commits": "On top of 8d5ad97b (v3-frozen), in order: 0d9e72c3 'Guard forms: a declaration may have no parameter list' (shared: ts/test/runtimeforms/forms.ts only, +7/-3); a62870e2 'rb: README tutorial, root quick start and REFERENCE from the shared pages' (rb only: Naming_rb.ts +24, Syntax_rb.ts +154, utility_rb.ts +8 rbSdkFile, Main_rb.ts and ReadmeExamplesTest_rb.ts call rbSdkFile, ReadmeQuick_rb/ReadmeTopQuick_rb/ReadmeRef_rb deleted -745, ts/test/runtimeforms/rb.ts +66); 2a87287f 'Golden follows the rb port' (ts/test/golden/add-output.txt, 11 lines, all src/cmp/rb). No build commit: `npm run build` left ts/dist unchanged (git status clean). Note: a first attempt swept the `git rm`-staged deletions into the shared commit; I reset and recommitted (see guide problems). No attribution trailers, per the brief's rule against naming tools in commits.",
+ "step_times": [
+  {
+   "step": "setup: copy freeze, confirm v3-frozen, rebuild (2.4s incremental), baseline regen + ts portcheck PASS",
+   "minutes": "1 (20:08:53-20:09:51)"
+  },
+  {
+   "step": "OLD baseline lanes (background): ^rb: lane on oldclone + before/run.sh oldclone rb",
+   "minutes": "1 (20:10:11-20:11:14)"
+  },
+  {
+   "step": "guide step 1: read rb components, runtime fragments, interface types and the shared components",
+   "minutes": "3 (20:09:51-20:12:05)"
+  },
+  {
+   "step": "guide step 2: Naming_rb + extract rbSdkFile into utility_rb, Main_rb and ReadmeExamplesTest_rb call it",
+   "minutes": "1 (20:12:05-20:13)"
+  },
+  {
+   "step": "guide steps 3+4: facts, tutorial printers, ref.facts and ref printers (one file)",
+   "minutes": "1 (20:13-20:14)"
+  },
+  {
+   "step": "guide step 5: guard forms rb.ts + shared forms.ts bare-declaration change",
+   "minutes": "0.5 (20:14:12-20:14:30)"
+  },
+  {
+   "step": "guide step 6: delete three components",
+   "minutes": "0.1 (20:14:32)"
+  },
+  {
+   "step": "guide step 7: build (5s), guard 3/3 first time, regen+portcheck FAIL (231 classes), classify (174 by rules, 57 by hand), purity allow, portcheck PASS",
+   "minutes": "3.5 (20:14:36-20:18:07)"
+  },
+  {
+   "step": "guide step 8: NEW ^rb: lane 49/49 + before/run.sh",
+   "minutes": "1 (20:18:17-20:19:14)"
+  },
+  {
+   "step": "guide step 9: commits, golden check/update (8s), redo of commits",
+   "minutes": "1 (20:19:50-20:20:27)"
+  },
+  {
+   "step": "repo suite without toolchain lanes",
+   "minutes": "4.3 (20:20:32-20:24:50)"
+  },
+  {
+   "step": "final regen + portcheck PASS on committed tree",
+   "minutes": "0.5 (20:24:50-20:25:18)"
+  }
+ ],
+ "sections": [
+  {
+   "section": "tutorial",
+   "old_lines": "ReadmeQuick_rb.ts 228 (175 without blanks/comments)",
+   "provider_and_hook_lines": "Syntax_rb.ts 154/121 + Naming_rb.ts 24/16 serve all three sections (about 106 lines of Syntax are facts + statement printers, shared with rootquick); guard rb.ts 66/57; utility_rb +8, Main_rb +1, ReadmeExamplesTest_rb +2",
+   "ledger": "units OLD 130 NEW 181: same 61, reworded 47, missing 22, added 73. 44 classes: correction 24 classes/75 units (S28, U45, S49, S50, G01), unification 11/65 (tutorial-op-sentence, write-comment-style, client-env-sentence), restored:fact 6/9, restored:shared 1/18, same-meaning 2/4, dropped 0, unclassified 0, defect 0",
+   "blocks": "OLD 48 NEW 48: identical 3; identical after the tool's corrections.json 0, because no corrections.json entry names rb; changed 45, each explained by hand: 17 by corrections only (S49 server x14, S50 secret x2, blank-lines x1) and 28 by named unifications (10 tutorial-op-sentence + rb-bare-call `load()`->`load`, 13 prints-fields, 5 write-comment-style); changed otherwise 0. Ruby toolchain present, so nothing is unverified; the lane runs its own models, not all 21 variations"
+  },
+  {
+   "section": "rootquick",
+   "old_lines": "ReadmeTopQuick_rb.ts 91 (64)",
+   "provider_and_hook_lines": "0 additional: reuses the tutorial printers and imports()",
+   "ledger": "units OLD 42 NEW 42: same 19, reworded 23, missing 0, added 0. 3 classes, all unification:step-comment-runtime-fact (23 units); dropped 0, unclassified 0",
+   "blocks": "OLD 19 NEW 19: identical 0 (expected per guide section 10); changed 19, each class explained individually. All carry step-comment-runtime-fact. 16 also carry S49/S50, 10 rb-bare-call, 7 list blocks plus their loads prints-fields (do...end, `record = x.data_get` / `puts \"#{record[\"id\"]}\"`), 1 root-load-nested (doc-nested). 2 (ent-none, ref-issues) are only the client: S49 + blank-lines"
+  },
+  {
+   "section": "reference",
+   "old_lines": "ReadmeRef_rb.ts 426 (291)",
+   "provider_and_hook_lines": "about 48 lines of Syntax_rb (refFacts + 4 ref printers); rest shared with the tutorial",
+   "ledger": "units OLD 16050 NEW 16529: same 15059, reworded 497, missing 494, added 973. 117 classes: correction 70/736 units (S49, S50, G01, G27, S09, S13, S25, U34, ref-6, runtime-forms, ref-features-escape), unification 24/682 (op-sentences, op-failure-clause, accessor-sentence, ref-test-heading, direct-table), restored:shared 12/356, restored:fact 7/193 (stream member, Enumerator), same-meaning 3/112, dropped 1/94 (data_get 'Returns a copy of the current data.', a fact lost through the shared dataGet sentence), unclassified 0, defect 0",
+   "blocks": "OLD 314 NEW 313: identical 303; changed 10, all one class: rb-bare-call `result = client.Ambient.load()` -> `...load`; OLD-only 1 (correction S25: the inactive remove in ref-issues); changed otherwise 0"
+  }
+ ],
+ "toolchain": "Ran: ruby 3.3.6 (2024-11-05) x86_64-linux, bundler 4.0.18, minitest 5.20.0, node v24.22.1 (/opt/node24/bin; default node is v22.23.4). OLD ^rb: lane (oldclone, `node --test --test-name-pattern '^rb: ' dist-test/generatedcompile.test.js`) 48/49: failure 'rb: the README examples run with Basic auth and a templated server' (README has no templated server). NEW lane 49/49, including all 13 README-lane cases (patch, Basic+server, required list params, keyword/__proto__ list params, selector load, shadowed param, action-only list, parented create, _id key, id-less update, quote/backslash, negative control 'fail for an SDK that does not load'). before/run.sh (`env LANG=C LC_ALL=C ruby test/readme_examples_test.rb`, 3 runs): OLD default 4/20/21 executed (+1 README block syntax-checked), crud 4/18/14, basic-server 4/18/14, all '4 runs, 20 assertions, 0 failures', minimum times 0.935/0.852/0.940 s. NEW: same counts, 0 failures, minimum times 0.755/0.668/0.806 s. 'Run' here means each runnable block executes in test mode (constructor rewritten to DemoSDK.test(fixtures)) and its output has no Ruby-level error; domain errors and wrong values are tolerated. Guard: runtimefacts.test.js 29/29 for all languages after the forms change; rb has 19 unguarded facts (SDKGEN_GUARD_REPORT=1). Suite without generatedcompile: 2554 tests, 2549 pass, 0 fail, 5 skipped.",
+ "interface_gaps": [
+  {
+   "construct": "A runtime method declared with no parameter list (Ruby `def options_map`, `def data_get`, `def make`, `def get_name`, `def get_utility`). The guard's findDecls required a bracketed parameter list and skipped such declarations, so the guard could not re-derive 6 rb members or the record accessor",
+   "where": "ts/test/runtimeforms/forms.ts findDecls (bracketed()==null -> continue); runtime src/cmp/rb/fragment/Main.fragment.rb `def options_map`, Entity.fragment.rb `def data_get`",
+   "smallest_change": "Optional `bare?: boolean` on Forms: findDecls accepts a declaration not followed by '(' and gives it params []. MADE, in shared commit 0d9e72c3 (needed to continue)",
+   "breaking": false,
+   "providers_forced": "none (optional field); rb uses it. Probably perl (`sub name {`) and scala (`def name: T`) too"
+  },
+  {
+   "construct": "Print chosen fields in the tutorial list only, and the whole record in the tutorial load and the root quick start",
+   "where": "old rb ReadmeQuick_rb.ts list step (`record = item.data_get` / `puts \"#{record[...]} ...\"`) vs load step `puts ${eVar}.data_get`; ReadmeTopQuick_rb.ts `planets.each { |item| puts item.data_get }` / `puts ${eVar}.data_get`. RuntimeFacts.prints is one value per language and example.ts show() applies it to every shown entity",
+   "smallest_change": "show() applies 'fields' only to a list item (Ref role 'item'), or a third prints value such as 'listFields'",
+   "breaking": false,
+   "providers_forced": "none (no ported language declares fields); php printed the same way in OLD (fields in the list, print_r of the record in the load)"
+  },
+  {
+   "construct": "The fields shown for the loaded entity when the tutorial loads a nested entity other than the example entity",
+   "where": "ts/src/helpers/example.ts loadBlock -> show(desc, facts, one) reads desc.quick.show, which sdkdesc.ts quickChoices computes from the EXAMPLE entity's fields; doc-nested: satellite printed with planet's chosen fields (coincides on `id` only)",
+   "smallest_change": "DescQuick.load carries its own `show` (or DescEntity.show), and show() reads the shown entity's",
+   "breaking": false,
+   "providers_forced": "none; affects every prints:'fields' language (rb now; php, lua, perl when ported). The README lane cannot see it: a missing field interpolates as an empty string"
+  },
+  {
+   "construct": "Choosing a display field: the old rb list printed id plus the first non-id field (radius)",
+   "where": "ts/src/helpers/sdkdesc.ts showFields compares '$STRING' === f.t, but the model writes types with backticks ('`$STRING`'), so no display field is ever chosen and only the id prints. The old ReadmeQuick_rb.ts had the same comparison but fell back to `fields.find(f => f.n !== 'id')`",
+   "smallest_change": "compare canonScalarKey(f.t) === 'STRING', and decide once whether to keep the old fallback",
+   "breaking": false,
+   "providers_forced": "none; changes output only for prints:'fields' languages"
+  },
+  {
+   "construct": "The fact that data_get returns a copy",
+   "where": "old ReadmeRef_rb.ts Common Methods: 'Get the entity data. Returns a copy of the current data.'; shared ts/src/cmp/ReadmeRef.ts memberText('dataGet') = 'Get the entity data.'",
+   "smallest_change": "Add 'Returns a copy of the current data.' to the shared dataGet sentence. Read: rb, py, php and perl data_get all clone",
+   "breaking": false,
+   "providers_forced": "none; changes py's REFERENCE text (golden) as a true added fact"
+  },
+  {
+   "construct": "No-argument call form chosen per operation (old rb wrote `list` but `load()` and `remove()`)",
+   "where": "old ReadmeQuick_rb.ts / ReadmeRef_rb.ts / ReadmeTopQuick_rb.ts",
+   "smallest_change": "none taken: recorded as unification:rb-bare-call (a call with no argument has no parentheses). The printer could branch on s.op, but only with an operation literal outside the fact tables, which purity flags",
+   "breaking": false,
+   "providers_forced": "none"
+  }
+ ],
+ "shared_files_touched": [
+  "ts/test/runtimeforms/forms.ts (commit 0d9e72c3): optional `bare` field so the guard can read a Ruby method declared without a parameter list; without it the guard cannot derive options_map/get_utility/data_get/match_get/make/get_name. Additive; the guard still passes 29/29 for all languages and the suite has 0 failures",
+  "ts/test/golden/add-output.txt (commit 2a87287f): regenerated with SDKGEN_GOLDEN_UPDATE=1; 11 lines change, all src/cmp/rb (3 deleted components, 2 new files, Main_rb/ReadmeExamplesTest_rb/utility_rb hashes)",
+  "Review tooling (my copies only, not the repo): tools/purity-allow.json gains rb's exampleVarName entry (same reason as py); my/manual.json gains 57 rb classifications; tools/classes/rb.json written by my/classify.js. I deleted my copy of tools/review/ts so classify.js would not rewrite ts.json"
+ ],
+ "facts": [
+  {
+   "fact": "data_get returns a copy of the current data (REFERENCE, Common Methods, every entity: 94 units)",
+   "outcome": "LOST: classified dropped. The shared dataGet sentence omits it; true for the rb/py/php/perl runtimes (read). Reported as interface gap 5"
+  },
+  {
+   "fact": "The tutorial list printed a second column, the first non-id field (`#{record[\"radius\"]}`)",
+   "outcome": "LOST: shared showFields never finds a display field under backticked types, so NEW prints `#{record[\"id\"]}` only (gap 4)"
+  },
+  {
+   "fact": "The tutorial load and the root quick start printed the whole record (`puts planet.data_get`, `puts item.data_get`)",
+   "outcome": "CHANGED: prints:'fields' applies everywhere, so they now print only the id (unification:prints-fields; gap 2). In doc-nested the satellite is printed with the planet's chosen fields (gap 3)"
+  },
+  {
+   "fact": "Tutorial code comments named the entity ('an Array of Planet entities', 'for the Ambient record')",
+   "outcome": "Reworded: the shared prose sentence above the block states the same facts (returns the entity, raises, data_get reads the record, a Hash) without the entity name (unification:tutorial-op-sentence)"
+  },
+  {
+   "fact": "direct() 'does not raise \u2014 inspect result[\"ok\"]', with keys ok/status/data/err",
+   "outcome": "Restored by the shared Returns sentence: ok, status, headers, data; err on failure; reported in the result, not as an error; branch on `result[\"ok\"]`"
+  },
+  {
+   "fact": "prepare 'Raises on error.'",
+   "outcome": "Restored: 'It raises on failure.' (from result style raise, prepare.fails 'style')"
+  },
+  {
+   "fact": "list: 'call with no argument to list all'",
+   "outcome": "Restored by the shared 'The match is optional: without one, every record is listed.'"
+  },
+  {
+   "fact": "Signatures `load(reqmatch, ctrl = nil) -> result`, `remove(reqmatch, ...)`, `make -> Entity`, `list(...) -> Array`",
+   "outcome": "Corrected from the runtime (correction:runtime-forms): reqmatch = nil is optional in load and remove; operations return the entity class (yard @return [EntyClass], re-derived by the guard), Array<{Class}>; make returns the entity's own class"
+  },
+  {
+   "fact": "The test constructor under 'Static Methods'; 'Both arguments may be nil'",
+   "outcome": "Restored under 'Test client' with the shared testopts/sdkopts sentence, which keeps 'both may be `nil`'"
+  },
+  {
+   "fact": "The stream member existed in the runtime but was undocumented",
+   "outcome": "Added (restored:fact): `stream(action, args = nil, callopts = nil) -> Enumerator`, kind streamSync, re-derived by the guard"
+  },
+  {
+   "fact": "The README (an unported section) states `load (reqmatch, ctrl) -> any` and `make () -> Entity`",
+   "outcome": "UNCHANGED, so README and REFERENCE of the same rb SDK now disagree on load's optional match and on what make returns (brief3 item 8). Not fixed: outside the three sections"
+  }
+ ],
+ "guide_problems": [
+  {
+   "step": "5 (guard forms) / section 5",
+   "problem": "Forms cannot declare a method that has no parameter list, which is Ruby's normal form. findDecls skips such a declaration, so the guard reports the member undefined. The default sigName/sigParams/sigReturns also need '(' (fixable per language), and ReadmeRef's memberName regex needs '(' too. Shared change required (made, additive)",
+   "kind": "wrong"
+  },
+  {
+   "step": "7 (classify) / section 4",
+   "problem": "The guide points at P/freeze/my/classify.js but does not say: (a) copy my/ beside your tools copy (it resolves ../tools and ../harness); (b) classify.js rewrites tools/classes/<lang>.json for EVERY language with templates under tools/review, so a baseline run of another language there gets rewritten; (c) after a passing portcheck the templates hold only unclassified classes, so re-running classify.js or allclasses.js sees nothing. Per-outcome counts need a rerun with CLASSES pointing at an empty directory",
+   "kind": "silent"
+  },
+  {
+   "step": "7 (blocks) / section 4",
+   "problem": "There are two corrections sources. tools/corrections.json (blocks.js 'after corrections') has no rb entries. The harness/corrections.js normalizers used by blockexplain.js limit several entries by language regex to the ported eight (for example server-required-given is c|zig|clojure|rust|elixir). A new port therefore gets 'after corrections 0' and must explain every changed block class by hand (26 whys for rb), and its counts are not comparable with the baseline table",
+   "kind": "unclear"
+  },
+  {
+   "step": "3 / section 6, rb row",
+   "problem": "'prints: fields' is presented as a simple choice. The guide does not say that it changes every shown entity (tutorial load and root quick start, where OLD rb printed the whole record), that the fields come from the example entity even when the load entity differs, or that showFields picks no display field under backticked model types",
+   "kind": "silent"
+  },
+  {
+   "step": "section 10",
+   "problem": "'A null-argument form chosen per operation ... cannot be kept (the provider sees no operation name)' is wrong as stated: the call statement carries s.op, and printers index facts.method with it. What is true is that a per-operation choice would need an operation literal outside the fact tables, which purity flags",
+   "kind": "wrong"
+  },
+  {
+   "step": "9 (golden) / section 10",
+   "problem": "'deleting your three components changes three lines, and nothing else' is wrong when section 1's own instruction (extract a naming function, make the generator call it) is followed. rb's golden changed 11 lines, all rb's own",
+   "kind": "wrong"
+  },
+  {
+   "step": "6 + 9 (commit order)",
+   "problem": "Deleting the components with `git rm` stages them, so the first plain `git commit` of the shared file sweeps the deletions into the shared commit. The guide should say delete with rm and stage by path, or commit with explicit paths",
+   "kind": "silent"
+  },
+  {
+   "step": "4 (the one command)",
+   "problem": "With REGEN=1, gen.js SKIPS alias-go2 ('alias staging would write into the clone; copy the clone under tools'). The guide does not mention it, so the 21-variation claim silently becomes 20 (irrelevant to rb, relevant to go ports)",
+   "kind": "silent"
+  },
+  {
+   "step": "1-3 (what to read)",
+   "problem": "The guide says to read example.ts and sdkdesc.ts. To know what the page would print I also had to read ts/src/cmp/ReadmeQuick.ts (which statements use show(), step titles, notes), ts/src/cmp/ReadmeRef.ts (memberText sentences per kind, memberName needing '('), helpers/runtimeprose.ts (which facts the sentences take), test/runtimefacts.test.ts (findDecls and the no-parameter-list failure), and test/generatedcompile.test.ts README_LANES (what the ^rb: lane runs)",
+   "kind": "silent"
+  },
+  {
+   "step": "7 (purity) / section 7",
+   "problem": "Any hook that adapts example names with exampleVarName gets the same finding ('naming function no non-README component calls'), which must be accepted with the py reason. The guide could say this finding is expected",
+   "kind": "unclear"
+  }
+ ],
+ "gaps": [
+  "Ruby did not run the blocks of all 21 harness variations. The README lane runs its own 13 models, and before/run.sh runs default, crud and basic-server. A variation-specific block (doc-nested root load, ref-issues collision) is checked by structure only",
+  "Not implemented: interface gaps 2-5 (prints granularity, per-entity show, showFields backtick comparison, dataGet copy sentence). They are recorded only, because shared changes from a port are discouraged",
+  "alias-go2 skipped by the generator (not relevant to rb)",
+  "I did not run the other languages' toolchain lanes after the forms.ts change; only the guard (29/29) and the non-lane suite (0 failures) ran",
+  "H2 is not measured beyond rb's own lines. lines.js labels rb 'not ported' in the worktree, so it is left out of its MEASURED and PROJECTION totals",
+  "Not done: the README sections outside the three (Reference table, Entities), which now disagree with REFERENCE on load's optional match and make's return type",
+  "The timings are wall-clock from `date`, single runs except before/run.sh (minimum of 3), on 4 CPUs shared with another agent"
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "partly",
+   "evidence": "RAN: purity (`node tools/purity.js --providers <clone>/ts/project/.sdk/src/cmp --lang rb`): Syntax_rb has 0 model reads, 0 open and 1 accepted (exampleVarName in the hook). The hook calls rbSdkFile (also Main_rb), nom (also TestEntity_rb) and exampleVarName. Breaking interface changes: 0; additive: 1 (guard forms `bare`). Language-supplied prose measured by share.js over 9 languages (rb only / words): tutorial 6.6% units, 10.8% words; reference 1.2% units, 4.8% words; rootquick 16.7% units, 38.2% words. That one root unit is the SHARED step comment 'List \u24ba \u24bas: an Array of entities, one per \u24ba; raises on failure', unique only through rb's fact tokens (Array, raises). Counted as fact tokens it is about 14 of 238 words (about 6%). By the tool's measure the 15% line is crossed in the root section. Notes: 0. 107 words in fact tables, 7 in prose literals (body values). Partly: the interface could not express the old rb choice of fields in the list only, nor fields per shown entity (gaps 2 and 3)"
+  },
+  {
+   "id": "H3",
+   "verdict": "supported",
+   "evidence": "RAN (ledger/blocks classes in tools/classes/rb.json): 10 catalogue ids reached rb as corrections with zero rb-specific code: S49 (34 classes), S50 (12), U34 (12), S28 (9), S09 (5), G01 (4), G27 (4), S13 (4), U45 (4), S25 (2), plus ref-6 and runtime-forms. The provider prints a nested server map; no sentence or condition is per-language. Counter-evidence: shared code introduced new rb defects (gaps 3 and 4: wrong-entity fields, no display field) and kept a dropped fact (gap 5), each fixable once in shared code"
+  },
+  {
+   "id": "H4",
+   "verdict": "supported",
+   "evidence": "RAN: OLD ^rb: lane 48/49 (fails Basic+templated server: the README has no templated server); NEW 49/49. before/run.sh: same executed counts on OLD and NEW (default 4/20/21, crud 4/18/14, basic-server 4/18/14), 0 failures. No example fails for a reason intrinsic to the approach. Caveat (read in ReadmeExamplesTest_rb.ts): the Ruby gate fails only on Ruby-level errors, so the wrong-entity field print of gap 3 (nil interpolates as an empty string) runs green and is invisible to it"
+  }
+ ]
+}

@@ -1,0 +1,14 @@
+▶ runtimefacts
+  ✔ js: the language declares its runtime forms (1.999913ms)
+  ✔ js: the declared facts are what its runtime defines (16.349633ms)
+  ✔ js: every declared fact is accounted for (13.800967ms)
+  ✔ js: each check fails when its fact is changed (negative controls) (272.213623ms)
+✔ runtimefacts (306.343484ms)
+ℹ tests 4
+ℹ suites 1
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 702.637454

@@ -1,0 +1,66 @@
+[selftest 0s] injections: 0 regressions, 0 false sentences, 0 of the re-check's, 6 dropped sentences; modes reviewed, scratch (12 runs)
+[selftest 0s] mode reviewed
+  ok   missing missing-direct-one-variation: flagged: 1 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 0 -> 1 (1/12, 8%)
+  ok   missing missing-direct-every-variation: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (2/12, 17%)
+  ok   missing missing-table-row: flagged: 3 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 0 -> 3 (3/12, 25%)
+  ok   missing missing-direct-every-variation-lua: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (4/12, 33%)
+  ok   missing missing-direct-every-variation-perl: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (5/12, 42%)
+  ok   missing missing-direct-every-variation-swift: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (6/12, 50%)
+[selftest 104s] mode scratch
+  ok   missing missing-direct-one-variation [scratch]: flagged: 1 new open class(es), 1 printed less often than its reference, 0 new absent sentence(s), unclassified 71 -> 72 (7/12, 58%)
+  ok   missing missing-direct-every-variation [scratch]: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 71 -> 71 (8/12, 67%)
+  ok   missing missing-table-row [scratch]: flagged: 2 new open class(es), 2 printed less often than its reference, 0 new absent sentence(s), unclassified 71 -> 73 (9/12, 75%)
+  ok   missing missing-direct-every-variation-lua [scratch]: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 103 -> 103 (10/12, 83%)
+  ok   missing missing-direct-every-variation-perl [scratch]: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 86 -> 85 (11/12, 92%)
+  ok   missing missing-direct-every-variation-swift [scratch]: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 109 -> 107 (12/12, 100%)
+[selftest 168s] regeneration: a generation that throws, and one that regenerates fewer variations than old/ holds
+  ok   regen generation-throws: exit 1: REGENERATION FAILED (exit 1): the generator threw; new/ holds the pages of an earlier run and nothing is measured
+  ok   regen regeneration-short: exit 1: REGENERATION SHORT: 21 variations regenerated, old/ holds 22 (skipped: none); a variation not regenerated keeps an earlier run's pages, so n
+[selftest 187s] identity: one template one sentence, the bold lead, comment facts, model text, re-key, stale build, stale hand record
+  ok   identity template-two-langs: one id expected: ts 010ab525bc "A failure is reported in the result, not as an err" | py 010ab525bc "A failure is reported in the result, not as an err" | rust 010ab525bc "A failure is reported in the result, not as an err"
+  ok   identity member-name: one id expected: ts 581898e092 "Accepts the same parameters as `direct()`." | go 581898e092 "Accepts the same parameters as `Direct()`." | c 581898e092 "Accepts the same parameters as `sdk_direct()`."
+  ok   identity label-none: one id expected: ts 746a31db3f "The first argument holds the test feature's option" | go 746a31db3f "The first argument holds the test feature's option" | c 746a31db3f "The first argument holds the test feature's option"
+  ok   identity article-and-class: one id expected: ts 0071df96c2 "Create a new `AmbientEntity` instance." | c 0071df96c2 "Create a new `Ambient` instance." | elixir 0071df96c2 "Create a new `Demo.Entity.Ambient` instance."
+  ok   identity number: one id expected: go b4e03207de "The program below runs these 2 steps in order." | go b4e03207de "The program below runs these 4 steps in order."
+  ok   identity comment-fact: one id expected: rust 23dc789f01 "Load an ambient: Ok is the entity; Err holds the f" | zig 23dc789f01 "Load an ambient: .ok is the entity; .err holds the"
+  ok   identity comment-collection: one id expected: py ae972576e9 "List planet records: a list of entities, one per r" | clojure ae972576e9 "List planet records: a vector of entities, one per"
+  ok   identity vec-own-backticks: one id expected: rust bea4cfb8e1 "The result's `Ok` is a `Vec` of entities, one per " | zig bea4cfb8e1 "The result's `.ok` is a slice of entities, one per"
+  ok   identity shared-word-stays: different ids expected: ts a32ec5077c "Resolves to an array of entities, one per record, " | ts 3006eded11 "Resolves to an array of entities, one per planet, "
+  ok   identity shared-literal-stays: different ids expected: ts 010ab525bc "A failure is reported in the result, not as an err" | ts 5ee363d15a "A failure is reported in the result, not as an err"
+  ok   identity bold-step-lead: split into 2: "**Create a client.**" | "The client reads its API key from the `D"
+  ok   identity returns-lead-kept: **Returns:** lead kept with its sentence (1 unit)
+  ok   identity model-text-left-out: the fixture model's descriptions are model text; a shared sentence is not
+  ok   identity build-current: the clone: 1814 sources, 0 stale
+  ok   identity stale-build: STALE BUILD: ts/src/helpers/x.ts is 794734144s newer than ts/dist/helpers/x.js
+  ok   identity stale-staged-model: STALE BUILD: ts/project/.sdk/model/feature/log.aontu differs from its staged copy ts/dist-test-scaffold/.sdk/model/feature/log.aontu, which generation reads
+  ok   identity stale-hand-record: 1 stale: bbbbbbbbbb voxgig_branch_on_okay(result)
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 125 classes
+[rekey clojure 2s] keys known: this code 196, the v3.2 code 162, of 230
+[rekey clojure 2s] records are keyed by this code already: nothing to map
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 125 classes
+[rekey clojure 2s] keys known: this code 196, the v3.2 code 162, of 230
+[rekey clojure 2s] records are keyed by this code already: nothing to map
+  ok   identity rekey-idempotent: records keyed by this code: left alone, twice: left alone
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 125 classes
+[rekey clojure 2s] keys known: this code 143, the v3.2 code 167, of 200
+[rekey clojure 2s] old tutorial: 52 classes
+[rekey clojure 2s] tutorial: renamed 43, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 2s] old rootquick: 19 classes
+[rekey clojure 2s] rootquick: renamed 19, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 2s] old reference: 123 classes
+[rekey clojure 2s] reference: renamed 105, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 125 classes
+[rekey clojure 2s] keys known: this code 167, the v3.2 code 143, of 200
+[rekey clojure 2s] records are keyed by this code already: nothing to map
+  ok   identity rekey-never-loses: clojure: 64 hand entries -> carried 55 (stale before 9, not carried 0, conflicts 0); re-keyed again: nothing to do
+
+selftest: 33 controls, 0 failed, 0 moved (missing 6/6, missing scratch 6/6, regen 2/2, identity 19/19) in 215s; scratch /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tmp/selftest2/selftest-LqUg2W
+exit 0

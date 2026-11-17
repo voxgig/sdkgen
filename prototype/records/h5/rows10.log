@@ -1,0 +1,50 @@
+
+##### [new] R10a package upgraded, copies not refreshed: see R1 too
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=362
+     generate-copies: target go, target js, target lua, target perl, target py, target ts: 26 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older t
+     generate-copies: target go, target lua, target perl, target py, target ts: 10 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdk
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   optional-component warnings: 0
+
+##### [new] R10b copies refreshed on the new build, then the package rolled back to 4.44.0
+   update: EXIT 0 (1877 ms)
+   build on new: TSC EXIT 0
+   (b1) compiled output from the new build kept, generate on 4.44.0:
+   GENERATE THREW: TypeError: (0 , sdkgen_1.readsSecret) is not a function |     at ReadmeHowto (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/work/r10b-new/.sdk/dist/cmp/ts/ReadmeHowto_ts.js:79:48) |     at ReadmeHowto (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/old/dist/helpers/component.js:48:16) |     at Object.ReadmeHowto (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/sdkgen/ts/node_modules/jostraca/dist/jostraca.js:562:20)
+   GEN ok=false ms=345
+     generate-copies: target go, target lua, target perl, target py, target ts: 15 file(s) in .sdk differ from what @voxgig/sdkgen 4.44.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdk
+     generate-copies: target js, target lua, target perl, target py, target ts: 11 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.45.0, but @voxgig/sdkgen 4.44.0 is installed, so this run generates from older templates. R
+     optional-component-missing: ts: no ReadmeTopQuick_ts component, so the top-level README.md's quickstart has no ts example. The SDK code is complete; only this documentation is affected. To add it, w
+     optional-component-missing: py: no ReadmeTopQuick_py component, so the top-level README.md's quickstart has no py example. The SDK code is complete; only this documentation is affected. To add it, w
+     optional-component-missing: go: no ReadmeTopQuick_go component, so the top-level README.md's quickstart has no go example. The SDK code is complete; only this documentation is affected. To add it, w
+     optional-component-missing: lua: no ReadmeTopQuick_lua component, so the top-level README.md's quickstart has no lua example. The SDK code is complete; only this documentation is affected. To add it
+     optional-component-missing: perl: no ReadmeTopQuick_perl component, so the top-level README.md's quickstart has no perl example. The SDK code is complete; only this documentation is affected. To add
+     optional-component-missing: go: no ReadmeQuick_go component, so go/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/go/Read
+     optional-component-missing: go: no ReadmeRef_go component, so go/REFERENCE.md is not written, though go/README.md links to it. The SDK code is complete; only this documentation is affected. To add i
+     optional-component-missing: lua: no ReadmeQuick_lua component, so lua/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/lua/
+     optional-component-missing: lua: no ReadmeRef_lua component, so lua/REFERENCE.md is not written, though lua/README.md links to it. The SDK code is complete; only this documentation is affected. To a
+     optional-component-missing: perl: no ReadmeQuick_perl component, so perl/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/p
+     optional-component-missing: perl: no ReadmeRef_perl component, so perl/REFERENCE.md is not written, though perl/README.md links to it. The SDK code is complete; only this documentation is affected. 
+     optional-component-missing: py: no ReadmeQuick_py component, so py/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/py/Read
+     optional-component-missing: py: no ReadmeRef_py component, so py/REFERENCE.md is not written, though py/README.md links to it. The SDK code is complete; only this documentation is affected. To add i
+     optional-component-missing: ts: no ReadmeQuick_ts component, so ts/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/ts/Read
+   (b2) the project's own tsc --build src against 4.44.0:
+   TSC EXIT 0
+   distinct missing exports: 
+   (b3) doctor on 4.44.0:
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/ts/Syntax_ts.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/ts/Naming_ts.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/py/Syntax_py.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/py/Naming_py.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/perl/Syntax_perl.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/perl/Naming_perl.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/lua/Syntax_lua.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/lua/Naming_lua.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/go/Syntax_go.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/go/Naming_go.ts
+      1    doctor-finding       MISSING (would be written by `target add`): src/cmp/ts/ReadmeTopQuick_ts.ts
+      1    doctor-finding       MISSING (would be written by `target add`): src/cmp/ts/ReadmeRef_ts.ts
+   (b4) dist cleared (a second machine: fresh checkout, no dist), tsc fails, generate on 4.44.0:
+   TSC EXIT 1
+   GEN ok=true ms=296

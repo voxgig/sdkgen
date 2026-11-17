@@ -1,0 +1,54 @@
+[portcheck go] sections: tutorial,rootquick,reference
+[portcheck go] ledger
+ledger go      tutorial  vars 20 | units OLD 144 NEW 197: same 22 reworded 25 missing 97 added 150 | classes 57 (echo 4, reworded 9, missing 9, added 26, novel-token 9) | unclassified 12, defect 0 -> tools/review/go/tutorial.ledger.txt
+ledger go      rootquick vars 20 | units OLD 39 NEW 44: same 20 reworded 19 missing 0 added 5 | classes 4 (reworded 3, added 1) | unclassified 1, defect 0 -> tools/review/go/rootquick.ledger.txt
+ledger go      reference vars 20 | units OLD 17144 NEW 17841: same 16686 reworded 313 missing 145 added 842 | classes 87 (echo 7, reworded 11, missing 12, added 44, novel-token 13) | unclassified 52, defect 0 -> tools/review/go/reference.ledger.txt
+[portcheck go] blocks
+blocks go      tutorial  vars 20 | OLD 20 NEW 20: identical 0, after corrections 0, changed 20, OLD-only 0, NEW-only 0 | classes 34 (changed 13, novel-token 10, vanished-token 9, novel-shape 2) | unclassified 1, defect 0 -> tools/review/go/tutorial.blocks.txt
+blocks go      rootquick vars 20 | OLD 20 NEW 20: identical 0, after corrections 0, changed 20, OLD-only 0, NEW-only 0 | classes 24 (changed 11, novel-token 8, vanished-token 5) | unclassified 1, defect 0 -> tools/review/go/rootquick.blocks.txt
+blocks go      reference vars 20 | OLD 354 NEW 354: identical 317, after corrections 0, changed 37, OLD-only 0, NEW-only 0 | classes 4 (changed 2, vanished-token 2) | unclassified 2, defect 0 -> tools/review/go/reference.blocks.txt
+[portcheck go] sharing (NEW, then OLD), over the languages ported for the section
+new: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   go         197 units  45.7%     0%     0%  54.3% |   2048 words  37.3%     0%     0%  62.7% | language words at output 1285 (20 distinct units) | at source: fact/notes tables facts,refFacts 118 words (0 in prose literals), other prose literals 43 words
+old: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   go         150 units  29.3%     0%     0%  70.7% |   1677 words    25%     0%     0%    75% | language words at output 1258 (9 distinct units) | at source: fact/notes tables facts,refFacts 118 words (0 in prose literals), other prose literals 43 words
+new: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   go          44 units  45.5%     0%     0%  54.5% |    295 words   6.8%     0%     0%  93.2% | language words at output 275 (3 distinct units) | at source: fact/notes tables facts,refFacts 118 words (0 in prose literals), other prose literals 43 words
+old: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   go          43 units  51.2%     0%     0%  48.8% |    274 words     8%     0%     0%    92% | language words at output 252 (2 distinct units) | at source: fact/notes tables facts,refFacts 118 words (0 in prose literals), other prose literals 43 words
+new: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   go       17841 units    89%   1.6%   5.4%     4% |  58506 words  74.6%     3%   9.2%  13.2% | language words at output 7715 (14 distinct units) | at source: fact/notes tables facts,refFacts 118 words (0 in prose literals), other prose literals 43 words
+old: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   go       18074 units  87.1%   2.2%     7%   3.6% |  57787 words  70.5%   2.5%  13.4%  13.6% | language words at output 7852 (12 distinct units) | at source: fact/notes tables facts,refFacts 118 words (0 in prose literals), other prose literals 43 words
+[portcheck go] purity
+purity over go (vocabulary: 20 features, 10 option keys, 36 entity name forms, 6 operations)
+  go      Syntax 192 lines, Naming present: 0 open, 1 accepted
+     naming calls goModule (@voxgig/sdkgen); also called by: Config_go.ts, EntityTypes_go.ts, Entity_go.ts, Main_go.ts, Package_go.ts, PrepareAuth_go.ts, Test_go.ts
+     naming calls nom (@voxgig/apidef); also called by: TestEntity_go.ts
+     naming calls goVarName (./utility_go); also called by: NO non-README component
+[portcheck go] guard: node --test --test-name-pattern go ts/dist-test/runtimefacts.test.js
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+ℹ skipped 0
+[portcheck go] summary
+  ledger go      tutorial  vars 20 | units OLD 144 NEW 197: same 22 reworded 25 missing 97 added 150 
+        classes 57 (echo 4, reworded 9, missing 9, added 26, novel-token 9) | unclassified 12, defect 0
+  ledger go      rootquick vars 20 | units OLD 39 NEW 44: same 20 reworded 19 missing 0 added 5 
+        classes 4 (reworded 3, added 1) | unclassified 1, defect 0
+  ledger go      reference vars 20 | units OLD 17144 NEW 17841: same 16686 reworded 313 missing 145 added 842 
+        classes 87 (echo 7, reworded 11, missing 12, added 44, novel-token 13) | unclassified 52, defect 0
+  blocks go      tutorial  vars 20 | OLD 20 NEW 20: identical 0, after corrections 0, changed 20, OLD-only 0, NEW-only 0 
+        classes 34 (changed 13, novel-token 10, vanished-token 9, novel-shape 2) | unclassified 1, defect 0
+  blocks go      rootquick vars 20 | OLD 20 NEW 20: identical 0, after corrections 0, changed 20, OLD-only 0, NEW-only 0 
+        classes 24 (changed 11, novel-token 8, vanished-token 5) | unclassified 1, defect 0
+  blocks go      reference vars 20 | OLD 354 NEW 354: identical 317, after corrections 0, changed 37, OLD-only 0, NEW-only 0 
+        classes 4 (changed 2, vanished-token 2) | unclassified 2, defect 0
+  worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/review/go/*.ledger.txt, *.blocks.txt, *.blocks.diff; templates *.template.json -> fill into /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/classes/go.json
+PORTCHECK go: FAIL

@@ -1,0 +1,82 @@
+
+##### [new] R11F lua: A = the 3.2 provider on the 3.2 shared code
+   [r11fa-lua] add: EXIT 0 (3240 ms)
+   [r11fa-lua] TSC EXIT 0
+   [r11fa-lua] GEN ok=true ms=126
+
+##### [new] R11F lua: L = the 3.2 provider as a pack on this build, as installed, declaring nothing
+   [r11fl-lua] add: EXIT 0 (2174 ms)
+   [r11fl-lua] TSC EXIT 0
+   [r11fl-lua]   syntax-interface-previous: lua32: the syntax provider .sdk/src/cmp/lua32/Syntax_lua32.ts is written for interface 3.2 (it declares none), which this sdkgen still serves until its next interface raise. Its pages leave out what these facts would say until the provider declares them and interface: '3.3':
+   [r11fl-lua] GEN ok=true ms=181
+   [r11fl-lua] doctor: doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [r11fl-lua] doctor: EXIT 0 (1082 ms)
+
+##### [new] R11F lua: D = the same, the provider declaring interface: '3.2'
+   [r11fd-lua] add: EXIT 0 (1789 ms)
+   [r11fd-lua] declarations: 1
+   [r11fd-lua] TSC EXIT 0
+   [r11fd-lua]   syntax-interface-previous: lua32: the syntax provider .sdk/src/cmp/lua32/Syntax_lua32.ts is written for interface 3.2, which this sdkgen still serves until its next interface raise. Its pages leave out what these facts would say until the provider declares them and interface: '3.3':
+   [r11fd-lua] GEN ok=true ms=237
+
+##### [new] R11F lua: B = the 3.3 provider, bundled, on this build
+   [r11fb-lua] add: EXIT 0 (2105 ms)
+   [r11fb-lua] TSC EXIT 0
+   [r11fb-lua] GEN ok=true ms=224
+
+##### [new] R11F lua: lines differing
+   lua32/README.md      A->L    0  L->D    0  L->B    0  A->B    0
+   lua32/REFERENCE.md   A->L   92  L->D    0  L->B   63  A->B  153
+   README.md            A->L    0  L->D    0  L->B    0  A->B    0
+
+##### [new] R11F lua: the sentences each change decides, in A, L and B
+   so branch on                               A   1  L   0  B   1
+   A failure is reported in the result        A   0  L   1  B   1
+   mock transport                             A   0  L   0  B   0
+   generated without the `test` feature       A   0  L   0  B   0
+   ends early once                            A   0  L   0  B   7
+   callopts.signal                            A   0  L   0  B   7
+   a copy of the SDK utility                  A   1  L   1  B   1
+   Return the SDK utility object              A   0  L   0  B   0
+   takes the entity out                       A   0  L   0  B   0
+
+##### [new] R11F ocaml: A = the 3.2 provider on the 3.2 shared code
+   [r11fa-ocaml] add: EXIT 0 (2685 ms)
+   [r11fa-ocaml] TSC EXIT 0
+   [r11fa-ocaml] GEN ok=true ms=130
+
+##### [new] R11F ocaml: L = the 3.2 provider as a pack on this build, as installed, declaring nothing
+   [r11fl-ocaml] add: EXIT 0 (2138 ms)
+   [r11fl-ocaml] TSC EXIT 0
+   [r11fl-ocaml]   syntax-interface-previous: ocaml32: the syntax provider .sdk/src/cmp/ocaml32/Syntax_ocaml32.ts is written for interface 3.2 (it declares none), which this sdkgen still serves until its next interface raise. Its pages leave out what these facts would say until the provider declares them and interface: '3.3':
+   [r11fl-ocaml] GEN ok=true ms=143
+   [r11fl-ocaml] doctor: doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [r11fl-ocaml] doctor: EXIT 0 (1153 ms)
+
+##### [new] R11F ocaml: D = the same, the provider declaring interface: '3.2'
+   [r11fd-ocaml] add: EXIT 0 (1972 ms)
+   [r11fd-ocaml] declarations: 1
+   [r11fd-ocaml] TSC EXIT 0
+   [r11fd-ocaml]   syntax-interface-previous: ocaml32: the syntax provider .sdk/src/cmp/ocaml32/Syntax_ocaml32.ts is written for interface 3.2, which this sdkgen still serves until its next interface raise. Its pages leave out what these facts would say until the provider declares them and interface: '3.3':
+   [r11fd-ocaml] GEN ok=true ms=118
+
+##### [new] R11F ocaml: B = the 3.3 provider, bundled, on this build
+   [r11fb-ocaml] add: EXIT 0 (1453 ms)
+   [r11fb-ocaml] TSC EXIT 0
+   [r11fb-ocaml] GEN ok=true ms=133
+
+##### [new] R11F ocaml: lines differing
+   ocaml32/README.md    A->L    4  L->D    0  L->B    0  A->B    4
+   ocaml32/REFERENCE.md A->L   95  L->D    0  L->B   80  A->B  173
+   README.md            A->L    0  L->D    0  L->B    0  A->B    0
+
+##### [new] R11F ocaml: the sentences each change decides, in A, L and B
+   so branch on                               A   1  L   0  B   1
+   A failure is reported in the result        A   0  L   1  B   1
+   mock transport                             A   0  L   0  B   0
+   generated without the `test` feature       A   0  L   0  B   0
+   ends early once                            A   0  L   0  B   7
+   callopts.signal                            A   0  L   0  B   7
+   a copy of the SDK utility                  A   0  L   0  B   0
+   Return the SDK utility object              A   0  L   0  B   0
+   takes the entity out                       A   0  L   0  B   0

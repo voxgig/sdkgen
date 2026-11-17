@@ -1,0 +1,98 @@
+variation           lang | prose same/chg/add/rem | code blocks same/chg (old->new) | lines -/+ | unexplained | outside-quick unchanged
+B                   c    | 4/3/2/0                | 1/1 (2->2)                      | 2/4       | 0           | true
+B                   go   | 1/8/0/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+B                   py   | 2/4/3/0                | 1/1 (2->2)                      | 1/0       | 0           | true
+B                   ts   | 2/4/3/0                | 1/1 (2->2)                      | 2/0       | 0           | true
+alias-go2           go   | 1/8/0/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+alias-go2           go2  | 1/8/0/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+auth-basic          c    | 4/3/2/0                | 1/1 (2->2)                      | 2/5       | 0           | true
+auth-basic          go   | 1/8/0/0                | 0/2 (1->2)                      | 19/10     | 0           | true
+auth-basic          py   | 2/4/3/0                | 1/1 (2->2)                      | 1/1       | 0           | true
+auth-basic          ts   | 2/4/3/0                | 1/1 (2->2)                      | 2/0       | 0           | true
+auth-basic-query    c    | 4/3/3/0                | 1/1 (2->2)                      | 2/4       | 0           | true
+auth-basic-query    go   | 1/8/1/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+auth-basic-query    py   | 2/4/4/0                | 1/1 (2->2)                      | 1/0       | 0           | true
+auth-basic-query    ts   | 2/4/4/0                | 1/1 (2->2)                      | 3/0       | 0           | true
+auth-off            c    | 4/3/1/0                | 1/1 (2->2)                      | 1/2       | 0           | true
+auth-off            go   | 1/7/0/1                | 0/2 (1->2)                      | 17/7      | 0           | true
+auth-off            py   | 2/4/2/0                | 1/1 (2->2)                      | 1/0       | 0           | true
+auth-off            ts   | 2/4/2/0                | 1/1 (2->2)                      | 2/0       | 0           | true
+auth-query          c    | 4/3/3/0                | 1/1 (2->2)                      | 2/4       | 0           | true
+auth-query          go   | 1/8/1/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+auth-query          py   | 2/4/4/0                | 1/1 (2->2)                      | 1/0       | 0           | true
+auth-query          ts   | 2/4/4/0                | 1/1 (2->2)                      | 2/0       | 0           | true
+crud-bare           c    | 7/5/0/0                | 3/1 (4->4)                      | 3/3       | 0           | true
+crud-bare           go   | 1/8/3/0                | 0/4 (1->4)                      | 49/33     | 0           | true
+crud-bare           py   | 5/5/2/0                | 3/1 (4->4)                      | 3/3       | 0           | true
+crud-bare           ts   | 4/7/1/0                | 2/2 (4->4)                      | 9/12      | 0           | true
+crud-basic          c    | 7/5/3/0                | 2/2 (4->4)                      | 5/8       | 0           | true
+crud-basic          go   | 1/8/6/0                | 0/4 (1->4)                      | 53/37     | 0           | true
+crud-basic          py   | 5/5/5/0                | 2/2 (4->4)                      | 4/4       | 0           | true
+crud-basic          ts   | 4/7/4/0                | 1/3 (4->4)                      | 11/12     | 0           | true
+crud-noupdate       c    | 7/5/2/0                | 2/2 (4->4)                      | 3/5       | 0           | true
+crud-noupdate       go   | 1/8/5/0                | 0/4 (1->4)                      | 41/26     | 0           | true
+crud-noupdate       py   | 5/5/4/0                | 2/2 (4->4)                      | 2/1       | 0           | true
+crud-noupdate       ts   | 4/7/3/0                | 1/3 (4->4)                      | 7/8       | 0           | true
+doc-crud            c    | 7/5/3/0                | 2/2 (4->4)                      | 5/7       | 0           | true
+doc-crud            go   | 1/8/6/0                | 0/4 (1->4)                      | 53/36     | 0           | true
+doc-crud            py   | 5/5/5/0                | 2/2 (4->4)                      | 4/3       | 0           | true
+doc-crud            ts   | 4/7/4/0                | 1/3 (4->4)                      | 11/12     | 0           | true
+doc-list            c    | 4/4/2/0                | 1/1 (2->2)                      | 2/4       | 0           | true
+doc-list            go   | 1/8/1/0                | 0/2 (1->2)                      | 21/11     | 0           | true
+doc-list            py   | 4/3/3/0                | 1/1 (2->2)                      | 1/0       | 0           | true
+doc-list            ts   | 3/5/2/0                | 0/2 (2->2)                      | 6/7       | 0           | true
+doc-nested          c    | 9/4/2/0                | 2/2 (4->4)                      | 4/6       | 0           | true
+doc-nested          go   | 1/8/6/0                | 0/4 (1->4)                      | 47/31     | 0           | true
+doc-nested          py   | 7/4/4/0                | 2/2 (4->4)                      | 3/2       | 0           | true
+doc-nested          ts   | 6/6/3/0                | 1/3 (4->4)                      | 9/10      | 0           | true
+ent-none            c    | 2/2/2/0                | 0/1 (1->1)                      | 2/4       | 0           | true
+ent-none            go   | 1/5/0/3                | 0/1 (1->1)                      | 14/5      | 0           | true
+ent-none            py   | 2/2/2/0                | 0/1 (1->1)                      | 1/0       | 0           | true
+ent-none            ts   | 2/2/2/0                | 0/1 (1->1)                      | 2/0       | 0           | true
+ent-only-ambient    c    | 4/3/2/0                | 1/1 (2->2)                      | 2/4       | 0           | true
+ent-only-ambient    go   | 1/8/0/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+ent-only-ambient    py   | 2/4/3/0                | 1/1 (2->2)                      | 1/0       | 0           | true
+ent-only-ambient    ts   | 2/4/3/0                | 1/1 (2->2)                      | 2/0       | 0           | true
+lone-go             go   | 1/8/0/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+op-absent-readonly  c    | 4/3/2/0                | 1/1 (2->2)                      | 2/4       | 0           | true
+op-absent-readonly  go   | 1/8/0/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+op-absent-readonly  py   | 2/4/3/0                | 1/1 (2->2)                      | 1/0       | 0           | true
+op-absent-readonly  ts   | 2/4/3/0                | 1/1 (2->2)                      | 2/0       | 0           | true
+server-mixed        c    | 4/3/2/0                | 1/1 (2->2)                      | 2/4       | 0           | true
+server-mixed        go   | 1/8/0/0                | 0/2 (1->2)                      | 19/9      | 0           | true
+server-mixed        py   | 2/4/3/0                | 1/1 (2->2)                      | 1/0       | 0           | true
+server-mixed        ts   | 2/4/3/0                | 1/1 (2->2)                      | 2/0       | 0           | true
+server-none         c    | 4/3/1/0                | 1/1 (2->2)                      | 0/1       | 0           | true
+server-none         go   | 1/7/0/1                | 0/2 (1->2)                      | 18/9      | 0           | true
+server-none         py   | 2/4/2/0                | 2/0 (2->2)                      | 0/0       | 0           | true
+server-none         ts   | 2/4/2/0                | 2/0 (2->2)                      | 0/0       | 0           | true
+server-static       c    | 4/3/1/0                | 1/1 (2->2)                      | 0/1       | 0           | true
+server-static       go   | 1/7/0/1                | 0/2 (1->2)                      | 18/9      | 0           | true
+server-static       py   | 2/4/2/0                | 2/0 (2->2)                      | 0/0       | 0           | true
+server-static       ts   | 2/4/2/0                | 2/0 (2->2)                      | 0/0       | 0           | true
+
+changed lines by reason (all ported languages and variations):
+  448  structure: go program split into steps (re-indented)
+  346  structure: go's one program split into the shared steps (drift: 18 of 20 use steps; go's README harness compiles fragments)
+  272  S28/U45 lead-in follows the steps written
+  183  unified wording: list/load step prose
+  181  D25/S49/G01 client prose states the env vars and server variables from the description
+  106  unified wording: write-step comments
+   84  S28 steps numbered as written
+   68  S49 c constructor carries the required server variables
+   59  S49/G01/M13/D55 server block lists only required variables
+   40  structure: go's one program split into the shared steps (drift: 18 of 20 use steps; go's README harness compiles fragments) (imports become single lines a fragment can carry)
+   36  structure: ts list wrapped in error handling (re-indented)
+   30  structure: ts list wrapped in error handling like every other language
+   29  U45 write heading names the operations present
+   24  structure: go's one program split into the shared steps (drift: 18 of 20 use steps; go's README harness compiles fragments) (its in-code commentary became the shared step prose)
+   24  unified: the description decides id chaining once (go never chained)
+   17  structure: write results are not printed (ts, py and c did not print them; go did)
+   15  DEFECT c-getenv: getenv without <stdlib.h> fails -Werror=implicit-function-declaration (the c DOC lane, OLD and NEW, on basic-server)
+   14  structure: unused write results are not bound (py and c did not bind them; ts and go did)
+    8  S28/U45 lead-in: the placement sentence reflows with it
+    7  S50/D23/M12 secret exactly when the runtime reads it
+    5  unified: the nested-entity choice is made once (go never made it)
+
+UNEXPLAINED in ported languages: 0
+unported languages differing from OLD (whole README): 0 

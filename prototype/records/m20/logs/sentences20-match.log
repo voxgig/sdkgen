@@ -1,0 +1,154 @@
+[sentences 9s] tutorial ts: 25 sentences so far
+[sentences 9s] tutorial go: 44 sentences so far
+[sentences 9s] tutorial py: 49 sentences so far
+[sentences 9s] tutorial c: 54 sentences so far
+[sentences 9s] tutorial zig: 59 sentences so far
+[sentences 9s] tutorial clojure: 61 sentences so far
+[sentences 9s] tutorial rust: 61 sentences so far
+[sentences 9s] tutorial elixir: 62 sentences so far
+[sentences 9s] tutorial rb: 64 sentences so far
+[sentences 9s] tutorial perl: 68 sentences so far
+[sentences 9s] tutorial swift: 73 sentences so far
+[sentences 9s] tutorial ocaml: 73 sentences so far
+[sentences 9s] tutorial lua: 73 sentences so far
+[sentences 10s] tutorial js: 75 sentences so far
+[sentences 10s] tutorial php: 80 sentences so far
+[sentences 10s] tutorial csharp: 82 sentences so far
+[sentences 10s] tutorial java: 82 sentences so far
+[sentences 10s] tutorial kotlin: 82 sentences so far
+[sentences 10s] tutorial scala: 82 sentences so far
+[sentences 10s] tutorial cpp: 84 sentences so far
+[sentences 10s] rootquick ts: 86 sentences so far
+[sentences 10s] rootquick go: 86 sentences so far
+[sentences 10s] rootquick py: 88 sentences so far
+[sentences 10s] rootquick c: 90 sentences so far
+[sentences 10s] rootquick zig: 92 sentences so far
+[sentences 10s] rootquick clojure: 92 sentences so far
+[sentences 10s] rootquick rust: 92 sentences so far
+[sentences 10s] rootquick elixir: 92 sentences so far
+[sentences 10s] rootquick rb: 92 sentences so far
+[sentences 10s] rootquick perl: 94 sentences so far
+[sentences 10s] rootquick swift: 96 sentences so far
+[sentences 10s] rootquick ocaml: 96 sentences so far
+[sentences 10s] rootquick lua: 96 sentences so far
+[sentences 10s] rootquick js: 96 sentences so far
+[sentences 10s] rootquick php: 96 sentences so far
+[sentences 10s] rootquick csharp: 96 sentences so far
+[sentences 10s] rootquick java: 96 sentences so far
+[sentences 10s] rootquick kotlin: 96 sentences so far
+[sentences 10s] rootquick scala: 96 sentences so far
+[sentences 10s] rootquick cpp: 96 sentences so far
+[sentences 11s] reference ts: 171 sentences so far
+[sentences 12s] reference go: 197 sentences so far
+[sentences 13s] reference py: 213 sentences so far
+[sentences 14s] reference c: 240 sentences so far
+[sentences 15s] reference zig: 251 sentences so far
+[sentences 16s] reference clojure: 261 sentences so far
+[sentences 17s] reference rust: 264 sentences so far
+[sentences 18s] reference elixir: 277 sentences so far
+[sentences 19s] reference rb: 281 sentences so far
+[sentences 20s] reference perl: 302 sentences so far
+[sentences 22s] reference swift: 319 sentences so far
+[sentences 24s] reference ocaml: 326 sentences so far
+[sentences 25s] reference lua: 338 sentences so far
+[sentences 26s] reference js: 338 sentences so far
+[sentences 27s] reference php: 354 sentences so far
+[sentences 29s] reference csharp: 364 sentences so far
+[sentences 30s] reference java: 369 sentences so far
+[sentences 32s] reference kotlin: 374 sentences so far
+[sentences 33s] reference scala: 378 sentences so far
+[sentences 35s] reference cpp: 385 sentences so far
+[sentences 36s] match ts tutorial: 19 of 66 classes
+[sentences 38s] match go tutorial: 20 of 92 classes
+[sentences 39s] match py tutorial: 25 of 52 classes
+[sentences 40s] match c tutorial: 21 of 57 classes
+[sentences 41s] match zig tutorial: 24 of 76 classes
+[sentences 42s] match clojure tutorial: 24 of 52 classes
+[sentences 43s] match rust tutorial: 24 of 62 classes
+[sentences 44s] match elixir tutorial: 24 of 53 classes
+[sentences 45s] match rb tutorial: 25 of 77 classes
+[sentences 47s] match js tutorial: 25 of 116 classes
+[sentences 48s] match php tutorial: 24 of 77 classes
+[sentences 49s] match lua tutorial: 25 of 71 classes
+[sentences 50s] match csharp tutorial: 24 of 73 classes
+[sentences 51s] match java tutorial: 27 of 68 classes
+[sentences 52s] match kotlin tutorial: 26 of 68 classes
+[sentences 53s] match scala tutorial: 27 of 79 classes
+[sentences 54s] match swift tutorial: 21 of 87 classes
+[sentences 55s] match cpp tutorial: 23 of 61 classes
+[sentences 56s] match perl tutorial: 22 of 64 classes
+[sentences 57s] match ocaml tutorial: 27 of 88 classes
+[sentences 58s] match ts rootquick: 0 of 20 classes
+[sentences 59s] match go rootquick: 1 of 20 classes
+[sentences 59s] match py rootquick: 3 of 15 classes
+[sentences 60s] match c rootquick: 0 of 37 classes
+[sentences 61s] match zig rootquick: 0 of 32 classes
+[sentences 61s] match clojure rootquick: 2 of 19 classes
+[sentences 62s] match rust rootquick: 1 of 24 classes
+[sentences 63s] match elixir rootquick: 3 of 17 classes
+[sentences 63s] match rb rootquick: 0 of 21 classes
+[sentences 64s] match js rootquick: 2 of 27 classes
+[sentences 64s] match php rootquick: 1 of 34 classes
+[sentences 65s] match lua rootquick: 0 of 30 classes
+[sentences 66s] match csharp rootquick: 2 of 31 classes
+[sentences 66s] match java rootquick: 3 of 26 classes
+[sentences 67s] match kotlin rootquick: 3 of 25 classes
+[sentences 68s] match scala rootquick: 3 of 30 classes
+[sentences 68s] match swift rootquick: 2 of 31 classes
+[sentences 69s] match cpp rootquick: 2 of 30 classes
+[sentences 69s] match perl rootquick: 0 of 28 classes
+[sentences 70s] match ocaml rootquick: 0 of 35 classes
+[sentences 106s] match ts reference: 74 of 209 classes
+[sentences 141s] match go reference: 83 of 145 classes
+[sentences 177s] match py reference: 82 of 194 classes
+[sentences 213s] match c reference: 67 of 181 classes
+[sentences 249s] match zig reference: 69 of 193 classes
+[sentences 284s] match clojure reference: 88 of 183 classes
+[sentences 320s] match rust reference: 73 of 204 classes
+[sentences 355s] match elixir reference: 93 of 210 classes
+[sentences 390s] match rb reference: 95 of 194 classes
+[sentences 427s] match js reference: 108 of 208 classes
+[sentences 463s] match php reference: 68 of 219 classes
+[sentences 498s] match lua reference: 100 of 212 classes
+[sentences 535s] match csharp reference: 116 of 245 classes
+[sentences 570s] match java reference: 124 of 256 classes
+[sentences 606s] match kotlin reference: 116 of 230 classes
+[sentences 642s] match scala reference: 115 of 235 classes
+[sentences 679s] match swift reference: 81 of 207 classes
+[sentences 714s] match cpp reference: 94 of 210 classes
+[sentences 750s] match perl reference: 65 of 178 classes
+[sentences 788s] match ocaml reference: 84 of 248 classes
+# reference sentences: 385 distinct masked sentences (NEW side of the reference languages' reworded and added classes)
+# text the fixture model holds, left out: 2 ("Level \\| percent see the guide or [site](https://e", "Words the project chose | not the spec")
+# tutorial: printed by one language 41: shared-condition 25, unexplained 15, note 1
+# rootquick: printed by one language 6: unexplained 2, shared-condition 4
+# reference: printed by one language 143: code 67, shared-condition 39, unexplained 23, note 12, provider-literal 2
+# tutorial: 84 (accepted by hand only 55, by stage-3a rule records only 20, both 9; template found 58; verdicts ok 57, false 0, awkward 0, none 27)
+# rootquick: 12 (accepted by hand only 6, by stage-3a rule records only 4, both 2; template found 7; verdicts ok 8, false 0, awkward 0, none 4)
+# reference: 289 (accepted by hand only 189, by stage-3a rule records only 82, both 18; template found 115; verdicts ok 156, false 0, awkward 0, none 133)
+# matched from scratch, ts: tutorial 19 of 66 classes (0 against a sentence with no verdict); rootquick 0 of 20 classes (0 against a sentence with no verdict); reference 74 of 209 classes (38 against a sentence with no verdict)
+# matched from scratch, go: tutorial 20 of 92 classes (4 against a sentence with no verdict); rootquick 1 of 20 classes (0 against a sentence with no verdict); reference 83 of 145 classes (37 against a sentence with no verdict)
+# matched from scratch, py: tutorial 25 of 52 classes (0 against a sentence with no verdict); rootquick 3 of 15 classes (0 against a sentence with no verdict); reference 82 of 194 classes (18 against a sentence with no verdict)
+# matched from scratch, c: tutorial 21 of 57 classes (0 against a sentence with no verdict); rootquick 0 of 37 classes (0 against a sentence with no verdict); reference 67 of 181 classes (15 against a sentence with no verdict)
+# matched from scratch, zig: tutorial 24 of 76 classes (0 against a sentence with no verdict); rootquick 0 of 32 classes (0 against a sentence with no verdict); reference 69 of 193 classes (14 against a sentence with no verdict)
+# matched from scratch, clojure: tutorial 24 of 52 classes (0 against a sentence with no verdict); rootquick 2 of 19 classes (0 against a sentence with no verdict); reference 88 of 183 classes (34 against a sentence with no verdict)
+# matched from scratch, rust: tutorial 24 of 62 classes (0 against a sentence with no verdict); rootquick 1 of 24 classes (0 against a sentence with no verdict); reference 73 of 204 classes (15 against a sentence with no verdict)
+# matched from scratch, elixir: tutorial 24 of 53 classes (0 against a sentence with no verdict); rootquick 3 of 17 classes (0 against a sentence with no verdict); reference 93 of 210 classes (36 against a sentence with no verdict)
+# matched from scratch, rb: tutorial 25 of 77 classes (0 against a sentence with no verdict); rootquick 0 of 21 classes (0 against a sentence with no verdict); reference 95 of 194 classes (37 against a sentence with no verdict)
+# matched from scratch, js: tutorial 25 of 116 classes (0 against a sentence with no verdict); rootquick 2 of 27 classes (2 against a sentence with no verdict); reference 108 of 208 classes (42 against a sentence with no verdict)
+# matched from scratch, php: tutorial 24 of 77 classes (2 against a sentence with no verdict); rootquick 1 of 34 classes (1 against a sentence with no verdict); reference 68 of 219 classes (25 against a sentence with no verdict)
+# matched from scratch, lua: tutorial 25 of 71 classes (4 against a sentence with no verdict); rootquick 0 of 30 classes (0 against a sentence with no verdict); reference 100 of 212 classes (43 against a sentence with no verdict)
+# matched from scratch, csharp: tutorial 24 of 73 classes (2 against a sentence with no verdict); rootquick 2 of 31 classes (2 against a sentence with no verdict); reference 116 of 245 classes (52 against a sentence with no verdict)
+# matched from scratch, java: tutorial 27 of 68 classes (5 against a sentence with no verdict); rootquick 3 of 26 classes (3 against a sentence with no verdict); reference 124 of 256 classes (56 against a sentence with no verdict)
+# matched from scratch, kotlin: tutorial 26 of 68 classes (4 against a sentence with no verdict); rootquick 3 of 25 classes (3 against a sentence with no verdict); reference 116 of 230 classes (50 against a sentence with no verdict)
+# matched from scratch, scala: tutorial 27 of 79 classes (5 against a sentence with no verdict); rootquick 3 of 30 classes (3 against a sentence with no verdict); reference 115 of 235 classes (51 against a sentence with no verdict)
+# matched from scratch, swift: tutorial 21 of 87 classes (0 against a sentence with no verdict); rootquick 2 of 31 classes (2 against a sentence with no verdict); reference 81 of 207 classes (24 against a sentence with no verdict)
+# matched from scratch, cpp: tutorial 23 of 61 classes (2 against a sentence with no verdict); rootquick 2 of 30 classes (2 against a sentence with no verdict); reference 94 of 210 classes (30 against a sentence with no verdict)
+# matched from scratch, perl: tutorial 22 of 64 classes (0 against a sentence with no verdict); rootquick 0 of 28 classes (0 against a sentence with no verdict); reference 65 of 178 classes (15 against a sentence with no verdict)
+# matched from scratch, ocaml: tutorial 27 of 88 classes (0 against a sentence with no verdict); rootquick 0 of 35 classes (0 against a sentence with no verdict); reference 84 of 248 classes (19 against a sentence with no verdict)
+-> ../sent20m/sentences.txt; verdicts go in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/m20/tools/reviewed/sentences.json ({ "sentences": { "<id>": { "verdict": "ok|false|awkward", "note": "..." } } })
+
+real	13m14.964s
+user	13m46.409s
+sys	0m6.818s
+exit 0

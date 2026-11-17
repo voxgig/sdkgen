@@ -1,0 +1,294 @@
+{
+ "ok": true,
+ "summary": "I re-ran every row the engineer scripted, on a copy at P/h5check where nothing under P/h5 or /home/user was written. All 75 row headers give the same outcomes they report; only timings, temp names and clock stamps differ. Action tests: 322/322. That is their 318 plus the 4 syntaxversion tests, because my file filter also matched that name.\n\nI then ran 22 states they did not try, against their final build. 16 are safe. Two are new NOT OK cases, and both belong to their own row-5b class: an old per-language component keeps writing pages while doctor exits 0 with \"matches the scaffold\".\n- S2b: one truncated record line turns an unchanged retired copy into an \"override\". It is kept and used, and remove refuses it as \"not written by target add\".\n- S17b: package update, then the retired files restored from git. The record has already forgotten them (written as null), so they become \"additive\", are used, and are kept by a second update.\n\nThree further states are loud but costly:\n- S4/S4g: after an interface raise, every unrefreshed provider copy in the project fails tsc. A TS2322 is a TypeScript type error. Here it says '\"3.3\"' is not assignable to '\"3.4\"', which blocks the whole `npm run generate`, not just the docs, until package update. A clean 3-way merge raises a customized provider's declared interface on the project's behalf.\n- S5a: a target removed with 4.44.0's own verb and re-added after the upgrade loads three orphan compiled components. Doctor catches it only because of their 0e99e799 fix, and target add does not clean them.\n- S9: in overwrite mode, doctor tells the project an edited retired copy is \"kept and used\", and the next add deletes it with an info-level line.\n\nRow 11 with my own provider: the interface check changes nothing for a provider declaring the current version. A removed optional fact (m3) and a printer with fewer arguments (m5) stay silent on both builds; an optional fact with a misspelled name (m4) is caught by tsc as an unknown property. `interface: SYNTAX_INTERFACE`, the imported constant, defeats the check on every later raise, and package check misreads it as 'none'. tsc --build stayed \"up to date\" after the package moved, so the type error (kind 1) appears only on a clean build.\n\nWhat I wrote is all under P/h5check: bin/st.sh, bin/st2.sh and bin/r11own.sh; logs rows-all.log, st.log, st-s1b.log, st2.log, st2g.log, r11own.log and action-tests.log; and PROGRESS.md.",
+ "verdict": "H5 is not decided. It leans toward confirmed for any project whose copy record is intact and whose packs ship old-style components. Their measurements hold, and for that population I found no state where a verb deletes what it did not write, a dry run writes, or a pack's old-style target changes beyond the one shared line.\n\nIt is not confirmed, because the set of NOT OK states is wider than their single row 5b. Any copy the record does not hold as \"unchanged\" is kept, used and never fails doctor. I reached that through:\n- no record (their 5b, and my S14: a gitignored log/ plus a fresh clone);\n- a truncated record line (S2b), which readCopies drops without a word;\n- restoring retired files from git after an update, which the record has already forgotten (S17b).\n\nA safe version needs a structure that is not built. One option is for the package to ship fingerprints of every released version of each retired file. The other is for doctor to fail on an unrecorded or override copy named after a retired shared section. That one contradicts their override rule, so it is a design choice, not a bug fix.\n\nSeparately, the interface check makes a pack that ships providers stop generating at every interface raise until the pack releases. H5 names that as a refutation condition, conditional on how often the interface breaks: about 25 times during porting.\n\nBuilding one of those two structures and re-running S2b, S14 and S17b would decide it.",
+ "how_sure": "Sure of the outcomes: every state and row was run on real .sdk projects, and the logs are in P/h5check. Moderately sure of the verdict, because whether S2b and S17b count against \"can be made safe\" depends on whether those states are judged realistic and whether the unbuilt fingerprint remedy works.\n\nThings that weaken individual results:\n- The `next` build (4.46.0) is an edited archive of HEAD (dist JS, .d.ts, scaffold files and version strings), not a source build.\n- Generation used their tool.js docs-only Root, not create-sdkgen's `npm run generate`.\n- S2b's record damage was synthesised by appending and truncating a JSON line.",
+ "worst": "The worst I found is a stale old component writing pages while doctor says the project matches, reached from two ordinary-looking states their record-gated design does not cover.\n\nS2b: one truncated line in .sdk/log/copies.jsonl. readCopies drops unparseable lines without a finding (copies.ts:77-107), so an unchanged 4.44.x copy reads as a project edit (\"override\"). It is then:\n- kept by package update, which warns target-component-override;\n- used (ts quick=OLD);\n- passed by doctor: \"matches the scaffold (0 additive, 0 customized)\", exit 0;\n- refused by `target remove ts`: \"refusing to delete what `target add` did not write\".\n\nS17b: package update, then `git checkout HEAD --` of the 15 retired files. They come back as \"additive (used instead of the shared X)\". Doctor reads \"matches the scaffold (15 additive)\", exit 0, all five ported targets write OLD pages, and a second package update keeps them.\n\nThe runner-up is the interface version, a project-wide break: once 4.46.0 is installed, the unrefreshed 3.3 provider copies in go, lua, perl, py and ts all fail tsc with TS2322. That stops all code generation, and the tsc message never mentions `package update`. An existing dist hides it: tsc --build stays \"up to date\" and generate throws instead.",
+ "rows_differ": [
+  {
+   "row": "all 75 row headers (section 1 today and new, rows 9, 10, 11, 12, 13, 14, 16, 15, 7b)",
+   "theirs": "P/h5/rows-all.log",
+   "mine": "P/h5check/rows-all.log. After normalising ms, clock stamps, temp-dir names and the h5/h5check path, the only differences are timings, the tsc temp dir and log times. No outcome, classification, exit code, file set or page comparison differs. diff: out/rows.diff, 65 lines."
+  },
+  {
+   "row": "9 (timings only)",
+   "theirs": "4.44.0 doctor min 1252 ms, full generate min 3704; upgraded doctor min 1369, generate min 4093; after update doctor min 1336, generate min 3599",
+   "mine": "4.44.0 doctor min 1393 ms, full generate min 4349; upgraded doctor min 1520, generate min 4105; after update doctor min 1235, generate min 3672. The machine was shared. My run also created work/all20 (EXIT 0, TSC EXIT 0), because I did not copy their fixture."
+  }
+ ],
+ "states": [
+  {
+   "state": "S1 legacy record (sdkgen-copies.json as 4.34.0 wrote it, no log/copies.jsonl)",
+   "did": "Converted base's jsonl into the legacy {items,files} file and deleted the jsonl, then upgraded, ran doctor, package update --no-fetch, tsc, generated, and ran doctor again.",
+   "happened": "Doctor: 15 RETIRED, exit 1. Update removed all 15 and their compiled output; pages NEW; doctor matches, exit 0. The legacy file was imported as the jsonl's first line (op import) and deleted.",
+   "safe": "yes"
+  },
+  {
+   "state": "S1b retired copy whose record entry was written by an older version (v4.34.1 content, 37 lines different, record line item version 4.34.1)",
+   "did": "Replaced ReadmeQuick_ts.ts with v4.34.1's text and appended a matching record line, then ran package update.",
+   "happened": "RETIRED and removed; doctor matches, exit 0. A first try with v4.40.0 was uninformative, because its content equals 4.44.0's.",
+   "safe": "yes"
+  },
+  {
+   "state": "S2a record whose only line is truncated",
+   "did": "Cut copies.jsonl to 900 bytes, then ran doctor and package update.",
+   "happened": "The record reads as empty: 11 FORKED, 15 additive, doctor exit 1. Update refuses ('no record ... nothing to merge against'). Pages OLD.",
+   "safe": "yes in the strict sense (doctor fails), but the project is stuck until --force, which then reaches their 5b"
+  },
+  {
+   "state": "S2b a later add's record line truncated (the record holds the earlier fingerprint of an unedited copy)",
+   "did": "Changed ReadmeQuick_ts.ts as a later add would, appended that add's record line truncated, then ran doctor, package update, generate and remove.",
+   "happened": "Classed as 'override ... (used instead of the shared ReadmeQuick)'. Kept by update with a target-component-override warning. ts quick=OLD. Doctor: 'matches the scaffold (0 additive, 0 customized)', exit 0. `target remove ts`: 'refusing to delete what `target add` did not write', exit 1. No finding names the unreadable record line.",
+   "safe": "NOT OK (stale component writes the page while doctor matches; a verb refuses a file an add wrote)"
+  },
+  {
+   "state": "S3a retired copy edited (CUSTOMIZED under 4.44.0), then reverted byte for byte, then upgraded",
+   "did": "Edited ReadmeQuick_ts.ts, ran 4.44.0's doctor, restored the file, upgraded, ran doctor and package update.",
+   "happened": "RETIRED, then removed; pages NEW; doctor exit 0.",
+   "safe": "yes"
+  },
+  {
+   "state": "S3b every src/cmp .ts file converted to CRLF (Windows checkout)",
+   "did": "sed to CRLF, then doctor and package update.",
+   "happened": "The fingerprint ignores CRLF, so the copies read RETIRED and are removed; doctor exit 0.",
+   "safe": "yes"
+  },
+  {
+   "state": "S3c reverted except one trailing space",
+   "did": "Appended a space to line 1, then doctor and package update.",
+   "happened": "Override: kept and used (ts quick=OLD), with a warning; doctor exit 0 with an override line.",
+   "safe": "yes under their override rule (it is a real change), though a whitespace-only change keeps the old component forever"
+  },
+  {
+   "state": "S4 merge mode: Syntax_ts comment printer edited after the first upgrade; the next build (4.46.0) raises the interface to 3.4, changes the same printer line and retires ReadmeTopHowto_ts; no git",
+   "did": "package update to 4.45.0, edit, install next, then generate, doctor, and four separate runs: target add ts, package update, -y, --keep then hand-declaring 3.4, and --force.",
+   "happened": "Before any add: tsc --build reports up to date (EXIT 0) despite the '3.3' literal, then generate throws the interface refusal. Doctor: CUSTOMIZED and 1 RETIRED, exit 1.\n\ntarget add and package update both refuse ('nothing was changed'), with the inaccurate line 'no record of what the toolchain wrote here' (a record exists; it is a missing base). Their log also prints 'removed src/cmp/ts/ReadmeTopHowto_ts.ts', but the source and its dist .js are still there (rollback works; tree sha unchanged).\n\n-y: tree unchanged.\n\n--keep: the local file is kept and ReadmeTopHowto is pruned. tsc then fails with TS2322 in the Syntax copies of go, lua, perl, py and ts, and generate throws.\n\nHand-declaring 3.4 fixes ts only; go, lua, perl and py still fail until package update.\n\n--force: the edit is lost (NOTE=0), as that mode says.",
+   "safe": "yes for loss and dry run. But every unrefreshed provider copy breaks tsc on an interface raise, and the message does not name package update."
+  },
+  {
+   "state": "S4g/S4gb the same with .sdk committed to git (a base is found)",
+   "did": "Overlapping edit (S4g) and non-overlapping edit to the each printer (S4gb), then package update on next.",
+   "happened": "S4g: conflict with a correct LOCAL/INCOMING preview; nothing changed.\n\nS4gb: clean merge. The edit is kept, `interface: '3.4'` is merged in, and the other providers are refreshed. tsc exit 0, generate ok, doctor 1 customized, exit 0. The merge declared 3.4 on the project's behalf without anyone reading the change list.",
+   "safe": "yes. The version acknowledgement by merge is a weakness of the interface check, not of the lifecycle."
+  },
+  {
+   "state": "S5a target removed with 4.44.0's own verb, re-added after the upgrade",
+   "did": "`target remove ts` on 4.44.0, upgrade, `target add ts`, tsc, generate, doctor.",
+   "happened": "4.44.0's remove left dist/cmp/ts. After the re-add, dist/cmp/ts/ReadmeQuick/Ref/TopQuick_ts.js have no source and are loaded: ts pages OLD. Generate warns '3 compiled component(s) ... still loads them'. Doctor: 3 ORPHAN COMPILED, exit 1. target add does not remove them; doctor prune does.",
+   "safe": "yes only because of their 0e99e799. Without it, silent NOT OK."
+  },
+  {
+   "state": "S5b target directory deleted by hand (src/cmp/ts and tm/ts; model and dist kept), upgraded, re-added",
+   "did": "rm -rf the two trees, upgrade, doctor, target add ts, doctor prune.",
+   "happened": "Doctor before: 130 missing and 34 orphan compiled. After the re-add: 3 orphan compiled still loaded (ts OLD), doctor exit 1. After doctor prune: ts NEW.",
+   "safe": "yes (doctor fails until the prune)"
+  },
+  {
+   "state": "S7a alias go~go2 made by 4.44.0, upgraded, then the base go removed, then go2 re-added",
+   "did": "target remove go on the new build, doctor, target add go2.",
+   "happened": "remove go exit 0. go2's 3 copies RETIRED, then pruned. go2 and js2 README/REFERENCE are byte-identical to their fresh alias project (out/r13/fresh).",
+   "safe": "yes"
+  },
+  {
+   "state": "S7b alias go~go2, base go removed under 4.44.0 before the upgrade, then package update",
+   "did": "4.44.0 target remove go, upgrade, package update.",
+   "happened": "go2 pruned, pages equal to the fresh alias, doctor matches, exit 0.",
+   "safe": "yes"
+  },
+  {
+   "state": "S8 two aliases of one language (go~go2 go~go3) by 4.44.0, package update",
+   "did": "4.44.0 add, upgrade, doctor, update.",
+   "happened": "6 RETIRED, all pruned; go2 and go3 pages identical modulo the name; doctor exit 0. The root README holds three 'Golang' headings per section, as 4.44.0 does: pre-existing.",
+   "safe": "yes"
+  },
+  {
+   "state": "S9 main.kit.copies 'overwrite' with an edited retired copy: is the project told before the delete",
+   "did": "base-edited plus overwrite mode; doctor; -y target add ts; also an edited LIVE copy (Main_ts.ts) for comparison; then the real add.",
+   "happened": "Doctor says 'override (... changed here, so kept and used instead of the shared component)', which is false in this mode. -y says 'would remove src/cmp/ts/ReadmeQuick_ts.ts' without saying the file is edited. The real add logs only info 'removed ...'. The live edited Main_ts.ts is overwritten with only 'written: ...', no warning, and nothing is kept in log/base.",
+   "safe": "yes by the mode's existing rule: it is the rule overwrite already applied to live copies. But doctor's sentence is wrong in that mode, so the project is told the opposite before the delete."
+  },
+  {
+   "state": "S10a package update -y, then real, then again",
+   "did": "sha1 over .sdk around each run.",
+   "happened": "-y: tree unchanged. The first update pruned 15. The second update changes only .jostraca/jostraca.meta.log (verified by sha diff) and adds no record line; doctor exit 0.",
+   "safe": "yes"
+  },
+  {
+   "state": "S10b package update with the package not newer (4.44.0 project, 4.44.0 installed)",
+   "did": "package update --no-fetch on the old build.",
+   "happened": "Exit 0; only .jostraca/jostraca.meta.log changed; copies kept.",
+   "safe": "yes"
+  },
+  {
+   "state": "S11 feature add retry after the upgrade, before any target add",
+   "did": "feature add retry, then doctor.",
+   "happened": "feature add prunes nothing in src/cmp. The 15 copies stay; doctor reports 15 RETIRED, exit 1; pages OLD until a target add or package update.",
+   "safe": "yes (doctor fails)"
+  },
+  {
+   "state": "S12 pack target named lua installed as lua~lp beside the bundled lua, both by 4.44.0; sdkgen upgraded",
+   "did": "4.44.0 target add packs/chk-neither/lua~lp, generate, upgrade, doctor, package update, generate, remove lp.",
+   "happened": "Only the bundled lua's 3 are RETIRED and pruned. lp keeps ReadmeQuick/Ref/TopQuick_lp. lp/README.md is unchanged; lp/REFERENCE.md differs by one line, the shared ReadmeRefFeatures backslash fix. lp's root block is unchanged. Doctor exit 0; remove lp exit 0.",
+   "safe": "yes (a pack page changes by one intended shared line)"
+  },
+  {
+   "state": "S13a stale dist: package update, then generate WITHOUT recompiling",
+   "did": "Generated straight after the update.",
+   "happened": "The ported targets have no compiled Syntax and no old component. The tutorial is empty, REFERENCE.md is not written and the root quick start is missing, with 12 optional-component-missing warnings. Those warnings advise writing the retired 'ReadmeQuick_go.ts'. Doctor matches, exit 0.",
+   "safe": "not a lifecycle hazard (`npm run generate` runs tsc first), but the advice names the retired component, and doctor has no check for a source without compiled output"
+  },
+  {
+   "state": "S13b dist absent (fresh checkout), recompiled",
+   "did": "rm .sdk/dist, then tsc and generate.",
+   "happened": "All NEW and SAME as expected.",
+   "safe": "yes"
+  },
+  {
+   "state": "S14 .sdk/.gitignore ignores log/ and dist/; committed; cloned on a second machine; upgraded",
+   "did": "git init, commit, clone, link node_modules, use new, doctor, package update, target add, then --force.",
+   "happened": "First machine: doctor warns 'ignores log/ ...' at info level, exit 0. Clone: no record. 11 FORKED and 15 additive; update and add refuse. --force: doctor 'matches the scaffold (15 additive)', exit 0, all ported pages OLD.",
+   "safe": "NOT OK after --force (their 5b, reached through a configuration the scaffold once shipped)"
+  },
+  {
+   "state": "S16 target remove -y on an upgraded project",
+   "did": "sha1 before and after.",
+   "happened": "'would remove ...'; tree unchanged.",
+   "safe": "yes"
+  },
+  {
+   "state": "S17b package update, then ONLY the 15 retired files restored from git (log kept)",
+   "did": "git commit of src, package update, `git checkout HEAD --` the 15 files, then tsc, generate, doctor, update again.",
+   "happened": "The record holds null for them, so they are 'additive (used instead of the shared X)'. All five ported targets are OLD on all three sections. Doctor: 'matches the scaffold (15 additive, 0 customized)', exit 0. A second package update keeps them and they get compiled. (S17, restoring all of src, also fails tsc in Naming_lua and Naming_py against restored 4.44.0 utilities: loud.)",
+   "safe": "NOT OK (stale components write pages while doctor matches)"
+  },
+  {
+   "state": "S18 junk beside a retired copy (ReadmeQuick_ts.ts.orig, .DS_Store)",
+   "did": "Created both, then doctor and package update.",
+   "happened": "The 3 RETIRED are removed; both junk files stay; doctor exit 0 and does not mention them.",
+   "safe": "yes"
+  }
+ ],
+ "rules_bent": [
+  {
+   "rule": "One rule, one place: the component file convention <Name>_<t> and the src -> dist mapping",
+   "line": "target.ts:554 (override note builds dist/...js), target.ts:566 (removeCompiled), doctor.ts:212 and 326-328 (prune and orphanCompiledFiles), doctor.ts:532 (replacesShared regex), check.ts:476-478 (name + '_' + t + '.ts'), syntaxversion.ts:33, besides optional.ts:45 and aliasCmpName",
+   "how": "Read: the path of a per-target component and of its compiled output is rebuilt by hand in six new places. There is no shared helper."
+  },
+  {
+   "rule": "One rule, one place: which files are compiled output",
+   "line": "target.ts:569 and doctor.ts:212, the same ['.js','.js.map','.d.ts','.d.ts.map'] list",
+   "how": "Read: duplicated list."
+  },
+  {
+   "rule": "One rule, one place: which components a shared section replaces",
+   "line": "check.ts:496 hard-codes ['ReadmeQuick','ReadmeRef','ReadmeTopQuick']; doctor.ts:531-534 uses OPTIONAL_COMPONENTS (optional.ts:10-36)",
+   "how": "Read: two different lists answer the same question."
+  },
+  {
+   "rule": "One rule, one place: what interface a provider declares",
+   "line": "optional.ts:48-50 reads the runtime value Syntax.interface; check.ts:487-488 reads source text with /^\\s*interface:\\s*['\"]([^'\"]+)['\"]/m",
+   "how": "Ran: they disagree. `interface: SYNTAX_INTERFACE` passes the runtime check (and every later raise) while package check reports 'declares interface none' (packs/own-const). This is also the pattern-reading the provenance rule warns against, applied to a new declaration."
+  },
+  {
+   "rule": "The copy record is the only thing that tells outdated from edited",
+   "line": "copies.ts:77-107 (readCopies/parseEntry drop unparseable lines silently), used by doctor.ts:988-991 and target.ts:534-547",
+   "how": "Ran (S2b): the lifecycle change makes the record decide deletion and doctor's ok, but a damaged record line is skipped without a finding. An unchanged copy then becomes an override that is kept, used and never fails doctor."
+  },
+  {
+   "rule": "doctor must compare what add writes (doctor is the check that keeps all of this true)",
+   "line": "doctor.ts:445-448 (override and additive excluded from ok), doctor.ts:461 (override label)",
+   "how": "Ran: an 'override' or 'additive' copy named after a retired shared section never fails doctor (S2b, S14, S17b, their 5b). The override label says 'kept and used' even in overwrite mode, where the next add deletes it (S9). Doctor now also reads .sdk/dist (doctor.ts:320-338), a tree no add writes (scope bend, as they said)."
+  },
+  {
+   "rule": "add is overwrite / remove plans from doctor's findings",
+   "line": "remove.ts driftFindings (+report.override); refusal wording unchanged",
+   "how": "Ran (S2b): remove refuses a copy an add wrote, saying it 'did not write' it, whenever the record misclassifies it."
+  },
+  {
+   "rule": "Dry run reaches everywhere",
+   "line": "target.ts:466-486 (prune logs 'removed' inside a guarded run later rolled back)",
+   "how": "Ran (S4): honoured. -y wrote nothing, and a refused merge rolled back the prune and its compiled output. But the log says 'removed' for a file still on disk. Wording only."
+  },
+  {
+   "rule": "Junk is filtered in one place",
+   "line": "target.ts:396-407 (listRel uses isJunk); doctor.ts:52-53 and 1142 (walk uses ignoredEntry -> isJunk); check.ts uses existsSync only",
+   "how": "Read and ran (S18): respected. Not bent."
+  },
+  {
+   "rule": "Provenance by exact line",
+   "line": "none in the three changes",
+   "how": "Read: the lifecycle change does not touch provenance lines. Only the interface regex above is a comparable pattern-read."
+  },
+  {
+   "rule": "requirePath swallows only module-not-found",
+   "line": "optional.ts:48-50",
+   "how": "Read and ran: the interface check throws SdkGenError inside a component render, which aborts the whole generation (code included), not just the docs page. Deliberate, but it is what makes a pack shipping providers stop generating at every raise."
+  }
+ ],
+ "row11": [
+  {
+   "mutation": "m1: required fact removed (refFacts.testMock deleted) in a project-owned target myts made from the ts provider",
+   "with_check": "kind 1: TS2741 'Property testMock is missing'. Emitted anyway: kind 2, generate throws 'ReadmeRef: the test constructor needs ref.facts.testMock'.",
+   "without_check": "identical (nocheck = e53586e2)"
+  },
+  {
+   "mutation": "m2: required fact misnamed (testmock)",
+   "with_check": "kind 1: TS2561 'Did you mean testMock?'. Emitted anyway: kind 2, the same throw.",
+   "without_check": "identical"
+  },
+  {
+   "mutation": "m3: optional fact removed (deleted)",
+   "with_check": "tsc 0, no throw. kind 3: REFERENCE silently loses '`result.deleted()` reads the mark' (3 lines differ).",
+   "without_check": "identical"
+  },
+  {
+   "mutation": "m4: optional fact misnamed (streamsignal)",
+   "with_check": "kind 1: TS2561 excess property (only because the object literal is annotated). Emitted anyway: REFERENCE silently loses 'It ends early once `callopts.signal` reports an abort' (14 lines).",
+   "without_check": "identical"
+  },
+  {
+   "mutation": "m5: printer arity reduced (ref.read(value) => value)",
+   "with_check": "tsc 0 (a function with fewer parameters is assignable), no throw. kind 3: 'read as `result.err`' becomes 'read as `result`', and 'branch on `result.ok`' disappears (6 lines).",
+   "without_check": "identical"
+  },
+  {
+   "mutation": "m6: printer arity increased (4 required parameters)",
+   "with_check": "kind 1: TS2322. Emitted anyway: no page change.",
+   "without_check": "identical"
+  },
+  {
+   "mutation": "m7: facts object cast (`as RefFacts`) with testMock removed",
+   "with_check": "tsc 0. kind 2 throw (needs ref.facts.testMock).",
+   "without_check": "identical"
+  },
+  {
+   "mutation": "m8: interface declared as the imported SYNTAX_INTERFACE (plus the cast)",
+   "with_check": "On 3.3: same throw as m7. Moved to 4.46.0 (3.4) with testMock restored: tsc 0 and generate ok, so the raise passes unread. The literal '3.3' twin is refused. package check: 'provider-interface: declares interface none' (false).",
+   "without_check": "n/a (no check)"
+  },
+  {
+   "mutation": "m9: interface '3.2' declared, provider otherwise correct",
+   "with_check": "kind 2: refused, listing the 5 changes since 3.2, though nothing is wrong.",
+   "without_check": "n/a"
+  },
+  {
+   "mutation": "summary",
+   "with_check": "For a provider declaring the current version the check adds nothing: 3 of 7 mutations still give silent page changes (m3, m5, and m4 only if the literal were not annotated). It catches version drift only, and only while the version is a string literal. Kind 1 appears only on a clean build: with an existing dist, tsc --build reported up to date after the package changed (r11o-new-next, S4).",
+   "without_check": "Same outcomes for m1-m7."
+  }
+ ],
+ "not_done": [
+  "Did not run my new states on the 'today' build (without the lifecycle change); only on their final build.",
+  "The 'next' build (4.46.0) was made by editing an archive of HEAD (dist JS, .d.ts, scaffold providers, version strings), not by building source. It has no new shared behaviour beyond the interface value.",
+  "Edition component retirement (edition.ts pruneRetired) was not exercised, by me or by them.",
+  "Generation used their tool.js docs-only Root, not create-sdkgen's scaffold with `npm run generate`. I did not install a create-sdkgen project.",
+  "No full suite run. Only the action and syntaxversion test files (322/322).",
+  "No toolchain compile of generated examples.",
+  "S2b's damage is synthetic: an appended JSON line cut at 60 bytes. I did not reproduce a real crash mid-append.",
+  "I built no fix for the NOT OK class (shipped retired fingerprints, or doctor failing on additive/override copies named after retired sections).",
+  "The Naming hook has no version and I did not attack it.",
+  "Did not test a pack that ships providers being upgraded across a raise end to end. Inferred from S4 and m8/m9, not run as a pack with package update <pack>."
+ ],
+ "ran": "Every command ran with PATH=/opt/node24/bin first.\n\nSetup: copied their sdkgen, old, bin, today, packs, langpack and base fixtures into P/h5check, repointed paths and symlinks, and ran npm run build (exit 0, incremental).\n\nRows: bin/rows.sh (all their rows, today and new, rows 9-16, about 6 min) -> rows-all.log, diffed after normalisation -> out/rows.diff.\n\nMy states:\n- bin/st.sh S1 S1b S2 S3 S5 S7 S8 S9 S10 S11 S12 S13 S14 S16 S17 S18 -> st.log\n- OLDTAG=v4.34.1 bin/st.sh S1b -> st-s1b.log\n- bin/st2.sh S4 S4b S17b -> st2.log, and S4g -> st2g.log\n\nEach of those used doctor, target add/remove, package update (--no-fetch, -y, --keep, --force), doctor prune, project tsc --build, in-memory generation and sha1 snapshots, on real .sdk projects.\n\nBuilds: next (edited archive of HEAD) and nocheck (git archive of e53586e2).\n\nRow 11: bin/r11own.sh, 9 mutations on new and 7 on nocheck -> r11own.log. Plus the m8 and literal-3.3 projects on next, and package check on packs/own-const.\n\nTests: node --test --test-concurrency=2 on the action files plus syntaxversion: 322/322 (action-tests.log).\n\nSpot checks: sha diffs (S10), README/REFERENCE diffs (S12, S7 against out/r13/fresh), heading counts (S8). Nothing was written outside P/h5check.",
+ "read": "- P/brief.md, P/prompts/k-h5check.md, P/prompts/k-h5.md, P/stage1.md section 4, P/h5/PROGRESS.md, and the engineer's report.\n- /home/user/sdkgen/AGENTS.md (CLAUDE.md symlink), the required sections.\n- /home/user/create-sdkgen/project/standard/.sdk/src/tsconfig.json and package.json (generate runs tsc first; declaration on).\n- Code in P/h5check/sdkgen/ts:\n  - git diff 1fcc1ef5^..61e8b338 for target.ts, edition.ts and remove.ts;\n  - git diff 1fcc1ef5^..HEAD for doctor.ts;\n  - git diff a0318794..HEAD for check.ts, optional.ts and example.ts;\n  - helpers/syntaxversion.ts;\n  - copies.ts (readCopies, parseEntry, appendEntry, recordCopies, untouched, guardCopies);\n  - helpers/copymerge.ts (CopyGuard: holds, spares, finish, rollback);\n  - resolve.ts (owned targets);\n  - cmp/ReadmeQuick, ReadmeRef and ReadmeTop load lines.\n- git history of copies.ts (legacy format in 4.34.0, jsonl from 4.34.1).\n\nThese readings are the basis of the rules_bent line citations. The bends marked \"Ran\" were also observed in the runs above."
+}

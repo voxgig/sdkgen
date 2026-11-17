@@ -1,0 +1,3 @@
+page read: ((voxgig.demosdk.entity.EntityBase) result).deleted()
+javac exit 0
+deleted read: true

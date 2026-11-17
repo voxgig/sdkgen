@@ -1,0 +1,430 @@
+[
+ {
+  "id": "ts-method-typo",
+  "lang": "ts",
+  "kind": "method name",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "update: 'update', patch",
+  "to": "update: 'updat', patch"
+ },
+ {
+  "id": "ts-method-swap",
+  "lang": "ts",
+  "kind": "method name (swapped to another real op)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "method: { list: 'list', load: 'load'",
+  "to": "method: { list: 'load', load: 'list'"
+ },
+ {
+  "id": "c-method-swap",
+  "lang": "c",
+  "kind": "method name (swapped)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "update: 'update', patch: 'patch'",
+  "to": "update: 'patch', patch: 'update'"
+ },
+ {
+  "id": "clj-method-typo",
+  "lang": "clojure",
+  "kind": "method name",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "remove: 'remove' },\n  named",
+  "to": "remove: 'delete' },\n  named"
+ },
+ {
+  "id": "ts-param-required",
+  "lang": "ts",
+  "kind": "parameter list (optional->required)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "load: 'load(match?: object, ctrl?: object)'",
+  "to": "load: 'load(match: object, ctrl?: object)'"
+ },
+ {
+  "id": "ts-param-type",
+  "lang": "ts",
+  "kind": "parameter list (type changed)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "load: 'load(match?: object, ctrl?: object)'",
+  "to": "load: 'load(match?: string, ctrl?: object)'"
+ },
+ {
+  "id": "ts-param-renamed",
+  "lang": "ts",
+  "kind": "parameter list (name changed)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "load: 'load(match?: object, ctrl?: object)'",
+  "to": "load: 'load(id?: object, ctrl?: object)'"
+ },
+ {
+  "id": "c-param-type",
+  "lang": "c",
+  "kind": "parameter list (type changed)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "load: 'Entity* vt->load(Entity* e, voxgig_value* reqmatch",
+  "to": "load: 'Entity* vt->load(Entity* e, const char* reqmatch"
+ },
+ {
+  "id": "c-param-dropped",
+  "lang": "c",
+  "kind": "parameter list (err dropped)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "voxgig_value* sdk_direct({client}* client, voxgig_value* fetchargs, PNError** err)",
+  "to": "voxgig_value* sdk_direct({client}* client, voxgig_value* fetchargs)"
+ },
+ {
+  "id": "clj-param-added",
+  "lang": "clojure",
+  "kind": "parameter list (added)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "'({client}/direct client fetchargs) -> map'",
+  "to": "'({client}/direct client fetchargs opts) -> map'"
+ },
+ {
+  "id": "clj-return-changed",
+  "lang": "clojure",
+  "kind": "return (op)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "list: '(list ent reqmatch ctrl) -> vector'",
+  "to": "list: '(list ent reqmatch ctrl) -> map'"
+ },
+ {
+  "id": "py-return-changed",
+  "lang": "py",
+  "kind": "return (op)",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "list: 'list(reqmatch=None, ctrl=None) -> list[{Class}]'",
+  "to": "list: 'list(reqmatch=None, ctrl=None) -> {Class}'"
+ },
+ {
+  "id": "py-direct-return",
+  "lang": "py",
+  "kind": "return (direct fact)",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "direct: { returns: 'dict' }",
+  "to": "direct: { returns: 'list' }"
+ },
+ {
+  "id": "ts-style-raise",
+  "lang": "ts",
+  "kind": "result style",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "result: 'throw',",
+  "to": "result: 'raise',"
+ },
+ {
+  "id": "c-style-pair",
+  "lang": "c",
+  "kind": "result style",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "result: 'errslot',",
+  "to": "result: 'pair',"
+ },
+ {
+  "id": "clj-style-throw",
+  "lang": "clojure",
+  "kind": "result style (raise->throw)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "result: 'raise',",
+  "to": "result: 'throw',"
+ },
+ {
+  "id": "ts-collection",
+  "lang": "ts",
+  "kind": "collection noun",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "collection: 'array',",
+  "to": "collection: 'linked list',"
+ },
+ {
+  "id": "c-collection",
+  "lang": "c",
+  "kind": "collection noun",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "collection: '`NULL`-terminated array',",
+  "to": "collection: 'vector',"
+ },
+ {
+  "id": "clj-collection",
+  "lang": "clojure",
+  "kind": "collection noun",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "collection: 'vector',",
+  "to": "collection: 'lazy sequence',"
+ },
+ {
+  "id": "ts-noun",
+  "lang": "ts",
+  "kind": "reference noun",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "noun: 'Methods',",
+  "to": "noun: 'Functions',"
+ },
+ {
+  "id": "ts-type-integer",
+  "lang": "ts",
+  "kind": "type name",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "type: (t) => canonToType(t, 'ts'),",
+  "to": "type: (t) => '`$INTEGER`' === t ? 'string' : canonToType(t, 'ts'),"
+ },
+ {
+  "id": "zig-type-integer",
+  "lang": "zig",
+  "kind": "type name (wrong but not any)",
+  "file": "project/.sdk/src/cmp/zig/Syntax_zig.ts",
+  "from": "INTEGER: 'i64', NUMBER: 'f64', BOOLEAN",
+  "to": "INTEGER: 'f64', NUMBER: 'f64', BOOLEAN"
+ },
+ {
+  "id": "clj-type-integer",
+  "lang": "clojure",
+  "kind": "type name (wrong but not any)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "INTEGER: 'long', NUMBER",
+  "to": "INTEGER: 'string', NUMBER"
+ },
+ {
+  "id": "c-type-string",
+  "lang": "c",
+  "kind": "type name (list/map swapped; excepted)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "('ARRAY' === k ? ' (list)' : ('OBJECT' === k ? ' (map)' : ''))",
+  "to": "('ARRAY' === k ? ' (map)' : ('OBJECT' === k ? ' (list)' : ''))"
+ },
+ {
+  "id": "ts-type-comment",
+  "lang": "ts",
+  "kind": "type name in example comment",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "' // ' + canonToType(en.type, 'ts'))])",
+  "to": "' // ' + 'number')])"
+ },
+ {
+  "id": "ts-lit-none",
+  "lang": "ts",
+  "kind": "literal (none)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "none: 'undefined',",
+  "to": "none: 'null',"
+ },
+ {
+  "id": "py-lit-false",
+  "lang": "py",
+  "kind": "literal (false)",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "lits: { true: 'True', false: 'False' },",
+  "to": "lits: { true: 'true', false: 'false' },"
+ },
+ {
+  "id": "ts-lit-int",
+  "lang": "ts",
+  "kind": "literal (example INTEGER)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "INTEGER: '1', NUMBER: '1', BOOLEAN: 'true'",
+  "to": "INTEGER: '\"1\"', NUMBER: '1', BOOLEAN: 'true'"
+ },
+ {
+  "id": "c-nullvalue",
+  "lang": "c",
+  "kind": "literal (nullValue)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "nullValue: 'NULL',",
+  "to": "nullValue: 'nullptr',"
+ },
+ {
+  "id": "ts-member-removed",
+  "lang": "ts",
+  "kind": "member removed",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "    { kind: 'tester', sig: 'tester(testopts?, sdkopts?)' },\n",
+  "to": ""
+ },
+ {
+  "id": "c-member-removed",
+  "lang": "c",
+  "kind": "member removed",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "    { kind: 'name', sig: 'const char* vt->get_name(Entity* e)' },\n",
+  "to": ""
+ },
+ {
+  "id": "clj-member-removed",
+  "lang": "clojure",
+  "kind": "member removed",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "    { kind: 'matchGet', sig: '((:match-get ent)) -> map' },\n",
+  "to": ""
+ },
+ {
+  "id": "py-member-removed-pair",
+  "lang": "py",
+  "kind": "member removed (half of pair)",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "    { kind: 'dataSet', sig: 'data_set(data=None)' },\n",
+  "to": ""
+ },
+ {
+  "id": "ts-member-invented",
+  "lang": "ts",
+  "kind": "member invented",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "    { kind: 'entopts', sig: 'entopts()' },\n",
+  "to": "    { kind: 'entopts', sig: 'entopts()' },\n    { kind: 'make', sig: 'clone()' },\n"
+ },
+ {
+  "id": "ts-member-misplaced",
+  "lang": "ts",
+  "kind": "member invented (client member declared on entity)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "    { kind: 'entopts', sig: 'entopts()' },\n",
+  "to": "    { kind: 'entopts', sig: 'entopts()' },\n    { kind: 'utility', sig: 'utility()' },\n"
+ },
+ {
+  "id": "c-member-invented",
+  "lang": "c",
+  "kind": "member invented",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "    { kind: 'prepare', sig: 'voxgig_value* sdk_prepare(",
+  "to": "    { kind: 'options', sig: 'voxgig_value* sdk_options({client}* client)' },\n    { kind: 'prepare', sig: 'voxgig_value* sdk_prepare("
+ },
+ {
+  "id": "clj-member-invented",
+  "lang": "clojure",
+  "kind": "member invented (get-utility, OLD's)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "    { kind: 'direct', sig: '({client}/direct client fetchargs) -> map' },",
+  "to": "    { kind: 'utility', sig: '({client}/get-utility client) -> map' },\n    { kind: 'direct', sig: '({client}/direct client fetchargs) -> map' },"
+ },
+ {
+  "id": "ts-utility-kind",
+  "lang": "ts",
+  "kind": "member kind (utility copy->live)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "{ kind: 'utility', sig: 'utility()', returns: 'object' }",
+  "to": "{ kind: 'utilityBase', sig: 'utility()', returns: 'object' }"
+ },
+ {
+  "id": "ts-cancel",
+  "lang": "ts",
+  "kind": "fact cancel",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "  cancel: true,",
+  "to": "  cancel: false,"
+ },
+ {
+  "id": "ts-async-false",
+  "lang": "ts",
+  "kind": "async",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "  async: true,",
+  "to": "  async: false,"
+ },
+ {
+  "id": "py-record",
+  "lang": "py",
+  "kind": "record accessor",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "record: 'data_get()',",
+  "to": "record: 'data()',"
+ },
+ {
+  "id": "ts-record-expr",
+  "lang": "ts",
+  "kind": "record accessor in printer (not fact)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "case 'record': return name(e.of) + '.data()'",
+  "to": "case 'record': return name(e.of) + '.record()'"
+ },
+ {
+  "id": "ts-ctor-sig",
+  "lang": "ts",
+  "kind": "ctor",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "ctor: ['new {ctor}(options?: object)'],",
+  "to": "ctor: ['{ctor}.create(options?: object)'],"
+ },
+ {
+  "id": "py-test-sig",
+  "lang": "py",
+  "kind": "test constructor params",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "sig: '{client}.test(testopts=None, sdkopts=None)'",
+  "to": "sig: '{client}.test(testopts=None)'"
+ },
+ {
+  "id": "rt-ts-load-renamed",
+  "lang": "ts",
+  "kind": "runtime: op method renamed",
+  "file": "project/.sdk/src/cmp/ts/fragment/EntityLoadOp.fragment.ts",
+  "from": "  async load(this: any,",
+  "to": "  async fetch(this: any,"
+ },
+ {
+  "id": "rt-ts-load-param-required",
+  "lang": "ts",
+  "kind": "runtime: optional param made required",
+  "file": "project/.sdk/src/cmp/ts/fragment/EntityLoadOp.fragment.ts",
+  "from": "reqmatch?: EntityNameLoadMatch",
+  "to": "reqmatch: EntityNameLoadMatch"
+ },
+ {
+  "id": "rt-ts-load-sync",
+  "lang": "ts",
+  "kind": "runtime: async dropped",
+  "file": "project/.sdk/src/cmp/ts/fragment/EntityLoadOp.fragment.ts",
+  "from": "  async load(this: any,",
+  "to": "  load(this: any,"
+ },
+ {
+  "id": "rt-clj-load-param",
+  "lang": "clojure",
+  "kind": "runtime: param added",
+  "file": "project/.sdk/src/cmp/clojure/fragment/EntityLoadOp.fragment.clj",
+  "from": "(defn load [ent reqmatch ctrl]",
+  "to": "(defn load [ent reqmatch ctrl opts]"
+ },
+ {
+  "id": "rt-clj-getname-renamed",
+  "lang": "clojure",
+  "kind": "runtime: member renamed",
+  "file": "project/.sdk/src/cmp/clojure/fragment/Entity.fragment.clj",
+  "from": ":get-name (fn []",
+  "to": ":entity-name (fn []"
+ },
+ {
+  "id": "rt-c-fnptr-renamed",
+  "lang": "c",
+  "kind": "runtime: vtable member renamed",
+  "file": "project/.sdk/tm/c/core/sdk.h",
+  "from": "(*get_name)",
+  "to": "(*entity_name)"
+ },
+ {
+  "id": "no-forms-zig",
+  "lang": "zig",
+  "kind": "forms file deleted (source)",
+  "edits": [
+   {
+    "file": "test/runtimeforms/zig.ts",
+    "delete": true
+   }
+  ]
+ },
+ {
+  "id": "forms-vacuous-ts",
+  "lang": "ts",
+  "kind": "forms weakened: public patterns match nothing",
+  "edits": [
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "client: /^  (?:static |async \\*?)?((?!constructor\\b)[a-z]\\w*)\\(/gm,\n    entity: /^  (?:static |async \\*?)?((?!constructor\\b)[a-z]\\w*)\\(/gm,",
+    "to": "client: /$NEVER^(x)/gm,\n    entity: /$NEVER^(x)/gm,"
+   },
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "  undocumented: {\n    graphql: 'a GraphQL request through the pipeline; no reference page documents it (old pages neither)',\n  },\n",
+    "to": ""
+   }
+  ]
+ }
+]

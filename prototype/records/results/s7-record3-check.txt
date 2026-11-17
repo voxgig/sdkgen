@@ -1,0 +1,185 @@
+committable: True
+summary: |
+  I checked the writer's final record against every report it names and corrected it in place. My notes are in CHECK.md beside it. The classes file needed no change from me. Nothing under /home/user was touched, and the sdkgen checkout's git status is clean.
+  
+  Two verdict words changed:
+  
+  - **H2: not refuted → refuted.** The criterion is "less than 2x fewer lines for those sections" and names no particular count. The structure tested from version 3 on makes each language supply a forms file, without which its declared facts are checked by nothing. Counting those forms, the source shrank 1.54x, and 1.20x with the guard. The prototype's own independent checker at version 3 and the builder at 3.2 both judged H2 with the forms counted. The writer's "the count the criterion names" switched to documentation code alone in the one round where that count first passes, by 3% (2.06x). The 2.06x is still shown in the verdict, with the reading under which H2 would not be refuted.
+  - **H4: holds → not refuted.** The record defines "holds" as the criterion not crossed and the claim shown. Seven of twenty languages were never compiled, the lanes compile only their own models, and the java and php lanes miss a dropped import or require. The record now says it holds where measured.
+  
+  H1 (refuted), H3 (not refuted) and H5 (not refuted) keep their words, with corrected figures and claims:
+  
+  - **H1:** "four times the limit" becomes 2.5 to 4.4 times: 25 changes to the provider interface alone, 44 with the forms framework.
+  - **H3:** the share with the false secrets sentence charged to X3 becomes a range: 5.6% to 8.3% by the brief's rule, 8.3% to 11.1% strict. It crosses the line only at the top of the strict range.
+  - **H5:** "every unsafe state has a local fix" is no longer claimed. The deep-import bypass has none: its recorded remedy is ruled out by ts/package.json, and the other remedy did not close it.
+  
+  The attack's worst finding was already in the verdict's opening paragraph, in H3, and in the plan table. The plan table now also states it as the condition on adopting shared sentences.
+  
+  Thirteen other figures or claims were wrong and are corrected (listed in the record of mismatches). Status, the table of standings, the verdict, sections 3.1 to 3.5 and section 8 now say the same thing. I found no breach of the house rules; I rewrapped the lines my own edits left too long.
+  
+  The record is now 3,101 lines and 218,610 bytes; the classes file is unchanged at 615 lines and 68,875 bytes. Both can be committed as the final record. The H2 reading is a judgement made openly in the text, so the verdict can be revisited without losing any figure.
+figures_checked: |
+  About 300 figures in the changed text, compared with the report each comes from (s4-h3fix, s4-h5, s4-h5fix, s4-h5fixcheck, the 28 s5 reports, s6-integrate, s6-measure20, s6-attack34).
+  
+  - **The verdict, every figure:**
+    - the interface counts (44, 25 + 19, 42 when two pairs are merged, 9 to 11 from new languages);
+    - the measures (41 accepted, 7.1% and 14.8%, 2.06x, 1.54x, 1.20x, 2.14x, 1.50x, and the line counts 15,038, 7,285, 9,780, 12,520);
+    - the H3 ratios and the lane results;
+    - the H5 figures (60 retired copies, 74 of 76 tests, 150 files).
+  - **Section 3:** the twenty-language tables, sentence counts and re-count rows P1 to P25 and F1 to F19 against section 6.1 and appendix B rows 35 to 47.
+  - **Ranges and per-language figures:** hand-decision ranges, appendix A rows against the integration's table, port times and port line counts.
+  - **Second wave:** whole-variation compile counts (351/333, 370/352, 146/143), the 1,319-block scope check, and the kotlin and scala inline-rule site counts.
+  - **Suites and attacks:** 2,702 tests, 105 guard and reader tests, 285 controls, 49 of 59 and 94 of 108 mutations, and 43 + 28 + 11 attacks.
+  - **Main:** source line numbers for the new runtime defects.
+  
+  Mismatched and corrected: 13 figures or claims, 2 paths and 1 line number.
+  
+  The naming-hook range (22 to 34 lines) is the one figure I measured myself: a line count of Naming_*.ts in the measurer's clean clone at v34-frozen. The record says so.
+mismatches:
+  - [0]
+    where: 6.1, what the second wave met
+    document: each listed between five and seven problems in the guide (40 in all)
+    report: s5-port-*: guide_problems js 6, php 5, cpp 7, csharp 6, java 7, kotlin 7, scala 6
+    source: s5-port-{js,php,cpp,csharp,java,kotlin,scala}
+    fixed: 44 in all
+  - [1]
+    where: Verdict, plan table, retirement row
+    document: the first migration round (about 265)
+    report: cost: doctor +62 -6, retire.test +38, syntaxversion +51, example +3, optional +4, sdkgen +2 -1, 13 providers +13, syntaxversion.test +36, check.ts +44, packagecheck.test +29: +282 / -7
+    source: s4-h5
+    fixed: about 280
+  - [2]
+    where: Verdict, plan table, naming-hook row
+    document: 22 to 26 lines per language
+    report: 22 to 26 is the seven last ports' range (hooks 22 to 26); across twenty, Naming_*.ts are 22 to 34 lines (elixir 34, c 28, clojure 27) at v34-frozen
+    source: s6-measure20 lines_per_language; wc -l of the measurer's clean v34-frozen clone, run in this check
+    fixed: 22 to 34 lines per language, with 22 to 26 for the seven, each attributed
+  - [3]
+    where: Verdict, plan table, shared-sentences row
+    document: every changed shared sentence reopens classes in every language (752 for one round of eleven sentences)
+    report: pass 1 opened 752 classes in the thirteen ported languages
+    source: s4-h3fix
+    fixed: 752 in the thirteen languages then ported
+  - [4]
+    where: Verdict H1
+    document: refuted ... at four times the limit
+    report: the breaking-change criterion is crossed 2.5 to 4 times over; 25 provider interface, 44 with the forms framework
+    source: s6-measure20 hypotheses
+    fixed: at 2.5 to 4.4 times the limit (25 counting the provider interface alone, 44 with the forms framework)
+  - [5]
+    where: 3.1, the re-count's reasons
+    document: four guard tightenings at 3.1 and one at 3.2 each forced every then-ported forms file
+    report: F2, F4 and F5 forced all 9 forms; F3 forced only the c, rust and clojure forms; F9 (b8fd4fc2) forced the c, scala, cpp and kotlin forms
+    source: s6-measure20 interface_recount F2 to F5, F9
+    fixed: the forced files stated per change
+  - [6]
+    where: Standings table, verdict H3, 3.3
+    document: charged to X3: 8.3% by the brief's rule, 11.1% strict (per distinct defect 10.3% and 13.8%), over the limit both ways on the strict reading
+    report: the record's own arithmetic over S13, D26 (half open, counted for or against), U44 and X3 gives ranges; only the top of the strict range is over 10%
+    source: s6-measure20 h3 ratios; s6-attack34 sentence_verdicts [11]
+    fixed: 5.6% to 8.3% by the rule and 8.3% to 11.1% strict per entry; 6.9% to 10.3% and 10.3% to 13.8% per distinct defect; over the line only with D26's open half counted against
+  - [7]
+    where: 3.3, the integration's own changed sentences
+    document: the stream signal in words (ok, in all sixteen runtimes that print it)
+    report: verdict ok; runtimes read: ts, go, php, rb, lua, perl, clojure, java, scala, swift, elixir, js, kotlin, csharp (14); py and ocaml not cited
+    source: s6-attack34 sentence_verdicts [0] to [3]
+    fixed: prints in sixteen; the attacker cites the reading in fourteen, all but py and ocaml
+  - [8]
+    where: 5.4, csharp
+    document: the verifier relabelled three records and deleted one
+    report: V3: the three CS0136 records relabelled as same meaning, and 80f77307dc (the stream-signal defect record) deleted
+    source: s5-verify-csharp
+    fixed: the three records of the duplicate name relabelled and a fourth (the stream sentence's) deleted
+  - [9]
+    where: 5.4, attack counts
+    document: the reviewers ran between 26 and 37 attacks per language ... in js and kotlin every attack that did not change a declared value
+    report: cpp 33 runs (7 not caught), csharp 37 (7), java 26 guard attacks (7), scala 31 (14), kotlin 37 entries (13 not caught), php 31 (9); js's review groups its attacks and gives no total
+    source: s5-review-*.json attacks; s5-review-cpp, -java, -scala summaries
+    fixed: rewritten with the per-language counts, js marked as giving no count
+  - [10]
+    where: 6.3, the guard at 3.4
+    document: the guard and reader tests number 105 (measurer and integrator, ran)
+    report: the measurer counted guard lines but did not run the guard tests; the integrator and attacker ran 105/105
+    source: s6-measure20 lines; s6-integrate freeze_checks [3]; s6-attack34 freeze_checks [3]
+    fixed: lines: measurer; tests: integrator and attacker
+  - [11]
+    where: 5.8, ts and js utility row
+    document: `ReadmeModel_ts.ts:103`
+    report: the reports cite line 103 in the prototype clone; on main the row is line 101
+    source: s5-fix-js; sed on /home/user/sdkgen
+    fixed: `ReadmeModel_ts.ts:101`, `ReadmeModel_js.ts:79`, on `main`
+  - [12]
+    where: Status
+    document: the shared changes the integration recorded and did not make, among them the fix for a shared sentence the attack found false in 17 runtimes
+    report: the integration never recorded it; the attacker found it after the freeze
+    source: s6-integrate decisions; s6-attack34 summary
+    fixed: listed separately as a fix no one has made
+  - [13]
+    where: 4.3, WP08
+    document: its T entries are the unfixed ones in `ReadmeRefFeatures.ts`
+    report: S22, X3, U52 and U53 were fixed by one shared edit each; the classes file was already updated
+    source: s4-h3fix entries; classes file WP08
+    fixed: fixed by one shared edit each, which needed no port
+  - [14]
+    where: Standings table, verdict H5, 3.5 standing
+    document: every unsafe state found traces to one rule with a local fix
+    report: c5's recorded remedy (an exports map) is ruled out by ts/package.json; the other remedy was applied and did not close the bypass
+    source: s6-attack34 decisions [12]; s6-measure20 h5_rows [29]; s4-h5fixcheck verdict
+    fixed: each has a local fix but one; the deep import's recorded remedy is ruled out and no other was tried
+  - [15]
+    where: Verdict H2, 3.2 standing
+    document: not refuted, by 3%, on the count the criterion names
+    report: the criterion is 'less than 2x fewer lines for those sections' and names no particular count; section 3.2 itself says the record gives each count so the reader can choose
+    source: brief.md; the record's section 3.2
+    fixed: the phrase removed; see the verdict change
+  - [16]
+    where: 3.5 and 5.7 paths
+    document: `test/packaging.test.ts`; `tm/kotlin/core/SdkClient.kt:358-361`
+    report: the repository paths are ts/test/packaging.test.ts and ts/project/.sdk/tm/kotlin/core/SdkClient.kt
+    source: git ls-files in /home/user/sdkgen
+    fixed: full repository paths
+verdict_changes:
+  - [0]
+    h: H2
+    was: not refuted
+    now: refuted
+    why: The criterion counts 'lines for those sections' and names no particular count. From version 3 on, each language supplies a forms file beside its provider and hook (the record's section 1.1); without it, the language's declared facts are checked by nothing. With the forms the source shrank 1.54x, and 1.20x with the guard (measurer, ran). The prototype's independent checker at version 3 judged H2 with the forms counted (1.39x), and the 3.2 builder called it refuted on every count that includes the forms or the guard, although its doc-only projection was 2.26x. The writer moved to documentation code alone in the one round where that count first passes, by 3% (2.06x); that is kinder than the evidence. The verdict keeps the 2.06x and says that on that reading H2 would not be refuted.
+  - [1]
+    h: H4
+    was: holds
+    now: not refuted
+    why: |
+      The record defines 'holds' as the criterion not crossed and the claim shown. The criterion is not crossed in the thirteen languages with a toolchain. The claim is not shown in full:
+      - seven of twenty languages were never compiled;
+      - the lanes compile their own models, not the 21 review variations;
+      - java's lane adds its own imports, and php's README test strips the page's require (attacker A5, A10, A11);
+      - for languages without a toolchain, the brief's byte-identity test leaves many blocks decided by hand.
+      The verdict says it holds where measured.
+consistency:
+  - Status, the table of standings, the verdict, the section headers and standings of 3.1 to 3.5, and section 8 now carry the same words: H1 refuted, H2 refuted, H3 not refuted, H4 not refuted, H5 not refuted. No hypothesis is 'not decided' and none 'holds'.
+  - Section 3.2 said 'the record gives each count so the reader can choose' while its standing called documentation code alone 'the count the criterion names'. Both now give the same reading, with the alternative stated.
+  - The H5 claim 'every unsafe state has a local fix' (table, verdict, 3.5 standing) contradicted the record's own account of c5: the remedy ruled out, the bypass still open. All three now say 'each has a local fix but one'.
+  - Section 4.3 still called WP08's T entries unfixed, while section 4.2, section 3.3 and the classes file say they were fixed by shared edits. Corrected.
+  - The status listed the secrets fix among the changes the integration recorded. The integration never recorded it (the attacker found it after the freeze), and section 8 already lists it under 'found by the attack'. Corrected.
+  - The X3-charged H3 figures differed between the table (single values) and the arithmetic they rest on (ranges, with D26 counted both ways). All three places now give the ranges.
+  - The plan table supported shared sentences without the condition the verdict itself sets: one shared edit was false in 17 runtimes and passed every check. The condition is now in the table.
+house:
+  - No AI model or tool is named in either file. Section 8 mentions attribution trailers in earlier commits without naming anything.
+  - No temporary path appears in either file. CHECK.md refers to reports as P/results; it is a working note, not part of the record.
+  - No em dash, en dash or spaced hyphen used as punctuation in either file.
+  - No first person outside code spans in either file.
+  - Prose stays at or under 78 columns. Five lines that my own edits left long were rewrapped; tables and one-line list entries run long as allowed.
+  - Repository paths given as the repository's now exist in /home/user/sdkgen. Two short forms were completed (ts/test/packaging.test.ts; ts/project/.sdk/tm/kotlin/core/SdkClient.kt).
+  - These line citations were checked on main: pipeline.hpp, sdk_runtime.ml, SecretsFeature.cs, TestFeature.java, EntityRemoveOp.fragment.cpp, EntityBase.fragment.cs and .kt, SdkClient.kt, EntityRemoveOp.fragment.php, Entity.fragment.php and ReadmeModel_js.ts. ReadmeModel_ts.ts:103 is 101 on main and was corrected.
+  - The two helper files I created while editing (an edit script and a backup copy) were deleted. Only the two record files and CHECK.md were changed or written.
+still_ask:
+  - Is the H2 reading the maintainers' too? The record gives both counts. With the forms counted (the reading used since version 3) H2 is refuted at 1.54x. On documentation code alone it passes at 2.06x, by 3%.
+  - Is the secrets feature's model (an active PreSpec hook) wrong, or are the 17 runtimes? That decides whether the fix belongs in the model, the runtimes or the shared sentence.
+  - Is there any remedy for the deep-import bypass compatible with sdkgen's deliberate choice of no exports map?
+  - What would it cost to run the guard, the forms and a replacement for the review tools and hand records in the repository's CI, and to keep them up release after release? None of it exists there.
+  - Would a smaller adoption capture most of the benefit, for example only the naming hook, or only the shared derivations? Every part was built and measured together.
+  - Do the seven uncompiled languages' examples compile? Two failures there were found only by reading.
+  - Do real specifications, not one demo model and 21 variations of it, behave the same?
+  - Are the 164 shared sentences that no independent reader has given a verdict true?
+  - Does the cost of keeping shared sentences and declared facts true stay low as runtimes change? Nothing was measured over time.
+must_change:

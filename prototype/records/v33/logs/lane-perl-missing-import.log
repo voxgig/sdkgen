@@ -1,0 +1,13 @@
+  generated perl (default): 146 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/before/work/default/perl/perl
+[perl default] run 1: exit 2, 5.070910021s
+[perl default] run 2: exit 2, 5.029190072s
+[perl default] run 3: exit 2, 4.946501951s
+[perl default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/before/work/default/perl/perl): perl -Ilib t/readme_examples.t
+[perl default] last lines:
+    # root README      total=3 executed=3 syntaxchecked=0 illustration=0
+    ok 5 - no runnable-looking perl block was left unexecuted
+    ok 6 - every perl block is executed, syntaxchecked-nonrunnable, or illustration
+    ok 7 - at least one executed perl example
+    1..7
+    # Looks like you failed 2 tests of 7.
+[perl default] minimum of 3: 4.946501951s

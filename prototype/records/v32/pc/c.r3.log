@@ -1,0 +1,25 @@
+[portcheck c] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck c] classify (hand/c.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck c] ledger
+[portcheck c] blocks
+[portcheck c] fact sheet (and the language and convention facts against the OLD page)
+[portcheck c] purity
+[portcheck c] guard: node --test --test-name-pattern '^c: ' ts/dist-test/runtimefacts.test.js
+== portcheck c ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   61 |      38      0       29       5       4     0       0 | 0
+rootquick                  19 |       3      0        3       0       0     0       0 | 0
+reference               14872 |     106      0       67      21      18     0       0 | 0
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                   0        41       0         7 |      15    0      0 | yes (gcc); 48 changed blocks compiled by nothing
+rootquick                  0         2       0        17 |      34    0      0 | yes (gcc); 19 changed blocks compiled by nothing
+reference                151       143      19         0 |       7    0      0 | yes (gcc); 162 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 5, novel-token 10; rootquick: changed 10, novel-token 18, vanished-token 4, novel-shape 2; reference: old-only 1, novel-token 6)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+purity: 0 open, 0 accepted | notes declared 0, note regions found 0
+guard: pass (pass 4 fail 0 )
+facts (language and convention, against the OLD page): attested 8, recorded by hand 2, UNATTESTED 0, not printed 0, not judged 0; cited 13, pinned prose 7 (the reviewer audits each)
+shared sentences: matched 0, of which against a sentence nobody reviewed 0 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 0 (0 explained; listed in <section>.absent.json, not failed)
+fact sheet: factsheet c: 64 facts, 0 with no account, 0 unattested, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/tools/review/c/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/tools/review/c/<section>.open.json (fill into hand/c.json), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK c: PASS

@@ -1,0 +1,112 @@
+{
+ "intro": {
+  "sent_u": 66,
+  "sent_w": 1276,
+  "sent_loneu": 12,
+  "sent_lonew": 224
+ },
+ "install": {
+  "sent_u": 57,
+  "sent_w": 827,
+  "sent_loneu": 46,
+  "sent_lonew": 714
+ },
+ "quick": {
+  "head_u": 60,
+  "head_w": 278,
+  "head_s15u": 56,
+  "head_s15w": 264,
+  "sent_u": 39,
+  "sent_w": 536,
+  "sent_s15u": 20,
+  "sent_s15w": 280,
+  "sent_loneu": 14,
+  "sent_lonew": 193,
+  "head_loneu": 4,
+  "head_lonew": 14
+ },
+ "errors": {
+  "head_u": 20,
+  "head_w": 60,
+  "head_s15u": 20,
+  "head_s15w": 60,
+  "sent_u": 60,
+  "sent_w": 797,
+  "sent_s15u": 45,
+  "sent_s15w": 630,
+  "sent_loneu": 10,
+  "sent_lonew": 86
+ },
+ "howto": {
+  "head_u": 104,
+  "head_w": 562,
+  "head_s15u": 94,
+  "head_s15w": 506,
+  "sent_u": 136,
+  "sent_w": 1290,
+  "sent_s15u": 71,
+  "sent_s15w": 479,
+  "sent_loneu": 41,
+  "sent_lonew": 614,
+  "head_loneu": 3,
+  "head_lonew": 18
+ },
+ "model": {
+  "head_u": 268,
+  "head_w": 611,
+  "head_s15u": 212,
+  "head_s15w": 460,
+  "cell_u": 844,
+  "cell_w": 4153,
+  "cell_s15u": 570,
+  "cell_s15w": 2025,
+  "cell_loneu": 68,
+  "cell_lonew": 610,
+  "sent_u": 571,
+  "sent_w": 2665,
+  "sent_s15u": 417,
+  "sent_s15w": 955,
+  "head_loneu": 12,
+  "head_lonew": 38,
+  "sent_loneu": 55,
+  "sent_lonew": 822
+ },
+ "entity": {
+  "head_u": 620,
+  "head_w": 1420,
+  "head_s15u": 620,
+  "head_s15w": 1420,
+  "sent_u": 155,
+  "sent_w": 655,
+  "sent_s15u": 133,
+  "sent_s15w": 399,
+  "cell_u": 500,
+  "cell_w": 1861,
+  "cell_s15u": 368,
+  "cell_s15w": 812,
+  "cell_loneu": 34,
+  "cell_lonew": 429,
+  "sent_loneu": 22,
+  "sent_lonew": 256
+ },
+ "explanation": {
+  "head_u": 39,
+  "head_w": 140,
+  "sent_u": 113,
+  "sent_w": 1764,
+  "sent_loneu": 63,
+  "sent_lonew": 971,
+  "head_loneu": 13,
+  "head_lonew": 53
+ },
+ "expl.table": {
+  "head_u": 40,
+  "head_w": 160,
+  "head_s15u": 40,
+  "head_s15w": 160,
+  "sent_u": 175,
+  "sent_w": 1970,
+  "sent_s15u": 165,
+  "sent_s15w": 1865
+ }
+}

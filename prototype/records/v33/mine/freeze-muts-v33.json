@@ -1,0 +1,946 @@
+[
+ {
+  "id": "ts-method-typo",
+  "lang": "ts",
+  "kind": "method name",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "update: 'update', patch",
+  "to": "update: 'updat', patch"
+ },
+ {
+  "id": "ts-method-swap",
+  "lang": "ts",
+  "kind": "method name (swapped to another real op)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "method: { list: 'list', load: 'load'",
+  "to": "method: { list: 'load', load: 'list'"
+ },
+ {
+  "id": "c-method-swap",
+  "lang": "c",
+  "kind": "method name (swapped)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "update: 'update', patch: 'patch'",
+  "to": "update: 'patch', patch: 'update'"
+ },
+ {
+  "id": "clj-method-typo",
+  "lang": "clojure",
+  "kind": "method name",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "remove: 'remove' },\n  named",
+  "to": "remove: 'delete' },\n  named"
+ },
+ {
+  "id": "ts-param-required",
+  "lang": "ts",
+  "kind": "parameter list (optional->required)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "load: 'load(match?: object, ctrl?: object)'",
+  "to": "load: 'load(match: object, ctrl?: object)'"
+ },
+ {
+  "id": "ts-param-type",
+  "lang": "ts",
+  "kind": "parameter list (type changed)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "load: 'load(match?: object, ctrl?: object)'",
+  "to": "load: 'load(match?: string, ctrl?: object)'"
+ },
+ {
+  "id": "ts-param-renamed",
+  "lang": "ts",
+  "kind": "parameter list (name changed)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "load: 'load(match?: object, ctrl?: object)'",
+  "to": "load: 'load(id?: object, ctrl?: object)'"
+ },
+ {
+  "id": "c-param-type",
+  "lang": "c",
+  "kind": "parameter list (type changed)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "load: 'Entity* vt->load(Entity* e, voxgig_value* reqmatch",
+  "to": "load: 'Entity* vt->load(Entity* e, const char* reqmatch"
+ },
+ {
+  "id": "c-param-dropped",
+  "lang": "c",
+  "kind": "parameter list (err dropped)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "voxgig_value* sdk_direct({client}* client, voxgig_value* fetchargs, PNError** err)",
+  "to": "voxgig_value* sdk_direct({client}* client, voxgig_value* fetchargs)"
+ },
+ {
+  "id": "clj-param-added",
+  "lang": "clojure",
+  "kind": "parameter list (added)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "'({client}/direct client fetchargs) -> map'",
+  "to": "'({client}/direct client fetchargs opts) -> map'"
+ },
+ {
+  "id": "clj-return-changed",
+  "lang": "clojure",
+  "kind": "return (op)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "list: '(list ent reqmatch ctrl) -> vector'",
+  "to": "list: '(list ent reqmatch ctrl) -> map'"
+ },
+ {
+  "id": "py-return-changed",
+  "lang": "py",
+  "kind": "return (op)",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "list: 'list(reqmatch=None, ctrl=None) -> list[{Class}]'",
+  "to": "list: 'list(reqmatch=None, ctrl=None) -> {Class}'"
+ },
+ {
+  "id": "ts-style-raise",
+  "lang": "ts",
+  "kind": "result style",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "result: 'throw',",
+  "to": "result: 'raise',"
+ },
+ {
+  "id": "c-style-pair",
+  "lang": "c",
+  "kind": "result style",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "result: 'errslot',",
+  "to": "result: 'pair',"
+ },
+ {
+  "id": "clj-style-throw",
+  "lang": "clojure",
+  "kind": "result style (raise->throw)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "result: 'raise',",
+  "to": "result: 'throw',"
+ },
+ {
+  "id": "ts-collection",
+  "lang": "ts",
+  "kind": "collection noun",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "collection: 'array',",
+  "to": "collection: 'linked list',"
+ },
+ {
+  "id": "c-collection",
+  "lang": "c",
+  "kind": "collection noun",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "collection: '`NULL`-terminated array',",
+  "to": "collection: 'vector',"
+ },
+ {
+  "id": "clj-collection",
+  "lang": "clojure",
+  "kind": "collection noun",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "collection: 'vector',",
+  "to": "collection: 'lazy sequence',"
+ },
+ {
+  "id": "ts-noun",
+  "lang": "ts",
+  "kind": "reference noun",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "noun: 'Methods',",
+  "to": "noun: 'Functions',"
+ },
+ {
+  "id": "ts-type-integer",
+  "lang": "ts",
+  "kind": "type name",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "type: (t) => canonToType(t, 'ts'),",
+  "to": "type: (t) => '`$INTEGER`' === t ? 'string' : canonToType(t, 'ts'),"
+ },
+ {
+  "id": "zig-type-integer",
+  "lang": "zig",
+  "kind": "type name (wrong but not any)",
+  "file": "project/.sdk/src/cmp/zig/Syntax_zig.ts",
+  "from": "INTEGER: 'i64', NUMBER: 'f64', BOOLEAN",
+  "to": "INTEGER: 'f64', NUMBER: 'f64', BOOLEAN"
+ },
+ {
+  "id": "clj-type-integer",
+  "lang": "clojure",
+  "kind": "type name (wrong but not any)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "INTEGER: 'long', NUMBER",
+  "to": "INTEGER: 'string', NUMBER"
+ },
+ {
+  "id": "c-type-string",
+  "lang": "c",
+  "kind": "type name (list/map swapped; excepted)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "('ARRAY' === k ? ' (list)' : ('OBJECT' === k ? ' (map)' : ''))",
+  "to": "('ARRAY' === k ? ' (map)' : ('OBJECT' === k ? ' (list)' : ''))"
+ },
+ {
+  "id": "ts-type-comment",
+  "lang": "ts",
+  "kind": "type name in example comment",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "' // ' + canonToType(en.type, 'ts'))])",
+  "to": "' // ' + 'number')])"
+ },
+ {
+  "id": "ts-lit-none",
+  "lang": "ts",
+  "kind": "literal (none)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "none: 'undefined',",
+  "to": "none: 'null',"
+ },
+ {
+  "id": "ts-lit-int",
+  "lang": "ts",
+  "kind": "literal (example INTEGER)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "INTEGER: '1', NUMBER: '1', BOOLEAN: 'true'",
+  "to": "INTEGER: '\"1\"', NUMBER: '1', BOOLEAN: 'true'"
+ },
+ {
+  "id": "c-nullvalue",
+  "lang": "c",
+  "kind": "literal (nullValue)",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "nullValue: 'NULL',",
+  "to": "nullValue: 'nullptr',"
+ },
+ {
+  "id": "ts-member-removed",
+  "lang": "ts",
+  "kind": "member removed",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "    { kind: 'tester', sig: 'tester(testopts?, sdkopts?)' },\n",
+  "to": ""
+ },
+ {
+  "id": "c-member-removed",
+  "lang": "c",
+  "kind": "member removed",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "    { kind: 'name', sig: 'const char* vt->get_name(Entity* e)' },\n",
+  "to": ""
+ },
+ {
+  "id": "clj-member-removed",
+  "lang": "clojure",
+  "kind": "member removed",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "    { kind: 'matchGet', sig: '((:match-get ent)) -> map' },\n",
+  "to": ""
+ },
+ {
+  "id": "py-member-removed-pair",
+  "lang": "py",
+  "kind": "member removed (half of pair)",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "    { kind: 'dataSet', sig: 'data_set(args=None)' },\n",
+  "to": ""
+ },
+ {
+  "id": "c-member-invented",
+  "lang": "c",
+  "kind": "member invented",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "    { kind: 'prepare', sig: 'voxgig_value* sdk_prepare(",
+  "to": "    { kind: 'options', sig: 'voxgig_value* sdk_options({client}* client)' },\n    { kind: 'prepare', sig: 'voxgig_value* sdk_prepare("
+ },
+ {
+  "id": "clj-member-invented",
+  "lang": "clojure",
+  "kind": "member invented (get-utility, OLD's)",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "    { kind: 'direct', sig: '({client}/direct client fetchargs) -> map' },",
+  "to": "    { kind: 'utility', sig: '({client}/get-utility client) -> map' },\n    { kind: 'direct', sig: '({client}/direct client fetchargs) -> map' },"
+ },
+ {
+  "id": "ts-utility-kind",
+  "lang": "ts",
+  "kind": "member kind (utility copy->live)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "{ kind: 'utility', sig: 'utility()', returns: 'object' }",
+  "to": "{ kind: 'utilityBase', sig: 'utility()', returns: 'object' }"
+ },
+ {
+  "id": "ts-cancel",
+  "lang": "ts",
+  "kind": "fact cancel",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "  cancel: true,",
+  "to": "  cancel: false,"
+ },
+ {
+  "id": "ts-async-false",
+  "lang": "ts",
+  "kind": "async",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "  async: true,",
+  "to": "  async: false,"
+ },
+ {
+  "id": "py-record",
+  "lang": "py",
+  "kind": "record accessor",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "record: 'data_get()',",
+  "to": "record: 'data()',"
+ },
+ {
+  "id": "ts-record-expr",
+  "lang": "ts",
+  "kind": "record accessor in printer (not fact)",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "case 'record': return name(e.of) + '.data()'",
+  "to": "case 'record': return name(e.of) + '.record()'"
+ },
+ {
+  "id": "ts-ctor-sig",
+  "lang": "ts",
+  "kind": "ctor",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "ctor: ['new {ctor}(options?: object)'],",
+  "to": "ctor: ['{ctor}.create(options?: object)'],"
+ },
+ {
+  "id": "py-test-sig",
+  "lang": "py",
+  "kind": "test constructor params",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "sig: '{client}.test(testopts=None, sdkopts=None)'",
+  "to": "sig: '{client}.test(testopts=None)'"
+ },
+ {
+  "id": "rt-ts-load-renamed",
+  "lang": "ts",
+  "kind": "runtime: op method renamed",
+  "file": "project/.sdk/src/cmp/ts/fragment/EntityLoadOp.fragment.ts",
+  "from": "  async load(this: any,",
+  "to": "  async fetch(this: any,"
+ },
+ {
+  "id": "rt-ts-load-param-required",
+  "lang": "ts",
+  "kind": "runtime: optional param made required",
+  "file": "project/.sdk/src/cmp/ts/fragment/EntityLoadOp.fragment.ts",
+  "from": "reqmatch?: EntityNameLoadMatch",
+  "to": "reqmatch: EntityNameLoadMatch"
+ },
+ {
+  "id": "rt-ts-load-sync",
+  "lang": "ts",
+  "kind": "runtime: async dropped",
+  "file": "project/.sdk/src/cmp/ts/fragment/EntityLoadOp.fragment.ts",
+  "from": "  async load(this: any,",
+  "to": "  load(this: any,"
+ },
+ {
+  "id": "rt-clj-load-param",
+  "lang": "clojure",
+  "kind": "runtime: param added",
+  "file": "project/.sdk/src/cmp/clojure/fragment/EntityLoadOp.fragment.clj",
+  "from": "(defn load [ent reqmatch ctrl]",
+  "to": "(defn load [ent reqmatch ctrl opts]"
+ },
+ {
+  "id": "rt-clj-getname-renamed",
+  "lang": "clojure",
+  "kind": "runtime: member renamed",
+  "file": "project/.sdk/src/cmp/clojure/fragment/Entity.fragment.clj",
+  "from": ":get-name (fn []",
+  "to": ":entity-name (fn []"
+ },
+ {
+  "id": "rt-c-fnptr-renamed",
+  "lang": "c",
+  "kind": "runtime: vtable member renamed",
+  "file": "project/.sdk/tm/c/core/sdk.h",
+  "from": "(*get_name)",
+  "to": "(*entity_name)"
+ },
+ {
+  "id": "no-forms-zig",
+  "lang": "zig",
+  "kind": "forms file deleted (source)",
+  "edits": [
+   {
+    "file": "test/runtimeforms/zig.ts",
+    "delete": true
+   }
+  ]
+ },
+ {
+  "id": "forms-vacuous-ts",
+  "lang": "ts",
+  "kind": "forms weakened: public patterns match nothing",
+  "edits": [
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "client: /^  (?:static |async \\*?)?((?!constructor\\b)[a-z]\\w*)\\(/gm,\n    entity: /^  (?:static |async \\*?)?((?!constructor\\b)[a-z]\\w*)\\(/gm,",
+    "to": "client: /$NEVER^(x)/gm,\n    entity: /$NEVER^(x)/gm,"
+   },
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "    graphql: 'a GraphQL request through the pipeline; no reference page documents it (old pages neither)',\n",
+    "to": ""
+   }
+  ]
+ },
+ {
+  "id": "my-cite-quote-gone-ts",
+  "lang": "ts",
+  "kind": "a cited quote removed from the runtime (Control.ts)",
+  "edits": [
+   {
+    "file": "project/.sdk/tm/ts/src/Control.ts",
+    "from": "signal?: AbortSignal",
+    "to": "signal?: any"
+   }
+  ]
+ },
+ {
+  "id": "my-cite-quote-gone-go",
+  "lang": "go",
+  "kind": "utility made the live node: the cited copy line goes",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/fragment/Main.fragment.go",
+    "from": "return CopyUtility(sdk.utility)",
+    "to": "return sdk.utility"
+   }
+  ]
+ },
+ {
+  "id": "my-cite-token-ts",
+  "lang": "ts",
+  "kind": "cited code token changed: direct.signal AbortSignal -> AbortController",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+    "from": "signal: 'AbortSignal'",
+    "to": "signal: 'AbortController'"
+   }
+  ]
+ },
+ {
+  "id": "my-cite-token-rust",
+  "lang": "rust",
+  "kind": "cited code token changed: none Value::Noval -> Value::Null",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+    "from": "none: 'Value::Noval',",
+    "to": "none: 'Value::Null',"
+   }
+  ]
+ },
+ {
+  "id": "my-method-swap-go",
+  "lang": "go",
+  "kind": "list and load methods swapped (go)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "method: { list: 'List', load: 'Load',",
+    "to": "method: { list: 'Load', load: 'List',"
+   }
+  ]
+ },
+ {
+  "id": "my-method-swap-elixir",
+  "lang": "elixir",
+  "kind": "create and update methods swapped (elixir)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/elixir/Syntax_elixir.ts",
+    "from": "create: 'create', update: 'update'",
+    "to": "create: 'update', update: 'create'"
+   }
+  ]
+ },
+ {
+  "id": "my-method-swap-clojure",
+  "lang": "clojure",
+  "kind": "list and load methods swapped (clojure)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+    "from": "method: { list: 'list', load: 'load',",
+    "to": "method: { list: 'load', load: 'list',"
+   }
+  ]
+ },
+ {
+  "id": "my-rt-op-file-swap-ts",
+  "lang": "ts",
+  "kind": "RUNTIME: EntityListOp defines load instead of list",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ts/fragment/EntityListOp.fragment.ts",
+    "from": "  async list(this: any,",
+    "to": "  async load(this: any,"
+   }
+  ]
+ },
+ {
+  "id": "my-param-renamed-rust",
+  "lang": "rust",
+  "kind": "load parameter renamed reqmatch -> query (rust)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+    "from": "load: 'load(reqmatch: Value, ctrl: Value)",
+    "to": "load: 'load(query: Value, ctrl: Value)"
+   }
+  ]
+ },
+ {
+  "id": "my-param-renamed-rb",
+  "lang": "rb",
+  "kind": "load parameter renamed reqmatch -> query (rb)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/rb/Syntax_rb.ts",
+    "from": "load: 'load(reqmatch = nil, ctrl = nil) -> {Class}',",
+    "to": "load: 'load(query = nil, ctrl = nil) -> {Class}',"
+   }
+  ]
+ },
+ {
+  "id": "my-param-type-go",
+  "lang": "go",
+  "kind": "load parameter type map[string]any -> string (go)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "load: 'Load(reqmatch, ctrl map[string]any) (any, error)',",
+    "to": "load: 'Load(reqmatch, ctrl string) (any, error)',"
+   }
+  ]
+ },
+ {
+  "id": "my-member-client-to-entity-go",
+  "lang": "go",
+  "kind": "client member Direct moved to the entity (go)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "    { kind: 'direct', sig: 'Direct(fetchargs map[string]any) (map[string]any, error)' },\n",
+    "to": ""
+   },
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "    { kind: 'name', sig: 'GetName() string' },\n",
+    "to": "    { kind: 'name', sig: 'GetName() string' },\n    { kind: 'direct', sig: 'Direct(fetchargs map[string]any) (map[string]any, error)' },\n"
+   }
+  ]
+ },
+ {
+  "id": "my-member-entity-to-client-rust",
+  "lang": "rust",
+  "kind": "entity member get_name moved to the client (rust)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+    "from": "    { kind: 'name', sig: 'get_name() -> String' },\n",
+    "to": ""
+   },
+   {
+    "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+    "from": "    { kind: 'direct', sig: 'direct(fetchargs: Value) -> Result<Value, ProjectNameError>' },\n",
+    "to": "    { kind: 'direct', sig: 'direct(fetchargs: Value) -> Result<Value, ProjectNameError>' },\n    { kind: 'name', sig: 'get_name() -> String' },\n"
+   }
+  ]
+ },
+ {
+  "id": "my-reader-ocaml-op-renamed",
+  "lang": "ocaml",
+  "kind": "RUNTIME (unported): entity_obj field e_load renamed e_fetch",
+  "edits": [
+   {
+    "file": "project/.sdk/tm/ocaml/sdk_types.ml",
+    "from": "  mutable e_load : value -> value -> entity_obj;",
+    "to": "  mutable e_fetch : value -> value -> entity_obj;"
+   }
+  ]
+ },
+ {
+  "id": "my-reader-perl-style",
+  "lang": "perl",
+  "kind": "RUNTIME (unported): perl forms told the style is throw",
+  "edits": [
+   {
+    "file": "test/runtimeforms/perl.ts",
+    "from": "style: { exception: 'die', raises: /\\bdie\\b/ },",
+    "to": "style: { exception: 'die', raises: /zz-never/ },"
+   }
+  ]
+ },
+ {
+  "id": "my-undocumented-member-ts",
+  "lang": "ts",
+  "kind": "RUNTIME: a new public entity member nobody documents (ts)",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ts/fragment/EntityBase.fragment.ts",
+    "from": "  entopts() {",
+    "to": "  secretHelper() {\n    return 1\n  }\n\n  entopts() {"
+   }
+  ]
+ },
+ {
+  "id": "v31-copy-cite-gone-rb",
+  "lang": "rb",
+  "kind": "citation removed",
+  "file": "test/runtimeforms/rb.ts",
+  "from": "    'ref.facts.entity[0].copy'",
+  "to": "    'ref.facts.entity[9].copy'"
+ },
+ {
+  "id": "v31-py-dataset-keyword",
+  "lang": "py",
+  "kind": "param name reverted",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "sig: 'data_set(args=None)'",
+  "to": "sig: 'data_set(data=None)'"
+ },
+ {
+  "id": "new-swift-throws-runtime",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/fragment/EntityLoadOp.fragment.swift",
+  "from": "_ ctrl: VMap?) throws -> Value {",
+  "to": "_ ctrl: VMap?) -> Value {"
+ },
+ {
+  "id": "new-swift-throws-view",
+  "lang": "swift",
+  "file": "test/runtimeforms/swift.ts",
+  "from": "? 'throws' : '' },",
+  "to": "? '' : '' },"
+ },
+ {
+  "id": "new-ts-static-test-instance",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/fragment/Main.fragment.ts",
+  "from": "  static test(testoptsarg?: any, sdkoptsarg?: any) {",
+  "to": "  test(testoptsarg?: any, sdkoptsarg?: any) {"
+ },
+ {
+  "id": "new-py-classmethod-test-instance",
+  "lang": "py",
+  "file": "project/.sdk/src/cmp/py/fragment/Main.fragment.py",
+  "from": "    @classmethod\n    def test(cls, testopts=None, sdkopts=None)",
+  "to": "    def test(self, testopts=None, sdkopts=None)"
+ },
+ {
+  "id": "new-swift-static-testsdk-instance",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/fragment/Main.fragment.swift",
+  "from": "  public static func testSDK(_ testoptsIn",
+  "to": "  public func testSDK(_ testoptsIn"
+ },
+ {
+  "id": "new-ocaml-field-to-function",
+  "lang": "ocaml",
+  "file": "project/.sdk/tm/ocaml/sdk_types.ml",
+  "from": "  mutable e_name : string;",
+  "to": "  mutable e_name : unit -> string;"
+ },
+ {
+  "id": "new-rb-none-null",
+  "lang": "rb",
+  "file": "project/.sdk/src/cmp/rb/Syntax_rb.ts",
+  "from": "  none: 'nil',",
+  "to": "  none: 'null',"
+ },
+ {
+  "id": "new-rb-lits-false-False",
+  "lang": "rb",
+  "file": "project/.sdk/src/cmp/rb/Syntax_rb.ts",
+  "from": "  maps: 'hashes',",
+  "to": "  maps: 'hashes',\n  lits: { true: 'true', false: 'False' },"
+ },
+ {
+  "id": "new-py-lits-removed",
+  "lang": "py",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "  lits: { true: 'True', false: 'False' },\n",
+  "to": ""
+ },
+ {
+  "id": "new-go-absence-matches",
+  "lang": "go",
+  "file": "project/.sdk/tm/go/utility/fetcher.go",
+  "from": "req, err := http.NewRequest(method, fullurl, bodyReader)",
+  "to": "req, err := http.NewRequest(method, fullurl, bodyReader) // abort is not wired"
+ },
+ {
+  "id": "new-ts-unquoted-occurs",
+  "lang": "ts",
+  "file": "test/runtimeforms/ts.ts",
+  "from": "'(\\'undefined\\' !== typeof Blob && value instanceof Blob) || isStream(value)', 'return new Uint8Array(chunk)'],",
+  "to": "'(\\'undefined\\' !== typeof Blob && value instanceof Blob) || isStream(value)'],"
+ },
+ {
+  "id": "new-swift-stream-incremental",
+  "lang": "swift",
+  "file": "test/runtimeforms/swift.ts",
+  "from": "runs: \"before it returns\", items: \"before it returns\",",
+  "to": "runs: \"before it returns\", items: \"as the caller iterates\","
+ },
+ {
+  "id": "new-clojure-stream-incremental",
+  "lang": "clojure",
+  "file": "test/runtimeforms/clojure.ts",
+  "from": "runs: \"before it returns\", items: \"before it returns\",",
+  "to": "runs: \"before it returns\", items: \"as the caller iterates\","
+ },
+ {
+  "id": "new-ocaml-stream-incremental-code",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Entity_ocaml.ts",
+  "from": "      seq_of raw);",
+  "to": "      seq_of raw);\n      (* | Some fn -> fn () *)"
+ },
+ {
+  "id": "new-swift-try-dropped-provider-na",
+  "lang": "swift",
+  "file": "test/runtimeforms/swift.ts",
+  "from": "failure: { shows: 'throws', call: 'try' },",
+  "to": ""
+ },
+ {
+  "id": "new-ts-unquoted-near",
+  "lang": "ts",
+  "edits": [
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "'(\\'undefined\\' !== typeof Blob && value instanceof Blob) || isStream(value)', 'return new Uint8Array(chunk)'],",
+    "to": "'(\\'undefined\\' !== typeof Blob && value instanceof Blob) || isStream(value)'],"
+   },
+   {
+    "file": "test/runtimeforms/ts.ts",
+    "from": "        Buffer: 'a Node Buffer is a Uint8Array, which ArrayBuffer.isView accepts',",
+    "to": "        Buffer: 'a Node Buffer is a Uint8Array, which ArrayBuffer.isView accepts',\n        Uint8Array: 'a typed array, which ArrayBuffer.isView accepts',"
+   }
+  ]
+ },
+ {
+  "id": "new-swift-try-dropped-provider-na",
+  "lang": "swift",
+  "file": "test/runtimeforms/swift.ts",
+  "from": "failure: { shows: 'throws', call: 'try' },",
+  "to": ""
+ },
+ {
+  "id": "new-rb-unquoted-near",
+  "lang": "rb",
+  "file": "test/runtimeforms/rb.ts",
+  "from": "'ref.facts.none': { file: 'src/cmp/rb/fragment/EntityLoadOp.fragment.rb', quote: 'def load(reqmatch = nil, ctrl = nil)' },",
+  "to": "'ref.facts.none': { file: 'src/cmp/rb/fragment/EntityLoadOp.fragment.rb', quote: 'def load(reqmatch = ', unquoted: { nil: 'excused although the line holds it' } },"
+ },
+ {
+  "id": "v32-ts-okfalse-False",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "abortCode: 'request_aborted', okFalse: 'false' }",
+  "to": "abortCode: 'request_aborted', okFalse: 'False' }"
+ },
+ {
+  "id": "v32-ts-abortcode-wrong",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "abortCode: 'request_aborted',",
+  "to": "abortCode: 'request_cancelled',"
+ },
+ {
+  "id": "v32-c-runs-iterate",
+  "lang": "c",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "PNError** err)', runs: 'call' },",
+  "to": "PNError** err)', runs: 'iterate' },"
+ },
+ {
+  "id": "v32-go-accessor-param-entopts",
+  "lang": "go",
+  "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+  "from": "arg: 'entopts', param: 'data' },",
+  "to": "arg: 'entopts', param: 'entopts' },"
+ },
+ {
+  "id": "v32-go-noerror-null",
+  "lang": "go",
+  "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+  "from": "  noError: 'nil',",
+  "to": "  noError: 'null',"
+ },
+ {
+  "id": "v32-rb-options-copy-false",
+  "lang": "rb",
+  "file": "project/.sdk/src/cmp/rb/Syntax_rb.ts",
+  "from": "{ kind: 'options', sig: 'options_map -> Hash', copy: true },",
+  "to": "{ kind: 'options', sig: 'options_map -> Hash', copy: false },"
+ },
+ {
+  "id": "v32-c-options-member-removed",
+  "lang": "c",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "    { kind: 'options', sig: 'voxgig_value* sdk_options_map({client}* client)', copy: true },\n",
+  "to": ""
+ },
+ {
+  "id": "v32-perl-okfalse-ahead-false",
+  "lang": "perl",
+  "file": "test/runtimeforms/perl.ts",
+  "from": "'ref.facts.direct.okFalse': { value: \"0\",",
+  "to": "'ref.facts.direct.okFalse': { value: \"false\","
+ },
+ {
+  "id": "v32-rb-okfalse-False",
+  "lang": "rb",
+  "file": "project/.sdk/src/cmp/rb/Syntax_rb.ts",
+  "from": "  direct: { returns: 'Hash', okFalse: 'false' },",
+  "to": "  direct: { returns: 'Hash', okFalse: 'False' },"
+ },
+ {
+  "id": "v32-rb-none-null",
+  "lang": "rb",
+  "file": "project/.sdk/src/cmp/rb/Syntax_rb.ts",
+  "from": "  none: 'nil',",
+  "to": "  none: 'null',"
+ },
+ {
+  "id": "v32-py-okfalse-removed",
+  "lang": "py",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "  direct: { returns: 'dict', okFalse: 'False' },",
+  "to": "  direct: { returns: 'dict' },"
+ },
+ {
+  "id": "v32-ts-stream-runs-call",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "runs: 'iterate'",
+  "to": "runs: 'call'"
+ },
+ {
+  "id": "py-direct-return-adapted",
+  "lang": "py",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "direct: { returns: 'dict', okFalse: 'False' }",
+  "to": "direct: { returns: 'list', okFalse: 'False' }"
+ },
+ {
+  "id": "py-lit-false-adapted",
+  "lang": "py",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "okFalse: 'False' }",
+  "to": "okFalse: 'false' }"
+ },
+ {
+  "id": "ts-member-invented-adapted",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "    { kind: 'entopts', sig: 'entopts()', copy: true },\n",
+  "to": "    { kind: 'entopts', sig: 'entopts()', copy: true },\n    { kind: 'make', sig: 'clone()' },\n"
+ },
+ {
+  "id": "ts-member-misplaced-adapted",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "    { kind: 'entopts', sig: 'entopts()', copy: true },\n",
+  "to": "    { kind: 'entopts', sig: 'entopts()', copy: true },\n    { kind: 'utility', sig: 'utility()' },\n"
+ },
+ {
+  "id": "v31-accessor-arg-data-ts-adapted",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "accessor: { sig: '{accessor}(entopts?: object)', arg: 'entopts', param: 'entopts' }",
+  "to": "accessor: { sig: '{accessor}(data?: object)', arg: 'data', param: 'data' }"
+ },
+ {
+  "id": "v31-copy-false-go-adapted",
+  "lang": "go",
+  "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+  "from": "Data(args ...any) any', copy: true",
+  "to": "Data(args ...any) any', copy: false"
+ },
+ {
+  "id": "v31-rust-direct-note-wrong-adapted3",
+  "lang": "rust",
+  "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+  "from": "The result map always comes back inside `Ok`.",
+  "to": "The result map comes back inside `Ok` only for a 2xx response."
+ },
+ {
+  "id": "new-go-note-token-missing-adapted",
+  "lang": "go",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+    "from": "no error is sent.",
+    "to": "no error is sent; see `StreamZz`."
+   },
+   {
+    "file": "test/runtimeforms/go.ts",
+    "from": "no error is sent.",
+    "to": "no error is sent; see `StreamZz`."
+   }
+  ]
+ },
+ {
+  "id": "my-types-reason-blanked-zig",
+  "lang": "zig",
+  "file": "test/runtimeforms/zig.ts",
+  "from": "types: { column: null, reason: 'the code generator has no zig column in canonToType: every field is a Value, so the page\\'",
+  "to": "types: { column: null, reason: ''"
+ },
+ {
+  "id": "my-new-provider-php-adapted",
+  "lang": "php",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/php/Syntax_php.ts",
+    "create": true,
+    "content": "import { canonToType, indentLines, jsKey, jsProp, jsQuote } from '@voxgig/sdkgen'\nimport type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'\n\n\nconst facts: RuntimeFacts = {\n  method: { list: 'list', load: 'load', create: 'create', update: 'update', patch: 'patch', remove: 'remove' },\n  named: 'call',\n  async: true,\n  result: 'throw',\n  collection: 'array',\n  record: '.data()',\n  listOf: '{Class}[]',\n  prints: 'record',\n}\n\n// The fixed API the reference page documents: EntityBase.fragment.ts,\n// Entity.fragment.ts and Main.fragment.ts.\nconst refFacts: RefFacts = {\n  entityBy: 'class',\n  noun: 'Methods',\n  none: 'undefined',\n  keys: 'member',\n  maps: 'objects',\n  container: 'object',\n  valueType: { STRING: 'string', OBJECT: 'object', ANY: 'any' },\n  ctor: ['new {ctor}(options?: object)'],\n  test: [{ sig: '{client}.test(testopts?, sdkopts?)', call: 'const client = {client}.test()', args: true }],\n  accessor: { sig: '{accessor}(data?: object)', arg: 'data', param: 'data' },\n  op: {\n    list: 'list(match?: object, ctrl?: object)',\n    load: 'load(match?: object, ctrl?: object)',\n    create: 'create(data?: object, ctrl?: object)',\n    update: 'update(data?: object, ctrl?: object)',\n    patch: 'patch(data?: object, ctrl?: object)',\n    remove: 'remove(match?: object, ctrl?: object)',\n  },\n  client: [\n    { kind: 'options', sig: 'options()', returns: 'object' },\n    { kind: 'utility', sig: 'utility()', returns: 'object' },\n    { kind: 'direct', sig: 'direct(fetchargs?: object)' },\n    { kind: 'prepare', sig: 'prepare(fetchargs?: object)' },\n    { kind: 'tester', sig: 'tester(testopts?, sdkopts?)' },\n  ],\n  entity: [\n    { kind: 'data', sig: 'data(data?: object)' },\n    { kind: 'match', sig: 'match(match?: object)' },\n    { kind: 'make', sig: 'make()' },\n    { kind: 'streamIterator', sig: 'stream(action: string, args?: object, callopts?: object)' },\n    { kind: 'client', sig: 'client()' },\n    { kind: 'entopts', sig: 'entopts()' },\n  ],\n  direct: { returns: 'Promise<{ ok, status, headers, data }>', signal: 'AbortSignal' },\n  prepare: { returns: 'Promise<{ url, method, headers, body } | Error>', fails: 'value' },\n  body: { values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string', once: 'a stream' },\n  cancel: true,\n}\n\nconst name = (r: Ref): string => r.name\n\nconst lit = (e: Extract<Expr, { k: 'lit' }>): string => ({\n  INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '[]', OBJECT: '{}', NULL: 'null',\n} as Record<string, string>)[e.type] ?? jsQuote(e.text)\n\nconst expr = (e: Expr): string => {\n  switch (e.k) {\n    case 'lit': return lit(e)\n    case 'str': return jsQuote(e.text)\n    case 'env': return 'process.env.' + e.name\n    case 'record': return name(e.of) + '.data()'\n    case 'field': return jsProp(name(e.of) + '.data()', e.field) + '!'\n    case 'fields': return e.fields.map((f) => jsProp(name(e.of) + '.data()', f)).join(', ')\n    case 'map': return '{ ' + e.entries.map(pair).join(', ') + ' }'\n  }\n}\n\nconst pair = (en: Entry): string => `${jsKey(en.key)}: ${expr(en.value)}`\n\n// One member per line, closed with a trailing comma and its type where it\n// has one; a map two levels down stays on its member's line.\nconst members = (entries: Entry[], pad: string, depth = 0): string[] =>\n  entries.flatMap((en) => 'map' === en.value.k && 0 === depth\n    ? [`${pad}${jsKey(en.key)}: {`, ...members(en.value.entries, pad + '  ', depth + 1), `${pad}},`]\n    : [`${pad}${pair(en)},` + (null == en.type ? '' : ' // ' + canonToType(en.type, 'ts'))])\n\nconst argOf = (arg: Entry[] | null, wide: boolean, note?: string): string =>\n  null == arg ? '' : (0 === arg.length && null == note ? '{}' :\n    wide ? '{\\n' + [...members(arg, '  '), ...(null == note ? [] : ['  // ' + note])].join('\\n') + '\\n}'\n      : '{ ' + arg.map(pair).join(', ') + ' }')\n\n\nconst Syntax: SyntaxType = {\n  fence: 'ts',\n  facts,\n\n  imports: (desc) => [`import { ${desc.layout.client} } from '${desc.layout.module}'`],\n\n  client: (s, desc) => [\n    0 === s.options.length\n      ? `const client = new ${desc.layout.ctor}()`\n      : `const client = new ${desc.layout.ctor}({\\n${members(s.options, '  ').join('\\n')}\\n})`,\n  ],\n\n  call: (s) => {\n    const call = `await client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${argOf(s.arg, s.wide, s.note)})`\n    return (null == s.bind ? call : `const ${name(s.bind)} = ${call}`).split('\\n')\n  },\n\n  each: (s, inner) => [\n    `for (const ${name(s.item)} of ${name(s.of)}) {`,\n    ...indentLines(inner(s.body), '  '),\n    '}',\n  ],\n\n  print: (s) => [`console.log(${expr(s.what)})`],\n\n  attempt: (s, inner) => [\n    'try {',\n    ...indentLines(inner(s.body), '  '),\n    '} catch (err) {',\n    `  console.error('${s.what} failed:', err)`,\n    '}',\n  ],\n\n  comment: (text) => '// ' + text,\n\n  expr: (e) => expr(e),\n\n  ref: {\n    facts: refFacts,\n    type: (t) => canonToType(t, 'ts'),\n    key: (container, path) => [container, ...path].join('.'),\n    instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}()`],\n    read: (value, key) => jsProp(value, key),\n  },\n}\n\n\nexport {\n  Syntax\n}\n"
+   }
+  ]
+ },
+ {
+  "id": "my-types-reason-blanked-zig",
+  "lang": "zig",
+  "kind": "zig forms: type column null with its reason blanked",
+  "edits": [
+   {
+    "file": "test/runtimeforms/zig.ts",
+    "from": "types: { column: null, reason: 'the code generator",
+    "to": "types: { column: null, reason: ((_s: string) => '')('the code generator"
+   },
+   {
+    "file": "test/runtimeforms/zig.ts",
+    "from": "type words are the provider\\'s own' },",
+    "to": "type words are the provider\\'s own') },"
+   }
+  ]
+ },
+ {
+  "id": "my-new-provider-php-adapted",
+  "lang": "php",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/php/Syntax_php.ts",
+    "create": true,
+    "content": "import { canonToType, indentLines, jsKey, jsProp, jsQuote } from '@voxgig/sdkgen'\nimport type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'\n\n\nconst facts: RuntimeFacts = {\n  method: { list: 'list', load: 'load', create: 'create', update: 'update', patch: 'patch', remove: 'remove' },\n  named: 'call',\n  async: true,\n  result: 'throw',\n  collection: 'array',\n  record: '.data()',\n  listOf: '{Class}[]',\n  prints: 'record',\n}\n\n// The fixed API the reference page documents: EntityBase.fragment.ts,\n// Entity.fragment.ts and Main.fragment.ts.\nconst refFacts: RefFacts = {\n  entityBy: 'class',\n  noun: 'Methods',\n  none: 'undefined',\n  keys: 'member',\n  maps: 'objects',\n  container: 'object',\n  valueType: { STRING: 'string', OBJECT: 'object', ANY: 'any' },\n  ctor: ['new {ctor}(options?: object)'],\n  test: [{ sig: '{client}.test(testopts?, sdkopts?)', call: 'const client = {client}.test()', args: true }],\n  accessor: { sig: '{accessor}(data?: object)', arg: 'data', param: 'data' },\n  op: {\n    list: 'list(match?: object, ctrl?: object)',\n    load: 'load(match?: object, ctrl?: object)',\n    create: 'create(data?: object, ctrl?: object)',\n    update: 'update(data?: object, ctrl?: object)',\n    patch: 'patch(data?: object, ctrl?: object)',\n    remove: 'remove(match?: object, ctrl?: object)',\n  },\n  client: [\n    { kind: 'options', sig: 'options()', returns: 'object' },\n    { kind: 'utility', sig: 'utility()', returns: 'object' },\n    { kind: 'direct', sig: 'direct(fetchargs?: object)' },\n    { kind: 'prepare', sig: 'prepare(fetchargs?: object)' },\n    { kind: 'tester', sig: 'tester(testopts?, sdkopts?)' },\n  ],\n  entity: [\n    { kind: 'data', sig: 'data(data?: object)' },\n    { kind: 'match', sig: 'match(match?: object)' },\n    { kind: 'make', sig: 'make()' },\n    { kind: 'streamIterator', sig: 'stream(action: string, args?: object, callopts?: object)', runs: 'iterate' },\n    { kind: 'client', sig: 'client()' },\n    { kind: 'entopts', sig: 'entopts()' },\n  ],\n  direct: { returns: 'Promise<{ ok, status, headers, data }>', signal: 'AbortSignal', abortCode: 'request_aborted', okFalse: 'false' },\n  prepare: { returns: 'Promise<{ url, method, headers, body } | Error>', fails: 'value' },\n  body: { values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string', once: 'a stream' },\n  cancel: true,\n}\n\nconst name = (r: Ref): string => r.name\n\nconst lit = (e: Extract<Expr, { k: 'lit' }>): string => ({\n  INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '[]', OBJECT: '{}', NULL: 'null',\n} as Record<string, string>)[e.type] ?? jsQuote(e.text)\n\nconst expr = (e: Expr): string => {\n  switch (e.k) {\n    case 'lit': return lit(e)\n    case 'str': return jsQuote(e.text)\n    case 'env': return 'process.env.' + e.name\n    case 'record': return name(e.of) + '.data()'\n    case 'field': return jsProp(name(e.of) + '.data()', e.field) + '!'\n    case 'fields': return e.fields.map((f) => jsProp(name(e.of) + '.data()', f)).join(', ')\n    case 'map': return '{ ' + e.entries.map(pair).join(', ') + ' }'\n  }\n}\n\nconst pair = (en: Entry): string => `${jsKey(en.key)}: ${expr(en.value)}`\n\n// One member per line, closed with a trailing comma and its type where it\n// has one; a map two levels down stays on its member's line.\nconst members = (entries: Entry[], pad: string, depth = 0): string[] =>\n  entries.flatMap((en) => 'map' === en.value.k && 0 === depth\n    ? [`${pad}${jsKey(en.key)}: {`, ...members(en.value.entries, pad + '  ', depth + 1), `${pad}},`]\n    : [`${pad}${pair(en)},` + (null == en.type ? '' : ' // ' + canonToType(en.type, 'ts'))])\n\nconst argOf = (arg: Entry[] | null, wide: boolean, note?: string): string =>\n  null == arg ? '' : (0 === arg.length && null == note ? '{}' :\n    wide ? '{\\n' + [...members(arg, '  '), ...(null == note ? [] : ['  // ' + note])].join('\\n') + '\\n}'\n      : '{ ' + arg.map(pair).join(', ') + ' }')\n\n\nconst Syntax: SyntaxType = {\n  fence: 'ts',\n  facts,\n\n  imports: (desc) => [`import { ${desc.layout.client} } from '${desc.layout.module}'`],\n\n  client: (s, desc) => [\n    0 === s.options.length\n      ? `const client = new ${desc.layout.ctor}()`\n      : `const client = new ${desc.layout.ctor}({\\n${members(s.options, '  ').join('\\n')}\\n})`,\n  ],\n\n  call: (s) => {\n    const call = `await client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${argOf(s.arg, s.wide, s.note)})`\n    return (null == s.bind ? call : `const ${name(s.bind)} = ${call}`).split('\\n')\n  },\n\n  each: (s, inner) => [\n    `for (const ${name(s.item)} of ${name(s.of)}) {`,\n    ...indentLines(inner(s.body), '  '),\n    '}',\n  ],\n\n  print: (s) => [`console.log(${expr(s.what)})`],\n\n  attempt: (s, inner) => [\n    'try {',\n    ...indentLines(inner(s.body), '  '),\n    '} catch (err) {',\n    `  console.error('${s.what} failed:', err)`,\n    '}',\n  ],\n\n  comment: (text) => '// ' + text,\n\n  expr: (e) => expr(e),\n\n  ref: {\n    facts: refFacts,\n    type: (t) => canonToType(t, 'ts'),\n    key: (container, path) => [container, ...path].join('.'),\n    instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}()`],\n    read: (value, key) => jsProp(value, key),\n  },\n}\n\n\nexport {\n  Syntax\n}\n"
+   }
+  ]
+ }
+]

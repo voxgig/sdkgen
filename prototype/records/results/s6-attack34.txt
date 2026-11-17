@@ -1,0 +1,687 @@
+ok: True
+summary: |
+  I re-ran every freeze check the integration report lists on my own copy (sdkgen 89387a4f = v34-frozen, tools e55846e = v34-frozen-tools, both in P/a34). The checks I re-ran give the same numbers as theirs: suite 2702 tests with 0 failed, golden 2/2, guard and reader 105/105, the twenty one commands all PASS with the same summaries, the H3 checker exit 0, the self-test 285 controls with 0 failed and 0 moved, and every NEW example lane identical (ts, go, py, c, rust, rb, zig, cpp, js, java, kotlin, perl, php). The language pack's own suite also passes against NEW: 74 pass, 0 fail, 2 skipped.
+  
+  What the integration missed:
+  
+  1. **A false shared sentence in 17 of 20 languages.** The H3 edit's line "- Also attaches to pipeline hooks." prints under `secrets` on every REFERENCE. Only ts, js and py define a PreSpec hook; the other seventeen resolve the secret at the transport, and several say so in their own comments. csharp's says: "NO PreSpec OVERRIDE, deliberately, though the model declares the hook." The sentence comes from the model's hook declaration, and every check passes it. The integration accepted it for the seven new languages by a rule, without reading their runtimes.
+  
+  2. **Brief 7's rule does not hold for a dropped sentence.** The rule says a sentence that vanishes must fail in the guard or the tools. I left out an optional fact the way a porter who missed it would (the declaration and its citation):
+     - `streamSignal` in csharp, java, kotlin and scala (with the cancel region keeping only its why) and `deleted` in js: the sentence vanishes, and the guard (105/105) and the one command (PASS) both pass.
+     - `accessor.cached` in php and `removeKeeps` in cpp: a sentence already known to be false for that runtime comes back, and the only sign is one open class left for a person.
+  
+  3. **Tests and recorded reasons that do not hold:**
+     - The c5 change deletes package check's error for a provider that declares interface '3.1'. Its test fails when c5 is reverted, but what it pins is that package check says nothing. The remedy the integration recorded (an exports map) is ruled out by sdkgen's own package.json.
+     - Decision [5]'s reason ("each example binds with the cast the runtime needs") is false for java and kotlin: 0 of 5 REFERENCE operation blocks cast, while the prose beside them says `data()` reads the record.
+     - The ReadmeRef layout fill (decision [14]), the factory-required rule and the csharp/java citation pins have no test that fails without them.
+     - The interface field (h5fix), which the integration calls a settlement, is breaking in effect: a provider written against v33's 3.3 has no `interface` line and is served as 3.2 with fewer clauses. It forced a commit in all seven new providers.
+     - F11 makes doctor fail a documented additive extension (a consumer target's own ReadmeIntro_go-cli.ts).
+  
+  4. **The stream signal's form.** The integration says only java and scala read one form without declaring it. At least go, perl, clojure, swift, elixir, ts and js do as well.
+  
+  H1 stays refuted on breaking changes. H3's checker passes, yet one H3 edit added a false sentence in 17 languages. H4 holds wherever a toolchain exists; seven languages could not be compiled here. H5 holds for pack generation but carries the F11 doctor defect.
+freeze_checks:
+  - [0]
+    check: build exits 0 and the tree is clean
+    theirs: exit 0 at 89387a4f; git status empty
+    mine: same: exit 0 (2.8 s, logs/build1.log), git status empty at 89387a4f. All four of my working trees (sdkgen, mut, tools, tools-mut) were clean again after every mutation and attack run (checked at the end).
+  - [1]
+    check: suite without the toolchain lanes
+    theirs: 2702 tests, 2697 pass, 0 fail, 5 skipped, 246 s
+    mine: identical: 2702 tests, 2697 pass, 0 fail, 5 skipped, 255 s (logs/suite.log)
+  - [2]
+    check: golden
+    theirs: 2/2
+    mine: 2/2 (logs/golden.log)
+  - [3]
+    check: guard and reader
+    theirs: 105/105; guard 4/4 in each one command
+    mine: 105/105 in 8 s (logs/guard.log); guard 4/4 in each of my twenty one commands
+  - [4]
+    check: the twenty one commands
+    theirs: 20 PASS at 89387a4f / e55846e; numbers identical to a2/a3
+    mine: 20 PASS (mine/run20.sh: batch 1 ts go py c zig clojure rust elixir rb perl with REGEN=1, batch 2 js php lua csharp java kotlin scala swift cpp ocaml). Every summary is identical to v34's g run (mine/cmppc.sh). Tools tree clean after.
+  - [5]
+    check: H3 catalogue checker
+    theirs: exit 0 over 25 of 26 variations, alias-go2 skipped
+    mine: exit 0 over the same 25, with --ported set to all twenty; the last 30 lines are identical to v34's logs/h3check.log; alias-go2 skipped as theirs
+  - [6]
+    check: tools self-test
+    theirs: 285 controls, 0 failed, 0 moved, run at tools 1abd7c7
+    mine: 285 controls, 0 failed, 0 moved, run at the frozen e55846e: S1 145, S2 25, S3 26, S4 19, S5 44, S6 26. S6 was rerun after a session break killed the first attempt.
+  - [7]
+    check: example lanes NEW (generatedcompile)
+    theirs: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig doc 6/6, cpp DOC 6/6
+    mine: identical: ts 16/16 (30 s), go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig doc 6/6, cpp DOC 6/6 (logs/lanes-new.out)
+  - [8]
+    check: example lanes OLD
+    theirs: c 5/6, rb 48/49, zig 5/6, the rest pass
+    mine: NOT re-run: I kept no OLD clone (the limit is two copies of the clone, and those were sdkgen and mut)
+  - [9]
+    check: perl and php (tools/before/run.sh, 3 models x 3 runs)
+    theirs: NEW exit 0 on all runs
+    mine: NEW perl: exit 0 on all 9 runs (default, crud, basic-server); NEW php: 4 tests, 0 failures on all 9 runs. OLD not re-run.
+  - [10]
+    check: java javac lane
+    theirs: NEW compiles 24/19/19 and runs 20/14/14
+    mine: NEW default 24/24 (runs 20), crud 19/19 (runs 14), basic-server 19/19 (runs 14): identical
+  - [11]
+    check: kotlin gradle --offline
+    theirs: NEW and OLD 0 errors for B, crud-basic, ref-issues
+    mine: NEW compileKotlin exit 0 with 0 errors for B (34 s), crud-basic and ref-issues; OLD not re-run
+  - [12]
+    check: js runblocks and runasis
+    theirs: NEW runblocks 20/24, 13/17, 13/17; runasis 24/24, 17/17, 17/17
+    mine: identical on NEW; OLD not re-run
+  - [13]
+    check: root quick starts from the repository root
+    theirs: NEW perl, rb, php, py, ts and go reach the live request; OLD rb and php fail at require; OLD go does not parse
+    mine: NEW perl 404, rb load error, php 'could not resolve host', py invalid URL: the same as theirs (mine/root/run.sh). NEW ts and go, and every OLD run, not repeated.
+  - [14]
+    check: commit messages
+    theirs: no trailer and no tool or model name in v33-frozen..HEAD or base33..HEAD
+    mine: The same within those ranges (62 sdkgen and 20 tools commits). Outside them, the frozen histories still hold 15 prototype sdkgen commits from before v33-frozen (for example e84d3525) and 2 tools commits from before base33 (499e4df, a006f3e) that end in a Co-Authored-By line naming a model, plus a session URL.
+  - [15]
+    check: language pack (not in their list; their not_done names it)
+    theirs: not generated or checked
+    mine: sdkgen-langpack c6069bb's suite against NEW sdkgen, with node_modules symlinked and nothing installed: 76 tests, 74 pass, 0 fail, 2 skipped (dart and ghc are not on PATH). dart, haskell and lean generate with no placeholder, and package add installs all three. OLD not run.
+sentence_verdicts:
+  - [0]
+    sentence: Stream signal, new words: 'It ends early once the `signal` in `callopts` reports an abort.' (prints in 16: not rust, zig, c, cpp)
+    verdict: ok
+    reason: Each printing runtime reads the signal key of callopts and stops between items when the signal reports an abort.
+    runtimes_read: ts EntityBase.fragment.ts:121-124,151; go Entity.fragment.go:151-157; php Entity.fragment.php:152,179-189; rb Entity.fragment.rb:107,130-134; lua Entity.fragment.lua:133,166-176; perl Entity.fragment.pm:153,191; clojure Entity.fragment.clj:166-167; java EntityBase.fragment.java:214-216,285; scala EntityBase.fragment.scala:166,210-212; swift EntityBase.fragment.swift:193,238; elixir entity_base.ex:117,153
+  - [1]
+    sentence: The same sentence with no form clause, in runtimes that read exactly one form
+    verdict: awkward
+    reason: True, but each of these runtimes reads one form and silently ignores any other value. A reader is not told what to pass. Only kotlin and csharp declare streamSignalForm. The integration names only java and scala as undeclared; go, perl, clojure, swift, elixir, ts and js are the same case. php, lua and rb accept a callable or an object with aborted.
+    runtimes_read: java BooleanSupplier :214-216; scala Function0 :210-212; go chan struct{} Entity.fragment.go:151-157; perl CODE ref :191; clojure fn? :167; swift @Sendable () -> Bool :193; elixir 0-arity fn entity_base.ex:117; ts/js signal.aborted :151; php :183-188 and lua :170-173 accept two forms
+  - [2]
+    sentence: kotlin form clause: '; the signal is read only as a function of no arguments, a `Function0`, that returns `true` once the stream is to end, and any other value is ignored.'
+    verdict: ok
+    reason: The runtime's aborted is `is Function0<*> -> invoke() == true`, and `{ false }` for anything else.
+    runtimes_read: kotlin EntityBase.fragment.kt (aborted when-block), compared with java :214-216 and scala :210-212
+  - [3]
+    sentence: csharp form clause: '; the signal is read only as a `CancellationToken`, and any other value is ignored.'
+    verdict: ok
+    reason: GetProp(callopts, 'signal') is CancellationToken, else CancellationToken.None; it is checked between yields.
+    runtimes_read: csharp EntityBase.fragment.cs:262-270 (citation quoted in runtimeforms/csharp.ts:77-79)
+  - [4]
+    sentence: cpp remove: 'It reads no record from the response: `data()` still reads the data the entity held.'
+    verdict: ok
+    reason: cpp's remove callback takes only resmatch, while load's takes resdata into data_. java, elixir and rust remove absorb resdata, so this fact is cpp's alone.
+    runtimes_read: cpp EntityRemoveOp.fragment.cpp (runOp callback), EntityLoadOp.fragment.cpp:12-22; java EntityRemoveOp.fragment.java:34-39; elixir EntityRemoveOp.fragment.ex:27-30; rust EntityRemoveOp.fragment.rs:16-30
+  - [5]
+    sentence: java deleted read: '`((voxgig.demosdk.entity.EntityBase) result).deleted()` reads the mark.'
+    verdict: ok
+    reason: Ran mine/deljava.sh against the generated crud SDK: javac exit 0, and the program prints true. The integration's evidence is wrong, though. The read stands only in prose: no java block on any page contains deleted(), so the java lane never compiled it.
+    runtimes_read: java EntityBase.fragment.java (package JAVAPACKAGE.entity); utility_java.ts JAVA_ENTITY; ran javac
+  - [6]
+    sentence: ts/js README methods row for utility(): 'The SDK utility object itself, not a copy.'
+    verdict: ok
+    reason: utility() returns struct.clone(this._utility), and clone copies a class instance by reference. I ran clone(new Utility()) and got the same instance back.
+    runtimes_read: ts Main.fragment.ts:109-111, StructUtility.ts:748-783; js Main.fragment.js:103-105 (ran); scala SdkClient.scala:88 and kotlin getUtility copy() for contrast
+  - [7]
+    sentence: csharp root quick start code: `foreach (var item in planets)` before `var planet = ...` (blockScope)
+    verdict: ok
+    reason: Under C# block scope (CS0136), the old loop variable `planet` clashes with the later `var planet`; `item` removes the clash. The cast `(List<object?>)` matches the runtime's List. Read only: no dotnet here.
+    runtimes_read: out/new/crud-basic/README.md C# block; csharp EntityBase.fragment.cs:101 Load and List signatures
+  - [8]
+    sentence: h3fix [0]: the hook-feature list without `test`, singular for one
+    verdict: ok
+    reason: test installs the base fetcher rather than attaching to hooks; none of the listed features rebinds the fetcher.
+    runtimes_read: py test_feature.py:232-234; go test_feature.go:261-263; java TestFeature.java:130-133; rb test_feature.rb:209; ocaml sdk_features.ml
+  - [9]
+    sentence: h3fix [1]: test's Considerations: 'Installs the BASE transport that the wrapping features wrap, so it must be activated before them.'
+    verdict: ok
+    reason: test replaces utility.fetcher outright, so a wrapper installed before it would be discarded.
+    runtimes_read: py test_feature.py:232-234; go test_feature.go:261-263; java TestFeature.java:130-133
+  - [10]
+    sentence: h3fix [2]: '- Also attaches to pipeline hooks.' under `cost`
+    verdict: ok
+    reason: cost defines its PrePoint, PreDone and PreUnexpected hooks in all twenty runtimes.
+    runtimes_read: ts CostFeature.ts:55,147,157; go cost_feature.go; zig cost.zig:128-139; ocaml sdk_features.ml; clojure src/sdk/features.clj; java, csharp, kotlin, scala, php, perl, swift, cpp, lua cost files (3 hook definitions each)
+  - [11]
+    sentence: h3fix [2]: '- Also attaches to pipeline hooks.' under `secrets` (all twenty B REFERENCE pages, for example go:1241, csharp:1186, java:1155, kotlin:1167, scala:1145)
+    verdict: false
+    reason: False in 17 of 20 languages. A PreSpec method exists only in ts (SecretsFeature.ts:100), js (SecretsFeature.js:177) and py (secrets_feature.py:210). Everywhere else the secret is resolved at the transport, and several runtimes say so in a comment, for example csharp SecretsFeature.cs:317 ('NO PreSpec OVERRIDE, deliberately, though the model declares the hook'), rb :19, php :70, kotlin :52, java :57, swift :28, clojure :24, zig :385. I searched for a PreSpec definition in every case spelling and found none outside those three. The sentence comes from secrets.aontu's `hook: PreSpec: active: true`, a model fact the runtimes contradict. The earlier draft in my own notes said 8 of 20; that was wrong.
+    runtimes_read: grep of every tm/<lang> secrets feature file for a def/fun/func/void/sub/defn named PreSpec; read the comment lines quoted above
+  - [12]
+    sentence: h3fix [3]: the short-circuit sentence without the cache example when cache is absent
+    verdict: ok
+    reason: The clause that remains is true of any wrapper that returns without calling inward.
+    runtimes_read: py retry_feature.py:38-43; go retry_feature.go:39-47; java RetryFeature.java:42-44
+  - [13]
+    sentence: h3fix [4]: '`retry` is the one feature that wraps the transport: it wraps whatever transport is installed.'
+    verdict: ok
+    reason: retry captures the installed fetcher and replaces it with its own wrapper.
+    runtimes_read: go retry_feature.go:39-41; java RetryFeature.java:42-44; rb retry_feature.rb:32-34; py retry_feature.py:38-43
+  - [14]
+    sentence: h3fix [5]: constructor rows auth, allow ('Comma-separated allow-lists of the HTTP methods and the operations the client may use.') and clean
+    verdict: ok
+    reason: The author's evidence was a count of files by grep. I opened the lines: each runtime reads allow.op and allow.method as lists and builds its clean config from the clean option.
+    runtimes_read: c make_point.c:113-118, make_options.c:61; ocaml sdk_runtime.ml:1187-1190,1675; perl make_point.pm:90-93, make_spec.pm:56-61, clean.pm:77-79; zig utility.zig:971-976,718
+  - [15]
+    sentence: h3fix [6]: 'Set <the provider's key> to <its true literal> in the client options, and override any option above in the same entry.'
+    verdict: awkward
+    reason: True as a path. But the key prints in bracket notation (`options["feature"]["audit"]["active"]`), which is not code in java, kotlin, scala, csharp, go or cpp: their option maps hold Object, Any?, object? or any, which take no second subscript. It is code in ts, js, py, rb, php, perl and lua.
+    runtimes_read: out/new/B/*/REFERENCE.md Usage lines; csharp Dictionary<string, object?>; kotlin MutableMap<String, Any?>; scala JMap[String, Object]
+  - [16]
+    sentence: h3fix [7]: log: 'It runs without being switched on. ... switching its `active` option off stops it.'
+    verdict: ok
+    reason: log.aontu:14 declares `options: active: true`, and the runtimes install a feature exactly when its merged active is true.
+    runtimes_read: c Main.fragment.c:55-70 (get_bool active, then feature_add); py Main.fragment.py:66-69; go Main.fragment.go:57; java SdkClient.java:72
+  - [17]
+    sentence: h3fix [8]: '- Active by default: switching its `active` option off stops it.'
+    verdict: ok
+    reason: The same fact as [7], now without a TypeScript literal.
+    runtimes_read: as [7]
+  - [18]
+    sentence: h3fix [9]: `cost` and `cache` as code spans in the ordering note
+    verdict: ok
+    reason: Only the escaping changed; the meaning is the same.
+    runtimes_read: page text only (none needed)
+  - [19]
+    sentence: h3fix [10], no test feature: 'The first argument is set, switched on, as <key> in the second, which holds the other client options. Both may be <none>.' (with 'refuses every request')
+    verdict: ok
+    reason: Each runtime sets the test options active, writes them at feature.test of a copy of sdkopts, and its fetcher blocks the request when feature.test.active is set.
+    runtimes_read: scala SdkClient.scala:329-340 and Fetcher.scala:213; kotlin SdkClient.kt:361-373 and Fetcher.kt:247; csharp Fetcher.cs:236; java SdkClient.java:386-400 and Fetcher.java:282; cpp types.hpp:990-994
+decisions_tested:
+  - [0]
+    decision: [0] calls.factory: cpp std::make_shared<X>(...) read as X's constructor (MADE, additive)
+    test_fails_without: The reader half, yes: reverting the factory branch of readCalls fails cpp (guard 103/105). The rule that each declared factory occurs in the runtime, NO: disabling it leaves the guard 105/105 and characterize 2/2. Its control is caught by the constructor check anyway, so no test needs the rule (logs/dec.log, dec2.out.json).
+    reason_true: yes: the old reader could not read cpp's constructor line
+    breaking_really: additive (an optional forms key)
+  - [1]
+    decision: [1] NOT A GAP: kotlin generic type arguments are already read by the guard
+    test_fails_without: n/a
+    reason_true: yes: bracketed() in test/runtimeforms/forms.ts:205 counts a '<' after a word character as a bracket inside a '(' list
+    breaking_really: n/a
+  - [2]
+    decision: [2] tools callcheck: type arguments, binding overloads, cast form, separators (MADE)
+    test_fails_without: not reverted by me. The self-test calls group passes 17/17 at the frozen tools (ran, S1); the old callcheck's 13/17 is their number.
+    reason_true: not re-checked
+    breaking_really: additive (tools)
+  - [3]
+    decision: [3] RuntimeFacts.blockScope for C# CS0136 (MADE)
+    test_fails_without: yes: integrate34 'a block-scoped language names the root quick start's list item apart...' fails (4/5)
+    reason_true: yes, by C# scope rules (read; no dotnet here)
+    breaking_really: additive
+  - [4]
+    decision: [4] RefFacts.removeKeeps for cpp (MADE)
+    test_fails_without: yes: the integrate34 remove test fails. However, a porter who omits the fact (declaration and citation, attack D-cpp) passes the guard 105/105, and the one command fails only through 1 open class, while the page prints the false record sentence.
+    reason_true: yes
+    breaking_really: additive
+  - [5]
+    decision: [5] RECORDED: the cast an operation's return type needs (java Object, kotlin Any?)
+    test_fails_without: n/a
+    reason_true: FALSE for java and kotlin. Counted per whole block, their REFERENCE operation blocks cast 0 of 5 (java `Object result = ...`, kotlin `val result = ...load(null, null)`), right under the prose ''data()' reads its record', and `result.data()` does not compile on Object or Any?. scala and csharp cast 5 of 5.
+    breaking_really: would be additive
+  - [6]
+    decision: [6] RECORDED: php case-folded entity class names
+    test_fails_without: n/a
+    reason_true: yes: php's runtime names classes with entityClassName(..., true), folding case (EntityOperation_php.ts:33), while the shared description does not fold. Latent: no variation has two names that fold together.
+    breaking_really: would be additive
+  - [7]
+    decision: [7] js ES import (MADE in the port)
+    test_fails_without: not reverted. NEW lanes ran: runasis 24/24, 17/17, 17/17 and runblocks 20/24, 13/17, 13/17, as theirs. OLD not re-run.
+    reason_true: yes on NEW
+    breaking_really: js pages only
+  - [8]
+    decision: [8] guard accessor lookup by its token as written; ref.instance judged; an accessor declared nowhere reported (MADE, counted breaking)
+    test_fails_without: yes: with the old lookup cpp, elixir, java, kotlin, php and scala fail (99/105); with the old lookup and without the new finding the controls fail (86/105). The ocaml `=`-binding half fails ocaml on arity when reverted.
+    reason_true: yes: six languages' accessor calls had never been judged
+    breaking_really: breaking (a guard tightening), as counted
+  - [9]
+    decision: [9] RECORDED: php entity getter return types
+    test_fails_without: n/a
+    reason_true: yes: data_get() and match_get() declare no return type (Entity.fragment.php:111,131)
+    breaking_really: would be breaking, as recorded
+  - [10]
+    decision: [10] H5 F6: a record that says changed, or a declared override, outweighs a released fingerprint (MADE)
+    test_fails_without: yes: retire.test fails 2 tests
+    reason_true: yes
+    breaking_really: a lifecycle behaviour change, as stated
+  - [11]
+    decision: [11] H5 F11: shared sections derived from the retired list (MADE)
+    test_fails_without: yes: retire.test 'a changed copy of an optional component the list names fails doctor until declared' fails
+    reason_true: The derivation is wrong. The retired list names nine optional components (ReadmeEntity, ReadmeExplanation, ReadmeHowto, ReadmeInstall, ReadmeIntro, ReadmeModel, ReadmeOptions, ReadmeTopHowto, ReadmeTopTest) only because dart, haskell, lean and seneca-provider left the bundle; no shared component writes them. I ran it end to end: a project's own src/cmp/go-cli/ReadmeIntro_go-cli.ts is reported both additive and undeclared, with doctor ok=false. The control, ReadmeFeatures_ts.ts, is additive with ok=true.
+    breaking_really: More breaking than recorded: it turns a documented safe extension into a doctor failure for consumer targets.
+  - [12]
+    decision: [12] H5 c5: package check no longer reads the interface from the source text (MADE in part)
+    test_fails_without: yes, ran (mine/dec3.json): with c5 reverted, packagecheck 'the declared interface is not read from the source text' fails (31/32). But that test pins silence for '3.2', none, '3.1' and '3.3'.
+    reason_true: Half true. The deep-import bypass is real. But the change deleted package check's provider-interface error for a provider declaring '3.1', which an author now learns of only when a consumer generates. And the recorded remedy, 'an exports map in package.json', is ruled out by sdkgen's own ts/package.json `_no_exports_comment` (deliberately no exports map, guarded by test/packaging.test.ts).
+    breaking_really: additive for providers; it removes an author-side check
+  - [13]
+    decision: [13] stream signal in words, plus streamSignalForm (MADE, counted breaking)
+    test_fails_without: yes: integrate34 and nshared fail with the old sentence; dropping the form clause fails integrate34. A provider that omits streamSignal entirely, with its cancel region keeping only its why, passes everything (attack D, ran).
+    reason_true: The sentence is true where printed. The recorded list of undeclared form readers (java, scala) is incomplete: go, perl, clojure, swift, elixir, ts and js are also single-form.
+    breaking_really: breaking (a changed shared sentence), as counted
+  - [14]
+    decision: [14] deleted read: every name checked, plus a layout fill (MADE, counted breaking)
+    test_fails_without: The guard halves, yes (the c and java controls fail). The fill in ReadmeRef, NO: reverting it to the raw string passes integrate34, characterize, runtimefacts, nshared and generate.test (304/304). Only java's one command notices, through one STALE hand quotation and 3 open classes.
+    reason_true: The reason is true, but the evidence is not: 'the java lane compiles the block' is false, because the read is prose only. I compiled it separately: javac exit 0, prints true.
+    breaking_really: breaking (guard), as counted
+  - [15]
+    decision: [15] NOT_RUNTIME names sdktest (MADE)
+    test_fails_without: yes: scala 'every declared fact is accounted for' fails
+    reason_true: yes
+    breaking_really: breaking (it forced scala's forms), as counted
+  - [16]
+    decision: [16] ts/js README utility row (MADE)
+    test_fails_without: yes: the integrate34 row test fails
+    reason_true: yes (ran the clone identity check)
+    breaking_really: a changed sentence in two per-language components
+  - [17]
+    decision: [17] csharp and java citation pins (MADE per language)
+    test_fails_without: NO: dropping all four pins leaves the guard at 105/105. Attack A7, which changes the container fact for java, kotlin and scala with its citation untouched, also passes the guard.
+    reason_true: The shared rule is still missing, as recorded.
+    breaking_really: per language
+  - [18]
+    decision: [18], [20], [21], [27], [29], [31] RECORDED or NOT A GAP
+    test_fails_without: n/a
+    reason_true: |
+      All six read true:
+      - [18] cpp pipeline.hpp:600-616 throws fetch_no_transport without system.fetch.
+      - [20] js REFERENCE:11 prints `new DemoSDK(options?: object)` under a js fence.
+      - [21] one block each in the java README and root README imports java.util.List and never uses it.
+      - [27] generatedcompile.test.ts:2639-2643 returns rather than calling t.skip when dotnet is missing.
+      - [29] kotlin's page says 'marked as deleted' and prints no read.
+      - [31] f237f14a is in v34-frozen; kept() is at Syntax_java.ts:108.
+    breaking_really: as recorded
+  - [19]
+    decision: [23] RECORDED: require facts.arity
+    test_fails_without: n/a
+    reason_true: Consistent with what I read: rb, lua, c, clojure, elixir and ocaml declare no arity, and rb and lua have defaults, which leaves the four named. Not run.
+    breaking_really: would be breaking
+  - [20]
+    decision: Interface field (h5fix 45fc740c, 1873c7bc), which the integration calls a settlement
+    test_fails_without: n/a
+    reason_true: At v33-frozen, testMock was required in the type (example.ts:151) and there was no interface field. At v34 a provider that declares no interface is served as 3.2 (syntaxversion.ts:18). Ran: kotlin's Syntax with `interface: '3.3'` removed is served 3.2 with a warning, and its B REFERENCE loses the clause 'so branch on `result["ok"] == true`'.
+    breaking_really: Breaking in effect for any provider written against 3.3, and it forced a commit in all seven new providers. It counts as a provider-interface break, not 0.
+attack_table:
+  - [0]
+    attack: A1 wrong fact changed with its citation: direct okFalse 'false' -> 'null', with the citation's value and quote moved to a real runtime line holding that token
+    lang: js
+    caught: only as a hand decision
+    by: guard 105/105; the one command fails only through 5 open ledger classes (pagecheck 0, callcheck 0, 0 unattested, STALE 0)
+  - [1]
+    attack: A1 wrong fact with its citation (okFalse -> null)
+    lang: php
+    caught: only as a hand decision
+    by: guard 105/105; one command: 3 open ledger classes only
+  - [2]
+    attack: A1 wrong fact with its citation (okFalse -> bodyErr)
+    lang: cpp
+    caught: only as a hand decision
+    by: guard 105/105; one command: 3 open ledger classes only
+  - [3]
+    attack: A1 wrong fact with its citation (okFalse -> null)
+    lang: csharp
+    caught: only as a hand decision
+    by: guard 105/105; one command: 2 open ledger classes only
+  - [4]
+    attack: A1 wrong fact with its citation (okFalse -> null)
+    lang: java
+    caught: only as a hand decision
+    by: guard 105/105; one command: 2 open ledger classes only
+  - [5]
+    attack: A1 wrong fact with its citation (okFalse -> null)
+    lang: kotlin
+    caught: only as a hand decision
+    by: guard 105/105; one command: 2 open ledger classes only
+  - [6]
+    attack: A1 wrong fact with its citation (okFalse -> null)
+    lang: scala
+    caught: only as a hand decision
+    by: guard 105/105; one command: 2 open ledger classes only
+  - [7]
+    attack: A2 the call printer prints a method the runtime lacks (`<op>Async(`)
+    lang: js, php, cpp, csharp, java, kotlin, scala (one run each)
+    caught: yes, all seven
+    by: guard (arity): '<lang>: the declared facts are what its runtime defines'
+  - [8]
+    attack: A3 a member dropped: prepare removed from refFacts.client, so its REFERENCE section vanishes
+    lang: js, php, cpp, csharp, java, kotlin, scala (one run each)
+    caught: yes, all seven
+    by: guard (members): '<lang>: the declared facts are what its runtime defines'
+  - [9]
+    attack: A4 wrong article: the comment printer writes 'Load a ambient'
+    lang: js, php, cpp, scala
+    caught: yes
+    by: pagecheck ARTICLE finding (a named check); guard pass
+  - [10]
+    attack: A4 wrong article in the comment printer
+    lang: java
+    caught: yes
+    by: pagecheck: 10 findings; guard pass
+  - [11]
+    attack: A4 wrong article in cited, pinned prose ('an function', changed together with its pin)
+    lang: kotlin
+    caught: yes
+    by: pagecheck: 94 findings; guard pass
+  - [12]
+    attack: A4 wrong article in cited, pinned prose ('an `CancellationToken`')
+    lang: csharp
+    caught: yes
+    by: pagecheck ARTICLE; guard pass
+  - [13]
+    attack: A5 import that does not resolve: from '<pkg>/client'
+    lang: js
+    caught: yes, by a runner only
+    by: guard pass; one command: 18 open block classes; runasis lane 0/24 with ERR_MODULE_NOT_FOUND; the port's own runblocks 20/24, the same as baseline (blind to it)
+  - [14]
+    attack: A5 import that does not resolve: require_once 'lib/...'
+    lang: php
+    caught: yes, by a manual run only
+    by: guard pass; one command: 19 open block classes; the php README example test passes 4/0 (blind); only running the root quick start from the repository root fails, at require_once on line 2
+  - [15]
+    attack: A5 import that does not resolve: #include "sdk/core/sdk.hpp"
+    lang: cpp
+    caught: yes
+    by: cpp DOC lane: 6 failures; guard pass; one command: 17 open block classes
+  - [16]
+    attack: A5 import that does not resolve: using DemoSdk.Client;
+    lang: csharp
+    caught: only as a hand decision
+    by: guard pass; one command: 20 open block classes; no dotnet here
+  - [17]
+    attack: A5 import that does not resolve: import voxgig.demosdk.client.DemoSDK;
+    lang: java
+    caught: yes
+    by: javac: 'package voxgig.demosdk.client does not exist' (2 blocks)
+  - [18]
+    attack: A5 import that does not resolve: import voxgig.demosdk.core.sdk.DemoSDK
+    lang: kotlin
+    caught: yes
+    by: gradle --offline compileKotlin: 34 'Unresolved reference' errors
+  - [19]
+    attack: A5 import that does not resolve: import voxgig.demosdk.core.sdk.DemoSDK
+    lang: scala
+    caught: only as a hand decision
+    by: guard pass; one command: 20 open block classes; no scala compiler here
+  - [20]
+    attack: D dropped sentence: the optional fact `deleted` omitted, so 'reads the mark' vanishes
+    lang: js
+    caught: no
+    by: guard 105/105; one command PASS (absent 0, OPEN 0)
+  - [21]
+    attack: D dropped sentence: accessor.cached omitted, declaration and citation (the page then says 'Create a new ... instance', which is false for php)
+    lang: php
+    caught: only as a hand decision
+    by: guard 105/105; one command fails only through 1 open reference class (pagecheck 0, callcheck 0, STALE 0)
+  - [22]
+    attack: D dropped sentence: removeKeeps omitted, declaration and citation (the page then prints the record sentence, which is false for cpp)
+    lang: cpp
+    caught: only as a hand decision
+    by: guard 105/105; one command: 1 open reference class only
+  - [23]
+    attack: D dropped sentence: streamSignal (and its form) omitted, with the cancel region still naming the fact
+    lang: csharp, java, kotlin, scala
+    caught: yes, but only through a leftover
+    by: guard: 'cite ref.facts.cancel: the region left out ... shows ref.facts.streamSignal, which the forms do not cite'
+  - [24]
+    attack: D dropped sentence: streamSignal (and its form) omitted, with the cancel region keeping only its why (as the CostFeature region does)
+    lang: csharp
+    caught: no
+    by: guard 105/105; one command PASS (OPEN 0, absent 0)
+  - [25]
+    attack: D dropped sentence: streamSignal omitted, why-only region
+    lang: java
+    caught: no
+    by: guard 105/105; one command PASS
+  - [26]
+    attack: D dropped sentence: streamSignal omitted, why-only region
+    lang: kotlin
+    caught: no
+    by: guard 105/105; one command PASS
+  - [27]
+    attack: D dropped sentence: streamSignal omitted, why-only region
+    lang: scala
+    caught: no
+    by: guard 105/105; one command PASS
+  - [28]
+    attack: A6 the deleted read's layout role names a package that does not exist (names.entity 'model')
+    lang: java
+    caught: partly
+    by: guard pass; java lane 19/19 (the read is prose); one command: STALE 1 + 2 open classes; my javac of the read: 'package voxgig.demosdk.model does not exist'
+  - [29]
+    attack: A7 wrong fact whose tokens stand in its unpinned citation: container -> Map<String, String>
+    lang: java, kotlin, scala
+    caught: only as a hand decision
+    by: guard 105/105; one command: 1-2 open ledger classes
+  - [30]
+    attack: A7 wrong fact in an unpinned citation: none 'Value::undef()' -> 'Value(options)'
+    lang: cpp
+    caught: yes
+    by: guard: 'cpp: every declared fact is accounted for'
+  - [31]
+    attack: A8 accessor called without its argument in ref.instance
+    lang: kotlin
+    caught: yes
+    by: guard (arity)
+  - [32]
+    attack: A10 operation arguments swapped: load(null, Map.of(...))
+    lang: java
+    caught: no
+    by: guard pass; callcheck 0; one command: 19 open block classes; javac compiles 19/19; 13 of 19 run vs 14, and the lane does not gate on that count
+  - [33]
+    attack: A11 SdkEntity import dropped from the imports printer
+    lang: java
+    caught: no
+    by: guard pass; one command: 12 open block classes; the java lane still compiles 19/19 because it adds its own imports
+  - [34]
+    attack: Revert of [14]'s fill: ReadmeRef prints the deleted read without filling {module} and {names.entity}
+    lang: java
+    caught: partly
+    by: suite 304/304; java one command: STALE 1 + 3 open classes
+  - [35]
+    attack: Old mutation set A (59: k-new, att-all, php-adapt, att-adapt) at v34-frozen
+    lang: 13 earlier languages
+    caught: 49 of 59
+    by: guard. Not caught (6): ocaml-m11-keys-member, ocaml-m21-ctrl-match-swapped, swift-entityBy-Name, perl-a07-prints-record, perl-none-cites-a-comment, G5-ocaml-arrow-signatures-adapted. Errors (4): stale text or build. Exactly v33's result.
+  - [36]
+    attack: Old mutation set B (108: freeze-muts-v33) at v34-frozen
+    lang: 13 earlier languages
+    caught: 94 of 108
+    by: guard. Not caught (5): clj-return-changed, ts-noun, ts-type-comment, ts-lit-int, new-ts-unquoted-near. Errors: 9. One more caught than at v33, because a php provider copy now builds.
+doubtful_lines:
+  - [0]
+    lang: csharp, java, kotlin, scala, go, rust, zig, c, cpp, lua, ocaml, elixir, swift, php, rb, perl, clojure
+    where: B REFERENCE, Features > `secrets` (csharp:1186, java:1155, kotlin:1167, scala:1145, go:1241, rust:1152)
+    line: - Also attaches to pipeline hooks.
+    why: These runtimes define no PreSpec hook and resolve the secret at the transport. csharp SecretsFeature.cs:317 says 'NO PreSpec OVERRIDE, deliberately, though the model declares the hook'.
+  - [1]
+    lang: kotlin
+    where: B REFERENCE operations (load:156-160; create, update, remove alike)
+    line: |
+      `data()` reads its record.
+      ```kotlin
+      val result = client.ambient(null).load(null, null)
+    why: result is Any? (load returns Any?, Interfaces.kt:20), so `result.data()`, as the sentence invites, does not compile without `as SdkEntity`, and 0 of 5 blocks cast. The tutorial and root blocks do cast.
+  - [2]
+    lang: java
+    where: B REFERENCE operations (load:155-160 and 4 more)
+    line: |
+      `data()` reads its record.
+      ```java
+      Object result = client.ambient(null).load(null, null);
+    why: Object has no data(); 0 of 5 blocks cast. This contradicts the reason recorded for [5].
+  - [3]
+    lang: csharp
+    where: B REFERENCE:10-14, Constructor
+    line: |
+      using DemoSdk;
+      
+      var client = new DemoSDK(options);
+    why: `options` is declared nowhere in the block (CS0103 if compiled as written). It is a fragment, as OLD printed it.
+  - [4]
+    lang: csharp
+    where: B REFERENCE:33-34 options table, and the test-client and Usage prose
+    line: | `options["server"]["tenant"]` | `string` | Required. |
+    why: options is Dictionary<string, object?>, so options["server"] is object? and has no indexer. This is a path notation, not C#.
+  - [5]
+    lang: csharp
+    where: B and crud-basic tutorial step 1 and root quick start
+    line: var client = new DemoSDK(new Dictionary<string, object?> { ["apikey"] = Environment.GetEnvironmentVariable("DEMO_APIKEY"), ... });
+    why: Compiles only with implicit usings (System, System.Collections.Generic). That is true of a net6+ template and of the SDK's own csproj (Package_csharp.ts:59), but the page does not say it. Not compiled: no dotnet here.
+  - [6]
+    lang: csharp
+    where: B REFERENCE, stream member signature
+    line: IAsyncEnumerable<object?> Stream(string action, ..., CancellationToken cancel = default)
+    why: It drops [EnumeratorCancellation] (EntityBase.fragment.cs:261). Harmless for a caller, but the token is also reachable through WithCancellation, which the page does not say.
+  - [7]
+    lang: kotlin
+    where: root quick start and tutorial blocks (B README:538-555)
+    line: |
+      val client = DemoSDK(...)
+      ...
+      println(ambient.data())
+    why: Top-level statements compile only in a .kts script, not in a .kt file. The kotlin lane wraps the blocks, so they compile there; as printed they are fragments.
+  - [8]
+    lang: kotlin
+    where: B REFERENCE, test client and Usage
+    line: replaces any `options["feature"]["test"]` in the second
+    why: Map<String, Any?>.get returns Any?, so the nested subscript is not Kotlin. A path notation.
+  - [9]
+    lang: scala
+    where: B REFERENCE:33-34 and 112-118, then the direct prose
+    line: | `fetchargs["path"]` | `String` | ... and, in prose, `result.get("err")`
+    why: One page names a java.util.Map key two ways: a bracket notation Scala does not have, and the .get call it does.
+  - [10]
+    lang: scala
+    where: B README:104-107 and REFERENCE create/update/load blocks
+    line: client.direct(java.util.Map.of("path", ..., "params", java.util.Map.of("id", "example")))
+    why: This compiles only if Scala infers Map.of's value type as Object from the expected JMap[String, Object]. I believe Scala 2.13 and 3 do, but I could not compile it here. java.util.Map.of also throws on a null value.
+  - [11]
+    lang: scala
+    where: B REFERENCE, list
+    line: val results = client.console(null).list(null, null).asInstanceOf[java.util.List[SdkEntity]]
+    why: An unchecked cast (an erasure warning). It is fine at run time, because MakeResult builds an ArrayList of entities.
+  - [12]
+    lang: csharp, kotlin, scala (and 11 more)
+    where: README 'Error handling' section (csharp:73,86; kotlin:69,82; scala:71,84)
+    line: |
+      ```ts
+      try { const ambient = await client.Ambient().load() ...
+    why: TypeScript code in a non-TypeScript README. It is the same in OLD and outside the sections under test, but a compiler-minded reader stops here.
+  - [13]
+    lang: all twenty
+    where: every REFERENCE: the body note (media.ts bodyNoteText)
+    line: ref.facts.body.values / body.once
+    why: Printed in none of the 21 review variations (grep), so these cited, pinned facts have never been read on a page by anyone.
+hypotheses:
+  - [0]
+    h: H1
+    criterion: Providers for 3 or more languages read model facts or carry model-dependent conditions
+    figure: 0 of 20 by grep: no Syntax_ or Naming_ file reads the model. But the shared code reads a model fact (secrets' hook declaration) where a runtime fact was needed, and prints a sentence that is false in 17 runtimes. Fixing it means a declared fact in 17 providers.
+    side: not refuted on this criterion as worded; the 'runtime difference is data' principle was not applied where it mattered
+  - [1]
+    h: H1
+    criterion: Per-language prose above about 15% of the sections' prose
+    figure: not re-measured (the record gives 7.2% at thirteen)
+    side: not tested by me
+  - [2]
+    h: H1
+    criterion: More than about 10 breaking interface changes after the first four languages
+    figure: The record counts 25 to 27 at 3.3. The integration adds 4 (or 5) and counts 0 provider-type breaks. I add the interface field: run without it, a v33-written 3.3 provider is served 3.2 and loses clauses, and all seven new providers needed a commit. c5 also removed an author-side check.
+    side: refuted (the earlier verdict confirmed; the breaks are understated)
+  - [3]
+    h: H2
+    criterion: Less than 2x fewer lines
+    figure: not re-measured
+    side: not tested by me
+  - [4]
+    h: H3
+    criterion: More than about 10% of catalogued issues still need a per-language edit
+    figure: The H3 checker over 25 of 26 variations, all twenty languages ported, exits 0 (ran, the same as theirs). But one H3 edit (X3: '- Also attaches to pipeline hooks.') is false in 17 of 20 languages, and [6]'s Usage key is not code in 6. The checker cannot see a false sentence that a fix itself introduces.
+    side: not refuted by the checker; weakened, since a written-once fix made a new false claim twenty times
+  - [5]
+    h: H4
+    criterion: An example test fails, in a language with a toolchain here, for a reason intrinsic to the approach
+    figure: All NEW lanes pass, the same as theirs: ts, go, py, c, rust, rb, zig, cpp, js (runasis), java (24/19/19), kotlin (0 errors), perl, php. The py, rb, php and perl root quick starts reach the live request. Not compilable here: csharp, scala, swift, lua, clojure, elixir, ocaml. The lanes are also partly blind: java adds its own imports (A11), argument swaps compile (A10), and the php README test misses a broken require (A5).
+    side: holds where measured; 7 languages untested
+  - [6]
+    h: H5
+    criterion: Retirement cannot be made safe for doctor, remove, target add and package update, or a pack's targets stop generating
+    figure: The langpack (dart, haskell, lean) suite passes against NEW, 74/0/2, and its targets generate. F11 (ran) makes doctor fail a project's own optional component for consumer targets, a documented safe extension, because the derived shared-section list includes components retired only because targets left the bundle. The interface field breaks unmarked v33 providers. c5 drops package check's interface error.
+    side: not refuted on pack generation; one unsafe doctor state (F11) is open, with a local fix
+worst: |
+  The rule brief 7 sets for this round does not hold at the frozen state: a wrong or vanished sentence must fail in the guard or the tools before any hand record is read.
+  
+  - A shared sentence written once from the model, "- Also attaches to pipeline hooks." under `secrets`, is false in 17 of the 20 runtimes, and every check passes it. The integration accepted it for the seven new languages by a rule, without reading their runtimes.
+  - A porter who omits an optional fact passes everything: the guard at 105/105 and the one command PASS. That covers `streamSignal` in csharp, java, kotlin and scala, and `deleted` in js; the sentence simply disappears.
+  - Omitting `cached` in php or `removeKeeps` in cpp brings back a sentence already known to be false for that runtime, and only one open class for a person shows it.
+not_done:
+  - OLD example lanes, OLD root quick starts, and the NEW ts and go root quick starts were not re-run: I kept no OLD clone (two copies at most: sdkgen and mut).
+  - csharp, scala, swift, lua, clojure, elixir and ocaml could not be compiled or run: dotnet, scala/sbt, swift, lua/busted, clojure, elixir and ocamlc are missing, kotlinc too (kotlin went through gradle --offline only). Their pages were read, not built.
+  - H1's per-language prose share and H2's line counts were not re-measured.
+  - Decision [2] (callcheck) was not reverted; only the self-test calls group (17/17) was run. Decision [7] (js import) was not compared against OLD.
+  - Of the csharp, kotlin and scala REFERENCE pages I read the constructor, test client, client methods, operations, direct, stream and feature Usage sections, plus the B, auth-basic, crud-basic and no-test tutorials and root quick starts. I did not read every line of all three REFERENCE pages.
+  - The language pack was run only against NEW. OLD was not run (it would mean pointing a link at /home/user/sdkgen/ts), and doctor and remove over a pack-installed project were not run.
+  - F11 was shown end to end only for a go-cli project's own ReadmeIntro_go-cli.ts; other consumer targets and the other eight component names were derived, not run.
+  - I did not run the interface experiment for any provider other than kotlin.
+  - About 205 /tmp/sdkgen-check-* directories leaked by packagecheck.test.ts from earlier runs (the earlier session's and the other engineer's) remain. I removed only the four from my 00:05 run.
+ran: |
+  All runs were on my copies in P/a34 (sdkgen 89387a4f, tools e55846e; mut and tools-mut for mutations), with the brief's PATH, one heavy command at a time and --test-concurrency=2. The earlier session of this same job did part of it, recorded in P/a34/PROGRESS.md; this session continued from there.
+  
+  Freeze checks:
+  - npm run build, then git status.
+  - The suite (255 s).
+  - characterize.
+  - runtimefacts + runtimereader.
+  - mine/run20.sh over all twenty, in two batches; summaries compared by mine/cmppc.sh.
+  - The H3 checker over 25 variations.
+  - The self-test S1 to S6, 285 controls; S6 rerun with TMPDIR=a34/tmp/st.
+  - mine/lanes.sh NEW: ts, go, py, c, rust, rb, zig doc, cpp DOC.
+  - js lane NEW: default, crud, basic-server (runblocks + runasis).
+  - kotlin lane NEW: B, crud-basic, ref-issues (gradle --offline).
+  - java lane NEW: default, crud, basic-server (mvn -o + javac).
+  - tools/before/run.sh perl and php (3 models x 3 runs).
+  - NEW root quick starts for perl, rb, php and py (mine/root/run.sh).
+  - git log scans for trailers.
+  - The language pack's suite against NEW (mine/langpack.sh, node_modules symlinked).
+  
+  Decision reverts (mine/mut.js on mut):
+  - dec.json (18) and dec2.json (4).
+  - dec3.json: the c5 revert, against packagecheck.test.js.
+  
+  Attacks:
+  - mine/att.json, 43 attacks, against the guard.
+  - mine/pcmut.js: the one command on 28 attack mutations, plus qcheck (pagecheck on regenerated pages) for the A4 articles.
+  - mine/lanemut.sh: lanes with A5 (java, js, cpp, php, kotlin), A6, A10 and A11.
+  - mine/deljava.sh: javac of the java deleted read, on NEW and on A6.
+  - mine/root/runm.sh: the php A5 root quick start.
+  - The old sets mine/oldA.json (59) and oldB.json (108) against the guard.
+  - New this session: mine/att3.json + att3b.json, 11 dropped-sentence attacks, against the guard and through the one command (mine/pc3.sh, 7 runs).
+  
+  Experiments:
+  - The interface experiment: kotlin without `interface`, then a regenerated B REFERENCE.
+  - F11 end to end: a temporary test in mut, using actionharness makeProject, target_add go and go-cli, and doctor.
+  - node on dist/helpers/optional.js (sharedSections, undeclaredOverride).
+  - clone() identity on a Utility instance.
+  - grep counts over out/new pages: casts per whole block, ```ts blocks, the stream sentence, the secrets sentence.
+read: |
+  The brief and records:
+  - P/prompts/k-attack34.md, P/brief.md, P/brief7.md (first section), P/results/s6-integrate.txt (in full).
+  - P/results/s4-h3fix.txt needs_reader [0]-[10], P/prompts/k-integrate34.md (PATH).
+  - /home/user/sdkgen/docs/design/model-dependent-text-prototype.md (status table and headings).
+  - sdkgen ts/package.json (_no_exports_comment).
+  
+  Runtimes and shared code, across families:
+  - The secrets feature file of all twenty runtimes, and the cost hooks in ts, zig, c, elixir, ocaml and clojure.
+  - The stream signal handling in ts, go, php, rb, lua, perl, clojure, java, scala, swift, elixir, kotlin and csharp.
+  - allow and clean in c, ocaml, perl and zig. c Main.fragment.c's feature install.
+  - csharp core/Types.cs, EntityBase.fragment.cs, Struct.cs, PrepareAuth_csharp.ts, Fetcher.cs.
+  - scala Main.fragment.scala, SdkClient.scala (testOptions, getUtility, optionsMap, prepare, direct), Fetcher.scala, Contracts.scala, PrepareAuth_scala.ts.
+  - kotlin Interfaces.kt, Main.fragment.kt, SdkClient.kt testOptions, Fetcher.kt, PrepareAuth_kotlin.ts. java Fetcher.java.
+  - ReadmeRef.ts accessorText. forms.ts bracketed(). opShape.ts entityClassName and EntityOperation_php.ts.
+  - The c2361edd diff (check.ts, syntaxversion.ts, packagecheck.test.ts). example.ts at v33-frozen and at v34. generatedcompile.test.ts csharp lane.
+  - The forms files (test/runtimeforms/{js,php,cpp,csharp,java,kotlin,scala}.ts) for the citations of streamSignal, cached and removeKeeps.
+  
+  Pages, read as a compiler would:
+  - csharp, kotlin and scala: README tutorial, root quick start and REFERENCE (selected sections) in B.
+  - The tutorial step 1 in auth-basic, the root C# quick start in crud-basic, and the test client in no-test.
+  
+  Earlier logs:
+  - The earlier session's logs and drafts in P/a34/logs and P/a34/scratch, which I used and corrected: the secrets count went from 8 to 17, and scala's casts from 3 to 5 of 5.

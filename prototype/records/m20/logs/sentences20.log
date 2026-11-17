@@ -1,0 +1,73 @@
+[sentences 15s] tutorial ts: 25 sentences so far
+[sentences 15s] tutorial go: 44 sentences so far
+[sentences 15s] tutorial py: 49 sentences so far
+[sentences 15s] tutorial c: 54 sentences so far
+[sentences 15s] tutorial zig: 59 sentences so far
+[sentences 15s] tutorial clojure: 61 sentences so far
+[sentences 15s] tutorial rust: 61 sentences so far
+[sentences 15s] tutorial elixir: 62 sentences so far
+[sentences 15s] tutorial rb: 64 sentences so far
+[sentences 15s] tutorial perl: 68 sentences so far
+[sentences 15s] tutorial swift: 73 sentences so far
+[sentences 15s] tutorial ocaml: 73 sentences so far
+[sentences 16s] tutorial lua: 73 sentences so far
+[sentences 16s] tutorial js: 75 sentences so far
+[sentences 16s] tutorial php: 80 sentences so far
+[sentences 16s] tutorial csharp: 82 sentences so far
+[sentences 16s] tutorial java: 82 sentences so far
+[sentences 16s] tutorial kotlin: 82 sentences so far
+[sentences 16s] tutorial scala: 82 sentences so far
+[sentences 16s] tutorial cpp: 84 sentences so far
+[sentences 16s] rootquick ts: 86 sentences so far
+[sentences 16s] rootquick go: 86 sentences so far
+[sentences 16s] rootquick py: 88 sentences so far
+[sentences 16s] rootquick c: 90 sentences so far
+[sentences 16s] rootquick zig: 92 sentences so far
+[sentences 16s] rootquick clojure: 92 sentences so far
+[sentences 16s] rootquick rust: 92 sentences so far
+[sentences 16s] rootquick elixir: 92 sentences so far
+[sentences 16s] rootquick rb: 92 sentences so far
+[sentences 16s] rootquick perl: 94 sentences so far
+[sentences 16s] rootquick swift: 96 sentences so far
+[sentences 16s] rootquick ocaml: 96 sentences so far
+[sentences 16s] rootquick lua: 96 sentences so far
+[sentences 16s] rootquick js: 96 sentences so far
+[sentences 16s] rootquick php: 96 sentences so far
+[sentences 16s] rootquick csharp: 96 sentences so far
+[sentences 16s] rootquick java: 96 sentences so far
+[sentences 16s] rootquick kotlin: 96 sentences so far
+[sentences 16s] rootquick scala: 96 sentences so far
+[sentences 16s] rootquick cpp: 96 sentences so far
+[sentences 17s] reference ts: 171 sentences so far
+[sentences 18s] reference go: 197 sentences so far
+[sentences 19s] reference py: 213 sentences so far
+[sentences 20s] reference c: 240 sentences so far
+[sentences 21s] reference zig: 251 sentences so far
+[sentences 22s] reference clojure: 261 sentences so far
+[sentences 23s] reference rust: 264 sentences so far
+[sentences 24s] reference elixir: 277 sentences so far
+[sentences 25s] reference rb: 281 sentences so far
+[sentences 26s] reference perl: 302 sentences so far
+[sentences 27s] reference swift: 319 sentences so far
+[sentences 29s] reference ocaml: 326 sentences so far
+[sentences 30s] reference lua: 338 sentences so far
+[sentences 31s] reference js: 338 sentences so far
+[sentences 32s] reference php: 354 sentences so far
+[sentences 34s] reference csharp: 364 sentences so far
+[sentences 36s] reference java: 369 sentences so far
+[sentences 37s] reference kotlin: 374 sentences so far
+[sentences 38s] reference scala: 378 sentences so far
+[sentences 40s] reference cpp: 385 sentences so far
+# reference sentences: 385 distinct masked sentences (NEW side of the reference languages' reworded and added classes)
+# text the fixture model holds, left out: 2 ("Level \\| percent see the guide or [site](https://e", "Words the project chose | not the spec")
+# tutorial: printed by one language 41: shared-condition 25, unexplained 15, note 1
+# rootquick: printed by one language 6: unexplained 2, shared-condition 4
+# reference: printed by one language 143: code 67, shared-condition 39, unexplained 23, note 12, provider-literal 2
+# tutorial: 84 (accepted by hand only 55, by stage-3a rule records only 20, both 9; template found 58; verdicts ok 57, false 0, awkward 0, none 27)
+# rootquick: 12 (accepted by hand only 6, by stage-3a rule records only 4, both 2; template found 7; verdicts ok 8, false 0, awkward 0, none 4)
+# reference: 289 (accepted by hand only 189, by stage-3a rule records only 82, both 18; template found 115; verdicts ok 156, false 0, awkward 0, none 133)
+-> ../sent20/sentences.txt; verdicts go in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/m20/tools/reviewed/sentences.json ({ "sentences": { "<id>": { "verdict": "ok|false|awkward", "note": "..." } } })
+
+real	0m47.142s
+user	0m50.843s
+sys	0m0.808s

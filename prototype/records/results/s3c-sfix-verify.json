@@ -1,0 +1,663 @@
+{
+ "ok": false,
+ "summary": "Not ready. Two things fail the bar: the matching can be fooled into accepting wrong prose, and the port procedure as written does not reach a passing one command.\n\nWhat holds:\n- Everything in part 6 reproduces both reports exactly. The nine reviewed one-command rows and the from-scratch open/shared counts are equal number for number.\n- All six false sentences were re-run (ts, py and go), and their fixes behave as described. Reverting the ts/js runtime fix makes featurefallback fail 4/4, makes the ts guard citation fail, and makes a regenerated no-test ts SDK throw \"fc is not a constructor\".\n- I read all 41 sentences without a verdict against at least three ported runtimes and the eleven unported ones, and generated a no-test SDK for all twenty targets. 39 are ok, 2 awkward, none false. The 2 awkward: direct's 'holds `data`' clause (ts and js drop the key on an unreadable body) and the wording 'A key is read as'.\n- No re-key decision was lost. Re-keying twice changes nothing.\n\nWhat fails:\n1. The match form masks any position whose text is ANY of the language's own facts, whichever fact belongs there. These page changes were each accepted automatically in both modes, matching a reviewed reference sentence:\n   - zig's `.ok` and `.err` swapped;\n   - py `list()` in place of `data_get()` as the record reader;\n   - rb `Hash` in place of `Array` as the collection;\n   - rb's root comment saying 'a list' (rb's method name).\n2. Numbers are masked, so a wrong step count ('these 3 steps' over a 2-step program) or a wrong heading number leaves no trace in either mode. A wrong article ('Load a ambient') is accepted.\n3. Dropping go's or c's branch sentence:\n   - from every variation leaves no trace, even in the reviewed mode;\n   - from scratch, even one dropped copy leaves no trace.\n   The shared engineer's adaptation retargeted the self-test control that covered this instead of recording it as moved.\n4. buildfresh does not compare `ts/project/.sdk/model/**` with the staged copy that generation reads. Measured with feature/log.aontu edited: buildfresh said current and the output was unchanged; with the edit staged, 787 files differ.\n5. handstale accepts a quotation found on any OLD page. A reason quoting text that left both NEW and the source stays green if OLD had it.\n6. The lua port procedure, run literally, re-keys cleanly but its one command FAILS with 16 open classes, against the 5 the tools report expected. The open classes are the v3.2 sentences lua still prints. The procedure has no step that moves the port onto v33s.\n\nAlso:\n- In all 18 runtimes without the mock, the no-test README's (unported) 'Use test mode' section still promises a mock client. The ts example throws: run, 'Request blocked by mode'.\n- 9 sdkgen commits and 3 tools commits carry a model-naming trailer.",
+ "required_fixes": [
+  {
+   "file": "sfix/tools/ident.js (match) and classify.js",
+   "change": "Mask a position in the match form only when the unit language's text there is its value for the SAME fact path (or printer) that the reference language's slot holds at that position. For example, record per position the fact path the reference's own text satisfied, and require the port's text to satisfy that path. Do not accept any own fact anywhere.",
+   "why": "Wrong prose was accepted automatically in both modes: zig `.err`/`.ok` swapped matched rust (auto 330eda8294 -> shared:rust:9e8fa38435); py `list()` reads its record matched ts (051bd06f0c); rb `Hash` collection matched py (190f1a9e6b); rb comment 'a list of entities' matched clojure (8df51be291). Match forms confirmed with work/idcheck.js."
+  },
+  {
+   "file": "sfix/tools/ident.js (match form), possibly cut.js",
+   "change": "Keep numbers literal in the match form, or check a step count and a step number against the page (the number of steps listed, the heading's position). Keep the a/an article literal in the match form, or check it against the word after it.",
+   "why": "number-steps-go ('these 3 steps' over 2) and number-heading-ts ('5. Load an ambient') leave no class and no count change in either mode. 'Load a ambient' is accepted as shared:clojure."
+  },
+  {
+   "file": "sfix/tools/controls/injections.json and controls/moved.json; classify.js absent list",
+   "change": "Restore sentence-removed-go's v3.2 intent (drop go's branch sentence) and record it in moved.json if it still fails. Make the absent list compare sentences with code spans erased across ALL references (not only the same result style), so the branch sentence a language drops is listed.",
+   "why": "Dropping 'A failure is reported in the result, ... so branch on `result[\"ok\"] == true`.' from every go variation, and its c twin from every c variation, leaves no trace even in the reviewed mode. From scratch, dropping it from one variation also leaves none. The control that covered this was retargeted to another sentence instead of being moved."
+  },
+  {
+   "file": "sfix/tools/buildfresh.js",
+   "change": "Also compare ts/project/.sdk/model/** (and every non-fragment file under .sdk/src) with its staged copy under ts/dist-test-scaffold/.sdk/, by content or by time.",
+   "why": "Generation reads target and feature models from the staged copy. log.aontu edited to active:false and not re-staged: buildfresh 'current', regenerated output identical (0 files). With the edit staged, 787 files differ."
+  },
+  {
+   "file": "sfix/tools/handstale.js",
+   "change": "A quotation found only on OLD pages counts as found only when the record says it quotes the OLD side, for example an outcome of correction, dropped or contradiction, or a 'was:' marker. Otherwise it must be on a NEW page or in the source.",
+   "why": "A record quoting 'Create a new SDK client instance.' stayed green after that text was removed from the source and from every NEW page, because OLD pages still hold it. A NEW-only quote removed the same way was flagged STALE, correctly. All 173 hand quotations of the nine are also in the source, so OLD acceptance is the only way such a change can go unnoticed."
+  },
+  {
+   "file": "sfix/tools/README.md (for_ports) and the porting guide",
+   "change": "Before rekey and portcheck: rebase or merge the port's commits onto v33s, declare ref.facts.testMock 'generated' and a truth read where needed (swift, ocaml), rebuild, and regenerate W/out/new. Only then re-key and run the one command.",
+   "why": "Run literally on a copy of P/ports/lua, the documented steps give PORTCHECK lua: FAIL with OPEN 6 tutorial and 10 reference. The open classes are lua's v3.2 sentences: the env sentence, old direct, test-client and action wording, and 'The match is optional: without one...'. Also 1 accepted class has a false verdict and 1 match stands on an unreviewed sentence. The tools report expected 5."
+  },
+  {
+   "file": "base32/sdkgen/ts/src/cmp/ReadmeRef.ts:214-219 (sfix/sdkgen)",
+   "change": "'For a response whose body is read, 2xx or not, it holds ...'. Replace 'A key is read as X' with 'Read the `err` key as X.' or fold it into the sentence before.",
+   "why": "ts/js drop `data` on an unreadable body (ran: ts 200 'not json' gives ok,status,headers,err), while py, go, php, perl and java keep data:null. 'A key is read as' reads as a rule for every key."
+  },
+  {
+   "file": "README test-mode sections (per-language ReadmeHowto/ReadmeTopTest components, unported)",
+   "change": "Condition the 'Use test mode' example on ref.facts.testMock and the test feature, as the REFERENCE now is.",
+   "why": "In the no-test variation, 20 READMEs say 'Create a mock client for unit testing'. That is true only for zig and clojure. Ran: the ts example's load throws 'Request blocked by mode: \"test\"'. Counted as a contradiction, not failed."
+  },
+  {
+   "file": "sfix/sdkgen commits b09502f1..e84d3525 (9) and sfix/tools dff5559, f348718, 740dc90",
+   "change": "Remove the model-naming co-author trailers if the brief's rule stands.",
+   "why": "Brief 4 rule: no tool or model name in a commit message. The shared engineer disclosed the conflict."
+  },
+  {
+   "file": "sfix/tools/reviewed/sentences.json",
+   "change": "Re-read the carried awkward verdicts 0071df96c2 and f6b8425ed5 (ts 'Create a new `PlanetEntity` instance', now right for class languages) and e9015df1ee (go bold lead, verdict from a split).",
+   "why": "Their verdicts describe text or copies that changed; they are not my sentences, so I left them."
+  }
+ ],
+ "attacks": [
+  {
+   "change": "c REFERENCE B: 'one per record' -> 'one per item' (shared word once masked as an entity)",
+   "expected": "open",
+   "happened": "open in both modes (1 class), nothing accepted",
+   "sound": true
+  },
+  {
+   "change": "rb REFERENCE B: 'SDK utility object' -> 'SDK options object'",
+   "expected": "open",
+   "happened": "open in both modes, nothing accepted",
+   "sound": true
+  },
+  {
+   "change": "go REFERENCE B: 'the entity id, `id`' -> 'the entity name, `id`'",
+   "expected": "open",
+   "happened": "open (2 reviewed, 3 scratch), nothing accepted",
+   "sound": true
+  },
+  {
+   "change": "py crud-bare tutorial comment: 'sends only the fields given' -> 'the records given'",
+   "expected": "open",
+   "happened": "open in both modes",
+   "sound": true
+  },
+  {
+   "change": "go REFERENCE B: '`headers` and `data`' -> '`headers` and `body`'",
+   "expected": "open",
+   "happened": "open in both modes",
+   "sound": true
+  },
+  {
+   "change": "go REFERENCE B: 'the key `err`' -> 'the key `error`', and -> 'the key `nil`' (nil is go's own fact)",
+   "expected": "open",
+   "happened": "open in both modes, both variants",
+   "sound": true
+  },
+  {
+   "change": "py REFERENCE B: 'The array form' -> 'The list form' (list is py's own collection fact)",
+   "expected": "open",
+   "happened": "open in both modes",
+   "sound": true
+  },
+  {
+   "change": "wrong word next to a masked token: c '`*err` set' -> 'cleared'; zig '`.err` reports' -> 'hides'",
+   "expected": "open",
+   "happened": "open in both modes",
+   "sound": true
+  },
+  {
+   "change": "wrong article: ts '2. Load an ambient' -> '2. Load a ambient'",
+   "expected": "open",
+   "happened": "ACCEPTED as shared:clojure (ad69938daf) in both modes. The article before a model name is normalised in the match form.",
+   "sound": false
+  },
+  {
+   "change": "article not before a mark: c 'Create a new' -> 'Create an new'; go 'Returns a `[]any`' -> 'Returns the `[]any`'",
+   "expected": "open",
+   "happened": "open in both modes",
+   "sound": true
+  },
+  {
+   "change": "wrong number: go 'runs these 2 steps' -> 'these 3 steps'; ts heading '2. Load' -> '5. Load'",
+   "expected": "open",
+   "happened": "NO TRACE in either mode: 0 open, 0 unclassified change. Numbers are \u24c3 in identity and match.",
+   "sound": false
+  },
+  {
+   "change": "printer output only: ts 'branch on `result.ok`' -> '`result.ok === true`'",
+   "expected": "same sentence id; class left for a person",
+   "happened": "same id 010ab525bc for both texts (work/idcheck.js); class open in both modes (match form keeps printer output literal). Correct.",
+   "sound": true
+  },
+  {
+   "change": "verdict false on two shared ids (010ab525bc, 4cc33fe3da) in a copy of the verdict file",
+   "expected": "every language's copy stops matching",
+   "happened": "from scratch, open classes rose by 1-2 in ts, go, py, zig, rust, elixir and rb, and by 0 in c and clojure (c's branch read is its own and never matched). rb's two shared matches (d16d410cb8 vs py, 17e455f4a3 vs ts) re-opened.",
+   "sound": true
+  },
+  {
+   "change": "printer revert: c 'branch on `voxgig_as_bool(getp(result, \"ok\"))`' -> the old false '`getp(result, \"ok\")`'",
+   "expected": "open",
+   "happened": "open in both modes, same sentence id",
+   "sound": true
+  },
+  {
+   "change": "comment fact from another language: rb root comment 'an Array of entities' -> py's 'a list of entities'",
+   "expected": "open (rb's collection is Array; open is right)",
+   "happened": "ACCEPTED as shared:clojure (8df51be291) in both modes. 'list' is rb's own method.list fact, so the match form masks it.",
+   "sound": false
+  },
+  {
+   "change": "go bold step lead: drop the sentence after '**Load an ambient.**' (B)",
+   "expected": "open",
+   "happened": "open in reviewed (count change); NO TRACE from scratch (the hole already in controls/moved.json)",
+   "sound": false
+  },
+  {
+   "change": "two facts of one language swapped: zig 'The result's `.ok` is the entity, and its `.err` reports failure' -> `.err`...`.ok`",
+   "expected": "open",
+   "happened": "ACCEPTED as shared:rust (330eda8294) in both modes; the match form is identical to rust's",
+   "sound": false
+  },
+  {
+   "change": "two facts swapped in c: '`NULL` with `*err` set' -> '`*err` with `NULL` set'",
+   "expected": "open",
+   "happened": "open in both modes",
+   "sound": true
+  },
+  {
+   "change": "own fact of another path: py '`data_get()` reads its record' -> '`list()` reads its record'",
+   "expected": "open",
+   "happened": "ACCEPTED as shared:ts (051bd06f0c) in both modes",
+   "sound": false
+  },
+  {
+   "change": "own fact of another path: rb 'Returns an `Array` of entities' -> 'an `Hash` of entities' (Hash = rb recordType)",
+   "expected": "open",
+   "happened": "ACCEPTED as shared:py (190f1a9e6b) in both modes",
+   "sound": false
+  },
+  {
+   "change": "drop go's branch sentence 'A failure is reported ... branch on `result[\"ok\"] == true`.' from B only / from every variation; same for c",
+   "expected": "open, or listed absent",
+   "happened": "B only: open in reviewed, NO TRACE from scratch. Every variation: NO TRACE in reviewed and from scratch, for go and for c.",
+   "sound": false
+  },
+  {
+   "change": "two templates one id: every reference unit's sentence id against its surface shape (work/merges.js)",
+   "expected": "no id covering two templates",
+   "happened": "609 ids, 23 with more than one shape. Every difference is an a/an article before a model name, a model name (entity headings), the language title, or a fact slot (Methods/Functions/Members; maps/dicts/hashes). No two templates merged.",
+   "sound": true
+  }
+ ],
+ "checks": [
+  {
+   "check": "build at v33s",
+   "mine": "forced full rebuild (tsc --build --force + check-scaffold, check-fixture, stage-scaffold): exit 0, git status 0 lines, describe v33s",
+   "reported": "exit 0, 0 lines"
+  },
+  {
+   "check": "suite without toolchain lanes, --test-concurrency=2",
+   "mine": "2606 tests, 2601 pass, 0 fail, 5 skipped, 359 s",
+   "reported": "2606/2601/0/5"
+  },
+  {
+   "check": "golden",
+   "mine": "2/2, compared against the committed golden without regenerating it",
+   "reported": "2/2 (after an update run)"
+  },
+  {
+   "check": "guard and reader",
+   "mine": "61/61",
+   "reported": "61/61"
+  },
+  {
+   "check": "lanes on NEW",
+   "mine": "ts README 16/16, go 12/12, py 12/12, c DOC 6/6, rust DOC 6/6, ^rb: 49/49, zig documentation 6/6",
+   "reported": "same"
+  },
+  {
+   "check": "regeneration",
+   "mine": "21 variations, byte-identical to sfix/out/new",
+   "reported": "-"
+  },
+  {
+   "check": "one command, reviewed, nine",
+   "mine": "9 PASS; every ledger and block row equal to the shared table (e.g. go tut 23/63/1/28/25/9, ref 17439/.../51/32/15, contra 1)",
+   "reported": "9 PASS, same rows"
+  },
+  {
+   "check": "one command, from scratch",
+   "mine": "9 FAIL as expected; open ts 28/5/96, go 47/4/53, py 19/0/61, c 21/3/63, zig 22/2/71, clojure 19/0/72, rust 26/2/78, elixir 19/0/75, rb 25/2/70; shared equal too",
+   "reported": "same"
+  },
+  {
+   "check": "tools self-test",
+   "mine": "203 controls, 0 failed, 1 moved (go-tut-step4-dropped scratch), 1020 s",
+   "reported": "203/0/1"
+  },
+  {
+   "check": "unported eleven vs base32/out/new",
+   "mine": "418 files identical",
+   "reported": "418 identical"
+  },
+  {
+   "check": "sentence list",
+   "mine": "230 distinct (tutorial 64, rootquick 8, reference 158), 41 without verdict before me, 0 after",
+   "reported": "41 without verdict"
+  },
+  {
+   "check": "re-key twice",
+   "mine": "all nine: 'already keyed ... nothing changed' both runs; hand/pinned/classes byte-identical",
+   "reported": "no-op"
+  }
+ ],
+ "false_checks": [
+  {
+   "sentence": "1. The client reads its API key from the environment",
+   "reran": "run/probe-ts.js and probe_py.py on SDKs I generated from my copy (gensdk.js, B and no-test); grep of the generated 20-target SDK for env reads",
+   "result": "ts and py with DEMO_APIKEY set and no option sent no credential. Runtimes read only options.apikey (py prepare_auth.py:38, lua :43, kotlin :37). The nine examples pass the env var as 'apikey'.",
+   "agrees": true
+  },
+  {
+   "sentence": "2. direct's Returns: non-2xx has no err",
+   "reran": "probe-ts.js and probe_py.py (stub fetch), plus my own go probe with an httptest server and an unreachable port",
+   "result": "ts, py and go: 2xx ok true; 404 ok false with data and no err; unreadable 200 ok false with err (ts drops data, py and go keep data null); unreachable gives only ok and err; go Direct's second return was nil every time. py: a raising custom system.fetch propagates. The same construction was read in js, php, perl, lua, csharp, java, kotlin, scala, swift, cpp and ocaml.",
+   "agrees": true
+  },
+  {
+   "sentence": "3. ctrl example explain: true",
+   "reran": "probe-ts.js, probe-ts-ctrl.js, probe_py.py, probe_py_ctrl.py",
+   "result": "ts load with explain true throws \"Cannot create property 'err' on boolean 'true'\"; py ignores it; direct records nothing in explain (ts and py).",
+   "agrees": true
+  },
+  {
+   "sentence": "4. no test feature: no mock transport",
+   "reran": "probes on the no-test ts, py and go SDKs; generated the no-test SDK for all 20 targets; reverted b09502f1 in my copy",
+   "result": "ts (fixed), py and go: test() gives mode test, and list, load and direct are refused (fetch_mode_block), also with a system.fetch given (ts). Only zig and clojure keep a test factory entry (testMock 'always' is right); the other 18 drop it, and ocaml, csharp and java fetchers refuse a non-live mode. Fix reverted: featurefallback fails 4/4, the ts guard citation fails, and the generated no-test ts SDK throws 'fc is not a constructor'. The js 'ahead' citation does not fail with js's fix reverted (unchecked until js is ported).",
+   "agrees": true
+  },
+  {
+   "sentence": "5. It returns a client in test mode (removed)",
+   "reran": "as 4",
+   "result": "Sentence gone from every page; mode 'test' confirmed in ts, py and go.",
+   "agrees": true
+  },
+  {
+   "sentence": "6. An action returns the action's OWN response",
+   "reran": "probe-ts-action.js, probe_py.py",
+   "result": "ts and py return the same entity, whose data() is the action response. Read: create stores resdata as data in go, c, php, java, lua, rust and cpp.",
+   "agrees": true
+  }
+ ],
+ "verdicts": {
+  "ok": 39,
+  "awkward": 2,
+  "false": 0
+ },
+ "sentences": [
+  {
+   "id": "25f8905d37",
+   "text": "The example passes the API key from the `DEMO_APIKEY` environment variable as the `apikey` option.",
+   "verdict": "ok",
+   "evidence": "nine examples pass the env read as apikey; runtimes read options.apikey only (probes ts, py)",
+   "note": ""
+  },
+  {
+   "id": "4966aea016",
+   "text": "... key and secret ... as the `apikey` and `secret` options.",
+   "verdict": "ok",
+   "evidence": "secret read only under auth.basic in all 20 PrepareAuth",
+   "note": ""
+  },
+  {
+   "id": "21fc35c768",
+   "text": "\u24c3. Create, update, patch, and remove a planet",
+   "verdict": "ok",
+   "evidence": "crud-bare ts block order",
+   "note": "'planet' unmasked (one entity)"
+  },
+  {
+   "id": "81aabf087b",
+   "text": "\u24c3. Create and remove a planet",
+   "verdict": "ok",
+   "evidence": "crud-noupdate",
+   "note": ""
+  },
+  {
+   "id": "219aa7c229",
+   "text": "\u24c3. Create, update, and remove a planet",
+   "verdict": "ok",
+   "evidence": "doc-nested",
+   "note": ""
+  },
+  {
+   "id": "9bcb2825f2",
+   "text": "Satellite is nested under planet, so the match also gives `planet_id`.",
+   "verdict": "ok",
+   "evidence": "ts and c doc-nested blocks pass planet_id and id",
+   "note": ""
+  },
+  {
+   "id": "b83e95bec6",
+   "text": "\u24c3. Update a gauge",
+   "verdict": "ok",
+   "evidence": "ref-issues",
+   "note": ""
+  },
+  {
+   "id": "b4e03207de",
+   "text": "The program below runs these \u24c3 steps in order.",
+   "verdict": "ok",
+   "evidence": "go B tutorial",
+   "note": ""
+  },
+  {
+   "id": "a06a8df5bb",
+   "text": "`Data()` reads an entity's record.",
+   "verdict": "ok",
+   "evidence": "go record accessor derived",
+   "note": ""
+  },
+  {
+   "id": "a8c3a1d8ce",
+   "text": "**Create, update, patch, and remove a \u24ba.**",
+   "verdict": "ok",
+   "evidence": "go lead",
+   "note": ""
+  },
+  {
+   "id": "ea12b61c7f",
+   "text": "**Create and remove a \u24ba.**",
+   "verdict": "ok",
+   "evidence": "go lead",
+   "note": ""
+  },
+  {
+   "id": "a2c72437b6",
+   "text": "**Create, update, and remove a \u24ba.**",
+   "verdict": "ok",
+   "evidence": "go lead",
+   "note": ""
+  },
+  {
+   "id": "4e460e7bba",
+   "text": "The program below runs this step.",
+   "verdict": "ok",
+   "evidence": "go ent-none",
+   "note": ""
+  },
+  {
+   "id": "26d1a4e4aa",
+   "text": "**Update a \u24ba.**",
+   "verdict": "ok",
+   "evidence": "go lead",
+   "note": ""
+  },
+  {
+   "id": "b442c2e605",
+   "text": "`Update()` returns `(value, error)`: ...",
+   "verdict": "ok",
+   "evidence": "go Update (any, error)",
+   "note": "no 'too' without an earlier step"
+  },
+  {
+   "id": "23dc789f01",
+   "text": "Load a \u24ba: \u27e6\u27e7 is the entity; \u27e6\u27e7 holds the failure",
+   "verdict": "ok",
+   "evidence": "rust Result, zig EntResult",
+   "note": ""
+  },
+  {
+   "id": "93ac2276de",
+   "text": "List \u24ba records: \u27e6\u27e7 is a \u27e6\u27e7 of entities ...; \u27e6\u27e7 holds the failure",
+   "verdict": "ok",
+   "evidence": "rust Vec, zig slice",
+   "note": ""
+  },
+  {
+   "id": "7e4d6fd58f",
+   "text": "Like any operation, an action's call gives back the entity; its data is then that action's OWN response ...",
+   "verdict": "ok",
+   "evidence": "ran ts, py; read go, c, php, java, lua, rust, cpp create ops",
+   "note": "a non-map response becomes {}"
+  },
+  {
+   "id": "0a6358906c",
+   "text": "**Returns:** \u27e6\u27e7, a result map.",
+   "verdict": "ok",
+   "evidence": "all 20 direct read",
+   "note": ""
+  },
+  {
+   "id": "746a31db3f",
+   "text": "The first argument holds the test feature's options, which the call switches on, and replaces any \u27e6\u27e7 in the second ...",
+   "verdict": "ok",
+   "evidence": "test() read in 14 runtimes: active true and setpath feature.test",
+   "note": "thin in a no-test SDK: no test feature reads those options"
+  },
+  {
+   "id": "5266d8cbf2",
+   "text": "Client \u27e6\u27e7",
+   "verdict": "ok",
+   "evidence": "members of the client in every page",
+   "note": ""
+  },
+  {
+   "id": "7a3e73d523",
+   "text": "Control options.",
+   "verdict": "ok",
+   "evidence": "no literal true of all 20",
+   "note": "says little"
+  },
+  {
+   "id": "663d6ed57c",
+   "text": "For a response, 2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and `ok` is \u27e6\u27e7 unless the status is 2xx.",
+   "verdict": "awkward",
+   "evidence": "ran ts: 200 'not json' gives ok,status,headers,err with NO data; py and go keep data null",
+   "note": "'for a response whose body is read'"
+  },
+  {
+   "id": "e87b3544ac",
+   "text": "When the body cannot be read, `ok` is \u27e6\u27e7 and the key `err` holds the error; a request that cannot be made gives only `ok` (\u27e6\u27e7) and `err`.",
+   "verdict": "ok",
+   "evidence": "ran ts, py, go; read 11 unported",
+   "note": "py: a raising custom fetch propagates"
+  },
+  {
+   "id": "eefd70afa7",
+   "text": "A key is read as \u27e6\u27e7.",
+   "verdict": "awkward",
+   "evidence": "true reads (ts result.err, c getp(result, \"err\"), go result[\"err\"])",
+   "note": "reads as a rule for every key"
+  },
+  {
+   "id": "010ab525bc",
+   "text": "A failure is reported in the result, not as an error, so branch on \u27e6\u27e7.",
+   "verdict": "ok",
+   "evidence": "go Direct err nil on every path (ran)",
+   "note": ""
+  },
+  {
+   "id": "4cc33fe3da",
+   "text": "The match is optional.",
+   "verdict": "ok",
+   "evidence": "list signatures, runtime table",
+   "note": ""
+  },
+  {
+   "id": "6cfad26916",
+   "text": "The data must include the entity id, `\u24bb`, unless the entity already holds it.",
+   "verdict": "ok",
+   "evidence": "paramValue in go, py, php, java; c reads entity data",
+   "note": ""
+  },
+  {
+   "id": "05a5a62f89",
+   "text": "Password for HTTP Basic authentication; `apikey` is the user name.",
+   "verdict": "ok",
+   "evidence": "js, ocaml, cpp PrepareAuth",
+   "note": ""
+  },
+  {
+   "id": "f616466503",
+   "text": "Create a test client.",
+   "verdict": "ok",
+   "evidence": "no-test, testMock generated",
+   "note": ""
+  },
+  {
+   "id": "dd74ff9ab6",
+   "text": "This SDK is generated without the `test` feature, so the client has no mock transport and refuses every request.",
+   "verdict": "ok",
+   "evidence": "ran ts, py, go; generated all 20: only zig and clojure keep the mock",
+   "note": ""
+  },
+  {
+   "id": "1f08cc692d",
+   "text": "It takes no arguments.",
+   "verdict": "ok",
+   "evidence": "go Test() = TestSDK(nil, nil), Main_go.ts:216",
+   "note": ""
+  },
+  {
+   "id": "b1e62e338a",
+   "text": "go action Call cell",
+   "verdict": "ok",
+   "evidence": "Planet(nil).Create exists",
+   "note": "compiled by nothing"
+  },
+  {
+   "id": "57d83d252b",
+   "text": "Create a new \u27e6\u27e7 entity.",
+   "verdict": "ok",
+   "evidence": "c, clojure, elixir accessors",
+   "note": ""
+  },
+  {
+   "id": "0d2b7ebded",
+   "text": "Create another \u27e6\u27e7 entity with the same client and options.",
+   "verdict": "ok",
+   "evidence": "make",
+   "note": ""
+  },
+  {
+   "id": "aa27f7dd7e",
+   "text": "... return its result items, every one already read.",
+   "verdict": "ok",
+   "evidence": "runtime table stream lines c, rust, zig",
+   "note": ""
+  },
+  {
+   "id": "c0e844726c",
+   "text": "c action Call cell",
+   "verdict": "ok",
+   "evidence": "demo_planet exists (client.c:366)",
+   "note": "compiled by nothing"
+  },
+  {
+   "id": "cca0deacc3",
+   "text": "zig action Call cell",
+   "verdict": "ok",
+   "evidence": "client.planet exists (sdk.zig:430)",
+   "note": "long; compiled by nothing"
+  },
+  {
+   "id": "72922e3782",
+   "text": "... return a sequence of its result items.",
+   "verdict": "ok",
+   "evidence": "elixir entity_base.ex runs run_op before return",
+   "note": ""
+  },
+  {
+   "id": "3deec669ce",
+   "text": "The result map always comes back inside `Ok`.",
+   "verdict": "ok",
+   "evidence": "rust direct",
+   "note": ""
+  },
+  {
+   "id": "72c41ba898",
+   "text": "elixir action Call cell",
+   "verdict": "ok",
+   "evidence": "Demo.planet/2, Planet.create/3",
+   "note": "compiled by nothing"
+  }
+ ],
+ "rekey": [
+  {
+   "lang": "ts",
+   "base_decisions": "74 hand",
+   "sfix_decisions": "120 hand",
+   "changed": "1, by hand with a reason: 0b29ec4944 restored:shared -> correction:sentence-review-update-id",
+   "lost": "0; 7 retired by v3.3 text, all named by a current record"
+  },
+  {
+   "lang": "go",
+   "base_decisions": "56",
+   "sfix_decisions": "107",
+   "changed": "1 (0b29ec4944, update-id); 3 re-key conflicts (defa8274d4, 9363faf207, b214355702) decided by hand or now a shared match",
+   "lost": "0; 13 retired, all named"
+  },
+  {
+   "lang": "py",
+   "base_decisions": "53",
+   "sfix_decisions": "90",
+   "changed": "1 (update-id)",
+   "lost": "0; 8 retired, all named"
+  },
+  {
+   "lang": "c",
+   "base_decisions": "72",
+   "sfix_decisions": "106",
+   "changed": "1 (18d10f8549, list-match)",
+   "lost": "0; 7 retired, all named"
+  },
+  {
+   "lang": "zig",
+   "base_decisions": "77",
+   "sfix_decisions": "131",
+   "changed": "1 (30b274a911, update-id)",
+   "lost": "0; 9 retired, all named"
+  },
+  {
+   "lang": "clojure",
+   "base_decisions": "64",
+   "sfix_decisions": "93",
+   "changed": "1 (8cf64fe4e8, list-match)",
+   "lost": "0; 9 retired, all named"
+  },
+  {
+   "lang": "rust",
+   "base_decisions": "60",
+   "sfix_decisions": "107",
+   "changed": "1 (30b274a911, update-id)",
+   "lost": "0; 7 retired, all named"
+  },
+  {
+   "lang": "elixir",
+   "base_decisions": "60",
+   "sfix_decisions": "95",
+   "changed": "0",
+   "lost": "0; 9 retired, all named"
+  },
+  {
+   "lang": "rb",
+   "base_decisions": "145",
+   "sfix_decisions": "183",
+   "changed": "1 (0b29ec4944, update-id)",
+   "lost": "0 carried decisions lost; 11 retired, 10 named; d7ede4c606 correction:write-comment-style is named by no current record (its successor class is decided, rb PASS)"
+  }
+ ],
+ "rekey_port": "Run literally on a copy of P/ports/lua (run/luaport.sh, log logs/b/lua.log):\n- tools copied: sfix/tools at 740dc90, with lua's counts and purity-allow;\n- rekey --dry, then rekey: exit 0 both times. Reference: 5 merges, 6 split parts, 0 conflicts; counts/lua.json unchanged;\n- a second rekey: 'already keyed ... nothing changed'.\n\nportcheck lua: FAIL.\n- ledger OPEN: tutorial 6, rootquick 0, reference 10;\n- blocks OPEN 0; guard pass 4/4; hand records 204, STALE 0;\n- 1 accepted class whose sentence is false (3f33c6f26f);\n- 1 shared match on an unreviewed sentence.\n\nWhat is open: lua's own v3.2 output, still holding the v3.2 shared sentences:\n- the env sentence (3320e33aa5, b98c5c1370);\n- '2. Update' and '4. Create, update, and remove';\n- 'There is no {ok, data} wrapper';\n- 'The data must include the entity `id`';\n- the old test-client and direct sentences;\n- 'The match is optional: without one, every record is listed';\n- the old action sentence;\n- 'API secret for authentication'.\nThose references no longer exist at v3.3.\n\nThe documented procedure has no step that puts the port on v33s. The tools report expected 5 open classes; the result is 16.",
+ "stale_checks": "Stale build:\n- Case A (ran): ts/src/cmp/ReadmeRef.ts touched. buildfresh printed 'STALE BUILD: ts/src/cmp/ReadmeRef.ts is 1655s newer than ts/dist/cmp/ReadmeRef.js' and exited 1. portcheck ts exited 1 with the same line on its screen.\n- Case B (ran): ts/project/.sdk/model/feature/log.aontu edited to active: false and not re-staged. buildfresh reported 'current' and exited 0. Regenerating the 21 variations gave 0 files different from out/new. With the same edit copied into dist-test-scaffold/.sdk/model, 787 files differ. So a model edit without a build passes unnoticed.\n\nStale record (ran, on copies of the source dirs and of NEW):\n- A hand reason quoting 'The example passes the API key from the' (NEW and source only), with that text removed from the source and every NEW page: STALE class [92f7d78487], exit 1, named.\n- A reason quoting 'Create a new SDK client instance.' (also on OLD pages), removed the same way: not flagged.\n\nMeasured: every one of the 173 quotations in the nine languages' hand reasons is also in the clone's source, so removing text from pages alone never makes a record stale.\n\nEverything restored: git status 0 lines, build current.",
+ "numbers": "Distinct reference sentences (sentences.js after my regeneration): 230 in all.\n- tutorial 64, rootquick 8, reference 158;\n- fixture model texts left out: 2.\n\nPrinted by one language alone:\n- The tool lists 106 (tutorial 34, rootquick 4, reference 68).\n- Recounted by page (work/printedby.js: the ident.js id of every unit the nine languages print): 77 (tutorial 30, rootquick 4, reference 43).\n- 29 of the tool's 106 are printed by several languages (e.g. go's 'Remove' and 'Update' comments, which all nine print). The tool attributes by class list.\n- 2 listed ids (rb tutorial d938f29a61, 26ebb140ea) match no page unit.\n\nThe 77, by what they are:\n- A runtime's own fact: 9. Notes: elixir getelem, go channel, zig throw:false, zig error union, clojure get-utility, rust Ok, elixir own node. Provider literals: clojure sdk.client, elixir Helpers.deep.\n- Printer output, whole-code cells: 15 (Call cells, key cells, the go type cell, the rust stream signature).\n- A declared fact used as a whole heading: 1 (clojure 'sdk.api').\n- Shared code one condition selects: 50 (result style, p.program bold leads and the program sentence, async, listOf, stream kinds, prepare fails, test args).\n- Listed but on no page: 2.\n\nProse share at v33s, sharewords.js over 21 variations, ALL sections. 'Only this language' / by source (provider literals: notes plus prose facts):\n- ts 11.3 / 0.4;\n- go 18.6 / 7.4 (over the 19 shared variations: 10.1 / 7.2);\n- py 2.5 / 0.2;\n- c 6.3 / 1.3;\n- zig 0.1 / 4.4;\n- clojure 0.4 / 2.8;\n- rust 1.4 / 0.5;\n- elixir 0.7 / 0.8;\n- rb 2.5 / 0.2.\n'By source' is the H1 measure; the highest is go's 7.4%, under the 15% line. The 'only' column counts shared code selected by a style, not provider prose.",
+ "could_not_check": [
+  "No toolchain here runs the clojure, elixir, lua, kotlin, scala, swift, csharp or ocaml runtimes; for them every sentence verdict rests on reading the runtime (zig's no-test mock was confirmed only by generation, not by running)",
+  "The four new Action Call cells (go, c, zig, elixir) are compiled by no lane; I checked only that the names they use exist in the generated runtimes",
+  "direct()'s four cases were run in ts, py and go only; the other 17 were read",
+  "go param.go and c param.c were read, but no update without an id in the data was run",
+  "The re-key comparison maps base32 decisions onto the v3.3 output; for decisions whose classes the v3.3 text retired I checked only that a current record names the old id, not each new decision's content",
+  "I did not merge the lua port onto v33s, so how many classes stay open for a correctly prepared port is unmeasured",
+  "swift and ocaml truth-read forms (shared engineer's note for the ports) not checked"
+ ],
+ "ran": "All runs were in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/sverify, on copies of sfix/sdkgen (v33s), sfix/tools (740dc90) and ports/lua. PATH was the brief's (node 24.22.1, pytest, zig).\n\nFreeze checks:\n- forced full rebuild;\n- regeneration of the 21 variations (tools/gen/gen.js);\n- the unported eleven compared with cmp;\n- suite at concurrency 2; golden; guard and reader;\n- the seven lanes (run/lanes.sh);\n- the nine one commands, reviewed (run/pcall.sh r1) and from scratch (s1);\n- tools/selftest.js.\n\nSentences:\n- tools/sentences.js twice;\n- my 41 verdicts written with work/verdicts.js into tools/reviewed/sentences.json.\n\nProbes:\n- gensdk.js B and no-test for ts, py and go, and for all 20 targets;\n- probe-ts.js, probe-ts-action.js, probe-ts-ctrl.js, probe_py.py, probe_py_ctrl.py;\n- my own go probe (cmd/vprobe, httptest);\n- ts and py default transport to 127.0.0.1:1.\n\nReverts and stale tests:\n- run/revertfix.sh: b09502f1 reverted, then featurefallback, the guard, and a no-test ts SDK built and probed; restored afterwards;\n- an extra js-only revert;\n- run/stalebuild.sh, plus a staged-model check;\n- handstale.js on a mini copy of the source and NEW.\n\nAttacks and checks (run/batch.sh):\n- work/attack.js: attacks1 (23) and attacks2 (3), each in both modes;\n- work/falseverdict.js, plus an rb open-set diff;\n- work/merges.js and work/printedby.js;\n- rekey.js twice on the nine;\n- rekey.js --code legacy/v32 from base32/tools onto the current output, with work/counterpart.js;\n- run/luaport.sh;\n- sharewords.js over 21 and over 19 variations;\n- work/idcheck.js and work/quotewhere.js.\n\nLogs are under sverify/logs, progress in sverify/PROGRESS.md.",
+ "read": "- Briefs: brief.md, brief3.md, brief4.md, brief5.md, brief6.md.\n- results/s3b-sentences.txt in full; base32/PORTING.md sections 5 and 6; both engineers' reports.\n- tools: README, portcheck.sh, ident.js (whole), classify.js (matching), rekey.js (main paths), selftest.js (injection core), handstale.js, buildfresh.js header, sharewords.js header, controls (injections, accept, recheck, masking, missing, moved, factmut index).\n- base32/runtime-table.md: test, list and stream rows for all 20.\n- Shared source: ReadmeRef.ts direct, test, accessor and field-usage code; runtimeprose.ts opText; account.ts testMock; commits b09502f1 and 2608dd45.\n- Runtimes:\n  - direct() in js, php, perl, lua, csharp, swift, java, scala, cpp, ocaml and go;\n  - makeFeature fallbacks of the eleven;\n  - test() in php, csharp, java, js, lua, perl, kotlin, scala, swift and cpp;\n  - csharp and java fetchers; ocaml test and fetcher;\n  - param resolution in go, c, php, java, py and lua;\n  - PrepareAuth secret handling in the eleven (js, ocaml and cpp in detail);\n  - create ops in go, c, php, java, lua, rust and cpp; elixir stream.\n- Pages: the generated pages and the no-test READMEs."
+}

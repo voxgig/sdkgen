@@ -1,0 +1,1149 @@
+ok: True
+summary: |
+  Version 3.2 is frozen at tag `v32-frozen` (3d58cb46) in `P/v32/sdkgen`. The review tools are under git at d2e3b26. Every freeze check holds at that commit, and the nine one-command checks pass.
+  
+  **What I ran, all at 3d58cb46:**
+  - Build: `git status` clean afterwards.
+  - Suite without the toolchain lanes: 2597 tests, 2592 pass, 0 fail, 5 skipped.
+  - Golden 2/2; guard and reader 61/61.
+  - Lanes on NEW: ts README 16/16, go 12/12, py 12/12, c DOC 6/6, rust DOC 6/6, `^rb: ` 49/49, zig documentation 6/6.
+  - The eleven unported languages: README and REFERENCE are identical to OLD apart from the same 7+8 lines the last freeze listed, 209 times each. They are also identical to `base/out/new`. 0 new lines.
+  - The nine one-command checks: PASS, with 0 open, 0 unattested, every absent entry explained.
+  - Tools self-test run from `P/base32`: 175 controls, 0 failed.
+  - Mutations: of the 75, 68 are caught. The 7 not caught are the same accounted ones as at v3.1, and none is caught less than before. Of the guard engineer's 19, 17 are caught; py with its literals removed now fails the build as a type error; new-ts-unquoted-near is still missed (the known 3-line window). Of my 12 new ones, 11 are caught by the guard (runs, accessor, members, account) and py `okFalse` removed fails the build.
+  - The re-check's provider mutations, run end to end on a copy (build, generate, one command):
+    - rb `none` 'null' and rb `okFalse` 'False' fail the guard, naming the fact.
+    - rb `maps` 'arrays' and `noun` 'Functions' fail the one command as UNATTESTED, in both modes.
+    - py with `okFalse` removed fails the build.
+  - A shared sentence dropped from one rb variation, classified from scratch: 1 new open class.
+  
+  **Merging the three engineers' work.** The 29 guard commits cherry-picked with no conflicts. The guard then failed 9 account tests, as both reports said it would. Comparing their lists:
+  - **runs:** the two engineers agree for all 20 runtimes.
+  - **ok literals:** they agree for all 20.
+  - **Disagreements:**
+    - ocaml's stream kind: streamLazy against streamSync. Both readings are in the guide, for the porter to settle.
+    - `depends on the feature`: worded differently by the two, but both statements are true.
+    - Item timing: java, kotlin, scala and perl run the operation at the call but draw the feature's items as the caller iterates. That made the shared `call` sentence's 'every item is read' false, so I changed it.
+  
+  **Source fixes I made:**
+  - `runs` and `accessor.param` are now derived by the guard. `okFalse`, `abortCode` and `noError` are cited.
+  - `okFalse` is cited ahead of a provider in all eleven unported forms (perl `0`), and the reader test checks those citations now.
+  - c documents `sdk_options_map` and `sdk_get_utility`.
+  - options and entopts say 'copy' only where a cited `copy` is declared.
+  - The test sentence names its arguments by position, so shared code prints no runtime token.
+  - `okFalse` now throws when missing. It used to print `undefined` past the type checker.
+  - Two citations no longer quote lines that do not show their value.
+  - The notes lint now requires one plain string per note.
+  
+  **Review findings:**
+  - Five hand records had gone stale: a shared change made their reasons false while their counts stayed the same, so the tools kept them closed. I re-decided them.
+  - The 7 unattested facts are recorded by hand.
+  - go's 'printed less often' case is a sentence-splitting artefact (README.md:37-38), not a dropped sentence.
+  
+  **Thresholds:**
+  - H1 is crossed on breaking interface changes: about 20 to 22 since the first four languages (11 to 13 at v3.1, plus the shared engineer's 8, plus 1 of mine), against a line of about 10. None was caused by a newly ported language.
+  - H1 on prose: by source, go is 7.4%, under the line; printed by go alone it is 22.6%, over the 15% line.
+  - H2 is refuted on every count that includes the forms or the guard: 1.61x measured for documentation code only, 1.33x with the forms, 0.98x with the guard. Projected to twenty: 2.26x, 1.80x and 1.47x.
+  - H4 holds.
+stopped_at: All six parts are done. `P/v32/PROGRESS.md` holds every step and decision. The tag is `v32-frozen` = 3d58cb46. The base is `P/base32`, and its `PORTING.md` is version 3.2.
+frozen_commit: 3d58cb46 (tag v32-frozen) in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen; 68 commits on 9089ed48. Tools: git d2e3b26 in v32/tools, and the same in base32/tools.
+base: |
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/base32 holds:
+  - sdkgen at v32-frozen, rebuilt, `git status` empty;
+  - tools at git d2e3b26, status clean (review/ and runs/ are ignored);
+  - harness;
+  - out/old, a copy (`diff -rq` against base/out/old is empty);
+  - out/new, identical to v32/out/new;
+  - oldclone, a link to freeze/oldclone;
+  - runtime-table.md (1119 lines);
+  - newport.sh;
+  - PORTING.md (621 lines).
+  
+  I ran `newport.sh kotlin v32/ws-demo`, then `REGEN=1 tools/portcheck.sh sdkgen out kotlin`:
+  - 21 variations regenerated, none skipped;
+  - it printed `kotlin: NOT PORTED. No section is ported for it: ...` and `PORTCHECK kotlin: NOT PORTED`, exit 1, with no stack trace (logs/newport-kotlin.log);
+  - `git -C tools status --short` printed nothing;
+  - out/new is identical to base32/out/new.
+  
+  `df -h /` shows 20G free. The self-test run from base32: 175 controls, 0 failed.
+merge: |
+  I copied i-shared/ws/sdkgen (51de033a) and i-tools/ws/tools. I fetched i-guard 41a6df87 as branch guard2; the clone already had an old branch called `guard`, at 9f183559, from an earlier stage. I checked that 9089ed48..guard2 touches only `ts/test/runtimefacts.test.ts`, `runtimereader.test.ts` and `runtimeforms/**`, then cherry-picked all 29 commits with no conflicts. After the build, guard and reader gave 52/61. The 9 failures were account tests: no category for okFalse, accessor.param, runs, abortCode or noError; citations missing for setArg (c, zig) and pairForm (go); an elixir exception for a note that no longer exists; py's lits citations for an undeclared fact.
+  
+  Commits, in order:
+  - 7c?-series: one shared guard commit, 'Guard meets the shared facts...' (account.ts, guard.ts, runtimereader.test.ts), then 20 forms commits (one per language).
+    - Note: the 11 unported forms commits say 'WRONG exceptions ... removed'. Only swift's had one; the others add the ahead citation.
+  - 70814346: shared ReadmeRef.ts, example.ts comment, refinterface test.
+  - 4e1c49fa..0d169116: nine per-language commits, each the provider plus its forms.
+  - 40fc06ae: Build.
+  - afc9cd4c: Golden, 9 provider hash lines.
+  - e7b9b526: shared, okFalse throws, plus a test.
+  - 3d58cb46: Build.
+  
+  Every commit is staged by explicit path. No message names a tool or a model.
+disagreements:
+  - [0]
+    topic: when a stream's operation runs (runs)
+    shared_said: ts iterate, go background, py iterate, rb iterate, c/zig/clojure/rust/elixir call; js/php/lua/csharp iterate; java/kotlin/scala/swift/cpp/perl/ocaml call
+    guard_said: forms.stream positions: the same 20 values (mapped as caller iterates -> iterate, before it returns -> call, from the call beside the caller -> background)
+    runtime_shows: agree 20/20: printed by `node -e` over guard.streamItems for each forms file. Examples: ts EntityBase.fragment.ts:111 (`async *stream`, pipeline inside), go Entity.fragment.go:217 (`go func()` at the call), perl Entity.fragment.pm:177 (`_run_op` before the coderef returns), lua Entity.fragment.lua:179-192 (coroutine resumed on the first pull)
+    decided: runs is DERIVED: guard.ts compares each stream member's runs with RUNS[streamItems(...).runs]. The control 'a stream whose operation is declared to run at another time' is added, and the mutations v32-c-runs-iterate and v32-ts-stream-runs-call are caught.
+  - [1]
+    topic: when items are read (the item column)
+    shared_said: 'as they arrive' was false of every runtime; no stream depends on the feature for the network read
+    guard_said: items are drawn as the caller iterates in java, kotlin, scala and perl although runs is 'call'; 'depends on feature: yes' for 12 runtimes (the feature's iterator against the whole result)
+    runtime_shows: java EntityBase.fragment.java:246 runOp then :278,292 src.next(); kotlin .kt:213,245,248; scala .scala:192,218,240; perl Entity.fragment.pm:177,202,205. Every feature iterates result.resdata, which is read whole (ts StreamingFeature.ts:52)
+    decided: Both are true: they speak of different reads. The shared 'call' sentence 'The operation runs, and every item is read, before the call returns' was false for java, kotlin, scala and perl, so I changed it once to 'The operation runs before the call returns.' (ReadmeRef.ts STREAM_RUNS). streamClaims now claims item timing only for streamList.
+  - [2]
+    topic: clojure and elixir stream kind (guard: WRONG streamLazy)
+    shared_said: kept streamLazy, with the sentence changed to 'return a lazy sequence of its result items' plus runs 'call'
+    guard_said: WRONG: every item is read before the call returns
+    runtime_shows: clojure Entity.fragment.clj:164 run-op, :180 vec/mapv, :185 lazy-seq over the realised vector; elixir entity_base.ex:150 run_op, :160 source(), :172 a Stream over a list (streaming.ex:58)
+    decided: The kind names the returned type (a LazySeq, an Elixir Stream), and the runs sentence beside it says the operation ran before the return. I judge a reader is not misled; no sentence claims item timing. Both WRONG exceptions are dropped, and the reader and guard pass.
+  - [3]
+    topic: swift stream (guard: NEEDS SHARED)
+    shared_said: streamIterator with runs 'call' (the kind alone could not say it)
+    guard_said: no kind fits; streamItems exception
+    runtime_shows: EntityBase.fragment.swift:223,229,236 (try runOp, the items array, then an AsyncStream over it)
+    decided: streamIterator with runs 'call' expresses it. The exception is removed, and the reader passes for swift.
+  - [4]
+    topic: ocaml stream kind
+    shared_said: streamLazy (value Seq.t) + runs call (Entity_ocaml.ts:141-152)
+    guard_said: streamSync (the forms' streamKind) + runs and items before it returns
+    runtime_shows: Entity_ocaml.ts:141 run_op, :145-150 rt_stream called eagerly, then seq_of raw; sdk_types.ml:226 e_stream : ... value Seq.t
+    decided: The language is unported. Both readings and their lines are in PORTING section 9, ocaml row, for the porter to settle against the new sentences. runs 'call' is agreed.
+  - [5]
+    topic: the ok literal of direct
+    shared_said: required ref.facts.direct.okFalse: false (8 languages), False (py); perl 0, scala/swift/cpp/ocaml spell boxed or wrapped false
+    guard_said: cited lits.true/lits.false ahead of the declaration: false/True..False; perl shows 0 or 1
+    runtime_shows: each quote holds the token: ts Main.fragment.ts `return { ok: false, err: ...}`, go Main.fragment.go:251, py Main.fragment.py:242 `"ok": False`, c Main.fragment.c:174 `v_bool(false)`, zig :257, clojure client.clj:135, rust :231, elixir :216, rb :214; perl Main.fragment.pm:226 `'ok' => 0,`
+    decided: The fact is direct.okFalse, CITED with its token required in the quote. The guard's lits.false citations moved to it; lits.true is dropped. AHEAD = direct.okFalse, with ahead citations for all 11 unported forms (perl value "0"; scala's quote `java.lang.Boolean.FALSE` excused); the reader test now checks them. The mutation v32-perl-okfalse-ahead-false is caught by the reader.
+  - [6]
+    topic: c options and utility members (guard WRONG)
+    shared_said: not addressed
+    guard_said: the REFERENCE omits sdk_options_map and sdk_get_utility
+    runtime_shows: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }`, :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`; sdk.h:477-478
+    decided: Declared in Syntax_c.ts as client members (options with copy:true, utility). The copy and kind are cited, and the WRONG exceptions and undocumented entries are removed. OLD c printed neither, so the 8 new classes were decided by hand (restored:fact).
+  - [7]
+    topic: 'deep copy' / 'copy of the entity options' with no fact
+    shared_said: chosen by Member.kind (no copy fact for options or entopts)
+    guard_said: not guarded; needs a cited copy fact
+    runtime_shows: every runtime clones the options: ts Main.fragment.ts:105 struct.clone, go :105 vs.Clone, py :108, zig :131, rust :96, elixir :80, rb :86, clojure core.clj:203, c utility.c:70; ts entopts EntityBase.fragment.ts:71 merge([{}, ...])
+    decided: memberText honours Member.copy for options and entopts ('Return the current SDK options.' without it). copy:true is declared and cited, pinned, in all nine plus ts entopts. Output is unchanged. The mutation v32-rb-options-copy-false is caught.
+  - [8]
+    topic: testopts and sdkopts as literals in shared prose (zig spells testopts_in)
+    shared_said: left open
+    guard_said: zig renames testopts_in -> testopts, with a reason (namesWhy)
+    runtime_shows: zig Main.fragment.zig:411 test_sdk(testopts_in, sdkopts_in); the rename is in forms zig.ts:51
+    decided: A parser for twenty signature syntaxes would guess: go puts the name before the type (`testopts, sdkopts map[string]any`), C after it. So the sentence names the arguments by position ('The first argument holds ... and the second ...'). The heading's signature shows the names, and paramNames checks them.
+  - [9]
+    topic: three citations not showing their value
+    shared_said: -
+    guard_said: py and rb direct.returns, ts prepare.returns do not show
+    runtime_shows: py's quote `if isinstance(fetched, dict):` is the response, not the result; ts quoted Promise from direct()
+    decided: py: that quote is replaced by an open unquoted excuse ('the result is a dict literal'). ts: the direct() quote is dropped and Promise excused ('an async method'). rb already used an open excuse. No citation now claims to show what it does not.
+wrong_facts_fixed:
+  - [0]
+    lang: elixir
+    fact: notes.tutorial:list / tutorial:load (arity)
+    was: 'Named with its arity, it is `list/2`' / '`load/2`' (WRONG in the guard)
+    now: the shared engineer removed the arity claims; the note is '`Voxgig.Struct.getelem/2` reads an item.', cited again with quotes `defmodule Voxgig.Struct do` and `def getelem(val, key, alt \\ nil)`. The stale hand record d94f240980 is re-decided as correction:elixir-arity
+    evidence: EntityListOp.fragment.ex:8 def list(ent, reqmatch \\ nil, ctrl \\ nil) = list/1../3; voxgig_struct.ex:466
+  - [1]
+    lang: clojure
+    fact: stream kind streamLazy (WRONG streamItems)
+    was: 'return a lazy stream of its result items' (the kind claimed items as iterated)
+    now: 'return a lazy sequence of its result items. The operation runs before the call returns.' runs:'call' is derived. The exception is removed
+    evidence: Entity.fragment.clj:164,180,185
+  - [2]
+    lang: elixir
+    fact: stream kind streamLazy (WRONG streamItems)
+    was: claimed items as iterated
+    now: the same as clojure; runs 'call' derived
+    evidence: entity_base.ex:150,160,172; streaming.ex:58
+  - [3]
+    lang: c
+    fact: client members (WRONG members:options, members:utility)
+    was: not declared
+    now: sdk_options_map (options, copy) and sdk_get_utility (utility) are declared and documented
+    evidence: tm/c/core/utility.c:70,72; sdk.h:477-478
+  - [4]
+    lang: all nine
+    fact: shared STREAM_RUNS.call sentence
+    was: 'The operation runs, and every item is read, before the call returns.'
+    now: 'The operation runs before the call returns.'
+    evidence: java EntityBase.fragment.java:246/278/292, kotlin .kt:213/245/248, scala .scala:192/218/240, perl Entity.fragment.pm:177/202/205: the feature's items are drawn as the caller iterates although the operation ran at the call
+  - [5]
+    lang: all nine
+    fact: direct.okFalse without a runtime check
+    was: the type checker alone; with the type bypassed, ReadmeRef.ts:81 printed `undefined`
+    now: okFalse() throws 'direct needs ref.facts.direct.okFalse' (e7b9b526), with a test in refinterface.test.ts
+    evidence: the e2e py-okfalse-removed run: the build failed with TS2741 and nothing else stopped it
+hand_facts:
+  - [0]
+    lang: go
+    fact: errVar
+    value: err
+    old_page: held in 6 contexts (`if err != nil`); 10 new contexts are the pair sentences
+    decision: recorded by hand (hand/go.json facts)
+    evidence: OLD B/go/README.md:62-63 `ambient, err := ...Load(nil, nil)` / `if err != nil {`
+  - [1]
+    lang: c
+    fact: errVar
+    value: err
+    old_page: held 1, new 3 (the errslot sentences 'check `err` after each call')
+    decision: recorded by hand
+    evidence: OLD B/c/README.md:58 `PNError* err = NULL;`, :68 `&err`; errSlot cited at EntityLoadOp.fragment.c
+  - [2]
+    lang: c
+    fact: ref.noun
+    value: Functions
+    old_page: no 'Instance ...' heading; OLD called the entity members 'Common Methods' (OLD B/c/REFERENCE.md:134), a misnomer
+    decision: recorded: C has free functions and vtable function pointers, not methods
+    evidence: Syntax_c.ts signatures; tm/c/core/sdk.h EntityVT
+  - [3]
+    lang: clojure
+    fact: ref.noun
+    value: Functions
+    old_page: '### Client functions' (OLD B/clojure/REFERENCE.md:43)
+    decision: recorded
+    evidence: signatures (api/ambient client data), ((:data-get ent))
+  - [4]
+    lang: clojure
+    fact: ref.heading
+    value: {module} (sdk.api)
+    old_page: '## Client' (OLD B/clojure/REFERENCE.md:6), which names no runtime thing
+    decision: recorded: the functions are called through the namespace sdk.api
+    evidence: NEW B/clojure/README.md:52 (require '[sdk.api :as api]); Main_clojure.ts:85-90
+  - [5]
+    lang: clojure
+    fact: ref.valueType.OBJECT
+    value: map
+    old_page: held in the options table; the 2 new contexts are direct and prepare Returns, whose `map` is direct.returns/prepare.returns with the same value (one mask label for two facts)
+    decision: recorded
+    evidence: OLD B/clojure/REFERENCE.md:27-29 '| `headers` | `map` |'
+  - [6]
+    lang: elixir
+    fact: ref.noun
+    value: Functions
+    old_page: '### Functions' (:41), '### Common Functions' (:127); the context counted as contradicted is the shared word 'Instance' before it
+    decision: recorded
+    evidence: Syntax_elixir.ts signatures (module functions taking the client)
+absent_sentences:
+  - [0]
+    lang: zig
+    sentence: 12 entries: rust's list/create/load sentences and comments with `Ok`/`Vec` (6c86b08eed, 5097de7b71, 76d2d79f05, 882eac65b5, 4f5c517896, 2d3c123097), options/direct/prepare Returns (f089dfe228, 9eb94f847f, 279ed7a4c5), 'Pass `Some(&map)` to set it' (e1e95dfa64)
+    decision: zig prints the same sentence under another mask, checked in NEW: crud-bare/zig/README.md:56, :89; B/README.md:637; B/zig/REFERENCE.md:17, 111, 121, 162, 203. Masks differ because rust's `Vec` and `Ok` are code where zig's 'slice' is a word and `.ok` a fact; bare Ok in comments is not masked; zig's container `Value` equals its direct.returns
+  - [1]
+    lang: zig
+    sentence: ec1e4431f5 'The result map always comes back inside Ok ...'
+    decision: rust's own note on direct; zig's direct returns a plain Value (B/zig/REFERENCE.md:111)
+  - [2]
+    lang: zig
+    sentence: 7ba1efdbf9 'Create a new `…` instance with the same client and options.' (make)
+    decision: Not documented: make is not a method of zig's entity struct. It is reached only as asEntity().makeEnt() (tm/zig/core/types.zig:56,64; v_make in Entity.fragment.zig), which neither OLD nor NEW documents. Recorded as a gap for the integration.
+  - [3]
+    lang: rust
+    sentence: 12 entries: zig's sentences with `.ok`/slice, options/direct/prepare Returns, 'Pass a map to set it'
+    decision: rust prints the same sentences: crud-bare/rust/README.md:47, :80; B/README.md:584; B/rust/REFERENCE.md:16, 112, 126, 167, 205 (masking, as for zig)
+  - [4]
+    lang: rust
+    sentence: 8f0ff15cb2 zig's prepare note; 6da7022487 zig's stream throw:false note
+    decision: zig-only notes; rust's prepare returns a Result and its stream a Result<IntoIter>
+  - [5]
+    lang: clojure
+    sentence: a12cc73410 'Create — returns the created entity; ⟦record⟧ reads its record'
+    decision: printed in clojure's own form (crud-bare/clojure/README.md:88 ';; Create — returns the created entity; ((:data-get created)) reads its record')
+  - [6]
+    lang: elixir
+    sentence: 808eae570d 'Its `data` argument holds the entity options: pass ...'
+    decision: elixir's accessor.param is 'entopts' (derived), so it prints the other branch, 'Pass `nil` for no initial options.'
+  - [7]
+    lang: rb
+    sentence: 7029749eeb 'Returns a `list` of entities, one per record, and raises on failure.'
+    decision: rb prints 'Returns an `Array` of entities ...'. It is one shared sentence: the article is chosen from the collection word (ReadmeRef.ts:399 `const a = ...`), and the mask leaves it outside the label. Shared code is not saying one thing two ways.
+review:
+  - [0]
+    lang: ts
+    section: tutorial
+    same: 61
+    shared_matched: 0 (30 rule records)
+    matched_unreviewed: 0
+    by_hand: 8
+    missing: 5
+    contradictions: 0
+    unclassified: 0
+  - [1]
+    lang: ts
+    section: rootquick
+    same: 21
+    shared_matched: 0 (5 rule records)
+    matched_unreviewed: 0
+    by_hand: 0
+    missing: 1
+    contradictions: 0
+    unclassified: 0
+  - [2]
+    lang: ts
+    section: reference
+    same: 15470
+    shared_matched: 1 (57 rule records)
+    matched_unreviewed: 1
+    by_hand: 19
+    missing: 34
+    contradictions: 1 (no-test test client)
+    unclassified: 0
+  - [3]
+    lang: go
+    section: tutorial
+    same: 23
+    shared_matched: 0 (40)
+    matched_unreviewed: 0
+    by_hand: 9
+    missing: 9
+    contradictions: 0
+    unclassified: 0
+  - [4]
+    lang: go
+    section: rootquick
+    same: 22
+    shared_matched: 0 (4)
+    matched_unreviewed: 0
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [5]
+    lang: go
+    section: reference
+    same: 17481
+    shared_matched: 0 (64)
+    matched_unreviewed: 0
+    by_hand: 11
+    missing: 12
+    contradictions: 2
+    unclassified: 0
+  - [6]
+    lang: py
+    section: tutorial
+    same: 61
+    shared_matched: 0 (31)
+    matched_unreviewed: 0
+    by_hand: 5
+    missing: 4
+    contradictions: 0
+    unclassified: 0
+  - [7]
+    lang: py
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3)
+    matched_unreviewed: 0
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [8]
+    lang: py
+    section: reference
+    same: 14958
+    shared_matched: 1 (77)
+    matched_unreviewed: 1
+    by_hand: 19
+    missing: 19
+    contradictions: 1
+    unclassified: 0
+  - [9]
+    lang: c
+    section: tutorial
+    same: 61
+    shared_matched: 0 (29)
+    matched_unreviewed: 0
+    by_hand: 5
+    missing: 4
+    contradictions: 0
+    unclassified: 0
+  - [10]
+    lang: c
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3)
+    matched_unreviewed: 0
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [11]
+    lang: c
+    section: reference
+    same: 14872
+    shared_matched: 0 (67)
+    matched_unreviewed: 0
+    by_hand: 21
+    missing: 18
+    contradictions: 0
+    unclassified: 0
+  - [12]
+    lang: zig
+    section: tutorial
+    same: 61
+    shared_matched: 0 (32)
+    matched_unreviewed: 0
+    by_hand: 5
+    missing: 5
+    contradictions: 1 (README Error handling)
+    unclassified: 0
+  - [13]
+    lang: zig
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3)
+    matched_unreviewed: 0
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [14]
+    lang: zig
+    section: reference
+    same: 15019
+    shared_matched: 2 (76)
+    matched_unreviewed: 2
+    by_hand: 15
+    missing: 19
+    contradictions: 1
+    unclassified: 0
+  - [15]
+    lang: clojure
+    section: tutorial
+    same: 61
+    shared_matched: 0 (29)
+    matched_unreviewed: 0
+    by_hand: 5
+    missing: 4
+    contradictions: 0
+    unclassified: 0
+  - [16]
+    lang: clojure
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3)
+    matched_unreviewed: 0
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [17]
+    lang: clojure
+    section: reference
+    same: 14983
+    shared_matched: 1 (75)
+    matched_unreviewed: 1
+    by_hand: 23
+    missing: 25
+    contradictions: 0
+    unclassified: 0
+  - [18]
+    lang: rust
+    section: tutorial
+    same: 61
+    shared_matched: 0 (32)
+    matched_unreviewed: 0
+    by_hand: 9
+    missing: 5
+    contradictions: 0
+    unclassified: 0
+  - [19]
+    lang: rust
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3)
+    matched_unreviewed: 0
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [20]
+    lang: rust
+    section: reference
+    same: 15019
+    shared_matched: 0 (83)
+    matched_unreviewed: 0
+    by_hand: 25
+    missing: 18
+    contradictions: 0
+    unclassified: 0
+  - [21]
+    lang: elixir
+    section: tutorial
+    same: 61
+    shared_matched: 0 (29)
+    matched_unreviewed: 0
+    by_hand: 7
+    missing: 4
+    contradictions: 0
+    unclassified: 0
+  - [22]
+    lang: elixir
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3)
+    matched_unreviewed: 0
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [23]
+    lang: elixir
+    section: reference
+    same: 14802
+    shared_matched: 0 (86)
+    matched_unreviewed: 0
+    by_hand: 21
+    missing: 22
+    contradictions: 1
+    unclassified: 0
+  - [24]
+    lang: rb
+    section: tutorial
+    same: 61
+    shared_matched: 23 (0 rule records)
+    matched_unreviewed: 23
+    by_hand: 19
+    missing: 5
+    contradictions: 0
+    unclassified: 0
+  - [25]
+    lang: rb
+    section: rootquick
+    same: 19
+    shared_matched: 0
+    matched_unreviewed: 0
+    by_hand: 3
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [26]
+    lang: rb
+    section: reference
+    same: 15059
+    shared_matched: 48
+    matched_unreviewed: 48
+    by_hand: 51
+    missing: 19
+    contradictions: 1
+    unclassified: 0
+contradictions:
+  - [0]
+    lang: ts
+    statement: REFERENCE (no-test): the test client has no mock transport
+    other_statement: ts/README.md:230 feature cell and the 'Use test mode' section
+    where: no-test, ts README (unported section)
+    true_side: REFERENCE (S13; feature source ships only for active features). Unchanged from v3.1; read, not run
+  - [1]
+    lang: go
+    statement: REFERENCE (no-test): Test()/TestSDK() have no mock transport (2 classes)
+    other_statement: go/README.md:221 'Creates a test-mode client with mock transport'
+    where: no-test
+    true_side: REFERENCE (S13)
+  - [2]
+    lang: py
+    statement: REFERENCE (no-test): no mock transport
+    other_statement: py/README.md:206
+    where: no-test
+    true_side: REFERENCE (S13)
+  - [3]
+    lang: elixir
+    statement: REFERENCE (no-test): no mock transport
+    other_statement: elixir/README.md:232
+    where: no-test
+    true_side: REFERENCE (S13)
+  - [4]
+    lang: rb
+    statement: REFERENCE (no-test): no mock transport
+    other_statement: rb/README.md:211
+    where: no-test
+    true_side: REFERENCE (S13)
+  - [5]
+    lang: zig
+    statement: tutorial and REFERENCE: load returns a result union; prepare returns an error union
+    other_statement: zig/README.md Error handling (shared ReadmeErrors.ts, TypeScript code): 'Entity operations reject on failure'
+    where: every zig README (tutorial and reference)
+    true_side: tutorial and REFERENCE (EntityLoadOp.fragment.zig returns EntResult)
+blocks:
+  - [0]
+    lang: ts
+    identical: tutorial 19, rootquick 0, reference 195
+    after_named_corrections: 16, 13, 0
+    by_named_unification: 12, 5, 118
+    changed_otherwise: 1, 1, 0 (each classified; reference OLD-only 17 action examples)
+    compiler: node on PATH; 29/19/118 changed blocks compiled by nothing in these variations
+    verified_by: ts README lane 16/16 at v32-frozen
+  - [1]
+    lang: go
+    identical: 0, 0, 337
+    after_named_corrections: 12, 14, 21
+    by_named_unification: 1, 4, 18
+    changed_otherwise: 8, 4, 0
+    compiler: go on PATH; 21/22/39 compiled by nothing
+    verified_by: go README lane 12/12
+  - [2]
+    lang: py
+    identical: 26, 0, 230
+    after_named_corrections: 22, 18, 0
+    by_named_unification: 0, 0, 83
+    changed_otherwise: 0, 1, 0
+    compiler: python3; 22/19/83
+    verified_by: py README lane 12/12 (real pytest)
+  - [3]
+    lang: c
+    identical: 0, 0, 151
+    after_named_corrections: 41, 2, 143 (reference: 43 load/remove blocks now identical to OLD after c-err-declared only; was unified by ref-load-unprinted)
+    by_named_unification: 0, 0, 19
+    changed_otherwise: 7, 17, 0: the checked examples, each decided by hand as correction:checked-examples (writes check and reset err; the root quick start checks the list before the load)
+    compiler: gcc; 48/19/162
+    verified_by: c DOC lane 6/6 (compiles README, REFERENCE and root README blocks)
+  - [4]
+    lang: zig
+    identical: 24, 0, 151
+    after_named_corrections: 17, 2, 0
+    by_named_unification: 0, 15, 162
+    changed_otherwise: 7, 2, 0
+    compiler: zig 0.16 on the brief's PATH; 24/19/162
+    verified_by: zig documentation lane 6/6
+  - [5]
+    lang: clojure
+    identical: 26, 0, 230
+    after_named_corrections: 21, 16, 0
+    by_named_unification: 0, 0, 83
+    changed_otherwise: 1, 3, 0
+    compiler: none on PATH: 22/19/83 changed blocks compiled by nothing
+    verified_by: nothing
+  - [6]
+    lang: rust
+    identical: 26, 0, 230 (was 187: 43 load/remove blocks byte-identical to OLD again)
+    after_named_corrections: 22, 18, 0
+    by_named_unification: 0, 0, 83
+    changed_otherwise: 0, 1, 0
+    compiler: cargo; 22/19/83
+    verified_by: rust DOC lane 6/6
+  - [7]
+    lang: elixir
+    identical: 16, 0, 151
+    after_named_corrections: 22, 18, 0
+    by_named_unification: 10, 0, 162
+    changed_otherwise: 0, 1, 0
+    compiler: none on PATH: 32/19/162 compiled by nothing
+    verified_by: nothing
+  - [8]
+    lang: rb
+    identical: 3, 0, 303
+    after_named_corrections: 21, 2, 0
+    by_named_unification: 23, 15, 10
+    changed_otherwise: 1, 2, 0
+    compiler: ruby; 45/19/10
+    verified_by: '^rb: ' lane 49/49
+freeze_checks:
+  - [0]
+    check: build leaves the tree clean, at the tag
+    result: 0 lines from git status (v32/sdkgen and base32/sdkgen)
+    command: cd sdkgen/ts && npm run build && git -C .. status --short | wc -l
+  - [1]
+    check: suite without the toolchain lanes
+    result: 2597 tests, 2592 pass, 0 fail, 5 skipped (suite2.log; at afc9cd4c, 2596/2591/0/5 in 337 s)
+    command: node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)
+  - [2]
+    check: golden
+    result: 1 pass 1 fail before the update; 2/2 with SDKGEN_GOLDEN_UPDATE=1 (9 Syntax_<lang> hash lines, commit afc9cd4c); 2/2 after the last build
+    command: SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js; node --test dist-test/characterize.test.js
+  - [3]
+    check: guard and reader
+    result: 61/61
+    command: node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js
+  - [4]
+    check: lanes on NEW at the tag
+    result: ts 16/16 (41 s), go 12/12 (58 s), py 12/12 (17 s), c 6/6 (31 s), rust 6/6 (24 s), '^rb: ' 49/49 (55 s), zig documentation 6/6 (8 s); identical counts at afc9cd4c
+    command: v32/mine/lanes.sh v32/sdkgen/ts final ts go py c rust rb zigdoc (logs/lane-*-final.log)
+  - [5]
+    check: eleven unported languages against OLD
+    result: README 209/209 and REFERENCE 209/209 differ only in the 7 + 8 already-shared lines listed at v3.1, each 209 times; 0 new lines. Against base/out/new: 0 files differ for js php lua csharp java kotlin scala swift cpp perl ocaml
+    command: python3 v32/mine/unported.py; cmp loop over out/new vs base/out/new
+  - [6]
+    check: NEW unchanged by the final shared commit
+    result: diff -rq out/new against a regeneration at 3d58cb46: empty
+    command: node tools/gen/gen.js tmp/regen6 sdkgen/ts; diff -rq out/new tmp/regen6
+  - [7]
+    check: the nine one-command checks
+    result: PASS x9: ledger and blocks OPEN 0, defect 0, purity open 0, guard pass, 0 facts without an account, UNATTESTED 0, printed-less-often 0, absent explained (zig 12, rust 12, clojure 1, elixir 1, rb 1)
+    command: v32/mine/pcall.sh r3 (tools/portcheck.sh sdkgen out <lang>; logs pc/<lang>.r3.log)
+  - [8]
+    check: tools self-test
+    result: from P/base32: 175 controls, 0 failed (ledger 24/24, recheck 19/19, accept 7/7, missing 3/3, the same four from scratch, facts 5/5 and 5/5, sentences 2/2, purity 28/28, blocks 28/28, recall 1/1), 405 s. The first full run in v32 gave 177/6 failed: rb-none-null (both modes; none is now cited, so the guard checks it, and the control moved to index.json 'moved' with the reason) and 4 recorded block tables (c x3, rust reference), re-recorded after reading
+    command: node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --tmp <dir>
+  - [9]
+    check: tag and tools at one commit
+    result: v32-frozen = 3d58cb46; tools git d2e3b26 (review/ and runs/ ignored), status clean
+    command: git tag v32-frozen; git -C tools init/add/commit
+recheck_evidence:
+  - [0]
+    blocker: (a) a wrong language/convention value or a removed literal passes
+    what_i_ran: v32/mutwork/e2e.sh on a copy (mut2): provider edit, npm run build, generate 21 variations, tools-copy/portcheck.sh; logs mutwork/runs/<id>/
+    result: rb none 'null': guard FAILED, 'cite ref.facts.none: the quote does not contain "null"'. rb okFalse 'False': guard FAILED, 'cite ref.facts.direct.okFalse: the quote does not contain "False"'. rb maps 'arrays': PORTCHECK FAIL, 'UNATTESTED ref.maps = "arrays" ... OLD says otherwise in 1', reviewed and from scratch. rb noun 'Functions': FAIL, 'UNATTESTED ref.noun = "Functions" ... OLD has no such sentence', both modes. py okFalse removed: the build fails, TS2741 'Property 'okFalse' is missing'. In that run the one command, working on the previous build, still printed PASS, so the build is the guard; okFalse now also throws at generation (e7b9b526).
+  - [1]
+    blocker: (b) a dropped shared sentence leaves no trace in a new port
+    what_i_ran: the re-check's inj.js, re-pointed (v32/mutwork/inj.js) with its rb-direct-sentence-dropped, --scratch
+    result: new open 1, auto 0, ledger unclassified 67->68: OPEN 17ac2b3403 'A failed request is reported in the result, not as an error, so branch on `result["ok"]`.' left for a person
+  - [2]
+    blocker: (c) the table cannot see throws, receivers, fields, lua's error value, stream timing
+    what_i_ran: SDKGEN_RUNTIME_TABLE=v32/runtime-table.md node --test dist-test/runtimereader.test.js (22/22), then the four sections read
+    result: swift: '| load | load | _ reqmatch: VMap?, _ ctrl: VMap? | Value | throws | instance | callable |' and 'Every operation's declaration shows its failure as `throws`; a call to one is written with `try`.'; '| test | testSDK | (_ testoptsIn: ..., _ sdkoptsIn: ...) | ProjectNameSDK |  | type | callable |'; 'Stream (...EntityBase.fragment.swift): the operation runs **before it returns** (a provider declares `runs: 'call'`)'; okFalse ahead `false` (`r.entries["ok"] = .bool(false)`). lua: '| load | load | reqmatch [optional], ctrl [optional] | EntyClass, string? (from a comment) | second value string? | instance | callable |'; '- an operation's second value on failure: "the `sdk_err` table, with `status` and `code`, not a string" (tm/lua/utility/make_error.lua)'; '| test | test | (testopts [optional], sdkopts [optional]) |  |  | type | callable |'; stream runs **as the caller iterates** (`runs: 'iterate'`). ocaml: '| e_name | property or field | string |  | instance | field | name |', '| e_deleted | property or field | bool |  | instance | field |', '| e_load | (value, value) | entity_obj |  | instance | callable |', '| e_stream | (string, value, value) | value Seq.t |  | instance | callable | stream | streamSync |'; 'Members the runtime does not have: options, utility.'; stream runs **before it returns** (`runs: 'call'`). perl: '| test | test | ($testopts [optional], $sdkopts [optional]) |  |  | type | callable |'; '- direct's `ok`: "`0` or `1`, not a boolean"'; okFalse cited ahead `0` (`'ok' => 0,`); stream runs **before it returns** (`runs: 'call'`), items **as the caller iterates**
+table_rows_quoted: |
+  swift:
+  | load | load | _ reqmatch: VMap?, _ ctrl: VMap? | Value | throws | instance | callable | src/cmp/swift/fragment/EntityLoadOp.fragment.swift |
+  Every operation's declaration shows its failure as `throws`; a call to one is written with `try`.
+  | test | testSDK | (_ testoptsIn: ProjectNameSdk.VMap?, _ sdkoptsIn: ProjectNameSdk.VMap?) | ProjectNameSDK |  | type | callable |
+  | stream | (_ action: String, _ args: VMap? = nil [optional], _ callopts: VMap? = nil [optional]) | AsyncStream<Value> | throws | instance | callable | stream | streamIterator |
+  Stream: the operation runs **before it returns** (a provider declares `runs: 'call'`); the items are read **before it returns**.
+  
+  lua:
+  | load | load | reqmatch [optional], ctrl [optional] | EntyClass, string? (from a comment) | second value string? | instance | callable |
+  - an operation's second value on failure: "the `sdk_err` table, with `status` and `code`, not a string" (tm/lua/utility/make_error.lua)
+  | test | test | (testopts [optional], sdkopts [optional]) |  |  | type | callable |
+  Stream: the operation runs **as the caller iterates** (`runs: 'iterate'`).
+  
+  ocaml:
+  | e_name | property or field | string |  | instance | field | name |
+  | e_deleted | property or field | bool |  | instance | field |
+  | e_load | (value, value) | entity_obj |  | instance | callable |
+  | e_stream | (string, value, value) | value Seq.t |  | instance | callable | stream | streamSync |
+  | test | test | () | sdk_client |  | module | callable |
+  Members the runtime does not have: options, utility.
+  Stream: runs **before it returns** (`runs: 'call'`).
+  
+  perl:
+  | test | test | ($testopts [optional], $sdkopts [optional]) |  |  | type | callable |
+  - direct's `ok`: "`0` or `1`, not a boolean" (src/cmp/perl/fragment/Main.fragment.pm)
+  - `ref.facts.direct.okFalse`, cited ahead of a provider: `0` (`'ok' => 0,`)
+  Stream: runs **before it returns** (`runs: 'call'`); the feature's items are read **as the caller iterates**.
+unported_changed_lines: |
+  Command: python3 v32/mine/unported.py, which is P/v31/unported.py re-pointed (difflib, out/old against out/new). It covers 11 languages x 19 variations = 209 files per document.
+  
+  README.md: 209 of 209 differ, only in the 7 ReadmeFeatures lines listed at v3.1. Each occurs 209 times:
+  - `-switch it on**, so an SDK you have not configured behaves exactly as if none of`
+  - `-them existed — no retries, ...`
+  - `+switch it on**, except `log`, ...`
+  - `+feature you have not configured ...`
+  - `+with no measurable overhead.`
+  - `-Set `feature.log.active` to enable it...`
+  - `+It is active by default: ...`
+  
+  REFERENCE.md: 209 of 209 differ, only in the 8 ReadmeRefFeatures lines listed at v3.1, each occurring 209 times.
+  
+  New lines: 0. Every file of the eleven is byte-identical to P/base/out/new (cmp loop: 0 for each of js php lua csharp java kotlin scala swift cpp perl ocaml).
+  
+  The root README differs from base/out/new in 17 variations. Those changes are c's root quick start, from the shared engineer's checked examples, which are part of c's reviewed rootquick blocks.
+shared_tests_per_language:
+  - [0]
+    lang: lua
+    files: ts/test/lua-table-keys.test.ts:53-55 names ReadmeQuick_lua.ts, ReadmeRef_lua.ts and ReadmeTopQuick_lua.ts as luaKey callers. A lua port may edit only those lines.
+  - [1]
+    lang: js php csharp java kotlin scala swift cpp perl ocaml
+    files: none. Searched with `grep -nE 'Readme(Quick|TopQuick|Ref)_<lang>\b' ts/test/*.ts` for each language. The Ruby pilot's port commit a62870e2 touched no shared test. Generic tests that will run on every port and are not the porter's to edit: media.test.ts:375 (accepts ReadmeRef_ or Syntax_), vendored.test.ts:425 (loops over the ReadmeRef_* files that exist), generate.test.ts:2544 and :2752 (every target's REFERENCE). Not tested: whether any of these fail after a real deletion; I did not port.
+guide: |
+  P/base32/PORTING.md (621 lines; the working copy is v32/PORTING.md). It starts from base/PORTING.md and makes these corrections:
+  - **Section 1:** the start message is quoted exactly as portcheck prints it (both lines, exit 1). The tools are under git, and `git -C tools status` stays clean.
+  - **Section 2, the rule of this stage:**
+    - a table of every fact a porter must declare, with where its value is read from and its check: okFalse (perl `0`), abortCode with signal, accessor.param, accessor.arg, runs on the stream member, copy, setArg, pairForm and noError for pair (lua), none;
+    - shared code throws instead of guessing;
+    - signatures carry every dimension: fails and failure.call (swift try), on (type, module), field, a return read from a comment (lua's sdk_err table);
+    - streams: the kind names what is returned and `runs` says when the operation runs, read from the code; no sentence says when items arrive;
+    - the checked-example rule by result style: interrupting styles stay bare; pair and union check at the call and read the record back; errslot wraps each call in an attempt and the printer prints the check, omitting an empty else;
+    - a note is one plain string literal.
+  - **Section 3:** a new step 1. Before writing any fact, read every row of the language's runtime-table section against the runtime and report each wrong or missing row. The forms file is the porter's to correct.
+  - **Section 4:** the per-language table of shared test files, as above, editable only in lines naming the porter's own language. Perl, swift, ocaml and lua go first: a construct the shared code cannot express is recorded (file, line, smallest change, breaking or additive, providers forced) and, only if the port is blocked, made as a separate commit of shared files only, additive only.
+  - **Section 5:**
+    - SCRATCH=1 first, then the reviewed mode;
+    - the full table of what must be 0 (UNATTESTED and printed-less-often added);
+    - the absent list with reasons;
+    - unreviewed sentence matches and STRICT_SENTENCES;
+    - the `classes` column explained;
+    - 'compiler on PATH' means only command -v; the changed blocks of these variations are compiled only by the lanes, on their own models;
+    - --record-counts with its full command;
+    - hand-recorded facts (value, why, evidence);
+    - the known `.**` segmentation case;
+    - stale hand records (this stage found five).
+  - **Section 6:** derived, cited, absence, language and convention. The rule for `unquoted`: refused within 3 lines of any quote, the report prints the count of runtime files holding the token, and the reviewer reads each excuse. No citation may claim to show what it does not.
+  - **Section 7, the reviewer:** audits every cited and pinned-prose fact, every excuse and every hand fact; reads OLD and NEW for B, an auth variation and ref-issues; re-runs the one command in both modes; changes a fact of each category; drops a sentence from one variation and from all; re-runs the lane.
+  - **Section 8:** notes as one plain string.
+  - **Section 9:** the table of eleven, corrected from runtime-table.md and the two reports:
+    - perl: ok 0/1, okFalse '0', test a class method, runs call;
+    - swift: throws on operations, prepare and stream (not direct), try, static testSDK, runs call;
+    - ocaml: fields, a module client with no options or utility member, stream kind with both readings, runs call;
+    - lua: sdk_err table, dot test, runs iterate, lua-table-keys.test.ts;
+    - java, kotlin, scala: runs call with items as iterated;
+    - kotlin and cpp constructor returns, scala toString, csharp runs iterate;
+    - every okFalse with its file and line.
+  - **Section 10:** commit order, plus the tools commit.
+  - **Section 11:** baselines at v32-frozen: the 27-row table from pc/*.r3.log, unreviewed-match counts, hand facts, absent lists, contradictions, and the guard account with pinned prose.
+  - **Sections 12 and 13:** the report list (12 items) and the traps, updated.
+account:
+  - [0]
+    lang: ts
+    derived: 47
+    cited: 19 (pinned prose 9)
+    pinned_prose: 9
+    absence: 0 (ts cancel is true, cited by a quote)
+    language: 1 (maps)
+    convention: 5
+  - [1]
+    lang: go
+    derived: 48
+    cited: 14
+    pinned_prose: 7
+    absence: 1 (cancel)
+    language: 2 (maps, unusedError)
+    convention: 6
+  - [2]
+    lang: py
+    derived: 48
+    cited: 14
+    pinned_prose: 6
+    absence: 1
+    language: 1
+    convention: 7
+  - [3]
+    lang: c
+    derived: 42
+    cited: 14
+    pinned_prose: 7
+    absence: 1
+    language: 1
+    convention: 10
+  - [4]
+    lang: zig
+    derived: 40
+    cited: 17
+    pinned_prose: 9
+    absence: 1
+    language: 2
+    convention: 9
+  - [5]
+    lang: clojure
+    derived: 43
+    cited: 16
+    pinned_prose: 8
+    absence: 1
+    language: 1
+    convention: 11
+  - [6]
+    lang: rust
+    derived: 43
+    cited: 14
+    pinned_prose: 6
+    absence: 1
+    language: 1
+    convention: 9
+  - [7]
+    lang: elixir
+    derived: 48
+    cited: 15
+    pinned_prose: 9
+    absence: 1
+    language: 1
+    convention: 5
+  - [8]
+    lang: rb
+    derived: 47
+    cited: 14
+    pinned_prose: 6
+    absence: 1
+    language: 1
+    convention: 7
+measures: |
+  All of these were run. The logs are in v32/logs.
+  
+  **Guard account at the tag** (from guard-report.txt):
+  
+  | Language | Derived | Cited | Language | Convention | Pinned prose |
+  | --- | --- | --- | --- | --- | --- |
+  | ts | 47 | 19 | 1 | 5 | 9 |
+  | go | 48 | 14 | 2 | 6 | 7 |
+  | py | 48 | 14 | 1 | 7 | 6 |
+  | c | 42 | 14 | 1 | 10 | 7 |
+  | zig | 40 | 17 | 2 | 9 | 9 |
+  | clojure | 43 | 16 | 1 | 11 | 8 |
+  | rust | 43 | 14 | 1 | 9 | 6 |
+  | elixir | 48 | 15 | 1 | 5 | 9 |
+  | rb | 47 | 14 | 1 | 7 | 6 |
+  
+  - Excepted: 0 everywhere. No WRONG exception remains in any of the 20 forms files.
+  - Pinned prose: 67 citations in all; only the reviewer checks those values.
+  - Unquoted excuses: 25.
+  
+  **Purity** (pc r3): 0 open in all nine. Accepted: ts 1, go 1, py 1, clojure 4, elixir 4, rb 1.
+  
+  **Source lines** (`node tools/lines.js --clone sdkgen --rev HEAD`, then my arithmetic with v3.1's method: ReadmeTop excluded; forms and guard counted with wc -l). Before, for the nine languages: 6,916.
+  - Shared documentation code: 2,346, counting new files whole and changed ones by their delta. ReadmeQuick 259, ReadmeRef 461, ReadmeRefFeatures 146, example 605, sdkdesc 530, runtimeprose 260, markdown 31, media +30, optional +4, FeatureDocs +9, ReadmeFeatures +11.
+  - Providers, hooks and other touched files: 1,937. ts 165, go 214, py 180, rb 189, rust 199, c 269, zig 220, clojure 272, elixir 229.
+  - Forms of the nine: 907. Forms of the eleven: 789.
+  - Shared guard: 1,878 (runtimefacts and runtimereader tests, forms.ts, account.ts, guard.ts).
+  
+  Measured for the nine:
+  
+  | What is counted | Lines | Ratio |
+  | --- | --- | --- |
+  | Documentation code only | 4,283 | 1.61x |
+  | + forms | 5,190 | 1.33x |
+  | + shared guard | 7,068 | 0.98x |
+  
+  The tool's own headline, which keeps ReadmeTop in and leaves the guard out: 7661 -> 5948, 1.29x.
+  
+  Projected to twenty (before 15,038; unported providers at the measured mean of 215):
+  
+  | Provider size | Doc code | + forms | + guard |
+  | --- | --- | --- | --- |
+  | x1 | 6,648 (2.26x) | 8,344 (1.80x) | 10,222 (1.47x) |
+  | x1.5 | 1.92x | 1.58x | 1.32x |
+  | x2 | 1.67x | 1.40x | 1.19x |
+  
+  **Prose** (`node tools/sharewords.js --clone sdkgen --root out/new --lang <nine>`), over the three sections:
+  
+  | Language | By source (provider literals) | Printed by this language alone | Notes |
+  | --- | --- | --- | --- |
+  | ts | 0.4% | 14.7% | 0% |
+  | go | 7.4% | 22.6% | 7.2% |
+  | py | 0.2% | 3.0% | 0% |
+  | c | 1.3% | 9.9% | 0% |
+  | zig | 4.5% | 4.8% | 3.4% |
+  | clojure | 2.8% | 2.8% | 2.4% |
+  | rust | 1.2% | 5.9% | 0.9% |
+  | elixir | 0.8% | 5.0% | 0.4% |
+  | rb | 0.2% | 4.7% | 0% |
+  
+  - Highest by section: go reference by source 8.1%; c tutorial alone 32.6%.
+  - Source literals: notes 0 to 45 words per provider (go 45); shared templates 876 prose-literal words.
+  
+  **Shared sentences** (`node tools/sentences.js ... --match`): 297 distinct.
+  - tutorial 71, rootquick 19, reference 207;
+  - 68 rest on a person's decision (56 by hand only, 12 both);
+  - 229 rest only on stage-3a rule records nobody re-read;
+  - verdicts in reviewed/sentences.json: 0;
+  - shared outcomes at the tag matched against unreviewed sentences: 76 (rb 71, zig 2, ts 1, py 1, clojure 1; the others 0).
+  
+  **Review effort this stage:** 67 class decisions (ts 7, go 5, py 6, c 27, zig 3, clojure 6, rust 2, elixir 6, rb 5), including 6 stale records re-decided. Also 7 hand facts, 28 absent reasons, counts re-recorded for c and rust, and one purity record re-keyed.
+prose: By source, the words the providers' own literals put on the page are at most 7.4% (go, mostly its stream note), well under H1's 15% line. By the older measure, 'printed by this language alone', go is 22.6% and ts 14.7%. Most of that is shared code that only one result style selects: go's pair sentences, its one-program tutorial, the root comments. That figure is over the line for go. The cancel paragraph is still a shared sentence that only one ported runtime prints (ts, cancel: true). It is counted in ts's 'alone' share and was not made a note.
+sentences: |
+  297 distinct masked reference sentences: tutorial 71, rootquick 19, reference 207.
+  - A person read 68 of them as hand decisions: 56 by hand only, 12 by both.
+  - 229 were accepted only by stage-3a rule records.
+  - 0 have a verdict in reviewed/sentences.json, which is still empty and is the only file that review writes.
+  - 76 shared outcomes at the tag match a sentence with no verdict: rb 71, zig 2, ts 1, py 1, clojure 1.
+  - `STRICT_SENTENCES=1` would fail all of those until the sentence review is done.
+  
+  This stage reviewed by hand the sentences it changed in all nine languages: the test sentence, the runs sentences, the accessor sentence and c's members.
+  
+  One sentence for the sentence reviewer: the 'Instance <noun>' heading reads oddly for c, clojure and elixir, where the members are module functions taking the client. The noun 'Functions' is right; the word 'Instance' is shared.
+source_lines: |
+  Files I changed, wc -l before (i-shared HEAD or i-guard HEAD) and after at the tag:
+  - ts/src/cmp/ReadmeRef.ts: 459 -> 465 (STREAM_RUNS comment and call sentence, copy for options and entopts, positional test sentence, okFalse throw)
+  - example.ts: comment only, 605 -> 605
+  - refinterface.test.ts: 119 -> 123
+  - guard.ts: 824 -> 870 (runs and accessor.param derived, streamClaims, RUNS, 2 new controls, 1 control changed)
+  - account.ts: 302 -> 302 (DEFAULTS, AHEAD)
+  - runtimereader.test.ts: 245 -> 256 (ahead citations checked, runs and ahead lines in the table)
+  - Providers: one token per member (copy) in nine; c +2 member lines (Syntax_c 234 -> 236)
+  - Forms of the nine: 906 -> 907 net. The lits.true lines went; okFalse, copy, abortCode, pairForm, noError, setArg, the elixir note and c's members were added.
+  - Forms of the eleven: 746 -> 789 (an ahead okFalse citation in each, 4 lines; swift's exception removed)
+  - tools: purity.js (one-literal rule), README, controls/purity.json (+1), factmut index, blocktables, purity-allow/clojure, hand/*.json, counts/{c,rust}.json, mkworkspace.sh default
+interface_changes:
+  - [0]
+    change: (i-shared) RefFacts.lits removed; RefFacts.direct.okFalse required
+    breaking: True
+    why: shared code printed `false` by default
+    rework_forced_in: all nine
+  - [1]
+    change: (i-shared) RefFacts.accessor.param required
+    breaking: True
+    why: the accessor sentence names a parameter called otherwise
+    rework_forced_in: all nine
+  - [2]
+    change: (i-shared) Member.runs required for stream kinds
+    breaking: True
+    why: when the operation runs differs within one kind
+    rework_forced_in: all nine
+  - [3]
+    change: (i-shared) setArg required with dataArg/matchArg
+    breaking: True
+    why: default 'a map'
+    rework_forced_in: c, zig
+  - [4]
+    change: (i-shared) pairForm and noError required for pair
+    breaking: True
+    why: defaults in runtimeprose
+    rework_forced_in: go
+  - [5]
+    change: (i-shared) direct.abortCode required with signal
+    breaking: True
+    why: request_aborted and AbortSignal were literals
+    rework_forced_in: ts
+  - [6]
+    change: (i-shared) errslot checked statement shapes
+    breaking: True
+    why: examples may not walk past a failure
+    rework_forced_in: c (attempt printer, hoisted reads)
+  - [7]
+    change: (i-shared) describeTarget, memberName, entOf, typeOf, opName, boundOf throw instead of guessing
+    breaking: True
+    why: no guessed token
+    rework_forced_in: none of the nine
+  - [8]
+    change: (v32) memberText honours Member.copy for options and entopts (without it: 'Return the current SDK options.' / 'Return the entity options.')
+    breaking: True
+    why: 'deep copy' and 'copy of the entity options' rested on no fact
+    rework_forced_in: all nine (options copy:true) and ts (entopts); output unchanged
+  - [9]
+    change: (v32) STREAM_RUNS.call sentence changed; the test-constructor sentence names its arguments by position
+    breaking: False
+    why: a sentence false for four runtimes, and a literal in shared prose
+    rework_forced_in: no provider code; it changed the pages of all nine and forced review classes in each
+  - [10]
+    change: (v32) okFalse() throws when missing
+    breaking: False
+    why: the type checker was the only guard
+    rework_forced_in: none
+  - [11]
+    change: (guard framework, i-guard) the reader requires a test constructor and stream record; none and lits cited; unquoted, note-token and runtime-file citation rules
+    breaking: True
+    why: see the i-guard report: 3 breaking, 5 additive
+    rework_forced_in: 20, 9 and 7 forms files
+  - [12]
+    change: (guard framework, v32) DEFAULTS: lits -> direct.okFalse/abortCode cited, noError cited, accessor.param and (client|entity)[n].runs derived; AHEAD = direct.okFalse; streamClaims only for streamList; ahead citations checked by the reader
+    breaking: True
+    why: meeting the shared facts
+    rework_forced_in: 9 forms (okFalse citations, lits.true dropped), 11 unported forms (ahead okFalse added)
+  - [13]
+    change: (tools, v32) notes must be one plain string literal
+    breaking: False
+    why: the providers already comply; notes 9
+    rework_forced_in: none
+breaking_counts: |
+  **Provider interface.** Cumulative breaking changes since the first four languages: about 20 to 22, made up of:
+  - about 11 to 13 at v3.1;
+  - the shared engineer's 8 (6 of which forced provider work);
+  - 1 of mine (copy on options and entopts).
+  
+  That is against a line of about 10, so H1's line is crossed about twice over. If changed shared sentences count as breaking under the guide's definition, my 2 sentence changes (STREAM_RUNS.call and the positional test sentence) make it about 22 to 24. They forced review in all nine languages but no provider code.
+  
+  Caused by a newly ported language: 0, at this stage and over every earlier one.
+  
+  **Guard and forms framework.** This stage: the guard engineer's 3 breaking changes plus my 1 (the DEFAULTS move, which forced citations in the 9 forms files).
+mutations: |
+  Harness: v32/mutwork/mutate.js on the copy v32/mut. Each mutation is applied, rebuilt, guard and reader run, then restored. 106 ran first in 614 s (muts.log), then 12 adapted ones in muts-adapt.json and muts-adapt2.json.
+  
+  **The 75 of v3.1.** 68 caught, 7 not caught, 0 errors once 9 were adapted.
+  - Adapted, because their `from` text no longer matched this stage's source, and all caught after adapting: py-direct-return, py-lit-false (now okFalse 'false'), ts-member-invented, ts-member-misplaced, v31-accessor-arg-data-ts, v31-copy-false-go, v31-rust-direct-note-wrong, my-types-reason-dropped-zig (v3.1's blanked form), my-new-provider-php (needed param, okFalse, abortCode and runs).
+  - Not caught, the same 7 as v3.1, each accounted: clj-return-changed, ts-noun, zig-type-integer, clj-type-integer, c-type-string, ts-type-comment, ts-lit-int.
+  - None is caught less than before.
+  
+  **The guard engineer's 19.**
+  - 17 caught by the guard, the reader or the account.
+  - new-py-lits-removed and new-rb-lits-false-False: their `lits` key no longer exists, so they ran as v32-py-okfalse-removed (the build fails: TS2741 'okFalse is missing') and v32-rb-okfalse-False (caught by the account).
+  - new-ts-unquoted-near is still NOT CAUGHT: the known 3-line window.
+  
+  **Mine, 12.** 11 caught, and py okFalse removed fails the build.
+  - ts okFalse 'False' (account)
+  - ts abortCode wrong (account, controls)
+  - c runs 'iterate' (runs)
+  - go accessor.param (accessor)
+  - go noError 'null' (account)
+  - rb options copy:false (account)
+  - c options member removed (members)
+  - perl ahead okFalse 'false' (reader)
+  - rb okFalse 'False' (account)
+  - rb none 'null' (account)
+  - ts stream runs 'call' (runs)
+  
+  **The re-check's three kinds.** See recheck_evidence: (a) end to end, (b) via inj.js from scratch, (c) the table rows quoted.
+for_the_integration:
+  - ReadmeRefFeatures.ts prints `active: false` and `feature.<name>.active` to true in TypeScript form for all twenty languages. It needs a literal from every provider, so it waits until all eleven are ported (notes 5). Not changed, to keep the eleven pages identical.
+  - The cancel paragraph is a shared sentence only ts prints (cancel: true). Counted, not made a note.
+  - zig's `make` is reachable only as asEntity().makeEnt() (tm/zig/core/types.zig:56,64). Neither OLD nor NEW documents it, and the zig forms list no make member.
+  - The shared heading 'Instance <noun>' fits c, clojure and elixir poorly: their members are module functions taking the client. For the sentence reviewer.
+  - The tools' sentence splitter does not split after '.**', so a sentence after a bold step lead becomes a different unit (go auth-off). A from-scratch port can see a false 'printed less often' because of it.
+  - Hand records are pinned by count only: a shared change that makes a record's reason false leaves it decided. Five were found and re-decided here. A check that re-reads the quoted text of a record would close this.
+  - generate.test.ts:2544/:2752, media.test.ts:375 and vendored.test.ts:425 run generically on every port. Whether any of them fails after a real deletion is untested.
+  - The sentence review (297 sentences, 0 verdicts) and switching STRICT_SENTENCES=1 on are still to do.
+  - In the e2e run with py's okFalse removed, the build failed but the one command still printed PASS on the previous build. Portcheck does not check that the clone's build is current; porters must rebuild and read the build's exit code.
+gaps:
+  - I did not recount H3 against the 329-issue catalogue, and did not exercise H5.
+  - Timings are single runs on shared CPUs, not the minimum of three.
+  - clojure and elixir changed blocks are unverified: no compiler here (22/19/83 and 32/19/162 compiled by nothing).
+  - The no-test contradictions rest on reading S13 and AGENTS.md. I did not run a no-test SDK.
+  - I did not port a language, so the guide's claims about unported runtimes rest on runtime-table.md and the two reports, with the file lines I checked for streams, ok literals and the four (c) sections.
+  - I did not re-run the i-shared engineer's printlost.js and blockident.js. The c and rust identity counts come from the block tool: c reference 143 corrected and rust 230 identical, against 187 before.
+  - The ahead okFalse citations for the eleven are checked for quote and token only. Each value rests on the two engineers agreeing; I did not open every one of the eleven files beyond the grep shown.
+  - The unported forms commits overstate their message ('WRONG exceptions removed'). I did not rewrite history after the tag.
+  - STRICT_SENTENCES is not switched on, since there are no verdicts yet.
+  - `make comments-test` and the comment gate were not run.
+surprises:
+  - The positional test sentence left four ts hand records 'decided' whose reasons ('named in the test sentence') had become false, because their counts did not change. Stale reasons are invisible to the tools.
+  - With okFalse removed, nothing but the type checker stopped it: ReadmeRef.ts:81 would have printed `undefined`. A required fact needs a runtime throw as well as a type.
+  - The shared 'call' sentence ('every item is read') was false for java, kotlin, scala and perl, which none of the nine ported languages exercised. The guard's per-runtime item positions showed it.
+  - zig and rust, the two union-style languages, each list 12 'absent' sentences that are the other's same sentence under a different mask: code `Vec`/`Ok` against prose 'slice'/`.ok`.
+  - OLD c called its entity members 'Common Methods'; NEW's noun 'Functions' corrects it.
+  - In the first self-test run, the rb `none` fact control failed because the fact moved from attestation to the guard. Moving a fact's category moves which control proves it.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: refuted
+    evidence: |
+      RAN:
+      - Purity: 0 open in all nine.
+      - Guard: every fact accounted for, 0 excepted.
+      - Prose by source is at most 7.4% (go), under 15%. Printed by go alone it is 22.6%, over the line, mostly shared code that only go's style selects.
+      
+      READ and counted: breaking provider-interface changes since the first four languages are about 20 to 22 (22 to 24 counting changed sentences), against a line of about 10. That is crossed about twice over. None was caused by a newly ported language: each turned a value shared code supplied into a declared fact. The eleven ports are what will show whether the interface has stopped moving.
+  - [1]
+    id: H2
+    verdict: refuted
+    evidence: |
+      RAN lines.js plus my arithmetic:
+      - the nine: 1.61x documentation only, 1.33x with forms, 0.98x with the shared guard;
+      - projected to twenty at x1: 2.26x, 1.80x and 1.47x; at x1.5: 1.92x, 1.58x and 1.32x.
+      Only documentation-only code at x1 stays over 2x.
+  - [2]
+    id: H3
+    verdict: partly
+    evidence: |
+      Fixed once, in shared code, for every ported language:
+      - the stream item claim;
+      - the copy claims;
+      - the test-constructor literals;
+      - the checked examples by result style (c, rust);
+      - the okFalse throw.
+      c's members and each language's facts are per-language data. Not re-measured against the catalogue.
+  - [3]
+    id: H4
+    verdict: supported
+    evidence: RAN at v32-frozen: ts 16/16, go 12/12, py 12/12, c DOC 6/6, rust DOC 6/6, rb 49/49, zig documentation 6/6; suite 0 fail. clojure and elixir cannot be compiled here.
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: I did not run doctor, remove, target add, package update, packs or aliases. alias-go2 was generated (21 of 21) but not checked against H5.
+reproduce: |
+  export PATH=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang:/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH
+  P=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2; V=$P/v32; B=$P/base32
+  cd $B/sdkgen && git rev-parse --short v32-frozen && cd ts && npm run build && git status --short   # 3d58cb46, empty
+  node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js   # 61/61
+  node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)   # 2597/2592/0/5
+  node --test dist-test/characterize.test.js   # 2/2
+  SDKGEN_GUARD_REPORT=1 node --test --test-name-pattern 'account, per language' dist-test/runtimefacts.test.js
+  $V/mine/lanes.sh $B/sdkgen/ts check ts go py c rust rb zigdoc
+  cd $B && for l in ts go py c zig clojure rust elixir rb; do tools/portcheck.sh sdkgen out $l | tail -1; done   # 9 x PASS
+  node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 $P/probe-ref/harness/out --tmp <dir>   # 175/0
+  python3 $V/mine/unported.py; python3 $V/mine/table.py r3
+  cd $V/mutwork && node mutate.js mutsall.json out.json && node mutate.js muts-adapt.json o2.json && node mutate.js muts-adapt2.json o3.json   # needs $V/mut
+  $V/mutwork/e2e.sh rb-maps-arrays rb rb/Syntax_rb.ts "  maps: 'hashes'," "  maps: 'arrays',"   # needs $V/mut2
+  node $V/mutwork/inj.js $V/mutwork/inj-b.json --scratch
+  node $B/tools/sentences.js --clone $B/sdkgen --old $B/out/old --new $B/out/new --match; node $B/tools/sharewords.js --clone $B/sdkgen --root $B/out/new --lang ts,go,py,c,zig,clojure,rust,elixir,rb; node $B/tools/lines.js --clone $B/sdkgen --rev HEAD
+  $B/newport.sh kotlin <dir> && cd <dir>/kotlin && REGEN=1 tools/portcheck.sh sdkgen out kotlin   # NOT PORTED, exit 1
+  Decisions: $V/dec/<lang>.py (+common.py) applied with $V/mine/apply.py; facts and absent reasons in tools/hand/<lang>.json; progress in $V/PROGRESS.md.

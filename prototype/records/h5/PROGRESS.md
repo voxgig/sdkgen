@@ -1,0 +1,22 @@
+# h5 progress
+- setup: cloned v33-frozen into sdkgen (branch h5), copied old, bin, langpack, node_modules
+- DECISION: the lifecycle change (a49fddc0, 7bb5161b, c193a603) is ALREADY in v33-frozen as 1fcc1ef5, 9481257f, 61e8b338 (identical source in doctor/target/edition/remove.ts and retire.test.ts). Cherry-pick of a49fddc0 conflicted only because it re-adds what is there; aborted. So "today" (without it) is built from branch `today` = h5 + revert of those three; packaged at h5/today.
+- version bumped to 4.45.0 on h5 (a0318794), so record from/to differ. today branch: a0318794 + 3 reverts + Build.
+- fixtures made by old 4.44.0: work/base (ts go py perl lua js php), base-edited, base-norecord, base-alias (go~go2 js~js2), base-owned (mine). refs: out/fresh7-new (fresh on new), out/oldcmp (base under new, copies kept)
+- action tests at h5 before my changes (v33 + version bump): 11 files (doctor remove target package copies retire action cli; includes actionstrip, packagecheck, php-live-client by name), 312/312 pass. log: action-tests-h5.log
+- section 1 rows: bin/rows1.sh today|new -> rows1-today.log, rows1-new.log (run before row-15 fix)
+- row 15 FIX: 0e99e799 doctor orphanCompiled (fails ok, generate warns via copyWarnings, doctor prune deletes, honours -y) + 2 tests in retire.test.ts (9/9). e53586e2 superseded prune honours -y too (was deleting in dry run; read in code).
+- NEXT: rerun rows1 new; R5b (--force on norecord); row 9 (20 targets); 10; 11; 12; 13; 14; 16; cost
+- row 9 done: bin/rows9.sh -> rows9.log (39 retired = 13x3; update removes 39 src + compiled; after == fresh for all 40 per-target pages + root README; 7 unported differ from 4.44.0 only by one shared ReadmeRefFeatures line)
+- row 10 done: bin/rows10.sh -> rows10.log; plus out/r10b-tsc.txt (187 TS errors, 12 missing exports, against 4.44.0 with a clean dist). b1 (stale dist, incremental tsc says up to date): generate THROWS readsSecret is not a function (ReadmeHowto_ts), + optional-component-missing per retired section.
+- row 11 measured (before the version check): bin/rows11.sh -> rows11.log, out/r11/{a,x,b}-{lua,ocaml}; packs/{lua,ocaml}32 hold the 3.2 providers as a pack. Findings: tsc TS2741 testMock (1 per provider); bypassed -> throw 'needs ref.facts.testMock'; silent: lua [8] stream signal, [14] utility copy regression; ocaml [0] read truth (wrong getp ok persists), [8]; non-breaking silent: lua [7][12], ocaml [9][10][11][12].
+- NEXT: build interface version (SYNTAX_INTERFACE in Syntax type + check in optionalComponent + changes table), rerun row 11
+- interface version built (uncommitted while suite runs): helpers/syntaxversion.ts (SYNTAX_INTERFACE '3.3', SYNTAX_CHANGES, checkSyntaxInterface), Syntax type gains required `interface`, check in optionalComponent('Syntax'), 13 providers declare interface: '3.3', test/syntaxversion.test.ts 4/4. Suite running -> suite-h5.log; golden manifest (characterize) fails as expected from provider hash change: refresh with SDKGEN_GOLDEN_UPDATE=1.
+- scripts ready: rows12/13/14/16.sh; packs/chk-{both,provider,hook,neither}
+- interface version committed b0896a75; suite before golden refresh 2631 pass/1 fail (golden)/5 skip of 2637; golden refreshed (13 provider hash lines)
+- row 11 after the check: rows11-after.log: tsc 'interface' missing (kind 1) + throw listing 5 changes (kind 2)
+- row 12 done: rows12.log: suite 74/76 pass 2 skip on both; 10/12 md identical, dart+lean REFERENCE differ by one line (shared ReadmeRefFeatures backslash fix)
+- row 13 done: rows13.log. go2 retired+pruned, pages upgraded==fresh, go2 field types = go's (4.44.0 printed all `any` for go2 AND js2); js2 still all `any` (unported, pre-existing). go2 README differs from go outside the tutorial (Error handling etc print ts code: pre-existing alias defect in other components, present in 4.44.0). root README labels both go and go2 "Golang". remove go2/js2 exit 0.
+- row 14 done: rows14.log (CUSTOMIZED, merge keeps, overwrite drops, async fact edit makes page say 'returns' for an async runtime, doctor ok)
+- row 16 done: rows16.log (before: no findings for all four), rows16-after.log (with new check rule 9deb6441); row 7b in rows16.log
+- 29175771 refusal names the refresh. Final: rows-all.log (bin/rows.sh, all rows, both builds), suite 2636 pass/0 fail/5 skip of 2641 (suite-h5-final.log), action tests 318/318 (action-tests-final.log). DONE except report.

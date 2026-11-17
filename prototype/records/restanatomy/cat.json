@@ -1,0 +1,2326 @@
+{
+ "S01": {
+  "title": "CHANGELOG first entry always promises \"plus CLI and MCP surfaces\" whatever consumer targets the model has",
+  "fate": "WP15.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S02": {
+  "title": "CHANGELOG lists six fixed languages (TypeScript, Python, PHP, Go, Ruby, Lua) regardless of the targets present",
+  "fate": "WP15.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S03": {
+  "title": "`SECURITY.md` scope names a fixed registry list (npm, PyPI, Packagist, RubyGems, LuaRocks, Go module)",
+  "fate": "WP15.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": []
+ },
+ "S04": {
+  "title": "`PUBLISHING.md` first-release command is literal \"cd ts &amp;&amp; npm publish\" though the worked example uses targets\\[0\\]",
+  "fate": "WP14.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S05": {
+  "title": "Error-handling section in 13 non-JS READMEs prints a TypeScript try/catch example from the DEFAULT\\_LANG fallback row",
+  "fate": "WP07.",
+  "cls": "wrong-language; sdkgen; neutral-component; 2 source files; size",
+  "fams": [
+   "ReadmeErrors",
+   "opExample"
+  ]
+ },
+ "S06": {
+  "title": "Root `AGENTS.md` calls a single-target project \"multi-language SDK project\"",
+  "fate": "WP15.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S07": {
+  "title": "Root `AGENTS.md` names `ts/` and `go/` as the project's build-output directories whether or not they exist",
+  "fate": "WP14.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S08": {
+  "title": "Features intro says unconfigured SDK has \"no retries, no cache, no logging\" whether or not those features exist",
+  "fate": "WP16.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S09": {
+  "title": "README and REFERENCE say every feature is inactive until switched on; `log` defaults on and its own table prints `active | true`",
+  "fate": "WP16.",
+  "cls": "contradiction; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": []
+ },
+ "S10": {
+  "title": "Root README Features line says all features are \"opt-in, inactive until switched on\" while `log` defaults on",
+  "fate": "WP16.",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "S11": {
+  "title": "Root README 'Offline unit testing' promises a built-in test mode with no `test` feature in the model",
+  "fate": "WP22.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": [
+   "ReadmeTopTest",
+   "ReadmeTop"
+  ]
+ },
+ "S12": {
+  "title": "Every target README's \"\\#\\#\\# Use test mode\" how-to is written with no `test` feature present",
+  "fate": "Repeats S11 and is resolved with it in WP22.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 0 source files; size",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "S13": {
+  "title": "Constructor tables document `SDK.test()` as creating a mock client when the mock transport is not shipped",
+  "fate": "Repeats S11 and is resolved with it in WP22.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 0 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeRef"
+  ]
+ },
+ "S14": {
+  "title": "Pipeline explanation says PreRequest is replaced \"as TestFeature does with mocks\" with no TestFeature present",
+  "fate": "Repeats S11 and is resolved with it in WP22.",
+  "cls": "stale-mention; sdkgen; neutral-component; 0 source files; size",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "S15": {
+  "title": "Module-structure trees name \"Built-in features (Base, Test, Log)\" in 18 READMEs regardless of declared features",
+  "fate": "WP34.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 18 source files; size",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "S16": {
+  "title": "Root `AGENTS.md` says \"Built-in features are `log` and `test`\" though new projects have no `log`",
+  "fate": "WP09.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S17": {
+  "title": "\"The SDK ships with built-in features:\" lead-in written before a loop that may emit no items",
+  "fate": "WP08.",
+  "cls": "omission; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "S18": {
+  "title": "Root README \"\\#\\#\\# Features\" heading and table header written before the row loop; empty table possible",
+  "fate": "WP08.",
+  "cls": "omission; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "S19": {
+  "title": "Feature agent guides illustrate activation with \"e.g. the `test` feature is switched on\" regardless of the model",
+  "fate": "Repeats S11 and is resolved with it in WP22.",
+  "cls": "stale-mention; sdkgen; neutral-component; 0 source files; size",
+  "fams": []
+ },
+ "S20": {
+  "title": "ts and js options tables illustrate `feature` with `{ test: { active: true } }`",
+  "fate": "Repeats S11 and is resolved with it in WP22.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 0 source files; size",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "S21": {
+  "title": "py-data says the SDK's paging feature fetches every page; paging is absent or default-off, so one page",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; consumer-main; 1 source file; size s;",
+  "fams": []
+ },
+ "S22": {
+  "title": "REFERENCE ordering note illustrates short-circuiting with \"a cache serving a hit\" when no cache feature exists",
+  "fate": "WP08.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S23": {
+  "title": "Entity section \"Operations:\" line lists an operation marked `active: false` (raw `Object.keys(ent.op)`) in all 20 languages",
+  "fate": "WP21.",
+  "cls": "contradiction; sdkgen; per-language-copy; 20 source files; size",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "S24": {
+  "title": "Per-entity README method table keeps `remove(match)` when the op is `active: false` in 19 languages (all but go)",
+  "fate": "Repeats S23 and is resolved with it in WP21; the DQ1 pre-pass",
+  "cls": "contradiction; sdkgen; per-language-copy; 19 source files; size",
+  "fams": [
+   "ReadmeEntity"
+  ]
+ },
+ "S25": {
+  "title": "REFERENCE documents `remove(match, ctrl?)` with example for an `active: false` op in 19 languages",
+  "fate": "Repeats S23 and is resolved with it in WP21.",
+  "cls": "contradiction; sdkgen; per-language-copy; 19 source files; size",
+  "fams": [
+   "ReadmeRef"
+  ]
+ },
+ "S26": {
+  "title": "Every ts/js feature guide lists six operations \"(load, list, create, update, patch, remove)\" whatever the entities declare",
+  "fate": "WP09.",
+  "cls": "wrong-baseline; sdkgen; neutral-component; 1 source file; size",
+  "fams": []
+ },
+ "S27": {
+  "title": "ocaml README says \"`e_remove` resolves to the entity marked deleted\" when no entity has remove",
+  "fate": "WP31.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "S28": {
+  "title": "Tutorial lead-in promises \"listing entities\" for an entity without list; its steps are numbered 1 then 3",
+  "fate": "WP31.",
+  "cls": "wrong-baseline; sdkgen; per-language-copy; 19 source files; size",
+  "fams": [
+   "ReadmeQuick"
+  ]
+ },
+ "S29": {
+  "title": "'Result shape' prose says `list` returns entities, one per record, when no entity has list (14 targets)",
+  "fate": "WP31.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 14 source files; size",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "S30": {
+  "title": "With no active entity the intro invents `client.Entity()` and the fixed op list (`list`, `load`)",
+  "fate": "WP31.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 22 source files; size",
+  "fams": [
+   "ReadmeIntro",
+   "ReadmeTop"
+  ]
+ },
+ "S31": {
+  "title": "MCP text says create/update/remove \"become tools when ... tool: write: true\" for an API with no write operations",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; consumer-main; 2 source files; size s;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "S32": {
+  "title": "go-cli README says `list` / `load` / `update` are words bound to the SDK whatever operations exist",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; consumer-main; 1 source file; size s;",
+  "fams": []
+ },
+ "S33": {
+  "title": "py-data README and `AGENTS.md` point at `ad.sdk.SomeEntity().create(...)`, a placeholder write the API may lack",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; consumer-main; 1 source file; size s;",
+  "fams": []
+ },
+ "S34": {
+  "title": "\"Use it for standard CRUD operations\" in every README, including read-only APIs",
+  "fate": "WP08.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "S35": {
+  "title": "go-cli README tells the reader to export `<ENV>_APIKEY` and lists it when the API has no auth",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; consumer-main; 1 source file; size s;",
+  "fams": []
+ },
+ "S36": {
+  "title": "go-mcp README says \"Set your API key\" and lists `<ENV>_APIKEY` when the API has no auth",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; consumer-main; 1 source file; size s;",
+  "fams": []
+ },
+ "S37": {
+  "title": "py-data README and `AGENTS.md` describe `<ENV>_APIKEY` credentials when the API has no auth",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; consumer-main; 2 source files; size s;",
+  "fams": []
+ },
+ "S38": {
+  "title": "Every SDK README's \"live alongside this one\" note links `../README.md` even when no root README is written",
+  "fate": "WP14.",
+  "cls": "dangling-link; sdkgen; helper; 1 source file; size s; changes",
+  "fams": [
+   "ReadmeIntro"
+  ]
+ },
+ "S39": {
+  "title": "Per-target and per-feature agent guides link `../AGENTS.md` and `../../../../AGENTS.md` when no root guide exists",
+  "fate": "WP14.",
+  "cls": "dangling-link; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": [
+   "AgentGuide"
+  ]
+ },
+ "S40": {
+  "title": "ts agent guide says paths are \"one level up from this ts/ directory\" and `cd ../.sdk` at the root or out of tree",
+  "fate": "WP14.",
+  "cls": "stale-mention; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": [
+   "AgentGuide"
+  ]
+ },
+ "S41": {
+  "title": "Install and test commands assume `<repo>/<target>/`: `npm install ./<repo>/ts`, `cd ts && npm test`, and 19 sibling `cd` literals",
+  "fate": "WP32.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 21 source files; size",
+  "fams": [
+   "ReadmeHowto",
+   "ReadmeInstall"
+  ]
+ },
+ "S42": {
+  "title": "Out-of-tree ts README (`../demo-ts`) keeps \"live alongside this one \u2014 see the top-level README\"",
+  "fate": "Repeats S38 and is resolved with it in WP14.",
+  "cls": "dangling-link; sdkgen; helper; 1 source file; size xs; changes",
+  "fams": [
+   "ReadmeIntro"
+  ]
+ },
+ "S43": {
+  "title": "Root `AGENTS.md` links `go-cli/AGENTS.md` and `go-mcp/AGENTS.md`, which are never generated",
+  "fate": "WP14.",
+  "cls": "dangling-link; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S44": {
+  "title": "Root `AGENTS.md` still links `ts/AGENTS.md` when ts's agentguide phase is switched off",
+  "fate": "Repeats S43 and is resolved with it in WP14.",
+  "cls": "dangling-link; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "S45": {
+  "title": "Root README links `<t>/README.md` (three places) when that target's readme phase is off",
+  "fate": "WP14.",
+  "cls": "dangling-link; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "S46": {
+  "title": "With ts phase.entity off, README/REFERENCE describe entity classes, and Main\\_ts still imports `./entity/<cls>`",
+  "fate": "WP22.",
+  "cls": "code-defect; sdkgen; other; 1 source file; size s; changes",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity"
+  ]
+ },
+ "S47": {
+  "title": "`publish.tag.active` (and `publish.tag.prefix`) are declared and documented, and nothing reads them",
+  "fate": "WP25.",
+  "cls": "unread-switch; sdkgen; model-schema; 0 source files; size s;",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "S48": {
+  "title": "Root README keeps the link `voxgig.com/sdk/custom` under a custom publisher",
+  "fate": "Not a defect: voxgig.com/sdk/custom is generator documentation,",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "S49": {
+  "title": "16 of 20 quick starts omit the required `server` option when the server URL is templated",
+  "fate": "WP29.",
+  "cls": "omission; sdkgen; per-language-copy; 32 source files; size l;",
+  "fams": [
+   "ReadmeTopQuick",
+   "ReadmeQuick"
+  ]
+ },
+ "S50": {
+  "title": "HTTP Basic: 19 targets document only `apikey`; only ts and the root README mention `secret`",
+  "fate": "WP29.",
+  "cls": "omission; sdkgen; per-language-copy; 100 source files; size l;",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeHowto",
+   "ReadmeTopQuick",
+   "ReadmeQuick",
+   "ReadmeRef"
+  ]
+ },
+ "X1": {
+  "title": "13 non-JS READMEs carry a TypeScript entity-state example and feature prose from ReadmeExplanation's default row",
+  "fate": "WP07.",
+  "cls": "wrong-language; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": [
+   "ReadmeExplanation",
+   "ReadmeErrors"
+  ]
+ },
+ "X2": {
+  "title": "\"Activate a feature ... alongside the options shown above\" when no options section is ever rendered",
+  "fate": "WP08.",
+  "cls": "wrong-baseline; sdkgen; neutral-component; 21 source files; size",
+  "fams": [
+   "ReadmeOptions"
+  ]
+ },
+ "X3": {
+  "title": "REFERENCE lists `test` among hook-only features whose order does not matter, then says it installs the BASE transport",
+  "fate": "WP08.",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "X4": {
+  "title": "Root README says \"five-stage pipeline\"; every target README says \"six-stage pipeline\"",
+  "fate": "WP08.",
+  "cls": "contradiction; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": [
+   "ReadmeExplanation",
+   "ReadmeTop"
+  ]
+ },
+ "X5": {
+  "title": "Root `AGENTS.md` says `generate` merges and \"Regeneration never DELETES\"; generation overwrites and prunes",
+  "fate": "WP17.",
+  "cls": "contradiction; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "X6": {
+  "title": "rust, zig and go README prose describe the `list` result when no entity has list",
+  "fate": "Repeats S29 and is resolved with it in WP31.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 4 source files; size s;",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity",
+   "ReadmeQuick"
+  ]
+ },
+ "X7": {
+  "title": "\"All entities share the same interface.\" in 16 READMEs whose entities have different operations",
+  "fate": "WP31.",
+  "cls": "wrong-baseline; sdkgen; per-language-copy; 17 source files; size",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "G01": {
+  "title": "ts README options table and ts quick starts call every server variable \"Required\", including ones the spec defaults",
+  "fate": "WP29.",
+  "cls": "contradiction; sdkgen; per-language-copy; 3 source files; size s;",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeTopQuick",
+   "ReadmeQuick"
+  ]
+ },
+ "G02": {
+  "title": "go-cli and go-mcp document `<ENV>_BASE` as optional and offer no way to set server variables a templated URL needs",
+  "fate": "WP36.",
+  "cls": "omission; sdkgen; consumer-main; 4 source files; size s; changes",
+  "fams": []
+ },
+ "G03": {
+  "title": "c, elixir, ocaml, scala, swift and zig READMEs document `<ENV>_TEST_LIVE`=TRUE, which none of their tests read",
+  "fate": "WP30.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 6 source files; size s;",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "G04": {
+  "title": "info.auth false leaves PrepareAuth placing credentials: isAuthSuppressed ignores it while isAuthActive honours it",
+  "fate": "WP28.",
+  "cls": "code-defect; sdkgen; helper; 21 source files; size m; changes",
+  "fams": []
+ },
+ "G05": {
+  "title": "Operation-level active:false is ignored by entity code, Config and flow tests while introductions drop the operation",
+  "fate": "WP21.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": []
+ },
+ "G06": {
+  "title": "go-cli, go-mcp and py-data ignore HTTP Basic: no secret is read or documented when the wrapped SDK needs one",
+  "fate": "WP36.",
+  "cls": "omission; sdkgen; consumer-main; 5 source files; size s; changes",
+  "fams": []
+ },
+ "G07": {
+  "title": "Generated live tests read `<ENV>_SERVER_<VAR>` and `<ENV>_TEST_<ENT>_ENTID`, which no document names",
+  "fate": "WP30.",
+  "cls": "omission; sdkgen; per-language-copy; 13 source files; size m;",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "G08": {
+  "title": "go-cli help, /help and `words.go` always offer list / load / update whatever operations the entities have",
+  "fate": "WP36.",
+  "cls": "code-defect; sdkgen; fragment; 3 source files; size s; changes",
+  "fams": []
+ },
+ "G09": {
+  "title": "go-cli and go-mcp binaries print and read the API-key env var and say it carries the key when auth is off",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; fragment; 4 source files; size s; changes",
+  "fams": []
+ },
+ "G10": {
+  "title": "go-cli package comment says \"Command Demo-cli\" (class name) for a binary named demo-cli",
+  "fate": "WP36.",
+  "cls": "code-defect; sdkgen; fragment; 2 source files; size xs; changes",
+  "fams": []
+ },
+ "G11": {
+  "title": "MCP load and remove tool descriptions say {\"id\":1} and list says \"first page\" regardless of entity id or paging",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; consumer-main; 1 source file; size xs;",
+  "fams": []
+ },
+ "G12": {
+  "title": "py-data data() raises \"No API credential found\" and the notebook demands `<ENV>_APIKEY` for an API without auth",
+  "fate": "WP36.",
+  "cls": "code-defect; sdkgen; consumer-main; 1 source file; size xs;",
+  "fams": []
+ },
+ "G13": {
+  "title": "Manifest descriptions: \"csharp SDK\", \"elixir SDK\", \"perl SDK\", \"Python Data SDK\"; rust/java/ocaml diverge; eight targets have none",
+  "fate": "WP15.",
+  "cls": "code-defect; sdkgen; helper; 4 source files; size m; changes",
+  "fams": []
+ },
+ "G14": {
+  "title": "Client source comments name five transport wrappers (retry/cache/netsim/proxy/ratelimit) and fixed feature lists; models declare eight wrappers",
+  "fate": "WP38.",
+  "cls": "stale-mention; sdkgen; fragment; 30 source files; size l; changes",
+  "fams": []
+ },
+ "G15": {
+  "title": "Comments presume test, streaming and paging features (testSDK, streaming output, pagination fields) in every SDK, present or not",
+  "fate": "WP38.",
+  "cls": "stale-mention; sdkgen; fragment; 53 source files; size l; changes",
+  "fams": []
+ },
+ "G16": {
+  "title": "Entity comments about remove/create/update/CRUD stay on entities without those operations (\"Deleted reports whether a successful Remove...\")",
+  "fate": "WP38.",
+  "cls": "stale-mention; sdkgen; fragment; 16 source files; size m; changes",
+  "fams": []
+ },
+ "G17": {
+  "title": "Generated source comments cite `AGENTS.md` section \"Entity operations return ENTITIES\", which no generated guide contains",
+  "fate": "WP38.",
+  "cls": "dangling-link; sdkgen; fragment; 78 source files; size s; changes",
+  "fams": [
+   "AgentGuide"
+  ]
+ },
+ "G18": {
+  "title": "py `__init__.py` keeps the unfired marker \"\\# \\#BuildFeatures\"; five other Main components carry dead \\#BuildFeatures handlers",
+  "fate": "WP37.",
+  "cls": "code-defect; sdkgen; fragment; 7 source files; size s; changes",
+  "fams": []
+ },
+ "G19": {
+  "title": "With auth off, 329 credential-placement comments remain in every target's source; the code they describe is also still generated",
+  "fate": "Repeats G04 and is resolved with it in WP28; its comment half",
+  "cls": "stale-mention; sdkgen; fragment; 20 source files; size m; changes",
+  "fams": []
+ },
+ "G20": {
+  "title": "SDKGEN\\_EXTERNAL changes the in-tree root README, `AGENTS.md`, Makefile, publish workflow, `PUBLISHING.md` and the js release tag",
+  "fate": "WP23.",
+  "cls": "code-defect; sdkgen; neutral-component; 0 source files; size s;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "G21": {
+  "title": "Relocated ts writes `../README.md` links, `cd ts`, `cd ../.sdk` and a test reading `../../README.md` into another repository",
+  "fate": "WP32.",
+  "cls": "dangling-link; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": [
+   "ReadmeHowto",
+   "AgentGuide"
+  ]
+ },
+ "G22": {
+  "title": "Relocating py with SDKGEN\\_EXTERNAL makes py-data abort the whole generation: \"py-data requires the py target\"",
+  "fate": "WP36.",
+  "cls": "code-defect; sdkgen; consumer-main; 1 source file; size xs;",
+  "fams": []
+ },
+ "G23": {
+  "title": "go-cli and go-mcp hard-code `../go` in README and go.mod replace, wrong when go is relocated, aliased or absent",
+  "fate": "WP36.",
+  "cls": "code-defect; sdkgen; consumer-main; 2 source files; size s;",
+  "fams": []
+ },
+ "G24": {
+  "title": "docgen SUMMARY and site: \"There are 1 SDK targets\", \"Build from source\", fixed `ts/` directory whatever the placement",
+  "fate": "WP26b.",
+  "cls": "code-defect; docgen; other; 1 source file; size s; changes",
+  "fams": []
+ },
+ "G25": {
+  "title": "With the only SDK relocated, root docs promise SDK READMEs and a direct example, and the run prunes Makefile and publish files",
+  "fate": "WP23.",
+  "cls": "code-defect; sdkgen; neutral-component; 0 source files; size s;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "G26": {
+  "title": "output.repo is documented and declared in the schema but read by nothing; manifests and install text name the SDK repository",
+  "fate": "WP25.",
+  "cls": "unread-switch; sdkgen; helper; 2 source files; size m; changes",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "G27": {
+  "title": "A field description containing '|' breaks README and REFERENCE table rows in all 20 targets (120 rows for two descriptions)",
+  "fate": "WP33.",
+  "cls": "code-defect; sdkgen; per-language-copy; 60 source files; size l;",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "G28": {
+  "title": "\\$\\$name\\$\\$ in vendor text is substituted by the Content template pass in docs, Config, entity tests and docgen output",
+  "fate": "WP33.",
+  "cls": "code-defect; sdkgen; helper; 0 source files; size m; changes",
+  "fams": []
+ },
+ "G29": {
+  "title": "A relative link inside a vendor field description becomes a dangling link in 60 generated documents",
+  "fate": "WP18.",
+  "cls": "dangling-link; sdkgen; per-language-copy; 60 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "G30": {
+  "title": "docgen throws \"Documentation images must use local assets\" on a remote image in vendor text, stopping the whole generate",
+  "fate": "WP05a.",
+  "cls": "code-defect; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "G31": {
+  "title": "Entity short vs desc chosen differently by ReadmeTop, per-language READMEs and docgen; a newline breaks the root table",
+  "fate": "WP33.",
+  "cls": "duplicated-rule; sdkgen; helper; 21 source files; size m; changes",
+  "fams": [
+   "ReadmeEntity",
+   "ReadmeTop"
+  ]
+ },
+ "V1": {
+  "title": "Six READMEs (c, elixir, ocaml, scala, swift, zig) document `<ENV>_TEST_LIVE`=TRUE and .env.local that nothing in those SDKs reads",
+  "fate": "Repeats G03 and is resolved with it in WP30.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 6 source files; size s;",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "V2": {
+  "title": "rust README says put .env.local 'at the crate root'; the test harness reads the crate's parent directory",
+  "fate": "WP30.",
+  "cls": "contradiction; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "V3": {
+  "title": "Six install sections print an empty code fence once their registry is active; root Packages table drops those rows",
+  "fate": "WP10.",
+  "cls": "code-defect; sdkgen; helper; 2 source files; size s; changes",
+  "fams": [
+   "ReadmeInstall",
+   "ReadmeTop"
+  ]
+ },
+ "V4": {
+  "title": "js README prints `npm install ${target.module.name}` (the slug) in a js-tagged fence, not packageName",
+  "fate": "WP35.",
+  "cls": "code-defect; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "V5": {
+  "title": "py README layout tree shows a flat `<name>_sdk.py` and py/core/; Main\\_py writes a package directory `<name>_sdk/`",
+  "fate": "WP37.",
+  "cls": "code-defect; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "V6": {
+  "title": "clojure README example namespace uses the SDK name where an entity name belongs: sdk.entity.&lt;sdk name>",
+  "fate": "WP37.",
+  "cls": "code-defect; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "V7": {
+  "title": "go-cli and go-mcp derive the env prefix per character, diverging from envToken for doubled or edge separators",
+  "fate": "WP36.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 2 source files; size",
+  "fams": []
+ },
+ "V8": {
+  "title": "docgen: go 'Not published' vs README go get; py import slug differs; MCP tools ignore tool.write; deck counts p.active",
+  "fate": "WP26a.",
+  "cls": "duplicated-rule; docgen; other; 2 source files; size s; changes",
+  "fams": []
+ },
+ "V9": {
+  "title": "Pack lean intro lists six verbs as a literal; dart and haskell 'live alongside' literal now removed",
+  "fate": "WP41.",
+  "cls": "stale-mention; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": [
+   "ReadmeIntro"
+  ]
+ },
+ "V10": {
+  "title": "Deploy emits `$(MAKE) -C <t> publish` for registry-active targets; clojure, elixir, ocaml, scala, zig Makefiles have no publish rule",
+  "fate": "WP35.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": []
+ },
+ "V11": {
+  "title": "Operation-level active:false is ignored by every entity code generator; the op is still generated and callable",
+  "fate": "Repeats G05 and is resolved with it in WP21.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": []
+ },
+ "V12": {
+  "title": "A target copy older than `provides` reads provides:{}, silently dropping features that need tags; only an info log",
+  "fate": "WP11.",
+  "cls": "code-defect; sdkgen; neutral-component; 0 source files; size xs;",
+  "fams": []
+ },
+ "V13": {
+  "title": "isConsumer requires all five phase flags off, so a pre-agentguide consumer copy is listed as an SDK language",
+  "fate": "WP13.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 0 source files; size",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "V14": {
+  "title": "A target with no `title` prints '\\# `<Name>` undefined SDK' and joins undefined into the root tagline",
+  "fate": "WP15.",
+  "cls": "code-defect; sdkgen; neutral-component; 0 source files; size s;",
+  "fams": [
+   "ReadmeIntro",
+   "ReadmeTop"
+  ]
+ },
+ "V15": {
+  "title": "Schema hook list omits PrePoint, PreDone, PreUnexpected, SetMatch and names unused PreTarget, PostOperation; misspellings unify",
+  "fate": "WP08.",
+  "cls": "code-defect; sdkgen; model-schema; 1 source file; size s; changes",
+  "fams": []
+ },
+ "V16": {
+  "title": "Schema comment says a plugin's `needs` is refused at generation when unmet; no code refuses anything",
+  "fate": "WP08.",
+  "cls": "stale-mention; sdkgen; model-schema; 1 source file; size xs;",
+  "fams": []
+ },
+ "V17": {
+  "title": "Twelve PrepareAuth generators carry a local isAuthActive-named copy of the suppression test instead of isAuthSuppressed",
+  "fate": "WP28.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 12 source files; size",
+  "fams": []
+ },
+ "V18": {
+  "title": "Config generators derive auth and server blocks twice (configDefinition and inline); ts data form lacks auth `in`/`name`",
+  "fate": "WP28.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 20 source files; size",
+  "fams": []
+ },
+ "V19": {
+  "title": "With info.auth:false and no config.auth the SDK still accepts and places an apikey; docs say no auth",
+  "fate": "Repeats G04 and is resolved with it in WP28.",
+  "cls": "contradiction; sdkgen; helper; 1 source file; size m; changes",
+  "fams": []
+ },
+ "V20": {
+  "title": "A generated, documented `patch` method is called by no generated flow test; test vocabulary has five ops",
+  "fate": "WP39.",
+  "cls": "test-gap; sdkgen; helper; 21 source files; size l; changes",
+  "fams": []
+ },
+ "V21": {
+  "title": "rust and perl Makefiles say 'tag-only for now (registry publish pending)' whatever the model's registry state",
+  "fate": "WP35.",
+  "cls": "stale-mention; sdkgen; template; 2 source files; size xs; changes",
+  "fams": []
+ },
+ "V22": {
+  "title": "Feature model descriptions make model-dependent claims ('streaming of list results', 'for list operations') docgen prints as its own prose",
+  "fate": "WP26b.",
+  "cls": "stale-mention; sdkgen; target-or-feature-model; 20 source files;",
+  "fams": []
+ },
+ "V23": {
+  "title": "apidef writes its own sentences into vendor slots ('The `<title>` API.', base-URL variable text); docgen quotes them as vendor words",
+  "fate": "WP06.",
+  "cls": "vendor-text; apidef; other; 2 source files; size s; changes",
+  "fams": []
+ },
+ "V24": {
+  "title": "'generated from the OpenAPI spec/specification' is written for a model apidef built from a GraphQL schema",
+  "fate": "WP15.",
+  "cls": "stale-mention; sdkgen; neutral-component; 4 source files; size s;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "V25": {
+  "title": "docgen treats the vendor title as own prose and project `text.summary/entity_desc` as vendor quotes",
+  "fate": "WP05b.",
+  "cls": "tooling-defect; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "V26": {
+  "title": "docgen's QA strips every occurrence of a quoted phrase's words from own text ('OK', 'Created' vanish)",
+  "fate": "WP05b.",
+  "cls": "tooling-defect; docgen; other; 1 source file; size s; changes",
+  "fams": []
+ },
+ "V27": {
+  "title": "A union-typed feature option without default prints 'number | map' raw into a two-column table",
+  "fate": "WP18.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "V28": {
+  "title": "output.create:false over a missing folder: target silently not generated, absent from root README, listed by docgen; INFO only",
+  "fate": "WP23.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": []
+ },
+ "V29": {
+  "title": "An unknown key in SDKGEN\\_EXTERNAL is logged as 'overrides the output of' and changes nothing",
+  "fate": "WP11.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "V30": {
+  "title": "An aliased target's model file is written once and never revisited by add, update, doctor exit code or generate",
+  "fate": "WP13.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size s;",
+  "fams": []
+ },
+ "V31": {
+  "title": "target add reads feature.trim from the source package file compiled alone, ignoring the project's own value",
+  "fate": "WP11.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "V32": {
+  "title": "Path from a target back to .sdk is a literal in 54 template files and 15 components; out-of-tree targets miss the corpus",
+  "fate": "WP32.",
+  "cls": "code-defect; sdkgen; template; 69 source files; size l; changes",
+  "fams": []
+ },
+ "U01": {
+  "title": "alongsideNote finds 'the CLI' and 'the MCP server' only by the keys go-cli and go-mcp; aliases and packaged surfaces are missed",
+  "fate": "WP13.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 1 source file; size",
+  "fams": []
+ },
+ "U02": {
+  "title": "Root README skips the MCP section, Surfaces CLI/MCP rows and docs order for an aliased or packaged CLI/MCP target",
+  "fate": "WP13.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 1 source file; size",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "U03": {
+  "title": "Root `AGENTS.md` LANG\\_CMD build/test commands and surface notes are keyed by target name, so aliases fall to the default",
+  "fate": "WP13.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 1 source file; size",
+  "fams": []
+ },
+ "U04": {
+  "title": "Release-tag literals name the original language: go README says `go/vX.Y.Z` and 15 Makefile templates hard-code TAG := `<lang>/v`",
+  "fate": "WP35.",
+  "cls": "stale-mention; sdkgen; template; 16 source files; size m; changes",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "U05": {
+  "title": "Aliased language gets the TypeScript error-handling and entity-state rows: wording tables indexed by target.name with a default row",
+  "fate": "WP07.",
+  "cls": "wrong-language; sdkgen; neutral-component; 2 source files; size",
+  "fams": [
+   "ReadmeExplanation",
+   "ReadmeErrors"
+  ]
+ },
+ "U06": {
+  "title": "Aliased language documents every field type as `any`: 30 components pass target.name to canonToType",
+  "fate": "Repeats N04 and is resolved with it in WP28.",
+  "cls": "wrong-language; sdkgen; per-language-copy; 30 source files; size",
+  "fams": [
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "U07": {
+  "title": "docgen classes a packaged consumer (seneca-provider) as an SDK because its surface table names only go-mcp, go-cli, py-data",
+  "fate": "WP26a.",
+  "cls": "duplicated-rule; docgen; other; 1 source file; size s; changes",
+  "fams": []
+ },
+ "U08": {
+  "title": "Root README names a packaged consumer as 'the `<title>` package'",
+  "fate": "Not a defect: \"the &lt;title> package\" is true; the disagreement",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "U09": {
+  "title": "lean options table is a fixed five rows naming Bearer and the authorization header whatever the API's auth",
+  "fate": "WP41.",
+  "cls": "stale-mention; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": [
+   "ReadmeOptions"
+  ]
+ },
+ "U10": {
+  "title": "lean quick start reads the API key from the bare `<ENV>` variable instead of `<ENV>_APIKEY`",
+  "fate": "WP41.",
+  "cls": "code-defect; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": [
+   "ReadmeQuick"
+  ]
+ },
+ "U11": {
+  "title": "lean seed example path `../.sdk/test/entity/`... assumes the build phase ran and the in-tree layout",
+  "fate": "WP41.",
+  "cls": "dangling-link; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "U12": {
+  "title": "lean root-README test stanza names 'retry, cache, rbac, netsim' in the feature catalog",
+  "fate": "Not a defect: lean declares trim: false, so its feature catalogue",
+  "cls": "stale-mention; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": [
+   "ReadmeTopTest"
+  ]
+ },
+ "U13": {
+  "title": "lean README compares its Value to 'the Go and Python SDKs', which the project may not have",
+  "fate": "WP41.",
+  "cls": "stale-mention; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "U14": {
+  "title": "lean (and dart, haskell) README get TypeScript error-handling prose from the neutral default rows",
+  "fate": "WP07.",
+  "cls": "wrong-language; sdkgen; neutral-component; 2 source files; size",
+  "fams": [
+   "ReadmeExplanation",
+   "ReadmeErrors"
+  ]
+ },
+ "U15": {
+  "title": "lean README says 'Entity instances are stateful' though lean has no entity objects",
+  "fate": "WP07.",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "U16": {
+  "title": "haskell install section prints an empty code fence once the registry is active",
+  "fate": "WP41.",
+  "cls": "omission; sdkgen-langpack; per-language-copy; 1 source file; size",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "U17": {
+  "title": "haskell README layout names `<name>-sdk.cabal` while the package writes `<org>-<name>-sdk.cabal`",
+  "fate": "WP41.",
+  "cls": "contradiction; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "U18": {
+  "title": "Root README and docgen print packageName's default for dart where the pack's pubspec uses `<name>_sdk`",
+  "fate": "WP41.",
+  "cls": "duplicated-rule; sdkgen; helper; 2 source files; size s; changes",
+  "fams": []
+ },
+ "U19": {
+  "title": "dart REFERENCE feature tables list every active feature without the target applicability filter",
+  "fate": "WP41.",
+  "cls": "omission; sdkgen-langpack; per-language-copy; 1 source file; size",
+  "fams": [
+   "ReadmeRef"
+  ]
+ },
+ "U20": {
+  "title": "dart README examples and tables use the raw op keys, including inactive and action-only operations",
+  "fate": "Repeats S23 and is resolved with it in WP21; the pre-pass reaches",
+  "cls": "duplicated-rule; sdkgen-langpack; per-language-copy; 2 source",
+  "fams": [
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "U21": {
+  "title": "Literal `cd <lang>` in 12 how-tos and 5 install components, wrong under an alias, out of tree or at root",
+  "fate": "WP32.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 17 source files; size",
+  "fams": [
+   "ReadmeHowto",
+   "ReadmeInstall"
+  ]
+ },
+ "U22": {
+  "title": "'Create a .env.local file at the project root' is wrong for an out-of-tree target",
+  "fate": "WP32.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 10 source files; size",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "U23": {
+  "title": "go-cli and go-mcp point at `../go` (and py-data at `../py`) under an alias or out-of-tree layout",
+  "fate": "Repeats G23 and is resolved with it in WP36.",
+  "cls": "code-defect; sdkgen; per-language-copy; 3 source files; size s;",
+  "fams": []
+ },
+ "U24": {
+  "title": "py-data's guard tests that a key named `py` exists, not that it is active or an alias of py",
+  "fate": "WP36.",
+  "cls": "code-defect; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": []
+ },
+ "U25": {
+  "title": "An out-of-tree target is absent from the root README yet listed by every docgen edition as `<name>/`",
+  "fate": "Repeats G24 and is resolved with it in WP26b.",
+  "cls": "contradiction; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": []
+ },
+ "U26": {
+  "title": "A publish workflow, `PUBLISHING.md` and trust script are written for an npm target whose registry state is inactive",
+  "fate": "WP10.",
+  "cls": "unread-switch; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U27": {
+  "title": "Root Makefile says every port tags `<target>/vX.Y.Z` while the primary npm target's workflow tags `v<version>`",
+  "fate": "WP25.",
+  "cls": "contradiction; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "U28": {
+  "title": "`PUBLISHING.md` says 'It is a DISPATCH ... because the root Makefile also publishes' when the registry is pending and it only tags",
+  "fate": "WP10.",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U29": {
+  "title": "Release branch is hard-coded `main` in the publish workflow, `PUBLISHING.md` and repo links",
+  "fate": "WP25.",
+  "cls": "unread-switch; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": []
+ },
+ "U30": {
+  "title": "`SECURITY.md` says 'Do not open public GitHub issues' for a repository on another host",
+  "fate": "WP10.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U31": {
+  "title": "Root Makefile reports c, cpp, zig as 'none (publish pending ...)' because registry name 'none' counts as a registry",
+  "fate": "WP10.",
+  "cls": "code-defect; sdkgen; neutral-component; 4 source files; size s;",
+  "fams": []
+ },
+ "U32": {
+  "title": "VERSION files and LICENSE years are frozen at target add, not updated by a version bump or a new year",
+  "fate": "WP35.",
+  "cls": "code-defect; sdkgen; template; 15 source files; size m; changes",
+  "fams": []
+ },
+ "U33": {
+  "title": "`CHANGELOG.md` is written once with a literal \\[0.0.1\\] entry and never follows the version",
+  "fate": "WP10.",
+  "cls": "unread-switch; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U34": {
+  "title": "Documents name the entity class `${ent.Name}Entity` where a collision renames it (e.g. PlanetEntityClient)",
+  "fate": "WP37.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 20 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeRef"
+  ]
+ },
+ "U35": {
+  "title": "Per-language 'API path:' is the first point of the alphabetically first op, which can be a custom action's route",
+  "fate": "WP31.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 9 source files; size",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "U36": {
+  "title": "Project entity\\_desc overrides in main.kit.text are ignored by 40 per-language README/REFERENCE entity components",
+  "fate": "WP33.",
+  "cls": "unread-switch; sdkgen; per-language-copy; 40 source files; size",
+  "fams": [
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "U37": {
+  "title": "The go target is 'Golang' (target.title) in some README lines and 'Go' (LANG\\_LABEL) in others",
+  "fate": "Repeats G13 and is resolved with it in WP15; the go title becomes",
+  "cls": "duplicated-rule; sdkgen; target-or-feature-model; 2 source files;",
+  "fams": []
+ },
+ "U38": {
+  "title": "Package manifests say 'Unofficial generated csharp SDK' because langLabel falls back to the key",
+  "fate": "Repeats G13 and is resolved with it in WP15.",
+  "cls": "non-markdown-text; sdkgen; helper; 1 source file; size xs;",
+  "fams": []
+ },
+ "U39": {
+  "title": "The API has three display names: info.title or '`<Name>` API', apiName() without 'API', and '`<Name>` API' from the slug",
+  "fate": "WP15.",
+  "cls": "duplicated-rule; sdkgen; helper; 5 source files; size s; changes",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "U40": {
+  "title": "The elixir app name is derived three ways (raw slug, snake\\_case, lower-case) across Main, Package and README",
+  "fate": "WP35.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 3 source files; size",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "U41": {
+  "title": "JVM package and Maven group id ignore publish.registry.package",
+  "fate": "WP35.",
+  "cls": "unread-switch; sdkgen; per-language-copy; 3 source files; size s;",
+  "fams": []
+ },
+ "U42": {
+  "title": "Four install sections print the placeholder `<repo-url>` literally",
+  "fate": "WP35.",
+  "cls": "omission; sdkgen; per-language-copy; 4 source files; size s;",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "U43": {
+  "title": "'The data must include the entity `id`' in update/patch reference text for an entity with no id field",
+  "fate": "WP31.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 20 source files; size",
+  "fams": [
+   "ReadmeRef"
+  ]
+ },
+ "U44": {
+  "title": "'The match is optional \u2014 call list() with no argument' for a nested entity whose list needs its parent",
+  "fate": "WP31.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 18 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeRef"
+  ]
+ },
+ "U45": {
+  "title": "Quick start heading '\\#\\#\\# 4. Create, update, and remove' over a single operation",
+  "fate": "WP31.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 18 source files; size",
+  "fams": [
+   "ReadmeQuick"
+  ]
+ },
+ "U46": {
+  "title": "go-cli README says 'any is valid as `<entity>`' for entities no CLI word can run",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": []
+ },
+ "U47": {
+  "title": "go-cli README and help use literal {id:1} and {name:\"x\"} arguments whatever the entity's id and fields",
+  "fate": "WP36.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": []
+ },
+ "U48": {
+  "title": "py-data README and code use SomeEntity and ad.things as example names",
+  "fate": "Repeats S33 and is resolved with it in WP36.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": []
+ },
+ "U49": {
+  "title": "direct()/prepare() examples use the fabricated path /api/resource/{id} in 42 files",
+  "fate": "WP31.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 42 source files; size",
+  "fams": [
+   "ReadmeHowto",
+   "ReadmeTopHowto",
+   "ReadmeErrors"
+  ]
+ },
+ "U50": {
+  "title": "'\\#\\# Use with Station' is written for an inactive station feature, with an API-key sentence for an API with no auth",
+  "fate": "WP11.",
+  "cls": "unread-switch; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeStation"
+  ]
+ },
+ "U51": {
+  "title": "'This SDK ships 1 optional features' \u2014 no singular",
+  "fate": "WP16.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U52": {
+  "title": "REFERENCE ordering note says 'several features wrap' and '`x` wrap the transport' when one feature wraps",
+  "fate": "WP08.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U53": {
+  "title": "When every feature wraps, the REFERENCE writes ' attach to pipeline hooks' with an empty subject",
+  "fate": "WP08.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U54": {
+  "title": "'Features are initialized in order ... later features can override earlier ones' in a fixed-order target (lean)",
+  "fate": "WP08.",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "U55": {
+  "title": "Agent guide feature file names and directories are wrong for 11 targets (`<name>_feature.<ext>` in `feature/`)",
+  "fate": "WP09.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 2 source files; size",
+  "fams": [
+   "AgentGuide"
+  ]
+ },
+ "U56": {
+  "title": "Root `AGENTS.md` says 'Each feature is generated into every SDK target'",
+  "fate": "WP09.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U57": {
+  "title": "Root `AGENTS.md` promises a per-feature guide `<lang>/src/feature/<name>/AGENTS.md` for languages that have none",
+  "fate": "WP09.",
+  "cls": "dangling-link; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U58": {
+  "title": "'Entity operations reject on failure, so wrap them in try / catch' for result-returning targets",
+  "fate": "Repeats S05 and is resolved with it in WP07.",
+  "cls": "wrong-language; sdkgen; neutral-component; 1 source file; size",
+  "fams": [
+   "ReadmeErrors"
+  ]
+ },
+ "U59": {
+  "title": "'no code generation is needed' in eight targets that do emit typed models",
+  "fate": "WP37.",
+  "cls": "contradiction; sdkgen; per-language-copy; 8 source files; size s;",
+  "fams": [
+   "ReadmeExplanation"
+  ]
+ },
+ "U60": {
+  "title": "Install sections call the SDK 'dependency-free' though a feature can declare deps for that target",
+  "fate": "WP35.",
+  "cls": "stale-mention; sdkgen; per-language-copy; 4 source files; size s;",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "U61": {
+  "title": "'capitalised, semantic Entities' beside a lower-case accessor in c, cpp, clojure and ocaml",
+  "fate": "WP37.",
+  "cls": "contradiction; sdkgen; per-language-copy; 4 source files; size s;",
+  "fams": [
+   "ReadmeIntro"
+  ]
+ },
+ "U62": {
+  "title": "'Every other field is typed normally' while two-branch unions become `any` in 15 languages",
+  "fate": "WP08.",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U63": {
+  "title": "Seven docgen sentences name the client libraries, companion tools, retry/timeout/logging and surfaces unconditionally",
+  "fate": "WP26a.",
+  "cls": "stale-mention; docgen; other; 1 source file; size s; changes",
+  "fams": []
+ },
+ "U64": {
+  "title": "docgen setup snippets always pass apikey and never a secret or server variables",
+  "fate": "WP26a.",
+  "cls": "omission; docgen; template; 3 source files; size s; changes",
+  "fams": []
+ },
+ "U65": {
+  "title": "docgen JVM setup imports hard-code `voxgig.` as the package root",
+  "fate": "WP26a.",
+  "cls": "duplicated-rule; docgen; template; 2 source files; size s;",
+  "fams": []
+ },
+ "U66": {
+  "title": "docgen MCP page says 'The API reference covers all entities' under an edition entity filter",
+  "fate": "WP05a.",
+  "cls": "stale-mention; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U67": {
+  "title": "`SUMMARY.md` tells readers to use 'the linked reference' and entity references that are not generated when the website edition is off",
+  "fate": "WP26a.",
+  "cls": "dangling-link; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U68": {
+  "title": "'unofficial', 'public API' and 'not affiliated' disclosure is written even for a publisher that owns the API",
+  "fate": "WP25.",
+  "cls": "unread-switch; sdkgen; helper; 1 source file; size s; changes",
+  "fams": []
+ },
+ "U69": {
+  "title": "Root README tagline says the surfaces are 'all generated from one OpenAPI spec' whatever the model was built from",
+  "fate": "Repeats V24 and is resolved with it in WP15.",
+  "cls": "stale-mention; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "U70": {
+  "title": "Root README links `voxgig.com/sdk/custom` for any publisher",
+  "fate": "Repeats S48, which is not a defect.",
+  "cls": "unread-switch; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "U71": {
+  "title": "Suspicion that non-ts PrepareAuth generators send Basic under query or cookie placement",
+  "fate": "Not a defect: all 160 generated PrepareAuth files were measured:",
+  "cls": "code-defect; sdkgen; per-language-copy; 0 source files; size xs;",
+  "fams": []
+ },
+ "U72": {
+  "title": "kotlin live test harness builds the live client with no server block, so a templated server URL cannot run live",
+  "fate": "WP30.",
+  "cls": "code-defect; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": []
+ },
+ "U73": {
+  "title": "cpp live test harness never builds a live client: no API key, no server, always testSDK",
+  "fate": "WP30.",
+  "cls": "code-defect; sdkgen; per-language-copy; 1 source file; size xs;",
+  "fams": []
+ },
+ "U74": {
+  "title": "entityOps and introOps append operations outside the six, for which no method is generated",
+  "fate": "WP21.",
+  "cls": "code-defect; sdkgen; helper; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U75": {
+  "title": "ts README lists a declared but unreferenced server variable under '\\*\\*Required.\\*\\*'",
+  "fate": "Repeats G01 and is resolved with it in WP29.",
+  "cls": "wrong-baseline; sdkgen; per-language-copy; 1 source file; size",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "U76": {
+  "title": "docgen 'Client defaults' block shows auth without its placement",
+  "fate": "WP26a.",
+  "cls": "omission; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U77": {
+  "title": "dart Config generator keeps an unused inline auth block, base URL and headers",
+  "fate": "WP41.",
+  "cls": "code-defect; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": []
+ },
+ "U78": {
+  "title": "py-data docstring names `<ENV>_BASE` for a fixed-host API where its README omits it",
+  "fate": "WP36.",
+  "cls": "non-markdown-text; sdkgen; per-language-copy; 1 source file; size",
+  "fams": []
+ },
+ "U79": {
+  "title": "py-data notebook and docstring say 'Every page is fetched' regardless of paging",
+  "fate": "WP36.",
+  "cls": "non-markdown-text; sdkgen; per-language-copy; 1 source file; size",
+  "fams": []
+ },
+ "U80": {
+  "title": "py-data README and notebook install with a literal `#subdirectory=py`",
+  "fate": "WP36.",
+  "cls": "non-markdown-text; sdkgen; per-language-copy; 1 source file; size",
+  "fams": []
+ },
+ "U81": {
+  "title": "MCP list tool says 'first page of records' for an SDK without paging",
+  "fate": "WP36.",
+  "cls": "non-markdown-text; sdkgen; per-language-copy; 1 source file; size",
+  "fams": []
+ },
+ "U82": {
+  "title": "MCP list tool calls the query an 'optional filter' for a nested list that needs its parent",
+  "fate": "WP36.",
+  "cls": "non-markdown-text; sdkgen; per-language-copy; 1 source file; size",
+  "fams": []
+ },
+ "U83": {
+  "title": "'Generated by sdkgen go-cli target' and `rm -rf ... go-cli` stay literal for an aliased go-cli",
+  "fate": "WP36.",
+  "cls": "non-markdown-text; sdkgen; fragment; 2 source files; size xs;",
+  "fams": []
+ },
+ "U84": {
+  "title": "Generated source headers print the alias's capitalised key, e.g. `// Demo Ts2 SDK`",
+  "fate": "WP37.",
+  "cls": "non-markdown-text; sdkgen; per-language-copy; 14 source files;",
+  "fams": []
+ },
+ "U85": {
+  "title": "Javadoc/godoc 'full CRUD contract ... every generated entity implements every operation' for the six-op interface",
+  "fate": "Not a defect: the six-operation interface comments describe the",
+  "cls": "non-markdown-text; sdkgen; template; 0 source files; size xs;",
+  "fams": []
+ },
+ "U86": {
+  "title": "go typed-model godoc names `<Name>.<Op>Typed` methods that do not exist for excluded entities",
+  "fate": "WP38.",
+  "cls": "non-markdown-text; sdkgen; per-language-copy; 1 source file; size",
+  "fams": []
+ },
+ "U87": {
+  "title": "perl, rb and clojure op docblocks describe the match as 'id/query fields' for an id-less entity",
+  "fate": "WP38.",
+  "cls": "non-markdown-text; sdkgen; fragment; 6 source files; size s;",
+  "fams": []
+ },
+ "U88": {
+  "title": "The language pack carries the same model claims in comments (`AGENTS.md` citations, transport-feature lists) in dart fragments and haskell templates",
+  "fate": "WP41.",
+  "cls": "non-markdown-text; sdkgen-langpack; fragment; 8 source files;",
+  "fams": []
+ },
+ "U89": {
+  "title": "`check-drift.sh` reports a layout difference as drift when its shell and the last generate disagree about SDKGEN\\_EXTERNAL",
+  "fate": "WP44a.",
+  "cls": "tooling-defect; create-sdkgen; other; 1 source file; size s;",
+  "fams": []
+ },
+ "U90": {
+  "title": "admin/status shows a stale in-tree folder as present after an override run placed the target elsewhere",
+  "fate": "WP20.",
+  "cls": "tooling-defect; sdkgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U91": {
+  "title": "`target remove` plans to delete only the in-tree folder for a target the run override sent elsewhere",
+  "fate": "WP20.",
+  "cls": "tooling-defect; sdkgen; action; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U92": {
+  "title": "A derived sdkrel commits this machine's directory names into generated files",
+  "fate": "WP23.",
+  "cls": "code-defect; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "U93": {
+  "title": "Scaffold `ci.yml` keys jobs on bundled directory names, so aliased, root-placed or out-of-tree targets are never tested",
+  "fate": "WP44a.",
+  "cls": "tooling-defect; create-sdkgen; other; 1 source file; size m;",
+  "fams": []
+ },
+ "U94": {
+  "title": "Pack tests cannot pass the build-option run override through the testkit",
+  "fate": "WP20.",
+  "cls": "test-gap; sdkgen; helper; 1 source file; size xs; changes nothing",
+  "fams": []
+ },
+ "U95": {
+  "title": "Edition text made plan-dependent would be regenerated differently by CI than from the committed model",
+  "fate": "Not a defect: a constraint on DQ3 (edition text follows the",
+  "cls": "tooling-defect; docgen; other; 0 source files; size xs; changes",
+  "fams": []
+ },
+ "U96": {
+  "title": "Adding a sixth name to PHASES would silently reclassify every existing consumer copy and pack target as an SDK",
+  "fate": "Repeats V13 and is resolved with it in WP13.",
+  "cls": "duplicated-rule; sdkgen; helper; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U97": {
+  "title": "A slot added to an origin's target file never reaches its alias",
+  "fate": "Repeats V30 and is resolved with it in WP13.",
+  "cls": "code-defect; sdkgen; action; 1 source file; size s; changes",
+  "fams": []
+ },
+ "U98": {
+  "title": "A packaged consumer is rendered under 'SDKs' by docgen unless each project sets kind",
+  "fate": "Repeats U07 and is resolved with it in WP26a.",
+  "cls": "duplicated-rule; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U99": {
+  "title": "LANG\\_LABEL lacks 13 bundled languages and disagrees with target.title ('rust' in manifests, 'Rust' in README)",
+  "fate": "Repeats G13 and is resolved with it in WP15.",
+  "cls": "duplicated-rule; sdkgen; helper; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U100": {
+  "title": "A package manifest's `parity: CONSUMER` can disagree with the target's phase flags and nothing checks it",
+  "fate": "WP20.",
+  "cls": "tooling-defect; sdkgen; action; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U101": {
+  "title": "A pack cannot declare a new tag or closed-set value without raising its sdkgen floor, because older releases reject it",
+  "fate": "WP20.",
+  "cls": "tooling-defect; sdkgen; helper; 1 source file; size s; changes",
+  "fams": []
+ },
+ "U102": {
+  "title": "A backtick or pipe in a feature option default breaks the REFERENCE code span or table row",
+  "fate": "WP18.",
+  "cls": "vendor-text; sdkgen; neutral-component; 2 source files; size xs;",
+  "fams": []
+ },
+ "U103": {
+  "title": "A `)` or space in a vendor URL breaks the generated markdown link",
+  "fate": "WP18.",
+  "cls": "vendor-text; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "U104": {
+  "title": "A code fence inside spliced vendor text could confuse the generated README-example extractors",
+  "fate": "WP18.",
+  "cls": "vendor-text; sdkgen; per-language-copy; 0 source files; size s;",
+  "fams": []
+ },
+ "U105": {
+  "title": "Scaffold's commented example tagline names three languages ('from TypeScript, Go and Python')",
+  "fate": "WP44a.",
+  "cls": "stale-mention; create-sdkgen; other; 1 source file; size xs;",
+  "fams": []
+ },
+ "U106": {
+  "title": "docgen overview splices the full vendor info.description (headings, HTML, pipe tables) into `SUMMARY.md`",
+  "fate": "WP05a.",
+  "cls": "vendor-text; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "U107": {
+  "title": "apidef cuts field short descriptions at 'e.g.' or 'i.e.' (twelve real sentences)",
+  "fate": "WP06.",
+  "cls": "vendor-text; apidef; helper; 2 source files; size s; changes",
+  "fams": []
+ },
+ "U108": {
+  "title": "A pack feature's description is treated as docgen's own prose and can fail a project's docgen style gate",
+  "fate": "WP05a.",
+  "cls": "vendor-text; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "N01": {
+  "title": "`sdk.json` is written before generate() renames entities, so standalone docgen names entities the SDK lacks (Planet, 3dsSession)",
+  "fate": "WP26a.",
+  "cls": "code-defect; docgen; other; 2 source files; size s; changes",
+  "fams": []
+ },
+ "N02": {
+  "title": "Generated Config says basic: true under query or cookie placement; no PrepareAuth reads it there",
+  "fate": "WP11.",
+  "cls": "code-defect; sdkgen; helper; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "N03": {
+  "title": "Twelve PrepareAuth generators carry a private copy of the auth-suppression test instead of importing isAuthSuppressed",
+  "fate": "Repeats V17 and is resolved with it in WP28.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 12 source files; size",
+  "fams": []
+ },
+ "N04": {
+  "title": "Thirty README components type fields with canonToType(field.t, target.name), so an aliased language documents every field as any",
+  "fate": "WP28.",
+  "cls": "code-defect; sdkgen; per-language-copy; 30 source files; size m;",
+  "fams": [
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "N05": {
+  "title": "Wording tables and exampleVarName keyed by target.name give an aliased language the TypeScript default row",
+  "fate": "WP07.",
+  "cls": "code-defect; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": [
+   "ReadmeExplanation",
+   "ReadmeErrors"
+  ]
+ },
+ "N06": {
+  "title": "go-cli and go-mcp generate without go and hard-code `../go` in README text and go.mod replace; py-data refuses",
+  "fate": "WP36.",
+  "cls": "code-defect; sdkgen; per-language-copy; 2 source files; size s;",
+  "fams": []
+ },
+ "N07": {
+  "title": "remove tests null != output.path while the schema default is '', so every in-tree target reads as out of tree",
+  "fate": "WP11.",
+  "cls": "code-defect; sdkgen; helper; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "N08": {
+  "title": "Root `AGENTS.md` says generate merges into existing files and never deletes; generation overwrites and prunes",
+  "fate": "Repeats X5 and is resolved with it in WP17.",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "N09": {
+  "title": "'Built-in features are log and test' false in a default project; copied `test.aontu` comment says most features start on",
+  "fate": "WP34 (the feature model's comment); the sentence itself is S16 in",
+  "cls": "stale-mention; sdkgen; neutral-component; 2 source files; size",
+  "fams": []
+ },
+ "N10": {
+  "title": "Base schema hook list names PreTarget and PostOperation, unused, and omits SetMatch, PrePoint, PreDone, PreUnexpected",
+  "fate": "Repeats V15 and is resolved with it in WP08.",
+  "cls": "code-defect; sdkgen; model-schema; 1 source file; size xs;",
+  "fams": []
+ },
+ "N11": {
+  "title": "33 code blocks in the js README and REFERENCE are fenced ts",
+  "fate": "WP37.",
+  "cls": "wrong-language; sdkgen; per-language-copy; 4 source files; size",
+  "fams": [
+   "ReadmeEntity",
+   "ReadmeExplanation",
+   "ReadmeErrors",
+   "ReadmeRef"
+  ]
+ },
+ "N12": {
+  "title": "Generated README tests match the constructor with a non-nesting \\[^()\\] pattern; a parenthesis in the printed constructor fails them",
+  "fate": "WP28.",
+  "cls": "code-defect; sdkgen; per-language-copy; 5 source files; size s;",
+  "fams": []
+ },
+ "N13": {
+  "title": "After a downgrade, doctor calls newer copies outdated and prints a refresh command that installs older copies",
+  "fate": "WP12.",
+  "cls": "tooling-defect; sdkgen; action; 2 source files; size s; changes",
+  "fams": []
+ },
+ "N14": {
+  "title": "Language pack floor lane failed check-package: 4.34.2 CLI imports One from shape, which resolves to 12.1.0",
+  "fate": "WP45.",
+  "cls": "tooling-defect; sdkgen-langpack; other; 2 source files; size xs;",
+  "fams": []
+ },
+ "N15": {
+  "title": "\\$\\$name\\$\\$ in vendor descriptions is substituted in 20 of 22 generated source files",
+  "fate": "Repeats G28 and is resolved with it in WP33.",
+  "cls": "code-defect; sdkgen; per-language-copy; 20 source files; size m;",
+  "fams": []
+ },
+ "N16": {
+  "title": "Generator docs list ocaml among untrimmed targets; `ocaml.aontu` sets trim: true",
+  "fate": "WP09.",
+  "cls": "generator-docs; sdkgen; generator-docs; 2 source files; size xs;",
+  "fams": []
+ },
+ "N17": {
+  "title": "No declared copy floor: component copies before v4.23.0 fail strict compile and pre-v1.3.18 model files do not parse",
+  "fate": "WP12.",
+  "cls": "tooling-defect; sdkgen; action; 3 source files; size s; changes",
+  "fams": []
+ },
+ "N18": {
+  "title": "An unrecorded project told to use --keep freezes stale copies as customized, and doctor then reports ok",
+  "fate": "WP12.",
+  "cls": "tooling-defect; sdkgen; helper; 1 source file; size s; changes",
+  "fams": []
+ },
+ "N19": {
+  "title": "--keep records the incoming copy as base without checking the fold, so doctor passes a tree tsc refuses (TS2305)",
+  "fate": "WP12.",
+  "cls": "tooling-defect; sdkgen; helper; 1 source file; size s; changes",
+  "fams": [
+   "ReadmeTopQuick"
+  ]
+ },
+ "N20": {
+  "title": "A project whose model lacks the test feature generates silently; its SDK fails at run time and its suites go red",
+  "fate": "Repeats S11 and is resolved with it in WP22.",
+  "cls": "omission; sdkgen; action; 2 source files; size s; changes nothing",
+  "fams": []
+ },
+ "N21": {
+  "title": "Language pack splices vendor field descriptions raw into dart and haskell README table cells",
+  "fate": "WP41.",
+  "cls": "code-defect; sdkgen-langpack; per-language-copy; 6 source files;",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "N22": {
+  "title": "No README lane renders constructor fields: no lane model has HTTP Basic or a templated server URL",
+  "fate": "WP01.",
+  "cls": "test-gap; sdkgen; test; 2 source files; size s; changes nothing",
+  "fams": []
+ },
+ "N23": {
+  "title": "The root plan is stated six times and the statements disagree on root documents, target.active and output.root",
+  "fate": "WP02.",
+  "cls": "duplicated-rule; sdkgen; helper; 6 source files; size m; changes",
+  "fams": []
+ },
+ "N24": {
+  "title": "No test pins the published export surface; b4cd6877 removed a published export and the suite passed",
+  "fate": "WP01.",
+  "cls": "test-gap; sdkgen; test; 1 source file; size xs; changes nothing",
+  "fams": []
+ },
+ "M01": {
+  "title": "Under a language alias, generated text still prints the origin key as a path: cd go, TAG := go/v, `../go`",
+  "fate": "WP32.",
+  "cls": "code-defect; sdkgen; per-language-copy; 10 source files; size m;",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "M02": {
+  "title": "Aliased go-cli/go-mcp missed by literal-key sites: alias listed as an SDK, MCP section vanishes, row notes lost",
+  "fate": "WP13.",
+  "cls": "code-defect; sdkgen; neutral-component; 4 source files; size s;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "M03": {
+  "title": "Schema default docs\\_order lists installed target keys, so an aliased language loses its documentation order",
+  "fate": "WP13.",
+  "cls": "code-defect; sdkgen; model-schema; 2 source files; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "M04": {
+  "title": "Thirty per-language README components pass target.name to canonToType; an aliased language documents every field as any",
+  "fate": "Repeats N04 and is resolved with it in WP28.",
+  "cls": "code-defect; sdkgen; per-language-copy; 30 source files; size m;",
+  "fams": [
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "M05": {
+  "title": "Neutral wording tables keyed by target.name give an aliased Go README the TypeScript try/catch row",
+  "fate": "Repeats N05 and is resolved with it in WP07.",
+  "cls": "code-defect; sdkgen; neutral-component; 2 source files; size s;",
+  "fams": [
+   "ReadmeExplanation",
+   "ReadmeErrors"
+  ]
+ },
+ "M06": {
+  "title": "go-cli and go-mcp generate without go (or with go aliased/relocated) and still point at `../go`",
+  "fate": "Repeats N06 and is resolved with it in WP36.",
+  "cls": "code-defect; sdkgen; per-language-copy; 2 source files; size s;",
+  "fams": []
+ },
+ "M07": {
+  "title": "target remove prints 'generates out of tree ()' for every in-tree target",
+  "fate": "Repeats N07 and is resolved with it in WP11.",
+  "cls": "code-defect; sdkgen; action; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "M08": {
+  "title": "With no active entity, 17 READMEs and go-cli print table headers with no rows; ts/js lead-in has nothing after it",
+  "fate": "WP31.",
+  "cls": "code-defect; sdkgen; per-language-copy; 22 source files; size m;",
+  "fams": [
+   "ReadmeModel"
+  ]
+ },
+ "M09": {
+  "title": "targetOrigins classes a project-owned target as bundled, so the ungenerated-ops warning speaks for it",
+  "fate": "WP13.",
+  "cls": "code-defect; sdkgen; action; 2 source files; size s; changes",
+  "fams": []
+ },
+ "M10": {
+  "title": "The secrets feature model alone declares no active: true, so feature add secrets installs it inactive",
+  "fate": "WP34.",
+  "cls": "omission; sdkgen; target-or-feature-model; 1 source file; size",
+  "fams": []
+ },
+ "M11": {
+  "title": "A project without the test feature generates without error and its SDK fails at run time ('fc is not a constructor')",
+  "fate": "Repeats S11 and is resolved with it in WP22; its run-time half is",
+  "cls": "code-defect; sdkgen; neutral-component; 3 source files; size s;",
+  "fams": []
+ },
+ "M12": {
+  "title": "ts/js READMEs print secret under Basic in query/cookie placement, and two live constructors omit the required server",
+  "fate": "WP29.",
+  "cls": "code-defect; sdkgen; per-language-copy; 8 source files; size s;",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeHowto",
+   "ReadmeTopQuick",
+   "ReadmeQuick",
+   "ReadmeRef"
+  ]
+ },
+ "M13": {
+  "title": "go, java and py quick starts print a defaulted server variable as if it were required (as ts does)",
+  "fate": "Repeats G01 and is resolved with it in WP29.",
+  "cls": "code-defect; sdkgen; per-language-copy; 6 source files; size s;",
+  "fams": [
+   "ReadmeTopQuick",
+   "ReadmeQuick"
+  ]
+ },
+ "M14": {
+  "title": "go quick start indents the \"server\" line four spaces short of \"apikey\"",
+  "fate": "WP29.",
+  "cls": "code-defect; sdkgen; per-language-copy; 2 source files; size xs;",
+  "fams": [
+   "ReadmeTopQuick",
+   "ReadmeQuick"
+  ]
+ },
+ "M15": {
+  "title": "A missing server variable panics (go, rust, zig) or abort()s (c) instead of a catchable error",
+  "fate": "WP40.",
+  "cls": "code-defect; sdkgen; template; 4 source files; size s; changes",
+  "fams": []
+ },
+ "M16": {
+  "title": "Language pack dart acts on auth.basic whatever the placement, always in the authorization header",
+  "fate": "WP41.",
+  "cls": "code-defect; sdkgen-langpack; template; 1 source file; size xs;",
+  "fams": []
+ },
+ "M17": {
+  "title": "Language pack haskell has no HTTP Basic branch and no secret option",
+  "fate": "WP42.",
+  "cls": "omission; sdkgen-langpack; template; 2 source files; size s;",
+  "fams": []
+ },
+ "M18": {
+  "title": "Language pack lean has no server option and leaves an unfilled {variable} in the request URL silently; no Basic",
+  "fate": "WP42.",
+  "cls": "omission; sdkgen-langpack; template; 2 source files; size m;",
+  "fams": []
+ },
+ "M19": {
+  "title": "Language pack lean root quick start constructs the client with no apikey when auth is active",
+  "fate": "WP41.",
+  "cls": "code-defect; sdkgen-langpack; per-language-copy; 1 source file;",
+  "fams": [
+   "ReadmeTopQuick",
+   "ReadmeQuick"
+  ]
+ },
+ "M20": {
+  "title": "Infrastructure pack floor lane fails check-package: sdkgen 4.33.0 CLI imports One, shape resolves to 12",
+  "fate": "WP04.",
+  "cls": "tooling-defect; sdkgen-infrapack; other; 2 source files; size xs;",
+  "fams": []
+ },
+ "M21": {
+  "title": "Language pack floor lane failed check-package at 4.34.2 (shape 12)",
+  "fate": "Repeats N14 and is resolved with it in WP45.",
+  "cls": "tooling-defect; sdkgen-langpack; other; 2 source files; size xs;",
+  "fams": []
+ },
+ "M22": {
+  "title": "Published sdkgen below 4.41.1 resolves shape 12 and fails 'One is not a function' on a fresh install",
+  "fate": "WP12.",
+  "cls": "tooling-defect; sdkgen; other; 0 source files; size xs; changes",
+  "fams": []
+ },
+ "M23": {
+  "title": "Reverse skew: copies newer than the installed package fail TS2305 and doctor calls them outdated",
+  "fate": "Repeats N13 and is resolved with it in WP12; its scaffold half (no",
+  "cls": "tooling-defect; sdkgen; action; 2 source files; size s; changes",
+  "fams": []
+ },
+ "M24": {
+  "title": "Re-scaffold after package update conflicts on `.sdk/package.json` because the scaffold's devDependencies are unsorted",
+  "fate": "WP44a.",
+  "cls": "tooling-defect; create-sdkgen; template; 1 source file; size xs;",
+  "fams": []
+ },
+ "M25": {
+  "title": "Scaffold Root installs ctx\\$.util.makeFlow, which nothing reads",
+  "fate": "WP44a.",
+  "cls": "code-defect; create-sdkgen; template; 1 source file; size xs;",
+  "fams": []
+ },
+ "M26": {
+  "title": "Six executable statements of the root plan disagree on top documents, target.active and output.root",
+  "fate": "WP02.",
+  "cls": "duplicated-rule; sdkgen; helper; 6 source files; size m; changes",
+  "fams": []
+ },
+ "M27": {
+  "title": "sdkgen's own `AGENTS.md` says generate merges into existing files; generation overwrites",
+  "fate": "WP17.",
+  "cls": "generator-docs; sdkgen; generator-docs; 1 source file; size xs;",
+  "fams": []
+ },
+ "M28": {
+  "title": "sdkgen `AGENTS.md` lists ocaml and lean as bundled untrimmed targets",
+  "fate": "Repeats N16 and is resolved with it in WP09.",
+  "cls": "stale-mention; sdkgen; generator-docs; 1 source file; size xs;",
+  "fams": []
+ },
+ "M29": {
+  "title": "`sdk.json` is written before generate() renames entities; standalone docgen names entities the SDK lacks",
+  "fate": "Repeats N01 and is resolved with it in WP26a; fixed through",
+  "cls": "code-defect; voxgig-model; other; 2 source files; size s; changes",
+  "fams": []
+ },
+ "M30": {
+  "title": "Config says basic: true under query or cookie placement while no PrepareAuth reads it",
+  "fate": "Repeats N02 and is resolved with it in WP11.",
+  "cls": "code-defect; sdkgen; helper; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "M31": {
+  "title": "Twelve PrepareAuth generators re-derive the auth-suppression test instead of importing isAuthSuppressed",
+  "fate": "Repeats V17 and is resolved with it in WP28.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 12 source files; size",
+  "fams": []
+ },
+ "M32": {
+  "title": "Root `AGENTS.md` says generate merges into existing files; generation overwrites",
+  "fate": "Repeats X5 and is resolved with it in WP17.",
+  "cls": "contradiction; sdkgen; neutral-component; 1 source file; size xs;",
+  "fams": []
+ },
+ "M33": {
+  "title": "'Built-in features are log and test' false in a default project; `test.aontu` comment says most features start on",
+  "fate": "Repeats N09 and is resolved with it in WP34; the sentence half is",
+  "cls": "stale-mention; sdkgen; neutral-component; 2 source files; size",
+  "fams": []
+ },
+ "M34": {
+  "title": "Base schema hook list names PreTarget and PostOperation and omits PrePoint, PreDone, PreUnexpected, SetMatch",
+  "fate": "Repeats V15 and is resolved with it in WP08.",
+  "cls": "code-defect; sdkgen; model-schema; 1 source file; size xs;",
+  "fams": []
+ },
+ "M35": {
+  "title": "33 code blocks in js README and REFERENCE are fenced ts",
+  "fate": "Repeats N11 and is resolved with it in WP37.",
+  "cls": "wrong-language; sdkgen; per-language-copy; 4 source files; size",
+  "fams": [
+   "ReadmeEntity",
+   "ReadmeExplanation",
+   "ReadmeErrors",
+   "ReadmeRef"
+  ]
+ },
+ "M36": {
+  "title": "Generated README tests match the constructor with \\[^()\\]\\* or \\[^)\\]\\*: a parenthesis inside it fails the suite",
+  "fate": "Repeats N12 and is resolved with it in WP28.",
+  "cls": "code-defect; sdkgen; per-language-copy; 4 source files; size s;",
+  "fams": []
+ },
+ "M37": {
+  "title": "\\$\\$ in vendor text is substituted in table cells and in 20 of 22 generated source files",
+  "fate": "Repeats G28 and is resolved with it in WP33.",
+  "cls": "code-defect; sdkgen; per-language-copy; 60 source files; size l;",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "M38": {
+  "title": "A pipe or line break in a field description breaks 120 rows and cuts 60 more; the third ts sink is ReadmeModel",
+  "fate": "Repeats G27 and is resolved with it in WP33.",
+  "cls": "code-defect; sdkgen; per-language-copy; 60 source files; size l;",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity",
+   "ReadmeRef"
+  ]
+ },
+ "M39": {
+  "title": "Operation-level active: false is undeclared in any schema and ignored by code; two comments claim otherwise",
+  "fate": "Repeats G05 and is resolved with it in WP21.",
+  "cls": "code-defect; sdkgen; model-schema; 3 source files; size s;",
+  "fams": []
+ },
+ "M40": {
+  "title": "Relocating py by the run override fails the whole generation (py-data refuses)",
+  "fate": "Repeats G22 and is resolved with it in WP36.",
+  "cls": "code-defect; sdkgen; per-language-copy; 1 source file; size s;",
+  "fams": []
+ },
+ "M41": {
+  "title": "A four-flag go-cli copy (pre-agentguide) is classed as an SDK by isConsumer",
+  "fate": "Repeats V13 and is resolved with it in WP13.",
+  "cls": "code-defect; sdkgen; neutral-component; 2 source files; size xs;",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "M42": {
+  "title": "Copies older than v4.23.0 (and v1.3.7 model files with // comments) cannot generate, and nothing says so",
+  "fate": "Repeats N17 and is resolved with it in WP12.",
+  "cls": "tooling-defect; sdkgen; action; 2 source files; size s; changes",
+  "fams": []
+ },
+ "M43": {
+  "title": "No README lane model has auth on or a templated server URL, so no lane renders a constructor field",
+  "fate": "WP01.",
+  "cls": "test-gap; sdkgen; test; 1 source file; size s; changes nothing in",
+  "fams": []
+ },
+ "M44": {
+  "title": "Nothing pins sdkgen's export list; a removed export passes the suite",
+  "fate": "Repeats N24 and is resolved with it in WP01.",
+  "cls": "test-gap; sdkgen; test; 1 source file; size xs; changes nothing",
+  "fams": []
+ },
+ "M45": {
+  "title": "The generation fixture reads target files unsubstituted, so every target carries base 'BASE'",
+  "fate": "WP01.",
+  "cls": "test-gap; sdkgen; test; 1 source file; size s; changes nothing in",
+  "fams": []
+ },
+ "M46": {
+  "title": "docgen peers sdkgen >=4.25.0 but needs modelText (4.34.1); below it drops main.kit.text silently; no floor lane",
+  "fate": "WP26a.",
+  "cls": "tooling-defect; docgen; other; 3 source files; size s; changes",
+  "fams": []
+ },
+ "M47": {
+  "title": "docgen's standalone command passes no logger, so its report and any fallback notice are never printed",
+  "fate": "WP05a.",
+  "cls": "tooling-defect; docgen; other; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "M48": {
+  "title": "docgen counts any target outside its three-name table as an SDK: a Seneca provider is listed as one",
+  "fate": "WP26a.",
+  "cls": "code-defect; docgen; other; 1 source file; size s; changes",
+  "fams": []
+ },
+ "M49": {
+  "title": "target add slows with each installed target (0.42 s first, 1.6 to 1.9 s for the 23rd)",
+  "fate": "WP12.",
+  "cls": "tooling-defect; sdkgen; action; 1 source file; size s; changes",
+  "fams": []
+ },
+ "D01": {
+  "title": "Which targets are active/generated is decided by nine private filters on four different inputs (raw map, filtered model, disk, run override)",
+  "fate": "WP14.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 10 source files; size",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "D02": {
+  "title": "Target surface (SDK/CLI/MCP/data) decided four ways: literal key, origname, five phase flags, docgen kind; aliases misclassed",
+  "fate": "WP13.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 8 source files; size",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "D04": {
+  "title": "Which features a target has: six predicates plus literal lists '(Base, Test, Log)' and 'Built-in features are log and test'",
+  "fate": "WP34.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 42 source files; size",
+  "fams": [
+   "ReadmeExplanation",
+   "ReadmeTop",
+   "ReadmeStation",
+   "ReadmeRef"
+  ]
+ },
+ "D05": {
+  "title": "'Inactive until you switch it on' is a constant in six writers; only AgentGuideFeature reads config.options.active, and log starts on",
+  "fate": "Repeats S09 and is resolved with it in WP16.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 8 source files; size",
+  "fams": [
+   "ReadmeTop",
+   "ReadmeStation"
+  ]
+ },
+ "D10": {
+  "title": "Which operations exist: key presence, active, and active-and-callable in circulation; inactive ops kept by code, dropped by intros",
+  "fate": "WP31.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 64 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity",
+   "ReadmeIntro",
+   "ReadmeTop",
+   "ReadmeRef"
+  ]
+ },
+ "D22": {
+  "title": "Auth on/off: isAuthActive, isAuthSuppressed, 12 private copies, docgen's info-only read; consumers always require an API key",
+  "fate": "WP28.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 18 source files; size",
+  "fams": []
+ },
+ "D23": {
+  "title": "What the constructor needs: apikey in 20 quick starts, server variables in 4, Basic secret in ts only; docgen hard-codes apikey",
+  "fate": "WP29.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 60 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeTopQuick",
+   "ReadmeTop",
+   "ReadmeQuick",
+   "ReadmeRef"
+  ]
+ },
+ "D25": {
+  "title": "Environment-variable names: envToken vs go-cli/go-mcp per-character rule vs docgen; suffixes literal; tests read names docs never mention",
+  "fate": "WP30.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 25 source files; size",
+  "fams": [
+   "ReadmeQuick"
+  ]
+ },
+ "D26": {
+  "title": "Client options: optspec is the validated schema no document reads; three hand-written row sets; ReadmeOptions never renders",
+  "fate": "WP29.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 62 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeOptions",
+   "ReadmeRef"
+  ]
+ },
+ "D27": {
+  "title": "Package name, install command and publish state derived separately by registryState, Deploy, PublishWorkflow, 20 ReadmeInstall, local name helpers, docgen",
+  "fate": "WP35.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 35 source files; size",
+  "fams": [
+   "ReadmeInstall",
+   "ReadmeTop"
+  ]
+ },
+ "D29": {
+  "title": "Release tag: '`<target>/v<version>`' in Deploy, Makefiles and READMEs vs bare '`v<version>`' in PublishWorkflow; publish.tag.\\* read by nothing",
+  "fate": "WP35.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 38 source files; size",
+  "fams": [
+   "ReadmeInstall"
+  ]
+ },
+ "D33": {
+  "title": "Target directories and paths between surfaces written as literals ('cd py', '`../go`', 'go-cli/') or target.name; `output.path/root` ignored",
+  "fate": "WP14.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 30 source files; size",
+  "fams": [
+   "ReadmeHowto",
+   "ReadmeInstall",
+   "ReadmeTop",
+   "AgentGuide"
+  ]
+ },
+ "D34": {
+  "title": "'Does this phase run' written four times; no document asks it before linking a target's `AGENTS.md` (go-cli, go-mcp)",
+  "fate": "WP14.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 6 source files; size",
+  "fams": []
+ },
+ "D35": {
+  "title": "Three hand-written Roots: create-sdkgen's honours `active/root/phase.top`; testkit's and the test harness's honour less, so sdkgen's suite never runs the real plan",
+  "fate": "WP02.",
+  "cls": "duplicated-rule; sdkgen; test; 4 source files; size m; changes",
+  "fams": []
+ },
+ "D44": {
+  "title": "MCP surface: ReadmeTop hard-codes 'go-mcp' and re-reads tool.write; docgen lists two tools; tool help says {\"id\":1}",
+  "fate": "WP36.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 4 source files; size",
+  "fams": [
+   "ReadmeTop"
+  ]
+ },
+ "D47": {
+  "title": "Six targets (c, elixir, ocaml, scala, swift, zig) document 'Run live tests' and `<ENV>_TEST_LIVE` that nothing in them reads",
+  "fate": "Repeats G03 and is resolved with it in WP30.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 6 source files; size",
+  "fams": [
+   "ReadmeHowto"
+  ]
+ },
+ "D48": {
+  "title": "Root `AGENTS.md` says generate 'merges' and 'never DELETES'; the root README says it overwrites; ReadmeTop reads copies bypassing KIT",
+  "fate": "Repeats X5 and is resolved with it in WP17.",
+  "cls": "duplicated-rule; sdkgen; neutral-component; 4 source files; size",
+  "fams": [
+   "ReadmeTop",
+   "AgentGuide"
+  ]
+ },
+ "D55": {
+  "title": "'Required' server variable read five ways; ts README calls a defaulted variable required; go-cli/go-mcp have no rule",
+  "fate": "Repeats G01 and is resolved with it in WP29.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 30 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeTopQuick",
+   "ReadmeRef"
+  ]
+ },
+ "D56": {
+  "title": "go-cli registers and advertises list/load/update literally while its README derives words from the model",
+  "fate": "Repeats G08 and is resolved with it in WP36.",
+  "cls": "duplicated-rule; sdkgen; fragment; 3 source files; size s;",
+  "fams": []
+ },
+ "D60": {
+  "title": "Path from a target back to .sdk hard-coded ('one level up', '`../../.sdk`', 'four levels up') in 58 templates and 15 components",
+  "fate": "Repeats V32 and is resolved with it in WP32.",
+  "cls": "duplicated-rule; sdkgen; template; 75 source files; size l;",
+  "fams": [
+   "AgentGuide"
+  ]
+ },
+ "D61": {
+  "title": "Whether the wrapped target exists: py-data throws, go-cli/go-mcp never check and write literal `../go` into README and go.mod",
+  "fate": "WP36.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 3 source files; size",
+  "fams": []
+ },
+ "D69": {
+  "title": "Vendor text in markdown table cells is never escaped in sdkgen (66 cell sites, root README); docgen escapes its own way",
+  "fate": "Repeats G27 and is resolved with it in WP33.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 45 source files; size",
+  "fams": [
+   "ReadmeModel",
+   "ReadmeEntity",
+   "ReadmeTop",
+   "ReadmeRef"
+  ]
+ },
+ "D70": {
+  "title": "'\\$\\$path\\$\\$' inside vendor text is substituted in all docs and 20 of 22 generated source files, kept in ts/js Config",
+  "fate": "Repeats G28 and is resolved with it in WP33.",
+  "cls": "duplicated-rule; sdkgen; per-language-copy; 25 source files; size",
+  "fams": []
+ },
+ "A01": {
+  "title": "docgen's tutorial says the credential is read from the environment, and promises \"Turn on a feature\", whatever the model",
+  "fate": "WP26a.",
+  "cls": "stale-mention; docgen; helper; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "A02": {
+  "title": "The language pack's suite read nothing in the introductions, so a doubled title passed every test",
+  "fate": "WP45; fixed on the language pack's main, and published by that",
+  "cls": "test-gap; sdkgen-langpack; test; 1 source file; size xs; changes",
+  "fams": []
+ },
+ "A03": {
+  "title": "The language pack's runtimes keep their own option specs in templates, outside main.kit.optspec",
+  "fate": "WP42.",
+  "cls": "duplicated-rule; sdkgen-langpack; template; 3 source files; size",
+  "fams": []
+ },
+ "A04": {
+  "title": "An aliased ts or js target writes its entity files with the alias as the file extension",
+  "fate": "WP28.",
+  "cls": "code-defect; sdkgen; per-language-copy; 2 source files; size xs;",
+  "fams": []
+ },
+ "A05": {
+  "title": "Fifteen READMEs capitalise operation names on the \"Operations:\" line and five print them lower-case, with no comment saying why",
+  "fate": "WP31.",
+  "cls": "contradiction; sdkgen; per-language-copy; 20 source files; size",
+  "fams": [
+   "ReadmeModel"
+  ]
+ }
+}

@@ -1,0 +1,35 @@
+[portcheck swift] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck swift] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck swift] classify (hand/swift.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck swift] ledger
+[portcheck swift] blocks
+[portcheck swift] fact sheet (and the language and convention facts against the OLD page)
+[portcheck swift] hand records: does every quotation in a reason still stand on a page or in the clone
+[portcheck swift] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck swift] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck swift] purity
+[portcheck swift] guard: node --test --test-name-pattern '^swift: ' ts/dist-test/runtimefacts.test.js
+== portcheck swift ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   59 |      48     21        0      22       5     0       0 | 0
+rootquick                  19 |       3      0        0       3       0     0       0 | 0
+reference               13560 |     195     49        0      70      31    44       0 | 1
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                   1         1       0        46 |      39    0      0 | NO; 47 changed blocks compiled by nothing
+rootquick                  0         0       0        19 |      28    0      0 | NO; 19 changed blocks compiled by nothing
+reference                207         0       0       106 |      13    0      0 | NO; 106 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 12, novel-token 22, vanished-token 4, novel-shape 1; rootquick: changed 11, novel-token 10, vanished-token 5, novel-shape 2; reference: changed 6, old-only 1, novel-token 5, vanished-token 1)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+contradictions (1; counted, not failed):
+  reference [bff341cf32] This SDK is generated without the `test` feature, so the client has no | other: the unported README's test-client line or its test-mode sect | true: REFERENCE: without the test feature the 
+purity: 0 open, 2 accepted | notes declared 0, note regions found 0 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1675 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 374 calls of 25 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+guard: pass (pass 4 fail 0 )
+build: 1815 sources checked, current
+hand records: 241, 61 quote text (112 quotations); STALE 0
+facts (language and convention, against the OLD page): attested 3, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 1, not judged 0; cited 15, pinned prose 9 (the reviewer audits each)
+shared sentences: matched 70, of which against a sentence nobody reviewed 0 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference whatever its style (this result style is no reference's) 1 (1 explained; an unexplained one FAILS)
+fact sheet: factsheet swift: 62 facts, 0 with no account, 0 unattested, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h3fix/tools/review/swift/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h3fix/tools/review/swift/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/swift.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK swift: FAIL

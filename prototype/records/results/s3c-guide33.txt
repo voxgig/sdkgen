@@ -1,0 +1,432 @@
+ok: True
+summary: |
+  I wrote the 3.3 guide and the four instruction files. Both are in P/v33g, which is the only place I wrote: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33g/PORTING.md (957 lines), plus port.md, review.md, fix.md and verify.md under v33g/prompts/. P/v33g/PROGRESS.md logs each step. The guide is written for the P/base33 layout and tag v33-frozen. P/base33 did not exist yet, so the guide refers to its paths but I did not read any of them.
+  
+  **What "passes" means is now stated one way everywhere.** The one command must exit 0 with the port's own hand records. The SCRATCH=1 run exits 1 by design for any newly ported language: its numbers are reported and never decide ok. The checks that read no hand record must still be clean in both runs: build current, regeneration complete, guard, purity, pagecheck and callcheck. A port that fails only on recorded `defect` classes is reported with ok false and the gap named, and that counts as a correct port. The guide (sections 5 and 13) and all four instruction files say this, and "in both modes" no longer appears in any of them (grep shows 0).
+  
+  **What else the guide now covers:**
+  - **The round's rule as porter steps:** a page that shared code makes wrong is recorded as `defect`, never `dropped`. Each fact is declared with the value the runtime shows, and every optional fact is read in the runtime.
+  - **One fact table (2.1):** the required facts of 3.2 and the optional ones of 3.3 (accessor.cached, streamSignal, copy on match and utility getters, memberNamed, field, deleted, arity, layout.dir with imports place, notes.top). For each: when it applies, how to tell from the runtime, its account, and what the page says with and without it. What the client's members are called on is explicitly not a fact: the heading is 'Client <noun>' and `on` is derived.
+  - **The new `calls` notation** (2.3): every forms file must state it, or the guard fails.
+  - **Imports by place, and lines no runtime file spells** (2.5), including that php's lane deletes the page's require_once, so a passing lane says nothing about the import.
+  - **Two lists in section 6:** what now fails that passed at 3.2, from the guard and from the tools including the five t7 commits (ABSENT, DROPPED, slot by fact path, pagecheck), each with its abridged message; and what still fails nowhere mechanical.
+  - **Section 9:** a row for each of the seven with file:line read at the tag, plus what the first four ports suggest each will meet.
+  - **Shared test files naming the seven's components:** none, searched again at the tag.
+  - **Baselines:** the freeze's thirteen-language table, the four new ports' lines before and after, the seven's starting line counts, and the guard accounts.
+  - **The reviewer's and verifier's procedure,** corrected from what worked in the four reviews.
+  
+  **Read-through as a porter of php and of kotlin.** It found 8 gaps, all fixed. Two of them are table rows the reader misses: kotlin's secondary `constructor() : this(null)` (Main.fragment.kt:10) and scala's `def this() = this(null)` (Main.fragment.scala:10). Without the forms reading them, a printed `DemoSDK()` would fail the guard's arity check.
+  
+  **Expected trouble spots for the seven:**
+  - java, kotlin and scala bind results as SdkEntity, which lacks `deleted()` (it is on EntityBase only): the same situation as swift, which leaves `deleted` undeclared.
+  - csharp's Stream takes its own CancellationToken, which the cancel absence search will find.
+  - cpp's `ok` is `Value(false)`, the same question ocaml had with `Bool false`.
+  - php's SDK file name is spelled inline in Main_php.ts:59, and its root require_once is path-relative, like perl's `use lib`.
+  
+  **What I did not run:** no portcheck, guard, suite or lane. I ran only `command -v` for the toolchains and node over the compiled forms to get the stream quote line numbers. Everything else is from reading.
+sections:
+  - [0]
+    section: header + 0. Environment
+    what: P/base33 layout and v33-frozen (0065f1e2); PATH; the command -v loop for the seven's toolchains, with what was present when written; machine rule
+  - [1]
+    section: 1. Workspace
+    what: newport.sh; the NOT PORTED start (exact two lines); Syntax_<lang>.ts makes the language ported, ported.json untouched; REGEN failures (FAILED/SHORT); every run checks the build is current but does not build; hand/<lang>.json the only state, review/ and *.open.json rewritten each run (merge, never replace); classes/<lang>.json generated and tracked
+  - [2]
+    section: 2. What a language supplies
+    what: the five things; the round's rule as three porter duties (declare the runtime's value, compared with the pin; defect not dropped; read the runtime for every optional fact); hook rule including extracting inline generator names into utility_<lang>.ts; read(value,key,truth)
+  - [3]
+    section: 2.1 Every fact you may declare
+    what: required table (3.2 facts incl. okFalse as a reader compares it, testMock, cancel, copy) and optional table (accessor.cached, streamSignal, match and utility copy, memberNamed, field, deleted, arity, layout.dir+imports place, notes.top): when, how to tell, account, page with/without; the client heading is not a fact; how prints selects and how to choose it
+  - [4]
+    section: 2.2 Signatures
+    what: failure marker must be spellable in a signature (lua 'err'); on from declaration and signature receiver; field vs call incl. the default sigName needing a '('; comment returns; parameters
+  - [5]
+    section: 2.3 calls
+    what: the new required forms notation, what the guard renders and checks (exists, receiver, separator, imports binding, arity probes); an unreadable construct (make_shared, casts) is a shared gap
+  - [6]
+    section: 2.4 Streams
+    what: kinds, runs from statement order, streamSignal apart from cancel
+  - [7]
+    section: 2.5 Imports and lines with no runtime spelling
+    what: place tutorial/top/reference; path-relative vs package-addressed vs include path; run the root quick start from the repository root on OLD and NEW; lanes that add or remove imports (perl before, php now); how a ctor[] import line is cited with unquoted keyword excuses
+  - [8]
+    section: 2.6 / 2.7
+    what: throw style keeps bare shape; casts are printer output nothing checks; what a language never does (purity follows helpers)
+  - [9]
+    section: 3. Order of work
+    what: table first (undocumented-member rows: report, correct if local); ahead citations become live when the provider exists; read every optional fact's runtime; nearest providers to copy; forms incl. calls and types; build exit code; SCRATCH then reviewed
+  - [10]
+    section: 4. What a port may touch
+    what: allowed files; shared tests naming the seven's components re-searched at the tag (none) plus the generic tests; the defect-and-gap protocol with no shared change made
+  - [11]
+    section: 5. The one command
+    what: what passes means (reviewed run exit 0; scratch reported, exits 1 by design; record-independent checks clean in both); the full table of numbers incl. pagecheck, callcheck, ABSENT/DROPPED, STALE; classification incl. slot-by-fact-path, absent basis = ts for all seven, DROPPED basis = all nine; facts and the minimal pair; blocks and RECOUNT
+  - [12]
+    section: 6. Guard and accounts
+    what: derived/cited (pin always compared)/absence over the whole runtime with except regions/type words/language-convention; commands; table of what now fails with messages (guard and tools, t7 included); what still fails nowhere mechanical
+  - [13]
+    section: 7. Reviewer and verifier
+    what: audit that the quoted line shows the value, comment-only citations; read every optional fact's runtime; four variations; run the root quick start where the reader stands or read as a compiler; mutate a fact of each kind incl. each optional fact; reviewed run must pass, scratch compared
+  - [14]
+    section: 8. Purity
+    what: provider, hook and helpers; name surgery; note lint and the 'record' coincidence; layout.dir paths; the full PRINTING list and an unknown printing helper as an accepted finding (php strings)
+  - [15]
+    section: 9. The seven
+    what: how to run OLD lanes on a copy of oldclone; one row each for js php csharp java kotlin scala cpp with stream kind/runs/signal, accessor, fields, on, copy, deleted, arity, okFalse as written, root import, command or absence of a toolchain, all with file:line; what the first four suggest for each
+  - [16]
+    section: 10. Commit
+    what: order of commits; tools files incl. classes/<lang>.json; no tool or model named and no trailer of any kind, with the git log check
+  - [17]
+    section: 11. Baselines
+    what: freeze table of the thirteen at v33-frozen (tools d3b258d; the five t7 commits open and close nothing); lanes; the four new ports' lines before and after; the seven's starting line counts; guard accounts; hand-recorded facts and the recorded contradiction
+  - [18]
+    section: 12. Report
+    what: what a porter reports, now incl. scratch numbers, optional facts per runtime, defects, root quick start runs, commit bodies
+  - [19]
+    section: 13. Traps
+    what: updated: ahead citations, copy cited to allocation, lanes that hide imports and constructor options, SCRATCH cannot pass
+guide_problems:
+  - [0]
+    from: perl porter
+    problem: imports print once for both places; the printer cannot tell tutorial from root (use lib)
+    answered_in: 2.1 optional table (layout.dir + imports place) and 2.5
+  - [1]
+    from: perl porter
+    problem: a non-call ctor line such as use lib has no runtime spelling; no rule for import lines in ctor
+    answered_in: 2.5 'A line with no runtime spelling' and 2.1 required table (ctor[i])
+  - [2]
+    from: perl porter
+    problem: blocks OPEN 1 with no line naming a changed normalizer count
+    answered_in: 5 table (RECOUNT <section>) and 5 Blocks
+  - [3]
+    from: perl porter
+    problem: prints 'fields' effect on print blocks and 'not judged' not explained
+    answered_in: 2.1 'prints' paragraph and 5 'Facts the OLD page cannot show' (minimal pair; NOT JUDGED fails until recorded)
+  - [4]
+    from: perl porter
+    problem: whether wrong reader rows for undocumented members are corrected or only reported
+    answered_in: 3 step 1
+  - [5]
+    from: perl porter
+    problem: oldclone read-only: how to run the lane on OLD
+    answered_in: 9 intro (cp -a of the resolved oldclone; run.sh writes only under tools/before/work) and header table
+  - [6]
+    from: perl porter; ocaml porter and reviewer
+    problem: 'passes in both modes' is impossible from scratch
+    answered_in: 5 'What the one command passes means', 12 item 2, 13 last trap; port/review/fix/verify ok definitions
+  - [7]
+    from: perl porter
+    problem: note lint flags ordinary words that are fixture entity names ('record')
+    answered_in: 8 Purity (reword, or accept with why it is true whatever the model)
+  - [8]
+    from: perl reviewer/verifier
+    problem: the lane adds its own import and replaces the constructor, so a page that does not run passes
+    answered_in: 2.5 and 13 traps (perl before, php's lane now strips require_once; constructor options never executed); 6 'fails nowhere mechanical'
+  - [9]
+    from: perl reviewer
+    problem: ref.facts.none citing an unrelated line passes
+    answered_in: 2.1 required table (none), 6 unquoted paragraph, 6 'fails nowhere mechanical', 7 step 1
+  - [10]
+    from: perl verifier
+    problem: commits carried model-naming trailers
+    answered_in: 10 (no trailer of any kind, git log check); fix.md and verify.md
+  - [11]
+    from: swift porter
+    problem: record derived only from its trailing name; prefix unchecked
+    answered_in: 6 table (record expression whole, print printer unwrap)
+  - [12]
+    from: swift porter
+    problem: entityBy attested by enumeration pairing though OLD differed
+    answered_in: 5 'Facts the OLD page cannot show' (minimal pair; swift's entityBy recorded by hand)
+  - [13]
+    from: swift porter
+    problem: row did not mention extension data(); no ported language shares the wrapped style, so absent list empty
+    answered_in: 5 'Absent and dropped sentences' (basis per style; DROPPED across all nine) and 9 (the seven are all throw, basis ts)
+  - [14]
+    from: swift porter
+    problem: a value with spaces can only be pinned, not token-checked
+    answered_in: 6 (cited: pinned prose counted, reviewer checks; unwrap now verbatim)
+  - [15]
+    from: swift porter
+    problem: whether classes/<lang>.json is committed
+    answered_in: 1 State paragraph, 4 allowed files, 10
+  - [16]
+    from: ocaml porter/reviewer
+    problem: okFalse given as 'false' for all but perl; ocaml writes Bool false
+    answered_in: 2.1 required table (as a reader compares with it: perl 0, ocaml Bool false); 9 scala and cpp rows raise the same question
+  - [17]
+    from: ocaml porter
+    problem: guard saw a call only through 'name (' forcing the paren signature style
+    answered_in: 2.2 (forms' called(sig, name) keeps the check on in the runtime's notation)
+  - [18]
+    from: ocaml porter
+    problem: blocks pairing needs '(' in headings
+    answered_in: 5 Blocks (a backticked heading without parentheses pairs by its first identifier)
+  - [19]
+    from: ocaml porter
+    problem: hook rules silent on non-template generator names
+    answered_in: 2 item 1 (extract inline generator names or constants into utility_<lang>.ts); 9 php row (Main_php.ts:59)
+  - [20]
+    from: ocaml reviewer
+    problem: a pinned value is not compared; 'a different declaration fails' was false
+    answered_in: 2 rule item 1, 2.1 okFalse row, 6 cited, 6 table first row
+  - [21]
+    from: lua porter
+    problem: failure.shows token must be spellable in a signature
+    answered_in: 2.2 first bullet
+  - [22]
+    from: lua porter
+    problem: 'say table where the page states it' had nowhere to go
+    answered_in: 2.1 (a note is for one runtime alone; a shared fact is a fact or a gap); no such sentence for the seven
+  - [23]
+    from: lua porter
+    problem: ctor[0] import line had to be cited with excuses; guide silent
+    answered_in: 2.5 'A line with no runtime spelling'
+  - [24]
+    from: lua porter
+    problem: *.open.json regenerated each run; hand/<lang>.json the only state
+    answered_in: 1 State paragraph and 5 How to classify
+  - [25]
+    from: lua porter
+    problem: blocks line printed '(unported)'
+    answered_in: 1 (Syntax_<lang>.ts makes the language ported; ported.json untouched); fixed in the tools (T5)
+  - [26]
+    from: lua porter
+    problem: 'notes declared 2, regions found 1' unexplained
+    answered_in: 5 table (purity: every declared note found in a region) and 8 (the screen names the notes not found)
+  - [27]
+    from: lua porter
+    problem: a collection word masked in unrelated shared sentences
+    answered_in: 5 How to classify (a position is masked only for the fact the references hold there)
+  - [28]
+    from: lua porter and reviewer
+    problem: direct's err sentence false for a non-2xx response
+    answered_in: settled in shared code at the freeze; 2.1 lists no fact for it and 6 notes reworded sentences need a reader
+  - [29]
+    from: lua reviewer
+    problem: an absence searched only in files the porter chose
+    answered_in: 6 cited absence (whole runtime, except regions with reason and fact)
+  - [30]
+    from: lua reviewer
+    problem: ctor sdk.create, client.Planet(), test on instance passed the guard
+    answered_in: 2.3 calls and 6 table
+  - [31]
+    from: lua reviewer
+    problem: an absent entry with no reason did not fail
+    answered_in: 5 table (ABSENT/DROPPED, NO REASON) and How to classify
+  - [32]
+    from: all four reviewers (what could not be checked)
+    problem: no compiler: changed blocks unverified; constructor options never executed
+    answered_in: 7 step 4 (read as a compiler, count blocks), 5 Blocks (callcheck's limits), 6 'fails nowhere mechanical'
+rows_of_the_seven:
+  - [0]
+    lang: js
+    row: throw, async; streamIterator, runs iterate (EntityBase.fragment.js:107/138), streamSignal true (:118); name = '' is a field (EntityBase.fragment.js:7) the js forms cannot read; test static (Main.fragment.js:334); cancel true with signal and abortCode as ts; utility() returns the live instance (Main.fragment.js:104): copy false; okFalse false; root import require of the shared packageName
+    expect: the nearest port is ts itself; re-read the name field and the live utility instead of copying them; no lane, so whatever is not run by hand with node is unverified
+    toolchain: node 24 present; no README example test or lane (before/run.sh prints NOT RUN)
+  - [1]
+    lang: php
+    row: throw; streamGenerator, runs iterate (Entity.fragment.php:148/195), streamSignal true (:152); accessor ($data = null) param data and cached true (MainEntity_php.ts:43-46); test static (Main.fragment.php:393); get_utility returns ProjectNameUtility::copy (Main.fragment.php:135): copy true; okFalse false (:262); require_once path-relative, needs layout.dir; SDK file name spelled inline in Main_php.ts:59
+    expect: perl's root-import problem and lua's cached accessor at once; the php lane strips require_once, so only a run from the repository root shows the import
+    toolchain: php 8.3 and composer present: before/run.sh sdkgen php, plus the php lanes in generatedcompile
+  - [2]
+    lang: csharp
+    row: throw; streamIterator, runs iterate (EntityBase.fragment.cs:257/306), streamSignal true (:268), Stream also takes a CancellationToken (the cancel absence will hit it); TestSDK(testopts, sdkopts) static with no optional parameters (Main.fragment.cs:414); List(reqmatch, ctrl = null): arity 1; GetUtility returns Utility.Copy (:105); Deleted() on IEntity; okFalse false (:228); using DemoSdk
+    expect: the first typed port with no compiler: the reviewer is the compiler; the cast (IEntity) is unchecked printer output
+    toolchain: dotnet missing
+  - [3]
+    lang: java
+    row: throw; streamLazy, runs call (EntityBase.fragment.java:246 before 278), streamSignal true (:214); ops return Object, arity 2; testSDK() and testSDK(a,b) static (Main.fragment.java:24,28); getUtility returns utility.copy() (SdkClient.java:108); deleted() not on SdkEntity; okFalse false (SdkClient.java:217); package imports
+    expect: a cast on every result and a deleted mark the bound type cannot reach (swift's case); the lane checks structure only
+    toolchain: javac, mvn, gradle present: before/run.sh sdkgen java (structure); compile doubtful blocks by hand
+  - [4]
+    lang: kotlin
+    row: throw; streamLazy, runs call (EntityBase.fragment.kt:213 before 245), streamSignal true (:187); name is a property (EntityBase.fragment.kt:18): field true, sigName needed for 'name: String'; testSDK on the companion object (Main.fragment.kt:17,19); secondary constructor() : this(null) (Main.fragment.kt:10) is missing from the table; arity 2; getUtility returns util.copy() (SdkClient.kt:98); deleted() not on SdkEntity; okFalse false (SdkClient.kt:203)
+    expect: java's issues plus the first property among the members (ocaml's e_name precedent); no compiler
+    toolchain: kotlinc and kotlin missing
+  - [5]
+    lang: scala
+    row: throw; streamSync, runs call (EntityBase.fragment.scala:192 before 218), streamSignal true (:166); toString a parameterless def (callable); matchArgs; def this() = this(null) (Main.fragment.scala:10) is missing from the table; testSDK overloads in the companion (:20,22); arity 2; getUtility returns utility.copy() (SdkClient.scala:88); deleted() not on SdkEntity; ok written java.lang.Boolean.FALSE (SdkClient.scala:175), cited as 'false' with an excuse
+    expect: java's issues; the boxed FALSE repeats ocaml's Bool false question; no compiler
+    toolchain: scala, scala-cli and sbt missing
+  - [6]
+    lang: cpp
+    row: throw; streamList, runs call (types.hpp:1424 before 1454); no signal anywhere: streamSignal false, a cited absence that must be declared; make_shared constructor, static create() (Main.fragment.cpp:34), testSDK overloads (:23,27); getName() a method, name_ a field; ops return SdkEntityPtr, arity 2; getUtility returns utility->copy() (types.hpp:988); deleted() on Entity (types.hpp:418); markDeleted after runOp whatever the outcome; ok written Value(false) (types.hpp:1085); include path needs -I
+    expect: a real compile lane among the typed ports; the call reader may not read std::make_shared<...>; the truth read of a Value (c's lesson)
+    toolchain: g++ and make present: the cpp DOC lane ('^cpp: every documented example compiles') and before/run.sh sdkgen cpp
+as_php:
+  - Could not tell where the SDK file name in `require_once` comes from. It is spelled inline in Main_php.ts:59 (`model.const.Name.toLowerCase() + '_sdk.'`), which the hook may not reproduce. Fixed: the 9 php row says to extract it into utility_php.ts, make Main_php.ts call it, and call it from the hook.
+  - Could not run the php lane on OLD safely: the guide said oldclone is read-only but not how to run against it. Fixed: section 9's intro says to copy it with cp -a of the resolved link (about 170 MB) and notes that run.sh writes only under tools/before/work.
+  - Could not tell from the guide how to check the root path. php -l only checks syntax. Fixed: the 9 php row says to run the block with php from the repository root and read whether it fails at require_once or later, at the live request.
+  - Had no starting values for keys and prints after removing 3.2's assertions. Fixed: the php row gives 3.2's reading (keys 'bare', prints 'listFields') as a starting point for the minimal pair, not a decision.
+  - No way to quote a php string in a printer within purity's rules. Fixed: section 8 lists purity's actual PRINTING set and says an unknown printing helper is an accepted finding with its reason (a php string cannot be JSON.stringify's output inside double quotes, where $ interpolates).
+as_kotlin:
+  - Could not declare `name` as a field and have the guard read it: the default signature reader finds a name only before '('. Fixed: 2.2 and the kotlin row say the forms need their own sigName for a field signature, with runtimeforms/ts.ts as the model.
+  - Would have printed `DemoSDK()` for a client with no options and failed the guard's arity check without knowing why. The runtime table misses the secondary `constructor() : this(null)` (Main.fragment.kt:10). Fixed: the kotlin row names it as a missing row for the forms to read, or the printer passes null. The scala row names the same gap for `def this() = this(null)` (Main.fragment.scala:10).
+  - Could not tell whether to declare `deleted`: the examples bind SdkEntity, which lacks deleted(). Fixed: the 2.1 deleted row and the java/kotlin/scala rows say to declare it only where the bound type has the member (swift's precedent), or print the cast, and say which.
+  - Section 2.3's separator examples did not cover the case of a constructor called without `new` (kotlin `DemoSDK(...)`), and none of the guide's examples showed a calls map for kotlin. I checked: the guard treats a class called as itself as running its constructor declaration, so I added nothing beyond the general rule. This is unverified by a run.
+prompt_changes:
+  - [0]
+    file: prompts/port.md
+    change: base32 and v32-frozen became base33 and v33-frozen; the porter now also reads briefs 6 and 7; 'nine languages' became 'thirteen'
+    reason: version 3.3, and the guide assumes all six briefs
+  - [1]
+    file: prompts/port.md
+    change: New paragraph 'What ok means': the one command exits 0 with the port's records after a fresh build and REGEN; SCRATCH=1 exits 1 by design, is reported, and never makes ok false; defect classes waiting on shared code give ok false with the gap named, which is a correct report
+    reason: ocaml's porter returned ok false only because 'passes in both modes' was impossible from scratch
+  - [2]
+    file: prompts/port.md
+    change: Item 1: read the runtime for every optional fact of section 2.1. Item 2: record defect, never dropped, and do not make the shared change (the old 'only if you cannot continue' exception is removed). A note that restates a shared sentence counts as a workaround
+    reason: brief 7's rule; perl recorded a page shared code broke as 'dropped'; the first four showed a fact one language needs is usually true of others
+  - [3]
+    file: prompts/port.md
+    change: Item 4 reworded: the one command now checks that the build is current but does not build. Toolchain paragraph: OLD runs on a copy of oldclone, and the root quick start is run from the repository root on OLD and NEW
+    reason: T5 buildfresh; perl's broken root import was invisible to its lane; the perl porter was unsure about oldclone
+  - [4]
+    file: prompts/port.md
+    change: Commit messages carry no trailer of any kind; the report adds, for each optional fact, whether the runtime has it, plus the defect classes left
+    reason: wave-1 commits carried model-naming trailers; reviewers need the optional-fact reading
+  - [5]
+    file: prompts/port.md
+    change: 'Five other engineers' became 'Other engineers'
+    reason: the number is not known for the seven
+  - [6]
+    file: prompts/review.md
+    change: base33, v33-frozen, briefs 6 and 7; points to the guide's 'fails nowhere mechanical' list
+    reason: version 3.3
+  - [7]
+    file: prompts/review.md
+    change: Step 1: decide whether the quoted line shows the value (not a token in an unrelated line or a comment); read pinned type words; read every excluded region's reason; read the runtime for every optional fact and say whether the port should have declared it
+    reason: perl's none citation passed on a token; the brief asks the reviewer to read every optional fact's runtime
+  - [8]
+    file: prompts/review.md
+    change: Step 2: read defect records too, and a 'dropped' that is really shared code making the page wrong must be a defect. Step 3: run the root quick start from the repository root, because a lane may add or remove the import; casts added to the compiler reading
+    reason: brief 7's rule; perl and php lanes hide the import line; the typed ports' casts are unchecked
+  - [9]
+    file: prompts/review.md
+    change: Step 4 adds a check of commit messages for trailers. Step 5 adds mutating and removing each declared optional fact and changing a printed call's arity or receiver. Step 6 replaces 'in both modes': the reviewed run must pass, and scratch numbers are compared
+    reason: trailers; the new optional facts and the G2/G3 checks; the both-modes ambiguity
+  - [10]
+    file: prompts/fix.md
+    change: base33, briefs 6 and 7; a missing optional fact found by the reviewer is declared and cited
+    reason: version 3.3
+  - [11]
+    file: prompts/fix.md
+    change: A shared fix is recorded with its classes as defect in hand/LANG.json, never dropped
+    reason: brief 7; the perl fixer had to invent this
+  - [12]
+    file: prompts/fix.md
+    change: Replaced 'until it passes in both modes (SCRATCH=1 first)' with: the reviewed run until it exits 0 (or fails only on defect classes), plus one SCRATCH=1 run whose numbers are reported. Added the root quick start run, and the build-current note
+    reason: the both-modes ambiguity; the import lesson
+  - [13]
+    file: prompts/fix.md
+    change: Commits carry no trailer of any kind, whatever adds one; check git log --format=%B and amend your own commits in this clone; classes/LANG.json committed in tools
+    reason: three of the four fixers' commits carried model-naming trailers that the integrator had to strip; classes/<lang>.json was left uncommitted by some
+  - [14]
+    file: prompts/fix.md
+    change: New 'ok' definition at the head of the report section
+    reason: so a fixer does not return ok false on scratch numbers, or ok true with recorded defects
+  - [15]
+    file: prompts/verify.md
+    change: base33, v33-frozen; reads briefs 1, 5 and 7 and guide section 2.1
+    reason: version 3.3; brief 7 holds the rule the verifier checks
+  - [16]
+    file: prompts/verify.md
+    change: Part 1: check that a fact fix's citation line shows the value, and that 'needs a shared change' findings have defect classes, not dropped. Part 2: the reviewed run must exit 0 (or only defect classes); the scratch run exits 1 by design, its numbers are compared, and its record-independent parts must be clean; root quick start from the root
+    reason: the both-modes ambiguity; brief 7
+  - [17]
+    file: prompts/verify.md
+    change: Part 3 checks commit messages for trailers. Part 4's attacks may remove an optional fact. The ok definition is restated, with defect-only failures giving ok false and that reason
+    reason: trailers; new facts; ok clarity
+rows_corrected:
+  - kotlin: the runtime table lists the client constructor only as (options: MutableMap<String, Any?>?). The runtime also has `constructor() : this(null)` (src/cmp/kotlin/fragment/Main.fragment.kt:10). Recorded in the guide's section 9, not corrected in the forms (not my file).
+  - scala: the table lists only (options: JMap[String, Object]). The runtime also has `def this() = this(null)` (src/cmp/scala/fragment/Main.fragment.scala:10). Recorded in section 9.
+  - js: the table says 'Members the runtime does not have: name', but EntityBase.fragment.js:7 declares `name = ''`, a field the js forms do not read (ts's forms were extended for this at the freeze). Recorded in section 9.
+not_done:
+  - I did not see P/base33: it did not exist while I wrote. Its paths, newport.sh behaviour and the proof run's numbers are written as the brief describes them, and the baselines are the freeze's numbers at tools d3b258d. The base engineer's run with the five t7 commits is the authority if it differs.
+  - I ran no portcheck, guard, suite, golden or lane. Every number in the baselines comes from the freezing engineer's report, and the message texts from reading guard.ts, account.ts, summary.js and portcheck.sh.
+  - I did not verify any of the seven's facts by running a generated SDK: the root quick start imports, cpp's truth read of a Value, and whether the call reader can read std::make_shared<...>. These are stated as decisions for the porter.
+  - I did not check the kotlin and scala secondary constructors against the guard by printing `DemoSDK()`. That the guard would fail on arity is inferred from the runtime table and G3, not run.
+  - I did not re-read the full s3c-survey.md, only the short form for the seven.
+  - I read s3c-sfix-shared and s3c-n-tools only in their relevant sections, not in full.
+ran: |
+  All with the brief's PATH:
+  - `command -v` (with `--version`) for node, npm, php, composer, javac, java, mvn, gradle, kotlinc, kotlin, scala, scala-cli, sbt, dotnet, g++ and make. kotlinc, kotlin, scala, scala-cli, sbt and dotnet are missing; the rest are present.
+  - `node -e` over the compiled forms (`P/v33/sdkgen/ts/dist-test/runtimeforms/<lang>.js`) for the seven, to get the line numbers of each stream's construct, run and draw quotes, and to see that no `calls` is stated yet.
+  - grep and sed over P/v33/sdkgen at v33-frozen to find the file:line facts in section 9: okFalse lines, utility getters, test constructors, name fields, the php accessor, the entity interfaces, secondary constructors and PRINTING.
+  - The shared-test grep for the seven's component names (`grep -rnE 'Readme(Quick|TopQuick|Ref)_<lang>\b' ts/test ts/src --include=*.ts`): none.
+  - `wc -l` of the seven's old components and forms.
+  - `du` of oldclone and `df -h /`.
+  - `git log` and `rev-parse` of P/v33 (v33-frozen = 0065f1e2, tools d3b258d, sdkgen tree clean).
+  - python3 edits to the guide. All writes went to P/v33g only.
+read: |
+  **Read in full:**
+  - k-guide33.md;
+  - briefs 1 and 3 to 7;
+  - P/base32/PORTING.md;
+  - s3b-wave1-consolidated.md;
+  - k-port.md, k-review.md, k-fix.md, k-verify.md;
+  - k-base33.md and k-base33a.md;
+  - s3c-freeze33.txt;
+  - s3c-n-shared.txt;
+  - s3c-t7.txt;
+  - the tail of P/v33/PROGRESS.md.
+  
+  **Read in part:**
+  - s3c-n-guard.txt: items, providers_wrong, for_freeze, not_done, breaking, table rows corrected.
+  - s3c-n-tools.txt: items, for_freeze, not_done, printed_call_check, selftest, readme, surprises.
+  - s3c-sfix-shared.txt: summary, per_language, interface_changes, runtime_defects, for_the_ports, tools_changes, surprises.
+  - s3c-survey-short.md: every line for the seven, all twelve questions.
+  - runtime-table.md at v33: the sections for js, php, java, kotlin, scala, csharp and cpp, plus the head of c.
+  - The t7 tools README: commands, who writes what, checks, the v3.3 sections.
+  
+  **Code read at v33-frozen:**
+  - the forms of php, js, ts, lua and kotlin, and parts of perl, rb, py and go;
+  - forms.ts types, calls.ts notation, account.ts DEFAULTS, NEW_FACTS and AHEAD, guard.ts messages;
+  - example.ts: RuntimeFacts, RefFacts, Member, Syntax, RefSyntax, NoteSlot, imports;
+  - sdkdesc.ts DescLayout;
+  - ReadmeRef.ts: testText, STREAM_SIGNAL, accessorText;
+  - Naming_perl.ts and Syntax_perl.ts imports;
+  - ReadmeExamplesTest_php.ts:300-340;
+  - Main_php.ts:59;
+  - before/run.sh and gensdk.js;
+  - portcheck.sh and summary.js at t7;
+  - the JVM, csharp and cpp entity interfaces;
+  - the generatedcompile lane definitions;
+  - the root README quick starts at v33 B.
+surprises:
+  - js, kotlin and scala each have a runtime fact that the table does not show: js's name field, and the no-argument secondary constructors of kotlin and scala. All three would trip the guard in a way the 3.3 table does not predict.
+  - php's README example test removes the page's own require_once and requires the SDK by absolute path (ReadmeExamplesTest_php.ts:304-318). It is the same blind spot perl's lane had, and php's root import is path-relative like perl's.
+  - csharp's Stream has its own CancellationToken parameter, so its cancel:false absence will match the shared word list inside the stream. That region must be excluded with fact streamSignal.
+  - The ahead citations already in the seven's forms files (streamSignal, okFalse, testMock, and cached for php) become failures the moment Syntax_<lang>.ts exists unless they are declared at their pinned values. cpp must therefore declare streamSignal false. The freeze made this change, but it was not written anywhere a porter would read.
+facts_table: |
+  Section 2.1 of /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33g/PORTING.md.
+  
+  **Required (from 3.2):**
+  - result, async, method, record, listOf: derived
+  - named, prints: convention, judged by the minimal pair
+  - collection, recordType: cited
+  - direct.okFalse: cited, pin compared
+  - direct.signal and abortCode: cited (ts, js)
+  - cancel: cited, or a cited absence over the whole runtime
+  - testMock: cited ('generated' for all seven)
+  - accessor.sig, param, arg: derived
+  - runs: derived
+  - none, setArg, container, valueType, body, prepare, direct.returns: cited
+  - noun, entityNoun, heading, keys, entityBy, maps: convention or language
+  - ctor, test, ctorAlts: derived for {ctor} calls; other lines cited
+  - copy: cited
+  
+  **Optional (new in 3.3):**
+  - accessor.cached: cited; lua and php
+  - streamSignal: cited; true for 16 runtimes, false (an absence) for cpp
+  - copy on the match getter: cited
+  - copy on the utility getter: cited to the allocation line; false for ts and js
+  - memberNamed: derived; 'bare' only for ocaml and clojure
+  - field: derived; leaving it out fails on a runtime field (ocaml, ts, kotlin, js)
+  - deleted: derived; declared only where the bound type has the member
+  - arity: derived from the required parameters of list
+  - layout.dir with imports place: a hook role (perl, rb, php)
+  - notes.top: cited
+  
+  The client heading is not a fact: it is 'Client <noun>', and `on` is derived.

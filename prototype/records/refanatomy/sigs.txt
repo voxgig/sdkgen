@@ -1,0 +1,412 @@
+== ts
+  client: `DemoSDK.test(testopts?, sdkopts?)`
+  client: `Ambient(data?: object)`
+  client: `Planet(data?: object)`
+  client: `options()`
+  client: `direct(fetchargs?: object)`
+  client: `prepare(fetchargs?: object)`
+  client: `tester(testopts?, sdkopts?)`
+  ent:    `create(data: object, ctrl?: object)`
+  ent:    `list(match: object, ctrl?: object)`
+  ent:    `load(match: object, ctrl?: object)`
+  ent:    `patch(data: object, ctrl?: object)`
+  ent:    `remove(match: object, ctrl?: object)`
+  ent:    `update(data: object, ctrl?: object)`
+  ent:    `data(data?: object)`
+  ent:    `match(match?: object)`
+  ent:    `make()`
+  ent:    `client()`
+  ent:    `entopts()`
+== js
+  client: `DemoSDK.test(testopts?, sdkopts?)`
+  client: `Ambient(data?: object)`
+  client: `Planet(data?: object)`
+  client: `options()`
+  client: `direct(fetchargs?: object)`
+  client: `prepare(fetchargs?: object)`
+  client: `tester(testopts?, sdkopts?)`
+  ent:    `create(data: object, ctrl?: object)`
+  ent:    `list(match: object, ctrl?: object)`
+  ent:    `load(match: object, ctrl?: object)`
+  ent:    `patch(data: object, ctrl?: object)`
+  ent:    `remove(match: object, ctrl?: object)`
+  ent:    `update(data: object, ctrl?: object)`
+  ent:    `data(data?: object)`
+  ent:    `match(match?: object)`
+  ent:    `make()`
+  ent:    `client()`
+  ent:    `entopts()`
+== go
+  client: `Test() *DemoSDK`
+  client: `TestSDK(testopts, sdkopts map[string]any) *DemoSDK`
+  client: `Ambient(data map[string]any) DemoEntityBase`
+  client: `Planet(data map[string]any) DemoEntityBase`
+  client: `OptionsMap() map[string]any`
+  client: `Direct(fetchargs map[string]any) (map[string]any, error)`
+  client: `Prepare(fetchargs map[string]any) (map[string]any, error)`
+  ent:    `List(reqmatch, ctrl map[string]any) (any, error)`
+  ent:    `Load(reqmatch, ctrl map[string]any) (any, error)`
+  ent:    `Create(reqdata, ctrl map[string]any) (any, error)`
+  ent:    `Update(reqdata, ctrl map[string]any) (any, error)`
+  ent:    `Patch(reqdata, ctrl map[string]any) (any, error)`
+  ent:    `Remove(reqmatch, ctrl map[string]any) (any, error)`
+  ent:    `Data(args ...any) any`
+  ent:    `Match(args ...any) any`
+  ent:    `Make() Entity`
+  ent:    `Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem`
+  ent:    `GetName() string`
+== py
+  client: `DemoSDK.test(testopts=None, sdkopts=None)`
+  client: `Ambient(data=None)`
+  client: `Planet(data=None)`
+  client: `options_map() -> dict`
+  client: `direct(fetchargs=None) -> dict`
+  client: `prepare(fetchargs=None) -> dict`
+  ent:    `create(reqdata, ctrl=None) -> PlanetEntity`
+  ent:    `list(reqmatch=None, ctrl=None) -> list[PlanetEntity]`
+  ent:    `load(reqmatch, ctrl=None) -> PlanetEntity`
+  ent:    `patch(reqdata, ctrl=None) -> PlanetEntity`
+  ent:    `remove(reqmatch, ctrl=None) -> PlanetEntity`
+  ent:    `update(reqdata, ctrl=None) -> PlanetEntity`
+  ent:    `data_get() -> dict`
+  ent:    `data_set(data)`
+  ent:    `match_get() -> dict`
+  ent:    `match_set(match)`
+  ent:    `make() -> Entity`
+  ent:    `get_name() -> str`
+== php
+  client: `DemoSDK::test($testopts = null, $sdkopts = null)`
+  client: `Ambient($data = null)`
+  client: `Planet($data = null)`
+  client: `options_map(): array`
+  client: `direct(array $fetchargs = []): array`
+  client: `prepare(array $fetchargs = []): mixed`
+  ent:    `create(array $reqdata, ?array $ctrl = null): mixed`
+  ent:    `list(?array $reqmatch = null, ?array $ctrl = null): mixed`
+  ent:    `load(array $reqmatch, ?array $ctrl = null): mixed`
+  ent:    `patch(array $reqdata, ?array $ctrl = null): mixed`
+  ent:    `remove(array $reqmatch, ?array $ctrl = null): mixed`
+  ent:    `update(array $reqdata, ?array $ctrl = null): mixed`
+  ent:    `data_get(): array`
+  ent:    `data_set($data): void`
+  ent:    `match_get(): array`
+  ent:    `match_set($match): void`
+  ent:    `make(): PlanetEntity`
+  ent:    `get_name(): string`
+== rb
+  client: `DemoSDK.test(testopts = nil, sdkopts = nil)`
+  client: `Ambient(data = nil)`
+  client: `Planet(data = nil)`
+  client: `options_map -> Hash`
+  client: `direct(fetchargs = {}) -> Hash`
+  client: `prepare(fetchargs = {}) -> Hash`
+  ent:    `create(reqdata, ctrl = nil) -> result`
+  ent:    `list(reqmatch = nil, ctrl = nil) -> Array`
+  ent:    `load(reqmatch, ctrl = nil) -> result`
+  ent:    `patch(reqdata, ctrl = nil) -> result`
+  ent:    `remove(reqmatch, ctrl = nil) -> result`
+  ent:    `update(reqdata, ctrl = nil) -> result`
+  ent:    `data_get -> Hash`
+  ent:    `data_set(data)`
+  ent:    `match_get -> Hash`
+  ent:    `match_set(match)`
+  ent:    `make -> Entity`
+  ent:    `get_name -> String`
+== lua
+  client: `sdk.test(testopts?, sdkopts?)`
+  client: `Ambient(data)`
+  client: `Planet(data)`
+  client: `options_map() -> table`
+  client: `direct(fetchargs) -> table, err`
+  client: `prepare(fetchargs) -> table, err`
+  ent:    `create(reqdata, ctrl) -> any, err`
+  ent:    `list(reqmatch, ctrl) -> any, err`
+  ent:    `load(reqmatch, ctrl) -> any, err`
+  ent:    `patch(reqdata, ctrl) -> any, err`
+  ent:    `remove(reqmatch, ctrl) -> any, err`
+  ent:    `update(reqdata, ctrl) -> any, err`
+  ent:    `data_get() -> table`
+  ent:    `data_set(data)`
+  ent:    `match_get() -> table`
+  ent:    `match_set(match)`
+  ent:    `make() -> Entity`
+  ent:    `get_name() -> string`
+== csharp
+  client: `DemoSDK.TestSDK(testopts = null, sdkopts = null)`
+  client: `Ambient(entopts = null)`
+  client: `Planet(entopts = null)`
+  client: `OptionsMap() -> Dictionary`
+  client: `Direct(fetchargs = null) -> Dictionary`
+  client: `Prepare(fetchargs = null) -> Dictionary`
+  ent:    `Create(reqdata, ctrl = null) -> object?`
+  ent:    `List(reqmatch, ctrl = null) -> object?`
+  ent:    `Load(reqmatch, ctrl = null) -> object?`
+  ent:    `Patch(reqdata, ctrl = null) -> object?`
+  ent:    `Remove(reqmatch, ctrl = null) -> object?`
+  ent:    `Update(reqdata, ctrl = null) -> object?`
+  ent:    `Data(newdata = null) -> object?`
+  ent:    `Match(newmatch = null) -> object?`
+  ent:    `Make() -> IEntity`
+  ent:    `GetName() -> string`
+== java
+  client: `DemoSDK.testSDK(testopts, sdkopts)`
+  client: `ambient(entopts)`
+  client: `console(entopts)`
+  client: `graphQl(entopts)`
+  client: `history(entopts)`
+  client: `planet(entopts)`
+  client: `record_(entopts)`
+  client: `optionsMap() -> Map`
+  client: `direct(fetchargs) -> Map`
+  client: `prepare(fetchargs) -> Map`
+  ent:    `create(reqdata, ctrl) -> Object`
+  ent:    `list(reqmatch, ctrl) -> Object`
+  ent:    `load(reqmatch, ctrl) -> Object`
+  ent:    `patch(reqdata, ctrl) -> Object`
+  ent:    `remove(reqmatch, ctrl) -> Object`
+  ent:    `update(reqdata, ctrl) -> Object`
+  ent:    `data(newdata...) -> Object`
+  ent:    `match(newmatch...) -> Object`
+  ent:    `make() -> Entity`
+  ent:    `getName() -> String`
+== kotlin
+  client: `DemoSDK.testSDK(testopts, sdkopts)`
+  client: `ambient(entopts)`
+  client: `console(entopts)`
+  client: `graphQl(entopts)`
+  client: `history(entopts)`
+  client: `planet(entopts)`
+  client: `record(entopts)`
+  client: `optionsMap() -> MutableMap`
+  client: `direct(fetchargs) -> MutableMap`
+  client: `prepare(fetchargs) -> MutableMap`
+  ent:    `create(reqdata, ctrl) -> Any?`
+  ent:    `list(reqmatch, ctrl) -> Any?`
+  ent:    `load(reqmatch, ctrl) -> Any?`
+  ent:    `patch(reqdata, ctrl) -> Any?`
+  ent:    `remove(reqmatch, ctrl) -> Any?`
+  ent:    `update(reqdata, ctrl) -> Any?`
+  ent:    `data(vararg newdata) -> Any?`
+  ent:    `match(vararg newmatch) -> Any?`
+  ent:    `make() -> Entity`
+  ent:    `name -> String`
+== scala
+  client: `DemoSDK.testSDK(testopts, sdkopts)`
+  client: `ambient(entopts)`
+  client: `console(entopts)`
+  client: `graphQl(entopts)`
+  client: `history(entopts)`
+  client: `planet(entopts)`
+  client: `record(entopts)`
+  client: `optionsMap() -> Map`
+  client: `direct(fetchargs) -> Map`
+  client: `prepare(fetchargs) -> Map`
+  ent:    `create(reqdata, ctrl) -> Object`
+  ent:    `list(reqmatch, ctrl) -> Object`
+  ent:    `load(reqmatch, ctrl) -> Object`
+  ent:    `patch(reqdata, ctrl) -> Object`
+  ent:    `remove(reqmatch, ctrl) -> Object`
+  ent:    `update(reqdata, ctrl) -> Object`
+  ent:    `data(newdata*) -> Object`
+  ent:    `matchArgs(newmatch*) -> Object`
+  ent:    `make() -> Entity`
+  ent:    `getName() -> String`
+== swift
+  client: `DemoSDK.testSDK(testopts, sdkopts)`
+  client: `Ambient(entopts)`
+  client: `Planet(entopts)`
+  client: `optionsMap() -> VMap`
+  client: `direct(fetchargs) -> VMap`
+  client: `prepare(fetchargs) throws -> VMap`
+  ent:    `create(reqdata, ctrl) throws -> Value`
+  ent:    `list(reqmatch, ctrl) throws -> Value`
+  ent:    `load(reqmatch, ctrl) throws -> Value`
+  ent:    `patch(reqdata, ctrl) throws -> Value`
+  ent:    `remove(reqmatch, ctrl) throws -> Value`
+  ent:    `update(reqdata, ctrl) throws -> Value`
+  ent:    `data(newdata?) -> Value`
+  ent:    `matchv(newmatch?) -> Value`
+  ent:    `make() -> Entity`
+  ent:    `getName() -> String`
+== rust
+  client: `test_sdk(testopts: Value, sdkopts: Value) -> Rc<DemoSDK>`
+  client: `ambient(entopts: Value) -> Rc<AmbientEntity>`
+  client: `planet(entopts: Value) -> Rc<PlanetEntity>`
+  client: `options_map() -> Value`
+  client: `direct(fetchargs: Value) -> Result<Value, DemoError>`
+  client: `prepare(fetchargs: Value) -> Result<Value, DemoError>`
+  ent:    `create(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, DemoError>`
+  ent:    `list(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, DemoError>`
+  ent:    `load(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, DemoError>`
+  ent:    `patch(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, DemoError>`
+  ent:    `remove(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, DemoError>`
+  ent:    `update(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, DemoError>`
+  ent:    `data(args: Option<&Value>) -> Value`
+  ent:    `matchv(args: Option<&Value>) -> Value`
+  ent:    `make() -> Rc<dyn Entity>`
+  ent:    `get_name() -> String`
+== c
+  client: `DemoSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts)`
+  client: `Entity* demo_ambient(DemoSDK* client, voxgig_value* entopts)`
+  client: `Entity* demo_planet(DemoSDK* client, voxgig_value* entopts)`
+  client: `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`
+  client: `voxgig_value* sdk_prepare(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`
+  ent:    `Entity* vt->create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)`
+  ent:    `Entity** vt->list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)`
+  ent:    `Entity* vt->load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)`
+  ent:    `Entity* vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)`
+  ent:    `Entity* vt->remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)`
+  ent:    `Entity* vt->update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)`
+  ent:    `voxgig_value* vt->data(Entity* e, voxgig_value* args)`
+  ent:    `voxgig_value* vt->matchv(Entity* e, voxgig_value* args)`
+  ent:    `Entity* vt->make(Entity* e)`
+  ent:    `const char* vt->get_name(Entity* e)`
+== cpp
+  client: `DemoSDK::testSDK(testopts, sdkopts)`
+  client: `ambient(entopts = Value::undef()) -> std::shared_ptr<AmbientEntity>`
+  client: `planet(entopts = Value::undef()) -> std::shared_ptr<PlanetEntity>`
+  client: `optionsMap() -> Value`
+  client: `direct(fetchargs) -> Value`
+  client: `prepare(fetchargs) -> Value`
+  ent:    `create(reqdata, ctrl) -> SdkEntityPtr`
+  ent:    `list(reqmatch, ctrl) -> std::vector<SdkEntityPtr>`
+  ent:    `load(reqmatch, ctrl) -> SdkEntityPtr`
+  ent:    `patch(reqdata, ctrl) -> SdkEntityPtr`
+  ent:    `remove(reqmatch, ctrl) -> SdkEntityPtr`
+  ent:    `update(reqdata, ctrl) -> SdkEntityPtr`
+  ent:    `data(arg = Value::undef()) -> Value`
+  ent:    `match(arg = Value::undef()) -> Value`
+  ent:    `make() -> EntityPtr`
+  ent:    `getName() -> std::string`
+== zig
+  client: `test_sdk(testopts: Value, sdkopts: Value) *DemoSDK`
+  client: `ambient(entopts: Value) *AmbientEntity`
+  client: `planet(entopts: Value) *PlanetEntity`
+  client: `options_map() Value`
+  client: `direct(fetchargs: Value) Value`
+  client: `prepare(fetchargs: Value) E!Value`
+  ent:    `create(reqdata: Value, ctrl: Value) EntResult`
+  ent:    `list(reqmatch: Value, ctrl: Value) EntListResult`
+  ent:    `load(reqmatch: Value, ctrl: Value) EntResult`
+  ent:    `patch(reqdata: Value, ctrl: Value) EntResult`
+  ent:    `remove(reqmatch: Value, ctrl: Value) EntResult`
+  ent:    `update(reqdata: Value, ctrl: Value) EntResult`
+  ent:    `data(args: ?Value) Value`
+  ent:    `matchv(args: ?Value) Value`
+  ent:    `stream(action: []const u8, args: Value, callopts: Value) StreamResult`
+  ent:    `get_name() []const u8`
+== perl
+  client: `DemoSDK->test($testopts, $sdkopts)`
+  client: `Ambient($data)`
+  client: `Planet($data)`
+  client: `options_map() -> hashref`
+  client: `direct($fetchargs) -> hashref`
+  client: `prepare($fetchargs) -> hashref`
+  ent:    `create($reqdata, $ctrl) -> PlanetEntity`
+  ent:    `list($reqmatch, $ctrl) -> arrayref`
+  ent:    `load($reqmatch, $ctrl) -> PlanetEntity`
+  ent:    `patch($reqdata, $ctrl) -> PlanetEntity`
+  ent:    `remove($reqmatch, $ctrl) -> PlanetEntity`
+  ent:    `update($reqdata, $ctrl) -> PlanetEntity`
+  ent:    `data_get() -> hashref`
+  ent:    `data_set($data)`
+  ent:    `match_get() -> hashref`
+  ent:    `match_set($match)`
+  ent:    `make() -> entity`
+  ent:    `get_name() -> string`
+== clojure
+  client: `(api/test-sdk testopts sdkopts)`
+  client: `(api/ambient client data)`
+  client: `(api/console client data)`
+  client: `(api/history client data)`
+  client: `(api/planet client data)`
+  client: `(api/record client data)`
+  client: `(api/utility client data)`
+  client: `(api/options-map client) -> map`
+  client: `(api/get-utility client) -> utility`
+  client: `(api/direct client fetchargs) -> map`
+  client: `(api/prepare client fetchargs) -> map`
+  ent:    `(create ent reqdata ctrl) -> entity`
+  ent:    `(list ent reqmatch ctrl) -> vector`
+  ent:    `(load ent reqmatch ctrl) -> entity`
+  ent:    `(patch ent reqdata ctrl) -> entity`
+  ent:    `(remove ent reqmatch ctrl) -> entity`
+  ent:    `(update ent reqdata ctrl) -> entity`
+  ent:    `((:data-get ent)) -> map`
+  ent:    `((:data-set ent) data)`
+  ent:    `((:match-get ent)) -> map`
+  ent:    `((:match-set ent) match)`
+  ent:    `((:make ent)) -> entity`
+  ent:    `((:get-name ent)) -> string`
+== elixir
+  client: `Demo.test(testopts \\ nil, sdkopts \\ nil)`
+  client: `Demo.ambient(client, entopts \\ nil)`
+  client: `Demo.planet(client, entopts \\ nil)`
+  client: `options_map(client) :: map()`
+  client: `direct(client, fetchargs) :: map()`
+  client: `prepare(client, fetchargs) :: map()`
+  ent:    `create(entity, reqdata, ctrl \\ nil) :: entity`
+  ent:    `list(entity, reqmatch \\ nil, ctrl \\ nil) :: list()`
+  ent:    `load(entity, reqmatch, ctrl \\ nil) :: entity`
+  ent:    `patch(entity, reqdata, ctrl \\ nil) :: entity`
+  ent:    `remove(entity, reqmatch, ctrl \\ nil) :: entity`
+  ent:    `update(entity, reqdata, ctrl \\ nil) :: entity`
+  ent:    `data_get(entity) :: map()`
+  ent:    `data_set(entity, data)`
+  ent:    `match_get(entity) :: map()`
+  ent:    `match_set(entity, match)`
+  ent:    `make(entity) :: entity`
+  ent:    `get_name(entity) :: String.t()`
+  ent:    `list(entity, reqmatch \\ nil, ctrl \\ nil) :: list()`
+  ent:    `data_get(entity) :: map()`
+  ent:    `data_set(entity, data)`
+  ent:    `match_get(entity) :: map()`
+  ent:    `match_set(entity, match)`
+  ent:    `make(entity) :: entity`
+  ent:    `get_name(entity) :: String.t()`
+  ent:    `list(entity, reqmatch \\ nil, ctrl \\ nil) :: list()`
+  ent:    `data_get(entity) :: map()`
+  ent:    `data_set(entity, data)`
+  ent:    `match_get(entity) :: map()`
+  ent:    `match_set(entity, match)`
+  ent:    `make(entity) :: entity`
+  ent:    `get_name(entity) :: String.t()`
+  ent:    `audit`
+  ent:    `cache`
+  ent:    `clienttrack`
+  ent:    `cost`
+  ent:    `debug`
+  ent:    `idempotency`
+  ent:    `log`
+  ent:    `metrics`
+  ent:    `netsim`
+  ent:    `paging`
+  ent:    `proxy`
+  ent:    `ratelimit`
+  ent:    `rbac`
+  ent:    `retry`
+  ent:    `secrets`
+  ent:    `streaming`
+  ent:    `telemetry`
+  ent:    `test`
+  ent:    `timeout`
+  ent:    `validate`
+== ocaml
+  client: `Sdk_client.test testopts sdkopts`
+  client: `Sdk_client.ambient client entopts : entity_obj`
+  client: `Sdk_client.planet client entopts : entity_obj`
+  client: `Sdk_client.utility client entopts : entity_obj`
+  client: `Sdk_client.direct client fetchargs : value`
+  client: `Sdk_client.prepare client fetchargs : value`
+  ent:    `e_create reqdata ctrl : entity_obj`
+  ent:    `e_list reqmatch ctrl : entity_obj list`
+  ent:    `e_load reqmatch ctrl : entity_obj`
+  ent:    `e_patch reqdata ctrl : entity_obj`
+  ent:    `e_remove reqmatch ctrl : entity_obj`
+  ent:    `e_update reqdata ctrl : entity_obj`
+  ent:    `e_data_get : unit -> value`
+  ent:    `e_data_set : value -> unit`
+  ent:    `e_match_get : unit -> value`
+  ent:    `e_match_set : value -> unit`
+  ent:    `e_make : unit -> entity_obj`
+  ent:    `e_name : string`

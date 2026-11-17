@@ -1,0 +1,31 @@
+== packs/chk-both
+package-check-end    ./packs/chk-both: no findings
+   exit 0
+== packs/chk-provider
+package-check-start  ./packs/chk-provider: checking ./packs/chk-provider
+provider-without-hook src/cmp/lua: Syntax_lua.ts has no Naming_lua.ts, so generation stops on its first page
+package-check-end    ./packs/chk-provider: 1 error(s), 0 warning(s)
+/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/packs/chk-provider: 1 error(s), 0 warning(s)
+   exit 1
+== packs/chk-hook
+package-check-start  ./packs/chk-hook: checking ./packs/chk-hook
+hook-without-provider src/cmp/lua: Naming_lua.ts and no Syntax_lua.ts or ReadmeQuick_lua.ts, so the tutorial, the root quick start and REFERENCE.md are empty
+package-check-end    ./packs/chk-hook: 1 warning(s)
+   exit 0
+== packs/chk-neither
+package-check-end    ./packs/chk-neither: no findings
+   exit 0
+== packs/lua32
+provider-interface   src/cmp/lua: Syntax_lua.ts declares interface none, and this sdkgen calls 3.3
+package-check-end    ./packs/lua32: 1 error(s), 0 warning(s)
+   exit 1
+== packs/ocaml32
+provider-interface   src/cmp/ocaml: Syntax_ocaml.ts declares interface none, and this sdkgen calls 3.3
+package-check-end    ./packs/ocaml32: 1 error(s), 0 warning(s)
+   exit 1
+== langpack
+package-check-end    ./langpack: no findings
+   exit 0
+== sdkgen/ts/project
+package-check-end    ./sdkgen/ts/project: no findings
+   exit 0

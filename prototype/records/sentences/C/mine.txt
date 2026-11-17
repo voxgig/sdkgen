@@ -1,0 +1,428 @@
+ed7f424dbc [sentence] L8 C8 {"rule record":8} T=[object Object]
+  M: The data must include the entity Ⓕ, `Ⓕ`.
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `update(data: object, ctrl?: object)`): The data must include the entity id, `id`.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+ea66aefd24 [cell] L8 C8 {"rule record":8} T=null
+  M: ⟦ref.valueType.STRING⟧
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK > Constructor): `string`
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+9c7c471a05 [cell] L8 C8 {"rule record":8} T=[object Object]
+  M: Defaults to `eu`.
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK > Constructor): Defaults to `eu`.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+9577ba159e [sentence] L8 C8 {"rule record":8} T=[object Object]
+  M: It returns a client in test mode.
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK > Test client > `DemoSDK.test(testopts?, sdkopts?)`): It returns a client in test mode.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+9c22b8823a [sentence] L8 C8 {"rule record":8} T=[object Object]
+  M: The match is optional: without one, every Ⓔ is listed.
+  E(ts B: Demo TypeScript SDK Reference > ConsoleEntity > Operations > `list(match?: object, ctrl?: object)`): The match is optional: without one, every record is listed.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+c151802d4a [header] L8 C8 {"rule record":8} T=null
+  M: Operation
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Actions): Operation
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+e3081c2053 [cell] L8 C8 {"rule record":8} T=null
+  M: ⟦method.create⟧
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Actions): `create`
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+8d6016d7e2 [sentence] L8 C8 {"rule record":8} T=[object Object]
+  M: Each feature is inactive until switched on, except `log`, which runs unless disabled.
+  E(ts B: Demo TypeScript SDK Reference > Features > Configuring features): Each feature is inactive until switched on, except `log`, which runs unless disabled.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+d77745e7ee [sentence] L8 C8 {"rule record":8} T=[object Object]
+  M: Active by default: set `active: false` to switch it off.
+  E(ts B: Demo TypeScript SDK Reference > Features > Configuring features > `log`): Active by default: set `active: false` to switch it off.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+d3d603d612 [sentence] L8 C8 {"rule record":8} T=[object Object]
+  M: The match must include `Ⓔ_id`.
+  E(ts doc-nested: Demo TypeScript SDK Reference > SatelliteEntity > Operations > `list(match?: object, ctrl?: object)`): The match must include `planet_id`.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+9402aedbb5 [sentence] L8 C8 {"rule record":8} T=[object Object]
+  M: Create a test client in test mode.
+  E(ts no-test: Demo TypeScript SDK Reference > DemoSDK > Test client > `DemoSDK.test(testopts?, sdkopts?)`): Create a test client in test mode.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+d48de033ea [sentence] L8 C8 {"rule record":8} T=[object Object]
+  M: This SDK is generated without the `test` feature, so it has no mock transport.
+  E(ts no-test: Demo TypeScript SDK Reference > DemoSDK > Test client > `DemoSDK.test(testopts?, sdkopts?)`): This SDK is generated without the `test` feature, so it has no mock transport.
+  langs=c,clojure,elixir,go,py,rust,ts,zig
+82e6814387 [sentence] L7 C8 {"hand":8} T=[object Object]
+  M: Select one with `$action` in the call's argument, beside the route's path parameters, as the Call column shows; the action's own arguments go beside them too, and are sent as that action's payload.
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Actions): Select one with `$action` in the call's argument, beside the route's path parameters, as the Call column shows; the action's own arguments go beside them too, and are sent as that action's payload.
+  langs=c,clojure,elixir,go,py,rust,ts
+ffe4eb970b [heading] L7 C7 {"rule record":7} T=[object Object]
+  M: Test client
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK): Test client
+  langs=c,elixir,go,py,rust,ts,zig
+abe9546ee3 [sentence] L7 C7 {"rule record":7} T=[object Object]
+  M: This entity exposes custom API actions in addition to the standard operations.
+  E(go B: Demo Golang SDK Reference > PlanetEntity > Actions): This entity exposes custom API actions in addition to the standard operations.
+  langs=c,clojure,elixir,go,py,rust,zig
+ebea8de27f [cell] L7 C7 {"rule record":7} T=null
+  M: `/Ⓔ/{Ⓕ}/terraform`
+  E(go B: Demo Golang SDK Reference > PlanetEntity > Actions): `/planet/{id}/terraform`
+  langs=c,clojure,elixir,go,py,rust,zig
+cf564b5fca [sentence] L7 C7 {"rule record":7} T=[object Object]
+  M: An action returns that action's OWN response, which is not necessarily a Ⓔ Ⓔ — check the API definition for its shape.
+  E(go B: Demo Golang SDK Reference > PlanetEntity > Actions): An action returns that action's OWN response, which is not necessarily a Planet record — check the API definition for its shape.
+  langs=c,clojure,elixir,go,py,rust,zig
+b21c47b21e [cell] L7 C7 {"rule record":7} T=[object Object]
+  M: API secret for authentication.
+  E(go auth-basic: Demo Golang SDK Reference > DemoSDK > Constructor): API secret for authentication.
+  langs=c,clojure,elixir,go,py,rust,zig
+82c5fb6c18 [sentence] L5 C5 {"rule record":5} T=[object Object]
+  M: Create a new `ⒺClient` instance.
+  E(ts ref-issues: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `Planet(data?: object)`): Create a new `PlanetEntityClient` instance.
+  langs=go,py,rust,ts,zig
+d9b679fcb2 [heading] L5 C5 {"rule record":5} T=null
+  M: ⒺClient
+  E(ts ref-issues: Demo TypeScript SDK Reference): PlanetEntityClient
+  langs=go,py,rust,ts,zig
+f2901d9293 [sentence] L5 C5 {"hand":5} T=[object Object]
+  M: Returns a copy of the current data.
+  E(py B: Demo Python SDK Reference > AmbientEntity > Common Methods > `data_get() -> dict`): Returns a copy of the current data.
+  langs=c,clojure,elixir,py,rust
+a597c33fd6 [cell] L5 C5 {"rule record":5} T=null
+  M: `server`
+  E(c B: Demo C SDK Reference > DemoSDK > Constructor): `server`
+  langs=c,clojure,elixir,rust,zig
+d58d5036f6 [cell] L5 C5 {"rule record":5} T=null
+  M: `server.tenant`
+  E(c B: Demo C SDK Reference > DemoSDK > Constructor): `server.tenant`
+  langs=c,clojure,elixir,rust,zig
+f9463bffa1 [cell] L5 C5 {"rule record":5} T=null
+  M: `server.region`
+  E(c B: Demo C SDK Reference > DemoSDK > Constructor): `server.region`
+  langs=c,clojure,elixir,rust,zig
+e866dc0d3c [sentence] L5 C5 {"hand":5} T=[object Object]
+  M: The operation runs before the call returns.
+  E(c B: Demo C SDK Reference > Ambient > Common Functions > `voxgig_value* ambient_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)`): The operation runs before the call returns.
+  langs=c,clojure,elixir,rust,zig
+fbfc02b589 [sentence] L4 C4 {"rule record":4} T=[object Object]
+  M: Create a new `Ⓔ` instance with the same client and options.
+  E(py B: Demo Python SDK Reference > PlanetEntity > Common Methods > `make() -> Entity`): Create a new `PlanetEntity` instance with the same client and options.
+  langs=c,clojure,py,rust
+a830234333 [sentence] L4 C4 {"rule record":4} T=null
+  M: Accepts the same parameters as `direct()`.
+  E(py B: Demo Python SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs=None) -> dict`): Accepts the same parameters as `direct()`.
+  langs=elixir,py,rust,zig
+f8e9e93796 [sentence] L4 C4 {"rule record":4} T=null
+  M: **Parameters (`options` map keys):**
+  E(zig B: Demo Zig SDK Reference > DemoSDK > Constructor): **Parameters (`options` map keys):**
+  langs=clojure,elixir,rust,zig
+f28445713f [sentence] L3 C3 {"rule record":3} T=[object Object]
+  M: Returns the entity, marked as deleted, and raises on failure.
+  E(py B: Demo Python SDK Reference > PlanetEntity > Operations > `remove(reqmatch, ctrl=None) -> PlanetEntity`): Returns the entity, marked as deleted, and raises on failure.
+  langs=clojure,elixir,py
+808eae570d [sentence] L3 C3 {"hand":3} T=[object Object]
+  M: Its ⟦ref.accessor.param⟧ argument holds the entity options: pass ⟦ref.none⟧ for none.
+  E(py B: Demo Python SDK Reference > DemoSDK > Instance Methods > `Ambient(data=None)`): Its `data` argument holds the entity options: pass `None` for none.
+  langs=clojure,py,rb
+943a2c940d [sentence] L3 C3 {"rule record":3} T=null
+  M: Returns the entity, and raises on failure.
+  E(py B: Demo Python SDK Reference > AmbientEntity > Operations > `load(reqmatch=None, ctrl=None) -> AmbientEntity`): Returns the entity, and raises on failure.
+  langs=clojure,elixir,py
+eb2099b4b6 [heading] L3 C3 {"rule record":3} T=null
+  M: `⟦ref.entity.5.sig⟧`
+  E(py B: Demo Python SDK Reference > AmbientEntity > Common Methods): `stream(action, args=None, callopts=None)`
+  langs=clojure,elixir,py
+ed1e41296e [heading] L3 C3 {"rule record":3} T=null
+  M: Instance ⟦ref.noun⟧
+  E(c B: Demo C SDK Reference > DemoSDK): Instance Functions
+  langs=c,clojure,elixir
+b597790893 [sentence] L3 C3 {"rule record":3} T=[object Object]
+  M: Run an operation through the pipeline and return its result items as one list.
+  E(c B: Demo C SDK Reference > Ambient > Common Functions > `voxgig_value* ambient_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)`): Run an operation through the pipeline and return its result items as one list.
+  langs=c,rust,zig
+9d48e9af0d [sentence] L2 C4 {"rule record":4} T=null
+  M: The result's ⟦ok⟧ is the updated entity, and its ⟦err⟧ reports failure.
+  E(zig B: Demo Zig SDK Reference > PlanetEntity > Operations > `update(reqdata: Value, ctrl: Value) EntResult`): The result's `.ok` is the updated entity, and its `.err` reports failure.
+  langs=rust,zig
+d473b14593 [sentence] L2 C4 {"rule record":4} T=null
+  M: The result's ⟦ok⟧ is the patched entity, and its ⟦err⟧ reports failure.
+  E(zig crud-bare: Demo Zig SDK Reference > PlanetEntity > Operations > `patch(reqdata: Value, ctrl: Value) EntResult`): The result's `.ok` is the patched entity, and its `.err` reports failure.
+  langs=rust,zig
+ea391183f8 [sentence] L2 C3 {"rule record":3} T=[object Object]
+  M: The result's ⟦ok⟧ is the entity, and its ⟦err⟧ reports failure.
+  E(zig B: Demo Zig SDK Reference > AmbientEntity > Operations > `load(reqmatch: Value, ctrl: Value) EntResult`): The result's `.ok` is the entity, and its `.err` reports failure.
+  langs=rust,zig
+95c824349e [heading] L2 C2 {"rule record":2} T=null
+  M: `⟦ref.op.load⟧`
+  E(ts B: Demo TypeScript SDK Reference > AmbientEntity > Operations): `load(match?: object, ctrl?: object)`
+  langs=elixir,ts
+910a6e34ce [heading] L2 C2 {"rule record":2} T=null
+  M: `⟦ref.op.remove⟧`
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Operations): `remove(match?: object, ctrl?: object)`
+  langs=elixir,ts
+b90b5c03ed [sentence] L2 C2 {"rule record":2} T=[object Object]
+  M: Create a new `ⒺEntity` instance.
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `Console(data?: object)`): Create a new `AmbientEntity` instance.
+  langs=go,ts
+bced6e2f5f [comment] L2 C2 {"rule record":2} T=null
+  M: string
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `create(data?: object, ctrl?: object)`): string
+  langs=go,ts
+e61813ee66 [cell] L2 C2 {"rule record":2} T=null
+  M: `options["server"]["tenant"]`
+  E(go B: Demo Golang SDK Reference > DemoSDK > Constructor): `options["server"]["tenant"]`
+  langs=go,py
+8a90021109 [cell] L2 C2 {"rule record":2} T=null
+  M: `options["server"]["region"]`
+  E(go B: Demo Golang SDK Reference > DemoSDK > Constructor): `options["server"]["region"]`
+  langs=go,py
+dc97559d3c [cell] L2 C2 {"rule record":2} T=null
+  M: `options["secret"]`
+  E(go auth-basic: Demo Golang SDK Reference > DemoSDK > Constructor): `options["secret"]`
+  langs=go,py
+866b167371 [sentence] L2 C2 {"rule record":1,"hand":1} T=[object Object]
+  M: **Returns:** ⟦recordType|ref.container|ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, a result map holding `ok`, `status`, `headers` and ⟦ref.accessor.param⟧, even for a non-2xx response; on a failure `ok` is ⟦ref.direct.okFalse⟧ and `err` holds the error.
+  E(py B: Demo Python SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs=None) -> dict`): **Returns:** `dict`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is `False` and `err` holds the error.
+  langs=py,rb
+9756a185e4 [sentence] L2 C2 {"rule record":1,"hand":1} T=[object Object]
+  M: **Returns:** ⟦recordType|ref.container|ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, the fetch definition: the request `direct()` would send.
+  E(py B: Demo Python SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs=None) -> dict`): **Returns:** `dict`, the fetch definition: the request `direct()` would send.
+  langs=py,rb
+fe6f690f6a [sentence] L2 C2 {"rule record":2} T=null
+  M: Its ⟦err⟧ reports failure.
+  E(zig B: Demo Zig SDK Reference > AmbientEntity > Common Methods > `stream(action: []const u8, args: Value, callopts: Value) StreamResult`): Its `.err` reports failure.
+  langs=rust,zig
+fbcf071a11 [header] L2 C2 {"rule record":2} T=[object Object]
+  M: Value type
+  E(clojure B: Demo Clojure SDK Reference > sdk.api > Constructor): Value type
+  langs=clojure,elixir
+9c0d0be786 [sentence] L2 C2 {"rule record":2} T=null
+  M: **Parameters (`fetchargs` map keys):**
+  E(clojure B: Demo Clojure SDK Reference > sdk.api > Instance Functions > `(api/direct client fetchargs) -> map`): **Parameters (`fetchargs` map keys):**
+  langs=clojure,elixir
+fa8637c0bd [heading] L1 C3 {"hand":3} T=null
+  M: ⟦ref.op.list⟧
+  E(rb B: Demo Ruby SDK Reference > ConsoleEntity > Operations): `list(reqmatch = nil, ctrl = nil) -> Array<ConsoleEntity>`
+  langs=rb
+9b677d094c [cell] L1 C2 {"rule record":2} T=null
+  M: `options.server`
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK > Constructor): `options.server`
+  langs=ts
+a5e47cfb6f [heading] L1 C2 {"hand":2} T=null
+  M: ⟦ref.op.patch⟧
+  E(rb crud-bare: Demo Ruby SDK Reference > PlanetEntity > Operations): `patch(reqdata, ctrl = nil) -> PlanetEntity`
+  langs=rb
+fdc5f931f9 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: The ⟦collection⟧ form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest.
+  E(ts B: Demo TypeScript SDK Reference > Features > Configuring features): The array form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest.
+  langs=ts
+85c81f68a4 [heading] L1 C1 {"rule record":1} T=null
+  M: `⟦ref.op.list⟧`
+  E(ts B: Demo TypeScript SDK Reference > ConsoleEntity > Operations): `list(match?: object, ctrl?: object)`
+  langs=ts
+a04e7e54b4 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: **Returns:** ⟦ref.client.0.returns|ref.client.1.returns|ref.container|ref.valueType.OBJECT⟧.
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `options()`): **Returns:** `object`.
+  langs=ts
+a758f137ae [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: **Returns:** `⟦ref.prepare.returns⟧`, the fetch definition: the request `direct()` would send.
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs?: object)`): **Returns:** `Promise<{ url, method, headers, body } | Error>`, the fetch definition: the request `direct()` would send.
+  langs=ts
+b1666a52ac [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: Resolves to the entity, marked as deleted, and throws on failure.
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `remove(match: object, ctrl?: object)`): Resolves to the entity, marked as deleted, and throws on failure.
+  langs=ts
+ea3964d6ba [sentence] L1 C1 {"rule record":1} T=null
+  M: On failure it resolves to the error instead.
+  E(ts B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs?: object)`): On failure it resolves to the error instead.
+  langs=ts
+9f6d56f5fb [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: Resolves to the entity, and throws on failure.
+  E(ts B: Demo TypeScript SDK Reference > AmbientEntity > Operations > `load(match?: object, ctrl?: object)`): Resolves to the entity, and throws on failure.
+  langs=ts
+d6fd5c15c3 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: Resolves to the created entity, and throws on failure.
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `create(data?: object, ctrl?: object)`): Resolves to the created entity, and throws on failure.
+  langs=ts
+863f603c11 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: Resolves to the updated entity, and throws on failure.
+  E(ts B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `update(data?: object, ctrl?: object)`): Resolves to the updated entity, and throws on failure.
+  langs=ts
+b7eb8b0b55 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: Resolves to the patched entity, and throws on failure.
+  E(ts crud-bare: Demo TypeScript SDK Reference > PlanetEntity > Operations > `patch(data?: object, ctrl?: object)`): Resolves to the patched entity, and throws on failure.
+  langs=ts
+87f6e3aeef [sentence] L1 C1 {"rule record":1} T=null
+  M: Returns the entity; ⟦errVar⟧ is non-nil on failure.
+  E(go B: Demo Golang SDK Reference > AmbientEntity > Operations > `Load(reqmatch, ctrl map[string]any) (any, error)`): Returns the entity; `err` is non-nil on failure.
+  langs=go
+9f786f0b8d [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: **Returns:** `⟦ref.direct.returns|ref.prepare.returns⟧`, the fetch definition: the request `Direct()` would send.
+  E(go B: Demo Golang SDK Reference > DemoSDK > Instance Methods > `Prepare(fetchargs map[string]any) (map[string]any, error)`): **Returns:** `(map[string]any, error)`, the fetch definition: the request `Direct()` would send.
+  langs=go
+b0b5838164 [cell] L1 C1 {"rule record":1} T=null
+  M: ⟦ref.container|ref.valueType.OBJECT⟧
+  E(go B: Demo Golang SDK Reference > DemoSDK > Constructor): `map[string]any`
+  langs=go
+91f89cb62e [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: Create a test client with mock features active, and no options.
+  E(go B: Demo Golang SDK Reference > DemoSDK > Test client > `Test() *DemoSDK`): Create a test client with mock features active, and no options.
+  langs=go
+c1cff7a16c [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: **Returns:** `⟦ref.direct.returns|ref.prepare.returns⟧`, a result map holding `ok`, `status`, `headers` and ⟦ref.accessor.param⟧, even for a non-2xx response; on a failure `ok` is ⟦ref.direct.okFalse⟧ and ⟦errVar⟧ holds the error.
+  E(go B: Demo Golang SDK Reference > DemoSDK > Instance Methods > `Direct(fetchargs map[string]any) (map[string]any, error)`): **Returns:** `(map[string]any, error)`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is `false` and `err` holds the error.
+  langs=go
+9f4a983dc3 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: Run an operation through the pipeline and stream its result items.
+  E(go B: Demo Golang SDK Reference > AmbientEntity > Common Methods > `Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem`): Run an operation through the pipeline and stream its result items.
+  langs=go
+9f4208cfb6 [sentence] L1 C1 {"hand":1} T=[object Object]
+  M: The operation starts at the call and runs beside the caller, handing over each item as the caller takes it.
+  E(go B: Demo Golang SDK Reference > AmbientEntity > Common Methods > `Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem`): The operation starts at the call and runs beside the caller, handing over each item as the caller takes it.
+  langs=go
+fd375d3d92 [cell] L1 C1 {"hand":1} T=null
+  M: `_, err := client.Ⓔ(nil).Create(map[string]any{"$action": "terraform", "Ⓕ": "Ⓔ_id"}, nil)`
+  E(go B: Demo Golang SDK Reference > PlanetEntity > Actions): `_, err := client.Planet(nil).Create(map[string]any{"$action": "terraform", "id": "planet_id"}, nil)`
+  langs=go
+a9015bfed2 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: This SDK is generated without the `test` feature, so it has no mock transport, and no options.
+  E(go no-test: Demo Golang SDK Reference > DemoSDK > Test client > `Test() *DemoSDK`): This SDK is generated without the `test` feature, so it has no mock transport, and no options.
+  langs=go
+dfa5cb5552 [cell] L1 C1 {"rule record":1} T=null
+  M: ⟦recordType|ref.container|ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧
+  E(py B: Demo Python SDK Reference > DemoSDK > Constructor): `dict`
+  langs=py
+aa099d49a5 [heading] L1 C1 {"rule record":1} T=null
+  M: ⟦ref.opMatched.list⟧
+  E(py doc-nested: Demo Python SDK Reference > SatelliteEntity > Operations): `list(reqmatch, ctrl=None) -> list[SatelliteEntity]`
+  langs=py
+e4a416734b [sentence] L1 C1 {"rule record":1} T=null
+  M: Returns the entity, or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure.
+  E(c B: Demo C SDK Reference > Ambient > Operations > `Entity* vt->load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)`): Returns the entity, or `NULL` with `*err` set on failure.
+  langs=c
+b8923f051e [sentence] L1 C1 {"hand":1} T=[object Object]
+  M: The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be ⟦nullValue|ref.none⟧.
+  E(c B: Demo C SDK Reference > DemoSDK > Test client > `DemoSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts)`): The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be `NULL`.
+  langs=c
+fb0d7d681d [heading] L1 C1 {"hand":1} T=null
+  M: ⟦ref.client.1.sig⟧
+  E(c B: Demo C SDK Reference > DemoSDK > Instance Functions): `Utility* sdk_get_utility(DemoSDK* client)`
+  langs=c
+ebb9d2605e [sentence] L1 C1 {"hand":1} T=[object Object]
+  M: Return a copy of the SDK Ⓔ object.
+  E(c B: Demo C SDK Reference > DemoSDK > Instance Functions > `Utility* sdk_get_utility(DemoSDK* client)`): Return a copy of the SDK utility object.
+  langs=c
+f0a75ee2f1 [cell] L1 C1 {"rule record":1} T=null
+  M: Control options (e.g. `cmap(1, "explain", v_bool(true))`).
+  E(c B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`): Control options (e.g. `cmap(1, "explain", v_bool(true))`).
+  langs=c
+f32a88ae8f [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: **Returns:** ⟦ref.container|ref.direct.returns|ref.prepare.returns⟧, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is ⟦ref.direct.okFalse⟧ and ⟦errVar⟧ holds the error.
+  E(c B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`): **Returns:** `voxgig_value*`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is `false` and `err` holds the error.
+  langs=c
+d4f559de9a [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: A failed request is reported in the result, not as an error, so branch on `getp(result, "ok")`.
+  E(c B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`): A failed request is reported in the result, not as an error, so branch on `getp(result, "ok")`.
+  langs=c
+b7fff1eb21 [sentence] L1 C1 {"rule record":1} T=null
+  M: Accepts the same parameters as `sdk_direct()`.
+  E(c B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_prepare(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`): Accepts the same parameters as `sdk_direct()`.
+  langs=c
+847a5afbe6 [comment] L1 C1 {"rule record":1} T=[object Object]
+  M: Fields to update
+  E(c B: Demo C SDK Reference > Planet > Operations > `Entity* vt->update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)`): Fields to update
+  langs=c
+eac17e410f [comment] L1 C1 {"rule record":1} T=[object Object]
+  M: Only the Ⓕ to change
+  E(c crud-bare: Demo C SDK Reference > Planet > Operations > `Entity* vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)`): Only the fields to change
+  langs=c
+c0e767997c [sentence] L1 C1 {"rule record":1} T=null
+  M: Under `throw: false` in `callopts.ctrl`, a failed stream is ⟦ok⟧ with whatever data the failure left; otherwise ⟦err⟧ holds the branded error.
+  E(zig B: Demo Zig SDK Reference > AmbientEntity > Common Methods > `stream(action: []const u8, args: Value, callopts: Value) StreamResult`): Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with whatever data the failure left; otherwise `.err` holds the branded error.
+  langs=zig
+fe57ce8980 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: A failed request is reported in the result, not as an error, so branch on `h.get_bool(result, "ok")`.
+  E(zig B: Demo Zig SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs: Value) Value`): A failed request is reported in the result, not as an error, so branch on `h.get_bool(result, "ok")`.
+  langs=zig
+c20ff7bee8 [cell] L1 C1 {"rule record":1} T=null
+  M: Control options (e.g. `h.jo(&.{.{ "explain", h.vbool(true) }})`).
+  E(zig B: Demo Zig SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs: Value) Value`): Control options (e.g. `h.jo(&.{.{ "explain", h.vbool(true) }})`).
+  langs=zig
+9259ea6674 [cell] L1 C1 {"hand":1} T=null
+  M: `switch (client.Ⓔ(h.vnull()).create(h.jo(&.{.{ "$action", h.vstr("terraform") }, .{ "Ⓕ", h.vstr("Ⓔ_id") }}), h.vnull())) {`
+  E(zig B: Demo Zig SDK Reference > PlanetEntity > Actions): `switch (client.planet(h.vnull()).create(h.jo(&.{.{ "$action", h.vstr("terraform") }, .{ "id", h.vstr("planet_id") }}), h.vnull())) {`
+  langs=zig
+88547b1a3d [heading] L1 C1 {"rule record":1} T=null
+  M: Constructor
+  E(clojure B: Demo Clojure SDK Reference > sdk.api): Constructor
+  langs=clojure
+e179fbae04 [sentence] L1 C1 {"hand":1} T=[object Object]
+  M: `(sdk.client/get-Ⓔ client)` returns a copy of it.
+  E(clojure B: Demo Clojure SDK Reference > sdk.api > Instance Functions): `(sdk.client/get-utility client)` returns a copy of it.
+  langs=clojure
+f9916ca6d7 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: A failed request is reported in the result, not as an error, so branch on `(vs/getprop result "ok")`.
+  E(clojure B: Demo Clojure SDK Reference > sdk.api > Instance Functions > `(api/direct client fetchargs) -> map`): A failed request is reported in the result, not as an error, so branch on `(vs/getprop result "ok")`.
+  langs=clojure
+cebb5984c9 [cell] L1 C1 {"hand":1} T=null
+  M: `(e-Ⓔ/create (api/Ⓔ client nil) (vs/jm "$action" "terraform" "Ⓕ" "Ⓔ_id") nil)`
+  E(clojure B: Demo Clojure SDK Reference > Planet > Actions): `(e-planet/create (api/planet client nil) (vs/jm "$action" "terraform" "id" "planet_id") nil)`
+  langs=clojure
+8ffae6e977 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: **Returns:** `Result<Value, ⓈError>`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is ⟦ref.direct.okFalse⟧ and `err` holds the error.
+  E(rust B: Demo Rust SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs: Value) -> Result<Value, DemoError>`): **Returns:** `Result<Value, DemoError>`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is `false` and `err` holds the error.
+  langs=rust
+b22e5e9034 [cell] L1 C1 {"rule record":1} T=null
+  M: Control options (e.g. `jo(vec![("explain", Value::Bool(true))])`).
+  E(rust B: Demo Rust SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs: Value) -> Result<Value, DemoError>`): Control options (e.g. `jo(vec![("explain", Value::Bool(true))])`).
+  langs=rust
+94f6b2ab2b [heading] L1 C1 {"rule record":1} T=null
+  M: `stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, ⓈError>`
+  E(rust B: Demo Rust SDK Reference > AmbientEntity > Common Methods): `stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, DemoError>`
+  langs=rust
+ed524ea13a [cell] L1 C1 {"hand":1} T=null
+  M: `client.Ⓔ(Value::Noval).create(jo(vec![("$action", Value::str("terraform")), ("Ⓕ", Value::str("Ⓔ_id"))]), Value::Noval).unwrap();`
+  E(rust B: Demo Rust SDK Reference > PlanetEntity > Actions): `client.planet(Value::Noval).create(jo(vec![("$action", Value::str("terraform")), ("id", Value::str("planet_id"))]), Value::Noval).unwrap();`
+  langs=rust
+857a1c7f50 [sentence] L1 C1 {"hand":1} T=null
+  M: Build `options` from a native map with `Ⓢ.Helpers.deep/1`.
+  E(elixir B: Demo Elixir SDK Reference > Demo > Constructor): Build `options` from a native map with `Demo.Helpers.deep/1`.
+  langs=elixir
+9c8718c05e [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: Return the SDK Ⓔ object.
+  E(elixir B: Demo Elixir SDK Reference > Demo > Functions > `get_utility(client) :: map()`): Return the SDK utility object.
+  langs=elixir
+8b566aed10 [sentence] L1 C1 {"rule record":1} T=null
+  M: It is the client's own node, not a copy.
+  E(elixir B: Demo Elixir SDK Reference > Demo > Instance Functions > `get_utility(client) :: map()`): It is the client's own node, not a copy.
+  langs=elixir
+eecb230369 [header] L1 C1 {"rule record":1} T=null
+  M: Key
+  E(elixir B: Demo Elixir SDK Reference > Demo > Instance Functions > `direct(client, fetchargs \\ nil) :: map()`): Key
+  langs=elixir
+ea307e5274 [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: A failed request is reported in the result, not as an error, so branch on `Voxgig.Struct.getprop(result, "ok")`.
+  E(elixir B: Demo Elixir SDK Reference > Demo > Instance Functions > `direct(client, fetchargs \\ nil) :: map()`): A failed request is reported in the result, not as an error, so branch on `Voxgig.Struct.getprop(result, "ok")`.
+  langs=elixir
+be5bf24fe1 [heading] L1 C1 {"rule record":1} T=null
+  M: `⟦ref.client.3.sig⟧`
+  E(elixir B: Demo Elixir SDK Reference > Demo > Instance Functions): `prepare(client, fetchargs \\ nil) :: map()`
+  langs=elixir
+9be5e84dbd [sentence] L1 C1 {"rule record":1} T=[object Object]
+  M: **Returns:** ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, the fetch definition: the request `direct()` would send.
+  E(elixir B: Demo Elixir SDK Reference > Demo > Instance Functions > `prepare(client, fetchargs \\ nil) :: map()`): **Returns:** `map()`, the fetch definition: the request `direct()` would send.
+  langs=elixir
+a640d12e06 [cell] L1 C1 {"hand":1} T=null
+  M: `Ⓢ.Entity.Ⓔ.create(Ⓔ, Ⓢ.Helpers.deep(%{"$action" => "terraform", "Ⓕ" => "Ⓔ_id"}))`
+  E(elixir B: Demo Elixir SDK Reference > Demo.Entity.Planet > Actions): `Demo.Entity.Planet.create(planet, Demo.Helpers.deep(%{"$action" => "terraform", "id" => "planet_id"}))`
+  langs=elixir
+e078a02b2e [cell] L1 C1 {"rule record":1} T=null
+  M: Yes
+  E(elixir ref-issues: Demo Elixir SDK Reference > Demo.Entity.Gauge > Field Usage by Operation): Yes
+  langs=elixir
+91de682ebb [sentence] L1 C1 {"hand":1} T=[object Object]
+  M: List entities matching the given criteria.
+  E(rb B: Demo Ruby SDK Reference > ConsoleEntity > Operations > `list(reqmatch = nil, ctrl = nil) -> Array<ConsoleEntity>`): List entities matching the given criteria.
+  langs=rb
+c81e766e95 [sentence] L1 C1 {"hand":1} T=[object Object]
+  M: Returns an ⟦collection⟧ of entities, one per Ⓔ, and raises on failure.
+  E(rb B: Demo Ruby SDK Reference > ConsoleEntity > Operations > `list(reqmatch = nil, ctrl = nil) -> Array<ConsoleEntity>`): Returns an `Array` of entities, one per record, and raises on failure.
+  langs=rb
+b5b5c85e92 [cell] L1 C1 {"hand":1} T=null
+  M: `client.Ⓔ.create({ "$action" => "terraform", "Ⓕ" => "Ⓔ_id" })`
+  E(rb B: Demo Ruby SDK Reference > PlanetEntity > Actions): `client.Planet.create({ "$action" => "terraform", "id" => "planet_id" })`
+  langs=rb

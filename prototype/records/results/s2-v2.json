@@ -1,0 +1,478 @@
+{
+ "summary": "I built interface version 2 in a copy of the probe's clone and re-did the README tutorial for ts, go, py, c, zig and clojure under it. I then ported a second section, the root README's per-language quick start, through the same description, builders and providers. Names now come from a per-language Naming hook (Naming_<lang>.ts, 21-27 lines each) that calls the same functions the code generator calls. The six providers hold 0 naming rules and read the model 0 times: purity.js finds 43 hits in the starting providers and 1 now, and that one is array subscript syntax. go's tutorial and its root quick start are each one complete program again; I generated a go SDK, ran its README program in test mode myself, and it exited 0 with every step succeeding. The facts stage 1 deleted are back, held in a declared RuntimeFacts table per provider, with the sentences for each of 5 result styles written once in shared code. A new test re-derives the declared methods, record accessor and result style from the runtime templates, and fails when any of them is changed. Every whether-decision listed in stage 1 now sits in the description or the builders. Across 19 variations, 0 changed lines are unexplained, the 14 unported languages are byte-identical (their READMEs and their root subsections), and nothing changed outside the two sections. Lanes: ts 16/16, go 12/12, py 12/12 under real pytest, c DOC 6/6 (basic-server now passes; it was 5/6), and the full suite is 2528 tests with 0 failures. The second section cost 54 new shared lines and 0 new provider lines, and it removed 659 lines in six languages (2,000 in twenty). H2 is still refuted: both sections in six languages go from 2,060 to 1,818 lines (1.13x), projected to twenty 1.75x, or 1.46x if providers are the size of c's. H1 is crossed on two measures: by sentence, 31% of each language's tutorial sentences (48% for go) are result-style frames that no other ported language uses, and by words, zig's root-section comments are 20% provider-supplied, over the 15% line. The migration change merged cleanly and passes 7/7; a real 4.44.0 project upgraded, had its 12 retired copies and their compiled output removed by package update, generated the new text, and doctor ended clean.",
+ "stopped_at": "Finished, in the brief's order: 2 names, 3 one program, 4 runtime facts (and a guard test for them), 5 decisions, 7 re-run, 1 migration, 6 second section, and the step-8 count. Commits are on top of the probe's c74f7435 in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v2/sdkgen. Not done: (a) zig and clojure were not compiled; command -v reports both MISSING here. (b) The REFERENCE page and every other README section were not touched, so the ts README still contradicts itself between the tutorial and the options table (brief2 item 8). (c) The facts guard checks methods, the record accessor and the result style, but not the collection noun, recordType, nullValue or errVar. (d) No unported language was ported. elixir's whole-collection accessor is possible under the hook's signature but was not exercised. (e) Timings were measured once under load (three runs, minimum), and only for one variation. (f) The lanes ran at fca3e1a3, before the lifecycle commits. Those commits touch only ts/src/action and their dist, and regenerating at the final HEAD f9c43b19 gave identical documentation output.",
+ "clone": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v2/sdkgen (detached; base 9aebaf9e; the architect's f21e6fe1..950912e7 and the probe's 0a4c0a06..c74f7435 underneath). My commits: af89a54e 'Interface v2: names from a per-language naming hook, declared runtime facts, call context, one-program form; root quick start through the providers'; e3965273 'The description takes the naming hook from the component; step comments carry the runtime fact; golden'; fca3e1a3 'Guard: each provider's declared runtime facts are re-derived from its templates'; 1fcc1ef5, 9481257f, 61e8b338 (migrate's a49fddc0, 7bb5161b, c193a603, applied as src+test patches with git am; its stand-ins 177c44ec and 98f87b2b were NOT taken); f9c43b19 'Build of the lifecycle change' (dist). Harness: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v2/harness (outputs in out/{old,new}/<variation>/). Pristine old clone copy: .../v2/oldclone. Upgrade walk: .../v2/mig (bin/tool.js, work/walk, work/walk-before).",
+ "interface_now": "// ===== ts/src/helpers/sdkdesc.ts (description) =====\ntype Scalar = string\n\ntype DescServerVar = {\n  name: string\n  required: boolean // the URL references it and it has no default\n  dflt: string\n}\n\ntype DescOption =\n  | { name: 'apikey', env: string }\n  | { name: 'secret', env: string }\n  | { name: 'server', vars: { name: string, placeholder: string }[] }\n\n// One member of an example request: a typed placeholder, or the id read off\n// the record the example created.\ntype DescArg =\n  | { name: string, type: Scalar, placeholder: string }\n  | { name: string, fromCreated: string }\n\n// The names the generated code gives the SDK as a whole, decided by the\n// target's own naming functions (its Naming hook).\ntype DescLayout = {\n  module: string // what an example imports the SDK by: a package, module path, header or namespace\n  client: string // the client type\n  ctor: string // the function or constructor an example creates a client with\n}\n\n// The names the generated code gives one entity, from the same hook.\ntype DescSymbols = {\n  accessor: string // the client member, or function, that yields the entity\n  var: string // a variable holding one entity\n  vars: string // a variable holding a list of them\n  module?: string // what an example must import to call its operations\n  alias?: string // the name that import is bound to\n  fields?: Record<string, string> // field -> the identifier a variable named after it takes\n}\n\n// A target's naming hook: the code generator's own naming functions, which may\n// read the model. Exported as `Naming` by cmp/<target>/Naming_<target>.\ntype Naming = (model: any, target: any) => {\n  layout: DescLayout\n  symbols: (entity: any) => DescSymbols\n}\n\ntype DescEntity = {\n  name: string // model key, e.g. graph_ql\n  Name: string // class-name stem, e.g. GraphQl\n  sym: DescSymbols\n  ops: string[] // generated, callable, canonical order\n  id: string | null // the load-match id key\n  dataId: string | null // the id on the returned record\n  parents: string[] // required non-id load parameters of a nested entity\n}\n\ntype DescQuick = {\n  entity: string // the example entity (first active)\n  list: DescArg[] | null // null: no list step\n  load: { entity: string, args: DescArg[], nested: null | { parent: string, param: string } } | null\n  create: DescArg[] | null\n  update: DescArg[] | null\n  patch: DescArg[] | null\n  remove: DescArg[] | null\n  chainsId: boolean // update/patch/remove take the id off the created record\n  show: string[] // the fields a runtime that prints chosen fields prints: the record id, then one display field\n}\n\ntype SdkDescription = {\n  target: string\n  name: string // model slug\n  Name: string // class-name stem\n  package: string // published package or module path of this target\n  layout: DescLayout\n  env: { prefix: string }\n  auth: { active: boolean, in: string, name: string, basic: boolean, secret: boolean }\n  options: DescOption[] // what the quick start's constructor passes, in order\n  server: DescServerVar[] // variables the server URL references\n  entities: DescEntity[]\n  quick: DescQuick | null // null when no entity is active\n}\n// sdkDescription(model, target, naming?: Naming): SdkDescription  -- memoised per model and target; the calling component finds the hook:\n// describeTarget(ctx$, target) in ts/src/cmp/ReadmeQuick.ts = sdkDescription(ctx$.model, target, optionalComponent(ctx$, target, 'Naming')?.Naming). OPTIONAL_COMPONENTS.Naming = null (no hook: genericNaming).\n\n// ===== ts/src/helpers/example.ts (representation) =====\ntype Ent = { name: string, Name: string, sym: DescSymbols }\n\n// A value an example names. `role` says what it holds, so a printer can\n// choose its identifier: the entities a list returned, one of them, the one a\n// load returned, the one a create returned.\ntype Ref = { role: 'many' | 'item' | 'one' | 'created', entity: Ent }\n\ntype Expr =\n  | { k: 'lit', type: Scalar, text: string } // a typed literal; `text` when it is a string\n  | { k: 'str', text: string } // a plain string\n  | { k: 'env', name: string } // an environment variable, read\n  | { k: 'record', of: Ref } // the record a returned entity holds\n  | { k: 'field', of: Ref, field: string } // one field of that record\n  | { k: 'fields', of: Ref, fields: string[] } // chosen fields of that record, for display\n  | { k: 'map', entries: Entry[] }\n\ntype Entry = { key: string, value: Expr }\n\ntype Stmt =\n  | { k: 'client', options: Entry[] } // construct the client; [] for none\n  // `wide`: the argument is laid out one member per line where the language\n  // lays maps out that way (a write's data; a load match of several members).\n  | { k: 'call', entity: Ent, op: string, arg: Entry[] | null, bind: Ref | null, wide: boolean }\n  | { k: 'each', item: Ref, of: Ref, body: Stmt[] }\n  | { k: 'print', what: Expr }\n  | { k: 'attempt', what: string, body: Stmt[] } // report a failure of `what`\n  | { k: 'comment', text: string }\n  | { k: 'gap' }\n\n// A null arg on a call: the call takes no match. A create always takes data.\n// Builders: clientBlock(desc), listBlock(desc, facts), loadBlock(desc, facts), writeBlock(desc, facts), writeOps(desc). Write results are never shown; `created` is bound only when desc.quick.chainsId. A print shows {k:'fields'} when facts.prints==='fields' and desc.quick.show is non-empty, else {k:'record'}.\n\n// ===== runtime-fact table type (example.ts) =====\ntype ResultStyle =\n  | 'throw' // the value is returned; a failure throws\n  | 'raise' // the value is returned; a failure raises\n  | 'pair' // (value, error)\n  | 'errslot' // the value is returned, or a null value with an error slot set\n  | 'union' // a result union whose success arm holds the value\n\ntype OpName = 'list' | 'load' | 'create' | 'update' | 'patch' | 'remove'\n\n// What a target's runtime is, independently of any model: declared by the\n// provider, checked against the runtime templates (test/runtimefacts.test.ts).\ntype RuntimeFacts = {\n  method: Record<OpName, string> // the method each operation is in the runtime: load -> Load\n  named: 'call' | 'bare' // prose names an operation as `load()` or as `load`\n  async: boolean // operations resolve (a promise) rather than return\n  result: ResultStyle\n  collection: string // what a list's value is: 'array', '`[]any`', 'slice' (markdown)\n  record: string // the code that reads an entity's record: '.data()'\n  recordType?: string // the type that record is, where the runtime names one: 'dict'\n  errVar?: string // pair, errslot: the variable a caller checks: 'err'\n  errSlot?: string // errslot: what is set on failure: '*err'\n  nullValue?: string // errslot: what a failed call returns: 'NULL'\n  ok?: string // union: the success arm: '.ok'\n  err?: string // union: the failure arm: '.err'\n  prints: 'record' | 'fields' // how an example shows an entity: its whole record, or chosen fields\n}\n// The sentences for each ResultStyle live once in ts/src/helpers/runtimeprose.ts: listSentence(f), loadSentence(f), createComment(f), listComment(f, title), loadComment(f, title).\n\n// ===== provider interface (example.ts) =====\n// What a block uses, for a printer that declares imports.\ntype Uses = { env: boolean, field: boolean, print: boolean, entities: string[] }\n// What one section's printing has declared so far; a printer that hoists a\n// declaration (a handle, an error slot) records it here.\n// `section` is every statement the section prints, known before its first\n// block, for a printer that declares ahead what later blocks use.\ntype Scope = { declared: Set<string>, local: Set<string>, stmts: Stmt[], section: Stmt[] }\n\n// Where a call stands: inside an attempt (whose handling covers it) or not,\n// and whether it is the last statement of its block.\ntype CallContext = { inAttempt: boolean, last: boolean }\n\n// One step of a section presented as one program: its title and its lines.\ntype ProgramStep = { title: string, lines: string[] }\n\ntype Syntax = {\n  fence: string // the code fence language\n  facts: RuntimeFacts\n  // Each printer returns lines; `inner` prints nested statements at one more level.\n  client: (s: Extract<Stmt, { k: 'client' }>, desc: SdkDescription, sc: Scope) => string[]\n  call: (s: Extract<Stmt, { k: 'call' }>, desc: SdkDescription, sc: Scope, cx: CallContext) => string[]\n  each: (s: Extract<Stmt, { k: 'each' }>, inner: (body: Stmt[]) => string[], sc: Scope) => string[]\n  print: (s: Extract<Stmt, { k: 'print' }>, sc: Scope) => string[]\n  attempt: (s: Extract<Stmt, { k: 'attempt' }>, inner: (body: Stmt[]) => string[], sc: Scope) => string[]\n  comment: (text: string) => string\n  expr: (e: Expr, sc: Scope) => string\n  // Optional: lines a block needs ahead of its statements (a hoisted handle).\n  before?: (stmts: Stmt[], desc: SdkDescription, sc: Scope) => string[]\n  // Optional: the steps of a section assembled into one complete program, for\n  // a language whose examples are whole programs that its README test runs.\n  program?: (steps: ProgramStep[], desc: SdkDescription, sc: Scope) => string[]\n}\n// Printing helpers: printBlock(p, stmts, desc, sc); printSteps(p, steps, desc, sc) (one local scope across steps; a step's leading comment is printed before what `before` hoists); printProgram(p, steps, desc, sc) (fenced p.program(printSteps(...))); printJoined(p, steps, desc, sc) (steps in one block, blank line between). printStmts flattens any returned multi-line string into lines. A provider is `Syntax` exported by cmp/<t>/Syntax_<t>; its naming hook is `Naming` exported by cmp/<t>/Naming_<t>; both are found through optionalComponent. A target's own ReadmeQuick_<t> / ReadmeTopQuick_<t> still wins over its provider (packs, overrides).",
+ "interface_changes": [
+  {
+   "change": "Scope gains `section: Stmt[]` (probe commit caf89e8e)",
+   "breaking": false,
+   "why": "clojure has to require the entity namespaces that later blocks call, from inside the client block, without reading desc.quick",
+   "rework_forced_in": "none of the existing providers (clojure was being written)"
+  },
+  {
+   "change": "RuntimeWords gains optional `one` (probe commit c74f7435)",
+   "breaking": false,
+   "why": "'load() returns the entity' is false for a result union",
+   "rework_forced_in": "zig (being written). Superseded by change 3"
+  },
+  {
+   "change": "Syntax.words: RuntimeWords is replaced by Syntax.facts: RuntimeFacts (af89a54e). The fact table holds the method per op, named, async, the result-style enum, collection, record, recordType, errVar, errSlot, nullValue, ok, err and prints. The shared sentences per result style move to helpers/runtimeprose.ts.",
+   "breaking": true,
+   "why": "Requirement C. RuntimeWords were English fragments fitted to two sentence frames, and they had lost facts. The table is structured, a test checks it against the templates, and the sentences are written once per style",
+   "rework_forced_in": "all 6: ts, go, py, c, zig, clojure (each replaced its `words` with a 9-14 line facts table)"
+  },
+  {
+   "change": "Expr gains kind `fields` {of, fields}; DescQuick gains `show: string[]`; RuntimeFacts.prints decides record or fields (af89a54e)",
+   "breaking": true,
+   "why": "Requirement D. php, rb, lua and perl choose display fields from the model; the choice now happens once in the description, and printing chosen fields is a declared capability. A new Expr kind breaks every exhaustive expr switch",
+   "rework_forced_in": "all 6 (one `case 'fields'` each; c and zig also handle it in print). None of the six uses it: all declare prints: 'record'"
+  },
+  {
+   "change": "Names: DescLayout, DescSymbols and the Naming hook type; SdkDescription.layout, DescEntity.sym and Ent.sym; OPTIONAL_COMPONENTS.Naming; a Naming_<lang>.ts per ported target (af89a54e, e3965273)",
+   "breaking": false,
+   "why": "Requirement A. Providers copied reserved-word lists and derived names by string surgery; elixir's accessor needs the whole entity collection",
+   "rework_forced_in": "Not forced by a compile break, but required: all 6 providers rewritten to read names only from desc.layout and entity.sym, and 6 hooks written (ts 24, go 23, py 26, c 27, zig 21, clojure 27 lines). Code generators changed to share a function: py (utility_py.pyPackageDir, called by Main_py), clojure (cljAccessor, cljEntityNs and cljEntityAlias, called by Main_clojure and MainEntity_clojure)"
+  },
+  {
+   "change": "Stmt `call` gains `wide: boolean`, set by the builder (af89a54e)",
+   "breaking": false,
+   "why": "Requirement D: Syntax_ts held a list of write operation names and a member-count rule to choose its layout",
+   "rework_forced_in": "ts (dropped WRITES and the condition). The others ignore it"
+  },
+  {
+   "change": "The `call` printer gains a 4th argument `cx: CallContext {inAttempt, last}` (af89a54e)",
+   "breaking": false,
+   "why": "zig used an undeclared Scope.local flag to learn that it was inside an attempt; ocaml and rust need position and context (probe)",
+   "rework_forced_in": "zig (switched from the flag to cx.inAttempt). `last` is computed but none of the six uses it"
+  },
+  {
+   "change": "Syntax gains optional `program(steps, desc, sc)`, the ProgramStep type, and printSteps/printProgram/printJoined (af89a54e)",
+   "breaking": false,
+   "why": "Requirement B: go's README test runs whole programs, and fragments are only type-checked",
+   "rework_forced_in": "go (adds program, 20 lines; drops its imports from client)"
+  },
+  {
+   "change": "Uses gains `print`",
+   "breaking": false,
+   "why": "go's program imports fmt only when the section prints",
+   "rework_forced_in": "none"
+  },
+  {
+   "change": "Builders take the facts: listBlock(desc, facts), loadBlock(desc, facts), writeBlock(desc, facts)",
+   "breaking": true,
+   "why": "The fields-or-record choice and the c create comment depend on declared facts",
+   "rework_forced_in": "no provider; the shared ReadmeQuick only"
+  },
+  {
+   "change": "sdkDescription(model, targetName) becomes sdkDescription(model, target, naming?); the calling component finds the hook (describeTarget)",
+   "breaking": true,
+   "why": "The description builder must call the target's naming hook; the optional-component table test requires the lookup to happen in a component",
+   "rework_forced_in": "no provider; ReadmeQuick and ReadmeTop only"
+  },
+  {
+   "change": "Builder and walker semantics: `created` is bound only when a later call reads its id; printStmts splits multi-line strings a printer returns",
+   "breaking": false,
+   "why": "go's whole program refuses an unused variable; the go constructor was mis-indented inside main (the M14 defect, reintroduced by my first program printer)",
+   "rework_forced_in": "none (ts may drop its own .split)"
+  }
+ ],
+ "names": "Names reach the description through one hook per language: cmp/<lang>/Naming_<lang>.ts exports `Naming(model, target)` returning {layout: {module, client, ctor}, symbols(entity): {accessor, var, vars, module?, alias?, fields?}}. The hook may read the model. ReadmeQuick.describeTarget finds it with optionalComponent(ctx$, target, 'Naming'). sdkDescription stores layout and per-entity sym (active entities only, though the hook sees the whole model, which elixir needs). The providers read only desc.layout and Ent.sym; purity.js counts 0 naming rules in them. One name per language where the code generator and the description call the same function:\n- ts: packageName(model, target.name), called by Package_ts.ts:68 (the package.json name) and Naming_ts.ts:11 (layout.module, the import path).\n- go: goModule(model, target.name), called by Main_go.ts:48 and Naming_go.ts:13. The alias go2 gets github.com/voxgig-sdk/demo-sdk/go2, as OLD did.\n- py: pyPackageDir(model), new in utility_py.ts and extracted from Main_py's inline expression, called by Main_py.ts:49 (the package folder) and Naming_py.ts:13. Other py components still repeat the inline expression `model.const.Name.toLowerCase() + '_sdk'` (MainEntity_py, Package_py, Test*_py); I moved only the one call site.\n- c: cIdent(model) and cVarName(entity.name), called by MainEntity_c.ts:16-17 and Naming_c.ts:14,17,20 (ctor demo_sdk_new, accessor demo_planet, handle planet). Field identifiers use cVarName too (EntityTypes_c.ts:27 and Naming_c.ts:19).\n- zig: zigVarName(entity.name), called by MainEntity_zig.ts:21 (the accessor method) and Naming_zig.ts:15.\n- clojure: cljEntityNs(e) and cljEntityAlias(e), new in utility_clojure.ts and extracted from Main_clojure's inline template, called by Main_clojure.ts:78; cljAccessor(e) is called by MainEntity_clojure.ts:16. Naming_clojure.ts:16-20 calls all three.\nFixed names that come from templates rather than functions are written as literals in the hooks, with a comment: zig module 'sdk', c header 'core/api.h', clojure 'sdk.api'/'api/make-sdk', and the ProjectNameSDK client class (model.const.Name + 'SDK'). The refinement holds: a language supplies (1) naming functions it shares with its code generator, (2) printers, and (3) a declared fact table. It decides nothing about what is shown.",
+ "program_unit": "Syntax.program?(steps, desc, sc) is optional. When a provider has it, the shared component writes the same sentences as a numbered list ('1. **Create a client.** <client sentence>' ...), after one shared sentence, 'The steps are one program, shown whole after them.' The code is one block: printProgram runs every step's statements under one local scope (printSteps), and the provider assembles the result. go's program() writes package main, an import block (fmt only when something prints, os only when an env var is read, the sdk module from desc.layout), and func main with each step under a comment that names it and its runtime fact. It adds `_ = client` when the section calls nothing. The root README uses the same path, so go's root quick start is also one program.\n\nWhich languages use it and why. I read each README test generator:\n- go (ReadmeExamplesTest_go.ts): compiles fragments by wrapping them (wrapFragment, with unused variables blanked) and, for a block containing `func main`, compiles it as is AND runs a test-mode variant with go run (rewriteCtorsToTest, runProgs). Only a whole program is executed. go uses program.\n- ts (ReadmeExamplesTest_ts.ts): every block is type-checked with tsc; a block that constructs the SDK or calls `client.` is rewritten to seeded test mode and executed. Each tutorial step is therefore already executed, so no program.\n- py (ReadmeExamplesTest_py.ts): every block is compiled; a block that constructs the SDK or drives `client.` is executed in a seeded test subprocess. Steps are executed; no program.\n- c: the in-SDK test (ReadmeExamplesTest_c.ts) is structural only (non-empty, balanced). sdkgen's DOC lane joins a section's numbered steps into one program and compiles it with -fsyntax-only, and executes nothing. Nothing c runs today, so no program.\n- zig and clojure: structural checks only (fences, balanced parens); no toolchain here.\n\nWhat runs, before and after:\n- go: OLD had 1 `func main` in go/README (compiled and run) and 0 in the root README (fragments, compiled only). Stage 1 had 0 (nothing executed). NEW has 1 in go/README and 1 in the root README, both compiled and run. Verified directly: I kept the generated SDK of the lane 'go: every README example is classified, and run, with a patch', rewrote the program's constructor as the harness does, and `go run` exited 0. It printed both seeded records, and create, update, patch and remove all succeeded.\n- ts and py: every tutorial and root block executed, before and after.\n- c: compiled only, before and after.\n- zig and clojure: structure only.",
+ "runtime_facts": [
+  {
+   "lang": "ts",
+   "facts": "method identity; named call; async true (resolves to); result throw; collection 'array'; record '.data()'; prints record",
+   "sentences": 5,
+   "words_runtime": 58,
+   "words_shared": 1114,
+   "restored_from_stage1": "'resolves to' (promise), OLD's verb, restored through async"
+  },
+  {
+   "lang": "go",
+   "facts": "method List/Load/Create/Update/Patch/Remove; named call; result pair; collection '`[]any`'; record 'Data()'; errVar 'err'; prints record",
+   "sentences": 7,
+   "words_runtime": 102,
+   "words_shared": 1441,
+   "restored_from_stage1": "'returns (value, error): the value is ...', 'a non-nil err reports failure', 'There is no {ok, data} wrapper'; also the whole program (B)"
+  },
+  {
+   "lang": "py",
+   "facts": "method identity; named call; result raise; collection '`list`'; record 'data_get()'; recordType 'dict'; prints record",
+   "sentences": 2,
+   "words_runtime": 80,
+   "words_shared": 1114,
+   "restored_from_stage1": "'reads its record (a dict)'. 'returns the ENTITY' is stated by the shared 'returns the entity' sentence"
+  },
+  {
+   "lang": "c",
+   "facts": "method identity; named call; result errslot; collection '`NULL`-terminated array'; record 'vt->data'; errVar 'err'; errSlot '*err'; nullValue 'NULL'; prints record",
+   "sentences": 5,
+   "words_runtime": 145,
+   "words_shared": 1171,
+   "restored_from_stage1": "'or NULL with *err set' (sentences and the create comment), 'so check err after the call'"
+  },
+  {
+   "lang": "zig",
+   "facts": "method identity; named call; result union; ok '.ok'; err '.err'; collection 'slice'; record 'asEntity().data(null)'; prints record",
+   "sentences": 5,
+   "words_runtime": 146,
+   "words_shared": 1180,
+   "restored_from_stage1": "'returns a result whose .ok is ... and whose .err reports failure' (from the union style, replacing RuntimeWords.one)"
+  },
+  {
+   "lang": "clojure",
+   "facts": "method identity; named bare (`list`); result raise; collection 'vector'; record '((:data-get entity))'; prints record",
+   "sentences": 2,
+   "words_runtime": 80,
+   "words_shared": 1092,
+   "restored_from_stage1": "nothing deleted in stage 1; the generic '((:data-get entity))' stays (RuntimeWords.data as a function of the entity was rejected as a breaking change)"
+  }
+ ],
+ "per_language": [
+  {
+   "lang": "ts",
+   "section": "README tutorial + root quick start",
+   "old_lines": 365,
+   "provider_lines": 88,
+   "naming_lines": 24,
+   "code_blocks_identical": 18,
+   "code_blocks_changed": 43,
+   "change_reasons": [
+    "C: list/load sentences per result style (resolves to)",
+    "S28/U45 lead-in and numbering",
+    "D25/S49/G01 client prose",
+    "S49/G01/M13 server block lists only required variables (both sections)",
+    "list wrapped in try/catch; root: list and load in error handling, as in the tutorial",
+    "root: each step commented with its title and runtime fact",
+    "root: the load shown is the description's choice",
+    "unused write results not bound"
+   ],
+   "unexplained": 0,
+   "compiles": "ts README lanes 16/16 (tsc type-check of every block)",
+   "runs": "before and after: every runnable tutorial and root block executed in seeded test mode (16/16 lanes)"
+  },
+  {
+   "lang": "go",
+   "section": "README tutorial + root quick start",
+   "old_lines": 335,
+   "provider_lines": 124,
+   "naming_lines": 23,
+   "code_blocks_identical": 0,
+   "code_blocks_changed": 39,
+   "change_reasons": [
+    "B: one program again (package main, imports, func main); steps become a numbered list of the same sentences",
+    "C: (value, error) sentences and the no-{ok,data} sentence restored from facts",
+    "root: one program too (OLD root was fragments)",
+    "S49/G01/M13 required server variables only; M14 indentation correct",
+    "D: one constructor NewDemoSDK(nil) instead of New() chosen by option count",
+    "root: loop variable `item`, load choice from the description",
+    "write results not printed or bound (one builder decision; OLD printed every write)"
+   ],
+   "unexplained": 0,
+   "compiles": "go README lanes 12/12",
+   "runs": "OLD: 1 program in go/README run, root fragments only compiled. Stage 1: nothing run. NEW: the go/README program and the root program both compiled and run in test mode; run directly, exit 0"
+  },
+  {
+   "lang": "py",
+   "section": "README tutorial + root quick start",
+   "old_lines": 325,
+   "provider_lines": 85,
+   "naming_lines": 26,
+   "code_blocks_identical": 25,
+   "code_blocks_changed": 36,
+   "change_reasons": [
+    "C: list/load sentences per result style, '(a dict)'",
+    "S28/U45 lead-in and numbering",
+    "D25/S49/G01 client prose",
+    "S49/G01/M13 server block",
+    "root: list and load in try/except as in the tutorial; step comments with facts; load choice from the description"
+   ],
+   "unexplained": 0,
+   "compiles": "compile() of every block (py lanes 12/12)",
+   "runs": "before and after: runnable blocks executed in seeded test mode; real pytest 9.1.1, 12/12 lanes"
+  },
+  {
+   "lang": "c",
+   "section": "README tutorial + root quick start",
+   "old_lines": 345,
+   "provider_lines": 148,
+   "naming_lines": 27,
+   "code_blocks_identical": 7,
+   "code_blocks_changed": 54,
+   "change_reasons": [
+    "C: errslot sentences restored ('or NULL with *err set', 'check err after the call') and the create comment",
+    "S49 constructor carries required server variables (both sections)",
+    "c-getenv: #include <stdlib.h> (root now too)",
+    "D: `PNError* err` declared ahead of the first block that calls an operation, not in the client block",
+    "root: if (err) handling as in the tutorial; load choice; comments with facts"
+   ],
+   "unexplained": 0,
+   "compiles": "c DOC lanes 6/6, including basic-server (start: 5/6, failing in the root README)",
+   "runs": "nothing executed, before or after (-fsyntax-only; the in-SDK test is structural)"
+  },
+  {
+   "lang": "zig",
+   "section": "README tutorial + root quick start",
+   "old_lines": 323,
+   "provider_lines": 126,
+   "naming_lines": 21,
+   "code_blocks_identical": 25,
+   "code_blocks_changed": 36,
+   "change_reasons": [
+    "C: union sentences ('.ok is ... .err reports failure')",
+    "S49 constructor carries required server variables",
+    "create bound outside its switch for the chained id; write results not printed",
+    "root: step comments with facts; load choice"
+   ],
+   "unexplained": 0,
+   "compiles": "not compiled: zig MISSING here",
+   "runs": "structural check only; not run"
+  },
+  {
+   "lang": "clojure",
+   "section": "README tutorial + root quick start",
+   "old_lines": 320,
+   "provider_lines": 109,
+   "naming_lines": 27,
+   "code_blocks_identical": 26,
+   "code_blocks_changed": 35,
+   "change_reasons": [
+    "C: raise sentences ('raises on failure' instead of 'on error')",
+    "S49 constructor carries required server variables",
+    "root: try/catch as in the tutorial; requires every entity namespace the section calls; load choice; comments with facts"
+   ],
+   "unexplained": 0,
+   "compiles": "not compiled: clojure MISSING here",
+   "runs": "structural check only; not run"
+  }
+ ],
+ "unported_identical": "The 14 unported languages (js php rb lua csharp java kotlin scala swift rust cpp perl elixir ocaml) are byte-identical to OLD in every one of the 19 variations: 0 differing per-target README.md files and 0 differing root README subsections ('### <Title>' under '## Quickstart' and '## Quickstart in other languages'). The root README outside the per-language quick-start subsections is identical in all 19 variations, and the six ported languages' READMEs are identical outside the tutorial section. Command: cd v2/harness && node diff2.js (after gen.js old and new). The variation op-absent-readonly was replaced by ex-readonly (example entity planet with list and load only), which does reach the quick start: its lead-in reads 'listing planet records, and loading a planet' and it has no write step.",
+ "source_lines": "Counted with node harness/metrics2.js; figures are total / non-blank non-comment.\nBEFORE (OLD, /home/user/sdkgen/ts):\n- shared ReadmeQuick.ts: 34/21.\n- ReadmeQuick_<lang> for the six: 1,354/1,044 (all 20: 4,503/3,458).\n- ReadmeTop.ts quick-start call sites: 13/12.\n- ReadmeTopQuick_<lang> for the six: 659/474 (all 20: 2,000/1,422).\n- Both sections, six languages: 2,060/1,551. All 20: 6,550/4,913.\nAFTER (v2):\n- Shared infrastructure, used by both sections: helpers/sdkdesc.ts 298/231, helpers/example.ts 338/242, helpers/runtimeprose.ts 101/75.\n- Shared section component ReadmeQuick.ts: 212/160, of which topQuickText is 13.\n- Root-only shared code: 54/51 (topQuickText 13, ReadmeTop topQuick 9 plus the call sites, failsShort 9, listComment 4, loadComment 3, printJoined 3).\n- Providers: ts 88, go 124, py 85, c 148, zig 126, clojure 109 (580 in all).\n- Naming hooks: ts 24, go 23, py 26, c 27, zig 21, clojure 27 (148 in all).\n- Code-generator extractions: utility_py +5 and utility_clojure +12 lines, not counted above.\n- Both sections, six languages: 1,818/1,377. Ratio 1.13x / 1.13x.\nPROJECTION to 20, assuming the other 14 providers and hooks average the six (about 121 + 25 lines) and the shared code does not grow: 6,550 -> 3,750 (1.75x; 1.73x non-blank non-comment). At c's size (148 + 27): 4,490 (1.46x). Both under the 2x of H2.\nThe tutorial alone, as stage 1 measured it: 1,388 -> 1,764 for six languages. It GREW, because the facts tables, hooks and runtimeprose were added.\nWHAT A SECOND SECTION COST: 54 new shared lines (51 non-blank non-comment) and 0 new provider or hook lines. Against that it retired 659 lines in six languages (2,000 in twenty). Every provider printed the root section unchanged; the go program printer written for B served the root too. One small shared change was made only for the root: in printSteps, a step's leading comment is printed before c's hoisted handle (4 lines, counted in infrastructure). The marginal reuse is high, but the fixed infrastructure (737 lines) still dominates at six languages, and twenty languages with two sections reach only 1.46x to 1.75x.",
+ "issues": [
+  {
+   "id": "S49",
+   "fixed_by_shared_code": true,
+   "per_language_edit_needed": false,
+   "shown_on": "B, server-mixed, auth-basic (root and tutorial); c/zig/clojure root lacked server entirely in OLD",
+   "note": "Root quick start now passes the required server variables in all six (table: OLD c/zig/clojure root had none)."
+  },
+  {
+   "id": "S50",
+   "fixed_by_shared_code": true,
+   "per_language_edit_needed": false,
+   "shown_on": "auth-basic root: OLD only ts printed secret; NEW all six",
+   "note": "desc.options includes secret exactly for Basic in the header."
+  },
+  {
+   "id": "M12",
+   "fixed_by_shared_code": true,
+   "per_language_edit_needed": false,
+   "shown_on": "auth-basic-query root: OLD ts printed secret; NEW none",
+   "note": "Same rule as S50."
+  },
+  {
+   "id": "G01",
+   "fixed_by_shared_code": true,
+   "per_language_edit_needed": false,
+   "shown_on": "B root: OLD ts/go/py printed defaulted region; NEW none",
+   "note": "Only required server variables are passed; the tutorial prose states the default."
+  },
+  {
+   "id": "M13",
+   "fixed_by_shared_code": true,
+   "per_language_edit_needed": false,
+   "shown_on": "B root go/py",
+   "note": "Repeats G01."
+  },
+  {
+   "id": "M14",
+   "fixed_by_shared_code": true,
+   "per_language_edit_needed": false,
+   "shown_on": "go root and tutorial",
+   "note": "The go server block is indented correctly. My first program printer reintroduced the mis-indent (a multi-line string indented as one line); printStmts now splits lines for every provider."
+  },
+  {
+   "id": "c-getenv (root)",
+   "fixed_by_shared_code": false,
+   "per_language_edit_needed": false,
+   "shown_on": "c DOC lane basic-server: start 5/6 (fails ../README.md), NEW 6/6",
+   "note": "The stdlib.h include is the c provider's from stage 1; the root reuses it, so the second section needed no new per-language edit."
+  },
+  {
+   "id": "S28/U45 (root)",
+   "fixed_by_shared_code": true,
+   "per_language_edit_needed": false,
+   "shown_on": "root load choice: OLD root showed the example entity (ambient) where the tutorial showed the nested one",
+   "note": "The root now shows the description's choice, as the tutorial does; OLD go root already chose nested while py/c/zig/clojure did not (drift)."
+  },
+  {
+   "id": "stage1-deleted-facts",
+   "fixed_by_shared_code": true,
+   "per_language_edit_needed": false,
+   "shown_on": "doc-crud c/go/py tutorials",
+   "note": "Restored as declared facts with the sentences written once per result style. The facts themselves are per language, which is the definition of a runtime fact."
+  },
+  {
+   "id": "go-program (stage1 regression)",
+   "fixed_by_shared_code": false,
+   "per_language_edit_needed": true,
+   "shown_on": "all variations with go",
+   "note": "Needed an interface addition (program) and a go printer (20 lines). It is a per-language capability by nature."
+  },
+  {
+   "id": "brief2-8 (document contradicts itself)",
+   "fixed_by_shared_code": false,
+   "per_language_edit_needed": false,
+   "shown_on": "B ts/README: the tutorial says region defaults to eu, the options table says Required",
+   "note": "Not addressed: the options table is still per-language and unported. The root quick start now agrees with the tutorial."
+  }
+ ],
+ "provider_purity": "Counted by harness/purity.js over the six Syntax_<lang>.ts files. It looks for imports other than the printing helpers indentLines, jsKey, jsProp, jsQuote and uses; model reads (model, ctx$, getModelPath, nom, @voxgig/apidef, utility_<lang>); naming rules (RESERVED sets, exampleVarName, safeVarName, camelify, isReservedName); string surgery on names (case changes, suffixing a description name); reads of desc.name/Name/package; whether-decisions on desc.quick, auth, options or server; and operation-name literals outside the facts table. Starting copy (the probe's): 43 hits (ts 9, go 9, py 9, c 9, zig 5, clojure 2). Now: 1 hit, which is c's `r.entity.sym.vars + '[i]'`, an array subscript and not a name rule. No reserved-word list is copied anywhere: C_RESERVED and ZIG_RESERVED now live only in utility_c and utility_zig, and the hooks reach them through cVarName and zigVarName.\nWhat the script cannot see: conditions on the shape of the printed section rather than on the description. These remain in providers and I judge them syntax, not decisions:\n- go prints `_ = client` when the section calls no entity (go refuses an unused variable).\n- c declares `PNError* err` ahead of the first block with a call (this moved out of the client block, where it was printed unconditionally).\n- zig switches on a call only outside an attempt (cx.inAttempt).\n- clojure fuses call+each into doseq and call+rest into let by looking ahead inside an attempt.\n- go chooses := or = for err from Scope.local.\nThe fact tables hold English nouns ('array', 'vector', 'slice'); they are counted as provider words in the prose measure. Whether-decisions moved out of the providers: the record-or-fields choice (description show plus facts.prints), write results shown (never, in the builder), created bound only when chained (builder), go's constructor chosen by option count (now one constructor), ts's write-op name list and member-count layout (call.wide set by the builder), c's unconditional err, zig's undeclared Scope flag (cx), and the py, c and zig naming copies (the hooks).",
+ "migration": "Merged migrate's a49fddc0, 7bb5161b and c193a603 (target.ts, doctor.ts, edition.ts, remove.ts, retire.test.ts) as src+test patches via git am, then rebuilt. The stand-ins 177c44ec and 98f87b2b were not taken. The patches applied without conflict.\n- retire.test: 7/7 against the real shared component.\n- Full suite: 2,528 tests, 2,523 pass, 0 fail, 5 skipped.\nUpgrade walk with the migration agent's driver, copied to v2/mig/bin/tool.js and adapted to add the root README:\n1. Made a project with 4.44.0 (target add ts go py c zig clojure, feature add test), built it and generated. The output was the OLD per-language text, including go's '### Quickstart'.\n2. Switched the project to my build. doctor exited 1: 12 MISSING (Syntax_ and Naming_ for six targets), 12 RETIRED (ReadmeQuick_<lang> and ReadmeTopQuick_<lang> for six), and 5 OUTDATED. The OUTDATED files are the code-generator files I refactored to share naming functions: Main_py, utility_py, Main_clojure, MainEntity_clojure and utility_clojure. doctor-end read '0 forked, 0 edited, 0 stale, 12 missing, 5 outdated, 12 retired'.\n3. `package update @voxgig/sdkgen --no-fetch` exited 0. It logged 'removed src/cmp/<t>/ReadmeQuick_<t>.ts' and 'ReadmeTopQuick_<t>.ts' for all six, deleted their compiled dist output, and wrote the providers and hooks.\n4. tsc --build src exited 0. Generation produced the new tutorial ('This tutorial walks through creating a client and loading an ambient.'; go: 'The steps are one program, shown whole after them.') and the shared root quick start, with no warnings.\n5. doctor: '.sdk matches the scaffold (0 additive, 0 customized)', EXIT 0.\nNot re-run here: the override, alias, no-record, owned-target and langpack rows (migrate covered them on its stand-in). The alias path does run in my harness (alias-go2 goes through Naming_go2 and Syntax_go2). The hazard migrate reported is unchanged: an override deleted by hand leaves stale compiled output that is still used.",
+ "measurements": [
+  {
+   "name": "starting numbers (probe copy, rebuilt)",
+   "value": "0 UNEXPLAINED, 0 unported READMEs differing, 19 variations",
+   "command": "cd v2/harness && node gen.js start <clone>/ts && SIDE=start node diff-probe.js"
+  },
+  {
+   "name": "changed lines without a reason, both sections, 6 languages, 19 variations",
+   "value": "0 (of 4,397 changed lines); 0 unported READMEs or root subsections differ; 0 changes outside the two sections",
+   "command": "cd v2/harness && node gen.js old /home/user/sdkgen/ts; node gen.js oldclone $(cd ../oldclone/ts;pwd) --only alias; cp -r out/oldclone/alias-go2 out/old/; node gen.js new $(cd ../sdkgen/ts;pwd); node diff2.js"
+  },
+  {
+   "name": "code blocks identical/changed vs OLD (both sections, all variations)",
+   "value": "ts 18/43, go 0/39, py 25/36, c 7/54, zig 25/36, clojure 26/35 (root blocks: all changed)",
+   "command": "node diff2.js --json > diff2-report.json"
+  },
+  {
+   "name": "tutorial prose, 17 variations: sentences identical in all six (masked) / standalone frames, and provider words",
+   "value": "ts 49/22 (2 distinct), 51 of 961 words (5.3%); go 49/46 (4), 73/1288 (5.7%); py 49/22 (2), 73/983 (7.4%); c 49/22 (2), 109/1054 (10.3%); zig 49/22 (2), 95/1071 (8.9%); clojure 49/22 (2), 73/961 (7.6%)",
+   "command": "node prose.js new"
+  },
+  {
+   "name": "root quick-start comment text: provider words",
+   "value": "ts 3.3%, go 11.4%, py 3.3%, c 13.7%, zig 20.0% (over 15%), clojure 3.3%; py and clojure share every comment (raise style); the others have 2 frames each that no other ported language uses (3 counted, 2 differing only by article)",
+   "command": "node prose.js new"
+  },
+  {
+   "name": "provider purity hits (start / now)",
+   "value": "43 / 1 (the 1 is array subscript syntax)",
+   "command": "node purity.js <probe clone>/ts; node purity.js"
+  },
+  {
+   "name": "source lines, both sections, six languages",
+   "value": "2,060 -> 1,818 total (1.13x); 1,551 -> 1,377 non-blank non-comment",
+   "command": "node metrics2.js"
+  },
+  {
+   "name": "projection to 20 languages",
+   "value": "6,550 -> 3,750 (1.75x) at the six's average provider and hook; 4,490 (1.46x) at c's size",
+   "command": "node metrics2.js"
+  },
+  {
+   "name": "second-section cost",
+   "value": "54 shared lines (51 non-blank non-comment), 0 provider/hook lines; retired 659 lines (six) / 2,000 (twenty)",
+   "command": "node metrics2.js (topOnly) and git diff"
+  },
+  {
+   "name": "ts README lanes",
+   "value": "16/16",
+   "command": "cd sdkgen/ts && node --test --test-name-pattern 'typescript: the README example tests type-check and run' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "go README lanes",
+   "value": "12/12; the go/README program compiled and its test-mode variant run by the generated test",
+   "command": "node --test --test-name-pattern '^go: (every README example|the README examples run)' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "go program executed directly",
+   "value": "exit 0; printed both seeded records; create/update/patch/remove succeeded; 1 func main in go/README and 1 in the root README (OLD 1 and 0)",
+   "command": "kept the SDK of 'go: every README example is classified, and run, with a patch' (copy of the compiled suite without tmp cleanup, TMPDIR=v2/keep), rewrote the ctor to sdk.TestSDK(readmeTestSeed, nil), go run ./_runcheck"
+  },
+  {
+   "name": "py README lanes (real pytest 9.1.1)",
+   "value": "12/12",
+   "command": "PATH=/root/.local/share/uv/tools/pytest/bin:$PATH node --test --test-name-pattern '^py: (every README example|the README examples run)' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "c DOC lanes",
+   "value": "6/6 including basic-server (start: 5/6)",
+   "command": "node --test --test-name-pattern '^c: every documented example compiles' dist-test/generatedcompile.test.js"
+  },
+  {
+   "name": "full suite without toolchain lanes (final HEAD)",
+   "value": "2,528 tests, 2,523 pass, 0 fail, 5 skipped",
+   "command": "cd sdkgen/ts && node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)"
+  },
+  {
+   "name": "runtime facts guard",
+   "value": "7/7. Negative controls fail as they should: go load 'Fetch' with result 'throw'; c record 'vt->record'",
+   "command": "node --test dist-test/runtimefacts.test.js; sed the compiled Syntax_go.js / Syntax_c.js and rerun"
+  },
+  {
+   "name": "retire suite",
+   "value": "7/7",
+   "command": "node --test dist-test/retire.test.js"
+  },
+  {
+   "name": "docs generation time, doc-crud, 21 READMEs, minimum of 3 (perturbed: the suite was running)",
+   "value": "OLD 894 ms, NEW 906 ms",
+   "command": "node gen.js t-old /home/user/sdkgen/ts --only '^doc-crud$' (x3); same for NEW"
+  }
+ ],
+ "tests": "Full suite without the toolchain lanes, at final HEAD f9c43b19: 2,528 tests, 2,523 pass, 0 fail, 5 skipped. The golden was refreshed (npm run golden) after the providers and hooks were added.\nTest adaptations I made:\n- generateharness/generate.test 'a registered component dispatches per target' used ReadmeTopQuick as its sample component, which ts, go and py no longer ship. It now uses ReadmeTopTest.\n- optional.test requires every optional component to be looked up from src/cmp and listed in docs/how-to/author-a-new-language.md. The hook lookup moved into ReadmeQuick.describeTarget, and the guide gained a Naming_<lang> paragraph.\n- New: test/runtimefacts.test.ts (7 cases) re-derives each provider's declared method names, record accessor and result style from src/cmp/<lang>/fragment and tm/<lang>/{core,src}. Three negative controls failed as they should.\n- Merged: test/retire.test.ts (7/7).\nLanes, run at fca3e1a3 (the docs output is identical at f9c43b19): ts README 16/16, go README 12/12, py README 12/12 under real pytest, c DOC 6/6.",
+ "gaps": [
+  "zig and clojure examples were neither compiled nor run: command -v reports zig and clojure MISSING here. Their test is structure plus the reasoned diff.",
+  "The facts guard checks method names, the record accessor and the result style. It does not check collection, recordType, nullValue, errVar, errSlot, ok/err or named, which are words a test could compare with the templates' return types but does not yet.",
+  "The 'standalone sentence' count is computed among the six ported languages only. Across 20, the raise frame would be shared by about 9 languages, so these per-language percentages would fall, but that was not measured.",
+  "Brief2 item 8 is not addressed: the ts README options table still says Required for region while the tutorial and root say it defaults to eu. Only the two quick-start sections were ported.",
+  "py: only Main_py's package-dir call site uses pyPackageDir; about 20 other py components still repeat the inline expression.",
+  "elixir's whole-collection accessor was not exercised. The hook signature allows it (Naming receives the model), but no Naming_elixir exists.",
+  "CallContext.last is computed but unused by all six (meant for ocaml's let/in sequencing).",
+  "The upgrade walk covered one project (no edits, recorded copies, six targets). The override, alias, no-record and langpack rows were not re-run on this build.",
+  "The REFERENCE page was not touched.",
+  "The lanes ran before the lifecycle commits, which change only ts/src/action. Regenerated documentation at HEAD is identical, but the lanes were not re-run at HEAD.",
+  "Timings were taken under load and for one variation only."
+ ],
+ "surprises": [
+  "My out/new was generated before my second commit (the step comments and the comment-before-hoist order), and my first diff and prose figures came from it. I caught this by regenerating at HEAD and diffing the outputs, then recomputed everything. The aggregates were unchanged and the comment lines differed.",
+  "My first go program printer reintroduced the M14 defect: a multi-line string returned as one line was indented only on its first line. The walker now flattens lines for every provider.",
+  "Refactoring a code generator to share a naming function with the description makes every existing project's copy of that file OUTDATED: Main_py, utility_py, Main_clojure, MainEntity_clojure and utility_clojure in the walk. package update refreshes them without --force, but the 'one naming function shared by docs and code' rule has an upgrade footprint in the code generators too.",
+  "py had no naming function at all. Its package directory is an inline expression repeated in about 20 components, so 'the function the code generator already calls' had to be extracted first. The same was true of clojure's entity namespace.",
+  "The second section needed 0 provider lines. Every printer, including go's program and c's hoisting, served the root quick start unchanged, and its cost was 54 shared lines.",
+  "Restoring the deleted facts as data made the tutorial prose LESS shared by sentence: 22 of 71 sentences per language (46 of 95 for go) are result-style frames that no other of the six uses. The stage-1 '100% shared' came from deleting them.",
+  "An existing test used ReadmeTopQuick as its sample of 'a component every target implements', so retiring a component breaks tests that use it as a fixture, not only the generators.",
+  "The c DOC lane basic-server now passes (6/6) without any c-specific work in the second section: the stage-1 stdlib.h fix in the provider covers the root as well."
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "partly",
+   "evidence": "Supported:\n- Providers read the model 0 times and hold 0 naming rules (purity.js: 43 hits at the start, 1 false positive now).\n- Every whether-decision listed in stage 1 is in the description or the builders.\n- Breaking interface changes since f21e6fe1: 2 to the provider interface (words->facts; Expr 'fields') and 2 to shared APIs only (builder signatures; sdkDescription(model, target, naming)). That is well under about 10.\n\nCrossed:\n- By sentence, among the six ported languages, 31% of each language's tutorial sentences (48% for go) are result-style frames used by that language alone. They are written once in shared code and keyed by a declared enum, but they are per-language prose in effect.\n- By provider-supplied words: 5.3-10.3% of the tutorial (under 15%), and 3.3-20% of the root comments, with zig at 20%, over the line.\n\nThe proposal holds only in its refined form: a language supplies naming functions shared with its code generator, printers, and a declared fact table. It does not decide what is shown."
+  },
+  {
+   "id": "H2",
+   "verdict": "refuted",
+   "evidence": "Both sections in six languages: 2,060 -> 1,818 lines (1.13x). Projected to 20: 1.75x at the average provider size, 1.46x at c's, both under 2x. The second section reused everything (54 shared lines, 0 provider lines, against 659/2,000 retired), so reuse is real. But the fixed infrastructure of 737 lines plus about 145 lines per language for provider and hook keeps the ratio below 2x at two sections."
+  },
+  {
+   "id": "H3",
+   "verdict": "supported",
+   "evidence": "In the root quick start, S49, S50, M12, G01, M13 and M14 are fixed in all six by shared code (tabulated per variation from the outputs). The c getenv include is a provider fact from stage 1, reused with no new edit. The facts stage 1 deleted are restored as data. Per-language edits needed for catalogued issues in these sections: the stage-1 pair (M14 for go, now shared via line splitting, and the c include)."
+  },
+  {
+   "id": "H4",
+   "verdict": "supported",
+   "evidence": "ts 16/16, go 12/12 with the program executed (verified directly: exit 0), py 12/12 under real pytest, c DOC 6/6 (basic-server passes; it was 5/6). No failure intrinsic to the approach. zig and clojure were not compiled (toolchains MISSING)."
+  },
+  {
+   "id": "H5",
+   "verdict": "supported",
+   "evidence": "migrate's lifecycle change merged cleanly, and retire.test passes 7/7 against the real shared component. A real 4.44.0 project upgraded to this build: doctor reported 12 RETIRED, package update removed them and their compiled output, generation produced the new tutorial and root text, and doctor then reported 'matches the scaffold (0 additive, 0 customized)', exit 0. Packs still win with their own components. Caveat: refactoring code generators for shared naming marks those files OUTDATED in every project (refreshed by package update)."
+  }
+ ],
+ "reproduce": "export PATH=/opt/node24/bin:$PATH\nV=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v2\ncd $V/sdkgen/ts && npm run build\ncd $V/harness\nnode gen.js old /home/user/sdkgen/ts\nnode gen.js oldclone \"$(cd ../oldclone/ts; pwd)\" --only alias && cp -r out/oldclone/alias-go2 out/old/\nnode gen.js new \"$(cd ../sdkgen/ts; pwd)\"\nnode diff2.js; node diff2.js --detail all --un; node prose.js new; node purity.js; node metrics2.js\nnode purity.js /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-interface/sdkgen/ts   # the starting 43 hits\n$V/lanes.sh        # ts, go, py (real pytest), c DOC lanes; logs in $V/lane-*.log\ncd $V/sdkgen/ts && node --test dist-test/runtimefacts.test.js dist-test/retire.test.js\nnode --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)\nUpgrade walk: cd $V/mig && T='node bin/tool.js'; $T mk walk; $T cli walk target add ts go py c zig clojure; $T cli walk feature add test; $T build walk; $T gen walk; $T use walk new; $T cli walk doctor; $T cli walk package update @voxgig/sdkgen --no-fetch; $T build walk; $T gen walk --full; $T cli walk doctor\nVariations: harness/variations.js (op-absent-readonly replaced by ex-readonly).",
+ "handoff": "Files:\n- Description: ts/src/helpers/sdkdesc.ts.\n- Representation, builders, walker and provider interface: ts/src/helpers/example.ts.\n- The sentences for each result style: ts/src/helpers/runtimeprose.ts.\n- The shared tutorial and root quick start: ts/src/cmp/ReadmeQuick.ts (quickSteps, quickText, topQuickText, describeTarget).\n- Root wiring: ts/src/cmp/ReadmeTop.ts (topQuick).\n- Providers: ts/project/.sdk/src/cmp/<lang>/Syntax_<lang>.ts. Naming hooks: Naming_<lang>.ts in the same folder.\n- Guard: ts/test/runtimefacts.test.ts.\n\nRules for porting a language:\n1. Write Naming_<lang> first. Call the naming functions the language's code generator calls. Where the generator has none, extract one into utility_<lang> and make the generator call it, then expect doctor to report that file OUTDATED in existing projects until package update. Constant names that come from templates go in the hook as literals, with a comment saying where they come from.\n2. Write a RuntimeFacts table. Pick a ResultStyle. If none fits (swift's Value/asNative, rust's Result, lua's (value, err) is 'pair'), add a style and its sentences in runtimeprose.ts; do not put a phrase in the provider. Run runtimefacts.test; extend its STYLE map for a new style.\n3. Write printers that read only desc.layout, Ent.sym and the statement; run harness/purity.js and keep it at 0. Use cx.inAttempt instead of Scope flags; use `before` for hoisting; use `program` only if the language's README test RUNS whole programs (read its ReadmeExamplesTest_<lang> first).\n4. Delete ReadmeQuick_<lang> and ReadmeTopQuick_<lang>, add the language to PORTED in harness/diff2.js and prose.js, add reason rules until UNEXPLAINED is 0, and refresh the golden.\n\nTraps:\n- An Expr kind added breaks every exhaustive expr switch.\n- A provider returning a multi-line string is split by the walker; do not rely on it being indented as one line.\n- Retiring a component breaks tests that use it as a sample (generate.test used ReadmeTopQuick).\n- optional.test requires every optional component (Naming included) to be looked up in src/cmp and listed in the author guide.\n- `created` is bound only when chained, so a language that refuses unused variables is safe.\n- php, rb, lua and perl should declare prints: 'fields'; desc.quick.show carries the field choice (record id, then the first other string field).\n- ocaml should use CallContext.last.\n- elixir's accessor goes in its hook via elixirAccessor(e, entityCollection(model)).\n- Never rebuild dist while lanes run.\n- Regenerate out/new after every source change before diffing: stale output fooled me once."
+}

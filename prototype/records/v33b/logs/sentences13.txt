@@ -1,0 +1,52 @@
+[sentences 7s] tutorial ts: 25 sentences so far
+[sentences 7s] tutorial go: 44 sentences so far
+[sentences 7s] tutorial py: 49 sentences so far
+[sentences 7s] tutorial c: 54 sentences so far
+[sentences 7s] tutorial zig: 59 sentences so far
+[sentences 8s] tutorial clojure: 61 sentences so far
+[sentences 8s] tutorial rust: 61 sentences so far
+[sentences 8s] tutorial elixir: 62 sentences so far
+[sentences 8s] tutorial rb: 64 sentences so far
+[sentences 8s] tutorial perl: 68 sentences so far
+[sentences 8s] tutorial swift: 73 sentences so far
+[sentences 8s] tutorial ocaml: 74 sentences so far
+[sentences 8s] tutorial lua: 79 sentences so far
+[sentences 8s] rootquick ts: 81 sentences so far
+[sentences 8s] rootquick go: 81 sentences so far
+[sentences 8s] rootquick py: 83 sentences so far
+[sentences 8s] rootquick c: 85 sentences so far
+[sentences 8s] rootquick zig: 87 sentences so far
+[sentences 8s] rootquick clojure: 87 sentences so far
+[sentences 8s] rootquick rust: 87 sentences so far
+[sentences 8s] rootquick elixir: 87 sentences so far
+[sentences 8s] rootquick rb: 87 sentences so far
+[sentences 9s] rootquick perl: 89 sentences so far
+[sentences 9s] rootquick swift: 91 sentences so far
+[sentences 9s] rootquick ocaml: 91 sentences so far
+[sentences 9s] rootquick lua: 92 sentences so far
+[sentences 10s] reference ts: 151 sentences so far
+[sentences 11s] reference go: 174 sentences so far
+[sentences 12s] reference py: 190 sentences so far
+[sentences 13s] reference c: 214 sentences so far
+[sentences 13s] reference zig: 225 sentences so far
+[sentences 14s] reference clojure: 235 sentences so far
+[sentences 15s] reference rust: 238 sentences so far
+[sentences 16s] reference elixir: 251 sentences so far
+[sentences 17s] reference rb: 255 sentences so far
+[sentences 18s] reference perl: 273 sentences so far
+[sentences 19s] reference swift: 290 sentences so far
+[sentences 21s] reference ocaml: 297 sentences so far
+[sentences 22s] reference lua: 312 sentences so far
+# reference sentences: 312 distinct masked sentences (NEW side of the reference languages' reworded and added classes)
+# text the fixture model holds, left out: 2 ("Level \\| percent see the guide or [site](https://e", "Words the project chose | not the spec")
+# tutorial: printed by one language 46: shared-condition 31, unexplained 14, note 1
+# rootquick: printed by one language 9: unexplained 3, shared-condition 6
+# reference: printed by one language 119: code 40, shared-condition 42, unexplained 24, note 11, provider-literal 2
+# tutorial: 79 (accepted by hand only 50, by stage-3a rule records only 23, both 6; template found 54; verdicts ok 64, false 0, awkward 0, none 15)
+# rootquick: 13 (accepted by hand only 7, by stage-3a rule records only 4, both 2; template found 8; verdicts ok 8, false 0, awkward 0, none 5)
+# reference: 220 (accepted by hand only 114, by stage-3a rule records only 89, both 17; template found 91; verdicts ok 159, false 0, awkward 0, none 61)
+-> /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33b/sent13/sentences.txt; verdicts go in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/base33/tools/reviewed/sentences.json ({ "sentences": { "<id>": { "verdict": "ok|false|awkward", "note": "..." } } })
+
+real	0m32.544s
+user	0m26.963s
+sys	0m0.710s

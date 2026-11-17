@@ -1,0 +1,52 @@
+[portcheck zig] sections: tutorial,rootquick,reference
+[portcheck zig] ledger
+ledger zig     tutorial  vars 19 | units OLD 137 NEW 181: same 61 reworded 57 missing 19 added 63 | classes 40 (echo 3, reworded 14, added 9, missing 5, novel-token 8, vanished-token 1) | unclassified 0, defect 0 -> tools/review/zig/tutorial.ledger.txt
+ledger zig     rootquick vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 | classes 3 (reworded 3) | unclassified 0, defect 0 -> tools/review/zig/rootquick.ledger.txt
+ledger zig     reference vars 19 | units OLD 15823 NEW 16303: same 15019 reworded 538 missing 266 added 746 | classes 111 (echo 12, reworded 21, missing 19, added 45, novel-token 14) | unclassified 0, defect 0 -> tools/review/zig/reference.ledger.txt
+[portcheck zig] blocks
+blocks zig     tutorial  vars 19 | OLD 48 NEW 48: identical 26, after corrections 0, changed 22 (UNVERIFIED: no zig here), OLD-only 0, NEW-only 0 | classes 22 (changed 8, novel-token 11, vanished-token 3) | unclassified 0, defect 0 -> tools/review/zig/tutorial.blocks.txt
+blocks zig     rootquick vars 19 | OLD 19 NEW 19: identical 0, after corrections 0, changed 19 (UNVERIFIED: no zig here), OLD-only 0, NEW-only 0 | classes 25 (changed 11, novel-token 10, vanished-token 2, novel-shape 2) | unclassified 0, defect 0 -> tools/review/zig/rootquick.blocks.txt
+blocks zig     reference vars 19 | OLD 314 NEW 313: identical 151, after corrections 0, changed 162 (UNVERIFIED: no zig here), OLD-only 1, NEW-only 0 | classes 12 (changed 9, old-only 1, novel-token 2) | unclassified 0, defect 0 -> tools/review/zig/reference.blocks.txt
+[portcheck zig] sharing (NEW, then OLD), over the languages ported for the section
+new: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   zig        181 units  48.1%  36.5%   8.8%   6.6% |   1535 words  48.2%  24.8%  14.6%  12.4% | language words at output 190 (2 distinct units) | at source: fact/notes tables facts,refFacts 118 words (6 in prose literals), other prose literals 19 words
+old: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   zig        137 units  29.2%  45.3%   5.1%  20.4% |    862 words  44.2%  27.1%   3.2%  25.4% | language words at output 219 (3 distinct units) | at source: fact/notes tables facts,refFacts 118 words (6 in prose literals), other prose literals 19 words
+new: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   zig         42 units  45.2%     0%     0%  54.8% |    284 words   6.7%     0%     0%  93.3% | language words at output 265 (3 distinct units) | at source: fact/notes tables facts,refFacts 118 words (6 in prose literals), other prose literals 19 words
+old: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   zig         42 units  45.2%     0%     0%  54.8% |    265 words   7.2%     0%     0%  92.8% | language words at output 246 (2 distinct units) | at source: fact/notes tables facts,refFacts 118 words (6 in prose literals), other prose literals 19 words
+new: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   zig      16303 units    91%   2.2%   5.5%   1.4% |  50567 words  81.5%     3%   9.4%     6% | language words at output 3052 (4 distinct units) | at source: fact/notes tables facts,refFacts 118 words (6 in prose literals), other prose literals 19 words
+old: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   zig      15823 units  88.1%   3.8%   4.7%   3.4% |  48323 words  76.1%   5.1%   6.9%  11.9% | language words at output 5755 (13 distinct units) | at source: fact/notes tables facts,refFacts 118 words (6 in prose literals), other prose literals 19 words
+[portcheck zig] purity
+purity over zig (vocabulary: 20 features, 10 option keys, 36 entity name forms, 6 operations)
+  zig     Syntax 199 lines, Naming present: 0 open, 0 accepted
+     naming calls zigVarName (./utility_zig); also called by: Entity_zig.ts, MainEntity_zig.ts, TestClean_zig.ts, TestDirect_zig.ts, TestEntity_zig.ts
+[portcheck zig] guard: node --test --test-name-pattern zig ts/dist-test/runtimefacts.test.js
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+ℹ skipped 0
+[portcheck zig] summary
+  ledger zig     tutorial  vars 19 | units OLD 137 NEW 181: same 61 reworded 57 missing 19 added 63 
+        classes 40 (echo 3, reworded 14, added 9, missing 5, novel-token 8, vanished-token 1) | unclassified 0, defect 0
+  ledger zig     rootquick vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 
+        classes 3 (reworded 3) | unclassified 0, defect 0
+  ledger zig     reference vars 19 | units OLD 15823 NEW 16303: same 15019 reworded 538 missing 266 added 746 
+        classes 111 (echo 12, reworded 21, missing 19, added 45, novel-token 14) | unclassified 0, defect 0
+  blocks zig     tutorial  vars 19 | OLD 48 NEW 48: identical 26, after corrections 0, changed 22 (UNVERIFIED: no zig here), OLD-only 0, NEW-only 0 
+        classes 22 (changed 8, novel-token 11, vanished-token 3) | unclassified 0, defect 0
+  blocks zig     rootquick vars 19 | OLD 19 NEW 19: identical 0, after corrections 0, changed 19 (UNVERIFIED: no zig here), OLD-only 0, NEW-only 0 
+        classes 25 (changed 11, novel-token 10, vanished-token 2, novel-shape 2) | unclassified 0, defect 0
+  blocks zig     reference vars 19 | OLD 314 NEW 313: identical 151, after corrections 0, changed 162 (UNVERIFIED: no zig here), OLD-only 1, NEW-only 0 
+        classes 12 (changed 9, old-only 1, novel-token 2) | unclassified 0, defect 0
+  worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/review/zig/*.ledger.txt, *.blocks.txt, *.blocks.diff; templates *.template.json -> fill into /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/classes/zig.json
+PORTCHECK zig: PASS

@@ -1,0 +1,528 @@
+{
+ "lang": "swift",
+ "verdict": "accept-with-fixes",
+ "summary": "I re-ran every number the porter reported and each one reproduced exactly. That covers the build (exit 0, tree clean), guard and reader (5/5), golden (2/2), the suite without lanes (2601 tests, 2596 pass, 0 fail, 5 skipped), the one command after a clean REGEN (PASS, exit 0) and with SCRATCH=1 (FAIL as expected: OPEN 26/3/95, blocks 35/28/13, UNATTESTED 1 for `named`), the line counts and the prose shares. Only the allowed files changed; no other language's page changed (only the `### Swift` blocks of the 19 root READMEs differ from base32/out/new); the provider reads no model and has 0 notes.\n\nNo sentence I read in B, auth-basic, ref-issues or crud-basic is false for the Swift runtime. Three facts are weaker or missing:\n- `matchv` returns a copy (EntityBase.fragment.swift:64), but no fact declares it.\n- `body.values` names `.native`, a case that takes a `NativeRef`. The constructor a reader writes is `.nat(_:)` (Value.swift:87). OLD said `.nat`. This fact is printed in 0 units of the 21 variations.\n- The list sentence lost OLD's working call `list(nil, nil)`. It now says `list()`, which does not compile in Swift.\n\nThe provider writes `asNative as? Entity` literally in two printers (Syntax_swift.ts:83 and :142) instead of reading `facts.unwrap`. Its `record` and `fields` expressions print `x.data()` on a `Value`, which has no such member; nothing reaches them today.\n\n13 of 15 attacks failed somewhere, but four of those failures were caught only because the porter's hand records drifted, with the guard passing: the provider and forms pin changed together, an example line, a record fact naming a member the runtime lacks, and entityBy 'Name'. A brand-new language has no such records. Two attacks failed nowhere:\n- A shared sentence dropped from one variation or from all, run from scratch: no number moved. Swift is the only language with the wrapped result style, so the nets that compare against reference languages are empty for it.\n- A provider that fails to compile: portcheck reported PASS on the stale build.\n\nA generation that throws is also hidden: portcheck prints \"regenerated 0 variations\" and measures the stale pages, because the pipe drops gen.js's exit code.\n\nH4 cannot be tested here (no Swift toolchain). I read 20 distinct changed blocks and judged none to fail, with two doubts.",
+ "required_fixes": [
+  {
+   "file": "ts/project/.sdk/src/cmp/swift/Syntax_swift.ts and ts/test/runtimeforms/swift.ts",
+   "change": "Declare copy: true on the matchArg member and cite EntityBase.fragment.swift `return clone(.map(match))`.",
+   "why": "matchv returns a clone (EntityBase.fragment.swift:64). The page says it for data() but not for matchv(): a true runtime fact is missing.",
+   "shared": false
+  },
+  {
+   "file": "ts/project/.sdk/src/cmp/swift/Syntax_swift.ts and ts/test/runtimeforms/swift.ts (cite)",
+   "change": "Make ref.facts.body.values name the constructor a caller writes, for example 'a `String`, or `Data` or `[UInt8]` wrapped with `.nat(...)`', and cite Value.swift:87 `public static func nat(_ v: Any) -> Value { .native(NativeRef(v)) }`.",
+   "why": "`.native` takes a NativeRef (Value.swift:83), so a reader who writes `.native(data)` gets a compile error. OLD named `.nat`. This pinned-prose fact appears in 0 units of the 21 variations, so no page review can see it.",
+   "shared": false
+  },
+  {
+   "file": "ts/project/.sdk/src/cmp/swift/Syntax_swift.ts",
+   "change": "Build the unwrap in the field expression (line 83) and the print printer (line 142) from facts.unwrap instead of a literal. Make expr cases 'record' and 'fields' (lines 82, 84) unwrap first, for example via facts.record.",
+   "why": "The printed code is not tied to the declared fact. Changing the print line to `as? EntityBase` (a type the runtime lacks) passed the guard and purity. `x.data()` on a Value does not compile; those expression cases are unreachable today but wrong if a shared builder starts using them.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/swift.ts (and the reader, if a shared change is needed)",
+   "change": "Read the public protocol extension in tm/swift/Sources/ProjectNameSDK/core/Types.swift:15-18 (no-argument `data()` and `matchv()` on Entity) as entity members.",
+   "why": "Every example's `print(x.data())` depends on it, and the guard cannot see it. The porter reported it and left it uncorrected.",
+   "shared": false
+  },
+  {
+   "file": "tools/portcheck.sh (shared tools)",
+   "change": "Add `set -o pipefail` around the regeneration step (line 26), or check PIPESTATUS. Fail when the regenerated count is lower than the number of variations. Fail when ts/dist or ts/dist-test-scaffold is older than any source, or rebuild and read the exit code.",
+   "why": "Measured: a provider that failed to compile (TS2820) left the old build in place and portcheck reported PASS. A generation that threw printed 'regenerated 0 variations; SKIPPED: none' and every number was taken from the stale out/new.",
+   "shared": true
+  },
+  {
+   "file": "ts/test/runtimeforms/forms.ts record reader (shared guard)",
+   "change": "Re-derive or check the whole record expression, including any unwrap prefix: every member it names must exist in the runtime, not just the trailing `data`.",
+   "why": "Measured: record '{var}.asEntity().data()' passed the guard (4/4). Only the porter's hand records caught it.",
+   "shared": true
+  },
+  {
+   "file": "tools (ledger/classify, shared)",
+   "change": "For a result style with no reference language, add a check from scratch for a sentence printed in fewer variations than its siblings, for example against the language's own reviewed NEW counts or a per-sentence variation count.",
+   "why": "Measured: dropping 'A failed request is reported in the result...' from one variation (x19 to x18) and from all 19 left SCRATCH OPEN at 95, the same as the baseline. The less-often and absent nets are empty for swift.",
+   "shared": true
+  },
+  {
+   "file": "ts/src/helpers/runtimeprose.ts wrapped branches (shared, breaking: a changed sentence)",
+   "change": "Have returnClause and carries name the unwrap (the porter's gap 0), so the record fact can go back to `{var}.data()` and every part of it is checked.",
+   "why": "Today the unwrap rides inside facts.record, where only the trailing name is checked. Only swift uses the wrapped style, so no other provider is forced to change.",
+   "shared": true
+  }
+ ],
+ "not_caught": [
+  {
+   "attack": "Shared sentence 'A failed request is reported in the result, not as an error...' removed from doc-crud's swift REFERENCE, run with SCRATCH=1",
+   "consequence": "Reference OPEN 95, the same as the scratch baseline; less-often 1, the same as baseline (the make-sentence artifact). The only trace is 'x18 in 18 var' in a worklist. The normal mode caught it (OPEN 1) only through the porter's hand record."
+  },
+  {
+   "attack": "The same sentence removed from all 19 variations, with SCRATCH=1",
+   "consequence": "OPEN 95, unchanged. No number moved."
+  },
+  {
+   "attack": "entityBy 'name' (an invalid enumerated value): the build failed with TS2820",
+   "consequence": "portcheck REGEN reported PASS, exit 0, against the stale build. The one command does not check that the build is current."
+  },
+  {
+   "attack": "cancel: true (absence flipped): generation throws 'cancel needs direct.signal'",
+   "consequence": "The guard did fail. But portcheck printed 'regenerated 0 variations; SKIPPED: none' and measured the stale out/new from the previous run: the tee pipe drops gen.js's exit code. A mutation that throws during generation while the guard passes would be measured on old pages."
+  },
+  {
+   "attack": "Pinned prose facts.unwrap changed in the provider and in the forms pin together ('asNative as! Entity')",
+   "consequence": "Guard PASS. Caught only by tutorial OPEN 3 against hand records; a new port has none, so a person decides."
+  },
+  {
+   "attack": "Print printer changed to `as? EntityBase` (no such type in the runtime)",
+   "consequence": "Guard PASS, purity 0. Caught only by blocks OPEN 5/12/3 against hand records; nothing ties the printed code to facts.unwrap."
+  },
+  {
+   "attack": "facts.record '{var}.asEntity().data()' (nonexistent member)",
+   "consequence": "Guard PASS. Caught only by ledger OPEN 6/3 and blocks OPEN 4 against hand records."
+  },
+  {
+   "attack": "entityBy 'class' -> 'Name' (a valid enumerated value)",
+   "consequence": "Guard PASS, factsheet silent ('not printed 1'). Caught only by ledger OPEN 5 against hand records."
+  }
+ ],
+ "attacks": [
+  {
+   "by": "guard (paramNames: op load) + ledger OPEN 2",
+   "caught": true,
+   "change": "derived: op.load parameter reqmatch -> reqdata"
+  },
+  {
+   "by": "guard: 'cite facts.collection: the quote does not contain VArray' + OPEN",
+   "caught": true,
+   "change": "cited token: collection `VList` -> `VArray`"
+  },
+  {
+   "by": "guard: 'cite facts.unwrap: the quote does not contain asEntity()'",
+   "caught": true,
+   "change": "pinned prose: facts.unwrap -> 'asEntity()' (provider only)"
+  },
+  {
+   "by": "ledger OPEN 3 only (hand records); guard pass",
+   "caught": true,
+   "change": "pinned prose changed in provider and forms pin together (as!)"
+  },
+  {
+   "by": "guard: 'cite ref.facts.cancel: the fact is true; the absence shows false' (generation also threw and portcheck measured stale pages)",
+   "caught": true,
+   "change": "absence: cancel false -> true"
+  },
+  {
+   "by": "factsheet UNATTESTED ref.maps + OPEN 1",
+   "caught": true,
+   "change": "language: maps -> 'arrays'"
+  },
+  {
+   "by": "factsheet UNATTESTED ref.noun + OPEN 4",
+   "caught": true,
+   "change": "convention: noun -> 'Functions'"
+  },
+  {
+   "by": "nothing: build failed (TS2820), portcheck PASS on the stale build",
+   "caught": false,
+   "change": "enumerated: entityBy 'name' (invalid)"
+  },
+  {
+   "by": "ledger OPEN 5 only (hand records); factsheet and guard silent",
+   "caught": true,
+   "change": "enumerated: entityBy 'Name'"
+  },
+  {
+   "by": "guard (fails: 'load shows its failure as throws; the signature does not')",
+   "caught": true,
+   "change": "signature without its throws marker (op.load)"
+  },
+  {
+   "by": "guard (on: 'testSDK is declared on the type... makes it on free')",
+   "caught": true,
+   "change": "test constructor called on an instance: DemoSDK().testSDK(nil, nil)"
+  },
+  {
+   "by": "guard (field: 'getName is called in the runtime, declared as a field') + members + kind",
+   "caught": true,
+   "change": "callable shown as a field: getName: String"
+  },
+  {
+   "by": "guard ('printed call ... has no try') + blocks OPEN 11/11/11",
+   "caught": true,
+   "change": "example line: call printer without try"
+  },
+  {
+   "by": "blocks OPEN 5/12/3 only (hand records); guard and purity pass",
+   "caught": true,
+   "change": "example line: print printer unwrap `as? EntityBase`"
+  },
+  {
+   "by": "purity 5 open (names operation load, entity Planet x3, states a number) + guard (uncited note)",
+   "caught": true,
+   "change": "note 'The Planet entity loads in 3 seconds.' on slot tutorial:load"
+  },
+  {
+   "by": "ledger OPEN 6/3 + blocks OPEN 4 only (hand records); guard pass",
+   "caught": true,
+   "change": "record fact '{var}.asEntity().data()'"
+  },
+  {
+   "by": "normal: OPEN 1; SCRATCH: nothing (95 = baseline)",
+   "caught": false,
+   "change": "shared sentence dropped from one variation (doc-crud)"
+  },
+  {
+   "by": "normal: OPEN 1; SCRATCH: nothing (95 = baseline)",
+   "caught": false,
+   "change": "shared sentence dropped from all variations"
+  }
+ ],
+ "facts_audit": [
+  {
+   "fact": "ref.facts.op.* (6 signatures)",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "EntityLoadOp.fragment.swift:8 and EntityListOp.fragment.swift:32 `(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`; EntityBase.fragment.swift:67-89 gives the same shapes for all six"
+  },
+  {
+   "fact": "ref.facts.test[0] testSDK on the type, not throwing",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Main.fragment.swift:330 `public static func testSDK(_ testoptsIn: ..., _ sdkoptsIn: ...) -> ProjectNameSDK`"
+  },
+  {
+   "fact": "ref.facts.client direct (not throws) / prepare (throws)",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Main.fragment.swift:162 and :96"
+  },
+  {
+   "fact": "stream: throws, AsyncStream, runs 'call'",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "EntityBase.fragment.swift:188-189; runOp at :223 runs before `return AsyncStream` at :236"
+  },
+  {
+   "fact": "ref.facts.accessor `(_ entopts: VMap? = nil) -> DemoEntityBase`",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "MainEntity_swift.ts:25"
+  },
+  {
+   "fact": "facts.collection `VList`",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "Value.swift `case list(VList)`; Make.swift:459-470 builds `.list(entities)` of `.nat(ent)`"
+  },
+  {
+   "fact": "ref.facts.none nil / setArg a `Value` / container VMap",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "Main.fragment.swift:26 `= nil`; EntityBase.fragment.swift:48 `data(_ newdata: Value?)`; Main.fragment.swift:21"
+  },
+  {
+   "fact": "ref.facts.direct.okFalse false",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "Main.fragment.swift:178,200,217,224,269 `.bool(false)`"
+  },
+  {
+   "fact": "facts.unwrap 'asNative as? Entity'",
+   "account": "cited, pinned prose",
+   "verdict": "true",
+   "evidence": "ValidateFeature.swift:248; Value.swift:134 asNative; Types.swift:8 protocol Entity"
+  },
+  {
+   "fact": "ref.facts.client[0].copy true",
+   "account": "cited, pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.swift:85 `return clone(.map(options))...`"
+  },
+  {
+   "fact": "ref.facts.client[1].kind utility (a copy)",
+   "account": "cited, pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.swift:89 `ProjectNameSdk.Utility.copy(utility)`; the page says 'Return a copy of the SDK utility object'"
+  },
+  {
+   "fact": "ref.facts.entity[0].copy true",
+   "account": "cited, pinned",
+   "verdict": "true",
+   "evidence": "EntityBase.fragment.swift:54 `return clone(data)`"
+  },
+  {
+   "fact": "ref.facts.prepare.fails style",
+   "account": "cited, pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.swift:96 throws"
+  },
+  {
+   "fact": "ref.facts.body.values 'a `String`, or `Data` or `[UInt8]` as a `.native` value' (+ unquoted excuse for String)",
+   "account": "cited, pinned prose",
+   "verdict": "weaker than OLD / misleading",
+   "evidence": "Fetcher.swift:125-131 matches `case .native(let ref)`, but `.native` takes a NativeRef (Value.swift:83); the constructor for a Data value is `.nat(_:)` (Value.swift:87). The String excuse is acceptable (body.asString). Printed in 0 units."
+  },
+  {
+   "fact": "ref.facts.cancel false",
+   "account": "cited absence",
+   "verdict": "true, but the search is narrow",
+   "evidence": "Only Fetcher.swift and EntityLoadOp.fragment.swift are searched. stream's callopts['signal'] (EntityBase.fragment.swift:193,238) stops yielding but cancels no request; Httpjson.swift:110 cancel is in the secrets plugin. The value holds."
+  },
+  {
+   "fact": "facts.named call (hand-recorded)",
+   "account": "convention, RECORDED",
+   "verdict": "acceptable, weaker",
+   "evidence": "OLD README.md:55 `load()`; but OLD's list sentence said `list(nil, nil)`, a working call, and NEW's `list()` does not compile in Swift"
+  },
+  {
+   "fact": "ref.entityBy class",
+   "account": "convention, ATTESTED by enumeration",
+   "verdict": "true; the attestation is structural",
+   "evidence": "Entity_swift.ts uses entityClassName; OLD headed by Name. The tool's ATTESTED (391 of 976 pairs) does not see the heading change. The porter decided it by hand anyway."
+  },
+  {
+   "fact": "matchv copy (MISSING)",
+   "account": "none",
+   "verdict": "missing",
+   "evidence": "EntityBase.fragment.swift:64 `return clone(.map(match))`; the page states a copy for data() only"
+  },
+  {
+   "fact": "ref.noun Methods / maps maps / keys member / prints record",
+   "account": "convention/language, ATTESTED",
+   "verdict": "true",
+   "evidence": "OLD 'Instance Methods', 'maps are JSON-serialized', options[\"apikey\"] rows, data() printed whole"
+  }
+ ],
+ "false_or_missing": [
+  {
+   "what": "matchv returns a copy; no fact or sentence says so",
+   "where": "REFERENCE, every entity's matchv entry",
+   "file_line": "ts/project/.sdk/src/cmp/swift/Syntax_swift.ts:50",
+   "runtime_shows": "EntityBase.fragment.swift:64 return clone(.map(match))"
+  },
+  {
+   "what": "body values name the `.native` case instead of the `.nat(...)` constructor (OLD said `.nat`)",
+   "where": "REFERENCE body note (printed in no variation here)",
+   "file_line": "ts/project/.sdk/src/cmp/swift/Syntax_swift.ts:57",
+   "runtime_shows": "Value.swift:83 `case native(NativeRef)`; :87 `static func nat(_ v: Any) -> Value`"
+  },
+  {
+   "what": "List sentence lost the working Swift call for 'no match' (`list(nil, nil)`); it now names `list()`, which does not exist",
+   "where": "REFERENCE list entries and tutorial list step (shared sentence plus named: call)",
+   "file_line": "ts/src/helpers/runtimeprose.ts:17 (opName)",
+   "runtime_shows": "EntityBase.fragment.swift:71 list has two required parameters with no defaults"
+  },
+  {
+   "what": "Printed unwrap is hard-coded, not taken from facts.unwrap; expr 'record'/'fields' would print `x.data()` on a Value (unreachable today)",
+   "where": "all examples that print a record or read a field",
+   "file_line": "ts/project/.sdk/src/cmp/swift/Syntax_swift.ts:82-84,142",
+   "runtime_shows": "Value (Value.swift:72-90) has no data() member"
+  },
+  {
+   "what": "Reader does not see the Entity protocol extension's no-argument data()/matchv()",
+   "where": "runtime-table swift entity rows",
+   "file_line": "tm/swift/Sources/ProjectNameSDK/core/Types.swift:15-18",
+   "runtime_shows": "public extension Entity { func data() -> Value; func matchv() -> Value }"
+  }
+ ],
+ "doubtful_lines": [
+  {
+   "line": "_ = try client.Planet().update(VMap([(\"id\", (created.asNative as? Entity)?.data().asMap?.entries[\"id\"] ?? .null), (\"radius\", .double(1.0)), (\"title\", .string(\"example_title\"))]), nil)",
+   "where": "crud-basic tutorial (and patch/remove lines)",
+   "why": "`??` with an implicit-member `.null` inside a tuple array passed to the overloaded VMap init (Value.swift:52-53). I believe it type-checks: the array literal rules out the OrderedDictionary init, and OrderedDictionary.swift:38 subscript returns Value?. It is unverified, and the type checker could also run out of time on the expression.",
+   "runtime_line": "Value.swift:52-53; OrderedDictionary.swift:38"
+  },
+  {
+   "line": "let ambient = try client.Ambient().load(nil, nil)  (top level, no do)",
+   "where": "root quick start, tutorial writes",
+   "why": "Legal only as main.swift top-level code; OLD had the same",
+   "runtime_line": "EntityLoadOp.fragment.swift:8 throws"
+  },
+  {
+   "line": "import Foundation (added)",
+   "where": "tutorial and root client blocks",
+   "why": "Needed for ProcessInfo, since DemoSdk does not re-export Foundation (no @_exported in tm/swift). I agree with the correction, but it is not compiled.",
+   "runtime_line": "Main.fragment.swift:17 imports Foundation only for itself"
+  }
+ ],
+ "examples": "swift and swiftc are MISSING (`command -v`), so nothing was compiled. There is no swift README lane (generatedcompile.test.ts has only a fetcher and a secrets lane that need swift), and ReadmeExamplesTest_swift.ts:120-156 checks only that delimiters balance. In my four variations (B, auth-basic, ref-issues, and crud-basic, chosen because only swift has the wrapped style and crud-basic is the variation that runs the unwrap chain on writes) there are 55 distinct NEW swift blocks: 35 identical to an OLD block, 20 changed. I read all 20 against the runtime (VMap/VList are final classes, so `let` plus `.entries[...] =` is legal; VMap init (Value.swift:52-53); static `.map(_ pairs:)` and `.list(_:)` (Value.swift:88-89); Entity protocol and extension (Types.swift:8-18); op signatures; testSDK static). None is judged to fail; the doubts are listed above. Over all 21 variations, 172 changed blocks (47 tutorial, 19 root, 106 reference) are compiled by nothing.",
+ "hand_records": [
+  {
+   "id": "99d9f7d2a7",
+   "verdict": "right",
+   "why": "dropped '`options` is a `VMap` of `Value`': the options table states VMap; 'of Value' is the entries type"
+  },
+  {
+   "id": "91baf1b4b6",
+   "verdict": "right",
+   "why": "contradiction: no-test swift/README.md:152-162 (unported) shows testSDK with mock records; the REFERENCE correctly says there is no mock transport (S13)"
+  },
+  {
+   "id": "360f66a3d2 / 325b1911ed",
+   "verdict": "right",
+   "why": "same-meaning: the README options row for `base` (README.md:216) says nothing about server variables"
+  },
+  {
+   "id": "2ab61ac902 / c3df4bebb5",
+   "verdict": "right",
+   "why": "word match on VList (extend's type), unrelated to list's return"
+  },
+  {
+   "id": "066a083189, ef00c80d4a, 38ae810847, 9641d970df, f09662fec4, e59066a2d8, f6f21dc984, f64ae2f4fc",
+   "verdict": "right",
+   "why": "each echo agrees with the unported text it quotes; none is stale against the current output"
+  },
+  {
+   "id": "facts.named",
+   "verdict": "acceptable but weaker",
+   "why": "OLD did use `load()`, but OLD's list sentence spelled the real call `list(nil, nil)`, which the shared sentence no longer gives"
+  },
+  {
+   "id": "ref.facts.entityBy (decided by hand, not recorded)",
+   "verdict": "true value; tool attestation unsound",
+   "why": "`AmbientEntity` and `PlanetEntityClient` are the generated class names; OLD headings named the entity. ATTESTED is by enumeration pairing only"
+  }
+ ],
+ "pages": [
+  {
+   "section": "tutorial",
+   "variation": "B",
+   "kind": "weaker",
+   "finding": "OLD's working call `list(nil, nil)` was replaced by `list()`, which Swift cannot call. Otherwise true: unwrap, VList, throws. Step numbering is fixed (old step 3 is now 2). Server option and Foundation import added."
+  },
+  {
+   "section": "reference",
+   "variation": "B",
+   "kind": "weaker/missing",
+   "finding": "matchv copy is not stated. The fetchargs ctrl example `.map([(\"explain\", .bool(true))])` compiles via static map(_ pairs:). Headings change to class names (true). The log 'Active by default: set `active: false`' uses TypeScript form, known and left for integration."
+  },
+  {
+   "section": "rootquick",
+   "variation": "auth-basic",
+   "kind": "ok",
+   "finding": "secret and server added; `if let ambient = ambient.asNative as? Entity` shadowing is legal; the comment 'the entity' is loose for a wrapped value but agrees with the tutorial sentence."
+  },
+  {
+   "section": "tutorial+reference",
+   "variation": "ref-issues",
+   "kind": "ok",
+   "finding": "Single Update step with the update sentence; headings PlanetEntityClient / PlanetEntityEntity are the true class names; Gauge update drops 'must include the entity id' (no id), a correction."
+  },
+  {
+   "section": "tutorial",
+   "variation": "crud-basic (where swift differs most: the only wrapped-style language, and here writes read the id through the unwrap chain)",
+   "kind": "doubtful",
+   "finding": "The write block's `(created.asNative as? Entity)?.data().asMap?.entries[\"id\"] ?? .null` is the most complex new Swift; it is legal by my reading but uncompiled."
+  }
+ ],
+ "gaps_judged": [
+  {
+   "gap": "0: wrapped returnClause/carries omit the unwrap; worked around by putting the unwrap inside facts.record",
+   "needed": true,
+   "breaking": true,
+   "why": "The workaround works for the page, but the guard checks only the trailing `data` of the record (proven: '{var}.asEntity().data()' passed). A shared sentence naming the unwrap, or a guard that reads the whole expression, is needed. Breaking only as a sentence change; it forces no other provider."
+  },
+  {
+   "gap": "1: shadowing the bound name instead of `<var>Entity`",
+   "needed": false,
+   "breaking": false,
+   "why": "Shadowing in if-let is legal Swift; nothing is needed"
+  },
+  {
+   "gap": "2: client printer uses option keys as Swift identifiers (`let server = VMap()`)",
+   "needed": false,
+   "breaking": false,
+   "why": "Safe only while shared option keys are identifiers and not Swift keywords; worth a guard, not a change now"
+  },
+  {
+   "gap": "(reviewer) unwrap literal in printers",
+   "needed": true,
+   "breaking": false,
+   "why": "The existing interface already allows it: the printers can read facts.unwrap in the same file. A provider-only fix."
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "held for swift, with a caveat",
+   "evidence": "0 model reads in Syntax_swift.ts, 0 notes, 0 provider prose literals. The interface held: 0 shared changes made, 1 breaking gap recorded (a sentence change in the wrapped branches, forcing no other provider), 0 additive. Language-supplied words are 0.6% (fact tokens only) by `node tools/sharewords.js` (ALL 53072 words). Caveat: words only swift prints, from wrapped branches of shared runtimeprose.ts, are 35.6% of the tutorial, 92.0% of the root quick start, 6.3% of the reference and 7.6% overall. That is per-language prose relocated into shared code, the brief3 item 6 pattern, and nothing compares it with another language."
+  },
+  {
+   "id": "H2",
+   "verdict": "held for swift (reproduced)",
+   "evidence": "git diff --numstat v32-frozen..HEAD: -764 (246+409+109), +171 Syntax, +24 Naming, forms +32/-5. 3.9x (3.4x with the forms delta)."
+  },
+  {
+   "id": "H3",
+   "verdict": "held as far as read",
+   "evidence": "S49 (server option and rows), S09 (log default), S13 (no-test client), the Basic secret and the step numbering appear in the swift NEW pages through shared code; the swift provider holds no catalogue-specific code"
+  },
+  {
+   "id": "H4",
+   "verdict": "not testable here",
+   "evidence": "command -v swift/swiftc: MISSING. 172 changed blocks are compiled by nothing; 20 distinct changed blocks were read in 4 variations and none judged failing (3 doubts)."
+  }
+ ],
+ "numbers": [
+  {
+   "what": "portcheck REGEN (normal) ledger tutorial/rootquick/reference",
+   "porter": "61|45 19 0 21 5 0 0|0; 19|3 0 0 3 0 0 0|0; 14013|143 48 0 67 27 0 0|1; PASS exit 0",
+   "mine": "identical; PASS exit 0 (my/pc-final.log)"
+  },
+  {
+   "what": "blocks identical/corrected/unified/otherwise, classes",
+   "porter": "1/1/0/46 35; 0/0/0/19 28; 207/0/0/106 13",
+   "mine": "identical"
+  },
+  {
+   "what": "SCRATCH=1 OPEN / blocks OPEN / UNATTESTED / less-often",
+   "porter": "26/3/95; 35/28/13; 1 (named); 1",
+   "mine": "identical (my/pc-finals.log), exit 1"
+  },
+  {
+   "what": "guard + reader",
+   "porter": "5/5",
+   "mine": "node --test --test-name-pattern '^swift: ' runtimefacts+runtimereader: tests 5 pass 5"
+  },
+  {
+   "what": "guard account",
+   "porter": "derived 45, cited 12, language 1, convention 5",
+   "mine": "identical (SDKGEN_GUARD_REPORT=1)"
+  },
+  {
+   "what": "suite without lanes",
+   "porter": "2601 tests, 2596 pass, 0 fail, 5 skipped, 7m59s",
+   "mine": "2601/2596/0/5, 343 s (--test-concurrency=2)"
+  },
+  {
+   "what": "golden",
+   "porter": "2/2",
+   "mine": "node --test dist-test/characterize.test.js: 2/2"
+  },
+  {
+   "what": "lines",
+   "porter": "+171/+24/-764; forms 75->102",
+   "mine": "identical"
+  },
+  {
+   "what": "prose only-swift",
+   "porter": "tutorial 35.6%, rootquick 92.0%, reference 6.3%, ALL 7.6%",
+   "mine": "identical"
+  },
+  {
+   "what": "other languages' pages",
+   "porter": "19 root READMEs, swift blocks only",
+   "mine": "diff -rq -x swift: 19, every differing line in a Swift block"
+  }
+ ],
+ "could_not_check": [
+  "No Swift compiler: 172 changed blocks across the 21 variations, including the 20 distinct changed blocks I read, are unverified by any compiler. The three doubtful constructs above are the risk.",
+  "Whether `region` defaults to `eu` at Swift run time: read only (the config merge in MakeOptions.swift:121), not executed.",
+  "The body-values sentence is printed in none of the 21 variations, so its rendered form was not seen."
+ ],
+ "ran": "In my copy, reviews/swift/ws: npm run build (exit 0, 6 s, status empty). REGEN=1 tools/portcheck.sh sdkgen out swift, at baseline and at the end (PASS), and SCRATCH=1 (FAIL as expected). Guard plus reader for swift, the guard account report, characterize.test.js, and the suite without generatedcompile. 15 provider mutations through my/mut.sh (apply, build, REGEN portcheck, restore with git checkout and rebuild), plus two page-edit drops in normal and SCRATCH mode. diff -rq against base32/out/new, git diff --numstat, tools/sharewords.js, and my/blocks.js to extract the changed blocks.",
+ "read": "The prompt and briefs 1, 3, 4 and 5, PORTING.md v3.2 and the porter's report. Syntax_swift.ts and Naming_swift.ts; runtimeforms/swift.ts; Main, EntityBase, Entity, EntityLoadOp and EntityListOp fragments; MainEntity_swift.ts; tm/swift Value.swift, Types.swift, Fetcher.swift, MakeOptions.swift, MakeError.swift, Make.swift; runtimeprose.ts and the wrapped branches; ReadmeRef.ts entityBy and cancel; media.ts; ReadmeExamplesTest_swift.ts; hand/swift.json (all non-correction records); facts.txt. OLD and NEW README tutorial, root quick start and REFERENCE for B, auth-basic, ref-issues and crud-basic.",
+ "touched": "Only /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/reviews/swift/: ws (the copy; restored with git checkout and rebuilt after every mutation, out/new regenerated clean at the end, tools status empty), my/ (scripts and logs), PROGRESS.md. gen.js created a new mstage directory inside ws/tools/gen. Nothing under ports/swift or /home/user was modified.",
+ "interface": "Interface version 3.2 held for swift: 0 shared changes made. The porter recorded 1 breaking gap (a sentence in the wrapped branches of runtimeprose.ts; it forces no other provider). My review adds 3 shared needs, all in the guard and tools rather than the documentation interface: the portcheck build and generation check, the whole-record check in the guard, and a dropped-sentence net for a result style with no reference language. The 4 swift-side fixes are expressible through the existing interface."
+}

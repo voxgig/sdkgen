@@ -1,0 +1,938 @@
+{
+ "entries": "100 entries in the slice: S 15 (S02 S05 S08 S12 S15 S18 S22 S25 S28 S32 S35 S38 S42 S45 S48), X 2 (X2 X5), G 9 (G02 to G28), V 10 (V2 to V32), U 33 (U02 to U108), N 7 (N02 to N22; the section ends at N24), M 15 (M02 to M48), D 7 (D02 D05 D22 D25 D35 D48 D55: the only headed D entries ending in 2, 5 or 8), A 2 (A02 A05). The rows D08, D12, D18 and so on in the \"50 rated medium or low\" table are left out. The catalogue says none of them is an issue of its own, and they are not among its 329 entries. Sources read: the brief, catalogue lines 1-50 and every entry in the slice (Fate, Class, Where and Fix lines), s2-restanatomy.txt and the h3 PROGRESS scope table. I also read S11, S33, G01, G13, G24, U07 and N16 for the repeats rule, and ran `git -C /home/user/sdkgen grep` at 9aebaf9e to check that registryState, originName, entityPath and repoInfo already exist and that featureOnByDefault, targetSurface, docLink, modelCopyMode and requiredOptions do not.",
+ "rows": [
+  {
+   "id": "S02",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: ts/src/cmp/Changelog.ts:22",
+   "repeats": "",
+   "also": "",
+   "reason": "One shared component writes the CHANGELOG language list for every target. The fix needs targetSurface, which does not exist at 9aebaf9e."
+  },
+  {
+   "id": "S05",
+   "cls": "S",
+   "sub": "runtime fact",
+   "component": "neutral-component: ts/src/cmp/ReadmeErrors.ts (DEFAULT_LANG table)",
+   "repeats": "",
+   "also": "O",
+   "reason": "The writer is already shared, but the fix needs each of 15 runtimes' own failure idiom (an error-style fact plus a snippet). The proposal's provider error-handling block would supply that; without the proposal it is 15 table rows."
+  },
+  {
+   "id": "S08",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: ts/src/cmp/ReadmeFeatures.ts:31",
+   "repeats": "",
+   "also": "",
+   "reason": "One shared paragraph. The fix needs featureOnByDefault, which no helper gives yet."
+  },
+  {
+   "id": "S12",
+   "cls": "K",
+   "sub": "",
+   "component": "per-language-copy ReadmeHowto_<lang>; fix in ts/src/sdkgen.ts and action/doctor.ts (S11's error)",
+   "repeats": "S11",
+   "also": "S",
+   "reason": "Its Fix is wholly 'resolved by the S11 generate/doctor error', which is a tool check, so rule 1 gives it K. No text changes."
+  },
+  {
+   "id": "S15",
+   "cls": "S",
+   "sub": "model",
+   "component": "per-language-copy: ReadmeExplanation_<lang>.ts (18 files) plus the pack's dart",
+   "repeats": "",
+   "also": "L",
+   "reason": "18 per-language module trees repeat the model-dependent phrase 'Built-in features (Base, Test, Log)'. The phrase sits inside trees that are otherwise one language's own layout, which the anatomy measured at 0% shared."
+  },
+  {
+   "id": "S18",
+   "cls": "O",
+   "sub": "plain",
+   "component": "neutral-component: ts/src/cmp/ReadmeTop.ts:588-605",
+   "repeats": "",
+   "also": "",
+   "reason": "The shared root README writes the heading before it filters. The fix filters first, a plain edit."
+  },
+  {
+   "id": "S22",
+   "cls": "T",
+   "sub": "",
+   "component": "neutral-component: ts/src/cmp/ReadmeRefFeatures.ts:50-53",
+   "repeats": "",
+   "also": "",
+   "reason": "Scope table: yes. PROGRESS step 4 records it as still present in all 20 languages after the prototype, because ReadmeRefFeatures was shared and untouched."
+  },
+  {
+   "id": "S25",
+   "cls": "T",
+   "sub": "",
+   "component": "per-language-copy: ReadmeRef_<lang>.ts",
+   "repeats": "S23",
+   "also": "",
+   "reason": "Scope table: yes. The prototype's REFERENCE section."
+  },
+  {
+   "id": "S28",
+   "cls": "T",
+   "sub": "",
+   "component": "per-language-copy: ReadmeQuick.ts plus ReadmeQuick_<lang>.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "Scope table: yes. The quick start."
+  },
+  {
+   "id": "S32",
+   "cls": "C",
+   "sub": "",
+   "component": "consumer-main: Main_go-cli.ts:317,323",
+   "repeats": "",
+   "also": "",
+   "reason": "The go-cli Main writes these README sentences, and no other language shares them."
+  },
+  {
+   "id": "S35",
+   "cls": "C",
+   "sub": "",
+   "component": "consumer-main: Main_go-cli.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "The go-cli Main writes the APIKEY lines."
+  },
+  {
+   "id": "S38",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "helper: ts/src/helpers/alongside.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "One shared helper, called from the shared ReadmeIntro frame. The fix needs docLink and targetSurface, which do not exist yet."
+  },
+  {
+   "id": "S42",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "helper: ts/src/helpers/alongside.ts:36-37",
+   "repeats": "S38",
+   "also": "",
+   "reason": "Same helper as S38. docLink is needed."
+  },
+  {
+   "id": "S45",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: ts/src/cmp/ReadmeTop.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "The shared root README writes the links. docLink is needed."
+  },
+  {
+   "id": "S48",
+   "cls": "N",
+   "sub": "",
+   "component": "neutral-component: ts/src/cmp/ReadmeTop.ts:680",
+   "repeats": "",
+   "also": "",
+   "reason": "The Fate says it is not a defect: the link is generator documentation."
+  },
+  {
+   "id": "X2",
+   "cls": "O",
+   "sub": "plain",
+   "component": "neutral-component: ts/src/cmp/ReadmeFeatures.ts:32-33 (plus the dead ReadmeOptions family)",
+   "repeats": "",
+   "also": "S",
+   "reason": "The visible wrong sentence is one shared line, and the fix rewrites it without a back-reference. The 20 ReadmeOptions copies are never rendered: deleting them is cleanup, and rebuilding them from optspec would be the proposal's ctor.options."
+  },
+  {
+   "id": "X5",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: ts/src/cmp/AgentGuideContent.ts",
+   "repeats": "",
+   "also": "K",
+   "reason": "The shared agent guide writes it once for the root. The fix needs modelCopyMode. sdkgen's own AGENTS.md is corrected in the same change."
+  },
+  {
+   "id": "G02",
+   "cls": "C",
+   "sub": "",
+   "component": "consumer-main: Main_go-cli.ts, Main_go-mcp.ts and their main.fragment.go",
+   "repeats": "",
+   "also": "G",
+   "reason": "The go-cli and go-mcp Mains and fragments write it, one writer each."
+  },
+  {
+   "id": "G05",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "Entity_<lang>.ts, Config and flow tests; fix: a guardModel pre-pass in ts/src/sdkgen.ts",
+   "repeats": "",
+   "also": "O",
+   "reason": "The wrong thing is the generated entity code, Config and flow tests. The fix is one model pre-pass with no per-language change, so the documentation proposal adds nothing."
+  },
+  {
+   "id": "G08",
+   "cls": "C",
+   "sub": "",
+   "component": "fragment: go-cli main.fragment.go and words.fragment.go; Main_go-cli.ts",
+   "repeats": "",
+   "also": "G",
+   "reason": "Code and help text belonging to the go-cli consumer target only."
+  },
+  {
+   "id": "G12",
+   "cls": "C",
+   "sub": "",
+   "component": "consumer-main: Main_py-data.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "The py-data Main writes data(), the README section and the notebook cell."
+  },
+  {
+   "id": "G15",
+   "cls": "G",
+   "sub": "comment",
+   "component": "fragment and templates: 53 files across languages",
+   "repeats": "",
+   "also": "",
+   "reason": "Model-dependent sentences in source comments of generated code."
+  },
+  {
+   "id": "G18",
+   "cls": "G",
+   "sub": "comment",
+   "component": "fragment: py Main.fragment.py:94 plus dead handlers in Main_<lang>",
+   "repeats": "",
+   "also": "",
+   "reason": "An unfired marker comment is left in generated py source, and dead generator handlers remain. The comment does not depend on the model, and no document is involved."
+  },
+  {
+   "id": "G22",
+   "cls": "C",
+   "sub": "",
+   "component": "consumer-main: Main_py-data.ts:23-31",
+   "repeats": "",
+   "also": "K",
+   "reason": "py-data's Main aborts generation. The fix is in that Main, reading the declared target set."
+  },
+  {
+   "id": "G25",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: ReadmeTop.ts, AgentGuideTop.ts; generated.ts prune",
+   "repeats": "",
+   "also": "K",
+   "reason": "The lead-ins are shared root components and need docLink. The pruning half is the generator's run plan (DQ3)."
+  },
+  {
+   "id": "G28",
+   "cls": "K",
+   "sub": "",
+   "component": "helper: jostraca Content (another repository) plus docgen emit",
+   "repeats": "",
+   "also": "G",
+   "reason": "The recommended single fix is a raw mode in jostraca's Content and its use in docgen: a defect of the tools, not of a sentence."
+  },
+  {
+   "id": "V2",
+   "cls": "L",
+   "sub": "",
+   "component": "per-language-copy: ReadmeHowto_rust.ts:138",
+   "repeats": "",
+   "also": "",
+   "reason": "A rust-only sentence about where rust's harness reads .env.local."
+  },
+  {
+   "id": "V5",
+   "cls": "L",
+   "sub": "",
+   "component": "per-language-copy: ReadmeExplanation_py.ts:16-30",
+   "repeats": "",
+   "also": "",
+   "reason": "py's own module-layout tree."
+  },
+  {
+   "id": "V8",
+   "cls": "K",
+   "sub": "",
+   "component": "other: docgen ts/src/content.ts, sdk-reference.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "docgen writes the text, so rule 2 gives K."
+  },
+  {
+   "id": "V12",
+   "cls": "K",
+   "sub": "",
+   "component": "neutral-component: ts/src/helpers/applicability.ts, cmp/Feature.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "The fix is a generate-time warning. The Class line says nothing changes in generated output."
+  },
+  {
+   "id": "V15",
+   "cls": "K",
+   "sub": "",
+   "component": "model-schema: ts/model/sdkgen.aontu:233-246 plus a modelcheck rule",
+   "repeats": "",
+   "also": "O",
+   "reason": "The fix is the schema's hook list, a package check rule and docs/reference: model and guard, not generated text."
+  },
+  {
+   "id": "V18",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "per-language-copy: Config_<lang>.ts (20) plus utility.ts configDefinition",
+   "repeats": "",
+   "also": "",
+   "reason": "Generated Config code derives auth and server twice. This is code, not documents, even though the fix applies the same one-derivation idea."
+  },
+  {
+   "id": "V22",
+   "cls": "K",
+   "sub": "",
+   "component": "target-or-feature-model: feature/<name>.aontu; the fix is in docgen content.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "The recommended fix changes how docgen lists features, and docgen's text is K by rule 2."
+  },
+  {
+   "id": "V25",
+   "cls": "K",
+   "sub": "",
+   "component": "other: docgen ts/src/content.ts:157-198",
+   "repeats": "",
+   "also": "",
+   "reason": "docgen's classification of prose against quotes."
+  },
+  {
+   "id": "V28",
+   "cls": "K",
+   "sub": "",
+   "component": "neutral-component: ts/src/sdkgen.ts:390-409,793-802",
+   "repeats": "",
+   "also": "O",
+   "reason": "The main fix is the generate skip (a warning) and one target set shared by ReadmeTop and docgen (DQ3), which is run-plan behaviour of the generator."
+  },
+  {
+   "id": "V32",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "template: 54 files under tm plus 15 components",
+   "repeats": "",
+   "also": "",
+   "reason": "Literal paths in generated code and test runners mean out-of-tree targets miss the corpus."
+  },
+  {
+   "id": "U02",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: ts/src/cmp/ReadmeTop.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "The shared root README needs targetSurface."
+  },
+  {
+   "id": "U05",
+   "cls": "O",
+   "sub": "plain",
+   "component": "neutral-component: ReadmeErrors.ts:212, ReadmeExplanation.ts:225",
+   "repeats": "",
+   "also": "",
+   "reason": "The fix keys the shared tables by originName, which already exists in packageMeta.ts:32, and drops the default row."
+  },
+  {
+   "id": "U08",
+   "cls": "N",
+   "sub": "",
+   "component": "neutral-component: ts/src/cmp/ReadmeTop.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "The Fate says it is not a defect. The disagreement is docgen's (U07)."
+  },
+  {
+   "id": "U12",
+   "cls": "N",
+   "sub": "",
+   "component": "per-language-copy: langpack ReadmeTopTest_lean.ts:12",
+   "repeats": "",
+   "also": "",
+   "reason": "The Fate says it is not a defect: lean sets trim: false."
+  },
+  {
+   "id": "U15",
+   "cls": "O",
+   "sub": "plain",
+   "component": "neutral-component: ts/src/cmp/ReadmeExplanation.ts:46 (DEFAULT_LANG entityState)",
+   "repeats": "",
+   "also": "",
+   "reason": "The shared table's default row gives lean the paragraph. Keying rows by origin with no default row removes it, a plain edit in one file."
+  },
+  {
+   "id": "U18",
+   "cls": "P",
+   "sub": "",
+   "component": "helper: packageMeta.ts:275-277; the fix is in the langpack dart target model or Package_dart",
+   "repeats": "",
+   "also": "O",
+   "reason": "The fix lets the pack's dart target declare publish.registry.package, which packageName already reads first, so the work is in the pack."
+  },
+  {
+   "id": "U22",
+   "cls": "S",
+   "sub": "model",
+   "component": "per-language-copy: ReadmeHowto_<lang>.ts (10 files)",
+   "repeats": "",
+   "also": "G",
+   "reason": "The same .env.local location sentence repeats across howto copies and depends on targetPlace, a model or layout fact. Aligning the runners is V32's work."
+  },
+  {
+   "id": "U25",
+   "cls": "K",
+   "sub": "",
+   "component": "neutral-component: ts/src/sdkgen.ts target set; docgen content.ts:244-246",
+   "repeats": "G24",
+   "also": "O",
+   "reason": "It repeats G24, which is docgen's. The sdkgen half is which target set the root README is generated from (DQ3), not a sentence."
+  },
+  {
+   "id": "U28",
+   "cls": "O",
+   "sub": "plain",
+   "component": "neutral-component: ts/src/cmp/PublishWorkflow.ts:372-374",
+   "repeats": "",
+   "also": "",
+   "reason": "One shared component. registryState already exists in packageMeta.ts:173."
+  },
+  {
+   "id": "U32",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "template: tm/<lang>/VERSION and LICENSE",
+   "repeats": "",
+   "also": "",
+   "reason": "Generated files are frozen at target add. The fix emits them from components."
+  },
+  {
+   "id": "U35",
+   "cls": "S",
+   "sub": "model",
+   "component": "per-language-copy: ReadmeModel_<lang>.ts (9 files)",
+   "repeats": "",
+   "also": "",
+   "reason": "The same 'API path:' rule appears in nine per-language ReadmeModel copies. entityPath(ent) already exists (opShape.ts:89), so shared ReadmeModel text would fix it once."
+  },
+  {
+   "id": "U38",
+   "cls": "O",
+   "sub": "plain",
+   "component": "helper: ts/src/helpers/packageMeta.ts:311-315",
+   "repeats": "G13",
+   "also": "G",
+   "reason": "A shared helper writes manifest descriptions. The fix takes the label from target.title."
+  },
+  {
+   "id": "U42",
+   "cls": "L",
+   "sub": "",
+   "component": "per-language-copy: ReadmeInstall_{swift,rust,cpp,zig}.ts",
+   "repeats": "",
+   "also": "S",
+   "reason": "Each of the four install idioms (SwiftPM, a cargo git dependency, CMake, zig fetch) is one language's own text. The fix substitutes repoUrl separately in each file."
+  },
+  {
+   "id": "U45",
+   "cls": "T",
+   "sub": "",
+   "component": "per-language-copy: ReadmeQuick_<lang>.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "Scope table: yes."
+  },
+  {
+   "id": "U48",
+   "cls": "C",
+   "sub": "",
+   "component": "consumer-main: Main_py-data.ts",
+   "repeats": "S33",
+   "also": "",
+   "reason": "py-data's example names, resolved with S33 in py-data's Main."
+  },
+  {
+   "id": "U52",
+   "cls": "T",
+   "sub": "",
+   "component": "neutral-component: ts/src/cmp/ReadmeRefFeatures.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "Scope table: yes. PROGRESS step 4 records it as unfixed by the prototype in all 20 languages."
+  },
+  {
+   "id": "U55",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: AgentGuideContent.ts:68-85, AgentGuide.ts:91-103",
+   "repeats": "",
+   "also": "",
+   "reason": "The shared agent guide needs the per-target feature path from featureSource discovery (the D09 home), which it does not read today."
+  },
+  {
+   "id": "U58",
+   "cls": "S",
+   "sub": "runtime fact",
+   "component": "neutral-component: ts/src/cmp/ReadmeErrors.ts",
+   "repeats": "S05",
+   "also": "O",
+   "reason": "Resolved with S05, so it takes S05's class: the fix needs each runtime's error style."
+  },
+  {
+   "id": "U62",
+   "cls": "O",
+   "sub": "plain",
+   "component": "neutral-component: ts/src/cmp/ReadmeUnions.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "One shared sentence. The condition reads CANON_UNION_JOIN in canonType.ts, which already exists."
+  },
+  {
+   "id": "U65",
+   "cls": "K",
+   "sub": "",
+   "component": "template: tm/edition/*/sdk-setup.json (docgen editions)",
+   "repeats": "",
+   "also": "",
+   "reason": "Edition setup is docgen's, so rule 2 gives K."
+  },
+  {
+   "id": "U68",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "helper: packageMeta.ts:311-315,326-330",
+   "repeats": "",
+   "also": "",
+   "reason": "Shared helpers write the disclosure. The fix needs a new model slot for an official publisher."
+  },
+  {
+   "id": "U72",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "per-language-copy: TestEntity_kotlin.ts:367-372",
+   "repeats": "",
+   "also": "",
+   "reason": "The generated kotlin live test omits the server block."
+  },
+  {
+   "id": "U75",
+   "cls": "S",
+   "sub": "model",
+   "component": "per-language-copy: ReadmeModel_ts.ts:66-72",
+   "repeats": "G01",
+   "also": "",
+   "reason": "The Fix is its own (list requiredOptions vars), so rule 1 does not apply. It is in ReadmeModel, which the prototype did not build, and depends on a model fact every language's options table would need."
+  },
+  {
+   "id": "U78",
+   "cls": "C",
+   "sub": "",
+   "component": "consumer-main: Main_py-data.ts:238-239",
+   "repeats": "",
+   "also": "",
+   "reason": "A py-data docstring."
+  },
+  {
+   "id": "U82",
+   "cls": "C",
+   "sub": "",
+   "component": "consumer-main: Main_go-mcp.ts:56-57",
+   "repeats": "",
+   "also": "",
+   "reason": "A go-mcp tool description."
+  },
+  {
+   "id": "U85",
+   "cls": "N",
+   "sub": "",
+   "component": "template: tm/go/core/types.go and others",
+   "repeats": "",
+   "also": "",
+   "reason": "The Fate says it is not a defect."
+  },
+  {
+   "id": "U88",
+   "cls": "P",
+   "sub": "",
+   "component": "fragment: langpack dart fragments and haskell templates",
+   "repeats": "",
+   "also": "G",
+   "reason": "Comments in the language pack's own sources, which follow the bundled comment pass."
+  },
+  {
+   "id": "U92",
+   "cls": "K",
+   "sub": "",
+   "component": "neutral-component: ts/src/sdkgen.ts:909-936",
+   "repeats": "",
+   "also": "",
+   "reason": "The generator's sdkrel derivation and warning. The fix is to refuse or error."
+  },
+  {
+   "id": "U95",
+   "cls": "N",
+   "sub": "",
+   "component": "other: docgen content.ts:157",
+   "repeats": "",
+   "also": "",
+   "reason": "The Fate says it is not a defect: it is a constraint on DQ3."
+  },
+  {
+   "id": "U98",
+   "cls": "K",
+   "sub": "",
+   "component": "other: docgen content.ts:160-163",
+   "repeats": "U07",
+   "also": "",
+   "reason": "docgen's surface table, rule 2."
+  },
+  {
+   "id": "U102",
+   "cls": "T",
+   "sub": "",
+   "component": "neutral-component: FeatureDocs.ts, ReadmeRefFeatures.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "Scope table: yes. PROGRESS records it as unfixed by the prototype."
+  },
+  {
+   "id": "U105",
+   "cls": "K",
+   "sub": "",
+   "component": "other: create-sdkgen src/project/standard/CreateRoot.ts:110",
+   "repeats": "",
+   "also": "",
+   "reason": "create-sdkgen's scaffold comment, another repository's tool."
+  },
+  {
+   "id": "U108",
+   "cls": "K",
+   "sub": "",
+   "component": "other: docgen content.ts:272",
+   "repeats": "",
+   "also": "",
+   "reason": "docgen's prose classification."
+  },
+  {
+   "id": "N02",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "helper: ts/src/utility.ts:388 configDefinition",
+   "repeats": "",
+   "also": "O",
+   "reason": "The generated Config carries a wrong basic: true. The fix is one predicate in a shared helper."
+  },
+  {
+   "id": "N05",
+   "cls": "O",
+   "sub": "plain",
+   "component": "neutral-component: ReadmeErrors.ts:212,229; ReadmeExplanation.ts:225,240",
+   "repeats": "",
+   "also": "S",
+   "reason": "Keying the shared lookups by originName, which exists, is the fix. Adding rows for every language is S05's work."
+  },
+  {
+   "id": "N08",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: AgentGuideContent.ts:137,173",
+   "repeats": "X5",
+   "also": "",
+   "reason": "Same as X5: modelCopyMode is needed."
+  },
+  {
+   "id": "N12",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "per-language-copy: ReadmeExamplesTest_<lang>.ts (rb, perl, php, ts)",
+   "repeats": "",
+   "also": "",
+   "reason": "The generated README tests' regex is wrong."
+  },
+  {
+   "id": "N15",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "per-language-copy: Config_<lang>.ts and TestEntity_ts/js (code sinks)",
+   "repeats": "G28",
+   "also": "K",
+   "reason": "Its own Fix is a per-language string escaper at code sinks in generated source. G28's jostraca raw mode would supersede it."
+  },
+  {
+   "id": "N18",
+   "cls": "K",
+   "sub": "",
+   "component": "helper: ts/src/helpers/copymerge.ts; action/copies.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "Copy-merge, --keep and doctor behaviour: a tool."
+  },
+  {
+   "id": "N22",
+   "cls": "K",
+   "sub": "",
+   "component": "test: ts/test/generatedcompile.test.ts README_LANES",
+   "repeats": "",
+   "also": "",
+   "reason": "A gap in the test suite."
+  },
+  {
+   "id": "M02",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: ReadmeTop.ts, alongside.ts, AgentGuideContent.ts, mcpTools.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "Shared sites compare literal keys. The fix needs targetSurface."
+  },
+  {
+   "id": "M05",
+   "cls": "O",
+   "sub": "plain",
+   "component": "neutral-component: ReadmeErrors.ts:212, ReadmeExplanation.ts:225",
+   "repeats": "N05",
+   "also": "",
+   "reason": "Same origin keying as N05."
+  },
+  {
+   "id": "M08",
+   "cls": "S",
+   "sub": "model",
+   "component": "per-language-copy: ReadmeModel_<lang>.ts 'Entity interface' table (17 languages); ts/js lead-in",
+   "repeats": "",
+   "also": "C",
+   "reason": "The same empty-table condition, an empty active-entity list in the model, is repeated across 17 ReadmeModel copies. A shared section would write it once. go-cli's Words table is a C site."
+  },
+  {
+   "id": "M12",
+   "cls": "T",
+   "sub": "",
+   "component": "per-language-copy: ts/js ReadmeHowto, ReadmeModel, ReadmeRef, ReadmeTopQuick, ReadmeQuick",
+   "repeats": "",
+   "also": "",
+   "reason": "Scope table: part."
+  },
+  {
+   "id": "M15",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "template: tm go, rust, zig and c make_options",
+   "repeats": "",
+   "also": "",
+   "reason": "Runtime templates panic or abort."
+  },
+  {
+   "id": "M18",
+   "cls": "P",
+   "sub": "",
+   "component": "template: langpack lean Config_lean.ts and SdkUtility.lean",
+   "repeats": "",
+   "also": "G",
+   "reason": "The pack's lean runtime lacks the server option and Basic."
+  },
+  {
+   "id": "M22",
+   "cls": "K",
+   "sub": "",
+   "component": "other: published sdkgen releases up to 4.41.0, peer range for shape",
+   "repeats": "",
+   "also": "",
+   "reason": "A registry release fixed by npm deprecate: a tool and release issue."
+  },
+  {
+   "id": "M25",
+   "cls": "K",
+   "sub": "",
+   "component": "template: create-sdkgen project/standard/.sdk/src/Root.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "Dead code in create-sdkgen's scaffold Root."
+  },
+  {
+   "id": "M28",
+   "cls": "K",
+   "sub": "",
+   "component": "generator-docs: sdkgen AGENTS.md:937-938",
+   "repeats": "N16",
+   "also": "",
+   "reason": "The repository's own agent guide, not generated text."
+  },
+  {
+   "id": "M32",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: AgentGuideContent.ts:137",
+   "repeats": "X5",
+   "also": "",
+   "reason": "Same as X5."
+  },
+  {
+   "id": "M35",
+   "cls": "T",
+   "sub": "",
+   "component": "per-language-copy: js ReadmeRef_js, ReadmeEntity_js; neutral tables",
+   "repeats": "N11",
+   "also": "",
+   "reason": "Scope table: part. PROGRESS: unfixed, because js was unported."
+  },
+  {
+   "id": "M38",
+   "cls": "T",
+   "sub": "",
+   "component": "per-language-copy: ReadmeEntity_<lang>, ReadmeRef_<lang>, ReadmeModel_<lang>",
+   "repeats": "G27",
+   "also": "",
+   "reason": "Scope table: part. Only the REFERENCE sink is in the built section."
+  },
+  {
+   "id": "M42",
+   "cls": "K",
+   "sub": "",
+   "component": "action: ts/src/action/doctor.ts; sdkgen.ts generate entry",
+   "repeats": "N17",
+   "also": "",
+   "reason": "Doctor and generate version reporting."
+  },
+  {
+   "id": "M45",
+   "cls": "K",
+   "sub": "",
+   "component": "test: ts/test/generateharness.ts",
+   "repeats": "",
+   "also": "",
+   "reason": "A gap in the test fixture."
+  },
+  {
+   "id": "M48",
+   "cls": "K",
+   "sub": "",
+   "component": "other: docgen content.ts:160-172",
+   "repeats": "",
+   "also": "",
+   "reason": "docgen's surface classification."
+  },
+  {
+   "id": "D02",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: alongside.ts, ReadmeTop.ts, AgentGuideContent.ts, packageMeta.ts, mcpTools.ts",
+   "repeats": "",
+   "also": "K",
+   "reason": "The fix's work is adding targetSurface and making the shared sites read it. The test sets and docgen are tools."
+  },
+  {
+   "id": "D05",
+   "cls": "T",
+   "sub": "",
+   "component": "neutral-component: ReadmeFeatures, ReadmeRefFeatures, ReadmeTop, ReadmeStation, AgentGuideTop",
+   "repeats": "S09",
+   "also": "",
+   "reason": "Scope table: part."
+  },
+  {
+   "id": "D22",
+   "cls": "G",
+   "sub": "behaviour",
+   "component": "per-language-copy: PrepareAuth_<lang>.ts (12 private copies); consumer Mains",
+   "repeats": "",
+   "also": "C",
+   "reason": "Most of the fix's files are generated credential code importing isAuthSuppressed. The visible document defect is in the three consumers' text (C). No per-language README section is involved."
+  },
+  {
+   "id": "D25",
+   "cls": "S",
+   "sub": "model",
+   "component": "per-language-copy: the how-to 'Run tests' sections and test generators; go-cli/go-mcp Mains; packageMeta helpers",
+   "repeats": "",
+   "also": "C",
+   "reason": "The fix spells env var names once in helpers and has every language's how-to name the variables its tests read: the model-derived name repeats across howto copies. The go-cli/go-mcp, docgen and lean parts are C, K and P."
+  },
+  {
+   "id": "D35",
+   "cls": "K",
+   "sub": "",
+   "component": "test: ts/src/testkit.ts, ts/test/generateharness.ts; create-sdkgen Root",
+   "repeats": "",
+   "also": "",
+   "reason": "Hand-written Roots in test harnesses and the scaffold."
+  },
+  {
+   "id": "D48",
+   "cls": "O",
+   "sub": "needs a derivation",
+   "component": "neutral-component: AgentGuideContent.ts, AgentGuide.ts, AgentGuideFeature.ts, ReadmeTop.ts",
+   "repeats": "X5",
+   "also": "",
+   "reason": "One neutral constant plus modelCopyMode."
+  },
+  {
+   "id": "D55",
+   "cls": "T",
+   "sub": "",
+   "component": "per-language-copy: ts ReadmeTopQuick, ReadmeModel; serverVars.ts",
+   "repeats": "G01",
+   "also": "",
+   "reason": "Scope table: part."
+  },
+  {
+   "id": "A02",
+   "cls": "K",
+   "sub": "",
+   "component": "test: sdkgen-langpack test/langpack.test.js:812-826",
+   "repeats": "",
+   "also": "",
+   "reason": "The language pack's test suite. Already fixed on the pack's main."
+  },
+  {
+   "id": "A05",
+   "cls": "S",
+   "sub": "runtime fact",
+   "component": "per-language-copy: ReadmeModel_<lang>.ts 'Operations:' line (20 files)",
+   "repeats": "",
+   "also": "",
+   "reason": "The 'Operations:' line is repeated in 20 ReadmeModel copies. The fix spells each op as the language's method is spelled, which is a provider spelling of a runtime fact."
+  }
+ ],
+ "counts": "100 rows. T 11 (S22 S25 S28 U45 U52 U102 M12 M35 M38 D05 D55). S 9 (6 model: S15 U22 U35 U75 M08 D25; 3 runtime fact: S05 U58 A05). L 3 (V2 V5 U42). O 24 (13 needs a derivation: S02 S08 S38 S42 S45 X5 G25 U02 U55 U68 N08 M02 M32 D02 D48, counting D02 and D48, which brings it to 15; 9 plain: S18 X2 U05 U15 U28 U38 U62 N05 M05). The O split is 15 needs a derivation and 9 plain, and the full list is S02 S08 S18 S38 S42 S45 X2 X5 G25 U02 U05 U15 U28 U38 U55 U62 U68 N05 N08 M02 M05 M32 D02 D48. C 9 (S32 S35 G02 G08 G12 G22 U48 U78 U82). G 12 (2 comment: G15 G18; 10 behaviour: G05 V18 V32 U32 U72 N02 N12 N15 M15 D22). K 24 (S12 G28 V8 V12 V15 V22 V25 V28 U25 U65 U92 U98 U105 U108 N18 N22 M22 M25 M28 M42 M45 M48 D35 A02). P 3 (U18 U88 M18). N 5 (S48 U08 U12 U85 U95). Sum: 11+9+3+24+9+12+24+3+5 = 100. Outside the tested 11, only 9 of the 89 entries are class S, where writing an unbuilt section once would fix them, and 3 of those 9 need a runtime fact each language declares. 24 are already written once by a shared component (O), and the proposal adds nothing to them beyond the shared derivations (targetSurface, docLink, modelCopyMode, featureOnByDefault) that the plan already needs. 51 are tools, generated code, consumers, packs or not defects (K, G, C, P, N), which the documentation proposal does not reach. Of the 11 T entries, PROGRESS records 4 in this slice (S22, U52, U102 and M35) as still present after the prototype.",
+ "least_sure": [
+  {
+   "id": "S05",
+   "between": "S (runtime fact) and O",
+   "settles": "Whether a shared component holding a per-language wording table counts as 'written once already'. The fix needs 15 language-specific failure snippets either way, as provider output or as table rows in ReadmeErrors.ts. Under O the proposal adds nothing. Under S it is exactly the provider's error-handling block. A ruling on whether S requires the writer to be a per-language component settles it, and U58 follows S05."
+  },
+  {
+   "id": "S15",
+   "between": "S (model) and L",
+   "settles": "Whether a model-dependent phrase inside a per-language module tree counts as a shared sentence. The anatomy measured ReadmeExplanation as 0% shared, but this one comment repeats in 18 trees. Diffing the 18 tree lines in spike/out/B/md/<lang>/README.md, and seeing whether only the feature list and comment syntax differ, settles it."
+  },
+  {
+   "id": "G05",
+   "between": "G (behaviour) and O or K",
+   "settles": "The defect is generated code, but the fix is a single model pre-pass in guardModel (ts/src/sdkgen.ts), with no per-language change. A rule on whether a core model guard is K or O when it fixes generated code settles it. Either way the documentation proposal does nothing for it."
+  },
+  {
+   "id": "D22",
+   "between": "G (behaviour) and C",
+   "settles": "Which site carries most of the Fix: by file count it is the 12 PrepareAuth_<lang> imports (generated code), but the user-visible wrong text is the three consumers' always-required API key. Weighting by visible defect rather than by file count would make it C."
+  },
+  {
+   "id": "D25",
+   "between": "S (model) and C or K",
+   "settles": "The env var names are spread over helpers (O), the go-cli and go-mcp Mains (C), TestEntity_ts (G), docgen (K) and lean (P). I chose S because the fix has every language's how-to 'Run tests' section name its variables. Counting how many of the 25 source files are ReadmeHowto_<lang> copies at 9aebaf9e would settle it."
+  },
+  {
+   "id": "U42",
+   "between": "L and S (model)",
+   "settles": "Whether a model value (repoUrl) printed inside four different install idioms (SwiftPM, cargo, CMake, zig) counts as a sentence the languages share. If the description's install block carried repoUrl and each provider only printed it, it would be S. I read it as four separate per-language edits."
+  }
+ ]
+}

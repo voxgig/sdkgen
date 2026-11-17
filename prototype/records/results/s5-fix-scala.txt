@@ -1,0 +1,337 @@
+lang: scala
+ok: False
+summary: |
+  The scala port is fixed in its own files, but `ok` is false: the one command still fails on 3 findings from a shared tool, and that tool is not mine to change.
+  
+  I fixed the defects the reviewer found in scala's own files.
+  - **Truth read.** The REFERENCE now prints `java.lang.Boolean.TRUE == result.get("ok")` instead of `result.get("ok") == true`, which compares an Object with a primitive Boolean.
+  - **`okFalse`.** It is now `java.lang.Boolean.FALSE`, the token the runtime writes. The citation is pinned to it and the `unquoted` excuse is gone.
+  - **Literals.** A primitive literal that a map of Object holds directly is now boxed the way the runtime boxes its own (`java.lang.Double.valueOf(1.0)`), through a new `scalaObjectLit` beside `scalaLit` in `utility_scala.ts`.
+  - **Hand records.** Re-recorded accordingly; STALE is 0.
+  
+  Before changing anything I checked each finding against the runtime, by grep over every .scala file under `src/cmp/scala` and `tm/scala`:
+  - 0 comparisons with a primitive `true` or `false`.
+  - 26 comparisons with the boxed constants.
+  - ReadmeHowto_scala.ts:78 already writes the boxed form.
+  - The runtime boxes its own map values (`TelemetryFeature.scala:49`, `NetsimFeature.scala:42`).
+  
+  I also made a control: declaring `okFalse: 'false'` again fails the guard.
+  
+  **Final state, after a fresh build (exit 0, tree clean) and `REGEN=1`:**
+  - Regenerated 21 of 21 variations.
+  - Ledger and blocks OPEN 0, defect 0.
+  - Purity 0 open; pagecheck 0; STALE 0.
+  - Facts 0 unattested; 30 of 30 absent sentences explained.
+  - Guard 4/4, reader 22/22, golden 2/2.
+  - Suite: 2635 tests, 2630 pass, 0 fail, 5 skipped.
+  - No other language's page changed.
+  
+  The one command exits 1 only on the 3 callcheck MEMBER findings on `results.forEach(...)`. That is a false positive of `tools/callcheck.js:131/139`, a shared tool. The printed form is OLD scala's own (byte-identical at OLD B REFERENCE.md:178). I recorded it as a shared change rather than altering correct code to get past the check. No class records it as `defect`, because the page is correct and callcheck findings are counted apart from classes.
+  
+  The other four shared changes (account.ts NOT_RUNTIME, two guard holes, one matching hole) are recorded, and the reviewer's not-caught list is copied unchanged.
+  
+  Nothing was compiled: no scala, scala-cli, sbt, scalac, coursier or amm is here, and there is no Scala compiler jar on disk. All 31 distinct changed blocks and the new prose code span were read, not compiled.
+outcomes:
+  - [0]
+    finding: R1 Syntax_scala.ts:189: read(value, key, truth) printed `result.get("ok") == true`, an Object compared with a primitive Boolean, which Scala 3 multiversal equality refuses (19 REFERENCEs)
+    outcome: fixed
+    how: Checked first (read): `get` on a JMap[String, Object] returns Object. The Scala runtime has 0 comparisons with a primitive true/false and 26 with java.lang.Boolean.TRUE/FALSE (grep over *.scala in src/cmp/scala and tm/scala, e.g. EntityBase.fragment.scala:211). ReadmeHowto_scala.ts:78 writes `java.lang.Boolean.TRUE == result.get("ok")`, and the generated test sdktest/ConcurrencyTest.scala:86,168 uses the boxed form; the nightly scala lane compiles it, but that lane was not run here. Now `read` with truth prints `java.lang.Boolean.TRUE == ${value}.get("key")`. The REFERENCE says `branch on java.lang.Boolean.TRUE == result.get("ok")` in 19 variations, and 0 `== true` are left (grep). The README how-to and the REFERENCE now agree, which closes the reviewer's page finding that they disagreed. Read, not compiled: java.lang.Boolean is a subtype of Object, so the new form is legal under either reading of the equality rules.
+    commit: sdkgen 8a508ccd
+  - [1]
+    finding: R2 refFacts.direct.okFalse 'false', with forms citation runtimeforms/scala.ts:107 pinned 'false' and an `unquoted` excuse that misdescribed the map as 'of Any'
+    outcome: fixed
+    how: The runtime writes java.lang.Boolean.FALSE at SdkClient.scala:175,229,261,268,272,314, and Boolean.valueOf(false) at :307 returns that same instance. A Scala reader compares with that token: `false` compared with an Object does not compile. So I declared okFalse 'java.lang.Boolean.FALSE'. The citation pins value 'java.lang.Boolean.FALSE', quotes `out.put("ok", java.lang.Boolean.FALSE)`, and the excuse is removed. The guard account lists `ref.facts.direct.okFalse: cited (tm/scala/core/SdkClient.scala)` with no excuse. Control (ran): with 'false' declared again, the guard fails 1 of 4 (`cite ref.facts.direct.okFalse: the quote does not contain "false", which the fact states`); restored, it passes 4/4.
+    commit: sdkgen 8a508ccd
+  - [2]
+    finding: R3 hand records 5cae18f518 and 873aa54fab (hand/scala.json:649) endorse `result.get("ok") == true` on a false premise
+    outcome: fixed
+    how: |
+      5cae18f518 is re-recorded quoting the sentence as it now prints. 873aa54fab is removed: after regeneration its class no longer exists. Five other records whose classes vanished are removed too (9c6d819441, afe39b8d17, 165ed4ede9, a886830e24, c62b59bf72). Their successors are recorded:
+      - a2c8963138 and 10d826fbfb: restored:shared.
+      - 549ebf24ea and 3c5844c600: same-meaning, echoes with no disagreement.
+      - 08fe31cfce, 70e7193725, f58d94f4bf (the novel tokens Boolean, FALSE, TRUE): correction:scala-boxed-boolean.
+      - 4d83ae4f86, f698b35c73 (the write blocks) and 43e425fea5, 72150b9927, 206a3563f7 (the tokens lang, Double, valueOf): correction:scala-boxed-literal.
+      The records were merged, never replaced, by P/ports/scala/work/fix-hand.js. Reviewed run: STALE 0; hand records 229.
+    commit: tools 490e54a
+  - [3]
+    finding: R4 tools/callcheck.js:131 (`known` receiver set) and :139 (MEMBER): `results.forEach(...)` on a cast java.util.List is reported as a missing runtime member
+    outcome: needs a shared change (recorded)
+    how: |
+      Confirmed by reading callcheck.js:131: any variable bound on a line holding `client` joins `known`, and :139 reports any unknown member called on it. The 3 lines are OLD scala's own form:
+      - OLD B REFERENCE.md:178 is byte-identical to NEW B REFERENCE.md:216.
+      - OLD crud-bare README.md:50 and doc-list README.md:52 print the same form with other variable names.
+      I did not work around it, and I did not change correct printed code to get past the check. No class is recorded as defect: the page is correct, and callcheck findings are counted apart from classes (summary.js:54). The one command fails on these 3 findings alone. The change is in shared_changes_needed.
+    commit: none (shared tools file)
+  - [4]
+    finding: R5 ts/test/runtimeforms/account.ts:244 NOT_RUNTIME does not name tm/scala/sdktest/
+    outcome: needs a shared change (recorded)
+    how: Additive. The guide-sanctioned workaround stays: the cancel absence's except region in runtimeforms/scala.ts quotes sdktest/SdkTestSupport.scala:29 once, with its reason. With the shared change it can be dropped.
+    commit: none (shared guard file)
+  - [5]
+    finding: R6 guard: the accessor's receiver (and each operation's) checked by name, not only by separator (reviewer attack A21: `DemoSDK.planet(null)` passed the guard and callcheck)
+    outcome: needs a shared change (recorded)
+    how: A guard hole, not a page defect: scala's pages print `client.planet(null)`, which is right. The attack is copied unchanged into not_caught_by_process.
+    commit: none (shared guard files)
+  - [6]
+    finding: R7 guard: derive `deleted` against the type the examples bind (SdkEntity, core/Contracts.scala:16-27), not against any entity class (reviewer attack A17)
+    outcome: needs a shared change (recorded)
+    how: A guard hole. Scala declares no `deleted`: SdkEntity lacks it, and EntityBase.fragment.scala:72 has it. Its absent reason is recorded. Attack copied unchanged.
+    commit: none (shared guard files)
+  - [7]
+    finding: R8 tools: an undeclared optional fact whose declared-form sentence OLD printed is matched against ts's other-form sentence (reviewer attack A13b)
+    outcome: needs a shared change (recorded)
+    how: A tools hole. Scala declares the utility copy (true, cited at SdkClient.scala:88 and Utility.scala:54-55). Attack copied unchanged.
+    commit: none (shared tools files)
+  - [8]
+    finding: R9 utility_scala.ts scalaLit: a bare `1.0` / `1L` / `true` in a Map.of passed as java.util.Map[String, Object] (Scala tries no implicit conversion to Object)
+    outcome: fixed in the ported sections
+    how: |
+      I added `scalaObjectLit` to utility_scala.ts, beside `scalaLit`; generate.test.ts:6321 requires the one literal table to stay there. It boxes the table's literal as the runtime boxes: INTEGER `java.lang.Long.valueOf(1L)`, NUMBER `java.lang.Double.valueOf(1.0)`, BOOLEAN `java.lang.Boolean.TRUE` (cf. TelemetryFeature.scala:49, NetsimFeature.scala:42, SdkClient.scala:337).
+      
+      The provider boxes a literal only where a map of Object holds it directly: an operation's argument map, an `options.put` or a sub-map `put`. A nested map's values stay bare, because Map.of's V is then inferred, not pinned to Object. So the 20 `feature.put(..., java.util.Map.of("active", true))` lines per REFERENCE stay identical to OLD.
+      
+      Result (grep over the 21 variations): 7 `java.lang.Double.valueOf(1.0)` in 4 tutorials, and 0 bare numeric literals left in any scala page.
+      
+      Purity: the accepted import finding now names both helpers (purity-allow/scala.json), so 0 open and 2 accepted. Not changed: the unported README components ReadmeEntity_scala.ts:115,151, ReadmeHowto_scala.ts:33,38,45 and ReadmeTopTest_scala.ts:39,47 still call scalaLit. They print no numeric or boolean literal in these 21 variations, but a model with a required numeric field would get a bare literal there.
+    commit: sdkgen 8a508ccd
+  - [9]
+    finding: P2 Syntax_scala.ts:101 `held` drops a member whose value prints as null
+    outcome: not a defect
+    how: The reviewer's own reading, confirmed: generate.test.ts:6338-6350 requires java and scala to leave a null-only member out of a Map.of map, because Map.of rejects a null value.
+    commit: -
+  - [10]
+    finding: P3 Syntax_scala.ts:147 the client printer names a variable after a map-valued option's key (`val server = ...`) without the hook's ident
+    outcome: not fixed
+    how: |
+      This is OLD's own form for a map-valued option: OLD B REFERENCE.md:494 prints `val feature = new java.util.LinkedHashMap[String, Object]()` (ReadmeRef_scala.ts:375 at v33-frozen), and NEW keeps it identical. The defect is latent: only `server` and `feature` occur, neither is reserved, and no page is wrong.
+      
+      A printer cannot reach the hook's `ident`: the description carries ident-adapted names only for `vars` (sdkdesc.ts:232-235). So a true fix is a shared change (an ident-adapted option variable name in the description), or a printed form that departs from OLD's.
+    commit: -
+  - [11]
+    finding: P4 scalaCorePackage extracted, but the same rule is still spelled inline at EntityTypes_scala.ts:103, PrepareAuth_scala.ts:59/88/188/249, TestClean_scala.ts:59, TestDirect_scala.ts:121, TestEntity_scala.ts:90 and as SCALAPACKAGE.core in tm/scala
+    outcome: not a defect
+    how: The reviewer's verdict is 'not wrong'. The hook calls the function Config_scala and Schema_scala call, and every site yields the same string. Extending the refactor to six more generator components is outside the three sections, and I left it.
+    commit: -
+  - [12]
+    finding: Reviewer doubtful lines kept from OLD: top-level statements; REFERENCE `asInstanceOf[SdkEntity]` with no import
+    outcome: not fixed
+    how: Both are as OLD prints them. REFERENCE blocks are standalone by design (guide 2.5 and section 13: a REFERENCE example gets a fresh scope and prints no imports). Top-level statements compile as a scala-cli script, as in OLD. Unverified: no compiler here.
+    commit: -
+shared_changes_needed:
+  - [0]
+    file: tools/callcheck.js:131 (the `known` receiver set) and :139 (MEMBER)
+    change: Do not treat a variable bound through a cast to a standard collection (`.asInstanceOf[java.util.List[...]]`, `(List<...>)`, `as List<...>`) as a runtime receiver. Alternatively, keep a per-language list of standard-library members (forEach).
+    why: It is the only failure of scala's one command: 3 MEMBER findings on `results.forEach(item => println(item.data()))`, a form OLD scala printed (OLD B REFERENCE.md:178, byte-identical). No hand record can accept a callcheck finding. The same heuristic checks nothing when a binding does not mention `client` (reviewer attack A21).
+    breaking: False
+    providers_forced: none (a tools change). The porter guessed java and kotlin would meet the same finding, but their OLD B pages hold no forEach (OLD java iterates with `for (Object item : results)`), so this depends on what their ports print. I did not read their ports.
+  - [1]
+    file: ts/test/runtimeforms/account.ts:244 (NOT_RUNTIME)
+    change: Add `sdktest` to the test-tree alternation.
+    why: tm/scala/sdktest/ is the generated SDK's own test tree. Today the cancel absence counts sdktest/SdkTestSupport.scala:29 as runtime, and scala carries a quoted except region with a reason for it.
+    breaking: False
+    providers_forced: none; scala could then drop that except region
+  - [2]
+    file: ts/test/runtimeforms guard (calls.ts / guard.ts: the accessor and operation receiver)
+    change: Check the receiver of the accessor call and of each operation call by name as well as by separator: an instance member written on the client's type or class name must fail.
+    why: Reviewer attack A21 printed `DemoSDK.planet(null).list(null, null)`. `planet` is an instance method of DemoSDK, not on its companion. The guard passed, because `.` serves both instance and type in scala.
+    breaking: False
+    providers_forced: none if their pages are right; it adds a check for every language whose instance and type separators coincide (scala, java, kotlin, csharp, ts, swift)
+  - [3]
+    file: ts/test/runtimeforms guard (the derivation of ref.facts.deleted)
+    change: Derive `deleted` against the type the examples bind (the layout's `names.entity`; for scala SdkEntity, core/Contracts.scala:16-27), not against any entity class of the runtime.
+    why: Reviewer attack A17 declared `deleted: '{var}.deleted()'`. It passed the guard because EntityBase.fragment.scala:72 declares deleted(), yet the page then calls it on a result cast to SdkEntity, which lacks it.
+    breaking: False
+    providers_forced: a provider that declares deleted while its examples bind a type lacking it; not checked across the thirteen here (scala declares none)
+  - [4]
+    file: tools shared-sentence matching (the undeclared-optional-fact case; sentences.js / classify.js)
+    change: When an optional fact (copy on a getter, streamSignal, arity, deleted, cached) is undeclared and the OLD page said the declared-form sentence, flag the NEW unit instead of matching it against a reference that prints the other form.
+    why: Reviewer attack A13b removed the utility `copy` fact and its citation together. 'Return the SDK utility object.' then matched ts's sentence with ledger and blocks OPEN 0, though getUtility returns a new Utility (SdkClient.scala:88, Utility.scala:54-55).
+    breaking: False
+    providers_forced: none
+  - [5]
+    file: ts/src/helpers/sdkdesc.ts (latent, optional)
+    change: Carry an ident-adapted variable name for each map-valued client option, as `vars` does for results, item, result and created (sdkdesc.ts:232-235).
+    why: Scala's client printer names a variable after the option key (`val server`, `val feature`, OLD's own form). A key that is a Scala reserved word would print invalid code, and a printer cannot call the hook's ident. Latent: no such key exists today.
+    breaking: False
+    providers_forced: none required; scala (and any printer that names a variable after an option key) could use it
+not_caught_by_process:
+  - [0]
+    attack: A13b: `copy` removed from the utility getter in both Syntax_scala.ts and its citation in runtimeforms/scala.ts
+    consequence: Nothing failed beyond the baseline MEMBER x3: guard 4/4, ledger OPEN 0, blocks OPEN 0. The page silently drops a true fact ('Return the SDK utility object.'); the unit matched ts's shared sentence.
+  - [1]
+    attack: A21: accessor printed on the class, `DemoSDK.planet(null).list(null, null)` (does not compile)
+    consequence: Guard passed. callcheck went from 3 findings to 0: no RECEIVER check because the receiver is not `client`, and the false-positive MEMBER findings vanished with the `client` binding. Only hand-decidable blocks OPEN 9/11/10 and ledger OPEN 1 remained.
+  - [2]
+    attack: A17: `deleted: '{var}.deleted()'` declared, on a bound type SdkEntity that lacks it
+    consequence: Guard passed (EntityBase has deleted()). The sentence '`result.deleted()` reads the mark.' matched as shared. Only an echo class and a novel-token class opened (reference OPEN 2), both decidable by hand.
+  - [3]
+    attack: A5: testMock 'always' pinned identically in provider and forms (false for scala: Config_scala.ts:166 falls back to BaseFeature; Fetcher.scala:205-207 refuses)
+    consequence: Guard passed. The false no-test sentence counted as 'same' (OLD said the same false thing), and the recorded contradiction vanished. Only ABSENT-no-reason x2 and reference OPEN 1 remained, decidable by hand.
+  - [4]
+    attack: A15: facts.arity removed (the runtime's list requires 2)
+    consequence: Guard passed: an absent optional derived fact is not checked against the runtime. Only tutorial OPEN 3 and one ABSENT-no-reason remained, decidable by hand.
+  - [5]
+    attack: A25: the truth read changed to `== "yes"`
+    consequence: Guard passed; nothing reads the truth form. Reference OPEN 2, plus a STALE hand record by luck (the porter's reason quoted the old form).
+  - [6]
+    attack: A24b: an example's cast changed to a type the runtime lacks (`asInstanceOf[SdkEnty]`)
+    consequence: Only blocks OPEN 2, decidable by hand. callcheck reads no casts, as the guide states.
+  - [7]
+    attack: The port's own `result.get("ok") == true` (Object vs primitive Boolean)
+    consequence: Nothing mechanical reads whether a truth read compiles. It passed every check and was endorsed in two hand records.
+review_counts:
+  - [0]
+    section: tutorial
+    same: 59
+    shared_matched: 22
+    by_hand: 21 ledger classes; blocks: 31 classes, all by hand
+    missing: 5 (each restored or corrected)
+    contradictions: 0
+    blocks: identical 19, corrected 1, unified 0, otherwise 28; classes 31, OPEN 0, defect 0; 29 changed blocks compiled by nothing
+    matched_unreviewed: 0
+  - [1]
+    section: rootquick
+    same: 19
+    shared_matched: 0
+    by_hand: 3 ledger classes; blocks: 26 classes
+    missing: 1
+    contradictions: 0
+    blocks: identical 0, corrected 2, unified 0, otherwise 17; classes 26, OPEN 0, defect 0; 19 changed blocks compiled by nothing
+    matched_unreviewed: 0
+  - [2]
+    section: reference
+    same: 14031
+    shared_matched: 67
+    by_hand: 57 ledger classes (54 before the fix plus the novel tokens Boolean, FALSE, TRUE); blocks: 14 classes
+    missing: 38 (restored or corrected; none dropped)
+    contradictions: 1 (bff341cf32: the unported README test-client line promises a mock; the true side is the REFERENCE, per Config_scala.ts:166 and Fetcher.scala:205-207)
+    blocks: identical 234, corrected 0, unified 0, otherwise 80; classes 14, OPEN 0, defect 0; 98 changed blocks compiled by nothing
+    matched_unreviewed: 1 (642b7ce8ca, the re-keyed e8e8cc2723, against sentence 42aedb7ce3)
+final_state: |
+  **Final reviewed run (ran).** Workspace P/ports/scala: sdkgen 5b8a6d33, tools 490e54a. `cd sdkgen/ts && npm run build` exits 0, and `git status --short` is empty in both clones. Then `REGEN=1 tools/portcheck.sh sdkgen out scala` exits 1 in 2m03s and regenerates 21 of 21 variations, SKIPPED none.
+  
+  ```
+  section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+  tutorial                   59 |      48     22        0      21       5     0       0 | 0
+  rootquick                  19 |       4      0        0       3       1     0       0 | 0
+  reference               14031 |     163     67        0      57      38     0       0 | 1
+  section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+  tutorial                  19         1       0        28 |      31    0      0 | NO; 29 changed blocks compiled by nothing
+  rootquick                  0         2       0        17 |      26    0      0 | NO; 19 changed blocks compiled by nothing
+  reference                234         0       0        80 |      14    0      0 | NO; 98 changed blocks compiled by nothing
+  ```
+  
+  The rest of the screen:
+  - contradictions (1; counted, not failed): reference [bff341cf32]
+  - purity: 0 open, 2 accepted | notes declared 0, note regions found 0
+  - pagecheck: 48 numbered headings, 1216 articles checked; findings 0
+  - printed calls (callcheck, no compiler): 405 calls of 24 runtime members checked; ARITY/RECEIVER/MEMBER findings 3
+    - MEMBER B reference: results.forEach(...): the runtime declares no member forEach
+    - MEMBER crud-bare tutorial: planets.forEach(...): the runtime declares no member forEach
+    - MEMBER doc-list tutorial: consoles.forEach(...): the runtime declares no member forEach
+  - guard: pass (pass 4 fail 0)
+  - build: 1813 sources checked, current
+  - hand records: 229, 22 quote text (33 quotations); STALE 0
+  - facts: attested 5, recorded by hand 2, UNATTESTED or NOT JUDGED 0; cited 15, pinned prose 10
+  - shared sentences: matched 89, of which against a sentence nobody reviewed 1; printed less often than its reference 0; absent 30 (30 explained)
+  - fact sheet: 66 facts, 0 with no account, 0 unattested
+  - PORTCHECK scala: FAIL
+  
+  Exit 1 comes only from the callcheck findings, which wait for the shared tools/callcheck.js change. No `defect` class is recorded.
+  
+  **SCRATCH run (ran; reported, not deciding).** `SCRATCH=1 tools/portcheck.sh sdkgen out scala` on the same regenerated pages exits 1.
+  
+  | | tutorial | rootquick | reference |
+  | --- | --- | --- | --- |
+  | ledger OPEN | 26 | 4 | 96 |
+  | blocks OPEN | 31 | 26 | 14 |
+  
+  Against the porter's numbers (ledger 26/4/93, blocks 28/26/14), the differences are the 3 novel tokens each that the fix adds: Boolean, FALSE, TRUE in the reference ledger; lang, Double, valueOf in the tutorial blocks.
+  - UNATTESTED or NOT JUDGED: 2 (named, ref.noun).
+  - ABSENT, NO REASON: 30.
+  - DROPPED: 0.
+  - Contradictions: 0 (hand-recorded only).
+  
+  The parts that read no hand record are the same in both runs: build current, guard 4/4, purity 0 open, pagecheck 0, and callcheck the same 3 MEMBER findings.
+  
+  **Other checks (ran).**
+  - Guard `node --test --test-name-pattern '^scala: ' dist-test/runtimefacts.test.js`: 4/4. Reader `dist-test/runtimereader.test.js`: 22/22.
+  - Guard account (SDKGEN_GUARD_REPORT=1): derived 49, cited 16, language 1, convention 6, excepted 0; types column scala; uncompared none. okFalse is cited with no excuse.
+  - Golden `dist-test/characterize.test.js`: 1 failure before the update (two scala hash lines), 2/2 after; only those 2 lines changed.
+  - Suite `node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)`: 2635 tests, 2630 pass, 0 fail, 5 skipped, exit 0, 5m01s.
+  - Other languages unchanged:
+    - `diff -rq -x scala -x README.md P/base33/out/new P/ports/scala/out/new` gives rc 0.
+    - Every per-language README `cmp`-equal.
+    - work/rootdiff.js: 0 of 21 root READMEs changed outside the `### Scala` sections; 143 changed lines inside them, the same as before the fix.
+  - Prose (`node tools/sharewords.js --clone sdkgen --root out/new --lang scala`):
+  
+    | section | words | shared |
+    | --- | --- | --- |
+    | tutorial | 1597 | 77.2% |
+    | rootquick | 238 | 8.0% |
+    | reference | 54387 | 96.9% |
+  
+    Across all sections, 4.0% is printed by scala alone. Provider literals: 132 words (0.2%). Notes: 0.
+  
+  FIX-PROGRESS.md holds one line per finding.
+lanes: |
+  **Toolchain check (ran):**
+  - Present: node v24.22.1, npm 11.19.1, php 8.3.6, composer, javac, java, mvn, gradle, g++ 13.3.0, make.
+  - MISSING: kotlinc, kotlin, scala, scala-cli, sbt, scalac, coursier, cs, amm, dotnet.
+  - `find / -xdev` found no scala3-compiler, scala-compiler or scala3-library jar.
+  
+  **Scala lanes (ran).** `node --test --test-name-pattern 'scala' dist-test/generatedcompile.test.js`: 16 tests, 0 pass, 0 fail, 16 skipped, 3.3s. Each skip is visible: `# no scala-cli toolchain` or `# no usable scala toolchain here (scala-cli ...)`. None of the 16 is a README example lane for scala.
+  
+  **Not run:**
+  - `tools/before/run.sh` has no scala entry (the porter's reading; I did not re-run it).
+  - The root quick start, OLD or NEW, from the repository root of a generated SDK: there is no Scala toolchain, and its import (`import voxgig.demosdk.core.DemoSDK`) is package-addressed, so it needs the SDK compiled on the classpath.
+commits:
+  - sdkgen 8a508ccd 'scala: compare direct's ok with the boxed Boolean, and box a literal a map of Object holds'. Files: ts/project/.sdk/src/cmp/scala/Syntax_scala.ts, ts/project/.sdk/src/cmp/scala/utility_scala.ts, ts/test/runtimeforms/scala.ts. The body explains the truth read, okFalse and scalaObjectLit; no trailer.
+  - sdkgen 5b8a6d33 'scala: golden, the provider's and the utility's new hashes'. File: ts/test/golden/add-output.txt (the 2 scala hash lines); no body, no trailer.
+  - tools 490e54a 'scala: hand records for the boxed Boolean truth read and okFalse, and the boxed literals; the purity allowance names the boxing helper'. Files: hand/scala.json, classes/scala.json (from the final reviewed run), purity-allow/scala.json. The body says what was re-keyed, re-recorded and removed; no trailer.
+  - On top of the porter's sdkgen a477d4b3, 479b7f02, 3992a951, c5b9ce45 and tools 642d9ad.
+  - Commit bodies checked (ran): `git log --format=%B v33-frozen..HEAD` in sdkgen and `a3fd3b8..HEAD` in tools show 0 lines matching co-authored, claude, anthropic or session_.
+  - `git status --short` after `npm run build` is empty in sdkgen and in tools.
+  - Commits were made as user `proto`, with no tool or model named and no trailer, as the guide's section 10 and the briefs require.
+lines: |
+  From `git diff --numstat v33-frozen..HEAD` (ran):
+  - Deleted old components: 709 lines (ReadmeQuick_scala 226, ReadmeRef_scala 396, ReadmeTopQuick_scala 87).
+  - Provider Syntax_scala.ts: +203, 203 lines by wc -l. It was 196 before this round; +7 for the boxing helper and the truth read.
+  - Hook Naming_scala.ts: +25.
+  - Forms runtimeforms/scala.ts: +44 -2, 114 lines by wc -l (was +42 -1).
+  - utility_scala.ts: +20 (8 for scalaCorePackage, 12 for scalaObjectLit).
+  - Config_scala.ts: +2 -1. Schema_scala.ts: +2 -1.
+  - Golden: +5 -6, scala lines only.
+  
+  Provider, hook and forms together are 203 + 25 + 44 = 272 lines against 709 deleted (2.61x; it was 263, 2.70x). With the generator-side lines (utility +20, Config +2, Schema +2) the total is 296 (2.40x; it was 275, 2.58x). This fix round added +7 to the provider, +1 net to the forms and +12 to utility_scala.ts.
+notes:
+  - [0]
+    slot: (none)
+    text: The scala provider declares no runtime notes: purity reports notes declared 0, note regions found 0, and sharewords counts 0 note words. No note was added in this round.
+not_done:
+  - The one command does not pass. It fails only on the 3 callcheck MEMBER findings, which wait for the shared tools/callcheck.js change. I did not change the printed `forEach` form to get past the check.
+  - No Scala block was compiled or run, OLD or NEW: no scala, scala-cli, sbt, scalac, coursier or amm, and no compiler jar on disk. The 16 scala lanes skip.
+  - The root quick start was not run from a generated SDK's repository root, OLD or NEW (no toolchain; package-addressed import).
+  - The unported scala README components (ReadmeEntity_scala.ts:115,151, ReadmeHowto_scala.ts:33,38,45, ReadmeTopTest_scala.ts:39,47) still print `scalaLit` literals into argument maps. They print none in the 21 variations, but would print a bare `1.0`/`1L`/`true` for a model with a required numeric or boolean field.
+  - P3 (`val ${en.key}` with no ident) is left as OLD's form; P4 (the partial scalaCorePackage extraction) is left as 'not wrong'.
+  - The four shared guard and tools holes (A21, A17, A13b, NOT_RUNTIME) are recorded, not made, as the job requires.
+  - I did not re-run the reviewer's 31 attacks on the fixed port. The control I ran myself (okFalse 'false') fails the guard as it should.
+unverified: |
+  Everything that only a Scala compiler would show is unverified: none was available.
+  
+  Read, not compiled:
+  - All 31 distinct changed blocks of the 21 variations, recounted by work/distinct.js after the fix: tutorial 11, rootquick 11, reference 9. In the one command's counts that is 29 + 19 + 98 changed block pairs, compiled by nothing.
+  - The new REFERENCE prose code span `java.lang.Boolean.TRUE == result.get("ok")`, in 19 variations.
+  - The 7 boxed `java.lang.Double.valueOf(1.0)`, in 2 distinct write blocks.
+  
+  Two premises behind the fixes come from Scala 3's language rules, not from a compiler run:
+  - that Scala 3 rejects an Object compared with a primitive `true`;
+  - that Scala 3 rejects a Double literal where Map.of's V is pinned to Object.
+  
+  The new forms compile under either reading, because java.lang.Boolean and java.lang.Double are subtypes of Object. The same forms stand in runtime code that the nightly scala lane compiles: sdktest/ConcurrencyTest.scala:86,168 and TelemetryFeature.scala:49. I did not run that lane here.
+  
+  Also unverified, as before:
+  - that the forEach lambda's parameter type is inferred;
+  - that the feature block's nested `java.util.Map.of("active", true)` compiles with V inferred as Boolean (identical to OLD);
+  - that top-level statements compile only as a scala-cli script;
+  - the REFERENCE blocks' unimported SdkEntity (standalone by design).

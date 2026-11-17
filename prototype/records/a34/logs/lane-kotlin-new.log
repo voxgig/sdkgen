@@ -1,0 +1,6 @@
+blocks B: tutorial 2 block(s) as one program, root 1, reference 22; 24 files; tutorial imports: import voxgig.demosdk.core.DemoSDK; import voxgig.demosdk.core.SdkEntity
+new B: compileKotlin exit 0 in 34s; errors: 0
+blocks crud-basic: tutorial 4 block(s) as one program, root 1, reference 15; 17 files; tutorial imports: import voxgig.demosdk.core.DemoSDK; import voxgig.demosdk.core.SdkEntity
+new crud-basic: compileKotlin exit 0 in 7s; errors: 0
+blocks ref-issues: tutorial 2 block(s) as one program, root 1, reference 18; 20 files; tutorial imports: import voxgig.demosdk.core.DemoSDK; import voxgig.demosdk.core.SdkEntity
+new ref-issues: compileKotlin exit 0 in 5s; errors: 0

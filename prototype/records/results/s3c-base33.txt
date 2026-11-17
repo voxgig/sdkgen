@@ -1,0 +1,330 @@
+ok: True
+summary: |
+  The base for the last seven ports is ready at P/base33, and the stricter tools opened nothing.
+  
+  **Step 0 (tools fix).** I brought t7's five commits onto the frozen tools in P/v33b/tools, as its bring_in said, leaving out 225a0de. There was one conflict, in controls/missing.json, and I kept both sides. Then I ran the thirteen one commands, regenerating on the first.
+  - All thirteen PASS, and the table is byte-identical to the freeze's table-h4.
+  - Each log is identical to its h4 log, apart from the new pagecheck line, which reports 0 findings in every language.
+  - The regenerated pages are byte-identical to v33/out/new.
+  - No class opened, no absent or dropped sentence appeared, and there were no pagecheck findings. The only class change is the four shared matches t7 predicted, which now name ts as their reference with the same outcome. I committed them.
+  
+  Two controls named text the freeze had re-wrapped: drop-branch-go-one and drop-branch-go-all. I re-aimed them with the same intent and committed that. The full self-test then gave 266 controls, 0 failed and 1 moved (go-tut-step4-dropped [scratch], as at t7).
+  
+  **Step 1 (the base).** P/base33 holds:
+  - sdkgen at v33-frozen (0065f1e2), built, with git status empty;
+  - tools at a3fd3b8 with history, tag base33, clean;
+  - harness, out/old, out/new, the oldclone link, and a newport.sh for the seven languages;
+  - runtime-table.md, regenerated at the tag: 1312 lines, identical to the freeze's.
+  
+  The proof:
+  - newport.sh kotlin, then the one command with REGEN=1: 21 of 21 variations regenerated, 'kotlin: NOT PORTED', exit 1 with no error, tools status clean.
+  - newport.sh perl, then REGEN=1: PASS with the same numbers as at the freeze.
+  - The self-test from the base: 266 controls, 0 failed, 1 moved.
+  - Free disk at the end: 9.3 GB.
+  
+  **Step 2 (measures at thirteen).**
+  - **Lines** (freeze method): 1.83x for documentation code only, 1.41x with forms, 1.02x with the shared guard. Projected to twenty: 2.16x, 1.65x and 1.28x.
+  - **Port sizes:** the four new ports average 236 lines against the nine's 219.
+  - **Prose by source:** at most 7.2% (go). Printed by one language alone, go is at 17.0%.
+  - **Shared sentences:** 235 distinct against the nine references, 231 with a verdict, 107 printed by one language. Against all thirteen as references, 312 distinct and 81 without a verdict.
+  - **Purity:** 0 open in all thirteen.
+  
+  On the hypotheses: H2 is crossed on the measured count (1.83x is under 2x), and it holds only for documentation code projected at the measured provider size. H1 stays refuted on breaking changes; that rests on the freeze's count, which I did not re-count.
+tools_commit: a3fd3b8 (P/base33/tools branch v33, tag base33; the same commit is on branch base33 in P/v33b/tools). Commits on v33-frozen-tools d3b258d: 5427371, 79c16a4, 371bcd2, b6bffbc, 712261a (t7's five), b6bb59f (classes), a3fd3b8 (controls re-aimed). No trailers (grep count 0); t7's commits keep their author 't7'.
+brought:
+  - [0]
+    commit: 3c4d27e -> 5427371
+    note: Match form: a position is a slot only for the fact the references hold there (ident.js). Clean.
+  - [1]
+    commit: 987c52a -> 79c16a4
+    note: pagecheck.js, the portcheck step and the summary line. Clean.
+  - [2]
+    commit: c3a6ae4 -> 371bcd2
+    note: Absent list on slot forms, per variation (ABSENT and DROPPED). Clean.
+  - [3]
+    commit: 549635a -> b6bffbc
+    note: Controls: samefact.json, pages.json, missing.json +4, moved.json -1, selftest parts. CONFLICT in controls/missing.json: on missing-direct-every-variation-swift, the freeze's 198547f had added an 'adapted2' line where t7 appended its four drop-branch controls. Resolved by keeping both: the freeze's adapted and adapted2 lines, then t7's four new entries (10 controls).
+  - [4]
+    commit: 0e61496 -> 712261a
+    note: README: t7 sections and the port procedure; the old paragraph is marked superseded. Clean.
+  - [5]
+    commit: 225a0de (not brought)
+    note: Left out as bring_in says. Its classes were regenerated instead and committed as b6bb59f, which has exactly the 4 changes t7 described.
+conflicts:
+  - controls/missing.json (cherry-pick of 549635a): the freeze's adapted2 line on missing-direct-every-variation-swift against t7's four appended drop-branch controls. Kept both. JSON checked: 10 controls.
+thirteen:
+  - [0]
+    lang: ts
+    result: PASS
+    numbers: tutorial same 59, shared 0, rule 23, hand 19, missing 5; rootquick 21, 0, 4, 0, 1; reference 15376, shared 2, rule 48, hand 47, missing 41, contra 1; OPEN 0, defect 0; blocks 19/16/12/1, 0/13/5/1, 195/0/118/0; pagecheck 48 headings, 1477 articles, 0 findings
+    differs_from_freeze: none apart from the added pagecheck line
+  - [1]
+    lang: go
+    result: PASS
+    numbers: tutorial 23, shared 1, rule 27, hand 26, missing 9; rootquick 22, 0, 4, 0, 0; reference 17439, shared 1, rule 51, hand 36, missing 15, contra 1; OPEN 0; pagecheck 21 step counts, 21 lists, 1423 articles (102 not judged), 0 findings
+    differs_from_freeze: none apart from pagecheck
+  - [2]
+    lang: py
+    result: PASS
+    numbers: 59/19/14940; shared 0/0/3; missing 4/0/24; OPEN 0; pagecheck 0 findings
+    differs_from_freeze: none apart from pagecheck
+  - [3]
+    lang: c
+    result: PASS
+    numbers: 59/19/14872; shared 0/0/0; missing 4/0/18; OPEN 0; pagecheck 0
+    differs_from_freeze: none apart from pagecheck
+  - [4]
+    lang: zig
+    result: PASS
+    numbers: 59/19/15001; shared 0/0/3; missing 5/0/24; OPEN 0; pagecheck 0
+    differs_from_freeze: none apart from pagecheck
+  - [5]
+    lang: clojure
+    result: PASS
+    numbers: 59/19/14984; shared 0/0/1; missing 4/0/23; OPEN 0; pagecheck 0
+    differs_from_freeze: none apart from pagecheck
+  - [6]
+    lang: rust
+    result: PASS
+    numbers: 59/19/15000; shared 0/0/1; missing 5/1/23; OPEN 0; pagecheck 0
+    differs_from_freeze: none apart from pagecheck
+  - [7]
+    lang: elixir
+    result: PASS
+    numbers: 59/19/14803; shared 0/0/0; missing 4/0/22; OPEN 0; pagecheck 0
+    differs_from_freeze: none apart from pagecheck
+  - [8]
+    lang: rb
+    result: PASS
+    numbers: 59/19/15021; shared 17/0/43; hand 28/3/67; missing 5/0/23; OPEN 0; pagecheck 0
+    differs_from_freeze: none apart from pagecheck. classes/rb.json: 6aced21d71 now names ts instead of go, same outcome
+  - [9]
+    lang: perl
+    result: PASS
+    numbers: 59/19/14891; shared 21/0/46; hand 20/3/61; missing 4/0/23; OPEN 0, defect 0; pagecheck 0
+    differs_from_freeze: none apart from pagecheck. 6aced21d71 names ts, same outcome
+  - [10]
+    lang: swift
+    result: PASS
+    numbers: 59/19/13994; shared 21/0/51; hand 22/3/71; missing 5/0/32; OPEN 0; pagecheck 1675 articles, 0
+    differs_from_freeze: none apart from pagecheck. 6aced21d71 names ts, same outcome
+  - [11]
+    lang: ocaml
+    result: PASS
+    numbers: 54/19/14073; shared 24/0/63; hand 21/3/73; missing 8/0/35; OPEN 0; pagecheck 0
+    differs_from_freeze: none apart from pagecheck. 79233d47ba names ts instead of clojure, same outcome
+  - [12]
+    lang: lua
+    result: PASS
+    numbers: 59/19/15053; shared 22/0/56; hand 18/3/66; missing 5/0/24; contra 2; OPEN 0; 1 match against an unreviewed sentence (as at the freeze); pagecheck 1464 articles, 0
+    differs_from_freeze: none apart from pagecheck (re-run alone with NOREGEN after the batch hit a 30-minute background limit during lua)
+openings:
+controls_reaimed:
+  - missing drop-branch-go-one (B/go/REFERENCE.md) and drop-branch-go-all (*/go/REFERENCE.md). t7 aimed them at v33a's wrapping, ' A failure is reported in the result, not as an error,\nso branch on `result["ok"] == true`.' The freeze re-wrapped direct's Returns paragraph. They are re-aimed at ' A failure is reported in the result, not as an\nerror, so branch on `result["ok"] == true`.', which occurs exactly once in each of the 21 go REFERENCEs. The intent is the same, and an 'adapted' note is recorded on each (commit a3fd3b8). Every other control with a page 'from' text, 71 in all, was found on the current pages (mine/ctlcheck.js). The 22 purity.json hits that check reported target provider source files, not pages, so they need nothing.
+selftest: |
+  Two full self-tests, each run alone with nothing else heavy beside it.
+  
+  1. From P/v33b at a3fd3b8: 266 controls, 0 failed, 1 moved, in 1723 s (logs/selftest-b1.log and .json).
+  2. From P/base33: 266 controls, 0 failed, 1 moved, in 2926 s (logs/selftest-base.log). It ran longer because the machine was shared.
+  
+  Per part, identical in both runs:
+  - ledger 25/25, recheck 19/19, accept 7/7, masking 5/5, samefact 4/4, missing 10/10, and the same counts from scratch;
+  - pages 12/12 and pages scratch 3/3;
+  - facts 8/8 and 6/6, sentences 2/2, regen 2/2, calls 10/10, identity 20/20, purity 34/34, blocks 28/28, recall 1/1.
+  
+  The one moved control is recheck go-tut-step4-dropped [scratch], unchanged since t7. sentence-removed-go-branch [scratch] now passes; it had been moved at the freeze. An earlier attempt exited at once with ENOENT because the --tmp directory did not exist; nothing ran, and I discard it.
+base: |
+  P/base33 (P = /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2):
+  
+  **Contents**
+  - **sdkgen:** a clone of P/v33/sdkgen on branch v33 at tag v33-frozen = 0065f1e2, with origin removed. node_modules was copied from v33. `npm run build` exited 0 (logs/build-base33.log), `git status --short` is empty, and no built file names v33 or v33b by path.
+  - **tools:** a clone of my v33b tools with full history, on branch v33 at a3fd3b8, tag base33, origin removed, status clean. ported.json is unchanged (the nine reference languages, as the freeze kept it).
+  - **harness:** a copy of base32/harness.
+  - **out/old:** a copy of base32/out/old.
+  - **out/new:** byte-identical to v33/out/new (21 variations).
+  - **oldclone:** a link to P/freeze/oldclone.
+  - **runtime-table.md:** regenerated at the tag with `SDKGEN_RUNTIME_TABLE=... node --test dist-test/runtimereader.test.js`; 1312 lines, identical to P/v33/runtime-table.md.
+  - **newport.sh <lang> <dir>:** points at P/base33 and names the seven (js php csharp java kotlin scala cpp).
+  - PORTING.md and prompts/ were copied in by the other engineer while I worked. I did not touch them.
+  
+  **Proof (ran)**
+  - `newport.sh kotlin P/v33b/ws`, then `REGEN=1 tools/portcheck.sh sdkgen out kotlin`: 21 of 21 variations regenerated, SKIPPED none. It printed 'kotlin: NOT PORTED. No section is ported for it ...' and 'PORTCHECK kotlin: NOT PORTED', exit 1, with no error or throw in the log. The workspace's tools and sdkgen git status were both empty, and its out/new was identical to base33/out/new.
+  - `newport.sh perl P/v33b/ws`, then `REGEN=1 tools/portcheck.sh sdkgen out perl`: PASS, exit 0. The summary is line for line the same as perl.b1, which equals the freeze's h4 numbers plus 'pagecheck findings 0'. Tools status was clean. Each workspace was deleted after its proof, so at most two clone copies existed at any time.
+  - Self-test from the base: 266/0/1 moved.
+  - `df -h /` at the end: 9.3 GB free, 76% used. It was 14 GB at the start; the other engineer's work also consumed space.
+  
+  **Left in place, ignored by git**
+  - base33/tools/review (114 MB) plus two 32 KB alias stages, gen/mstage-sdkgen-778a77 and legacy/v32/gen/mstage-*, all made by my runs from the base. My instructions allow deleting only under v33b, so I left them.
+  - mkworkspace.sh excludes review/ and gen/mstage-*, but not legacy/*/gen/mstage-*, so that 32 KB stage is copied into each workspace. Harmless, but it is an exclusion the script lacks.
+newport_unported: kotlin. REGEN=1 portcheck: 21 of 21 variations regenerated, 'PORTCHECK kotlin: NOT PORTED', exit 1 with no error. tools git status 0 lines, sdkgen 0 lines. Log: P/v33b/logs/np-kotlin.log.
+newport_ported: |
+  perl. REGEN=1 portcheck: PASS, exit 0.
+  - tutorial 59 | 45 classes: shared 21, by hand 20, missing 4.
+  - rootquick 19 | 3 classes, all by hand.
+  - reference 14891 | 131 classes: shared 46, by hand 61, missing 23, contra 1.
+  - OPEN 0 and defect 0 in each section.
+  - blocks 3/6/0/39 (19 classes), 0/0/0/19 (25), 227/0/0/86 (7).
+  
+  This is identical to the freeze, plus 'pagecheck 0 findings'. Tools status was clean after. Log: P/v33b/logs/np-perl.log.
+measures:
+  lines: |
+    Ran from the base: `node tools/lines.js --clone sdkgen --rev HEAD` with the registry's nine (logs/lines-nine.txt). Then again with the thirteen, through a temporary ported.json in v33b/tools that I reverted at once (logs/lines-thirteen.txt and .json). The arithmetic follows the freeze's method in mine/lines.py: ReadmeTop excluded; ReadmeQuick, ReadmeRef and ReadmeRefFeatures counted whole, like new files, and other changed shared files by their delta.
+    
+    **Inputs**
+    - Before, for the thirteen: 9,887 lines (families plus shared files of the time, ReadmeTop left out).
+    - Shared documentation code: 2,473 (ReadmeQuick 267, ReadmeRef 504, ReadmeRefFeatures 146, example 632, sdkdesc 533, runtimeprose 292, markdown 45, media +30, optional +4, FeatureDocs +9, ReadmeFeatures +11).
+    - Provider, hook and other touched files: nine 1,975 (mean 219: ts 174, go 218, py 183, c 271, zig 223, clojure 275, rust 202, elixir 230, rb 199); four new ports 945 (mean 236: perl 255, swift 208, ocaml 281, lua 201).
+    - Forms: nine 1,064, four 576 (mean 144, against the nine's 118). The seven unported already have forms of 62 to 92 lines, 492 in all.
+    - Shared guard: 2,650 (runtimefacts and runtimereader tests, forms.ts, account.ts, guard.ts and calls.ts; without calls.ts, 2,457).
+    
+    **Measured, thirteen**
+    - Documentation code only: 5,393 lines, 1.83x.
+    - With forms: 7,033, 1.41x.
+    - With the shared guard: 9,683, 1.02x.
+    
+    The nine alone at this base give 1.55x, 1.25x and 0.85x; at v3.2 they gave 1.61x, 1.33x and 0.98x.
+    
+    The tool's own headline (ReadmeTop in, guard out): 10,632 -> 7,791, 1.36x.
+  lines_projected: |
+    Projected to twenty: before 15,038. The seven unported providers are taken at the thirteen's mean of 225 lines, and the unported forms as they exist.
+    
+    | Provider size | Doc code | + forms | + guard |
+    | --- | --- | --- | --- |
+    | x1 | 6,965 (2.16x) | 9,097 (1.65x) | 11,747 (1.28x) |
+    | x1.5 | 7,751 (1.94x) | 9,883 (1.52x) | 12,533 (1.20x) |
+    | x2 | 8,538 (1.76x) | 10,670 (1.41x) | 13,320 (1.13x) |
+    
+    At the four new ports' mean (236): 2.13x, 1.64x, 1.27x.
+    
+    If the seven unported forms grow to the thirteen's forms mean of 126 (the four ports' forms grew to 122 to 170 lines), the x1 row becomes 1.59x with forms and 1.24x with the guard. That last projection is my arithmetic, not a tool's output.
+    
+    Against v3.2's projection (2.26x, 1.80x, 1.47x), every column fell.
+  prose: |
+    Ran from the base: `node tools/sharewords.js --clone sdkgen --root out/new --lang <thirteen>` (logs/sharewords.txt).
+    
+    **By source** (provider literals, all three sections):
+    - ts 0.4%, go 7.2% (reference 7.4%), py 0.2%, c 1.3%, zig 4.3%, clojure 2.8%, rust 0.5%;
+    - elixir 0.8%, rb 0.2%, perl 1.7%, swift 0.6%, ocaml 5.5%, lua 4.1%.
+    
+    The highest is go at 7.2%, under H1's 15%.
+    
+    **Printed by this language alone**, compared against all thirteen:
+    - ts 8.2%, go 17.0% (tutorial 57.1%), py 2.4%, c 6.2%, zig 0.1%, clojure 0.4%, rust 1.4%;
+    - elixir 0.5%, rb 0.0%, perl 7.9%, swift 8.2%, ocaml 0.4%, lua 11.0%.
+    
+    Only go is over 15%. Comparing against thirteen rather than nine lowers it from v3.2's 22.6%.
+    
+    **Notes:** go 7.0%, ocaml 5.1%, lua 3.7%, zig 3.3%, clojure 2.4%, perl 1.5%; the rest under 0.5%.
+    
+    **At the source:** shared templates hold 980 prose-literal words. Provider notes run from 0 to 45 words (go 45, lua 40, ocaml 31).
+  sentences: |
+    Ran: `node tools/sentences.js --clone sdkgen --old out/old --new out/new --match --out P/v33b/sent9`, with the registry's nine references. Also a run with `--refs <thirteen>` into P/v33b/sent13.
+    
+    **Nine references: 235 distinct sentences** (tutorial 64, rootquick 8, reference 163).
+    - Accepted by hand only 94, by stage-3a rule records only 125, by both 16.
+    - Verdicts: 231 ok, 0 false, 0 awkward, 4 none. The four are the ones the freeze changed: 42aedb7ce3 and fe4d5d27e7 (direct's Returns), fdfa305bc4 (list call), 0612fc4d79 (ts name heading).
+    - From scratch, each reference matches 0 to 3 classes against an unreviewed sentence (ts 2, go 2, py 3, c 1, zig 1, clojure 1, rust 1, elixir 1, rb 2).
+    
+    **Printed by one language: 107 of 235.**
+    - tutorial 34: shared-condition 19, unexplained 14, note 1;
+    - rootquick 4: shared-condition 3, unexplained 1;
+    - reference 69: code 25, shared-condition 23, unexplained 13, note 6, provider-literal 2.
+    - By language: go 28, ts 23, c 17, elixir 13 and the rest 1 to 6.
+    
+    I read the 28 'unexplained' ones. They are result-style sentences (go's pair and c's errslot), table headers and cells, go's bold step leads and code comments: shared code that one style selects. None is a provider's own sentence.
+    
+    **Thirteen as references: 312 distinct**; 231 have a verdict and 81 do not, because the four ports' sentences are not keyed in reviewed/sentences.json. 174 are printed by one language: tutorial 46, rootquick 9, reference 119.
+    
+    At the one commands, lua matches 1 sentence nobody reviewed, as at the freeze.
+  purity: From the thirteen one commands (b1 logs), 0 open in all thirteen. Accepted: ts 1, go 1, py 1, c 2, zig 1, clojure 4, rust 3, elixir 4, rb 2, perl 2, swift 2, ocaml 1, lua 1. No provider reads the model.
+hypotheses:
+  - [0]
+    h: H1
+    says: Purity holds: 0 open in all thirteen, so no provider reads model facts. Prose by source is at most 7.2% (go), under the 15% line. 'Printed by this language alone' is still over 15% for go (17.0%), and that is shared code go's result style selects, not go's own prose. The breaking-change criterion stays crossed: about 25 to 27 against a limit of about 10, on the freeze's count, which I read and did not re-count. This round made no interface change: the base is the frozen clone unchanged. Verdict: refuted on the breaking-changes criterion; the purity and prose-by-source criteria hold.
+  - [1]
+    h: H2
+    says: Crossed. Measured over thirteen, documentation code alone is 1.83x, under the 2x line; with forms 1.41x and with the shared guard 1.02x. Only the projection to twenty for documentation code at the measured provider size gets over 2x (2.16x), and 1.5x larger providers already bring it under (1.94x). Every column fell against v3.2's projection. The shared code grew, and the four new ports are 8% larger than the nine (236 against 219 lines) with forms 22% larger (144 against 118).
+  - [2]
+    h: H3
+    says: Not measured in this round. Step 0 changed no page: out/new is byte-identical to the freeze's.
+  - [3]
+    h: H4
+    says: Not run here: no example lane was run. The frozen clone is unchanged, so the freeze's lane results stand as read, not as re-run: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig 6/6, perl 7/7 in 3 models.
+  - [4]
+    h: H5
+    says: Not tested. Making a workspace with newport.sh and running the one command works for an unported language (NOT PORTED, no error) and for a ported one (PASS with the freeze's numbers), but that is not H5's doctor, remove, target add or package update.
+  - [5]
+    h: tools
+    says: The stricter matching opened nothing on the thirteen: no class, no ABSENT or DROPPED entry, no pagecheck finding. The checks that would catch a porter's slot swap, wrong number or article, or one-variation drop now run in the base. Their controls pass in both modes: samefact 4/4, pages 12/12 and 3/3, missing 10/10.
+disk: |
+  At the end, `df -h /` reports /dev/vda 252G, 30G used, 9.3G free (76%). It was 14 GB at launch, falling as the other engineer worked too.
+  
+  What I hold:
+  - P/base33: sdkgen 182 MB and tools 137 MB, of which 114 MB is an ignored review/ that my runs generated.
+  - P/v33b: tools working copy, out, logs, sent9, sent13.
+  
+  v33b/sdkgen and both newport workspaces are deleted, and v33b/tmp is empty. One sdkgen copy remains, in base33.
+not_done:
+  - I did not re-count the breaking interface changes for H1; I repeat the freeze's count.
+  - No example lanes, suite or golden were run on the base. The sdkgen tree is the frozen tag unchanged and built clean, so the freeze's results apply as read.
+  - H3 and H5 were not measured.
+  - No compiler-backed check of any block. None was needed for step 0, which changed no page.
+  - base33/tools/review (114 MB) and two 32 KB alias stages, all generated by my runs, are left in place because I may delete only under v33b. mkworkspace.sh does not exclude legacy/*/gen/mstage-*, so the 32 KB stage is copied into each workspace. I did not change mkworkspace.sh.
+  - base33/tools/ported.json still lists the nine as references. lines.js and sentences.js therefore measure the nine by default, and the thirteen-language numbers come from a temporary registry and --refs. I did not change the registry, because the freeze kept the nine as the reference set on purpose.
+  - The 81 sentences only the four ports contribute have no ids or verdicts in reviewed/sentences.json; that is unchanged from the freeze.
+  - I did not write PORTING.md or prompts/: another engineer owns them, and they appeared in base33 while I worked.
+ran: |
+  All runs used the brief's PATH (node 24).
+  
+  **Workspace and step 0**
+  - Cloned v33/tools (v33-frozen-tools) and v33/sdkgen (v33-frozen) into P/v33b, then `npm run build` (exit 0, clean).
+  - `git cherry-pick` of t7's five commits, with one conflict resolved.
+  
+  **The thirteen**
+  - `mine/run13.sh b1` for all thirteen, with REGEN on ts; lua again alone with NOREGEN=1.
+  - `python3 mine/table.py b1`, then a diff against the freeze's table-h4: identical.
+  - A per-language diff of each summary against the h4 logs.
+  - `diff -rq v33/out/new v33b/out/new`: no difference.
+  
+  **Controls and self-test**
+  - `mine/ctlcheck.js` over all controls' from-texts.
+  - Re-aimed the two go controls and committed.
+  - `node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --v32 P/base32/tools --tmp ... --json ...`, once from v33b and once from base33.
+  
+  **Base**
+  - Clone, `npm run build` and the runtime table in base33.
+  - `newport.sh kotlin` and `newport.sh perl`, each followed by `REGEN=1 tools/portcheck.sh`, with git status checks and a diff of out/new.
+  
+  **Measures**
+  - `node tools/lines.js` (nine, and thirteen through a temporary registry), plus `python3 mine/lines.py`.
+  - `node tools/sharewords.js` over the thirteen.
+  - `node tools/sentences.js --match` (nine refs) and `--refs <thirteen>`.
+  - `df -h /`.
+  
+  Logs are in P/v33b/logs; progress is in P/v33b/PROGRESS.md.
+read: |
+  **Read in full**
+  - prompts/k-base33a.md, brief.md, brief5.md, brief6.md, brief7.md;
+  - results/s3c-freeze33.txt;
+  - results/s3c-t7.txt, including bring_in;
+  - base32/newport.sh and tools/mkworkspace.sh.
+  
+  **Read in part**
+  - P/v33/PROGRESS.md (head and tail);
+  - results/s3fix2-final.txt, for how the last measures were reported;
+  - the tools README: Who writes what, Outcomes, Checks, Controls and the t7 sections;
+  - portcheck.sh;
+  - the headers of lines.js, sharewords.js and sentences.js;
+  - v33/mine/run13.sh and table.py;
+  - controls/samefact.json, pages.json, missing.json and moved.json;
+  - the 28 one-language 'unexplained' sentences and the four sentences without a verdict in sent9/sentences.txt.
+  
+  **Taken from the freeze and not re-run here**
+  - the breaking-change count for H1;
+  - the lane results for H4.
+surprises:
+  - The stricter tools opened nothing at all on the thirteen, as t7 predicted from v33a: every page check is clean (0 findings, 965 to 1675 articles per language), and the only class changes are the four shared matches that now name ts.
+  - Only two of the controls naming page text had gone stale (go's drop-branch pair). The freeze's re-wrap of direct's paragraph broke the go sentence after 'not as an', the same place c already broke it.
+  - My background batch of the thirteen was killed at the 30-minute background limit during lua, the last language. I re-ran lua alone. The table that resulted is identical to the freeze's.
+  - Building the clone took about 5 to 6 seconds, though briefs speak of minutes. All build steps ran (check-scaffold, check-fixture, stage-scaffold) and dist-test was produced fresh, since it is git-ignored.
+  - Shared documentation code grew from 2,346 lines at v3.2 to 2,473, and the shared guard from 1,878 to 2,650 lines (2,457 without the new calls.ts). So the nine alone measure lower than at v3.2: 1.55x against 1.61x for documentation code only.

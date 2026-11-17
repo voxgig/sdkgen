@@ -1,0 +1,14 @@
+[lanes after] ts start 00:00:02
+[lanes after] ts done in 38s: ℹ tests 16 ℹ pass 16 ℹ fail 0 ℹ skipped 0 
+[lanes after] go start 00:00:40
+[lanes after] go done in 79s: ℹ tests 12 ℹ pass 12 ℹ fail 0 ℹ skipped 0 
+[lanes after] py start 00:01:59
+[lanes after] py done in 16s: ℹ tests 12 ℹ pass 12 ℹ fail 0 ℹ skipped 0 
+[lanes after] c start 00:02:15
+[lanes after] c done in 27s: ℹ tests 6 ℹ pass 6 ℹ fail 0 ℹ skipped 0 
+[lanes after] rust start 00:02:42
+[lanes after] rust done in 26s: ℹ tests 6 ℹ pass 6 ℹ fail 0 ℹ skipped 0 
+[lanes after] rb start 00:03:08
+[lanes after] rb done in 43s: ℹ tests 49 ℹ pass 49 ℹ fail 0 ℹ skipped 0 
+[lanes after] zigdoc start 00:03:51
+[lanes after] zigdoc done in 6s: ℹ tests 6 ℹ pass 6 ℹ fail 0 ℹ skipped 0 

@@ -1,0 +1,966 @@
+summary: |
+  I rebuilt the frozen clone (`v3-frozen`, 8d5ad97b) and the pristine 9aebaf9e clone in my own directory and regenerated both outputs myself. My OLD and NEW outputs match the handed `out/old` and `out/new` exactly (`diff -rq`, ignoring warnings.json).
+  
+  **Every headline number reproduces:**
+  - Suite: 2551 tests, 2546 pass, 0 fail, 5 skipped.
+  - Lanes: ts 16/16, go 12/12, py 12/12 under real pytest, c 6/6, rust 6/6.
+  - Golden passes.
+  - Guard: 26/26, with 20 to 26 unguarded facts per language.
+  - portcheck passes for all eight ported languages.
+  - Purity: 0 open findings, 6 accepted.
+  - Blocks: 857 identical / 206 corrected / 444 unified / 14 otherwise / 8 removed.
+  - Unported languages: of 456 files, 0 READMEs differ and 228 REFERENCEs differ by the same 4 shared lines.
+  - Lines: 1.39x measured, 1.95x projected.
+  
+  **Three findings change the verdict on whether six people can port safely.**
+  
+  **1. Classification accepts false facts automatically.** The review tools themselves are sensitive: they flagged 24 of 24 regressions I injected, without being told where. But PORTING section 4 tells porters to classify with `my/classify.js`. Its `my/rules.js` holds 106 rules, 89 of them apply to every language, and the first match wins. Those rules automatically accepted false sentences I injected:
+  - py "on a failure `ok` is `True`" became restored:shared.
+  - go "except for a non-2xx response" became restored:shared.
+  - py "returns `None` on failure" became unification:op-failure-clause.
+  - ts `options.server.region` changed to "Required." became correction:G01 when the classes are rebuilt from scratch, as the freeze describes.
+  
+  The last rule, `echo-agrees`, marks every leftover echo class as same-meaning in every language. The echo check is the one built to catch stage 2's "two documents disagree", so this switches it off.
+  
+  **2. The note lint has never seen a note.** Its region regex requires `notes` at column 0, but all four providers that have notes (go, zig, rust, elixir) indent it. It found 0 note regions. Five injected notes, each naming a feature, an option, an entity, an operation or a server fact, all went unflagged. With the regex fixed to allow leading whitespace, all five are flagged, and the real notes are clean.
+  
+  **3. The guard is narrower than reported.** I made 52 changes at source level in ts, c, clojure, py and zig and rebuilt each time; it caught 27. It misses:
+  - an operation's method swapped for another real method (ts list↔load, c update↔patch);
+  - parameter types and names;
+  - clojure's declared returns (its forms compare none);
+  - a wrong but non-`any` type in a language with no canonToType column (zig i64→f64, clojure long→string). perl and ocaml have no column either.
+  - a client member declared on the entity;
+  - every literal, noun and collection value. These are listed as unguarded, and they are the facts sentences are built from.
+  
+  Deleting a forms source file passes the guard on an incremental build, because the stale compiled file remains. A brand-new provider with no forms file does fail.
+  
+  **Other results:**
+  - **Unverified blocks.** zig, clojure and elixir carry 276 changed blocks, never compiled (104, 64, 108). The freeze counts only 6 of them as "otherwise". A zig 0.16 wheel can be downloaded from PyPI here, but running it was denied in this session.
+  - **H2 refuted:** 1.39x, and 1.24x if the shared guard (608 lines) is counted.
+  - **H1:** two thresholds crossed. go's notes are 18.9% of its REFERENCE prose by my count (20.4% by the freeze's denominator), over 15%. My count of breaking interface changes from the type diffs is about 10, which is at the line.
+  - **Stage-2 defects:** most are fixed in the ported sections. The README/REFERENCE contradictions remain (region Required, "no logging", secret in How-to), and the 4 shared lines now add the log contradiction to all 12 unported languages as well. The c load and remove examples, and rust's load, no longer show the record.
+  - **Ready to port:** not as written. ocaml's operations are record fields typed `value -> value -> entity_obj` with no bracketed parameter list, which the forms framework cannot read. That forces a shared `forms.ts` change in the middle of parallel ports. The shared rules.js and manual.json, and classify.js rewriting every language's classes file, also make merges collide.
+claims:
+  - [0]
+    claim: Frozen at v3-frozen = 8d5ad97b, tree clean
+    verdict: confirmed
+    what_i_ran: cd C/sdkgen && git rev-parse HEAD; git status --short (after cp -a P/freeze/sdkgen C/sdkgen and npm run build)
+    what_is_true: HEAD 8d5ad97b158a942846bf135e344163ceb897a149, 0 changed files after a rebuild (build deterministic).
+  - [1]
+    claim: Suite without toolchain lanes: 2,551 tests, 2,546 pass, 0 fail, 5 skipped
+    verdict: confirmed
+    what_i_ran: C/mine/suite.sh suite1.log (node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name generatedcompile.test.js | sort)), node 24
+    what_is_true: tests 2551, pass 2546, fail 0, skipped 5, 303 s with shared CPUs (one run). The golden (characterize: matches the golden manifest) and runtimefacts are inside it and pass.
+  - [2]
+    claim: Five lanes pass, nothing skipped: ts 16/16, go 12/12, py 12/12 real pytest, c DOC 6/6, rust DOC 6/6
+    verdict: confirmed
+    what_i_ran: C/mine/lanes.sh 1 (same patterns as the freeze), PATH with /root/.local/share/uv/tools/pytest/bin and /opt/node24/bin
+    what_is_true: ts 16/16 (42 s), go 12/12 (56 s), py 12/12 (15 s), c 6/6 (27 s), rust 6/6 (20 s), 0 skipped. Logs are C/mine/lane-*-1.log. One run each, not three.
+  - [3]
+    claim: NEW and OLD outputs are as handed
+    verdict: confirmed
+    what_i_ran: node gen.js mnew <C/sdkgen/ts>; node gen.js mold <C/oldclone/ts>; diff -rq out/mnew out/new; diff -rq out/mold out/old
+    what_is_true: Identical apart from warnings.json. OLD was regenerated from my copy of the pristine clone at 9aebaf9e, NEW from v3-frozen.
+  - [4]
+    claim: Unported languages: 456 files, 0 READMEs differ, 228 REFERENCEs differ by the same 4 shared-component lines
+    verdict: confirmed
+    what_i_ran: cmp loop over 21 variations x 12 languages x README/REFERENCE; diff | sort | uniq -c
+    what_is_true: files=456, readme_diff=0, ref_diff=228. Each of the 8 changed lines appears 228 times. The change adds the claim that log 'runs unless disabled' to every unported REFERENCE, while the same SDK's README Features section still says 'no logging' (README B/php:546-548). So this stage spreads the stage-2 log contradiction to 12 more languages.
+  - [5]
+    claim: portcheck passes for all eight ported languages (ledger and blocks 0 unclassified, purity clean, guard green)
+    verdict: confirmed
+    what_i_ran: cd C/tools && ./portcheck.sh ../sdkgen ../mine/root <lang> for the 8 languages (root/old -> mold, root/new -> mnew)
+    what_is_true: PASS x8. Logs are C/mine/pc-<lang>.log.
+  - [6]
+    claim: Guard: 26/26 tests, 12 negative controls caught wherever they apply
+    verdict: confirmed
+    what_i_ran: node --test dist-test/runtimefacts.test.js in my copy
+    what_is_true: 26/26. The controls are in-memory mutations of the declared facts, and they do fire.
+  - [7]
+    claim: The guard re-derives signatures (parameters, optional, returns), methods, members both ways, member shapes and field types
+    verdict: imprecise
+    what_i_ran: C/mine/mutate.js muts1.json: 52 source edits to providers, runtimes and forms in a copy clone (C/mut), each followed by npm run build and the guard
+    what_is_true: |
+      It caught 27 of 52. Gaps not listed anywhere:
+      - methods swapped between two real operations (ts list<->load, c update<->patch);
+      - parameter types and names (ts match?: object -> string, c voxgig_value* -> const char*, ts match -> id);
+      - clojure's declared returns, since its forms set returns and sigReturns to '' (list -> vector became -> map, not caught);
+      - a wrong type that is not 'any' where there is no canonToType column (zig INTEGER i64->f64, clojure long->string). perl and ocaml also have no column;
+      - a client member declared on the entity (utility() added to the entity, not caught, because entity signatures are searched in every file);
+      - the record printer disagreeing with the record fact.
+      Misses that are listed as unguarded: collection, noun, none, lits, nullValue, cancel, ctor, utility copy-or-live, direct returns, and c's ARRAY/OBJECT exception. Caught: method typos, optional->required, added and dropped parameters, py returns, style (ts, c, clojure), async, record, members removed or invented, and runtime renames and parameter changes (ts, clojure, c).
+  - [8]
+    claim: A ported language with no forms file fails
+    verdict: imprecise
+    what_i_ran: Added Syntax_php.ts (a copy of ts) and rebuilt: 3 php tests fail. Moved test/runtimeforms/zig.ts away and ran npm run build, then the guard
+    what_is_true: A new provider without forms fails. Deleting an existing forms source does not fail on an incremental build: prune-dist-test removes only stale *.test.js, so dist-test/runtimeforms/zig.js stays, and all 3 zig tests pass (26/26). The freeze's control moved the compiled file instead.
+  - [9]
+    claim: Purity: 0 open, 6 accepted, including the note lint
+    verdict: wrong
+    what_i_ran: node tools/purity.js over all 8 (0 open, 6 accepted). Then C/mine/puritymut.js pmuts.json: 13 provider edits checked by purity. Then a copy of purity.js with the note-region regex allowing leading whitespace
+    what_is_true: The count reproduces, but the note lint is inert. Its region regex /^(?:const\s+)?(\w*[nN]otes\w*)\b.../gm finds 0 note regions in go, zig, rust and elixir, because their `notes:` is indented (purity --json reports notes: 0). Five injected notes went unflagged: one naming 'retry', one 'apikey', one 'planet', one 'load', and one making a server claim. With the regex fixed, all 5 are flagged, and the 4 real providers' notes give 0 findings. Also missed: a model read through a parameter (m.main.kit.info.name), a description condition written as (desc as any).features, and an inline reserved-word ternary in a hook. Caught: hook concatenation, hook pluralisation, operation literal, case change, a fact-prose feature name.
+  - [10]
+    claim: Review tools flag regressions without being told where
+    verdict: confirmed
+    what_i_ran: C/mine/myinject.js inj1.json, inj2.json, inj4.json: 24 injections into a copy of NEW, then ledger.js and blocks.js with the frozen classes
+    what_is_true: |
+      24 of 24 flagged (unclassified > 0 or RECOUNT). The injections:
+      - type cells i64->f64 and ->any (zig);
+      - a sentence removed (go);
+      - false sentences: raises->returns None (py), retries three times (ts);
+      - optional->required (py) and a negation (go);
+      - a code comment changed (ts);
+      - variables renamed (c, clojure);
+      - the c err reset removed;
+      - the py loop restructured;
+      - numbers 2->3 and 30000->3000 (ts);
+      - list->load and a class name in the root quick start (ts);
+      - a field swapped (go) and an id literal changed (c);
+      - one sentence changed in all 18 variations (zig);
+      - a table row removed (zig), a switch arm changed (zig), and an elixir call changed;
+      - region Required (ts) and a duplicated unit (ts).
+  - [11]
+    claim: 1,666 classes classified (132 normalizers, about 1,490 by content rules, 44 by hand); broad rules could hide a second change
+    verdict: wrong
+    what_i_ran: C/mine/autoclass.js inj3.json and autoclass2.js inj4.json: inject, run ledger --template, then apply my/rules.js exactly as classify.js does (first match wins)
+    what_is_true: |
+      The rules do not merely risk hiding changes; they accept false facts outright:
+      - py 'ok is `True`' became AUTO restored:shared (rule direct-shared), both classes.
+      - go 'except for a non-2xx response' became restored:shared.
+      - py 'returns `None` on failure' became unification:op-failure-clause, and its echo restored:shared.
+      - ts region 'Required.', rebuilt from scratch, became correction:G01 (rule server-required-cell), with its echoes correction:S49.
+      - the zig type echo became same-meaning (rule echo-agrees).
+      Only the reworded `i64` => `f64`, `2` => `3` and a novel DEMO_TOKEN token were left for a human. rules.js has 106 rules, 89 without a language restriction. The last rule, echo-agrees (types: ['echo'], regex 'still stated, unchanged, elsewhere in this SDK'), marks every remaining echo class as same-meaning in every language.
+  - [12]
+    claim: Blocks: 857 identical, 206 after corrections, 444 by unification, 14 otherwise, 8 removed
+    verdict: confirmed
+    what_i_ran: cd C/harness && node blocks3.js > C/mine/blocks3.txt, then summed
+    what_is_true: 857/206/444/14/8 exactly. Per language, changed blocks (corrected + unified + otherwise): c 117, clojure 64, elixir 108, go 35, py 64, rust 86, ts 86, zig 104.
+  - [13]
+    claim: Zig, clojure and elixir changed blocks are unverified: zig 4, clojure 1, elixir 1 'changed otherwise'
+    verdict: imprecise
+    what_i_ran: blocks3.txt per-language sums; the tools' blocks.js via portcheck; command -v loop
+    what_is_true: Every changed block in those three languages is unverified code, not only the 'otherwise' ones: 104 + 64 + 108 = 276 never compiled. Normalizer equality is a counting device, not a compile. The tools' own blocks line for zig says reference changed 162, tutorial 22, root 19, all 'UNVERIFIED: no zig here'. A zig 0.16 wheel (ziglang 0.16.0) downloads from PyPI here, but executing it was denied in this session.
+  - [14]
+    claim: MEASURED 1.39x (1.32x); projection 1.95x / 1.63x / 1.40x
+    verdict: confirmed
+    what_i_ran: node tools/lines.js --clone ../sdkgen --rev HEAD, and an independent wc -l: git show 9aebaf9e for the 24 retired components (5966) plus shared before (950); Syntax+Naming+forms now (2049) plus other files (43) plus shared (2842 + media/optional deltas 34)
+    what_is_true: 6916 -> 4968 = 1.39x. Counting the shared guard (runtimefacts.test.ts 392 + forms.ts 216 = 608 lines) gives 6916 -> 5576 = 1.24x.
+  - [15]
+    claim: go's notes are 20.4% of its REFERENCE prose (over 15%)
+    verdict: imprecise
+    what_i_ran: C/mine/notewords2.js: note text matched in each NEW REFERENCE outside code fences and the Features section, over 19 variations
+    what_is_true: go 18.9% (5400 note words of 28512; member:stream printed 108 times), zig 11.0%, rust 2.2%, elixir 0.9%, the others 0. Notes print 0 words in the tutorials. Over both sections, go is 5400/30481 = 17.7%. The denominator differs from the freeze's, but either way the 15% line is crossed.
+  - [16]
+    claim: About 12 breaking interface changes since the first four languages (line about 10)
+    verdict: imprecise
+    what_i_ran: git diff of ts/src/helpers/example.ts type declarations for every commit from f21e6fe1 (first four languages) to HEAD
+    what_is_true: |
+      From the types I count 10 breaking changes:
+      - af89a54e: RuntimeWords replaced by required RuntimeFacts; the naming hook and Ent.sym; the new Expr kind 'fields'; call.wide.
+      - 21d40b96: classes->entityBy; utilityShared->utilityBase; streamChannel->stream; prepare.fails errorunion->note; Ref.name.
+      - 98fa964e/0b61c236: the required forms file.
+      Additive: Scope.section/stmts, RefSyntax (optional), utilityShared, streamLazy, container, die/wrapped, notes, lits, opMatched, ctorAlts, streamSync and streamFunction. At or just over the line, depending on how af89a54e is split.
+  - [17]
+    claim: Unguarded facts per language: c 21, clojure 18, elixir 26, go 20, py 22, rust 21, ts 20, zig 22
+    verdict: confirmed
+    what_i_ran: SDKGEN_GUARD_REPORT=1 node --test dist-test/runtimefacts.test.js
+    what_is_true: Same counts. The list omits the gaps I found by mutation: parameter types and names, method-to-operation mapping, clojure returns, and type correctness where there is no column.
+  - [18]
+    claim: OLD clojure documented api/get-utility, which sdk.api does not export
+    verdict: confirmed
+    what_i_ran: grep Main_clojure.ts and tm/clojure/src/sdk
+    what_is_true: Main_clojure.ts:85-90 re-exports make-sdk, test-sdk, direct, graphql, prepare and options-map only. But get-utility exists publicly in sdk.client (tm/clojure/src/sdk/client.clj:69). Dropping it leaves the page with no way to reach the utility at all.
+  - [19]
+    claim: Providers read the model 0 times
+    verdict: confirmed
+    what_i_ran: grep Syntax_*.ts for .main, main.kit, (desc as any), and desc.<field> other than layout/Name/name
+    what_is_true: The only description read beyond layout is clojure's require filter (Syntax_clojure.ts:136), which is the accepted finding. Purity's regex would not catch an indirect read, as my mutation showed, but none exists.
+  - [20]
+    claim: Toolchains present: node 24, go, python3+pytest, ruby, php, perl, javac+mvn, rustc+cargo, gcc, g++; missing lua, busted, dotnet, kotlinc, scala, sbt, swift, zig, clojure, elixir, ocamlc, ghc
+    verdict: confirmed
+    what_i_ran: command -v loop
+    what_is_true: Same here. Default node is 22.23.4; node 24 is at /opt/node24/bin.
+  - [21]
+    claim: Ocaml's stream shape was not surveyed
+    verdict: imprecise
+    what_i_ran: grep tm/ocaml and src/cmp/ocaml/Entity_ocaml.ts
+    what_is_true: It can be settled from the runtime: Entity_ocaml.ts:92 has e_stream = (fun _ _ _ -> Seq.empty), a lazy Seq, so streamLazy fits. OLD's ocaml page does not document it.
+guard_controls:
+  - [0]
+    lang: ts
+    mutation: facts.method update -> 'updat' (typo)
+    caught: True
+    note: check method
+  - [1]
+    lang: ts
+    mutation: facts.method list<->load swapped (both real operations)
+    caught: False
+    note: one(ops, m) only asks whether some declaration of that name exists
+  - [2]
+    lang: c
+    mutation: facts.method update<->patch swapped
+    caught: False
+    note: as for ts
+  - [3]
+    lang: clojure
+    mutation: facts.method remove -> 'delete'
+    caught: True
+    note: method
+  - [4]
+    lang: ts
+    mutation: op.load 'match?: object' -> 'match: object' (optional shown required)
+    caught: True
+    note: optional
+  - [5]
+    lang: ts
+    mutation: op.load parameter type object -> string
+    caught: False
+    note: parameter types are never compared
+  - [6]
+    lang: ts
+    mutation: op.load parameter renamed match -> id
+    caught: False
+    note: parameter names are never compared
+  - [7]
+    lang: c
+    mutation: vt->load reqmatch type voxgig_value* -> const char*
+    caught: False
+    note: types are not compared
+  - [8]
+    lang: c
+    mutation: sdk_direct loses its PNError** err parameter
+    caught: True
+    note: parameters
+  - [9]
+    lang: clojure
+    mutation: direct declared with an extra parameter
+    caught: True
+    note: parameters
+  - [10]
+    lang: clojure
+    mutation: op.list return '-> vector' -> '-> map'
+    caught: False
+    note: clojure forms: returns () => '' and sigReturns () => ''
+  - [11]
+    lang: py
+    mutation: op.list return list[{Class}] -> {Class}
+    caught: True
+    note: returns
+  - [12]
+    lang: py
+    mutation: direct.returns 'dict' -> 'list'
+    caught: False
+    note: listed as unguarded (direct)
+  - [13]
+    lang: ts
+    mutation: result throw -> raise
+    caught: True
+    note: style
+  - [14]
+    lang: c
+    mutation: result errslot -> pair
+    caught: True
+    note: style
+  - [15]
+    lang: clojure
+    mutation: result raise -> throw
+    caught: True
+    note: style
+  - [16]
+    lang: ts
+    mutation: collection 'array' -> 'linked list'
+    caught: False
+    note: listed unguarded
+  - [17]
+    lang: c
+    mutation: collection NULL-terminated array -> vector
+    caught: False
+    note: listed unguarded
+  - [18]
+    lang: clojure
+    mutation: collection vector -> lazy sequence
+    caught: False
+    note: listed unguarded
+  - [19]
+    lang: ts
+    mutation: ref noun Methods -> Functions
+    caught: False
+    note: listed unguarded
+  - [20]
+    lang: ts
+    mutation: ref.type prints INTEGER as string
+    caught: True
+    note: types (column ts)
+  - [21]
+    lang: zig
+    mutation: type printer INTEGER i64 -> f64
+    caught: False
+    note: no canonToType column: only 'not any' is checked; perl and ocaml are the same
+  - [22]
+    lang: clojure
+    mutation: type printer INTEGER long -> string
+    caught: False
+    note: no column
+  - [23]
+    lang: c
+    mutation: type suffixes (list)/(map) swapped
+    caught: False
+    note: excepted types:ARRAY/OBJECT
+  - [24]
+    lang: ts
+    mutation: example type comment printed as 'number' for every field
+    caught: False
+    note: printer output is not guarded
+  - [25]
+    lang: ts
+    mutation: none 'undefined' -> 'null'
+    caught: False
+    note: listed unguarded
+  - [26]
+    lang: py
+    mutation: lits true/false True/False -> true/false (the stage-2 py defect)
+    caught: False
+    note: listed unguarded
+  - [27]
+    lang: ts
+    mutation: example INTEGER literal '1' -> '"1"'
+    caught: False
+    note: printer
+  - [28]
+    lang: c
+    mutation: nullValue NULL -> nullptr
+    caught: False
+    note: listed unguarded
+  - [29]
+    lang: ts
+    mutation: client member tester removed from the table
+    caught: True
+    note: members
+  - [30]
+    lang: c
+    mutation: entity member get_name removed
+    caught: True
+    note: members
+  - [31]
+    lang: clojure
+    mutation: matchGet removed (half of the pair)
+    caught: True
+    note: members, kind
+  - [32]
+    lang: py
+    mutation: dataSet removed (half of the pair)
+    caught: True
+    note: kind
+  - [33]
+    lang: ts
+    mutation: entity member invented: clone()
+    caught: True
+    note: caught as 'parameters' (a clone( exists elsewhere), not as an undefined member
+  - [34]
+    lang: ts
+    mutation: client member utility() declared on the entity
+    caught: False
+    note: entity signatures are searched in [...entity, ...all], so client members satisfy them
+  - [35]
+    lang: c
+    mutation: client member sdk_options invented
+    caught: True
+    note: signature
+  - [36]
+    lang: clojure
+    mutation: OLD's (api/get-utility client) re-added
+    caught: True
+    note: members
+  - [37]
+    lang: ts
+    mutation: utility kind -> utilityBase (copy vs live node)
+    caught: False
+    note: listed unguarded
+  - [38]
+    lang: ts
+    mutation: cancel true -> false
+    caught: False
+    note: listed unguarded
+  - [39]
+    lang: ts
+    mutation: async true -> false
+    caught: True
+    note: async
+  - [40]
+    lang: py
+    mutation: record data_get() -> data()
+    caught: True
+    note: record
+  - [41]
+    lang: ts
+    mutation: record printer prints .record() while the fact says .data()
+    caught: False
+    note: printer and fact are not tied
+  - [42]
+    lang: ts
+    mutation: ctor 'new {ctor}(...)' -> '{ctor}.create(...)'
+    caught: False
+    note: listed unguarded
+  - [43]
+    lang: py
+    mutation: test sig loses sdkopts
+    caught: True
+    note: parameters
+  - [44]
+    lang: ts
+    mutation: RUNTIME: EntityLoadOp load renamed fetch
+    caught: True
+    note: method, signature
+  - [45]
+    lang: ts
+    mutation: RUNTIME: load's reqmatch made required
+    caught: True
+    note: optional
+  - [46]
+    lang: ts
+    mutation: RUNTIME: load made synchronous
+    caught: True
+    note: async
+  - [47]
+    lang: clojure
+    mutation: RUNTIME: defn load gains a parameter
+    caught: True
+    note: parameters
+  - [48]
+    lang: clojure
+    mutation: RUNTIME: :get-name renamed :entity-name
+    caught: True
+    note: signature, members
+  - [49]
+    lang: c
+    mutation: RUNTIME: sdk.h (*get_name) renamed
+    caught: True
+    note: signature, members
+  - [50]
+    lang: zig
+    mutation: forms source file deleted, incremental build
+    caught: False
+    note: stale dist-test/runtimeforms/zig.js stays; 26/26 pass
+  - [51]
+    lang: php
+    mutation: new provider Syntax_php.ts with no forms file
+    caught: True
+    note: 3 php tests fail
+  - [52]
+    lang: ts
+    mutation: forms weakened: public patterns match nothing, undocumented removed
+    caught: True
+    note: members (the family check needs each declared family to exist)
+tool_controls:
+  - [0]
+    regression: zig REFERENCE B: field Type cell i64 -> f64
+    caught: True
+    by: ledger (reworded + echo, 2 unclassified)
+  - [1]
+    regression: zig REFERENCE B: Type cell i64 -> any
+    caught: True
+    by: ledger
+  - [2]
+    regression: go REFERENCE doc-crud: direct() 'branch on result["ok"]' sentence removed
+    caught: True
+    by: ledger
+  - [3]
+    regression: py REFERENCE: 'raises on failure' -> 'returns None on failure' (false)
+    caught: True
+    by: ledger (3); but rules.js auto-classifies it (op-failure-clause, test-opts-shared)
+  - [4]
+    regression: ts REFERENCE: a false sentence appended to the constructor paragraph
+    caught: True
+    by: ledger
+  - [5]
+    regression: py REFERENCE: 'The match is optional' -> 'required'
+    caught: True
+    by: ledger
+  - [6]
+    regression: go REFERENCE: 'even for a non-2xx' -> 'except for a non-2xx'
+    caught: True
+    by: ledger (4); rules.js auto-classifies both new classes restored:shared (direct-shared)
+  - [7]
+    regression: ts tutorial: a comment inside a block changed
+    caught: True
+    by: ledger and blocks
+  - [8]
+    regression: c tutorial: planets[i] -> planet[i] in one use
+    caught: True
+    by: blocks
+  - [9]
+    regression: c tutorial: err = NULL; removed after a failed list
+    caught: True
+    by: blocks
+  - [10]
+    regression: py REFERENCE: list loop restructured to print(results.data_get())
+    caught: True
+    by: blocks
+  - [11]
+    regression: ts REFERENCE: retries default 2 -> 3 (numbers are masked)
+    caught: True
+    by: ledger (reworded, left for a human by the rules)
+  - [12]
+    regression: ts REFERENCE: ms 30000 -> 3000
+    caught: True
+    by: ledger
+  - [13]
+    regression: ts root quick start: list() -> load()
+    caught: True
+    by: blocks
+  - [14]
+    regression: ts root quick start: a comment names RecordEntity for a planet
+    caught: True
+    by: ledger and blocks
+  - [15]
+    regression: go tutorial: field title -> name
+    caught: True
+    by: blocks
+  - [16]
+    regression: c tutorial: id literal v_str -> v_num
+    caught: True
+    by: blocks
+  - [17]
+    regression: zig REFERENCE: one sentence changed in all 18 variations
+    caught: True
+    by: ledger
+  - [18]
+    regression: zig REFERENCE: an options row removed
+    caught: True
+    by: ledger
+  - [19]
+    regression: zig REFERENCE: switch arm .ok -> .err
+    caught: True
+    by: blocks
+  - [20]
+    regression: clojure tutorial: data-get on the wrong variable
+    caught: True
+    by: ledger (the code span changes)
+  - [21]
+    regression: elixir REFERENCE: .load( -> .list(
+    caught: True
+    by: blocks
+  - [22]
+    regression: ts REFERENCE B: options.server.region 'Defaults to eu' -> 'Required.'
+    caught: True
+    by: ledger RECOUNT (2). Rebuilding classes from scratch with rules.js classifies it correction:G01 automatically
+  - [23]
+    regression: py REFERENCE: on a failure ok is True (false)
+    caught: True
+    by: ledger; then rules.js auto-classifies both classes restored:shared, so after classify.js portcheck would PASS
+  - [24]
+    regression: go tutorial: env var DEMO_APIKEY -> DEMO_TOKEN
+    caught: True
+    by: ledger; the added class is auto-classified unification:client-env-sentence, only the novel token is left for a human
+  - [25]
+    regression: a provider note naming a feature, option, entity, operation or server fact (go member:stream)
+    caught: False
+    by: purity.js note lint: 0 note regions found (indented `notes:`). Caught by all 5 once the regex allows leading whitespace
+misclassified:
+  - [0]
+    lang: all
+    unit: my/rules.js 'echo-agrees' (last rule, all languages): every echo class matching 'still stated, unchanged, elsewhere in this SDK'
+    recorded_as: same-meaning
+    in_fact: An echo is by construction one fact moved in one place only, the stage-2 'two documents disagree' item 8. Live examples: ts B README:225 says '**Required.** ... `tenant`, `region`' while the tutorial line 36 and REFERENCE:30 say `region` defaults to `eu`; README:593 says 'no logging' while REFERENCE:682 says log 'runs unless disabled'. A blanket same-meaning outcome hides these for all future ports.
+  - [1]
+    lang: zig
+    unit: [74e67fc6cf] 'On failure it returns the error of its error union, for `try` or `catch`.' echoed against zig/README.md:77 'Entity operations reject on failure, so wrap them in `try` / `catch`'
+    recorded_as: same-meaning
+    in_fact: The REFERENCE sentence is true for prepare, but the echo exposes a false README sentence: zig entity operations return a result union, they do not 'reject'. Classifying the echo as same-meaning closes the only place the tools surface that contradiction. The freeze lists it as an unported gap.
+  - [2]
+    lang: clojure
+    unit: [423809a525]/[c1aa3f3565] `(api/get-utility client) -> utility` / 'Return a copy of the SDK utility object.'
+    recorded_as: dropped (sdk.api does not export get-utility)
+    in_fact: Partly a lost fact. sdk.api does not export it (Main_clojure.ts:85-90), but sdk.client/get-utility is public (tm/clojure/src/sdk/client.clj:69). The page now gives no way to reach the utility. I accept the reason for the sdk.api heading, not for removing the capability.
+  - [3]
+    lang: rust
+    unit: [6b6c33954a] '(removed) `Ok` is the entity, marked as deleted, and `Err` a failure.' (ref-issues)
+    recorded_as: same-meaning
+    in_fact: The outcome is correct but the label is wrong: ref-issues turns remove off, so the whole remove section is rightly gone (OLD 2 remove( occurrences, NEW 0). It is a removal by correction, not a rewording.
+  - [4]
+    lang: ts
+    unit: [a0ea2daad1]/[5734aba53e]/[38660bb110] accessor parameter table
+    recorded_as: dropped
+    in_fact: Accepted: 'Create a new `PlanetEntity` instance. Pass `undefined` for no initial data.' (doc-crud ts REFERENCE:51) keeps the argument, the class and the none value.
+  - [5]
+    lang: elixir
+    unit: [d94f240980] list/2, getelem/2 arity sentence; [4a4cd8d647] Helpers.deep/1 sentence
+    recorded_as: dropped
+    in_fact: Lost facts dropped as 'elixir-only prose'. Under brief3 these belong in a runtime note, which exists for exactly this. Dropping them because the interface has no fact slot is the interface limit being hidden, not a judgement that they are false.
+  - [6]
+    lang: c
+    unit: REFERENCE load/remove example: OLD 'if (result) { printf(... result->vt->data ...) }' -> NEW bare call
+    recorded_as: unification (reference examples in the old majority shape)
+    in_fact: Weaker than OLD: c load and remove examples no longer show the NULL check or how to read the record (doc-crud c REFERENCE:146-150; OLD 132-136). Rust load lost its println of data(None). go and zig still print. So the 'majority shape' is not uniform either.
+defects_status:
+  - [0]
+    item: A check-v2 1: zig create comment 'returns the created entity' (false for a union)
+    status: fixed
+    evidence: mnew/doc-crud/zig/README.md:95 '// Create — .ok carries the created entity; asEntity().data(null) reads its record'
+  - [1]
+    item: A check-v2 2: ts root quick start lost the returned class
+    status: fixed
+    evidence: mnew/doc-crud/README.md TypeScript: '// List planet records: a PlanetEntity[], one entity per record; throws on failure', '// Load a planet: the entity, a PlanetEntity'
+  - [2]
+    item: A check-v2 3: clojure prose names an unbound `entity`
+    status: fixed
+    evidence: mnew/doc-crud/clojure/README.md:63,75 '((:data-get planet))' and :89 '((:data-get created))'
+  - [3]
+    item: A check-v2 4: go create comment imprecise; pair fact only for List/Load; two comments in a row
+    status: partly
+    evidence: Fixed: the comment is now '// Create — the value is the created entity'. Not fixed: step 4 still carries no sentence, the tutorial prose states (value, error) only for List and Load (README:59-66), and write results are discarded (`_, err =`).
+  - [4]
+    item: A check-v2 5: go 'The steps are one program, shown whole after them.'
+    status: fixed
+    evidence: mnew/ent-none/go/README.md 'The program after this step runs it.'
+  - [5]
+    item: A check-v2 6: c err never reset
+    status: partly
+    evidence: Tutorial fixed ('err = NULL;' after list and load failures). The root quick start still calls load after list with no check and no reset (mnew/doc-nested/README.md C), and the tutorial's write step chains create, update, patch and remove on one err with no check.
+  - [6]
+    item: A check-v2 7: ts README contradicts itself (region; secret under query Basic)
+    status: not-fixed
+    evidence: mnew/B/ts/README.md:36 'region defaults to eu' vs :225 '**Required.** ... tenant, region' and :214 'server?: { tenant: string, region: string }'. auth-basic-query ts README:144,181,193,217,231 still show secret. These are unported README sections.
+  - [7]
+    item: A check-v2 8: ts create 'returns' beside 'resolves'
+    status: fixed
+    evidence: mnew/doc-crud/ts/README.md:83 '// Create — resolves to the created entity; .data() reads its record'
+  - [8]
+    item: A check-v2 9: zig/clojure unverifiable
+    status: not-fixed
+    evidence: Still no toolchain; 276 changed blocks in zig, clojure and elixir are uncompiled (blocks3 sums 104/64/108).
+  - [9]
+    item: A check-ref 1: zig field types all `any`
+    status: fixed
+    evidence: mnew/B/zig/REFERENCE.md:139 `f64`, :306 `i64`. But the guard checks only 'not any' for zig (an i64->f64 mutation passes).
+  - [10]
+    item: A check-ref 2: `utilitys`/`historys` plurals
+    status: partly
+    evidence: Gone from the ported sections. Still 259 `utilitys` and 154 `historys` in every language's README in unported sections (e.g. mnew/B/ts/README.md:586), as in OLD.
+  - [11]
+    item: A check-ref 3: py 'ok is `false`'
+    status: fixed
+    evidence: mnew/B/py/REFERENCE.md:110 'on a failure `ok` is `False`' (lits). The guard does not check lits: a mutation back to false passes.
+  - [12]
+    item: A check-ref 4: direct() result keys lost in go py c zig
+    status: fixed
+    evidence: go doc-crud REFERENCE:96-99, c B REFERENCE:101-104, and py, zig, rust, clojure and elixir B REFERENCE all state ok, status, headers, data and the read idiom.
+  - [13]
+    item: A check-ref 5: c/zig data 'called without arguments'
+    status: fixed
+    evidence: mnew/B/c/REFERENCE.md:147 'Get the entity data. Pass a map to set it.'; zig 14 occurrences
+  - [14]
+    item: A check-ref 6: ts action call lost
+    status: partly
+    evidence: mnew/doc-crud/ts/REFERENCE.md:146 Call cell `await client.Planet().create({ $action: 'terraform' })` for route /planet/{id}/terraform. The call passes no id and drops OLD's '/* ...the action's own arguments */', so it shows a call that cannot fill its route.
+  - [15]
+    item: A check-ref 7: log on by default vs README 'no logging'
+    status: not-fixed
+    evidence: B/ts REFERENCE:682 vs README:593. The 4 shared lines now carry the REFERENCE side into all 12 unported languages too (228 files).
+  - [16]
+    item: A check-ref 8: REFERENCE omits the test constructor under no-test
+    status: fixed
+    evidence: mnew/no-test/ts/REFERENCE.md:33-41 documents DemoSDK.test and says the SDK has no mock transport
+  - [17]
+    item: A check-ref 9: region default eu vs README Required
+    status: not-fixed
+    evidence: Same as A7: README:225 vs REFERENCE:30
+  - [18]
+    item: A check-ref 10: py doc-nested list optional vs must include
+    status: fixed
+    evidence: mnew/doc-nested/py/REFERENCE.md:306 'list(reqmatch, ctrl=None)' with 'The match must include `planet_id`'
+  - [19]
+    item: A check-ref 11: zig stream throw:false clause
+    status: fixed
+    evidence: Restored as the zig note member:streamList (mnew/B/zig/REFERENCE.md:173)
+  - [20]
+    item: A check-ref 12: go TestSDK example with undefined variables
+    status: fixed
+    evidence: mnew/doc-crud/go/REFERENCE.md:51 'client := sdk.TestSDK(nil, nil)'
+  - [21]
+    item: A check-ref 13: load sentence 'whose record .data() reads'
+    status: fixed
+    evidence: doc-crud ts REFERENCE:168-169 'Resolves to the entity, and throws on failure. `.data()` reads its record.'
+facts_status:
+  - [0]
+    item: zig: 'Create — .ok carries the created entity'
+    status: restored
+    evidence: Restored as a shared createComment fact (zig README:95)
+  - [1]
+    item: zig: switch on list's .ok
+    status: dropped-accepted
+    evidence: The union sentence states .ok/.err and the code shows the switch (class 84f11343be)
+  - [2]
+    item: ts root: the class each operation returns
+    status: restored
+    evidence: listOf fact: 'a PlanetEntity[]', 'a PlanetEntity'
+  - [3]
+    item: ts tutorial: every operation resolves to entities; create comment '.data() for the record'
+    status: restored
+    evidence: doc-crud ts README:31 and :83
+  - [4]
+    item: go: (value, error) for every operation, writes included; write results printed
+    status: still-lost
+    evidence: The tutorial states the pair for List and Load only; writes are `_, err =`. Only the unported 'Error handling' section says 'Every entity operation returns (value, error)'.
+  - [5]
+    item: py: create comment '(call data_get() for the record)'
+    status: restored
+    evidence: doc-crud py README:80 '# Create — returns the created entity; data_get() reads its record'
+  - [6]
+    item: clojure: naming the bound variable
+    status: restored
+    evidence: {var} in the record fact
+  - [7]
+    item: ts: options()/utility() return object
+    status: restored
+    evidence: B ts REFERENCE:88,94 '**Returns:** `object`.'
+  - [8]
+    item: ts: test() testopts/sdkopts, returns a test-mode client; tester Returns
+    status: restored
+    evidence: Shared sentence 'testopts are the test feature's options ... It returns a client in test mode'; tester is 'Alias for DemoSDK.test()'
+  - [9]
+    item: ts: accessor parameter table and Returns PlanetEntity
+    status: dropped-accepted
+    evidence: 'Create a new `PlanetEntity` instance. Pass `undefined` for no initial data.'
+  - [10]
+    item: ts: how to call a custom action
+    status: restored
+    evidence: Restored as the Call cell, weaker: no id or arguments for a /planet/{id}/terraform route
+  - [11]
+    item: ts, go, py, zig: '// Fields to update', '// Only the fields to change'
+    status: restored
+    evidence: grep counts NEW = OLD = 2 in doc-crud REFERENCE for each
+  - [12]
+    item: go: GetName print
+    status: restored
+    evidence: B go REFERENCE:136 'fmt.Println(ambient.GetName()) // "ambient"'
+  - [13]
+    item: py: direct keys and result["ok"]; prepare returns fetchdef
+    status: restored
+    evidence: Shared direct sentence with the read printer
+  - [14]
+    item: py: '# str' type comments
+    status: restored
+    evidence: NEW 2 = OLD 2 (doc-crud)
+  - [15]
+    item: c: direct keys, getp idiom, never sets *err for non-2xx; prepare fetchdef
+    status: restored
+    evidence: B c REFERENCE:101-112. 'never sets *err' is carried as 'reported in the result, not as an error'
+  - [16]
+    item: c: data/matchv 'Pass a map to set it'
+    status: restored
+    evidence: B c REFERENCE:147
+  - [17]
+    item: c: '// char*' comments; 'if (result)' guard after load
+    status: dropped-not-accepted
+    evidence: Comments restored (2 = 2). The if (result) guard and the printed record are gone from the load and remove examples (NEW 0, OLD 2), called a majority-shape unification, while go and zig still print.
+  - [18]
+    item: zig: direct returns a map even on non-2xx; h.get_bool(result, "ok")
+    status: restored
+    evidence: get_bool NEW 1 = OLD 1 (B)
+  - [19]
+    item: zig: StreamResult under throw:false
+    status: restored
+    evidence: Restored as the note member:streamList
+  - [20]
+    item: zig: field types
+    status: restored
+    evidence: zigType printer (f64, i64, []const u8, ...)
+  - [21]
+    item: zig: '// []const u8' comments; data 'Pass a map'
+    status: restored
+    evidence: Counts NEW = OLD
+  - [22]
+    item: rust: direct envelope inside Ok, branch on getp
+    status: restored
+    evidence: Restored as the rust note member:direct (19 prints)
+  - [23]
+    item: rust: data(Option<&Value>) 'Pass Some(&map)'
+    status: restored
+    evidence: setArg fact (not read line by line)
+  - [24]
+    item: rust: println of the loaded record
+    status: dropped-not-accepted
+    evidence: doc-crud rust REFERENCE load example has no println (OLD had one)
+  - [25]
+    item: elixir: get_utility returns the live node
+    status: restored
+    evidence: utilityBase kind plus the note
+  - [26]
+    item: elixir: arity naming list/2, getelem/2; Helpers.deep/1 sentence
+    status: dropped-not-accepted
+    evidence: Dropped as 'elixir-only prose'. A runtime note is the slot brief3 defines for that, and the guard does not check notes.
+  - [27]
+    item: clojure: get-utility
+    status: dropped-not-accepted
+    evidence: sdk.client/get-utility exists (client.clj:69); the page now gives no route to the utility
+output_defects:
+  - [0]
+    lang: ts js php rb lua csharp java kotlin scala swift cpp perl ocaml (all 20)
+    variation: B and every variation with log
+    defect: REFERENCE says log 'runs unless disabled' while the README Features section of the same SDK says every feature is inactive, 'no logging'. log.aontu:8 has active: true, so the README is the false side.
+    evidence: mnew/B/ts/REFERENCE.md:682 vs README.md:593; the same 4 shared lines differ in 228 unported REFERENCE files
+    worse_than_old: True
+  - [1]
+    lang: ts
+    variation: doc-crud (every variation with an action)
+    defect: The action's Call cell omits the route's {id} and the action's arguments, so the call shown cannot fill /planet/{id}/terraform.
+    evidence: mnew/doc-crud/ts/REFERENCE.md:146; OLD carried '/* ...the action's own arguments */'
+    worse_than_old: True
+  - [2]
+    lang: c
+    variation: doc-crud, B
+    defect: The load and remove REFERENCE examples no longer check NULL or show reading the record.
+    evidence: mnew/doc-crud/c/REFERENCE.md:146-150 vs mold 132-136
+    worse_than_old: True
+  - [3]
+    lang: rust
+    variation: doc-crud
+    defect: The load example no longer prints data(None).
+    evidence: mnew/doc-crud/rust/REFERENCE.md load block vs OLD 'println!("{:?}", result.data(None));'
+    worse_than_old: True
+  - [4]
+    lang: c
+    variation: doc-nested and every root quick start
+    defect: The root quick start calls load after list with err neither checked nor reset. The runtime returns NULL when *err is already set, so load silently does nothing after a failed list.
+    evidence: mnew/doc-nested/README.md ### C
+    worse_than_old: False
+  - [5]
+    lang: zig
+    variation: doc-crud REFERENCE
+    defect: The new standalone snippet binds with '.err => |e| return std.debug.print(...)'. That needs an enclosing void function, and it was never compiled (no zig here).
+    evidence: mnew/doc-crud/zig/REFERENCE.md load block
+    worse_than_old: False
+  - [6]
+    lang: go
+    variation: doc-crud
+    defect: Step 4 has no sentence; the pair is stated only for List and Load; write results are discarded.
+    evidence: mnew/doc-crud/go/README.md:59-112
+    worse_than_old: False
+  - [7]
+    lang: ts
+    variation: server-mixed, B
+    defect: The README contradicts itself on region: 'defaults to eu' (tutorial) vs '**Required.**' (options table) vs 'server?: { ..., region: string }'.
+    evidence: mnew/server-mixed/ts/README.md:36, 214, 225
+    worse_than_old: False
+own_measurements:
+  - [0]
+    name: suite without toolchain lanes
+    value: 2551 tests, 2546 pass, 0 fail, 5 skipped, 303 s (shared CPUs, one run)
+    command: C/mine/suite.sh suite1.log
+  - [1]
+    name: lanes on NEW
+    value: ts 16/16 (42 s), go 12/12 (56 s), py 12/12 real pytest (15 s), c 6/6 (27 s), rust 6/6 (20 s), 0 skipped
+    command: C/mine/lanes.sh 1
+  - [2]
+    name: NEW/OLD regeneration equals the handed outputs
+    value: 0 differing files apart from warnings.json; 16 s and 17 s
+    command: node gen.js mnew C/sdkgen/ts; node gen.js mold C/oldclone/ts; diff -rq
+  - [3]
+    name: unported byte-identity
+    value: 456 files: README 0 differ; REFERENCE 228 differ, each by the same 8 lines (4 pairs)
+    command: cmp loop over mold/mnew x 12 languages; diff | sort | uniq -c
+  - [4]
+    name: portcheck x8
+    value: PASS for ts go py c zig clojure rust elixir
+    command: cd C/tools && ./portcheck.sh ../sdkgen ../mine/root <lang>
+  - [5]
+    name: guard source mutations
+    value: 27 of 52 caught (25 missed: 14 listed as unguarded, 11 not listed)
+    command: node C/mine/mutate.js muts1.json muts1.out.json
+  - [6]
+    name: review-tool injections
+    value: 24 of 24 flagged by ledger and/or blocks
+    command: node C/mine/myinject.js inj1.json, inj2.json, inj4.json
+  - [7]
+    name: rules.js auto-acceptance of injected false facts
+    value: 4 of 7 sampled regressions fully auto-classified (py ok True, go except non-2xx, py returns None, ts region Required rebuilt from scratch); the zig type echo became same-meaning
+    command: node C/mine/autoclass.js inj3.json; CLS=C/mine/noclasses node C/mine/autoclass2.js inj4.json
+  - [8]
+    name: purity
+    value: 0 open, 6 accepted; note regions found: 0 in go, zig, rust and elixir
+    command: node tools/purity.js --providers ../sdkgen/ts/project/.sdk/src/cmp --root ../mine/root/new [--json]
+  - [9]
+    name: purity mutations
+    value: 5 of 13 flagged. 0 of 5 note mutations flagged; 5 of 5 with the region regex allowing leading whitespace
+    command: node C/mine/puritymut.js pmuts.json; PUR=purity-fixed.js node C/mine/puritymut2.js pmuts-notes.json
+  - [10]
+    name: note words in REFERENCE (outside code and Features)
+    value: go 18.9% (5400/28512), zig 11.0%, rust 2.2%, elixir 0.9%, ts py c clojure 0%; README tutorials 0 note words
+    command: node C/mine/notewords2.js
+  - [11]
+    name: only-this-language words (share.js, 8 languages)
+    value: tutorial: ts 23.5, go 62.6, py 22.9, c 26.6, zig 12.4, clojure 11.2, rust 12, elixir 10.9 %; reference: ts 11.4, go 13.3, py 5.4, c 5.2, zig 6, clojure 2.5, rust 4.6, elixir 2.9 %; root quick start 93% for 6 of 8
+    command: portcheck sharing step (C/mine/pc-<lang>.log)
+  - [12]
+    name: facts exactly one ported language declares (shared sentences only it prints)
+    value: result errslot (c), pair (go), throw (ts); stream kinds stream (go), streamIterator (ts), streamGenerator (py); utilityBase (elixir); cancel, direct.signal, prepare.fails value, tester/client/entopts (ts); prepare.fails note (zig); lits, recordType (py); heading, entityNoun (clojure); entityBy module (elixir)
+    command: node -e over dist-test-scaffold Syntax_<lang>.js facts
+  - [13]
+    name: source lines
+    value: 6916 -> 4968 = 1.39x (1.32x without blanks and comments); with the shared guard (608) 1.24x; projections 1.95x / 1.63x / 1.40x
+    command: node tools/lines.js --clone ../sdkgen --rev HEAD; independent wc -l over git show 9aebaf9e and HEAD
+  - [14]
+    name: blocks accounting
+    value: identical 857, corrected 206, unified 444, otherwise 14, removed 8; unverified changed blocks: zig 104, clojure 64, elixir 108
+    command: cd C/harness && node blocks3.js
+  - [15]
+    name: unguarded facts
+    value: c 21, clojure 18, elixir 26, go 20, py 22, rust 21, ts 20, zig 22
+    command: SDKGEN_GUARD_REPORT=1 node --test dist-test/runtimefacts.test.js
+  - [16]
+    name: breaking interface changes after the first four languages
+    value: about 10 (4 in af89a54e, 5 in 21d40b96, 1 forms file)
+    command: git diff c~1 c -- ts/src/helpers/example.ts for each of 12 commits
+ready_to_port:
+  verdict: |
+    Not ready as written. The interface itself held for eight languages, but four things would let six parallel ports ship false sentences unseen or collide on merge:
+    - the classification rules accept false facts automatically;
+    - the note lint is inert;
+    - the guard cannot read ocaml at all;
+    - the guard cannot check types in perl and ocaml.
+    Each is a small fix to make before porting starts.
+  blockers:
+    - PORTING section 4 tells porters to classify with my/classify.js. my/rules.js (106 rules, 89 for all languages, first match wins, ending in a catch-all echo rule marking every echo same-meaning) automatically classifies injected false facts: ok True, except non-2xx, returns None, region Required. Restrict rules to the languages whose classes were read, remove echo-agrees, and require a human outcome for every new class in a ported language.
+    - The note lint in tools/purity.js:67 never finds a note (it needs `notes` at column 0; every provider indents it). Section 7 promises it. One-line fix: /^\s*(?:const\s+)?.../.
+    - ocaml: operations are record fields typed `e_load : value -> value -> entity_obj` (tm/ocaml/sdk_types.ml:214) and bound `fun _ _ ->` (Entity_ocaml.ts:82). The forms framework requires a bracketed parameter list (forms.ts bracketed()), so ocaml's forms cannot be written without changing the shared forms.ts. Section 6 does not say so, and section 8 forbids shared changes in a port. Settle it before the ports start.
+    - perl and ocaml have no canonToType column, so the guard's type check only refuses 'any'. A wrong type passes, as shown for zig i64->f64 and clojure long->string. Give these languages a declared type map that the guard compares, or say plainly that the types are unguarded.
+    - Known unguarded but load-bearing: collection noun, literals (none, lits, nullValue), method-to-operation mapping (a list<->load swap passes) and parameter types. A porter's typo in these reaches the page with only the classification layer between it and a pass.
+  merge_conflict_risks:
+    - my/rules.js and my/manual.json are single shared files every porter is told to extend. classify.js rewrites every language's tools/classes/<lang>.json on each run, so a rule one porter adds reclassifies the others' languages.
+    - An ocaml port needs a shared forms.ts change (see blockers). Any other porter extending forms.ts for a new declaration shape (perl's `sub load { my ($self, ...) = @_`) touches the same file.
+    - The golden is per-target sections in test/golden/add-output.txt: different targets do not collide (checked by format), so regenerating on conflict is sound.
+    - test/lua-table-keys.test.ts must be edited by the lua porter (language-local, no conflict).
+    - dist-test is not rebuilt clean by npm run build: a deleted forms or test-support file survives as stale JS on a porter's machine, so a local green guard can disagree with CI.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: partly
+    evidence: |
+      Held:
+      - Providers read the model 0 times. By my own grep, the only description read beyond layout is clojure's accepted require filter (Syntax_clojure.ts:136).
+      
+      Crossed (ran):
+      - Language-supplied prose: go's notes are 18.9% of its REFERENCE prose (C/mine/notewords2.js), 17.7% over both sections, over the 15% line.
+      - Breaking interface changes after the first four languages are about 10 by my type-diff count: at the line, and over it by the freeze's count of 12.
+      
+      Not evidence of purity:
+      - The purity tool's '0 open' includes a note lint that has never inspected a note.
+      - Its model-read check misses indirect reads (mutation printer-model-read missed).
+  - [1]
+    id: H2
+    verdict: refuted
+    evidence: Ran lines.js and recounted by hand: 6916 -> 4968 = 1.39x for the eight ported languages, under 2x. Counting the shared guard (runtimefacts.test.ts + forms.ts, 608 lines), it is 1.24x. Projections to 20 languages: 1.95x at measured provider size, 1.63x at 1.5 times, 1.40x at twice.
+  - [2]
+    id: H3
+    verdict: partly
+    evidence: Read and ran on output: most stage-2 defects in the ported sections are fixed by shared code (A list: 13 fixed, 5 partly, 4 not fixed). The not-fixed ones are all cross-document. The README's own region, secret and logging statements still contradict the REFERENCE, and the shared ReadmeRefFeatures change now carries the log contradiction into all 12 unported languages. Per-language edits were needed for ts/py/elixir signatures and the c printer. I did not recount the 329-issue catalogue.
+  - [3]
+    id: H4
+    verdict: partly
+    evidence: Ran: ts 16/16, go 12/12, py 12/12 (real pytest), c 6/6, rust 6/6 at v3-frozen, nothing skipped. But 276 changed blocks in zig, clojure and elixir (blocks3: 104/64/108) were never compiled. The freeze counts only 6 of them, because normalizer equality is treated as verification. A zig 0.16 toolchain could be fetched here from PyPI; running it was denied in this session, so zig stays unverified. Seven of the twelve languages still to port also have no toolchain here.
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: I did not exercise migration, doctor, remove, target add or package update in this check.

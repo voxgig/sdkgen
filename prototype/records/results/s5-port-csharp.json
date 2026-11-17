@@ -1,0 +1,527 @@
+{
+ "lang": "csharp",
+ "ok": false,
+ "summary": "I ported csharp by the guide: Naming_csharp.ts, Syntax_csharp.ts and the porter's part of runtimeforms/csharp.ts (calls included), and deleted the three old components. No shared file was touched. Build exits 0 with a clean tree. The guard passes for csharp (4/4), guard plus reader pass 81/81, the suite passes 2630 of 2635 with 0 failures and 5 skipped, and the golden changes only csharp's lines.\n\nAfter a fresh build and REGEN=1, the reviewed one command exits 1 (PORTCHECK csharp: FAIL). OPEN is 0 everywhere and nothing is stale, unattested or absent without a reason. The only failure is the 3 rootquick block classes, which I recorded as `defect` on purpose.\n\nThe interface gap behind them: shared code gives the list item and the loaded entity the same variable name (example.ts refOf), and the root quick start puts both in one block (ReadmeQuick.ts topQuickText). That gives `foreach (var planet in planets) {...}` followed by `var planet = (IEntity)...` at the same level. C# forbids this: a local is in scope across its whole block, nested blocks included (CS0136). The OLD page used planetItem and planet, which compiles. It affects 5 of 21 variations (crud-bare, crud-basic, crud-noupdate, doc-crud, ex-readonly). The provider cannot rename the variable without breaking the rule that names are decided once in shared code.\n\nNo C# compiler is here (dotnet is missing), so every changed block is unverified. I read the 30 distinct changed blocks as a compiler would.",
+ "commits": [
+  "sdkgen 445b2b23 csharp: README tutorial, root quick start and REFERENCE from shared code (provider, naming hook, forms; old components removed) -- files: ts/project/.sdk/src/cmp/csharp/{Syntax_csharp.ts (new), Naming_csharp.ts (new), ReadmeQuick_csharp.ts, ReadmeTopQuick_csharp.ts, ReadmeRef_csharp.ts (deleted)}, ts/test/runtimeforms/csharp.ts",
+  "sdkgen dbb9e169 Golden: csharp provider and naming hook in place of its three README components -- ts/test/golden/add-output.txt (+2 -3, csharp lines only)",
+  "tools 9d60029 csharp: hand records, classes and normalizer counts -- hand/csharp.json, classes/csharp.json, counts/csharp.json",
+  "No build commit: npm run build changes nothing (git status --short empty after the final build). Commit bodies are the subject line only, with no trailer (checked with git log --format=%B)."
+ ],
+ "portcheck": "REGEN=1 tools/portcheck.sh sdkgen out csharp (after a fresh npm run build, exit 0), exit code 1:\nsection    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions\ntutorial                   59 |      46     22        0      20       4     0       0 | 0\nrootquick                  19 |       4      0        0       3       1     0       0 | 0\nreference               13843 |     175     64        0      66      44     0       0 | 1\nsection    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH\ntutorial                  18         0       0        30 |      27    0      0 | NO; 30 changed blocks compiled by nothing\nrootquick                  0         2       0        17 |      26    0      3 | NO; 19 changed blocks compiled by nothing\nreference                212         0       0       101 |      13    0      0 | NO; 101 changed blocks compiled by nothing\ncontradictions (1; counted, not failed): reference [bff341cf32]\npurity: 0 open, 1 accepted | notes declared 1 (member:streamIterator), note regions found 1\npage numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1291 articles checked; findings 0\nprinted calls (callcheck, no compiler): 386 calls of 20 runtime members checked; ARITY/RECEIVER/MEMBER findings 0\nguard: pass (pass 4 fail 0 )\nbuild: 1813 sources checked, current\nhand records: 232, 71 quote text (158 quotations); STALE 0\nfacts: attested 4, recorded by hand 2, UNATTESTED or NOT JUDGED 0; cited 16, pinned prose 11\nshared sentences: matched 86, of which against a sentence nobody reviewed 2; printed less often than its reference 0; absent 25 (25 explained)\nfact sheet: 63 facts, 0 with no account, 0 unattested\nPORTCHECK csharp: FAIL   (exit 1; the only failing numbers are rootquick blocks defect 3)",
+ "scratch": "SCRATCH=1 tools/portcheck.sh sdkgen out csharp, exit 1 (by design).\n- Ledger OPEN: tutorial 24, rootquick 4, reference 111. Classes shared/rule-rec: 22/0, 0/0, 64/0. Units same: 59 / 19 / 13843.\n- Blocks OPEN: tutorial 27, rootquick 27 on the first run (26 plus RECOUNT before the counts were recorded; 26 on the final scratch run), reference 13.\n- Facts: UNATTESTED or NOT JUDGED 2 (named NOT JUDGED, ref.noun UNATTESTED).\n- ABSENT, NO REASON: 25.\n- The parts that read no hand record are clean in both runs: build current, 21/21 regenerated, guard 4/4, purity 0 open, pagecheck 0 findings, callcheck 0 findings.\nFirst-run screen: work/../scratch-run1.txt (P/ports/csharp/scratch-run1.txt); final: P/ports/csharp/work/scratch-final.txt.",
+ "guard": "Guard for csharp (node --test --test-name-pattern '^csharp: ' dist-test/runtimefacts.test.js): 4 pass, 0 fail. Guard plus reader (runtimefacts and runtimereader): 81/81 pass.\n\nAccount line (SDKGEN_GUARD_REPORT=1): derived 47, cited 17, language 1, convention 6, excepted 0. Type words come from column csharp (derived from the generator). The constructor is ProjectNameSDK, a template name through tm. Uncompared: none.",
+ "lanes": "No csharp lane can run here: dotnet is missing. The generatedcompile lanes 'csharp: the project builds' and 'csharp: the secrets feature runs' need dotnet. `tools/before/run.sh sdkgen csharp` printed \"the generated SDK has no README example test (no runner file); NOT RUN\" for the default, crud and basic-server models (on NEW; not run on OLD for the same reason).\n\nBy hand, I ran the generated README test's structure check (ReadmeExamplesTest_csharp.ts Balanced) in node over every csharp block (work/balance.js): OLD 660 blocks, 0 unbalanced; NEW 659 blocks, 0 unbalanced. The root quick start could not be run from the repository root, OLD or NEW: there is no dotnet, and `using DemoSdk;` is package-addressed and needs the SDK project referenced.",
+ "lines": "From `git diff --numstat v33-frozen..HEAD` in the clone:\n- Deleted: ReadmeQuick_csharp.ts 0/232, ReadmeRef_csharp.ts 0/413, ReadmeTopQuick_csharp.ts 0/96, which is 741 lines.\n- Added: Syntax_csharp.ts 176/0, Naming_csharp.ts 25/0, runtimeforms/csharp.ts +55 -2, golden +2 -3.\n\nwc -l: Syntax 176, Naming 25, forms 118 (was 65). Provider plus hook is 201 lines against 741 deleted (3.7x for this language's components alone, before counting shared code).",
+ "prose": "node tools/sharewords.js --clone sdkgen --root out/new --lang csharp, as words outside code spans:\n- tutorial: 1604 words; shared sentence 1233 (76.9%); printed by csharp alone 371 (23.1%); notes 0; provider literals 7 (0.4%, collection 7).\n- rootquick: 238 words; shared 19 (8.0%); csharp alone 219 (92.0%); notes 0; provider literals 7 (2.9%).\n- reference: 55720 words; shared 53036 (95.2%); csharp alone 1744 (3.1%); notes 940 (1.7%); provider literals 1212 (2.2%: collection 140, ref.noun 113, ref.maps 19).\n- ALL: 57562 words; csharp alone 2334 (4.1%); notes 940 (1.6%); provider literals 1226 (2.1%).\n\nAt the source: the csharp note is 10 words and fact-table prose literals are 10 words.",
+ "other_languages_unchanged": "`diff -rq -x csharp out/new P/base33/out/new` lists only the 19 root README.md files (alias-go2 and lone-go have no csharp). work/rootdiff.js cut the C# block under '## Quickstart in other languages' out of both sides and compared the rest: 0 root READMEs differ. So no other language's page changed.",
+ "table_rows_wrong": [
+  {
+   "row": "every csharp parameter with a default (e.g. `Dictionary<string, object?>? ctrl = null [optional]`, `[EnumeratorCancellation] CancellationToken cancel = default`)",
+   "file_line": "ts/test/runtimeforms/csharp.ts param reader (v33-frozen line 16-19)",
+   "runtime_shows": "the parameter is named ctrl / entopts / cancel; the forms' reader `^(.*\\S)\\s+(\\w+)\\s*(?:=.*)?$` backtracked to name every defaulted parameter after its default value (null, default), so the accessor check said 'the accessor's signature names its argument null'",
+   "forms_change": "param now drops the default first (`replace(/\\s*=[^=].*$/, '')`) then reads `type name`; reader and guard still pass"
+  },
+  {
+   "row": "client members",
+   "file_line": "src/cmp/csharp/fragment/Main.fragment.cs:20,23",
+   "runtime_shows": "the client also has the public fields `Mode` (string) and `Features` (List<BaseFeature>), which the table does not list (it lists only callable members)",
+   "forms_change": "none: no page fact rests on them (not documented)"
+  },
+  {
+   "row": "Deleted mark: MarkDeleted 'set by Remove itself'",
+   "file_line": "src/cmp/csharp/fragment/EntityBase.fragment.cs:233-240",
+   "runtime_shows": "RunPipeline marks it whenever the op name is remove and the result is ok, so Stream(\"remove\", ...) also marks the entity, and MarkDeleted is public",
+   "forms_change": "none (undocumented member)"
+  },
+  {
+   "row": "Calls: not stated yet",
+   "file_line": "ts/test/runtimeforms/csharp.ts",
+   "runtime_shows": "`new` for the client, `.` for instance and type members",
+   "forms_change": "added calls: { on: { instance: ['.'], type: ['.'] } }"
+  }
+ ],
+ "facts": [
+  {
+   "path": "facts.method.*",
+   "value": "List Load Create Update Patch Remove",
+   "account": "derived",
+   "evidence": "Entity*Op.fragment.cs"
+  },
+  {
+   "path": "facts.named",
+   "value": "call",
+   "account": "convention, NOT JUDGED -> decided by hand",
+   "evidence": "arity 1 makes operation names bare whatever named says; OLD wrote Load(), List(null)"
+  },
+  {
+   "path": "facts.async",
+   "value": "false",
+   "account": "derived",
+   "evidence": "no async op"
+  },
+  {
+   "path": "facts.result",
+   "value": "throw",
+   "account": "derived",
+   "evidence": "throw in Helpers.UnsupportedOp / RunOp"
+  },
+  {
+   "path": "facts.collection",
+   "value": "list",
+   "account": "cited (pinned prose)",
+   "evidence": "tm/csharp/utility/MakeResult.cs 'var entities = new List<object?>();' 'result.Resdata = entities;' + Done.cs 'return ctx.Result.Resdata;'"
+  },
+  {
+   "path": "facts.record",
+   "value": "Data()",
+   "account": "derived",
+   "evidence": "EntityBase.fragment.cs:75"
+  },
+  {
+   "path": "facts.arity",
+   "value": "1",
+   "account": "derived",
+   "evidence": "List(reqmatch, ctrl = null): 1 required"
+  },
+  {
+   "path": "facts.prints",
+   "value": "record",
+   "account": "convention, ATTESTED",
+   "evidence": "OLD printed StructUtils.Jsonify(x.Data()) everywhere"
+  },
+  {
+   "path": "ref.facts.entityBy",
+   "value": "class",
+   "account": "convention, attested (minimal pair)",
+   "evidence": "the class is <Name>Entity (Entity_csharp.ts entityClassName)"
+  },
+  {
+   "path": "ref.facts.noun",
+   "value": "Methods",
+   "account": "convention, decided by hand",
+   "evidence": "OLD '### Instance Methods', '### Static Methods', '### Common Methods'"
+  },
+  {
+   "path": "ref.facts.keys",
+   "value": "member",
+   "account": "convention, attested",
+   "evidence": "OLD options[\"apikey\"] table"
+  },
+  {
+   "path": "ref.facts.maps",
+   "value": "dictionaries",
+   "account": "language, attested",
+   "evidence": "OLD 'dictionaries are JSON-serialized'"
+  },
+  {
+   "path": "ref.facts.none",
+   "value": "null",
+   "account": "cited",
+   "evidence": "MainEntity_csharp.ts 'public ${model.const.Name}EntityBase ${entity.Name}(Dictionary<string, object?>? entopts = null)'"
+  },
+  {
+   "path": "ref.facts.container",
+   "value": "Dictionary<string, object?>",
+   "account": "cited",
+   "evidence": "Main.fragment.cs 'public ProjectNameSDK(Dictionary<string, object?>? options = null)'"
+  },
+  {
+   "path": "ref.facts.valueType.{STRING,OBJECT,ANY}",
+   "value": "string / Dictionary<string, object?> / object?",
+   "account": "derived",
+   "evidence": "guard"
+  },
+  {
+   "path": "ref.facts.ctor[0..2]",
+   "value": "'using {module};', '', 'var client = new {ctor}(options);'",
+   "account": "[0] cited (Main.fragment.cs 'using ProjectNameSdk.Feature;' + 'namespace ProjectNameSdk;', Main_csharp.ts \"ProjectNameSdk: model.const.Name + 'Sdk',\"); [1] convention; [2] derived",
+   "evidence": "guard"
+  },
+  {
+   "path": "ref.facts.test[0]",
+   "value": "{client} {client}.TestSDK(Dictionary<string, object?>? testopts, Dictionary<string, object?>? sdkopts); call var client = {client}.TestSDK(null, null);",
+   "account": "derived (static, 2 args)",
+   "evidence": "Main.fragment.cs:414"
+  },
+  {
+   "path": "ref.facts.testMock",
+   "value": "generated",
+   "account": "cited, pinned",
+   "evidence": "Config_csharp.ts 'return new Feature.BaseFeature();'"
+  },
+  {
+   "path": "ref.facts.accessor",
+   "value": "sig {sdk}EntityBase {accessor}(Dictionary<string, object?>? entopts = null), arg entopts, param entopts",
+   "account": "derived",
+   "evidence": "MainEntity_csharp.ts:172"
+  },
+  {
+   "path": "ref.facts.op.*",
+   "value": "object? <Op>(Dictionary<string, object?>? reqmatch|reqdata, Dictionary<string, object?>? ctrl = null)",
+   "account": "derived (names, types, optionality, return)",
+   "evidence": "fragments"
+  },
+  {
+   "path": "ref.facts.client[0] options",
+   "value": "Dictionary<string, object?> OptionsMap(), copy true",
+   "account": "sig derived; copy cited (pinned): 'return global::Voxgig.Struct.StructUtils.Clone(_options) as Dictionary<string, object?>'",
+   "evidence": "Main.fragment.cs:99"
+  },
+  {
+   "path": "ref.facts.client[1] utility",
+   "value": "Utility GetUtility(), copy true",
+   "account": "kind and copy cited: Main.fragment.cs 'return global::ProjectNameSdk.Utility.Copy(_utility);' + tm/csharp/core/Utility.cs 'public static Utility Copy(Utility src)', 'var u = new Utility(true)'",
+   "evidence": "the allocation is quoted, not only the call"
+  },
+  {
+   "path": "ref.facts.client[2,3]",
+   "value": "Dictionary<string, object?> Direct(Dictionary<string, object?>? fetchargs); ... Prepare(...)",
+   "account": "derived",
+   "evidence": ""
+  },
+  {
+   "path": "ref.facts.entity[0] data",
+   "value": "object? Data(object? newdata = null), copy true",
+   "account": "derived; copy cited 'return StructUtils.Clone(data);'",
+   "evidence": "EntityBase:85"
+  },
+  {
+   "path": "ref.facts.entity[1] match",
+   "value": "object? Match(object? newmatch = null), copy true",
+   "account": "derived; copy cited 'return StructUtils.Clone(match);'",
+   "evidence": "EntityBase:98"
+  },
+  {
+   "path": "ref.facts.entity[2] make",
+   "value": "IEntity Make()",
+   "account": "derived",
+   "evidence": ""
+  },
+  {
+   "path": "ref.facts.entity[3] streamIterator",
+   "value": "IAsyncEnumerable<object?> Stream(string action, ... args = null, ... callopts = null, CancellationToken cancel = default), runs iterate",
+   "account": "derived (runs from the stream quotes; the attribute type is mapped through typeNames with namesWhy)",
+   "evidence": "EntityBase:257,306,333"
+  },
+  {
+   "path": "ref.facts.entity[4] name",
+   "value": "string GetName()",
+   "account": "derived (a method, not a field)",
+   "evidence": "EntityBase:66"
+  },
+  {
+   "path": "ref.facts.direct.returns / okFalse",
+   "value": "Dictionary<string, object?> / false",
+   "account": "returns derived; okFalse cited, pinned: '[\"ok\"] = false,'",
+   "evidence": "Main.fragment.cs:228"
+  },
+  {
+   "path": "ref.facts.prepare",
+   "value": "returns Dictionary<string, object?> (derived), fails style (cited, pinned: 'throw ctx.MakeError(\"spec_method_allow\",')",
+   "account": "",
+   "evidence": "Main.fragment.cs:141"
+  },
+  {
+   "path": "ref.facts.body.values / once",
+   "value": "a `byte[]`, a `string` or a `Stream` / a `Stream`",
+   "account": "values cited, pinned prose: Fetcher.cs 'if (braw is string body && body != \"\")', 'else if (braw is byte[] bytes)', 'else if (braw is Stream stream)' + Media.cs 'if (body is byte[] || body is Stream)'; once cited: Media.cs '// Bytes, a Stream or a string, sent as they are. A Stream can be read', 'if (body is Stream stream)'",
+   "evidence": ""
+  },
+  {
+   "path": "ref.facts.cancel",
+   "value": "false",
+   "account": "cited absence over the whole csharp runtime (147 files) with the shared word pattern. Regions left out: (1) EntityBase.fragment.cs stream lines 255-256, 261, 265-268, 270, 342, 370, with fact ref.facts.streamSignal; the stream reads callopts.signal and its own cancel token, and no operation reads either. (2) tm/csharp/feature/CostFeature.cs, comments 'catastrophic cancellation' and 'signal.' (3) tm/csharp/utility/struct/Struct.cs, comment 'cancels one ascend'.",
+   "evidence": ""
+  },
+  {
+   "path": "ref.facts.streamSignal",
+   "value": "true",
+   "account": "cited, pinned (ahead): 'StructUtils.GetProp(callopts, \"signal\") is CancellationToken sigTok', 'signal.IsCancellationRequested'",
+   "evidence": "EntityBase:268,342"
+  },
+  {
+   "path": "ref.facts.deleted",
+   "value": "{var}.Deleted()",
+   "account": "derived (Deleted declared on the entity; IEntity declares it, Types.cs:19; examples bind the result as IEntity)",
+   "evidence": ""
+  },
+  {
+   "path": "optional: accessor.cached",
+   "value": "not declared",
+   "account": "runtime has no cache: MainEntity_csharp.ts:172-175 returns new EntyClass on every call",
+   "evidence": ""
+  },
+  {
+   "path": "optional: memberNamed",
+   "value": "default (call)",
+   "account": "C# calls take parentheses",
+   "evidence": ""
+  },
+  {
+   "path": "optional: field flag",
+   "value": "none",
+   "account": "the name is the method GetName(); the field `name` is protected (EntityBase:15)",
+   "evidence": ""
+  },
+  {
+   "path": "optional: copy on match and utility",
+   "value": "declared true",
+   "account": "cited above",
+   "evidence": ""
+  },
+  {
+   "path": "optional: layout.dir / place-aware imports",
+   "value": "not used",
+   "account": "`using DemoSdk;` is a namespace, not a path; package-addressed (needs the project referenced)",
+   "evidence": ""
+  },
+  {
+   "path": "optional: notes.top",
+   "value": "none",
+   "account": "",
+   "evidence": ""
+  },
+  {
+   "path": "optional: arity",
+   "value": "1",
+   "account": "derived",
+   "evidence": ""
+  },
+  {
+   "path": "notes.member:streamIterator",
+   "value": "It also ends early once its own `cancel` token is cancelled.",
+   "account": "cited, pinned prose: EntityBase.fragment.cs '[EnumeratorCancellation] CancellationToken cancel = default)' (:261), 'if (!more || cancel.IsCancellationRequested || signal.IsCancellationRequested)' (:342). One claim: the Stream's own CancellationToken parameter ends it between items; no other runtime has this parameter",
+   "evidence": ""
+  }
+ ],
+ "optional_facts_read": [
+  {
+   "fact": "accessor.cached",
+   "declared": "no",
+   "runtime_shows": "a new entity on every call",
+   "file_line": "src/cmp/csharp/MainEntity_csharp.ts:172-175"
+  },
+  {
+   "fact": "streamSignal",
+   "declared": "true",
+   "runtime_shows": "callopts[\"signal\"] as a CancellationToken, checked between yields",
+   "file_line": "src/cmp/csharp/fragment/EntityBase.fragment.cs:267-270,342,370"
+  },
+  {
+   "fact": "copy on match getter",
+   "declared": "true",
+   "runtime_shows": "return StructUtils.Clone(match);",
+   "file_line": "EntityBase.fragment.cs:98"
+  },
+  {
+   "fact": "copy on utility getter",
+   "declared": "true",
+   "runtime_shows": "Utility.Copy allocates new Utility(true)",
+   "file_line": "Main.fragment.cs:105; tm/csharp/core/Utility.cs:54-56"
+  },
+  {
+   "fact": "memberNamed",
+   "declared": "default",
+   "runtime_shows": "calls with parentheses",
+   "file_line": "-"
+  },
+  {
+   "fact": "field flag",
+   "declared": "none",
+   "runtime_shows": "GetName() is a method",
+   "file_line": "EntityBase.fragment.cs:66"
+  },
+  {
+   "fact": "deleted",
+   "declared": "{var}.Deleted()",
+   "runtime_shows": "public bool Deleted() on the entity and on IEntity",
+   "file_line": "EntityBase.fragment.cs:33; tm/csharp/core/Types.cs:19"
+  },
+  {
+   "fact": "arity",
+   "declared": "1",
+   "runtime_shows": "List(reqmatch, ctrl = null)",
+   "file_line": "EntityListOp.fragment.cs:41-42"
+  },
+  {
+   "fact": "layout.dir/imports place",
+   "declared": "not used",
+   "runtime_shows": "namespace import, not a path",
+   "file_line": "Main.fragment.cs:7"
+  },
+  {
+   "fact": "notes.top",
+   "declared": "none",
+   "runtime_shows": "nothing csharp-only after the root quick start",
+   "file_line": "-"
+  }
+ ],
+ "notes": [
+  {
+   "slot": "member:streamIterator",
+   "text": "It also ends early once its own `cancel` token is cancelled.",
+   "claims": "Stream takes its own CancellationToken parameter `cancel` (EntityBase.fragment.cs:261), and the stream stops yielding once it is cancelled (EntityBase.fragment.cs:342, 370). Runtime-only: no other port's stream takes a token parameter."
+  }
+ ],
+ "interface_gaps": [
+  {
+   "construct": "The root quick start declares the list's loop variable and the loaded entity with the same name in one block: `foreach (var planet in planets) {...}` and then `var planet = (IEntity)client.Planet().Load(...)!;`. C# forbids this (CS0136: a local's declaration space covers its whole block, nested blocks included). OLD used planetItem and planet.",
+   "file_line": "ts/src/helpers/example.ts:219-227 (refOf: 'item' and 'one' both take entity.sym.var for VarNaming 'entity'); ts/src/cmp/ReadmeQuick.ts topQuickText (bare() drops the try blocks, so both land at the top level); seen in out/new/{crud-bare,crud-basic,crud-noupdate,doc-crud,ex-readonly}/README.md, C# block",
+   "smallest_change": "An optional RuntimeFacts flag, e.g. `blockScope?: true` (a local is in scope over its whole block, C# spec \u00a77.3). With it, refOf names the list item by the generic item name (layout.vars.item through ident) wherever the same section binds a single entity of that entity. Its sentence is unchanged. Account: language, compared with OLD (planetItem).",
+   "breaking": false,
+   "providers_forced": "none. Of the seven still being ported, csharp alone has this scope rule; java, kotlin, scala, cpp, js and php accept a later declaration after a loop variable has gone out of scope. Read, not compiled.",
+   "made": false,
+   "worked_around": "no: recorded as defect on rootquick block classes 8c5a4fbe41, 3d4aae6c8d, b2b5fd8804"
+  }
+ ],
+ "defects_recorded": [
+  {
+   "cls": "8c5a4fbe41, 3d4aae6c8d, b2b5fd8804",
+   "page": "root README.md, C# quick start (crud-noupdate/doc-crud/ex-readonly; crud-bare; crud-basic)",
+   "why_shared_code_cannot_say_it": "shared code decides both example names (refOf), and a provider may not rename one: that would be a concatenation or name decision in the printer. The hook's symbols(e) gives one `var` for both the item and the loaded entity."
+  }
+ ],
+ "shared_files_touched": [],
+ "review_counts": [
+  {
+   "section": "tutorial",
+   "same": "59 units",
+   "shared_matched": "22 classes",
+   "matched_unreviewed": "0 (2 across all sections)",
+   "by_hand": "20 ledger classes + 27 block classes",
+   "missing": "4 (Create/Update/Patch comments restored:shared; '4. Create, update, and remove' correction:U45)",
+   "contradictions": "0",
+   "blocks": "identical 18, corrected 0, unified 0, otherwise 30 (unverified, no dotnet); 27 classes, 0 open, 0 defect"
+  },
+  {
+   "section": "rootquick",
+   "same": "19 units",
+   "shared_matched": "0",
+   "matched_unreviewed": "0",
+   "by_hand": "3 ledger + 26 block classes",
+   "missing": "1 ('Load a specific ambient ...' -> the shared step comment)",
+   "contradictions": "0",
+   "blocks": "identical 0, corrected 2, unified 0, otherwise 17 (unverified); 26 classes, 0 open, 3 defect"
+  },
+  {
+   "section": "reference",
+   "same": "13843 units",
+   "shared_matched": "64",
+   "matched_unreviewed": "2 (whole command)",
+   "by_hand": "66 ledger + 13 block classes",
+   "missing": "44 (old typed-less signatures -> restored:fact; old sentences -> restored:shared; 'Static/Instance Methods' -> Test client / Client Methods; ref-issues remove -> S25; feature defaults -> S09; options sentence -> table row)",
+   "contradictions": "1: no-test csharp/README.md:226 'Creates a test-mode client with mock transport' (unported README) vs REFERENCE 'no mock transport and refuses every request' (true side; read: Config_csharp.ts BaseFeature fallback, Fetcher.cs:225-227 fetch_mode_block)",
+   "blocks": "identical 212, corrected 0, unified 0, otherwise 101 (unverified); 13 classes, 0 open, 0 defect"
+  }
+ ],
+ "hand_decisions": [
+  {
+   "id": "facts.named",
+   "kind": "fact",
+   "outcome": "call",
+   "why": "C# writes every call with parentheses; arity 1 makes the shared prose name operations bare regardless, so NOT JUDGED"
+  },
+  {
+   "id": "facts.ref.noun",
+   "kind": "fact",
+   "outcome": "Methods",
+   "why": "OLD '### Instance Methods/Static Methods/Common Methods'; the new context is the shared 'Client Methods' heading"
+  },
+  {
+   "id": "c1b55b9c24, 16fed272aa, 34b283aa62",
+   "kind": "block",
+   "outcome": "dropped",
+   "why": "the REFERENCE constructor block's `using Voxgig.Struct;` is unused by `new DemoSDK(options)`; `using DemoSdk;` is kept"
+  },
+  {
+   "id": "087a6d0de8, 74addb7cf9, 595e0793c6, d668e7ef06",
+   "kind": "ledger",
+   "outcome": "correction",
+   "why": "OLD gave TestSDK, Direct and Prepare `= null` defaults that the declarations do not have (Main.fragment.cs:113, 205, 414-415)"
+  },
+  {
+   "id": "8898ed5bef and 6 more",
+   "kind": "block",
+   "outcome": "unification:csharp-entity-cast",
+   "why": "REFERENCE results are bound as `(IEntity)...!`, so `result.Deleted()` and `Data()` named by the sentences are calls on the bound type"
+  },
+  {
+   "id": "c6998cc942/599e6c7589/fa8ee0c3e6",
+   "kind": "ledger",
+   "outcome": "restored:shared",
+   "why": "the branch is `result[\"ok\"] is true`; OLD `result[\"ok\"]` is object? and cannot be a C# condition"
+  },
+  {
+   "id": "absent (25)",
+   "kind": "absent",
+   "outcome": "reasons recorded",
+   "why": "11 sync 'returns' forms of ts's 'resolves to'; 2 listOf (C# ops return object?); 1 placement sentence printed only after ts's primary quick start; utility copy; direct signal; prepare throws; no tester; 4 cancelling sentences (cancel false); no client() or entopts() getter (protected fields); GetName is a method"
+  }
+ ],
+ "old_vs_new": "As the tools counted it (reviewed run): tutorial reworded 58, missing 13, added 70 units over 19 variations; reference has 44 missing classes and 66 hand classes; rootquick has 1 missing class.\n\nWhat OLD said that NEW does not:\n- the '(as `object?`)' asides in the tutorial (the type moved into the REFERENCE signatures);\n- 'call `List(null)` to list all records' (now 'a call without one is `List(null)`', per the sentence review);\n- 'Static Methods' and 'Instance Methods' (now 'Test client' and 'Client Methods');\n- the false `= null` defaults on TestSDK, Direct and Prepare;\n- `result[\"ok\"]` as a branch (now `result[\"ok\"] is true`, which compiles);\n- the unused `using Voxgig.Struct;` in the constructor block;\n- planetItem/planetList names, which is what breaks the root quick start in 5 variations (the defect);\n- 'Each feature ... no feature work at all' (S09);\n- the data must include `id` for the id-less gauge.\n\nWhat NEW says that OLD did not:\n- full C# declarations as headings;\n- the Stream member, with its runtime-run sentence, the callopts.signal sentence and the note on its own cancel token;\n- 'Returns a copy' on Data and Match, and the copy wording for options and utility;\n- `result.Deleted()` reads the mark;\n- the server variables and the Basic secret in the client examples;\n- the direct Returns paragraph (when `err` is there);\n- the no-test sentence;\n- the Actions Call cell;\n- update and patch ids taken from the created entity in the tutorial.\n\nI decided that every one of these is true of the runtime except the CS0136 collision.",
+ "doubtful_lines": [
+  {
+   "where": "root README C# quick start, crud-bare / crud-basic / crud-noupdate / doc-crud / ex-readonly",
+   "line": "foreach (var planet in planets) {...}  ...  var planet = (IEntity)client.Planet().Load(new Dictionary<string, object?> { [\"id\"] = \"example_id\" })!;",
+   "doubt": "CS0136: the later top-level `planet` conflicts with the loop variable (C# local declaration spaces include nested blocks). Read, not compiled. Recorded as defect."
+  },
+  {
+   "where": "every tutorial/root block using Environment or Console",
+   "line": "[\"apikey\"] = Environment.GetEnvironmentVariable(\"DEMO_APIKEY\"),  /  Console.WriteLine(...)",
+   "doubt": "needs `using System;` unless the reader's project has ImplicitUsings (the SDK's own csproj enables it, Package_csharp.ts:59); same as OLD"
+  },
+  {
+   "where": "tutorial and root step 1",
+   "line": "using DemoSdk;",
+   "doubt": "package-addressed: needs the generated project referenced; not runnable from the repository root as is (same as OLD)"
+  },
+  {
+   "where": "doc-list root/tutorial",
+   "line": "foreach (var console in consoles) { Console.WriteLine(...) }",
+   "doubt": "a local `console` beside the type `Console`; legal because C# names are case-sensitive, but worth a compiler's look"
+  }
+ ],
+ "guide_problems": [
+  {
+   "section": "3.6 / forms (reader part)",
+   "problem": "The csharp forms' param reader at v33-frozen named every parameter that has a default after its default value (`ctrl = null` became 'null'). Both sides were read the same way, so the operations' comparison passed while comparing nothing. Neither the guide nor the table flags this; the accessor check exposed it ('names its argument null'). Other forms files with a `Type name = default` reader should be read for the same fault (java, kotlin and scala write defaults differently; not checked)."
+  },
+  {
+   "section": "6 (unquoted)",
+   "problem": "An `unquoted` excuse for a keyword (`using`) is refused when that keyword appears within 3 lines of the quote, even in an unrelated line. The guide says this, but not that the fix is to quote such a line (here 'using ProjectNameSdk.Feature;'), which shows a namespace import, not the SDK's own."
+  },
+  {
+   "section": "6 (cite of a derived fact)",
+   "problem": "Citing direct.returns or prepare.returns fails with 'the guard re-derives this fact; drop the citation'. The 2.1 table lists `direct.returns` among the cited facts."
+  },
+  {
+   "section": "2.1 / 2.6",
+   "problem": "The guide does not say where a typed language's cast belongs relative to the record fact. go puts the cast in the record expression; here the record fact is 'Data()' and the casts are printer output by Ref role. Nothing says which is preferred, and the choice decides whether `deleted` can be declared."
+  },
+  {
+   "section": "5",
+   "problem": "No section warns that the shared example names can collide within one block in a language with whole-block scope. The tools do not catch it either (callcheck sees calls only, pagecheck sees prose): I found it by reading the pages."
+  },
+  {
+   "section": "1 / 12",
+   "problem": "STALE checking treats every backticked span in a `why` as a quotation, so a reason that writes a hypothetical fragment in backticks (my `-> type`, `result.Data()`) fails. That is worth saying in 5 ('how to classify')."
+  }
+ ],
+ "surprises": [
+  "csharp's operations need no cast for `Deleted()` if the result is bound as IEntity, which lets csharp declare the deleted fact (unlike java, kotlin and scala, whose bound type lacks it).",
+  "The cancel absence was nearly empty in csharp: outside the stream, only two English comments in CostFeature.cs and one in the vendored Struct.cs matched. The HTTP fetcher uses no CancellationToken at all.",
+  "OLD's `result[\"ok\"]` branch could never compile in C# (object? as a condition); the shared read printer's truth flag fixes it.",
+  "The REFERENCE page shows `## PlanetEntity` where OLD showed `## Planet`; PlanetEntity is the real generated class name."
+ ],
+ "unverified": "Every changed csharp block is unverified because no C# compiler (dotnet) is on PATH: 30 distinct changed blocks (work/distinct.js; 150 changed pairs over the 21 variations). I read all 30 and list the doubtful lines. Only the structure check of the generated README test (balanced delimiters) was run, in node. I did not run the root quick start from the repository root, OLD or NEW. Constructor options are executed by no lane.",
+ "not_done": [
+  "No compile or run of any csharp block, OLD or NEW: dotnet is missing (command -v output: node v24.22.1, npm 11.19.1, php 8.3.6, composer, javac, java, mvn, gradle, g++ 13.3.0, make present; kotlinc, kotlin, scala, scala-cli, sbt, dotnet, csc, mono MISSING).",
+  "No root quick start run from the repository root (no dotnet).",
+  "The generatedcompile lanes were not run (none for csharp's README can run without dotnet).",
+  "The interface gap (block-scope naming) was not fixed, by instruction, so `ok` is false.",
+  "I did not re-check whether the java, kotlin or scala forms have the same default-named parameter reader fault."
+ ],
+ "time": "Started 15:44 UTC, final runs about 18:40. Reading (briefs, guide, table, runtime, old components): about 20 min. Table checked against the runtime: about 10 min. Provider, hook and forms, with guard iterations: about 30 min (three builds). Review: first scratch run 3.5 min; classifying 204 classes, 25 absent reasons and 2 facts about 45 min; suite about 20 min in the background; golden, final REGEN and scratch runs, and commits about 20 min.",
+ "workspace": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/csharp (sdkgen clone, tools, out, PROGRESS.md, work/: decide.js, balance.js, distinct.js, rootdiff.js, changed-blocks.txt, suite.txt, final.txt, scratch-final.txt)"
+}

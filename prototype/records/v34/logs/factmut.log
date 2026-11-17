@@ -1,0 +1,8 @@
+[1/8] clojure-entitynoun-fields: ref.entityNoun = Fields: 18 files differ
+[2/8] rb-maps-arrays: ref.maps = arrays: 19 files differ
+[3/8] clojure-heading-client: ref.heading = {client}: 19 files differ
+[4/8] rb-noun-functions: ref.noun = Functions: 19 files differ
+[5/8] py-keys-bare: ref.keys = bare: 19 files differ
+[6/8] perl-prints-record: prints = record: 51 files differ
+[7/8] ocaml-keys-member: ref.keys = member: 19 files differ
+[8/8] swift-entityby-name: ref.entityBy = Name: 18 files differ

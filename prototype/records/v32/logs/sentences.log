@@ -1,0 +1,68 @@
+[sentences 2s] tutorial ts: 24 sentences so far
+[sentences 3s] tutorial go: 48 sentences so far
+[sentences 3s] tutorial py: 53 sentences so far
+[sentences 4s] tutorial c: 58 sentences so far
+[sentences 5s] tutorial zig: 63 sentences so far
+[sentences 5s] tutorial clojure: 66 sentences so far
+[sentences 6s] tutorial rust: 68 sentences so far
+[sentences 6s] tutorial elixir: 69 sentences so far
+[sentences 7s] tutorial rb: 71 sentences so far
+[sentences 7s] rootquick ts: 75 sentences so far
+[sentences 7s] rootquick go: 75 sentences so far
+[sentences 7s] rootquick py: 78 sentences so far
+[sentences 7s] rootquick c: 81 sentences so far
+[sentences 7s] rootquick zig: 84 sentences so far
+[sentences 7s] rootquick clojure: 85 sentences so far
+[sentences 7s] rootquick rust: 88 sentences so far
+[sentences 7s] rootquick elixir: 89 sentences so far
+[sentences 7s] rootquick rb: 90 sentences so far
+[sentences 8s] reference ts: 143 sentences so far
+[sentences 9s] reference go: 175 sentences so far
+[sentences 10s] reference py: 202 sentences so far
+[sentences 10s] reference c: 229 sentences so far
+[sentences 11s] reference zig: 244 sentences so far
+[sentences 12s] reference clojure: 259 sentences so far
+[sentences 12s] reference rust: 267 sentences so far
+[sentences 13s] reference elixir: 288 sentences so far
+[sentences 14s] reference rb: 297 sentences so far
+[sentences 14s] match ts tutorial: 17 of 62 classes
+[sentences 15s] match go tutorial: 12 of 87 classes
+[sentences 16s] match py tutorial: 22 of 49 classes
+[sentences 16s] match c tutorial: 19 of 53 classes
+[sentences 16s] match zig tutorial: 21 of 73 classes
+[sentences 17s] match clojure tutorial: 21 of 48 classes
+[sentences 17s] match rust tutorial: 21 of 58 classes
+[sentences 18s] match elixir tutorial: 22 of 50 classes
+[sentences 18s] match rb tutorial: 23 of 74 classes
+[sentences 19s] match ts rootquick: 0 of 21 classes
+[sentences 19s] match go rootquick: 0 of 20 classes
+[sentences 19s] match py rootquick: 2 of 15 classes
+[sentences 20s] match c rootquick: 0 of 37 classes
+[sentences 20s] match zig rootquick: 0 of 30 classes
+[sentences 21s] match clojure rootquick: 2 of 19 classes
+[sentences 21s] match rust rootquick: 0 of 21 classes
+[sentences 21s] match elixir rootquick: 2 of 17 classes
+[sentences 22s] match rb rootquick: 0 of 20 classes
+[sentences 29s] match ts reference: 27 of 124 classes
+[sentences 37s] match go reference: 40 of 91 classes
+[sentences 45s] match py reference: 58 of 119 classes
+[sentences 53s] match c reference: 47 of 113 classes
+[sentences 61s] match zig reference: 52 of 116 classes
+[sentences 69s] match clojure reference: 56 of 126 classes
+[sentences 76s] match rust reference: 55 of 128 classes
+[sentences 83s] match elixir reference: 55 of 145 classes
+[sentences 90s] match rb reference: 52 of 120 classes
+# reference sentences: 297 distinct masked sentences (NEW side of the reference languages' reworded and added classes)
+# tutorial: 71 (accepted by hand only 15, by stage-3a rule records only 54, both 2; template found 51; verdicts ok 0, false 0, awkward 0, none 71)
+# rootquick: 19 (accepted by hand only 1, by stage-3a rule records only 16, both 2; template found 10; verdicts ok 0, false 0, awkward 0, none 19)
+# reference: 207 (accepted by hand only 40, by stage-3a rule records only 159, both 8; template found 96; verdicts ok 0, false 0, awkward 0, none 207)
+# matched from scratch, ts: tutorial 17 of 62 classes (17 against a sentence with no verdict); rootquick 0 of 21 classes (0 against a sentence with no verdict); reference 27 of 124 classes (27 against a sentence with no verdict)
+# matched from scratch, go: tutorial 12 of 87 classes (12 against a sentence with no verdict); rootquick 0 of 20 classes (0 against a sentence with no verdict); reference 40 of 91 classes (40 against a sentence with no verdict)
+# matched from scratch, py: tutorial 22 of 49 classes (22 against a sentence with no verdict); rootquick 2 of 15 classes (2 against a sentence with no verdict); reference 58 of 119 classes (58 against a sentence with no verdict)
+# matched from scratch, c: tutorial 19 of 53 classes (19 against a sentence with no verdict); rootquick 0 of 37 classes (0 against a sentence with no verdict); reference 47 of 113 classes (47 against a sentence with no verdict)
+# matched from scratch, zig: tutorial 21 of 73 classes (21 against a sentence with no verdict); rootquick 0 of 30 classes (0 against a sentence with no verdict); reference 52 of 116 classes (52 against a sentence with no verdict)
+# matched from scratch, clojure: tutorial 21 of 48 classes (21 against a sentence with no verdict); rootquick 2 of 19 classes (2 against a sentence with no verdict); reference 56 of 126 classes (56 against a sentence with no verdict)
+# matched from scratch, rust: tutorial 21 of 58 classes (21 against a sentence with no verdict); rootquick 0 of 21 classes (0 against a sentence with no verdict); reference 55 of 128 classes (55 against a sentence with no verdict)
+# matched from scratch, elixir: tutorial 22 of 50 classes (22 against a sentence with no verdict); rootquick 2 of 17 classes (2 against a sentence with no verdict); reference 55 of 145 classes (55 against a sentence with no verdict)
+# matched from scratch, rb: tutorial 23 of 74 classes (23 against a sentence with no verdict); rootquick 0 of 20 classes (0 against a sentence with no verdict); reference 52 of 120 classes (52 against a sentence with no verdict)
+-> /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/tools/review/sentences/sentences.txt; verdicts go in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/tools/reviewed/sentences.json ({ "sentences": { "<id>": { "verdict": "ok|false|awkward", "note": "..." } } })

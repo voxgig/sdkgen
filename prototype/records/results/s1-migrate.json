@@ -1,0 +1,248 @@
+{
+ "summary": "H5 is not refuted, but only with a change to the tool. Without it, retiring per-language components is unsafe, and it fails quietly rather than loudly. With the unmodified tool, a project that took ReadmeQuick_<lang> copies from 4.44.0 keeps them after the upgrade, after `target add` and after `package update`. Generation keeps calling those copies, so the shared section never appears. Doctor labels them \"additive (project-owned, not drift)\" even though the copy record shows an add wrote them. `target remove` refuses them as \"what `target add` did not write\". A second hazard sits under that: deleting the .ts source is not enough. `tsc --build src` leaves .sdk/dist/cmp/<t>/ReadmeQuick_<t>.js behind, and the loader requires dist, so the retired component is still called. The fix is 136 added and 14 removed lines in 4 files (target.ts +85/-3, doctor.ts +45/-10, edition.ts +5/-1, remove.ts +1), plus a 143-line test file. After it, an unchanged copy that the scaffold no longer ships is reported once as RETIRED: doctor fails, it is counted as outdated, and generate warns. The next `target add`, `package update` or `edition add` deletes it and its compiled output, and the record forgets it. An edited copy is kept, still called, and reported as an `override`; doctor stays ok and does not fail because of it. A file the record does not name is never deleted. A dry run deletes nothing. Overwrite mode and --force treat an edited retired copy like any edited copy, which means they delete it. Aliases (go~go2) and a pack that retires its own component (dart) go through the same path, and both work. The language pack, still shipping its own ReadmeQuick_<lang>, generates the same output and passes its suite against the modified build, because the shared component calls a target's own component first. Two things remain open. A project with no copy record (or whose copies were never recorded) cannot be cleaned automatically; doctor now names those files, but they stay in use. And a project that deletes an override by hand leaves stale compiled output that is silently still used.",
+ "stopped_at": "Done: all eight situations measured before and after, the change made, the suites run and the langpack checked. Not done: the generatedcompile toolchain lanes; an end-to-end run of `edition add` on a retired edition component (only the existing edition tests and the shared code path cover it); a real `npm run generate` through @voxgig/model (a driver stood in for it: tsc --build src, then Aontu on model/sdk.aontu, then SdkGen.generate with a Readme-only Root, folder set to the project, cwd .sdk); Windows; documentation updates (copies-merge.md, AGENTS.md sharp edges, reference/cli); a guard against stale compiled output when someone deletes a component by hand; the CLI drift summary that omits outdated and retired counts; updating the five tests the stand-in breaks.",
+ "clone": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/migrate/sdkgen (from 9aebaf9e = 4.44.0). Commits: 177c44ec stand-in (deletes ReadmeQuick_{ts,go,py}.ts, adds Syntax_{ts,go,py}.ts, and ts/src/cmp/ReadmeQuick.ts calls the target's own ReadmeQuick_<t> if present, else writes '<!-- shared-quick provider=X -->'); 98f87b2b sets the version to 4.45.0 so the record's from/to versions differ; a49fddc0, 7bb5161b and c193a603 are the lifecycle change and its tests. The unmodified 4.44.0 build was copied to /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/migrate/old. Langpack clone: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/migrate/langpack (c6069bb). Its node_modules/@voxgig/sdkgen is a symlink to the old copy or to the clone's ts/.",
+ "behaviours": [
+  {
+   "situation": "1. Project made with 4.44.0 (target add ts go py, copies recorded). Package upgraded to the build with the stand-in; nothing else run",
+   "command": "tsc --build src; generate; voxgig-sdkgen doctor",
+   "today": "generate works and writes the OLD per-language quick start for ts, go and py, because generation loads the project's still-present copies (shared section absent). Doctor: the 3 retired copies are 'additive (project-owned, not drift)'; the 3 new Syntax_<lang>.ts are MISSING. Exit 1, caused by the MISSING providers, not by the retired files. A release that only deleted files would exit 0. Generate warns '3 file(s) in .sdk differ \u2026 changed in this project', and those 3 files are the missing ones",
+   "after_change": "Doctor: 'RETIRED (an unchanged copy its source no longer ships; the next add removes it)' for each file, counted as outdated per item, with doctor-outdated advice '`voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them'. doctor-end reads '3 missing, 0 outdated, 3 retired'. Exit 1. Generate also warns '3 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but \u2026 4.45.0 is installed'. Generation still writes the old quick start until an add runs",
+   "acceptable": true
+  },
+  {
+   "situation": "2a. Same project, re-add",
+   "command": "voxgig-sdkgen target add ts  (then target add go py)",
+   "today": "ReadmeQuick_ts.ts kept and still called. Record keeps its fingerprint. Doctor after re-adding all three: 'matches the scaffold (3 additive, 0 customized)', exit 0. Retired copies are never removed and the shared section never appears. pruneStaleTemplates runs on tm/<t> only, never on src/cmp",
+   "after_change": "'removed src/cmp/ts/ReadmeQuick_ts.ts', and dist/cmp/ts/ReadmeQuick_ts.js(.map) are deleted too. The record writes null for the file. Generate writes '<!-- shared-quick provider=ts -->'. After go and py are re-added, doctor reports 'matches the scaffold (0 additive, 0 customized)', exit 0",
+   "acceptable": true
+  },
+  {
+   "situation": "2b. Same project, package update",
+   "command": "voxgig-sdkgen package update @voxgig/sdkgen --no-fetch",
+   "today": "Exit 0. All three retired copies kept and still used. Doctor afterwards: 3 additive, exit 0",
+   "after_change": "preCheck logs the 3 outdated files. The update removes all three retired copies and their compiled output without --force. Generate writes the shared section for go, py and ts. Doctor ok, exit 0",
+   "acceptable": true
+  },
+  {
+   "situation": "2c. Re-add as a dry run",
+   "command": "voxgig-sdkgen -y target add ts",
+   "today": "Nothing written",
+   "after_change": "Logs 'would remove 1 stale template(s) \u2014 ** DRY RUN **' and 'would remove src/cmp/ts/ReadmeQuick_ts.ts'. Source and compiled files are still on disk",
+   "acceptable": true
+  },
+  {
+   "situation": "3. Retired copy the project EDITED (ReadmeQuick_ts.ts), then upgrade",
+   "command": "doctor; target add ts go py; package update --no-fetch; generate",
+   "today": "With 4.44.0 the edit was 'CUSTOMIZED', ok. After the upgrade it becomes 'additive', exactly like the unedited copies, so the project is not told. Re-add keeps it and it is still used ('PROJECT-EDITED QUICK START'). No message",
+   "after_change": "Doctor: 'override (its source no longer ships it; changed here, so kept and used instead of the shared component): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)'. It is informational, so doctor exits 0 once go and py are re-added. Re-add and package update keep it and warn target-component-override: '\u2026kept and still used in place of the shared one. To use the shared one, delete it and its compiled output under dist/cmp/ts/ReadmeQuick_ts.js'. Generate still uses the edit. The record keeps its fingerprint, so it stays classed as an override",
+   "acceptable": true
+  },
+  {
+   "situation": "3b. Edited retired copy with --force, or with main.kit.copies 'overwrite'",
+   "command": "target add ts --force  /  target add ts (overwrite mode)",
+   "today": "Kept",
+   "after_change": "Deleted, along with its compiled output. This matches how --force and overwrite mode treat any changed copy",
+   "acceptable": true
+  },
+  {
+   "situation": "4a. target remove ts right after the upgrade, unedited",
+   "command": "voxgig-sdkgen target remove ts",
+   "today": "Refuses: 'target remove: refusing to delete what `target add` did not write  ts: src/cmp/ts/ReadmeQuick_ts.ts \u2026 or pass --force', EXIT 1. The record shows target add did write it",
+   "after_change": "EXIT 0. The retired copy goes with the tree",
+   "acceptable": true
+  },
+  {
+   "situation": "4b. target remove ts after a re-add",
+   "command": "voxgig-sdkgen target remove ts",
+   "today": "Refuses on src/cmp/ts/ReadmeQuick_ts.ts, as in 4a",
+   "after_change": "EXIT 0 (the copy is already gone)",
+   "acceptable": true
+  },
+  {
+   "situation": "4c. target remove ts with the edited override",
+   "command": "voxgig-sdkgen target remove ts",
+   "today": "Refuses on src/cmp/ts/ReadmeQuick_ts.ts (as additive)",
+   "after_change": "Refuses on it, now because it is an `override`. This is the same rule remove already applies to customized and additive files: refused unless --force. The refusal wording 'what `target add` did not write' was not changed and is inaccurate for an override",
+   "acceptable": true
+  },
+  {
+   "situation": "5. Project whose copy record was deleted (as before 4.34.0), then upgrade",
+   "command": "doctor; target add ts go py; target remove ts",
+   "today": "3 additive; re-add keeps them and they are still used; remove refuses",
+   "after_change": "Same, deliberately, because nothing shows an add wrote them. Doctor now adds '(used instead of the shared ReadmeQuick)' to each additive line. Without a record the tool cannot tell a retired copy from the project's own file. Cleanup is by hand (delete the source and its compiled output)",
+   "acceptable": true
+  },
+  {
+   "situation": "6. Aliased target go~go2 added with 4.44.0, then upgrade",
+   "command": "doctor; target add go~go2; generate",
+   "today": "src/cmp/go2/ReadmeQuick_go2.ts reported as additive; Syntax_go2.ts MISSING. Re-add copies Syntax_go2.ts (renamed by aliasCmpTree, content lang: 'go' unchanged) but keeps ReadmeQuick_go2.ts, which is still used",
+   "after_change": "Doctor reports RETIRED for src/cmp/go2/ReadmeQuick_go2.ts. Re-add removes it: the source list is renamed with aliasCmpName before comparing. The shared component then finds ./cmp/go2/Syntax_go2 and writes '<!-- shared-quick provider=go --> SHARED QUICK START for go2'",
+   "acceptable": true
+  },
+  {
+   "situation": "7a. Language pack (dart, haskell, lean), still shipping ReadmeQuick_<lang>, against the modified sdkgen",
+   "command": "node --test test/*.test.js in the pack clone; and testkit generation of all 12 .md files, diffed between the old and modified builds",
+   "today": "With old 4.44.0: 76 tests, 74 pass, 0 fail, 2 skipped",
+   "after_change": "Modified build (stand-in, and stand-in plus lifecycle change): 76 tests, 74 pass, 0 fail, 2 skipped. All 12 generated .md files byte-identical (diff -r clean). The shared component calls the target's own ReadmeQuick_<lang> first",
+   "acceptable": true
+  },
+  {
+   "situation": "7b. A pack that later retires its own component (pack copy with ReadmeQuick_dart.ts deleted, version bumped), project installed from it",
+   "command": "package add @voxgig/sdkgen-langpack; then doctor; package update @voxgig/sdkgen-langpack --no-fetch",
+   "today": "Not run on 4.44.0. The code path is the same as row 2a, so the copy would be kept and labelled additive",
+   "after_change": "Doctor counts 1 unchanged copy outdated for target dart. package update logs 'removed src/cmp/dart/ReadmeQuick_dart.ts'",
+   "acceptable": true
+  },
+  {
+   "situation": "8. Project-owned target `mine` (model/target/mine.aontu plus src/cmp/mine/ReadmeQuick_mine.ts, no scaffold source)",
+   "command": "target add ts go py mine; generate; doctor",
+   "today": "'target-owned \u2026 its files stay as they are'; its own quick start is used; no doctor finding for mine",
+   "after_change": "Same: 'MINE OWN QUICK START', no finding for mine. The prune is never reached for an owned target, because TargetRoot returns before it",
+   "acceptable": true
+  },
+  {
+   "situation": "Override deleted by hand, following the old advice 'delete it'",
+   "command": "rm src/cmp/ts/ReadmeQuick_ts.ts; tsc --build src; generate; doctor",
+   "today": "Same as after the change (this hazard was not changed)",
+   "after_change": "Generate still writes 'PROJECT-EDITED QUICK START' from the stale dist/cmp/ts/ReadmeQuick_ts.js. Doctor reports 'matches the scaffold', exit 0. Only the override message was changed, to name the compiled file; no check catches this",
+   "acceptable": false
+  }
+ ],
+ "changes": [
+  {
+   "file": "ts/src/action/target.ts",
+   "lines": "+85 -3",
+   "what": "New pruneRetired(ctx$, actx, fromDir, toRel, origname, name), called for src/cmp/<t> before the copy. It reuses pruneStaleTemplates with a new optional 7th argument {record, rename, discard}. The new retiredCopies() keeps only the unwanted files that untouched() shows unchanged (or changed, when discard is set: --force or overwrite mode). For a changed copy it warns target-component-override instead of deleting. The new removeCompiled() also deletes dist/<path>.js, .js.map, .d.ts and .d.ts.map for each deleted source. pruneRetired is exported",
+   "rule_it_touches": "Add is overwrite (the source's deletion is applied like an overwrite); nothing is deleted that the record does not show an add wrote (untouched() from copies.ts, the one place); dry run (reuses pruneStaleTemplates' dry-run branch); junk filtered through isJunk in the existing listRel walk; aliases (aliasCmpName, the existing rule)"
+  },
+  {
+   "file": "ts/src/action/doctor.ts",
+   "lines": "+45 -10",
+   "what": "Report gains retired[] and override[]. compareTrees sends a file under a forked tree that the scaffold has never shipped to found('unshipped'). noteDrift decides through untouched(): unchanged goes to retired (counted in ok, tallied as outdated so the existing refresh advice and generate's copyCheck warning apply); changed goes to override (informational); unrecorded goes to additive (as before). doctor-end counts retired. The new replacesShared() adds '(used instead of the shared <Name>)' to additive and override lines named after an OPTIONAL_COMPONENTS dispatch name",
+   "rule_it_touches": "Doctor must compare everything an add writes; one rule in one place (classification by the copy record, dispatch names from helpers/optional)"
+  },
+  {
+   "file": "ts/src/action/edition.ts",
+   "lines": "+5 -1",
+   "what": "The edition 'none' (component) tree calls pruneRetired, so doctor's 'the next add removes it' holds for editions too",
+   "rule_it_touches": "One rule in one place across kinds"
+  },
+  {
+   "file": "ts/src/action/remove.ts",
+   "lines": "+1",
+   "what": "driftFindings adds report.override to what remove refuses. Retired copies are not refused",
+   "rule_it_touches": "remove plans from doctor's findings and refuses on project-changed files"
+  },
+  {
+   "file": "ts/test/retire.test.ts",
+   "lines": "+143 (new)",
+   "what": "7 cases on the actionharness memfs project. A recorded unchanged copy is retired and removed by an add (with its compiled output and its record entry); package update removes it without --force; a dry run removes nothing; a changed copy is an override, kept, warned about, and doctor stays ok; overwrite mode removes it; an unrecorded file is additive and kept; remove deletes a retired copy and refuses an override",
+   "rule_it_touches": "test coverage"
+  }
+ ],
+ "packs": "The pack was cloned to /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/migrate/langpack. Its node_modules holds symlinks into the clone's node_modules, and @voxgig/sdkgen is a symlink to either the old 4.44.0 copy or the modified clone/ts. I ran it with `PATH=/opt/node24/bin:$PATH npm_execpath=/opt/node24/lib/node_modules/npm/bin/npm-cli.js node --enable-source-maps --test test/*.test.js`, skipping the comment and dep gates in `npm test`. Results: old build 76 tests, 74 pass, 0 fail, 2 skipped; stand-in build the same; stand-in plus lifecycle change the same. Output: bin/lpgen.js (stageConsumer, addPackage, compile, generateInto with the pack's consumerModel) wrote 12 .md files (dart, haskell, lean \u00d7 README, REFERENCE, AGENTS, CLAUDE). `diff -r` between old and modified builds found them identical. The pack's targets keep their own ReadmeQuick_<lang>, and the shared component calls it first. That precedence is required for packs that have not moved, and it is also what made un-pruned retired copies win in projects. I also simulated a pack retiring its own component (row 7b): `package update` removes the unchanged dart copy.",
+ "aliases": "`target add go~go2` copies the scaffold's src/cmp/go tree through aliasCmpTree, so Syntax_go.ts becomes src/cmp/go2/Syntax_go2.ts. Its object content is unchanged (`lang: 'go'`), because aliasCmpText rewrites only `_go'` import suffixes and src/cmp/go/ paths. The shared component loads ./cmp/go2/Syntax_go2 by the target name and finds it: generation wrote '<!-- shared-quick provider=go --> SHARED QUICK START for go2'. The retired ReadmeQuick_go2.ts is recorded under its alias path, so retirement needs the source file list renamed with aliasCmpName before comparing. pruneRetired does that, and doctor already did (renameCmp). Measured: doctor reports RETIRED for src/cmp/go2/ReadmeQuick_go2.ts, the re-add removes it, and the shared section appears. A provider that needs to know it is serving an alias is not covered. It would get the origin's literal values, which is correct for syntax.",
+ "override_rule": "An edited copy of a retired component is the project's own override, decided by the copy record and nothing else. If the recorded fingerprint differs from the file, it is an override: kept by every add and package update, called first (a target's own <Name>_<t> wins over the shared section, as for packs), and reported by doctor as `override` without failing it. `remove` refuses it, as it refuses any changed or project-added copy, unless --force is passed. An add deletes it only where any changed copy would be overwritten (--force, or main.kit.copies 'overwrite'), and then deletes its compiled output too. A file with no record entry is never deleted and is reported as additive, '(used instead of the shared <Name>)'. The advice for dropping an override must name both the source and .sdk/dist/cmp/<t>/<Name>_<t>.js, or the compiled output keeps being used. Better still, a loader or doctor check for compiled components with no source, which I did not build. Order for a PROJECT when a release retires components: (1) before upgrading, make sure every copy is recorded: any add or `package update` on a version of 4.34.0 or later records what it writes; commit .sdk/log/copies.jsonl. (2) Install the new sdkgen. (3) Run `voxgig-sdkgen doctor`: RETIRED files will be removed; decide on each `override`; additive '(used instead of the shared X)' lines are copies with no record, to delete by hand together with their dist .js. (4) Run `voxgig-sdkgen package update @voxgig/sdkgen`, which removes the unchanged retired copies and their compiled output without --force. (5) Run `npm run generate`, review the README diff, and commit. Order for a PACK AUTHOR: (1) Nothing is required while the pack keeps shipping <Name>_<lang>: output is unchanged and the suite passes against the new sdkgen. (2) To move, add the syntax provider and delete <Name>_<lang>.ts in the same release. Raise the @voxgig/sdkgen peer floor and engines.sdkgen to the first sdkgen that has both the shared component and this record-based pruning; below that, a project's old copy is called forever, labelled additive, and refused by remove. (3) Tell consumers to run `package update <pack>`. One constraint on sdkgen: the shared component must keep calling <Name>_<t> first, and OPTIONAL_COMPONENTS must keep the name, for as long as any pack or project ships one.",
+ "tests": "Full suite without the toolchain lanes (`node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)`). Stand-in only, before the lifecycle change: 2514 tests, 2504 pass, 5 fail, 5 skipped. With the lifecycle change: 2521 tests, 2511 pass, 5 fail, 5 skipped. The same 5 fail in both runs and all come from the stand-in, not from the lifecycle change. They are: characterize 'matches the golden manifest' (lists ReadmeQuick_* no longer written and Syntax_* newly written); optional 'every optional component is loaded through the table' (ReadmeQuick no longer goes through optionalComponent); and three generate.test content checks that read the ts, go and py quick start ('the nested quick start was not written', 'singleton go \u2026 calls no operation', a go update example). The full suite was run before the last two commits, which changed only comments and one warning's wording. After those commits: the lifecycle suites retire, copies, doctor, remove, target, package, edition, alias, owned, dryrun, cli, copymerge and provenance gave 250 tests, 250 pass. retire.test.js gave 7/7 on the change. As a negative control, the same compiled test against the unmodified 4.44.0 gave 2/7: the 5 behavioural cases failed, and the two 'keep' cases passed as they should. `npm run build` passes (tsc, check-scaffold, check-fixture, stage-scaffold). `node ../tools/comment-gate.cjs` is clean. Not run: generatedcompile toolchain lanes, `make test` prose and dep gates, Windows.",
+ "measurements": [
+  {
+   "name": "Change size (tool)",
+   "value": "136 added / 14 removed lines in 4 files: target.ts +85/-3, doctor.ts +45/-10, edition.ts +5/-1, remove.ts +1/-0; test file +143",
+   "command": "git -C .../migrate/sdkgen diff 9aebaf9e --numstat -- ts/src/action ts/test/retire.test.ts"
+  },
+  {
+   "name": "Stand-in size",
+   "value": "ReadmeQuick_{go,py,ts}.ts -203/-225/-242 lines; Syntax_* +7 each; ts/src/cmp/ReadmeQuick.ts +16/-7",
+   "command": "git diff 177c44ec~1 177c44ec --numstat"
+  },
+  {
+   "name": "Full suite, stand-in plus change",
+   "value": "2521 tests, 2511 pass, 5 fail (all from the stand-in), 5 skipped; 4m40s wall, one run on a shared machine",
+   "command": "cd sdkgen/ts && node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)"
+  },
+  {
+   "name": "Full suite, stand-in only",
+   "value": "2514 tests, 2504 pass, the same 5 fail, 5 skipped",
+   "command": "same command, before commit a49fddc0 (build from the first lifecycle edit was not yet compiled into dist-test)"
+  },
+  {
+   "name": "Lifecycle suites after the final commit",
+   "value": "250/250 pass",
+   "command": "node --enable-source-maps --test dist-test/{retire,copies,doctor,remove,target,package,edition,alias,owned,dryrun,cli,copymerge,provenance}.test.js"
+  },
+  {
+   "name": "retire.test negative control on 4.44.0",
+   "value": "2 pass / 5 fail (the keep cases pass, the remove, report and refuse cases fail)",
+   "command": "copy dist-test/retire.test.js + actionharness.js into the old build; node --test dist-test/retire.test.js"
+  },
+  {
+   "name": "Langpack suite",
+   "value": "76 tests, 74 pass, 0 fail, 2 skipped, on old, stand-in and final builds",
+   "command": "cd langpack && node --enable-source-maps --test test/*.test.js (npm_execpath set)"
+  },
+  {
+   "name": "Langpack markdown output",
+   "value": "12 files, byte-identical old vs final",
+   "command": "node bin/lpgen.js lp-out-old / lp-out-final; diff -r"
+  },
+  {
+   "name": "tsc leaves compiled output of a deleted source",
+   "value": "after rm src/cmp/ts/ReadmeQuick_ts.ts and `tsc --build src` (TypeScript 7.0.2), dist/cmp/ts/ReadmeQuick_ts.js remains and generation still writes the old quick start",
+   "command": "bin/tool.js build t1; ls .sdk/dist/cmp/ts; bin/tool.js gen t1"
+  },
+  {
+   "name": "Lifecycle rows",
+   "value": "all rows in `behaviours`, output at .../migrate/rows-final.log (before the change, captured row by row in this session)",
+   "command": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/migrate/bin/rows.sh"
+  }
+ ],
+ "risks": [
+  "Stale compiled output, not fixed. The loader requires .sdk/dist/cmp/<t>/<Name>_<t>.js and the project's `tsc --build src` never deletes the output of a deleted source. The change deletes it when an add prunes a copy. But a person who deletes a component (an override, or an unrecorded retired copy) by hand keeps getting it, and doctor reports nothing (measured: 'PROJECT-EDITED QUICK START' after deletion, doctor ok). Needs either a loader rule (ignore a dist module whose .sdk/src source is absent) or a doctor check for orphan compiled components.",
+  "Projects without a copy record (last add before 4.34.0, or copies never recorded) cannot be cleaned automatically. The retired copy stays, keeps overriding the shared section, and keeps any defect it carries. So any catalogue fix made once in a shared sentence (H3) does not reach that project until a person deletes the file.",
+  "Doctor exits non-zero for unchanged retired copies until the next add, like `outdated`. A CI job that gates on doctor turns red on the upgrade commit and green after `package update`. That is intended, but it is a rollout-ordering cost.",
+  "The CLI's drift summary (bin/voxgig-sdkgen) prints only forked, edited, stale and missing counts. A release that only retires files makes doctor exit 1 while printing '0 forked, 0 edited, 0 stale, 0 missing'. This already happens for outdated-only drift. Read in the code, not run in that exact state.",
+  "The generate warning says '3 file(s) in .sdk differ \u2026 changed in this project' for files that are MISSING (the new providers). This is existing wording, made more visible because each retirement also adds a provider.",
+  "Under --force or overwrite mode, an edited retired copy is deleted with no backup, as an edited live copy is overwritten. That is consistent with those modes, but the edit is lost, with nothing left to merge into.",
+  "Edition component retirement shares the code but was not exercised end to end.",
+  "The 'own component wins' precedence is what keeps packs working, and it is the same precedence that hides an un-pruned retired copy. Any later change that makes the shared section ignore <Name>_<t> would break every pack that has not moved.",
+  "An override is reported on every doctor run but never fails it. A project can carry an outdated override indefinitely without noticing that shared fixes are not reaching it."
+ ],
+ "surprises": [
+  "Doctor calls an unchanged retired copy 'additive (project-owned, not drift)' although .sdk/log/copies.jsonl holds its fingerprint from the add that wrote it. The record could always tell the two apart; doctor never asked it for a file the scaffold does not ship.",
+  "`target remove` refuses an unchanged retired copy with the message 'refusing to delete what `target add` did not write', which the record contradicts.",
+  "In row 1 the exit status changed because of the MISSING new providers, not the retired files. A release that only deleted components would leave doctor at exit 0 and generation silently on the old text.",
+  "pruneStaleTemplates exists but covers tm/ only, and on tm/ it deletes edited files regardless of the record. src/cmp had no pruning at all.",
+  "The copy-merge guard (merge mode) already holds back an unlink of an unrecorded file and defers the deletion of an edited one. The record check in pruneRetired is therefore the only protection under --force and overwrite mode, where the guard is off.",
+  "target models already declare `superseded:` for retired GENERATED output (doctor prune), but there is no equivalent for retired components.",
+  "Building a scratch project with `declaration: true` through symlinked jostraca failed with TS2883 ('cannot be named \u2026 not portable'). This is an artifact of the symlinked toolchain; the scratch projects compile with declaration off."
+ ],
+ "hypotheses": [
+  {
+   "id": "H5",
+   "verdict": "supported",
+   "evidence": "Not refuted, but only because of the change. With the stand-in and no change, retirement is unsafe in a quiet way: old copies stay in use after re-add and package update, doctor mislabels them as additive, remove refuses them, and stale dist output survives deleting the source. With the 136/-14-line change, the rules hold. Add is overwrite (the source's deletion is applied). Doctor compares everything an add writes (retired and override categories). Deletion is limited to what the record shows an add wrote and left unchanged. Dry run writes nothing. Junk is filtered through the existing walk, and aliases are renamed by the existing aliasCmpName. All rows except hand-deletion pass. The langpack's targets generate byte-identical .md and its suite passes (74/76, 2 skipped, same as before). Conditions: projects must have a copy record, and hand-deleting a component still leaves stale compiled output in use."
+  },
+  {
+   "id": "H1",
+   "verdict": "not-tested",
+   "evidence": "Outside this task (the shared component and providers were built by another agent); a stand-in was used."
+  },
+  {
+   "id": "H2",
+   "verdict": "not-tested",
+   "evidence": "Outside this task."
+  },
+  {
+   "id": "H3",
+   "verdict": "not-tested",
+   "evidence": "Outside this task. Relevant finding: a shared fix does not reach a project still holding a retired copy, whether that copy is unrecorded or an override."
+  },
+  {
+   "id": "H4",
+   "verdict": "not-tested",
+   "evidence": "No toolchain lanes run; the stand-in writes placeholder text."
+  }
+ ],
+ "reproduce": "export PATH=/opt/node24/bin:$PATH; D=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/migrate. Build the clone: cd $D/sdkgen/ts && npm run build. The project driver is $D/bin/tool.js; its commands are mk <p>, use <p> old|new, cli <p> <verb...>, build <p> and gen <p>. Each project lives at $D/work/<p>/.sdk with node_modules/@voxgig/sdkgen symlinked to $D/old (4.44.0) or $D/sdkgen/ts. gen prints each target's quick start and generate's warnings. Base fixtures: work/base (4.44.0, target add ts go py, recorded); base-edited (bin/edit.sh puts 'PROJECT-EDITED QUICK START' into ReadmeQuick_ts.ts); base-norecord (log/copies.jsonl deleted); base-alias (target add go~go2); base-owned (project-defined target mine). All rows: $D/bin/rows.sh, which copies a base, switches it to the new build and runs each row; output is in $D/rows-final.log. Before-change rows: check out 98f87b2b in the clone, run npm run build, then rerun rows.sh. Langpack: cd $D/langpack && npm_execpath=/opt/node24/lib/node_modules/npm/bin/npm-cli.js node --enable-source-maps --test test/*.test.js; output comparison: node $D/bin/lpgen.js <outdir> under each symlink, then diff -r. Unit tests: cd $D/sdkgen/ts && node --test dist-test/retire.test.js."
+}

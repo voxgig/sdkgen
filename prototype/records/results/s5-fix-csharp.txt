@@ -1,0 +1,239 @@
+lang: csharp
+ok: False
+summary: |
+  Status: the csharp fix round is done. Every one of the reviewer's 8 required fixes has an outcome, and `ok` is false only because the one command still fails on recorded `defect` classes that wait for shared changes.
+  
+  What changed:
+  - Three fixes in csharp's own files:
+    - The accessor citation in hand record dae78da098 now names MainEntity_csharp.ts:25-28 (the file is 36 lines).
+    - The body.once citation now quotes the code that reads a Stream in full (Media.cs:116-120) instead of a comment.
+    - The MarkDeleted and Deleted reasons now say what the pipeline does: it marks the entity on any successful op named remove, Stream("remove", ...) included (EntityBase.fragment.cs:233-240, 281, 306).
+  - Four fixes need shared changes, recorded below and not made: root quick start naming (CS0136), the stream-signal sentence, callcheck, and the guard's citation check.
+    - The stream sentence prints `callopts.signal`, which C# cannot write; the key is `callopts["signal"]` and only a CancellationToken counts. I recorded its class 80f77307dc (x94) as a `defect`. The reviewer called it awkward rather than false. I recorded it anyway, because the provider cannot respell a shared sentence.
+    - The 3 rootquick defect classes stay as the porter recorded them.
+  - The eighth fix (declare a new fact and remove the three defect records) waits on the naming change.
+  
+  Final numbers, after a build that exits 0 and leaves `git status` empty:
+  - Guard 4/4, guard plus reader 81/81.
+  - Suite 2,630 of 2,635 pass, 0 fail, 5 skipped. Golden 2/2, unchanged.
+  - The reviewed one command with REGEN=1 exits 1. Its only failing numbers are reference ledger defect 1 and rootquick blocks defect 3.
+  - The SCRATCH=1 numbers equal the porter's.
+  - The pages are byte-identical to the ones the reviewer read, and no other language's page changed.
+  
+  No C# compiler is here (dotnet, csc and mono are all missing), so the 30 changed blocks are still compiled by nothing. The single csharp lane that reports a pass returns early without dotnet, so it ran nothing.
+outcomes:
+  - [0]
+    finding: 1. Root quick start: the list item and the loaded entity get the same name, so `foreach (var planet in planets)` is followed by `var planet = ...` in one C# block (CS0136); 5 of 21 variations (crud-bare, crud-basic, crud-noupdate, doc-crud, ex-readonly)
+    outcome: needs a shared change
+    how: Checked myself. out/new/crud-basic/README.md, C# block under 'Quickstart in other languages', holds `foreach (var planet in planets) {...}` and then `var planet = (IEntity)client.Planet().Load(...)!;` at top level. refOf (ts/src/helpers/example.ts:219-227) gives roles 'item' and 'one' the same entity.sym.var, and bare() (ts/src/cmp/ReadmeQuick.ts:236-239), called by topQuickText (:246), removes the try blocks that kept them apart. Read, not compiled (no dotnet). The defect records 8c5a4fbe41 (n 3), 3d4aae6c8d and b2b5fd8804 on the rootquick block classes stay as recorded; each names both shared files. The change is under shared_changes_needed.
+    commit: none this round (records from tools 9d60029, kept)
+  - [1]
+    finding: 2. After the shared naming fix: declare the new fact in Syntax_csharp.ts, remove the three rootquick defect records, re-run to PORTCHECK PASS
+    outcome: not fixed
+    how: It waits on finding 1's shared change. Until the fact exists in RuntimeFacts there is nothing to declare, and removing the defect records would reopen the classes as OPEN, not close them.
+    commit: none
+  - [2]
+    finding: 3. Hand record dae78da098 cites MainEntity_csharp.ts:172-175, which does not exist
+    outcome: fixed
+    how: The reviewer is right: MainEntity_csharp.ts is 36 lines, and the accessor `public ${model.const.Name}EntityBase ${entity.Name}(...)` / `return new global::${model.const.Name}Sdk.Entity.${cls}(this, entopts);` is at :25-28. The reason now cites :25-28. A grep over the provider, hook, forms and hand file found no other copy of the wrong lines. The porter's report text (accessor.sig, accessor.cached) should read :25-28 too. After the fix: hand records 233, STALE 0.
+    commit: tools 97783f2
+  - [3]
+    finding: 4. Forms citation ref.facts.body.once leans on a comment ('// Bytes, a Stream or a string, sent as they are. A Stream can be read')
+    outcome: fixed
+    how: Media.cs:110-112 is a comment; :116-120 is the code that reads the stream in full. The quote is now ['if (body is Stream stream)', 'stream.CopyTo(buffer);', 'return buffer.ToArray();'] (each occurs once in Media.cs). The guard account report shows the citation quoting code only; the guard passes 4/4 and guard plus reader 81/81. The account line is unchanged: derived 47, cited 17, language 1, convention 6.
+    commit: sdkgen dc778914
+  - [4]
+    finding: 5. Forms undocumented.MarkDeleted reason 'set by Remove itself' is not what the runtime does
+    outcome: fixed
+    how: The reviewer is right. Stream builds its context with `["opname"] = action` (EntityBase.fragment.cs:281) and runs `RunOp` (:306). RunPipeline then calls MarkDeleted whenever `ctx.Result.Ok` and opname is "remove" (:233-240), and MarkDeleted is public (:28). The reason now says this. The sibling reason for Deleted ('whether Remove succeeded on this instance') had the same fault and is reworded too. No page fact rests on either reason; the pages are byte-identical before and after.
+    commit: sdkgen dc778914
+  - [5]
+    finding: 6. ReadmeRef.ts STREAM_SIGNAL prints the literal `callopts.signal` and does not say a C# signal must be a CancellationToken
+    outcome: needs a shared change
+    how: Checked: EntityBase.fragment.cs:267-270 reads `StructUtils.GetProp(callopts, "signal") is CancellationToken sigTok ? sigTok : CancellationToken.None`. callopts is a Dictionary<string, object?>?, so the C# spelling is `callopts["signal"]`, and any value other than a CancellationToken is ignored. The sentence is one literal (ts/src/cmp/ReadmeRef.ts:123, used at :119), and the provider may not respell it. Class 80f77307dc (reference, x94 in 18 variations), until now matched automatically as shared:ts, is recorded as `defect` in hand/csharp.json naming ReadmeRef.ts. The reason of token class eea38408c0 now names the C# key. The reviewer judged it awkward, not false; I record it as a defect because the code span is not C# and the guide's rule is that a page shared code cannot make right is a defect.
+    commit: tools 97783f2
+  - [6]
+    finding: 7. tools/callcheck.js silently drops printed calls to undeclared members (MEMBER 0) and misses an instance accessor called on the type (RECEIVER 0)
+    outcome: needs a shared change
+    how: It is a shared tools file, so I did not touch it. No csharp page carries such a call: callcheck checks 386 calls of 20 runtime members with 0 findings, and the reviewer's misses (`.Lode(`, `DemoSDK.Planet().Load(`, `.Fetch(`, `.Record()`) were injected edits. So there is no class to mark `defect`. Recorded under shared_changes_needed.
+    commit: none
+  - [7]
+    finding: 8. Guard citation check compares a cited code value with its quote as a set of tokens (B1/B3 passed)
+    outcome: needs a shared change
+    how: It is a shared guard file (ts/test/runtimeforms/account.ts checkCitation, :299-306, codeTokens :113), so I did not touch it. No csharp page fact is wrong. Read: container `Dictionary<string, object?>` stands contiguous in 'public ProjectNameSDK(Dictionary<string, object?>? options = null)'; none `null` in 'entopts = null'; okFalse `false` in '["ok"] = false,'; ctor[0] 'using {module};' in order in 'using ProjectNameSdk.Feature;'. So there is no class to mark `defect`. Recorded under shared_changes_needed.
+    commit: none
+shared_changes_needed:
+  - [0]
+    file: ts/src/helpers/example.ts (refOf :219-227, RuntimeFacts type) and ts/src/cmp/ReadmeQuick.ts (topQuickText :246, bare :236-239)
+    change: An optional RuntimeFacts flag, e.g. `blockScope?: true` (a local is in scope over its whole block). Where it is set and VarNaming is 'entity', refOf names role 'item' by the generic item name through the hook's layout.vars (`vars.item ?? 'item'`, as GENERIC does), whenever the same section also binds role 'one' or 'created' for that entity. The reviewer's alternative is a language-neutral rule (always name the item apart when one section binds both roles of one entity), but that changes the root quick start of every ported language.
+    why: bare() puts `foreach (var planet in planets)` and `var planet = ...` in one C# block. That is CS0136, and it breaks 5 of 21 root quick starts (crud-bare, crud-basic, crud-noupdate, doc-crud, ex-readonly); OLD used planetItem and compiled. Read, not compiled.
+    breaking: False
+    providers_forced: The flag: csharp only (declare it, then remove defect records 8c5a4fbe41, 3d4aae6c8d, b2b5fd8804). Read, not compiled: java, kotlin, scala, cpp, js and php accept a later outer declaration after a loop variable. The language-neutral alternative would be breaking by the guide's definition (changed root blocks in all thirteen ported languages, each to be re-reviewed), though no provider code would change.
+  - [1]
+    file: ts/src/cmp/ReadmeRef.ts (STREAM_SIGNAL :122-123, used in streamText :119) and ts/src/helpers/example.ts (RefSyntax.key :473)
+    change: Print the key through the provider: 'It ends early once ' + code(r.key('callopts', ['signal'])) + ' reports an abort.', and widen key's container union from 'options' | 'fetchargs' to include 'callopts'. Add an optional cited fact (for example ref.facts.streamSignalType) naming the only value the stream honours, printed in the same sentence.
+    why: csharp prints `callopts.signal`, which is not C#: its key is `callopts["signal"]`, and only a CancellationToken ends the stream (EntityBase.fragment.cs:267-270). Class 80f77307dc (x94) is recorded as `defect` until then.
+    breaking: True
+    providers_forced: Breaking by the guide's definition: a changed sentence. The code span changes in csharp, go, py, rb, swift and perl (their key printers write `callopts["signal"]` / `$callopts->{signal}`); ts prints the same, and lua through its own index printer. clojure, elixir and ocaml must change their key printer: it prints the path alone (Syntax_clojure.ts:214, Syntax_elixir.ts:171, Syntax_ocaml.ts:226), so the sentence would read `signal`. The type fact is additive, declared by csharp (CancellationToken), and when ported by java (BooleanSupplier, EntityBase.fragment.java:214-216), kotlin (Function0, EntityBase.fragment.kt:233-235) and scala (EntityBase.fragment.scala:210, not read in full). Every language with streamSignal re-reviews the sentence class.
+  - [2]
+    file: tools/callcheck.js
+    change: Report a printed call to a member the runtime does not declare as MEMBER, instead of dropping it from the count. Report an instance accessor called on the client type (DemoSDK.Planet()) as RECEIVER.
+    why: Reviewer's runs: `.Fetch(`, `.Record()` and `.Lode(` lowered the call count (386 to 326, 342 and 385) with MEMBER 0, and `DemoSDK.Planet().Load(` gave RECEIVER 0.
+    breaking: False
+    providers_forced: none (a tools check). A port whose pages print such a call would newly fail; csharp's pages print none (0 findings over 386 calls).
+  - [3]
+    file: ts/test/runtimeforms/account.ts (checkCitation :299-306, codeTokens :113)
+    change: For a code-valued cited fact, compare the value with the quote as a sequence: its tokens in order, adjacent after whitespace normalisation and slot removal. Not as a set of tokens each found anywhere in the quote.
+    why: Reviewer's runs: container 'Dictionary<string, object>' and 'Dictionary<object?, string>' both passed, because every token stands in 'public ProjectNameSDK(Dictionary<string, object?>? options = null)'.
+    breaking: False
+    providers_forced: No interface change. Forms work only in a language whose code-valued citation quotes its tokens out of order. csharp's container, none, okFalse and ctor[0] hold in order (read).
+commits:
+  - sdkgen dc778914 'csharp forms: the stream body cited to the code that reads it in full; MarkDeleted and Deleted described as the pipeline sets them' -- ts/test/runtimeforms/csharp.ts (+4 -3); body is the subject line only
+  - tools 97783f2 'csharp: the accessor citation at its real lines; the stream signal sentence recorded as a defect waiting on shared code' -- hand/csharp.json, classes/csharp.json (generated by the last reviewed run); body is the subject line only
+  - Earlier, the porter's, unchanged: sdkgen 445b2b23 (provider, hook, forms, deletions), sdkgen dbb9e169 (golden), tools 9d60029 (hand, classes, counts)
+  - No build commit: npm run build exits 0 and `git status --short` is empty after it. No golden commit: characterize.test.js passes 2/2 without an update. Checked with `git log --format='%h %s%n%b---' 0065f1e2..HEAD` in sdkgen and `-2` in tools: no body text and no trailer on any commit.
+final_state: |
+  The reviewed one command (`REGEN=1 tools/portcheck.sh sdkgen out csharp`, after a build exiting 0) exits 1 in 63 s. It regenerated 21 of 21 variations. Screen:
+  
+  ```
+  section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+  tutorial                   59 |      46     22        0      20       4     0       0 | 0
+  rootquick                  19 |       4      0        0       3       1     0       0 | 0
+  reference               13843 |     175     63        0      66      44     0       1 | 1
+  section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+  tutorial                  18         0       0        30 |      27    0      0 | NO; 30 changed blocks compiled by nothing
+  rootquick                  0         2       0        17 |      26    0      3 | NO; 19 changed blocks compiled by nothing
+  reference                212         0       0       101 |      13    0      0 | NO; 101 changed blocks compiled by nothing
+  ```
+  
+  The rest of the screen:
+  - contradictions (1; counted, not failed): reference [bff341cf32]
+  - purity: 0 open, 1 accepted | notes declared 1 (member:streamIterator), note regions found 1
+  - pagecheck: 48 numbered headings, 1291 articles; findings 0
+  - callcheck: 386 calls of 20 runtime members; ARITY/RECEIVER/MEMBER findings 0
+  - guard: pass (pass 4 fail 0)
+  - build: 1813 sources checked, current
+  - hand records: 233, 72 quote text (160 quotations); STALE 0
+  - facts: attested 4, recorded by hand 2, UNATTESTED or NOT JUDGED 0; cited 16, pinned prose 11
+  - shared sentences: matched 85, of which against an unreviewed sentence 2; printed less often 0; absent 25 (25 explained)
+  - fact sheet: 63 facts, 0 with no account, 0 unattested
+  - PORTCHECK csharp: FAIL. The only failing numbers are reference ledger defect 1 (80f77307dc, STREAM_SIGNAL) and rootquick blocks defect 3 (8c5a4fbe41, 3d4aae6c8d, b2b5fd8804, CS0136). Both wait on shared changes.
+  
+  Against the porter's screen: reference shared 64 to 63 and defect 0 to 1; hand records 232 to 233; matched shared sentences 86 to 85. Nothing else moved.
+  
+  The SCRATCH=1 run (`SCRATCH=1 tools/portcheck.sh sdkgen out csharp`) exits 1 by design in 44 s. Its numbers are the same as the porter's and the reviewer's:
+  - Ledger OPEN 24 / 4 / 111 (tutorial / rootquick / reference). Shared 22 / 0 / 64. Units same 59 / 19 / 13843. Defect 0.
+  - Blocks OPEN 27 / 26 / 13.
+  - Facts UNATTESTED or NOT JUDGED 2 (named NOT JUDGED, ref.noun UNATTESTED).
+  - ABSENT, NO REASON 25.
+  - The parts that read no hand record are clean in both runs: build current, 21/21 regenerated, guard 4/4, purity 0 open, pagecheck 0, callcheck 0.
+  
+  Other checks:
+  - Guard `^csharp: ` 4/4; guard plus reader 81/81.
+  - Suite without the toolchain lanes (`node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)`): 2635 tests, 2630 pass, 0 fail, 5 skipped, 285 s, exit 0.
+  - Golden (`node --test dist-test/characterize.test.js`): 2/2.
+  - `git status --short` after `npm run build` (exit 0): empty, in both sdkgen and tools.
+  - Pages are byte-identical to the reviewer's copy (`diff -rq out/new P/reviews/csharp/ws/out/new`).
+  - No other language's page changed. `diff -rq -x csharp out/new P/base33/out/new` lists only the 19 root README.md files, and work/rootdiff.js finds 0 of them differing outside the C# quick start.
+lanes: |
+  Toolchain check (`command -v`): node v24.22.1, npm 11.19.1, php 8.3.6, composer, javac, java, mvn, gradle, g++ 13.3.0 and make are present. kotlinc, kotlin, scala, scala-cli, sbt, dotnet, csc and mono are MISSING.
+  
+  Ran `node --test --test-name-pattern '^csharp' dist-test/generatedcompile.test.js`: 29 tests, 1 pass, 0 fail, 28 skipped visibly ('no dotnet toolchain here' and similar), 5.7 s. The single pass, 'csharp: the project builds', ran nothing: it returns when dotnet is missing (generatedcompile.test.ts:2640-2642), so it is a silent pass rather than a skip.
+  
+  Not run:
+  - `tools/before/run.sh sdkgen csharp` (read): cmd_for has no csharp command (run.sh:14-22), so it only generates SDKs and prints NOT RUN (run.sh:30).
+  - The root quick start from the repository root of a generated SDK, OLD or NEW: no dotnet. `using DemoSdk;` is package-addressed and needs the SDK project built and referenced.
+lines: |
+  Measured with `wc -l` and `git diff --numstat` in the clone:
+  - Provider Syntax_csharp.ts: 176 lines, unchanged this round.
+  - Naming hook Naming_csharp.ts: 25 lines, unchanged.
+  - Forms runtimeforms/csharp.ts: 119 lines (118 before this round; +4 -3 this round; +58 -4 against v33-frozen, where it was 65).
+  - Old components deleted by the porter: ReadmeQuick_csharp.ts 232, ReadmeRef_csharp.ts 413, ReadmeTopQuick_csharp.ts 96, which is 741 lines.
+  - Golden: +2 -3.
+  
+  Provider plus hook is 201 lines against 741 deleted (3.7x for this language's components alone).
+not_caught_by_process:
+  - [0]
+    attack: B1: ref.facts.container 'Dictionary<string, object>' (nullability dropped)
+    consequence: The guard passes. Only 2 OPEN reference classes appear in the old-page comparison, which a porter can close as restored:fact.
+  - [1]
+    attack: B3: ref.facts.container 'Dictionary<object?, string>' (type arguments swapped)
+    consequence: The guard passes, because each token is in the quote. Only 2 OPEN classes appear (hand-decidable).
+  - [2]
+    attack: H1: the TestSDK signature written without its type qualifier ('{client} TestSDK(...)')
+    consequence: The guard passes, because the csharp forms read no receiver when there is no qualifier. A C# reader would take it for an instance method. Only 1 OPEN class appears. The reverse attack (H4, the accessor written on the type) is caught.
+  - [3]
+    attack: M1: the cast printed as (IEntty), a type the runtime lacks
+    consequence: The guard and callcheck both pass. Only block OPEN classes appear (7/11/8), as the guide says.
+  - [4]
+    attack: L2: `.Lode(` edited into the crud-basic root quick start
+    consequence: callcheck skipped the call (385 of 386 counted) with MEMBER 0. Only 2 block OPEN classes appear. In A1 and M2, provider-printed `.Fetch(` and `.Record()` were also skipped by callcheck, but the guard caught both.
+  - [5]
+    attack: L4: `DemoSDK.Planet().Load(` (an instance accessor on the type) edited into a REFERENCE block
+    consequence: callcheck RECEIVER 0. Only 2 block OPEN classes appear.
+  - [6]
+    attack: L1: a tutorial print line changed (`Console.WriteLine(ambient.Data());`)
+    consequence: Only 1 block OPEN class (hand-decidable).
+  - [7]
+    attack: CS0136: the same local declared in a nested and an enclosing block
+    consequence: No tool checks name scope (callcheck sees calls, pagecheck sees prose). The porter found it by reading. My mine/scope.js found the same 5 blocks.
+  - [8]
+    attack: G4: utility copy set to false
+    consequence: The guard caught the pin. Separately, the absent list shrank from 25 to 24 with no report of the now-unused absent reason f3e421e046.
+  - [9]
+    attack: A wrong line number in a hand reason (dae78da098: MainEntity_csharp.ts:172-175)
+    consequence: handstale checks quoted text, not file:line, so STALE stays 0.
+  - [10]
+    attack: Every attack's exit code
+    consequence: The port's own reviewed run already exits 1 (defect 3), so exit 1 carried no signal. I judged each attack by the new failing numbers.
+not_done:
+  - Did not make any shared change, by instruction: example.ts/ReadmeQuick.ts (CS0136), ReadmeRef.ts/example.ts (STREAM_SIGNAL), tools/callcheck.js, runtimeforms/account.ts. The one command therefore keeps failing on 4 defect classes.
+  - Did not declare the root-quick-start naming fact or remove the 3 rootquick defect records: the fact does not exist until the shared change lands.
+  - Did not compile or run any C# block, OLD or NEW: dotnet, csc and mono are missing. The generated README example test checks balanced delimiters only and would not catch CS0136 even with dotnet.
+  - Did not run the root quick start from the repository root of a generated SDK (no dotnet; `using DemoSdk;` is package-addressed).
+  - Did not run tools/before/run.sh for csharp: by construction it prints NOT RUN for csharp (run.sh:14-22, :30).
+  - Did not re-read all 30 distinct changed blocks this round. No page changed (byte-identical to the reviewer's pages), so the porter's and reviewer's readings stand; I re-read only the crud-basic root C# block (CS0136 confirmed).
+  - Left the reviewer's 'awkward' page notes that were not required fixes: the heading notation `DemoSDK DemoSDK.TestSDK(...)` (the porter's way of showing a static member, which the guard reads as `on: type`), and the implicit `using System;` (same as OLD).
+  - Did not close the not-caught process holes (H1 and the others above): not mine to fix, copied unchanged.
+notes:
+  - [0]
+    slot: member:streamIterator
+    text: It also ends early once its own `cancel` token is cancelled. Unchanged this round. Cited, pinned prose: EntityBase.fragment.cs:261 `[EnumeratorCancellation] CancellationToken cancel = default)` and :342 `if (!more || cancel.IsCancellationRequested || signal.IsCancellationRequested)` (also :370). Purity finds it in its region (notes declared 1, regions found 1).
+review_counts:
+  - [0]
+    section: tutorial
+    same: 59 units
+    shared_matched: 22 classes
+    matched_unreviewed: 0 (2 across all sections)
+    by_hand: 20 ledger + 27 block classes
+    missing: 4
+    contradictions: 0
+    blocks: identical 18, corrected 0, unified 0, otherwise 30 (compiled by nothing); 27 classes, 0 OPEN, 0 defect
+  - [1]
+    section: rootquick
+    same: 19 units
+    shared_matched: 0
+    matched_unreviewed: 0
+    by_hand: 3 ledger + 26 block classes
+    missing: 1
+    contradictions: 0
+    blocks: identical 0, corrected 2, unified 0, otherwise 17 (compiled by nothing); 26 classes, 0 OPEN, 3 defect (8c5a4fbe41, 3d4aae6c8d, b2b5fd8804: CS0136, waiting on example.ts refOf / ReadmeQuick.ts topQuickText)
+  - [2]
+    section: reference
+    same: 13843 units
+    shared_matched: 63 (64 before this round; 80f77307dc moved to defect)
+    matched_unreviewed: 2 (whole command)
+    by_hand: 66 ledger + 13 block classes; ledger defect 1 (80f77307dc, STREAM_SIGNAL, waiting on ReadmeRef.ts)
+    missing: 44
+    contradictions: 1: bff341cf32, the unported README's test-client line (no-test csharp/README.md:226) against the REFERENCE, which is the true side (Config_csharp.ts BaseFeature fallback, Main.fragment.cs:426-429, Fetcher.cs fetch_mode_block)
+    blocks: identical 212, corrected 0, unified 0, otherwise 101 (compiled by nothing); 13 classes, 0 OPEN, 0 defect
+unverified: |
+  Every changed csharp block is still unverified, because no C# compiler is here (dotnet, csc and mono are missing):
+  - 30 distinct NEW blocks not byte-identical to any OLD block, of 77 distinct NEW blocks (`node work/distinct.js out/old out/new`). The reviewer counted 31 by a per-file measure.
+  - Per section, the one command counts 30 tutorial, 19 rootquick and 101 reference changed blocks compiled by nothing.
+  
+  CS0136 in the 5 root quick starts is read, not compiled. The claim that only C#, of java, kotlin, scala, cpp, js and php, has the whole-block scope rule is read, not compiled. The constructor options of the examples are executed by no lane.
+  
+  What I ran this round: two builds; guard and reader; the guard account report; the reviewed one command with REGEN=1, twice; SCRATCH=1; the golden; the suite; the csharp generatedcompile lanes (28 skipped, 1 empty pass); the page diffs; distinct.js and rootdiff.js.
+  
+  What I read: MainEntity_csharp.ts; EntityBase.fragment.cs (:18-40, :120-160, :220-320, the signal lines); Media.cs (:50-124); ReadmeRef.ts (:100-130); media.ts (:62-95); example.ts (refOf, the key type); ReadmeQuick.ts (bare, topQuickText); the key printers of the thirteen ported providers; the java, kotlin, ts and js stream signal reads; account.ts checkCitation; classify.js hand precedence; run.sh; generatedcompile.test.ts:2640-2648.

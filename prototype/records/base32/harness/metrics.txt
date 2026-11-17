@@ -1,0 +1,38 @@
+== source size (lines total / non-blank non-comment)
+OLD shared ReadmeQuick.ts                {"lines":34,"code":21}
+OLD ReadmeQuick_ts.ts                    {"lines":242,"code":180}
+OLD ReadmeQuick_go.ts                    {"lines":203,"code":155}
+OLD ReadmeQuick_py.ts                    {"lines":225,"code":171}
+OLD ReadmeQuick_c.ts                     {"lines":241,"code":190}
+NEW src/cmp/ReadmeQuick.ts               {"lines":165,"code":131}
+NEW src/helpers/sdkdesc.ts               {"lines":245,"code":194}
+NEW src/helpers/example.ts               {"lines":244,"code":185}
+NEW Syntax_ts.ts                         {"lines":89,"code":67}
+NEW Syntax_go.ts                         {"lines":103,"code":76}
+NEW Syntax_py.ts                         {"lines":81,"code":62}
+NEW Syntax_c.ts                          {"lines":142,"code":111}
+utility_<lang>.ts lines removed: 0 (nothing in them was used only by the retired components)
+four languages: before 945/717  after 1069/826  ratio 0.88x / 0.87x
+  of which shared 654/510, providers 415/316 (mean 103.75/79)
+twenty languages (projection): before 4537/3479 (measured: all 20 ReadmeQuick_<lang> + shared)  after 2729/2090 (shared + 20 x the four providers' mean)  ratio 1.66x / 1.66x
+
+== model reads in providers (must be zero)
+Syntax_ts.ts: 0 model reads; imports exampleVarName, indentLines, jsKey, jsProp, jsQuote; description fields read: Name, package
+Syntax_go.ts: 0 model reads; imports camelify, exampleVarName, indentLines; description fields read: package, Name
+Syntax_py.ts: 0 model reads; imports exampleVarName, indentLines; description fields read: Name
+Syntax_c.ts: 0 model reads; imports indentLines; description fields read: Name, name
+total model reads in providers: 0
+
+== provider interface
+Syntax members: 10 (fence, words, client, call, each, print, attempt, comment, expr, before?); RuntimeWords members: 4 (op, many, fails, data)
+Stmt kinds: 7 client, call, each, print, attempt, comment, gap
+Expr kinds: 6 lit, str, env, record, field, map
+interface changes after the first provider (ts): see the git log of src/helpers/example.ts
+f21e6fe1 Prototype: SDK description, example representation, shared quick start, ts/go/py/c syntax providers
+
+== idiom notes (provider-supplied prose beyond RuntimeWords)
+Syntax_ts.ts: 0
+Syntax_go.ts: 0
+Syntax_py.ts: 0
+Syntax_c.ts: 0
+total idiom notes: 0 (the interface has no member for one: none was needed)

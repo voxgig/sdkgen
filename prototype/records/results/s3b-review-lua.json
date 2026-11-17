@@ -1,0 +1,498 @@
+{
+ "lang": "lua",
+ "verdict": "accept-with-fixes",
+ "summary": "I reviewed the lua port in a copy at P/reviews/lua/ws (P = /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2). Progress log: P/reviews/lua/PROGRESS.md. Scripts: P/reviews/lua/my.\n\nWhat I RAN reproduces every number the porter reported:\n- Build exits 0 and the tree stays clean.\n- Fresh `REGEN=1 tools/portcheck.sh sdkgen out lua`: PASS, exit 0, the same screen digit for digit.\n- SCRATCH=1: exit 1, with ledger OPEN 23/3/71, blocks OPEN 26/27/24 and errVar UNATTESTED.\n- Suite: 2601 tests, 2596 pass, 0 fail, 5 skipped, exit 0.\n- Golden 2/2. lua guard and reader 5/5.\n- Line counts 749 to 190 (529 to 142 without blanks and comments). sharewords: provider literals 0.4% / 2.5% / 4.4%.\n- No other language's page changed: 21 root READMEs differ from base32 only inside lua blocks.\n\nThe provider reads no model. The examples I read look right for the runtime. The two notes are true.\n\nThe port is not clean, though:\n- One hand record calls a contradiction \"same-meaning\". The REFERENCE now says direct's second value is always nil. The same SDK's README still says direct returns `table, err` and \"follows the same `(value, err)` convention\".\n- Two citations do not show their value:\n  - ctor[0] quotes an unrelated `require(\"config_shared\")` line.\n  - pairForm quotes the `---@return string? err` comment that the forms file itself calls wrong.\n- The cancel absence search covers only fetcher.lua, while the stream honours `callopts.signal`.\n- Two shared sentences are false for lua:\n  - The accessor sentence says \"Create a new X instance\", but a nil argument returns the client's cached instance.\n  - direct says \"`err` holds the error\" on failure, but for a non-2xx response `err` is nil.\n\nMy 20 attacks found four process holes:\n- `okFalse: 'nil'` passed the guard: the token `nil` is in the same quote line, and the pin is never compared.\n- A constructor of `sdk.create`, which does not exist, passed the guard.\n- A `client.` dot call passed the guard. Those two failed only on hand-decidable OPEN block classes.\n- A shared sentence dropped from all 19 lua REFERENCEs passed the one command outright.",
+ "required_fixes": [
+  {
+   "file": "tools/hand/lua.json (record d2b1853b85)",
+   "change": "Reclassify it from same-meaning to contradiction. Where: lua/README.md:214 (`direct` | `(fetchargs) -> table, err`) and lua/README.md:68 ('`direct` follows the same `(value, err)` convention', followed by `if err then error(err) end`). True side: the REFERENCE (Main.fragment.lua:267,300,315,323,368,374 all return `..., nil`).",
+   "why": "The recorded reason ('OLD said `table, err`') states a difference, not an agreement. The porter's own surprises list admits the two documents disagree. The ledger then shows 1 contradiction where there are 2.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/lua.ts (cite 'ref.facts.ctor[0]')",
+   "change": "Stop quoting `local config = require(\"config_shared\")()`, which has nothing to do with the SDK module. Either cite `File({ name: luaSdkModule(model) + '.' + target.ext })` (Main_lua.ts:138) with the `require` excused openly, or account the line as derived from layout.module.",
+   "why": "brief5 names this pattern as a defect: a quote of an unrelated line that holds only a shared keyword. The guard accepted it because the only code token left after the excuse is `require`.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/lua.ts (cite 'facts.pairForm')",
+   "change": "Cite the code, not the comment: `return nil, sdk_err` (tm/lua/utility/make_error.lua:86) and `return self, nil` (Entity.fragment.lua:437).",
+   "why": "The quoted `---@return EntyClass\\n---@return string? err` is the comment that the same forms file (`shows`) declares wrong about the second value. A citation should not rest on a source the citer has rejected.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/lua.ts (cite 'ref.facts.cancel')",
+   "change": "Widen the absence search to every file an operation or stream runs through (at least Entity.fragment.lua). Or narrow the fact to operations only and record that stream honours `callopts.signal` (Entity.fragment.lua:129,133,166-177,193,219).",
+   "why": "The search covers only tm/lua/utility/fetcher.lua and so cannot see the cancellation the stream implements. The shared cancel paragraph's stream half (ReadmeRef.ts:299-300, 'takes the signal as `callopts.signal`, and ends when it aborts') is true of lua and goes unprinted.",
+   "shared": false
+  },
+  {
+   "file": "ts/src/cmp/ReadmeRef.ts:272-280 (accessorText) and RefFacts",
+   "change": "Additive change, as the porter proposed: an optional `accessor.cached` fact, cited to MainEntity_lua.ts:20-26, and one sentence written once for it.",
+   "why": "'Create a new `PlanetEntity` instance ... pass `nil` for none' is false for lua: with nil the client returns its kept instance. Every REFERENCE example then uses that same instance (`client:Planet():...`). php has the same false sentence.",
+   "shared": true
+  },
+  {
+   "file": "ts/src/cmp/ReadmeRef.ts (direct Returns sentence)",
+   "change": "Say that `err` is set only when no response was read or the body could not be read. For a non-2xx response `ok` is false and `err` is unset.",
+   "why": "Main.fragment.lua:359-367 sets `ok = false` for a non-2xx response and leaves `err` nil unless body_err is set. The page reads as if `err` is always set on failure.",
+   "shared": true
+  },
+  {
+   "file": "ts/test/runtimeforms/account.ts:268-277 (checkCitation)",
+   "change": "When a citation carries `value:`, compare it with the declared value always, not only when the value is prosy.",
+   "why": "Attack `okFalse: 'nil'`: the guard PASSED, because the quote `return { ok = false, err = err }, nil` contains the token `nil` and the `value: \"false\"` pin is never compared. Only 4 OPEN ledger classes caught it, and a hand record could accept them. PORTING.md section 2 says 'a different declaration fails'. It does not.",
+   "shared": true
+  },
+  {
+   "file": "ts/test/runtimefacts.test.ts / runtimeforms guard (layout.ctor and call receivers)",
+   "change": "Check layout.ctor (binding plus member) against the runtime: `new` must exist on the type, and the module binding must be the one the imports printer binds. Check the receiver separator the call printer prints (`:` for an instance member) against `on`.",
+   "why": "With ctor 'sdk.create' (no such function) the guard passed and the fact sheet still said 'naming hook (generator function)', though 'sdk.new' is a literal in Naming_lua.ts:17. With the call printer emitting `client.Planet()` instead of `client:Planet()` the guard also passed. Both were caught only by OPEN block classes, which a person can accept by hand.",
+   "shared": true
+  },
+  {
+   "file": "tools/portcheck.sh / summary.js (absent list)",
+   "change": "Fail on an absent-list entry with no reason in hand/<lang>.json.",
+   "why": "A shared sentence dropped from all 19 lua REFERENCEs gave PORTCHECK PASS. The only trace was 'absent 36 (35 explained)', which is not failed. OLD lua never printed the sentence, so the missing column cannot see it.",
+   "shared": true
+  }
+ ],
+ "not_caught": [
+  {
+   "attack": "A sentence dropped from every lua REFERENCE (' A failed request is reported in the result, not as an error, so branch on `result.ok`.', 19 files)",
+   "consequence": "PORTCHECK PASS, exit 0. Only the absent count moved (35 to 36, one unexplained, not failed)."
+  },
+  {
+   "attack": "ref.facts.direct.okFalse 'false' to 'nil'",
+   "consequence": "The guard passed. The page then says `ok` is `nil` on failure. It was caught only by 4 OPEN ledger classes that a hand record could accept."
+  },
+  {
+   "attack": "Naming_lua layout.ctor 'sdk.new' to 'sdk.create' (no such function)",
+   "consequence": "The guard passed. Only the OPEN block classes (8/14/3) failed the run. A calls-nil constructor would have reached every page."
+  },
+  {
+   "attack": "Call printer `client:Planet()` to `client.Planet()` (self dropped: a runtime error)",
+   "consequence": "The guard passed. Only the OPEN block classes (8/10/10) failed the run."
+  }
+ ],
+ "attacks": [
+  {
+   "by": "derived: op load sig param reqmatch to reqdata",
+   "caught": true,
+   "change": "Guard failed 2 tests. Ledger OPEN 3."
+  },
+  {
+   "by": "cited token: ref.facts.none 'nil' to 'null'",
+   "caught": true,
+   "change": "Guard failed 1. Ledger OPEN 4."
+  },
+  {
+   "by": "pinned prose: facts.collection 'array' to 'list'",
+   "caught": true,
+   "change": "Guard failed 1. Ledger OPEN 1/1/3. Blocks OPEN 6."
+  },
+  {
+   "by": "absence: a `signal` line added to fetcher.lua",
+   "caught": true,
+   "change": "Guard failed 1 (the absence no longer holds)."
+  },
+  {
+   "by": "convention: facts.errVar 'err' to 'e'",
+   "caught": true,
+   "change": "errVar UNATTESTED (hand value differs). Ledger OPEN 6/3/6. Guard passed."
+  },
+  {
+   "by": "language: ref.maps 'tables' to 'arrays'",
+   "caught": true,
+   "change": "ref.maps UNATTESTED. Ledger OPEN 1. Guard passed."
+  },
+  {
+   "by": "enumerated: facts.prints 'fields' to 'record'",
+   "caught": true,
+   "change": "Blocks OPEN 3/13/5. Ledger OPEN 2. Guard passed."
+  },
+  {
+   "by": "signature without its failure marker: remove sig loses ', err'",
+   "caught": true,
+   "change": "Guard failed 2. Ledger OPEN 1."
+  },
+  {
+   "by": "called on the wrong thing: test sig 'test(...)', call 'client:test()'",
+   "caught": true,
+   "change": "Guard failed 2. Ledger OPEN 3. Blocks OPEN 1."
+  },
+  {
+   "by": "callable shown as a field: 'get_name -> string'",
+   "caught": true,
+   "change": "Guard failed 2. Ledger OPEN 3."
+  },
+  {
+   "by": "note naming an entity and stating a number",
+   "caught": true,
+   "change": "Purity 4 open. Guard failed 1 (pin mismatch). Ledger OPEN 2."
+  },
+  {
+   "by": "record fact 'data_get()' to 'data()' (printer unchanged)",
+   "caught": true,
+   "change": "Guard failed 2. Ledger OPEN 3. Blocks OPEN 4."
+  },
+  {
+   "by": "direct.okFalse 'false' to 'nil'",
+   "caught": true,
+   "change": "Guard PASSED. Caught only by ledger OPEN 4."
+  },
+  {
+   "by": "layout.ctor 'sdk.new' to 'sdk.create'",
+   "caught": true,
+   "change": "Guard PASSED. Caught only by blocks OPEN 8/14/3."
+  },
+  {
+   "by": "example printer: `client:` to `client.`",
+   "caught": true,
+   "change": "Guard PASSED. Caught only by blocks OPEN 8/10/10."
+  },
+  {
+   "by": "page: shared direct sentence dropped from one variation (doc-crud)",
+   "caught": true,
+   "change": "Ledger OPEN 1."
+  },
+  {
+   "by": "page: the same sentence dropped from all 19 lua REFERENCEs",
+   "caught": false,
+   "change": "PORTCHECK PASS. Absent 35 to 36, not failed."
+  },
+  {
+   "by": "page: tutorial sentence 'There is no `{ok, data}` wrapper;' dropped (crud-basic)",
+   "caught": true,
+   "change": "Ledger OPEN 3, missing 6 to 5."
+  },
+  {
+   "by": "page: example line `result:data_get()` to `result.data_get()` (B REFERENCE, 3 places)",
+   "caught": true,
+   "change": "Blocks OPEN 4."
+  },
+  {
+   "by": "page: `if err then error(err) end` after the load removed (crud-basic tutorial)",
+   "caught": true,
+   "change": "Blocks OPEN 2."
+  }
+ ],
+ "could_not_check": [
+  "No lua toolchain here: `command -v` finds none of lua, lua5.4, lua5.3, lua5.1, luajit, luac, busted or luarocks. So no example was compiled or run, and the README examples test (readme_examples_test.lua) was not run.",
+  "Unverified: 45 tutorial, 19 rootquick and 162 reference changed blocks across the 21 variations (226). Of these I read 24 distinct blocks in B, auth-basic, ref-issues and crud-basic.",
+  "Under the README test, `if err then error(err) end` after a call on an unseeded id (for example \"planet_id\", \"example_id\") raises a tolerated error. The lines after it (data_get, print) are then never executed, as in OLD. Their run-time behaviour is checked by reading only.",
+  "STRICT_SENTENCES=1 not run: all 79 shared matches are against sentences nobody has reviewed yet.",
+  "I did not re-audit all 174 hand classes. I read every same-meaning (18), contradiction (1) and fact record (1), and sampled the absent reasons."
+ ],
+ "doubtful_lines": [
+  {
+   "line": "Called with `nil`, `client:Planet(nil)` and `client:Planet()` return the instance the client keeps, while the page says 'Create a new `PlanetEntity` instance'",
+   "where": "REFERENCE, Instance Methods, every variation",
+   "why": "False sentence (shared). The cache is at MainEntity_lua.ts:20-26.",
+   "runtime_line": "src/cmp/lua/MainEntity_lua.ts:20 `if data == nil then if self._<field> == nil then ... end return self._<field> end`"
+  },
+  {
+   "line": "on a failure `ok` is `false` and `err` holds the error",
+   "where": "REFERENCE, direct Returns",
+   "why": "For a non-2xx response `err` is nil.",
+   "runtime_line": "src/cmp/lua/fragment/Main.fragment.lua:359-367"
+  },
+  {
+   "line": "`update` returns `value, err` too: ...",
+   "where": "ref-issues tutorial (only write step)",
+   "why": "'too' has no antecedent when the tutorial has no earlier pair sentence. Shared (runtimeprose.ts:123); go prints the same.",
+   "runtime_line": "n/a (prose)"
+  },
+  {
+   "line": "porter's doubt: 'ProjectNameError has no __tostring'",
+   "where": "porter report, doubtful_lines",
+   "why": "Wrong in the porter's favour: the error has one, so error(err) prints its message.",
+   "runtime_line": "tm/lua/core/error.lua:61 `function ProjectNameError:__tostring() return self.msg end`"
+  }
+ ],
+ "facts_audit": [
+  {
+   "fact": "facts.collection = array",
+   "account": "cited, pinned",
+   "verdict": "true",
+   "evidence": "make_result.lua builds a sequence table with table.insert. 'array' is OLD lua's word."
+  },
+  {
+   "fact": "facts.pairForm = value, err",
+   "account": "cited, pinned",
+   "verdict": "true value, bad citation",
+   "evidence": "Quote is the `---@return string? err` comment the forms itself rejects. The code shows the pair: make_error.lua:86 `return nil, sdk_err`, Entity.fragment.lua:437 `return self, nil`."
+  },
+  {
+   "fact": "facts.noError = nil",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "Entity.fragment.lua:437"
+  },
+  {
+   "fact": "facts.errVar = err",
+   "account": "convention, hand record",
+   "verdict": "true",
+   "evidence": "OLD lua code binds `local x, err` and checks it. The mutation to 'e' was caught."
+  },
+  {
+   "fact": "facts.prints = fields",
+   "account": "convention, not judged",
+   "verdict": "acceptable",
+   "evidence": "OLD tutorial printed chosen fields. The root quick start loses OLD's json.encode of the whole record (weaker, but needs no dkjson in REFERENCE blocks)."
+  },
+  {
+   "fact": "ref.facts.none = nil",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "MainEntity_lua.ts:20"
+  },
+  {
+   "fact": "ref.facts.container / valueType.OBJECT = table",
+   "account": "cited / derived",
+   "verdict": "true",
+   "evidence": "Main.fragment.lua:160-162"
+  },
+  {
+   "fact": "ref.facts.ctor[0] = local sdk = require(\"{module}\")",
+   "account": "cited with unquoted 'sdk'",
+   "verdict": "true value, citation shows nothing",
+   "evidence": "The quote `require(\"config_shared\")` is unrelated. The module name comes from luaSdkModule (utility_lua.ts, used by Main_lua.ts:138). Tests bind `sdk` (tm/lua/test/extend_test.lua:14). The excuse is accurate."
+  },
+  {
+   "fact": "ref.facts.ctor[1] / layout.ctor = sdk.new",
+   "account": "derived / 'naming hook (generator function)'",
+   "verdict": "true, mislabelled",
+   "evidence": "`function ProjectNameSDK.new(options)` Main.fragment.lua:81 is a dot function on the type. 'sdk.new' is a literal in Naming_lua.ts:17, not a generator function. The guard does not check it (sdk.create passed)."
+  },
+  {
+   "fact": "ref.facts.test[0] sdk.test(testopts?, sdkopts?)",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Main.fragment.lua:432-452, on the type. Both arguments are defaulted to {}."
+  },
+  {
+   "fact": "ref.facts.accessor {accessor}(data), arg entopts, param data",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "MainEntity_lua.ts:18,26 `EntityMod.new(self, data)`; Entity.fragment.lua:12 `new(client, entopts)`"
+  },
+  {
+   "fact": "ref.facts.op.* -> {Class}[|] , err",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Op fragments `return self:_run_op(...)`. _run_steps returns self (Entity.fragment.lua:437) or the list array. Failure is (nil, sdk_err). `ctrl?` is optional in the comments, but the signatures print no `?` (forms optional: () => true makes every parameter optional)."
+  },
+  {
+   "fact": "client[0] options_map -> table, copy true",
+   "account": "derived / cited pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.lua:159-165 vs.clone"
+  },
+  {
+   "fact": "client[1] get_utility -> Utility, kind utility (copy)",
+   "account": "cited pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.lua:168-170 and utility_type.lua:53 Utility.copy (a new object, same functions)"
+  },
+  {
+   "fact": "client[2] direct(fetchargs) -> table + note",
+   "account": "derived; returns cited with unquoted 'table'",
+   "verdict": "true",
+   "evidence": "Every return in direct/_raw_request ends `, nil`. The excuse for `table` is fair (a table constructor)."
+  },
+  {
+   "fact": "client[3] prepare -> table, err; fails style",
+   "account": "cited pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.lua:201,253-258; make_fetch_def.lua:8,21,36"
+  },
+  {
+   "fact": "entity data_get/match_get copy true",
+   "account": "cited pinned",
+   "verdict": "true",
+   "evidence": "Entity.fragment.lua:102,116. The page says 'Returns a copy' only for data_get, so match_get's copy is not printed."
+  },
+  {
+   "fact": "entity make -> {Class}",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Entity.fragment.lua:70-76"
+  },
+  {
+   "fact": "entity stream streamFunction, runs iterate",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "coroutine.create at the call, first resume on the first pull (Entity.fragment.lua:179,229-233)"
+  },
+  {
+   "fact": "direct.okFalse = false",
+   "account": "cited",
+   "verdict": "true value; guard check unsound",
+   "evidence": "Main.fragment.lua:284,300. Changing it to 'nil' passes the guard because the quote holds `nil`."
+  },
+  {
+   "fact": "body.values = a string",
+   "account": "cited pinned",
+   "verdict": "true for the default fetcher; printed in no variation",
+   "evidence": "fetcher.lua:240-245 drops a non-string body. media.request_body jsonifies tables."
+  },
+  {
+   "fact": "cancel = false",
+   "account": "cited absence",
+   "verdict": "true for operations; the search is scoped too narrowly",
+   "evidence": "Searched only fetcher.lua. Entity.fragment.lua:133,166-177 honours callopts.signal in stream, and the page omits it."
+  },
+  {
+   "fact": "notes.member:direct",
+   "account": "cited pinned",
+   "verdict": "true, claim by claim",
+   "evidence": "Main.fragment.lua:267,300,315,319-323,368,371-374 all return `..., nil`. Failures are in the table. A fetcher that raises would propagate, but that is not a second-value claim."
+  },
+  {
+   "fact": "notes.member:streamFunction",
+   "account": "cited pinned",
+   "verdict": "true",
+   "evidence": "Entity.fragment.lua:207-208 the coroutine returns err, then :238 `error(item, 0)`, :254 `error(err, 0)`. Operations instead return (nil, err) via _run_op's pcall (:325-343). Exception: with ctrl.throw_err == false nothing is raised (:360)."
+  },
+  {
+   "fact": "guard account line",
+   "account": "report",
+   "verdict": "discrepancy",
+   "evidence": "The guard prints 'cited 18' (okFalse cited ahead included). The fact sheet and the porter say cited 17."
+  }
+ ],
+ "pages": [
+  {
+   "section": "tutorial",
+   "variation": "B",
+   "kind": "weaker/ok",
+   "finding": "Step numbering is fixed (OLD jumped to '3.'). The S49 server sentence is added. The load prints one chosen field where OLD looped over every key: weaker, but correct."
+  },
+  {
+   "section": "reference",
+   "variation": "B",
+   "kind": "false (shared)",
+   "finding": "The accessor 'Create a new `XEntity` instance ... pass `nil` for none' is false: nil returns the cached instance. OLD said the same false thing. The direct 'err holds the error' is false for non-2xx. OLD's 'or `nil` and an error on failure' became '`err` is non-nil on failure', which drops that the value is nil: weaker. stream, the Actions table and the class return types are gains."
+  },
+  {
+   "section": "README vs REFERENCE",
+   "variation": "B (every variation)",
+   "kind": "contradiction not recorded",
+   "finding": "lua/README.md:68 says '`direct` follows the same `(value, err)` convention' with an err check, and :214 says `(fetchargs) -> table, err`. The REFERENCE says the second value is always nil. The hand record d2b1853b85 calls it same-meaning."
+  },
+  {
+   "section": "tutorial/rootquick/reference",
+   "variation": "auth-basic",
+   "kind": "ok",
+   "finding": "Secret (S50) and server (S49) are correct against make_options.lua:304-330 (test mode substitutes test-<name>; live mode raises on a missing variable). No false sentence found."
+  },
+  {
+   "section": "tutorial",
+   "variation": "ref-issues",
+   "kind": "awkward (shared)",
+   "finding": "'`update` returns `value, err` too' is the only write sentence, so 'too' has nothing to refer to. go prints the same. OLD's bare `client:Gauge():update(...)` with no check is now checked: a gain. The REFERENCE heading PlanetEntityClient follows entityClassName (Entity_lua.ts:28): a correction."
+  },
+  {
+   "section": "tutorial",
+   "variation": "crud-basic (chosen: lua's pair style is most different there; every write repeats `local _, err` and a check, which no other language prints)",
+   "kind": "ok",
+   "finding": "Valid Lua: redeclaring `local _, err` shadows legally, and `created:data_get()[\"id\"]` is a valid prefixexp. OLD wrote update, patch and remove unchecked. NEW checks each one."
+  }
+ ],
+ "examples": "I read 24 distinct changed lua blocks (B, auth-basic, ref-issues, crud-basic: root README, lua/README tutorial, REFERENCE) against the runtime. The script is P/reviews/lua/my/blocks.js and its output P/reviews/lua/my/blocks4.txt. These declarations hold:\n- `ProjectNameSDK.new(options)` is a dot function on the module.\n- Accessors are colon methods `ProjectNameSDK:<Name>(data)`.\n- Ops are colon methods `(reqmatch|reqdata, ctrl)` returning (entity, nil) or (nil, sdk_err), and list returns an array of entities.\n- `data_get()` is a colon method.\n- `error(err)` with err a ProjectNameError prints its msg through __tostring (error.lua:61).\n\nI found no line I believe would fail to compile, and no wrong member name, arity, receiver or return use.\n\nWhat I could not settle at run time:\n- Under the README test, every `if err then error(err) end` after an unseeded id raises a tolerated error, so the read-back lines after it never execute (as in OLD).\n- Block `print(rec[\"fields\"])` (RecordEntity) prints a table address: it runs, but is unhelpful.\n- The REFERENCE examples ignore the `local planet = client:Planet(nil)` instance printed above them and call `client:Planet()` again. That works, because it is the same cached instance.\n\nNo toolchain: lua, luac, luajit and busted are all absent.",
+ "interface": "H1: the interface held for lua.\n- 0 shared source files touched. `git diff --stat v32-frozen..HEAD` shows only Syntax/Naming (new), the three deleted components, utility_lua.ts with Main_lua.ts (an allowed extraction), the lua forms, lua's lines of lua-table-keys.test.ts and the golden's lua lines. `git -C tools log` shows lua files only.\n- The provider reads no model. Purity: 0 open, 3 accepted (luaKey, luaString, exampleVarName), each justified. The tool's 'note regions found 1' is one notes table holding both notes, not a missed note.\n- Shared changes lua forces: 0 breaking. Additive: 1 sentence gap (accessor cache, shared with php) and 1 tools gap (purity PRINTING lacks luaKey/luaString). The existing 'instance' note slot could have carried the cache fact as an interim lua note. The porter rightly declined, since php shares it, but the page is left false.\n- Shared defects that lua exposes: 2 sentences (accessor, direct err) and 4 tool or guard holes (okFalse pin, ctor and receiver unchecked, absent list not failed).\n- Prose lua supplies, by sharewords, which I reproduced: tutorial 0.4%, rootquick 2.5%, reference 4.4% (notes 4.0% of reference words), 4.3% overall. Well under 15%.\n\nH3: S49, S50, S09, S13, S25 and U45 are visible on lua's pages with no lua-specific edit. U34 and G27 I did not trace individually.\n\nH4: untestable here (no toolchain). 226 changed blocks are unverified.\n\nH2: reproduced, 749 lines became 190 (3.9x), or 529 became 142 without blanks and comments (3.7x).",
+ "ran": "All runs were in P/reviews/lua/ws with node 24, on the PATH from the guide:\n- `npm run build`: exit 0, `git status` clean (twice, and once after the mutations).\n- `REGEN=1 tools/portcheck.sh sdkgen out lua`: PASS, exit 0, equal to the porter's screen (log P/reviews/lua/pc-normal.log, and pc-clean2.log after the mutations).\n- `SCRATCH=1 tools/portcheck.sh sdkgen out lua` on the fresh regeneration: exit 1, OPEN 23/3/71, blocks OPEN 26/27/24, errVar UNATTESTED (pc-scratch.log).\n- Suite: `node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)` gave 2601 tests, 2596 pass, 0 fail, 5 skipped, exit 0, 341 s (suite.log).\n- `node --test dist-test/characterize.test.js`: 2/2.\n- lua guard and reader: 5/5.\n- `SDKGEN_GUARD_REPORT=1` account: derived 47, cited 18, language 1, convention 6.\n- `node tools/purity.js`: 0 open, 3 accepted.\n- `node tools/sharewords.js`: matches the porter.\n- `git diff --numstat v32-frozen..HEAD` plus awk counts: 749/529 and 190/142.\n- A blank-lua-blocks comparison against base32/out/new: 0 of 21 root READMEs differ outside lua blocks.\n- 15 source mutations and 5 page mutations, each followed by build, guard, regeneration and portcheck, then restored (my/mut-*.log).\n- `command -v` for lua, lua5.4, lua5.3, lua5.1, luajit, luac, busted and luarocks: all missing.",
+ "read": "Briefs 1, 3, 4 and 5; PORTING.md v3.2; Syntax_lua.ts; Naming_lua.ts; runtimeforms/lua.ts and its diff; account.ts checkCitation.\n\nThe lua runtime:\n- Main.fragment.lua (whole)\n- Entity.fragment.lua (whole)\n- EntityLoadOp, EntityListOp, EntityCreateOp and EntityRemoveOp fragments\n- MainEntity_lua.ts\n- make_error.lua, make_fetch_def.lua, error.lua, context.lua make_error\n- fetcher.lua send_once, media.lua request_body\n- make_options.lua (server variables), utility_type.lua copy\n- test_feature.lua (load, list, update)\n- ReadmeExamplesTest_lua.ts\n\nPages, OLD and NEW: B, auth-basic, ref-issues and crud-basic (tutorial, root quick start, REFERENCE), plus spot reads of no-test, server-none, server-mixed, auth-query and auth-off.\n\nThe tools: the hand/lua.json same-meaning, contradiction and fact records, and the absent reasons; the facts.txt sheet.",
+ "touched": "P/reviews/lua/ is the only place written:\n- ws: a copy of ports/lua. Restored after every mutation; final state built and regenerated clean, PASS.\n- PROGRESS.md.\n- build and portcheck logs.\n- my/: blocks.js, rep.js, mut.sh, edits/*.json, mut-*.log, new.clean.\n\nNothing under /home/user or P/ports/lua was modified. No commits, no push.",
+ "numbers": [
+  {
+   "what": "portcheck normal (REGEN=1)",
+   "porter": "PASS exit 0; ledger 61/19/15091 same, shared 21/0/58, by hand 17/3/52, missing 6/0/18, contradictions 0/0/1; blocks 3/15/0/30, 0/2/0/17, 151/0/0/162; classes 26/27/24",
+   "mine": "identical, PASS exit 0"
+  },
+  {
+   "what": "portcheck SCRATCH=1",
+   "porter": "exit 1; OPEN 23/3/71; blocks OPEN 26/27/24; errVar UNATTESTED (held 0, contradicted 3, new 9); absent 35, 0 explained",
+   "mine": "identical, exit 1"
+  },
+  {
+   "what": "suite without lanes",
+   "porter": "2601 / 2596 pass / 0 fail / 5 skipped",
+   "mine": "2601 / 2596 / 0 / 5, exit 0, 341 s"
+  },
+  {
+   "what": "guard and reader for lua",
+   "porter": "5 of 5",
+   "mine": "5 of 5"
+  },
+  {
+   "what": "golden",
+   "porter": "lua lines only",
+   "mine": "diff is lua lines only; characterize 2/2"
+  },
+  {
+   "what": "guard account",
+   "porter": "derived 47, cited 17, language 1, convention 6",
+   "mine": "derived 47, cited 18 (direct.okFalse cited ahead counted), language 1, convention 6; fact sheet says cited 17"
+  },
+  {
+   "what": "lines deleted / added",
+   "porter": "749 / 190 (3.9x); 529 / 142 (3.7x)",
+   "mine": "749 / 190; 175+285+69 = 529 / 126+16 = 142"
+  },
+  {
+   "what": "prose by source",
+   "porter": "0.4% / 2.5% / 4.4%; notes 4.0% of reference",
+   "mine": "same (sharewords re-run)"
+  },
+  {
+   "what": "other languages' pages",
+   "porter": "0 of 21 root READMEs differ outside lua blocks",
+   "mine": "0 of 21"
+  },
+  {
+   "what": "distinct changed blocks read (4 variations)",
+   "porter": "n/a",
+   "mine": "24"
+  }
+ ],
+ "hand_records": [
+  {
+   "id": "d2b1853b85",
+   "verdict": "wrong",
+   "why": "It is labelled same-meaning, but its reason ('OLD said `table, err`') is a difference. lua/README.md:214 still says `table, err`, and :68 says direct follows the `(value, err)` convention. It should be a contradiction, true side REFERENCE."
+  },
+  {
+   "id": "655e314529",
+   "verdict": "right but incomplete",
+   "why": "The echo it matched is fine. The README Error handling text beside it (:68) contradicts the direct note and was matched nowhere."
+  },
+  {
+   "id": "ee54946dbe",
+   "verdict": "right",
+   "why": "The README envelope keys ok/status/headers/data equal the REFERENCE's."
+  },
+  {
+   "id": "f64ae2f4fc",
+   "verdict": "right",
+   "why": "The README feature table says nothing of log's default."
+  },
+  {
+   "id": "91baf1b4b6 (contradiction)",
+   "verdict": "right",
+   "why": "No-test: without the test feature `_make_feature('test')` falls back to base (Main.fragment.lua:70-76), so there is no mock transport. The REFERENCE is true."
+  },
+  {
+   "id": "facts.errVar",
+   "verdict": "right",
+   "why": "OLD code binds err. The mutation to 'e' was caught against this record."
+  },
+  {
+   "id": "absent (35)",
+   "verdict": "plausible",
+   "why": "I sampled the go one-program, go getter/setter and go channel-stream entries: each is go-specific or a mask artifact."
+  }
+ ]
+}

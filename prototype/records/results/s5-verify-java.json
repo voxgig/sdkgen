@@ -1,0 +1,284 @@
+{
+ "lang": "java",
+ "ok": false,
+ "summary": "Verdict: ok is false for one reason. At its last commit (sdkgen 87c3f5f3, tools 5104f95) the port fails the reviewed one command only on its two recorded defect classes (c56f7ac39f, 2fc5c0888f). Both wait for ts/src/helpers/runtimeprose.ts to fill a package into the deleted template.\n\nThe one required fix that lives in java's files is made:\n- Syntax_java.ts now takes literals from utility_java's javaLit and passes every Map.of argument through javaMapItems.\n- The three suite tests that failed before now pass.\n- I generated the two null-only fixture SDKs, compiled them with mvn and compiled every block with javac using only the imports each page prints: crate 9/9, tally 7/7. No page holds \"z\" or a null value inside Map.of, and no run throws NullPointerException.\n\nThe other six required fixes are recorded as shared changes:\n- R6's classes are recorded as defect.\n- R2, R3, R4 and R5 make no page wrong today.\n- R7's classes stay same-meaning and now cite the gap, as the reviewer asked.\n\nTwo of the recorded shared changes are wrong in their details:\n- **R5 is not additive.** Making arity required forces four ported providers that declare none although their list has required parameters (measured: c 4 of 4, clojure 3 of 3, elixir 1 of 3, ocaml 2 of 2), so it is breaking by section 4's definition.\n- **R3's recorded calls.ts change is not needed.** The guard half is a one-line spelling bug at guard.ts:454. With it changed in my copy, the guard names the reviewer's q25 attack and all 59 runtimefacts tests still pass.\n\nEverything else in part 2 equals the fixer's numbers:\n- build exit 0, git status empty, guard 4/4, guard plus reader 81/81, golden 2/2;\n- suite 2635 tests, 2630 pass, 0 fail, 5 skipped;\n- reviewed one command identical, line for line, to the fixer's final run; SCRATCH numbers identical;\n- the lane gives BUILD SUCCESS on all three models;\n- the root quick start, run from each repository root, reaches the live request.\n\nNothing outside the guide's allowed files changed, the commits carry no trailer, and no other language's page changed.\n\nMy two fresh attacks:\n- **A**, a wrong cited token: facts.collection set to `new`, which stands in its quote. The guard passes, and the page prints \"Returns a `new` of entities\". Only by-hand classes open, plus 3 STALE records that fail by accident. Pinning value '`List`' in java's own forms, as 6 ported languages already do, catches it by name (measured).\n- **B**, the R1 filter removed: the suite names it (2 tests, quoting the line), and the one command shows the same screen as the clean port.",
+ "still_wrong": [
+  {
+   "file": "ts/project/.sdk/src/cmp/java/Syntax_java.ts:64 (printed in REFERENCE remove sentence, 15 variations, e.g. out/new/B/java/REFERENCE.md:449)",
+   "what": "`((EntityBase) result).deleted()` names a class in the entity subpackage (EntityBase.fragment.java:1 `package JAVAPACKAGE.entity;`) that no java page imports or names (0 files under out/new contain `demosdk.entity`)",
+   "why": "Ran javac against the crud SDK: no import gives exit 1 (cannot find symbol); the import, or the class named in full, gives exit 0 and prints deleted=true. Recorded as defect (c56f7ac39f n15, 2fc5c0888f n1); it waits on runtimeprose.ts filling {module}/{names.<role>} in ref.facts.deleted. These 2 classes are the only reason the one command fails: the control run with them reverted exits 0 PASS."
+  },
+  {
+   "file": "ts/test/runtimeforms/java.ts:84 ('facts.collection' citation, no value:)",
+   "what": "The citation pins no value, so any code token standing in its quote `List<Object> entities = new ArrayList<>();` passes the guard",
+   "why": "Attack A: collection '`new`' passes the guard (4/0). The page prints 'Returns a `new` of entities' (83 REFERENCE units). Only by-hand classes fail: ledger OPEN 2/1/1, rootquick blocks OPEN 5, plus 3 STALE records that fail by accident. Adding value: '`List`' in java's own forms makes the guard say 'cite facts.collection: the fact is \"`new`\"; the citation pins \"`List`\"' (measured with mine/pinprobe.js). c, clojure, elixir, lua, ts and zig already pin it. ref.facts.none and ref.facts.container are unpinned in every language (the reviewer's g06)."
+  },
+  {
+   "file": "fixer's record R5 (shared_changes_needed: ts/test/runtimeforms/guard.ts facts.arity)",
+   "what": "Recorded as breaking: false, with the providers forced 'to be checked'",
+   "why": "Ran mine/arityprobe.js through the guard: c (4 of 4), clojure (3 of 3), elixir (1 of 3) and ocaml (2 of 2) have a list with required parameters and declare no arity. Requiring arity there is a new required fact for 4 ported providers: BREAKING under section 4."
+  },
+  {
+   "file": "fixer's record R3 (shared_changes_needed: calls.ts:115, guard.ts, tools/callcheck.js)",
+   "what": "The recorded change bundles an unnecessary calls.ts head classification with the real cause",
+   "why": "guard.ts:454 builds the accessor pattern with pattern(forms.tokens.accessor). pattern runs spell (guard.ts:81), which turns '${accessor}' into '$${accessor}', so findDecls finds no accessor and the call is never judged. findDecls with the token escaped finds MainEntity_java.ts:31. calls.ts:115 already reads `DemoSDK.planet` as 'qualified', and receiverFits('instance','qualified') is false. Changing that one line in my copy's dist-test guard made q25 fail by name; runtimefacts stayed 59/59 for all languages. Restored afterwards (sha1 f96826ec)."
+  },
+  {
+   "file": "process (port pass criteria: tools/portcheck.sh; ts/test/generate.test.ts)",
+   "what": "A regression of the R1 fix is invisible to the one command",
+   "why": "Attack B (kept() removed from mapOf and argOf): the screen is identical to the clean port (fails only on defect 2), because no variation has a null-only member. Only the repository suite names it (2 tests, quoting `list(Map.of(\"z\", null), null)` in README and REFERENCE)."
+  }
+ ],
+ "shared_changes": [
+  {
+   "file": "ts/src/helpers/runtimeprose.ts (opText, the remove sentence's ref.facts.deleted), ts/test/runtimeforms/guard.ts:547-556, then java's own utility_java.ts / EntityBase_java.ts / Entity_java.ts / Naming_java.ts / Syntax_java.ts",
+   "change": "Fill {module} and {names.<role>} in the deleted template, as notes already may. The guard's deleted check reads those placeholders as layout names. java then extracts JAVA_ENTITY = 'entity' (spelled inline at EntityBase_java.ts:25, Entity_java.ts:39), adds names.entity to the hook, and declares '(({module}.{names.entity}.EntityBase) {var}).deleted()'.",
+   "why": "Closes java's two defect classes. javac: the qualified form exit 0, the printed form exit 1 without an import no page names. Alternative needing no shared change: leave deleted undeclared, as section 9 allows (swift precedent), and give an absent reason. That drops the mark sentence.",
+   "breaking": false,
+   "providers_forced": "java, to close its 2 defects. Optional for kotlin and scala, which cast the same way when they port."
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts:454",
+   "change": "Build the accessor's declaration pattern from the raw token, without spell: `/(?<!\\$)\\{\\w+\\}/.test(t) ? namePattern(t) : esc(t)` on forms.tokens.accessor.",
+   "why": "spell re-substitutes '{accessor}' inside '${accessor}', so java's accessor calls are never judged (the reviewer's q25 passes). Measured in my copy: with this one line, q25 fails naming 'planet is declared on the instance; ... calls it on DemoSDK (qualified)', and runtimefacts passes 59/59 for every language.",
+   "breaking": false,
+   "providers_forced": "none (59/59 pass)"
+  },
+  {
+   "file": "tools/callcheck.js:116-144 (SEP table)",
+   "change": "Judge receivers in languages whose instance and type separators are the same ('.'): a call whose head is a bound variable is on an instance; one whose head is the client type is on the type (calls.ts's binds rule).",
+   "why": "RECEIVER runs only for languages in SEP (lua), so for java callcheck judges no receiver at all. A page-level `DemoSDK.planet(...)` gives 0 findings.",
+   "breaking": false,
+   "providers_forced": "none"
+  },
+  {
+   "file": "ts/test/runtimeforms/forms.ts (Forms) and guard.ts:149-160; then ts/test/runtimeforms/java.ts",
+   "change": "An optional forms hook sigOn(sig) => On, compared with the declaration's on for every signature. java: /\\bstatic\\b/.test(sig) ? 'type' : 'instance'.",
+   "why": "The reviewer's g20: a test signature without `static` passes. Read: the on check reads a receiver from the signature text, which a Java signature lacks, and forms.on reads only declarations. Java's own forms cannot express it.",
+   "breaking": false,
+   "providers_forced": "java (one line). kotlin, scala, csharp and cpp when they port."
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts:547-556",
+   "change": "Check every identifier of ref.facts.deleted: member names on the entity, and a cast's type as a type the runtime declares (as recordWhole checks facts.record).",
+   "why": "The reviewer's g15 (EntityBaseX passes). Measured: c's `{var}->vtx->deleted({var})` passes too, the same hole. EntityBase is not an entity member, so a cast type must be resolved as a type. c's real `vt` resolves, so c is not forced.",
+   "breaking": false,
+   "providers_forced": "none (java is the only cast today; its EntityBase exists)"
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts:237-240 and the prose call printer (runtimeprose opName)",
+   "change": "Instead of requiring facts.arity, judge the call the prose names (`list()` and the like) against the runtime's required parameter count, as G3 judges printed calls.",
+   "why": "The reviewer's g19: with arity removed, the page names `list()`, which Java cannot call. The recorded form (fail when arity is undeclared) is a new required fact for c, clojure, elixir and ocaml (measured).",
+   "breaking": false,
+   "providers_forced": "The proposed form forces none unless a ported page already names a call its runtime cannot make. The recorded form would be BREAKING for c, clojure, elixir and ocaml."
+  },
+  {
+   "file": "ts/src/helpers/runtimeprose.ts (list and load return clauses) and RuntimeFacts in ts/src/helpers/example.ts",
+   "change": "An optional fact for the declared return type. Where it is set, the operation sentences say once that the call is declared as that type and the caller casts.",
+   "why": "OLD java said '(as `Object`)'; NEW cannot (EntityListOp.fragment.java:20 `public Object list(`). The page is not false: hand records 3b6556a083 and 39a9cc2d2c cite this gap.",
+   "breaking": false,
+   "providers_forced": "none (optional): java, kotlin, scala, csharp would declare it"
+  },
+  {
+   "file": "ts/src/cmp/ReadmeRef.ts (STREAM_SIGNAL) and RefFacts",
+   "change": "An optional fact for the type a stream signal must have, printed in the stream-signal sentence.",
+   "why": "EntityBase.fragment.java:214-216 ignores a signal that is not a BooleanSupplier. The sentence is true but incomplete. kotlin and scala have the same restriction (guide section 9).",
+   "breaking": false,
+   "providers_forced": "none (optional)"
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts (cited code-token facts)",
+   "change": "For a cited code-token fact, compare the declared value with what the quote means: require value: pinned, or require the declared value to stand in the quote as declared. Each token appearing somewhere in the line is not enough.",
+   "why": "Attack A (collection `new`) and the reviewer's g06 (none `this`) pass the guard. java can pin collection in its own forms; none and container are pinned in no language.",
+   "breaking": false,
+   "providers_forced": "no provider. Forms edits in the ported languages for none and container."
+  }
+ ],
+ "fixes_checked": [
+  {
+   "finding": "R1: Syntax_java.ts had its own literal table; a null-only member went into Map.of (generate.test.ts:6289, 6321, 6337 failed)",
+   "fixer_outcome": "fixed (ef7f7d63; golden 87c3f5f3; purity-allow tools 5104f95)",
+   "seen": "Syntax_java.ts:73 `const lit = ... javaLit(e.type, e.text)`. :107-108 kept() through javaMapItems (opExample.ts:160 drops NULL). mapOf :112 and argOf :121 filter. Generated pages: null-tally README:46 `client.tally(null).list(Map.of(), null)`; null-crate README:47 `load(Map.of(\"id\", \"example_id\"), null)`. 0 `\"z\"` and 0 `Map.of(..., null)` on either fixture's pages. The suite's three tests pass.",
+   "right": true,
+   "evidence": "Ran: suite (mine/suite.log lines 1201-1203). gennull.js, then mvn -o compile exit 0 for both fixtures. strict.js: crate 9/9 compile, 5 run clean, 4 mock 404; tally 7/7 compile and run; no NullPointerException. The 21 variations' java pages at HEAD equal the reviewer's at 7834f129 (38 of 38), so the fix changed none."
+  },
+  {
+   "finding": "R2: the guard cannot read `static` in a Java signature (g20)",
+   "fixer_outcome": "needs a shared change (sigOn hook); no defect, since the page is true",
+   "seen": "guard.ts:149-160 reads on through readCalls on the signature text. forms.ts:100 `on?: (d: Decl)` reads declarations only. Both test signatures carry static (Syntax_java.ts:32-33); Main.fragment.java:24,28 declares them public static.",
+   "right": true,
+   "evidence": "read; java's own forms cannot express it; additive"
+  },
+  {
+   "finding": "R3: guard and callcheck cannot tell a type call from an instance call through '.' (g25)",
+   "fixer_outcome": "needs a shared change (calls.ts head classification, judge the ${accessor} declaration, callcheck)",
+   "seen": "The guard half is a spelling bug at guard.ts:454: spell turns '${accessor}' into '$${accessor}', so accDecls is empty. calls.ts:115 already classes DemoSDK.planet as 'qualified'. callcheck checks receivers only for lua (SEP).",
+   "right": false,
+   "evidence": "Ran mine/accprobe.js: findDecls with the escaped token finds MainEntity_java.ts:31. Ran mine/q25probe.js: 0 findings as shipped. With guard.js line 538 (compiled) changed: on findings naming the call; runtimefacts 59/59. Restored. The outcome is right that a shared change is needed, but the recorded change is not the smallest."
+  },
+  {
+   "finding": "R4: the guard checks only the last identifier of ref.facts.deleted (g15)",
+   "fixer_outcome": "needs a shared change",
+   "seen": "guard.ts:547-556 takes ids[ids.length-1] only",
+   "right": true,
+   "evidence": "Ran mine/r4probe.js: c `{var}->vtx->deleted({var})` passes (same hole); java's `EntityBase` used as a member fails (it is not one), so the check must resolve a cast type as a type. Additive; c's vt resolves."
+  },
+  {
+   "finding": "R5: the guard does not require facts.arity (g19)",
+   "fixer_outcome": "needs a shared change, breaking false, providers 'to be checked'",
+   "seen": "guard.ts:237-240 runs only when arity is declared. Four ported providers would be forced.",
+   "right": false,
+   "evidence": "Ran mine/arityprobe.js: c 4/4, clojure 3/3, elixir 1/3, ocaml 2/2 required, undeclared. That is BREAKING; the smaller form judges the named call."
+  },
+  {
+   "finding": "R6: `((EntityBase) result).deleted()` needs an import no page states",
+   "fixer_outcome": "needs a shared change; classes recorded defect",
+   "seen": "hand/java.json: c56f7ac39f (n 15) and 2fc5c0888f (n 1) outcome defect, reasons naming runtimeprose.ts. Remove sentence at B/java/REFERENCE.md:449.",
+   "right": true,
+   "evidence": "Ran javac (mine/deleted): NoImport exit 1 'cannot find symbol'; WithImport and Qualified exit 0, deleted=true. Ran the control: reverting the 2 records gives PORTCHECK PASS exit 0. Read EntityBase.fragment.java:1, :43-49; SdkEntity.java and Entity.java have no deleted. Not dropped; additive."
+  },
+  {
+   "finding": "R7: OLD's '(as `Object`)' is lost (porter gap 1)",
+   "fixer_outcome": "needs a shared change; 3b6556a083 and 39a9cc2d2c kept same-meaning, citing the gap",
+   "seen": "Both reasons now name runtimeprose.ts and the four runtimes. EntityListOp.fragment.java:20 `public Object list(`. STALE 0.",
+   "right": true,
+   "evidence": "read; the page is not false (the cast and the `Object list(...)` heading show the type); this is what the reviewer recommended"
+  },
+  {
+   "finding": "Doubtful line: '`data()` reads its record.' beside `Object result`",
+   "fixer_outcome": "not fixed (not a defect)",
+   "seen": "Every REFERENCE block that reads a record binds SdkEntity; the others do not read it",
+   "right": true,
+   "evidence": "Ran strict.js (REFERENCE blocks with only the tutorial's imports): B 21/21, crud 14/14, basic-server 14/14, default 21/21, doc-crud 14/14 compile"
+  },
+  {
+   "finding": "Doubtful line: tutorial update `Map.of(\"id\", ((Map<?, ?>) created.data()).get(\"id\"), ...)` throws NullPointerException if the record has no id",
+   "fixer_outcome": "not fixed (not a defect)",
+   "seen": "Unchanged. The mock always sets an id (TestFeature.java:321, per the fixer; not re-read).",
+   "right": true,
+   "evidence": "Ran: the crud and doc-crud tutorials compile as one program and fail only with mock 404s, no NullPointerException. Left on the page: a live API whose created record lacks id gets a NullPointerException before the SDK's error (not run)."
+  },
+  {
+   "finding": "Provider: a map-valued option key used raw as a Java variable (Syntax_java.ts:148-152)",
+   "fixer_outcome": "not fixed (OLD did the same; renaming would be name surgery)",
+   "seen": "Unchanged. The fixer's reason cites EntityBase.fragment.java:56-63 (entopts), which is the accessor's map, not the client options; the conclusion (keep LinkedHashMap) is still safe.",
+   "right": true,
+   "evidence": "read; see unverified for the variable-collision risk"
+  },
+  {
+   "finding": "Weaker than OLD: the stream signal is only a BooleanSupplier",
+   "fixer_outcome": "needs a shared change (optional fact)",
+   "seen": "EntityBase.fragment.java:214-216 `signalObj instanceof BooleanSupplier ? ... : null`",
+   "right": true,
+   "evidence": "read; the sentence is true but incomplete"
+  },
+  {
+   "finding": "Porter gap 2 (Uses.ops); runtime defects (TestFeature drops created records, the accessor writes active into the caller's map)",
+   "fixer_outcome": "not fixed",
+   "seen": "No page sentence hides either; the update-after-create 404 shows in every crud tutorial run",
+   "right": true,
+   "evidence": "Ran: crud, basic-server and doc-crud tutorial runs fail with 'update: request: 404' after create, in NEW as the reviewer saw in OLD"
+  },
+  {
+   "finding": "The reviewer's not_caught g06 (none 'this'), g23 (throws marker), g26/x04 (cast to SdkClient)",
+   "fixer_outcome": "no outcome given (the list was copied into not_caught_by_process)",
+   "seen": "g06's class reproduced on another fact by my attack A",
+   "right": false,
+   "evidence": "Ran mine/pinprobe.js: pinning facts.collection in java's own forms closes attack A. none and container are pinned in no language (grep over the 14 forms files)."
+  }
+ ],
+ "state": [
+  {
+   "check": "npm run build (sdkgen/ts), git status --short",
+   "fixer_said": "exit 0, empty",
+   "result": "Exit 0, empty. Also forced tsc --build --force src test then npm run build: exit 0, empty. Final rebuild after the attacks: exit 0, empty (mine/build.log, build-force.log, final-build.log)."
+  },
+  {
+   "check": "guard ^java: / guard + reader / golden",
+   "fixer_said": "4/4; 81/81; 2/2",
+   "result": "4/4; 81/81; 2/2 (mine/guard-java.log, guard-reader.log, golden.log)"
+  },
+  {
+   "check": "suite without lanes (--test-concurrency=2)",
+   "fixer_said": "2635 tests, 2630 pass, 0 fail, 5 skipped",
+   "result": "2635 tests, 2630 pass, 0 fail, 5 skipped, exit 0, 276 s. The three java null tests pass (mine/suite.log)."
+  },
+  {
+   "check": "REGEN=1 tools/portcheck.sh sdkgen out java (reviewed)",
+   "fixer_said": "exit 1, FAIL only on reference defect 2; tutorial 59|47 22 0 20 5 0 0|0; rootquick 19|4 0 0 3 1 0 0|0; reference 13823|182 67 0 67 45 0 2|1; blocks 19/16/0/13 c21, 0/0/0/19 c22, 183/0/0/131 c15, OPEN 0; purity 0 open 6 accepted; pagecheck 0; callcheck 405/20/0; build 1813 current; hand 231 STALE 0; facts attested 4, by hand 2, 0 unattested; shared matched 89; absent 27 explained; fact sheet 67/0/0",
+   "result": "Identical on every number: exit 1, regenerated 21 of 21, FAIL only on reference defect 2 (c56f7ac39f, 2fc5c0888f). Run twice (14:51 and 15:08), same result (mine/pc-reviewed.log, pc-final.log). tools git status empty after."
+  },
+  {
+   "check": "control: the same command with the 2 defect records set back",
+   "fixer_said": "PASS exit 0",
+   "result": "PASS, exit 0 (mine/pc-control.log); records and classes restored with git checkout"
+  },
+  {
+   "check": "SCRATCH=1 tools/portcheck.sh sdkgen out java",
+   "fixer_said": "exit 1; ledger OPEN 25/4/114; blocks OPEN 21/22/15; UNATTESTED or NOT JUDGED 2 (named, ref.noun); ABSENT 27; DROPPED 0; no-hand parts clean",
+   "result": "Exit 1; ledger OPEN 25/4/114; blocks OPEN 21/22/15; 2 (NOT JUDGED named, UNATTESTED ref.noun); 27 absent, 0 explained (the screen lists 10 of them); 0 DROPPED. Guard 4/0, purity 0 open (6 accepted), pagecheck 0, callcheck 0, build current (mine/pc-scratch.log)."
+  },
+  {
+   "check": "lane tools/before/run.sh sdkgen java (NEW)",
+   "fixer_said": "BUILD SUCCESS x3, Tests run 4; min 7.70 / 7.53 / 7.69 s",
+   "result": "BUILD SUCCESS x3, Tests run 4, Failures 0; min of 3: 5.92 / 5.88 / 5.91 s (mine/lane-new.log). OLD not run (the fix changes no OLD output)."
+  },
+  {
+   "check": "javac on every block, nothing added that a page does not print (mine/strict.js: tutorial as ONE program with its printed imports only; root block with its own imports; REFERENCE with java.util.List/Map, client, SdkEntity, never EntityBase)",
+   "fixer_said": "compileblocks.js (adds core and EntityBase imports to every block): 24/24, 19/19, 19/19; runs 20/14/14",
+   "result": "Compile: default 23/23, crud 16/16, basic-server 16/16, full B 23/23 plus its features block (constructs 20 features), doc-crud 16/16, null crate 9/9, null tally 7/7. Run under testSDK, exit 0: 19, 11, 11, 19, 11, 5, 7. Every other run is a mock 404; no NullPointerException."
+  },
+  {
+   "check": "root quick start from the repository root (jshell --class-path java/target/classes)",
+   "fixer_said": "5/5 reach the live request; control fails at the import",
+   "result": "5/5 (default, crud, basic-server, null-crate, null-tally) resolve imports, construct the client and fail at the live fetch on the placeholder URLs. The NullPointerExceptions after it are jshell continuing past the failed statement. Control with an empty class path: 'package voxgig.demosdk.core does not exist'."
+  },
+  {
+   "check": "line counts (git diff --numstat v33-frozen..HEAD)",
+   "fixer_said": "Syntax 199, Naming 24, forms +38, utility +5, Main +2 -2, golden +4 -5; 746 deleted; 3.35x / 2.78x",
+   "result": "Identical. 746/223 = 3.35x; 746/268 = 2.78x"
+  },
+  {
+   "check": "files touched / commits / trailers",
+   "fixer_said": "java files and golden only; no trailers",
+   "result": "9 files, all on section 4's list: Main_java, Naming_java, Syntax_java, utility_java, three ReadmeX_java deleted, runtimeforms/java.ts, golden (java lines only, 4 insertions, 5 deletions). Tools commits 085bc9a and 5104f95 touch only classes, counts, hand and purity-allow java.json. git log --format=%B: 0 matches for co-authored, claude, session, signed-off, generated with, or a model name."
+  }
+ ],
+ "attacks": [
+  {
+   "by": "nothing mechanical: guard 4/0 pass, facts line, purity, pagecheck and callcheck clean; only by-hand classes (ledger OPEN 2/1/1, rootquick blocks OPEN 5) and 3 STALE records that quote the old sentence by accident",
+   "caught": false,
+   "change": "A (wrong cited token): facts.collection '`List`' -> '`new`', a token standing in its cited quote. Built, REGEN one command; the page printed 'Returns a `new` of entities, one per record' (83 REFERENCE units). With value '`List`' pinned in java's forms, the guard names it (measured). Restored, rebuilt."
+  },
+  {
+   "by": "the repository suite: generate.test.ts 'a list example writes a null-only parameter...' and 'java and scala leave a null-only load parameter...' fail, quoting `list(Map.of(\"z\", null), null)`; the one command screen is identical to the clean port",
+   "caught": true,
+   "change": "B (changed example, R1 regression): kept() removed from mapOf and argOf in Syntax_java.ts. Built, ran the named tests, REGEN one command (0 pages with a null in Map.of across 21 variations). Restored, rebuilt."
+  },
+  {
+   "by": "guard account: 'ref.facts.accessor.cached: cite the runtime file and a quote that shows true'",
+   "caught": true,
+   "change": "C (false optional fact, guard level via mine/attackprobe.js): accessor.cached true, uncited"
+  },
+  {
+   "by": "guard account: 'cite ref.facts.ctorAlts[0].kind: the provider declares no such fact'",
+   "caught": true,
+   "change": "D (guard level): ctorAlts removed"
+  },
+  {
+   "by": "guard paramNames: 'parameter 1 is testopts in the runtime, sdkopts declared'",
+   "caught": true,
+   "change": "E (guard level): test signature parameters swapped"
+  },
+  {
+   "by": "nothing as shipped (0 findings); with the one-line guard.ts:454 change, the guard on check names it",
+   "caught": false,
+   "change": "Re-run of the reviewer's q25 at guard level: the call printer calls the accessor on DemoSDK (mine/q25probe.js)"
+  }
+ ],
+ "other_languages": "diff -rq out/new P/base33/out/new: 57 entries, all in java's own directories or among the 19 root READMEs of the variations with a java target (0 other files). mine/rootcut.js removes the `### Java` subsection under each `## Quickstart...` heading: 0 of 21 root READMEs differ elsewhere. Control against base33/out/old: 21 of 21 differ.",
+ "ran": "Everything ran in P/verify/java/ws, a cp -a copy of ports/java (sdkgen 87c3f5f3, tools 5104f95); scripts and logs are in P/verify/java/mine.\n- Toolchain (`command -v` loop): node v24.22.1, npm 11.19.1, php 8.3.6, composer, javac, java, jshell, mvn, gradle, g++ 13.3, make present; kotlinc, kotlin, scala, scala-cli, sbt, dotnet MISSING.\n- Build: npm run build; tsc --build --force src test then npm run build; git status.\n- Guard: `^java:` and runtimefacts + runtimereader; characterize (golden).\n- Suite without generatedcompile, --test-concurrency=2.\n- One command: REGEN=1 reviewed, twice; SCRATCH=1; a control with the 2 defect records reverted.\n- Lane: tools/before/run.sh sdkgen java.\n- Examples:\n  - strict.js on the 3 lane SDKs, 2 null fixtures (gennull.js, mvn -o compile) and 2 full variation SDKs (genv.js: B, doc-crud), plus B's features block;\n  - javac on the deleted span three ways;\n  - rootrun.js (jshell from the repository root) on 5 SDKs, plus an empty-class-path control.\n- Guard-module probes (no build): arityprobe.js (14 languages), accprobe.js, q25probe.js, r4probe.js, attackprobe.js (A, C, D, E), pinprobe.js. A one-line change to dist-test/runtimeforms/guard.js line 538, then q25 and runtimefacts (59/59), then restored (sha1 f96826ec).\n- Attacks A and B with a build and a REGEN one command each, restored and rebuilt.\n- Comparisons: diff -rq and rootcut.js against base33; cmp of my java pages against the reviewer's 7834f129 output (38/38 equal); git diff --numstat, git log --format=%B, wc -l.",
+ "read": "- verify.md, brief.md, brief5.md, brief7.md, PORTING.md (all sections).\n- The three reports.\n- Syntax_java.ts at HEAD and the ef7f7d63 diff; Naming_java.ts; runtimeforms/java.ts.\n- utility_java.ts javaLit (:120-130); opExample.ts javaMap and javaMapItems (:144-162).\n- generate.test.ts at :6287, :6321 and :6337.\n- guard.ts:\n  - :81-83 spell and pattern;\n  - :140-165 the signature on check;\n  - :225-250 arity and record;\n  - :372-402 judge;\n  - :454-476 the accessor and operation probes;\n  - :540-556 memberNamed and deleted;\n  - :897 full.\n- forms.ts:100-132 and findDecls :247; namePattern :287; calls.ts:105-125 and :178-189.\n- tools/callcheck.js (:1-30, :100-150); tools/before/run.sh and gensdk.js; tools/gen/lib2.js MSTAGE.\n- The fixer's my/compileblocks.js, rootrun.js and gennull.js; the reviewer's genv.js.\n- hand/java.json and purity-allow/java.json diffs (5104f95).\n- The runtime:\n  - EntityBase.fragment.java:1, :28, :43-49, :212-217;\n  - EntityListOp.fragment.java:18-22;\n  - MainEntity_java.ts:13-31.\n- Every provider's deleted template, and the forms' pins for none, collection and container in 14 languages.\n- out/new B java REFERENCE around :440-455, doc-crud java tutorial, the B root README headings.",
+ "touched": "Only P/verify/java: ws (the copy), mine/ (scripts, logs, generated SDKs) and PROGRESS.md.\n\nTemporary edits in ws, each reverted:\n- Syntax_java.ts, for attacks A and B: git checkout, then rebuilt;\n- dist-test/runtimeforms/guard.js line 538: copied back, sha1 checked;\n- tools hand/java.json and classes/java.json: git checkout.\n\nThe final ws state is git status empty in sdkgen and tools, built, and regenerated by a clean REGEN run. ws/tools/gen gained a staging dir keyed by the ws path; ws/tools/before/work holds the lane SDKs.\n\nports/java and base33 are unmodified: git status 0, HEADs 87c3f5f3 and 5104f95. Their .git index files date from 14:00 and 14:08, before I started; only the .git directory mtimes moved, from my read-only git status. Nothing under /home/user. No push or publish.",
+ "unverified": "For want of a compiler: 0 java blocks. javac, java, jshell and mvn are here.\n\nNot run by me:\n- **Changed blocks of the 21 variations.** The one command counts 197 changed blocks compiled by nothing (tutorial 29, rootquick 19, reference 149). I compiled only the B and doc-crud variations in full (39 blocks plus the features block), plus the lane and fixture models. The other 17 variations rely on the reviewer's 351/351 at 7834f129, on pages I measured byte-identical at HEAD.\n- **Live requests.** No live API was reached, and no constructor options ran outside testSDK.\n- **OLD.** The lane, the root quick start and the blocks were not re-run on OLD; the fix changes no OLD output.\n- **Variable collisions (read, not run).** The tutorial is one main scope that declares `options` and, where a server option prints, `server` and `feature` maps (Syntax_java.ts:146-152). An entity with one of those names would redeclare a local in a later block. No variation has one.\n- **Attacks only at guard level.** C, D and E, and the R3, R4 and R5 probes, ran through the compiled guard module, not through a build and the one command.\n- **Other runtimes.** kotlin, scala and csharp were not read; the claims about them come from the guide's section 9."
+}

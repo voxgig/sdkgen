@@ -1,0 +1,1324 @@
+=== after 2026-11-15T15:52:43Z sdkgen beebf7f1
+=== section 1, build new
+
+##### [new] R1 upgraded, nothing run
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=514
+     generate-copies: target go, target js, target lua, target perl, target py, target ts: 26 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older t
+     generate-copies: target go, target lua, target perl, target py, target ts: 10 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdk
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 11 doctor-finding
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 10 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1079 ms)
+
+##### [new] R2a re-add ts
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (1047 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:-] 
+   GEN ok=true ms=565
+     generate-copies: target go, target js, target lua, target perl, target py: 19 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=NEW ref=NEW top=NEW
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor other: 7 doctor-finding
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 12 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 8 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1116 ms)
+
+##### [new] R2a2 re-add the rest
+   target-template-prune-file removed src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/go: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/py: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/perl: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (1765 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:SN] 
+   GEN ok=true ms=484
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1259 ms)
+
+##### [new] R2b package update --no-fetch
+   target-template-prune-file removed src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/go: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/perl: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/py: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2970 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=548
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1356 ms)
+
+##### [new] R2c dry-run re-add and dry-run package update
+   target-template-prune src/cmp/ts: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file would remove src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file would remove src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/go: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file would remove src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file would remove src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/py: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file would remove src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file would remove src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/perl: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file would remove src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file would remove src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/lua: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file would remove src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file would remove src/cmp/lua/ReadmeTopQuick_lua.ts
+   EXIT 0 (1187 ms)
+   target-template-prune src/cmp/go: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file would remove src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file would remove src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/lua: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file would remove src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file would remove src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/perl: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file would remove src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file would remove src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/py: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file would remove src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file would remove src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/ts: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file would remove src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file would remove src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (1880 ms)
+   tree unchanged by the dry runs
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+
+##### [new] R3 edited retired copy, re-add all
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor: doctor-finding       override (its source no longer ships it; changed h…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       OVERRIDE NOT DECLARED (kept and used instead of the shared sect…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor other: 11 doctor-finding
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 14 retired, 0 orphan compiled, 1 undeclared override, 0 damaged record line, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 10 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1483 ms)
+   target-component-override src/cmp/ts/ReadmeQuick_ts.ts: its source no longer ships this component, and this project changed it, so it is kept and still used in place of the shared one. To use the shared one, delete it and its compiled output under dist/cmp/ts/
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 2 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/go: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/py: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/perl: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (3182 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:QSN dist:Q] 
+   GEN ok=true ms=540
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=OTHER+EDITED ref=NEW top=NEW
+   doctor: doctor-finding       override (its source no longer ships it; changed h…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       OVERRIDE NOT DECLARED (kept and used instead of the shared sect…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 0 missing, 0 outdated, 0 retired, 0 orphan compiled, 1 undeclared override, 0 damaged record line, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 0 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1293 ms)
+
+##### [new] R3b edited, package update
+   target-template-prune-file removed src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/go: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/perl: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/py: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-component-override src/cmp/ts/ReadmeQuick_ts.ts: its source no longer ships this component, and this project changed it, so it is kept and still used in place of the shared one. To use the shared one, delete it and its compiled output under dist/cmp/ts/
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 2 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (3176 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:QSN dist:Q] 
+   GEN ok=true ms=496
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=OTHER+EDITED ref=NEW top=NEW
+
+##### [new] R3c edited, re-add --force
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (1311 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:-] 
+   GEN ok=true ms=596
+     generate-copies: target go, target js, target lua, target perl, target py: 19 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=NEW ref=NEW top=NEW
+
+##### [new] R3d edited, re-add in copies overwrite mode
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (1605 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:-] 
+   GEN ok=true ms=580
+     generate-copies: target go, target js, target lua, target perl, target py: 19 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=NEW ref=NEW top=NEW
+
+##### [new] R4a remove ts, upgraded only
+   EXIT 0 (1407 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] 
+
+##### [new] R4b remove ts after a re-add
+   EXIT 0 (1611 ms)
+
+##### [new] R4c remove ts with the edited copy, after re-add
+   Voxgig SDK Generation Error: target remove: refusing to delete what `target add` did not write
+     ts:
+       src/cmp/ts/ReadmeQuick_ts.ts
+     move any project decision into .sdk/model/, then run again; or pass --force to delete these too
+   EXIT 1 (1343 ms)
+
+##### [new] R4d remove js, unported, upgraded only
+   EXIT 0 (1167 ms)
+
+##### [new] R5 no copy record
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 11 doctor-finding
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 10 missing, 0 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   .sdk has drifted from the scaffold: 11 forked, 0 edited, 0 stale, 10 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1517 ms)
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/go: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/py: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/perl: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   Voxgig SDK Generation Error: target add ts go py perl lua js php: 11 locally changed file(s) cannot take the incoming copy, so nothing was changed:
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+   EXIT 1 (2980 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=667
+     generate-copies: target go, target lua, target perl, target py, target ts: 15 file(s) in .sdk are unchanged copies, but @voxgig/sdkgen 4.45.0 has changed since they were copied, so this run generates from older templates. Run `n
+     generate-copies: target go, target js, target lua, target perl, target py, target ts: 21 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 11 doctor-finding
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 10 missing, 0 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   .sdk has drifted from the scaffold: 11 forked, 0 edited, 0 stale, 10 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1373 ms)
+   Voxgig SDK Generation Error: target remove: refusing to delete what `target add` did not write
+     ts:
+       src/cmp/ts/ReadmeHowto_ts.ts
+       src/cmp/ts/ReadmeModel_ts.ts
+       src/cmp/ts/fragment/Config.data.fragment.ts
+       src/cmp/ts/fragment/Config.fragment.ts
+     move any project decision into .sdk/model/, then run again; or pass --force to delete these too
+   EXIT 1 (1293 ms)
+
+##### [new] R6 alias go~go2 js~js2 made by 4.44.0
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go2/Naming_go2.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go2/Syntax_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeQuick_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeRef_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeTopQuick_go2.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 12 missing, 13 outdated, 18 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1473 ms)
+   target-template-prune-file removed src/cmp/go2/ReadmeQuick_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeRef_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeTopQuick_go2.ts
+   target-template-prune src/cmp/go2: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2121 ms)
+go[src:QRT dist:QRT] go2[src:SN dist:-] js[src:QRT dist:QRT] js2[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=628
+     generate-copies: target go, target js, target lua, target perl, target py, target ts: 26 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older t
+     generate-copies: target go, target lua, target perl, target py, target ts: 10 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdk
+   go: quick=OLD ref=OLD top=OTHER; go2: quick=OTHER ref=OTHER top=OTHER; js: quick=SAME ref=SAME top=SAME; js2: quick=OTHER ref=OTHER top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1107 ms)
+
+##### [new] R8 project-owned target mine
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/go: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/py: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/perl: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2091 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] mine[src:Q dist:Q] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=446
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; mine: quick=OTHER ref=ABSENT top=ABSENT; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   mine own quick start lines: 1
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (957 ms)
+
+##### [new] R15 override kept by an add, then deleted by hand following the advice
+   target-component-override src/cmp/ts/ReadmeQuick_ts.ts: its source no longer ships this component, and this project changed it, so it is kept and still used in place of the shared one. To use the shared one, delete it and its compiled output under dist/cmp/ts/
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 2 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (1418 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:QSN] 
+   GEN ok=true ms=486
+     generate-copies: 1 compiled component(s) in .sdk have no source, and this run still loads them: dist/cmp/ts/ReadmeQuick_ts.js. `npx voxgig-sdkgen doctor prune` deletes them.
+     generate-copies: target go, target js, target lua, target perl, target py: 19 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OTHER+EDITED ref=NEW top=NEW
+   PROJECT-EDITED lines in ts README: 1
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeQuick_ts.js
+   doctor other: 7 doctor-finding
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 12 retired, 1 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 8 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (989 ms)
+
+##### [new] R15b then doctor prune -y, doctor prune, generate
+   doctor-prune         would prune orphan compiled component: dist/cmp/ts/ReadmeQuick_ts.js
+   doctor-prune-end     would prune 1 file(s) - ** DRY RUN **
+   EXIT 0 (845 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:QSN] 
+   doctor-prune         pruned orphan compiled component: dist/cmp/ts/ReadmeQuick_ts.js
+   doctor-prune-end     pruned 1 file(s)
+   EXIT 0 (807 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:SN] 
+   GEN ok=true ms=575
+     generate-copies: target go, target js, target lua, target perl, target py: 19 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=NEW ref=NEW top=NEW
+
+##### [new] R5b no copy record, re-add with --force
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/go: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/py: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/perl: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (1704 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=459
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1230 ms)
+=== row 9
+
+##### [new] R9 make: twenty targets by 4.44.0
+   retired-to-be component files (old names) in src/cmp: 60
+   GEN ok=true ms=1302
+   [4.44.0] doctor ms: 1674 1819 1984 -> min 1674 ms
+   [4.44.0] full generate ms: 4419 5752 5067 -> min 4419 ms
+   [4.44.0] doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [4.44.0] EXIT 0 (1851 ms)
+
+##### [new] R9 upgraded, nothing run
+   TSC EXIT 0
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 26 missing, 25 outdated, 39 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 26 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1662 ms)
+   RETIRED findings: 39, MISSING: 26, OUTDATED: 25
+   [upgraded] doctor ms: 1545 1697 1469 -> min 1469 ms
+     generate-copies: target c, target clojure, target elixir, target go, target js, target lua, target ocaml, target perl, target py, target rb, target rust, target swift, target ts, target zig: 64 file(s) in .sdk are unchanged copies from @v
+     generate-copies: target c, target clojure, target elixir, target go, target lua, target ocaml, target perl, target py, target rb, target rust, target swift, target ts, target zig: 26 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 
+   GEN ok=true ms=1123
+   [upgraded] full generate ms: 4420 4450 4835 -> min 4420 ms
+
+##### [new] R9 package update --no-fetch, three copies
+   EXIT 0 (9066 ms)
+   EXIT 0 (7966 ms)
+   EXIT 0 (13707 ms)
+   removed (prune-file lines): 39; prune lines name:      13 ReadmeQuick_      13 ReadmeRef_      13 ReadmeTopQuick_ 
+   doctor-outdated      target c: 5 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target clojure: 6 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target elixir: 5 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target go: 3 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target js: 2 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target lua: 5 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target ocaml: 7 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target perl: 4 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   TSC EXIT 0
+   [after update] doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [after update] EXIT 0 (2174 ms)
+   [after update] doctor ms: 2827 2408 2863 -> min 2408 ms
+   GEN ok=true ms=1401
+   [after update] full generate ms: 5396 4753 4513 -> min 4513 ms
+   files left: 21 old-style, 26 new; compiled old-style left: 21
+
+##### [new] R9 reference: twenty targets made fresh on the new build
+   add: EXIT 0 (6338 ms)
+TSC EXIT 0
+   GEN ok=true ms=1304
+
+##### [new] R9 compare pages byte for byte
+   after vs fresh [ported]: 26 identical, 0 differ
+   after vs fresh [unported]: 14 identical, 0 differ
+   up vs old [unported]: 7 identical, 7 differ: js/REFERENCE.md php/REFERENCE.md csharp/REFERENCE.md java/REFERENCE.md kotlin/REFERENCE.md scala/REFERENCE.md cpp/REFERENCE.md
+   after vs old [unported]: 7 identical, 7 differ: js/REFERENCE.md php/REFERENCE.md csharp/REFERENCE.md java/REFERENCE.md kotlin/REFERENCE.md scala/REFERENCE.md cpp/REFERENCE.md
+   up vs old [ported]: 13 identical, 13 differ: ts/REFERENCE.md go/REFERENCE.md py/REFERENCE.md c/REFERENCE.md zig/REFERENCE.md clojure/REFERENCE.md rust/REFERENCE.md elixir/REFERENCE.md rb/REFERENCE.md perl/REFERENCE.md swift/REFERENCE.md ocaml/REFERENCE.md lua/REFERENCE.md
+   up vs fresh [ported]: 0 identical, 26 differ: ts/README.md ts/REFERENCE.md go/README.md go/REFERENCE.md py/README.md py/REFERENCE.md c/README.md c/REFERENCE.md zig/README.md zig/REFERENCE.md clojure/README.md clojure/REFERENCE.md rust/README.md rust/REFERENCE.md elixir/README.md elixir/REFERENCE.md rb/README.md rb/REFERENCE.md perl/README.md perl/REFERENCE.md swift/README.md swift/REFERENCE.md ocaml/README.md ocaml/REFERENCE.md lua/README.md lua/REFERENCE.md
+   root README after == fresh
+   up:    c: quick=OLD ref=OLD top=OLD
+   up:  clojure: quick=OLD ref=OLD top=OLD
+   up:  cpp: quick=SAME ref=SAME top=SAME
+   after:    c: quick=NEW ref=NEW top=NEW; clojure: quick=NEW ref=NEW top=NEW; cpp: quick=SAME ref=SAME top=SAME; csharp: quick=SAME ref=SAME top=SAME; elixir: quick=NEW ref=NEW top=NEW; go: quick=NEW ref=NEW top=NEW; java: quick=SAME ref=SAME top=SAME; js: quick=SAME ref=SAME top=SAME; kotlin: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; ocaml: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; rb: quick=NEW ref=NEW top=NEW; rust: quick=NEW ref=NEW top=NEW; scala: quick=SAME ref=SAME top=SAME; swift: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW; zig: quick=NEW ref=NEW top=NEW
+=== row 10
+
+##### [new] R10a package upgraded, copies not refreshed: see R1 too
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=497
+     generate-copies: target go, target js, target lua, target perl, target py, target ts: 26 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older t
+     generate-copies: target go, target lua, target perl, target py, target ts: 10 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdk
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   optional-component warnings: 0
+
+##### [new] R10b copies refreshed on the new build, then the package rolled back to 4.44.0
+   update: EXIT 0 (2257 ms)
+   build on new: TSC EXIT 0
+   (b1) compiled output from the new build kept, generate on 4.44.0:
+   GENERATE THREW: TypeError: (0 , sdkgen_1.readsSecret) is not a function |     at ReadmeHowto (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/work/r10b-new/.sdk/dist/cmp/ts/ReadmeHowto_ts.js:79:48) |     at ReadmeHowto (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/old/dist/helpers/component.js:48:16) |     at Object.ReadmeHowto (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/sdkgen/ts/node_modules/jostraca/dist/jostraca.js:562:20)
+   GEN ok=false ms=412
+     generate-copies: target go, target lua, target perl, target py, target ts: 15 file(s) in .sdk differ from what @voxgig/sdkgen 4.44.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdk
+     generate-copies: target js, target lua, target perl, target py, target ts: 11 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.45.0, but @voxgig/sdkgen 4.44.0 is installed, so this run generates from older templates. R
+     optional-component-missing: ts: no ReadmeTopQuick_ts component, so the top-level README.md's quickstart has no ts example. The SDK code is complete; only this documentation is affected. To add it, w
+     optional-component-missing: py: no ReadmeTopQuick_py component, so the top-level README.md's quickstart has no py example. The SDK code is complete; only this documentation is affected. To add it, w
+     optional-component-missing: go: no ReadmeTopQuick_go component, so the top-level README.md's quickstart has no go example. The SDK code is complete; only this documentation is affected. To add it, w
+     optional-component-missing: lua: no ReadmeTopQuick_lua component, so the top-level README.md's quickstart has no lua example. The SDK code is complete; only this documentation is affected. To add it
+     optional-component-missing: perl: no ReadmeTopQuick_perl component, so the top-level README.md's quickstart has no perl example. The SDK code is complete; only this documentation is affected. To add
+     optional-component-missing: go: no ReadmeQuick_go component, so go/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/go/Read
+     optional-component-missing: go: no ReadmeRef_go component, so go/REFERENCE.md is not written, though go/README.md links to it. The SDK code is complete; only this documentation is affected. To add i
+     optional-component-missing: lua: no ReadmeQuick_lua component, so lua/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/lua/
+     optional-component-missing: lua: no ReadmeRef_lua component, so lua/REFERENCE.md is not written, though lua/README.md links to it. The SDK code is complete; only this documentation is affected. To a
+     optional-component-missing: perl: no ReadmeQuick_perl component, so perl/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/p
+     optional-component-missing: perl: no ReadmeRef_perl component, so perl/REFERENCE.md is not written, though perl/README.md links to it. The SDK code is complete; only this documentation is affected. 
+     optional-component-missing: py: no ReadmeQuick_py component, so py/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/py/Read
+     optional-component-missing: py: no ReadmeRef_py component, so py/REFERENCE.md is not written, though py/README.md links to it. The SDK code is complete; only this documentation is affected. To add i
+     optional-component-missing: ts: no ReadmeQuick_ts component, so ts/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/ts/Read
+   (b2) the project's own tsc --build src against 4.44.0:
+   TSC EXIT 0
+   distinct missing exports: 
+   (b3) doctor on 4.44.0:
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/ts/Syntax_ts.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/ts/Naming_ts.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/py/Syntax_py.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/py/Naming_py.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/perl/Syntax_perl.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/perl/Naming_perl.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/lua/Syntax_lua.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/lua/Naming_lua.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/go/Syntax_go.ts
+      1    doctor-finding       additive (project-owned, not drift): src/cmp/go/Naming_go.ts
+      1    doctor-finding       MISSING (would be written by `target add`): src/cmp/ts/ReadmeTopQuick_ts.ts
+      1    doctor-finding       MISSING (would be written by `target add`): src/cmp/ts/ReadmeRef_ts.ts
+   (b4) dist cleared (a second machine: fresh checkout, no dist), tsc fails, generate on 4.44.0:
+   TSC EXIT 1
+   GEN ok=true ms=340
+=== row 12
+
+##### R12 langpack against old: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/old
+   suite exit 0
+   ℹ tests 76 ℹ pass 74 ℹ fail 0 ℹ skipped 2 
+   
+   > @voxgig/sdkgen-langpack@0.0.15 build
+   > tsc --project /tmp/sdkgen-consumer-QrA4BT/tsconfig.json --outDir /tmp/sdkgen-consumer-QrA4BT/.sdk/dist/cmp
+   
+   wrote 12 md files; sdkgen at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/old
+
+##### R12 langpack against new: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/sdkgen/ts
+   suite exit 0
+   ℹ tests 76 ℹ pass 74 ℹ fail 0 ℹ skipped 2 
+   
+   > @voxgig/sdkgen-langpack@0.0.15 build
+   > tsc --project /tmp/sdkgen-consumer-hRgGiw/tsconfig.json --outDir /tmp/sdkgen-consumer-hRgGiw/.sdk/dist/cmp
+   
+   wrote 12 md files; sdkgen at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/sdkgen/ts
+
+##### R12 compare
+   md files: old 12, new 12
+   DIFFER: 2 file(s)
+   diff -r /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/out/lp-md-old/dart/REFERENCE.md /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/out/lp-md-new/dart/REFERENCE.md
+   diff -r /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/out/lp-md-old/lean/REFERENCE.md /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/out/lp-md-new/lean/REFERENCE.md
+=== row 13
+
+##### [new] R13 upgraded: 4.44.0-made go~go2 js~js2, re-added on the new build
+   before src/cmp/go2: ReadmeQuick_go2.ts ReadmeRef_go2.ts ReadmeTopQuick_go2.ts 
+   before src/cmp/js2: ReadmeQuick_js2.ts ReadmeRef_js2.ts ReadmeTopQuick_js2.ts 
+   target-template-prune-file removed src/cmp/go2/ReadmeQuick_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeRef_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeTopQuick_go2.ts
+   EXIT 0 (1692 ms)
+   after src/cmp/go2: Naming_go2.ts Syntax_go2.ts 
+   after src/cmp/js2: ReadmeQuick_js2.ts ReadmeRef_js2.ts ReadmeTopQuick_js2.ts 
+   [up] GEN ok=true ms=645
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1345 ms)
+
+##### [new] R13 fresh: go~go2 js~js2 made on the new build
+   EXIT 0 (3024 ms)
+   fresh src/cmp/go2: Naming_go2.ts Syntax_go2.ts 
+   fresh src/cmp/js2: ReadmeQuick_js2.ts ReadmeRef_js2.ts ReadmeTopQuick_js2.ts 
+   [fresh] GEN ok=true ms=632
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1587 ms)
+
+##### [new] R13 pages
+   go2/README.md: upgraded == fresh
+   go2/REFERENCE.md: upgraded == fresh
+   js2/README.md: upgraded == fresh
+   js2/REFERENCE.md: upgraded == fresh
+   README.md: upgraded != fresh (38 lines)
+   go  field types:       3 `float64`       1 `int`       1 `map[string]any`      10 `string` 
+   go2 field types:       3 `float64`       1 `int`       1 `map[string]any`      10 `string` 
+   go2 REFERENCE with go2 read as go, against go: 0 differing lines
+   go2 README with go2 read as go, against go: 98 differing lines
+   js  field types:       1 `Object`       4 `number`      10 `string` 
+   js2 field types:      15 `any` 
+   js2 REFERENCE with js2 read as js, against js: 30 differing lines
+   js2 README with js2 read as js, against js: 30 differing lines
+   root README heading: 71:### Golang
+   root README heading: 87:### Golang
+   root README heading: 96:### JavaScript
+   root README heading: 105:### JavaScript
+   root README heading: 206:### Golang
+   root README heading: 242:### Golang
+   root README heading: 264:### JavaScript
+   root README heading: 276:### JavaScript
+
+##### [new] R13 remove
+   [r13u-new remove go2] EXIT 0 (983 ms)
+   [r13u-new remove js2] EXIT 0 (937 ms)
+   [r13f remove go2] EXIT 0 (967 ms)
+   [r13f remove js2] EXIT 0 (1158 ms)
+=== row 14
+
+##### [new] R14 base: made on the new build, target add ts go js
+   EXIT 0 (1731 ms)
+   [base] GEN ok=true ms=254
+   [base] 'NOTE:' comments 0, 'MyClient' 0, test-feature-always sentence: 0
+
+##### [new] R14 the project edits the printer, the fact and the hook
+   edited: 2 lines in Syntax_ts, 1 in Naming_ts
+   [edited] GEN ok=true ms=318
+   [edited] 'NOTE:' comments 1, 'MyClient' 13, test-feature-always sentence: 0
+   ref diff: < ## DemoSDK
+   ref diff: < #### `DemoSDK.test(testopts?, sdkopts?)`
+   ref diff: < const client = DemoSDK.test()
+   ref diff: < Alias for `DemoSDK.test()`.
+   ref diff: < Return the parent `DemoSDK` instance.
+   ref diff: < Return the parent `DemoSDK` instance.
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Naming_ts.ts
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor-end           .sdk matches the scaffold (0 additive, 2 customized)
+   EXIT 0 (1120 ms)
+
+##### [new] R14 target add ts, merge mode
+   copy-merge-merged    target add ts: merged the incoming copy into 2 locally changed file(s): src/cmp/ts/Naming_ts.ts, src/cmp/ts/Syntax_ts.ts
+   EXIT 0 (1212 ms)
+   [merged] GEN ok=true ms=271
+   [merged] 'NOTE:' comments 1, 'MyClient' 13, test-feature-always sentence: 0
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Naming_ts.ts
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor-end           .sdk matches the scaffold (0 additive, 2 customized)
+   EXIT 0 (906 ms)
+
+##### [new] R14 package update --no-fetch, merge mode
+   EXIT 0 (1548 ms)
+   [updated] GEN ok=true ms=250
+   [updated] 'NOTE:' comments 1, 'MyClient' 13, test-feature-always sentence: 0
+
+##### [new] R14 target add ts, copies overwrite
+   EXIT 0 (1042 ms)
+   [overwritten] GEN ok=true ms=238
+   [overwritten] 'NOTE:' comments 0, 'MyClient' 0, test-feature-always sentence: 0
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (996 ms)
+
+##### [new] R14 a declared runtime fact edited: async true to false, in merge mode
+   [async] GEN ok=true ms=239
+   'await' in ts README+REFERENCE: before 30 after 30
+   < `load()` resolves to the entity and throws on failure; `.data()` reads
+   < its record.
+   > `load()` returns the entity and throws on failure; `.data()` reads its
+   > record.
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor-end           .sdk matches the scaffold (0 additive, 1 customized)
+   EXIT 0 (1128 ms)
+=== row 16
+
+##### [new] R16 package check: both
+   exit 0
+   [15:58:06.988] INFO: sdkgen                 package-check-start  ./packs/chk-both: checking ./packs/chk-both
+   [15:58:07.162] INFO: sdkgen                 package-check-end    ./packs/chk-both: no findings
+   add: EXIT 0 (1018 ms)
+   TSC EXIT 0
+   gen: GEN ok=true ms=132
+
+##### [new] R16 package check: provider
+   exit 1
+   [15:58:10.558] INFO: sdkgen                 package-check-start  ./packs/chk-provider: checking ./packs/chk-provider
+   [15:58:10.726] ERROR: lua/sdkgen             provider-without-hook src/cmp/lua: Syntax_lua.ts has no Naming_lua.ts, so generation stops on its first page
+   [15:58:10.726] INFO: sdkgen                 package-check-end    ./packs/chk-provider: 1 error(s), 0 warning(s)
+   /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fix/packs/chk-provider: 1 error(s), 0 warning(s)
+   add: EXIT 0 (1008 ms)
+   TSC EXIT 0
+   gen: GENERATE THREW: Error: lp: a syntax provider needs a Naming hook (cmp/lp/Naming_lp) |     at describeTarget (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5fi
+   gen: GEN ok=false ms=89
+
+##### [new] R16 package check: hook
+   exit 0
+   [15:58:14.216] INFO: sdkgen                 package-check-start  ./packs/chk-hook: checking ./packs/chk-hook
+   [15:58:14.382] WARN: lua/sdkgen             hook-without-provider src/cmp/lua: Naming_lua.ts and no Syntax_lua.ts or ReadmeQuick_lua.ts, so the tutorial, the root quick start and REFERENCE.md are empty
+   [15:58:14.382] INFO: sdkgen                 package-check-end    ./packs/chk-hook: 1 warning(s)
+   add: EXIT 0 (964 ms)
+   TSC EXIT 0
+   gen:   optional-component-missing: lp: no ReadmeTopQuick_lp component, so the top-level README.md's quickstart has no lp example. The SDK code is complete; only this documentation is affected. To add it, w
+   gen:   optional-component-missing: lp: no ReadmeQuick_lp component, so lp/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/lp/Read
+   gen:   optional-component-missing: lp: no ReadmeRef_lp component, so lp/REFERENCE.md is not written, though lp/README.md links to it. The SDK code is complete; only this documentation is affected. To add i
+   gen: GEN ok=true ms=100
+
+##### [new] R16 package check: neither
+   exit 0
+   [15:58:17.861] INFO: sdkgen                 package-check-start  ./packs/chk-neither: checking ./packs/chk-neither
+   [15:58:18.015] INFO: sdkgen                 package-check-end    ./packs/chk-neither: no findings
+   add: EXIT 0 (1017 ms)
+   TSC EXIT 0
+   gen: GEN ok=true ms=114
+
+##### [new] R7b a pack that retires its own components: installed old-style, then the pack moves to a provider
+   add v0.1.0: EXIT 0 (1026 ms)
+   TSC EXIT 0
+   GEN ok=true ms=151
+   doctor-finding       MISSING (would be written by `target add`): src/cmp/lp/Naming_lp.ts
+   doctor-finding       MISSING (would be written by `target add`): src/cmp/lp/Syntax_lp.ts
+   doctor-finding       RETIRED (an unchanged copy its source no longer ships; the next add removes it): src/cmp/lp/ReadmeQuick_lp.ts
+   doctor-finding       RETIRED (an unchanged copy its source no longer ships; the next add removes it): src/cmp/lp/ReadmeRef_lp.ts
+   doctor-finding       RETIRED (an unchanged copy its source no longer ships; the next add removes it): src/cmp/lp/ReadmeTopQuick_lp.ts
+   doctor-finding       OUTDATED (unchanged since it was copied, but its source has moved on): src/cmp/lp/Main_lp.ts
+   doctor-finding       OUTDATED (unchanged since it was copied, but its source has moved on): src/cmp/lp/utility_lp.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 2 missing, 2 outdated, 3 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (929 ms)
+   re-add v0.2.0: target-template-prune-file removed src/cmp/lp/ReadmeQuick_lp.ts
+   re-add v0.2.0: target-template-prune-file removed src/cmp/lp/ReadmeRef_lp.ts
+   re-add v0.2.0: target-template-prune-file removed src/cmp/lp/ReadmeTopQuick_lp.ts
+   re-add v0.2.0: EXIT 0 (1201 ms)
+   files: Naming_lp.ts Syntax_lp.ts 
+   TSC EXIT 0
+   GEN ok=true ms=109
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (662 ms)
+=== attack states
+
+##### [new] S1 legacy record: sdkgen-copies.json as 4.34.0 wrote it, no log/copies.jsonl
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (935 ms)
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (2321 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=475
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (971 ms)
+   legacy file still there: no
+   log: 3 line(s); last op {"at":"2026-11-15T15:58:32.119Z","op":"add","items":{"featur
+   first line: {"at":"2026-11-15T15:58:32.074Z","op":"import","items":{"feature/test":{"package
+
+##### [new] S1b retired copy whose last record entry was written by 4.40.0 with 4.40.0 content
+   (4.40.0 content == 4.44.0)
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1120 ms)
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (2205 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1045 ms)
+
+##### [new] S2a copy record whose only line is truncated mid-JSON
+   record now 900 bytes
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 10 missing, 0 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 1 damaged record line, 0 unresolved
+   EXIT 1 (982 ms)
+     src/cmp/ts/fragment/Config.data.fragment.ts (no record of what the toolchain wrote here, so nothing to merge against; a base is found in git once the copies an add writes are committed)
+     src/cmp/ts/fragment/Config.fragment.ts (no record of what the toolchain wrote here, so nothing to merge against; a base is found in git once the copies an add writes are committed)
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+   EXIT 1 (2120 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=482
+     generate-copies: target go, target lua, target perl, target py, target ts: 15 file(s) in .sdk are unchanged copies, but @voxgig/sdkgen 4.45.0 has changed since they were copied, so this run generates from older templates. Run `n
+     generate-copies: target go, target js, target lua, target perl, target py, target ts: 21 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 10 missing, 0 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 1 damaged record line, 0 unresolved
+   EXIT 1 (1374 ms)
+
+##### [new] S2b a later add rewrote ReadmeQuick_ts, and THAT line is truncated: record holds the earlier fingerprint
+   doctor: doctor-finding       override (its source no longer ships it; changed h…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       OVERRIDE NOT DECLARED (kept and used instead of the shared sect…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 14 retired, 0 orphan compiled, 1 undeclared override, 1 damaged record line, 0 unresolved
+   EXIT 1 (1240 ms)
+   target-component-override src/cmp/ts/ReadmeQuick_ts.ts: its source no longer ships this component, and this project changed it, so it is kept and still used in place of the shared one. To use the shared one, delete it and its compiled output under dist/cmp/ts/ReadmeQuick_ts.js. Doctor fails until th
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (2066 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:QSN dist:Q] 
+   GEN ok=true ms=404
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=OLD ref=NEW top=NEW
+   doctor: doctor-finding       override (its source no longer ships it; changed h…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       OVERRIDE NOT DECLARED (kept and used instead of the shared sect…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 0 missing, 0 outdated, 0 retired, 0 orphan compiled, 1 undeclared override, 1 damaged record line, 0 unresolved
+   EXIT 1 (898 ms)
+   remove: Voxgig SDK Generation Error: target remove: refusing to delete what `target add` did not write
+   remove: EXIT 1 (884 ms)
+
+##### [new] S3a retired copy edited, doctor run under 4.44.0, then reverted byte for byte, then upgrade
+   4.44.0 doctor while edited: doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (972 ms)
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (2264 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=434
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (979 ms)
+
+##### [new] S3b reverted but with CRLF line endings throughout src/cmp, a Windows checkout
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (904 ms)
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (2166 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (939 ms)
+
+##### [new] S3c reverted except one trailing space
+   doctor: doctor-finding       override (its source no longer ships it; changed h…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       OVERRIDE NOT DECLARED (kept and used instead of the shared sect…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 14 retired, 0 orphan compiled, 1 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (927 ms)
+   target-component-override src/cmp/ts/ReadmeQuick_ts.ts: its source no longer ships this component, and this project changed it, so it is kept and still used in place of the shared one. To use the shared one, delete it and its compiled output under dist/cmp/ts/ReadmeQuick_ts.js. Doctor fails until th
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (1914 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:QSN dist:Q] 
+   GEN ok=true ms=485
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=OLD ref=NEW top=NEW
+   doctor: doctor-finding       override (its source no longer ships it; changed h…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       OVERRIDE NOT DECLARED (kept and used instead of the shared sect…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 0 missing, 0 outdated, 0 retired, 0 orphan compiled, 1 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (960 ms)
+
+##### [new] S5a target removed by the verb under 4.44.0, re-added after the upgrade
+   4.44.0 remove: EXIT 0 (701 ms)
+   dist/cmp after remove: go js lua perl php py ts 
+   EXIT 0 (1221 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:QRT] 
+   GEN ok=true ms=512
+     generate-copies: 3 compiled component(s) in .sdk have no source, and this run still loads them: dist/cmp/ts/ReadmeQuick_ts.js, dist/cmp/ts/ReadmeRef_ts.js, dist/cmp/ts/ReadmeTopQuick_ts.js. `npx voxgig-sdkgen doctor prune` delet
+     generate-copies: target go, target js, target lua, target perl, target py: 19 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeQuick_ts.js
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeRef_ts.js
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeTopQuick_ts.js
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 12 retired, 3 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (971 ms)
+
+##### [new] S5b target directory deleted by hand under 4.44.0, src/cmp/ts and tm/ts gone, model and dist left, upgrade, re-add
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeQuick_ts.js
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeRef_ts.js
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeTopQuick_ts.js
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 130 missing, 7 outdated, 12 retired, 34 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1172 ms)
+   EXIT 0 (1498 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:QRT] 
+   GEN ok=true ms=445
+     generate-copies: 3 compiled component(s) in .sdk have no source, and this run still loads them: dist/cmp/ts/ReadmeQuick_ts.js, dist/cmp/ts/ReadmeRef_ts.js, dist/cmp/ts/ReadmeTopQuick_ts.js. `npx voxgig-sdkgen doctor prune` delet
+     generate-copies: target go, target js, target lua, target perl, target py: 19 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeQuick_ts.js
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeRef_ts.js
+   doctor: doctor-finding       ORPHAN COMPILED COMPONENT (its source is gone, but generate still l…): dist/cmp/ts/ReadmeTopQuick_ts.js
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 12 retired, 3 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1051 ms)
+
+##### [new] S5b2 then doctor prune
+   doctor-prune         pruned orphan compiled component: dist/cmp/ts/ReadmeQuick_ts.js
+   doctor-prune         pruned orphan compiled component: dist/cmp/ts/ReadmeRef_ts.js
+   doctor-prune         pruned orphan compiled component: dist/cmp/ts/ReadmeTopQuick_ts.js
+   doctor-prune-end     pruned 3 file(s)
+   EXIT 0 (789 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:SN dist:SN] 
+   GEN ok=true ms=441
+     generate-copies: target go, target js, target lua, target perl, target py: 19 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 12 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1070 ms)
+
+##### [new] S7a alias go~go2 made by 4.44.0, upgrade, then the base go removed, then go2 re-added
+   remove go: EXIT 0 (839 ms)
+   src/cmp: go2 js js2 lua perl php py ts 
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go2/Naming_go2.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go2/Syntax_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeQuick_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeRef_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeTopQuick_go2.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 13 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1169 ms)
+   target-alias-model-kept go2: keeping the existing aliased target model (project-owned — an alias is differentiated by editing it)
+   target-template-prune-file removed src/cmp/go2/ReadmeQuick_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeRef_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeTopQuick_go2.ts
+   target-template-prune src/cmp/go2: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (1224 ms)
+go2[src:SN dist:-] js[src:QRT dist:QRT] js2[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=589
+     generate-copies: target js, target js2, target lua, target perl, target py, target ts: 25 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older 
+     generate-copies: target lua, target perl, target py, target ts: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+   go2: quick=OTHER ref=OTHER top=OTHER; js: quick=SAME ref=SAME top=SAME; js2: quick=OTHER ref=OTHER top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 13 outdated, 12 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1225 ms)
+
+##### [new] S7b alias go~go2, base go removed under 4.44.0 BEFORE the upgrade, then package update
+   4.44.0 remove go: EXIT 0 (871 ms)
+   package-update-alias-model-kept @voxgig/sdkgen: keeping the model file of 2 aliased item(s) — that file is where an alias is differentiated, so upstream model changes to go, js must be ported by hand: model/target/go2.aontu, model/target/js2.aontu
+   target-alias-model-kept go2: keeping the existing aliased target model (project-owned — an alias is differentiated by editing it)
+   target-template-prune-file removed src/cmp/go2/ReadmeQuick_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeRef_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeTopQuick_go2.ts
+   target-template-prune src/cmp/go2: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2837 ms)
+go2[src:SN dist:-] js[src:QRT dist:QRT] js2[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=531
+   go2: quick=OTHER ref=OTHER top=OTHER; js: quick=SAME ref=SAME top=SAME; js2: quick=OTHER ref=OTHER top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (924 ms)
+
+##### [new] S8 two aliases of one language, go~go2 go~go3, made by 4.44.0, package update
+   4.44.0 add: EXIT 0 (1610 ms)
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeQuick_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeRef_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go2/ReadmeTopQuick_go2.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go3/ReadmeQuick_go3.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go3/ReadmeRef_go3.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/go3/ReadmeTopQuick_go3.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 14 missing, 11 outdated, 21 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1170 ms)
+   package-update-alias-model-kept @voxgig/sdkgen: keeping the model file of 2 aliased item(s) — that file is where an alias is differentiated, so upstream model changes to go, go must be ported by hand: model/target/go2.aontu, model/target/go3.aontu
+   target-alias-model-kept go2: keeping the existing aliased target model (project-owned — an alias is differentiated by editing it)
+   target-template-prune-file removed src/cmp/go2/ReadmeQuick_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeRef_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeTopQuick_go2.ts
+   target-template-prune src/cmp/go2: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-alias-model-kept go3: keeping the existing aliased target model (project-owned — an alias is differentiated by editing it)
+   target-template-prune-file removed src/cmp/go3/ReadmeQuick_go3.ts
+   target-template-prune-file removed src/cmp/go3/ReadmeRef_go3.ts
+   target-template-prune-file removed src/cmp/go3/ReadmeTopQuick_go3.ts
+   target-template-prune src/cmp/go3: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2685 ms)
+go[src:SN dist:-] go2[src:SN dist:-] go3[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=649
+   go: quick=NEW ref=NEW top=OTHER; go2: quick=OTHER ref=OTHER top=OTHER; go3: quick=OTHER ref=OTHER top=ABSENT; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1059 ms)
+   go2/README.md == go3/README.md modulo the name
+   go2/REFERENCE.md == go3/REFERENCE.md modulo the name
+
+##### [new] S9 overwrite mode, edited retired copy: is the project told BEFORE the delete
+   doctor before any add:
+     doctor-finding       override (its source no longer ships it; changed here, and copies are overwritten in this project, so the next add deletes it): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+     doctor-finding       OVERRIDE NOT DECLARED (kept and used instead of the shared section; declare it as main: kit: target: <t>: override: <Name>: true, or delete it and its compiled output): src/cmp/ts/ReadmeQuick_ts.ts
+     doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 14 retired, 0 orphan compiled, 1 undeclared override, 0 damaged record line, 0 unresolved
+     EXIT 1 (1183 ms)
+   dry run (-y) of target add ts:
+     target-template-prune src/cmp/ts: would remove 3 stale template(s) — ** DRY RUN **, nothing was written
+     target-template-prune-file would remove src/cmp/ts/ReadmeQuick_ts.ts
+     target-template-prune-file would remove src/cmp/ts/ReadmeRef_ts.ts
+     target-template-prune-file would remove src/cmp/ts/ReadmeTopQuick_ts.ts
+     target-result        ** DRY RUN ** 6 files would change; nothing was written
+     feature-result       ** DRY RUN ** 0 files would change; nothing was written
+   the same mode on a LIVE edited copy (Main_ts.ts), dry run:
+     target-result        written: src/cmp/ts/Main_ts.ts
+   real add:
+     target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+     EXIT 0 (1155 ms)
+   PROJECT LIVE EDIT left: 0; PROJECT-EDITED file: gone; base store: 
+
+##### [new] S10a package update -y then real, then again
+   feature-result       ** DRY RUN ** 0 files would change; nothing was written
+   feature-result       ** DRY RUN ** 0 files would change; nothing was written
+   EXIT 0 (1416 ms)
+   -y: tree unchanged
+   first update prune lines: 15
+   log: 4 line(s); last op {"at":"2026-11-15T16:00:06.536Z","op":"add","items":{"featur
+   EXIT 0 (2260 ms)
+   second update: TREE CHANGED
+   log: 4 line(s); last op {"at":"2026-11-15T16:00:06.536Z","op":"add","items":{"featur
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (960 ms)
+
+##### [new] S10b package update with the package NOT newer: 4.44.0 project, 4.44.0 installed
+   package-update-nofetch @voxgig/sdkgen: --no-fetch, using the source already installed
+   EXIT 0 (2519 ms)
+   TREE CHANGED
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+
+##### [new] S11 feature add after the upgrade, before any target add
+   EXIT 0 (890 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   go: quick=OLD ref=OTHER top=OLD; js: quick=SAME ref=OTHER top=SAME; lua: quick=OLD ref=OTHER top=OLD; perl: quick=OLD ref=OTHER top=OLD; php: quick=SAME ref=OTHER top=SAME; py: quick=OLD ref=OTHER top=OLD; ts: quick=OLD ref=OTHER top=OLD
+
+##### [new] S12 pack target named lua installed as lua~lp beside the bundled lua, both by 4.44.0, upgrade sdkgen
+   4.44.0 add pack: EXIT 0 (1438 ms)
+   TSC EXIT 0
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1041 ms)
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2283 ms)
+   lp files: ReadmeQuick_lp.ts ReadmeRef_lp.ts ReadmeTopQuick_lp.ts 
+go[src:SN dist:-] js[src:QRT dist:QRT] lp[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=599
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lp: quick=OTHER ref=OTHER top=ABSENT; lua: quick=NEW ref=NEW top=OLD; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   lp/README.md unchanged by the upgrade
+   lp/REFERENCE.md CHANGED (2 lines)
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1050 ms)
+   remove lp: EXIT 0 (1152 ms)
+
+##### [new] S13a generate with a stale dist: after package update, generate WITHOUT recompiling
+   EXIT 0 (2598 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+         1   optional-component-missing: go: no ReadmeQuick_go component, so go/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/go/Read
+         1   optional-component-missing: go: no ReadmeRef_go component, so go/REFERENCE.md is not written, though go/README.md links to it. The SDK code is complete; only this documentation is affected. To add i
+         1   optional-component-missing: go: no ReadmeTopQuick_go component, so the top-level README.md's quickstart has no go example. The SDK code is complete; only this documentation is affected. To add it, w
+         1   optional-component-missing: lua: no ReadmeQuick_lua component, so lua/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/lua/
+         1   optional-component-missing: lua: no ReadmeRef_lua component, so lua/REFERENCE.md is not written, though lua/README.md links to it. The SDK code is complete; only this documentation is affected. To a
+         1   optional-component-missing: lua: no ReadmeTopQuick_lua component, so the top-level README.md's quickstart has no lua example. The SDK code is complete; only this documentation is affected. To add it
+         1   optional-component-missing: perl: no ReadmeQuick_perl component, so perl/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/p
+         1   optional-component-missing: perl: no ReadmeRef_perl component, so perl/REFERENCE.md is not written, though perl/README.md links to it. The SDK code is complete; only this documentation is affected. 
+         1   optional-component-missing: perl: no ReadmeTopQuick_perl component, so the top-level README.md's quickstart has no perl example. The SDK code is complete; only this documentation is affected. To add
+         1   optional-component-missing: py: no ReadmeQuick_py component, so py/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/py/Read
+         1   optional-component-missing: py: no ReadmeRef_py component, so py/REFERENCE.md is not written, though py/README.md links to it. The SDK code is complete; only this documentation is affected. To add i
+         1   optional-component-missing: py: no ReadmeTopQuick_py component, so the top-level README.md's quickstart has no py example. The SDK code is complete; only this documentation is affected. To add it, w
+      go: quick=OTHER ref=ABSENT top=ABSENT; js: quick=SAME ref=SAME top=SAME; lua: quick=OTHER ref=ABSENT top=ABSENT; perl: quick=OTHER ref=ABSENT top=ABSENT; php: quick=SAME ref=SAME top=SAME; py: quick=OTHER ref=ABSENT top=ABSENT; ts: quick=OTHER ref=ABSENT top=OTHER
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1667 ms)
+
+##### [new] S13b dist deleted entirely before generate (fresh checkout), recompiled
+   GEN ok=true ms=590
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+
+##### [new] S14 .gitignore ignores log/ and dist/, committed, cloned on a second machine, then upgraded
+   first machine doctor: doctor-copies-ignored .sdk/.gitignore ignores log/, so .sdk/log/copies.jsonl is not committed and a fresh clone has no copy record. Delete the log/ line.
+   first machine doctor: EXIT 0 (1086 ms)
+   clone has log: none, dist: 
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 10 missing, 0 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1382 ms)
+     src/cmp/ts/fragment/Config.fragment.ts (no record of what the toolchain wrote here, so nothing to merge against; a base is found in git once the copies an add writes are committed)
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+   EXIT 1 (3619 ms)
+     src/cmp/js/fragment/Config.fragment.js (no record of what the toolchain wrote here, so nothing to merge against; a base is found in git once the copies an add writes are committed)
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+   EXIT 1 (3060 ms)
+go[src:QRT dist:-] js[src:QRT dist:-] lua[src:QRT dist:-] perl[src:QRT dist:-] php[src:QRT dist:-] py[src:QRT dist:-] ts[src:QRT dist:-] 
+   GEN ok=true ms=745
+     generate-copies: .sdk/.gitignore ignores log/, so .sdk/log/copies.jsonl is not committed and a fresh clone has no copy record. Delete the log/ line.
+     generate-copies: target go, target lua, target perl, target py, target ts: 15 file(s) in .sdk are unchanged copies, but @voxgig/sdkgen 4.45.0 has changed since they were copied, so this run generates from older templates. Run `n
+     generate-copies: target go, target js, target lua, target perl, target py, target ts: 21 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 10 missing, 0 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1294 ms)
+
+##### [new] S14b and with --force
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (3959 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=526
+     generate-copies: .sdk/.gitignore ignores log/, so .sdk/log/copies.jsonl is not committed and a fresh clone has no copy record. Delete the log/ line.
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1276 ms)
+
+##### [new] S16 target remove -y (dry run) on an upgraded project
+   remove-file          would remove src/cmp/ts/Config_ts.ts
+   remove-file          would remove src/cmp/ts/EntityBase_ts.ts
+   remove-file          would remove src/cmp/ts/EntityOperation_ts.ts
+   remove-file          would remove src/cmp/ts/EntityTypes_ts.ts
+   remove-file          would remove src/cmp/ts/Entity_ts.ts
+   tree unchanged
+
+##### [new] S17 package update, then the source tree restored from git (log kept): retired copies come back, record says forgotten
+   prune lines: 15
+go[src:QRTSN dist:-] js[src:QRT dist:QRT] lua[src:QRTSN dist:-] perl[src:QRTSN dist:-] php[src:QRT dist:QRT] py[src:QRTSN dist:-] ts[src:QRTSN dist:-] 
+   tsc: src/cmp/lua/Naming_lua.ts(5,10): error TS2305: Module '"./utility_lua"' has no exported member 'luaSdkModule'.
+   tsc: src/cmp/py/Naming_py.ts(5,10): error TS2305: Module '"./utility_py"' has no exported member 'pyPackageDir'.
+   tsc: TSC EXIT 1
+   GEN ok=true ms=555
+     generate-copies: target go, target lua, target perl, target py, target ts: 15 file(s) in .sdk are unchanged copies, but @voxgig/sdkgen 4.45.0 has changed since they were copied, so this run generates from older templates. Run `n
+   go: quick=OTHER ref=ABSENT top=ABSENT; js: quick=SAME ref=SAME top=SAME; lua: quick=OTHER ref=ABSENT top=ABSENT; perl: quick=OTHER ref=ABSENT top=ABSENT; php: quick=SAME ref=SAME top=SAME; py: quick=OTHER ref=ABSENT top=ABSENT; ts: quick=OTHER ref=ABSENT top=OTHER
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 0 missing, 0 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1378 ms)
+   copy-merge-merged    package update @voxgig/sdkgen: merged the incoming copy into 11 locally changed file(s): src/cmp/js/fragment/Config.data.fragment.js, src/cmp/js/fragment/Config.fragment.js, src/cmp/lua/Main_lua.ts, src/cmp/lua/utility_lua.ts, src/cmp/perl/ReadmeExamplesTest_perl.ts, src/cmp/py/
+   EXIT 0 (5341 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   doctor-end           .sdk matches the scaffold (0 additive, 11 customized)
+   EXIT 0 (1476 ms)
+
+##### [new] S18 junk beside a retired copy: an editor backup and .DS_Store in src/cmp/ts, and a compiled backup in dist
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (3157 ms)
+   left: .DS_Store ReadmeEntity_ts.ts ReadmeExampleTest_ts.ts ReadmeExamplesTest_ts.ts ReadmeExplanation_ts.ts ReadmeHowto_ts.ts ReadmeInstall_ts.ts ReadmeIntro_ts.ts ReadmeModel_ts.ts ReadmeOptions_ts.ts ReadmeQuick_ts.ts.orig ReadmeTopHowto_ts.ts ReadmeTopTest_ts.ts 
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1416 ms)
+=== attack states st2
+
+##### [new] S17b package update, then ONLY the 15 retired files restored from git: the record has forgotten them
+   prune lines: 15
+   record lines forgetting ReadmeQuick_ts: 1
+go[src:QRTSN dist:-] js[src:QRT dist:QRT] lua[src:QRTSN dist:-] perl[src:QRTSN dist:-] php[src:QRT dist:QRT] py[src:QRTSN dist:-] ts[src:QRTSN dist:-] 
+   GEN ok=true ms=595
+     generate-copies: target go, target lua, target perl, target py, target ts: 15 file(s) in .sdk are unchanged copies, but @voxgig/sdkgen 4.45.0 has changed since they were copied, so this run generates from older templates. Run `n
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 0 missing, 0 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1801 ms)
+   EXIT 0 (5281 ms)
+go[src:SN dist:SN] js[src:QRT dist:QRT] lua[src:SN dist:SN] perl[src:SN dist:SN] php[src:QRT dist:QRT] py[src:SN dist:SN] ts[src:SN dist:SN] 
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1348 ms)
+=== st3
+
+##### [new] S2r realistic S2b: the copy is 4.44.0 content, the record holds an older release, the 4.44.0 add line is cut
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 1 damaged record line, 0 unresolved
+   EXIT 1 (1500 ms)
+   copies-damaged       cannot read log/copies.jsonl:4: the copies it named read as unrecorded, so a changed one cannot be told from an outdated one. Restore it from git, or delete the line.
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (3587 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   GEN ok=true ms=625
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 0 missing, 0 outdated, 0 retired, 0 orphan compiled, 0 undeclared override, 1 damaged record line, 0 unresolved
+   EXIT 1 (1569 ms)
+   remove: EXIT 0 (1082 ms)
+
+##### [new] S2n a cut line with no newline, then an add: is the next line joined to it
+   copies-damaged       cannot read log/copies.jsonl:3: the copies it named read as unrecorded, so a changed one cannot be told from an outdated one. Restore it from git, or delete the line.
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (1995 ms)
+   record lines: 5; unreadable: 1
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 12 retired, 0 orphan compiled, 0 undeclared override, 1 damaged record line, 0 unresolved
+   EXIT 1 (1445 ms)
+
+##### [new] S19 an EDITED retired copy with no record, re-added with --force: the case the list cannot decide
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   target-template-prune src/cmp/ts: removed 2 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/go/ReadmeQuick_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeRef_go.ts
+   target-template-prune-file removed src/cmp/go/ReadmeTopQuick_go.ts
+   target-template-prune src/cmp/go: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/py/ReadmeQuick_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeRef_py.ts
+   target-template-prune-file removed src/cmp/py/ReadmeTopQuick_py.ts
+   target-template-prune src/cmp/py: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/perl/ReadmeQuick_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeRef_perl.ts
+   target-template-prune-file removed src/cmp/perl/ReadmeTopQuick_perl.ts
+   target-template-prune src/cmp/perl: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   target-template-prune-file removed src/cmp/lua/ReadmeQuick_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeRef_lua.ts
+   target-template-prune-file removed src/cmp/lua/ReadmeTopQuick_lua.ts
+   target-template-prune src/cmp/lua: removed 3 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2736 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:QSN dist:Q] 
+   GEN ok=true ms=907
+   go: quick=NEW ref=NEW top=NEW; js: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; ts: quick=OTHER+EDITED ref=NEW top=NEW
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor: doctor-finding       OVERRIDE NOT DECLARED (kept and used instead of the shared sect…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 0 missing, 0 outdated, 0 retired, 0 orphan compiled, 1 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1928 ms)
+
+##### [new] S19b the same, with the override declared in the model
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts (used instead of the shared ReadmeQuick)
+   doctor-end           .sdk matches the scaffold (1 additive, 0 customized)
+   EXIT 0 (1757 ms)
+
+##### [new] S20 an unedited 4.44.0 copy whose record calls it additive: a later update forgot it, then a git restore
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer s…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   EXIT 1 (1463 ms)
+   target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeRef_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopQuick_ts.ts
+   EXIT 0 (4698 ms)
+go[src:SN dist:-] js[src:QRT dist:QRT] lua[src:SN dist:-] perl[src:SN dist:-] php[src:QRT dist:QRT] py[src:SN dist:-] ts[src:SN dist:-] 
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1553 ms)
+=== done 2026-11-15T16:02:27Z

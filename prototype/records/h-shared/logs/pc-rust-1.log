@@ -1,0 +1,54 @@
+[portcheck rust] sections: tutorial,rootquick,reference
+[portcheck rust] ledger
+ledger rust    tutorial  vars 19 | units OLD 137 NEW 187: same 61 reworded 56 missing 20 added 70 | classes 46 (echo 6, reworded 13, added 11, missing 5, novel-token 10, vanished-token 1) | unclassified 5, defect 0 -> tools/review/rust/tutorial.ledger.txt
+ledger rust    rootquick vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 | classes 3 (reworded 3) | unclassified 0, defect 0 -> tools/review/rust/rootquick.ledger.txt
+ledger rust    reference vars 19 | units OLD 15635 NEW 16561: same 15019 reworded 426 missing 190 added 1116 | classes 126 (echo 19, reworded 21, missing 18, added 48, novel-token 19, vanished-token 1) | unclassified 4, defect 0 -> tools/review/rust/reference.ledger.txt
+[portcheck rust] blocks
+blocks rust    tutorial  vars 19 | OLD 48 NEW 48: identical 26, after corrections 17, changed 5, OLD-only 0, NEW-only 0 | classes 13 (changed 1, novel-token 11, vanished-token 1) | unclassified 0, defect 0 -> tools/review/rust/tutorial.blocks.txt
+blocks rust    rootquick vars 19 | OLD 19 NEW 19: identical 0, after corrections 2, changed 17, OLD-only 0, NEW-only 0 | classes 21 (changed 4, novel-token 12, vanished-token 3, novel-shape 2) | unclassified 0, defect 0 -> tools/review/rust/rootquick.blocks.txt
+blocks rust    reference vars 19 | OLD 314 NEW 313: identical 187, after corrections 0, changed 126, OLD-only 1, NEW-only 0 | classes 4 (changed 2, old-only 1, novel-token 1) | unclassified 0, defect 0 -> tools/review/rust/reference.blocks.txt
+[portcheck rust] sharing (NEW, then OLD), over the languages ported for the section
+new: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   rust       187 units  46.5%  35.3%  11.8%   6.4% |   1651 words  44.8%  23.1%    21%  11.1% | language words at output 183 (2 distinct units) | at source: fact/notes tables facts,refFacts 131 words (5 in prose literals), other prose literals 10 words
+old: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   rust       137 units  29.2%  45.3%   8.8%  16.8% |    889 words  42.9%  26.3%     6%  24.9% | language words at output 221 (2 distinct units) | at source: fact/notes tables facts,refFacts 131 words (5 in prose literals), other prose literals 10 words
+new: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   rust        42 units  45.2%     0%     0%  54.8% |    284 words   6.7%     0%     0%  93.3% | language words at output 265 (3 distinct units) | at source: fact/notes tables facts,refFacts 131 words (5 in prose literals), other prose literals 10 words
+old: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   rust        42 units  45.2%     0%     0%  54.8% |    249 words   7.6%     0%     0%  92.4% | language words at output 230 (2 distinct units) | at source: fact/notes tables facts,refFacts 131 words (5 in prose literals), other prose literals 10 words
+new: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   rust     16561 units  90.4%   3.3%   4.4%   1.9% |  50713 words  82.1%   6.2%   7.3%   4.5% | language words at output 2262 (4 distinct units) | at source: fact/notes tables facts,refFacts 131 words (5 in prose literals), other prose literals 10 words
+old: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   rust     15635 units  89.1%   3.9%   4.2%   2.8% |  44601 words  82.4%   5.5%   6.6%   5.4% | language words at output 2409 (11 distinct units) | at source: fact/notes tables facts,refFacts 131 words (5 in prose literals), other prose literals 10 words
+[portcheck rust] purity
+purity over rust (vocabulary: 20 features, 10 option keys, 36 entity name forms, 6 operations)
+  rust    Syntax 177 lines, Naming present: 0 open, 0 accepted
+     naming calls crateIdent (./utility_rust); also called by: Main_rust.ts, Package_rust.ts, Test_rust.ts
+     naming calls rustMethodName (./utility_rust); also called by: MainEntity_rust.ts, TestClean_rust.ts, TestEntity_rust.ts
+     naming calls rustVarName (./utility_rust); also called by: EntityBase_rust.ts, EntityTypes_rust.ts, Entity_rust.ts, MainEntity_rust.ts, TestDirect_rust.ts, TestEntity_rust.ts, utility_rust.ts
+[portcheck rust] guard: node --test --test-name-pattern rust ts/dist-test/runtimefacts.test.js
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+ℹ skipped 0
+[portcheck rust] summary
+  ledger rust    tutorial  vars 19 | units OLD 137 NEW 187: same 61 reworded 56 missing 20 added 70 
+        classes 46 (echo 6, reworded 13, added 11, missing 5, novel-token 10, vanished-token 1) | unclassified 5, defect 0
+  ledger rust    rootquick vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 
+        classes 3 (reworded 3) | unclassified 0, defect 0
+  ledger rust    reference vars 19 | units OLD 15635 NEW 16561: same 15019 reworded 426 missing 190 added 1116 
+        classes 126 (echo 19, reworded 21, missing 18, added 48, novel-token 19, vanished-token 1) | unclassified 4, defect 0
+  blocks rust    tutorial  vars 19 | OLD 48 NEW 48: identical 26, after corrections 17, changed 5, OLD-only 0, NEW-only 0 
+        classes 13 (changed 1, novel-token 11, vanished-token 1) | unclassified 0, defect 0
+  blocks rust    rootquick vars 19 | OLD 19 NEW 19: identical 0, after corrections 2, changed 17, OLD-only 0, NEW-only 0 
+        classes 21 (changed 4, novel-token 12, vanished-token 3, novel-shape 2) | unclassified 0, defect 0
+  blocks rust    reference vars 19 | OLD 314 NEW 313: identical 187, after corrections 0, changed 126, OLD-only 1, NEW-only 0 
+        classes 4 (changed 2, old-only 1, novel-token 1) | unclassified 0, defect 0
+  worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/review/rust/*.ledger.txt, *.blocks.txt, *.blocks.diff; templates *.template.json -> fill into /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/classes/rust.json
+PORTCHECK rust: FAIL

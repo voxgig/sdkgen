@@ -1,0 +1,201 @@
+{
+ "lang": "perl",
+ "ok": false,
+ "summary": "I checked all 10 of the reviewer's findings against the fixer's outcomes. The fixer's report is accurate: every number it gives I reproduced exactly. The port still does not stand at its last commit, so `ok` is false.\n\n**The findings**\n- Six are fixed in perl's own files, and I confirmed each against the runtime: F1, F5, F6, F7, F8, and F9 for the root quick start.\n- Three are correctly recorded as additive shared changes (F2, F3, F4). I confirmed in the shared code that perl's own files cannot express them.\n- One is correctly left unfixed (F10): it is in a generator test component that section 4 does not let a port touch.\n\n**Why `ok` is false**\n- The one command exits 1 in every mode: `SCRATCH=1 REGEN=1`, `REGEN=1`, and plain.\n- In reviewed mode the only failures are the 14 classes the fixer deliberately recorded as `defect`: 13 rootquick classes and 1 reference class. Every other number passes: ledger OPEN 0, blocks OPEN 0, purity 0 open, guard 4/4, UNATTESTED 0.\n- Both defects are real:\n  - **Root quick start.** I ran `perl -c` on the NEW B root quick start from the generated repository root and got \"Can't locate DemoSDK.pm in @INC\". With `use lib 'perl/lib';` added, the same block gives \"syntax OK\".\n  - **Record list example.** It prints `$item->data_get->{fields}`, a hashref, in 17 variations.\n- Both need the shared changes before the port can pass.\n- Separately, the fixer's three commits (sdkgen 52f711fe and 73234667, tools 70c12f4) carry a Co-Authored-By trailer that names a model. PORTING section 10 says commit messages name no tool and no model. The porter's commits carry no trailer.\n\n**Everything else at the last commit**\n- Build: exit 0, tree clean.\n- Guard 4/4, guard plus reader 65/65, golden 2/2.\n- Suite without the toolchain lanes: 2601 tests, 2596 pass, 0 fail, 5 skipped.\n- perl README lane: 7/7 in all three models.\n- The port touched only perl's files and perl's golden lines. No other language's output changed.\n\n**My two attacks**\n- A printer-owned type word changed (`integer` to `int`): the one command fails, reference ledger OPEN 5, naming both tokens.\n- Calls given a flat list instead of a hashref (`load('id' => 'planet_id')`, a runtime bug that still compiles): the one command fails, blocks OPEN 7/4/4. The perl lane, which executes exactly that REFERENCE block, still passes 7/7.",
+ "still_wrong": [
+  {
+   "file": "ts/project/.sdk/src/cmp/perl/Syntax_perl.ts:144-147 (imports), with shared ts/src/helpers/example.ts (Scope, imports call in printStmts) and ts/src/cmp/ReadmeQuick.ts (topQuickText)",
+   "what": "All 19 root quick starts begin `use DemoSDK;` with no library path. They do not compile from the repository root: `perl -c` fails with \"Can't locate DemoSDK.pm in @INC\" (I ran it in tools/before/work/default/perl). The same root README's other perl block still prints `use lib 'perl/lib';`.",
+   "why": "The shared imports printer is not told which section it prints for, and the provider cannot know the target's directory. It is recorded as 13 defect classes, so the one command fails until the shared change lands."
+  },
+  {
+   "file": "ts/src/helpers/sdkdesc.ts showFields (`other.find(STRING) || other[0]`), seen at out/new/B/perl/REFERENCE.md:536",
+   "what": "The Record list example prints `$item->data_get->{fields}`, which outputs HASH(0x...). This is in 17 variations: grep -c finds 1 per REFERENCE in B, auth-*, crud-*, doc-*, ex-readonly, no-test, ref-issues and server-*.",
+   "why": "The shared display-field fallback picks a map field. Recorded as defect class 24d40b660d."
+  },
+  {
+   "file": "tools/hand/perl.json 33526951e8, 9b32484fa9 (tutorial, outcome dropped)",
+   "what": "The tutorial's client block `use DemoSDK; my $client = DemoSDK->new(...)` does not compile on its own even from perl/: `perl -c` gives \"Can't locate\", the same as the root block. It is mitigated only by the Install block directly above it (`use lib 'lib'; use DemoSDK;`, out/new/B/perl/README.md:27-30).",
+   "why": "Weaker, not false, and the reviewer did not require it as a fix. The shared imports-place change fixes it too, so the record should be re-read when that lands."
+  },
+  {
+   "file": "ts/project/.sdk/src/cmp/perl/ReadmeExamplesTest_perl.ts:233-238 (outside what a port may touch)",
+   "what": "The lane runner adds `use lib '$LIB'; use DemoSDK;` to every block and replaces ->new(...) with ->test(fixtures). It also passes blocks whose call arguments are wrong. My attack 2 printed `$client->Planet->load('id' => 'planet_id')` at REFERENCE.md:432, and that block executed with 7/7.",
+   "why": "F10 is not fixed. The lane cannot see a missing import, constructor options, or wrong arguments, so H4's 'lane same as OLD' says nothing about those. Only the one command's block comparison against OLD caught attack 2."
+  },
+  {
+   "file": "git history of the clone (52f711fe, 73234667) and of tools (70c12f4)",
+   "what": "The commit messages end with 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>' and a session line.",
+   "why": "PORTING section 10 and the brief say commit messages name no tool and no model. The fixer flagged this itself, and the integrator needs to strip the trailers."
+  }
+ ],
+ "shared_changes": [
+  {
+   "file": "ts/src/helpers/example.ts (type Scope; Syntax.imports signature; printStmts' imports call); ts/src/cmp/ReadmeQuick.ts (quickText, topQuickText); ts/src/helpers/sdkdesc.ts (DescLayout)",
+   "change": "1. Add an optional `place?: ShowPlace` to Scope (ShowPlace already exists in example.ts).\n2. quickText sets 'tutorial' and topQuickText sets 'top'.\n3. printStmts calls `p.imports(desc, used, sc.place)`, with `place` an optional third parameter.\n4. Add an optional layout role for the target's directory, set by the naming hook from target.name (or the out-of-tree output.path).\n\nperl's imports then prints `use lib 'lib';` for the tutorial and `use lib '<dir>/lib';` for the root.",
+   "why": "perl's own files cannot express it. The provider gets the same call in both places, and the `program` printer would reshape the tutorial too. Verified by running `perl -c` on the root block, with and without the lib line. This is the smallest change that carries both the place and the directory.",
+   "breaking": false,
+   "providers_forced": "perl only. Other providers ignore an optional argument. Worth a check, not checked: rb `require_relative` and php `require_once` lines on the root README."
+  },
+  {
+   "file": "ts/src/cmp/ReadmeQuick.ts topQuickText; ts/src/helpers/example.ts NoteSlot",
+   "change": "Print `note(p, 'top', desc)` with the root quick start, as quickText does for 'tutorial', or remove 'top' from NoteSlot.",
+   "why": "The slot is declared but no shared code prints it: topQuickText has no note() call (read). A provider that declares it fails purity ('declared N, regions found 1'). perl does not need it once the imports change lands.",
+   "breaking": false,
+   "providers_forced": "none"
+  },
+  {
+   "file": "ts/src/helpers/sdkdesc.ts showFields",
+   "change": "Fall back only to a scalar field (STRING, then INTEGER, NUMBER or BOOLEAN). With none, show the id alone.",
+   "why": "`other.find(STRING) || other[0]` picks Record's map field, so perl prints HASH(0x...) in 17 variations. Today it affects only perl's NEW output: the other ported languages print the whole record in the REFERENCE.",
+   "breaking": false,
+   "providers_forced": "none to change. Re-read the blocks of any language with prints 'fields' or 'listFields' (rb, and php and lua once ported) where an entity has a map field."
+  }
+ ],
+ "fixes_checked": [
+  {
+   "finding": "F1: stream note false under chunkSize",
+   "fixer_outcome": "fixed",
+   "seen": "Syntax_perl.ts and the B REFERENCE (lines 180, 246, ...) now read 'An entity is yielded as the hashref its `data_get` returns.'. The runtime batches at streaming_feature.pm:65-70, and Entity.fragment.pm:182-186 unwraps every blessed entity via data_get, inside a batch or not.",
+   "right": true,
+   "evidence": "Read the runtime; the regenerated out/new is identical to the fixer's (diff -r: 0 lines)."
+  },
+  {
+   "finding": "F2: imports printer has no place, so the root loses use lib",
+   "fixer_outcome": "needs a shared change; root classes recorded as defect",
+   "seen": "Scope has no place; topQuickText and quickText call printStmts, which calls p.imports(desc, uses(...)) with no place. The provider also has no directory role. 13 rootquick classes are defect, covering all 19 root blocks.",
+   "right": true,
+   "evidence": "Ran perl -c on the root block: fails without the lib line, 'syntax OK' with `use lib 'perl/lib';`. Read example.ts and ReadmeQuick.ts."
+  },
+  {
+   "finding": "F3: top NoteSlot never printed",
+   "fixer_outcome": "needs a shared change",
+   "seen": "NoteSlot includes 'top'; topQuickText calls no note().",
+   "right": true,
+   "evidence": "Read ReadmeQuick.ts; I did not re-run the attack."
+  },
+  {
+   "finding": "F4: showFields picks a map field (HASH output)",
+   "fixer_outcome": "needs a shared change; 24d40b660d recorded as defect",
+   "seen": "sdkdesc.ts showFields uses `|| other[0]`. `->{fields}` is printed once in each of 17 variations. Class 24d40b660d is defect.",
+   "right": true,
+   "evidence": "grep over out/new; read sdkdesc.ts."
+  },
+  {
+   "finding": "F5: ref.facts.none quoted the stream's end of items",
+   "fixer_outcome": "fixed",
+   "seen": "cite now quotes EntityLoadOp.fragment.pm:7 '# (undef is treated as an empty match). ctrl: optional per-call control.'",
+   "right": true,
+   "evidence": "The line exists at :7, and the guard report lists it. The fact is printed in two senses: 'pass undef for none' and 'undef once the items end'. The new quote shows the first; the second still holds (Entity.fragment.pm:237)."
+  },
+  {
+   "finding": "F6: ctor[0] quote shows <sdk>/lib, not lib",
+   "fixer_outcome": "fixed",
+   "seen": "An added `also` quote from tm/perl/Makefile:6,14 ('-Ilib puts the generated SDK module on', 'prove -r -Ilib t/').",
+   "right": true,
+   "evidence": "Read the Makefile. It is acceptable: it shows lib relative to the SDK directory. The guard still matches on word tokens only, so this stays a reviewer-audited citation."
+  },
+  {
+   "finding": "F7: container excuse false",
+   "fixer_outcome": "fixed",
+   "seen": "The excuse now says the runtime names hashref for a match, request data and a record, never in a comment on the options.",
+   "right": true,
+   "evidence": "Matches EntityLoadOp:5, Entity:99 and Main.fragment.pm:31-33. The guard passes."
+  },
+  {
+   "finding": "F8: S13 cited for the log default",
+   "fixer_outcome": "fixed",
+   "seen": "hand/perl.json 2f38082332 and ac1eac6be0 now read correction:S09.",
+   "right": true,
+   "evidence": "Read hand/perl.json."
+  },
+  {
+   "finding": "F9: root lib loss recorded as dropped",
+   "fixer_outcome": "fixed (root as defect; tutorial left dropped)",
+   "seen": "Every rootquick class carrying the loss is defect. Tutorial 33526951e8 and 9b32484fa9 stay dropped, with the Install-section reason.",
+   "right": true,
+   "evidence": "Read rootquick.blocks.txt. The tutorial block alone also fails `perl -c` from perl/, but the Install block above it supplies the line, so 'dropped' is defensible."
+  },
+  {
+   "finding": "F10: lane runner adds use lib to every block",
+   "fixer_outcome": "not fixed (outside the port's files)",
+   "seen": "ReadmeExamplesTest_perl.ts:238 prepends the import; :233 replaces ->new with ->test.",
+   "right": true,
+   "evidence": "Read. My attack 2 shows the runner also passes wrong call arguments, so what is left wrong is wider than the missing import."
+  }
+ ],
+ "state": [
+  {
+   "check": "npm run build",
+   "fixer_said": "exit 0, git status empty",
+   "result": "exit 0, git status --short empty (also after both attacks were restored)"
+  },
+  {
+   "check": "guard ^perl:",
+   "fixer_said": "4/4",
+   "result": "4/4"
+  },
+  {
+   "check": "guard + reader",
+   "fixer_said": "65/65",
+   "result": "65/65"
+  },
+  {
+   "check": "golden (characterize)",
+   "fixer_said": "2/2; only the perl Syntax_perl.ts line changed",
+   "result": "2/2. git diff 70f0be92..HEAD on the golden: +1 -1, the perl Syntax_perl.ts hash line."
+  },
+  {
+   "check": "SCRATCH=1 REGEN=1 portcheck",
+   "fixer_said": "exit 1; ledger OPEN 22/3/68; blocks OPEN 21/27/7; UNATTESTED 1",
+   "result": "Identical: exit 1, ledger OPEN 22/3/68, blocks OPEN 21/27/7, UNATTESTED 1 (ref.valueType.OBJECT), printed less often 1. The regeneration printed 21 variations and SKIPPED none, and out/new is byte-identical to the fixer's."
+  },
+  {
+   "check": "REGEN=1 portcheck",
+   "fixer_said": "exit 1. Ledger same 61/19/14910, OPEN 0, defect 0. Blocks 0/6/0/42, 0/0/0/19, 227/0/0/86; OPEN 0; defect 0/13/1. Purity 0 open, 1 accepted. Guard pass 4. UNATTESTED 0. Contradictions 1.",
+   "result": "Identical on every column. PORTCHECK perl: FAIL."
+  },
+  {
+   "check": "plain portcheck (no REGEN)",
+   "fixer_said": "exit 1, same screen",
+   "result": "exit 1, screen identical by diff"
+  },
+  {
+   "check": "suite without generatedcompile, concurrency 2",
+   "fixer_said": "2601 tests, 2596 pass, 0 fail, 5 skipped (6m42s)",
+   "result": "2601 tests, 2596 pass, 0 fail, 5 skipped, exit 0, 402 s (load average about 6-7)"
+  },
+  {
+   "check": "perl lane tools/before/run.sh sdkgen perl",
+   "fixer_said": "exit 0, 7/7 x3. default README 18 (17 executed), REFERENCE 21/21, root 3/3; crud and basic-server 16 (15), 14/14, 3/3. Minimums 4.49/3.63/3.67 s.",
+   "result": "exit 0, 7/7 in every run. default README 18 (17 executed, 1 illustration), REFERENCE 21/21, root 3/3; crud and basic-server README 16 (15 executed), REFERENCE 14/14, root 3/3. Minimums 4.67/3.64/3.63 s on a shared machine."
+  },
+  {
+   "check": "touched files",
+   "fixer_said": "only perl files and the golden",
+   "result": "git diff --stat v32-frozen..HEAD lists only Naming_perl.ts, Syntax_perl.ts, the three deleted perl Readme components, runtimeforms/perl.ts and the golden (perl lines). tools log: perl's files only (hand, classes, counts, purity-allow). diff -r -x perl -x README.md against base32/out/new: 0 lines. Root README outside perl blocks: 0 changed lines over 21 variations."
+  },
+  {
+   "check": "line counts",
+   "fixer_said": "Syntax 191, Naming 22, forms 95",
+   "result": "wc -l: 191, 22, 95"
+  }
+ ],
+ "attacks": [
+  {
+   "by": "V1: a type word the printer owns: Syntax_perl.ts type() INTEGER 'integer' -> 'int'. It is not an accounted fact; the guard says perl's type words are 'printer total only'.",
+   "caught": true,
+   "change": "The one command fails: reference ledger OPEN 5 (missing `integer`, added `int`, an echo naming `integer` still stated at perl/README.md:268, a novel token and a vanished token). The guard and the fact sheet stay silent (pass 4, 0 unattested). Only the comparison with OLD catches it. Restored: build clean, screen identical."
+  },
+  {
+   "by": "V2: a changed example that still compiles. argOf prints a call's map as a flat list, `load('id' => 'planet_id')` instead of `load({ 'id' => 'planet_id' })`, so the match becomes the string 'id' and the ctrl becomes 'planet_id'.",
+   "caught": true,
+   "change": "The one command fails: blocks OPEN tutorial 7, rootquick 4, reference 4, and reference ledger OPEN 3. The perl lane (default model) still passes 7/7 with REFERENCE 21/21 executed, including `$client->Planet->load('id' => 'planet_id')` at REFERENCE.md:432. The lane cannot see wrong arguments in test mode. Restored: build clean, portcheck screen identical, out/new identical, lane exit 0."
+  }
+ ],
+ "ran": "All runs were in my copy at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/verify/perl/ws, with node v24.22.1 and perl 5.38.2 (/usr/bin/perl).\n- `npm run build` (exit 0, clean).\n- The guard (`node --test --test-name-pattern '^perl: '`) 4/4, guard plus reader 65/65, characterize 2/2.\n- The guard report (`SDKGEN_GUARD_REPORT=1`).\n- `SCRATCH=1 REGEN=1`, `REGEN=1` and plain `tools/portcheck.sh sdkgen out perl` (each exit 1, numbers above).\n- The suite: 2601, 2596 pass, 0 fail, 5 skipped.\n- `tools/before/run.sh sdkgen perl` (exit 0, 7/7 x3 models x3 runs).\n- `perl -c` of the B root README's three perl blocks from the lane's generated repository root. Block 1 (the quick start) fails \"Can't locate DemoSDK.pm\"; with `use lib 'perl/lib';` added it gives \"syntax OK\"; from perl/ it also fails.\n- diff -r against base32/out/new, and a Python check of the root READMEs outside perl blocks.\n- Two attacks, each with a rebuild and a REGEN portcheck, plus the lane for attack 2, each restored and re-verified.",
+ "read": "- brief.md, brief5.md, and PORTING.md sections 0-1 and 3-10.\n- Syntax_perl.ts.\n- The fixer's diff 70f0be92..HEAD (Syntax_perl.ts, runtimeforms/perl.ts, golden).\n- Entity.fragment.pm:138-240 (stream), streaming_feature.pm:55-80, and EntityLoadOp.fragment.pm:1-12.\n- tm/perl/Makefile lines 6 and 14, and ReadmeExamplesTest_perl.ts:224-285.\n- Shared code: example.ts (ShowPlace, Scope, Syntax.imports, NoteSlot, printStmts), ReadmeQuick.ts (quickText, topQuickText), sdkdesc.ts showFields, and the ReadmeRef.ts uses of facts.none.\n- hand/perl.json for the fixed ids, rootquick.blocks.txt, and the NEW and OLD B perl README tutorial.\n- The commit messages of all perl commits.",
+ "touched": "Only /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/verify/perl/:\n- ws, a copy of ports/perl. I edited it temporarily for the two attacks, and both are restored.\n- PROGRESS.md and the logs.\n- tmp/ (the extracted root blocks).\n- porter-out-new-snapshot.\n\nNothing under ports/perl or /home/user was modified. No commits, no push.",
+ "unverified": "For want of a compiler: 0. perl 5.38.2 is on PATH.\n\nNot compiled or run by any tool here, which is not a matter of a missing compiler:\n- The 153 changed perl blocks of the 21 review variations (48 tutorial, 19 rootquick, 86 reference). Only the lane's three models execute. I compiled by hand only the B root README's three blocks.\n- Constructor options (server, secret), import lines and call arguments in the lane are never exercised as written, because the runner rewrites ->new and prepends the import.\n\nAlso not done:\n- I did not re-run the reviewer's 23 attacks.\n- I did not check rb's and php's root require lines for the same place problem.\n- I did not re-audit catalogue ids beyond S09 and S13.",
+ "other_languages": "Unchanged:\n- `diff -r -x perl -x README.md ws/out/new base32/out/new` prints 0 lines.\n- Every root README differs only inside ```perl blocks: 0 changed lines outside them over all 21 variations.\n- The clone's diff from v32-frozen touches no other language's files, and the tools commits touch only perl's."
+}

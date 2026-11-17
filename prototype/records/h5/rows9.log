@@ -1,0 +1,61 @@
+
+##### [new] R9 make: twenty targets by 4.44.0
+   add: EXIT 0 (4250 ms)
+TSC EXIT 0
+   retired-to-be component files (old names) in src/cmp: 60
+   GEN ok=true ms=1073
+   [4.44.0] doctor ms: 1332 1330 1376 -> min 1330 ms
+   [4.44.0] full generate ms: 3550 3466 3469 -> min 3466 ms
+   [4.44.0] doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [4.44.0] EXIT 0 (1280 ms)
+
+##### [new] R9 upgraded, nothing run
+   TSC EXIT 0
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 26 missing, 25 outdated, 39 retired, 0 orphan compiled, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 26 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1235 ms)
+   RETIRED findings: 39, MISSING: 26, OUTDATED: 25
+   [upgraded] doctor ms: 1360 1355 1434 -> min 1355 ms
+     generate-copies: target c, target clojure, target elixir, target go, target js, target lua, target ocaml, target perl, target py, target rb, target rust, target swift, target ts, target zig: 64 file(s) in .sdk are unchanged copies from @v
+     generate-copies: target c, target clojure, target elixir, target go, target lua, target ocaml, target perl, target py, target rb, target rust, target swift, target ts, target zig: 26 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 
+   GEN ok=true ms=1066
+   [upgraded] full generate ms: 3572 3969 3568 -> min 3568 ms
+
+##### [new] R9 package update --no-fetch, three copies
+   EXIT 0 (4097 ms)
+   EXIT 0 (4347 ms)
+   EXIT 0 (4112 ms)
+   removed (prune-file lines): 39; prune lines name:      13 ReadmeQuick_      13 ReadmeRef_      13 ReadmeTopQuick_ 
+   doctor-outdated      target c: 5 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target clojure: 6 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target elixir: 5 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target go: 3 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target js: 2 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target lua: 5 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target ocaml: 7 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   doctor-outdated      target perl: 4 file(s) are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed - `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch` refreshes them
+   TSC EXIT 0
+   [after update] doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [after update] EXIT 0 (1234 ms)
+   [after update] doctor ms: 1256 1277 1355 -> min 1256 ms
+   GEN ok=true ms=960
+   [after update] full generate ms: 3638 3600 3594 -> min 3594 ms
+   files left: 21 old-style, 26 new; compiled old-style left: 21
+
+##### [new] R9 reference: twenty targets made fresh on the new build
+   add: EXIT 0 (3810 ms)
+TSC EXIT 0
+   GEN ok=true ms=972
+
+##### [new] R9 compare pages byte for byte
+   after vs fresh [ported]: 26 identical, 0 differ
+   after vs fresh [unported]: 14 identical, 0 differ
+   up vs old [unported]: 7 identical, 7 differ: js/REFERENCE.md php/REFERENCE.md csharp/REFERENCE.md java/REFERENCE.md kotlin/REFERENCE.md scala/REFERENCE.md cpp/REFERENCE.md
+   after vs old [unported]: 7 identical, 7 differ: js/REFERENCE.md php/REFERENCE.md csharp/REFERENCE.md java/REFERENCE.md kotlin/REFERENCE.md scala/REFERENCE.md cpp/REFERENCE.md
+   up vs old [ported]: 13 identical, 13 differ: ts/REFERENCE.md go/REFERENCE.md py/REFERENCE.md c/REFERENCE.md zig/REFERENCE.md clojure/REFERENCE.md rust/REFERENCE.md elixir/REFERENCE.md rb/REFERENCE.md perl/REFERENCE.md swift/REFERENCE.md ocaml/REFERENCE.md lua/REFERENCE.md
+   up vs fresh [ported]: 0 identical, 26 differ: ts/README.md ts/REFERENCE.md go/README.md go/REFERENCE.md py/README.md py/REFERENCE.md c/README.md c/REFERENCE.md zig/README.md zig/REFERENCE.md clojure/README.md clojure/REFERENCE.md rust/README.md rust/REFERENCE.md elixir/README.md elixir/REFERENCE.md rb/README.md rb/REFERENCE.md perl/README.md perl/REFERENCE.md swift/README.md swift/REFERENCE.md ocaml/README.md ocaml/REFERENCE.md lua/README.md lua/REFERENCE.md
+   root README after == fresh
+   up:    c: quick=OLD ref=OLD top=OLD
+   up:  clojure: quick=OLD ref=OLD top=OLD
+   up:  cpp: quick=SAME ref=SAME top=SAME
+   after:    c: quick=NEW ref=NEW top=NEW; clojure: quick=NEW ref=NEW top=NEW; cpp: quick=SAME ref=SAME top=SAME; csharp: quick=SAME ref=SAME top=SAME; elixir: quick=NEW ref=NEW top=NEW; go: quick=NEW ref=NEW top=NEW; java: quick=SAME ref=SAME top=SAME; js: quick=SAME ref=SAME top=SAME; kotlin: quick=SAME ref=SAME top=SAME; lua: quick=NEW ref=NEW top=NEW; ocaml: quick=NEW ref=NEW top=NEW; perl: quick=NEW ref=NEW top=NEW; php: quick=SAME ref=SAME top=SAME; py: quick=NEW ref=NEW top=NEW; rb: quick=NEW ref=NEW top=NEW; rust: quick=NEW ref=NEW top=NEW; scala: quick=SAME ref=SAME top=SAME; swift: quick=NEW ref=NEW top=NEW; ts: quick=NEW ref=NEW top=NEW; zig: quick=NEW ref=NEW top=NEW

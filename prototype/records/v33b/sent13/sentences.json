@@ -1,0 +1,7755 @@
+{
+ "sentences": 312,
+ "sections": {
+  "tutorial": {
+   "sentences": 79,
+   "byHandOnly": 50,
+   "byRuleOnly": 23,
+   "mixed": 6,
+   "template": 54,
+   "verdict": {
+    "ok": 64,
+    "false": 0,
+    "awkward": 0,
+    "none": 15
+   },
+   "single": {
+    "all": 46,
+    "shared-condition": 31,
+    "unexplained": 14,
+    "note": 1
+   }
+  },
+  "rootquick": {
+   "sentences": 13,
+   "byHandOnly": 7,
+   "byRuleOnly": 4,
+   "mixed": 2,
+   "template": 8,
+   "verdict": {
+    "ok": 8,
+    "false": 0,
+    "awkward": 0,
+    "none": 5
+   },
+   "single": {
+    "all": 9,
+    "unexplained": 3,
+    "shared-condition": 6
+   }
+  },
+  "reference": {
+   "sentences": 220,
+   "byHandOnly": 114,
+   "byRuleOnly": 89,
+   "mixed": 17,
+   "template": 91,
+   "verdict": {
+    "ok": 159,
+    "false": 0,
+    "awkward": 0,
+    "none": 61
+   },
+   "single": {
+    "all": 119,
+    "code": 40,
+    "shared-condition": 42,
+    "unexplained": 24,
+    "note": 11,
+    "provider-literal": 2
+   }
+  }
+ },
+ "match": null,
+ "modelText": [
+  {
+   "text": "Level \\| percent see the guide or [site](https://example.com/x)",
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "perl",
+    "py",
+    "rust",
+    "swift",
+    "ts",
+    "zig"
+   ]
+  },
+  {
+   "text": "Words the project chose | not the spec",
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ]
+  }
+ ],
+ "list": [
+  {
+   "id": "cb33d087c0",
+   "section": "tutorial",
+   "kind": "heading",
+   "masked": "Ⓝ. Load a Ⓔ",
+   "example": {
+    "lang": "ts",
+    "where": "B: Tutorial: your first API call",
+    "text": "2. Load an ambient"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "ed44d07e36",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`load()` resolves to the entity and throws on failure; `.data()` reads its record.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Tutorial: your first API call > 3. Load an ambient",
+    "text": "`load()` resolves to the entity and throws on failure; `.data()` reads its record."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 5
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "ebfc2354cd",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "This tutorial walks through creating a client and loading an ambient.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Tutorial: your first API call",
+    "text": "This tutorial walks through creating a client and loading an ambient."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "9ca694d427",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Every operation returns entities, not raw records.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Tutorial: your first API call",
+    "text": "Every operation returns entities, not raw records."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 4,
+    "of": 4
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "25f8905d37",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "The example passes the API key from the `DEMO_APIKEY` environment variable as the `apikey` option.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Tutorial: your first API call > 1. Create a client",
+    "text": "The example passes the API key from the `DEMO_APIKEY` environment variable as the `apikey` option."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "hand": 9
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 6,
+    "of": 6
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "7a955e855f",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "The server URL is templated, so `server` must give ⟦⟧; `region` defaults to `eu`.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Tutorial: your first API call > 1. Create a client",
+    "text": "The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 15,
+   "by": {
+    "rule record": 15
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 3,
+    "of": 3
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "4966aea016",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "The example passes the API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables as the `apikey` and `secret` options.",
+   "example": {
+    "lang": "ts",
+    "where": "auth-basic: Tutorial: your first API call > 1. Create a client",
+    "text": "The example passes the API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables as the `apikey` and `secret` options."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "hand": 9
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 7,
+    "of": 8
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "21fc35c768",
+   "section": "tutorial",
+   "kind": "heading",
+   "masked": "Ⓝ. Create, update, patch, and remove a planet",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "4. Create, update, patch, and remove a planet"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "hand": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "836725aec1",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "This tutorial walks through creating a client, listing planet records, loading a planet, and creating, updating, patching, and removing a planet.",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "This tutorial walks through creating a client, listing planet records, loading a planet, and creating, updating, patching, and removing a planet."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 5,
+    "of": 18
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "e3dc10a6b7",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Patch — sends only the fields given; the id comes off the created entity's record",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, and remove",
+    "text": "Patch — sends only the fields given; the id comes off the created entity's record"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/helpers/example.ts",
+    "n": 7,
+    "of": 12
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "a102512ba9",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Update — the id comes off the created entity's record",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, and remove",
+    "text": "Update — the id comes off the created entity's record"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/helpers/example.ts",
+    "n": 4,
+    "of": 7
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "5e178e9588",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`list()` resolves to an array of entities, one per record, and throws on failure; `.data()` reads an entity's record.",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list()` resolves to an array of entities, one per record, and throws on failure; `.data()` reads an entity's record."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 11
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "6d459aa83b",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure.",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 6,
+    "of": 16
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "64560e9dff",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Create — resolves to the created entity; .data() reads its record",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Create — resolves to the created entity; .data() reads its record"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "728df7c1c3",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "This tutorial walks through creating a client, listing planet records, loading a planet, and creating and removing a planet.",
+   "example": {
+    "lang": "ts",
+    "where": "crud-noupdate: Tutorial: your first API call",
+    "text": "This tutorial walks through creating a client, listing planet records, loading a planet, and creating and removing a planet."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 5,
+    "of": 16
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "81aabf087b",
+   "section": "tutorial",
+   "kind": "heading",
+   "masked": "Ⓝ. Create and remove a planet",
+   "example": {
+    "lang": "ts",
+    "where": "crud-noupdate: Tutorial: your first API call",
+    "text": "4. Create and remove a planet"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "hand": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "1760a2d205",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "This tutorial walks through creating a client and listing console records.",
+   "example": {
+    "lang": "ts",
+    "where": "doc-list: Tutorial: your first API call",
+    "text": "This tutorial walks through creating a client and listing console records."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "219aa7c229",
+   "section": "tutorial",
+   "kind": "heading",
+   "masked": "Ⓝ. Create, update, and remove a planet",
+   "example": {
+    "lang": "ts",
+    "where": "doc-nested: Tutorial: your first API call",
+    "text": "4. Create, update, and remove a planet"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "hand": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "9bcb2825f2",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Satellite is nested under planet, so the match also gives `Ⓔ_id`.",
+   "example": {
+    "lang": "ts",
+    "where": "doc-nested: Tutorial: your first API call > 3. Load a satellite",
+    "text": "Satellite is nested under planet, so the match also gives `planet_id`."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "hand": 9
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 2,
+    "of": 7
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "3ab3fb2b2e",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "This tutorial walks through creating a client, listing planet records, loading a satellite, and creating, updating, and removing a planet.",
+   "example": {
+    "lang": "ts",
+    "where": "doc-nested: Tutorial: your first API call",
+    "text": "This tutorial walks through creating a client, listing planet records, loading a satellite, and creating, updating, and removing a planet."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 5,
+    "of": 17
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "bcbefa9d5b",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "This tutorial walks through creating a client.",
+   "example": {
+    "lang": "ts",
+    "where": "ent-none: Tutorial: your first API call",
+    "text": "This tutorial walks through creating a client."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 4,
+    "of": 4
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "0416b3a5e1",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "This tutorial walks through creating a client, listing planet records, and loading a planet.",
+   "example": {
+    "lang": "ts",
+    "where": "ex-readonly: Tutorial: your first API call",
+    "text": "This tutorial walks through creating a client, listing planet records, and loading a planet."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 5,
+    "of": 11
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "787064e0dd",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "This tutorial walks through creating a client and updating a gauge.",
+   "example": {
+    "lang": "ts",
+    "where": "ref-issues: Tutorial: your first API call",
+    "text": "This tutorial walks through creating a client and updating a gauge."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "b83e95bec6",
+   "section": "tutorial",
+   "kind": "heading",
+   "masked": "Ⓝ. Update a gauge",
+   "example": {
+    "lang": "ts",
+    "where": "ref-issues: Tutorial: your first API call",
+    "text": "2. Update a gauge"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "hand": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "78dac4093d",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`update()` resolves to the entity it wrote, and throws on failure.",
+   "example": {
+    "lang": "ts",
+    "where": "ref-issues: Tutorial: your first API call > 2. Update a gauge",
+    "text": "`update()` resolves to the entity it wrote, and throws on failure."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 7
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "b4e03207de",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "The program below runs these Ⓝ steps in order.",
+   "example": {
+    "lang": "go",
+    "where": "B: Tutorial: your first API call",
+    "text": "The program below runs these 2 steps in order."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 2,
+    "of": 6
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "3cba044db7",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "**Create a client.**",
+   "example": {
+    "lang": "go",
+    "where": "B: Tutorial: your first API call",
+    "text": "**Create a client.**"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "e9015df1ee",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "**Load a Ⓔ.**",
+   "example": {
+    "lang": "go",
+    "where": "B: Tutorial: your first API call",
+    "text": "**Load an ambient.**"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "20caf7c646",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`Load` returns `(value, error)`: the value is the entity, and a non-nil `err` reports failure; `Data()` reads its record.",
+   "example": {
+    "lang": "go",
+    "where": "B: Tutorial: your first API call",
+    "text": "`Load` returns `(value, error)`: the value is the entity, and a non-nil `err` reports failure; `Data()` reads its record."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 5,
+    "of": 6
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "a0f86c7f47",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Load a Ⓔ: the entity; err is non-nil on failure",
+   "example": {
+    "lang": "go",
+    "where": "B: Tutorial: your first API call",
+    "text": "Load an ambient: the entity; err is non-nil on failure"
+   },
+   "langs": [
+    "go",
+    "lua"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 5,
+    "hand": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "2a35f2bf45",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Create — the value is the created entity; Data() reads its record",
+   "example": {
+    "lang": "go",
+    "where": "crud-bare: Tutorial: your first API call > Quickstart",
+    "text": "Create — the value is the created entity; Data() reads its record"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 9
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "288c093dd4",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "**List Ⓔ Ⓔs.**",
+   "example": {
+    "lang": "go",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "**List planet records.**"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "19898188ee",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`List` returns `(value, error)`: the value is a `[]any` of entities, one per record, and a non-nil `err` reports failure.",
+   "example": {
+    "lang": "go",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "`List` returns `(value, error)`: the value is a `[]any` of entities, one per record, and a non-nil `err` reports failure."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 7
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "a06a8df5bb",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`Data()` reads an entity's record.",
+   "example": {
+    "lang": "go",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "`Data()` reads an entity's record."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/example.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "a8c3a1d8ce",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "**Create, update, patch, and remove a Ⓔ.**",
+   "example": {
+    "lang": "go",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "**Create, update, patch, and remove a planet.**"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "2fe75fe657",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Each write returns `(value, error)` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure.",
+   "example": {
+    "lang": "go",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "Each write returns `(value, error)` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 7,
+    "of": 15
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "3f27586bc2",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "List Ⓔ records: a []any of entities, one per record; err is non-nil on failure",
+   "example": {
+    "lang": "go",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "List planet records: a []any of entities, one per record; err is non-nil on failure"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 12
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "4235f37e3f",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Remove",
+   "example": {
+    "lang": "go",
+    "where": "crud-bare: Tutorial: your first API call",
+    "text": "Remove"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "ea12b61c7f",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "**Create and remove a Ⓔ.**",
+   "example": {
+    "lang": "go",
+    "where": "crud-noupdate: Tutorial: your first API call",
+    "text": "**Create and remove a planet.**"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "a2c72437b6",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "**Create, update, and remove a Ⓔ.**",
+   "example": {
+    "lang": "go",
+    "where": "doc-nested: Tutorial: your first API call",
+    "text": "**Create, update, and remove a planet.**"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "4e460e7bba",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "The program below runs this step.",
+   "example": {
+    "lang": "go",
+    "where": "ent-none: Tutorial: your first API call",
+    "text": "The program below runs this step."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeQuick.ts",
+    "n": 3,
+    "of": 3
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "26d1a4e4aa",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "**Update a Ⓔ.**",
+   "example": {
+    "lang": "go",
+    "where": "ref-issues: Tutorial: your first API call",
+    "text": "**Update a gauge.**"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "f832084416",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`Update` returns `(value, error)`: the value is the entity it wrote, and a non-nil `err` reports failure.",
+   "example": {
+    "lang": "go",
+    "where": "ref-issues: Tutorial: your first API call",
+    "text": "`Update` returns `(value, error)`: the value is the entity it wrote, and a non-nil `err` reports failure."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "fa74e53c4a",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Update",
+   "example": {
+    "lang": "go",
+    "where": "ref-issues: Tutorial: your first API call",
+    "text": "Update"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "86db54d92d",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "⟦⟧ returns the entity and raises on failure; ⟦⟧ reads its record (a ⟦⟧).",
+   "example": {
+    "lang": "py",
+    "where": "B: Tutorial: your first API call > 2. Load an ambient",
+    "text": "`load()` returns the entity and raises on failure; `data_get()` reads its record (a `dict`)."
+   },
+   "langs": [
+    "ocaml",
+    "py"
+   ],
+   "classes": 4,
+   "by": {
+    "rule record": 2,
+    "hand": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "e0c2bbfe41",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "⟦⟧ returns a ⟦⟧ of entities, one per record, and raises on failure; ⟦⟧ reads an entity's record (a ⟦⟧).",
+   "example": {
+    "lang": "py",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list()` returns a `list` of entities, one per record, and raises on failure; `data_get()` reads an entity's record (a `dict`)."
+   },
+   "langs": [
+    "ocaml",
+    "py"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 1,
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 8
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "f2515f53be",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Each write returns the entity it wrote (a removed one is marked as deleted), and raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Each write returns the entity it wrote (a removed one is marked as deleted), and raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "hand": 3
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 5,
+    "of": 15
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "663f4dd150",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Create — returns the created entity; ⟦⟧ reads its record",
+   "example": {
+    "lang": "py",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Create — returns the created entity; data_get() reads its record"
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "perl",
+    "py",
+    "rb"
+   ],
+   "classes": 5,
+   "by": {
+    "hand": 4,
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "d7a6195670",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "⟦⟧ returns the entity it wrote, and raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "ref-issues: Tutorial: your first API call > 2. Update a gauge",
+    "text": "`update()` returns the entity it wrote, and raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "hand": 3
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 6
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "790326d5b9",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`load()` returns the entity, or `NULL` with `*err` set on failure; `vt->data` reads its record.",
+   "example": {
+    "lang": "c",
+    "where": "B: Tutorial: your first API call > 3. Load an ambient",
+    "text": "`load()` returns the entity, or `NULL` with `*err` set on failure; `vt->data` reads its record."
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "639e10468d",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`list()` returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure, so check `err` after the call; `vt->data` reads an entity's record.",
+   "example": {
+    "lang": "c",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list()` returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure, so check `err` after the call; `vt->data` reads an entity's record."
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 8
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "165ac95a50",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Create — returns the created entity, or NULL with *err set; vt->data reads its record",
+   "example": {
+    "lang": "c",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, and remove",
+    "text": "Create — returns the created entity, or NULL with *err set; vt->data reads its record"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "90c00da33e",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Each write returns the entity it wrote (a removed one is marked as deleted), or `NULL` with `*err` set on failure, so check `err` after each call.",
+   "example": {
+    "lang": "c",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Each write returns the entity it wrote (a removed one is marked as deleted), or `NULL` with `*err` set on failure, so check `err` after each call."
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 5,
+    "of": 14
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "6d4b60876c",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`update()` returns the entity it wrote, or `NULL` with `*err` set on failure, so check `err` after each call.",
+   "example": {
+    "lang": "c",
+    "where": "ref-issues: Tutorial: your first API call > 2. Update a gauge",
+    "text": "`update()` returns the entity it wrote, or `NULL` with `*err` set on failure, so check `err` after each call."
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 5
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "263b1f2143",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`load` returns a result whose ⟦⟧ is the entity and whose ⟦⟧ reports failure; ⟦⟧ reads its record.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Tutorial: your first API call > 3. Load an ambient",
+    "text": "`load` returns a result whose `.ok` is the entity and whose `.err` reports failure; `asEntity().data(null)` reads its record."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 3
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "e155e1e5ca",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`list` returns a result whose ⟦⟧ is a ⟦⟧ of entities, one per record, and whose ⟦⟧ reports failure; ⟦⟧ reads an entity's record.",
+   "example": {
+    "lang": "zig",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list` returns a result whose `.ok` is a slice of entities, one per record, and whose `.err` reports failure; `asEntity().data(null)` reads an entity's record."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 9
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "827b348227",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Each write returns a result whose ⟦⟧ is the entity it wrote (a removed one is marked as deleted) and whose ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Each write returns a result whose `.ok` is the entity it wrote (a removed one is marked as deleted) and whose `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 6,
+    "of": 14
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "ad23683b78",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Create — ⟦⟧ carries the created entity; ⟦⟧ reads its record",
+   "example": {
+    "lang": "zig",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Create — .ok carries the created entity; asEntity().data(null) reads its record"
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 1,
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "746f265c38",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`update` returns a result whose ⟦⟧ is the entity it wrote and whose ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "ref-issues: Tutorial: your first API call > 2. Update a gauge",
+    "text": "`update` returns a result whose `.ok` is the entity it wrote and whose `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 5
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "74ef39d5b3",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`load` returns the entity and raises on failure; ⟦⟧ reads its record.",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Tutorial: your first API call > 3. Load an ambient",
+    "text": "`load` returns the entity and raises on failure; `((:data-get ambient))` reads its record."
+   },
+   "langs": [
+    "clojure",
+    "elixir"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "f4a3261b79",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`list` returns a ⟦⟧ of entities, one per record, and raises on failure; ⟦⟧ reads an entity's record.",
+   "example": {
+    "lang": "clojure",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list` returns a vector of entities, one per record, and raises on failure; `((:data-get planet))` reads an entity's record."
+   },
+   "langs": [
+    "clojure",
+    "elixir"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 1,
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 10
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "3426e9ddb3",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`Voxgig.Struct.getelem/2` reads an item.",
+   "example": {
+    "lang": "elixir",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`Voxgig.Struct.getelem/2` reads an item."
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "note"
+  },
+  {
+   "id": "d938f29a61",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "`list` returns an `Array` of entities, one per record, and raises on failure; `data_get` reads an entity's record (a `Hash`).",
+   "example": {
+    "lang": "rb",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list` returns an `Array` of entities, one per record, and raises on failure; `data_get` reads an entity's record (a `Hash`)."
+   },
+   "langs": [
+    "rb"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 8
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "26ebb140ea",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "`load` returns the entity and raises on failure; `data_get` reads its record (a `Hash`).",
+   "example": {
+    "lang": "rb",
+    "where": "crud-bare: Tutorial: your first API call > 3. Load a planet",
+    "text": "`load` returns the entity and raises on failure; `data_get` reads its record (a `Hash`)."
+   },
+   "langs": [
+    "rb"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "5c8401afa4",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`load()` returns the entity and dies on failure; `$Ⓔ->data_get` reads its Ⓔ (a `hashref`).",
+   "example": {
+    "lang": "perl",
+    "where": "B: Tutorial: your first API call > 2. Load an ambient",
+    "text": "`load()` returns the entity and dies on failure; `$ambient->data_get` reads its record (a `hashref`)."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "751c70d413",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`list()` returns an `arrayref` of entities, one per Ⓔ, and dies on failure; `$Ⓔ->data_get` reads an entity's Ⓔ (a `hashref`).",
+   "example": {
+    "lang": "perl",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list()` returns an `arrayref` of entities, one per record, and dies on failure; `$planet->data_get` reads an entity's record (a `hashref`)."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 8
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "90cc4ae312",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Each write returns the entity it wrote (a removed one is marked as deleted), and dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Each write returns the entity it wrote (a removed one is marked as deleted), and dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 5,
+    "of": 15
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "cfe494c224",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`update()` returns the entity it wrote, and dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "ref-issues: Tutorial: your first API call > 2. Update a gauge",
+    "text": "`update()` returns the entity it wrote, and dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 6
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "3f7f5ddb3e",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`load` returns a value holding the entity, and throws on failure; `asNative as? Entity` takes it out, and `Ⓔ.data()` reads its Ⓔ.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Tutorial: your first API call > 2. Load an ambient",
+    "text": "`load` returns a value holding the entity, and throws on failure; `asNative as? Entity` takes it out, and `ambient.data()` reads its record."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 8,
+    "of": 8
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "230576eb77",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`list` returns a value holding a `VList` of entities, one per Ⓔ, and throws on failure; `asNative as? Entity` takes one entity out, and `Ⓔ.data()` reads an entity's Ⓔ.",
+   "example": {
+    "lang": "swift",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list` returns a value holding a `VList` of entities, one per record, and throws on failure; `asNative as? Entity` takes one entity out, and `planet.data()` reads an entity's record."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 6,
+    "of": 11
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "2bbfbdb1ac",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Each write returns a value holding the entity it wrote (a removed one is marked as deleted), and throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Each write returns a value holding the entity it wrote (a removed one is marked as deleted), and throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 9,
+    "of": 18
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "a0dfe490e5",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Create — returns a value holding the created entity; asNative as? Entity takes it out, and created.data() reads its Ⓔ",
+   "example": {
+    "lang": "swift",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Create — returns a value holding the created entity; asNative as? Entity takes it out, and created.data() reads its record"
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 17
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "ccce866938",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`update` returns a value holding the entity it wrote, and throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "ref-issues: Tutorial: your first API call > 2. Update a gauge",
+    "text": "`update` returns a value holding the entity it wrote, and throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 5,
+    "of": 9
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "065d77eac4",
+   "section": "tutorial",
+   "kind": "comment",
+   "masked": "Create — returns the created entity; created.e_data_get () reads its Ⓔ",
+   "example": {
+    "lang": "ocaml",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Create — returns the created entity; created.e_data_get () reads its record"
+   },
+   "langs": [
+    "ocaml"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "305aabb16e",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`load` returns `value, err`: the value is the entity, and a non-nil `err` reports failure; `data_get()` reads its record.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Tutorial: your first API call > 2. Load an ambient",
+    "text": "`load` returns `value, err`: the value is the entity, and a non-nil `err` reports failure; `data_get()` reads its record."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 5,
+    "of": 6
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "8e637f1a0c",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`list` returns `value, err`: the value is an array of entities, one per Ⓔ, and a non-nil `err` reports failure.",
+   "example": {
+    "lang": "lua",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`list` returns `value, err`: the value is an array of entities, one per record, and a non-nil `err` reports failure."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 11
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "9e46f6996a",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`data_get()` reads an entity's record.",
+   "example": {
+    "lang": "lua",
+    "where": "crud-bare: Tutorial: your first API call > 2. List planet records",
+    "text": "`data_get()` reads an entity's record."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/example.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "433653cb47",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "Each write returns `value, err` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure.",
+   "example": {
+    "lang": "lua",
+    "where": "crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove a planet",
+    "text": "Each write returns `value, err` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 7,
+    "of": 15
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "ea4598e14c",
+   "section": "tutorial",
+   "kind": "sentence",
+   "masked": "`update` returns `value, err`: the value is the entity it wrote, and a non-nil `err` reports failure.",
+   "example": {
+    "lang": "lua",
+    "where": "ref-issues: Tutorial: your first API call > 2. Update a gauge",
+    "text": "`update` returns `value, err`: the value is the entity it wrote, and a non-nil `err` reports failure."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "99a8153c15",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "Load a Ⓔ: the entity, a ⒺEntity; throws on failure",
+   "example": {
+    "lang": "ts",
+    "where": "B: TypeScript",
+    "text": "Load an ambient: the entity, an AmbientEntity; throws on failure"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "a0b269a293",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "List Ⓔ records: a ⒺEntity[], one entity per record; throws on failure",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: TypeScript",
+    "text": "List planet records: a PlanetEntity[], one entity per record; throws on failure"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 9
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "0ea856bddf",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "Load a Ⓔ: the entity; raises on failure",
+   "example": {
+    "lang": "py",
+    "where": "B: Python",
+    "text": "Load an ambient: the entity; raises on failure"
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "ocaml",
+    "py",
+    "rb"
+   ],
+   "classes": 10,
+   "by": {
+    "rule record": 6,
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "ae972576e9",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "List Ⓔ records: a ⟦⟧ of entities, one per record; raises on failure",
+   "example": {
+    "lang": "py",
+    "where": "crud-bare: Python",
+    "text": "List planet records: a list of entities, one per record; raises on failure"
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "ocaml",
+    "py",
+    "rb"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 3,
+    "hand": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 10
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "90e58e8669",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "Load a Ⓔ: the entity; *err is set on failure",
+   "example": {
+    "lang": "c",
+    "where": "B: C",
+    "text": "Load an ambient: the entity; *err is set on failure"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/example.ts",
+    "n": 1,
+    "of": 7
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "e71030dc82",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "List Ⓔ records: a NULL-terminated array of entities, one per record; *err is set on failure",
+   "example": {
+    "lang": "c",
+    "where": "crud-bare: C",
+    "text": "List planet records: a NULL-terminated array of entities, one per record; *err is set on failure"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 13
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "23dc789f01",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "Load a Ⓔ: ⟦⟧ is the entity; ⟦⟧ holds the failure",
+   "example": {
+    "lang": "zig",
+    "where": "B: Zig",
+    "text": "Load an ambient: .ok is the entity; .err holds the failure"
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 4,
+   "by": {
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "93ac2276de",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "List Ⓔ records: ⟦⟧ is a ⟦⟧ of entities, one per record; ⟦⟧ holds the failure",
+   "example": {
+    "lang": "zig",
+    "where": "crud-bare: Zig",
+    "text": "List planet records: .ok is a slice of entities, one per record; .err holds the failure"
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 13
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "12899e5db8",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "Load a Ⓔ: the entity; dies on failure",
+   "example": {
+    "lang": "perl",
+    "where": "B: Perl",
+    "text": "Load an ambient: the entity; dies on failure"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "f61c327e57",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "List Ⓔ Ⓔs: an arrayref of entities, one per Ⓔ; dies on failure",
+   "example": {
+    "lang": "perl",
+    "where": "crud-bare: Perl",
+    "text": "List planet records: an arrayref of entities, one per record; dies on failure"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 10
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "3d4c79a9e2",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "Load a Ⓔ: the entity; throws on failure",
+   "example": {
+    "lang": "swift",
+    "where": "B: Swift",
+    "text": "Load an ambient: the entity; throws on failure"
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "48ebb2a260",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "List Ⓔ Ⓔs: a VList of entities, one per Ⓔ; throws on failure",
+   "example": {
+    "lang": "swift",
+    "where": "crud-bare: Swift",
+    "text": "List planet records: a VList of entities, one per record; throws on failure"
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 10
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "250c64659b",
+   "section": "rootquick",
+   "kind": "comment",
+   "masked": "List Ⓔ Ⓔs: an array of entities, one per Ⓔ; err is non-nil on failure",
+   "example": {
+    "lang": "lua",
+    "where": "crud-bare: Lua",
+    "text": "List planet records: an array of entities, one per record; err is non-nil on failure"
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 12
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "49431fb9be",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`await client.Ⓔ().create({ $action: 'terraform', Ⓕ: 'Ⓔ_id' })`",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Actions",
+    "text": "`await client.Planet().create({ $action: 'terraform', id: 'planet_id' })`"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "4fb872e54f",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The array form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > Features > Configuring features",
+    "text": "The array form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRefFeatures.ts",
+    "n": 14,
+    "of": 17
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "4388aa476d",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.op.load⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Operations",
+    "text": "`load(match?: object, ctrl?: object)`"
+   },
+   "langs": [
+    "elixir",
+    "lua",
+    "ocaml",
+    "py",
+    "rb",
+    "swift",
+    "ts"
+   ],
+   "classes": 10,
+   "by": {
+    "rule record": 4,
+    "hand": 6
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "fa8637c0bd",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.op.list⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > ConsoleEntity > Operations",
+    "text": "`list(match?: object, ctrl?: object)`"
+   },
+   "langs": [
+    "lua",
+    "ocaml",
+    "rb",
+    "swift",
+    "ts"
+   ],
+   "classes": 9,
+   "by": {
+    "rule record": 1,
+    "hand": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "03f31979fa",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.op.create⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations",
+    "text": "`create(data?: object, ctrl?: object)`"
+   },
+   "langs": [
+    "ocaml",
+    "rb",
+    "swift",
+    "ts"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 1,
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "21516a568c",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.op.remove⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations",
+    "text": "`remove(match?: object, ctrl?: object)`"
+   },
+   "langs": [
+    "elixir",
+    "lua",
+    "ocaml",
+    "py",
+    "rb",
+    "swift",
+    "ts"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 3,
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "0bd42bc9da",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.op.update⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations",
+    "text": "`update(data?: object, ctrl?: object)`"
+   },
+   "langs": [
+    "ocaml",
+    "rb",
+    "swift",
+    "ts"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 1,
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "7e4d6fd58f",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Like any operation, an action's call gives back the entity; its data is then that action's OWN response, which is not necessarily a Planet record — check the API definition for its shape.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Actions",
+    "text": "Like any operation, an action's call gives back the entity; its data is then that action's OWN response, which is not necessarily a Planet record — check the API definition for its shape."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 10,
+   "by": {
+    "hand": 10
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 23,
+    "of": 30
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "0071df96c2",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Create a new ⟦⟧ instance.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `Ambient(data?: object)`",
+    "text": "Create a new `PlanetEntity` instance."
+   },
+   "langs": [
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "rule record": 9
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeModel.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "0a6358906c",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "**Returns:** ⟦⟧, a result map.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs?: object)`",
+    "text": "**Returns:** `Promise<{ ok, status, headers, data }>`, a result map."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "ocaml",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 10,
+   "by": {
+    "hand": 10
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "82e6814387",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Select one with `$action` in the call's argument, beside the route's path parameters, as the Call column shows; the action's own arguments go beside them too, and are sent as that action's payload.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Actions",
+    "text": "Select one with `$action` in the call's argument, beside the route's path parameters, as the Call column shows; the action's own arguments go beside them too, and are sent as that action's payload."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts"
+   ],
+   "classes": 8,
+   "by": {
+    "hand": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 20,
+    "of": 26
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "a32ec5077c",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Resolves to an array of entities, one per record, and throws on failure.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > ConsoleEntity > Operations > `list(match: object, ctrl?: object)`",
+    "text": "Resolves to an array of entities, one per record, and throws on failure."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 10
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "f3e421e046",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Return the SDK utility object.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `utility()`",
+    "text": "Return the SDK utility object."
+   },
+   "langs": [
+    "elixir",
+    "ts"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 1,
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 2,
+    "of": 2
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "b1666a52ac",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Resolves to the entity, marked as deleted, and throws on failure.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `remove(match: object, ctrl?: object)`",
+    "text": "Resolves to the entity, marked as deleted, and throws on failure."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 8
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "9b677d094c",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options.server`",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Constructor",
+    "text": "`options.server`"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "4eea983832",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "Values for the variables the server URL is templated on.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Constructor",
+    "text": "Values for the variables the server URL is templated on."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/helpers/sdkdesc.ts",
+    "n": 7,
+    "of": 7
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "5c71a59923",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options.server.tenant`",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Constructor",
+    "text": "`options.server.tenant`"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "7247de945f",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "Required.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Constructor",
+    "text": "Required."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "6c3aa41f7c",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options.server.region`",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Constructor",
+    "text": "`options.server.region`"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "9c7c471a05",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "Defaults to `eu`.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Constructor",
+    "text": "Defaults to `eu`."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/Registered.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "ffe4eb970b",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "Test client",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK",
+    "text": "Test client"
+   },
+   "langs": [
+    "c",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "746a31db3f",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The first argument holds the test feature's options, which the call switches on, and replaces any ⟦⟧ in the second, which holds the other client options; both may be ⟦⟧.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Test client > `DemoSDK.test(testopts?, sdkopts?)`",
+    "text": "The first argument holds the test feature's options, which the call switches on, and replaces any `options.feature.test` in the second, which holds the other client options; both may be `undefined`."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "perl",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 10,
+   "by": {
+    "hand": 10
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 14,
+    "of": 22
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "5266d8cbf2",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "Client ⟦⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK",
+    "text": "Client Methods"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "hand": 9
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "4af20ce756",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.accessor.sig⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Client Methods",
+    "text": "`Ambient(entopts?: object)`"
+   },
+   "langs": [
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 4,
+   "by": {
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "c002d31995",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "**Returns:** `object`.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Client Methods > `options()`",
+    "text": "**Returns:** `object`."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "ea66aefd24",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "⟦ref.valueType.STRING⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Client Methods > `direct(fetchargs?: object)`",
+    "text": "`string`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "7a3e73d523",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "Control options.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Client Methods > `direct(fetchargs?: object)`",
+    "text": "Control options."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "hand": 9
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "42aedb7ce3",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "For a response whose body is read, 2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and `ok` is ⟦⟧ unless the status is 2xx.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Client Methods > `direct(fetchargs?: object)`",
+    "text": "For a response whose body is read, 2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and `ok` is `false` unless the status is 2xx."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "lua",
+    "ocaml",
+    "perl",
+    "py",
+    "rb",
+    "rust",
+    "swift",
+    "ts",
+    "zig"
+   ],
+   "classes": 13,
+   "by": {
+    "hand": 13
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 11,
+    "of": 13
+   },
+   "verdict": null
+  },
+  {
+   "id": "fe4d5d27e7",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "When the body cannot be read, `ok` is ⟦⟧ and the key `err` holds the error, read as ⟦⟧; a request that cannot be made gives only `ok` (⟦⟧) and `err`.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Client Methods > `direct(fetchargs?: object)`",
+    "text": "When the body cannot be read, `ok` is `false` and the key `err` holds the error, read as `result.err`; a request that cannot be made gives only `ok` (`false`) and `err`."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "lua",
+    "ocaml",
+    "perl",
+    "py",
+    "rb",
+    "rust",
+    "swift",
+    "ts",
+    "zig"
+   ],
+   "classes": 13,
+   "by": {
+    "hand": 13
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 9,
+    "of": 11
+   },
+   "verdict": null
+  },
+  {
+   "id": "010ab525bc",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "A failure is reported in the result, not as an error, so branch on ⟦⟧.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Client Methods > `direct(fetchargs?: object)`",
+    "text": "A failure is reported in the result, not as an error, so branch on `result.ok`."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "ocaml",
+    "perl",
+    "py",
+    "rb",
+    "rust",
+    "swift",
+    "ts",
+    "zig"
+   ],
+   "classes": 12,
+   "by": {
+    "hand": 12
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 8,
+    "of": 11
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "ea3964d6ba",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "On failure it resolves to the error instead.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > DemoSDK > Client Methods > `prepare(fetchargs?: object)`",
+    "text": "On failure it resolves to the error instead."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "9f6d56f5fb",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Resolves to the entity, and throws on failure.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Operations > `load(match?: object, ctrl?: object)`",
+    "text": "Resolves to the entity, and throws on failure."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 5
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "3bb5d3a968",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "⟦⟧ reads its record.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Operations > `load(match?: object, ctrl?: object)`",
+    "text": "`.data()` reads its record."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "hand": 7,
+    "rule record": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "3c3c04f33c",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a copy of the current match criteria.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods > `match(match?: object)`",
+    "text": "Returns a copy of the current match criteria."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "lua",
+    "ocaml",
+    "perl",
+    "py",
+    "rb",
+    "rust",
+    "swift",
+    "ts",
+    "zig"
+   ],
+   "classes": 13,
+   "by": {
+    "hand": 13
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 5,
+    "of": 5
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "7034f074ec",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.entity.3.sig⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods",
+    "text": "`stream(action: string, args?: object, callopts?: object)`"
+   },
+   "langs": [
+    "c",
+    "ocaml",
+    "py",
+    "ts"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 3,
+    "hand": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "4c93659f14",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Run an operation through the pipeline and yield its result items as an async iterator.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods > `stream(action: string, args?: object, callopts?: object)`",
+    "text": "Run an operation through the pipeline and yield its result items as an async iterator."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 9,
+    "of": 12
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "5003b705ca",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The operation runs when iteration starts, not when the call returns.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods > `stream(action: string, args?: object, callopts?: object)`",
+    "text": "The operation runs when iteration starts, not when the call returns."
+   },
+   "langs": [
+    "py",
+    "rb",
+    "ts"
+   ],
+   "classes": 3,
+   "by": {
+    "hand": 3
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 8,
+    "of": 8
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "28235772cb",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It ends early once `callopts.signal` reports an abort.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods > `stream(action: string, args?: object, callopts?: object)`",
+    "text": "It ends early once `callopts.signal` reports an abort."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "go",
+    "lua",
+    "ocaml",
+    "perl",
+    "py",
+    "rb",
+    "swift",
+    "ts"
+   ],
+   "classes": 10,
+   "by": {
+    "hand": 10
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "0612fc4d79",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.entity.6.sig⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods",
+    "text": "`name: string`"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "f1bcce31a0",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The entity name.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods > `name: string`",
+    "text": "The entity name."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "fdfa305bc4",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The match is optional; a call without one is ⟦⟧.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > ConsoleEntity > Operations > `list(match?: object, ctrl?: object)`",
+    "text": "The match is optional; a call without one is `list()`."
+   },
+   "langs": [
+    "go",
+    "perl",
+    "py",
+    "rust",
+    "swift",
+    "ts",
+    "zig"
+   ],
+   "classes": 10,
+   "by": {
+    "hand": 10
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 6,
+    "of": 6
+   },
+   "verdict": null
+  },
+  {
+   "id": "c151802d4a",
+   "section": "reference",
+   "kind": "header",
+   "masked": "Operation",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Actions",
+    "text": "Operation"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "e3081c2053",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "⟦method.create⟧",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Actions",
+    "text": "`create`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "d6fd5c15c3",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Resolves to the created entity, and throws on failure.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `create(data?: object, ctrl?: object)`",
+    "text": "Resolves to the created entity, and throws on failure."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 6
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "bced6e2f5f",
+   "section": "reference",
+   "kind": "comment",
+   "masked": "string",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `create(data?: object, ctrl?: object)`",
+    "text": "string"
+   },
+   "langs": [
+    "go",
+    "ts"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "6cfad26916",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The data must include the entity id, `Ⓕ`, unless the entity already holds it.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `update(data?: object, ctrl?: object)`",
+    "text": "The data must include the entity id, `id`, unless the entity already holds it."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 13,
+   "by": {
+    "hand": 13
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 8,
+    "of": 8
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "863f603c11",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Resolves to the updated entity, and throws on failure.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `update(data?: object, ctrl?: object)`",
+    "text": "Resolves to the updated entity, and throws on failure."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 6
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "808ab9f422",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "⟦⟧ reads the mark.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > PlanetEntity > Operations > `remove(match?: object, ctrl?: object)`",
+    "text": "`result.deleted()` reads the mark."
+   },
+   "langs": [
+    "c",
+    "go",
+    "lua",
+    "ocaml",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "hand": 9
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "8d6016d7e2",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Each feature is inactive until switched on, except `log`, which runs unless disabled.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > Features > Configuring features",
+    "text": "Each feature is inactive until switched on, except `log`, which runs unless disabled."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRefFeatures.ts",
+    "n": 5,
+    "of": 7
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "d77745e7ee",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Active by default: set `active: false` to switch it off.",
+   "example": {
+    "lang": "ts",
+    "where": "B: Demo TypeScript SDK Reference > Features > Configuring features > `log`",
+    "text": "Active by default: set `active: false` to switch it off."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRefFeatures.ts",
+    "n": 2,
+    "of": 2
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "05a5a62f89",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "Password for HTTP Basic authentication; `apikey` is the user name.",
+   "example": {
+    "lang": "ts",
+    "where": "auth-basic: Demo TypeScript SDK Reference > DemoSDK > Constructor",
+    "text": "Password for HTTP Basic authentication; `apikey` is the user name."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 9,
+   "by": {
+    "hand": 9
+   },
+   "template": {
+    "file": "ts/src/helpers/sdkdesc.ts",
+    "n": 3,
+    "of": 3
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "a5e47cfb6f",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.op.patch⟧",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Demo TypeScript SDK Reference > PlanetEntity > Operations",
+    "text": "`patch(data?: object, ctrl?: object)`"
+   },
+   "langs": [
+    "ocaml",
+    "rb",
+    "swift",
+    "ts"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 1,
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "b7eb8b0b55",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Resolves to the patched entity, and throws on failure.",
+   "example": {
+    "lang": "ts",
+    "where": "crud-bare: Demo TypeScript SDK Reference > PlanetEntity > Operations > `patch(data?: object, ctrl?: object)`",
+    "text": "Resolves to the patched entity, and throws on failure."
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 6
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "d3d603d612",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The match must include `Ⓔ_id`.",
+   "example": {
+    "lang": "ts",
+    "where": "doc-nested: Demo TypeScript SDK Reference > SatelliteEntity > Operations > `list(match?: object, ctrl?: object)`",
+    "text": "The match must include `planet_id`."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 8
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "f616466503",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Create a test client.",
+   "example": {
+    "lang": "ts",
+    "where": "no-test: Demo TypeScript SDK Reference > DemoSDK > Test client > `DemoSDK.test(testopts?, sdkopts?)`",
+    "text": "Create a test client."
+   },
+   "langs": [
+    "c",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts"
+   ],
+   "classes": 7,
+   "by": {
+    "hand": 7
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "dd74ff9ab6",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "This SDK is generated without the `test` feature, so the client has no mock transport and refuses every request.",
+   "example": {
+    "lang": "ts",
+    "where": "no-test: Demo TypeScript SDK Reference > DemoSDK > Test client > `DemoSDK.test(testopts?, sdkopts?)`",
+    "text": "This SDK is generated without the `test` feature, so the client has no mock transport and refuses every request."
+   },
+   "langs": [
+    "c",
+    "elixir",
+    "go",
+    "py",
+    "rb",
+    "rust",
+    "ts"
+   ],
+   "classes": 7,
+   "by": {
+    "hand": 7
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 9,
+    "of": 12
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "f6b8425ed5",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Create a new ⟦⟧ instance with the same client and options.",
+   "example": {
+    "lang": "ts",
+    "where": "ref-issues: Demo TypeScript SDK Reference > PlanetEntity > Common Methods > `make()`",
+    "text": "Create a new `PlanetEntityClient` instance with the same client and options."
+   },
+   "langs": [
+    "go",
+    "perl",
+    "py",
+    "rust",
+    "swift",
+    "ts"
+   ],
+   "classes": 14,
+   "by": {
+    "rule record": 8,
+    "hand": 6
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 3,
+    "of": 4
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "9fe8f9d917",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "PlanetEntityClient",
+   "example": {
+    "lang": "ts",
+    "where": "ref-issues: Demo TypeScript SDK Reference",
+    "text": "PlanetEntityClient"
+   },
+   "langs": [
+    "go",
+    "py",
+    "rust",
+    "ts",
+    "zig"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 5
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "74c9db4d88",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options.server.account`",
+   "example": {
+    "lang": "ts",
+    "where": "server-mixed: Demo TypeScript SDK Reference > DemoSDK > Constructor",
+    "text": "`options.server.account`"
+   },
+   "langs": [
+    "ts"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "0bf479489c",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the entity; `err` is non-nil on failure.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > AmbientEntity > Operations > `Load(reqmatch, ctrl map[string]any) (any, error)`",
+    "text": "Returns the entity; `err` is non-nil on failure."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "2bd8ff9d43",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It sends the items on the returned channel, which closes when the stream ends.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > AmbientEntity > Common Methods > `Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem`",
+    "text": "It sends the items on the returned channel, which closes when the stream ends."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "note"
+  },
+  {
+   "id": "5ddee20721",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "HTTP method (default: `GET`).",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Instance Methods > `Direct(fetchargs map[string]any) (map[string]any, error)`",
+    "text": "HTTP method (default: `GET`)."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "perl",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "rule record": 7,
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "6afe3f6b0d",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options[\"server\"]`",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Constructor",
+    "text": "`options[\"server\"]`"
+   },
+   "langs": [
+    "go",
+    "py"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "e61813ee66",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options[\"server\"][\"tenant\"]`",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Constructor",
+    "text": "`options[\"server\"][\"tenant\"]`"
+   },
+   "langs": [
+    "go",
+    "py"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "8a90021109",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options[\"server\"][\"region\"]`",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Constructor",
+    "text": "`options[\"server\"][\"region\"]`"
+   },
+   "langs": [
+    "go",
+    "py"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "0daa28353f",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Create a test client with mock features active.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Test client > `Test() *DemoSDK`",
+    "text": "Create a test client with mock features active."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 5,
+    "of": 5
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "1f08cc692d",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It takes no arguments.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Test client > `Test() *DemoSDK`",
+    "text": "It takes no arguments."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "b0b5838164",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "⟦ref.container|ref.valueType.OBJECT⟧",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Client Methods > `Direct(fetchargs map[string]any) (map[string]any, error)`",
+    "text": "`map[string]any`"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "5c8f458658",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "**Returns:** ⟦⟧, the fetch definition: the request ⟦⟧ would send.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Client Methods > `Prepare(fetchargs map[string]any) (map[string]any, error)`",
+    "text": "**Returns:** `(map[string]any, error)`, the fetch definition: the request `Direct()` would send."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "swift",
+    "zig"
+   ],
+   "classes": 8,
+   "by": {
+    "hand": 2,
+    "rule record": 6
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 3
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "ab92519649",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "`err` is non-nil on failure.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > DemoSDK > Client Methods > `Prepare(fetchargs map[string]any) (map[string]any, error)`",
+    "text": "`err` is non-nil on failure."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "9f4a983dc3",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Run an operation through the pipeline and stream its result items.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > AmbientEntity > Common Methods > `Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem`",
+    "text": "Run an operation through the pipeline and stream its result items."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 5,
+    "of": 8
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "9f4208cfb6",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The operation starts at the call and runs beside the caller, handing over each item as the caller takes it.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > AmbientEntity > Common Methods > `Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem`",
+    "text": "The operation starts at the call and runs beside the caller, handing over each item as the caller takes it."
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 17,
+    "of": 17
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "185f26bc68",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "Actions",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > PlanetEntity",
+    "text": "Actions"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "abe9546ee3",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "This entity exposes custom API actions in addition to the standard operations.",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > PlanetEntity > Actions",
+    "text": "This entity exposes custom API actions in addition to the standard operations."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 8,
+    "of": 9
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "2b8bc511e9",
+   "section": "reference",
+   "kind": "header",
+   "masked": "Action",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > PlanetEntity > Actions",
+    "text": "Action"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "120aec2437",
+   "section": "reference",
+   "kind": "header",
+   "masked": "Route",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > PlanetEntity > Actions",
+    "text": "Route"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "22bdd0ff18",
+   "section": "reference",
+   "kind": "header",
+   "masked": "Call",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > PlanetEntity > Actions",
+    "text": "Call"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "2a8d9aa773",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`terraform`",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > PlanetEntity > Actions",
+    "text": "`terraform`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "ebea8de27f",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`/Ⓔ/{Ⓕ}/terraform`",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > PlanetEntity > Actions",
+    "text": "`/planet/{id}/terraform`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "go",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 7,
+   "by": {
+    "rule record": 7
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "b1e62e338a",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`_, err := client.Ⓔ(nil).Create(map[string]any{\"$action\": \"terraform\", \"Ⓕ\": \"Ⓔ_id\"}, nil); if err != nil { panic(err) }`",
+   "example": {
+    "lang": "go",
+    "where": "B: Demo Golang SDK Reference > PlanetEntity > Actions",
+    "text": "`_, err := client.Planet(nil).Create(map[string]any{\"$action\": \"terraform\", \"id\": \"planet_id\"}, nil); if err != nil { panic(err) }`"
+   },
+   "langs": [
+    "go"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "dc97559d3c",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options[\"secret\"]`",
+   "example": {
+    "lang": "go",
+    "where": "auth-basic: Demo Golang SDK Reference > DemoSDK > Constructor",
+    "text": "`options[\"secret\"]`"
+   },
+   "langs": [
+    "go",
+    "py"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "799b8582a8",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options[\"server\"][\"account\"]`",
+   "example": {
+    "lang": "go",
+    "where": "server-mixed: Demo Golang SDK Reference > DemoSDK > Constructor",
+    "text": "`options[\"server\"][\"account\"]`"
+   },
+   "langs": [
+    "go",
+    "py"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "b04b0bd470",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a ⟦⟧ of entities, one per record, and raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > ConsoleEntity > Operations > `list(reqmatch=None, ctrl=None) -> list[ConsoleEntity]`",
+    "text": "Returns a `list` of entities, one per record, and raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py",
+    "rb"
+   ],
+   "classes": 4,
+   "by": {
+    "rule record": 3,
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 6
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "04d3017bb0",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the created entity, and raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > PlanetEntity > Operations > `create(reqdata, ctrl=None) -> PlanetEntity`",
+    "text": "Returns the created entity, and raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "1c3e043734",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the updated entity, and raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > PlanetEntity > Operations > `update(reqdata, ctrl=None) -> PlanetEntity`",
+    "text": "Returns the updated entity, and raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "f28445713f",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the entity, marked as deleted, and raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > PlanetEntity > Operations > `remove(reqmatch, ctrl=None) -> PlanetEntity`",
+    "text": "Returns the entity, marked as deleted, and raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 7
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "440d837326",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.entity.1.sig⟧",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > AmbientEntity > Common Methods",
+    "text": "`data_set(args=None)`"
+   },
+   "langs": [
+    "ocaml",
+    "py",
+    "swift"
+   ],
+   "classes": 4,
+   "by": {
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "3cd4c3ecdc",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Prepare a fetch definition without sending the request.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs=None) -> dict`",
+    "text": "Prepare a fetch definition without sending the request."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 6,
+   "by": {
+    "rule record": 6
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 5,
+    "of": 5
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "dfa5cb5552",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "⟦recordType|ref.container|ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > DemoSDK > Client Methods > `direct(fetchargs=None) -> dict`",
+    "text": "`dict`"
+   },
+   "langs": [
+    "py"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "107a756204",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`fetchargs[\"ctrl\"]`",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > DemoSDK > Client Methods > `direct(fetchargs=None) -> dict`",
+    "text": "`fetchargs[\"ctrl\"]`"
+   },
+   "langs": [
+    "py"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "581898e092",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Accepts the same parameters as ⟦⟧.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > DemoSDK > Client Methods > `prepare(fetchargs=None) -> dict`",
+    "text": "Accepts the same parameters as `direct()`."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "py",
+    "rust",
+    "zig"
+   ],
+   "classes": 6,
+   "by": {
+    "rule record": 6
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "4b8eb8b6bf",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > DemoSDK > Client Methods > `prepare(fetchargs=None) -> dict`",
+    "text": "It raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "943a2c940d",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the entity, and raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > AmbientEntity > Operations > `load(reqmatch=None, ctrl=None) -> AmbientEntity`",
+    "text": "Returns the entity, and raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "f2901d9293",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a copy of the current data.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > AmbientEntity > Common Methods > `data_get() -> dict`",
+    "text": "Returns a copy of the current data."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "py",
+    "rust"
+   ],
+   "classes": 5,
+   "by": {
+    "hand": 5
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 4,
+    "of": 4
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "957a8c7efa",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.entity.5.sig⟧",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > AmbientEntity > Common Methods",
+    "text": "`stream(action, args=None, callopts=None)`"
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "7df20388eb",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Run an operation through the pipeline and yield its result items as a generator.",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > AmbientEntity > Common Methods > `stream(action, args=None, callopts=None)`",
+    "text": "Run an operation through the pipeline and yield its result items as a generator."
+   },
+   "langs": [
+    "py"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 8,
+    "of": 11
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "76fabc0077",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`client.Ⓔ().create({\"$action\": \"terraform\", \"Ⓕ\": \"Ⓔ_id\"})`",
+   "example": {
+    "lang": "py",
+    "where": "B: Demo Python SDK Reference > PlanetEntity > Actions",
+    "text": "`client.Planet().create({\"$action\": \"terraform\", \"id\": \"planet_id\"})`"
+   },
+   "langs": [
+    "py"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "5338ac6916",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the patched entity, and raises on failure.",
+   "example": {
+    "lang": "py",
+    "where": "crud-bare: Demo Python SDK Reference > PlanetEntity > Operations > `patch(reqdata, ctrl=None) -> PlanetEntity`",
+    "text": "Returns the patched entity, and raises on failure."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "py"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "38db57bb5d",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "System overrides (e.g. custom fetch).",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Constructor",
+    "text": "System overrides (e.g. custom fetch)."
+   },
+   "langs": [
+    "c",
+    "rust",
+    "zig"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": {
+    "file": "ts/src/helpers/sdkdesc.ts",
+    "n": 2,
+    "of": 2
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "b677be31b2",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the entity, or `NULL` with `*err` set on failure.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > Ambient > Operations > `Entity* vt->load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)`",
+    "text": "Returns the entity, or `NULL` with `*err` set on failure."
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "57d83d252b",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Create a new ⟦⟧ entity.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Entity Accessors > `Entity* demo_ambient(DemoSDK* client, voxgig_value* entopts)`",
+    "text": "Create a new `Ambient` entity."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "ocaml"
+   ],
+   "classes": 8,
+   "by": {
+    "hand": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeModel.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "0d2b7ebded",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Create another ⟦⟧ entity with the same client and options.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > Ambient > Common Methods > `Entity* vt->make(Entity* e)`",
+    "text": "Create another `Ambient` entity with the same client and options."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "ocaml"
+   ],
+   "classes": 8,
+   "by": {
+    "hand": 8
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 3,
+    "of": 4
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "4cc33fe3da",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The match is optional.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > Console > Operations > `Entity** vt->list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)`",
+    "text": "The match is optional."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "rb"
+   ],
+   "classes": 4,
+   "by": {
+    "hand": 4
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "a597c33fd6",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`server`",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Constructor",
+    "text": "`server`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "ocaml",
+    "rust",
+    "zig"
+   ],
+   "classes": 6,
+   "by": {
+    "rule record": 5,
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "d58d5036f6",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`server.tenant`",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Constructor",
+    "text": "`server.tenant`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "rust",
+    "zig"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 5
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "f9463bffa1",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`server.region`",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Constructor",
+    "text": "`server.region`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "rust",
+    "zig"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 5
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "475c89eecd",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.client.0.sig⟧",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Client Functions",
+    "text": "`voxgig_value* sdk_options_map(DemoSDK* client)`"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "2e09bb327d",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Return a deep copy of the current SDK options.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Client Functions > `voxgig_value* sdk_options_map(DemoSDK* client)`",
+    "text": "Return a deep copy of the current SDK options."
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 6,
+    "of": 6
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "fb0d7d681d",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.client.1.sig⟧",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Client Functions",
+    "text": "`Utility* sdk_get_utility(DemoSDK* client)`"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "2666022713",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Return a copy of the SDK utility object.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Client Functions > `Utility* sdk_get_utility(DemoSDK* client)`",
+    "text": "Return a copy of the SDK utility object."
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 5,
+    "of": 5
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "7d64fb6cb3",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "Path parameter values for `{param}` substitution.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Client Functions > `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`",
+    "text": "Path parameter values for `{param}` substitution."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "4f5d0aa907",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "⟦ref.valueType.OBJECT⟧",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Client Functions > `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`",
+    "text": "`map`"
+   },
+   "langs": [
+    "c",
+    "rust",
+    "zig"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "186e69881f",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`ctrl`",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Client Functions > `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`",
+    "text": "`ctrl`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "rust",
+    "zig"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 5
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "c7a96c7e57",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It returns `NULL` with `*err` set on failure.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > DemoSDK > Client Functions > `voxgig_value* sdk_prepare(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`",
+    "text": "It returns `NULL` with `*err` set on failure."
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "b1c01c6444",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "Common ⟦⟧",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > Ambient",
+    "text": "Common Functions"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "aa27f7dd7e",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Run an operation through the pipeline and return its result items, every one already read.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > Ambient > Common Functions > `voxgig_value* ambient_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)`",
+    "text": "Run an operation through the pipeline and return its result items, every one already read."
+   },
+   "langs": [
+    "c",
+    "rust",
+    "zig"
+   ],
+   "classes": 3,
+   "by": {
+    "hand": 3
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 9,
+    "of": 12
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "e866dc0d3c",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The operation runs before the call returns.",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > Ambient > Common Functions > `voxgig_value* ambient_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)`",
+    "text": "The operation runs before the call returns."
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "rust",
+    "zig"
+   ],
+   "classes": 5,
+   "by": {
+    "hand": 5
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 4,
+    "of": 4
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "c0e844726c",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`PNError* err = NULL; Entity* Ⓔ = demo_Ⓔ(client, NULL); Ⓔ->vt->create(Ⓔ, cmap(2, \"$action\", v_str(\"terraform\"), \"Ⓕ\", v_str(\"Ⓔ_id\")), NULL, &err);`",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > Planet > Actions",
+    "text": "`PNError* err = NULL; Entity* planet = demo_planet(client, NULL); planet->vt->create(planet, cmap(2, \"$action\", v_str(\"terraform\"), \"id\", v_str(\"planet_id\")), NULL, &err);`"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "847a5afbe6",
+   "section": "reference",
+   "kind": "comment",
+   "masked": "Fields to update",
+   "example": {
+    "lang": "c",
+    "where": "B: Demo C SDK Reference > Planet > Operations > `Entity* vt->update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)`",
+    "text": "Fields to update"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/example.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "56cbce4ad6",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`secret`",
+   "example": {
+    "lang": "c",
+    "where": "auth-basic: Demo C SDK Reference > DemoSDK > Constructor",
+    "text": "`secret`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "ocaml",
+    "rust",
+    "zig"
+   ],
+   "classes": 6,
+   "by": {
+    "rule record": 5,
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "6c805e005d",
+   "section": "reference",
+   "kind": "comment",
+   "masked": "Only the fields to change",
+   "example": {
+    "lang": "c",
+    "where": "crud-bare: Demo C SDK Reference > Planet > Operations > `Entity* vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)`",
+    "text": "Only the fields to change"
+   },
+   "langs": [
+    "c"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/example.ts",
+    "n": 2,
+    "of": 2
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "0808ae08e7",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`server.account`",
+   "example": {
+    "lang": "c",
+    "where": "server-mixed: Demo C SDK Reference > DemoSDK > Constructor",
+    "text": "`server.account`"
+   },
+   "langs": [
+    "c",
+    "clojure",
+    "elixir",
+    "rust",
+    "zig"
+   ],
+   "classes": 5,
+   "by": {
+    "rule record": 5
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "b7514cf478",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with whatever data the failure left; otherwise `.err` holds the branded error.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > AmbientEntity > Common Methods > `stream(action: []const u8, args: Value, callopts: Value) StreamResult`",
+    "text": "Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with whatever data the failure left; otherwise `.err` holds the branded error."
+   },
+   "langs": [
+    "zig"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "note"
+  },
+  {
+   "id": "858d89077c",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The result's ⟦⟧ is the entity, marked as deleted, and its ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > PlanetEntity > Operations > `remove(reqmatch: Value, ctrl: Value) EntResult`",
+    "text": "The result's `.ok` is the entity, marked as deleted, and its `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 5
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "bea4cfb8e1",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The result's ⟦⟧ is a ⟦⟧ of entities, one per record, and its ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > ConsoleEntity > Operations > `list(reqmatch: Value, ctrl: Value) EntListResult`",
+    "text": "The result's `.ok` is a slice of entities, one per record, and its `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 4,
+   "by": {
+    "rule record": 4
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 7
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "a669448486",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "**Parameters (⟦⟧ map keys):**",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > DemoSDK > Constructor",
+    "text": "**Parameters (`options` map keys):**"
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "rust",
+    "zig"
+   ],
+   "classes": 6,
+   "by": {
+    "rule record": 6
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "ec57fa7390",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The result's ⟦⟧ is the created entity, and its ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > PlanetEntity > Operations > `create(reqdata: Value, ctrl: Value) EntResult`",
+    "text": "The result's `.ok` is the created entity, and its `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "a819580a76",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The result's ⟦⟧ is the updated entity, and its ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > PlanetEntity > Operations > `update(reqdata: Value, ctrl: Value) EntResult`",
+    "text": "The result's `.ok` is the updated entity, and its `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 4,
+   "by": {
+    "rule record": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "083fc645cd",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "On failure it returns the error of its error union, for `try` or `catch`.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > DemoSDK > Client Methods > `prepare(fetchargs: Value) E!Value`",
+    "text": "On failure it returns the error of its error union, for `try` or `catch`."
+   },
+   "langs": [
+    "zig"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "note"
+  },
+  {
+   "id": "a96f8d1f55",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The result's ⟦⟧ is the entity, and its ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > AmbientEntity > Operations > `load(reqmatch: Value, ctrl: Value) EntResult`",
+    "text": "The result's `.ok` is the entity, and its `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 3
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 1,
+    "of": 2
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "3a4a68b9c0",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Its ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > AmbientEntity > Common Methods > `stream(action: []const u8, args: Value, callopts: Value) StreamResult`",
+    "text": "Its `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "cca0deacc3",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`switch (client.Ⓔ(h.vnull()).create(h.jo(&.{.{ \"$action\", h.vstr(\"terraform\") }, .{ \"Ⓕ\", h.vstr(\"Ⓔ_id\") }}), h.vnull())) { .ok => {}, .err => \\|e\\| std.debug.print(\"create failed: {s}\\n\", .{e.msg}), }`",
+   "example": {
+    "lang": "zig",
+    "where": "B: Demo Zig SDK Reference > PlanetEntity > Actions",
+    "text": "`switch (client.planet(h.vnull()).create(h.jo(&.{.{ \"$action\", h.vstr(\"terraform\") }, .{ \"id\", h.vstr(\"planet_id\") }}), h.vnull())) { .ok => {}, .err => \\|e\\| std.debug.print(\"create failed: {s}\\n\", .{e.msg}), }`"
+   },
+   "langs": [
+    "zig"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "9c7c8ac25c",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The result's ⟦⟧ is the patched entity, and its ⟦⟧ reports failure.",
+   "example": {
+    "lang": "zig",
+    "where": "crud-bare: Demo Zig SDK Reference > PlanetEntity > Operations > `patch(reqdata: Value, ctrl: Value) EntResult`",
+    "text": "The result's `.ok` is the patched entity, and its `.err` reports failure."
+   },
+   "langs": [
+    "rust",
+    "zig"
+   ],
+   "classes": 4,
+   "by": {
+    "rule record": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "12182a3155",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "`options` is a ⟦⟧ map (⟦⟧ for none).",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > Client > make-sdk",
+    "text": "`options` is a `voxgig.struct` map (`nil` for none)."
+   },
+   "langs": [
+    "clojure",
+    "elixir",
+    "ocaml"
+   ],
+   "classes": 3,
+   "by": {
+    "rule record": 2,
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "939f3f59bd",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "sdk.api",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference",
+    "text": "sdk.api"
+   },
+   "langs": [
+    "clojure"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "88547b1a3d",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "Constructor",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > sdk.api",
+    "text": "Constructor"
+   },
+   "langs": [
+    "clojure"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "fbcf071a11",
+   "section": "reference",
+   "kind": "header",
+   "masked": "Value type",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > sdk.api > Constructor",
+    "text": "Value type"
+   },
+   "langs": [
+    "clojure",
+    "elixir"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "bce8a9347a",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The SDK utility object is reached through `sdk.client`, which `sdk.api` does not re-export:",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > sdk.api > Client Functions",
+    "text": "The SDK utility object is reached through `sdk.client`, which `sdk.api` does not re-export:"
+   },
+   "langs": [
+    "clojure"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "provider-literal"
+  },
+  {
+   "id": "e179fbae04",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "`(sdk.client/get-Ⓔ client)` returns a copy of it.",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > sdk.api > Client Functions",
+    "text": "`(sdk.client/get-utility client)` returns a copy of it."
+   },
+   "langs": [
+    "clojure"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/example.ts",
+    "n": 1,
+    "of": 2
+   },
+   "verdict": "ok",
+   "single": "note"
+  },
+  {
+   "id": "afa4347469",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Its `data` argument holds the entity options: pass ⟦⟧ for none.",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > sdk.api > Client Functions > `(api/ambient client data)`",
+    "text": "Its `data` argument holds the entity options: pass `nil` for none."
+   },
+   "langs": [
+    "clojure"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 3
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "65e89e0eda",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > sdk.api > Client Functions > `(api/direct client fetchargs) -> map`",
+    "text": "`map`"
+   },
+   "langs": [
+    "clojure",
+    "elixir"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 2
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "72922e3782",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Run an operation through the pipeline and return a sequence of its result items.",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > Ambient > Common Members > `(stream ent action args callopts) -> seq`",
+    "text": "Run an operation through the pipeline and return a sequence of its result items."
+   },
+   "langs": [
+    "clojure",
+    "elixir"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 8,
+    "of": 11
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "cebb5984c9",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`(e-Ⓔ/create (api/Ⓔ client nil) (vs/jm \"$action\" \"terraform\" \"Ⓕ\" \"Ⓔ_id\") nil)`",
+   "example": {
+    "lang": "clojure",
+    "where": "B: Demo Clojure SDK Reference > Planet > Actions",
+    "text": "`(e-planet/create (api/planet client nil) (vs/jm \"$action\" \"terraform\" \"id\" \"planet_id\") nil)`"
+   },
+   "langs": [
+    "clojure"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "3deec669ce",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "The result map always comes back inside `Ok`.",
+   "example": {
+    "lang": "rust",
+    "where": "B: Demo Rust SDK Reference > DemoSDK > Client Methods > `direct(fetchargs: Value) -> Result<Value, DemoError>`",
+    "text": "The result map always comes back inside `Ok`."
+   },
+   "langs": [
+    "rust"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "note"
+  },
+  {
+   "id": "94f6b2ab2b",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "`stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, ⓈError>`",
+   "example": {
+    "lang": "rust",
+    "where": "B: Demo Rust SDK Reference > AmbientEntity > Common Methods",
+    "text": "`stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, DemoError>`"
+   },
+   "langs": [
+    "rust"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "ed524ea13a",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`client.Ⓔ(Value::Noval).create(jo(vec![(\"$action\", Value::str(\"terraform\")), (\"Ⓕ\", Value::str(\"Ⓔ_id\"))]), Value::Noval).unwrap();`",
+   "example": {
+    "lang": "rust",
+    "where": "B: Demo Rust SDK Reference > PlanetEntity > Actions",
+    "text": "`client.planet(Value::Noval).create(jo(vec![(\"$action\", Value::str(\"terraform\")), (\"id\", Value::str(\"planet_id\"))]), Value::Noval).unwrap();`"
+   },
+   "langs": [
+    "rust"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "4b1f2e32dd",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Create a new SDK client instance.",
+   "example": {
+    "lang": "elixir",
+    "where": "B: Demo Elixir SDK Reference > Demo > Constructor",
+    "text": "Create a new SDK client instance."
+   },
+   "langs": [
+    "elixir",
+    "ocaml"
+   ],
+   "classes": 2,
+   "by": {
+    "rule record": 1,
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 3,
+    "of": 3
+   },
+   "verdict": "ok"
+  },
+  {
+   "id": "857a1c7f50",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Build `options` from a native map with `Ⓢ.Helpers.deep/1`.",
+   "example": {
+    "lang": "elixir",
+    "where": "B: Demo Elixir SDK Reference > Demo > Constructor",
+    "text": "Build `options` from a native map with `Demo.Helpers.deep/1`."
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "provider-literal"
+  },
+  {
+   "id": "fef59d5955",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Pass ⟦⟧ for no initial options.",
+   "example": {
+    "lang": "elixir",
+    "where": "B: Demo Elixir SDK Reference > Demo > Client Functions > `Demo.ambient(client, entopts \\\\ nil)`",
+    "text": "Pass `nil` for no initial options."
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "8b566aed10",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It is the client's own node, not a copy.",
+   "example": {
+    "lang": "elixir",
+    "where": "B: Demo Elixir SDK Reference > Demo > Client Functions > `get_utility(client) :: map()`",
+    "text": "It is the client's own node, not a copy."
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "note"
+  },
+  {
+   "id": "78e12a7505",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.client.2.sig⟧",
+   "example": {
+    "lang": "elixir",
+    "where": "B: Demo Elixir SDK Reference > Demo > Client Functions",
+    "text": "`direct(client, fetchargs \\\\ nil) :: map()`"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "eecb230369",
+   "section": "reference",
+   "kind": "header",
+   "masked": "Key",
+   "example": {
+    "lang": "elixir",
+    "where": "B: Demo Elixir SDK Reference > Demo > Client Functions > `direct(client, fetchargs \\\\ nil) :: map()`",
+    "text": "Key"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "4fd58b94dc",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.client.3.sig⟧",
+   "example": {
+    "lang": "elixir",
+    "where": "B: Demo Elixir SDK Reference > Demo > Client Functions",
+    "text": "`prepare(client, fetchargs \\\\ nil) :: map()`"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "72c41ba898",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`Ⓔ = Ⓢ.Ⓔ(sdk); Ⓢ.Entity.Ⓔ.create(Ⓔ, Ⓢ.Helpers.deep(%{\"$action\" => \"terraform\", \"Ⓕ\" => \"Ⓔ_id\"}))`",
+   "example": {
+    "lang": "elixir",
+    "where": "B: Demo Elixir SDK Reference > Demo.Entity.Planet > Actions",
+    "text": "`planet = Demo.planet(sdk); Demo.Entity.Planet.create(planet, Demo.Helpers.deep(%{\"$action\" => \"terraform\", \"id\" => \"planet_id\"}))`"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "22cfc13b27",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "Field Usage by Operation",
+   "example": {
+    "lang": "elixir",
+    "where": "ref-issues: Demo Elixir SDK Reference > Demo.Entity.Gauge",
+    "text": "Field Usage by Operation"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "30308ece64",
+   "section": "reference",
+   "kind": "header",
+   "masked": "update",
+   "example": {
+    "lang": "elixir",
+    "where": "ref-issues: Demo Elixir SDK Reference > Demo.Entity.Gauge > Field Usage by Operation",
+    "text": "update"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "3531b58c59",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`Ⓕ`",
+   "example": {
+    "lang": "elixir",
+    "where": "ref-issues: Demo Elixir SDK Reference > Demo.Entity.Gauge > Field Usage by Operation",
+    "text": "`level`"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "e078a02b2e",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "Yes",
+   "example": {
+    "lang": "elixir",
+    "where": "ref-issues: Demo Elixir SDK Reference > Demo.Entity.Gauge > Field Usage by Operation",
+    "text": "Yes"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "114c546be5",
+   "section": "reference",
+   "kind": "header",
+   "masked": "Field",
+   "example": {
+    "lang": "elixir",
+    "where": "ref-issues: Demo Elixir SDK Reference > Demo.Entity.Utility > Fields",
+    "text": "Field"
+   },
+   "langs": [
+    "elixir"
+   ],
+   "classes": 1,
+   "by": {
+    "rule record": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "unexplained"
+  },
+  {
+   "id": "7bebc239a6",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.entity.4.sig⟧",
+   "example": {
+    "lang": "rb",
+    "where": "B: Demo Ruby SDK Reference > AmbientEntity > Common Methods",
+    "text": "`make -> AmbientEntity`"
+   },
+   "langs": [
+    "ocaml",
+    "rb"
+   ],
+   "classes": 4,
+   "by": {
+    "hand": 4
+   },
+   "template": null,
+   "verdict": "ok"
+  },
+  {
+   "id": "7ba0882026",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Run an operation through the pipeline and return an iterator over its result items.",
+   "example": {
+    "lang": "rb",
+    "where": "B: Demo Ruby SDK Reference > AmbientEntity > Common Methods > `stream(action, args = nil, callopts = nil) -> Enumerator`",
+    "text": "Run an operation through the pipeline and return an iterator over its result items."
+   },
+   "langs": [
+    "rb"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 8,
+    "of": 11
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "91de682ebb",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "List entities matching the given criteria.",
+   "example": {
+    "lang": "rb",
+    "where": "B: Demo Ruby SDK Reference > ConsoleEntity > Operations > `list(reqmatch = nil, ctrl = nil) -> Array<ConsoleEntity>`",
+    "text": "List entities matching the given criteria."
+   },
+   "langs": [
+    "rb"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 3,
+    "of": 3
+   },
+   "verdict": "ok",
+   "single": "shared-condition"
+  },
+  {
+   "id": "b5b5c85e92",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`client.Ⓔ.create({ \"$action\" => \"terraform\", \"Ⓕ\" => \"Ⓔ_id\" })`",
+   "example": {
+    "lang": "rb",
+    "where": "B: Demo Ruby SDK Reference > PlanetEntity > Actions",
+    "text": "`client.Planet.create({ \"$action\" => \"terraform\", \"id\" => \"planet_id\" })`"
+   },
+   "langs": [
+    "rb"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": "ok",
+   "single": "code"
+  },
+  {
+   "id": "3a8c36d722",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the entity, marked as deleted, and dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > Planet entity > Operations > `remove($reqmatch, $ctrl) -> PlanetEntity`",
+    "text": "Returns the entity, marked as deleted, and dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 7
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "58add65cdc",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "ⒺEntity",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference",
+    "text": "PlanetEntity"
+   },
+   "langs": [
+    "perl",
+    "swift"
+   ],
+   "classes": 4,
+   "by": {
+    "hand": 4
+   },
+   "template": null,
+   "verdict": null
+  },
+  {
+   "id": "2addb4c0ac",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the created entity, and dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > Planet entity > Operations > `create($reqdata, $ctrl) -> PlanetEntity`",
+    "text": "Returns the created entity, and dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "ebee11573e",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the updated entity, and dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > Planet entity > Operations > `update($reqdata, $ctrl) -> PlanetEntity`",
+    "text": "Returns the updated entity, and dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "905efcfc61",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns an `arrayref` of entities, one per Ⓔ, and dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > Console entity > Operations > `list($reqmatch, $ctrl) -> arrayref`",
+    "text": "Returns an `arrayref` of entities, one per record, and dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 6
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "f7afbb5cfa",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`$options->{server}`",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > DemoSDK > Constructor",
+    "text": "`$options->{server}`"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "fd49a6d3cc",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`$options->{server}{tenant}`",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > DemoSDK > Constructor",
+    "text": "`$options->{server}{tenant}`"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "39a74a4231",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`$options->{server}{region}`",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > DemoSDK > Constructor",
+    "text": "`$options->{server}{region}`"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "c34d5507ef",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`$fetchargs->{ctrl}`",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > DemoSDK > Client Methods > `direct($fetchargs) -> hashref`",
+    "text": "`$fetchargs->{ctrl}`"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "50269d86a5",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > DemoSDK > Client Methods > `prepare($fetchargs) -> hashref`",
+    "text": "It dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "440111fd56",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the entity, and dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > AmbientEntity > Operations > `load($reqmatch, $ctrl) -> AmbientEntity`",
+    "text": "Returns the entity, and dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "01df958c57",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Run an operation through the pipeline and return a function that returns its next result item on each call, and `undef` once the items end.",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > AmbientEntity > Common Methods > `stream($action, $args, $callopts) -> coderef`",
+    "text": "Run an operation through the pipeline and return a function that returns its next result item on each call, and `undef` once the items end."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 13,
+    "of": 18
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "0d04e38726",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "An entity is yielded as the hashref its `data_get` returns.",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > AmbientEntity > Common Methods > `stream($action, $args, $callopts) -> coderef`",
+    "text": "An entity is yielded as the hashref its `data_get` returns."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "note"
+  },
+  {
+   "id": "8a32383618",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`$client->Ⓔ->create({ '$action' => 'terraform', 'Ⓕ' => 'Ⓔ_id' });`",
+   "example": {
+    "lang": "perl",
+    "where": "B: Demo Perl SDK Reference > PlanetEntity > Actions",
+    "text": "`$client->Planet->create({ '$action' => 'terraform', 'id' => 'planet_id' });`"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "0815ef9cd3",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`$options->{secret}`",
+   "example": {
+    "lang": "perl",
+    "where": "auth-basic: Demo Perl SDK Reference > DemoSDK > Constructor",
+    "text": "`$options->{secret}`"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "0e53a5ccaf",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the patched entity, and dies on failure.",
+   "example": {
+    "lang": "perl",
+    "where": "crud-bare: Demo Perl SDK Reference > Planet entity > Operations > `patch($reqdata, $ctrl) -> PlanetEntity`",
+    "text": "Returns the patched entity, and dies on failure."
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "97db7812d3",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "PlanetEntityEntity",
+   "example": {
+    "lang": "perl",
+    "where": "ref-issues: Demo Perl SDK Reference",
+    "text": "PlanetEntityEntity"
+   },
+   "langs": [
+    "perl",
+    "swift"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": null,
+   "verdict": null
+  },
+  {
+   "id": "faec5feaa7",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`$options->{server}{account}`",
+   "example": {
+    "lang": "perl",
+    "where": "server-mixed: Demo Perl SDK Reference > DemoSDK > Constructor",
+    "text": "`$options->{server}{account}`"
+   },
+   "langs": [
+    "perl"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "80820ec7bd",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Get the entity match criteria.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > Ambient > Common Methods > `matchv(newmatch?) -> Value`",
+    "text": "Get the entity match criteria."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 2,
+    "of": 2
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "84bc8aeac7",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a value holding a `VList` of entities, one per Ⓔ, and throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > Console > Operations > `list(reqmatch, ctrl) throws -> Value`",
+    "text": "Returns a value holding a `VList` of entities, one per record, and throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "bd77ae64d2",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Get the entity data.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > Ambient > Common Methods > `data(newdata?) -> Value`",
+    "text": "Get the entity data."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "28e435afa1",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a value holding the entity, marked as deleted, and throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > Planet > Operations > `remove(reqmatch, ctrl) throws -> Value`",
+    "text": "Returns a value holding the entity, marked as deleted, and throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 6,
+    "of": 10
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "613ca49e89",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.test.0.sig⟧",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > DemoSDK > Test client",
+    "text": "`DemoSDK.testSDK(_ testopts: VMap?, _ sdkopts: VMap?) -> DemoSDK`"
+   },
+   "langs": [
+    "ocaml",
+    "swift"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": null,
+   "verdict": null
+  },
+  {
+   "id": "cd7daca308",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "`Ⓔ(_ entopts: VMap? = nil) -> ⓈEntityBase`",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > DemoSDK > Client Methods",
+    "text": "`Ambient(_ entopts: VMap? = nil) -> DemoEntityBase`"
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "43ce2109a8",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "⟦ref.container|ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > DemoSDK > Client Methods > `direct(_ fetchargs: VMap?) -> VMap`",
+    "text": "`VMap`"
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "9e029f70a5",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > DemoSDK > Client Methods > `prepare(_ fetchargs: VMap?) throws -> VMap`",
+    "text": "It throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "3b50e5f3e9",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a value holding the entity, and throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > AmbientEntity > Operations > `load(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`",
+    "text": "Returns a value holding the entity, and throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 7,
+    "of": 7
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "e82c974949",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "`asNative as? Entity` takes the entity out, and `result.data()` reads its Ⓔ.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > AmbientEntity > Operations > `load(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`",
+    "text": "`asNative as? Entity` takes the entity out, and `result.data()` reads its record."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 2
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "105bf22883",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.entity.0.sig⟧",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > AmbientEntity > Common Methods",
+    "text": "`data(_ newdata: Value?) -> Value`"
+   },
+   "langs": [
+    "ocaml",
+    "swift"
+   ],
+   "classes": 2,
+   "by": {
+    "hand": 2
+   },
+   "template": null,
+   "verdict": null
+  },
+  {
+   "id": "d3791e4efc",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Pass a `Value` to set it.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > AmbientEntity > Common Methods > `data(_ newdata: Value?) -> Value`",
+    "text": "Pass a `Value` to set it."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "0395b68f5f",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`_ = try client.Ⓔ().create(VMap([(\"$action\", .string(\"terraform\")), (\"Ⓕ\", .string(\"Ⓔ_id\"))]), nil)`",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > PlanetEntity > Actions",
+    "text": "`_ = try client.Planet().create(VMap([(\"$action\", .string(\"terraform\")), (\"id\", .string(\"planet_id\"))]), nil)`"
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "8fd58e6285",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a value holding the created entity, and throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > PlanetEntity > Operations > `create(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value`",
+    "text": "Returns a value holding the created entity, and throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "5e9fd9b312",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a value holding the updated entity, and throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "B: Demo Swift SDK Reference > PlanetEntity > Operations > `update(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value`",
+    "text": "Returns a value holding the updated entity, and throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "819b9cc463",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns a value holding the patched entity, and throws on failure.",
+   "example": {
+    "lang": "swift",
+    "where": "crud-bare: Demo Swift SDK Reference > PlanetEntity > Operations > `patch(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value`",
+    "text": "Returns a value holding the patched entity, and throws on failure."
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 4,
+    "of": 8
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "7079e8c26e",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "`ⒺEntity(_ entopts: VMap? = nil) -> ⓈEntityBase`",
+   "example": {
+    "lang": "swift",
+    "where": "ref-issues: Demo Swift SDK Reference > DemoSDK > Client Methods",
+    "text": "`PlanetEntity(_ entopts: VMap? = nil) -> DemoEntityBase`"
+   },
+   "langs": [
+    "swift"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "b750dfa2f2",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "`Sdk_client.make0 ()` uses the defaults.",
+   "example": {
+    "lang": "ocaml",
+    "where": "B: Demo OCaml SDK Reference > Sdk_client > Constructor",
+    "text": "`Sdk_client.make0 ()` uses the defaults."
+   },
+   "langs": [
+    "ocaml"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 1
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "f6efe863c2",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "Request body (⟦⟧ are JSON-serialized).",
+   "example": {
+    "lang": "ocaml",
+    "where": "B: Demo OCaml SDK Reference > Sdk_client > Instance functions > `Sdk_client.direct client fetchargs : value`",
+    "text": "Request body (maps are JSON-serialized)."
+   },
+   "langs": [
+    "ocaml"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "d188aa578f",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.entity.2.sig⟧",
+   "example": {
+    "lang": "ocaml",
+    "where": "B: Demo OCaml SDK Reference > Ambient > Common Fields",
+    "text": "`e_match_get () : value`"
+   },
+   "langs": [
+    "ocaml"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "07f19bc48e",
+   "section": "reference",
+   "kind": "heading",
+   "masked": "⟦ref.test.1.sig⟧",
+   "example": {
+    "lang": "ocaml",
+    "where": "B: Demo OCaml SDK Reference > Sdk_client > Test client",
+    "text": "`test_with (testopts : value) (sdkopts : value) : sdk_client`"
+   },
+   "langs": [
+    "ocaml"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "24f9dee022",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Each operation takes its match or data, then a control map, `ctrl`, both by position: pass `Noval` for either to give none.",
+   "example": {
+    "lang": "ocaml",
+    "where": "B: Demo OCaml SDK Reference > Ambient > Operations",
+    "text": "Each operation takes its match or data, then a control map, `ctrl`, both by position: pass `Noval` for either to give none."
+   },
+   "langs": [
+    "ocaml"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "note"
+  },
+  {
+   "id": "8bc8ed5995",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Its arguments are the name of the operation, its match, and `callopts`.",
+   "example": {
+    "lang": "ocaml",
+    "where": "B: Demo OCaml SDK Reference > Ambient > Common Fields > `e_stream (string) (value) (value) : value Seq.t`",
+    "text": "Its arguments are the name of the operation, its match, and `callopts`."
+   },
+   "langs": [
+    "ocaml"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "note"
+  },
+  {
+   "id": "147fc0f5eb",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`let _ = (Sdk_client.Ⓔ client Noval).e_create (jo [(\"$action\", Str \"terraform\"); (\"Ⓕ\", (Str \"Ⓔ_id\"))]) Noval`",
+   "example": {
+    "lang": "ocaml",
+    "where": "B: Demo OCaml SDK Reference > Planet > Actions",
+    "text": "`let _ = (Sdk_client.planet client Noval).e_create (jo [(\"$action\", Str \"terraform\"); (\"id\", (Str \"planet_id\"))]) Noval`"
+   },
+   "langs": [
+    "ocaml"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "aa16f4825a",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns an array of entities, one per Ⓔ; `err` is non-nil on failure.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > ConsoleEntity > Operations > `list(reqmatch, ctrl) -> any, err`",
+    "text": "Returns an array of entities, one per record; `err` is non-nil on failure."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 6
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "b4da6fdef2",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Called with `nil`, return the `ⒺEntity` instance the client keeps, made by the first such call; called with entity options, create a new one.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > DemoSDK > Client Methods > `Ambient(data)`",
+    "text": "Called with `nil`, return the `AmbientEntity` instance the client keeps, made by the first such call; called with entity options, create a new one."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 7,
+    "of": 15
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "d0be654344",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Its `data` argument holds the entity options.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > DemoSDK > Client Methods > `Ambient(data)`",
+    "text": "Its `data` argument holds the entity options."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 2
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "6dc17eb03f",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "⟦ref.container|ref.direct.returns|ref.valueType.OBJECT⟧",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > DemoSDK > Client Methods > `direct(fetchargs) -> table`",
+    "text": "`table`"
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "e67979c2cf",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "It also returns a second value, which is always `nil`: a failure is reported in the result, never in the second value.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > DemoSDK > Client Methods > `direct(fetchargs) -> table`",
+    "text": "It also returns a second value, which is always `nil`: a failure is reported in the result, never in the second value."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "note"
+  },
+  {
+   "id": "9858d14c2e",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Run an operation through the pipeline and return a function that returns its next result item on each call, and `nil` once the items end.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > AmbientEntity > Common Methods > `stream(action, args, callopts) -> function`",
+    "text": "Run an operation through the pipeline and return a function that returns its next result item on each call, and `nil` once the items end."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 13,
+    "of": 18
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "ef72e06fee",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Unlike an operation, it reports a failure by raising it with `error` from the returned function, as the caller iterates.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > AmbientEntity > Common Methods > `stream(action, args, callopts) -> function`",
+    "text": "Unlike an operation, it reports a failure by raising it with `error` from the returned function, as the caller iterates."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 1,
+    "of": 13
+   },
+   "verdict": null,
+   "single": "note"
+  },
+  {
+   "id": "b73012bc89",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`local _, err = client:Ⓔ():create({ [\"$action\"] = \"terraform\", Ⓕ = \"Ⓔ_id\" }); if err then error(err) end`",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > PlanetEntity > Actions",
+    "text": "`local _, err = client:Planet():create({ [\"$action\"] = \"terraform\", id = \"planet_id\" }); if err then error(err) end`"
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "39586d4af7",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the created entity; `err` is non-nil on failure.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > PlanetEntity > Operations > `create(reqdata, ctrl) -> PlanetEntity, err`",
+    "text": "Returns the created entity; `err` is non-nil on failure."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "51ebe8ffe3",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the updated entity; `err` is non-nil on failure.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > PlanetEntity > Operations > `update(reqdata, ctrl) -> PlanetEntity, err`",
+    "text": "Returns the updated entity; `err` is non-nil on failure."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "2bb1c328b8",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the entity, marked as deleted; `err` is non-nil on failure.",
+   "example": {
+    "lang": "lua",
+    "where": "B: Demo Lua SDK Reference > PlanetEntity > Operations > `remove(reqmatch, ctrl) -> PlanetEntity, err`",
+    "text": "Returns the entity, marked as deleted; `err` is non-nil on failure."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/helpers/runtimeprose.ts",
+    "n": 2,
+    "of": 4
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "5e48b2d2c3",
+   "section": "reference",
+   "kind": "cell",
+   "masked": "`options.secret`",
+   "example": {
+    "lang": "lua",
+    "where": "auth-basic: Demo Lua SDK Reference > DemoSDK > Constructor",
+    "text": "`options.secret`"
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "code"
+  },
+  {
+   "id": "b283fdcfd9",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Returns the patched entity; `err` is non-nil on failure.",
+   "example": {
+    "lang": "lua",
+    "where": "crud-bare: Demo Lua SDK Reference > PlanetEntity > Operations > `patch(reqdata, ctrl) -> PlanetEntity, err`",
+    "text": "Returns the patched entity; `err` is non-nil on failure."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": null,
+   "verdict": null,
+   "single": "unexplained"
+  },
+  {
+   "id": "06570245d0",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Called with `nil`, return the `ⒺEntityClient` instance the client keeps, made by the first such call; called with entity options, create a new one.",
+   "example": {
+    "lang": "lua",
+    "where": "ref-issues: Demo Lua SDK Reference > DemoSDK > Client Methods > `Planet(data)`",
+    "text": "Called with `nil`, return the `PlanetEntityClient` instance the client keeps, made by the first such call; called with entity options, create a new one."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 7,
+    "of": 15
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  },
+  {
+   "id": "35746c73d3",
+   "section": "reference",
+   "kind": "sentence",
+   "masked": "Called with `nil`, return the `ⒺEntityEntity` instance the client keeps, made by the first such call; called with entity options, create a new one.",
+   "example": {
+    "lang": "lua",
+    "where": "ref-issues: Demo Lua SDK Reference > DemoSDK > Client Methods > `PlanetEntity(data)`",
+    "text": "Called with `nil`, return the `PlanetEntityEntity` instance the client keeps, made by the first such call; called with entity options, create a new one."
+   },
+   "langs": [
+    "lua"
+   ],
+   "classes": 1,
+   "by": {
+    "hand": 1
+   },
+   "template": {
+    "file": "ts/src/cmp/ReadmeRef.ts",
+    "n": 7,
+    "of": 15
+   },
+   "verdict": null,
+   "single": "shared-condition"
+  }
+ ]
+}

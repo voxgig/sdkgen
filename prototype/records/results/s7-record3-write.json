@@ -1,0 +1,166 @@
+{
+ "summary": "I brought the record to its final state at twenty languages and added a Verdict section. I worked on copies in record3/. Nothing under /home/user was modified; the repository copy is byte-identical to its commit.\n\nThe verdict: H1 refuted, H2 not refuted, H3 not refuted, H4 holds, H5 not refuted. None is \"not decided\".\n- **H1:** refuted on the interface criterion. The independent re-count from the code history finds 44 breaking changes against a limit of about 10. The integration counted 4 (or 5) from the last seven languages and 0 to the provider types; the verdict follows the re-count.\n- **H2:** not refuted, by 3%. Documentation code shrank 2.06x at twenty (independent measurer, ran). Every count that includes the forms (1.54x) or the guard (1.20x) is under 2x. At nine and thirteen languages every count was under 2x.\n- **H3:** not refuted. By the brief's rule 2.8% to 5.6% still need a per-language edit at twenty (independent, ran). But the attacker's worst finding is in the verdict itself, not only in a list. X3's shared edit prints \"- Also attaches to pipeline hooks.\" under `secrets`, taken from the model's hook declaration. It is false in 17 of 20 runtimes, and every check passed it. Charged to X3, the share is 8.3% by the rule (10.3% per distinct defect) and 11.1% on the strict reading. The other half of that finding is also in the verdict: optional facts whose omission leaves no trace.\n- **H4:** holds in the thirteen languages with a toolchain (integrator ran the lanes; the attacker re-ran them with identical results). Seven languages were never compiled.\n- **H5:** not refuted. Every unsafe state found has a local fix, and packs keep generating. As built, the deep-import bypass is still open, and the derived section list makes `doctor` fail a documented consumer-target extension.\n\nThe record is 3,072 lines (215,814 bytes); the classes file is 615 lines (68,875 bytes).",
+ "verdict": [
+  {
+   "h": "H1",
+   "word": "refuted",
+   "reason": "On the interface criterion, at about four times the limit: 44 breaking changes after the first four languages (25 provider interface, 19 forms framework), by the measurer's independent re-count from the code history; new languages alone caused 9 to 11. The integration counted 4 (or 5) from the last seven and 0 provider-type changes; the measurer and the attacker both showed the migration round's interface field is breaking in effect (a provider without it is served the previous version and loses sentences; all seven new providers had to add it), so the verdict follows the re-count. The other two criteria are not crossed: 0 open model reads in all twenty (41 accepted), prose at most 7.1% by source and 14.8% alone (go, both); but the secrets sentence is shared code reading a model fact where a runtime fact was needed."
+  },
+  {
+   "h": "H2",
+   "word": "not refuted",
+   "reason": "On the count the criterion names, documentation code, it shrank 2.06x at twenty (2.14x without the 259 lines of migration machinery; measurer, ran, base builder's arithmetic unchanged): the first measured figure over 2x, by 3%, and lower than both earlier projections (2.16x, 2.26x). With the forms it is 1.54x and with the guard 1.20x, and the thirteen recomputed at the same state give 1.71x, so 'substantially' is not shown for the structure as it had to be built. The earlier standing (refuted at nine and thirteen on every count) is kept as history."
+  },
+  {
+   "h": "H3",
+   "word": "not refuted",
+   "reason": "The checker over all 26 variations and twenty languages exits 0 (measurer, ran). Per entry the share is 2.8% to 5.6% by the brief's rule, 5.6% to 8.3% strict and 16.7% to 19.4% strictest, unchanged from thirteen; 34 of 36 entries are fixed by shared code alone, S13 by one fact per provider, and D26 half. The attacker read X3's shared edit '- Also attaches to pipeline hooks.' under secrets against all twenty runtimes: it is false in 17, written from the model's PreSpec declaration, and every check and the integration's rule-based acceptance passed it. Charged to X3 the share is 8.3% by the rule (10.3% per distinct defect) and 11.1% per entry on the strict reading (13.8% per distinct defect), so 'fixed once' is not shown."
+  },
+  {
+   "h": "H4",
+   "word": "holds",
+   "reason": "Holds in the thirteen languages with a toolchain (ts, js, go, py, php, rb, perl, java, kotlin through gradle's offline cache, c, cpp, rust, zig). Every NEW lane passes (integrator, ran; re-run identically by the attacker). The last wave's failures (js module forms, java Map.of null, kotlin import, scala boxed comparison, csharp CS0136) were printer or naming decisions fixed inside the interface or by an optional fact; the csharp and scala ones were found by reading, not compiling. Not tested in csharp, scala, swift, lua, clojure, elixir or ocaml; the lanes compile their own models and are partly blind (java adds imports; php strips the require; java and kotlin REFERENCE blocks never cast)."
+  },
+  {
+   "h": "H5",
+   "word": "not refuted",
+   "reason": "Every unsafe state any attack found traces to one rule with a local fix. The measurer rebuilt fixtures and re-ran the rows: same verdicts, F6 and F11 now safe or loud, and 60 retired copies in a 20-target project removed with pages equal to fresh. The attacker ran the language pack's suite: 74/76 pass, 2 skipped. As built it is not safe throughout. The c5 deep-import bypass is still open and silent, and its recorded remedy (an exports map) is ruled out by ts/package.json. The F11 derivation makes doctor fail a consumer target's own component (attacker, ran). The c5 change also removed package check's error for an unservable interface. The interface raise, restored files, edition retirement and a pack across a real release were not run at the final state."
+  },
+  {
+   "h": "Reach (first question)",
+   "word": "not a general solution",
+   "reason": "The mechanism reaches 66 of 329 entries (20%; 58 to 70 across borders). 81 entries (25%) are already written once, 46 of them needing derivations the proposal does not supply. It does nothing for 175 (53%). Where applied it works (34 of 36 fixed by shared code alone at twenty), but writing once turns each sentence into a claim about twenty runtimes that no check verifies."
+  }
+ ],
+ "generality": "The proposal is neither a general solution alone nor just a list of fixes.\n\nIt is a general mechanism for the per-language documentation text. At twenty languages it worked there:\n- 34 of the 36 in-scope entries in the three sections were fixed by shared code alone for all twenty languages.\n- A correction made once reached every page.\n\nIt is not a general solution to the catalogue:\n- It reaches 66 of 329 entries (20%).\n- A quarter is already written once but needs shared derivations the proposal does not supply.\n- Just over half (consumer writers, generated source, tools, docgen, create-sdkgen, apidef, the pack) stays individual fixes.\n\nWriting a sentence once also makes it a claim about twenty runtimes. The build kept finding shared sentences false for some runtime, the last false in 17, and the checks it built do not see that kind of error.\n\nThe principle that spans more of the catalogue is one resolved answer per fact, read by every writer. Writing each sentence once is that principle's documentation half.",
+ "for_the_plan": "The new section gives a table per part of the proposal: what the evidence supports, and what each part cost in the prototype.\n\n- **Naming hook:** supported. 0 model reads in 20, and documentation and code agree on names. Cost: 22 to 26 lines per language, and naming functions extracted from generator components (marked outdated in projects; some inline restatements remain).\n- **Shared sentences plus a syntax provider, for the three sections:** supported for those sections. 34 of 36 entries fixed once; documentation code 2.06x smaller. Cost per language: a 148 to 204 line provider plus a hook, against 709 to 753 lines deleted; 2,840 lines of shared code. Each port took a porter under an hour to about 4 hours, plus a review, fix and verification. Each changed sentence reopens classes in every language and needs reading against all twenty runtimes.\n- **Declared facts checked by a guard:** needed but not sufficient. Omitted optional facts, unrelated quoted lines and sentences built from model facts all pass. Cost: 2,495 lines of forms, a 2,740-line guard, review tools with a 285-control self-test, and 55 to 135 hand decisions per REFERENCE. None of these is in the repository.\n- **Stable interface:** not supported (44 breaking changes). The layer that serves the previous interface costs about 70 lines, 2 to 6 per breaking change, and a decision at each raise.\n- **Retirement machinery:** supported with conditions. The package ships a fingerprint list of 150 files and every release must regenerate it; about 730 lines plus the earlier rounds. It is generic to any per-target component.\n- **The proposal as the plan's principle for the whole catalogue:** not supported. Only 2 of the 46 packages would disappear and 9 shrink; WP03 and WP19 are needed anyway.\n\nThe evidence stops at:\n- three sections out of thirteen README families;\n- one model family;\n- seven languages never compiled;\n- no measurement over time;\n- tools and guard that are working files only;\n- nothing merged on main and no real release.",
+ "record_path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/record3/model-dependent-text-prototype.md",
+ "record_lines": "model-dependent-text-prototype.md: 3,072 lines, 215,814 bytes (was 1,942). model-dependent-text-classes.md: 615 lines, 68,875 bytes (was 601).",
+ "classes_path": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/record3/model-dependent-text-classes.md",
+ "classes_changes": [
+  "Status line: notes that on 2026-11-17 the T rows were brought to the twenty-language state, with no class or count changed.",
+  "Section 3, item 1: the thirteen-language statement becomes history. Added the final state: the six entries were fixed by shared edits, so 34 are fixed by shared code alone; S13 takes one fact per provider; D26 is partly fixed; N11 and M35 are fixed for js; the checker is clean in all twenty; X3's edit introduced a sentence false in 17 runtimes.",
+  "Section 4, WP08 reason: its T entries were fixed by one shared edit each, which needed no port, so the fate (c) does not change.",
+  "Section 4, WP18 reason: V27 and U102 were fixed by shared escaper edits, not by porting; U103 is not fixed. The fate (b) does not change.",
+  "Section 6 intro: says which rows now give the final twenty-language state.",
+  "Rows S22, U52, U53, V27, U102: 'not fixed by the prototype' becomes 'fixed by one shared edit, clean in all 20 languages'.",
+  "Row X3: fixed and clean in all 20, plus a note that the edit printed the false secrets sentence (false in 17 runtimes).",
+  "Row D26: the rows now come from the option spec in all 20 languages, except extend, utility, entity and test; there is no default column.",
+  "Row U06: '13 type printers' becomes the type printers of all 20 languages; checked through the aliased go target at twenty and clean.",
+  "Rows N04 and M04: checked through the aliased go target at twenty and clean.",
+  "Rows N11 and M35: fixed for js when js was ported, through its provider's fence value.",
+  "No class, sub-class, count, range or package fate changed."
+ ],
+ "changes": [
+  {
+   "section": "Title block and status",
+   "what": "Status is now 'final record (2026-11-17, fourth version)': twenty languages ported, version 3.4 frozen, an independent measurer and attacker. Added what changed since the third version, what is genuinely not done, and new roles (integrator, measurer, attacker)."
+  },
+  {
+   "section": "Where each hypothesis stands",
+   "what": "Rewritten with the final standings at 3.4: H1 refuted (44 breaking changes), H2 not refuted (2.06x, under 2x with forms or guard), H3 not refuted (with the secrets sentence), H4 holds in 13 languages, H5 not refuted (c5 still open, F11 overreach), Reach unchanged."
+  },
+  {
+   "section": "Verdict (new, before section 1)",
+   "what": "An opening paragraph on the attacker's worst finding: the secrets sentence false in 17 of 20, passed by every check, and optional facts whose omission leaves no trace. For each of H1 to H5: claim, criterion, figures with who measured them and run or read, one word and a reason. Then the answer to the maintainers' first question, a table of what the plan should take from each part with its cost, and where the evidence stops."
+  },
+  {
+   "section": "2.1 Stages",
+   "what": "Added rows 13 to 18: catalogue shared edits, migration structures, second wave of ports, integration and freeze 3.4, measures at twenty, attack. Added a paragraph on v34-frozen: the settlements, the re-keying, 4.44.0 reported, and the integrator reading the 28 reports through a digest."
+  },
+  {
+   "section": "2.2 to 2.4",
+   "what": "Added that the second wave added no rule and the attack found the stage-7 rule fails. Hand-decision ranges at 3.4 (14-28 / 0-4 / 55-135). Environment at twenty: 13 languages compilable, kotlin through gradle's offline cache; the csharp lane passes without dotnet."
+  },
+  {
+   "section": "3 intro and 3.1 H1",
+   "what": "Section renamed 'Results'. Added purity at twenty (0 open, 41 accepted), the extracted helpers and leftover inline rules, and a note that shared code read a model fact. Added the twenty-language prose table (go 14.8% alone) and sentences at twenty (385 / 221 / 164). Added the integration's and the re-count's interface rows, the reasons the re-count differs, attribution to new languages (9 to 11), adoption of the interface field, and a new standing."
+  },
+  {
+   "section": "3.2 H2",
+   "what": "Added the measured twenty-language table (2.06x / 1.54x / 1.20x, without H5 2.14x; tool headline 1.50x), the comparison with projections, thirteen and nine recomputed at the frozen state, per-language numbers for the seven, and a new standing (not refuted by 3%, under 2x with forms and guard). Projections are marked as history."
+  },
+  {
+   "section": "3.3 H3",
+   "what": "New header standing. The h3fix summary now notes its sentences were read only at twenty, plus FIXED_ORDER_TARGETS and the language pack not generated. Added: the checker over all 26 variations at twenty, the lines the seven added, N04, U06, M04, N11 and M35, the ratio table at twenty, the attacker's verdicts on the 11 changed sentences (secrets false in 17, Usage key awkward), the integration's own sentences, the arithmetic with X3 charged, and the final standing."
+  },
+  {
+   "section": "3.4 H4",
+   "what": "Lane table gains a 3.4 column and rows for cpp, php, java (javac), kotlin (gradle) and js (run as written). Added root quick starts at 3.4, whole-variation compiles by reviewers and verifiers, the second wave's failures and fixes, what the lanes miss (java imports, php require, csharp without dotnet, java and kotlin no casts), and the final standing."
+  },
+  {
+   "section": "3.5 H5",
+   "what": "New header. Corrected the h5fix claim that duplicated rules moved to one place. The earlier standing is marked history. Added the three local fixes made at the integration, the rebuild at twenty with what was not re-run, the attack on the fixes, and the final standing."
+  },
+  {
+   "section": "4 Reach",
+   "what": "The opening, 4.2 item 1 and 4.5 now give the twenty-language status of T (34 fixed by shared code alone, S13, D26 half, N11 and M35 fixed) and the false sentence X3's fix introduced."
+  },
+  {
+   "section": "5 What the build found",
+   "what": "5.1: seven more twenty-language cases of shared sentences false for some runtime. 5.2: a 3.4 guard-mutation row, the accessor-lookup defect hidden in six languages, the attacker's omitted-fact, moved-citation, unpinned, parenless and getter-copy holes, three integration changes with no failing test, and more runtime-table omissions. 5.3: sentences at twenty and the re-keying. 5.4: second-wave attacks decided by hand, and csharp held failing only by honest records. 5.6: contradictions at twenty. 5.7: nine new runtime entries (secrets PreSpec in 17, java mock, cpp remove, cpp and ocaml transport, and others). 5.8: fourteen new defects of main's pages and tests."
+  },
+  {
+   "section": "6 Cost",
+   "what": "6.1: rows for the catalogue edits, the migration structures, the second wave and the 3.4 integration, plus a re-count column for every round. The cumulative paragraph now uses the re-count (44); added what the second wave met. 6.2: rows for the catalogue edits, the second wave and the integration, plus the 3.4 control failures. 6.3: a 3.4 self-test row (285/0/0) and guard and forms sizes at twenty. 6.4 renamed 'One port', with a second-wave timing table."
+  },
+  {
+   "section": "7 What the evidence cannot show",
+   "what": "Now seven of twenty never compiled. Added: checks cannot see what is not declared; twenty is not every language; the final migration state was partly rebuilt; some evidence was read through digests."
+  },
+  {
+   "section": "8 Not done",
+   "what": "Rewritten as the final list, grouped: found by the attack and not fixed; recorded at the integration and not made; catalogue; migration; never measured; carried from earlier rounds; what a real adoption would still have to do."
+  },
+  {
+   "section": "Appendix A",
+   "what": "Now 'The twenty languages at version 3.4': a twenty-row table, facts per language, suite numbers and second-wave history per language. The 3.3 table is kept below 'for comparison'."
+  },
+  {
+   "section": "Appendix B",
+   "what": "Rows 7, 10, 33 and 34 annotated with the re-count. Added rows 35 to 40 (changes only the re-count found) and 41 to 47 (the last wave: interface field, three guard changes, stream sentence, ts/js README row, lifecycle). Rewrote the closing paragraph to reconcile the 47 rows with the re-count's 44 and the builders' 25 to 27."
+  },
+  {
+   "section": "Appendix C",
+   "what": "Retitled. The 3.3 table is kept and noted as reproduced at v34 (49/59, 94/108). Added an 'At 3.4' table of 21 attacks that nothing mechanical catches."
+  }
+ ],
+ "contradictions": [
+  "Interface count: the record said about 25 to 27 at 3.3 (31 to 33 with forms). The independent re-count gives 24 provider and 16 forms (40) at v33-frozen, and 25 and 19 (44) at v34. It adds four 3.1 guard tightenings, one at 3.2 (b8fd4fc2) and the testMock value rename, and splits rows 33 and 34 into six. Row 7 forced 4 providers, not 5; row 10 forced 7, not 8. Rows 4 and 5 are shared only, and row 6 was not breaking for providers. The record now follows the re-count.",
+  "New-language attribution: the record gave the first wave 2 or 3 breaking changes. The re-count gives 6 or 7, because the four 3.3 guard changes were required to answer that wave's reviews.",
+  "Interface field: the third version called it a pending breaking change. The integration called its adoption a 'settlement' with 0 provider-type changes. The measurer and attacker count it as breaking in effect (kotlin without it lost a clause; all seven providers needed a commit). The record follows them.",
+  "Record 3.3 said the eleven changed sentences of the catalogue round were not yet checked, and implied the shared edits were sound. The attacker found one false in 17 of 20 runtimes (secrets) and one awkward (the Usage bracket key in six typed languages). The integration had accepted them for the seven by rule without reading the runtimes.",
+  "Record 3.5 reported, from the h5fix builder, that the duplicated rules each moved to one place. The h5fix checker found the shared loaders (ReadmeQuick.ts, ReadmeRef.ts, ReadmeTop.ts, Registered.ts) still build component paths by hand, and the interface is still read two ways. Corrected.",
+  "H5 F11: the integration says it was fixed and the measurer says it is caught at release and loud at doctor. The attacker shows the derived list overreaches, so doctor fails a consumer target's own ReadmeIntro_go-cli.ts, a documented extension. Both are recorded: the original state is fixed, and a new false failure is introduced.",
+  "H5 c5: the integration says 'made in part' with an exports map as remedy. The measurer says it is still open and silent. The attacker says the change removed package check's error for '3.1' and that an exports map is ruled out by ts/package.json. The record follows both independents.",
+  "The integration said the java lane compiles the deleted read. The attacker found the read is in prose only and compiled it separately; it prints true.",
+  "Integration decision [5] said each example binds with the cast the runtime needs. The attacker found 0 of 5 java and kotlin REFERENCE operation blocks cast.",
+  "The integration said only java and scala read a single undeclared stream-signal form. The attacker found go, perl, clojure, swift, elixir, ts and js do too.",
+  "Record 2.4 said kotlin has no toolchain. Kotlin was compiled through gradle's offline Kotlin 2.2.0 cache.",
+  "Record H2 said refuted at thirteen, projected 2.16x at twenty. The measurement is 2.06x for documentation code, under both projections, and over 2x for the first time.",
+  "Record H1: go 'alone' was 17.0% against thirteen. Against twenty it is 14.8%, with the same sentences.",
+  "The guide (brief 7, decision 11; PORTING.md 2.1) said every runtime replaces the entity data on remove. cpp does not (fixer, ran).",
+  "The runtime table's three omissions were described as uncorrected in the forms. The second-wave porters corrected them and found more."
+ ],
+ "unanswered": [
+  "What a full adoption on main would cost in calendar time and people. Port times are recorded only for porters (under an hour to about 4 hours); reviews, fixes and verifications were not timed, and the seven ran concurrently on one machine.",
+  "Whether the guard, the forms and something like the review tools can live in the repository's CI. Nothing was built to run there, so their maintenance cost per release is unknown.",
+  "Whether shared sentences and declared facts stay cheap to keep true as runtimes change. Nothing was measured over time.",
+  "Whether the secrets model declaration or the 17 runtimes are right, and so whether the fix is in the model, the runtimes or the sentence.",
+  "Whether the other ten README families would give similar gains. Only an estimate from titles exists, and Install and Explanation look like one-language text.",
+  "Whether a smaller adoption would capture most of the benefit (for example only the naming hook, or only the shared derivations). Every part was built and measured together.",
+  "How the seven uncompiled languages' examples actually fare. Two errors there were found only by reading.",
+  "How a real pack would live through an interface raise end to end.",
+  "How common projects without an intact copy record are.",
+  "Whether real specifications, not the Demo model and its 21 variations, behave the same.",
+  "How the language pack's own README components would be ported, and at what cost.",
+  "Whether the 164 shared sentences without an independent verdict are true."
+ ],
+ "not_done": [
+  "I did not read every field of all 28 second-wave reports line by line. I read in full: summary, time, lines, interface gaps, defects, runtime-table rows, surprises, hypotheses and lanes of the ports; summary, verdict, required fixes, not-caught, hypotheses, pages, doubtful lines and examples of the reviews; summary, not-caught, lanes and lines of the fixes; summary and still-wrong of the verifications. I searched the rest (facts tables, hand decisions, attack lists, ran/read) rather than reading them. I read s4-h3fix, s4-h5fix, s4-h5fixcheck, s6-integrate, s6-measure20 and s6-attack34 completely.",
+  "I checked no figure by running anything. Every number comes from the reports, except arithmetic labelled as the record's own (the H3 ratios with X3 charged).",
+  "I did not edit the repository files or commit anything. The two updated files are in record3/; the helper scripts used to edit them are in record3/tools/.",
+  "The record grew to 3,072 lines. I did not shorten earlier history sections; a figure a later round replaced is kept and marked as history.",
+  "I did not change any class, count or package fate in the classes file. The twenty-language results changed only rows' status text."
+ ]
+}

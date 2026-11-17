@@ -1,0 +1,791 @@
+ok: True
+summary: |
+  Interface version 3 is frozen at tag `v3-frozen` (8d5ad97b) in P/freeze/sdkgen. At that commit, everything that `ok` depends on passes:
+  - **Build** passes.
+  - **Suite** without the toolchain lanes: 2,551 tests, 2,546 pass, 0 fail, 5 skipped.
+  - **Golden** passes.
+  - **Five lanes**, nothing skipped: ts README 16/16, go README 12/12, py README 12/12 under real pytest, c DOC 6/6, rust DOC 6/6.
+  - **Review**: the one-command check passes for all eight ported languages. Ledger and blocks are at 0 unclassified across 1,666 classes, purity has 0 open findings (6 accepted with reasons), and the guard is green.
+  
+  What was done, part by part:
+  1. **Part 1.** I confirmed the handed state first (full suite 2,532/0 at db5e5915; block table byte-identical) and closed the predecessor's gaps:
+     - The load-wording regex matches all 228 load sentences.
+     - Clojure's stream is a lazy-seq, so it shares streamLazy.
+     - Every v3 addition no ported language used is now exercised by a test.
+     - Two stream kinds two unported runtimes share were added: streamSync (rb, scala) and streamFunction (lua, perl).
+  2. **Part 2. The guard was rebuilt on per-language forms files**, `ts/test/runtimeforms/<lang>.ts`.
+     - It re-derives, from the runtime alone: methods, signatures with parameter count, optional parameters and returns, result style, async, the record accessor and its arity, public members both ways, data/match/stream shapes, and the field-type printer.
+     - A ported language with no forms file fails.
+     - Twelve negative controls are caught in every language where they apply.
+     - It found real drift: ts, py and elixir signatures showed runtime-optional parameters as required (now corrected), and OLD clojure documented `api/get-utility`, which `sdk.api` does not export.
+  3. **Part 3. Clojure's REFERENCE is ported** with no interface change. It uses the v3 heading and nouns, streamLazy, and a printer look-ahead through Scope.stmts for its `doseq` fusion. The predecessor's claim that this fusion was an interface limit was wrong.
+  4. **Part 4. All eight were reviewed, and the tools were fixed where the corrected output exposed them:**
+     - `blocks.js`: two pairing keys, because corrected signatures and a collision rename had shifted blocks.
+     - `purity.js`: a Lisp signature was being read as prose.
+     - `lines.js`: guard forms were not counted.
+     - `portcheck.sh`: it now derives sections from the clone, so porters do not edit `ported.json`.
+     - The harness normalizers: secret, server, zig, loopItem and handle.
+     - The review found and fixed three output or source defects: the ts root comment said "a AmbientEntity" (predecessor regression), c's feature snippet closed differently from OLD, and c's accessor naming was written twice (now one function, `cAccessorName`).
+  5. **Part 5. Freeze.**
+     - Block accounting: 857 identical, 206 identical after named corrections, 444 changed only by a named unification, 14 explained one by one, 8 removed.
+     - Unported languages: all twelve READMEs are byte-identical to OLD. 228 REFERENCE files differ, all by the same 4 lines from the already-shared `ReadmeRefFeatures.ts`.
+  6. **Part 6.** `PORTING.md` is written.
+  
+  Thresholds crossed, plainly:
+  - **H1, breaking changes:** about 12 since the first four languages, against the line of about 10. The forms file every language must now supply counts as one.
+  - **H1, language-supplied prose:** go's notes are 20.4% of its REFERENCE prose, over the 15% line. The note prints under every entity, exactly as OLD go's paragraph did.
+  - **H2:** 1.39x fewer lines for the ported set once guard forms are counted. The projection to twenty is 1.95x, under the 2x line.
+stopped_at: |
+  All six parts are done. The commit history, in order:
+  - 691d976a: interface completion and test.
+  - b7b712e7: build.
+  - 98fa964e: guard.
+  - 0b61c236: forms and signature fixes.
+  - 9445ad2c: golden.
+  - 2e741782: guard fix.
+  - 3bfc1e9b: clojure port.
+  - 5e21356d: golden.
+  - d5c56f0b: article fix.
+  - bffc64c5: review fixes.
+  - a0ac64d1: build.
+  - 8d5ad97b: golden, tagged `v3-frozen`.
+  
+  The tree is clean. Tools are in P/freeze/tools, and the guide is P/freeze/PORTING.md.
+  
+  Not done:
+  - Three timings per measure (each measure was run once).
+  - H5, which was not touched in this stage.
+clone: |
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/freeze/sdkgen
+  
+  Also in P/freeze:
+  - harness: blocks3.js, corrections.js.
+  - tools: blocks.js, purity.js, lines.js, portcheck.sh, ported.json, purity-allow.json, classes/*.json.
+  - my: classify.js, rules.js, manual.json, blockexplain.js, guard.js, controls.js, suite.sh, lanes.sh, and the logs.
+  - PORTING.md.
+frozen_commit: 8d5ad97b158a942846bf135e344163ceb897a149 (tag v3-frozen)
+interface_now: |
+  As v3 (handed over), plus:
+  - MemberKind gains 'streamSync' (a synchronous iterator) and 'streamFunction' (a function returning the next item per call, and `none` once the items end), each with its sentence written once in ReadmeRef.memberText.
+  - Constructor sentences with ctorAlts wrap at 72 columns.
+  - The guard contract: each language supplies ts/test/runtimeforms/<lang>.ts exporting `forms: Forms` (type in ts/test/runtimeforms/forms.ts). Its fields:
+    - files {client, entity, ops}
+    - decl(name), plus open and split for Lisp forms
+    - receiver, optional(param), returns(after, before, head)
+    - public {client, entity} and undocumented {name: reason}
+    - members (family -> runtime name), streamKind, async
+    - style {exception, raises, pair?, errslot?, union?, wrapped?}
+    - record, sigName, sigParams, sigReturns, tokens
+    - types {column, any}
+    - exceptions {key: reason}
+  
+    A language with a Syntax and no forms file fails.
+  
+  Unchanged and frozen (see PORTING.md section 2): ResultStyle, RuntimeFacts, RefFacts, Member, Scope (whose stmts allow look-ahead), Syntax (including imports and notes), RefSyntax, NoteSlot, and Naming(model, target, tm).
+interface_changes:
+  - [0]
+    change: MemberKind adds streamSync and streamFunction, with sentences in shared ReadmeRef
+    breaking: False
+    why: rb (Enumerator.new, Entity.fragment.rb:104) and scala (Iterator[Object], EntityBase.fragment.scala:162) share a sync iterator; lua (returns function(), Entity.fragment.lua:229) and perl (returns sub, Entity.fragment.pm:149) share an iterator function. Added before the freeze so that two porters do not each add the same kind.
+    rework_forced_in: none
+  - [1]
+    change: Every ported language must supply ts/test/runtimeforms/<lang>.ts (guard forms); without it the guard fails
+    breaking: True
+    why: Part 2 requires declared forms instead of regexes grown per port, and a missing file must fail. It is a new required per-language artifact.
+    rework_forced_in: ts go py c zig clojure rust elixir (one forms file each, 36 to 55 lines)
+  - [2]
+    change: RefFacts signature values corrected to the runtime's optional parameters (ts op sigs match?/data?; py load and remove reqmatch=None, data_set and match_set =None; elixir direct and prepare fetchargs \\ nil)
+    breaking: False
+    why: Declared data was wrong against the runtime, and the rebuilt guard found it.
+    rework_forced_in: ts py elixir (data only)
+  - [3]
+    change: Constructor sentence wraps when ctorAlts are declared
+    breaking: False
+    why: refinterface.test exercised ctorAlts for the first time; the sentence was unwrapped
+    rework_forced_in: none (no ported language uses ctorAlts)
+  - [4]
+    change: Cumulative since stage 1's first commit
+    breaking: True
+    why: About 6 breaking changes after stage 2, 5 in v3-shape, and 1 here (the required forms file): about 12 against H1's line of about 10. No deprecated aliases were re-added: every provider in existence is already migrated, so aliases would only lower the count.
+    rework_forced_in: see the rows above
+left_over_done:
+  - Full suite re-run at the handed state, db5e5915 (ran): 2,538 tests, 2,532 pass, 0 fail, 6 skipped. The predecessor had not re-run it.
+  - The predecessor's load-wording regex was tested on every ported REFERENCE load sentence in every variation (ran): 228 of 228 match.
+  - streamLazy sharing checked. clojure stream returns a lazy-seq (Entity.fragment.clj:186-188), so it shares with elixir. Scala returns Iterator[Object], which needed the new streamSync kind; java (Stream<Object>) and kotlin (Sequence) share streamLazy.
+  - ctorAlts, test.alts, heading, entityNoun, the entityBy variants and every stream kind are now exercised by ts/test/refinterface.test.ts (4/4).
+  - NOT AS REPORTED: clojure's doseq fusion was called an interface limit. Scope.stmts already gives a printer look-ahead. Implemented in Syntax_clojure (fusesWith), it moves 3 clojure root blocks from 'changed otherwise' to 'corrected'.
+  - NOT AS REPORTED: the predecessor's A2 fix introduced 'the entity, a AmbientEntity' in the ts root quick start. Fixed in runtimeprose.loadComment with the existing article helper.
+  - Handoff decision (1): member notes print per slot, as brief3 defines a note and as OLD go printed its paragraph (7 times in B in both OLD and NEW). Go's 20.4% is reported, not hidden.
+  - Handoff decision (2): no deprecated aliases (see interface_changes).
+  - Handoff decision (3): errslot, die and wrapped stay styles, because each drives five sentences. They cross the single-runtime rule (c, perl, swift); recorded.
+  - Handoff decision (4): solved without an interface change (look-ahead).
+  - The 69 'otherwise' blocks are now explained one by one: 14 remain, the rest are made equal by named normalizers after normalizer fixes, and the rest of the reduction came from printer fixes (c feature layout).
+guard:
+  design: |
+    ts/test/runtimefacts.test.ts drives a check(t, Syntax, forms) for every provider found in the staged scaffold, against the forms each language declares in ts/test/runtimeforms/<lang>.ts. It reads only the files the forms name (client, entity and ops sources, the generator components included).
+    
+    Each declaration is parsed by bracket matching, not by a regex per language. It re-derives:
+    - facts.method, each defined as an operation;
+    - each declared signature (op, opMatched, client and entity members, test constructors): the function exists, the parameter count matches, which parameters may be left out matches, and the return matches where both sides state one (tokens spelled as the templates spell them);
+    - the result style, from the load declaration (pair, errslot, union and wrapped predicates, else the declared exception verb confirmed by a raise in the source);
+    - async;
+    - the record accessor and its arity;
+    - every public client and entity member against the table, both ways, with an undocumented list that requires a reason and fails when stale;
+    - each member family the runtime publicly has is declared;
+    - the data and match shape (get/set pair, optional argument, or always-passed argument) and the stream kind;
+    - the field-type printer, total over the 8 canonical types and equal to canonToType where the code generator has a column.
+    
+    There are 12 negative controls, run as tests in every language: method renamed, async flipped, style changed, record renamed, parameter added, undefined member declared, defined member undeclared, stream kind changed, optional parameter shown required, return changed, data shape changed, and a field type printed as any.
+    
+    Also run by hand:
+    - Real-file controls: four providers' source files were edited at once and built (go method, py stream kind, zig INTEGER type, rust extra parameter). Each failed with its own check, and was then restored.
+    - Moving zig's compiled forms away failed all three zig tests.
+    
+    Unguarded facts are listed per language with SDKGEN_GUARD_REPORT=1.
+  per_language:
+    - [0]
+      lang: ts
+      guarded: method x6, op sigs x6 (params, optional), client 5 and entity 6 members both ways, data and match shape, stream kind streamIterator, style throw, async, record data(), field types vs canonToType ts. undocumented: graphql.
+      unguarded: 20: named, collection, listOf, prints, entityBy, noun, none, keys, maps, container, valueType, ctor, accessor, direct, prepare, body, cancel, member returns (options, utility), utility copy-or-live
+    - [1]
+      lang: go
+      guarded: method, op sigs including returns (any, error), members both ways, data and match (variadic, so optional), stream kind (<-chan), style pair, record Data(), types vs go map. undocumented: GetRootCtx, Graphql.
+      unguarded: 20: named, collection, errVar, unusedError, prints, entityBy, noun, none, keys, maps, container, valueType, ctor, accessor, direct, prepare, body, cancel, utility copy-or-live, notes.member:stream
+    - [2]
+      lang: py
+      guarded: method, sigs with returns, optional params (found load/remove/data_set/match_set drift), members both ways, get/set pair, streamGenerator (yield), style raise, record data_get, types vs py map. undocumented: options property, get_root_ctx, graphql.
+      unguarded: 22: as ts plus recordType, lits, and 3 exceptions with reasons (opMatched list optional; data_get and match_get return TypedDict EntityName, page says dict)
+    - [3]
+      lang: c
+      guarded: vtable methods, sigs with returns before the name, members both ways (vtable plus entyvar_ functions), dataArg/matchArg (always passed), streamList, style errslot (PNError** param), record vt->data, types vs c map. undocumented: sdk_graphql, mark_deleted, deleted.
+      unguarded: 21: named, collection, errVar, errSlot, nullValue, prints, entityBy, noun, none, keys, maps, container, valueType, ctor, accessor, direct, prepare, body, cancel, and exceptions types:ARRAY and types:OBJECT (voxgig_value* (list)/(map), as OLD printed)
+    - [4]
+      lang: zig
+      guarded: pub fns, sigs with returns, members both ways including the Entity interface in core/types.zig, dataArg/matchArg, streamList (StreamResult), style union (*Result), record data with arity 1, types total (no generator map). undocumented: new_with, get_root_ctx, graphql, mark_deleted, is_deleted.
+      unguarded: 22: named, collection, ok, err, unusedError, prints, entityBy, noun, none, keys, maps, container, valueType, ctor, accessor, direct, prepare, body, cancel, utility copy-or-live, notes member:prepare and member:streamList
+    - [5]
+      lang: clojure
+      guarded: defn and keyword-fn members (Lisp forms, space-split), public client = what sdk.api re-exports, get/set pairs, streamLazy (lazy-seq), style raise ((throw)), record data-get, types total (NULL and ANY may be any, as OLD). undocumented: graphql, mark-deleted, deleted.
+      unguarded: 18: named, collection, prints, entityBy, noun, entityNoun, heading, none, keys, maps, container, valueType, ctor, accessor, direct, prepare, body, cancel
+    - [6]
+      lang: rust
+      guarded: pub fns and Entity trait methods, sigs with -> returns, dataArg (Option<&Value>), streamList (IntoIter), style union (Result<), record data(None) arity 1, types vs rust map. undocumented: get_root_ctx, graphql, mark_deleted, deleted.
+      unguarded: 21: named, collection, ok, err, prints, entityBy, noun, none, setArg, keys, maps, container, valueType, ctor, accessor, direct, prepare, body, cancel, utility copy-or-live, notes.member:direct
+    - [7]
+      lang: elixir
+      guarded: def functions with @spec returns, optional \\ defaults (found direct/prepare drift), get/set pairs, streamLazy (Stream.), style raise, record data_get/1 arity 1, types vs elixir map. undocumented: new, get_root_ctx, mode, graphql, construct, op_return, mark_deleted, deleted.
+      unguarded: 26: named, collection, prints, entityBy, noun, none, keys, maps, container, valueType, ctor, accessor, direct, prepare, body, cancel, utilityBase live-node, notes.member:utilityBase, and 8 exceptions (op returns: the @spec says term(), the page says entity; opMatched list optional)
+  negative_controls:
+    - [0]
+      mutation: an operation method renamed (facts.method.update + 'Nope'), all 8 languages
+      caught: True
+    - [1]
+      mutation: async flipped, all 8
+      caught: True
+    - [2]
+      mutation: result style changed, all 8
+      caught: True
+    - [3]
+      mutation: record accessor renamed, all 8
+      caught: True
+    - [4]
+      mutation: a parameter added to load's declared signature, all 8
+      caught: True
+    - [5]
+      mutation: a member the runtime does not define declared, all 8
+      caught: True
+    - [6]
+      mutation: a member the runtime defines removed from the table, all 8
+      caught: True
+    - [7]
+      mutation: stream kind changed, all 8
+      caught: True
+    - [8]
+      mutation: an optional parameter shown required (ts, py, elixir; n/a where the language has no optional parameters)
+      caught: True
+    - [9]
+      mutation: a declared return changed (go, py, c, zig, rust; n/a where the signature states no return or is excepted)
+      caught: True
+    - [10]
+      mutation: data member shape changed, all 8
+      caught: True
+    - [11]
+      mutation: a field type printed as the generic any, all 8
+      caught: True
+    - [12]
+      mutation: real-file edits, then build: go method Load->Fetch, py stream kind ->streamList, zig INTEGER type ->any, rust load given a third parameter
+      caught: True
+    - [13]
+      mutation: zig forms file removed (the compiled file was moved away): all three zig tests fail
+      caught: True
+    - [14]
+      mutation: OLD clojure's (api/get-utility client) member added back to the clojure table
+      caught: True
+clojure_reference: |
+  Clojure's REFERENCE page is ported (Syntax_clojure.ts ref, Naming_clojure.ts; ReadmeRef_clojure.ts deleted).
+  
+  Facts used:
+  - entityBy 'Name' gives `## Planet`, as OLD.
+  - noun 'Functions' and entityNoun 'Members' give "Instance Functions" and "Common Members" (OLD had "Client functions" and "Common Members").
+  - heading '{module}' gives `## sdk.api` (OLD said "## Client").
+  - keys 'bare', container 'voxgig.struct', none 'nil', read `(vs/getprop result "ok")`.
+  - A field-type table as OLD: string, long, double, boolean, vector, map, else any.
+  - streamLazy, shared with elixir.
+  
+  Printers:
+  - A wide argument that carries a comment breaks one member per line, because a Lisp comment runs to the end of its line. This keeps OLD's two shapes: one-line tutorial writes, multi-line reference writes with ";; string".
+  - OLD's nested feature layout.
+  - doseq fusion through Scope.stmts look-ahead.
+  - Accessors qualified with layout.client in the printer, not in the hook.
+  
+  Result: 40 of 83 reference op blocks are byte-identical to OLD, and 43 differ only by the ref-loop-item unification (loop variable `item`). Ctor, test, instance and feature blocks are identical (9, 9, 47 and 9). All of them are unverified, because there is no clojure toolchain here.
+  
+  What it still needed:
+  - No interface change.
+  - It surfaced an OLD defect: get-utility is documented but not exported by sdk.api (Main_clojure.ts writes only make-sdk, test-sdk, direct, graphql, prepare and options-map). It is dropped with that reason, and the guard now catches it.
+  - Dropped as clojure-only prose: "State accessors are stored on the entity map and called via keyword lookup."
+ledger:
+  - [0]
+    lang: c
+    section: reference
+    same: 14872 units
+    reworded: 312 reworded, 355 missing, 1136 added; classes correction 46, unification 29, same-meaning 2
+    restored: shared 17, fact 5
+    dropped: 0
+    unclassified: 0
+  - [1]
+    lang: c
+    section: rootquick
+    same: 19 units
+    reworded: 23 reworded; classes unification 3
+    restored: 0
+    dropped: 0
+    unclassified: 0
+  - [2]
+    lang: c
+    section: tutorial
+    same: 61 units
+    reworded: 61 reworded, 15 missing, 59 added; classes correction 25, unification 5, same-meaning 3
+    restored: shared 1, fact 1
+    dropped: 0
+    unclassified: 0
+  - [3]
+    lang: clojure
+    section: reference
+    same: 14983 units
+    reworded: 446 reworded, 507 missing, 1024 added; classes correction 46, unification 40, same-meaning 6
+    restored: shared 15, fact 7
+    dropped: 3 (get-utility signature and sentence: not exported by sdk.api; keyword-lookup sentence)
+    unclassified: 0
+  - [4]
+    lang: clojure
+    section: rootquick
+    same: 19 units
+    reworded: 23 reworded; classes unification 3
+    restored: 0
+    dropped: 0
+    unclassified: 0
+  - [5]
+    lang: clojure
+    section: tutorial
+    same: 61 units
+    reworded: 60 reworded, 16 missing, 60 added; classes correction 24, unification 6, same-meaning 2
+    restored: shared 1, fact 2
+    dropped: 0
+    unclassified: 0
+  - [6]
+    lang: elixir
+    section: reference
+    same: 14802 units
+    reworded: 519 reworded, 403 missing, 1189 added; classes correction 53, unification 46, same-meaning 3
+    restored: shared 16, fact 7, note 2
+    dropped: 1 (Helpers.deep/1 sentence)
+    unclassified: 0
+  - [7]
+    lang: elixir
+    section: rootquick
+    same: 19 units
+    reworded: 23 reworded; classes unification 3
+    restored: 0
+    dropped: 0
+    unclassified: 0
+  - [8]
+    lang: elixir
+    section: tutorial
+    same: 61 units
+    reworded: 57 reworded, 12 missing, 63 added; classes correction 24, unification 5, same-meaning 2
+    restored: shared 1, fact 3
+    dropped: 2 (list/2 and getelem/2 arity naming)
+    unclassified: 0
+  - [9]
+    lang: go
+    section: reference
+    same: 17589 units
+    reworded: 333 reworded, 152 missing, 891 added; classes correction 52, unification 16, same-meaning 1
+    restored: shared 14, fact 3, note 1
+    dropped: 0
+    unclassified: 0
+  - [10]
+    lang: go
+    section: rootquick
+    same: 22 units
+    reworded: 21 reworded, 5 added; classes unification 4
+    restored: 0
+    dropped: 0
+    unclassified: 0
+  - [11]
+    lang: go
+    section: tutorial
+    same: 23 units
+    reworded: 26 reworded, 101 missing, 156 added; classes correction 23, unification 27, same-meaning 1
+    restored: shared 1, fact 5
+    dropped: 0
+    unclassified: 0
+  - [12]
+    lang: py
+    section: reference
+    same: 15052 units
+    reworded: 592 reworded, 236 missing, 885 added; classes correction 62, unification 30
+    restored: shared 14, fact 6
+    dropped: 0
+    unclassified: 0
+  - [13]
+    lang: py
+    section: rootquick
+    same: 19 units
+    reworded: 23 reworded; classes unification 3
+    restored: 0
+    dropped: 0
+    unclassified: 0
+  - [14]
+    lang: py
+    section: tutorial
+    same: 61 units
+    reworded: 51 reworded, 18 missing, 69 added; classes correction 25, unification 7, same-meaning 1
+    restored: shared 1, fact 3
+    dropped: 0
+    unclassified: 0
+  - [15]
+    lang: rust
+    section: reference
+    same: 15019 units
+    reworded: 426 reworded, 190 missing, 971 added; classes correction 61, unification 38, same-meaning 5
+    restored: shared 12, fact 7, note 2
+    dropped: 0
+    unclassified: 0
+  - [16]
+    lang: rust
+    section: rootquick
+    same: 19 units
+    reworded: 23 reworded; classes unification 3
+    restored: 0
+    dropped: 0
+    unclassified: 0
+  - [17]
+    lang: rust
+    section: tutorial
+    same: 61 units
+    reworded: 56 reworded, 20 missing, 64 added; classes correction 25, unification 8, same-meaning 5
+    restored: shared 1, fact 2
+    dropped: 0
+    unclassified: 0
+  - [18]
+    lang: ts
+    section: reference
+    same: 15578 units
+    reworded: 467 reworded, 1135 missing, 804 added; classes correction 53, unification 32, same-meaning 2
+    restored: shared 19, fact 3
+    dropped: 3 (accessor parameter table: header, `object`, `data` cells; the accessor sentence carries the facts)
+    unclassified: 0
+  - [19]
+    lang: ts
+    section: rootquick
+    same: 21 units
+    reworded: 18 reworded, 16 missing, 5 added; classes unification 5, correction 1
+    restored: 0
+    dropped: 0
+    unclassified: 0
+  - [20]
+    lang: ts
+    section: tutorial
+    same: 61 units
+    reworded: 57 reworded, 35 missing, 63 added; classes correction 25, unification 7, same-meaning 4
+    restored: shared 2, fact 2
+    dropped: 0
+    unclassified: 0
+  - [21]
+    lang: zig
+    section: reference
+    same: 15019 units
+    reworded: 538 reworded, 266 missing, 746 added; classes correction 62, unification 28, same-meaning 4
+    restored: shared 12, fact 2, note 3
+    dropped: 0
+    unclassified: 0
+  - [22]
+    lang: zig
+    section: rootquick
+    same: 19 units
+    reworded: 23 reworded; classes unification 3
+    restored: 0
+    dropped: 0
+    unclassified: 0
+  - [23]
+    lang: zig
+    section: tutorial
+    same: 61 units
+    reworded: 57 reworded, 19 missing, 63 added; classes correction 25, unification 5, same-meaning 4
+    restored: shared 2, fact 3
+    dropped: 1 (switch on .ok instruction)
+    unclassified: 0
+blocks:
+  - [0]
+    lang: ts
+    section: tutorial / root / reference
+    identical: 105 total (ref ctor 9, test 9, instance 47, op 32; tutorial load 8)
+    after_named_corrections: 12
+    by_named_unification: 60 (ref-list-printed, ref-type-comments, ts-trailing-comma, ts-single-quote, root-load-step, tutorial-list-attempt, tutorial-write-unbound)
+    changed_otherwise: 0; 8 removed (the action example is now the table's Call cell, ref-6)
+    verified_by: ts README lane 16/16 (ran)
+  - [1]
+    lang: go
+    section: tutorial / root / reference
+    identical: 149
+    after_named_corrections: 18
+    by_named_unification: 12
+    changed_otherwise: 5, each explained: 4 tutorial programs (writes one member per line, results unbound with the id from the created entity, doc-list's OLD loop variable named after the wrong entity) and doc-nested root loading the nested entity
+    verified_by: go README lane 12/12 (compiled and run)
+  - [2]
+    lang: py
+    section: all
+    identical: 127
+    after_named_corrections: 20
+    by_named_unification: 43 (ref-loop-item)
+    changed_otherwise: 1: doc-nested root loads the nested entity
+    verified_by: py README lane 12/12, real pytest
+  - [3]
+    lang: c
+    section: all
+    identical: 74 (+9 feature snippets now identical after the printer fix)
+    after_named_corrections: 80
+    by_named_unification: 32
+    changed_otherwise: 1: doc-nested root loads the nested entity
+    verified_by: c DOC lane 6/6
+  - [4]
+    lang: zig
+    section: all
+    identical: 87
+    after_named_corrections: 8
+    by_named_unification: 90 (zig-bind-outside now reaches root steps; ref-loop-item)
+    changed_otherwise: 4: 3 tutorial write blocks (create bound outside its switch, ids chained) and doc-nested root. UNVERIFIED: no zig here
+    verified_by: none (zig missing)
+  - [5]
+    lang: clojure
+    section: all
+    identical: 127
+    after_named_corrections: 16
+    by_named_unification: 43 (ref-loop-item)
+    changed_otherwise: 1: doc-nested root. UNVERIFIED
+    verified_by: none (clojure missing)
+  - [6]
+    lang: rust
+    section: all
+    identical: 105
+    after_named_corrections: 20
+    by_named_unification: 65
+    changed_otherwise: 1: doc-nested root
+    verified_by: rust DOC lane 6/6
+  - [7]
+    lang: elixir
+    section: all
+    identical: 83
+    after_named_corrections: 18
+    by_named_unification: 87
+    changed_otherwise: 1: doc-nested root. UNVERIFIED
+    verified_by: none (elixir missing)
+  - [8]
+    lang: all eight
+    section: total
+    identical: 857
+    after_named_corrections: 206
+    by_named_unification: 444
+    changed_otherwise: 14 (was 69), each explained; 8 removed
+    verified_by: command: cd P/freeze/harness && node blocks3.js [--detail all]. The tools' blocks.js classes (per language: tools/review/<lang>/*.blocks.txt) are all classified: 132 mechanically through the same normalizers (my/blockexplain.js), the rest by hand in my/manual.json
+prose:
+  - [0]
+    lang: go
+    section: reference (features excluded)
+    words_total: 27007 prose words over 19 variations
+    words_language_supplied: 5508 note words (20.4%), go's member:stream note printed under each entity, as OLD did. Words printed only by go among the eight: 33.3% (share.js), OLD 38.2%
+    notes: over H1's 15% line
+    shared_sentences_only_this_language: pair-style sentences, also shared by lua
+  - [1]
+    lang: zig
+    section: reference
+    words_total: 19293
+    words_language_supplied: 2334 note words (12.1%); only-zig words 17.9% (OLD 39.3%)
+    notes: member:prepare and member:streamList notes
+    shared_sentences_only_this_language: union is shared with rust
+  - [2]
+    lang: rust
+    section: reference
+    words_total: 18165
+    words_language_supplied: 437 note words (2.4%); only-rust 14% (OLD 22.1%)
+    notes: member:direct
+    shared_sentences_only_this_language: none
+  - [3]
+    lang: elixir
+    section: reference
+    words_total: 16846
+    words_language_supplied: 171 note words (1.0%); only-elixir 9% (OLD 25.4%)
+    notes: member:utilityBase
+    shared_sentences_only_this_language: streamLazy is now shared with clojure, java and kotlin
+  - [4]
+    lang: ts
+    section: reference
+    words_total: 21840
+    words_language_supplied: 0 note words; only-ts 30.4% (OLD 33.9%)
+    notes: 
+    shared_sentences_only_this_language: the cancel paragraph and prepare 'value' (js shares both)
+  - [5]
+    lang: py
+    section: reference
+    words_total: 16593
+    words_language_supplied: 0 notes; only-py 17.1% (OLD 9.6%)
+    notes: 
+    shared_sentences_only_this_language: streamGenerator (php shares)
+  - [6]
+    lang: c
+    section: reference
+    words_total: 17995
+    words_language_supplied: 0 notes; only-c 16% (OLD 21.6%)
+    notes: 
+    shared_sentences_only_this_language: errslot style sentences: c alone among all twenty (crosses the rule; kept as a style)
+  - [7]
+    lang: clojure
+    section: reference
+    words_total: 16643
+    words_language_supplied: 0 notes; only-clojure 7.9% (OLD 27.2%)
+    notes: 
+    shared_sentences_only_this_language: none
+  - [8]
+    lang: all eight
+    section: tutorial and root quick start
+    words_total: tutorial about 1,150 to 1,900 words per language over the variations
+    words_language_supplied: 0 note words in every language. Only-this-language words in the tutorial: ts 23.5%, go 62.6% (go's program step titles and pair sentences), py 22.9%, c 26.6%, zig 12.4%, clojure 11.2%, rust 12%, elixir 10.9%. In the root quick start: 93% for 6 of 8 languages, because the step comments carry each language's runtime fact (OLD was also 92 to 94%)
+    notes: share.js counts as only-this-language any unit whose fact tokens outside code spans differ (e.g. 'vector', 'slice'), so this is the fact-token measure
+    shared_sentences_only_this_language: -
+unported_identical: |
+  Ran:
+  
+  ```
+  for v in out/new/*; for l in js php rb lua csharp java kotlin scala swift cpp perl ocaml; cmp old vs new README.md and REFERENCE.md
+  ```
+  
+  - **Files compared:** 456.
+  - **READMEs:** 0 differ. diff2.js also reports 0 differing unported README files and root subsections.
+  - **REFERENCE files:** 228 differ, every one by the same 4 pairs of lines from the already-shared ts/src/cmp/ReadmeRefFeatures.ts, changed in stage 2 (catalogued S09 and the escaped-backtick fix). Each line appears 228 times in `diff | sort | uniq -c`:
+    - OLD "Each feature is inactive until switched on, and an SDK with no feature" became NEW "Each feature is inactive until switched on, except `log`, which / runs unless disabled."
+    - OLD "\\`feature\\`" became NEW "`feature`".
+    - OLD "- Inactive by default: leaving it out costs nothing at runtime." became NEW "- Active by default: set `active: false` to switch it off."
+    - The reflowed "Every option below keeps its default" line.
+  
+  No shared component that unported languages render was changed in this stage. The new stream kinds and the wrapped constructor sentence are only reached by ported providers.
+source_lines: |
+  Ran: `node P/freeze/tools/lines.js --clone P/freeze/sdkgen --rev HEAD` (lines.js was fixed to count ts/test/runtimeforms/<lang>.ts as guard forms).
+  
+  **MEASURED** for ts go py rust c zig clojure elixir: 6,916/5,033 lines became 4,968/3,816, which is 1.39x (1.32x without blanks and comments).
+  
+  **Per language after** (provider / hook / guard forms / other files touched):
+  - ts: 140 / 22 / 36
+  - go: 191 / 24 / 38
+  - py: 149 / 24 / 42 / +8
+  - rust: 176 / 24 / 42
+  - c: 232 / 28 / 48 / +5
+  - zig: 196 / 22 / 42
+  - clojure: 219 / 27 / 55 / +20
+  - elixir: 183 / 34 / 55 / +10
+  
+  **Shared files** (before -> after):
+  
+  | file | before | after |
+  | --- | --- | --- |
+  | ReadmeQuick.ts | 34 | 254 |
+  | ReadmeRef.ts | 29 | 394 |
+  | ReadmeRefFeatures.ts | 142 | 146 |
+  | ReadmeTop.ts | 745 | 756 |
+  | example.ts | — | 539 |
+  | sdkdesc.ts | — | 503 |
+  | runtimeprose.ts | — | 219 |
+  | markdown.ts | — | 31 |
+  | media.ts | 79 | 109 |
+  
+  The shared guard (runtimefacts.test.ts and forms.ts) is not counted to the documentation.
+  
+  **PROJECTION** to all 20: 2.19x without guard forms (as the tools engineer counted), 1.95x with them, 1.63x if the remaining providers are 1.5 times the measured size, and 1.40x at twice. H2 is not met for the measured set (1.39x).
+lanes: |
+  Ran at 8d5ad97b (= v3-frozen), node 24, with real pytest on PATH:
+  - **ts README:** 16/16 (33 s). Command: `node --test --test-name-pattern 'typescript: the README example tests type-check and run' dist-test/generatedcompile.test.js`
+  - **go README:** 12/12 (44 s). Pattern `'^go: (every README example|the README examples run)'`.
+  - **py README:** 12/12 (16 s). Pattern `'^py: (every README example|the README examples run)'`.
+  - **c DOC:** 6/6 (26 s). Pattern `'^c: every documented example compiles'`.
+  - **rust DOC:** 6/6 (23 s). Pattern `'^rust: every documented example compiles'`.
+  
+  None skipped. Logs are P/freeze/my/lane-*-1.log; the script is my/lanes.sh.
+  
+  **Suite** (find dist-test -name '*.test.js' ! -name generatedcompile.test.js): 2,551 tests, 2,546 pass, 0 fail, 5 skipped, 248 s. Log: my/suite1.log.
+  
+  **Golden** (characterize): 2/2.
+porting_guide: |
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/freeze/PORTING.md (replaces P/ref/PORTING.md). Sections:
+  1. What a language supplies and never does (hook, printers, facts, notes, guard forms).
+  2. The frozen interface.
+  3. Order of work, with the file to copy from per kind of language.
+  4. The one command (`REGEN=1 ./portcheck.sh <clone> <out-root> <lang>`), what each number must be, the rule that unverified blocks are counted as unverified, and the baseline per language and section.
+  5. The guard and how to write ts/test/runtimeforms/<lang>.ts.
+  6. A table for the twelve: result style, entity naming, nouns, stream kind with file:line, known constructs and their v3 expression, and the command that compiles or runs examples here, or that there is none.
+  7. Provider and hook rules, and what purity flags.
+  8. What to do when the interface cannot express something.
+  9. The commit order for six parallel merges: no shared commit, no build commit; the golden is per-file, so regenerate it on conflict; ported.json is not edited.
+  10. Traps, corrected against worklist F.
+tools_changed:
+  - tools/blocks.js: two pairing keys, added because the corrected output mis-paired blocks after the predecessor's own: (3) the heading path with each signature cut to its function name, needed when a corrected parameter list changed headings; and (4) the last heading alone, needed when an entity heading was renamed by a collision (U34). ts reference identical went from 162 to 195.
+  - tools/purity.js: a literal that opens a Lisp form is a signature, not prose. It falsely flagged clojure's six op signatures.
+  - tools/lines.js: counts ts/test/runtimeforms/<lang>.ts as the language's guard forms (it reported 0 before).
+  - tools/portcheck.sh: a language absent from ported.json gets its sections from the clone (a provider and no ReadmeQuick_, a provider with ref: and no ReadmeRef_), and is added to its own sharing set, so six porters never edit the shared registry.
+  - tools/ported.json: clojure added to reference.
+  - tools/purity-allow.json (new): 6 accepted findings with reasons.
+  - tools/classes/<lang>.json (new): all 1,666 classes, each with its outcome and rule.
+  - harness/blocks3.js: clojure's REFERENCE enabled; OLD clojure's '### make-sdk' read as the constructor block.
+  - |
+    harness/corrections.js:
+    - loopItem no longer rewrites a name inside api/planet or e-planet/list;
+    - zigSwitch reaches a bind-outside switch after a step comment;
+    - secret-option removes the pair in one-line clients (clojure, elixir), fixes c's cmap count, and is skipped where OLD already printed secret;
+    - noServer knows 'account';
+    - handle-with-step accounts for the blank line after a step comment;
+    - new unifications: ts-trailing-comma, ts-single-quote.
+measurements:
+  - [0]
+    name: handed-state suite (db5e5915)
+    value: 2538 tests, 2532 pass, 0 fail, 6 skipped, 275 s
+    command: P/freeze/my/suite.sh suite0.log
+  - [1]
+    name: frozen suite (8d5ad97b)
+    value: 2551 tests, 2546 pass, 0 fail, 5 skipped, 248 s
+    command: P/freeze/my/suite.sh suite1.log
+  - [2]
+    name: guard
+    value: 26/26 tests; 8 languages with 0 findings; 12 controls caught wherever they apply; 0.63 s
+    command: cd ts && node --test dist-test/runtimefacts.test.js; node P/freeze/my/controls.js
+  - [3]
+    name: load wording regex
+    value: 228 of 228 ported REFERENCE load sentences match
+    command: node -e over harness/out/new/*/<lang>/REFERENCE.md (inline script in session)
+  - [4]
+    name: portcheck, all eight
+    value: PASS for ts go py c zig clojure rust elixir; about 4.6 s each
+    command: cd P/freeze/tools && ./portcheck.sh ../sdkgen ../harness/out <lang>
+  - [5]
+    name: classes classified
+    value: 1666 of 1666: 132 by normalizers, about 1490 by 120 content rules, 44 by hand
+    command: node P/freeze/my/classify.js --used
+  - [6]
+    name: blocks (blocks3)
+    value: identical 857, after corrections 206, by unification 444, otherwise 14, removed 8
+    command: cd P/freeze/harness && node blocks3.js
+  - [7]
+    name: purity
+    value: 0 open, 6 accepted (was 36 open at stage 2)
+    command: node tools/purity.js --providers sdkgen/ts/project/.sdk/src/cmp --root harness/out/new
+  - [8]
+    name: note words in REFERENCE
+    value: go 20.4%, zig 12.1%, rust 2.4%, elixir 1.0%, others 0
+    command: node P/freeze/my/notewords.js
+  - [9]
+    name: lines
+    value: measured 1.39x (1.32x); projection 1.95x / 1.63x / 1.40x
+    command: node tools/lines.js --clone sdkgen --rev HEAD
+  - [10]
+    name: unported
+    value: 456 files: 0 READMEs differ; 228 REFERENCE files differ by the same 4 shared-component lines
+    command: cmp loop over harness/out/{old,new}
+  - [11]
+    name: hook refactors (c cAccessorName, whole tm() ctor names, clojure accessor in printers)
+    value: 0 output files changed
+    command: diff -rq after regeneration
+  - [12]
+    name: toolchains here
+    value: present: node 24, go, python3+pytest, ruby, php, perl, javac+mvn, rustc+cargo, gcc, g++; missing: lua, busted, dotnet, kotlinc, scala, sbt, swift, zig, clojure, elixir, ocamlc, ghc
+    command: command -v loop
+gaps:
+  - The ledger classification was done by content rules (P/freeze/my/rules.js, about 120 rules, each written after reading the cluster it covers), 44 hand entries (manual.json) and mechanical block explanation. I did not re-read all 1,666 classes one by one. Broad rules (server-vars S49, op-sentences, echo-agrees) could hide a second change inside a unit that matches them. The 41 echo classes were read individually.
+  - Zig, clojure and elixir blocks (and every changed block of the twelve to come without toolchains) are unverified. Clojure's ReadmeExamplesTest reads REFERENCE.md, and its new blocks were never compiled.
+  - |
+    Unported README sections that still contradict ported ones (not ported, per the rules):
+    - zig README 'Error handling' says entity operations reject and shows a ```ts block, in OLD and NEW alike;
+    - the ts README options table says region is Required;
+    - README Features says 'no logging';
+    - the ts README table lists tester() in no-test, while REFERENCE omits it there (S13).
+  - graphql is a public client method in all eight runtimes and is documented by no REFERENCE page, OLD or NEW. It is listed as undocumented in every forms file, with that reason.
+  - Timings were taken once, not three times. The CPUs were shared.
+  - H5 (migration safety) was not tested in this stage. The lifecycle change is unchanged since stage 2.
+  - The task speaks of 'nine languages'; the list it gives has eight (ts go py c zig clojure rust elixir). The go~go2 alias variation is included in go's numbers.
+  - Ocaml's stream shape was not surveyed (its runtime is a single sdk_runtime.ml); PORTING marks it.
+  - |
+    Guard limits:
+    - It cannot see whether utility() returns a copy or the live node, or check nouns, notes, body or ctor text: 18 to 26 declared facts per language are unguarded and listed.
+    - Return comparison is skipped where the page states no return (ts) or is excepted (elixir @spec term()).
+surprises:
+  - |
+    The rebuilt guard found drift on its first run:
+    - ts declared every operation's match or data as required, py's load, remove, data_set and match_set likewise, and elixir's direct and prepare, while each runtime makes them optional.
+    - OLD clojure documented (api/get-utility client), which the generated sdk.api namespace does not export.
+  - The predecessor's 'interface limit' (clojure cannot fuse doseq outside an attempt) was not one: Scope.stmts already lets a printer look ahead.
+  - The predecessor's A2 fix printed 'the entity, a AmbientEntity' in the ts root quick start, although runtimeprose already had an article helper.
+  - Two unported pairs share stream shapes no v3 kind had (rb and scala a synchronous iterator; lua and perl an iterator function). Left open, two porters would each have added the same shared kind and conflicted.
+  - The tools' per-language registry would have been edited by all six porters. portcheck now reads a language's sections off the clone.
+  - The golden is a per-file hash manifest, so each port changes only its own lines; a conflict there is regenerated, never merged.
+  - Lua's own test (lua-table-keys.test.ts) pins ReadmeQuick_lua.ts and ReadmeRef_lua.ts by name, so the lua porter must edit it.
+  - Most remaining 'changed otherwise' blocks were normalizer gaps rather than real differences (one-line clients, 'account' variables, OLD already printing secret).
+hypotheses:
+  - [0]
+    id: H1
+    verdict: partly
+    evidence: |
+      Providers read the model 0 times. Purity has 0 open findings, 6 accepted with reasons; 3 hook concatenations were removed and c's accessor rule was extracted into the generator's own function. Two thresholds are crossed:
+      - Breaking interface changes since the first four languages are about 12 against the line of about 10 (the required forms file adds 1 to v3's 11).
+      - Language-supplied prose: go's notes are 20.4% of its REFERENCE prose (notewords.js), over 15%.
+      All other ported languages are at or under 12.1%, and notes add 0 words to the README tutorials. Three styles in shared prose are one runtime's (errslot, die, wrapped), which crosses the single-runtime-sentence rule.
+  - [1]
+    id: H2
+    verdict: refuted
+    evidence: Measured for the eight ported languages: 1.39x (1.32x without blanks and comments) once each language's guard forms are counted (lines.js). Projected to 20: 1.95x at measured provider size, 1.63x at 1.5 times. Without guard forms it would be 1.5x measured and 2.19x projected.
+  - [2]
+    id: H3
+    verdict: partly
+    evidence: Every catalogued issue this stage met is fixed by shared code in all eight languages: S09, S13, S25, S28, S49, S50, G01, G27, U34, U44, U45, M12 (cited in classes/*.json). Per-language edits were needed for declared facts the guard found wrong (ts, py and elixir signatures) and for one printer (c feature layout). I did not recount the catalogue as a whole.
+  - [3]
+    id: H4
+    verdict: supported
+    evidence: ts README 16/16, go 12/12, py 12/12 (real pytest), c DOC 6/6 and rust DOC 6/6 at v3-frozen (ran). Nothing that ran before only compiles now. Zig, clojure and elixir changed blocks are unverified: no toolchain here.
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: Not exercised in this stage. The migrate lifecycle change from stage 2 is unchanged.
+reproduce: |
+  P=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2
+  
+  ```
+  export PATH=/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH
+  cd $P/freeze/sdkgen && git checkout v3-frozen && cd ts && npm run build
+  node --test dist-test/runtimefacts.test.js dist-test/refinterface.test.js
+  SDKGEN_GUARD_REPORT=1 node --test dist-test/runtimefacts.test.js     # unguarded facts per language
+  node $P/freeze/my/controls.js                                        # negative controls table
+  cd $P/freeze/harness && node gen.js new "$(cd ../sdkgen/ts; pwd)" && node blocks3.js [--detail all]
+  cd $P/freeze/tools && for l in ts go py c zig clojure rust elixir; do ./portcheck.sh ../sdkgen ../harness/out $l; done
+  node lines.js --clone ../sdkgen --rev HEAD
+  node $P/freeze/my/notewords.js
+  $P/freeze/my/suite.sh <log>; $P/freeze/my/lanes.sh <suffix>
+  ```
+  
+  To rebuild the classifications: run portcheck with CLASSES=../my/noclasses for full templates, then `node $P/freeze/my/classify.js --left`.

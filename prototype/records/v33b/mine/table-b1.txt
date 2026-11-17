@@ -1,0 +1,52 @@
+ts tutorial same 59 classes shared 0 rule 23 hand 19 missing 5 OPEN 0 defect 0 contra 0 | identical 19 corrected 16 unified 12 otherwise 1 | classes 19 OPEN 0 defect 0
+ts rootquick same 21 classes shared 0 rule 4 hand 0 missing 1 OPEN 0 defect 0 contra 0 | identical 0 corrected 13 unified 5 otherwise 1 | classes 15 OPEN 0 defect 0
+ts reference same 15376 classes shared 2 rule 48 hand 47 missing 41 OPEN 0 defect 0 contra 1 | identical 195 corrected 0 unified 118 otherwise 0 | classes 12 OPEN 0 defect 0
+ts PASS hand records: 136, 34 quote text (54 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 5, recorded by hand 1, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 22, pinned prose 12 (the reviewer audits each)
+go tutorial same 23 classes shared 1 rule 27 hand 26 missing 9 OPEN 0 defect 0 contra 0 | identical 0 corrected 12 unified 1 otherwise 8 | classes 29 OPEN 0 defect 0
+go rootquick same 22 classes shared 0 rule 4 hand 0 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 14 unified 4 otherwise 4 | classes 16 OPEN 0 defect 0
+go reference same 17439 classes shared 1 rule 51 hand 36 missing 15 OPEN 0 defect 0 contra 1 | identical 337 corrected 21 unified 18 otherwise 0 | classes 2 OPEN 0 defect 0
+go PASS hand records: 129, 22 quote text (55 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 4, recorded by hand 3, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 17, pinned prose 11 (the reviewer audits each)
+py tutorial same 59 classes shared 0 rule 24 hand 15 missing 4 OPEN 0 defect 0 contra 0 | identical 26 corrected 22 unified 0 otherwise 0 | classes 9 OPEN 0 defect 0
+py rootquick same 19 classes shared 0 rule 3 hand 0 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 18 unified 0 otherwise 1 | classes 12 OPEN 0 defect 0
+py reference same 14940 classes shared 3 rule 62 hand 42 missing 24 OPEN 0 defect 0 contra 1 | identical 230 corrected 0 unified 83 otherwise 0 | classes 2 OPEN 0 defect 0
+py PASS hand records: 104, 21 quote text (32 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 6, recorded by hand 1, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 17, pinned prose 10 (the reviewer audits each)
+c tutorial same 59 classes shared 0 rule 24 hand 14 missing 4 OPEN 0 defect 0 contra 0 | identical 0 corrected 41 unified 0 otherwise 7 | classes 15 OPEN 0 defect 0
+c rootquick same 19 classes shared 0 rule 3 hand 0 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 2 unified 0 otherwise 17 | classes 34 OPEN 0 defect 0
+c reference same 14872 classes shared 0 rule 52 hand 43 missing 18 OPEN 0 defect 0 contra 1 | identical 151 corrected 143 unified 19 otherwise 0 | classes 7 OPEN 0 defect 0
+c PASS hand records: 115, 42 quote text (60 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 8, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 14, pinned prose 10 (the reviewer audits each)
+zig tutorial same 59 classes shared 0 rule 23 hand 18 missing 5 OPEN 0 defect 0 contra 0 | identical 24 corrected 17 unified 0 otherwise 7 | classes 30 OPEN 0 defect 0
+zig rootquick same 19 classes shared 0 rule 0 hand 3 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 2 unified 15 otherwise 2 | classes 29 OPEN 0 defect 0
+zig reference same 15001 classes shared 3 rule 60 hand 45 missing 24 OPEN 0 defect 0 contra 1 | identical 151 corrected 0 unified 162 otherwise 0 | classes 3 OPEN 0 defect 0
+zig PASS hand records: 160, 26 quote text (52 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 8, recorded by hand 1, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 19, pinned prose 12 (the reviewer audits each)
+clojure tutorial same 59 classes shared 0 rule 24 hand 14 missing 4 OPEN 0 defect 0 contra 0 | identical 26 corrected 21 unified 0 otherwise 1 | classes 10 OPEN 0 defect 0
+clojure rootquick same 19 classes shared 0 rule 3 hand 0 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 16 unified 0 otherwise 3 | classes 16 OPEN 0 defect 0
+clojure reference same 14984 classes shared 1 rule 61 hand 40 missing 23 OPEN 0 defect 0 contra 0 | identical 230 corrected 0 unified 83 otherwise 0 | classes 2 OPEN 0 defect 0
+clojure PASS hand records: 106, 17 quote text (32 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 8, recorded by hand 3, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 17, pinned prose 11 (the reviewer audits each)
+rust tutorial same 59 classes shared 0 rule 25 hand 20 missing 5 OPEN 0 defect 0 contra 0 | identical 26 corrected 22 unified 0 otherwise 0 | classes 12 OPEN 0 defect 0
+rust rootquick same 19 classes shared 0 rule 0 hand 3 missing 1 OPEN 0 defect 0 contra 0 | identical 0 corrected 18 unified 0 otherwise 1 | classes 20 OPEN 0 defect 0
+rust reference same 15000 classes shared 1 rule 69 hand 49 missing 23 OPEN 0 defect 0 contra 1 | identical 230 corrected 0 unified 83 otherwise 0 | classes 2 OPEN 0 defect 0
+rust PASS hand records: 135, 23 quote text (46 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 8, recorded by hand 1, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 16, pinned prose 9 (the reviewer audits each)
+elixir tutorial same 59 classes shared 0 rule 22 hand 17 missing 4 OPEN 0 defect 0 contra 0 | identical 16 corrected 22 unified 10 otherwise 0 | classes 10 OPEN 0 defect 0
+elixir rootquick same 19 classes shared 0 rule 3 hand 0 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 18 unified 0 otherwise 1 | classes 14 OPEN 0 defect 0
+elixir reference same 14803 classes shared 0 rule 71 hand 42 missing 22 OPEN 0 defect 0 contra 1 | identical 151 corrected 0 unified 162 otherwise 0 | classes 15 OPEN 0 defect 0
+elixir PASS hand records: 105, 22 quote text (36 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 4, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 17, pinned prose 12 (the reviewer audits each)
+rb tutorial same 59 classes shared 17 rule 0 hand 28 missing 5 OPEN 0 defect 0 contra 0 | identical 3 corrected 21 unified 23 otherwise 1 | classes 27 OPEN 0 defect 0
+rb rootquick same 19 classes shared 0 rule 0 hand 3 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 2 unified 15 otherwise 2 | classes 18 OPEN 0 defect 0
+rb reference same 15021 classes shared 43 rule 0 hand 67 missing 23 OPEN 0 defect 0 contra 1 | identical 303 corrected 0 unified 10 otherwise 0 | classes 1 OPEN 0 defect 0
+rb PASS hand records: 199, 27 quote text (52 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 5, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 17, pinned prose 10 (the reviewer audits each)
+perl tutorial same 59 classes shared 21 rule 0 hand 20 missing 4 OPEN 0 defect 0 contra 0 | identical 3 corrected 6 unified 0 otherwise 39 | classes 19 OPEN 0 defect 0
+perl rootquick same 19 classes shared 0 rule 0 hand 3 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 0 unified 0 otherwise 19 | classes 25 OPEN 0 defect 0
+perl reference same 14891 classes shared 46 rule 0 hand 61 missing 23 OPEN 0 defect 0 contra 1 | identical 227 corrected 0 unified 0 otherwise 86 | classes 7 OPEN 0 defect 0
+perl PASS hand records: 196, 63 quote text (227 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 6, recorded by hand 3, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 12, pinned prose 8 (the reviewer audits each)
+swift tutorial same 59 classes shared 21 rule 0 hand 22 missing 5 OPEN 0 defect 0 contra 0 | identical 1 corrected 1 unified 0 otherwise 46 | classes 39 OPEN 0 defect 0
+swift rootquick same 19 classes shared 0 rule 0 hand 3 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 0 unified 0 otherwise 19 | classes 28 OPEN 0 defect 0
+swift reference same 13994 classes shared 51 rule 0 hand 71 missing 32 OPEN 0 defect 0 contra 1 | identical 207 corrected 0 unified 0 otherwise 106 | classes 13 OPEN 0 defect 0
+swift PASS hand records: 241, 61 quote text (112 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 3, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 1, not judged 0; cited 15, pinned prose 9 (the reviewer audits each)
+ocaml tutorial same 54 classes shared 24 rule 0 hand 21 missing 8 OPEN 0 defect 0 contra 0 | identical 19 corrected 0 unified 0 otherwise 29 | classes 35 OPEN 0 defect 0
+ocaml rootquick same 19 classes shared 0 rule 0 hand 3 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 0 unified 0 otherwise 19 | classes 32 OPEN 0 defect 0
+ocaml reference same 14073 classes shared 63 rule 0 hand 73 missing 35 OPEN 0 defect 0 contra 1 | identical 151 corrected 0 unified 0 otherwise 163 | classes 17 OPEN 0 defect 0
+ocaml PASS hand records: 257, 157 quote text (426 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 7, recorded by hand 4, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 16, pinned prose 13 (the reviewer audits each)
+lua tutorial same 59 classes shared 22 rule 0 hand 18 missing 5 OPEN 0 defect 0 contra 0 | identical 3 corrected 15 unified 0 otherwise 30 | classes 26 OPEN 0 defect 0
+lua rootquick same 19 classes shared 0 rule 0 hand 3 missing 0 OPEN 0 defect 0 contra 0 | identical 0 corrected 2 unified 0 otherwise 17 | classes 27 OPEN 0 defect 0
+lua reference same 15053 classes shared 56 rule 0 hand 66 missing 24 OPEN 0 defect 0 contra 2 | identical 151 corrected 0 unified 0 otherwise 162 | classes 24 OPEN 0 defect 0
+lua PASS hand records: 251, 130 quote text (307 quotations); STALE 0 | facts (language and convention, against the OLD page): attested 4, recorded by hand 3, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 21, pinned prose 15 (the reviewer audits each)

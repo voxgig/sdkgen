@@ -1,0 +1,8 @@
+- 15:44 step 1 workspace made (clone 0065f1e2). Start: reading table.
+- 16:05 step 2 reading done (briefs, guide, table, runtime, old components). Table rows read: all correct for page facts; missing rows: public fields Mode/Features on client (undocumented). Decisions: C# declaration-style signatures with full types (guard compares types); record 'Data()' (as OLD prose); casts in printers: (IEntity) at bind for one/created, (List<object?>) for many, ((IEntity)x!) for an item; prints 'record'; arity 1; deleted '{var}.Deleted()' (bound IEntity).
+- in progress: step 3 Naming_csharp.ts + Syntax_csharp.ts + forms.
+- 16:35 provider+hook+forms written, old components deleted, build exit 0, guard 4/4 csharp, guard+reader 81/81. Forms fix: param reader named every defaulted param after its default (ctrl = null -> 'null'). Next: SCRATCH run.
+- 16:55 commit 445b2b23 (provider, hook, forms, deletions). SCRATCH run 1 saved scratch-run1.txt. Found: root quick start declares the list item and the loaded entity with the same name in one block (CS0136) in 5 variations: interface gap, record defect. Now classifying.
+- 17:40 classification recorded (hand/csharp.json: 204 classes + contradiction + 25 absent + 2 facts); reviewed run fails only on the 3 rootquick defect classes. Next: golden, suite, final runs, commits.
+- 18:20 suite 2630 pass 0 fail; golden committed; fresh build done. Next: final REGEN run, SCRATCH run, tools commit.
+- 18:40 final: reviewed exit 1 on 3 rootquick defect classes only; SCRATCH numbers in work/scratch-final.txt; tools commit 9d60029; sdkgen commits 445b2b23 + golden. Done; report.

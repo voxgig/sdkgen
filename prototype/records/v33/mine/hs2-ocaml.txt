@@ -1,0 +1,2 @@
+STALE fact [ref.noun]: quotes "### Instance functions", on no OLD or NEW page of ocaml and nowhere in the clone
+hand records ocaml: 247, 150 quote text (409 quotations), STALE 1

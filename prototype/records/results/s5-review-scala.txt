@@ -1,0 +1,687 @@
+lang: scala
+verdict: accept-with-fixes
+summary: |
+  The port is honest, and its numbers reproduce exactly. In my copy (P/reviews/scala/ws, sdkgen c5b9ce45, tools 642d9ad):
+  - Build: exit 0, tree clean.
+  - Guard: `^scala:` 4/4; guard and reader together 81/81; reader 22/22.
+  - The one command, reviewed (REGEN=1): byte-identical output to the porter's stored out/new, and the same screen. It ends FAIL, exit 1, only on the 3 callcheck MEMBER findings: `results.forEach(...)` on a cast `java.util.List`. That is a false positive of tools/callcheck.js:131/139, as the porter says.
+  - SCRATCH: ledger OPEN 26/4/93, blocks OPEN 28/26/14, 2 unattested, 30 absent. All equal to the porter's.
+  - Suite without the toolchain lanes: 2635 tests, 2630 pass, 0 fail, 5 skipped (erl, elixir and dotnet absent).
+  - Golden: 2/2.
+  - Line counts and the sharewords prose shares reproduce exactly.
+  - No other language's page changed: 364 per-language READMEs, every REFERENCE, and 21 root READMEs outside the Scala sections.
+  
+  Read:
+  - Every derived fact I spot-checked (more than 5), every cited and pinned fact, and every optional fact of 2.1 holds against the runtime. Collection, copies, utility copy, testMock, the cancel absence, streamSignal and runs are true. accessor.cached, field and deleted are rightly not declared.
+  - The four variations (B, crud-basic, ref-issues, crud-bare) are true and in places better than OLD: the no-test mock sentence is now true, plus the server and Basic-secret sentences and the auxiliary constructor.
+  
+  One real defect, in scala's own provider. Syntax_scala.ts:189 prints `result.get("ok") == true`, as "branch on `result.get("ok") == true`", in 19 REFERENCEs. That compares an Object with a primitive Boolean, which Scala 3's multiversal equality rejects: Boolean has a reflexive CanEqual instance, and Object is not a subtype of Boolean. Scala 3.7.3 is the target (Package_scala.ts:14). Read, not compiled. The corroboration:
+  - The scala runtime makes 25 Boolean comparisons, all against the boxed java.lang.Boolean.TRUE/FALSE, and 0 against a primitive.
+  - Scala's own README how-to (ReadmeHowto_scala.ts:78) writes `java.lang.Boolean.TRUE == result.get("ok")`.
+  - OLD printed only `result.get("ok")`.
+  
+  The okFalse='false' decision rests on the same false premise.
+  
+  Attacks: 31 run. The guard or a mechanical tool caught 17. Of the other 14, nine show up only in outcomes a porter can decide by hand (OPEN classes, ABSENT/DROPPED reasons, UNATTESTED records). Five are serious: four were seen only by hand-decidable classes, and one was not seen at all:
+  - The accessor called on the class, `DemoSDK.planet(null)`: guard silent, callcheck silent.
+  - `deleted` declared, a member the bound SdkEntity lacks: guard silent.
+  - testMock 'always' pinned in both forms and provider: the false sentence counted as "same" as OLD.
+  - The utility copy removed from both provider and forms: nothing caught it at all.
+  - The truth read changed: guard silent.
+  
+  No scala compiler of any kind is here. None of the 31 distinct changed blocks was compiled, and the root quick start was not run from the repository root, OLD or NEW. I read all 31 blocks as a compiler would. Two carry `"radius", 1.0` into a `Map.of` passed as `Map[String, Object]`. I believe Scala 3 rejects that, and OLD prints the same.
+required_fixes:
+  - [0]
+    file: ts/project/.sdk/src/cmp/scala/Syntax_scala.ts (line 189, ref.read)
+    change: With truth set, print `java.lang.Boolean.TRUE == ${value}.get("key")`, or `${value}.get("key") == java.lang.Boolean.TRUE`, instead of `${value}.get("key") == true`.
+    why: `result.get("ok")` is an Object. Under Scala 3.7.3 multiversal equality (non-strict), comparing Object with a primitive Boolean is legal only if the types are the same, one is a subtype of the other, or neither has a reflexive CanEqual instance; Boolean has one. So the branch the REFERENCE tells the reader to write does not compile. Read, not run: no compiler here. Corroboration: the scala runtime compares only with the boxed constants (25 sites, e.g. SdkClient.scala:35, EntityBase.fragment.scala:211), and scala's own README how-to (ReadmeHowto_scala.ts:78) writes `java.lang.Boolean.TRUE == result.get("ok")`. The sentence prints in 19 REFERENCEs, and OLD had no comparison there.
+    shared: False
+  - [1]
+    file: ts/project/.sdk/src/cmp/scala/Syntax_scala.ts (refFacts.direct.okFalse) and ts/test/runtimeforms/scala.ts:107 (its citation)
+    change: Re-decide okFalse as what a Scala reader compares with: `java.lang.Boolean.FALSE`, the token SdkClient.scala:175 writes. Pin that value in the citation and drop the `unquoted` excuse. Otherwise re-justify 'false' on grounds that do not need `== false` on an Object to compile.
+    why: The guide defines okFalse as the literal 'as a reader compares with it'. The porter kept 'false' on the stated premise that Scala's == compares the boxed Boolean with the literal false; Scala 3 rejects that comparison for an Object operand. The excuse's text 'the boxed false a Scala map of Any holds' is also inaccurate: the map is JMap[String, Object].
+    shared: False
+  - [2]
+    file: tools/hand/scala.json (5cae18f518, and the record at line 649 that reasons 'the truth read of a boxed Boolean, == true')
+    change: Re-record both after the read fix: they quote and endorse `result.get("ok") == true`.
+    why: After the fix they go STALE. The second one's reason is the false premise above.
+    shared: False
+  - [3]
+    file: tools/callcheck.js:131 (the `known` receiver set) and :139 (MEMBER)
+    change: Do not treat a variable bound through a cast to a standard collection (`.asInstanceOf[java.util.List[...]]`, `(List<...>)`, `as List<...>`) as a runtime receiver. Alternatively, keep a per-language list of standard-library members (forEach).
+    why: It is the only thing failing the port's one command: 3 MEMBER findings on `results.forEach(item => println(item.data()))`, a form OLD printed byte for byte. No hand record can accept a callcheck finding, so without this fix the port can pass only by changing correct printed code. The same binding heuristic also hides real errors: when the call is not bound from `client` (attack A21), callcheck checks nothing at all.
+    shared: True
+  - [4]
+    file: ts/test/runtimeforms/account.ts:244 (NOT_RUNTIME)
+    change: Add `sdktest` to the test-tree alternation.
+    why: tm/scala/sdktest/ is the generated SDK's test tree. The porter's quoted except region (forms :102-103) is a legitimate, openly reasoned workaround. Additive.
+    shared: True
+  - [5]
+    file: ts/test/runtimeforms guard (calls/guard: accessor receiver)
+    change: Check the receiver of the accessor call (and each operation's receiver) by name as well as by separator: an instance member written on the client's type or class name must fail.
+    why: Attack A21 printed `DemoSDK.planet(null)...` everywhere. `planet` is an instance method of DemoSDK, not on its companion, so this does not compile. The guard passed, because scala's `.` serves both instance and type, and callcheck reported 0 because it checks RECEIVER only when the receiver is literally `client`. Only hand-decidable block classes opened. java and kotlin share the separator problem.
+    shared: True
+  - [6]
+    file: ts/test/runtimeforms guard (ref.facts.deleted derivation)
+    change: Derive `deleted` against the type the examples bind (here SdkEntity, core/Contracts.scala:16-27), not against any entity class in the runtime.
+    why: Attack A17 declared `deleted: '{var}.deleted()'`. The guard passed because EntityBase declares deleted() (EntityBase.fragment.scala:72), yet the page then says `result.deleted()` on a result cast to SdkEntity, which lacks it. Only an echo class and a novel-token class opened, both hand-decidable.
+    shared: True
+  - [7]
+    file: tools (shared-sentence matching for optional facts)
+    change: When an optional fact (copy on a getter, streamSignal, arity, deleted, cached) is undeclared and the OLD page said the declared-form sentence, flag the NEW unit instead of matching it against a reference that prints the other form.
+    why: Attack A13b removed the utility `copy` fact together with its citation. The page then says 'Return the SDK utility object.' (false: getUtility returns a new Utility, Utility.scala:54-55). It matched ts's shared sentence and was accepted, with ledger OPEN 0 and blocks OPEN 0. The porter's now-unused absent reason was not flagged either. Nothing failed beyond the baseline MEMBER findings.
+    shared: True
+  - [8]
+    file: ts/project/.sdk/src/cmp/scala/utility_scala.ts (scalaLit, lines 123-132)
+    change: Where a literal goes into a map of Object, box it (`java.lang.Double.valueOf(1.0)`, `java.lang.Long.valueOf(1L)`, `java.lang.Boolean.TRUE`). The other option is a separate Object-context form of the table, kept in this one file as generate.test.ts:6321 requires.
+    why: Pre-existing, not a regression: OLD prints the same in 4 READMEs. Two of the 31 distinct changed blocks pass `"radius", 1.0` inside `java.util.Map.of(...)` as a `java.util.Map[String, Object]`. I believe Scala 3 rejects that: Double is not an Object, and no implicit view to Object is sought. Compiled scala code never writes it: 30 explicit `X.valueOf` boxings, 0 bare literals in Object maps. Required before H4 can be claimed for scala.
+    shared: False
+not_caught:
+  - [0]
+    attack: A13b: `copy` removed from the utility getter in both Syntax_scala.ts and its citation in runtimeforms/scala.ts
+    consequence: Nothing failed beyond the baseline MEMBER x3: guard 4/4, ledger OPEN 0, blocks OPEN 0. The page silently drops a true fact ('Return the SDK utility object.'); the unit matched ts's shared sentence.
+  - [1]
+    attack: A21: accessor printed on the class, `DemoSDK.planet(null).list(null, null)` (does not compile)
+    consequence: Guard passed. callcheck went from 3 findings to 0: no RECEIVER check because the receiver is not `client`, and the false-positive MEMBER findings vanished with the `client` binding. Only hand-decidable blocks OPEN 9/11/10 and ledger OPEN 1 remained.
+  - [2]
+    attack: A17: `deleted: '{var}.deleted()'` declared, on a bound type SdkEntity that lacks it
+    consequence: Guard passed (EntityBase has deleted()). The sentence '`result.deleted()` reads the mark.' matched as shared. Only an echo class and a novel-token class opened (reference OPEN 2), both decidable by hand.
+  - [3]
+    attack: A5: testMock 'always' pinned identically in provider and forms (false for scala: Config_scala.ts:166 falls back to BaseFeature; Fetcher.scala:205-207 refuses)
+    consequence: Guard passed. The false no-test sentence counted as 'same' (OLD said the same false thing), and the recorded contradiction vanished. Only ABSENT-no-reason x2 and reference OPEN 1 remained, decidable by hand.
+  - [4]
+    attack: A15: facts.arity removed (the runtime's list requires 2)
+    consequence: Guard passed: an absent optional derived fact is not checked against the runtime. Only tutorial OPEN 3 and one ABSENT-no-reason remained, decidable by hand.
+  - [5]
+    attack: A25: the truth read changed to `== "yes"`
+    consequence: Guard passed; nothing reads the truth form. Reference OPEN 2, plus a STALE hand record by luck (the porter's reason quoted the old form).
+  - [6]
+    attack: A24b: an example's cast changed to a type the runtime lacks (`asInstanceOf[SdkEnty]`)
+    consequence: Only blocks OPEN 2, decidable by hand. callcheck reads no casts, as the guide states.
+  - [7]
+    attack: The port's own `result.get("ok") == true` (Object vs primitive Boolean)
+    consequence: Nothing mechanical reads whether a truth read compiles. It passed every check and was endorsed in two hand records.
+attacks:
+  - [0]
+    by: guard
+    caught: True
+    change: A1 facts.arity 2 -> 1: "facts.arity is 1; the runtime's list requires 2 of its 2 parameters"
+  - [1]
+    by: guard
+    caught: True
+    change: A2 op.load ctrl typed String: "op load: parameter ctrl is JMap[String, Object] in the runtime, String declared"
+  - [2]
+    by: guard
+    caught: True
+    change: A3 collection `LinkedList`: "cite facts.collection: the quote does not contain LinkedList"
+  - [3]
+    by: guard
+    caught: True
+    change: A4 client[1].copy false in provider only: "the fact is false; the citation pins true"
+  - [4]
+    by: nothing beyond hand-decidable ABSENT x2 + OPEN 1
+    caught: False
+    change: A5 testMock 'always' pinned in both forms and provider
+  - [5]
+    by: guard
+    caught: True
+    change: A6 cancel true: "the fact is true; the absence shows false"
+  - [6]
+    by: guard
+    caught: True
+    change: A6b sdktest except region removed: "no longer holds: tm/scala/sdktest/SdkTestSupport.scala:29 has aborts"
+  - [7]
+    by: tools (UNATTESTED, OLD comparison)
+    caught: True
+    change: A7 maps 'arrays': "UNATTESTED ref.maps = arrays ... OLD says otherwise in 1" + ledger OPEN 1
+  - [8]
+    by: tools (UNATTESTED vs hand record)
+    caught: True
+    change: A8 noun 'Functions': UNATTESTED (hand decided Methods) + ledger OPEN 7
+  - [9]
+    by: guard
+    caught: True
+    change: A9 none 'nil': "the quote does not contain nil"
+  - [10]
+    by: tools (minimal pair)
+    caught: True
+    change: A10a prints 'fields': UNATTESTED + blocks OPEN 4/12/4
+  - [11]
+    by: tools (minimal pair)
+    caught: True
+    change: A10b keys 'bare': UNATTESTED + ABSENT-no-reason + ledger OPEN 11
+  - [12]
+    by: guard
+    caught: True
+    change: A11 streamSignal removed: "cite ref.facts.streamSignal: the provider declares no such fact"
+  - [13]
+    by: guard
+    caught: True
+    change: A12 streamSignal false: "the fact is false; the citation pins true"
+  - [14]
+    by: guard
+    caught: True
+    change: A13 utility copy removed (forms still cite): "provider declares no such fact"
+  - [15]
+    by: nothing
+    caught: False
+    change: A13b utility copy removed from provider AND forms
+  - [16]
+    by: guard
+    caught: True
+    change: A14 match copy removed (forms still cite): "provider declares no such fact"
+  - [17]
+    by: tools only, hand-decidable (tutorial OPEN 3, ABSENT 1)
+    caught: False
+    change: A15 arity removed; guard passed
+  - [18]
+    by: guard
+    caught: True
+    change: A16 accessor.cached true added: "cite the runtime file and a quote that shows true"
+  - [19]
+    by: hand-decidable echo/novel-token classes only
+    caught: False
+    change: A17 deleted '{var}.deleted()' added; guard passed
+  - [20]
+    by: guard
+    caught: True
+    change: A18 name as field `name: String`: "entity name: name is not defined by the runtime's entity"
+  - [21]
+    by: guard
+    caught: True
+    change: A19 test sig on an instance: "the signature writes testSDK on client ...; the runtime declares it on the type"
+  - [22]
+    by: guard
+    caught: True
+    change: A20 call printer passes one argument: "op load: load takes 2 argument(s) in the runtime; ... passes 1" (every op)
+  - [23]
+    by: hand-decidable block classes only; guard and callcheck silent
+    caught: False
+    change: A21 accessor called on the class DemoSDK.planet(null)
+  - [24]
+    by: tools (DROPPED, hand-decidable)
+    caught: True
+    change: A22a direct 'A failure is reported ...' sentence removed from B's REFERENCE: "DROPPED, NO REASON ... from 1 variation(s) (B)" + OPEN 1
+  - [25]
+    by: tools (ABSENT, hand-decidable)
+    caught: True
+    change: A22b same sentence removed from all 19 REFERENCEs: "ABSENT, NO REASON ... in 19 variation(s)"
+  - [26]
+    by: guard + purity
+    caught: True
+    change: A23 notes.top 'The planet record has 3 fields.': guard "notes.top: cite the runtime file"; purity "note states a number", "note names entity Planet"
+  - [27]
+    by: callcheck
+    caught: True
+    change: A24a B tutorial `load(null, null)` -> `load(null)`: "ARITY B tutorial: load passes 1 argument(s); the runtime declares 2"
+  - [28]
+    by: blocks OPEN 2 only (hand-decidable)
+    caught: False
+    change: A24b B tutorial cast to SdkEnty
+  - [29]
+    by: reference OPEN 2 + STALE by luck; guard silent
+    caught: False
+    change: A25 truth read `== "yes"`
+  - [30]
+    by: guard (negative controls test)
+    caught: True
+    change: the guard's own negative controls for scala ran and passed in every run
+  - [31]
+    by: nothing
+    caught: False
+    change: the port as delivered: `result.get("ok") == true`, Object vs primitive Boolean, in 19 REFERENCEs
+facts_audit:
+  - [0]
+    fact: facts.method.* list/load/create/update/patch/remove
+    account: derived
+    verdict: true
+    evidence: src/cmp/scala/fragment/Entity{List,Load,Create,...}Op.fragment.scala `override def <op>(reqmatch|reqdata: JMap[String, Object], ctrl: JMap[String, Object]): Object`; also core/Contracts.scala:17-22
+  - [1]
+    fact: facts.async false; facts.result throw
+    account: derived
+    verdict: true
+    evidence: ops return Object synchronously; runOp catches NonFatal into unexpected -> makeError, which throws (EntityBase.fragment.scala:125-144); Context.scala:162 makeError returns new SdkError (extends RuntimeException, SdkError.scala:8), so the examples' `case err: RuntimeException` catches it
+  - [2]
+    fact: facts.collection `ArrayList`
+    account: cited
+    verdict: true, and the quote shows the value
+    evidence: tm/scala/utility/Make.scala:642 `result.resdata = new ArrayList[Object]()`, :647 `val entities = new ArrayList[Object]()`, :655 `result.resdata = entities`; list returns Done.done -> ctx.result.resdata (Misc.scala:378) because runOp returns `out` for list (EntityBase.fragment.scala:120-124)
+  - [3]
+    fact: facts.record {var}.data(); facts.arity 2
+    account: derived
+    verdict: true
+    evidence: core/Contracts.scala:9 data(args: Object*) on Entity; EntityListOp.fragment.scala:11 two required parameters
+  - [4]
+    fact: facts.prints record; ref.entityBy Name; ref.keys member
+    account: convention, attested by minimal pair
+    verdict: attestation holds (OLD reads as record in 114, Name in 188, member in 152)
+    evidence: tools/review/scala/facts.txt; `options["apikey"]` is OLD's convention, not Scala syntax (a java.util.Map is not indexed with [])
+  - [5]
+    fact: facts.named call; ref.noun Methods
+    account: convention, recorded by hand
+    verdict: right
+    evidence: OLD names `load()`; with arity 2 named=call is what prints `list(null, null)`; the client's members are methods of DemoSDK and SdkClient
+  - [6]
+    fact: ref.none null
+    account: cited
+    verdict: true; the quote does mean none (null for no options)
+    evidence: Main.fragment.scala:20 `def testSDK(): ProjectNameSDK = testSDK(null, null)`
+  - [7]
+    fact: ref.maps maps; ref.valueType.OBJECT Map
+    account: language / convention, attested
+    verdict: true
+    evidence: OLD option tables
+  - [8]
+    fact: ref.container java.util.Map[String, Object]
+    account: cited
+    verdict: true
+    evidence: MainEntity_scala.ts:31 `def ${accessor}(entopts: java.util.Map[String, Object]): SdkEntity`; Main.fragment.scala:3,8 JMap alias
+  - [9]
+    fact: ref.ctor / ctorAlts[0] `new {ctor}()` kind defaults
+    account: derived / cited, pinned
+    verdict: true
+    evidence: Main.fragment.scala:8,10 `def this() = this(null)`; SdkClient(null) -> makeOptions merges config defaults (Make.scala:390-397); 'uses the defaults' is true
+  - [10]
+    fact: ref.test[0], test[1] on the type
+    account: derived
+    verdict: true
+    evidence: Main.fragment.scala:16-26 companion object; SdkClient.testOptions (SdkClient.scala:329-340): testopts with active=true replaces feature.test in a clone of sdkopts; both may be null
+  - [11]
+    fact: ref.testMock generated
+    account: cited, pinned prose
+    verdict: true
+    evidence: Config_scala.ts:166 `case _ => new ${scalapackage}.feature.BaseFeature()`; Fetcher.scala:205-207 throws fetch_mode_block when mode is not live; testSDK sets mode test (Main.fragment.scala:24)
+  - [12]
+    fact: ref.accessor sig/arg/param entopts
+    account: derived
+    verdict: true
+    evidence: MainEntity_scala.ts:31-32; also generated core/DemoSDK.scala:18-66
+  - [13]
+    fact: ref.client[0] optionsMap copy true
+    account: cited, pinned
+    verdict: true: the quote shows the copy
+    evidence: SdkClient.scala:83 Struct.clone; Struct.java:604-610 clone of a Map allocates a new LinkedHashMap (deep for maps and lists, objects by reference)
+  - [14]
+    fact: ref.client[1] getUtility kind utility, copy true
+    account: cited, pinned
+    verdict: true
+    evidence: SdkClient.scala:88 `this.utility.copy()`; Utility.scala:54-55 `val u = new Utility(true)`, fields copied at :56+
+  - [15]
+    fact: ref.client[2,3] direct/prepare (fetchargs) returns java.util.Map[String, Object]
+    account: derived (renames fetchargs0)
+    verdict: true
+    evidence: SdkClient.scala:92,160
+  - [16]
+    fact: ref.entity data/matchArgs copy true
+    account: cited, pinned
+    verdict: true
+    evidence: EntityBase.fragment.scala:49 Struct.clone(this.dataState), :59 Struct.clone(this.matchState)
+  - [17]
+    fact: ref.entity make(): Entity; getName(): String
+    account: derived
+    verdict: true
+    evidence: Entity.fragment.scala:10-13; EntityBase.fragment.scala:39
+  - [18]
+    fact: ref.entity stream streamSync runs call
+    account: derived from forms' stream quotes
+    verdict: true
+    evidence: EntityBase.fragment.scala:192 runOp before :218 `new Iterator[Object]`; returns Iterator[Object] (:163)
+  - [19]
+    fact: ref.streamSignal true
+    account: cited
+    verdict: true (only a Function0 counts)
+    evidence: EntityBase.fragment.scala:166 opts.get("signal"), :210-213 aborted, :224 hasNext ends
+  - [20]
+    fact: ref.direct.returns java.util.Map[String, Object]
+    account: derived
+    verdict: true
+    evidence: SdkClient.scala:160; ok/status/headers/data at :307-311; err only for an unreadable body (:311) or a request that cannot be made (:261,268,272-273,314-315), opDenied (:174-179)
+  - [21]
+    fact: ref.direct.okFalse 'false'
+    account: cited with `unquoted` excuse
+    verdict: unsupported as decided: the runtime writes java.lang.Boolean.FALSE (SdkClient.scala:175), and a Scala 3 reader cannot compare an Object with `false`; the excuse also misdescribes the map ('of Any': it is JMap[String, Object])
+    evidence: Scala 3 multiversal equality (Boolean has a reflexive CanEqual; Object is not a subtype of Boolean); runtime compares only with boxed constants (25 sites); ReadmeHowto_scala.ts:78
+  - [22]
+    fact: ref.read(truth) printer: `x.get("ok") == true`
+    account: printer (no account)
+    verdict: false as code: believed not to compile under Scala 3.7.3; read, not run
+    evidence: Syntax_scala.ts:189; printed in 19 REFERENCEs via ReadmeRef.ts:227
+  - [23]
+    fact: ref.prepare.fails style
+    account: cited, pinned
+    verdict: true
+    evidence: SdkClient.scala:113 `throw ctx.makeError(...)`; Context.scala:162 returns a new SdkError, so prepare always throws
+  - [24]
+    fact: ref.body.values / once
+    account: cited, pinned
+    verdict: true (prints in no variation: no raw-body operation)
+    evidence: Media.scala:55 requestBody, :86-92 rawBody reads an InputStream once; Fetcher.scala:69-71 String, Array[Byte], InputStream
+  - [25]
+    fact: ref.cancel false
+    account: cited absence over 143 files
+    verdict: true; every excluded region's reason checked
+    evidence: no `.cancel`, interrupt or abort on any operation path (TimeoutFeature races a deadline with no cancel); regions: EntityBase.fragment.scala stream signal (fact streamSignal), CostFeature.scala comments (English words), sdktest/SdkTestSupport.scala:29 (test tree)
+  - [26]
+    fact: type words, column scala
+    account: derived from the generator column
+    verdict: true (java.lang.Double, String)
+    evidence: guard account: types column scala, uncompared none
+  - [27]
+    fact: layout.module voxgig.demosdk.core, client/ctor DemoSDK, names.entity SdkEntity
+    account: naming hook
+    verdict: true
+    evidence: generated work/gen/scala/core/DemoSDK.scala:1,8; core/Contracts.scala:16
+optional_facts:
+  - [0]
+    fact: ref.facts.accessor.cached
+    runtime_shows: a new entity on every call
+    file_line: src/cmp/scala/MainEntity_scala.ts:31-32
+    port_declared: no
+    right: yes, correctly left out
+  - [1]
+    fact: ref.facts.streamSignal
+    runtime_shows: reads callopts.signal (a Function0) and ends the iterator when it reports TRUE
+    file_line: src/cmp/scala/fragment/EntityBase.fragment.scala:166,210-213,224
+    port_declared: true
+    right: yes
+  - [2]
+    fact: copy on match getter
+    runtime_shows: Struct.clone(this.matchState): a new LinkedHashMap
+    file_line: EntityBase.fragment.scala:59; tm/scala/utility/struct/Struct.java:604-610
+    port_declared: true
+    right: yes
+  - [3]
+    fact: copy on utility getter
+    runtime_shows: this.utility.copy() allocates new Utility(true) and copies the function fields
+    file_line: tm/scala/core/SdkClient.scala:88; tm/scala/core/Utility.scala:54-55
+    port_declared: true
+    right: yes
+  - [4]
+    fact: ref.facts.memberNamed
+    runtime_shows: calls take parentheses
+    file_line: -
+    port_declared: default (call)
+    right: yes
+  - [5]
+    fact: field: true on a member
+    runtime_shows: name is a protected var behind getName(); no documented member is a field (mode, features are undocumented vars)
+    file_line: EntityBase.fragment.scala:13,39; SdkClient.scala:12-13
+    port_declared: no
+    right: yes
+  - [6]
+    fact: ref.facts.deleted
+    runtime_shows: deleted() on EntityBase only; SdkEntity, the type every example binds, lacks it
+    file_line: EntityBase.fragment.scala:72; tm/scala/core/Contracts.scala:16-27
+    port_declared: no (absent reason recorded)
+    right: yes; and declaring it would pass the guard wrongly (attack A17)
+  - [7]
+    fact: facts.arity
+    runtime_shows: list requires 2 of 2 parameters
+    file_line: EntityListOp.fragment.scala:11
+    port_declared: 2
+    right: yes
+  - [8]
+    fact: layout.dir / imports place
+    runtime_shows: a package-addressed import (`import voxgig.demosdk.core.DemoSDK`); the place does not change it
+    file_line: generated core/DemoSDK.scala:1
+    port_declared: no
+    right: yes (not run from the root: no toolchain)
+  - [9]
+    fact: notes.top
+    runtime_shows: nothing scala-only after the root quick start
+    file_line: -
+    port_declared: no
+    right: yes
+pages:
+  - [0]
+    variation: B
+    section: tutorial
+    kind: better
+    finding: True throughout. NEW adds the server sentence (S49): `tenant` required, `region` defaults to `eu` (Make.scala:425-455 plus the config merge at :390-397). It also fixes OLD's step numbering (OLD jumped from `### 1.` to `### 3.`).
+  - [1]
+    variation: B
+    section: reference
+    kind: false
+    finding: direct Returns: 'so branch on `result.get("ok") == true`'. The code span does not compile in Scala 3 (Object vs Boolean); the same SDK's README how-to writes `java.lang.Boolean.TRUE == result.get("ok")`. The rest of the page is true: auxiliary constructor, no-argument testSDK, testSDK(testopts, sdkopts) semantics, copies, the stream's runs and signal, the `ArrayList` collection, prepare throws, and remove marks the entity.
+  - [2]
+    variation: B
+    section: rootquick
+    kind: ok
+    finding: True. Package import, so not runnable from the repository root without a build: not run (no toolchain).
+  - [3]
+    variation: crud-basic (auth variation)
+    section: tutorial
+    kind: ok
+    finding: True. The Basic `secret` option is real (PrepareAuth_scala.ts:97 OPTION_SECRET). The writes take the id off the created entity. The dropped '(as `Object`)' is said again in the same README's Result shape, so that drop is sound. Doubtful (as OLD): `"radius", 1.0` in a Map.of passed as Map[String, Object].
+  - [4]
+    variation: crud-basic
+    section: rootquick
+    kind: ok
+    finding: True. The lambda parameter `planet` followed by a later `val planet` is shadowing, not a forward reference; it compiles.
+  - [5]
+    variation: ref-issues
+    section: tutorial
+    kind: ok
+    finding: True: 'Update a gauge', id-less update. The `SdkEntity` import is unused in this block (OLD the same); at most a warning.
+  - [6]
+    variation: ref-issues
+    section: reference
+    kind: ok
+    finding: True. `Map.of(` holding only a comment `)` is a zero-argument Map.of and compiles against Map[String, Object]. The vendor text with `|` is escaped. The Actions Call cell is correct. Same `== true` sentence as B.
+  - [7]
+    variation: ref-issues
+    section: rootquick
+    kind: ok
+    finding: The client only: every language stops there in this variation (a shared decision, not scala's).
+  - [8]
+    variation: crud-bare (where scala differs most: the no-option path prints the auxiliary constructor `new DemoSDK()`, which the porter added to the forms; plus casts, Map.of and forEach in every write)
+    section: tutorial, rootquick, reference
+    kind: ok
+    finding: True. `new DemoSDK()` exists (Main.fragment.scala:10). The write block is the same as crud-basic's, with the same `1.0` doubt as OLD.
+  - [9]
+    variation: no-test (read for testMock)
+    section: reference
+    kind: better
+    finding: True and corrected: 'This SDK is generated without the `test` feature, so the client has no mock transport and refuses every request.' OLD falsely promised mock features.
+  - [10]
+    variation: all
+    section: README (unported) vs REFERENCE
+    kind: contradiction (recorded)
+    finding: bff341cf32 is correct: the README test-client line promises a mock; the REFERENCE is the true side. The README direct how-to and the REFERENCE now also disagree on how to test `ok` (boxed TRUE vs `== true`). The REFERENCE side is the wrong one.
+doubtful_lines:
+  - [0]
+    line: ... so branch on `result.get("ok") == true`.
+    where: REFERENCE direct Returns, 19 variations (printed by Syntax_scala.ts:189 via ReadmeRef.ts:227)
+    why: Comparing Object with primitive Boolean is illegal under Scala 3's default multiversal equality: the types are not the same, neither is a subtype of the other, and Boolean has a reflexive CanEqual instance. Expected error: 'Values of types Object and Boolean cannot be compared with == or !='. Read, not compiled.
+    runtime_line: tm/scala/core/SdkClient.scala:175 `out.put("ok", java.lang.Boolean.FALSE)`, :307 java.lang.Boolean.valueOf(...); every runtime comparison uses the boxed constant, e.g. SdkClient.scala:35; scala's own ReadmeHowto_scala.ts:78 `if (java.lang.Boolean.TRUE == result.get("ok"))`; Package_scala.ts:14 `//> using scala "3.7.3"`
+  - [1]
+    line: client.planet(null).update(java.util.Map.of("id", created.data()...get("id"), "radius", 1.0, "title", "example_title"), null) (and the patch line)
+    where: tutorial crud-basic/crud-bare (one distinct block), doc-nested (one distinct block); OLD prints the same pattern in 4 READMEs
+    why: update(reqdata: JMap[String, Object], ...) fixes Map.of's V to Object (invariant java.util.Map); a Double literal is not an Object, and Scala does not search an implicit view to Object. Believed not to compile. Pre-existing (scalaLit), not a regression.
+    runtime_line: Contracts.scala:20 update(reqdata: JMap[String, Object], ...); compiled scala code boxes explicitly in 30 places (e.g. tm/scala/feature/TestFeature.scala:116 `java.lang.Integer.valueOf(status)`) and never puts a bare literal into an Object map
+  - [2]
+    line: top-level statements (`val client = ...`) in every tutorial and root block
+    where: all; OLD the same
+    why: Compiles only as a scala-cli script (.sc) or inside a method body; not as a .scala source at top level.
+    runtime_line: tm/scala/Makefile: `scala-cli compile .`
+  - [3]
+    line: val result = client.planet(null).load(...).asInstanceOf[SdkEntity]
+    where: REFERENCE operation examples
+    why: Standalone REFERENCE block with no SdkEntity import (by design; OLD's list example the same). Compiles only with `import voxgig.demosdk.core.SdkEntity` in scope.
+    runtime_line: core/Contracts.scala:16 trait SdkEntity in package SCALAPACKAGE.core
+gaps_judged:
+  - [0]
+    gap: callcheck treats a variable bound from a `client` line as a runtime receiver, so `forEach` on a cast java.util.List is a MEMBER finding
+    needed: True
+    breaking: False
+    why: Confirmed in tools/callcheck.js:131 (known set) and :139 (MEMBER). It fails OLD-identical correct output, and no hand record can accept it. The same heuristic is blind when the binding does not mention `client` (attack A21). A tools fix, not an interface change.
+  - [1]
+    gap: NOT_RUNTIME does not name scala's test tree tm/scala/sdktest/
+    needed: True
+    breaking: False
+    why: Confirmed at ts/test/runtimeforms/account.ts:244 (matches /test/, /tests/, /t/, /Tests/ only). The porter's quoted except region with a reason is the guide's sanctioned workaround and is correct. Additive.
+  - [2]
+    gap: Could the existing interface express `ok` truthiness correctly?
+    needed: False
+    breaking: False
+    why: Yes: `read(value, key, truth)` is scala's own printer and can print `java.lang.Boolean.TRUE == x.get("ok")`. The defect is the port's choice, not a missing interface.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: held for scala
+    evidence: Ran: purity 0 open, 2 accepted (the scalaLit import, which generate.test.ts requires; the generator's own -sdk suffix rule). Notes 0. Provider prose literals 132 words of 56,222 (0.2%); scala-only units 4.0% (sharewords, reproduced), almost all shared templates carrying scala's tokens. Read: the provider reads no model and changes no case; the hook calls generator functions only (scalaCorePackage, which Config/Schema now call, though 8 other generator sites still spell `${scalapackage}.core` inline; scalaVarName, used by MainEntity_scala). Shared changes forced: 0 breaking. Additive: 2 in tools/guard (callcheck receiver heuristic, NOT_RUNTIME sdktest), plus 3 guard/tools holes my attacks found (A13b, A17, A21). None is an interface change.
+  - [1]
+    id: H2
+    verdict: held for scala's three sections
+    evidence: Ran `git diff --numstat v33-frozen..HEAD`: 709 lines deleted (226 + 396 + 87); provider 196, hook 25, forms +42 −1, so 263 (2.70x); with 12 generator lines, 275 (2.58x). Non-blank, non-comment provider 154 lines, hook 15.
+  - [2]
+    id: H3
+    verdict: held for the catalogued issues met in these pages
+    evidence: Read: S13 (no-test mock sentence now true, cited by testMock), S49 (server variables, true per Make.scala:425-455), S50 (Basic secret, PrepareAuth_scala.ts:97), U45 step numbering (OLD jumped 1 to 3) all arrive through shared code with no scala-specific prose. Scala-only corrections (throws, parameter names `args`) are facts. One new false thing was introduced through the provider's printer (`== true`), not through shared prose.
+  - [3]
+    id: H4
+    verdict: not tested; read only
+    evidence: No scala, scala-cli, sbt, scalac or coursier, and no compiler jar on disk. 0 of 31 distinct changed blocks were compiled or run, and the root quick start was not run from the root. I read all 31 as a compiler would. Two blocks have a believed compile error that OLD shares (a Double into Map[String, Object]). One REFERENCE code span introduced by the port (`result.get("ok") == true`) is believed not to compile. The scala README example test (ReadmeExamplesTest_scala.ts) checks fences and brackets only; tools/before/run.sh has no scala entry. H4 is unverified for scala, and the approach itself is not shown at fault: both errors are printer and literal-table choices fixable in scala's own files.
+numbers:
+  - [0]
+    what: build exit / tree
+    mine: exit 0; git status empty (`npm run build` in sdkgen/ts)
+    porter: exit 0, clean
+  - [1]
+    what: guard ^scala:
+    mine: 4 pass 0 fail (`node --test --test-name-pattern '^scala: ' dist-test/runtimefacts.test.js`)
+    porter: 4/4
+  - [2]
+    what: reader
+    mine: 22/22 (`node --test dist-test/runtimereader.test.js`); guard + reader together 81/81
+    porter: 22/22
+  - [3]
+    what: guard account
+    mine: derived 49, cited 16, language 1, convention 6, excepted 0; column scala; uncompared none (SDKGEN_GUARD_REPORT=1)
+    porter: derived 49, cited 16, language 1, convention 6
+  - [4]
+    what: one command, reviewed, REGEN=1
+    mine: Identical screen. Ledger units same 59/19/14031; classes 48/4/160; shared 22/0/67; by hand 21/3/54; missing 5/1/38; OPEN 0; defect 0; contradictions 0/0/1. Blocks 19-1-0-28 c28, 0-2-0-17 c26, 234-0-0-80 c14, OPEN 0. Purity 0 open, 2 accepted. pagecheck 0. callcheck 3 MEMBER. STALE 0. Facts 0 unattested. Absent 30/30 explained. FAIL exit 1. 2m43s.
+    porter: same, FAIL exit 1 on callcheck MEMBER x3
+  - [5]
+    what: one command, SCRATCH=1
+    mine: ledger OPEN 26/4/93; blocks OPEN 28/26/14; UNATTESTED or NOT JUDGED 2 (named, ref.noun); ABSENT no reason 30; DROPPED 0; exit 1
+    porter: 26/4/93; 28/26/14; 2; 30; 0
+  - [6]
+    what: suite without toolchain lanes
+    mine: 2635 tests, 2630 pass, 0 fail, 5 skipped, exit 0, 4m54s (`node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)`)
+    porter: first run 2627 pass 3 fail; after the fix only generate.test.js 205/205 reported
+  - [7]
+    what: golden
+    mine: characterize.test.js 2/2
+    porter: passes
+  - [8]
+    what: lines
+    mine: deleted 709; provider 196, hook 25, forms +42 −1, utility +8, Config +2 −1, Schema +2 −1, golden +5 −6; 263 (2.70x), 275 (2.58x)
+    porter: same
+  - [9]
+    what: prose (sharewords)
+    mine: tutorial 1597 words, 77.2% shared; rootquick 238, 8.0%; reference 54387, 96.9%; all 56222, 4.0% scala only; provider literals 132 (0.2%)
+    porter: same
+  - [10]
+    what: distinct changed blocks
+    mine: 31 across 21 variations (17 in my four)
+    porter: 31
+  - [11]
+    what: other languages
+    mine: 0 changes (diff -rq -x scala -x README.md rc 0; 364 per-language READMEs cmp-equal; 21 root READMEs equal outside ### Scala)
+    porter: 0
+could_not_check:
+  - Compiling or running any scala block: scala, scala-cli, sbt, scalac and coursier are missing and no Scala compiler jar exists on disk. 31 distinct changed blocks were read, not compiled.
+  - The root quick start from the repository root of a generated SDK, OLD and NEW: no toolchain, and the import is package-addressed (it needs the SDK compiled on the classpath).
+  - Whether Scala 3.7.3 rejects `Object == true` and a Double literal into Map[String, Object]: concluded from the language rules and the runtime's consistent avoidance of both, not from a compiler run.
+  - Whether the lambda parameter type in `forEach(item => ...)` on java.util.List[SdkEntity] is inferred: believed yes (SAM conversion against Consumer[? >: T]), not run.
+  - No scala lane exists here: tools/before/run.sh has no scala entry, and generatedcompile.test.ts's scala lanes need scala-cli.
+  - Runtime behaviour of the examples (Map.of immutability): the operations only read reqdata and reqmatch (Context.scala:93-98; Misc.scala:417-445). The one write is stream's `ctx.reqdata.put("body$", ...)` (EntityBase.fragment.scala:187), which no printed example reaches. Read, not run.
+provider_code:
+  - [0]
+    file_line: ts/project/.sdk/src/cmp/scala/Syntax_scala.ts:189
+    finding: `read` with truth prints `== true` on an Object. This is the one defect; fix it in this file.
+  - [1]
+    file_line: ts/project/.sdk/src/cmp/scala/Syntax_scala.ts:101
+    finding: `held` drops a member whose value prints as `null`. This is a condition on printed content, but it is the shared rule for java and scala that generate.test.ts:6321-6350 requires (Map.of rejects null). Not the porter's invention.
+  - [2]
+    file_line: ts/project/.sdk/src/cmp/scala/Syntax_scala.ts:147
+    finding: Minor: the client printer names a Scala variable after an option key (`val server = ...`) without the hook's `ident`. Latent if a map-valued option key were ever a Scala reserved word; only `server` occurs today.
+  - [3]
+    file_line: ts/project/.sdk/src/cmp/scala/Naming_scala.ts:13 with utility_scala.ts:38-40
+    finding: The hook calls scalaCorePackage, which Config_scala and Schema_scala now call. The same rule is still spelled inline at EntityTypes_scala.ts:103, PrepareAuth_scala.ts:59/88/188/249, TestClean_scala.ts:59, TestDirect_scala.ts:121, TestEntity_scala.ts:90, and as `SCALAPACKAGE.core` in tm/scala. Not wrong, but the extraction is partial.
+  - [4]
+    file_line: git diff --stat v33-frozen..HEAD; git -C tools log --stat
+    finding: Only files the guide's section 4 allows were touched, and tools commits touch only scala's files. Commit bodies (`git log --format=%B v33-frozen..HEAD`) carry no trailer and name no tool.
+hand_records:
+  - [0]
+    id: 39a9cc2d2c
+    verdict: right (dropped)
+    why: '(as `Object`)' is still said on the same README page (Result shape: 'and `list` a list of entities, one per record, as `Object`'), and the cast in the block shows it.
+  - [1]
+    id: bff341cf32
+    verdict: right (contradiction)
+    why: The README test-client line promises a mock; Config_scala.ts:166 and Fetcher.scala:205-207 make the REFERENCE the true side.
+  - [2]
+    id: same-meaning x13 (360f66a3d2, 9c6d819441, afe39b8d17, 042a0a48ab, 48d12b9b75, ...)
+    verdict: right
+    why: Read against the README: these are echoes with no disagreement. The README direct how-to agrees that err is present only for a transport failure.
+  - [3]
+    id: facts.named=call, ref.noun=Methods
+    verdict: right
+    why: Explained above (arity 2 prints `list(null, null)`; members are methods).
+  - [4]
+    id: absent x30
+    verdict: right
+    why: Each reason checked: async forms, the cancel paragraph, tester/client/entopts getters (none declared), name as a field (scala has getName()), utility copy (scala copies), streamSync/runs call, entityBy Name sentences, deleted not on SdkEntity, the root-only lead sentence.
+  - [5]
+    id: 5cae18f518 and the record at hand/scala.json:649
+    verdict: wrong premise
+    why: They endorse `result.get("ok") == true` as the truth read of a boxed Boolean; Scala 3 rejects that comparison for an Object operand. Re-record after the provider fix.
+  - [6]
+    id: correction:scala-throws x3, scala-param-names x2
+    verdict: right
+    why: EntityBase.fragment.scala:136 `throw e`; data and matchArgs parameters are `args` (:41, :52).
+ran: |
+  In P/reviews/scala/ws (a copy of P/ports/scala), with PATH /opt/node24/bin first:
+  - `npm run build` (exit 0, 4.4 s, tree clean).
+  - The guard for scala; guard plus reader; the reader alone; SDKGEN_GUARD_REPORT=1 account.
+  - `REGEN=1 tools/portcheck.sh sdkgen out scala`: reviewed, then again after the attacks as the final baseline, identical both times.
+  - `SCRATCH=1 tools/portcheck.sh sdkgen out scala`.
+  - 31 attacks, one at a time, each rebuilt, guard-run and (where the guard passed) run through the full one command, then restored with `git checkout` and a snapshot of out/new: A1-A25 with variants a/b.
+  - The suite without toolchain lanes at --test-concurrency=2; characterize.test.js; tools/sharewords.js.
+  - `diff -rq` against P/base33/out/new and against the porter's stored out/new, and my own rootdiff.js.
+  - My distinct-block extractor over the four variations and over all 21.
+  - The toolchain `command -v` loop: node 24, php, javac/java/mvn/gradle, g++ and make present; scala, scala-cli, sbt, scalac, amm, coursier, kotlinc and dotnet missing.
+read: |
+  - briefs 1 and 3-7, PORTING.md v3.3.
+  - The provider, hook, forms, and the utility/Config/Schema diffs.
+  - The runtime: Main.fragment.scala, SdkClient.scala, EntityBase/Entity/Op fragments, Contracts.scala, Context.makeError, Make.scala (makeOptions, server variables, list result), Misc.scala Done, Struct.java clone, Utility.copy, Media.scala, Fetcher.scala, Config_scala.ts makeFeature, MainEntity_scala.ts, TimeoutFeature.
+  - The generated SDK (work/gen) for the imports.
+  - OLD and NEW tutorial, root quick start and REFERENCE for B, crud-basic, ref-issues and crud-bare, plus no-test and doc-nested.
+  - All 31 distinct changed blocks.
+  - Every dropped, contradiction and same-meaning hand record; the hand facts; all 30 absent reasons; the scala-specific corrections.
+  - callcheck.js:100-150, account.ts NOT_RUNTIME, handstale.js quotation rules, generate.test.ts:6300-6350, ReadmeRef.ts testText and the direct paragraph, media.ts bodyNoteText, ReadmeHowto_scala.ts:70-90, ReadmeExamplesTest_scala.ts, before/run.sh.
+examples: |
+  31 distinct changed blocks across 21 variations (17 in B, crud-basic, ref-issues and crud-bare), all read as a compiler, none compiled.
+  
+  Believed errors:
+  - Two blocks pass `"radius", 1.0` inside `java.util.Map.of` as a `Map[String, Object]` (tutorial crud-bare/crud-basic, tutorial doc-nested). This is shared with OLD and comes from the generator's scalaLit table.
+  - One REFERENCE prose code span the port introduced: `result.get("ok") == true` (19 variations).
+  
+  Everything else checks against the declarations: names, two arguments on every operation, casts to SdkEntity and java.util.List[SdkEntity], `new DemoSDK()` and `new DemoSDK(options)`, `DemoSDK.testSDK()` and `testSDK(null, null)` on the companion, `forEach` with a lambda, try/catch on RuntimeException (SdkError extends it), and `created.data().asInstanceOf[java.util.Map[String, Object]].get("id")`.
+  
+  Imports resolve in the generated SDK (core/DemoSDK.scala:1,8; core/Contracts.scala:16). Blocks compile only as scala-cli script statements, as in OLD.
+touched: Only P/reviews/scala/: ws (the copy, left at sdkgen c5b9ce45 and tools 642d9ad with a clean tree and a fresh clean regeneration), my/ (scripts rep.js, attack.sh, pagedrop.js, distinct4.js, rootdiff.js; logs; the new-snapshot) and PROGRESS.md. Nothing under P/ports/scala, P/base33 or /home/user was modified. No push, no publish, no install.
+interface: |
+  The interface held for scala. 0 breaking changes; the provider reads no model.
+  
+  The defect found (the truth read) is in scala's own printer and can be fixed inside the existing interface.
+  
+  Shared changes this port forces or exposes, all additive and in tools or guard, none in the provider interface:
+  - callcheck's receiver heuristic (required for the port to pass at all);
+  - NOT_RUNTIME naming sdktest/;
+  - a guard check of an instance member written on the class name (A21);
+  - `deleted` derived against the bound type (A17);
+  - matching that accepts an undeclared optional fact's variant against ts's sentence when OLD said the declared form (A13b).

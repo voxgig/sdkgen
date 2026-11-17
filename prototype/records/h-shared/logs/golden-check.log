@@ -1,0 +1,12 @@
+▶ characterize add output
+  ✔ matches the golden manifest (6426.256608ms)
+  ✔ the manifest is machine-independent (82.05154ms)
+✔ characterize add output (6509.424794ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6913.997186

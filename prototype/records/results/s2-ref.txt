@@ -1,0 +1,705 @@
+summary: I built the shared REFERENCE page (ts/src/cmp/ReadmeRef.ts) for ts, go, py and c, and then zig, in a copy of the v2 clone. Every heading and sentence is written once and conditioned on an extended SdkDescription. Each provider supplies one declared RefFacts table (signatures, a closed set of member kinds, null literal, key layout) plus three printers (type, key, instance). Operation examples and the feature snippet go through the existing example representation. ReadmeRef_ts/go/py/c/zig are deleted. Across 21 model variations (two new ones, ref-issues and no-test, expose the catalogued defects), every changed line in the five languages has a stated reason: 0 UNEXPLAINED. The 15 unported languages are byte-identical apart from two fixes I made in the already-shared ReadmeRefFeatures (the escaped-backtick leak and S09), and the README sections ported in v2 are unchanged (diff2: 0 unexplained, 0 outside). Lanes at HEAD: ts README 16/16, go README 12/12, py README with real pytest 12/12, c DOC 6/6 (6/6 again at the final HEAD). My first run failed ts 5/16 and py 3/12 for one reason, an action example that no test mode can run. I dropped that example: the table names the operation and the route, and the issue is not intrinsic to the approach. Suite without toolchain lanes: 2534 tests, 2528 pass, 0 fail, 6 skipped. I extended the runtime-facts guard so that every declared reference signature must exist in the runtime, and every stream/client/entopts/options/utility/make/name member the runtime defines must be declared; a negative control fails as it should. H2 holds for this page: five languages go from 2,196 to 967 lines (2.27x; 1.92x non-blank non-comment), and the projection to 20 is 4.86x with measured-size providers and 3.07x if they are twice that size. Both sections together project to 2.74x, or 2.03x if the remaining providers are 1.5x the measured size. Of the catalogued issues, 17 checks are fixed by shared code in all five languages (issuecheck.js). N11 (the js fence) and the perl `{id}` defect need the js and perl ports. Negatives: a few true language-specific facts were lost (zig's StreamResult `throw:false` clause, ts tester's Returns line, py's `# str` type comments in create examples, ts's update comment). clojure is not ported: its client has no type name for the shared h2. Neither zig nor clojure has a toolchain here.
+stopped_at: Finished in the brief's order of importance. Done: 1 and 2 for ts and go, then py and c (description, shared page, providers, retired components); 3 (provider facts, the extended guard and its negative control); 4 (mdCell/mdInline); 5 (ReadmeRef_ts/go/py/c/zig deleted, unported byte-identical); 6 (issue checks on variations); 7 (prose, code blocks, source lines, purity); 8 (build, suite, golden, the ts/go/py/c lanes at HEAD); 9 (PORTING.md); and zig. NOT done: (a) clojure's reference port. Its client has no class (old h2 '## Client', '### make-sdk'), and the shared h2 prints layout.client ('api'), so it needs a fact or a layout field first. (b) zig output was not compiled (command -v zig: missing); its test is the reasoned diff, 0 unexplained. (c) Feature defaults are not in DescRef. ReadmeRefFeatures (shared) still reads featureDocs from the model itself. (d) The guard does not check the collection noun, recordType, nullValue, errVar, ok/err, maps, container, valueType, body.values or direct ctrl. (e) I did not re-run the upgrade walk or the lifecycle suites on this build. (f) No timings. (g) The OLD lane numbers are from stage 1 and v2's runs, not re-run here.
+clone: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ref/sdkgen (a copy of v2 at f9c43b19; detached). Commits on top: 81f51194 'Shared REFERENCE page: the description carries every model fact the page states; ts, go, py and c print it through their providers; retire their ReadmeRef components', a93e754f 'Reference page: container fact, data operations always take data, tester only with the test feature', a111591a 'Guard: each provider's reference members are re-derived from its runtime; media test finds providers; golden; build', e8d78809 'The action table names the operation and route; no action example, which no test mode can run', 8c8fd163 'zig reference facts; prepare's error union and a list stream's failure are shared sentences; retire ReadmeRef_zig', d1d97043 'Golden follows the zig retirement', c41dcdf0 'Description comment: the test constructor exists either way'. Harness: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ref/harness (new: diffref.js, issuecheck.js, proseref.js, metrics3.js, blockcount.js; lib2.js now also captures REFERENCE.md; variations.js gains ref-issues and no-test). Pristine old clone: .../ref/oldclone. Porting guide: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ref/PORTING.md
+interface_now: |
+  // ===== ts/src/helpers/sdkdesc.ts (description) =====
+  type Scalar = string
+  type DescServerVar = { name: string, required: boolean, dflt: string }
+  type DescOption =
+    | { name: 'apikey', env: string }
+    | { name: 'secret', env: string }
+    | { name: 'server', vars: { name: string, placeholder: string }[] }
+  type DescArg =
+    | { name: string, type: Scalar, placeholder: string }
+    | { name: string, fromCreated: string }
+  type DescLayout = {
+    module: string // what an example imports the SDK by: a package, module path, header or namespace
+    client: string // the client type
+    ctor: string // the function or constructor an example creates a client with
+  }
+  type DescSymbols = {
+    accessor: string // the client member, or function, that yields the entity
+    var: string // a variable holding one entity
+    vars: string // a variable holding a list of them
+    module?: string // what an example must import to call its operations
+    alias?: string // the name that import is bound to
+    fields?: Record<string, string> // field -> the identifier a variable named after it takes
+  }
+  type Naming = (model: any, target: any) => {
+    layout: DescLayout
+    symbols: (entity: any) => DescSymbols
+  }
+  // One field of an entity's record. `type` is the canonical sentinel, which a
+  // provider names in its own language; `text` is the spec's description, raw.
+  type DescField = {
+    name: string
+    type: any
+    required: boolean
+    text: string
+    ops: string[] // the generated operations whose request or response carries it
+  }
+  // One generated operation, as the reference page shows it.
+  type DescOp = {
+    name: string // canonical: list, load, create, update, patch, remove
+    action: boolean // reachable only through `$action`, so no example call
+    args: DescArg[] // what its example passes, id first; [] for none
+    needs: string[] // list: the match members it requires (a nested entity's parent)
+    idInData: string | null // update, patch: the id key the data must carry
+    body: BodyFacts | null // a request body that is not JSON
+  }
+  type DescEntity = {
+    name: string // model key, e.g. graph_ql
+    Name: string // class-name stem, e.g. GraphQl
+    className: string // the entity class, collision-free (entityClassName)
+    sym: DescSymbols
+    text: string // the description: the project's entity_desc, else the spec's
+    ops: string[] // generated, callable, canonical order
+    id: string | null // the load-match id key
+    dataId: string | null // the id on the returned record
+    parents: string[] // required non-id load parameters of a nested entity
+    fields: DescField[]
+    fieldOps: boolean // the model says which operations each field takes part in
+    refOps: DescOp[] // every active operation's method, canonical order, as the reference shows it
+    actions: { action: string, op: string, path: string }[] // custom `$action` routes
+  }
+  // A client option the constructor accepts, in table order.
+  type DescOptionRow = {
+    path: string[] // the key, and for a server variable the key under `server`
+    type: 'STRING' | 'OBJECT' | 'ANY'
+    text: string
+  }
+  type DescFeature = { name: string, title: string, version: string }
+  type DescRef = {
+    title: string // the language's title, as the target names it
+    test: boolean // the test feature ships; without it the test constructor builds no mock
+    optionRows: DescOptionRow[]
+    features: DescFeature[] // the features this target has, sorted
+  }
+  type DescQuick = { entity: string, list: DescArg[] | null, load: { entity: string, args: DescArg[], nested: null | { parent: string, param: string } } | null, create: DescArg[] | null, update: DescArg[] | null, patch: DescArg[] | null, remove: DescArg[] | null, chainsId: boolean, show: string[] }  // unchanged from v2
+  type SdkDescription = {
+    target: string
+    name: string // model slug
+    Name: string // class-name stem
+    package: string // published package or module path of this target
+    layout: DescLayout
+    env: { prefix: string }
+    auth: { active: boolean, in: string, name: string, basic: boolean, secret: boolean }
+    options: DescOption[] // what the quick start's constructor passes, in order
+    server: DescServerVar[] // variables the server URL references
+    entities: DescEntity[]
+    quick: DescQuick | null // null when no entity is active
+    ref: DescRef
+  }
+  // ===== ts/src/helpers/media.ts =====
+  type BodyFacts = { kind: 'raw' | 'encoded', media: string, binary: boolean, others: string[], encoded: string[] }
+  // bodyFacts(op), bodyNoteText(facts, { values, once?, binary? }); bodyNote(op, target) kept = bodyNoteText(bodyFacts(op), target)
+  // ===== ts/src/helpers/markdown.ts =====
+  // mdCell(text): one line, pipes escaped, relative links unwrapped to their label, $$ escaped; mdInline(text): paragraph, relative links unwrapped
+  // ===== ts/src/helpers/example.ts (representation: Ent, Ref, Expr, Entry, Stmt unchanged from v2) =====
+  type Ent = { name: string, Name: string, sym: DescSymbols }
+  type Ref = { role: 'many' | 'item' | 'one' | 'created', entity: Ent }
+  type Expr =
+    | { k: 'lit', type: Scalar, text: string } | { k: 'str', text: string } | { k: 'env', name: string }
+    | { k: 'record', of: Ref } | { k: 'field', of: Ref, field: string } | { k: 'fields', of: Ref, fields: string[] }
+    | { k: 'map', entries: Entry[] }
+  type Entry = { key: string, value: Expr }
+  type Stmt =
+    | { k: 'client', options: Entry[] }
+    | { k: 'call', entity: Ent, op: string, arg: Entry[] | null, bind: Ref | null, wide: boolean }
+    | { k: 'each', item: Ref, of: Ref, body: Stmt[] } | { k: 'print', what: Expr }
+    | { k: 'attempt', what: string, body: Stmt[] } | { k: 'comment', text: string } | { k: 'gap' }
+  // Builders: clientBlock(desc), listBlock(desc, facts), loadBlock(desc, facts), writeBlock(desc, facts), writeOps(desc),
+  // refOpBlock(desc, facts, ent: DescEntity, op: DescOp): Stmt[] | null  (null for an action-only op; list/load as attempt+call+each/print like the tutorial; writes a bare call, data ops always take data),
+  // featureBlock(names): Stmt[]  (a client statement with feature.<name>.active = true)
+  // ===== runtime-fact tables (example.ts) =====
+  type ResultStyle = 'throw' | 'raise' | 'pair' | 'errslot' | 'union'
+  type OpName = 'list' | 'load' | 'create' | 'update' | 'patch' | 'remove'
+  type RuntimeFacts = {
+    method: Record<OpName, string>; named: 'call' | 'bare'; async: boolean; result: ResultStyle
+    collection: string; record: string; recordType?: string; errVar?: string; errSlot?: string
+    nullValue?: string; ok?: string; err?: string; prints: 'record' | 'fields'
+  }  // unchanged from v2
+  // A fixed member of the client or of an entity, as the runtime declares it.
+  // `sig` is the signature as the language writes it; {sdk}, {client}, {ctor},
+  // {module}, {accessor}, {var}, {Class} and {Name} are filled from the
+  // description. Each kind has its sentence written once, in the shared page.
+  type MemberKind =
+    | 'options' | 'utility' | 'direct' | 'prepare' | 'tester'
+    | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet'
+    | 'make' | 'name' | 'client' | 'entopts'
+    | 'streamIterator' | 'streamGenerator' | 'streamChannel' | 'streamList'
+  type Member = { kind: MemberKind, sig: string }
+  type RefFacts = {
+    classes: boolean // an entity is a class named by its className; false: by its Name
+    noun: 'Methods' | 'Functions' // what the client's and an entity's members are called
+    none: string // the literal for no value: 'undefined', 'nil', 'None', 'NULL'
+    keys: 'member' | 'bare' // option tables name `options.x`, or bare map keys
+    maps: string // the language's maps, plural: 'objects', 'maps', 'dicts'
+    container: string // the type of the options and fetchargs containers: 'object', 'voxgig_value*'
+    valueType: Record<'STRING' | 'OBJECT' | 'ANY', string> // option and fetcharg value types
+    ctor: string[] // the constructor, as the page shows it
+    test: { sig: string, call: string, args: boolean }[] // test constructors
+    accessor: { sig: string, arg: 'data' | 'entopts' } // the client's entity accessor
+    op: Record<OpName, string> // each operation's signature
+    client: Member[] // the client's fixed members, in page order
+    entity: Member[] // an entity's fixed members, in page order
+    direct: { returns: string, signal?: string } // `signal`: the type of fetchargs ctrl.signal
+    // 'value': the error is returned in place of the definition; 'errorunion': a language error union
+    prepare: { returns: string, fails: 'style' | 'value' | 'errorunion' }
+    body: { values: string, once?: string, binary?: boolean } // what `$body` accepts
+    cancel: boolean // operations take an abort signal in ctrl.signal
+  }
+  // Sentences per ResultStyle (runtimeprose.ts): listSentence, loadSentence, createComment, listComment, loadComment (v2) + opText(f, op, needs, idInData), failsSentence(f) (new). Sentences per MemberKind: memberText in ReadmeRef.ts.
+  // ===== provider interface (example.ts) =====
+  type Uses = { env: boolean, field: boolean, print: boolean, entities: string[] }
+  type Scope = { declared: Set<string>, local: Set<string>, stmts: Stmt[], section: Stmt[] }
+  type CallContext = { inAttempt: boolean, last: boolean }
+  type ProgramStep = { title: string, lines: string[] }
+  type Syntax = {
+    fence: string // the code fence language
+    facts: RuntimeFacts
+    client: (s: Extract<Stmt, { k: 'client' }>, desc: SdkDescription, sc: Scope) => string[]
+    call: (s: Extract<Stmt, { k: 'call' }>, desc: SdkDescription, sc: Scope, cx: CallContext) => string[]
+    each: (s: Extract<Stmt, { k: 'each' }>, inner: (body: Stmt[]) => string[], sc: Scope) => string[]
+    print: (s: Extract<Stmt, { k: 'print' }>, sc: Scope) => string[]
+    attempt: (s: Extract<Stmt, { k: 'attempt' }>, inner: (body: Stmt[]) => string[], sc: Scope) => string[]
+    comment: (text: string) => string
+    expr: (e: Expr, sc: Scope) => string
+    before?: (stmts: Stmt[], desc: SdkDescription, sc: Scope) => string[]
+    program?: (steps: ProgramStep[], desc: SdkDescription, sc: Scope) => string[]
+    // Optional: what the reference page needs beyond statements.
+    ref?: RefSyntax
+  }
+  type RefSyntax = {
+    facts: RefFacts
+    type: (t: any) => string // a field's type, from its canonical sentinel
+    key: (container: 'options' | 'fetchargs', path: string[]) => string // how a table names an option
+    instance: (ent: Ent, desc: SdkDescription) => string[] // obtaining one entity from the client
+  }
+  // Lookup: ReadmeRef finds `Syntax` through optionalComponent(ctx$, target, 'Syntax') and uses the shared page when Syntax.ref exists; a target's own ReadmeRef_<lang> (loadOptional) wins over it; describeTarget(ctx$, target) (ReadmeQuick.ts) supplies the description with the Naming hook.
+interface_changes:
+  - [0]
+    change: Scope gains `local` (stage 1 architect, before the first commit; not visible in git)
+    breaking: False
+    why: go declares err once per block
+    rework_forced_in: go
+  - [1]
+    change: Scope gains `stmts` (stage 1, before the first commit)
+    breaking: False
+    why: c lookahead for hoisted field reads
+    rework_forced_in: c
+  - [2]
+    change: An optional block post-processor became `before` (stage 1, before the first commit)
+    breaking: True
+    why: c hoists handles
+    rework_forced_in: c
+  - [3]
+    change: Scope.section (probe-interface caf89e8e)
+    breaking: False
+    why: clojure requires the namespaces later blocks use
+    rework_forced_in: clojure
+  - [4]
+    change: RuntimeWords.one optional (probe c74f7435)
+    breaking: False
+    why: 'returns the entity' is false for a result union
+    rework_forced_in: zig
+  - [5]
+    change: RuntimeWords replaced by the declared RuntimeFacts table, with sentences per ResultStyle in runtimeprose.ts (v2 af89a54e)
+    breaking: True
+    why: runtime phrases were per-language prose; facts must be data
+    rework_forced_in: ts go py c zig clojure
+  - [6]
+    change: Ent gains `sym`; names come from a per-language Naming hook into desc.layout and DescEntity.sym (v2)
+    breaking: True
+    why: providers had copied naming rules (C_RESERVED, cIdent, py package dir)
+    rework_forced_in: ts go py c zig clojure
+  - [7]
+    change: call gains cx: CallContext (v2)
+    breaking: False
+    why: per-call handling outside an attempt (zig), ocaml sequencing
+    rework_forced_in: zig (dropped its Scope.local flag)
+  - [8]
+    change: Stmt call gains `wide` (v2)
+    breaking: False
+    why: ts's layout rule held op names in the provider
+    rework_forced_in: ts
+  - [9]
+    change: Expr gains `fields`; DescQuick.show; RuntimeFacts.prints (v2)
+    breaking: True
+    why: php, rb, lua and perl print chosen fields; a new Expr kind breaks every exhaustive expr switch
+    rework_forced_in: ts go py c zig clojure
+  - [10]
+    change: Syntax.program? optional, ProgramStep, printSteps/printProgram/printJoined (v2)
+    breaking: False
+    why: go's README test runs whole programs
+    rework_forced_in: go
+  - [11]
+    change: Uses.print (v2)
+    breaking: False
+    why: go imports fmt only when something prints
+    rework_forced_in: go
+  - [12]
+    change: listBlock/loadBlock/writeBlock take facts (v2)
+    breaking: True
+    why: the print choice and the create comment depend on a declared fact
+    rework_forced_in: shared callers only, no provider
+  - [13]
+    change: Syntax.ref?: RefSyntax optional, with RefFacts, Member, MemberKind (this stage, 81f51194)
+    breaking: False
+    why: the reference page needs signatures, type names, key spelling and an instance line
+    rework_forced_in: none (opt-in per provider)
+  - [14]
+    change: SdkDescription.ref (DescRef, DescOptionRow, DescFeature); DescEntity gains className, text, fields, fieldOps, refOps, actions; DescOp, DescField (this stage)
+    breaking: False
+    why: every model fact the page states, decided once
+    rework_forced_in: none
+  - [15]
+    change: bodyNote split into bodyFacts + bodyNoteText; mdCell/mdInline; refOpBlock, featureBlock builders (this stage)
+    breaking: False
+    why: the body note's model facts go through the description; vendor text escaping in one place
+    rework_forced_in: none
+  - [16]
+    change: RefFacts.container added after the first reference commit (a93e754f)
+    breaking: True
+    why: '`options` is a `map` map' was false for c: the container type differs from the value type
+    rework_forced_in: ts go py c
+  - [17]
+    change: actionBlock builder added (81f51194) and removed (e8d78809)
+    breaking: False
+    why: an action's payload is not in the model and every test mode rejects an unknown action; the example failed ts 5/16 and py 3/12 lanes
+    rework_forced_in: none
+  - [18]
+    change: RefFacts.prepare.fails gains 'errorunion'; the streamList sentence appends the style's failure clause (8c8fd163)
+    breaking: False
+    why: zig's prepare returns E!Value; zig's and c's list streams report failure
+    rework_forced_in: none (zig added)
+names: Names reach the description only through the v2 Naming hook (cmp/<lang>/Naming_<lang>.ts, found by optionalComponent(ctx$, target, 'Naming') in describeTarget). The reference page adds one name source: DescEntity.className = entityClassName(e, entityCollection(model)), computed in sdkdesc.ts describe(). It is the same function the code generators use for the class (zig Entity_zig.ts:24 `const cls = entityClassName(entity, entityColl)`; ts and py fragments use EntyClass from the same helper). That is how U34 shows PlanetEntityClient in ref-issues. Signatures hold tokens ({sdk} {client} {ctor} {module} {accessor} {var} {Class} {Name}), which the shared fill() in ReadmeRef.ts substitutes from desc.layout and DescEntity; providers do no string work on a name. Per language, one function called by both the code generator and the description: ts packageName (Package_ts.ts:68, Naming_ts.ts:11); go goModule (Main_go.ts:48, Naming_go.ts:13); py pyPackageDir (Main_py.ts:49, Naming_py.ts:13); c cIdent/cVarName (MainEntity_c.ts:16-17, Naming_c.ts:14-20; EntityBase_c.ts:47 names the stream function `${evar}_stream`, which the c facts mirror as '{var}_stream'); zig zigVarName (MainEntity_zig.ts:21, Naming_zig.ts:15). Field types come from canonToType(t, '<literal language>') in each provider's ref.type, never from target.name, so the go~go2 alias prints go types (N04/U06/M04, shown on alias-go2).
+program_unit: Unchanged from v2. Syntax.program? is used by go alone, because go's README test runs whole programs (ReadmeExamplesTest_go). The REFERENCE page uses no program form in any language. Every example there is one block, printed with a fresh Scope (printBlock). I read the README tests: go compiles REFERENCE fragments (go/REFERENCE is in its doc list) and runs only `func main` programs, and neither the old nor the new REFERENCE has one. ts type-checks every block and executes those that construct the SDK or call client.; py does the same in a seeded subprocess; c's DOC lane compiles each block (-fsyntax-only) inside a scope that already declares client and err. Block classification by the README tests' own rule (blockcount.js, 5 models), OLD -> NEW: ts B 22=20 run+2 illustration -> 21=20 run+1 illustration (the action illustration removed); py 21 run -> 21 run; go 20 compiled fragments + 2 signature blocks, unchanged; c 21 compiled, unchanged. RUN at HEAD: ts README lane 16/16, which executes every runnable REFERENCE block; py README lane 12/12 with real pytest, which executes every runnable REFERENCE block; go README lane 12/12 (REFERENCE fragments compiled, not run, as before); c DOC lane 6/6 (compiled, not run, as before; also 6/6 at the final HEAD). BEFORE (stage 1 / v2 records, not re-run here): ts 16/16, go 12/12, py 12/12, c 6/6 at v2. Nothing that ran before is now only type-checked.
+runtime_facts:
+  - [0]
+    lang: ts
+    facts: RuntimeFacts: throw, async, collection 'array', record '.data()'. RefFacts: classes, Methods, none 'undefined', keys member, maps 'objects', container 'object', valueType string/object/any; ctor 'new {ctor}(options?: object)'; test {client}.test(testopts?, sdkopts?); accessor '{accessor}(data?: object)'/data; op sigs '<op>(match|data: object, ctrl?: object)'; client options/utility/direct/prepare/tester; entity data/match/make/streamIterator/client/entopts; direct returns 'Promise<{ ok, status, headers, data }>', signal AbortSignal; prepare 'Promise<{ url, method, headers, body } | Error>' fails 'value'; body Buffer/Uint8Array/ArrayBuffer/Blob/stream/string, once 'a stream'; cancel true
+    sentences: 0
+    words_runtime: 102
+    words_shared: 22217
+    restored_from_stage1: Kept every runtime fact the old ts page stated: 'throws on failure' (now in the shared style sentence), the AbortSignal paragraph (shared, conditioned on cancel), and client()/entopts(). Added stream(), which the runtime defines (EntityBase.fragment.ts:111) and the old page omitted. Lost: tester's 'Returns: DemoSDK instance in test mode', the accessor's parameter table, and the update example's '// Fields to update' comment.
+  - [1]
+    lang: go
+    facts: RuntimeFacts: pair, errVar 'err', collection '`[]any`', record 'Data()'. RefFacts: classes, Methods, none 'nil', keys member, maps 'maps', container 'map[string]any'; ctor 'func {ctor}(options map[string]any) *{client}'; test Test() (no args) and TestSDK(testopts, sdkopts); accessor '{accessor}(data map[string]any) {sdk}EntityBase'; op '<Op>(reqmatch|reqdata, ctrl map[string]any) (any, error)'; client OptionsMap/GetUtility/Direct/Prepare; entity Data/Match/Make/streamChannel Stream/GetName; direct '(map[string]any, error)'; prepare fails style; body []byte/string/io.Reader
+    sentences: 0
+    words_runtime: 19
+    words_shared: 23782
+    restored_from_stage1: Kept '`err` is non-nil on failure' (pair style) and the whole channel Stream paragraph (shared streamChannel sentence). Lost: the `fmt.Println(planet.GetName())` line in the instance example, and the 'No-arg convenience constructor' wording (now the shared 'and no options' sentence).
+  - [2]
+    lang: py
+    facts: RuntimeFacts: raise, collection '`list`', record 'data_get()', recordType 'dict'. RefFacts: classes, Methods, none 'None', keys member, maps 'dicts', container 'dict'; ctor 'from {module} import {client}' / 'client = {ctor}(options)'; test {client}.test(testopts=None, sdkopts=None); accessor '{accessor}(data=None)'; op '<op>(reqmatch|reqdata, ctrl=None) -> {Class}' (list -> list[{Class}]); client options_map/get_utility/direct/prepare; entity dataGet/dataSet/matchGet/matchSet/make/streamGenerator/name; direct 'dict'; prepare 'dict' style; body bytes/bytearray/memoryview/str/file object
+    sentences: 0
+    words_runtime: 19
+    words_shared: 17161
+    restored_from_stage1: Kept 'raises on failure' and 'never raises: branch on ok' (now a shared sentence). Added fetchargs ctrl, which Main.fragment.py:126 reads, and stream(), defined at Entity.fragment.py:74. Lost: the `# str` type comments in create examples.
+  - [3]
+    lang: c
+    facts: RuntimeFacts: errslot, errVar 'err', errSlot '*err', nullValue 'NULL', collection '`NULL`-terminated array', record 'vt->data'. RefFacts: classes false, Functions, none 'NULL', keys bare, maps 'maps', container 'voxgig_value*', valueType string/map/any; ctor '#include "{module}"' / '{client}* client = {ctor}(options);'; test test_sdk; accessor 'Entity* {accessor}({client}* client, voxgig_value* entopts)'/entopts; op 'Entity[*]* vt-><op>(Entity* e, ..., PNError** err)'; client sdk_direct/sdk_prepare; entity data/match(matchv)/make/streamList '{var}_stream(...)'/name; type = canonToType(t,'c') + ' (list)'/' (map)'
+    sentences: 0
+    words_runtime: 185
+    words_shared: 20382
+    restored_from_stage1: Kept 'or `NULL` with `*err` set on failure' in every op sentence (errslot style), and the ' (list)'/' (map)' type suffixes. Added fetchargs ctrl (Main.fragment.c:90 reads it) and `<evar>_stream` (EntityBase_c.ts:47 declares it). Lost: the 'if (result)' guard in the load example; it is now the shared attempt form `if (err) ... else`.
+  - [4]
+    lang: zig
+    facts: RuntimeFacts: union, ok '.ok', err '.err', collection 'slice', record 'asEntity().data(null)'. RefFacts: classes, Methods, none 'h.vnull()', keys bare, container 'Value'; ctor '@import("{module}")' ... '{client}.new(options)'; test test_sdk; accessor '{accessor}(entopts: Value) *{Class}'; op '<op>(reqmatch|reqdata: Value, ctrl: Value) EntResult|EntListResult'; client options_map/get_utility/direct/prepare 'E!Value'; entity data/matchv/streamList/get_name; prepare fails 'errorunion'
+    sentences: 0
+    words_runtime: 102
+    words_shared: 19554
+    restored_from_stage1: Kept the .ok/.err union wording (union style) and prepare's error union (the shared 'errorunion' sentence). Lost: StreamResult's 'Under throw: false in callopts.ctrl, a failed stream is .ok with whatever data the failure left'. The streamList sentence plus the union failure clause does not carry it.
+per_language:
+  - [0]
+    lang: ts
+    section: REFERENCE
+    old_lines: 473
+    provider_lines: 138
+    naming_lines: 24
+    code_blocks_identical: 120
+    code_blocks_changed: 192
+    change_reasons:
+      - op example through the representation: list/load consumed as the tutorial does (try/catch), writes called alone, no result binding
+      - feature snippet is the constructor through the provider (import line, nested map inline)
+      - instance example variable from the naming hook
+      - S13 test constructor and tester only with the test feature
+      - operations in canonical order (S25/D10)
+      - Actions block kept, its illustration example dropped (no test mode can run it)
+    unexplained: 0
+    compiles: yes: ts README lane 16/16 type-checks every REFERENCE block
+    runs: BEFORE: every runnable REFERENCE block executed in seeded test mode (v2/stage 1: 16/16). AFTER: the same, 16/16; runnable count per model unchanged (B 20), illustrations 2 -> 1.
+  - [1]
+    lang: go
+    section: REFERENCE
+    old_lines: 435
+    provider_lines: 175
+    naming_lines: 23
+    code_blocks_identical: 82
+    code_blocks_changed: 292
+    change_reasons:
+      - op examples through the representation: bound result names from the hook (planets/planet), `_, err :=` for writes, nil match for none
+      - feature snippet laid out by the provider's members()
+      - GetName print dropped from the instance example
+      - Actions documented (was ts only)
+      - stream channel paragraph kept as the shared streamChannel sentence
+    unexplained: 0
+    compiles: yes: go README lane 12/12 compiles go/REFERENCE fragments
+    runs: BEFORE: compiled only (fragments; no func main in REFERENCE). AFTER: the same.
+  - [2]
+    lang: py
+    section: REFERENCE
+    old_lines: 416
+    provider_lines: 135
+    naming_lines: 26
+    code_blocks_identical: 120
+    code_blocks_changed: 192
+    change_reasons:
+      - load/list examples wrapped in try/except like the tutorial
+      - create type comments dropped
+      - ctrl row and stream() added (the runtime has them)
+      - op order canonical
+      - Actions documented
+    unexplained: 0
+    compiles: yes: py README lane 12/12 (real pytest) compiles every block
+    runs: BEFORE: every runnable REFERENCE block executed (12/12). AFTER: every runnable block executed, 12/12; 21 runnable blocks in B before and after.
+  - [3]
+    lang: c
+    section: REFERENCE
+    old_lines: 418
+    provider_lines: 201
+    naming_lines: 27
+    code_blocks_identical: 131
+    code_blocks_changed: 181
+    change_reasons:
+      - examples declare err and the handle through `before` per block; load/list use the shared attempt `if (err) ... else`
+      - heading scheme: '### Instance Functions', '### Test client'
+      - ctrl row and <evar>_stream added
+      - feature snippet laid out one feature per line by the client printer
+    unexplained: 0
+    compiles: yes: c DOC lane 6/6 (-fsyntax-only of every block in README, REFERENCE and the root README), at two HEADs
+    runs: BEFORE: compiled only. AFTER: compiled only.
+  - [4]
+    lang: zig
+    section: REFERENCE
+    old_lines: 425
+    provider_lines: 173
+    naming_lines: 21
+    code_blocks_identical: 131
+    code_blocks_changed: 181
+    change_reasons:
+      - examples through the representation: switch on .ok/.err for list and load, bare calls for writes
+      - '### Static Functions' -> '### Test client'
+      - prepare's error union and the list stream's .err as shared sentences
+      - Actions documented
+    unexplained: 0
+    compiles: not compiled: command -v zig reports missing here; the DOC lane skips
+    runs: not run before or after; the test is the reasoned diff (0 unexplained)
+unported_identical: Across 21 variations, every unported REFERENCE.md (js php rb lua csharp java kotlin scala swift rust cpp perl clojure elixir ocaml) is byte-identical to OLD except the lines of the already-shared ReadmeRefFeatures I fixed once: the escaped-backtick leak ('The array form of \`feature\`' -> '`feature`') and S09 (log, on by default, now 'Active by default: set `active: false` to switch it off.', and the 'Each feature is inactive ... except `log`' sentence). That is 2280 lines after zig's port, and 0 other lines (node diffref.js with PORTED=ts,go,py,c,go2,zig). Every README.md of the unported languages and their root subsections are byte-identical (node diff2.js: 0), and nothing outside the two README sections changed.
+source_lines: Measured by node harness/metrics3.js (total / non-blank non-comment); BEFORE = 9aebaf9e, AFTER = working tree. REFERENCE alone, five ported languages (ts go py c zig): before 2,196 / 1,542 (five ReadmeRef_<lang> = 473+435+416+418+425, plus shared ReadmeRef.ts 29); after 967 / 805 = shared ReadmeRef.ts 338 / 272 + infrastructure growth 378 / 308 (sdkdesc.ts +160, example.ts about +95, runtimeprose.ts +63, markdown.ts 31 new, media.ts +30) + provider growth 50/51/50/53/47 lines (ts/go/py/c/zig) = 251. Ratio 2.27x total, 1.92x ncnb. For four languages only (ts go py c): 1,771 -> 917 (1.93x total, 1.62x ncnb). Projection to 20 for this page: before 8,359 (the 20 ReadmeRef_<lang> are 8,330). After: 1,720 if each of the other 15 providers adds the measured average (50 lines), giving 4.86x (3.96x ncnb); 2,222 at 1.5x that (3.76x); 2,724 at 2x (3.07x). I assume about 50 lines because the reference addition is a fixed-size table (15-23 signatures, which every old file already held as OP_SIGNATURES) plus three one-line printers. Examples need no new printer, since they reuse the quick-start printers through refOpBlock. Languages with more fixed members (clojure 23, java/kotlin/scala 20) sit at the upper end, hence the 1.5x and 2x rows. What the SECOND section cost: the description and representation built for the quick start were reused; the reference page added 378 lines of infrastructure and about 50 per language, against 418-473 per language removed. Both sections together across 20 (ReadmeQuick_ + ReadmeTopQuick_ + ReadmeRef_ for 20, plus shared ReadmeQuick and ReadmeRef): before 14,896 / 10,767; after 5,437 / 4,296, assuming 20 providers plus hooks the size of the five measured (188.6 lines on average) plus all infrastructure (sdkdesc 458, example 432, runtimeprose 164, markdown 31, media growth) and the two shared components (ReadmeQuick 212, ReadmeRef 338). Ratio 2.74x (2.51x ncnb); at 1.5x-sized providers, 7,323 (2.03x). The ReadmeTop shared quick-start hook (about 54 lines, metrics2) is not in the after-total, which is a small omission.
+issues:
+  - [0]
+    id: S25
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues (planet remove active:false): ts/py/c/zig OLD document remove(), NEW do not; go already did not
+    note: refOps are the active methods in CANON_OP_ORDER, decided in describeEntity
+  - [1]
+    id: D10
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues; also every variation (canonical order: 748 moved lines)
+    note: one rule (active, canonical); action-only ops keep their signature and appear under Actions
+  - [2]
+    id: U43
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues gauge (update, no id): OLD 'must include the entity `id`' in all five; NEW absent
+    note: DescOp.idInData from sendsId; the sentence names the actual id key
+  - [3]
+    id: U44
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: doc-nested satellite: OLD py/c/zig 'match is optional'; NEW 'The match must include `planet_id`'
+    note: DescOp.needs = requiredItems(e,'list')
+  - [4]
+    id: U34
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues (entity planet_entity takes PlanetEntity): NEW heading '## PlanetEntityClient' in ts/go/py/zig
+    note: c has no class (classes:false), so it prints '## Planet', correctly; not applicable there
+  - [5]
+    id: U36
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues (text.entity_desc.planet): NEW prints the project's words in all five
+    note: entity_desc, then short, then desc; mdInline
+  - [6]
+    id: S50
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: auth-basic: OLD secret row in ts only; NEW in all five. auth-basic-query: OLD ts printed a secret no runtime reads; NEW none
+    note: desc.auth.secret (Basic, header, not suppressed)
+  - [7]
+    id: D23
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: B: NEW server, server.tenant 'Required.', server.region 'Defaults to `eu`.' in all five
+    note: option rows from DescRef.optionRows
+  - [8]
+    id: D55
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: B (as D23)
+    note: required = referenced and no default, from desc.server
+  - [9]
+    id: D26
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: every variation: rows exist only for keys of main.kit.optspec
+    note: partly: optspec has no descriptions, so the row text is held once in sdkdesc.ts OPTION_TEXT rather than in the model. The ReadmeModel/ReadmeOptions tables were not touched
+  - [10]
+    id: D04
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: no variation exposes a visible difference; the table now comes from featureDocs (192 changed lines, from the snippet layout)
+    note: by construction: one call
+  - [11]
+    id: G27
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues gauge.level 'Level | percent\nsee [the guide](guide.md)': OLD row broken in all five; NEW one row with '\|'
+    note: mdCell in the shared page
+  - [12]
+    id: G29
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues: OLD '](guide.md)' dangling; NEW the label only, the absolute link kept
+    note: mdCell/mdInline unwrap relative links
+  - [13]
+    id: M38
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues (as G27)
+    note: REFERENCE sinks only; ReadmeEntity/ReadmeModel sinks are not ported
+  - [14]
+    id: D69
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: ref-issues
+    note: field cells, the entity description and feature titles go through mdCell/mdInline
+  - [15]
+    id: S13
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: no-test: OLD test constructor in all five (and ts tester); NEW absent
+    note: the constructors exist in every runtime regardless; without the feature the sentence 'with mock features active' is false, so the page omits them. The catalogue preferred a generate-time error
+  - [16]
+    id: N04
+    fixed_by_shared_code: True
+    per_language_edit_needed: True
+    shown_on: alias-go2: OLD go2 fields typed `any`; NEW go types
+    note: each provider's ref.type passes its own literal language to canonToType: a one-line per-language fact, written once per port
+  - [17]
+    id: U06
+    fixed_by_shared_code: True
+    per_language_edit_needed: True
+    shown_on: alias-go2
+    note: same as N04
+  - [18]
+    id: M04
+    fixed_by_shared_code: True
+    per_language_edit_needed: True
+    shown_on: alias-go2
+    note: same as N04
+  - [19]
+    id: N11
+    fixed_by_shared_code: False
+    per_language_edit_needed: True
+    shown_on: js not ported: js REFERENCE still fenced ts
+    note: under the shared page the fence is Syntax_js.fence, so it is fixed when js gets a provider
+  - [20]
+    id: S09
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: B: OLD log said 'Inactive by default' in all 20; NEW 'Active by default' in all 20
+    note: fixed in the already-shared ReadmeRefFeatures
+  - [21]
+    id: uncatalogued: backtick leak
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: B: OLD 'of \`feature\`' in all 20; NEW fixed in all 20
+    note: ReadmeRefFeatures
+  - [22]
+    id: uncatalogued: Actions in ts only
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: doc-crud (terraform): OLD go/py/c/zig omit; NEW all five show the table
+    note: without an example: the payload is not in the model and test modes reject unknown actions (the first lane run failed on it)
+  - [23]
+    id: uncatalogued: stream missing
+    fixed_by_shared_code: False
+    per_language_edit_needed: True
+    shown_on: B: OLD ts/py/c omit stream(); NEW documented in all five
+    note: each provider declares the member; the runtimefacts guard now fails when a runtime defines stream (or client/entopts/options/utility/make/name) and the table does not declare it
+  - [24]
+    id: uncatalogued: direct ctrl
+    fixed_by_shared_code: True
+    per_language_edit_needed: False
+    shown_on: B: OLD py, c and zig omit fetchargs ctrl, though their runtimes read it; NEW listed
+    note: one row list
+  - [25]
+    id: uncatalogued: perl list prints ->{id}
+    fixed_by_shared_code: False
+    per_language_edit_needed: True
+    shown_on: not shown (perl not ported)
+    note: the shared builder prints the record, or desc.quick.show fields for prints:'fields'
+provider_purity: node harness/purity.js counts per provider. Model reads: 0 in ts, go, py, c and zig. Naming rules: 0. Operation names outside the facts table: 0. The import check flags canonToType in all five and canonKey in c. These are shared pure maps from a canonical sentinel to a type name, called with the provider's own literal language: the type-name table stage 1 classed as syntax, now in one place. I count them as allowed, which takes the strict count from 6 to 1. The one remaining hit is `case 'item': return r.entity.sym.vars + '[i]'` in Syntax_c. That is a C index expression, not a naming rule, and v2 had it too: running purity.js on the v2 clone gives 1, although v2 reported 0. What a script cannot see: the RefFacts tables are hand-written data. The runtimefacts guard re-derives the signatures and the presence of seven member kinds from the fragments, templates and Main/MainEntity/EntityBase components, but not the nouns (collection, maps, container, valueType) or the body phrase. Those can still be false. Provider-declared English phrases remain in body.values and body.once (e.g. 'a `Buffer`, ... stream or string'), counted as declared-fact words.
+migration: Nothing new merged; the v2 lifecycle change (migrate's a49fddc0/7bb5161b/c193a603 as 1fcc1ef5/9481257f/61e8b338) is in the base. ReadmeRef follows the same rule as ReadmeQuick: loadOptional(`./cmp/<t>/ReadmeRef_<t>`) wins over the provider, so a pack or a project override keeps its page, and the record-gated retire/prune in target.ts and doctor.ts applies to a leftover ReadmeRef_<lang> exactly as it does to ReadmeQuick_<lang>. The suite's retire.test passes within the 2534-test run. I did NOT re-run the upgrade walk (v2/mig) or the lifecycle rows on this build; that is a gap. The golden manifest (test/golden/add-output.txt) was refreshed twice, and records ReadmeRef_ts/go/py/c/zig as no longer shipped.
+measurements:
+  - [0]
+    name: REFERENCE changed lines without a reason (ts go py c zig + go2 alias), 21 variations
+    value: 0 UNEXPLAINED; per language changed lines: ts 4447, go 2675, py 3745, c 4886, zig 4761, go2 183
+    command: cd harness && PORTED=ts,go,py,c,go2,zig node diffref.js --un
+  - [1]
+    name: REFERENCE code blocks identical / changed
+    value: ts 120/192, go 82/292, py 120/192, c 131/181, zig 131/181, go2 4/18
+    command: PORTED=ts,go,py,c,go2,zig node diffref.js
+  - [2]
+    name: unported REFERENCE lines differing from OLD
+    value: 0, apart from 2280 lines of the two fixes in the already-shared ReadmeRefFeatures
+    command: PORTED=ts,go,py,c,go2,zig node diffref.js
+  - [3]
+    name: README sections (v2 quick start and root) still clean
+    value: UNEXPLAINED 0; unported READMEs differing 0; changes outside the two sections 0
+    command: node diff2.js
+  - [4]
+    name: REFERENCE prose shared by sentence, excluding the already-shared feature reference (all four of ts/go/py/c)
+    value: OLD ts 66.7%, go 66.8%, py 71.2%, c 70.7%; NEW ts 76.8%, go 76.9%, py 80.8%, c 78.2%. Sentences written by a provider: 0. Standalone sentences in NEW are shared frames for a result style, member kind or capability that one of the four runtimes has (distinct: ts 17, go 11, py 14, c 12)
+    command: node proseref.js old --nofeat; node proseref.js new --nofeat
+  - [5]
+    name: REFERENCE prose by word: declared-fact words outside code spans
+    value: ts 102 of 22,319 (0.5%), go 19 of 23,801 (0.1%), py 19 of 17,180 (0.1%), c 185 of 20,567 (0.9%), zig 102 of 19,656 (0.5%); code-span words (syntax) are counted apart: about 2,200-3,100 per language
+    command: LANGS=ts,go,py,c,zig node proseref.js new --nofeat
+  - [6]
+    name: REFERENCE prose shared, whole page including features
+    value: NEW 89-91% of sentences in all five (ts 89, go 89.1, py 91, c 89.9, zig 90.3); OLD 85.1-88.8%
+    command: LANGS=ts,go,py,c,zig node proseref.js new; ... old
+  - [7]
+    name: issue checks OLD/NEW on exposing variations
+    value: 17 checks; the defect shows in OLD and not in NEW for every ported language where the check applies (U34 n/a for c); the unported js/java/perl columns still show it
+    command: node issuecheck.js
+  - [8]
+    name: source lines, REFERENCE, five languages
+    value: 2,196 -> 967 (2.27x total; 1.92x ncnb)
+    command: node metrics3.js
+  - [9]
+    name: source lines, REFERENCE, projection to 20
+    value: 8,359 -> 1,720 (4.86x) with providers at the measured +50 lines; 3.76x at 1.5x; 3.07x at 2x
+    command: node metrics3.js
+  - [10]
+    name: source lines, both sections, 20 languages
+    value: 14,896 -> 5,437 (2.74x; 2.51x ncnb); 2.03x if the 15 unported providers are 1.5x the measured average of 188.6 lines
+    command: node metrics3.js
+  - [11]
+    name: provider purity
+    value: 0 model reads, 0 naming rules; 5 imports of canonToType/canonKey (allowed: pure type maps keyed by a literal language); 1 pre-existing c index-expression hit
+    command: node purity.js
+  - [12]
+    name: ts README lane
+    value: 16/16 (run 1: 11/16, all 5 failures the action example; fixed)
+    command: cd sdkgen/ts && node --test --test-name-pattern 'typescript: the README example tests type-check and run' dist-test/generatedcompile.test.js
+  - [13]
+    name: go README lane
+    value: 12/12
+    command: node --test --test-name-pattern '^go: (every README example|the README examples run)' dist-test/generatedcompile.test.js
+  - [14]
+    name: py README lane (real pytest)
+    value: 12/12 (run 1: 9/12, the action example)
+    command: PATH=/root/.local/share/uv/tools/pytest/bin:$PATH node --test --test-name-pattern '^py: (every README example|the README examples run)' dist-test/generatedcompile.test.js
+  - [15]
+    name: c DOC lane
+    value: 6/6 at a111591a+e8d78809 and 6/6 at the final HEAD
+    command: node --test --test-name-pattern '^c: every documented example compiles' dist-test/generatedcompile.test.js
+  - [16]
+    name: suite without toolchain lanes
+    value: 2534 tests, 2528 pass, 0 fail, 6 skipped (the skips include runtimefacts' reference check for clojure, which declares no ref)
+    command: node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)
+  - [17]
+    name: facts guard negative control
+    value: declaring a 'remake()' member that the ts runtime lacks makes runtimefacts fail with the signature named; restoring it passes
+    command: edit dist-test-scaffold/.sdk/dist/cmp/ts/Syntax_ts.js, node --test dist-test/runtimefacts.test.js, restore
+tests: Changed or added in the clone: ts/test/runtimefacts.test.ts adds a test per provider, 'the declared reference members are what its runtime defines'. Every declared signature (client, entity, test constructors, ops) must name a function defined in the runtime fragments, templates or Main/MainEntity/EntityBase components. Every member the runtime defines among stream, client, entopts, options, utility, make and name must be declared. It skips providers without ref. ts/test/media.test.ts selects targets with a ReadmeRef_<t> or a Syntax_<t>. ts/test/golden/add-output.txt was refreshed. The two new harness variations (ref-issues, no-test) serve as fixtures for the issue checks, but they are harness-only, not suite tests. Run: the full suite (2534 tests, 0 fail), the four documentation lanes, and the negative control above.
+gaps:
+  - clojure's reference port is not done: its client has no type, and the shared h2 '## {layout.client}' would print '## api'. It needs a fact (for example a client heading) or a layout field.
+  - zig output was not compiled (no zig here); the test is the reasoned diff only.
+  - Feature defaults are not in DescRef: ReadmeRefFeatures (shared) still reads featureDocs from the model.
+  - The guard does not check RuntimeFacts.collection, recordType, nullValue, errVar, errSlot, ok/err, nor RefFacts.maps, container, valueType, body.values or none against the runtime.
+  - Lost facts: zig StreamResult's throw:false clause; ts tester's 'Returns: DemoSDK instance in test mode' and the accessor parameter table; py's '# str' comments in create examples; ts's '// Fields to update' comment; go's GetName print.
+  - Actions have no example: no test mode can run one and the payload is not in the model, so the table names the operation and route only.
+  - D26 is only partly fixed: optspec has no descriptions, so the row text is held once in sdkdesc.ts; ReadmeModel/ReadmeOptions tables were not touched, so the README options table still disagrees with the REFERENCE rows (brief2 item 8 remains for those sections).
+  - The OLD lane numbers were not re-run here (taken from stage 1 and v2).
+  - The upgrade walk and the lifecycle rows were not re-run on this build.
+  - The issue checks for the unported contrast columns (js, java, perl) use loose regexes and are indicative only; S13 for java/perl reads '--' because the check's heading regex does not match those pages.
+  - The diffref.js reason rules are context rules (by section and heading), not per-line rules; some are broad (the Common-members rule tags 2,553 lines).
+  - No timings were measured.
+  - The 'both sections' after-count leaves out ReadmeTop's shared quick-start hook (about 54 lines).
+surprises:
+  - The examples needed no new provider printer. refOpBlock reuses the quick-start statements (attempt, call, each, print), and the feature snippet is a client statement. Stage 1's proposed opExample/actionCall/featureActivation provider members were unnecessary.
+  - The action example cannot be made runnable in any language: test modes reject an unknown action ('Operation "create" action "terraform" is not valid'), and ts requires the create fields. The old ts page escaped this only because its comment made it an 'illustration'. My first lane run caught it (ts 5 and py 3 failures).
+  - The test constructors exist in every runtime whether or not the test feature ships (Main.fragment.ts:325, py :354, go :390, c :346). S13 is about a false sentence, not a missing method.
+  - c also reads fetchargs ctrl (Main.fragment.c:90) and defines `<evar>_stream` (EntityBase_c.ts:47). Stage 1 named only py for ctrl and did not check c for stream. zig also reads ctrl.
+  - Stage 1 section 5 was wrong or incomplete in places. optspec holds no descriptions, so 'option rows from optspec' gives keys and types but not text. The proposed clientTypeName/entityTypeName provider functions were replaced by the naming hook plus one `classes` boolean. c's '(list)/(map)' type annotation and its options container type ('voxgig_value*' vs 'map') needed two facts, not one. An `options()`/`utility()` absence in c is correct, as the runtime has none.
+  - Sharing the shared ReadmeRefFeatures fixes changed 2,280 lines in the 15 unported languages. That is the proposal working as intended, but it means 'unported byte-identical' can only hold up to fixes to already-shared code.
+  - v2's purity report of 0 was 1 by its own script (the c index expression).
+hypotheses:
+  - [0]
+    id: H1
+    verdict: supported
+    evidence: REFERENCE for five languages (ts go py c zig): 0 model reads and 0 naming rules in providers (purity.js). 0 sentences written in providers, and declared-fact words are 0.1-0.9% of prose words (proseref.js), far under 15%. Breaking interface changes since stage 1's first commit: about 6 in all (block->before, RuntimeWords->RuntimeFacts, Ent.sym, Expr 'fields', builders taking facts, RefFacts.container), under the ~10 line. Only RefFacts.container came after the first four reference languages, and it was made before zig. Caveat: about 11-17 distinct sentence frames per language are each used by one of the five runtimes; across 20 they would be shared more. Some true facts were lost (listed in gaps).
+  - [1]
+    id: H2
+    verdict: supported
+    evidence: REFERENCE: five languages 2,196 -> 967 lines (2.27x; 1.92x ncnb); projected to 20, 4.86x (3.07x even with providers at twice the measured size). Both sections together across 20: 2.74x, or 2.03x with 1.5x providers. This depends on the reference reusing the description, representation and quick-start printers, which it did: +378 infrastructure lines and about 50 per language. The quick start alone remains refuted (v2: 1.59-1.66x), so H2 holds only for the pair of sections.
+  - [2]
+    id: H3
+    verdict: supported
+    evidence: Of the 21 catalogued REFERENCE issues plus the uncatalogued ones, every one applicable to the five ported languages is fixed by shared code (issuecheck.js, OLD X / NEW - on the exposing variation). The N04 family needs a one-line per-language fact (the literal language in ref.type), N11 needs the js port, and stream is fixed by each provider declaring its member, enforced by the new guard. Per-language edits are about 3 of 25, around the 10% line, and each is a declared fact rather than a correction.
+  - [3]
+    id: H4
+    verdict: supported
+    evidence: ts 16/16, go 12/12, py 12/12 (real pytest), c 6/6 (twice). The only failure met, the action example, was not intrinsic: an example whose payload the model does not describe cannot run in any test mode. The fix was a builder decision, not a per-language one. zig was not compiled (no toolchain).
+  - [4]
+    id: H5
+    verdict: partly
+    evidence: ReadmeRef follows v2's rule: a target's own ReadmeRef_<lang> wins, and the record-gated retire/prune covers it. retire.test passes in the suite and the golden records the removed components. Not re-run on this build: the upgrade walk, the override/alias/no-record rows, and the langpack.
+reproduce: |
+  export PATH=/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH
+  R=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ref
+  cd $R/sdkgen/ts && npm run build
+  cd $R/harness
+  node gen.js old /home/user/sdkgen/ts
+  node gen.js oldclone "$(cd ../oldclone/ts; pwd)" --only alias && cp -r out/oldclone/alias-go2 out/old/
+  node gen.js new "$(cd ../sdkgen/ts; pwd)"
+  PORTED=ts,go,py,c,go2,zig node diffref.js --un      # REFERENCE reasons, blocks, unported check
+  node diff2.js                                        # README sections still clean
+  node issuecheck.js                                   # catalogued issues OLD/NEW
+  node proseref.js old --nofeat; node proseref.js new --nofeat; LANGS=ts,go,py,c,zig node proseref.js new
+  node purity.js; node metrics3.js; node blockcount.js
+  $R/lanes.sh                                          # ts, go, py, c lanes -> $R/lane-*.log
+  cd $R/sdkgen/ts && node --test dist-test/runtimefacts.test.js dist-test/media.test.js
+  node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)
+  Variations: harness/variations.js (21: v2's 19 plus ref-issues and no-test). lib2.js captures README.md and REFERENCE.md.
+handoff: |
+  Files. Shared page: ts/src/cmp/ReadmeRef.ts (refText, memberText, fill, keyTable, constructorText, testText, instanceText, entityText, featuresText). Description: ts/src/helpers/sdkdesc.ts (describeRef, describeEntity, describeOp, OPTION_TEXT). Representation and provider interface: ts/src/helpers/example.ts (RefFacts, RefSyntax, MemberKind, refOpBlock, featureBlock). Sentences per result style: ts/src/helpers/runtimeprose.ts (opText, failsSentence). Escaping: ts/src/helpers/markdown.ts. Body note facts: ts/src/helpers/media.ts. Feature reference (already shared): ts/src/cmp/ReadmeRefFeatures.ts. Providers: ts/project/.sdk/src/cmp/{ts,go,py,c,zig}/Syntax_<lang>.ts. Guard: ts/test/runtimefacts.test.ts.
+  
+  The porting guide for the fourteen remaining languages is /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ref/PORTING.md (205 lines). In brief:
+  (1) What a language writes, in order. Naming_<lang> first, calling the code generator's own naming functions (extract one into utility_<lang> if the generator inlines it). Then RuntimeFacts: pick a ResultStyle, and add a style plus its sentences in runtimeprose.ts and its STYLE check if none is true (swift Value/asNative, rust Result, perl die). Then the quick-start printers (client, call, each, print, attempt, comment, expr; before for hoisting; program only if the README test RUNS whole programs). Then RefFacts, every value read off the runtime: classes, noun, none, keys, maps, container, valueType, ctor, test[], accessor, op sigs with {Class}, client/entity Members of the closed MemberKind set in page order, direct.returns/signal, prepare.returns/fails, body, cancel. Then ref.type = canonToType(t, '<literal lang>'), ref.key, ref.instance. Then delete ReadmeQuick_/ReadmeTopQuick_/ReadmeRef_<lang>.
+  (2) How to check: npm run build, runtimefacts/optional/media tests, npm run golden, then gen.js new, diff2.js, diffref.js with PORTED extended, issuecheck.js, purity.js, proseref.js, metrics3.js, the suite, and the language's README_LANES or DOC_LANES lane (command -v the compiler first).
+  (3) Rules. No model, ctx$ or utility import in a provider; names only from desc.layout and Ent.sym; no op names outside the facts table; no sentences; no whether-decisions; every declared signature defined by the runtime and every defined member declared.
+  (4) Reporting. If the interface cannot express something, stop and record the construct, the file:line, the smallest change, breaking or additive, and the providers it forces.
+  (5) Traps. A new Expr/Stmt kind breaks every switch. Regenerate before diffing. Never rebuild while a run is going. members() inlines maps below depth 0. Data ops always take data. A REFERENCE block gets a fresh Scope. There is no action example. Test constructors exist without the feature. js fences js. lean keeps its own component. ocaml's 'Fields' and clojure's 'Members' are not in the noun union.
+  (6) clojure needs a client-heading fact first.
+  
+  For whoever builds on this: the next step that pays most is porting the README options table and entity sections to the same description (desc.ref.optionRows already exists), so the ts README stops contradicting its own REFERENCE (brief2 item 8). After that, extend the guard to the nouns and phrases it cannot yet check.

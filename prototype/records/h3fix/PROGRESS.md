@@ -1,0 +1,50 @@
+# h3fix progress
+- setup: copied base33 sdkgen (branch h3fix at v33-frozen), tools, out/new; out/old links base33/out/old; h3gen, issuecheck33-fenced.js, h3old copied (links absolute, still resolve)
+PORTCHECK ts start: PASS
+- X3 committed fde936de: FeatureDocs hooks[], ReadmeRefFeatures hooked = transport none + hooks; test readme.test.ts 'X3' fails before, passes after
+- S22 committed 5e876130: cache clause only with cache; test readme.test.ts 'S22' fails before (no-cache text names cache), passes after
+- U52 committed 1bd79f55: nests = >1 wrapper; singular sentence for one; test 'U52' fails before, passes after
+- U53 committed e875ff1c: hooked sentence gated, singular form; test 'U53' fails before, passes after
+- V27 committed 9ad60089: type cell via mdCell; test 'V27' fails before, passes after
+- U102 committed 3919e234: markdown.ts mdCodeCell; name+default cells; test 'U102' fails before, passes after
+- D26 committed b1bc9ee0: rows from optspec; OPTION_UNSTATED entity/extend/utility/test with reasons; test optspec.test.ts 'constructor option rows follow optspec' fails before (allow has no row), passes after. Decision: extend/utility differ by runtime (rust c ocaml no extend; zig new_with arg; rust c zig ocaml cpp no utility seam) -> needs a per-language fact, not done; entity/test not verified -> not done
+- residue backticks committed 83f532ad; test 'escaped backticks' fails before, passes after
+- residue log/true committed e1055ef3: decided = S09 in other words (the Usage sentence assumes every feature starts off); literal via provider key()+expr(lit BOOLEAN); unported: no literal. test 'S09 residue' fails before, passes after
+- residue S13 committed dc6dc844: reworded when !mock; test refinterface 'not called the feature' fails before, passes after; runtime read: py Main.fragment.py:354-373, ts Main.fragment.ts:325-337 setpath feature.test
+- U37 decided, no change: go README title (line 1) and REFERENCE title both say Golang (target.title); LANG_LABEL 'Go' is used only by pkgDescription (manifests), outside the sections. A shared label rule for the REFERENCE alone would make it disagree with its own README title; the fix is the target model title (go.aontu, a copied model file), which is a per-target model change, not one shared rule.
+- regen + portcheck ts after edits: FAIL, 65 open (reference); mine/decide3.py (12 rules, one per changed template) decides all 65 for ts (DRY). Running batch 1 (go py c zig clojure rust) to collect opens; then batch 2.
+- unported diff vs base33/out/new: REFERENCE.md only, 383 files changed overall; unported-diff.txt lists lines per language
+- issuecheck-h3fix.js = fenced checker + broad rows (X3 any, S22 any, U52 any, U53 any, V27 U102 any, D26 both, S09r, lit, S13r, bt)
+- decide3 applied (written) for ts go py c zig clojure rust: all decided, 0 left
+- observed, not fixed (outside the list given): the feature Configuration tables print each default through FeatureDocs.renderValue in JavaScript spelling (`false`, `'anonymous'`, `['GET']`) for every language; the same class as the Usage literal, larger (every option row of every feature)
+- batch 2 portcheck running (elixir rb perl swift ocaml lua)
+- 11:06 resumed after a machine restart (uptime 3 min): batch-2 portcheck had stopped in lua; re-verifying build, regeneration and decisions before continuing
+- 11:07 build exit 0, dist unchanged by it (same diff as before the restart); running REGEN=1 portcheck ts (pc3-ts.log)
+- 11:09 S13 residue sentence found FALSE on reading the runtimes: every ported constructor reads feature.test.active (py Main.fragment.py:45, c Main.fragment.c:38, go make_options.go:156 and fetcher.go:228), so 'nothing reads it' was wrong. Reworded to 'The first argument is set, switched on, as <feature.test> in the second, which holds the other client options. Both may be <none>.'; test updated; HEAD amended (was dc6dc844, now 9964094d). ts run pc3 (before the change): OPEN 0, failed only on STALE 2: decide3's s13 why quoted two runtime lines joined by '; ' (not on one line anywhere); decide3 to be fixed
+- 11:11 decide3.py fixed (s13-res why: single-line quotes, no 'nothing reads'; echo same-meaning); hand/*.json reset to the tools base (a3fd3b8) so every decision is rewritten by the fixed rules; running pass 1 (collect opens) REGEN with ts, then the twelve (pc4-*.log)
+- 11:13 pass 1 ts: FAIL with 65 open (reference), STALE 0; decide3 (fixed) decides 65, left 0; written to hand/ts.json. Pass 1 continues (go py c zig clojure rust)
+- 11:15 before-table: issuecheck-h3fix.js on P/h3/out (v33-frozen NEW) -> meas/before.out (exit 1, 193 cells)
+- 11:16 pass 1 go: 43 open, decide3 43 decided, 0 left, written
+- 11:19 pass 1 py: 66 decided, 0 left, written
+- 11:22 pass 1 c: 65 decided, 0 left, written
+- 11:25 pass 1 zig: 61 decided (2 absent-s13), 0 left, written
+- 11:28 pass 1 clojure: 60 decided (2 absent-s13), 0 left, written
+- 11:31 pass 1 rust: 64 decided, 0 left, written. Batch A of pass 1 done; starting batch B pass 1 (elixir rb perl swift ocaml lua, pc5)
+- 11:35 pass 1 elixir: elixir decided 64  left 0, written
+- 11:37 pass 1 rb: rb decided 65  left 0, written
+- 11:39 pass 1 perl: perl decided 46  left 0, written
+- 11:41 pass 1 swift: swift decided 43  left 0, written
+- 11:43 pass 1 ocaml: ocaml decided 65  left 0, written
+- 11:45 pass 1 lua: lua decided 45  left 0, written
+- 11:46 pass 1 done for all 13: every open class decided by decide3 (0 left); starting pass 2 (pc6 then pc7), no regeneration
+- 11:47 h3out generated (26/26, exit 0); the 21 shared variations equal out/new. Checker 'lit' row of the previous run was a false positive on swift rust c zig (its snippet parser could not read .bool(true), Value::Bool(true), v_bool(true), h.vbool(true)); rewritten to compare the Usage literal with the snippet's active lines. after: exit 0 (13 ported clean); before (P/h3/out): exit 1, 193 cells. pass 2 ts: PASS
+- 11:48 mutations (mine/mut.js -> h3mut, 17 attempts): fired: X3 any (x2), U52+U52 any (plural back), U53 any, V27U102 any (x2), D26 both (row lost, row added), lit (py true), bt (backslash). Fooled: narrow X3 S22 U52 U53 V27 U102 D26 S09 everywhere they were tried; S22 any (cached), U52 any (stack in the order listed), D26 both (false text on a kept key), S09r (Turn it on), lit (bare true), S13r (options of the test feature), bt (&#96;). Added post-attack S22 any2, S13r2, bt2: catch theirs; after-table still exit 0; before-table they fire on v33-frozen NEW
+- 11:53 pass 2 batch one: ts go py c zig clojure rust PASS; starting pc7 (elixir rb perl swift ocaml lua)
+- 12:00 pass 2 all 13 PASS (pc6, pc7). Starting the suite without the toolchain lanes (meas/suite.log)
+- 12:01 tools records committed: 72b2a64 (hand + classes, 13 languages)
+- 12:08 suite: 2642 tests, 2637 pass, 0 fail, 5 skipped (436 s); golden next
+- 12:08 golden: SDKGEN_GOLDEN_UPDATE=1 then plain: 2/2 pass, test/golden unchanged (no golden commit: nothing moved). Guard+reader: 77/77, all twenty. Next: fail-before check in a second copy (fbclone)
+- 12:09 dist committed f5a44660 (Build); npm run build again exit 0, git status clean; tagged h3fix at f5a44660; commit messages checked: no tool/model names, no trailers
+- 12:09 fail-before (mine/failbefore2.sh, meas/failbefore.txt): each of the 10 commits' tests fails with src at C^ and passes at C (D26: 1 of its 2 tests fails before, the gated-key one held already); fbclone and out-new-pre removed
+- H3 again (36 entries fixed-or-should-be, 29 distinct): per-language by the rule 1/36 (S13) with D26's unfinished half counted for, 2/36 (S13, D26) against; strict (+U44) 2/36 and 3/36; strictest (+N04 U06 M04 M14) 6/36 and 7/36. Per distinct: 1/29 2/29; 2/29 3/29; 4/29 5/29. Not fixed now: D26's four unstated keys only (extend and utility need a runtime fact per language)
+- DONE except the report. Branch and tag are both named h3fix (git warns the name is ambiguous; use refs/tags/h3fix). The D26 commit message says 'both ways'; four keys are excepted with reasons in OPTION_UNSTATED (message not rewritten)

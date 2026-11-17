@@ -1,0 +1,770 @@
+summary: |
+  The guard now accounts for every leaf a provider declares, in all nine ported languages, and its forms read all twenty runtimes. I changed no file under ts/src or ts/project, and ts/dist is unchanged.
+  
+  **What I ran:**
+  - Guard: 39/39. Reader: 22/22 (20 languages, plus the forms-count test and the table test).
+  - Suite without the toolchain lanes: 2586 tests, 2581 pass, 0 fail, 5 skipped.
+  - `git status` is clean after a full `npm run build`.
+  - The check's 52 mutations plus my 19, each rebuilt: 62 of 71 caught.
+    - Of the check's 52: 43 caught (it reported 27).
+    - Of mine: 19 of 19 caught.
+    - Every miss is in a stated category. All nine misses are the check's own: one return compared with nothing (clojure), one convention noun, two literals (language), two type printers with no column, one c type exception, two printer internals.
+  
+  **What changed in the guard:**
+  - Each operation's method is the one its own source defines. The default is the `Entity<Op>Op` fragment; c uses the vtable order; ocaml uses the record field.
+  - Parameter names and types are compared, with declared renames and type names, each with a reason.
+  - A member is looked up only on the object that has it.
+  - The record printer must call the record accessor.
+  - A comparison that compares nothing is counted and needs a reason.
+  - A type printer with no column needs a reason.
+  - A compiled forms file with no source fails.
+  - An entity accessor's argument is derived from the entity constructor it is passed to.
+  - A citation is checked: the file belongs to the runtime, the quote is still there, and the value's code tokens are in the quote. Where no quote can hold the value (prose, a boolean, a member kind, a note), the citation pins the value it audited.
+  
+  **Found on the way (read, then confirmed by the guard):**
+  - The handed guard's undocumented-member check had never fired in any language. The literal `{ctor}` in its known-names list became the wildcard `\w+`.
+  - Six declared facts are wrong (rust has one in a note), in six languages:
+    - ts, go, py, rb, clojure: `accessor.arg: 'data'`, so the page says "Pass … for no initial data". Each runtime forwards the argument to the entity constructor's `entopts`.
+    - py: `data_set` and `match_set` show a keyword (`data=`/`match=`) the runtime does not have; it names it `args`.
+    - rust: the direct note says `Err` is "reserved for a request that could not be made". `direct` never returns `Err`.
+  
+    All are recorded as `WRONG:` exceptions for the next engineer.
+  
+  **H1:**
+  - A language supplies one forms file, about 45 to 105 lines.
+  - The framework grew additively: `declReader`, file parts (`path#from#to`), a return read from a later line, `absentOps`, `param`, `renames`, `typeNames`, `uncompared`, `cite`, value pins. These let it read perl's `my (...) = @_`, ocaml's arrows and record fields, java's overloads, kotlin/scala/swift properties, swift's next-line returns, lua's `---@return` pairs and cpp's class sections.
+  - Measured against the handed state, the only change that forced edits in existing forms files was making the new account pass: citations and parameter readers had to be added. That is new required content, not a changed interface.
+  - No shared file needs a per-language edit to port one of the eleven. The one exception would be a fact key with no default category, which fails loudly.
+clone: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-guard/sdkgen (copied from P/pilot-rb/sdkgen at 2a87287f; HEAD 9f183559). Mutation copy: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-guard/mut. Scripts and logs: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-guard/work (mutate.js, muts1.json, muts1b.json, muts2.json, muts3.json, mutsall.json, mutsall.out.json, mutsall.summary, muts1.log = the first run against the guard before pins, mutsall.log, suite.log, report.txt, fnd.js). Table: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-guard/runtime-table.md (872 lines).
+commits: |
+  35 commits on top of 2a87287f, test files only. Shared and per-language commits are kept separate. Commit messages carry no attribution trailers, because the brief forbids naming tools in commits.
+  
+  1. 09357259: shared, the guard and account (runtimefacts.test.ts, runtimeforms/forms.ts, account.ts, guard.ts).
+  2. 79833817 c807897b 7eaa2077 fb624dcc 658d9d35 45835d56 f886541d 8b8fabba bb085f87: ts go py c zig clojure rust elixir rb forms account for every declared fact.
+  3. e0aa6726: shared, the forms read every runtime (declReader, file parts, a return on a later line, absentOps; runtimereader.test.ts).
+  4. 1fc084c2 2ab307ba 1b810874: c, rust, clojure follow the part syntax and the reader test.
+  5. 23b150dc 306ae3c8 48d0786c d9083246 cd08cf2b 1669ac20 2a8b5772 36c61705 1a679f0c 1b48b499 e9726c7e: js php lua csharp java kotlin scala swift cpp perl ocaml forms, written from the runtime before the port.
+  6. 16355d4d: shared, a citation pins the value it audited where no quote can hold it.
+  7. 10b88eb8 4f0e911a 07297593 625db28e 92b2265f 18288da9 324bd1fe 56f1b194 9f183559: per-language pins.
+  
+  No build commit and no golden commit: neither ts/dist nor the golden changed.
+checks_added:
+  - [0]
+    check: a: an operation's method is that operation's (method)
+    how: opMethod derives each method from the operation's own source. Default: the Entity<Op>Op fragment and the one public member it declares, narrowed by an opName pattern for go (LoadTyped wrappers), zig and rust. c: the entyvar_<x> function its fragment defines, mapped through the EntityVT initializer order onto the sdk.h field. ocaml: the entity_obj field e_<op>. facts.method[op] must equal the derived method, and ref.facts.op[op]'s signature must name it.
+    negative_control: Control 'two operations' methods swapped' (list<->load), all 9. Mutations ts-method-swap, c-method-swap, my-method-swap-go/-elixir/-clojure, my-rt-op-file-swap-ts: all caught (method).
+  - [1]
+    check: b: parameter names and types (paramNames, paramTypes)
+    how: forms.param(p) gives {name, type} on both sides. A name is compared where both state one, allowing forms.renames (runtime name -> page names, with namesWhy). A type is compared as tokens where both state one, allowing forms.typeNames. A declared name or type with nothing to compare against counts as uncompared and needs forms.uncompared.<check>.
+    negative_control: Controls 'a parameter of load renamed' and 'a parameter type of load changed' (wherever the load signature names or types one). Mutations ts-param-type, ts-param-renamed, c-param-type, my-param-renamed-rust/-rb, my-param-type-go: caught.
+  - [2]
+    check: c: a member is declared on the object that has it (signature)
+    how: Entity signatures are looked up in entity files only, client signatures in client files only. File parts (path#from#to) narrow a shared header: c's entity is the EntityVT struct; rust's is the Entity trait.
+    negative_control: Control 'a client member declared on the entity'. Mutations ts-member-misplaced, my-member-client-to-entity-go, my-member-entity-to-client-rust: caught.
+  - [3]
+    check: d: the record printer agrees with the record fact (record)
+    how: printRecord runs S.expr({k:'record'}) with a probe entity. Its output must call forms.record(facts.record).name.
+    negative_control: Control 'the record printer reads another member' (all 9). Mutation ts-record-expr: caught.
+  - [4]
+    check: e: a returns comparison that compares nothing says so (returns)
+    how: A declared return compared with an empty runtime return is counted. More than zero needs forms.uncompared.returns. clojure's sigReturns now parses '-> x', so its 14 declared returns are counted. The same applies to py (6), rb (7), elixir (9) and c (1), each with a reason.
+    negative_control: A guard run with uncompared.returns removed reports the count (the unit of the check). Mutation clj-return-changed is still not caught, and is accounted as uncompared with its reason.
+  - [5]
+    check: f: field types where the generator has no type map (types)
+    how: types.column null needs a non-empty types.reason. The report prints 'printer total only (reason)'. zig and clojure carry reasons; perl and ocaml forms have them too.
+    negative_control: Control 'a type column dropped with no reason' (all 9). Mutation my-types-reason-dropped-zig (reason blanked): caught (types).
+  - [6]
+    check: g: stale compiled forms
+    how: A test fails when dist-test/runtimeforms/<x>.js has no test/runtimeforms/<x>.ts, or when a provider has no forms source. formsOf requires the source too.
+    negative_control: Mutation no-forms-zig (source deleted, incremental build): caught (stale-forms, forms-missing). It passed before.
+  - [7]
+    check: undocumented public members (members): the existing check, now live
+    how: The known-names list held the literal '{ctor}', which namePattern turned into \w+, so every public name counted as known in every language. Tokens are spelled first now, and a ${...} template placeholder is literal.
+    negative_control: Mutation my-undocumented-member-ts (a new public method on EntityBase): caught.
+  - [8]
+    check: accessor argument (accessor)
+    how: forms.entityCtor names the constructor the accessor's argument is passed to. Its last parameter's name (entopts or data) is the derived accessor.arg.
+    negative_control: Control 'an accessor argument shown as data when it is options'. Mutation my-wrong-exception-removed-ts: caught.
+  - [9]
+    check: derivations for the account
+    how: Verified by the guard: ctor lines (as a call: the function exists and takes that many arguments); test sig, call and args; accessor.sig (the MainEntity component's declaration); direct/prepare returns where the runtime states one; listOf and collection where the list declaration's return contains them; valueType equal to the type printer; member kinds whose sig names forms.members[kind] (not utility: copy or live is cited).
+    negative_control: Mutations ts-ctor-sig (ctor), py-test-sig (parameters): caught.
+  - [10]
+    check: account: every declared leaf is derived, cited, language or convention (account)
+    how: DEFAULTS in runtimeforms/account.ts give each key a category. Derived needs the guard to have verified the leaf, else a citation. A cited fact needs a citation: the file is the runtime's own; each quote is present; code tokens in the value are present, word-bounded (or listed as unquoted with a reason); a value with prose beyond its tokens pins the audited value. A null value that is more than a keyword (h.vnull(), Value::Noval) must be cited. A citation on a derived fact, or on a fact that does not exist, fails. Leaf exceptions are 'excepted'.
+    negative_control: Controls 'a citation whose quote no longer exists', 'a cited code token changed', 'a cited prose value changed' and 'a cited fact with its citation removed', in all 9. Mutations my-cite-quote-gone-ts/-go, my-cite-token-ts/-rust, c-nullvalue, py-direct-return, ts/c/clj-collection, ts-utility-kind, ts-cancel: caught.
+  - [11]
+    check: reader test for all twenty (reader)
+    how: For every forms file: six methods with declarations (or absentOps), a load declaration, a result style other than none, a record accessor, public client and entity members, every members entry declared and public, and a type column or a reason.
+    negative_control: Mutations my-reader-ocaml-op-renamed (sdk_types.ml e_load -> e_fetch), my-reader-perl-style (raises pattern never matches), rt-clj-getname-renamed, rt-c-fnptr-renamed: caught (reader).
+account:
+  - [0]
+    lang: ts
+    derived: 44
+    cited: 13: collection, container, valueType.OBJECT, client[0].returns, client[1].kind, client[1].returns, direct.returns, direct.signal, prepare.returns, prepare.fails, body.values, body.once, cancel
+    language: 2 (none, maps)
+    convention: 5 (named, prints, entityBy, noun, keys)
+    exceptions: 1 leaf excepted plus 1 check exception, both WRONG: ref.facts.accessor.arg; paramNames:accessor. Unquoted tokens with reasons: 6 (Promise, Error, Buffer, Uint8Array, object x2).
+  - [1]
+    lang: go
+    derived: 45
+    cited: 8: collection, container, client[1].kind, prepare.fails, body.values, body.once, cancel, notes.member:stream
+    language: 3 (unusedError, none, maps)
+    convention: 6
+    exceptions: 1 leaf WRONG: ref.facts.accessor.arg
+  - [2]
+    lang: py
+    derived: 45
+    cited: 10: recordType, container, ctor[0], client[1].kind, direct.returns, prepare.returns, prepare.fails, body.values, body.once, cancel
+    language: 4 (none, lits.true, lits.false, maps)
+    convention: 7 (includes valueType.ANY 'any', the options table's word)
+    exceptions: 1 leaf WRONG (accessor.arg), 2 check WRONG (paramNames:entity dataSet, matchSet), 3 earlier exceptions (optional:opMatched list, returns:entity dataGet/matchGet)
+  - [3]
+    lang: c
+    derived: 37
+    cited: 8: collection, errSlot, nullValue, container, ctor[0], prepare.fails, body.values, cancel
+    language: 2
+    convention: 10 (includes valueType STRING/OBJECT/ANY)
+    exceptions: 0 leaves; check exceptions types:ARRAY, types:OBJECT; uncompared returns 1 (accessor name spelled through the generator), paramNames 10 (unnamed vtable receivers)
+  - [4]
+    lang: zig
+    derived: 38
+    cited: 13: collection, ok, err, none (h.vnull()), container, ctor[0], ctor[1], client[1].kind, prepare.fails, body.values, cancel, notes.member:prepare, notes.member:streamList
+    language: 2
+    convention: 9
+    exceptions: 0; types: printer total only, with reason
+  - [5]
+    lang: clojure
+    derived: 40
+    cited: 10: collection, container, ctor[0], ctor[1], direct.returns, prepare.returns, prepare.fails, body.values, body.once, cancel
+    language: 2
+    convention: 11
+    exceptions: 1 leaf WRONG (accessor.arg); uncompared returns 14 with reason; types: printer total only
+  - [6]
+    lang: rust
+    derived: 41
+    cited: 10: ok, err, none, setArg, container, ctor[0], client[1].kind, prepare.fails, body.values, cancel
+    language: 1 (maps)
+    convention: 9
+    exceptions: 1 leaf WRONG: notes.member:direct
+  - [7]
+    lang: elixir
+    derived: 46
+    cited: 9: collection, container, client[1].kind (utilityBase), direct.returns, prepare.returns, prepare.fails, body.values, cancel, notes.member:utilityBase
+    language: 2
+    convention: 5
+    exceptions: 0 leaves; earlier returns:* and optional:opMatched list exceptions kept; uncompared returns 9
+  - [8]
+    lang: rb
+    derived: 44
+    cited: 10: recordType, container, ctor[0], client[1].kind, direct.returns, prepare.returns, prepare.fails, body.values, body.once, cancel
+    language: 2
+    convention: 7
+    exceptions: 1 leaf WRONG (accessor.arg); returns:entity dataGet kept; uncompared returns 7
+wrong_facts:
+  - [0]
+    lang: ts
+    fact: ref.facts.accessor.arg and the accessor signature's parameter
+    declared: arg: 'data', sig '{accessor}(data?: object)'; the page says 'Pass `undefined` for no initial data.'
+    runtime_shows: project/.sdk/src/cmp/ts/MainEntity_ts.ts:20-25: 'The argument is the entity OPTIONS object (passed to the entity constructor as entopts), not initial entity data.' `${entity.Name}(entopts?: Record<string, any>) { ... return new ${cls}(self, entopts) }`
+  - [1]
+    lang: go
+    fact: ref.facts.accessor.arg
+    declared: 'data' ('Pass `nil` for no initial data.')
+    runtime_shows: MainEntity_go.ts:17-18 `func (sdk *...) ${entity.Name}(data map[string]any) ... { return New${entity.Name}EntityFunc(sdk, data) }`; fragment/Entity.fragment.go:23 `func NewEntyClass(client *core.ProjectNameSDK, entopts map[string]any)`: the argument is the entity options
+  - [2]
+    lang: py
+    fact: ref.facts.accessor.arg
+    declared: 'data'
+    runtime_shows: MainEntity_py.ts:21,24 `def ${entity.Name}(self, data=None)` / `return ${cls}(self, data)`; fragment/Entity.fragment.py:12 `def __init__(self, client, entopts=None):`
+  - [3]
+    lang: py
+    fact: entity dataSet and matchSet signatures (parameter name)
+    declared: 'data_set(data=None)', 'match_set(match=None)'
+    runtime_shows: fragment/Entity.fragment.py:56 `def data_set(self, args=None):`, :65 `def match_set(self, args=None):`. A keyword call data_set(data=...) raises TypeError.
+  - [4]
+    lang: rb
+    fact: ref.facts.accessor.arg
+    declared: 'data'
+    runtime_shows: MainEntity_rb.ts:21-23 `def ${entity.Name}(data = nil)` ... `${cls}.new(self, data)`; fragment/Entity.fragment.rb:7 `def initialize(client, entopts = nil)`
+  - [5]
+    lang: clojure
+    fact: ref.facts.accessor.arg
+    declared: 'data'
+    runtime_shows: MainEntity_clojure.ts:16 `(defn ${cljAccessor(entity)} [client data] (${cljEntityAlias(entity)}/make client data))`; fragment/Entity.fragment.clj:54 `(defn make [client data] (new-entity client data))` and :32 `(defn- new-entity [client entopts]`
+  - [6]
+    lang: rust
+    fact: notes.member:direct
+    declared: 'The result map comes back inside `Ok` even for a non-2xx response; `Err` is reserved for a request that could not be made.'
+    runtime_shows: fragment/Main.fragment.rs: direct never returns Err. A prepare failure (245-251), a fetch failure (272-278), no response (282-287) and an unreadable one (338-341) all return Ok(jo(... ("ok", Value::Bool(false)) ...)).
+forms_changes:
+  - [0]
+    change: Forms gains optional param, renames (a value may be a list), typeNames, namesWhy, uncompared, cite, entityCtor, ctorDecl, opSource, opName, opMethod, absentOps, declReader, types.reason
+    breaking: False
+    why: Optional fields. A forms file that leaves them out still type-checks. The account then asks for citations and reasons, which is new required content, not a changed shape.
+  - [1]
+    change: returns(after, before, head, rest): a fourth argument
+    breaking: False
+    why: swift writes `throws -> T` on the line after the parameter list. Existing three-argument functions ignore it.
+  - [2]
+    change: read() accepts path#from#to (a part of a file)
+    breaking: False
+    why: c's sdk.h and rust's types.rs declare client and entity things together, and cpp's class sections live in one header. It replaced a 'path#from:to' form introduced earlier in this stage, which broke on C++'s ':'. The handed state had neither form.
+  - [3]
+    change: Decl gains bare (a declaration with no parameter list)
+    breaking: False
+    why: Lets the table say 'property or field' for kotlin/scala/swift/cpp.
+  - [4]
+    change: Citation shape {file, quote, also?, unquoted?, value?}; a prose-bearing value must pin value
+    breaking: False
+    why: New with the account. A quote cannot hold prose, so the audited value is pinned and a provider change re-opens the audit.
+  - [5]
+    change: The guard now looks client signatures up in client files only and entity signatures in entity files only. It spells {tokens} before matching names, and the undocumented-member check fires.
+    breaking: True
+    why: Behaviour, not shape. Existing forms that relied on the looser search, or on the inert undocumented check, needed edits: undocumented lists grew in all 9 (ts toJSON/toString/markDeleted/deleted, go DataTyped/MatchTyped/String/GoString/MarshalJSON/New/Deleted/MarkDeleted, and so on). clojure's public.entity regex matched ':else' and ':exclude'. rust's entity file picked up the Feature trait. The 11 new forms files are written against the current behaviour.
+runtime_table: |
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-guard/runtime-table.md (872 lines). It is written by `SDKGEN_RUNTIME_TABLE=<path> node --test dist-test/runtimereader.test.js`. Each of the twenty languages has a section with: result style and whether operations resolve; the record accessor and its arity; per operation the method, parameters, return and source file; the entity accessor and the entity constructor it passes to; every public client and entity member with parameters (all overloads), return, family and shape (data/match get+set, optional or always-passed argument, stream kind; properties and fields marked); field types from canonToType, or the reason there is no column.
+  
+  I read each of the eleven unported sections against the runtime and corrected the forms until they matched: kotlin locals leaking in, cpp's MainEntity TypeScript and `return`/`class` read as types, swift's return reader, swift's constructor order.
+  
+  Against PORTING section 6, result styles and stream kinds agree for all twelve unported languages, plus rb:
+  - js throw async, streamIterator (EntityBase.fragment.js:107)
+  - php throw, streamGenerator (Entity.fragment.php:148)
+  - lua pair (---@return EntyClass / string? err), streamFunction (Entity.fragment.lua:229)
+  - csharp throw, streamIterator (EntityBase.fragment.cs:257)
+  - java throw, streamLazy (EntityBase.fragment.java:206)
+  - kotlin throw, streamLazy (EntityBase.fragment.kt:180)
+  - scala throw, streamSync (EntityBase.fragment.scala:162)
+  - swift wrapped, streamIterator (EntityBase.fragment.swift:188-189)
+  - cpp throw, streamList (tm/cpp/core/types.hpp:749)
+  - perl die, streamFunction (Entity.fragment.pm:149)
+  - ocaml raise; PORTING says 'not surveyed'. It is streamLazy: tm/ocaml/sdk_types.ml:226 `mutable e_stream : string -> value -> value -> value Seq.t`.
+  
+  Differences from PORTING:
+  - rb's citation is stale: Enumerator.new is at Entity.fragment.rb:140, not :104.
+  - scala's match member is `matchArgs` (EntityBase.fragment.scala:52), which PORTING does not mention.
+  - swift's data/match are `data(_ newdata: Value?)` / `matchv(_ newmatch: Value?)` with no default (dataArg/matchArg shape; EntityBase.fragment.swift:48,58).
+  - csharp's Stream takes a fourth parameter, `[EnumeratorCancellation] CancellationToken cancel = default`, and Direct/Prepare take a required fetchargs (Main.fragment.cs:113,205).
+  - java's operations have no overloads, so their two parameters are required (EntityLoadOp.fragment.java:22).
+  - ocaml's client has no options_map/get_utility. It has make, make0, test, test_with, direct, prepare, graphql and entity (Main_ocaml.ts:168-200).
+  - lua, php and perl name their accessor argument data (MainEntity_lua.ts:18 `(data)`, MainEntity_php.ts:40 `$data = null`, MainEntity_perl.ts:21-24) but pass it to the entity constructor's entopts: the trap behind the five WRONG facts above.
+eleven:
+  - [0]
+    lang: js
+    style: throw, async
+    stream: streamIterator
+    forms_needed: class-method decl (as ts), no types (`optional: () => true`), types column 'js' exists in canonToType
+    differs_from_guide: no
+    notes: Accessor `${entity.Name}(entopts)` -> constructor(client, entopts).
+  - [1]
+    lang: php
+    style: throw
+    stream: streamGenerator
+    forms_needed: `public (static )?function name(`, a parameter as `?type $name = default`, return after `):`
+    differs_from_guide: no
+    notes: Accessor `${accessor}($data = null)` passes to __construct($client, ?array $entopts): the WRONG trap.
+  - [2]
+    lang: lua
+    style: pair (from ---@return lines)
+    stream: streamFunction
+    forms_needed: `function T[.:]name(`; returns read from the `---@return` comment block above
+    differs_from_guide: no
+    notes: Accessor `(data)` -> new(client, entopts).
+  - [3]
+    lang: csharp
+    style: throw
+    stream: streamIterator
+    forms_needed: modifiers plus a type ahead of the name; opName for `public override object? Load(`
+    differs_from_guide: partly
+    notes: Stream has a 4th parameter (CancellationToken); Direct/Prepare fetchargs required.
+  - [4]
+    lang: java
+    style: throw
+    stream: streamLazy
+    forms_needed: client files include tm/java/core/SdkClient.java; overloads read as separate declarations (testSDK() or testSDK(a, b)); varargs optional
+    differs_from_guide: partly
+    notes: Operations take two required parameters; no default arguments.
+  - [5]
+    lang: kotlin
+    style: throw
+    stream: streamLazy
+    forms_needed: fun/val/var/class with bare: true; public = class-level members plus companion funs; SdkClient.kt
+    differs_from_guide: no
+    notes: `name` is a property; data/match are vararg.
+  - [6]
+    lang: scala
+    style: throw
+    stream: streamSync
+    forms_needed: def/val/var with bare; SdkClient.scala
+    differs_from_guide: partly
+    notes: The match member is matchArgs.
+  - [7]
+    lang: swift
+    style: wrapped (throws -> Value)
+    stream: streamIterator
+    forms_needed: returns from `rest` (next-line `throws -> T`); `label name: Type` parameters; entity file order puts Entity before EntityBase
+    differs_from_guide: partly
+    notes: data/matchv take a non-defaulted Value?: dataArg/matchArg.
+  - [8]
+    lang: cpp
+    style: throw
+    stream: streamList
+    forms_needed: file parts for class SdkClient and class EntityBase in types.hpp; types.hpp in ops for the throw; the MainEntity template part; return/class excluded as types
+    differs_from_guide: no
+    notes: The reader cannot see C++ access sections: private/protected members (opAllowed, rawRequest, runOp) need undocumented reasons; public fields are listed.
+  - [9]
+    lang: perl
+    style: die
+    stream: streamFunction
+    forms_needed: declReader reads `my ($self, ...) = @_;` from the body; no column (reason)
+    differs_from_guide: no
+    notes: Accessor `($data)` -> new($client, $entopts).
+  - [10]
+    lang: ocaml
+    style: raise
+    stream: streamLazy
+    forms_needed: declReader for record fields (`: a -> b -> c;`) and lets (`(x : t)` groups); opSource/opMethod via the e_<op> field; the entity_obj record as a file part
+    differs_from_guide: yes
+    notes: PORTING has no stream kind. The client has no options/utility members.
+mutations:
+  - [0]
+    mutation: ts-method-typo
+    lang: ts
+    caught: True
+    by_or_account: method,signature
+  - [1]
+    mutation: ts-method-swap list<->load
+    lang: ts
+    caught: True
+    by_or_account: method,signature
+  - [2]
+    mutation: c-method-swap update<->patch
+    lang: c
+    caught: True
+    by_or_account: method,signature
+  - [3]
+    mutation: clj-method-typo
+    lang: clojure
+    caught: True
+    by_or_account: method
+  - [4]
+    mutation: ts-param-required
+    lang: ts
+    caught: True
+    by_or_account: optional
+  - [5]
+    mutation: ts-param-type object->string
+    lang: ts
+    caught: True
+    by_or_account: paramTypes
+  - [6]
+    mutation: ts-param-renamed match->id
+    lang: ts
+    caught: True
+    by_or_account: paramNames
+  - [7]
+    mutation: c-param-type
+    lang: c
+    caught: True
+    by_or_account: paramTypes
+  - [8]
+    mutation: c-param-dropped
+    lang: c
+    caught: True
+    by_or_account: parameters
+  - [9]
+    mutation: clj-param-added
+    lang: clojure
+    caught: True
+    by_or_account: parameters
+  - [10]
+    mutation: clj-return-changed -> vector to -> map
+    lang: clojure
+    caught: False
+    by_or_account: derived signature; its return part is uncompared, with reason (the clojure runtime declares no types)
+  - [11]
+    mutation: py-return-changed
+    lang: py
+    caught: True
+    by_or_account: returns
+  - [12]
+    mutation: py-direct-return dict->list
+    lang: py
+    caught: True
+    by_or_account: account (cited token)
+  - [13]
+    mutation: ts-style-raise
+    lang: ts
+    caught: True
+    by_or_account: style
+  - [14]
+    mutation: c-style-pair
+    lang: c
+    caught: True
+    by_or_account: style
+  - [15]
+    mutation: clj-style-throw
+    lang: clojure
+    caught: True
+    by_or_account: style
+  - [16]
+    mutation: ts-collection 'linked list'
+    lang: ts
+    caught: True
+    by_or_account: account (pinned prose value)
+  - [17]
+    mutation: c-collection 'vector'
+    lang: c
+    caught: True
+    by_or_account: account (pinned value)
+  - [18]
+    mutation: clj-collection 'lazy sequence'
+    lang: clojure
+    caught: True
+    by_or_account: account (pinned value)
+  - [19]
+    mutation: ts-noun Methods->Functions
+    lang: ts
+    caught: False
+    by_or_account: convention
+  - [20]
+    mutation: ts-type-integer
+    lang: ts
+    caught: True
+    by_or_account: types
+  - [21]
+    mutation: zig-type-integer i64->f64
+    lang: zig
+    caught: False
+    by_or_account: types: column null with reason (printer checked for totality only)
+  - [22]
+    mutation: clj-type-integer long->string
+    lang: clojure
+    caught: False
+    by_or_account: types: column null with reason
+  - [23]
+    mutation: c-type-string (list)/(map) swapped
+    lang: c
+    caught: False
+    by_or_account: exception types:ARRAY/OBJECT, with reason
+  - [24]
+    mutation: ts-type-comment (example comment printer)
+    lang: ts
+    caught: False
+    by_or_account: printer output, not a declared fact; outside the account (left to the README lanes and review)
+  - [25]
+    mutation: ts-lit-none undefined->null
+    lang: ts
+    caught: False
+    by_or_account: language
+  - [26]
+    mutation: py-lit-false True->true
+    lang: py
+    caught: False
+    by_or_account: language
+  - [27]
+    mutation: ts-lit-int (example literal printer)
+    lang: ts
+    caught: False
+    by_or_account: printer output, not a declared fact; outside the account
+  - [28]
+    mutation: c-nullvalue NULL->nullptr
+    lang: c
+    caught: True
+    by_or_account: account (cited token)
+  - [29]
+    mutation: ts-member-removed
+    lang: ts
+    caught: True
+    by_or_account: members
+  - [30]
+    mutation: c-member-removed
+    lang: c
+    caught: True
+    by_or_account: members
+  - [31]
+    mutation: clj-member-removed
+    lang: clojure
+    caught: True
+    by_or_account: members,kind
+  - [32]
+    mutation: py-member-removed-pair
+    lang: py
+    caught: True
+    by_or_account: kind
+  - [33]
+    mutation: ts-member-invented
+    lang: ts
+    caught: True
+    by_or_account: parameters,kind
+  - [34]
+    mutation: ts-member-misplaced utility() on entity
+    lang: ts
+    caught: True
+    by_or_account: signature
+  - [35]
+    mutation: c-member-invented
+    lang: c
+    caught: True
+    by_or_account: signature
+  - [36]
+    mutation: clj-member-invented
+    lang: clojure
+    caught: True
+    by_or_account: account
+  - [37]
+    mutation: ts-utility-kind utility->utilityBase
+    lang: ts
+    caught: True
+    by_or_account: account (pinned kind)
+  - [38]
+    mutation: ts-cancel true->false
+    lang: ts
+    caught: True
+    by_or_account: account (pinned boolean)
+  - [39]
+    mutation: ts-async-false
+    lang: ts
+    caught: True
+    by_or_account: async
+  - [40]
+    mutation: py-record
+    lang: py
+    caught: True
+    by_or_account: record
+  - [41]
+    mutation: ts-record-expr
+    lang: ts
+    caught: True
+    by_or_account: record (printer)
+  - [42]
+    mutation: ts-ctor-sig
+    lang: ts
+    caught: True
+    by_or_account: ctor
+  - [43]
+    mutation: py-test-sig
+    lang: py
+    caught: True
+    by_or_account: parameters
+  - [44]
+    mutation: rt-ts-load-renamed
+    lang: ts
+    caught: True
+    by_or_account: method,signature
+  - [45]
+    mutation: rt-ts-load-param-required
+    lang: ts
+    caught: True
+    by_or_account: optional
+  - [46]
+    mutation: rt-ts-load-sync
+    lang: ts
+    caught: True
+    by_or_account: async
+  - [47]
+    mutation: rt-clj-load-param
+    lang: clojure
+    caught: True
+    by_or_account: parameters
+  - [48]
+    mutation: rt-clj-getname-renamed
+    lang: clojure
+    caught: True
+    by_or_account: signature,members,reader
+  - [49]
+    mutation: rt-c-fnptr-renamed
+    lang: c
+    caught: True
+    by_or_account: signature,members,reader
+  - [50]
+    mutation: no-forms-zig (source deleted, incremental build)
+    lang: zig
+    caught: True
+    by_or_account: stale-forms,forms-missing
+  - [51]
+    mutation: forms-vacuous-ts (its 'from' adjusted to the current undocumented list)
+    lang: ts
+    caught: True
+    by_or_account: method,members,reader
+  - [52]
+    mutation: my-cite-quote-gone-ts (Control.ts signal?: AbortSignal)
+    lang: ts
+    caught: True
+    by_or_account: account
+  - [53]
+    mutation: my-cite-quote-gone-go (GetUtility made the live node)
+    lang: go
+    caught: True
+    by_or_account: account
+  - [54]
+    mutation: my-cite-token-ts (direct.signal AbortController)
+    lang: ts
+    caught: True
+    by_or_account: account
+  - [55]
+    mutation: my-cite-token-rust (none Value::Null)
+    lang: rust
+    caught: True
+    by_or_account: account
+  - [56]
+    mutation: my-method-swap-go list<->load
+    lang: go
+    caught: True
+    by_or_account: method,signature
+  - [57]
+    mutation: my-method-swap-elixir create<->update
+    lang: elixir
+    caught: True
+    by_or_account: method,signature
+  - [58]
+    mutation: my-method-swap-clojure list<->load
+    lang: clojure
+    caught: True
+    by_or_account: method,signature
+  - [59]
+    mutation: my-rt-op-file-swap-ts (EntityListOp defines load)
+    lang: ts
+    caught: True
+    by_or_account: method,signature
+  - [60]
+    mutation: my-param-renamed-rust
+    lang: rust
+    caught: True
+    by_or_account: paramNames
+  - [61]
+    mutation: my-param-renamed-rb
+    lang: rb
+    caught: True
+    by_or_account: paramNames
+  - [62]
+    mutation: my-param-type-go
+    lang: go
+    caught: True
+    by_or_account: paramTypes
+  - [63]
+    mutation: my-member-client-to-entity-go (Direct)
+    lang: go
+    caught: True
+    by_or_account: signature
+  - [64]
+    mutation: my-member-entity-to-client-rust (get_name)
+    lang: rust
+    caught: True
+    by_or_account: signature
+  - [65]
+    mutation: my-wrong-exception-removed-ts
+    lang: ts
+    caught: True
+    by_or_account: accessor,account
+  - [66]
+    mutation: my-types-reason-dropped-zig
+    lang: zig
+    caught: True
+    by_or_account: types
+  - [67]
+    mutation: my-reader-ocaml-op-renamed
+    lang: ocaml
+    caught: True
+    by_or_account: reader
+  - [68]
+    mutation: my-reader-perl-style
+    lang: perl
+    caught: True
+    by_or_account: reader
+  - [69]
+    mutation: my-undocumented-member-ts
+    lang: ts
+    caught: True
+    by_or_account: members
+  - [70]
+    mutation: my-new-provider-php (copy of ts provider)
+    lang: php
+    caught: True
+    by_or_account: async,record,types,signature,accessor,members,kind,account
+still_passes:
+  - Convention facts are never compared with anything (noun, entityNoun, heading, entityBy, keys, named, prints, errVar, and valueType where it is not the type printer's word): c 10, clojure 11, elixir 5, go 6, py 7, rb 7, rust 9, ts 5, zig 9. ts noun Methods->Functions passes.
+  - Language facts are never compared (none when it is a bare keyword, maps, lits, unusedError): c 2, clojure 2, elixir 2, go 3, py 4, rb 2, rust 1, ts 2, zig 2. ts none undefined->null and py True->true pass.
+  - Prose-bearing cited facts are pinned, so a change fails; but the pinned value is only as good as the audit that pinned it. Per language: c 4 (collection 'NULL-terminated array', body.values, prepare.fails, cancel); clojure 5 (collection 'vector', body.values, body.once, prepare.fails, cancel); elixir 6 (collection, client[1].kind utilityBase, body.values 'a binary', prepare.fails, cancel, note utilityBase); go 6 (client[1].kind, body.values, body.once, prepare.fails, cancel, note stream); py 5 (client[1].kind, body.values, body.once 'a file object', prepare.fails, cancel); rb 5 (client[1].kind, body.values, body.once 'an IO', prepare.fails, cancel); rust 4 (client[1].kind, body.values, prepare.fails, cancel); ts 6 (collection 'array', client[1].kind, body.values, body.once 'a stream', prepare.fails 'value', cancel); zig 7 (collection 'slice', client[1].kind, body.values, prepare.fails 'note', cancel, two notes). Total 48. A collection called a 'linked list' fails now only if the pin is updated without re-reading the quote.
+  - Unquoted tokens: a token the citation says the quote lacks, with a reason (21): ts 6, rust 4, py 3, clojure 3, elixir 2, rb 2, zig 1, go 0, c 0.
+  - Field types where there is no generator column (zig, clojure; perl and ocaml when ported): any non-'any' type passes (i64->f64, long->string).
+  - Return parts compared with nothing, each with a reason: clojure 14, elixir 9 (members), rb 7, py 6, c 1.
+  - Printer internals that are not declared facts (an example's literal or type comment) are outside the account.
+  - A cancel=false citation cannot show absence; it quotes the transport call that takes no signal, and that is an audit, not a check.
+  - The style check's exception fallback greps for the raise word over the read files (scala's /\bthrow\b/ also matches comments).
+lines: |
+  Measured with wc -l on the final files.
+  
+  Shared guard: 1372 lines.
+  - runtimefacts.test.ts 88
+  - runtimereader.test.ts 128
+  - runtimeforms/forms.ts 330
+  - runtimeforms/account.ts 205
+  - runtimeforms/guard.ts 621
+  
+  The handed runtimefacts.test.ts plus forms.ts was 612 (392 + 220).
+  
+  Forms of the ported nine: 773 (handed: 424).
+  - ts 105, go 81, py 75, c 93, zig 77, clojure 87, rust 83, elixir 80, rb 92
+  
+  Forms of the eleven unported: 601.
+  - js 44, php 45, lua 56, csharp 47, java 47, kotlin 52, scala 51, swift 56, cpp 69, perl 51, ocaml 83
+  
+  All test/runtime* files: 2746.
+gaps:
+  - The forms for the eleven unported languages hold only the reader's half. sigName/sigParams/sigReturns, renames, typeNames, citations and exceptions are the porter's, as marked. No provider exists for them, so the account for them is not tested.
+  - The reader cannot see C++ access sections: cpp's private/protected members appear as public and carry reasons instead.
+  - Notes are cited as prose and pinned. Their backticked tokens (go `StreamItem`, `callopts["ctrl"]`) are not checked against the quote.
+  - I did not run any toolchain lane or the golden test per mutation, only the guard and the reader. I did not check whether the golden hash test would also fail on each provider mutation.
+  - The comment gate exits 1 on the handed tree. My files are clean (its total went from 27 to 22 findings; the rest are in other files, not mine).
+  - Parameter-name renames and typeNames are declared by the same porter who writes the provider; they are listed with a reason, not independently checked.
+  - I did not fix any provider (not mine): the WRONG facts stand in the providers.
+  - The 52 mutations ran against a copy of my clone (2a87287f plus my commits), not the check's v3-frozen clone. One mutation's 'from' text was adjusted to my changed forms (forms-vacuous-ts).
+surprises:
+  - The handed guard's 'public member neither declared nor undocumented' check never fired in any language. The known-names list contained the literal '{ctor}', and namePattern turned it into \w+, which matched every name. The handed negative controls passed through the family check instead.
+  - Five of nine ported providers (ts, go, py, rb, clojure) tell the reader the accessor takes initial data. Every runtime passes the argument to the entity constructor as entopts. ts's own component says so in a comment.
+  - rust's provider note on direct is the opposite of the runtime: direct never returns Err.
+  - zig's runtime has no live transport. fetcher_util ends in ctx.fail('fetch_transport', 'live transport unavailable ...') (tm/zig/core/utility.zig:2332-2336).
+  - clojure's runtime defines get-utility, but sdk.api does not re-export it, so it is not public.
+  - canonToType has a js column, so js need not be an untyped exception.
+  - The pilot's ':' file-part separator idea breaks on C++ 'class X : public Y'.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: partly
+    evidence: Ran: guard 39/39 and reader 22/22. The suite without toolchain lanes is 2586 tests, 0 fail. All eleven unported runtimes were read from a forms file alone (44 to 83 lines each), with no change to shared code per language; perl and ocaml needed two additive hooks (declReader, file parts), added once. A language must supply one forms file: how it declares, parameters, returns, public members, member names, stream kind, style predicates, record, tokens, types or a reason; then, when ported, citations for its cited facts and reasons for what it cannot compare. Against the handed state the forms framework's shape changes were all additive; the behaviour changes (member side, a live undocumented check, the account) forced additions in all nine existing forms files. That is required new content, not a renamed or removed field. Not tested: whether a porter can write citations without editing shared DEFAULTS. A new fact key needs a category there, and that would be a shared edit.
+  - [1]
+    id: H2
+    verdict: not-tested
+    evidence: This stage adds test code only; no documentation source changed. The guard grew from 612 to 1372 shared lines and the forms from 424 to 1374, which counts against the source reduction if test code is included (the check counted the guard at 608).
+  - [2]
+    id: H3
+    verdict: not-tested
+    evidence: No catalogued issue was re-measured. The guard found 6 wrong declared facts (6 languages) that would print false sentences on every page of those languages.
+  - [3]
+    id: H4
+    verdict: not-tested
+    evidence: No example lane was run; the guard reads templates and providers only.
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: Not exercised.
+reproduce: |
+  ```
+  export PATH=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang:/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH
+  cd /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-guard/sdkgen/ts
+  npm run build
+  node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js   # 61/61
+  SDKGEN_GUARD_REPORT=1 node --test --test-name-pattern 'account, per language' dist-test/runtimefacts.test.js   # counts, citations, exceptions
+  SDKGEN_RUNTIME_TABLE=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-guard/runtime-table.md node --test dist-test/runtimereader.test.js
+  node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)   # 2586/2581/0/5
+  cd .. && git status --short   # empty
+  ```
+  
+  Mutations (each rebuilds the copy):
+  
+  ```
+  node /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-guard/work/mutate.js mutsall.json mutsall.out.json
+  ```
+  
+  Run it from the work directory, after `cp -a sdkgen mut`.

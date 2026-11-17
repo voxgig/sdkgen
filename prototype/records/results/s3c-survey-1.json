@@ -1,0 +1,1210 @@
+{
+ "surveys": [
+  {
+   "pair": [
+    "ts",
+    "js"
+   ],
+   "result": {
+    "langs": [
+     "ts",
+     "js"
+    ],
+    "answers": [
+     {
+      "lang": "ts",
+      "question": 1,
+      "answer": "The accessor makes a new entity on every call, with or without an argument, including undefined or null. It never caches. The argument is the entity OPTIONS object (entopts), not initial data. null or undefined becomes {} in the entity constructor. The constructor also mutates the caller's object: it sets entopts.active.",
+      "evidence": "src/cmp/ts/MainEntity_ts.ts:23-25 \"${entity.Name}(entopts?: Record<string, any>) {\" / \"return new ${cls}(self, entopts)\"; :21-22 \"The argument is the entity OPTIONS object (passed to the entity constructor as entopts), not initial entity data.\"; src/cmp/ts/fragment/EntityBase.fragment.ts:36-37 \"entopts = entopts || {}\" / \"entopts.active = false !== entopts.active\"",
+      "sure": "read and certain",
+      "old_page": "Old README (out/old/B/ts/README.md) lists `Ambient(data?)` with 'Create an Ambient entity instance'. Old REFERENCE.md documents the parameter as `data` | `object` | 'Initial entity data.' That is wrong: the argument is entopts."
+     },
+     {
+      "lang": "js",
+      "question": 1,
+      "answer": "Same as ts: a new entity on every call, never cached. The argument is entopts, not data. null or undefined becomes {}.",
+      "evidence": "src/cmp/js/MainEntity_js.ts:23-25 \"${entity.Name}(entopts) {\" / \"return new ${cls}(self, entopts)\"; src/cmp/js/fragment/EntityBase.fragment.js:18-19 \"entopts = entopts || {}\" / \"entopts.active = false !== entopts.active\"",
+      "sure": "read and certain",
+      "old_page": "out/old/B/js/README.md:230 \"| `Ambient(data?)` | `AmbientEntity` | Create an Ambient entity instance. |\": the parameter name is wrong (it is entopts)."
+     },
+     {
+      "lang": "ts",
+      "question": 2,
+      "answer": "options() returns struct.clone(_options). That is a deep JSON copy of plain data, but functions (system.fetch) and class instances (extend features) are shared by reference. utility() returns struct.clone(_utility), and because Utility is a class instance, clone hands back THE SAME LIVE OBJECT, not a copy. data() and match() return struct.clone of _data and _match (deep copies). entopts() returns merge([{}, _entopts]), a new object whose nested maps are also copied. client() returns the live client.",
+      "evidence": "src/cmp/ts/fragment/Main.fragment.ts:104-111 \"return this._utility.struct.clone(this._options)\" / \"return this._utility.struct.clone(this._utility)\"; :31 \"_utility = new Utility()\"; tm/ts/src/utility/Utility.ts:37 \"class Utility {\"; tm/ts/src/utility/StructUtility.ts:752 \"// Copy (don't clone) functions and non-plain-object instances by reference.\" and :764-765 \"v.constructor instanceof Function && 'Object' !== v.constructor.name\"; EntityBase.fragment.ts:89 \"let out = struct.clone(this._data)\"; :105 \"let out = struct.clone(this._match)\"; :71 \"return this._utility.struct.merge([{}, this._entopts])\"; :75 \"return this._client\". I checked this by running tm/js StructUtility clone in node: clone(new U()) === instance -> true; merge([{}, e]).n === e.n -> false.",
+      "sure": "read and certain",
+      "old_page": "The old README says `utility()` | 'Deep copy of the SDK utility object.' The old REFERENCE says 'Return a copy of the SDK utility object.' Both are FALSE: utility() returns the live instance. Its description of options() as a 'Deep copy' holds for plain data only."
+     },
+     {
+      "lang": "js",
+      "question": 2,
+      "answer": "Identical to ts: options() is a deep copy of plain data; utility() returns the live Utility instance, because clone keeps class instances by reference; data() and match() are deep copies; entopts() is a merged copy; client() is live.",
+      "evidence": "src/cmp/js/fragment/Main.fragment.js:99 \"return this._utility.struct.clone(this._options)\"; :104 \"return this._utility.struct.clone(this._utility)\"; tm/js/src/utility/Utility.js:37 \"class Utility {\"; tm/js/src/utility/StructUtility.js:675 \"// Copy (don't clone) functions and non-plain-object instances by reference.\"; EntityBase.fragment.js:75 \"let out = struct.clone(this._data)\"; :91 \"let out = struct.clone(this._match)\"; :57 \"return this._utility.struct.merge([{}, this._entopts])\"",
+      "sure": "read and certain",
+      "old_page": "out/old/B/js/README.md:227 \"| `utility()` | `Utility` | Deep copy of the SDK utility object. |\": false."
+     },
+     {
+      "lang": "ts",
+      "question": 3,
+      "answer": "Yes. stream(action, args, callopts) copies callopts.signal into ctrl.signal. It is an AbortSignal (Control types it that way). It is checked before each item is yielded, and the generator returns quietly once it has aborted. It also travels in ctrl to makeFetchDef, so fetch aborts the request in flight. An error thrown while the signal is aborted is swallowed, so the stream ends without throwing.",
+      "evidence": "src/cmp/ts/fragment/EntityBase.fragment.ts:121-124 \"if (null != callopts.signal) {\" / \"ctrl.signal = callopts.signal\" / \"const signal = ctrl.signal\"; :151 \"if (signal && signal.aborted) { return }\"; :177-179 \"// An abort ends the stream quietly, whenever it lands.\" / \"if (e && true !== signal?.aborted) { throw e }\"; tm/ts/src/Control.ts:10 \"signal?: AbortSignal\"; tm/ts/src/utility/MakeFetchDefUtility.ts:37-38 \"if (null != ctx.ctrl?.signal) {\" / \"fetchdef.signal = ctx.ctrl.signal\"",
+      "sure": "read and certain",
+      "old_page": "The old REFERENCE says \"`stream()` takes the signal as `callopts.signal`, and ends when it aborts.\" That is consistent with the code."
+     },
+     {
+      "lang": "js",
+      "question": 3,
+      "answer": "Same as ts: callopts.signal (an AbortSignal) is copied to ctrl.signal. Each yield is checked and the stream returns quietly on abort. The fetch is aborted, and the resulting error is swallowed when the signal has aborted.",
+      "evidence": "src/cmp/js/fragment/EntityBase.fragment.js:117-120 \"if (null != callopts.signal) {\" / \"ctrl.signal = callopts.signal\" / \"const signal = ctrl.signal\"; :147 and :156 \"if (signal && signal.aborted) { return }\"; :175 \"if (e && true !== signal?.aborted) { throw e }\"; :105 comment \"`signal` (AbortSignal) are honoured: an abort cancels the request and ends the iteration.\"",
+      "sure": "read and certain",
+      "old_page": ""
+     },
+     {
+      "lang": "ts",
+      "question": 4,
+      "answer": "Yes. Pass an AbortSignal as ctrl.signal: load(match, { signal }), list(match, { signal }), or direct({ ..., ctrl: { signal } }). makeFetchDef hands the signal to fetch. A signal that has already aborted throws before sending, so nothing is sent. Any failure after the abort becomes a ProjectNameError with code 'request_aborted', message 'request aborted' and a non-enumerable cause holding signal.reason. An operation then throws (makeError prefixes the message: 'DemoSDK: load: request aborted'). With ctrl.throw === false it returns undefined instead. direct does not throw: it returns { ok: false, err } where err.code is 'request_aborted'.",
+      "evidence": "tm/ts/src/utility/MakeRequestUtility.ts:35-36 \"if (true === fetchdef.signal?.aborted) {\" / \"throw fetchdef.signal.reason\"; :77-85 \"function abortError(ctx: Context, err: any): any {\" ... \"const abort = ctx.error('request_aborted', 'request aborted')\" ... \"Object.defineProperty(abort, 'cause', { value: signal.reason, ...\"; tm/ts/src/utility/MakeErrorUtility.ts:34 \"setMessage(err, 'ProjectNameSDK: ' + op.name + ': ' + errmsg)\" and :72-76 \"if (false === ctx.ctrl.throw) {\" ... \"throw err\"; src/cmp/ts/fragment/Main.fragment.ts:220-221 \"if (true === fetchdef.signal?.aborted) {\" / \"throw fetchdef.signal.reason\" and :278-279 \"return { ok: false, err: utility.clean(ctx, abortError(ctx, err)) }\"; tm/ts/src/Control.ts:9 \"// Cancels the request in flight, which ts and js alone do so far.\"",
+      "sure": "read and certain",
+      "old_page": "The old REFERENCE section 'Cancelling a call' and the fetchargs.ctrl.signal row agree with the code."
+     },
+     {
+      "lang": "js",
+      "question": 4,
+      "answer": "Same as ts: ctrl.signal (an AbortSignal) cancels load, list and direct. An operation rejects with an error whose code is 'request_aborted' and whose cause is the signal's reason. direct returns { ok: false, err } with that error. A pre-aborted signal sends nothing.",
+      "evidence": "tm/js/src/utility/MakeRequestUtility.js (no differences from the ts file except types: diff -w shows only import and signature lines) abortError 'request_aborted'; src/cmp/js/fragment/Main.fragment.js:276 \"return { ok: false, err: utility.clean(ctx, abortError(ctx, err)) }\"",
+      "sure": "read and certain",
+      "old_page": ""
+     },
+     {
+      "lang": "ts",
+      "question": 5,
+      "answer": "When the caller first asks for an item. stream is an async generator (async *), so calling it runs nothing. On the first next() or for-await step the body runs in order: it builds ctrl and ctx, then awaits _streamSteps(ctx) (point, spec, request, response, result), then yields. There is no thread: everything runs on the caller's event loop.",
+      "evidence": "src/cmp/ts/fragment/EntityBase.fragment.ts:111 \"async *stream(this: any, action: string, args?: any, callopts?: any): AsyncGenerator<any> {\"; :126 \"const ctx: Context = makeContext({\"; :142 \"const failed = await this._streamSteps(ctx)\"; :150-152 \"for await (const item of result.stream()) {\" ... \"yield item\"; :157-161 \"const data = null == failed ? done(ctx) : error(ctx, failed)\" ... \"yield item\"",
+      "sure": "read and certain",
+      "old_page": ""
+     },
+     {
+      "lang": "js",
+      "question": 5,
+      "answer": "Same as ts: async generator. The operation runs on the first iteration step, not at the call.",
+      "evidence": "src/cmp/js/fragment/EntityBase.fragment.js:107 \"async *stream(action, args, callopts) {\"; :138 \"const failed = await this._streamSteps(ctx)\"; :146 \"for await (const item of result.stream()) {\"",
+      "sure": "read and certain",
+      "old_page": ""
+     },
+     {
+      "lang": "ts",
+      "question": 6,
+      "answer": "After a successful remove the op calls markDeleted(), which sets the field _deleted = true. The caller reads it through the method deleted(), which returns a boolean. The data is not cleared. Like load, remove first replaces _data with ctx.result.resdata when the response produced non-null data. Otherwise the instance keeps the data it held.",
+      "evidence": "src/cmp/ts/fragment/EntityRemoveOp.fragment.ts:91-92 \"if (null != ctx.result.resdata) {\" / \"this._data = ctx.result.resdata\"; :98-100 \"if (ctx.result && ctx.result.ok) {\" / \"this.markDeleted()\" / \"return this\"; EntityBase.fragment.ts:60-61 \"markDeleted(this: any): void {\" / \"this._deleted = true\"; :65-66 \"deleted(this: any): boolean {\" / \"return true === this._deleted\"",
+      "sure": "read and certain",
+      "old_page": "The old pages say 'return it marked as deleted' but name neither deleted() nor _deleted. The old Entity method tables omit deleted() (and stream)."
+     },
+     {
+      "lang": "js",
+      "question": 6,
+      "answer": "Same as ts: the method deleted() reads the field _deleted. Data is replaced by the remove response's resdata if it is non-null, otherwise kept. A js comment states that the instance keeps its data.",
+      "evidence": "src/cmp/js/fragment/EntityRemoveOp.fragment.js:88-89 \"if (null != ctx.result.resdata) {\" / \"this._data = ctx.result.resdata\"; :103-104 \"this.markDeleted()\" / \"return this\"; EntityBase.fragment.js:25 \"this._deleted = false\"; :43-44 comment \"the instance KEEPS the data it held \u2014 a caller can still read what was deleted\"; :51-52 \"deleted() {\" / \"return true === this._deleted\"",
+      "sure": "read and certain",
+      "old_page": "The js comment's 'KEEPS the data it held' is not quite exact: a non-null resdata from the remove response replaces it."
+     },
+     {
+      "lang": "ts",
+      "question": 7,
+      "answer": "Constructor: instance (`new DemoSDK({ apikey })`). Test constructor: static `DemoSDK.test(testopts, sdkopts)`, plus the instance alias `client.tester(testopts, sdkopts)`. direct and prepare are instance and async: `await client.direct({ path, method, params })` and `await client.prepare({...})`. Getters are instance methods: `client.options()` and `client.utility()`. The accessor is an instance method: `client.Planet()`. Operations are entity instance methods: `await client.Planet().load({ id: 'p1' })`.",
+      "evidence": "src/cmp/ts/fragment/Main.fragment.ts:36 \"constructor(options?: any) {\"; :325 \"static test(testoptsarg?: any, sdkoptsarg?: any) {\"; :344-345 \"tester(testopts?: any, sdkopts?: any) {\" / \"return ProjectNameSDK.test(testopts, sdkopts)\"; :186 \"async direct(fetchargs?: any): Promise<DirectResult> {\"; :116 \"async prepare(fetchargs?: any) {\"; :104 \"options() {\"; :109 \"utility() {\"; MainEntity_ts.ts:23 \"${entity.Name}(entopts?: Record<string, any>) {\"; EntityLoadOp.fragment.ts:13 \"async load(this: any, reqmatch?: EntityNameLoadMatch, ctrl?: Control): Promise<EntyClass> {\"",
+      "sure": "read and certain",
+      "old_page": ""
+     },
+     {
+      "lang": "js",
+      "question": 7,
+      "answer": "Same shape as ts: `new DemoSDK({...})`, static `DemoSDK.test()`, `client.tester()`, `await client.direct({...})`, `await client.prepare({...})`, `client.options()`, `client.utility()`, `client.Planet()`, `await client.Planet().load({ id: 'p1' })`.",
+      "evidence": "src/cmp/js/fragment/Main.fragment.js:27 \"constructor(options) {\"; :334 \"static test(testoptsarg, sdkoptsarg) {\"; :353 \"tester(testopts, sdkopts) {\"; :183 \"async direct(fetchargs) {\"; :110 \"async prepare(fetchargs) {\"; :99,:104 options()/utility() bodies; src/cmp/js/MainEntity_js.ts:23 \"${entity.Name}(entopts) {\"; EntityLoadOp.fragment.js:12 \"async load(reqmatch, ctrl) {\"",
+      "sure": "read and certain",
+      "old_page": ""
+     },
+     {
+      "lang": "ts",
+      "question": 8,
+      "answer": "name, name_ and Name are fields (strings, read without a call). client(), data(), match(), deleted() and entopts() are methods. The backing fields _client, _data, _match, _deleted and _entopts exist as public properties, but by convention they are private.",
+      "evidence": "src/cmp/ts/fragment/EntityBase.fragment.ts:18-20 \"name = ''\" / \"name_ = ''\" / \"Name = ''\"; :74 \"client() {\"; :79 \"data(this: any, data?: Partial<D>): D {\"; :95 \"match(this: any, match?: Partial<D>): Partial<D> {\"; :65 \"deleted(this: any): boolean {\"; :70 \"entopts() {\"; Entity.fragment.ts:24-26 \"this.name = 'entityname'\" ...",
+      "sure": "read and certain",
+      "old_page": ""
+     },
+     {
+      "lang": "js",
+      "question": 8,
+      "answer": "Same as ts: name, name_ and Name are fields. client(), data(), match(), deleted() and entopts() are methods.",
+      "evidence": "src/cmp/js/fragment/Entity.fragment.js:12-14 \"this.name = 'entityname'\" / \"this.name_ = 'entityname'\" / \"this.Name = 'EntityName'\"; EntityBase.fragment.js:51 \"deleted() {\"; :60 \"client() {\"",
+      "sure": "read and certain",
+      "old_page": ""
+     },
+     {
+      "lang": "ts",
+      "question": 9,
+      "answer": "(a) 2xx: { ok: true, status, headers: fetched.headers, data: parsed JSON } with no err key. data is undefined for 204, 304, content-length 0, or an all-whitespace body. (b) non-2xx with a readable body: { ok: false, status, headers, data: parsed body } with NO err. (c) body not JSON (JSON.parse throws SyntaxError): { ok: false, status, headers, data: undefined, err }. On a 2xx, err is a ProjectNameError with code 'response_json_invalid' or 'response_content_type'. On a non-2xx, err is the 'request_status' error with the response detail appended. A body read that fails for a reason other than SyntaxError (for example a dropped connection) is rethrown, reaches the outer catch, and yields { ok: false, err } with no status or headers. (d) the request cannot be made: { ok: false, err }, holding the transport rejection or a 'request_aborted' error, or a returned Error such as fetch_mode_block, fetch_test_block or fetch_getonly_block, or 'direct_no_response'. A prepare failure (method not allowed, auth) and an allow.op denial also give { ok: false, err }. Failure channel: direct catches inside its try and never throws by design; the Promise resolves. The one exception is this.prepare(fetchargs), which is awaited OUTSIDE the try, so an exception thrown inside prepare would reject the Promise (inferred; I found no such path).",
+      "evidence": "src/cmp/ts/fragment/Main.fragment.ts:270-276 \"ok: null == err && status >= 200 && status < 300,\" / \"status,\" / \"headers: fetched.headers,\" / \"data: json,\" / \"...(null == err ? {} : { err: utility.clean(ctx, err) }),\"; :242 \"const noBody = 204 === status || 304 === status || '0' === String(contentLength)\"; :258-266 \"if ('SyntaxError' !== parseErr?.name) {\" / \"throw parseErr\" ... \"err = unreadableBody(ctx, {\" ... \"failed: 200 <= status && status < 300 ? undefined :\" / \"ctx.error('request_status', ...\"; :209-211 \"const fetchdef = await this.prepare(fetchargs)\" / \"return { ok: false, err: utility.clean(this._rootctx, fetchdef) }\"; :226-230 \"return { ok: false, err: ctx.error('direct_no_response', 'response: undefined') }\" / \"return { ok: false, err: utility.clean(ctx, abortError(ctx, fetched)) }\"; :278-279 \"catch (err: any) {\" / \"return { ok: false, err: utility.clean(ctx, abortError(ctx, err)) }\"; :187-191 allow.op denial \"return {\" / \"ok: false,\" / \"err: new Error(...\"; tm/ts/src/utility/ResultBodyUtility.ts:75-78 \"ctx.error('response_json_invalid', ...\" / \"ctx.error('response_content_type', ...\"; tm/ts/src/utility/FetcherUtility.ts:50,59 \"ctx.error('fetch_mode_block', ...\" / \"ctx.error('fetch_test_block', ...\"",
+      "sure": "read and certain",
+      "old_page": "The old README says 'on failure `status` holds the HTTP status (for error responses) and `err` holds the error'. That is FALSE for case (b): a non-2xx with a readable body carries no err. It is the shape the graphql() comment at :303-307 relies on ('the raw path represents a non-2xx as { ok: false } with no err'). The old DirectResult block shows { ok, status, headers, data } and says 'On error, ok is false and an err property contains the error': also not true for (b)."
+     },
+     {
+      "lang": "js",
+      "question": 9,
+      "answer": "Same as ts in all four cases. The code is line-for-line the same: ok is written `null == err && status >= 200 && status < 300`, so `true` or `false`. A non-2xx with a readable body gives { ok: false, status, headers, data } with no err. direct never throws, except through prepare, which is awaited outside the try.",
+      "evidence": "src/cmp/js/fragment/Main.fragment.js:268 \"ok: null == err && status >= 200 && status < 300,\"; :257 \"throw parseErr\"; :206-208 \"const fetchdef = await this.prepare(fetchargs)\" / \"return { ok: false, err: utility.clean(this._rootctx, fetchdef) }\"; :224 \"direct_no_response\"; :227, :276 \"return { ok: false, err: utility.clean(ctx, abortError(ctx, ...)) }\"",
+      "sure": "read and certain",
+      "old_page": "The same false claim about err on a non-2xx appears in out/old/B/js/README.md."
+     },
+     {
+      "lang": "ts",
+      "question": 10,
+      "answer": "It fails, with no fallback to BaseFeature. DemoSDK.test() sets sdkopts.feature.test = { active: true, ... } and calls new DemoSDK(sdkopts). makeOptions puts 'test' first in __derived__.featureorder. The constructor loop finds fopts.active true. The hasFeature skip applies only when an extend instance carries that name, so it calls config.makeFeature('test'). FEATURE_CLASS has no 'test' entry in an SDK generated without the feature, so `new fc()` evaluates `new undefined()` and throws a TypeError ('fc is not a constructor'). The error propagates synchronously out of the constructor and out of DemoSDK.test() (and tester()).",
+      "evidence": "src/cmp/ts/fragment/Main.fragment.ts:334-337 \"setprop(testopts, 'active', true)\" / \"setpath(sdkopts, 'feature.test', testopts)\" / \"const testsdk = new ProjectNameSDK(sdkopts)\"; :76-87 \"for (const fname of featureorder) {\" ... \"if (!this._rootctx.config.hasFeature(fname) &&\" / \"extend.some((f: any) => fname === f.name)) {\" ... \"featureAdd(this._rootctx, this._rootctx.config.makeFeature(fname))\"; tm/ts/src/utility/MakeOptionsUtility.ts:101-105 \"let names = Object.keys(opts.feature || {}).sort()\" ... \"['test'].concat(...)\"; src/cmp/ts/fragment/Config.fragment.ts:18-21 \"makeFeature(this: any, fn: string) {\" / \"const fc = FEATURE_CLASS[fn]\" / \"const fi = new fc()\"; Config_ts.ts:103-106 FEATURE_CLASS is filled only from targetFeatures(model, target) \"Line(` ${f.name}: ${nom(f, 'Name')}Feature,`)\"",
+      "sure": "read and inferred",
+      "old_page": "out/old/no-test/ts/README.md:125-141 still documents '### Use test mode' with `DemoSDK.test()` and `client.tester()`, and no-test/ts/REFERENCE.md:32-47 says it returns 'DemoSDK instance in test mode'. In such an SDK both throw. The no-test root README also keeps the 'Offline unit testing' section."
+     },
+     {
+      "lang": "js",
+      "question": 10,
+      "answer": "Same as ts: makeFeature('test') does `new FEATURE_CLASS['test']()` with an undefined class, which throws a TypeError ('fc is not a constructor'). There is no BaseFeature fallback. A comment even reads 'TODO: errors etc'.",
+      "evidence": "src/cmp/js/fragment/Config.fragment.js:29-33 \"makeFeature(fn) {\" / \"const fc = FEATURE_CLASS[fn]\" / \"const fi = new fc()\" / \"// TODO: errors etc\"; Main.fragment.js:81 \"featureAdd(this._rootctx, this._rootctx.config.makeFeature(fname))\"; :334 \"static test(testoptsarg, sdkoptsarg) {\"",
+      "sure": "read and inferred",
+      "old_page": "out/old/no-test/js/README.md:131-147 documents `DemoSDK.test()` / `client.tester()`."
+     },
+     {
+      "lang": "ts",
+      "question": 11,
+      "answer": "explain is an OBJECT the pipeline fills in place: spec, fetchdef, result and err (plus test.query and netsim from features). Steps test `if (ctx.ctrl.explain)` and then assign properties on it. Passing `true` passes the truthy test, and then `true.spec = ...` throws a TypeError in strict mode. The ts SDK is strict: tsconfig strict:true, so the compiled output is strict. The op's catch then calls _unexpected, which also assigns `ctrl.explain.err`, so the operation rejects with a raw TypeError ('Cannot create property ... on boolean true') instead of doing the work. On direct, only the test and netsim features touch explain, so with true and live transport nothing reads it (inferred).",
+      "evidence": "tm/ts/src/utility/MakeSpecUtility.ts:61-62 \"if (ctx.ctrl.explain) {\" / \"ctx.ctrl.explain.spec = ctx.spec\"; MakeRequestUtility.ts:45-46 \"ctx.ctrl.explain.fetchdef = fetchdef\"; MakeResultUtility.ts:47-48 \"ctx.ctrl.explain.result = result\"; MakeErrorUtility.ts:49-50 \"ctx.ctrl.explain.err = {\"; DoneUtility.ts:23-24 \"const explain = ctx.ctrl.explain\" / \"if (null == explain || 'object' !== typeof explain) {\"; src/cmp/ts/fragment/EntityBase.fragment.ts:258-259 \"if (null == ctrl.explain.err) {\" / \"ctrl.explain.err = cleanerr\"; tm/ts/src/tsconfig.json \"\\\"strict\\\": true\"; node check: \"'use strict'; x.explain.spec=1\" -> \"Cannot create property 'spec' on boolean 'true'\"",
+      "sure": "read and inferred",
+      "old_page": "The old REFERENCE fetchargs.ctrl row reads \"Control options (e.g. `{ explain: true }`).\" The code takes an object (`{ explain: {} }`), so the documented example is wrong."
+     },
+     {
+      "lang": "js",
+      "question": 11,
+      "answer": "Same contract (an object filled in place), but true behaves DIFFERENTLY from ts. The utility steps are plain functions in CommonJS files without 'use strict', so `true.spec = ...` is silently ignored and a successful op proceeds as if explain were off. Class bodies are always strict, though, so on any error path EntityBase._unexpected's `ctrl.explain.err = cleanerr` throws a TypeError that replaces the real error. In test mode TestFeature.buildArgs (a class method) assigns `ctx.ctrl.explain.test` and throws as well.",
+      "evidence": "tm/js/src/utility/MakeSpecUtility.js:67-68 \"if (ctx.ctrl.explain) {\" / \"ctx.ctrl.explain.spec = ctx.spec\" (no 'use strict' at the top of the file: lines 1-5 are requires); src/cmp/js/fragment/EntityBase.fragment.js (_unexpected, a class method) \"ctrl.explain.err = cleanerr\"; tm/js/src/feature/test/TestFeature.js:49 \"class TestFeature extends BaseFeature {\" and :362-363 \"if (ctx.ctrl.explain) {\" / \"ctx.ctrl.explain.test = { query: q }\"; node check: a sloppy assignment raised no error, a strict one threw",
+      "sure": "read and inferred",
+      "old_page": "js REFERENCE presumably carries the same `{ explain: true }` example. Not checked line by line."
+     },
+     {
+      "lang": "ts",
+      "question": 12,
+      "answer": "(a) From ts/: package.json has main dist/DemoSDK.js, type commonjs, no 'exports' field and no runtime dependencies. A standalone .js file can use `const { DemoSDK } = require('.')` or `require('./dist/DemoSDK')`. A .ts file run by a type-stripping runner can use `import { DemoSDK } from './src/DemoSDK'` (or './dist/DemoSDK'). (b) From the repository root: `const { DemoSDK } = require('./ts')`, which resolves through ts/package.json main, or `require('./ts/dist/DemoSDK')`. dist/ is committed (Gitignore_ts says so), so no build is needed. The package name '@voxgig-sdk/demo-sdk' resolves only where the package is installed in a node_modules. With no 'exports' field there is no self-reference either. The old root README's TypeScript quick start printed `import { DemoSDK } from '@voxgig-sdk/demo-sdk'` with top-level `await client.Ambient().load()`. From the repository root without installing it, that import would not resolve (inferred).",
+      "evidence": "src/cmp/ts/Package_ts.ts:75-77 \"main: `dist/${SdkName}SDK.js`,\" / \"type: 'commonjs',\" / \"types: `dist/${SdkName}SDK.d.ts`,\"; Main_ts.ts:76 \"File({ name: model.const.Name + 'SDK.' + target.name }\"; Gitignore_ts.ts:16 \"# dist/ and dist-test/ are COMMITTED, not ignored\"; model/target/ts.aontu deps: only 'typescript' and '@types/node' with kind: dev; out/old/B/README.md:267 \"import { DemoSDK } from '@voxgig-sdk/demo-sdk'\"",
+      "sure": "read and inferred",
+      "old_page": "Root quick start (out/old/B/README.md:264-283): a package-name import plus top-level await. It does not run from the repository root as printed. The ts README Install says `npm install ./demo-sdk/ts` first."
+     },
+     {
+      "lang": "js",
+      "question": 12,
+      "answer": "(a) From js/: package.json main is src/DemoSDK.js, type commonjs, no exports, dev deps only. Use `const { DemoSDK } = require('.')` or `require('./src/DemoSDK')`. (b) From the root: `const { DemoSDK } = require('./js')` or `require('./js/src/DemoSDK')`. There is no build step. The old root README's JavaScript quick start printed `const { DemoSDK } = require('@voxgig-sdk/demo-sdk-js')` followed by a top-level `await client.Ambient().load()`. From the root the package name does not resolve without an install. In a CommonJS .js file a top-level await is also a SyntaxError, so the snippet fails as a standalone file even after installing (inferred from Node semantics; not run).",
+      "evidence": "src/cmp/js/Package_js.ts:75-76 \"main: `src/${SdkName}SDK.js`,\" / \"type: 'commonjs',\"; :81 \"files: ['src', 'README.md', 'REFERENCE.md'],\"; model/target/js.aontu:26-27 \"deps: {\" / \"'dotenv': { active: true, version: '^17.4.2', kind: dev }\"; out/old/B/README.md:506 \"const { DemoSDK } = require('@voxgig-sdk/demo-sdk-js')\" and :513 \"const ambient = await client.Ambient().load()\"",
+      "sure": "read and inferred",
+      "old_page": "The root README JS quick start mixes require() with top-level await and a package name. It would not run from the repository root."
+     },
+     {
+      "lang": "ts",
+      "question": 13,
+      "answer": "Contradictions between the old ts pages and the code: (1) utility() is called a 'Deep copy' or 'copy', but it returns the live instance. (2) The entity accessor is documented as `Ambient(data?)` with 'Initial entity data', but the argument is entopts. (3) direct: 'on failure ... err holds the error', but a non-2xx with a readable body has no err. (4) The ctrl example `{ explain: true }` makes ts ops throw a TypeError; explain must be an object. (5) In the no-test SDK the pages document DemoSDK.test() and tester(), which throw. (6) The entity method table omits deleted() and stream().",
+      "evidence": "out/old/B/ts/README.md:235 \"| `utility()` | `Utility` | Deep copy of the SDK utility object. |\"; :239 \"| `Ambient(data?)` | `AmbientEntity` | Create an Ambient entity instance. |\"; :74-76 \"The low-level `direct()` method does **not** throw \u2014 it returns the result envelope. Branch on `ok`; on failure `status` holds the HTTP status (for error responses) and `err` holds the error\"; out/old/B/ts/REFERENCE.md:162 \"| `fetchargs.ctrl` | `object` | Control options (e.g. `{ explain: true }`). |\"; out/old/no-test/ts/README.md:130 \"const client = DemoSDK.test()\"",
+      "sure": "read and certain",
+      "old_page": "see answer"
+     },
+     {
+      "lang": "js",
+      "question": 13,
+      "answer": "The same contradictions as ts on the js pages: utility() is called a 'Deep copy', `Ambient(data?)`, the no-test test() and tester(). In addition the root README JS quick start uses top-level await in a require()-based (CommonJS) snippet.",
+      "evidence": "out/old/B/js/README.md:227 \"| `utility()` | `Utility` | Deep copy of the SDK utility object. |\"; :230 \"| `Ambient(data?)` | `AmbientEntity` | Create an Ambient entity instance. |\"; out/old/no-test/js/README.md:136 \"const client = DemoSDK.test()\"; out/old/B/README.md:506,513",
+      "sure": "read and certain",
+      "old_page": "see answer"
+     }
+    ],
+    "differences": [
+     "ctrl.explain = true: in ts every pipeline step's `ctrl.explain.X = ...` throws a TypeError, because the compiled code is strict (tsconfig strict:true). In js the utility steps are sloppy-mode CommonJS functions and silently ignore the assignment, so a successful op works. Only the class-method sites (EntityBase._unexpected on an error path, TestFeature.buildArgs in test mode) throw. Same template logic, different observable behaviour.",
+     "Packaging: the ts entry is dist/DemoSDK.js (compiled, committed); the js entry is src/DemoSDK.js (no build). Root-relative require paths therefore differ: './ts/dist/DemoSDK' and './js/src/DemoSDK' (or './ts' and './js' through main).",
+     "Otherwise ts and js are line-for-line ports: Main, EntityBase, the op fragments, Config, MakeRequest, ResultBody, MakeFetchDef, Fetcher, Control, MakeError and Done differ only in types, imports and comments (checked with diff)."
+    ],
+    "surprises": [
+     "client.utility() returns the LIVE Utility object, not a copy: struct.clone passes class instances through by reference. I confirmed this by running the vendored js clone in node. Every entity's _utility is therefore the client's own Utility, and custom utilities set through options.utility mutate it (MakeOptionsUtility.ts:48-51 setprop(utility, key, val)).",
+     "The old REFERENCE's own example `{ explain: true }` breaks ts operations with a TypeError.",
+     "direct() returns { ok: false } with NO err for a non-2xx readable response. The graphql() comment depends on this, but the README says err holds the error on failure.",
+     "A body-read failure that is not a SyntaxError (a dropped connection) loses status and headers in direct (rethrown to the outer catch). The entity-op path instead keeps the status, through bodyReadError's 'response_body_read'.",
+     "The entity constructor mutates the caller's entopts object (sets .active)."
+    ],
+    "not_done": [
+     "I did not generate or run an SDK. Q10 (TypeError on test() in no-test) and Q11 (explain:true behaviour) are traced from code plus node checks of the language semantics, not from executing a generated client.",
+     "I did not check the js REFERENCE.md line by line for the `{ explain: true }` example. I assumed it mirrors ts.",
+     "I did not confirm what resdata a 204 remove produces through TransformResponseUtility (whether data is kept or replaced in that case). I inferred that it is kept when resdata is null.",
+     "I did not consult the runtime-table.md section."
+    ]
+   }
+  },
+  {
+   "pair": [
+    "go",
+    "c"
+   ],
+   "result": {
+    "langs": [
+     "go",
+     "c"
+    ],
+    "answers": [
+     {
+      "lang": "go",
+      "question": 1,
+      "answer": "A new entity every call, with or without an argument: the client keeps no entity. The argument (named `data`) is NOT data: it is passed through as the entity's entopts (entity options), so `client.Planet(map[string]any{\"id\":\"x\"})` sets no data. nil gives fresh entopts {active:true}.",
+      "evidence": "ts/project/.sdk/src/cmp/go/MainEntity_go.ts:17 \"func (sdk *${model.const.Name}SDK) ${entity.Name}(data map[string]any) ${model.const.Name}EntityBase {\"; :18 \"return New${entity.Name}EntityFunc(sdk, data)\"; ts/project/.sdk/src/cmp/go/Main_go.ts:192 \"core.New${ent.Name}EntityFunc = func(client *core.${model.const.Name}SDK, entopts map[string]any) ...\"; ts/project/.sdk/src/cmp/go/fragment/Entity.fragment.go:23 \"func NewEntyClass(client *core.ProjectNameSDK, entopts map[string]any) *EntyClass {\"; :39 \"entopts: entopts,\"; :40 \"data:    map[string]any{},\"",
+      "sure": "read and certain",
+      "old_page": "go/REFERENCE.md: \"#### `Planet(data map[string]any) DemoEntityBase` Create a new `Planet` entity instance. Pass `nil` for no initial data.\" and README table \"`(data map[string]any) DemoEntityBase` | Create an Ambient entity instance\" - 'new instance' is right, 'initial data' is false: the map becomes entity options."
+     },
+     {
+      "lang": "go",
+      "question": 2,
+      "answer": "Client options getter `OptionsMap()`: deep clone. Client utility getter `GetUtility()`: a copy (new *Utility struct, value-copied, its Custom map copied one level; function fields shared). Entity data getter `Data()`: clone. Match getter `Match()`: clone. Entity-options getter: does not exist (entopts is an unexported field). Setters `Data(x)`/`Match(x)` also store a clone of the argument.",
+      "evidence": "ts/project/.sdk/src/cmp/go/fragment/Main.fragment.go:104-105 \"func (sdk *ProjectNameSDK) OptionsMap() map[string]any {\" / \"out := vs.Clone(sdk.options)\"; :112-113 \"func (sdk *ProjectNameSDK) GetUtility() *Utility {\" / \"return CopyUtility(sdk.utility)\"; ts/project/.sdk/tm/go/core/utility_type.go:52-55 \"*u = *src\" / \"u.Custom = map[string]any{}\"; Entity.fragment.go:100 \"e.data = vs.Clone(args[0])\"; :105 \"out := vs.Clone(e.data)\"; :119 \"out := vs.Clone(e.match)\"; :16 \"entopts map[string]any\" (unexported, no getter in Entity interface tm/go/core/types.go:26-34)",
+      "sure": "read and certain",
+      "old_page": "README: \"`OptionsMap` ... Deep copy of current SDK options.\", \"`GetUtility` ... Copy of the SDK utility object.\"; REFERENCE: Data \"returns a copy of the current data\" - consistent."
+     },
+     {
+      "lang": "go",
+      "question": 3,
+      "answer": "Yes. `Stream` reads `callopts[\"signal\"]`, accepted as a channel (`<-chan struct{}` or `chan struct{}`; anything else is ignored). When it is closed or receives, the next send fails, the goroutine returns and the item channel is closed: the caller just sees the channel end, with no error item. The signal is checked only when handing over an item; it does not abort the HTTP request already running in the pipeline steps.",
+      "evidence": "ts/project/.sdk/src/cmp/go/fragment/Entity.fragment.go:151 \"var signal <-chan struct{}\"; :152 \"switch s := callopts[\\\"signal\\\"].(type) {\"; :153 \"case <-chan struct{}:\"; :155 \"case chan struct{}:\"; :187-193 \"send := func(item core.StreamItem) bool {\" / \"case <-signal:\" / \"return false\"; :218 \"defer close(out)\"; :240-241 \"if !send(core.StreamItem{Item: item}) {\" / \"return\"",
+      "sure": "read and certain",
+      "old_page": "go/REFERENCE.md Stream section mentions only callopts[\"ctrl\"] and throw:false; nothing about a signal."
+     },
+     {
+      "lang": "go",
+      "question": 4,
+      "answer": "No. Load/List/Direct take no context.Context and no cancel signal; ctrl has no cancellation key (Control holds Throw, Err, Explain, Actor, Paging); the default transport builds the request with http.NewRequest (no context). Not found anywhere in core/utility.",
+      "evidence": "ts/project/.sdk/tm/go/core/control.go:3-9 \"type Control struct { Throw *bool; Err error; Explain map[string]any; Actor string; Paging map[string]any }\"; ts/project/.sdk/tm/go/utility/fetcher.go:115 \"req, err := http.NewRequest(method, fullurl, bodyReader)\"; EntityLoadOp.fragment.go:13 \"func (e *EntyClass) Load(reqmatch map[string]any, ctrl map[string]any) (any, error) {\"; grep for context/signal/cancel in tm/go/utility, tm/go/core: no matches except the stream",
+      "sure": "read and certain",
+      "old_page": "Nothing stated."
+     },
+     {
+      "lang": "go",
+      "question": 5,
+      "answer": "Beside the caller, in a goroutine started at the call. Stream makes an unbuffered channel, builds the context, starts `go func()` and returns the channel at once; the goroutine runs all pipeline steps (request included) immediately, whether or not anyone reads; each item hand-over blocks until the caller receives.",
+      "evidence": "Entity.fragment.go:145 \"out := make(chan core.StreamItem)\"; :177 \"ctx := utility.MakeContext(ctxmap, e.entctx)\"; :217 \"go func() {\"; :229 \"if err := e.streamSteps(ctx); err != nil {\"; :239 \"for item := range ctx.Result.Stream() {\"; :247 \"sendData(utility.Done(ctx))\"; :250 \"return out\"",
+      "sure": "read and certain",
+      "old_page": "REFERENCE: \"Run an operation through the pipeline and send its result items on the returned channel, which closes when the stream ends\" - consistent, silent on the goroutine."
+     },
+     {
+      "lang": "go",
+      "question": 6,
+      "answer": "Method `Deleted() bool` (field `deleted`, set by `MarkDeleted()`), set only when the result is ok. Data is not cleared, but it is REPLACED by a clone of the response data when the remove response carries data (resdata non-nil); kept only when the response has none.",
+      "evidence": "Entity.fragment.go:79-81 \"func (e *EntyClass) MarkDeleted() {\" / \"e.deleted = true\"; :85 \"func (e *EntyClass) Deleted() bool {\"; :372-374 \"if ctx.Result != nil && ctx.Result.Ok && opname != \\\"list\\\" {\" / \"if opname == \\\"remove\\\" {\" / \"e.MarkDeleted()\"; EntityRemoveOp.fragment.go:28-31 \"if ctx.Result.Resdata != nil {\" / \"e.data = map[string]any{}\" / \"if data := core.ToMapAny(vs.Clone(ctx.Result.Resdata)); data != nil {\" / \"e.data = data\"",
+      "sure": "read and certain",
+      "old_page": "\"Remove an entity, and return it marked as deleted.\" - no name for the mark given (Deleted() is not in the README's interface table)."
+     },
+     {
+      "lang": "go",
+      "question": 7,
+      "answer": "Constructor: package-level function `sdk.NewDemoSDK(opts)` (also `sdk.New()`). Test constructors: package-level `sdk.TestSDK(nil, nil)` and `sdk.Test()`. direct, prepare, options and utility getters, entity accessor: methods on the client instance. Operation: method on the entity instance. Calls: `client := sdk.NewDemoSDK(map[string]any{\"apikey\": key})`; `tc := sdk.TestSDK(nil, nil)` / `tc := sdk.Test()`; `res, err := client.Direct(map[string]any{\"path\": \"/x\"})`; `fd, err := client.Prepare(map[string]any{\"path\": \"/x\"})`; `opts := client.OptionsMap()`; `u := client.GetUtility()`; `p := client.Planet(nil)`; `ent, err := client.Planet(nil).Load(map[string]any{\"id\": \"x\"}, nil)`.",
+      "evidence": "Main.fragment.go:19 \"func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {\"; :390 \"func TestSDK(testopts map[string]any, sdkopts map[string]any) *ProjectNameSDK {\"; :120 \"func (sdk *ProjectNameSDK) Prepare(fetchargs map[string]any) (map[string]any, error) {\"; :220 \"func (sdk *ProjectNameSDK) Direct(fetchargs map[string]any) (map[string]any, error) {\"; Main_go.ts:215 \"func New() *${model.const.Name}SDK  { return New${model.const.Name}SDK(nil) }\"; :216 \"func Test() *${model.const.Name}SDK { return TestSDK(nil, nil) }\"; MainEntity_go.ts:17; EntityLoadOp.fragment.go:13",
+      "sure": "read and certain",
+      "old_page": "Consistent."
+     },
+     {
+      "lang": "go",
+      "question": 8,
+      "answer": "All are methods; the entity exports no fields. name: `GetName()`; data: `Data()`; match: `Match()`; deleted mark: `Deleted()`. client and entity options: no accessor at all (unexported fields `client`, `entopts`). (The client struct itself does export fields `Mode` and `Features`.)",
+      "evidence": "Entity.fragment.go:12-21 \"type EntyClass struct { name string; client *core.ProjectNameSDK; utility *core.Utility; entopts map[string]any; data any; match map[string]any; entctx *core.Context; deleted bool }\"; :54 \"func (e *EntyClass) GetName() string { return e.name }\"; tm/go/core/types.go:26-34 Entity interface \"GetName() string / Make() Entity / Data(data ...any) any / Match(match ...any) any / MarkDeleted() / Deleted() bool\"; Main.fragment.go:11-16 \"Mode string\" ... \"Features []Feature\"",
+      "sure": "read and certain",
+      "old_page": "Consistent (lists GetName, Data, Match, Make as methods)."
+     },
+     {
+      "lang": "go",
+      "question": 9,
+      "answer": "(a) 2xx: {ok: true, status, headers, data} - no err. (b) non-2xx readable: {ok: false, status, headers, data (the parsed body)} - no err key. (c) body not parseable as JSON (`unreadable`): {ok: false, status, headers, data: nil, err: response_json_invalid / response_content_type error (or request_status with detail when also non-2xx)}. A 204/304/content-length 0 skips parsing: data nil, ok by status. (d) request cannot be made (transport error, body read/decode error, prepare/auth failure, allow.op denied, nil response): {ok: false, err} only - no status/headers/data. ok is the Go bool `true`/`false`. The second return value (error) is ALWAYS nil from Direct: every failure is returned inside the map.",
+      "evidence": "Main.fragment.go:249-252 \"fetchdef, err := sdk.Prepare(fetchargs)\" / \"return map[string]any{\\\"ok\\\": false, \\\"err\\\": sdk.cleanErr(sdk.rootctx, err)}, nil\"; :276-277 \"if fetchErr != nil {\" / \"return map[string]any{\\\"ok\\\": false, \\\"err\\\": sdk.cleanErr(ctx, fetchErr)}, nil\"; :299 \"noBody := status == 204 || status == 304 || contentLength == \\\"0\\\"\"; :309 \"if unreadable, _ := vs.GetProp(fm, \\\"unreadable\\\").(bool); unreadable {\"; :320-325 \"\\\"ok\\\": bodyErr == nil && status >= 200 && status < 300,\" / \"\\\"status\\\": status,\" / \"\\\"headers\\\": headers,\" / \"\\\"data\\\": jsonData,\"; :326-327 \"if bodyErr != nil {\" / \"out[\\\"err\\\"] = sdk.cleanErr(ctx, bodyErr)\"; :222 \"return sdk.opDenied(\\\"direct\\\"), nil\"; tm/go/utility/fetcher.go:168-170 \"unreadable := false\" ... \"unreadable = json.Unmarshal(bodyBytes, &jsonBody) != nil\"; tm/go/core/response.go:96-97 \"response_json_invalid\"",
+      "sure": "read and certain",
+      "old_page": "README \"Error handling\": \"`Direct` follows the same `(value, error)` convention: ... if err != nil { // handle err }\" and how-to \"if err != nil { panic(err) }\" - misleading: Direct never returns a non-nil error, failures are only in result[\"ok\"]/result[\"err\"]. README Result shape lists only \"ok\", \"status\", \"headers\", \"data\" keys, omitting \"err\"."
+     },
+     {
+      "lang": "go",
+      "question": 10,
+      "answer": "It does not fail at construction: makeFeature has no case for \"test\" and falls back to the base (no-op) feature. Trace: TestSDK sets testopts active=true at sdkopts.feature.test, calls NewDemoSDK, then sets Mode \"test\"; the constructor sets Mode \"test\" too and calls makeFeature(\"test\"), whose `default:` returns NewBaseFeatureFunc(). No mock transport is installed, so every operation/Direct reaches the real fetcher, which refuses: error code `fetch_mode_block` (\"Request blocked by mode: \\\"test\\\" ...\") - an op returns it as its error; Direct returns {ok:false, err}.",
+      "evidence": "Main.fragment.go:400 \"testopts[\\\"active\\\"] = true\"; :402 \"vs.SetPath(sdkopts, []any{\\\"feature\\\", \\\"test\\\"}, testopts)\"; :404-405 \"sdk := NewProjectNameSDK(sdkopts)\" / \"sdk.Mode = \\\"test\\\"\"; :39-40 \"if vs.GetPath(sdk.options, []any{\\\"feature\\\", \\\"test\\\", \\\"active\\\"}) == true {\" / \"sdk.Mode = \\\"test\\\"\"; :59 \"sdk.utility.FeatureAdd(sdk.rootctx, makeFeature(fname))\"; Config_go.ts:259 \"func makeFeature(name string) Feature {\"; :266 \"case \\\"${f.name}\\\":\" (one per model feature only); :274-276 \"default:\" / \"if NewBaseFeatureFunc != nil {\" / \"return NewBaseFeatureFunc()\"; tm/go/feature/base_feature.go:45 \"func (f *BaseFeature) Init(ctx *core.Context, options map[string]any)  {}\"; tm/go/utility/fetcher.go:221-222 \"if ctx.Client.Mode != \\\"live\\\" {\" / \"return nil, ctx.MakeError(\\\"fetch_mode_block\\\",\"",
+      "sure": "read and inferred",
+      "old_page": "no-test/go/README.md:141 \"Create a mock client for unit testing \u2014 no server required:\" and :221 \"Creates a test-mode client with mock transport.\" - false in an SDK without the test feature: there is no mock transport and every request fails with fetch_mode_block."
+     },
+     {
+      "lang": "go",
+      "question": 11,
+      "answer": "A map the runtime fills (`Control.Explain map[string]any`); the caller passes a map and reads spec, fetchdef, result, err etc. from it afterwards (cleaned in Done). Passing `true` is silently ignored: the type assertion to map fails, Explain stays nil, nothing is recorded and no error is raised.",
+      "evidence": "ts/project/.sdk/tm/go/core/control.go:6 \"Explain map[string]any\"; tm/go/core/context.go:73-75 \"if e, ok := cm[\\\"explain\\\"]; ok {\" / \"if em, ok := e.(map[string]any); ok {\" / \"ctx.Ctrl.Explain = em\"; tm/go/utility/make_spec.go:81-82 \"if ctx.Ctrl.Explain != nil {\" / \"ctx.Ctrl.Explain[\\\"spec\\\"] = ctx.Spec\"; tm/go/utility/done.go:19 \"// The explain map IS the caller's (`ctrl[\\\"explain\\\"]`)\"",
+      "sure": "read and certain",
+      "old_page": "go/REFERENCE.md:101 \"`fetchargs[\\\"ctrl\\\"]` | `map[string]any` | Control options (e.g. `map[string]any{\\\"explain\\\": true}`).\" - the example value `true` does nothing in Go; it must be a map."
+     },
+     {
+      "lang": "go",
+      "question": 12,
+      "answer": "The module is rooted at go/: go.mod there declares `module github.com/voxgig-sdk/demo-sdk/go` (from goModule: main.kit.target.go.module.path, else <repo host>/<repo path>/go) with no external requires (struct is vendored at utility/struct). The root package is in go/ itself, so a program must be `package main` in its own directory (e.g. go/cmd/demo/main.go; `go run file.go` naming one file also works). (a) from go/: `package main\\nimport (\\n  \"fmt\"\\n  sdk \"github.com/voxgig-sdk/demo-sdk/go\"\\n)\\nfunc main() { client := sdk.NewDemoSDK(map[string]any{...}); ... }` run with `go run ./cmd/demo` - the import resolves to the main module itself. (b) from the repository root: there is no go.mod or go.work at the root (go.work is even gitignored), so the same file is outside any module and the import would be fetched from the network (fails until published); it needs its own go.mod with `require github.com/voxgig-sdk/demo-sdk/go v0.0.0` + `replace github.com/voxgig-sdk/demo-sdk/go => ./go`, or `go run -C go ./cmd/demo`. The old root README quick start printed `import sdk \"github.com/voxgig-sdk/demo-sdk/go\"` followed by bare statements (`client := sdk.NewDemoSDK(...)`, `fmt.Println(...)`, `os.Getenv`) with no `package main`, no `func main`, and no fmt/os imports: it does not compile anywhere as printed, and from the root it would also lack a module.",
+      "evidence": "ts/project/.sdk/src/cmp/go/Package_go.ts:23-24 \"File({ name: 'go.mod' }, () => {\" / \"Content(`module ${gomodule}\"; ts/src/helpers/packageMeta.ts:128-136 \"function goModule(model: any, target: string): string {\" ... \"return `${host}/${path}/${target}`\"; ts/project/.sdk/model/target/go.aontu:25 \"deps: {}\"; Entity_go.ts:70 \"'\\\"github.com/voxgig/struct\\\"': `\\\"${gomodule}/utility/struct\\\"`,\"; Main_go.ts:141-142 \"File({ name: model.name + '.' + target.ext }, () => {\" / \"Content(`package ${gopackage}\"; src/cmp/go/Gitignore_go.ts:36 \"go.work\"; out/old/B/README.md:346-365 (Golang quickstart: \"import sdk \\\"github.com/voxgig-sdk/demo-sdk/go\\\"\" then \"client := sdk.NewDemoSDK(map[string]any{\" ... \"fmt.Println(ambient.(sdk.Entity).Data())\")",
+      "sure": "read and inferred",
+      "old_page": "go/README.md Quickstart is a complete program (package main, imports fmt, os, sdk) - correct for a separate module that has the SDK as a dependency; it says `go get ...@latest`, and `go mod edit -replace ...=../demo-sdk/go` for a checkout."
+     },
+     {
+      "lang": "go",
+      "question": 13,
+      "answer": "Contradictions in the old Go pages: (1) accessor documented as taking initial data (`Pass nil for no initial data`) - the map is entity options; (2) Direct documented as following `(value, error)` with `if err != nil` - the error is always nil; (3) Result shape omits the `err` key of Direct's map; (4) REFERENCE ctrl example `{\"explain\": true}` is ignored - must be a map; (5) the no-test page promises a mock client with no server - TestSDK there blocks every request (fetch_mode_block); (6) root README Go quick start is a fragment without package/main/imports.",
+      "evidence": "see questions 1, 9, 11, 10, 12 evidence; out/old/B/go/REFERENCE.md \"Pass `nil` for no initial data.\"; out/old/B/go/README.md \"`Direct` follows the same `(value, error)` convention:\"; out/old/B/go/REFERENCE.md:101 \"(e.g. `map[string]any{\\\"explain\\\": true}`)\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "c",
+      "question": 1,
+      "answer": "A new entity every call (calloc in entity_new); the client keeps none. The argument is the entity options (`entopts`, a voxgig_value* map; NULL or a non-map gives a fresh map with active=true). It does not set data.",
+      "evidence": "ts/project/.sdk/src/cmp/c/MainEntity_c.ts:20-21 \"Entity* ${cAccessorName(model, entity.name)}(${Name}SDK* client, voxgig_value* entopts) {\" / \"return ${evar}_entity_new(client, entopts);\"; src/cmp/c/fragment/Entity.fragment.c:44 \"entopts = voxgig_is_map(entopts) ? entopts : voxgig_new_map();\"; :53 \"entyvar_entity* self = (entyvar_entity*)calloc(1, sizeof(entyvar_entity));\"; :59 \"self->data = voxgig_new_map();\"",
+      "sure": "read and certain",
+      "old_page": "\"`demo_ambient` | `(DemoSDK*, entopts) -> Entity*` | Create an Ambient entity instance.\" - consistent."
+     },
+     {
+      "lang": "c",
+      "question": 2,
+      "answer": "Options getter `sdk_options_map(client)`: deep clone. Utility getter `sdk_get_utility(client)`: a newly allocated Utility sharing the same fetcher pointer with a shallow copy of the custom map (a copy, not the live struct). Entity `vt->data(e, NULL)`: clone. `vt->matchv(e, NULL)`: clone. Entity-options getter: does not exist (entopts is a private field of the per-entity struct defined in the .c file). Setting via data/matchv stores a clone.",
+      "evidence": "ts/project/.sdk/tm/c/core/utility.c:70 \"voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }\"; :72 \"Utility* sdk_get_utility(ProjectNameSDK* sdk) { return utility_copy(sdk->utility); }\"; :20-29 \"Utility* utility_copy(Utility* src) {\" ... \"u->fetcher = src->fetcher;\" / \"// Shallow copy of the custom map.\"; Entity.fragment.c:245 \"self->data = voxgig_clone(args);\"; :249 \"return voxgig_clone(self->data);\"; :260 \"return voxgig_clone(self->mtch);\"; :13 \"voxgig_value* entopts;\" (inside the static struct, no vtable entry: tm/c/core/sdk.h:347-367)",
+      "sure": "read and certain",
+      "old_page": "README: \"`data` | `(Entity*, args) -> voxgig_value*` | Get entity data (pass a map to set).\" - silent on clone; sdk.h comment says \"deep clone of options\"."
+     },
+     {
+      "lang": "c",
+      "question": 3,
+      "answer": "No signal. `<entity>_stream` reads only `ctrl` and `body` from callopts (callopts is also copied into ctrl as `stream`); there is no signal or cancellation key.",
+      "evidence": "Entity.fragment.c:147-148 \"voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,\" / \"voxgig_value* callopts, PNError** err) {\"; :156 \"voxgig_value* given = to_map(getp(stream_opts, \\\"ctrl\\\"));\"; :163 \"setp(ctrl, \\\"stream\\\", v_share(stream_opts));\"; :178 \"voxgig_value* body = getp(stream_opts, \\\"body\\\");\"; no other getp on stream_opts",
+      "sure": "read and certain",
+      "old_page": "Nothing found."
+     },
+     {
+      "lang": "c",
+      "question": 4,
+      "answer": "No. load/list/direct take (reqmatch/fetchargs, ctrl, PNError**); Control has no cancel field, and the built-in HTTP transport has only a fixed 30 s deadline (HTTP_TIMEOUT_MS), not caller cancellation.",
+      "evidence": "ts/project/.sdk/tm/c/core/sdk.h:152-159 \"typedef struct Control { bool has_throw; bool throw_v; PNError* err; voxgig_value* explain; char* actor; voxgig_value* paging; } Control;\"; tm/c/utility/http.c:24 \"#define HTTP_TIMEOUT_MS 30000\"; :1232 \"c.deadline = monotonic_ms() + HTTP_TIMEOUT_MS;\"",
+      "sure": "read and certain",
+      "old_page": "C README: \"gives up on an exchange 30 seconds after it starts to connect\" - consistent; no cancellation claimed."
+     },
+     {
+      "lang": "c",
+      "question": 5,
+      "answer": "At the call, synchronously, before it returns: the stream function runs every pipeline step and returns a whole List (or the streaming feature's producer output, also obtained before return); the caller then walks the list. No thread.",
+      "evidence": "Entity.fragment.c:139-140 \"// whole result). This runtime is synchronous and C has no lazy iterators, so\" / \"// the returned value is a List cursor the caller walks (voxgig_as_list).\"; :187-188 \"feature_hook_util(ctx, \\\"PrePoint\\\");\" / \"voxgig_value* point = make_point_util(ctx, &pe);\"; :198 \"Response* resp = make_request_util(ctx, &pe);\"; :217-220 \"if (res && res->stream) {\" ... \"return res->stream(res->stream_ud);\"; :223 \"return entyvar_stream_items(done_util(ctx, err), err);\"",
+      "sure": "read and certain",
+      "old_page": "Nothing on stream in the C README."
+     },
+     {
+      "lang": "c",
+      "question": 6,
+      "answer": "The vtable function `deleted` (`e->vt->deleted(e)`, backed by the private field `deleted`, set at the end of a successful remove). Data is not cleared, but it is REPLACED by a clone of the response data when the remove response carries data; kept only when it carries none. The code's own comment ('keeps its data') is only true in that second case.",
+      "evidence": "Entity.fragment.c:282-283 \"static bool entyvar_deleted(Entity* e) {\" / \"return ((entyvar_entity*)e)->deleted;\"; EntityRemoveOp.fragment.c:9-11 \"if (!v_is_noval(resdata) && !v_is_null(resdata)) {\" / \"voxgig_value* m = to_map(voxgig_clone(resdata));\" / \"self->data = voxgig_is_map(m) ? m : voxgig_new_map();\"; :33-34 \"// A removed entity keeps its data but is no longer a live record.\" / \"self->deleted = true;\"; tm/c/core/sdk.h comment \"`remove` resolves to the entity, marked. The instance KEEPS the data it held\"",
+      "sure": "read and certain",
+      "old_page": "\"Remove an entity, which is returned marked as deleted.\" - names no accessor; the vtable table in README omits `deleted`/`mark_deleted`."
+     },
+     {
+      "lang": "c",
+      "question": 7,
+      "answer": "Everything except entity operations is a module-level function taking the client (or nothing): `DemoSDK* client = demo_sdk_new(cmap(1, \"apikey\", v_str(key)));`; `DemoSDK* tc = test_sdk(NULL, NULL);`; `voxgig_value* res = sdk_direct(client, cmap(1, \"path\", v_str(\"/x\")), &err);`; `voxgig_value* fd = sdk_prepare(client, cmap(1, \"path\", v_str(\"/x\")), &err);`; `voxgig_value* o = sdk_options_map(client);`; `Utility* u = sdk_get_utility(client);`; `Entity* p = demo_planet(client, NULL);`. An operation is a function pointer in the entity's vtable, called with the entity as first argument: `Entity* got = p->vt->load(p, cmap(1, \"id\", v_str(\"x\")), NULL, &err);`. Stream is again module-level: `voxgig_value* items = planet_stream(p, \"list\", NULL, NULL, &err);`. (Every global name is mapped to a demo_-prefixed one by core/prefix_api.h; programs keep the short names.)",
+      "evidence": "tm/c/core/sdk.h:482-485 \"ProjectNameSDK* projectname_sdk_new(voxgig_value* options);\" / \"ProjectNameSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts);\" / \"voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);\" / \"voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);\"; :477-478 \"voxgig_value* sdk_options_map(ProjectNameSDK* sdk);\" / \"Utility* sdk_get_utility(ProjectNameSDK* sdk);\"; :356 \"Entity* (*load)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);\"; src/cmp/c/EntityBase_c.ts:47 \"voxgig_value* ${evar}_stream(Entity* e, const char* action, ...\"; tm/c/Makefile:97-101 \"SDK_PREFIX := projectname_\" ... \"API_PREFIX_H := core/prefix_api.h\"",
+      "sure": "read and certain",
+      "old_page": "Consistent."
+     },
+     {
+      "lang": "c",
+      "question": 8,
+      "answer": "All are function calls; the public `struct Entity` has only `vt`. name: `e->vt->get_name(e)`; data: `e->vt->data(e, NULL)`; match: `e->vt->matchv(e, NULL)`; deleted: `e->vt->deleted(e)`. client and entity options: no accessor (private fields of the static per-entity struct).",
+      "evidence": "tm/c/core/sdk.h:369-372 \"struct Entity {\" / \"const EntityVT* vt;\" / \"// subtype-specific state follows.\"; :347-353 \"const char* (*get_name)(Entity*);\" ... \"bool (*deleted)(Entity*);\"; Entity.fragment.c:8-19 \"typedef struct entyvar_entity { Entity base; char* name; ProjectNameSDK* client; Utility* utility; voxgig_value* entopts; voxgig_value* data; voxgig_value* mtch; Context* entctx; bool deleted; } entyvar_entity;\"",
+      "sure": "read and certain",
+      "old_page": "Consistent."
+     },
+     {
+      "lang": "c",
+      "question": 9,
+      "answer": "(a) 2xx: map {ok: true, status, headers, data}. (b) non-2xx readable: {ok: false, status, headers, data} - no err. (c) body not valid JSON: {ok: false, status, headers, data undefined (voxgig_new_undef), err: a STRING message (cleaned)}; 204/304/content-length 0 skip parsing. (d) request cannot be made (transport error, prepare/auth error, op denied, no response, non-map response): {ok: false, err: string message} only. ok is written `v_bool(true)`/`v_bool(false)` (a voxgig bool). Unlike Go, `err` in the map is a string, not an error object. The out-parameter `PNError** err` is set to NULL on entry and never set to an error by sdk_direct in any case.",
+      "evidence": "src/cmp/c/fragment/Main.fragment.c:173-174 \"static voxgig_value* err_map(const char* msg) {\" / \"return cmap(2, \\\"ok\\\", v_bool(false), \\\"err\\\", v_str(msg));\"; :202-204 \"voxgig_value* fetchdef = sdk_prepare(sdk, fetchargs, &perr);\" / \"if (perr) {\" / \"return err_map(perr->msg);\"; :220-221 \"if (ferr) {\" / \"return err_map(clean_str(ctx, ferr->msg));\"; :243-247 \"if (no_body) {\" / \"json_data = voxgig_new_undef();\" ... \"json_data = voxgig_is_func(jf) ? call_json(jf) : voxgig_new_undef();\"; :264-270 \"\\\"ok\\\", v_bool(NULL == body_err && status >= 200 && status < 300),\" ... \"setp(out, \\\"err\\\", v_str(clean_str(ctx, body_err->msg)));\"; :281-282 \"voxgig_value* sdk_direct(...)\" / \"*err = NULL;\"; :198 \"*err = NULL;\"; tm/c/utility/http.c:1273 \"voxgig_value* parsed = valid ? voxgig_parse_json(text + bom, len - bom) : voxgig_new_undef();\"; :1281 \"\\\"unreadable\\\", v_bool(!blank && !valid));\"",
+      "sure": "read and certain",
+      "old_page": "c/README.md: \"A non-2xx response carries status + data (the error body); a transport-level failure carries err instead. Only one is present.\" - false for an unreadable body, where status and err are both present. \"`sdk_direct()` never sets `*err` for a non-2xx response\" - true but understated: it never sets *err at all. Result-shape table omits err; \"On error, `ok` is `false` and `err` carries the error value\" does not say it is a string."
+     },
+     {
+      "lang": "c",
+      "question": 10,
+      "answer": "Same as Go: no failure at construction; make_feature falls back to the base feature for \"test\". Trace: test_sdk clones opts, sets feature.test {active:true}, calls demo_sdk_new, then sets mode \"test\"; the constructor also sets mode \"test\" and calls make_feature(\"test\"), which has no strcmp branch for it (branches only for model features) and returns feature_base_new(). With no mock transport, every request hits fetcher_util, which refuses with code `fetch_mode_block`: an op returns NULL with *err set; sdk_direct returns {ok:false, err:\"...Request blocked by mode...\"}.",
+      "evidence": "Main.fragment.c:349 \"setp(testopts, \\\"active\\\", v_bool(true));\"; :353 \"voxgig_setpath(sdkopts, path, testopts, NULL);\"; :355-357 \"ProjectNameSDK* sdk = projectname_sdk_new(sdkopts);\" ... \"sdk->mode = strdup(\\\"test\\\");\"; :66 \"feature_add_util(rootctx, make_feature(fname));\"; src/cmp/c/Config_c.ts:452 \"Feature* make_feature(const char* name) {\"; :455 \"if (strcmp(name, \\\"${fname}\\\") == 0) return feature_${fname}_new();\"; :459 \"return feature_base_new();\"; tm/c/utility/fetcher.c:200-205 \"const char* mode = client->mode;\" / \"if (strcmp(mode, \\\"live\\\") != 0) {\" ... \"*err = context_make_error(ctx, \\\"fetch_mode_block\\\", buf);\"",
+      "sure": "read and inferred",
+      "old_page": "c/README.md \"### test_sdk ... Creates a test-mode client with mock transport.\" - false in an SDK generated without the test feature (no-test model; not separately read for C)."
+     },
+     {
+      "lang": "c",
+      "question": 11,
+      "answer": "A map the runtime fills (`Control.explain`, \"Map when supplied, else Noval\"). Passing true is silently ignored: only a map is taken, otherwise explain stays undefined and nothing is recorded.",
+      "evidence": "tm/c/core/sdk.h:156 \"voxgig_value* explain; // Map when supplied, else Noval\"; tm/c/core/context.c:115-116 \"voxgig_value* explain = getp(cs.ctrl, \\\"explain\\\");\" / \"if (voxgig_is_map(explain)) c->explain = explain;\"; tm/c/core/control.c:19 \"bool control_has_explain(Control* c) { return c && voxgig_is_map(c->explain); }\"",
+      "sure": "read and certain",
+      "old_page": "No explain mention found in C README/REFERENCE."
+     },
+     {
+      "lang": "c",
+      "question": 12,
+      "answer": "There is no package: the program compiles against the c/ tree and links libsdk.a, built by `make` in c/ (which also writes core/prefix_api.h, needed by sdk.h). core/api.h includes \"sdk.h\" (same dir), which includes \"prefix_api.h\" and \"voxgig_struct.h\" (needs -I utility/struct). (a) From c/: `#include \"core/api.h\"` (+ <stdio.h>, <stdlib.h>), `int main(void){ DemoSDK* client = demo_sdk_new(cmap(1, \"server\", cmap(2, \"tenant\", v_str(\"t\"), \"region\", v_str(\"r\")))); ... }`, built with `make && cc -std=c11 -I utility/struct myapp.c libsdk.a $(make -s ldlibs) -o myapp` (the quoted include resolves relative to myapp.c in c/). (b) From the repository root: `#include \"core/api.h\"` needs `-I c` (plus `-I c/utility/struct`): `cc -std=c11 -I c -I c/utility/struct myapp.c c/libsdk.a $(make -s -C c ldlibs) -o myapp`; or keep `-I c/core` and write `#include \"api.h\"`. The old root README C quick start printed `#include \"core/api.h\"` then bare statements (`DemoSDK* client = demo_sdk_new(cmap(1, \"apikey\", v_str(getenv(\"DEMO_APIKEY\"))));` ... `printf(...)`) with no main and no stdio/stdlib includes, so it does not compile as printed; and since it passes no `server` while the API base is `https://{tenant}.example.com/{region}`, construction would abort() at runtime outside test mode.",
+      "evidence": "src/cmp/c/EntityBase_c.ts:33-39 \"File({ name: 'api.h' }, () => {\" ... \"#include \\\"sdk.h\\\"\"; tm/c/core/sdk.h:31 \"#include \\\"prefix_api.h\\\"\"; :34 \"#include \\\"voxgig_struct.h\\\"\"; tm/c/Makefile:22 \"INC := -I core -I utility/struct -I feature ...\"; :101 \"API_PREFIX_H := core/prefix_api.h\"; :142 \"build: libsdk.a\"; :31 \"LDLIBS := -lm\"; tm/c/utility/make_options.c:124-128 \"fprintf(stderr, \\\"%s: the server variable '%s' is required: ...\\\"\" ... \"abort();\"; out/old/B/README.md:399-415 C quickstart; out/old/B/README.md:969 \"- Upstream API: `https://{tenant}.example.com/{region}`\"",
+      "sure": "read and inferred",
+      "old_page": "c/README.md Install: \"cc -I c/core -I c/utility/struct myapp.c c/libsdk.a $(make -s -C c ldlibs) -o myapp\" together with \"include `core/api.h`\" - with only -I c/core, `#include \"core/api.h\"` from a root-level myapp.c is not found (it would look for ./core/api.h and c/core/core/api.h)."
+     },
+     {
+      "lang": "c",
+      "question": 13,
+      "answer": "Contradictions in the old C pages: (1) \"Error handling\" shows TypeScript try/catch and `await client.Ambient().load()` - C has no exceptions; failures are a NULL return plus *err; (2) the direct how-to says a non-2xx carries status+data and a transport failure err, \"Only one is present\" - an unreadable body carries both status and err; (3) the install cc line uses -I c/core with `#include \"core/api.h\"`, which does not resolve from the root; (4) the tutorial, quick starts (C README and root README) construct the client without the `server` variables the templated base requires - make_options aborts the process outside test mode; (5) test_sdk is described as a mock-transport client unconditionally; (6) the README entity vtable table omits `deleted`/`mark_deleted`; (7) the runtime table lists sdk_direct's failure as `error parameter PNError**`, but sdk_direct never sets it.",
+      "evidence": "out/old/B/c/README.md \"Entity operations reject on failure, so wrap them in `try` / `catch`:\" followed by a ```ts block; README \"Only one is present.\"; Main.fragment.c:264-270 (status and err both set); tm/c/utility/make_options.c:124-128 abort; out/old/B/c/README.md:54-57 \"DemoSDK* client = demo_sdk_new(cmap(1,\" / \"\\\"apikey\\\", v_str(getenv(\\\"DEMO_APIKEY\\\"))));\"; base32/runtime-table.md (## c) \"| sdk_direct | ... | error parameter PNError** |\"",
+      "sure": "read and certain"
+     }
+    ],
+    "differences": [
+     "Accessor argument: C names it `entopts` and documents it so; Go's generated accessor names it `data` and its docs say 'initial data', yet it is passed straight through as entopts in both. Neither caches.",
+     "direct's err: Go puts an `error` value under \"err\"; C puts a string (v_str(msg)). Both always leave their own failure channel unset (Go second return nil, C *err NULL).",
+     "direct unreadable body: Go data is nil; C data is undefined (voxgig_new_undef).",
+     "Stream: Go runs the operation in a goroutine started at the call and hands items over a channel, honouring callopts[\"signal\"] (a chan struct{}) only between items; C runs everything synchronously before returning a List and has no signal at all.",
+     "Calling style: Go uses methods on client and entity instances (client.Direct, client.Planet(nil).Load); C uses module-level functions taking the client (sdk_direct(client,...), demo_planet(client,...)) and vtable function pointers taking the entity (p->vt->load(p,...)).",
+     "Member access: Go entity name via GetName(), C via vt->get_name(e); both have no client/entopts accessor; Go's client exports Mode and Features fields, C's client struct is accessed only through functions.",
+     "Utility getter copies: Go copies the whole Utility struct value plus Custom; C allocates a new Utility holding only the shared fetcher and a shallow custom copy (C's Utility has only those two members, so equivalent)."
+    ],
+    "surprises": [
+     "Go: `client.Planet(map[string]any{...})` silently treats the map as entity options, not data; the old REFERENCE says 'Pass nil for no initial data'. NewEntyClass also writes entopts[\"active\"]=true into the caller's map (Entity.fragment.go:27-33).",
+     "Both runtimes: remove REPLACES the entity's data with the response data when the response has any; the C code comments and sdk.h say the instance 'KEEPS the data it held', which holds only when the response body is empty.",
+     "Both runtimes: Direct never reports failure through its own error channel, yet the old Go page shows `if err != nil` as the way to handle Direct failures.",
+     "Without the test feature, both TestSDK/test_sdk construct fine (base-feature fallback) but every request fails with fetch_mode_block, while the no-test pages still promise a mock client with no server required.",
+     "C quick starts (root README and C README tutorial) omit the server variables for a templated base; C make_options calls abort() in that case (Go panics similarly, but its quick starts pass tenant/region).",
+     "The old C README's 'Error handling' section is TypeScript code.",
+     "runtime-table.md's `## go` section appeared empty when extracted (the next heading followed immediately); not investigated further since it is not evidence."
+    ],
+    "not_done": [
+     "Did not compile or run anything (no toolchain use was in scope); answers 10 and 12 are traced by reading, hence 'read and inferred'.",
+     "Did not read out/old/no-test/c pages specifically; the C no-test claim is from the B C README text, which the no-test page presumably shares.",
+     "Did not verify that the optspec validator leaves an unknown `feature.test` entry in options untouched in Go/C (assumed from make_options flow and the Mode check, which fires regardless).",
+     "Did not trace the streaming feature's producer (res->stream / ctx.Result.Stream) internals for laziness; only the entity Stream code paths.",
+     "Notes file: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/survey/go/notes.md"
+    ]
+   }
+  },
+  {
+   "pair": [
+    "py",
+    "rb"
+   ],
+   "result": {
+    "langs": [
+     "py",
+     "rb"
+    ],
+    "answers": [
+     {
+      "lang": "py",
+      "question": 1,
+      "answer": "The accessor makes a new entity on every call, with or without an argument. The client keeps no cache. The argument is NOT data: it is passed as the entity constructor's second parameter, `entopts`, so it becomes entity options. The constructor also writes `active` into the caller's dict.",
+      "evidence": "src/cmp/py/MainEntity_py.ts:21 \"def ${entity.Name}(self, data=None) -> \\\"${cls}\\\":\"; :24 \"return ${cls}(self, data)\"; src/cmp/py/fragment/Entity.fragment.py:12 \"def __init__(self, client, entopts=None):\"; :16 \"entopts[\\\"active\\\"] = True\"; :25 \"self._entopts = entopts\"; :26 \"self._data = {}\"",
+      "sure": "read and certain",
+      "old_page": "py/README.md and the REFERENCE list the accessor as `(data) -> XEntity`, 'Create an X entity instance'. Calling the parameter data is wrong: it is entopts."
+     },
+     {
+      "lang": "rb",
+      "question": 1,
+      "answer": "The accessor makes a new entity on every call (`Cls.new(self, data)`), with or without an argument. The client keeps no cache. As in py, the argument is passed to the constructor's `entopts` parameter, not used as data, and the constructor writes \"active\" into the caller's Hash.",
+      "evidence": "src/cmp/rb/MainEntity_rb.ts:21 \"def ${entity.Name}(data = nil)\"; :23 \"${cls}.new(self, data)\"; src/cmp/rb/fragment/Entity.fragment.rb:7 \"def initialize(client, entopts = nil)\"; :10 \"entopts[\\\"active\\\"] = true\"; :21 \"@_data = {}\"",
+      "sure": "read and certain",
+      "old_page": "rb/REFERENCE.md:61 \"#### `Planet(data = nil)`\" with 'Pass `nil` for no initial data.' This is false: the argument becomes entity options and the entity's data starts as {}."
+     },
+     {
+      "lang": "py",
+      "question": 2,
+      "answer": "Options: `client.options` is a property that returns the live dict the client holds, and it has a setter. `client.options_map()` returns a deep clone. Utility: `client.get_utility()` returns a shallow copy, a new Utility object holding the same function references. Entity data: `data_get()` returns a clone. Match: `match_get()` returns a clone. Entity options: the entity has no getter (`_entopts` is private). The client attribute `_utility` is private.",
+      "evidence": "tm: src/cmp/py/fragment/Main.fragment.py:96-98 \"@property / def options(self): / return self._options\"; :107-108 \"def options_map(self): / out = vs.clone(self.options)\"; :113-114 \"def get_utility(self): / return ProjectNameUtility.copy(self._utility)\"; tm/py/pkg/core/utility_type.py:52-54 \"def copy(cls, src): / u = cls() / u.clean = src.clean\"; src/cmp/py/fragment/Entity.fragment.py:61-63 \"def data_get(self) -> EntityName: ... return vs.clone(self._data)\"; :70-72 \"def match_get(self) ... return vs.clone(self._match)\"",
+      "sure": "read and certain",
+      "old_page": "py/REFERENCE.md:75 'Return a deep copy of the current SDK options.' (options_map) and :79 'Return a copy of the SDK utility object.' Both agree with the code. The live `options` property is not documented."
+     },
+     {
+      "lang": "rb",
+      "question": 2,
+      "answer": "Options: `client.options` is an attr_accessor that returns, and allows replacing, the live Hash. `client.options_map` returns a deep clone. Utility: `client.get_utility` returns a shallow copy: the instance variables are copied by reference and only `@custom` is dup'ed. Entity data: `data_get` returns a clone, and so does `to_h`. Match: `match_get` returns a clone. Entity options: no getter exists.",
+      "evidence": "src/cmp/rb/fragment/Main.fragment.rb:21 \"attr_accessor :mode, :features, :options\"; :85-86 \"def options_map / out = VoxgigStruct.clone(@options)\"; :90-91 \"def get_utility / ProjectNameUtility.copy(@_utility)\"; tm/rb/core/utility_type.rb:27-30 \"src.instance_variables.each do |var| ... u.instance_variable_set(:@custom, src.custom.dup)\"; src/cmp/rb/fragment/Entity.fragment.rb:77-79 \"def data_get ... VoxgigStruct.clone(@_data)\"; :90-92 \"def match_get ... VoxgigStruct.clone(@_match)\"",
+      "sure": "read and certain",
+      "old_page": "rb/REFERENCE.md:75/79 say 'deep copy' (options_map) and 'copy' (get_utility). Both agree with the code. rb/REFERENCE.md:138 says data_get 'Returns a copy of the current data', which is correct."
+     },
+     {
+      "lang": "py",
+      "question": 3,
+      "answer": "Yes. `stream` reads `callopts[\"signal\"]`. It accepts either a callable, whose truthy return means aborted, or any object with an `aborted` attribute, such as an event-like flag. The signal is checked only before each item is handed over. When it fires, the generator returns and iteration simply ends: no exception is raised and no error code is given. It does not interrupt a request already in flight.",
+      "evidence": "src/cmp/py/fragment/Entity.fragment.py:88 \"signal = callopts.get(\\\"signal\\\")\"; :113-118 \"def aborted(): ... if callable(signal): return bool(signal()) / return bool(getattr(signal, \\\"aborted\\\", False))\"; :134-136 \"if aborted(): return / yield item\"; :148-150 same",
+      "sure": "read and certain",
+      "old_page": "Not documented on the old py pages: stream does not appear in README or REFERENCE."
+     },
+     {
+      "lang": "rb",
+      "question": 3,
+      "answer": "Yes. `stream` reads `callopts[\"signal\"]`, a value that responds to `call`, such as a lambda or Proc, or that responds to `aborted`. It is checked before each item. When it fires, the code throws `:stream_stop`, which the Enumerator catches, so enumeration ends quietly with no exception. It does not interrupt a request in flight.",
+      "evidence": "src/cmp/rb/fragment/Entity.fragment.rb:107 \"signal = callopts[\\\"signal\\\"]\"; :130-135 \"aborted = lambda do ... return !!signal.call if signal.respond_to?(:call) / return !!signal.aborted if signal.respond_to?(:aborted)\"; :148 \"catch(:stream_stop) do\"; :159 \"throw :stream_stop if aborted.call\"",
+      "sure": "read and certain",
+      "old_page": "Not documented on the old rb pages."
+     },
+     {
+      "lang": "py",
+      "question": 4,
+      "answer": "No. A caller cannot cancel `load`, `list` or `direct` once it has started. The control object has no signal, token or context: ctrl carries only throw_err/throw, explain, actor and paging. The only time limit is the `timeout` feature, which is set in the client options, not per call, and passes a `timeout` to the HTTP request. A request that times out comes back as a transport error string (see Q9 d).",
+      "evidence": "tm/py/pkg/core/control.py:10-15 \"self.throw_err = ... self.explain = ... self.actor = ... self.paging = ...\"; tm/py/pkg/core/context.py:49-58 (reads throw_err, throw, explain, actor, paging only); tm/py/pkg/utility/fetcher.py:97-99 \"timeout = fetchdef.get(\\\"timeout\\\") ... kwargs[\\\"timeout\\\"] = timeout\"; grep of tm/py/pkg for signal/cancel/abort finds no caller-facing cancellation",
+      "sure": "read and certain",
+      "old_page": "Nothing said."
+     },
+     {
+      "lang": "rb",
+      "question": 4,
+      "answer": "No. `load`, `list` and `direct` have no caller cancellation: the Control class carries only throw_err, err, explain, actor and paging. A timeout is possible only through the timeout feature in the client options.",
+      "evidence": "tm/rb/core/control.rb:4 \"attr_accessor :throw_err, :err, :explain, :actor, :paging\"; grep of tm/rb for signal/cancel/abort finds no cancellation outside Entity.stream",
+      "sure": "read and certain",
+      "old_page": "Nothing said."
+     },
+     {
+      "lang": "py",
+      "question": 5,
+      "answer": "The operation runs when the caller first asks for an item. `stream` contains `yield`, so it is a generator function and nothing in its body runs at the call, not even building ctx. The order on the first `next()` is: ctx is built (line 103); `_stream_steps` runs the whole pipeline, including the HTTP request (line 123); then either the streaming feature's generator is iterated lazily (lines 133-136), or the materialised result is read once with `done` (line 139) and its items are yielded one by one (lines 147-150). No thread is involved.",
+      "evidence": "src/cmp/py/fragment/Entity.fragment.py:74 \"def stream(self, action, args=None, callopts=None):\"; :103 \"ctx = utility.make_context(ctxmap, self._entctx)\"; :123 \"failed = self._stream_steps(ctx)\"; :133 \"for item in stream_fn():\"; :139 \"data = utility.done(ctx) if failed is None\"; :150 \"yield item\"",
+      "sure": "read and certain",
+      "old_page": "Not documented."
+     },
+     {
+      "lang": "rb",
+      "question": 5,
+      "answer": "The work is split. At the call, lines 105-135 run eagerly: the context is built and the body is attached. Then `Enumerator.new` (line 140) is returned without running the pipeline. The pipeline (`_stream_steps`, line 149) runs when the caller first iterates (`each` or `next`), and the items follow from the feature's enumerator (line 158) or from the materialised `done` result (lines 164-169). This differs from py, where even the context is built lazily. Everything runs on the caller's thread.",
+      "evidence": "src/cmp/rb/fragment/Entity.fragment.rb:120 \"ctx = utility.make_context.call(ctxmap, @_entctx)\"; :140 \"Enumerator.new do |yielder|\"; :149 \"failed = _stream_steps(ctx)\"; :158 \"stream_enum.each do |item|\"; :164 \"data = failed.nil? ? utility.done.call(ctx) : utility.make_error.call(ctx, failed)\"",
+      "sure": "read and certain",
+      "old_page": "Not documented."
+     },
+     {
+      "lang": "py",
+      "question": 6,
+      "answer": "`remove` calls `self.mark_deleted()`, which sets the private `_deleted`. Callers read it with the method `deleted()`, which returns bool. The data is not cleared. But it is not simply kept: post_done REPLACES `_data` with the response's resdata whenever that is not None. It is kept only when the response carries no record. On a successful remove, `remove` returns the entity itself.",
+      "evidence": "src/cmp/py/fragment/Entity.fragment.py:43-47 \"def mark_deleted(self): self._deleted = True / def deleted(self): return True is self._deleted\"; :267-269 \"if opname == \\\"remove\\\": self.mark_deleted() / return self\"; src/cmp/py/fragment/EntityRemoveOp.fragment.py:27-28 \"if ctx.result.resdata is not None: / self._data = helpers.to_map(vs.clone(ctx.result.resdata)) or {}\"",
+      "sure": "read and certain",
+      "old_page": "py/README.md:230 'Remove an entity, and return it marked as deleted.' This is right. The code comment (Entity.fragment.py:41 'The instance KEEPS the data it held') overstates it, because a response record replaces the data."
+     },
+     {
+      "lang": "rb",
+      "question": 6,
+      "answer": "The same as py. `mark_deleted` sets `@_deleted`, and the method `deleted` (no `?`, called without parentheses) returns true. The data is replaced by the response's resdata when that is truthy (non-nil), and is otherwise kept.",
+      "evidence": "src/cmp/rb/fragment/Entity.fragment.rb:55-61 \"def mark_deleted / @_deleted = true ... def deleted / true == @_deleted\"; :289 \"mark_deleted if opname == \\\"remove\\\"\"; src/cmp/rb/fragment/EntityRemoveOp.fragment.rb:25-26 \"if ctx.result.resdata / @_data = ProjectNameHelpers.to_map(VoxgigStruct.clone(ctx.result.resdata)) || {}\"",
+      "sure": "read and certain",
+      "old_page": "rb/README.md:230 'return it marked as deleted'. This is correct, and the page does not name `deleted`."
+     },
+     {
+      "lang": "py",
+      "question": 7,
+      "answer": "Constructor: on the type, `client = DemoSDK({\"apikey\": \"...\"})`. Test constructor: a classmethod on the type, `client = DemoSDK.test()`. direct: on the instance, `res = client.direct({\"path\": \"/planet\", \"method\": \"GET\"})`. prepare: on the instance, `fd = client.prepare({\"path\": \"/planet\"})`. Options: `opts = client.options`, a property; the clone is `client.options_map()`. Utility: `u = client.get_utility()`. Accessor: on the instance, `planet = client.Planet()`. Operation: on the entity instance, `planet = client.Planet().load({\"id\": \"p1\"})`. There are no module-level functions.",
+      "evidence": "src/cmp/py/fragment/Main.fragment.py:24 \"def __init__(self, options=None):\"; :353-354 \"@classmethod / def test(cls, testopts=None, sdkopts=None)\"; :210 \"def direct(self, fetchargs=None):\"; :120 \"def prepare(self, fetchargs=None):\"; :96-97 \"@property def options(self)\"; :113 \"def get_utility(self):\"; src/cmp/py/MainEntity_py.ts:21; src/cmp/py/fragment/EntityLoadOp.fragment.py:8 \"def load(self, reqmatch=None, ctrl=None) -> EntyClass:\"",
+      "sure": "read and certain",
+      "old_page": "Consistent with the old pages."
+     },
+     {
+      "lang": "rb",
+      "question": 7,
+      "answer": "Constructor: on the type, `client = DemoSDK.new({ \"apikey\" => \"...\" })`. Test constructor: a class method, `client = DemoSDK.test`. direct: `res = client.direct({ \"path\" => \"/planet\" })`. prepare: `fd = client.prepare({ \"path\" => \"/planet\" })`. Options: `client.options`, an attr_accessor, and `client.options_map`. Utility: `client.get_utility`. Accessor: `planet = client.Planet`, parentheses optional. Operation: `planet = client.Planet.load({ \"id\" => \"p1\" })`. All except the constructor and test are instance methods. Ruby calls every one of them as a method, even without parentheses.",
+      "evidence": "src/cmp/rb/fragment/Main.fragment.rb:23 \"def initialize(options = {})\"; :325 \"def self.test(testopts = nil, sdkopts = nil)\"; :179 \"def direct(fetchargs = {})\"; :109 \"def prepare(fetchargs = {})\"; :21 \"attr_accessor :mode, :features, :options\"; :90 \"def get_utility\"; src/cmp/rb/MainEntity_rb.ts:21; src/cmp/rb/fragment/EntityLoadOp.fragment.rb:14 \"def load(reqmatch = nil, ctrl = nil)\"",
+      "sure": "read and certain",
+      "old_page": "Consistent with the old pages."
+     },
+     {
+      "lang": "py",
+      "question": 8,
+      "answer": "All entity members a program reads are methods, called with parentheses: name is `get_name()`, data is `data_get()`, match is `match_get()`, and the deleted mark is `deleted()`. The client and the entity options have no public member at all: `_client` and `_entopts` are private attributes. No public field exists.",
+      "evidence": "src/cmp/py/fragment/Entity.fragment.py:22-28 \"self._name = ... self._client = client ... self._entopts = entopts ... self._deleted = False\"; :37 \"def get_name(self):\"; :46 \"def deleted(self):\"; :61 \"def data_get(self)\"; :70 \"def match_get(self)\"",
+      "sure": "read and certain",
+      "old_page": "The old page lists get_name, data_get and match_get as methods. It does not mention deleted, client or entity options."
+     },
+     {
+      "lang": "rb",
+      "question": 8,
+      "answer": "All are methods: `get_name`, `data_get`, `match_get`, `deleted` and `to_h`. Ruby lets a caller write them without parentheses, so they read like fields, but each one is a method call. The client and the entity options have no reader: they are in the instance variables `@_client` and `@_entopts`.",
+      "evidence": "src/cmp/rb/fragment/Entity.fragment.rb:17-23 \"@_name = ... @_client = client ... @_entopts = entopts\"; :33 \"def get_name\"; :40 \"def to_h\"; :59 \"def deleted\"; :77 \"def data_get\"; :90 \"def match_get\"",
+      "sure": "read and certain",
+      "old_page": "Consistent with rb/README.md:229-239."
+     },
+     {
+      "lang": "py",
+      "question": 9,
+      "answer": "(a) 2xx: {\"ok\": True, \"status\": <int>, \"headers\": <dict>, \"data\": <parsed JSON, or None for 204/304/content-length 0>}, with no err key. (b) Non-2xx with a readable body: {\"ok\": False, status, headers, \"data\": <parsed body>}, with no err key. (c) Unreadable (non-JSON) body: \"ok\": False even for a 2xx, plus status, headers and \"data\": None. \"err\" is a cleaned error: `response_json_invalid` or `response_content_type` for a 2xx, or a `request_status` error with the response described for a non-2xx. (d) The request could not be made: {\"ok\": False, \"err\": <cleaned STRING>}. The default transport returns `str(e)`, so err is a str, not an exception; there are no status, headers or data. If prepare fails, the result is {\"ok\": False, \"err\": <cleaned exception>}. `ok` is written `True`/`False`. Failure channel: direct catches every Exception from prepare and returns a dict. It can still raise when a caller-supplied `system.fetch` raises, because the fetcher call is outside any try.",
+      "evidence": "src/cmp/py/fragment/Main.fragment.py:236-242 \"try: fetchdef = self.prepare(fetchargs) / except Exception as err: ... return {\\\"ok\\\": False, \\\"err\\\": utility.clean(self._rootctx, err)}\"; :256 \"fetched, fetch_err = utility.fetcher(ctx, url, fetchdef)\"; :258-259 \"if fetch_err is not None: return {\\\"ok\\\": False, \\\"err\\\": utility.clean(ctx, fetch_err)}\"; :289-294 unreadable handling; :296-304 \"\\\"ok\\\": body_err is None and status >= 200 and status < 300, ... if body_err is not None: out[\\\"err\\\"] = ...\"; tm/py/pkg/utility/fetcher.py:105 \"return None, str(e)\"; :117 \"unreadable = True\"; tm/py/pkg/utility/result_body.py:44-48 response_json_invalid / response_content_type",
+      "sure": "read and certain",
+      "old_page": "py/README.md: direct 'Returns a result dict ... does not raise'. That holds except when a custom system.fetch raises. The old pages do not say that err can be a plain string."
+     },
+     {
+      "lang": "rb",
+      "question": 9,
+      "answer": "(a) 2xx: { \"ok\" => true, \"status\", \"headers\", \"data\" => parsed JSON (nil for no body) }, with no \"err\". (b) Non-2xx readable: \"ok\" => false, status, headers, \"data\" => parsed body, with no err. (c) Unreadable body: \"ok\" => false, status, headers, \"data\" => nil, and \"err\" => a cleaned ProjectNameError: response_json_invalid or response_content_type, or the request_status error with detail for a non-2xx. When the failed error is not a ProjectNameError, err is a plain RuntimeError. (d) Not made: { \"ok\" => false, \"err\" => cleaned String \"<ExceptionClass>: <message>\" }. `ok` is written `true`/`false`. Failure channel: raw_request rescues ONLY ProjectNameError from prepare (py rescues every Exception), so any other StandardError raised in prepare propagates. A raising system.fetch also propagates.",
+      "evidence": "src/cmp/rb/fragment/Main.fragment.rb:211-215 \"begin / fetchdef = prepare(fetchargs) / rescue ProjectNameError => err / return { \\\"ok\\\" => false, \\\"err\\\" => err }\"; :228 \"return { \\\"ok\\\" => false, \\\"err\\\" => utility.clean.call(ctx, fetch_err) } if fetch_err\"; :258-263 unreadable; :266-272 \"\\\"ok\\\" => body_err.nil? && status >= 200 && status < 300\"; tm/rb/utility/fetcher.rb:224 \"return nil, \\\"#{e.class}: #{e.message}\\\"\"; tm/rb/utility/result_body.rb:32 \"return RuntimeError.new(message) unless failed.is_a?(ProjectNameError)\"",
+      "sure": "read and certain",
+      "old_page": "rb/REFERENCE.md:84-86: '`{ \"ok\" => ..., \"status\" => ..., \"data\" => ..., \"err\" => ... }`; it does not raise'. The page omits headers, and 'does not raise' holds only for ProjectNameError. The prepare-failure err is also not passed through clean in rb, unlike py."
+     },
+     {
+      "lang": "py",
+      "question": 10,
+      "answer": "`DemoSDK.test()` sets feature.test = {active: True} in sdkopts (lines 366-368) and constructs the client. Validation passes, because the generated feature optspec is an OPEN map whose children accept any name. `featureorder` puts \"test\" first. The constructor calls `_make_feature(\"test\")`, and with no TestFeature class the factory falls back to `BaseFeature()`, a no-op. Construction succeeds and mode is \"test\". But there is no mock transport: every request then fails in the fetcher with `fetch_mode_block` ('Request blocked by mode: \"test\"'). So ops raise ProjectNameError, and direct returns {ok: False, err}.",
+      "evidence": "src/cmp/py/fragment/Main.fragment.py:366-371 \"testopts[\\\"active\\\"] = True / vs.setpath(sdkopts, \\\"feature.test\\\", testopts) / sdk = cls(sdkopts) / sdk.mode = \\\"test\\\"\"; :81 \"utility.feature_add(self._rootctx, _make_feature(fname))\"; src/cmp/py/Main_py.ts:191-195 \"def _make_feature(name): / factory = _FEATURES.get(name) ... return _FEATURES[\\\"base\\\"]()\"; ts/src/helpers/optspec.ts:56-58 \"const feature = { [S_CHILD]: { [S_OPEN]: true, active: false,\"; tm/py/pkg/utility/fetcher.py:133-134 \"if ctx.client.mode != \\\"live\\\": return None, ctx.make_error(\\\"fetch_mode_block\\\",\"",
+      "sure": "read and inferred",
+      "old_page": "no-test/py/README.md:127 'Create a mock client for unit testing \u2014 no server required' and :202 'Creates a test-mode client with mock transport'. Both are false in a no-test SDK: there is no mock, and every call is blocked."
+     },
+     {
+      "lang": "rb",
+      "question": 10,
+      "answer": "The same path as py. `self.test` sets feature.test active (rb lines 333-335) and calls `new`. The open feature optspec validates. The constructor calls `ProjectNameFeatures.make_feature(\"test\")`, whose `case` falls to `else BaseFeature.new`. The client is built in test mode with no mock. The fetcher refuses every request with `fetch_mode_block`.",
+      "evidence": "src/cmp/rb/fragment/Main.fragment.rb:333-338 \"testopts[\\\"active\\\"] = true / VoxgigStruct.setpath(sdkopts, \\\"feature.test\\\", testopts) / sdk = ProjectNameSDK.new(sdkopts) / sdk.mode = \\\"test\\\"\"; :61 \"utility.feature_add.call(@_rootctx, ProjectNameFeatures.make_feature(fname))\"; src/cmp/rb/Main_rb.ts:137-138 \"else / ${model.const.Name}BaseFeature.new\"; tm/rb/utility/fetcher.rb:229-230 \"if ctx.client.mode != \\\"live\\\" / return nil, ctx.make_error(\\\"fetch_mode_block\\\",\"",
+      "sure": "read and inferred",
+      "old_page": "no-test/rb/README.md:199 shows `DemoSDK.test(testopts, sdkopts)` described as a mock test client, which is false without the feature."
+     },
+     {
+      "lang": "py",
+      "question": 11,
+      "answer": "`explain` is a map that the pipeline fills. The context copies `ctrl[\"explain\"]` into the control ONLY when it is a dict. Passing `True` is silently ignored: explain stays None and nothing is recorded or raised. With a dict, the pipeline writes fetchdef, spec, result and err into it in place, and it is cleaned at done.",
+      "evidence": "tm/py/pkg/core/context.py:53-54 \"if isinstance(ctrl_raw.get(\\\"explain\\\"), dict): / self.ctrl.explain = ctrl_raw[\\\"explain\\\"]\"; tm/py/pkg/utility/make_request.py:34-35 \"if ctx.ctrl.explain is not None: ctx.ctrl.explain[\\\"fetchdef\\\"] = fetchdef\"; tm/py/pkg/utility/done.py:18-25 clean_explain_util",
+      "sure": "read and certain",
+      "old_page": "The py REFERENCE direct parameter table has no ctrl row. Nothing found."
+     },
+     {
+      "lang": "rb",
+      "question": 11,
+      "answer": "A Hash that the pipeline fills. The context sets it only when it `is_a?(Hash)`, so `true` is silently ignored.",
+      "evidence": "tm/rb/core/context.rb:37 \"@ctrl.explain = ctrl_raw[\\\"explain\\\"] if ctrl_raw[\\\"explain\\\"].is_a?(Hash)\"; tm/rb/utility/done.rb:18-21 \"explain = ctx.ctrl.explain / return unless explain.is_a?(Hash)\"",
+      "sure": "read and certain",
+      "old_page": "rb/REFERENCE.md:97 \"| `fetchargs[\\\"ctrl\\\"]` | `Hash` | Control options (e.g. `{ \\\"explain\\\" => true }`). |\". The code contradicts this: true is ignored, and a Hash must be passed."
+     },
+     {
+      "lang": "py",
+      "question": 12,
+      "answer": "The package is the directory `py/demo_sdk/`, named `<name lowercased>_sdk` by pyPackageDir. It uses absolute imports (`from demo_sdk.\u2026`), and pyproject's setuptools finds `demo_sdk*`. (a) For a script inside `py/`: `from demo_sdk import DemoSDK`, then `client = DemoSDK({...})`. This works because Python puts the script's own directory on sys.path. (b) For a script at the repository root: either `pip install -e py` first and then the same import, or `import sys; sys.path.insert(0, \"py\")` before `from demo_sdk import DemoSDK`. Live HTTP also needs `requests`, imported lazily. The old root README's quick start printed `import os` / `from demo_sdk import DemoSDK` / `client = DemoSDK({...})`, and its offline block had no import at all. From the repository root that fails with ModuleNotFoundError unless the package was installed.",
+      "evidence": "src/cmp/py/utility_py.ts:11-12 \"function pyPackageDir(model: any): string { / return model.const.Name.toLowerCase() + '_sdk'\"; src/cmp/py/Main_py.ts:63 \"Folder({ name: pkgdir }, () => {\"; :76 \"File({ name: '__init__.' + target.ext }\"; src/cmp/py/Package_py.ts:67-68 \"[tool.setuptools.packages.find] / include = [\\\"${...}_sdk*\\\"]\"; src/cmp/py/fragment/Main.fragment.py:3 \"from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs\"; out/old/B/README.md:313-314 \"import os / from demo_sdk import DemoSDK\"; :56 \"client = DemoSDK.test()\" (no import)",
+      "sure": "read and inferred",
+      "old_page": "Root README.md:314 'from demo_sdk import DemoSDK' does not run from the repository root without an install or a path change."
+     },
+     {
+      "lang": "rb",
+      "question": 12,
+      "answer": "The main file is `rb/Demo_sdk.rb` (rbSdkFile = `<Name>_sdk`), at the root of `rb/`. It loads everything else with require_relative, and the gemspec has `require_paths = [\".\"]`. (a) For a file inside `rb/`: `require_relative \"Demo_sdk\"`, then `client = DemoSDK.new({ \"apikey\" => ENV[\"DEMO_APIKEY\"] })`. (b) For a file at the repository root: `require_relative \"rb/Demo_sdk\"`, or `$LOAD_PATH.unshift File.join(__dir__, \"rb\"); require \"Demo_sdk\"`, or for an installed gem `require \"Demo_sdk\"`. require_relative resolves against the requiring FILE's directory, not the working directory. The old root README printed `require_relative \"Demo_sdk\"`, which fails with LoadError in a file at the repository root.",
+      "evidence": "src/cmp/rb/utility_rb.ts:21-22 \"function rbSdkFile(model: any): string { / return model.const.Name + '_sdk'\"; src/cmp/rb/Main_rb.ts:62 \"File({ name: rbSdkFile(model) + '.' + target.ext }\"; src/cmp/rb/Package_rb.ts:68 \"spec.require_paths = [\\\".\\\"]\"; src/cmp/rb/fragment/Main.fragment.rb:3 \"require_relative 'utility/struct/voxgig_struct'\"; out/old/B/README.md:370 \"require_relative \\\"Demo_sdk\\\"\"",
+      "sure": "read and inferred",
+      "old_page": "Root README.md:370, rb/README.md:37 and rb/REFERENCE.md:11 all use require_relative \"Demo_sdk\". That is right only for a file inside rb/."
+     },
+     {
+      "lang": "py",
+      "question": 13,
+      "answer": "(1) The accessor's argument is documented as `data` but becomes entity options (Q1). (2) The no-test README promises a mock client from `test()`, but every request is blocked (Q10). (3) The root quick start's import does not resolve from the repository root (Q12). (4) The REFERENCE does not say that direct's err can be a plain string, or that a custom system.fetch that raises escapes direct (Q9).",
+      "evidence": "See Q1, Q9, Q10 and Q12. py/REFERENCE.md: 'Pass `None` for no initial data' wording parallels rb; no-test/py/README.md:202 'Creates a test-mode client with mock transport.'",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "rb",
+      "question": 13,
+      "answer": "(1) rb/REFERENCE.md:97 gives `{ \"explain\" => true }` as an example, but true is ignored (Q11). (2) 'Pass `nil` for no initial data' is wrong: the argument is entopts (Q1). (3) direct's 'does not raise' holds only for ProjectNameError (Q9), and the documented result shape omits headers. (4) The no-test README promises a mock (Q10). (5) require_relative fails in a file at the repository root (Q12).",
+      "evidence": "rb/REFERENCE.md:97 \"(e.g. `{ \\\"explain\\\" => true }`)\"; rb/REFERENCE.md:62 \"Create a new `Planet` entity instance. Pass `nil` for no initial data.\"; rb/REFERENCE.md:84-86 direct return shape; src/cmp/rb/fragment/Main.fragment.rb:213 \"rescue ProjectNameError => err\"",
+      "sure": "read and certain"
+     }
+    ],
+    "differences": [
+     "Stream laziness: py's stream is a generator function, so nothing runs at the call, not even the context build. rb builds the context and attaches the body at the call, and defers only the pipeline into Enumerator.new.",
+     "direct's prepare-failure catch: py catches every Exception and cleans it. rb rescues only ProjectNameError and does not clean it, so other StandardErrors propagate.",
+     "direct with no response: py's err is str(e). rb's err is \"<ExceptionClass>: <message>\". Both are strings, not exceptions.",
+     "A denied op (allow.op): py returns err as a bare Exception. rb returns a ProjectNameError with code \"<op>_allow\".",
+     "Options getter: py `options` is a @property backed by a __slots__ attribute. rb `options` is an attr_accessor. Both are live and writable.",
+     "get_utility: py copies named function slots into a new Utility. rb copies every instance variable by reference and dups only @custom.",
+     "Entity printing: rb defines to_h, to_s and inspect, which show only the data. The py entity defines no __repr__.",
+     "Remove: py replaces the data when resdata `is not None`. rb replaces it when resdata is truthy. These are equivalent for Hash and nil."
+    ],
+    "surprises": [
+     "In both languages the entity accessor's parameter is named `data` but is passed as the constructor's `entopts`. client.Planet({\"id\": 1}) therefore sets entity options, not data, and it mutates the caller's dict by adding active=true.",
+     "In a no-test SDK, test() quietly builds a test-mode client backed by a no-op BaseFeature. Every request then fails with fetch_mode_block, while the docs promise a mock.",
+     "The code comment 'The instance KEEPS the data it held' after remove is only half true: a response record replaces the data.",
+     "ctrl.explain = true is silently ignored in both languages, and the rb REFERENCE gives exactly that value as its example."
+    ],
+    "not_done": [
+     "No SDK was generated or run: the py/rb behaviour of test() without the test feature (Q10) is traced in the code, not executed.",
+     "I did not read the streaming feature's own generator (tm/*/feature/streaming*) to check whether it does any work of its own before the first item.",
+     "I did not check py's patch/update/create op fragments individually beyond load/remove/list. The runtime table and _run_op show they share the same run path."
+    ]
+   }
+  },
+  {
+   "pair": [
+    "php",
+    "perl"
+   ],
+   "result": {
+    "langs": [
+     "php",
+     "perl"
+    ],
+    "answers": [
+     {
+      "lang": "php",
+      "question": 1,
+      "answer": "Called with no argument or null, the accessor returns one entity that the client keeps in a private field and creates on the first call. Called with a non-null argument, it makes a new entity every time. The argument becomes the entity's entopts, not its data.",
+      "evidence": "ts/project/.sdk/src/cmp/php/MainEntity_php.ts:30 \"private $_${field} = null;\"; :43-47 \"if ($data === null) { if ($this->_${field} === null) { $this->_${field} = new ${cls}($this, null); } return $this->_${field};\"; :49 \"return new ${cls}($this, $data);\"; fragment/Entity.fragment.php:22 \"public function __construct($client, ?array $entopts = null)\"",
+      "sure": "read and certain",
+      "old_page": "The old README method table says `Ambient | ($data): AmbientEntity | Create an Ambient entity instance.` That is false for the no-argument call, which returns the cached instance."
+     },
+     {
+      "lang": "php",
+      "question": 2,
+      "answer": "options_map() returns a deep clone. get_utility() returns a new utility object (UtilityType::copy) that holds the same closures, so it is a shallow copy. data_get() and match_get() each return a clone. There is no entity-options getter and no client getter on the entity. The client's `options` property is public, so `$client->options` reads the live array; PHP arrays are value types, though, so the caller gets a copy on write.",
+      "evidence": "fragment/Main.fragment.php:116 \"$out = Struct::clone($this->options);\"; :135 \"return ProjectNameUtility::copy($this->_utility);\"; tm/php/core/UtilityType.php:58-60 \"public static function copy(ProjectNameUtility $src): ProjectNameUtility { $u = new ProjectNameUtility(); $u->clean = $src->clean;\"; fragment/Entity.fragment.php:114 \"return Struct::clone($this->_data);\"; :134 \"return Struct::clone($this->_match);\"; :16 \"private array $_entopts;\" (no getter); Main.fragment.php:29 \"public ?array $options;\"",
+      "sure": "read and certain",
+      "old_page": "The old page says `options_map` is a deep copy and `get_utility` is a copy. Both agree with the code."
+     },
+     {
+      "lang": "php",
+      "question": 3,
+      "answer": "Yes. stream reads callopts['signal']. It may be a callable that returns true to abort, or an object with an `aborted` property. It is checked before each yield, and when it is set the generator returns and ends quietly, with no error.",
+      "evidence": "fragment/Entity.fragment.php:152 \"$signal = $callopts['signal'] ?? null;\"; :183-187 \"if (is_callable($signal)) { return (bool)$signal(); } if (is_object($signal) && isset($signal->aborted)) { return (bool)$signal->aborted;\"; :206-208 \"if ($aborted()) { return; }\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "php",
+      "question": 4,
+      "answer": "No. ctrl for load, list and direct carries throw, explain, actor and paging, and nothing that cancels. The transport is synchronous (cURL or file_get_contents). The timeout feature says outright that an in-flight request cannot be aborted.",
+      "evidence": "tm/php/core/Context.php:52-63 (only throw/explain/actor/paging read from ctrl); tm/php/feature/TimeoutFeature.php:9-11 \"PHP transports are synchronous, so an in-flight request cannot be raced/aborted the way the TS implementation cancels a fetch via AbortController.\"",
+      "sure": "read and inferred"
+     },
+     {
+      "lang": "php",
+      "question": 5,
+      "answer": "When the caller first asks for an item. stream is a PHP generator function (it returns \\Generator and contains yield), so none of its body runs until the first iteration. That includes make_context and the pipeline in _stream_steps. An error from the pipeline is also raised on that first iteration, not at the call.",
+      "evidence": "fragment/Entity.fragment.php:148 \"public function stream(string $action, ?array $args = null, ?array $callopts = null): \\Generator\"; :169 \"$ctx = ($utility->make_context)($ctxmap, $this->_entctx);\"; :195 \"$failed = $this->_stream_steps($ctx);\"; :209 \"yield $item;\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "php",
+      "question": 6,
+      "answer": "Through the method deleted(), which returns bool and is backed by the private field _deleted that markDeleted() sets. Whether the data is kept depends on the response: remove's post_done replaces _data with the response's resdata when resdata is truthy, and leaves the old data when the body is empty or falsy.",
+      "evidence": "fragment/Entity.fragment.php:80-83 \"public function markDeleted(): void { $this->_deleted = true;\"; :85 \"public function deleted(): bool\"; :399-400 \"if ($opname === 'remove') { $this->markDeleted();\"; fragment/EntityRemoveOp.fragment.php:69-70 \"if ($ctx->result->resdata) { $this->_data = ProjectNameHelpers::to_map(Struct::clone($ctx->result->resdata)) ?? [];\"",
+      "sure": "read and certain",
+      "old_page": "The old page says remove will \"return it marked as deleted\" and does not name deleted(). A comment in the code says the instance \"KEEPS the data it held\". That holds only when the remove response has no body."
+     },
+     {
+      "lang": "php",
+      "question": 7,
+      "answer": "Constructor: an instance via new, `$client = new DemoSDK([\"apikey\" => getenv(\"DEMO_APIKEY\")]);`. Test constructor: static, `$client = DemoSDK::test([\"entity\"=>[...]], []);`. direct: instance, `$res = $client->direct([\"path\"=>\"/x/{id}\",\"method\"=>\"GET\",\"params\"=>[\"id\"=>\"1\"]]);`. prepare: instance, `$def = $client->prepare([\"path\"=>\"/x\"]);`. Options: `$client->options_map();`. Utility: `$client->get_utility();`. Accessor: instance method, `$planet = $client->Planet();`. Operation: instance, `$planet->load([\"id\"=>\"p1\"]);`.",
+      "evidence": "fragment/Main.fragment.php:34 \"public function __construct(array $options = [])\"; :393 \"public static function test(?array $testopts = null, ?array $sdkopts = null): self\"; :222 \"public function direct(array $fetchargs = []): mixed\"; :143 \"public function prepare(array $fetchargs = []): mixed\"; :114 \"public function options_map(): array\"; :133 \"public function get_utility()\"; MainEntity_php.ts:40 \"public function ${accessor}($data = null)\"; fragment/EntityLoadOp.fragment.php:15 \"public function load(?array $reqmatch = null, $ctrl = null): mixed\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "php",
+      "question": 8,
+      "answer": "On the entity everything a program reads is a method: get_name(), data_get(), match_get() and deleted(). The client, the entity options and the deleted flag are private fields with no public read, except through deleted(). On the client, mode, features and options are public properties.",
+      "evidence": "fragment/Entity.fragment.php:13-20 \"private string $_name; private $_client; ... private array $_entopts; private mixed $_data; private array $_match; ... private bool $_deleted = false;\"; :48 \"public function get_name(): string\"; :85 \"public function deleted(): bool\"; Main.fragment.php:27-29 \"public string $mode; public array $features; public ?array $options;\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "php",
+      "question": 9,
+      "answer": "(a) 2xx with a readable body: ['ok'=>true,'status'=>int,'headers'=>array,'data'=>parsed JSON], with no err. (b) Non-2xx with a readable body: ok false, plus status, headers and data (the parsed error body), with no err. (c) A body that is not valid JSON (`unreadable`): ok false even on a 2xx, status, headers, data null, and err set to a cleaned ProjectNameError. On a 2xx that error is response_json_invalid or response_content_type; on a non-2xx it is request_status with the detail. 204, 304 and content-length 0 skip parsing, so data is null and ok follows the status. (d) The request cannot be made: ['ok'=>false,'err'=>...] with no status, headers or data. With the default transport that err is a plain STRING (the curl_error text or the stream warning), not an object. A prepare failure gives ['ok'=>false,'err'=>Throwable]. direct's own failure channel: it catches only prepare's throw. A throwing custom system.fetch, or the fetcher, is not caught, so the exception escapes direct. ok is written as true or false.",
+      "evidence": "fragment/Main.fragment.php:259-263 \"try { $fetchdef = $this->prepare($fetchargs); } catch (\\Throwable $err) { return [\"ok\" => false, \"err\" => $err]; }\"; :274 \"[$fetched, $fetch_err] = ($utility->fetcher)($ctx, $url, $fetchdef);\" (not in try); :276-277 \"if ($fetch_err) { return [\"ok\" => false, \"err\" => ($utility->clean)($ctx, $fetch_err)];\"; :308-317 unreadable -> ProjectNameResultBody::unreadable; :322 \"\\\"ok\\\" => null === $body_err && $status >= 200 && $status < 300,\"; :327-328 \"if (null !== $body_err) { $out[\\\"err\\\"] = ...\"; tm/php/utility/Fetcher.php:296-306 \"$err = curl_error($ch) ?: 'curl_exec failed'; return [[ 'status' => 0, ...], $err,];\"; :216-217 \"$warning = error_get_last()['message'] ?? 'request failed'; return [null, preg_replace(...)]\"; :329-331 \"$decoded = json_decode($response_body, true); if (json_last_error() === JSON_ERROR_NONE) {...} else { $unreadable = true; }\"; tm/php/utility/ResultBody.php:55-60 response_json_invalid / response_content_type",
+      "sure": "read and certain",
+      "old_page": "The old page says `ok` is `true if the HTTP status is 2xx`, which is false for a 2xx with an unreadable body. It says err \"holds a transport error\", but err is also set for an unreadable body. Its example calls `$err->getMessage()`, which is a fatal error when err is the plain string the default transport returns."
+     },
+     {
+      "lang": "php",
+      "question": 10,
+      "answer": "The factory falls back to a base feature, so construction does not fail. test() sets feature.test.active=true and calls new. make_options keeps the key, because the feature optspec is open, and orders test first. The constructor's has_feature('test') is false, but no extend instance carries the name, so it still calls make_features('test'). Its switch has no 'test' case, so the default branch returns a BaseFeature. mode is 'test', both from the options and from test() itself. The first operation or direct then fails in Fetcher::call with fetch_mode_block (\"Request blocked by mode: \\\"test\\\"\"): an operation throws ProjectNameError, and direct returns ok false with that err.",
+      "evidence": "fragment/Main.fragment.php:402-411 \"$testopts[\\\"active\\\"] = true; ... $sdk = new ProjectNameSDK($sdkopts); $sdk->mode = \\\"test\\\";\"; :55-56 \"if (Struct::getpath($this->options, \\\"feature.test.active\\\") === true) { $this->mode = \\\"test\\\";\"; :85-93 \"if (!ProjectNameFeatures::has_feature($fname)) {...} ($utility->feature_add)($this->_rootctx, ProjectNameFeatures::make_feature($fname));\"; src/cmp/php/Main_php.ts:141-142 \"default: return new ${model.const.Name}BaseFeature();\"; tm/php/utility/Fetcher.php:351-353 \"if ($ctx->client->mode !== 'live') { return [null, $ctx->make_error('fetch_mode_block',\"",
+      "sure": "read and inferred",
+      "old_page": "The old no-test PHP README still documents `DemoSDK::test(...)` as a mock client (out/old/no-test/php/README.md:132). In that SDK every call fails."
+     },
+     {
+      "lang": "php",
+      "question": 11,
+      "answer": "explain must be an array, filled with spec, fetchdef, result and err. true, or any other non-array, is ignored silently. An empty array [] is falsy in PHP, so `explain => []` records nothing; it takes a non-empty array such as ['on'=>true]. Because PHP arrays are copied by value, the record is filled on the context's copy, and the caller's own array never receives it. The code says so in a comment.",
+      "evidence": "tm/php/core/Context.php:55-56 \"if (isset($ctrl_raw['explain']) && is_array($ctrl_raw['explain'])) { $this->ctrl->explain = $ctrl_raw['explain'];\"; tm/php/utility/MakeSpec.php:83 \"if ($ctx->ctrl->explain) {\"; tm/php/utility/Done.php:21-22 \"The record is an array the context owns (the caller's copy is its own)\"; src/cmp/php/TestClean_php.ts:522-523 \"What the caller passed and keeps; an array, so the call cannot change it\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "php",
+      "question": 12,
+      "answer": "The main file is `<name>_sdk.php` at the root of php/, for example demo_sdk.php. It loads core, config and features through __DIR__ paths, and the entities load lazily the same way. (a) From php/: `<?php require_once 'demo_sdk.php'; $client = new DemoSDK([...]);`, which resolves through include_path '.' or the script's own directory. After `composer install` you can use `require 'vendor/autoload.php';` instead: composer.json autoload lists files [\"demo_sdk.php\"] plus a classmap. (b) From the repository root: `require_once 'php/demo_sdk.php';` or `require_once __DIR__ . '/php/demo_sdk.php';`. The old root README's live quick start printed `require_once 'demo_sdk.php';`, which fails from the repository root unless the script itself sits in php/. Its test quick start has no require line at all, so run alone it ends in \"Class DemoSDK not found\".",
+      "evidence": "src/cmp/php/Main_php.ts:59 \"File({ name: model.const.Name.toLowerCase() + '_sdk.' + target.ext }\"; fragment/Main.fragment.php:6 \"require_once __DIR__ . '/utility/struct/Struct.php';\"; MainEntity_php.ts:42 \"require_once __DIR__ . '/entity/${entity.name}_entity.php';\"; src/cmp/php/Package_php.ts:68-70 \"\\\"autoload\\\": { \\\"files\\\": [\\\"${...}_sdk.php\\\"], \\\"classmap\\\": [...]\"; out/old/B/README.md:334 \"require_once 'demo_sdk.php';\"; out/old/B/README.md:63-68 (test quick start, no require)",
+      "sure": "read and inferred"
+     },
+     {
+      "lang": "php",
+      "question": 13,
+      "answer": "Contradictions in the old PHP pages: (1) The accessor is described as \"Create an Ambient entity instance\", but with no argument it returns a cached one, and its `$data` argument is used as entity options, not data. (2) `ok` is \"true if the HTTP status is 2xx\", but a 2xx with a non-JSON body is ok=false with err. (3) err is said to hold \"a transport error\", but it also holds a body-parse error. (4) The direct example calls `$err->getMessage()`, but the default transport's err is a string. (5) The no-test README offers DemoSDK::test as a mock client, and in that SDK every call is blocked.",
+      "evidence": "out/old/B/php/README.md:222 \"| `Ambient` | `($data): AmbientEntity` | Create an Ambient entity instance. |\"; :257 \"| `ok` | `bool` | `true` if the HTTP status is 2xx. |\"; :68-69 \"`err` holds a transport error\"; :80 \"($err ? $err->getMessage() : ...\"; code as in Q1, Q9, Q10",
+      "sure": "read and certain",
+      "old_page": "see answer"
+     },
+     {
+      "lang": "perl",
+      "question": 1,
+      "answer": "The accessor makes a new entity on every call, with or without an argument; there is no cache. The argument is passed to the entity constructor as entopts, not as data.",
+      "evidence": "ts/project/.sdk/src/cmp/perl/MainEntity_perl.ts:21-24 \"sub ${entity.Name} { my ($self, $data) = @_; require(...); return ${cls}->new($self, $data);\"; fragment/Entity.fragment.pm:18 \"my ($class, $client, $entopts) = @_;\"",
+      "sure": "read and certain",
+      "old_page": "The old page says \"Create an Ambient entity instance\" and \"Create an instance: `my $ambient = $client->Ambient;`\". Both are consistent with the code."
+     },
+     {
+      "lang": "perl",
+      "question": 2,
+      "answer": "options_map returns a deep clone. get_utility returns a new utility hash with the same coderefs and a copied custom map, so it is a shallow copy. data_get and match_get each return a clone. There is no entity-options getter and no client getter. The client is a blessed hashref, so `$client->{options}` reads the live hash with nothing to stop it.",
+      "evidence": "fragment/Main.fragment.pm:105 \"my $out = Voxgig::Struct::clone($self->{options});\"; :111 \"return ProjectNameUtility->copy($self->{_utility});\"; tm/perl/core/utility_type.pm:22-28 \"sub copy { ... for my $k (keys %$src) { $u->{$k} = $src->{$k}; } $u->{custom} = { %{ $src->{custom} || {} } };\"; fragment/Entity.fragment.pm:103 \"return Voxgig::Struct::clone($self->{_data});\"; :119 \"return Voxgig::Struct::clone($self->{_match});\"",
+      "sure": "read and certain",
+      "old_page": "The old page says \"Deep copy of current SDK options\" and \"Copy of the SDK utility object\". Both agree with the code."
+     },
+     {
+      "lang": "perl",
+      "question": 3,
+      "answer": "Yes. stream reads callopts->{signal}, and only a coderef counts: when it returns true, the iterator returns undef, which is the same as exhaustion. An object with an aborted flag is ignored, which PHP does accept. The signal is checked on each pull.",
+      "evidence": "fragment/Entity.fragment.pm:148 \"#   - signal: an optional coderef; when it returns true the iterator stops.\"; :153 \"my $signal = ProjectNameHelpers::gp($callopts, 'signal');\"; :190-192 \"my $aborted = sub { return (ref $signal eq 'CODE' && $signal->()) ? 1 : 0; };\"; :236 \"return undef if $aborted->();\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "perl",
+      "question": 4,
+      "answer": "No. ctrl carries throw, explain, actor and paging only. Transport is a blocking HTTP::Tiny request, and the runtime has no signal, token or context.",
+      "evidence": "tm/perl/core/context.pm:45-49 (only throw/explain/actor/paging read from ctrl); tm/perl/utility/fetcher.pm:154 \"my $res = eval { _http_client(%new_args)->request($method, $fullurl, $opts) };\"; grep for signal/cancel/abort in tm/perl/utility and core: none",
+      "sure": "read and inferred"
+     },
+     {
+      "lang": "perl",
+      "question": 5,
+      "answer": "At the call, eagerly. stream builds the context, runs the whole pipeline through _run_op, and only then returns an iterator coderef. Pipeline errors therefore die from stream() itself. Only when the streaming feature supplies result->{stream} does each pull call the source incrementally. This differs from PHP, where nothing runs until the first item is asked for.",
+      "evidence": "fragment/Entity.fragment.pm:159 \"my $ctx = $utility->{make_context}->({\"; :177 \"$self->_run_op($ctx, sub { return });\"; :200-202 \"if ($result && ref $result->{stream} eq 'CODE') { my $src = $result->{stream}; return sub {\"; :235 \"return sub {\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "perl",
+      "question": 6,
+      "answer": "Through the method deleted, which returns 1 or 0 and is backed by the hash key _deleted that mark_deleted sets. Remove's post_done replaces _data with a clone of the response's resdata when that is truthy, and otherwise keeps the old data.",
+      "evidence": "fragment/Entity.fragment.pm:77-80 \"sub mark_deleted { my ($self) = @_; $self->{_deleted} = 1;\"; :84-86 \"sub deleted { ... return $self->{_deleted} ? 1 : 0;\"; :295 \"$self->mark_deleted if defined $opname && $opname eq 'remove';\"; fragment/EntityRemoveOp.fragment.pm:23-25 \"if ($result->{resdata}) { $self->{_data} = ProjectNameHelpers::to_map(Voxgig::Struct::clone($result->{resdata})) || {};\"",
+      "sure": "read and certain",
+      "old_page": "The old page says \"return it marked as deleted\" and does not name deleted."
+     },
+     {
+      "lang": "perl",
+      "question": 7,
+      "answer": "Constructor: class method, `my $client = DemoSDK->new({ 'apikey' => $ENV{'DEMO_APIKEY'} });`. Test constructor: class method, though it works on an instance too, `my $client = DemoSDK->test(undef, undef);`. direct: instance, `my $res = $client->direct({ 'path' => '/x/{id}', 'method' => 'GET', 'params' => { 'id' => '1' } });`. prepare: instance, `$client->prepare({ 'path' => '/x' })`. Options: `$client->options_map`. Utility: `$client->get_utility`. Accessor: instance method, parentheses optional, `my $planet = $client->Planet;`. Operation: instance, `$planet->load({ 'id' => 'p1' });`.",
+      "evidence": "fragment/Main.fragment.pm:31-32 \"sub new { my ($class, $options) = @_;\"; :364-377 \"sub test { my ($class, $testopts, $sdkopts) = @_; ... my $sdk = $class->new($sdkopts);\"; :206 \"sub direct {\"; :132 \"sub prepare {\"; :103 \"sub options_map {\"; :109 \"sub get_utility {\"; MainEntity_perl.ts:21 \"sub ${entity.Name} {\"; fragment/EntityLoadOp.fragment.pm:42-43 \"sub load { my ($self, $reqmatch, $ctrl) = @_;\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "perl",
+      "question": 8,
+      "answer": "The documented members are all methods: get_name, data_get, match_get and deleted. The entity is a blessed hashref, so _name, _client, _entopts, _data, _match and _deleted are hash keys a program could read without a call, for example `$e->{_data}`. They are private by convention, have no accessor, and data read that way is not cloned.",
+      "evidence": "fragment/Entity.fragment.pm:30-38 \"my $self = bless { _name => 'entityname', _client => $client, _utility => ..., _entopts => $entopts, _data => {}, _deleted => 0, _match => {}, }, $class;\"; :50 \"sub get_name {\"; :84 \"sub deleted {\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "perl",
+      "question": 9,
+      "answer": "(a) 2xx: {ok=>1,status,headers,data=>parsed JSON}, with no err. (b) Non-2xx with a readable body: {ok=>0,status,headers,data=>error body}, with no err. (c) A body that is not valid JSON: {ok=>0,status,headers,data=>undef,err=>cleaned error}, also on a 2xx. On a non-2xx the error is request_status with the detail; on a 2xx it comes from unreadable_body. 204, 304 and content-length 0 skip parsing. (d) The request cannot be made: {ok=>0, err=>...}, with no status, headers or data. With the default transport err is a plain STRING: the die text, or HTTP::Tiny's 599 content. A prepare failure gives err=>$@. ok is written as 1 or 0. Failure channel: direct traps only prepare's die (in an eval). The fetcher call is not in an eval, so a dying custom system.fetch propagates out of direct. _op_denied's err is a plain string here, where PHP uses a ProjectNameError.",
+      "evidence": "fragment/Main.fragment.pm:243-246 \"my $fetchdef = eval { $self->prepare($fetchargs) }; if (my $prep_err = $@) { return { 'ok' => 0, 'err' => $prep_err };\"; :258 \"my ($fetched, $fetch_err) = $utility->{fetcher}->($ctx, $url, $fetchdef);\"; :260 \"return { 'ok' => 0, 'err' => $utility->{clean}->($ctx, $fetch_err) } if $fetch_err;\"; :289-295 unreadable -> unreadable_body; :300 \"'ok' => (!defined $body_err && $status >= 200 && $status < 300) ? 1 : 0,\"; :305 \"$out->{err} = $utility->{clean}->($ctx, $body_err) if defined $body_err;\"; :227 \"'err' => \\\"ProjectNameSDK: $op: operation not allowed by\\\"\"; tm/perl/utility/fetcher.pm:155-158 \"my $e = (defined $@ && length $@) ? \\\"$@\\\" : 'request failed'; ... return (undef, $e);\"; :163-167 599 -> \"return (undef, $reason);\"; :189-191 \"my $parsed = eval { $json_body = Voxgig::Struct::parse_json($content); 1 }; $unreadable = 1 unless $parsed;\"",
+      "sure": "read and certain",
+      "old_page": "The old page says `ok` is \"True if the HTTP status is 2xx\", which is false for a 2xx with an unreadable body. Its how-to comment says \"A non-2xx response carries status + data (the error body); a transport-level failure carries err instead. Only one is present\", but an unreadable body carries status and err together."
+     },
+     {
+      "lang": "perl",
+      "question": 10,
+      "answer": "The factory falls back to a base feature, so construction succeeds. test() clones the options, sets feature.test.active to JTRUE and calls $class->new. new adds features in featureorder, with test first, and calls make_feature('test'). With no test case generated, the trailing `return ...BaseFeature->new` runs. mode is 'test', so the fetcher refuses every request with fetch_mode_block: an operation dies with that error, and direct returns {ok=>0, err=>...}.",
+      "evidence": "fragment/Main.fragment.pm:373-378 \"$testopts->{active} = Voxgig::Struct::JTRUE(); Voxgig::Struct::setpath($sdkopts, 'feature.test', $testopts); my $sdk = $class->new($sdkopts); $sdk->{mode} = 'test';\"; :77-79 \"if ($fopts && ProjectNameHelpers::is_true($fopts->{active})) { $utility->{feature_add}->($self->{_rootctx}, ProjectNameFeatures::make_feature($fname));\"; src/cmp/perl/Main_perl.ts:158 \"return ${model.const.Name}BaseFeature->new;\"; tm/perl/utility/fetcher.pm:240-242 \"if ('live' ne $mode) { return (undef, $ctx->make_error('fetch_mode_block',\"; tm/perl/utility/make_options.pm:218-219 test-first order",
+      "sure": "read and inferred",
+      "old_page": "The old no-test Perl README still documents `DemoSDK->test(undef, undef)` as a mock client (out/old/no-test/perl/README.md:139)."
+     },
+     {
+      "lang": "perl",
+      "question": 11,
+      "answer": "explain must be a hashref, and the runtime fills the caller's OWN hash in place: spec, fetchdef, result, err and unexpected, cleaned and written back into the same hash. A true scalar such as 1 is ignored silently because it is not a map. Unlike PHP, an empty {} works, because a reference is always true, and the caller reads the record afterwards from its own variable.",
+      "evidence": "tm/perl/core/context.pm:47 \"$self->{ctrl}{explain} = $ctrl_raw->{explain} if Voxgig::Struct::ismap($ctrl_raw->{explain});\"; tm/perl/utility/done.pm:30-32 \"The caller's own hash is the explain record ... so the cleaned copy is written back INTO it\"; :40 \"%$explain = %$cleaned;\"; tm/perl/utility/make_spec.pm:89 \"$ctx->{ctrl}{explain}{spec} = $ctx->{spec} if $ctx->{ctrl}{explain};\"",
+      "sure": "read and certain"
+     },
+     {
+      "lang": "perl",
+      "question": 12,
+      "answer": "The main module is perl/lib/DemoSDK.pm. It finds core/, utility/, config.pm and features.pm through Cwd::abs_path(__FILE__), so only the lib directory has to be on @INC. (a) From perl/: `use lib 'lib'; use DemoSDK; my $client = DemoSDK->new({...});`. (b) From the repository root: `use lib 'perl/lib'; use DemoSDK;`. A relative `use lib` resolves against the current directory, not the script's location. There is a Makefile.PL with VERSION_FROM lib/DemoSDK.pm, but the README says the SDK is not on CPAN, and the module reaches ../core outside lib. The old root README printed `use lib 'perl/lib'; use DemoSDK;` for both quick starts, which runs from the repository root, and from nowhere else.",
+      "evidence": "src/cmp/perl/Main_perl.ts:70-71 \"Folder({ name: 'lib' }, () => { File({ name: model.const.Name + 'SDK.pm' }\"; fragment/Main.fragment.pm:15 \"BEGIN { $DIR = File::Basename::dirname(Cwd::abs_path(__FILE__)) }\"; :18 \"require(Cwd::abs_path(\\\"$DIR/../core/helpers.pm\\\"));\"; fragment/Entity.fragment.pm:12 \"require(Cwd::abs_path(\\\"$__dir/../lib/Voxgig/Struct.pm\\\"));\"; src/cmp/perl/Package_perl.ts:55 \"VERSION_FROM     => 'lib/${Name}SDK.pm',\"; out/old/B/README.md:187 and :550 \"use lib 'perl/lib';\"",
+      "sure": "read and inferred"
+     },
+     {
+      "lang": "perl",
+      "question": 13,
+      "answer": "Contradictions in the old Perl page: (1) Its error-handling section and its Entity state example are TypeScript (`const result = await client.direct({...})`, `client.Ambient()`, `ambient.data()`), not Perl. Those methods do not exist in Perl, where the record is read with data_get. (2) `ok` is described as \"True if the HTTP status is 2xx\", which is false for an unreadable 2xx. (3) The comment says only one of status and err is present, but an unreadable body has both. (4) The no-test page offers test() as a mock client.",
+      "evidence": "out/old/B/perl/README.md:82 \"const result = await client.direct({\"; :978-983 (ts block: \"const ambient = client.Ambient()\", \"ambient.data()\"); :260 \"| `ok` | `boolean` | True if the HTTP status is 2xx. |\"; :113-115 \"a transport-level failure carries err instead. Only one is present\"; code as in Q9",
+      "sure": "read and certain",
+      "old_page": "see answer"
+     }
+    ],
+    "differences": [
+     "Q1 accessor: php caches a no-argument entity per client (MainEntity_php.ts:43-47); perl makes a new entity on every call (MainEntity_perl.ts:24).",
+     "Q5 stream timing: php's stream is a lazy generator, so the pipeline and its errors arrive on the first iteration; perl's runs the pipeline eagerly inside stream() (Entity.fragment.pm:177) and returns an iterator coderef, so errors die at the call.",
+     "Q3 signal: php accepts a callable or an object with an `aborted` property; perl accepts only a coderef. In both, firing ends the iteration silently, with no error.",
+     "Q11 explain: perl fills the caller's own hashref in place, and an empty {} works; php copies the array by value, so the caller can never read the record back, and an empty [] is falsy and records nothing. Both ignore `true`.",
+     "Q9 ok literal: php writes true/false; perl writes 1/0. A denied direct's err is a ProjectNameError object in php and a plain string in perl. A transport failure's err is a plain string in both.",
+     "Q7: php's test is a static method (DemoSDK::test); perl's is a class method (DemoSDK->test) that also works on an instance. Perl's accessor and its no-argument calls can be written without parentheses.",
+     "Q8: php entity state is in private properties with no outside read; perl's is in plain hash keys that a caller can read ($e->{_data}), uncloned.",
+     "Q12: perl's root quick start (use lib 'perl/lib') runs from the repository root; php's (require_once 'demo_sdk.php') does not, and php's test quick start has no require line at all."
+    ],
+    "surprises": [
+     "In both languages the accessor's argument, documented as `$data`, is passed to the entity constructor as entopts, not as entity data.",
+     "PHP's explain record cannot be read by a caller at all: Done.php says \"the caller's copy is its own\", and the generated TestClean reads it through a feature hook instead.",
+     "In both languages the default transport's err from direct is a plain string, so the old PHP example's `$err->getMessage()` would be a fatal error on a network failure.",
+     "In both languages remove keeps the old data only when the response body is empty: a body replaces it.",
+     "In both languages direct catches only prepare's failure. A custom system.fetch that throws or dies escapes direct, despite the \"never throws\" comment.",
+     "In both languages the fetcher marks a body 'unreadable' when it is not valid JSON, so a 2xx with a non-JSON body gives ok false with err.",
+     "The old Perl README contains TypeScript code blocks in its error-handling and entity-state sections."
+    ],
+    "not_done": [
+     "I ran no code, so nothing here is confirmed by executing it. Q10, the no-test path, is traced by reading only: I did not see a generated no-test features.php or features.pm, only the generator component and the no-test README.",
+     "I did not read the streaming feature's own stream implementation in either language, beyond the entity stream method.",
+     "I did not trace what direct does when ctrl throw=false makes prepare return instead of throw (php prepare returns make_error's result, and then fetches an empty URL).",
+     "I did not read REFERENCE.md for either language.",
+     "Notes file: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/survey/php/notes.md"
+    ]
+   }
+  },
+  {
+   "pair": [
+    "lua",
+    "elixir"
+   ],
+   "result": {
+    "langs": [
+     "lua",
+     "elixir"
+    ],
+    "answers": [
+     {
+      "lang": "lua",
+      "question": 1,
+      "answer": "With no argument (nil) the accessor returns one entity the client keeps: the first call makes it and stores it on the client, and later calls return that same instance, state included. With an argument it makes a new entity every time and does not cache it.",
+      "evidence": "S/src/cmp/lua/MainEntity_lua.ts:18-26: \"function ${model.const.Name}SDK:${entity.Name}(data)\" / \"if data == nil then\" / \"if self._${field} == nil then\" / \"self._${field} = EntityMod.new(self, nil)\" / \"return self._${field}\" / \"return EntityMod.new(self, data)\" (S = P/base32/sdkgen/ts/project/.sdk)",
+      "sure": "read and certain",
+      "old_page": "Not stated. README.md:948-956 ('local ambient = client:Ambient() ... Call make() to create a fresh instance') does not say the accessor caches."
+     },
+     {
+      "lang": "elixir",
+      "question": 1,
+      "answer": "No cache: the accessor is a module function that calls the entity module's new/2 on every call, with or without entopts, so each call returns a new entity node.",
+      "evidence": "S/src/cmp/elixir/MainEntity_elixir.ts:20-21: \"def ${accessor}(client, entopts \\\\\\\\ nil) do\" / \"${elixirEntityModule(Name, entity)}.new(client, entopts)\"; S/tm/elixir/lib/projectname/entity_base.ex:22: \"ent = S.jm([])\"",
+      "sure": "read and certain",
+      "old_page": "Not stated."
+     },
+     {
+      "lang": "lua",
+      "question": 2,
+      "answer": "options_map() returns a deep clone. get_utility() returns a new Utility table holding the same function members and a shallow copy of custom, so it is a copy but the functions are shared. data_get() and match_get() return clones. No entity-options getter exists: the options sit in the raw field _entopts.",
+      "evidence": "S/tm/../src/cmp/lua/fragment/Main.fragment.lua:159-160: \"function ProjectNameSDK:options_map()\" / \"local out = vs.clone(self.options)\"; Main.fragment.lua:168-169: \"function ProjectNameSDK:get_utility()\" / \"return Utility.copy(self._utility)\"; S/tm/lua/core/utility_type.lua:53-54: \"function Utility.copy(src)\" / \"local u = Utility.new()\", :87-89: \"u.custom = {}\" / \"for k, v in pairs(src.custom) do\" / \"u.custom[k] = v\"; Entity.fragment.lua:100-102: \"function EntyClass:data_get()\" ... \"return vs.clone(self._data)\"; :114-116: \"function EntyClass:match_get()\" ... \"return vs.clone(self._match)\"; :26: \"self._entopts = entopts\" (no getter in the file)",
+      "sure": "read and certain",
+      "old_page": "README.md:202-203: options_map 'Deep copy of current SDK options.', get_utility 'Copy of the SDK utility object.' REFERENCE.md:135: data_get 'Returns a copy of the current data.' These agree."
+     },
+     {
+      "lang": "elixir",
+      "question": 2,
+      "answer": "options_map(client) returns a clone. get_utility(client) returns the live utility node the client holds, with no copy. This is a difference from lua. data_get(ent) and match_get(ent) return clones. No entity-options getter exists: the options are read only with S.getprop(ent, \"_entopts\").",
+      "evidence": "S/src/cmp/elixir/fragment/Main.fragment.ex:79-80: \"def options_map(client) do\" / \"out = S.clone(S.getprop(client, \\\"options\\\"))\"; :84: \"def get_utility(client), do: S.getprop(client, \\\"_utility\\\")\"; S/tm/elixir/lib/projectname/entity_base.ex:86-88: \"def data_get(ent) do\" ... \"S.clone(S.getprop(ent, \\\"_data\\\"))\"; :100-102: \"def match_get(ent) do\" ... \"S.clone(S.getprop(ent, \\\"_match\\\"))\"; :27: \"S.setprop(ent, \\\"_entopts\\\", entopts)\"",
+      "sure": "read and certain",
+      "old_page": "README.md:234-235: options_map 'Deep copy of current SDK options.', get_utility 'The SDK utility node.' REFERENCE.md:75-77: 'Return the SDK utility node.' Consistent: it does not claim a copy."
+     },
+     {
+      "lang": "lua",
+      "question": 3,
+      "answer": "Yes. stream reads callopts[\"signal\"]. The signal can be a function (it aborts when the call returns a truthy value) or a table with an `aborted` field. It is checked before each item is yielded. When it fires, the coroutine returns and iteration ends quietly, with no error. The request has already been made by then.",
+      "evidence": "S/src/cmp/lua/fragment/Entity.fragment.lua:133: \"local signal = callopts[\\\"signal\\\"]\"; :166-177: \"local function aborted()\" ... \"if type(signal) == \\\"function\\\" then\" / \"return signal() and true or false\" ... \"if type(signal) == \\\"table\\\" and signal.aborted ~= nil then\"; :193-195 and :219-221: \"if aborted() then\" / \"return\"; :230-231: \"if coroutine.status(co) == \\\"dead\\\" then\" / \"return nil\"",
+      "sure": "read and certain",
+      "old_page": "Not documented."
+     },
+     {
+      "lang": "elixir",
+      "question": 3,
+      "answer": "Yes. stream reads callopts \"signal\", which must be a 0-arity function. It counts as fired only when it returns exactly true. The Stream is wrapped in Stream.take_while, so the signal is checked before each item, and when it returns true the stream stops quietly. It cannot stop the request, because the pipeline already ran inside stream/4.",
+      "evidence": "S/tm/elixir/lib/projectname/entity_base.ex:117: \"#   - signal: an optional 0-arity fn; when it returns true iteration stops.\"; :153: \"signal = S.getprop(callopts, \\\"signal\\\")\"; :172: \"|> Stream.take_while(fn _ -> not (S.isfunc(signal) and signal.() == true) end)\"",
+      "sure": "read and certain",
+      "old_page": "Not documented."
+     },
+     {
+      "lang": "lua",
+      "question": 4,
+      "answer": "No. ctrl has no signal, token or context, and direct has none either. Transports are synchronous. The timeout feature only discards a late result after the call finishes.",
+      "evidence": "S/tm/lua/core/control.lua:10-15: only \"throw_err\", \"err\", \"explain\", \"actor\", \"paging\"; S/tm/lua/core/context.lua:47-61 copies only throw_err/throw, explain, actor, paging from ctrl; grep -i 'signal|cancel|abort' over tm/lua/core, tm/lua/utility, tm/lua/feature/*.lua finds no cancellation; S/tm/lua/feature/timeout_feature.lua:3-4: \"-- Per-request timeout. Lua transports are synchronous, so an in-flight\" / \"-- request cannot be raced or aborted the way the async targets do it.\"",
+      "sure": "read and certain",
+      "old_page": "Not stated."
+     },
+     {
+      "lang": "elixir",
+      "question": 4,
+      "answer": "No. The control node holds only throw_err, err, explain, actor and paging. No cancellation path exists for ops or direct. The timeout feature only adds a `timeout` key to fetchdef and turns a late response into a timeout error.",
+      "evidence": "S/tm/elixir/lib/projectname/core.ex:15-20: \"\\\"throw_err\\\", ...\", \"\\\"err\\\", nil,\", \"\\\"explain\\\", ...\", \"\\\"actor\\\", ...\", \"\\\"paging\\\", ...\"; grep -i 'signal|cancel|abort' over tm/elixir/lib/projectname finds only the stream signal; S/tm/elixir/lib/projectname/feature/timeout.ex:40-41: \"# Annotate the fetch definition so a real transport can cancel itself\" / \"# (Python-idiomatic analog of an abort signal).\"",
+      "sure": "read and certain",
+      "old_page": "Not stated."
+     },
+     {
+      "lang": "lua",
+      "question": 5,
+      "answer": "When the caller first asks for an item. stream builds the context, wraps the pipeline in a coroutine that has not started, and returns an iterator. The first iterator call resumes the coroutine, which runs the pipeline steps and then yields items. Nothing runs alongside the caller: a coroutine is not a thread.",
+      "evidence": "S/src/cmp/lua/fragment/Entity.fragment.lua:155: \"local ctx = utility.make_context(ctxmap, self._entctx)\"; :179-180: \"local co = coroutine.create(function()\" / \"local failed = self:_stream_steps(ctx)\"; :229: \"return function()\"; :233: \"local ok, item = coroutine.resume(co)\"; :263-307 _stream_steps runs make_point..make_result",
+      "sure": "read and certain",
+      "old_page": "Not documented."
+     },
+     {
+      "lang": "elixir",
+      "question": 5,
+      "answer": "At the call. stream/4 runs Pipeline.run_op synchronously before it returns. With the streaming feature it also calls the feature's stream function then, and that function builds its items eagerly as a list. Only the take_while/map/guard wrapping is lazy. Nothing runs in another process.",
+      "evidence": "S/tm/elixir/lib/projectname/entity_base.ex:150: \"Pipeline.run_op(ctx, fn -> nil end)\"; :159-160: \"if S.isfunc(stream_fn) do\" / \"source(ctx, stream_fn)\"; :179-180: \"defp source(ctx, stream_fn) do\" / \"stream_fn.()\"; :171-174: \"items\" / \"|> Stream.take_while(...)\" / \"|> Stream.map(&stream_unwrap/1)\" / \"|> guarded(ctx)\"; S/tm/elixir/lib/projectname/feature/streaming.ex:47: \"S.setprop(result, \\\"stream\\\", fn -> stream_items(f, result) end)\", :58: \"# Produce the streamed items eagerly as a plain Elixir list.\"",
+      "sure": "read and certain",
+      "old_page": "Not documented. Note the entity fragment comment (Entity.fragment.ex:22) says 'returns a lazy Stream over result items'. That is true of the returned Stream, but the request is not lazy."
+     },
+     {
+      "lang": "lua",
+      "question": 6,
+      "answer": "remove sets the field _deleted = true, which the method ent:deleted() reads. The entity keeps its data unless the response carries resdata: post_done then replaces _data with a clone of resdata, and resmatch replaces _match.",
+      "evidence": "S/src/cmp/lua/fragment/Entity.fragment.lua:82-84: \"function EntyClass:mark_deleted()\" / \"self._deleted = true\"; :87-88: \"function EntyClass:deleted()\" / \"return true == self._deleted\"; :434-435: \"if opname == \\\"remove\\\" then\" / \"self:mark_deleted()\"; S/src/cmp/lua/fragment/EntityRemoveOp.fragment.lua:24-28: \"if ctx.result.resmatch ~= nil then\" / \"self._match = ctx.result.resmatch\" ... \"if ctx.result.resdata ~= nil then\" / \"self._data = helpers.to_map(vs.clone(ctx.result.resdata)) or {}\"",
+      "sure": "read and certain",
+      "old_page": "README.md:224 and REFERENCE.md:365: 'return it marked as deleted'. The page never names how the mark is read."
+     },
+     {
+      "lang": "elixir",
+      "question": 6,
+      "answer": "remove sets the key \"_deleted\" to true on the entity node. The mark is read with ProjectName.EntityBase.deleted(ent). The per-entity module (Demo.Entity.Planet) does not delegate deleted/1, so Demo.Entity.Planet.deleted(ent) does not exist. Data is kept unless the response carries resdata, which then replaces _data (resmatch replaces _match).",
+      "evidence": "S/tm/elixir/lib/projectname/entity_base.ex:60-61: \"def mark_deleted(ent) do\" / \"S.setprop(ent, \\\"_deleted\\\", true)\"; :65: \"def deleted(ent), do: S.getprop(ent, \\\"_deleted\\\") == true\"; S/src/cmp/elixir/fragment/Entity.fragment.ex:14-24 delegate only get_name, make, data_set, data_get, match_set, match_get, stream (no deleted); S/src/cmp/elixir/fragment/EntityRemoveOp.fragment.ex:29-30: \"rd = S.getprop(result, \\\"resdata\\\")\" / \"if rd != nil, do: S.setprop(ent, \\\"_data\\\", H.or_(H.to_map(S.clone(rd)), S.jm([])))\"; :37: \"if ent == out, do: out, else: EntityBase.mark_deleted(ent)\"",
+      "sure": "read and certain",
+      "old_page": "README.md:256 and REFERENCE.md:357: 'return it marked as deleted'. Nothing says how to read the mark."
+     },
+     {
+      "lang": "lua",
+      "question": 7,
+      "answer": "The constructor and the test constructor are functions on the module table (static, dot call). direct, prepare, options_map, get_utility and the accessor are instance methods (colon). Operations are instance methods on the entity.",
+      "evidence": "Main.fragment.lua:81: \"function ProjectNameSDK.new(options)\"; :432: \"function ProjectNameSDK.test(testopts, sdkopts)\"; :265: \"function ProjectNameSDK:direct(fetchargs)\"; :178: \"function ProjectNameSDK:prepare(fetchargs)\"; :159, :168 options_map/get_utility with ':'; MainEntity_lua.ts:18 \"function ${model.const.Name}SDK:${entity.Name}(data)\"; EntityLoadOp.fragment.lua:12: \"function EntyClass:load(reqmatch, ctrl)\". Calls: local sdk = require(\"demo_sdk\"); local client = sdk.new({ apikey = os.getenv(\"DEMO_APIKEY\") }); local tclient = sdk.test(); local res = client:direct({ path = \"/planet/{id}\", params = { id = \"p1\" } }); local fetchdef, err = client:prepare({ path = \"/planet\" }); local opts = client:options_map(); local u = client:get_utility(); local planet = client:Planet(); local planet2, err2 = client:Planet():load({ id = \"p1\" })",
+      "sure": "read and certain",
+      "old_page": "Consistent (README.md:31, 111, 62)."
+     },
+     {
+      "lang": "elixir",
+      "question": 7,
+      "answer": "Everything is a module-level function. new/1 and test/2 are functions on the SDK module. direct, prepare, options_map, get_utility and the accessor are functions on the SDK module that take the client first. Operations are functions on Demo.Entity.<Name> that take the entity first and return the entity.",
+      "evidence": "Main.fragment.ex:12: \"def new(options \\\\\\\\ nil) do\"; :88: \"def test(testopts \\\\\\\\ nil, sdkopts \\\\\\\\ nil) do\"; :176: \"def direct(client, fetchargs \\\\\\\\ nil) do\"; :103: \"def prepare(client, fetchargs \\\\\\\\ nil) do\"; :79,:84 options_map(client), get_utility(client); MainEntity_elixir.ts:20 \"def ${accessor}(client, entopts \\\\\\\\ nil) do\"; EntityLoadOp.fragment.ex:10: \"def load(ent, reqmatch \\\\\\\\ nil, ctrl \\\\\\\\ nil) do\". Calls: alias Demo.Helpers, as: H; sdk = Demo.new(H.deep(%{\"apikey\" => System.get_env(\"DEMO_APIKEY\")})); tsdk = Demo.test(); res = Demo.direct(sdk, H.deep(%{\"path\" => \"/planet/{id}\", \"params\" => %{\"id\" => \"p1\"}})); fetchdef = Demo.prepare(sdk, H.deep(%{\"path\" => \"/planet\"})); opts = Demo.options_map(sdk); u = Demo.get_utility(sdk); planet = Demo.planet(sdk); planet = Demo.Entity.Planet.load(planet, H.deep(%{\"id\" => \"p1\"}))",
+      "sure": "read and certain",
+      "old_page": "Consistent in the Elixir sections (README.md:52-62, 113)."
+     },
+     {
+      "lang": "lua",
+      "question": 8,
+      "answer": "Everything a program should read is a method: get_name(), data_get(), match_get(), deleted(). The entity has no client getter and no entity-options getter. The underlying values are plain table fields (_name, _client, _data, _match, _deleted, _entopts), readable without a call, but they are private by naming convention. On the client, `mode` is a plain field.",
+      "evidence": "Entity.fragment.lua:23-29: \"self._name = \\\"entityname\\\"\" / \"self._client = client\" / ... \"self._entopts = entopts\" / \"self._data = {}\" / \"self._deleted = false\" / \"self._match = {}\"; :42 \"function EntyClass:get_name()\"; :87 \"function EntyClass:deleted()\"; :100 data_get; :114 match_get; Main.fragment.lua:83: \"self.mode = \\\"live\\\"\"",
+      "sure": "read and certain",
+      "old_page": "No disagreement found."
+     },
+     {
+      "lang": "elixir",
+      "question": 8,
+      "answer": "All are function calls on a module: Demo.Entity.<Name>.get_name(ent), data_get(ent), match_get(ent), and Demo.EntityBase.deleted(ent). The entity is an ETS-backed handle ({:vmap, id}), so it has no fields in Elixir's sense. _client, _entopts, _data, _match and _deleted are reached only through Voxgig.Struct.getprop(ent, \"_...\"). No client or entity-options getter exists.",
+      "evidence": "S/tm/elixir/lib/utility/struct/voxgig_struct.ex:11: \"# tagged reference `{:vmap, id}` / `{:vlist, id}` whose contents live in the\"; entity_base.ex:22-29: \"ent = S.jm([])\" / \"S.setprop(ent, \\\"_module\\\", module)\" ... \"S.setprop(ent, \\\"_match\\\", S.jm([]))\"; Entity.fragment.ex:14-19 function delegates",
+      "sure": "read and certain",
+      "old_page": "No disagreement found."
+     },
+     {
+      "lang": "lua",
+      "question": 9,
+      "answer": "direct returns a table and a second value that is always nil. (a) 2xx with JSON: {ok = true, status, headers, data = parsed body}, no err. A 204/304 or content-length 0 response gives data nil. (b) non-2xx with a readable JSON body: {ok = false, status, headers, data = parsed body}, no err key. (c) unreadable (non-JSON) body: {ok = false, status, headers, data = nil, err = cleaned error}. The error code is response_json_invalid or response_content_type, or request_status with details when the status is not 2xx, so a 2xx with an unreadable body is ok = false. (d) request cannot be made: {ok = false, err = cleaned transport error}, with no status, headers or data. A prepare failure gives {ok = false, err = err} without cleaning, and a denied allow.op gives {ok = false, err = string}. The second return value is never set. An error() raised inside a custom system.fetch is not caught by pcall and propagates as a Lua error. That last point is read and inferred.",
+      "evidence": "S/src/cmp/lua/fragment/Main.fragment.lua:298-300: \"local fetchdef, err = self:prepare(fetchargs)\" / \"if err ~= nil then\" / \"return { ok = false, err = err }, nil\"; :312: \"local fetched, fetch_err = utility.fetcher(ctx, url, fetchdef)\"; :314-315: \"if fetch_err ~= nil then\" / \"return { ok = false, err = utility.clean(ctx, fetch_err) }, nil\"; :335: \"local no_body = status == 204 or status == 304 or tostring(content_length) == \\\"0\\\"\"; :348-355: \"if vs.getprop(fetched, \\\"unreadable\\\") == true then\" ... \"body_err = unreadable_body(...)\"; :359-368: \"ok = body_err == nil and status >= 200 and status < 300,\" ... \"out.err = utility.clean(ctx, body_err)\" / \"return out, nil\"; S/tm/lua/utility/fetcher.lua:281-282: \"if not res then\" / \"return nil, code\"; :304-309 unreadable on JSON decode failure; S/tm/lua/utility/unreadable_body.lua:62-67 response_json_invalid / response_content_type",
+      "sure": "read and certain",
+      "old_page": "README.md:59-68: '`direct` follows the same `(value, err)` convention' with 'if err then error(err) end'. That is false: the second value is always nil, and failures are in result.ok/result.err. README.md:248-249 lists only ok, status, headers, data and omits err."
+     },
+     {
+      "lang": "elixir",
+      "question": 9,
+      "answer": "direct returns one struct-map node, read with Voxgig.Struct.getprop. There is no tuple. (a) 2xx: \"ok\" true, status, headers, data = parsed JSON, no err. 204/304/content-length 0 gives data nil. (b) non-2xx with a readable body: \"ok\" false, status, headers, data = parsed body, no err. (c) unreadable body: \"ok\" false, status, headers, data nil, err = cleaned error (response_json_invalid / response_content_type, or request_status when not 2xx). A 2xx with an unreadable body is ok false. (d) transport failure: {\"ok\" false, \"err\" cleaned error}, which is the inspect() of the :httpc reason for the default transport. A prepare failure, which raises, is rescued into {\"ok\" false, \"err\" exception struct} without cleaning. No second return exists and direct does not raise for these cases. The fetcher call is not inside a try, so an exception raised by a custom system.fetch would propagate. That last point is read and inferred.",
+      "evidence": "S/src/cmp/elixir/fragment/Main.fragment.ex:207-216: \"try do\" / \"prepare(client, fetchargs)\" / \"rescue\" / \"err -> {:direct_err, err}\" ... \"S.jm([\\\"ok\\\", false, \\\"err\\\", err])\"; :224: \"{fetched, fetch_err} = Utility.fetcher(ctx, url, fetchdef)\"; :227-228: \"fetch_err != nil ->\" / \"S.jm([\\\"ok\\\", false, \\\"err\\\", Utility.clean(ctx, fetch_err)])\"; :240: \"no_body = status in [204, 304] or to_string(content_length) == \\\"0\\\"\"; :273-276: \"S.jm([\\\"ok\\\", body_err == nil and status >= 200 and status < 300,\" ... \"if body_err != nil, do: S.setprop(out, \\\"err\\\", Utility.clean(ctx, body_err))\"; S/tm/elixir/lib/projectname/utility.ex:2580-2581: \"{:error, reason} ->\" / \"{nil, inspect(reason)}\"",
+      "sure": "read and certain",
+      "old_page": "README.md:276: '`ok` ... `true` if the HTTP status is 2xx'. That is incomplete: a 2xx with an unreadable body gives ok false with err. README.md:281: 'On error, `ok` is `false` and `err` carries the error value'. A readable non-2xx has no err. README.md:106 and REFERENCE.md:83 say 'never raises', which holds for prepare and transport errors."
+     },
+     {
+      "lang": "lua",
+      "question": 10,
+      "answer": "The call succeeds and the factory falls back to the base feature. SDK.test sets feature.test.active = true and calls new. The option spec accepts any feature name (open child with active:false default). new sets mode \"test\" because feature.test.active is true, then adds _make_feature(\"test\"), which returns features.base() when the generated features table has no \"test\" entry. With no mock transport installed, the first request fails in the fetcher with fetch_mode_block ('Request blocked by mode: \"test\"'). An operation returns that as (nil, err), and direct puts it in result.err.",
+      "evidence": "Main.fragment.lua:444-448: \"testopts[\\\"active\\\"] = true\" / \"vs.setpath(sdkopts, \\\"feature.test\\\", testopts)\" / \"local sdk = ProjectNameSDK.new(sdkopts)\"; :102-103: \"if vs.getpath(self.options, \\\"feature.test.active\\\") == true then\" / \"self.mode = \\\"test\\\"\"; :70-75: \"local factory = features_factory[name]\" ... \"return features_factory.base()\"; S/src/cmp/lua/Main_lua.ts:209-218 generates features.base and one entry per target feature only; P/base32/sdkgen/ts/src/helpers/optspec.ts:56-60: \"[S_CHILD]: {\" / \"[S_OPEN]: true,\" / \"active: false,\"; S/tm/lua/utility/fetcher.lua:383-386: \"if ctx.client.mode ~= \\\"live\\\" then\" / \"return nil, ctx:make_error(\\\"fetch_mode_block\\\",\"",
+      "sure": "read and inferred",
+      "old_page": "Not checked in the no-test model output."
+     },
+     {
+      "lang": "elixir",
+      "question": 10,
+      "answer": "The call succeeds and the factory falls back to the base feature. Demo.test sets feature.test active and calls new. new sets mode \"test\" and calls Demo.Features.make_feature(\"test\"), whose case ends in `_ -> Demo.Feature.new()`. The first request then fails in fetcher_impl with fetch_mode_block. An operation raises it by default, and direct returns it in \"err\".",
+      "evidence": "Main.fragment.ex:94-99: \"S.setprop(testopts, \\\"active\\\", true)\" / \"S.setpath(sdkopts, \\\"feature.test\\\", testopts)\" / \"client = new(sdkopts)\"; :42: \"if S.getpath(opts, \\\"feature.test.active\\\") == true, do: S.setprop(client, \\\"mode\\\", \\\"test\\\")\"; :59: \"Utility.feature_add(rootctx, ProjectName.Features.make_feature(fname))\"; S/src/cmp/elixir/Main_elixir.ts:130: \"_ -> ${Name}.Feature.new()\"; S/tm/elixir/lib/projectname/utility.ex:2446-2449: \"if mode != \\\"live\\\" do\" / \"{nil,\" / \"Context.make_error(ctx, \\\"fetch_mode_block\\\",\"",
+      "sure": "read and inferred",
+      "old_page": "Not checked in the no-test output."
+     },
+     {
+      "lang": "lua",
+      "question": 11,
+      "answer": "explain must be a table that the pipeline fills in (spec, fetchdef, result, err). The context copies ctrl.explain only when it is a table, so explain = true is silently ignored: nothing is recorded and no error is raised.",
+      "evidence": "S/tm/lua/core/context.lua:53-55: \"if type(ctrl_raw.explain) == \\\"table\\\" then\" / \"self.ctrl.explain = ctrl_raw.explain\"; S/tm/lua/utility/make_spec.lua:83-84: \"if ctx.ctrl.explain ~= nil then\" / \"ctx.ctrl.explain[\\\"spec\\\"] = ctx.spec\"",
+      "sure": "read and certain",
+      "old_page": "REFERENCE.md:94: '`fetchargs.ctrl` | `table` | Control options (e.g. `{ explain = true }`)'. The code contradicts this: true is ignored."
+     },
+     {
+      "lang": "elixir",
+      "question": 11,
+      "answer": "explain must be a map node that the pipeline fills in. The context copies it only when S.ismap(ex), so true is silently ignored.",
+      "evidence": "S/tm/elixir/lib/projectname/context.ex:71-72: \"ex = S.getprop(ctrl_raw, \\\"explain\\\")\" / \"if S.ismap(ex), do: S.setprop(ctrl, \\\"explain\\\", ex)\"; utility.ex:1172-1173: \"explain = S.getprop(ctrl, \\\"explain\\\")\" / \"if explain != nil, do: S.setprop(explain, \\\"spec\\\", spec)\"",
+      "sure": "read and certain",
+      "old_page": "The Elixir pages do not mention explain (REFERENCE.md:88-95 lists no ctrl key)."
+     },
+     {
+      "lang": "lua",
+      "question": 12,
+      "answer": "(a) From lua/: `local sdk = require(\"demo_sdk\")`. This works because the module is the file <name>_sdk.lua at lua/ and Lua's default package.path includes ./?.lua, which also resolves the SDK's own requires (core.helpers, utility.struct.struct, features, config_shared). dkjson must be installed (rockspec dependency). (b) From the repository root, prepend the path first: `package.path = \"lua/?.lua;lua/?/init.lua;\" .. package.path` then `local sdk = require(\"demo_sdk\")`. Without it, require fails with module not found. The old root README's Lua quick start (README.md:90-95) prints `local client = sdk.test()` with no require line, so `sdk` is an undefined global and the snippet fails as a standalone file from any directory. The Lua section of 'Quickstart in other languages' (README.md:384-397) has require(\"demo_sdk\"), which would not resolve from the root without the package.path line.",
+      "evidence": "S/src/cmp/lua/Main_lua.ts:137: \"File({ name: model.name + '_sdk.' + target.ext }, () => {\"; S/src/cmp/lua/Package_lua.ts:137: \"[\\\"${model.name}_sdk\\\"] = \\\"${model.name}_sdk.lua\\\",\" and :97: \"\\\"dkjson >= 2.5\\\",\"; Main.fragment.lua:3-7: \"local json = require(\\\"dkjson\\\")\" / \"local vs = require(\\\"utility.struct.struct\\\")\" / \"local Utility = require(\\\"core.utility_type\\\")\"; S/tm/lua/Makefile:17: \"busted --no-auto-insulate -p _test test/\" (run from lua/, no path setup); P/base32/out/old/B/README.md:93: \"local client = sdk.test()\"; :385: \"local sdk = require(\\\"demo_sdk\\\")\"",
+      "sure": "read and inferred",
+      "old_page": "lua/README.md:16-19 says to add `path/to/lua/?.lua;path/to/lua/?/init.lua;;` to LUA_PATH, which agrees with (b)."
+     },
+     {
+      "lang": "elixir",
+      "question": 12,
+      "answer": "No import line is needed: modules are global once compiled, and `alias Demo.Helpers, as: H` is only a convenience. (a) From elixir/, put the code in a file and run it with `mix run file.exs`. mix.exs defines app :demo with elixirc_paths [\"lib\"] and extra_applications [:inets, :ssl]. (b) From the repository root there is no mix.exs, so `mix run` cannot load the project. A standalone file would need `Mix.install([{:demo, path: \"elixir\"}])` and be run with `elixir file.exs`, or be run as `cd elixir && mix run ../file.exs`. The old root README's Elixir quick start (README.md:139-148) prints `alias Demo.Helpers, as: H` / `sdk = Demo.test()` / ... with no setup, so from the repository root with `elixir file.exs` it would fail with an undefined module Demo.",
+      "evidence": "S/src/cmp/elixir/Package_elixir.ts: \"app: :${app},\", \"elixirc_paths: elixirc_paths(Mix.env()),\", \"def application, do: [extra_applications: [:inets, :ssl]]\", \"defp elixirc_paths(_), do: [\\\"lib\\\"]\"; Main.fragment.ex:7: \"defmodule ProjectName do\"; P/base32/out/old/B/README.md:142-144: \"alias Demo.Helpers, as: H\" / \"sdk = Demo.test()\"",
+      "sure": "read and inferred",
+      "old_page": "elixir/README.md:20-40 documents adding {:demo, path: \"../demo-sdk/elixir\"} as a mix dependency and running mix deps.get, which is consistent."
+     },
+     {
+      "lang": "lua",
+      "question": 13,
+      "answer": "(1) README.md:59-68 says direct follows the (value, err) convention and shows `if err then error(err) end`, but direct's second value is always nil. (2) REFERENCE.md:94 gives `{ explain = true }` as a ctrl example, but true is ignored. (3) README.md:248-249 says the envelope has ok, status, headers, data and leaves out err.",
+      "evidence": "Main.fragment.lua:300,315,368: every return ends \", nil\"; context.lua:53: \"if type(ctrl_raw.explain) == \\\"table\\\" then\"; out/old/B/lua/README.md:59: \"`direct` follows the same `(value, err)` convention:\"; REFERENCE.md:94: \"| `fetchargs.ctrl` | `table` | Control options (e.g. `{ explain = true }`). |\"",
+      "sure": "read and certain",
+      "old_page": "see answer"
+     },
+     {
+      "lang": "elixir",
+      "question": 13,
+      "answer": "(1) The Elixir README's 'Error handling' (README.md:76-100) and 'Entity state' (README.md:1004-1010) blocks are TypeScript code (```ts, client.Ambient().load(), await) on the Elixir page. (2) README.md:276 says ok is true if the status is 2xx, but a 2xx with an unreadable body is ok false. (3) README.md:281 says on error ok is false and err carries the error, but a readable non-2xx has no err.",
+      "evidence": "out/old/B/elixir/README.md:76: \"```ts\", :78: \"const ambient = await client.Ambient().load()\"; :1004: \"```ts\"; Main.fragment.ex:273: \"S.jm([\\\"ok\\\", body_err == nil and status >= 200 and status < 300,\"",
+      "sure": "read and certain",
+      "old_page": "see answer"
+     }
+    ],
+    "differences": [
+     "Accessor: lua caches the no-argument entity on the client (client:Planet() returns the same instance each time). elixir makes a new entity on every accessor call.",
+     "get_utility: lua returns a copy (Utility.copy: new table, shared functions, copied custom map). elixir returns the live utility node.",
+     "stream timing: lua runs the pipeline lazily, at the first iterator call inside a coroutine. elixir runs it eagerly inside stream/4 before returning, and the streaming feature's items are also built eagerly.",
+     "stream signal: lua accepts a function (truthy result fires) or a table with .aborted. elixir accepts only a 0-arity function that must return exactly true.",
+     "Failure channel: lua operations return (value, err) pairs and prepare returns (nil, err). elixir operations and prepare raise by default. direct never uses a failure channel in either: lua's second value is always nil, and elixir returns a single map read via Voxgig.Struct.getprop.",
+     "Call form: lua uses instance methods (client:direct, client:Planet():load). elixir uses module functions taking the client or entity (Demo.direct(sdk, ...), Demo.Entity.Planet.load(ent, ...)).",
+     "Deleted mark: lua ent:deleted() is a method on the entity. elixir has no per-entity deleted/1, only Demo.EntityBase.deleted(ent).",
+     "Standalone program: lua needs require(\"<name>_sdk\") plus a package.path entry when run outside lua/. elixir needs no import but must run inside the mix project (mix run from elixir/) or via Mix.install from elsewhere."
+    ],
+    "surprises": [
+     "elixir: Entity.fragment.ex does not delegate deleted/1 or mark_deleted/1, so Demo.Entity.<Name>.deleted(ent) does not exist. runtime-table.md lists `deleted (ent)` as an entity member, which is wrong for the per-entity module.",
+     "Both runtimes: a 2xx response whose body is not valid JSON gives direct ok=false with err set (unreadable_body), not ok=true.",
+     "Both runtimes: ctrl.explain = true is silently ignored (only a table/map is copied into the control), yet the old lua REFERENCE gives `{ explain = true }` as the example.",
+     "The old Elixir README contains TypeScript code blocks in two sections.",
+     "Both runtimes: direct's prepare-failure path puts the error in err without cleaning it, while the transport and unreadable paths clean theirs. Same in lua (Main.fragment.lua:300) and elixir (Main.fragment.ex:216).",
+     "The old root README's Lua quick start uses `sdk` without a require line."
+    ],
+    "not_done": [
+     "Ran nothing: no lua or elixir toolchain was invoked, so Q12's run-from-root behaviour and Q10's end-to-end failure are read and inferred, not observed.",
+     "Did not read the no-test model's generated README pages (P/base32/out/old/no-test/lua, elixir) for what they say about the test constructor.",
+     "Did not trace whether lua's default http transport or the elixir :httpc transport honour the timeout feature's fetchdef annotation.",
+     "Did not verify whether elixir operations accept plain Elixir maps for reqmatch in place of H.deep struct nodes."
+    ]
+   }
+  }
+ ]
+}

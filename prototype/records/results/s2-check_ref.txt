@@ -1,0 +1,348 @@
+summary: |
+  I checked the shared REFERENCE page independently in my own copy, /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/check-ref/ (sdkgen clone at c41dcdf0, a v2 base worktree at f9c43b19, and the old clone). I rebuilt all three, regenerated OLD, v2 and NEW over all 21 variations, and compared them with my own scripts in check-ref/my/ (cmp.py, prose.py, prose2.py, uniq.py, lost.py).
+  
+  **What reproduces exactly:**
+  - Code blocks match their counts: identical/changed ts 120/192, go 82/292, py 120/192, c 131/181, zig 131/181.
+  - In the 15 unported languages, all 285 REFERENCE files differ from OLD, and they differ only in the 4 removed and 4 added ReadmeRefFeatures lines (2,280 lines in all).
+  - All 404 README.md files are byte-identical to v2, and v2's REFERENCE is identical to OLD.
+  - Lanes on NEW: ts 16/16, go 12/12, py 12/12 with real pytest, c 6/6. Lanes on OLD: 16/16, 12/12, 12/12, and c 5/6 (the old README getenv failure).
+  - A block I injected into REFERENCE that throws made both the ts and the py lane fail. So both lanes really execute REFERENCE blocks.
+  - Full suite: 2534 tests, 2528 pass, 0 fail, 6 skipped.
+  - Source lines: 2,196 become 967 (2.27x).
+  - The catalogued fixes hold on their variations: S25/D10, U43, U44, U34, U36, S50, D23/D55, G27/G29/M38/D69, S13, and N04/U06/M04 on go2.
+  
+  **What is wrong or overstated:**
+  1. **"0 UNEXPLAINED" is structural, not semantic.** diffref.js explains every changed line by the section it sits in: any line under `### Fields`, `### Operations` or `### Common` gets that section's reason. That rule hid a real regression: every zig field type is now `any`. OLD printed `[]const u8`, `f64`, `i64` and `Value (object)`; NEW prints 16 of 16 field cells in B as `any`. The cause is that `canonToType` has no zig column, and it falls back to `any`, which is not a zig type name.
+  2. **The runtimefacts guard checks names only.** I changed py's declared `load` to take an extra parameter and return `list[int]`, and `data_set` to take a bogus argument; the guard still passed. Deleting the stream member did fail it.
+  3. **More language-specific facts were lost than reported:**
+     - go, py, c and zig no longer say that direct()'s result holds `status`, `headers` and `data`.
+     - py, c and zig lost their idiom for reading `ok`: `result["ok"]`, `getp(result, "ok")` and `h.get_bool(result, "ok")`.
+     - ts lost the Returns lines of options() and utility(), and the descriptions of testopts and sdkopts.
+     - c and zig lost "Pass a map to set it". The new sentence speaks of calling with no arguments, which C and Zig cannot do.
+     - The c and zig type comments in create examples are gone.
+  4. **New defects:**
+     - py says "`ok` is `false`", but Python's value is `False`.
+     - Example variables now read `utilitys`, `historys` and `planet_entitys` (338 occurrences). They come from a `vars: v + 's'` rule copied into all five Naming hooks. That rule is used only by the docs, not by any code generator.
+  5. **The README and REFERENCE of one SDK now contradict each other:**
+     - log on by default: REFERENCE says yes, README Features says every feature is inactive.
+     - The test constructor: no-test's README uses `DemoSDK.test()`; its REFERENCE omits it.
+     - `region`: README says Required, REFERENCE says it defaults to `eu`.
+  6. **Language-specific prose has moved into the shared file rather than disappearing.** Templates keyed by a member kind that only one runtime declares (go's channel paragraph, ts cancelling and async iterator, zig's error union) are, by words, 29% of go's and 18% of ts's own part of the page (everything outside the shared feature reference). Over the whole page they are 11% and 6%.
+  
+  **Verdicts:**
+  - **H2:** holds for this page by total lines (2.27x), but not by non-blank, non-comment lines (1.89x by my count, 1.92x by theirs).
+  - **H3:** holds within REFERENCE for the five ported languages.
+  - **H4:** holds. Nothing that ran before now only compiles, and zig was compiled neither before nor after.
+  - **H1:** holds only in part (model reads 0, about 6 breaking interface changes), with the prose caveat in point 6.
+  - **H5:** I did not test it beyond the suite.
+claims:
+  - [0]
+    claim: Across 21 variations every changed line in the five ported languages has a stated reason: 0 UNEXPLAINED
+    verdict: imprecise
+    what_i_ran: read harness/diffref.js rules (lines 59-90); my own per-language diffs (diff of OLD/NEW REFERENCE cut at '## Features') for doc-crud, B, ref-issues; grep of field type cells in old/B and new/B
+    what_is_true: The reasons are matched by section, not by content: 'N04/U06/M04 field type ...' applies to ANY line under '### Fields', and 'op example ...' to any code line under '### Operations', so any regression in those sections is 'explained'. It masked a real one: every zig field type became `any` (B: 16 cells `any`; OLD 10 `[]const u8`, 3 `f64`, 1 `i64`, 1 `Value (object)`), because canonToType has no zig column (src/helpers/canonType.ts:2-5) and falls back to 'any'.
+  - [1]
+    claim: Code blocks identical/changed: ts 120/192, go 82/292, py 120/192, c 131/181, zig 131/181
+    verdict: confirmed
+    what_i_ran: python3 check-ref/my/cmp.py (own multiset match of NEW blocks against OLD blocks of the same file)
+    what_is_true: Exactly reproduced. NEW also has fewer blocks than OLD: ts 312 vs 330 (the action illustration dropped in every variation, plus no-test and ref-issues), go 374/376, py 312/314; go2 4/18 in alias-go2.
+  - [2]
+    claim: The 15 unported languages are byte-identical apart from the two ReadmeRefFeatures fixes (2280 lines)
+    verdict: confirmed
+    what_i_ran: python3 check-ref/my/cmp.py: unified diff of every unported REFERENCE.md OLD vs NEW
+    what_is_true: 285 unported REFERENCE files differ, every one by the same 8 changed lines (4 removed, 4 added: the inactive/log sentence, the escaped backtick, 'Active by default'), 2280 lines in all, nothing else.
+  - [3]
+    claim: README sections ported in v2 are unchanged and nothing outside changed (diff2: 0)
+    verdict: confirmed
+    what_i_ran: built a v2 worktree at f9c43b19, node gen.js v2, cmp of all 404 README.md (incl. root) NEW vs v2; cmp of REFERENCE v2 vs OLD
+    what_is_true: 0 of 404 READMEs differ from v2; v2's REFERENCE pages equal OLD's, so every REFERENCE change is this stage's.
+  - [4]
+    claim: Lanes at HEAD: ts 16/16, go 12/12, py 12/12 real pytest, c DOC 6/6
+    verdict: confirmed
+    what_i_ran: check-ref/mylanes.sh (same four --test-name-pattern runs) on NEW and on the old clone
+    what_is_true: NEW: ts 16/16, go 12/12, py 12/12, c 6/6. OLD: ts 16/16, go 12/12, py 12/12, c 5/6 (basic-server fails on the README getenv, as in stage 1). Negative control: injecting a throwing ```ts and ```python block into the REFERENCE op section made the ts lane fail ('snippet 4 threw at runtime: ref-exec-probe') and the py lane fail ('RUNTIME ERROR in py REFERENCE.md python block #4'), so both lanes really execute REFERENCE blocks.
+  - [5]
+    claim: Suite without toolchain lanes: 2534 tests, 2528 pass, 0 fail, 6 skipped
+    verdict: confirmed
+    what_i_ran: node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort) in my copy
+    what_is_true: 2534 / 2528 pass / 0 fail / 6 skipped. npm run build left the committed dist unchanged (git status clean).
+  - [6]
+    claim: The runtime-facts guard: every declared reference signature must exist in the runtime; members the runtime defines must be declared; negative control fails
+    verdict: imprecise
+    what_i_ran: edited dist-test-scaffold/.sdk/dist/cmp/py/Syntax_py.js: load -> 'load(reqmatch, wrongparam, ctrl=None) -> list[int]', data_set -> 'data_set(data, bogus)'; ran runtimefacts py; then removed the streamGenerator member; restored
+    what_is_true: Wrong parameters and return types PASS the guard (only the function name is matched by memberPattern). Removing stream fails it, as claimed. The guard also cannot see ref.type (the zig `any` regression), the nouns, or the body phrases, as they say.
+  - [7]
+    claim: Source: five languages 2,196 -> 967 lines (2.27x; 1.92x ncnb)
+    verdict: imprecise
+    what_i_ran: git show f9c43b19/HEAD | wc -l and a non-blank non-comment filter per file; git diff --numstat f9c43b19 HEAD
+    what_is_true: Total confirmed: 473+435+416+418+425+29 = 2196; after 338 + 378 infrastructure growth + 251 provider growth = 967 (2.27x). Non-blank non-comment by my filter: 1520 -> 805 = 1.89x, below 2x (their 1542 gives 1.92x). Both-sections projection reproduced: 14,896 -> 5,437 (2.74x).
+  - [8]
+    claim: Projection to 20 for this page: 4.86x with ~50-line provider additions
+    verdict: imprecise
+    what_i_ran: read the assumption; counted Syntax/Naming sizes (ts 162, go 198, py 161, c 228, zig 194 incl. Naming)
+    what_is_true: The 50 lines are added on top of a provider that 15 of the 20 languages do not have yet; on its own the page figure is marginal. The combined figure (2.74x, 2.03x at 1.5x-sized providers, 1.62x at 2x) is the fair one. It assumes the shared code stops growing, yet it grew 378 lines for five languages and gained one-language branches ('errorunion', 'streamChannel', cancel).
+  - [9]
+    claim: Kept every runtime fact the old ts page stated; lost only tester's Returns, the accessor parameter table and the update comment
+    verdict: wrong
+    what_i_ran: python3 check-ref/my/lost.py and diff of old/new doc-crud ts
+    what_is_true: Also lost: '**Returns:** `object`' for options() and utility(); the test parameter descriptions (testopts 'Test feature options', sdkopts 'Additional SDK options merged with test defaults'); the action call example (`client.Planet().create({ $action: 'terraform', ... })`); patch's '// Only the fields to change'.
+  - [10]
+    claim: py: kept 'never raises: branch on ok' as a shared sentence
+    verdict: imprecise
+    what_i_ran: diff old/new doc-crud py REFERENCE
+    what_is_true: The shared sentence says '`ok` is `false`', but Python's value is `False`. It also lost 'Returns a result `dict` with `ok`, `status`, `headers`, and `data`' and the idiom `result["ok"]`. The Returns cell is now just `dict`.
+  - [11]
+    claim: Names: one function shared by code generator and description (packageName, goModule, pyPackageDir, cIdent/cVarName, zigVarName, entityClassName)
+    verdict: confirmed
+    what_i_ran: grep in Package_ts.ts:68, Main_go.ts:48, Main_py.ts:49, MainEntity_c.ts:16-17, MainEntity_zig.ts:21-22, Entity_ts.ts:27, Entity_go.ts:28, EntityOperation_py.ts:33, sdkdesc.ts:218, and the five Naming_<lang>.ts
+    what_is_true: For module, accessor and class the same functions are called. But each hook also invents names the code generator never uses: `vars: <var> + 's'` (all five), which prints `utilitys`, `historys` and `planet_entitys`. client and ctor are restated by concatenation (`Name + 'SDK'`, `'New' + Name + 'SDK'`, `Name + 'SDK.new'`), copying the template's rule rather than calling a function.
+  - [12]
+    claim: Catalogued fixes S25, D10, U43, U44, U34, U36, S50, D23, D55, G27, G29, M38, D69, S13, N04/U06/M04 shown on their variations
+    verdict: confirmed
+    what_i_ran: grep/awk on new and old ref-issues, doc-nested, auth-basic, auth-basic-query, B, no-test, alias-go2 for all five
+    what_is_true: ref-issues: OLD shows remove() in ts/py/c/zig, NEW in none. U36: NEW prints the project words in all five. U43: OLD gauge 'must include the entity' in all five, NEW none. G27: NEW 'Level \| percent see the guide or [site](https://...)'. S50: secret row in auth-basic, none in auth-basic-query. D23/D55: tenant 'Required.', region 'Defaults to `eu`.'. go2 field types are go types. These fixes reach REFERENCE only: the same SDK's README still states the old facts (S09, D23, S13), so the two documents now contradict each other.
+  - [13]
+    claim: zig output not compiled: command -v zig missing
+    verdict: confirmed
+    what_i_ran: command -v zig (absent); command -v go gcc python3 pytest tsc present
+    what_is_true: zig missing here; its REFERENCE was neither compiled before nor after.
+own_measurements:
+  - [0]
+    name: code blocks NEW identical to OLD / changed (21 variations)
+    value: ts 120/192 (OLD 330 blocks), go 82/292 (376), py 120/192 (314), c 131/181 (314), zig 131/181 (314), go2 4/18
+    command: python3 check-ref/my/cmp.py
+  - [1]
+    name: unported REFERENCE files differing from OLD, and distinct changed lines
+    value: 285 files; 8 distinct lines (the 4/4 ReadmeRefFeatures fix lines), 2280 changed lines in all; nothing else
+    command: python3 check-ref/my/cmp.py
+  - [2]
+    name: README.md NEW vs v2 (f9c43b19)
+    value: 0 of 404 differ
+    command: node gen.js v2 <v2base/ts>; cmp new/*/README.md v2/*/README.md
+  - [3]
+    name: prose sentences identical in all five ported languages (21 variations, page up to '### Configuring features')
+    value: OLD 221 of 1430-1886 per language (11.7-15.5%); NEW 615 of 1643-1943 (31.7-37.4%). By words: OLD 9.6-16.0%, NEW 25.8-38.3% of words outside code spans
+    command: python3 check-ref/my/prose2.py old; python3 check-ref/my/prose2.py new
+  - [4]
+    name: NEW sentences printed by only one of the five, by kind (words)
+    value: result-style sentences (failure clause): ts 12.5%, go 9.7%, py 14.4%, c 18.1%, zig 18.4%; member/capability text only that language's facts select: ts 23.4%, go 28.9%, py 27.8%, c 0%, zig 0%
+    command: python3 check-ref/my/prose2.py new
+  - [5]
+    name: words in shared templates that only one runtime of the 20 uses (go channel, ts cancel/iterator/prepare value, zig errorunion, py generator)
+    value: language-written part: go 29.1%, ts 17.7%, py 13.5%, zig 1.6%, c 0%; whole page incl. feature reference: go 10.7%, ts 6.1%, py 3.7%, zig 0.5%, c 0%
+    command: python3 check-ref/my/uniq.py own; python3 check-ref/my/uniq.py all
+  - [6]
+    name: provider-declared plain-English phrase words (collection, maps, body phrases)
+    value: ts 83 (0.5%), py 0 counted as plain (its nouns are code spans), c 166 (1.1%), zig 83 (0.6%), go 0
+    command: python3 check-ref/my/prose2.py new (DECL table)
+  - [7]
+    name: source lines, REFERENCE, five languages
+    value: before 2196 total / 1520 ncnb; after 967 / 805; 2.27x / 1.89x
+    command: git show f9c43b19:<file> | wc -l and grep -v blank/comment; git diff --numstat f9c43b19 HEAD
+  - [8]
+    name: both sections, 20 languages, projection
+    value: before 14,896 (ReadmeQuick_ 4503 + ReadmeTopQuick_ 2000 + ReadmeRef_ 8330 + 63 shared); after 5,437 if 20 providers average 188.6 lines (2.74x); 7,323 at 1.5x (2.03x); 9,209 at 2x (1.62x)
+    command: wc -l over /home/user/sdkgen/ts/project/.sdk/src/cmp/*/{ReadmeQuick,ReadmeTopQuick,ReadmeRef}_*.ts and the clone's shared files and Syntax/Naming
+  - [9]
+    name: bad plural example variables in NEW ported REFERENCE (OLD 0)
+    value: utilitys 208, historys 124, planet_entitys 6 (+4 planetentitys)
+    command: grep -rhoE '\b[a-z_]+(ys|ss|xs|chs|shs)\b' new/*/{ts,go,py,c,zig}/REFERENCE.md | sort | uniq -c
+  - [10]
+    name: zig field type cells in B
+    value: OLD: 10 `[]const u8`, 3 `f64`, 1 `i64`, 1 `Value (object)`, 1 `any`; NEW: 16 `any`
+    command: grep -E '^\| `[a-z_]+` \| `' old|new/B/zig/REFERENCE.md | awk -F'|' '{print $3}' | sort | uniq -c
+  - [11]
+    name: lanes NEW / OLD
+    value: ts 16/16 / 16/16; go 12/12 / 12/12; py 12/12 / 12/12 (pytest 9.1.1); c 6/6 / 5/6
+    command: check-ref/mylanes.sh; logs in check-ref/lanes/{new,old}-*.log
+  - [12]
+    name: REFERENCE execution negative control
+    value: ts lane fails (snippet threw ref-exec-probe), py lane fails (RUNTIME ERROR in py REFERENCE.md python block #4)
+    command: injected a throwing block after each load example in dist/cmp/ReadmeRef.js, ran one ts and one py lane, restored (logs check-ref/lanes/probe-*.log)
+  - [13]
+    name: guard negative controls
+    value: wrong params/returns in declared py signatures: guard passes (2/2); stream member removed: guard fails (1 of 2)
+    command: edited dist-test-scaffold/.sdk/dist/cmp/py/Syntax_py.js; node --test --test-name-pattern py dist-test/runtimefacts.test.js
+  - [14]
+    name: suite without toolchain lanes
+    value: 2534 tests, 2528 pass, 0 fail, 6 skipped
+    command: node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)
+  - [15]
+    name: model reads in providers
+    value: 0 in Syntax_ts/go/py/c/zig (imports only canonToType, canonKey, indentLines, jsKey, jsProp, jsQuote, uses; no model, ctx$, getModelPath, apidef, utility_<lang>)
+    command: grep -nE '\bmodel\b|ctx\$|getModelPath|target\.|KIT|apidef|utility_<lang>' Syntax_<lang>.ts
+output_defects:
+  - [0]
+    lang: zig
+    variation: every variation with fields (e.g. B, doc-crud)
+    defect: Every field's Type cell is `any`, which is not a zig type name and says less than before. OLD printed `[]const u8`, `f64`, `i64`, `Value (object)`. The cause: canonToType has no zig column, so the provider's ref.type falls back.
+    evidence: new/B/zig/REFERENCE.md: 16 field cells `any`; old/B/zig: 10 `[]const u8`, 3 `f64`, 1 `i64`; src/helpers/canonType.ts:2-5 (zig has no column); old ReadmeRef_zig.ts zigType()
+    worse_than_old: True
+  - [1]
+    lang: ts go py c zig
+    variation: every variation with a list op (B, doc-crud, ...)
+    defect: Example variables are bad English plurals (`utilitys`, `historys`, `planet_entitys`). They come from `vars: v + 's'`, copied into all five Naming hooks, which no code generator uses.
+    evidence: new/doc-crud/ts/REFERENCE.md: 'const utilitys = await client.Utility().list()'; 338 occurrences; Naming_<lang>.ts symbols()
+    worse_than_old: True
+  - [2]
+    lang: py
+    variation: all
+    defect: direct() Returns says '`ok` is `false`'. In Python the value is `False`. OLD said 'branch on `result["ok"]`'.
+    evidence: new/B/py/REFERENCE.md direct(): '**Returns:** `dict`. On a failure `ok` is `false` and `err` holds the error.'
+    worse_than_old: True
+  - [3]
+    lang: go py c zig
+    variation: all
+    defect: direct() no longer says what the result holds: `status`, `headers` and `data` appear nowhere. Only ts names them, in its type `Promise<{ ok, status, headers, data }>`. py, c and zig also lost the idiom for reading `ok`.
+    evidence: OLD py 'Returns a result `dict` with `ok`, `status`, `headers`, and `data` (or `err` on failure)'; OLD c '... branch on `getp(result, "ok")`'; OLD zig '... branch on `h.get_bool(result, "ok")`'; NEW only '**Returns:** `dict`|`voxgig_value*`|`Value`'
+    worse_than_old: True
+  - [4]
+    lang: c zig
+    variation: all
+    defect: The data()/matchv() description says 'When called without arguments, returns a copy'. In C and Zig the argument is always passed (NULL or null), so the sentence describes a call these languages cannot make. OLD said 'Get the entity data. Pass a map to set it.'
+    evidence: new/B/c/REFERENCE.md Common Functions vt->data; c/fragment/Entity.fragment.c:242-250 (args NULL check)
+    worse_than_old: True
+  - [5]
+    lang: ts
+    variation: doc-crud, B and every variation with an action
+    defect: The Actions block no longer shows how to call an action. The 'Call' column and the example `client.Planet().create({ $action: 'terraform', ... })` are gone. Only the sentence 'Select one with `$action` in the call's argument' remains.
+    evidence: diff old/new doc-crud ts: '| `terraform` | `/planet/{id}/terraform` | `client.Planet().create({ $action: ...})` |' -> '| `terraform` | `create` | `/planet/{id}/terraform` |'
+    worse_than_old: True
+  - [6]
+    lang: ts go py c zig
+    variation: B, every variation with log
+    defect: The REFERENCE now says log runs unless disabled, while the README Features section of the same SDK says every feature is 'inactive until you switch it on ... no logging'. The two documents contradict each other.
+    evidence: new/B/ts/REFERENCE.md:708 vs new/B/ts/README.md:590-592
+    worse_than_old: False
+  - [7]
+    lang: ts go py c zig
+    variation: no-test
+    defect: The REFERENCE omits the test constructor, which still exists in every runtime. The README of the same SDK still uses it (`DemoSDK.test()`, `test_sdk(NULL, NULL)`) and lists it in its own table.
+    evidence: new/no-test/ts/README.md:132,253; new/no-test/c/README.md:157,264; grep counts README 2-3, REFERENCE 0
+    worse_than_old: False
+  - [8]
+    lang: ts
+    variation: B, server-mixed
+    defect: The REFERENCE says `region` defaults to `eu`. The README options table of the same SDK says '**Required.** ... `tenant`, `region`'.
+    evidence: new/B/ts/README.md:224 vs new/B/ts/REFERENCE.md options.server.region row
+    worse_than_old: False
+  - [9]
+    lang: py
+    variation: doc-nested
+    defect: The list signature says the match is optional (`list(reqmatch=None, ...)`), while the sentence below it says 'The match must include `planet_id`'.
+    evidence: new/doc-nested/py/REFERENCE.md SatelliteEntity list
+    worse_than_old: False
+  - [10]
+    lang: zig
+    variation: all
+    defect: Stream lost what happens under `throw: false` (a failed stream is `.ok` with whatever data the failure left). `.err` is no longer described as 'the branded error'.
+    evidence: old/B/zig Common Methods stream vs new
+    worse_than_old: True
+  - [11]
+    lang: go
+    variation: all
+    defect: The TestSDK example `client := sdk.TestSDK(testopts, sdkopts)` uses undefined variables. The same line is in OLD.
+    evidence: new/doc-crud/go/REFERENCE.md Test client
+    worse_than_old: False
+  - [12]
+    lang: ts go py c zig
+    variation: all
+    defect: The load sentence reads awkwardly: 'Resolves to the entity, whose record `.data()` reads'. OLD had the same phrase.
+    evidence: new/doc-crud/ts/REFERENCE.md load
+    worse_than_old: False
+facts_lost:
+  - ts: options() and utility() return `object` ('**Returns:** `object`')
+  - ts: test(testopts, sdkopts): testopts are 'Test feature options', sdkopts 'Additional SDK options merged with test defaults'; it returns a DemoSDK instance in test mode (and the same Returns line for tester())
+  - ts: each accessor's parameter table ('`data` | `object` | Initial entity data') and its '**Returns:** `PlanetEntity` instance'
+  - ts: how to call a custom action: `client.Planet().create({ $action: 'terraform', /* ...the action's own arguments */ })`
+  - ts, go, py, zig: update/patch example comments '// Fields to update', '// Only the fields to change'
+  - go: the instance example `fmt.Println(planet.GetName()) // "planet"` (what GetName returns)
+  - py: direct() returns a result dict with keys `ok`, `status`, `headers`, `data` (or `err`), and the idiom `result["ok"]`; prepare returns the `fetchdef`
+  - py: `# str` type comments on create example fields
+  - c: direct() returns a result map with `ok`, `status`, `headers`, `data`; it never sets `*err` for a non-2xx response; read ok with `getp(result, "ok")`; prepare returns the fetchdef
+  - c: vt->data / vt->matchv: 'Pass a map to set it' (replaced by a no-arguments sentence that does not fit C)
+  - c: `// char*` type comments on create fields; the `if (result)` guard after load
+  - zig: direct() returns a `Value` map with `ok`, `status`, `headers`, `data` even on a non-2xx response; read ok with `h.get_bool(result, "ok")`
+  - zig: StreamResult under `throw: false` in callopts.ctrl: a failed stream is `.ok` with whatever data the failure left; `.err` is the branded error
+  - zig: field types `[]const u8`, `f64`, `i64`, `bool`, `Value (array)`, `Value (object)` (now all `any`)
+  - zig: `// []const u8` type comments on create fields; data()/matchv(): 'Pass a map to set it'
+  - go, py, c, zig: direct()'s result keys `status`, `headers` and `data` are no longer stated anywhere on the page
+purity: |
+  I scanned Syntax_ts/go/py/c/zig.ts with grep for model, ctx$, getModelPath, target., KIT, apidef and utility_<lang> imports. I found 0 model reads. Imports are limited to canonToType, canonKey, indentLines, jsKey, jsProp, jsQuote and uses.
+  
+  Reading the files: no reserved-word list and no naming rule remain in the Syntax files. The string operations are escaping (str()) and syntax (c's `vars[i]`, zig's arm()). Whether-decisions in the providers are declarations, not conditions on the model: which members exist, cancel, signal, prepare.fails. The only conditional layout is ts's `wide` flag, which comes from the statement.
+  
+  Zero was reached mostly by moving facts into the description: className via entityClassName; ops, ids, option rows and actions in sdkdesc.ts. Names come through the Naming hooks, which call the generators' own goModule, pyPackageDir, packageName, cIdent, cVarName and zigVarName.
+  
+  It was not reached entirely without copying:
+  - (1) Every hook restates client and ctor by concatenation (`Name + 'SDK'`, `'New' + Name + 'SDK'`, `Name + 'SDK.new'`) instead of calling a shared function.
+  - (2) Every hook carries `vars: <var> + 's'`, an English pluralisation rule written five times and used by no code generator. It is defective (`utilitys`).
+  - (3) Option-row texts live in sdkdesc.ts OPTION_TEXT, not in the model (D26 only partly fixed).
+  
+  The shared ReadmeRef.ts switches on member kinds and enum values that exactly one runtime declares: streamChannel (go), streamIterator and cancel (ts), prepare 'value' (ts) and 'errorunion' (zig). That is per-language prose relocated into the shared file. It is go 29% and ts 18% of the words of their language-written part of the page.
+  
+  The RefFacts tables are hand-written. The guard checks only that each declared function name exists (it passed wrong parameters and return types in my control) and does not check types (zig `any`).
+toolchain:
+  - [0]
+    lang: ts
+    what_ran: generatedcompile 'typescript: the README example tests type-check and run' (16 models); plus a throwing-block negative control
+    compiled: every ```ts block in README, REFERENCE and root README type-checked, before and after
+    executed: NEW: runnable REFERENCE blocks executed in seeded test mode, 16/16 pass; the negative control proves REFERENCE blocks run
+    old_executed: OLD (old clone): 16/16 pass, same harness; the action illustration was not run and is now removed
+  - [1]
+    lang: py
+    what_ran: generatedcompile '^py: (every README example|the README examples run)' with pytest 9.1.1 from /root/.local/share/uv/tools/pytest/bin; negative control
+    compiled: every python block compiled, before and after
+    executed: NEW: 12/12 pass; REFERENCE blocks executed (negative control fails at 'py REFERENCE.md python block #4')
+    old_executed: OLD: 12/12 pass, same harness
+  - [2]
+    lang: go
+    what_ran: generatedcompile '^go: (every README example|the README examples run)'
+    compiled: REFERENCE fragments wrapped and compiled, before and after (no func main in either)
+    executed: NEW: 12/12 pass; REFERENCE blocks compiled only
+    old_executed: OLD: 12/12, REFERENCE compiled only; no weakening
+  - [3]
+    lang: c
+    what_ran: generatedcompile '^c: every documented example compiles' (gcc -fsyntax-only)
+    compiled: NEW: 6/6, every block of README, REFERENCE and root README
+    executed: none, before or after
+    old_executed: OLD: 5/6; the basic-server failure is README getenv without stdlib.h, not REFERENCE
+  - [4]
+    lang: zig
+    what_ran: nothing: command -v zig reports absent
+    compiled: no, before or after
+    executed: no
+    old_executed: no
+hypotheses:
+  - [0]
+    id: H1
+    verdict: partly
+    evidence: |
+      Holding: providers read the model 0 times (my scan). By my reading of the git history, about 6 breaking interface changes count after the first four languages, including RefFacts.container in a93e754f, so under 10. No sentence is written in a provider: the plain-English words they declare are 0-1.1% of page words.
+      
+      Not holding cleanly:
+      - (a) Per-language prose is relocated, not removed. Shared templates selected by member kinds or enums that only one runtime declares are 29% of go's and 18% of ts's words in the part of the page each language used to write (11% and 6% of the whole page). For go and ts that is over the ~15% line by that measure, and under it by the whole-page measure.
+      - (b) True language-specific facts were deleted to fit the shared sentences. See facts_lost: direct()'s result keys in four languages, zig's stream semantics, c/zig 'pass a map to set it', ts Returns lines.
+      - (c) Naming hooks restate rules by string concatenation and carry a doc-only pluralisation rule, copied five times.
+  - [1]
+    id: H2
+    verdict: partly
+    evidence: REFERENCE for five languages: 2,196 to 967 total lines (2.27x). By non-blank, non-comment lines: 1,520 to 805 (1.89x), below 2x by my count; their 1.92x is also below. Both sections across 20 languages, projected: 14,896 to 5,437 (2.74x), 2.03x if the remaining providers are 1.5x the measured size, 1.62x at 2x. The page-only 4.86x projection presumes providers that 15 languages do not have yet. It also presumes shared code that stops growing, though it grew 378 lines and added one-language branches in this stage.
+  - [2]
+    id: H3
+    verdict: supported
+    evidence: |
+      Confirmed on the exposing variations for all five ported languages: S25/D10, U43, U44, U34, U36, S50, D23/D55, G27/G29/M38/D69, S13, and N04/U06/M04 on go2. S09 and the backtick leak are fixed for all 20 in the shared ReadmeRefFeatures.
+      
+      Caveats:
+      - The fixes reach REFERENCE only. The README of the same SDK still states the old facts (S09, D23 region, S13 test constructor), so the documents now contradict each other.
+      - A new regression appeared that no catalogued check covers: zig field types are all `any`.
+      - N11 and perl's `{id}` need ports. N04/U06/M04 need one literal per provider.
+  - [3]
+    id: H4
+    verdict: supported
+    evidence: NEW: ts 16/16 and py 12/12, both executing REFERENCE blocks, as the negative control shows. go 12/12, compiled only, as before. c 6/6, compiled only, as before (OLD 5/6, failing outside REFERENCE). Nothing that was executed is now only compiled. The action illustration was dropped rather than made runnable, and it was never executed. zig cannot be checked here.
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: I did not run the upgrade walk. All I confirmed: retire.test passes within the 2534-test suite, ReadmeRef is in OPTIONAL_COMPONENTS (src/helpers/optional.ts:28), the golden records the five retired ReadmeRef_<lang>, and a target's own ReadmeRef_<t> still wins (ReadmeRef.ts:26-27).

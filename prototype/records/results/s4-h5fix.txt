@@ -1,0 +1,500 @@
+ok: True
+summary: |
+  I built both structures on P/h5fix/sdkgen, branch h5fix (from 29175771, final head d36954fc), plus one experiment branch, h5fix-loud (909088f7, in the worktree P/h5fix/dev). P = /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2.
+  
+  Part 1, a retired copy recognised without the record:
+  - The package ships ts/project/sdkgen-retired.json. `npm run retired` (ts/build/retired.js) generates it from the v* release tags with the copy record's own fingerprint function. Measured: 129 files, 552 fingerprints, 18,804 bytes (7,257 gzipped), from v0.0.1..v4.44.0, in about 3 s.
+  - Doctor, target add and package update read it, and remove follows doctor. A copy identical to a released version is RETIRED and removed whatever the record says.
+  - A record line that cannot be read is a doctor finding that fails the check, and every add warns about it. An append no longer joins a cut line.
+  - A changed or unrecorded copy of a section that a shared component writes now fails doctor until the model declares it (`main: kit: target: <t>: override: <Name>: true`). This is the second of the two readings in the brief.
+  - The duplicated rules the attack listed each moved to one place: helpers/cmpfile.ts, SYNTAX_SECTIONS, declaredInterface.
+  
+  Part 2, serving the previous interface:
+  - A provider that declares interface '3.2', or nothing, compiles unchanged and generates on 3.3. It gets one warning per target, and package check gives a warning instead of an error.
+  - All five breaking changes could be served. One of them, testMock, only after moving its requiredness from the type to generate time.
+  
+  Re-runs: all of the first engineer's rows and the attack's states, before and after. Previously NOT OK: R5b, S14b, S17b and my S2r and S20 are now safe; S2b (synthetic) and my S19 are now loud. S2b alone is still not fully safe. An interface raise (my next2 build: 4.46.0, interface 3.4) no longer stops generation.
+  
+  Tests: action tests 336/336. The full suite without generatedcompile: 2650 pass, 0 fail, 5 skipped of 2655 at d36954fc.
+  
+  Note: P/h5check and P/h5/sdkgen were deleted by someone else while I worked. I had already copied everything I needed (next, nocheck, today, old, langpack, packs, fixtures, scripts).
+verdict: |
+  H5: confirmed, with conditions. The refutation condition was that retiring per-language components cannot be made safe for doctor, remove, target add and package update without breaking their rules, or that a pack's targets stop generating.
+  
+  With the retired list, the damaged-record finding and the declared-override rule, I found no state among about 75 rows and 29 states where a stale component writes a page while doctor says the project matches. A pack provider written for the previous interface keeps generating across a raise instead of being refused.
+  
+  Conditions:
+  (a) A release must run `npm run retired`. make publish now does; the CI workflow cannot, because it does not fetch the tags.
+  (b) The list recognises only released versions. A copy taken from an unreleased build, with no record, is still read as the project's own. For the three shared sections it is now loud (undeclared). For a retired component outside those sections it stays silent: that hole remains.
+  (c) Two rules are bent:
+  - "A file the record does not name is never deleted" now has an exception: a copy byte-identical to a release, where the package's list stands in for the record.
+  - An override of a shared section is no longer informational. It fails doctor until the model declares it. This leans on "a project decision belongs in the model", and it turns the first engineer's R3 and R3b and the attack's S3c and S9 from exit 0 into exit 1.
+  (d) Residual: S2b. Its copy content is in no release and a record line is damaged. Doctor fails, naming both causes, but `target remove` still refuses with the inaccurate "did not write" wording, and the page stays old until the project acts. The realistic form of the same state (S2r, with released content) is fully safe.
+list: |
+  How it is made: ts/build/retired.js lists the release tags (git tag v*, semver only). For each tag it runs `git ls-tree -r <tag> -- ts/project/.sdk/src/cmp/` and keeps every path the working tree no longer ships. It reads the distinct blobs with `git cat-file --batch` and fingerprints each with dist/action/copies.js `fingerprint`, the same function the copy record uses (sha256 of the LF-normalised bytes, first 16 hex characters). It writes ts/project/sdkgen-retired.json, keyed by path relative to `.sdk`, beside sdkgen-package.json. It needs dist built and the full tag history. `--check` regenerates the list and compares it with the committed one.
+  
+  What a release must run: `npm run retired` after embed-version. I added that step to make publish, and the file to its `git add`. A hand-dispatched release that skips it ships a stale list. The test only checks that every listed file is no longer shipped, not that the list is complete.
+  
+  Measured (RAN):
+  - 129 files, 552 fingerprints, 18,804 bytes (7,257 gzipped), from v0.0.1..v4.44.0. Generation took 3.3 s real.
+  - 48 of the files are the three sections: 39 for the 13 ported languages, plus 9 for dart, haskell and lean, which moved to the pack. They hold 376 fingerprints.
+  - The other 81 are older retirements: 41 dart, 21 haskell and 19 lean files, among them 6 SdkError.fragment.* files.
+  - The largest entry is src/cmp/lua/ReadmeQuick_lua.ts with 13 versions.
+  - All 15 retired copies in a 4.44.0-made project (ts, go, py, perl, lua) are in the list.
+  - Aliased copies are recognised by reversing the alias rename (aliasCmpText with the names swapped) before fingerprinting.
+  - Doctor time on the 20-target upgraded project, where 39 lookups happen: minimum 1,469 ms against a 1,498 ms baseline, within noise on the shared machine.
+edited_copy_rule: |
+  The case the list cannot decide is an edited copy named after a retired shared section, with no record or a record that calls it additive.
+  
+  I built the second reading. A copy of ReadmeQuick_<t>, ReadmeRef_<t> or ReadmeTopQuick_<t> that the source no longer ships, and that is neither recorded unchanged nor a released version, is reported as OVERRIDE NOT DECLARED. It counts against ok, so doctor exits 1, until the model says `main: kit: target: <t>: override: <Name>: true`. The new key is in ts/model/sdkgen.aontu. The add's override warning names the key. The copy is still kept and used, because no edit is lost without the mode that says so. The rule lives in one function, `undeclaredOverride` in helpers/optional.ts, and applies to SYNTAX_SECTIONS only.
+  
+  Measured (RAN): S19 (edited ReadmeQuick_ts, no record, re-added with --force): before, doctor said "matches (15 additive)", exit 0. After: 1 undeclared, exit 1, the other 14 copies recognised and removed. S19b, the same with the model key: "matches (1 additive)", exit 0.
+  
+  Which rule each reading keeps or bends:
+  - Reading 1 (the first engineer's: an override is reported and never fails) keeps "add is overwrite / never lose an edit" and their informational override category. It bends "doctor is the check that keeps all of this true", because a stale or whitespace-edited copy (S3c) silently replaces the shared page forever.
+  - Reading 2 keeps that rule and "a project decision belongs in the model". It bends the informational override category. Measured cost: R3 and R3b (a deliberate edit) and the attack's S3c and S9 now exit 1 until the project adds one model line per override.
+record_finding: |
+  readCopies returns `damaged: string[]`: `log/copies.jsonl:<n>` for each line that is not valid JSON or not an object entry ({items?, files?} maps), or `sdkgen-copies.json` for an unreadable legacy file.
+  
+  - Doctor puts these in `damagedRecord`, which counts against ok, with the finding "DAMAGED COPY RECORD (a line that cannot be read; the copies it named read as unrecorded. Restore it from git, or delete the line)".
+  - guardCopies warns `copies-damaged` on every add and package update.
+  - appendEntry first ends a log that lacks a trailing newline, so the next line is not joined to a cut one.
+  
+  Measured (RAN):
+  - S2a: before 0 damaged; after 1 damaged and 15 retired, exit 1.
+  - S2n (cut line with no newline, then target add ts): before, 4 lines with 1 unreadable, because the add's own line was joined to the cut one and its entry lost. After, 5 lines with 1 unreadable, and doctor reports it.
+  - S2b and S2r: the damaged line is named, and doctor exits 1.
+  
+  Tests: three in retire.test.ts (a cut line, wrong-shaped entries, no join after a cut line).
+rows:
+  - [0]
+    row: R1 upgraded, nothing run
+    before: doctor exit 1 (10 missing, 11 outdated, 15 retired); ported pages OLD
+    after: same
+    safe: yes (both)
+  - [1]
+    row: R2a/R2a2/R2b/R2c/R4a/R4b/R4c/R4d/R6/R8/R13
+    before: as in the first engineer's report (after the lifecycle change)
+    after: same outcomes; the doctor end line gains 2 counters
+    safe: yes (both)
+  - [2]
+    row: R3 / R3b edited retired copy, re-add or update
+    before: override kept and used; doctor matches, exit 0
+    after: kept and used; OVERRIDE NOT DECLARED, exit 1; the add warning names the model key
+    safe: yes (both); a rule change (reading 2)
+  - [3]
+    row: R3c/R3d --force or overwrite mode
+    before: edited copy deleted, pages NEW
+    after: same
+    safe: yes
+  - [4]
+    row: R5 no record
+    before: 11 forked + 15 additive, exit 1, add refuses
+    after: 11 forked + 15 RETIRED, exit 1, add refuses
+    safe: yes (both); labelled correctly after
+  - [5]
+    row: R5b no record, re-add --force
+    before: 15 kept and used, pages OLD, doctor matches (15 additive) exit 0
+    after: 15 removed with compiled output; pages NEW; doctor matches (0 additive) exit 0
+    safe: before NOT OK, after yes
+  - [6]
+    row: R9 twenty targets
+    before: 39 retired; after update 26/26 ported and 14/14 unported pages == fresh
+    after: same (26/26, 14/14)
+    safe: yes
+  - [7]
+    row: R12 langpack
+    before: 74/76 pass, 2 skipped; 10/12 .md identical to 4.44.0
+    after: same
+    safe: yes
+  - [8]
+    row: R15/R15b orphan compiled
+    before: ORPHAN finding exit 1; prune -y keeps, prune deletes
+    after: same
+    safe: yes
+  - [9]
+    row: R7b / R16 pack retires its own components; package check
+    before: safe
+    after: same, plus provider-interface-previous is a warning, not an error
+    safe: yes
+  - [10]
+    row: S1/S1b legacy record, older-version entry
+    before: retired, removed
+    after: same
+    safe: yes
+  - [11]
+    row: S2a only record line truncated
+    before: 11 forked + 15 additive, exit 1, stuck until --force (which reached 5b)
+    after: 11 forked + 15 retired + 1 damaged, exit 1; --force now removes the retired copies
+    safe: yes; after it no longer leads to 5b
+  - [12]
+    row: S2b synthetic (content in no release, cut record line)
+    before: override kept and used; doctor matches exit 0; remove refuses 'did not write'
+    after: kept and used; doctor exit 1 (1 undeclared, 1 damaged); remove still refuses 'did not write'
+    safe: loud, but NOT fully: the page stays OLD until the project acts, and remove's wording is wrong
+  - [13]
+    row: S2r realistic S2b (4.44.0 content, record holds v4.34.1's fingerprint, the 4.44.0 line cut)
+    before: override kept and used; doctor matches exit 0; remove refuses
+    after: RETIRED, removed by update; pages NEW; doctor exit 1 only for the damaged line; remove exit 0
+    safe: before NOT OK, after yes
+  - [14]
+    row: S2n cut line with no newline, then an add
+    before: the add's line joined to the cut one (its entry lost); 4 lines, 1 unreadable
+    after: 5 lines, 1 unreadable; doctor names it
+    safe: before silent loss, after yes
+  - [15]
+    row: S3a/S3b reverted / CRLF
+    before: retired, removed
+    after: same
+    safe: yes
+  - [16]
+    row: S3c one trailing space
+    before: override kept and used; doctor exit 0
+    after: kept; undeclared, exit 1
+    safe: before silent, after loud
+  - [17]
+    row: S4/S4b/S4g interface raise 3.3->3.4 (next2, made from this branch)
+    before: (attack, its next) tsc TS2322 in go/lua/perl/py copies or a generate refusal; all generation stopped
+    after: tsc exit 0; generate ok; one syntax-interface-previous warning per unrefreshed provider (ts, py, go, lua, perl); --keep, declaring 3.4 by hand and --force all generate
+    safe: yes; a clean merge (S4gb) still raises the declaration on the project's behalf
+  - [18]
+    row: S5a/S5b removed by the 4.44.0 verb / tree deleted by hand
+    before: 3 orphan compiled, exit 1, prune fixes
+    after: same
+    safe: yes
+  - [19]
+    row: S7a/S7b/S8 aliases
+    before: retired and pruned; pages == fresh alias
+    after: same
+    safe: yes
+  - [20]
+    row: S9 overwrite mode, edited retired copy
+    before: doctor said 'kept and used' (false in that mode), exit 1 via retired
+    after: label says 'copies are overwritten in this project, so the next add deletes it' (rows script grep shows the undeclared finding too), exit 1
+    safe: yes; the sentence is now true
+  - [21]
+    row: S10/S11/S12/S13/S16/S18
+    before: safe
+    after: same
+    safe: yes
+  - [22]
+    row: S14b gitignored log/, fresh clone, --force
+    before: 15 kept and used, OLD pages, doctor matches exit 0
+    after: 15 removed, pages NEW, doctor matches (0 additive)
+    safe: before NOT OK, after yes
+  - [23]
+    row: S17 whole src restored from git
+    before: tsc fails in Naming_lua/Naming_py (loud)
+    after: same (loud)
+    safe: yes (loud)
+  - [24]
+    row: S17b only the 15 retired files restored after an update
+    before: 15 additive, used, OLD pages; doctor matches exit 0; a second update keeps them
+    after: 15 RETIRED, doctor exit 1; the second update removes them; doctor matches
+    safe: before NOT OK, after yes
+  - [25]
+    row: S19 edited copy, no record, --force
+    before: kept and used; doctor matches exit 0
+    after: kept and used; undeclared, exit 1 (S19b with the key: exit 0)
+    safe: before NOT OK, after yes (loud)
+  - [26]
+    row: S20 unedited 4.44.0 copy whose record says forgotten (null)
+    before: additive; the update keeps it; doctor exit 0
+    after: RETIRED; the update removes it; doctor matches
+    safe: before NOT OK, after yes
+still_not_safe:
+  - S2b (synthetic): content in no release and a cut record line. Doctor exits 1, naming the damaged line and the undeclared override. But the stale component still writes the page until the project acts, and `target remove ts` still refuses with 'refusing to delete what `target add` did not write', which is inaccurate. Only an unreleased build can produce that content; the released form (S2r) is safe.
+  - Not run, read from the code: an unrecorded, unchanged copy of an UNRELEASED version (a linked local checkout, a prerelease) of a retired component that is not one of the three shared sections is still read as 'additive' and never fails doctor. For the three sections it is now loud (undeclared). The list covers released versions only.
+  - The list is only as complete as the last `npm run retired`. CI's publish job cannot regenerate it (no tags), and the shipped test checks only that every listed path is no longer shipped.
+  - Part 2 cost: to let a 3.2 provider compile unchanged, RefFacts.testMock became optional in the type, with requiredness checked at generate. Mutation m1 (testMock removed) went from kind 1 (TS2741) to kind 2 (a generate throw). `interface` is optional too, so a 3.3 provider that forgets it is served as 3.2 with a warning rather than refused.
+  - A clean 3-way merge still raises a customized provider's declared interface on the project's behalf (S4gb). With serving, that only moves the provider from served to current, where the loud declared-fact checks (if shipped) then apply.
+rules_in_one_place:
+  - [0]
+    rule: Path of a per-target component and of its compiled output (attack rules_bent[0])
+    where: ts/src/helpers/cmpfile.ts: componentModule, componentSource, parseComponent, compiledStem, compiledFiles, sourceStem
+    done: yes. Callers moved: target.ts (override note, removeCompiled), doctor.ts (prune, orphanCompiledFiles, replacesShared), check.ts, syntaxversion.ts and optional.ts. helpers/component.ts already existed (jostraca cmp), so the new module is cmpfile.ts. What remains spells file names in prose messages only, not paths that decide anything.
+  - [1]
+    rule: Which files are compiled output (rules_bent[1])
+    where: COMPILED_EXTS in helpers/cmpfile.ts, used by target.ts removeCompiled and doctor prune
+    done: yes
+  - [2]
+    rule: Which components a shared section replaces (rules_bent[2])
+    where: SYNTAX_SECTIONS in helpers/optional.ts, used by check.ts, doctor replacesShared and undeclaredOverride
+    done: yes. Decision: the doctor label '(used instead of the shared X)' is now limited to these three, the only sections a shared component writes from the provider. Before, it covered all OPTIONAL_COMPONENTS.
+  - [3]
+    rule: Alias rename of component names and imports
+    where: aliasCmpName and aliasCmpText moved from target.ts to cmpfile.ts (target.ts re-exports them), so copies.ts can reverse them without an import cycle. escapeRe moved to utility.ts for the same reason.
+    done: yes
+  - [4]
+    rule: Two readings of the declared interface (rules_bent[3])
+    where: declaredInterface(src) in helpers/syntaxversion.ts beside the runtime check. SYNTAX_INTERFACE is no longer exported from the package index.
+    done: partly. A source-text reading and a runtime value cannot be one function: package check compiles nothing. Un-exporting the constant makes a literal the only declaration that compiles. Mutation m8 is now TS2305 (kind 1); emitted anyway, it is served as previous with a warning, never passed unread. A local const alias would still read as 'none' in package check, which is now a warning, not an error.
+  - [5]
+    rule: The copy record decides unchanged-ness (rules_bent[4])
+    where: unchangedCopy(fs, folder, record, kind, source, rel) in copies.ts: the record's verdict, unless releasedCopy finds a released version. doctor noteDrift and target retiredCopies both call it. The copy guard is told through actx.released, so its 'never delete an unrecorded file' does not spare a released copy.
+    done: yes. The guard part was found by a failing test (the guard restored the deleted copy) and fixed in 0f0f9d5e.
+tests: |
+  New tests, all RAN:
+  - retire.test.ts, 11 new:
+    - An unrecorded released copy is retired and an add removes it.
+    - remove does not refuse it.
+    - A record that calls it changed does not outweigh the release.
+    - An aliased copy is read back through the alias.
+    - A copy that is no release stays additive and kept.
+    - An undeclared override fails doctor; the declared one passes.
+    - An add keeps the override and names the declaration.
+    - A damaged line is a finding.
+    - Wrong-shaped entries count as damage.
+    - No join after a cut line.
+    - The shipped list names only unshipped files, with 16-hex fingerprints.
+  - syntaxversion.test.ts, 3 new:
+    - The previous interface, declared or not, is served with one warning naming each change.
+    - A served provider is marked once, on a copy, and warns once.
+    - SYNTAX_INTERFACE is not exported from the index.
+  - packagecheck.test.ts: 1 test changed. The previous interface, or none, is a warning; 3.1 is an error.
+  
+  Runs:
+  - Action tests (every dist-test file whose name contains doctor, remove, target, package, copies, retire, action, cli or syntaxversion; 12 files including php-live-client by name): 336/336 at the build after 0f0f9d5e (action-tests-2.log).
+  - Full suite without generatedcompile: 2650 pass, 0 fail, 5 skipped of 2655, both at that build (suite-1.log) and at the final head d36954fc (suite-2.log).
+  - The characterize golden did not move; no provider changed on h5fix.
+  - The loud experiment branch h5fix-loud was built (exit 0) but its suite was NOT run.
+layer:
+  - [0]
+    change: [0] ref.read(value, key, truth?): the direct result's 'so branch on X' clause
+    served: yes, by omission
+    lines: ReadmeRef.ts 2
+    page: A (3.2 on 3.2): lua 'branch on `result.ok`' (right), ocaml 'branch on `getp result "ok"`' (false). L (served): the clause is left out for both, so the sentence ends 'not as an error.' B (3.3 provider): lua '`result.ok`', ocaml '... = Bool true'.
+    note: Corrects ocaml's false clause by omission; loses lua's right one. The correct test needs the provider, so no default can print it.
+  - [1]
+    change: [1] ref.facts.testMock required
+    served: yes, only after relaxing the type: optional in RefFacts, required at generate for 3.3
+    lines: ReadmeRef.ts 6, example.ts 3 (type)
+    page: With the test feature: not consulted, identical. Without it (NOTEST variant): A 'so it has no mock transport' (right for lua and ocaml, both 'generated'); L 'Create a test client. This SDK is generated without the `test` feature.' with the mock claim omitted; B states the claim.
+    note: There is no honest default ('always' and 'generated' runtimes differ), so the clause is omitted. The cost: m1 went from kind 1 to kind 2 for 3.3 providers.
+  - [2]
+    change: [8] ref.facts.streamSignal; the cancel paragraph no longer names the stream
+    served: yes, with 0 layer lines (absent means no sentence)
+    lines: 0
+    page: lua and ocaml: 'ends early once callopts.signal' appears 0 times in A, 0 in L, 7 in B. The served page equals the 3.2 page here; the 3.3 provider adds 7 true sentences.
+    note: 3.2's page had no such sentence for these two providers, so serving keeps 3.2's page.
+  - [3]
+    change: [13] wrapped style: facts.unwrap separate from facts.record
+    served: yes: a served provider without unwrap prints its record fact alone, which in 3.2 held the unwrap
+    lines: runtimeprose.ts 5 (unwraps() and 2 call sites)
+    page: Not exercised: lua and ocaml are not 'wrapped' (swift only). NOT TESTED.
+    note: Would reproduce 3.2's page.
+  - [4]
+    change: [14] the utility getter's sentence follows Member.copy
+    served: yes: a served provider that says nothing keeps 3.2's 'Return a copy of the SDK utility object.'
+    lines: ReadmeRef.ts 3
+    page: lua: A 'a copy' (right per B), L 'a copy', B 'a copy'. Without this line L said 'Return the SDK utility object.', which in 3.3's wording claims the object itself, false for lua. ocaml has no utility member.
+    note: The one change served with 3.2's sentence: no wording is true of both a copy and the live object. It is false for a runtime that returns the live object, as its 3.2 page already was.
+  - [5]
+    change: machinery: SYNTAX_PREVIOUS, servedInterface, serveSyntax (a marked copy of the module, cached per module), the warning, the `served` fact, the loader hook, the package check warning
+    served: n/a
+    lines: syntaxversion.ts +52, optional.ts +2 -5, example.ts +4, check.ts +9 -3, sdkgen.ts 2
+    page: n/a
+    note: About 70 shared lines in all, plus 34 test lines.
+layer_pages: |
+  RAN, bin/rows11fix.sh, logs rows11fix.log and rows11fix-notest.log. Line counts are from diff, lines starting < or >.
+  
+  Setup:
+  - A = the 3.2 provider on the 3.2 shared code (P/ports/<l>/sdkgen/ts as the installed package).
+  - L = the 3.2 pack (packs/lua32, packs/ocaml32) on this build, unchanged, declaring nothing.
+  - D = L with `interface: '3.2'` declared.
+  - B = the bundled 3.3 provider of the same language on this build.
+  - tsc exits 0 for L and D. Each generate prints one syntax-interface-previous warning. Doctor on L: matches, exit 0.
+  
+  With the test feature:
+  - lua: README A->L 0, L->B 0. REFERENCE A->L 92, L->D 0, L->B 63, A->B 153. Root README 0 everywhere.
+  - ocaml: README A->L 4 (a shared rewrap), L->B 0. REFERENCE A->L 95, L->D 0, L->B 80, A->B 173. Root README 0.
+  
+  Without the test feature (NOTEST):
+  - lua: REFERENCE A->L 95, L->B 72.
+  - ocaml: REFERENCE A->L 100, L->B 94.
+  
+  Where the A->L lines come from (read in the lua diff): almost all are 3.3 shared corrections every provider gets. Among them:
+  - the 'Client Methods' heading;
+  - the direct Returns paragraph;
+  - 'The match is optional.';
+  - the action sentence;
+  - 'unless the entity already holds it';
+  - `ctrl` 'Control options.';
+  - the test-client wording;
+  - 'Returns a copy of the current match criteria.', where lua 3.2 already declares copy on its match getters.
+  
+  The layer's own share: the [0] clause in both languages, and in NOTEST the [1] clause (1 occurrence in lua, 2 in ocaml).
+  
+  Comparison (READ from the first engineer's report): the same providers on 3.3 without the layer could not compile (TS2741). With the type error bypassed: REFERENCE A->X1 95 (lua) and 95 (ocaml), X1->B 62 and 80, with [0] false for ocaml and [14] false for lua, both silent.
+  
+  What a pack author sees:
+  - tsc: nothing.
+  - generate: one warning per target, naming the file, the version it is served at, and the facts to declare.
+  - package check: provider-interface-previous (warning, exit 0).
+  
+  When the layer can be deleted: at the next interface raise. SYNTAX_PREVIOUS moves up one step and its conditionals go, so a provider gets exactly one raise. In releases that depends on the raise cadence; while 13 languages were ported, the interface broke about 25 times, so one raise is a short window. A real release would need a fixed minimum window, for example two minor releases. Not built.
+  
+  The interface raise itself (RAN, bin/st2n.sh with next2 = this branch's package with interface 3.4 and previous 3.3): unrefreshed 3.3 provider copies of ts, py, go, lua and perl compile and generate with a warning each. The attack saw TS2322 in all of them and all generation stopped.
+mutations_loud:
+  - [0]
+    mutation: m1 testMock removed
+    before: (attack, check build) kind 1 TS2741
+    after: compat build: kind 2 (tsc 0; generate throws 'needs ref.facts.testMock'); loud branch: the same
+    cost: the type relaxation that lets a 3.2 provider compile unchanged
+  - [1]
+    mutation: m2 testMock misnamed
+    before: kind 1 TS2561
+    after: kind 1 TS2561, then a kind 2 throw if emitted
+    cost: 0
+  - [2]
+    mutation: m3 optional fact removed (deleted)
+    before: kind 3: silent, 3 lines lost
+    after: compat build: still silent (3 lines). Loud branch: kind 2 at load, 'ref.facts.deleted (declare false if none)'
+    cost: the loud branch: deleted is declared by every provider; 3 bundled providers (clojure, elixir, swift) add `deleted: false`
+  - [3]
+    mutation: m4 optional fact misnamed (streamsignal)
+    before: kind 1 only because the literal is annotated; emitted anyway, silent (14 lines)
+    after: compat build: same. Loud branch: kind 1, plus a kind 2 at load, 'ref.facts.streamSignal (declare false if none)'
+    cost: 3 bundled providers (c, rust, zig) add `streamSignal: false`
+  - [4]
+    mutation: m5 printer arity reduced (read(value))
+    before: kind 3: silent, 6 lines
+    after: compat build: same. Loud branch: kind 2 at load, 'ref.read takes 3 parameters, and declares 1'
+    cost: 7 bundled providers (clojure, elixir, lua, perl, py, rb, ts) rename `(value, key)` to `(value, key, _truth)`
+  - [5]
+    mutation: m6 arity increased
+    before: kind 1 TS2322
+    after: kind 1 TS2322 on both builds
+    cost: 0
+  - [6]
+    mutation: m7 cast with testMock removed
+    before: kind 2
+    after: kind 2
+    cost: 0
+  - [7]
+    mutation: m8 interface: SYNTAX_INTERFACE
+    before: passes every raise unread
+    after: kind 1 TS2305 (not exported). Emitted anyway: served as previous with a warning; the page differs by 2 lines
+    cost: 0
+  - [8]
+    mutation: m9 interface '3.2', provider otherwise current
+    before: refused (kind 2), though nothing is wrong
+    after: served with a warning; the page differs by 2 lines (the omitted clauses)
+    cost: 0
+  - [9]
+    mutation: every opt-in fact made required with an explicit absent value (count only, not built)
+    before: n/a
+    after: Estimated with grep on the 13 bundled providers over the 20 optional RuntimeFacts and RefFacts keys: 202 of 260 possible declarations are absent, about 15.5 per provider. Many are style-specific (errVar, errSlot, nullValue, pairForm, ...).
+    cost: About 202 extra lines across 13 providers, mostly noise for facts no sentence of that style reads. The 3 facts and printers the attack names cost 13 line edits in 11 providers plus 32 shared lines.
+recommendation: |
+  Ship serving the previous interface, not the refusal.
+  
+  The refusal is safe, but it stops every pack and project at every raise until its copies are refreshed, and the interface broke about 25 times during porting. Serving cost about 70 shared lines of machinery plus 2 to 6 lines per breaking change. All five 3.2->3.3 changes could be served: three by leaving out the clause the missing fact decides, [8] with 0 lines, and [14] by keeping 3.2's sentence. A pack keeps generating, a project's tsc keeps passing, and the author gets one warning naming what to declare.
+  
+  Its costs:
+  1. Each raise needs someone to classify each change (servable by omission or not) and write those lines.
+  2. A required fact must have its requiredness at generate time rather than in the type. That cost m1's kind 1.
+  3. A served page is less complete than a current one (L->B 63 to 94 REFERENCE lines here). It is never more wrong than its 3.2 page, except where the 3.2 page itself was wrong ([14] for a live-object runtime).
+  4. The window is one raise, so the cadence of raises still matters.
+  
+  I would pair it with the loud checks for a provider that declares the current interface. They are built on h5fix-loud as an experiment: opt-in facts declared even when absent, and printer arity checked at load. They apply only once an author declares the new version, which is exactly when the author is acting on the change list. They cost 13 line edits in the 11 bundled providers they touch and 32 shared lines, and they make m3, m4 and m5 loud.
+  
+  Making every opt-in fact required (about 202 absent-value lines) is not worth it. Name only the facts whose absence silently drops a sentence.
+totals: |
+  Source, tests and build script, 29175771..d36954fc (dist excluded; the JSON list counted separately): +730 / -116, of which tests are +188 / -4. Plus Makefile +4 -1, package.json +1, model +5, and the generated list of 821 lines (18,804 bytes).
+  
+  Per file:
+  - copies.ts +122 -20
+  - cmpfile.ts +86 (new)
+  - doctor.ts +43 -14
+  - target.ts +35 -37
+  - syntaxversion.ts +63 -3
+  - optional.ts +22 -7
+  - check.ts +16 -9
+  - example.ts +10 -5
+  - ReadmeRef.ts +8 -4 (plus 3 in 59fce00e)
+  - runtimeprose.ts +7 -2
+  - manifest.ts +11
+  - utility.ts +6
+  - kind.ts +1 -6
+  - types.ts +3
+  - edition.ts +2 -2
+  - sdkgen.ts +1 -2
+  - build/retired.js +102
+  - retire.test.ts +154
+  - syntaxversion.test.ts +30 -1
+  - packagecheck.test.ts +4 -3
+  
+  Per commit (no dist): f81abe2b +578 -89, acd232e9 +134 -23, 0f0f9d5e +860 -5 (the 821-line list included), deb57713 +8 -22, 59fce00e +4 -1. Loud experiment 909088f7: shared +32 -3, providers 13 lines.
+  
+  Earlier H5 work, for the whole (READ from git): the lifecycle change (1fcc1ef5^..61e8b338) is target.ts +85 -3, doctor.ts +45 -10, edition.ts +5 -1, remove.ts +1, retire.test.ts +143. The first round (a0318794..29175771): doctor.ts +62 -6 (orphan compiled finding), check.ts +44, syntaxversion.ts +51, optional.ts +4, example.ts +3, tests +103.
+  
+  Tests added this round: 14 new and 1 changed. Earlier: 7 (lifecycle) and 10 (first round).
+  
+  What is specific to documentation components:
+  - Part 2 entirely (the Syntax interface).
+  - In part 1: SYNTAX_SECTIONS, undeclaredOverride and the `override` model key, the package check provider rules, and declaredInterface.
+  
+  Generic, serving any per-target component: the retired list and its generator, releasedCopy and unchangedCopy, the guard release set, the damaged record finding and newline guard, cmpfile.ts (paths, compiled output, alias rename), and the earlier lifecycle and orphan-compiled changes.
+commits:
+  - Order for a clone with seven more ported languages: cherry-pick the source commits in this order, skipping the two 'Build' commits (dist conflicts; rebuild instead). Then run `npm run retired` again so the list also names the 21 files of the seven languages, run `npm run build`, and check that every new Syntax_<t>.ts declares interface: '3.3'.
+  - f81abe2b Retired copies recognised without the record: the package ships fingerprints of every released version of each retired file; a damaged record line and an undeclared override of a shared section fail doctor; component paths, compiled extensions, shared sections and the interface reading each in one place
+  - 0f0f9d5e Retired list: generated from the release tags by npm run retired, run by make publish; the copy guard lets a copy go that an add recognised as a released version (bring this right after f81abe2b: without it an add never deletes an unrecorded released copy)
+  - acd232e9 Serve the previous provider interface: a provider declaring 3.2, or nothing, generates on 3.3 with one warning naming each change; its pages leave out the clauses the new facts decide
+  - deb57713 A 3.2 provider compiles unchanged: interface optional (3.3 or 3.2), testMock optional in the type and required at generate from 3.3
+  - 59fce00e A served provider that says nothing of its utility getter keeps the sentence its own page carried
+  - beebf7f1 Build and d36954fc Build: dist only; regenerate rather than pick
+  - Optional experiment, branch h5fix-loud in P/h5fix/dev: 909088f7 (deleted and streamSignal declared even when absent, ref.read arity, checked at load for a current-interface provider; edits 11 bundled providers). It is based on beebf7f1, so it lacks 59fce00e. A clone with more languages needs the same edits in each new provider.
+not_done:
+  - The loud experiment branch's full suite was not run; it was only built (exit 0) and exercised by bin/r11loud.sh. It also lacks 59fce00e.
+  - Change [13] (the wrapped style) has its served path built but not exercised: no 3.2 wrapped provider (swift) was run, and there is no unit test for it.
+  - No real deprecation window was built: the layer serves exactly one previous interface, and nothing ties that to a number of releases.
+  - Edition component retirement (pruneRetired for editions) was updated to the new signature but not exercised end to end, as in both earlier runs.
+  - S2b's remove wording ('did not write') was not changed.
+  - The CLI drift summary still prints only forked/edited/stale/missing; the new counts appear in doctor-end only.
+  - The case where an unrecorded copy of an unreleased version of a non-section retired component stays silent was found by reading the code, not run.
+  - The every-opt-in-fact count (202) is a grep estimate (a key named at line start anywhere in the provider file), not a build.
+  - Timings were not repeated three times A/B for the list's cost; the only comparison is R9's doctor minimum (1469 ms after vs 1498 ms in the baseline run), taken on a heavily loaded machine.
+  - No toolchain compile of generated examples (H4 territory).
+  - The first engineer's today build rows were run in the baseline only (unchanged by this work), not after.
+  - The attack's states S4g/S4gb were run against my next2, not its original next, which was built from h5's tree.
+ran: |
+  Every command ran with PATH=/opt/node24/bin first. Logs are in P/h5fix.
+  
+  Setup: copied P/h5/sdkgen (branch h5fix at 29175771), old, today, bin, packs, langpack, the base fixtures and refs, and the h5check bin (as checkbin), next and nocheck. Paths and symlinks repointed to h5fix. Build exit 0 (build-0.log).
+  
+  Baseline before any change (baseline-before.log): bin/rows.sh (all rows, today and new), checkbin/st.sh (16 states), st2.sh S4 S4b S17b, r11own.sh. All outcomes matched the attack's log; only timings and temp names differed. Also bin/st3.sh S2r S2n S19 S20 (st3-before.log), my new states.
+  
+  Builds, all exit 0: build-1 to build-5 (main clone) and build-loud (dev worktree).
+  
+  Generated the list: node build/retired.js. It printed 0 files twice before two bugs were fixed: git ran from the wrong directory, and an invalid execFileSync encoding option.
+  
+  Tests: action tests 336/336 (action-tests-2.log), after one failure (action-tests-1.log) that exposed the copy guard sparing unrecorded deletes. Full suite 2650/0/5 of 2655, twice (suite-1.log, suite-2.log).
+  
+  After the change (after-1.log): rows1 new, rows 9, 10, 12, 13, 14, 16, st.sh all 16 states, st2 S17b, st3 S2r S2n S19 S20.
+  
+  Part 2:
+  - bin/rows11fix.sh with and without the test feature (rows11fix.log, rows11fix-notest.log).
+  - package check on packs/lua32 and packs/ocaml32.
+  - bin/r11loud.sh: the attack's 9 mutations on the compat build and the loud build (r11loud.log).
+  - Built next2 (this branch's package edited to 4.46.0 / 3.4 / previous 3.3, ts comment printer changed, ReadmeTopHowto_ts retired and added to the list) and ran bin/st2n.sh S4 S4b S4g against it (st2n.log).
+  
+  Measures: numstat per file and per commit; grep counts of the facts each bundled provider declares.
+  
+  Nothing was written outside P/h5fix. No push, publish, download or install.
+read: |
+  Read, not run:
+  - The briefs and reports: P/prompts/k-h5fix.md, P/brief.md, P/prompts/k-h5.md, P/results/s4-h5.txt and s4-h5check.txt in full; s3c-freeze33.txt interface_changes.
+  - /home/user/sdkgen AGENTS.md: 'Content can come from OUTSIDE this package' and 'Sharp edges'. P/h5/PROGRESS.md.
+  - Code in P/h5fix/sdkgen/ts:
+    - copies.ts (all);
+    - doctor.ts (report, prune, orphanCompiledFiles, doctor, noteDrift, the tree walk that emits 'unshipped');
+    - target.ts (pruneStaleTemplates, pruneRetired, retiredCopies, removeCompiled, the alias helpers);
+    - check.ts checkProviders; optional.ts; syntaxversion.ts; copymerge.ts (isEdited, holds, spares);
+    - manifest.ts manifestPath; kind.ts (kindTrees, escapeRe);
+    - example.ts (Syntax, RefFacts, RuntimeFacts); ReadmeRef.ts (clientMember, testText, memberText);
+    - runtimeprose.ts (need, readsRecord, createComment, opText); sdkdesc.ts and applicability.ts (where the test flag comes from);
+    - the actionharness; Makefile publish.
+  - The v32-frozen..v33-frozen shared diff, for the five breaking changes.
+  - The lua and ocaml 3.2 and 3.3 providers' facts.
+  - The attack's next build diff, from my copy of it.

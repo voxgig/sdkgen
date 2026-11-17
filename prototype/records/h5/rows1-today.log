@@ -1,0 +1,405 @@
+
+##### [today] R1 upgraded, nothing run
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=477
+     generate-copies: target go, target lua, target perl, target py, target ts: 10 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdk
+     generate-copies: target js, target lua, target perl, target py, target ts: 11 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 11 doctor-finding
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 10 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (1049 ms)
+
+##### [today] R2a re-add ts
+   EXIT 0 (974 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=359
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+     generate-copies: target js, target lua, target perl, target py: 7 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. Run `npx voxg
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 7 doctor-finding
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 8 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (917 ms)
+
+##### [today] R2a2 re-add the rest
+   EXIT 0 (1584 ms)
+go[src:QRTSN dist:QRT] js[src:QRT dist:QRT] lua[src:QRTSN dist:QRT] perl[src:QRTSN dist:QRT] php[src:QRT dist:QRT] py[src:QRTSN dist:QRT] ts[src:QRTSN dist:QRTSN] 
+   GEN ok=true ms=425
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor-end           .sdk matches the scaffold (15 additive, 0 customized)
+   EXIT 0 (968 ms)
+
+##### [today] R2b package update --no-fetch
+   EXIT 0 (2323 ms)
+go[src:QRTSN dist:QRT] js[src:QRT dist:QRT] lua[src:QRTSN dist:QRT] perl[src:QRTSN dist:QRT] php[src:QRT dist:QRT] py[src:QRTSN dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=455
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor-end           .sdk matches the scaffold (15 additive, 0 customized)
+   EXIT 0 (929 ms)
+
+##### [today] R2c dry-run re-add and dry-run package update
+   EXIT 0 (1025 ms)
+   EXIT 0 (1228 ms)
+   tree unchanged by the dry runs
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+
+##### [today] R3 edited retired copy, re-add all
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 11 doctor-finding
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 10 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (902 ms)
+   EXIT 0 (1627 ms)
+go[src:QRTSN dist:QRT] js[src:QRT dist:QRT] lua[src:QRTSN dist:QRT] perl[src:QRTSN dist:QRT] php[src:QRT dist:QRT] py[src:QRTSN dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=424
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OTHER+EDITED ref=OLD top=OLD
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor-end           .sdk matches the scaffold (15 additive, 0 customized)
+   EXIT 0 (919 ms)
+
+##### [today] R3b edited, package update
+   EXIT 0 (2027 ms)
+go[src:QRTSN dist:QRT] js[src:QRT dist:QRT] lua[src:QRTSN dist:QRT] perl[src:QRTSN dist:QRT] php[src:QRT dist:QRT] py[src:QRTSN dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=455
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OTHER+EDITED ref=OLD top=OLD
+
+##### [today] R3c edited, re-add --force
+   EXIT 0 (959 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=420
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+     generate-copies: target js, target lua, target perl, target py: 7 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. Run `npx voxg
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OTHER+EDITED ref=OLD top=OLD
+
+##### [today] R3d edited, re-add in copies overwrite mode
+   EXIT 0 (1009 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=413
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+     generate-copies: target js, target lua, target perl, target py: 7 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. Run `npx voxg
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OTHER+EDITED ref=OLD top=OLD
+
+##### [today] R4a remove ts, upgraded only
+   Voxgig SDK Generation Error: target remove: refusing to delete what `target add` did not write
+     ts:
+       src/cmp/ts/ReadmeQuick_ts.ts
+       src/cmp/ts/ReadmeRef_ts.ts
+       src/cmp/ts/ReadmeTopQuick_ts.ts
+     move any project decision into .sdk/model/, then run again; or pass --force to delete these too
+   EXIT 1 (723 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+
+##### [today] R4b remove ts after a re-add
+   Voxgig SDK Generation Error: target remove: refusing to delete what `target add` did not write
+     ts:
+       src/cmp/ts/ReadmeQuick_ts.ts
+       src/cmp/ts/ReadmeRef_ts.ts
+       src/cmp/ts/ReadmeTopQuick_ts.ts
+     move any project decision into .sdk/model/, then run again; or pass --force to delete these too
+   EXIT 1 (801 ms)
+
+##### [today] R4c remove ts with the edited copy, after re-add
+   Voxgig SDK Generation Error: target remove: refusing to delete what `target add` did not write
+     ts:
+       src/cmp/ts/ReadmeQuick_ts.ts
+       src/cmp/ts/ReadmeRef_ts.ts
+       src/cmp/ts/ReadmeTopQuick_ts.ts
+     move any project decision into .sdk/model/, then run again; or pass --force to delete these too
+   EXIT 1 (751 ms)
+
+##### [today] R4d remove js, unported, upgraded only
+   EXIT 0 (776 ms)
+
+##### [today] R5 no copy record
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 11 doctor-finding
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 10 missing, 0 outdated, 0 unresolved
+   .sdk has drifted from the scaffold: 11 forked, 0 edited, 0 stale, 10 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (906 ms)
+   Voxgig SDK Generation Error: target add ts go py perl lua js php: 11 locally changed file(s) cannot take the incoming copy, so nothing was changed:
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+   EXIT 1 (1873 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=427
+     generate-copies: target go, target js, target lua, target perl, target py, target ts: 21 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Naming_ts.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 11 doctor-finding
+   doctor-end           .sdk has drifted: 11 forked, 0 edited, 0 stale, 10 missing, 0 outdated, 0 unresolved
+   .sdk has drifted from the scaffold: 11 forked, 0 edited, 0 stale, 10 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (924 ms)
+   Voxgig SDK Generation Error: target remove: refusing to delete what `target add` did not write
+     ts:
+       src/cmp/ts/ReadmeHowto_ts.ts
+       src/cmp/ts/ReadmeModel_ts.ts
+       src/cmp/ts/fragment/Config.data.fragment.ts
+       src/cmp/ts/fragment/Config.fragment.ts
+       src/cmp/ts/ReadmeQuick_ts.ts
+       src/cmp/ts/ReadmeRef_ts.ts
+       src/cmp/ts/ReadmeTopQuick_ts.ts
+     move any project decision into .sdk/model/, then run again; or pass --force to delete these too
+   EXIT 1 (691 ms)
+
+##### [today] R6 alias go~go2 js~js2 made by 4.44.0
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go2/Naming_go2.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go2/Syntax_go2.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go2/ReadmeQuick_go2.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go2/ReadmeRef_go2.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go2/ReadmeTopQuick_go2.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 12 missing, 13 outdated, 0 unresolved
+   EXIT 1 (992 ms)
+   EXIT 0 (1105 ms)
+go[src:QRT dist:QRT] go2[src:QRTSN dist:QRT] js[src:QRT dist:QRT] js2[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:QRT dist:QRT] 
+   GEN ok=true ms=494
+     generate-copies: target go, target lua, target perl, target py, target ts: 10 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdk
+     generate-copies: target js, target lua, target perl, target py, target ts: 11 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. R
+   go: quick=OLD ref=OLD top=OTHER; go2: quick=OTHER ref=OTHER top=OTHER; js: quick=SAME ref=SAME top=SAME; js2: quick=OTHER ref=OTHER top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go2/ReadmeQuick_go2.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go2/ReadmeRef_go2.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go2/ReadmeTopQuick_go2.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 0 unresolved
+   EXIT 1 (883 ms)
+
+##### [today] R8 project-owned target mine
+   EXIT 0 (1789 ms)
+go[src:QRTSN dist:QRT] js[src:QRT dist:QRT] lua[src:QRTSN dist:QRT] mine[src:Q dist:Q] perl[src:QRTSN dist:QRT] php[src:QRT dist:QRT] py[src:QRTSN dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=426
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; mine: quick=OTHER ref=ABSENT top=ABSENT; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   mine own quick start lines: 1
+   doctor-end           .sdk matches the scaffold (15 additive, 0 customized)
+   EXIT 0 (924 ms)
+
+##### [today] R15 override kept by an add, then deleted by hand following the advice
+   EXIT 0 (970 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:RTSN dist:QRTSN] 
+   GEN ok=true ms=415
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+     generate-copies: target js, target lua, target perl, target py: 7 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. Run `npx voxg
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OTHER+EDITED ref=OLD top=OLD
+   PROJECT-EDITED lines in ts README: 1
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Naming_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/go/Syntax_go.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Naming_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/lua/Syntax_lua.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Naming_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/perl/Syntax_perl.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Naming_py.ts
+   doctor: doctor-finding       MISSING (would be written by `target add`…): src/cmp/py/Syntax_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor other: 7 doctor-finding
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 8 missing, 7 outdated, 0 unresolved
+   .sdk has drifted from the scaffold: 0 forked, 0 edited, 0 stale, 8 missing. Run `voxgig-sdkgen target add <lang>` to resync, and move any project decision into .sdk/model/.
+   EXIT 1 (915 ms)
+
+##### [today] R15b then doctor prune -y, doctor prune, generate
+   doctor-prune-end     nothing superseded to prune
+   EXIT 0 (811 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:RTSN dist:QRTSN] 
+   doctor-prune-end     nothing superseded to prune
+   EXIT 0 (702 ms)
+go[src:QRT dist:QRT] js[src:QRT dist:QRT] lua[src:QRT dist:QRT] perl[src:QRT dist:QRT] php[src:QRT dist:QRT] py[src:QRT dist:QRT] ts[src:RTSN dist:QRTSN] 
+   GEN ok=true ms=456
+     generate-copies: target go, target lua, target perl, target py: 8 file(s) in .sdk differ from what @voxgig/sdkgen 4.45.0 installs: changed in this project, or copied before sdkgen recorded its copies. `npx voxgig-sdkgen doctor` 
+     generate-copies: target js, target lua, target perl, target py: 7 file(s) in .sdk are unchanged copies from @voxgig/sdkgen 4.44.0, but @voxgig/sdkgen 4.45.0 is installed, so this run generates from older templates. Run `npx voxg
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OTHER+EDITED ref=OLD top=OLD
+
+##### [today] R5b no copy record, re-add with --force
+   EXIT 0 (1673 ms)
+go[src:QRTSN dist:QRT] js[src:QRT dist:QRT] lua[src:QRTSN dist:QRT] perl[src:QRTSN dist:QRT] php[src:QRT dist:QRT] py[src:QRTSN dist:QRT] ts[src:QRTSN dist:QRT] 
+   GEN ok=true ms=427
+   go: quick=OLD ref=OLD top=OLD; js: quick=SAME ref=SAME top=SAME; lua: quick=OLD ref=OLD top=OLD; perl: quick=OLD ref=OLD top=OLD; php: quick=SAME ref=SAME top=SAME; py: quick=OLD ref=OLD top=OLD; ts: quick=OLD ref=OLD top=OLD
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeRef_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/go/ReadmeTopQuick_go.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeRef_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/lua/ReadmeTopQuick_lua.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeRef_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/perl/ReadmeTopQuick_perl.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeRef_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/py/ReadmeTopQuick_py.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeQuick_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeRef_ts.ts
+   doctor: doctor-finding       additive (project-owned, not drift…): src/cmp/ts/ReadmeTopQuick_ts.ts
+   doctor-end           .sdk matches the scaffold (15 additive, 0 customized)
+   EXIT 0 (1049 ms)

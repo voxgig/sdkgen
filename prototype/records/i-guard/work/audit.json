@@ -1,0 +1,776 @@
+[
+ {
+  "lang": "c",
+  "fact": "facts.collection = \"`NULL`-terminated array\" | src/cmp/c/fragment/EntityListOp.fragment.c: \"// array is NULL-terminated. ... items[n] = N",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "c",
+  "fact": "facts.errSlot = \"*err\" | src/cmp/c/fragment/Main.fragment.c: \"*err = context_make_error(ctx, \\\"spec_method_allow\\\",",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "c",
+  "fact": "facts.nullValue = \"NULL\" | src/cmp/c/fragment/EntityLoadOp.fragment.c: \"if (*err) return NULL;\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.none = \"NULL\" | src/cmp/c/fragment/EntityLoadOp.fragment.c: \"if (*err) return NULL;\"",
+  "shows_value": "yes",
+  "changed": "new: `if (*err) return NULL;`"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.container = \"voxgig_value*\" | src/cmp/c/fragment/Main.fragment.c: \"ProjectNameSDK* projectname_sdk_new(voxgig_value* opt",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.ctor[0] = \"#include \\\"{module}\\\"\" | src/cmp/c/fragment/Main.fragment.c: \"#include \\\"api.h\\\"\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.entity[0].copy = true | src/cmp/c/fragment/Entity.fragment.c: \"return voxgig_clone(self->data);\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.prepare.fails = \"style\" | src/cmp/c/fragment/Main.fragment.c: \"voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.body.values = \"a string value holding the bytes, such as `voxgig_new_string_n`\" | tm/c/utility/http.c: \"if (voxgig_is_string(body)) {\\n    bytes = voxgig_as_string(body);\\n",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.cancel = false | tm/c/utility/http.c: \"absent: /\\\\b(cancel\\\\w*|abort\\\\w*|signal)\\\\b|AbortController|WithCon",
+  "shows_value": "absence",
+  "changed": "was the file header comment; now an absence search over http.c"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.lits.false = \"false\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "c",
+  "fact": "ref.facts.lits.true = \"true\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "clojure",
+  "fact": "facts.collection = \"vector\" | src/cmp/clojure/fragment/EntityListOp.fragment.clj: \";; Resolves to a vector of entities, ",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.none = \"nil\" | src/cmp/clojure/fragment/EntityLoadOp.fragment.clj: \";; Load a single EntityName (reqmatch",
+  "shows_value": "yes",
+  "changed": "new: a comment (`nil = empty match`): no code line spells the default"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.container = \"voxgig.struct\" | tm/clojure/src/sdk/client.clj: \"[voxgig.struct :as vs]\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.ctor[0] = \"(require '[{module} :as {client}]\" | src/cmp/clojure/Main_clojure.ts: \"(ns sdk.api ... (:require [sdk.client :as client]${requi",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.ctor[1] = \"         '[voxgig.struct :as vs])\" | tm/clojure/src/sdk/client.clj: \"[voxgig.struct :as vs]\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.entity[0].copy = true | src/cmp/clojure/fragment/Entity.fragment.clj: \"(vs/clone (deref (:_data ent)))\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.direct.returns = \"map\" | tm/clojure/src/sdk/client.clj: \"(vs/jm \\\"ok\\\" false \\\"err\\\" (core/ucall ctx :clean fetch-e | unquoted map: vs/jm builds a map [the runtime has it in 32 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.prepare.returns = \"map\" | tm/clojure/src/sdk/client.clj: \"(defn prepare [client fetchargs]\" | unquoted map: the fetch definition make-fetch-def builds, a voxgig.struct map [the runtime has it in 32 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.prepare.fails = \"style\" | tm/clojure/src/sdk/client.clj: \"(core/sdk-throw (core/ctx-error ctx \\\"spec_method_allow\\\"\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.body.values = \"a byte array, a `String` or an `InputStream`\" | tm/clojure/src/sdk/core.clj: \";; A byte array, an InputStream or a string, sent as it is.  | unquoted String: a string, which the comment above raw-body names [the runtime has it in 23 file(s)]",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.body.once = \"an `InputStream`\" | tm/clojure/src/sdk/core.clj | tm/clojure/src/sdk/core.clj: \";; read here, once, before the",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.cancel = false | tm/clojure/src/sdk/core.clj: \"absent: /\\\\b(cancel\\\\w*|abort\\\\w*|signal)\\\\b|AbortController",
+  "shows_value": "absence",
+  "changed": "was the http-client def; now an absence search over core.clj"
+ },
+ {
+  "lang": "clojure",
+  "fact": "notes.instance = \"The SDK utility object is reached through `sdk.client`, which `{module}`\\ndoes  | tm/clojure/src/sdk/client.clj | tm/clojure/src/sdk/core.clj: \"(ns sdk.client ... (defn get | unquoted (sdk.client/get-utility client): the call a caller writes to the defn the quote shows [the runtime has it in 0 file(s)]",
+  "shows_value": "pinned prose",
+  "changed": "added `(ns sdk.client`; the call form unquoted"
+ },
+ {
+  "lang": "clojure",
+  "fact": "notes.members = \"State accessors are stored on the entity map and called via keyword lookup.\" | src/cmp/clojure/fragment/Entity.fragment.clj: \":data-get (fn [] (ent-data-get ent))\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.lits.false = \"false\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "clojure",
+  "fact": "ref.facts.lits.true = \"true\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "elixir",
+  "fact": "facts.collection = \"`Voxgig.Struct` list\" | src/cmp/elixir/fragment/EntityListOp.fragment.ex | src/cmp/elixir/fragment/Main.fragment.e",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.none = \"nil\" | src/cmp/elixir/fragment/EntityLoadOp.fragment.ex: \"def load(ent, reqmatch \\\\\\\\ nil, ctrl \\",
+  "shows_value": "yes",
+  "changed": "new: `def load(ent, reqmatch \\\\ nil, ctrl \\\\ nil)`"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.container = \"Voxgig.Struct\" | src/cmp/elixir/fragment/Main.fragment.ex: \"alias Voxgig.Struct, as: S ... fetchargs = if S",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.client[1].kind = \"utilityBase\" | src/cmp/elixir/fragment/Main.fragment.ex: \"def get_utility(client), do: S.getprop(client, ",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.entity[0].copy = true | tm/elixir/lib/projectname/entity_base.ex: \"S.clone(S.getprop(ent, \\\"_data\\\"))\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.direct.returns = \"map()\" | src/cmp/elixir/fragment/Main.fragment.ex: \"S.jm([\\\"ok\\\", false, \\\"err\\\", err])\" | unquoted map(): S.jm builds a map [the runtime has it in 6 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.prepare.returns = \"map()\" | src/cmp/elixir/fragment/Main.fragment.ex: \"def prepare(client, fetchargs \\\\\\\\ nil) do\" | unquoted map(): the fetch definition, a map [the runtime has it in 6 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.prepare.fails = \"style\" | src/cmp/elixir/fragment/Main.fragment.ex: \"raise Context.make_error(ctx, \\\"spec_method_all",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.body.values = \"a binary\" | tm/elixir/lib/projectname/utility.ex: \"scalar = is_binary(body) or is_number(body) or is_b",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.cancel = false | tm/elixir/lib/projectname/utility.ex: \"absent: /\\\\b(cancel\\\\w*|signal)\\\\b|cancel_request|:",
+  "shows_value": "absence",
+  "changed": "was the :httpc.request line; now an absence search over utility.ex (pattern narrowed: :aborted is a :global.trans result)"
+ },
+ {
+  "lang": "elixir",
+  "fact": "notes.member:utilityBase = \"It is the client's own node, not a copy.\" | src/cmp/elixir/fragment/Main.fragment.ex: \"def get_utility(client), do: S.getprop(client, ",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "elixir",
+  "fact": "notes.ctor = \"Build `options` from a native map with `{names.helpers}.deep/1`.\" | tm/elixir/lib/projectname/helpers.ex | src/cmp/elixir/fragment/Main.fragment.ex: \"def deep | unquoted {names.helpers}.deep/1: the arity name of def deep(v), behind the helpers module the slot names [the runtime has it in 0 file(s)]",
+  "shows_value": "pinned prose",
+  "changed": "added `def new(options \\\\ nil)` for `options`; deep/1 unquoted"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.lits.false = \"false\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "elixir",
+  "fact": "ref.facts.lits.true = \"true\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "go",
+  "fact": "facts.collection = \"`[]any`\" | tm/go/utility/make_result.go: \"var entities []any\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.none = \"nil\" | src/cmp/go/fragment/Main.fragment.go: \"return nil, err\"",
+  "shows_value": "yes",
+  "changed": "new: `return nil, err`"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.container = \"map[string]any\" | src/cmp/go/fragment/Main.fragment.go: \"func NewProjectNameSDK(options map[string]any) *Pro",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.client[1].kind = \"utility\" | src/cmp/go/fragment/Main.fragment.go: \"return CopyUtility(sdk.utility)\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.entity[0].copy = true | src/cmp/go/fragment/Entity.fragment.go: \"out := vs.Clone(e.data)\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.prepare.fails = \"style\" | src/cmp/go/fragment/Main.fragment.go: \"func (sdk *ProjectNameSDK) Prepare(fetchargs map[st",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.body.values = \"a `[]byte`, a `string` or an `io.Reader`\" | tm/go/utility/fetcher.go: \"\\tcase string:\\n\\t\\tif body != \\\"\\\" {\\n\\t\\t\\tbodyReader = strin",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.body.once = \"an `io.Reader`\" | tm/go/utility/media.go: \"if r, ok := body.(io.Reader); ok {\\n\\t\\tdata, err := io.ReadAll(r",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.cancel = false | tm/go/utility/fetcher.go: \"absent: /\\\\b(cancel\\\\w*|abort\\\\w*|signal)\\\\b|AbortController|Wi",
+  "shows_value": "absence",
+  "changed": "was a quote of http.NewRequest (cannot show absence); now an absence search over fetcher.go"
+ },
+ {
+  "lang": "go",
+  "fact": "notes.member:stream = \"It sends the items on the returned channel, which closes when the stream\\nends. | src/cmp/go/fragment/Entity.fragment.go | tm/go/core/types.go: \"func (e *EntyClass) Stream(",
+  "shows_value": "pinned prose",
+  "changed": "added the quote of callopts[\"ctrl\"], a token the note names"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.lits.false = \"false\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "go",
+  "fact": "ref.facts.lits.true = \"true\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "py",
+  "fact": "facts.recordType = \"dict\" | src/cmp/py/fragment/Entity.fragment.py: \"def data_get(self) -> EntityName: ... return vs.c | unquoted dict: EntityName is a TypedDict, so a dict at run time [the runtime has it in 56 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.none = \"None\" | src/cmp/py/fragment/EntityLoadOp.fragment.py: \"def load(self, reqmatch=None, ctrl=None) ->",
+  "shows_value": "yes",
+  "changed": "new: `def load(self, reqmatch=None, ctrl=None)`"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.lits.true = \"True\" | src/cmp/py/fragment/Main.fragment.py: \"\\\"ok\\\": body_err is None and status >= 200 and stat | unquoted True: ok is the bool the status test computes; True is not spelled [the runtime has it in 56 file(s)]",
+  "shows_value": "yes",
+  "changed": "new: the computed ok line; True unquoted (computed, not spelled)"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.lits.false = \"False\" | src/cmp/py/fragment/Main.fragment.py: \"return {\\\"ok\\\": False, \\\"err\\\": utility.clean(self.",
+  "shows_value": "yes",
+  "changed": "new: `return {\"ok\": False, ...}`"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.container = \"dict\" | src/cmp/py/fragment/Main.fragment.py: \"extend = options.get(\\\"extend\\\") if isinstance(opti",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.ctor[0] = \"from {module} import {client}\" | src/cmp/py/Main_py.ts | src/cmp/py/fragment/Main.fragment.py: \"File({ name: '__init__.' + ",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.client[1].kind = \"utility\" | src/cmp/py/fragment/Main.fragment.py: \"return ProjectNameUtility.copy(self._utility)\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.entity[0].copy = true | src/cmp/py/fragment/Entity.fragment.py: \"return vs.clone(self._data)\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.direct.returns = \"dict\" | src/cmp/py/fragment/Main.fragment.py: \"def direct(self, fetchargs=None): ... return {\\\"ok\\",
+  "shows_value": "no",
+  "changed": "added `if isinstance(fetched, dict):`; shows direct handles a dict response, the result itself is a dict literal (dict still not spelled for the result)"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.prepare.returns = \"dict\" | tm/py/pkg/utility/make_fetch_def.py: \"\\\"url\\\": url, ... \\\"method\\\": spec.method,\" | unquoted dict: the fetch definition is a dict literal [the runtime has it in 56 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.prepare.fails = \"style\" | src/cmp/py/fragment/Main.fragment.py: \"raise ctx.make_error(\\\"spec_method_allow\\\",\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.body.values = \"`bytes`, `bytearray`, `memoryview`, a `str` or a file object\" | tm/py/pkg/utility/fetcher.py: \"if isinstance(body, str):\\n        return body.encode(\\\"utf",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.body.once = \"a file object\" | tm/py/pkg/utility/media.py: \"if body is not None and callable(getattr(body, \\\"read\\\", None",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "py",
+  "fact": "ref.facts.cancel = false | tm/py/pkg/utility/fetcher.py: \"absent: /\\\\b(cancel\\\\w*|abort\\\\w*|signal)\\\\b|AbortControlle",
+  "shows_value": "absence",
+  "changed": "was `timeout = fetchdef.get(\"timeout\")` (unrelated); now an absence search over fetcher.py"
+ },
+ {
+  "lang": "rb",
+  "fact": "facts.recordType = \"Hash\" | src/cmp/rb/fragment/Entity.fragment.rb: \"@return [EntityName, Hash]\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.none = \"nil\" | src/cmp/rb/fragment/EntityLoadOp.fragment.rb: \"def load(reqmatch = nil, ctrl = nil)\"",
+  "shows_value": "yes",
+  "changed": "new: `def load(reqmatch = nil, ctrl = nil)`"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.container = \"Hash\" | src/cmp/rb/fragment/Main.fragment.rb: \"out.is_a?(Hash) ? out : {}\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.ctor[0] = \"require_relative '{module}'\" | src/cmp/rb/Main_rb.ts: \"require_relative 'feature/base_feature'\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.client[1].kind = \"utility\" | src/cmp/rb/fragment/Main.fragment.rb: \"def get_utility\\n    ProjectNameUtility.copy(@_util",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.entity[0].copy = true | src/cmp/rb/fragment/Entity.fragment.rb: \"VoxgigStruct.clone(@_data)\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.direct.returns = \"Hash\" | src/cmp/rb/fragment/Main.fragment.rb: \"\\\"ok\\\" => false, ... # ({ \\\"ok\\\" => ..., ... }) and | unquoted Hash: the result is a Hash literal [the runtime has it in 59 file(s)]",
+  "shows_value": "no",
+  "changed": "added the comment `({ \"ok\" => ..., ... })`; Hash still unquoted"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.prepare.returns = \"Hash\" | src/cmp/rb/fragment/Main.fragment.rb: \"fetchdef, fd_err = utility.make_fetch_def.call(ctx)",
+  "shows_value": "yes",
+  "changed": "unquoted Hash replaced by the comment naming the fetchdef Hash (a comment, where the code returns make_fetch_def's value)"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.prepare.fails = \"style\" | src/cmp/rb/fragment/Main.fragment.rb: \"raise fd_err if fd_err\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.body.values = \"a `String`, or an IO that responds to `read`\" | tm/rb/utility/fetcher.rb: \"if body_str.is_a?(String)\\n        request.body = body_str\\n   ",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.body.once = \"an IO\" | tm/rb/utility/media.rb: \"body.respond_to?(:read) ? body.read : body\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.cancel = false | tm/rb/utility/fetcher.rb: \"absent: /\\\\b(cancel\\\\w*|abort\\\\w*|signal)\\\\b|AbortController|Wi",
+  "shows_value": "absence",
+  "changed": "was the Net::HTTP.new line; now an absence search over fetcher.rb"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.lits.false = \"false\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "rb",
+  "fact": "ref.facts.lits.true = \"true\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "rust",
+  "fact": "facts.ok = \"Ok\" | src/cmp/rust/fragment/EntityLoadOp.fragment.rs: \"Ok(self.clone())\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "facts.err = \"Err\" | src/cmp/rust/fragment/Entity.fragment.rs: \"Err(err) => return utility.make_error(ctx, Some",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.none = \"Value::Noval\" | src/cmp/rust/fragment/Main.fragment.rs: \"options: RefCell::new(Value::Noval),\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.setArg = \"`Some(&map)`\" | src/cmp/rust/fragment/Entity.fragment.rs: \"fn data(&self, args: Option<&Value>) -> Value { | unquoted Some(&map): an Option<&Value> argument, written for a map value named map [the runtime has it in 0 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.container = \"Value\" | src/cmp/rust/fragment/Main.fragment.rs: \"pub fn new(options: Value) -> Rc<ProjectNameSDK> ",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.ctor[0] = \"use {module}::{jo, ProjectNameEntityBase, {client}, Entity, Value};\" | src/cmp/rust/Main_rust.ts: \"call_json, call_vfn, getp, ja, jo, json_thunk, to_map, unsuppo | unquoted ProjectNameEntityBase: the generator spells it ${model.const.Name}EntityBase [the runtime has it in 4 file(s)]; unquoted ProjectNameSDK: the generator ",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.client[1].kind = \"utility\" | src/cmp/rust/fragment/Main.fragment.rs: \"pub fn get_utility(&self) -> Rc<Utility> {\\n     ",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.entity[0].copy = true | src/cmp/rust/fragment/Entity.fragment.rs: \"vs::clone(&self.data.borrow())\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.prepare.fails = \"style\" | src/cmp/rust/fragment/Main.fragment.rs: \"pub fn prepare(&self, fetchargs: Value) -> Result",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.body.values = \"a string, or bytes as `bytes_value(&[u8])`\" | tm/rust/utility/media.rs: \"pub fn bytes_value(bytes: &[u8]) -> Value { ... Value::Str(s) = | unquoted bytes_value(&[u8]): the signature bytes_value(bytes: &[u8]) with its parameter name left out [the runtime has it in 0 file(s)]",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.cancel = false | tm/rust/utility/fetcher.rs: \"absent: /\\\\b(cancel\\\\w*|abort\\\\w*|signal)\\\\b|AbortController|",
+  "shows_value": "absence",
+  "changed": "was the ureq agent line; now an absence search over fetcher.rs"
+ },
+ {
+  "lang": "rust",
+  "fact": "notes.member:direct = \"The result map always comes back inside `Ok`, for a non-2xx response and\\nfor a | src/cmp/rust/fragment/Main.fragment.rs: \"        self.raw_request(fetchargs) ...          ",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.lits.false = \"false\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "rust",
+  "fact": "ref.facts.lits.true = \"true\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "ts",
+  "fact": "facts.collection = \"array\" | src/cmp/ts/fragment/EntityListOp.fragment.ts: \"async list(this: any, reqmatch?: EntityName",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.none = \"undefined\" | src/cmp/ts/fragment/EntityBase.fragment.ts: \"return undefined\"",
+  "shows_value": "yes",
+  "changed": "new: `return undefined`"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.container = \"object\" | tm/ts/src/utility/MakeOptionsUtility.ts: \"const layer = (b: any) => null != b && 'object' ",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.valueType.OBJECT = \"object\" | tm/ts/src/utility/MakeOptionsUtility.ts: \"const layer = (b: any) => null != b && 'object' ",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.client[0].returns = \"object\" | src/cmp/ts/fragment/Main.fragment.ts | tm/ts/src/utility/MakeOptionsUtility.ts: \"return th",
+  "shows_value": "yes",
+  "changed": "unquoted object replaced by a quote of MakeOptionsUtility layer, where options are built as objects"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.client[1].kind = \"utility\" | src/cmp/ts/fragment/Main.fragment.ts: \"return this._utility.struct.clone(this._utility)\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.client[1].returns = \"object\" | src/cmp/ts/fragment/Main.fragment.ts: \"return this._utility.struct.clone(this._utility)\" | unquoted object: a clone of the Utility instance [the runtime has it in 27 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.entity[0].copy = true | src/cmp/ts/fragment/EntityBase.fragment.ts: \"let out = struct.clone(this._data)\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.direct.returns = \"Promise<{ ok, status, headers, data }>\" | src/cmp/ts/fragment/Main.fragment.ts: \"async direct(fetchargs?: any): Promise<DirectResult",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.direct.signal = \"AbortSignal\" | tm/ts/src/Control.ts: \"signal?: AbortSignal\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.prepare.returns = \"Promise<{ url, method, headers, body } | Error>\" | src/cmp/ts/fragment/Main.fragment.ts | tm/ts/src/utility/MakeFetchDefUtility.ts | tm/ts/sr | unquoted Error: ctx.error returns a ProjectNameError, which extends Error [the runtime has it in 33 file(s)]",
+  "shows_value": "no",
+  "changed": "unquoted Promise replaced by a quote of the async direct beside it (Promise<DirectResult>); prepare itself is an async method with no annotation, so this shows the class's async methods resolve a Promise, not prepare's own type"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.prepare.fails = \"value\" | src/cmp/ts/fragment/Main.fragment.ts: \"return ctx.error('spec_method_allow'\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.body.values = \"a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string\" | tm/ts/src/utility/MediaUtility.ts | tm/ts/src/utility/MakeFetchDefUtility.ts: \"return valu | unquoted Buffer: a Node Buffer is a Uint8Array, which ArrayBuffer.isView accepts [the runtime has it in 5 file(s)]",
+  "shows_value": "pinned prose",
+  "changed": "unquoted Uint8Array replaced by a quote of `return new Uint8Array(chunk)`; Buffer stays unquoted (8 lines away only in unrelated code)"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.body.once = \"a stream\" | tm/ts/src/utility/MakeRequestUtility.ts: \"// A stream can be read once; read it now, so th",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.cancel = true | tm/ts/src/utility/MakeFetchDefUtility.ts: \"fetchdef.signal = ctx.ctrl.signal\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.lits.false = \"false\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "ts",
+  "fact": "ref.facts.lits.true = \"true\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "zig",
+  "fact": "facts.collection = \"slice\" | src/cmp/zig/fragment/Entity.fragment.zig: \"pub const EntListResult = union(enum) {\\n    ok",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "facts.ok = \".ok\" | src/cmp/zig/fragment/Entity.fragment.zig: \".ok => EntResult{ .ok = self },\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "facts.err = \".err\" | src/cmp/zig/fragment/Entity.fragment.zig: \".err => |e| EntResult{ .err = e },\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.none = \"h.vnull()\" | src/cmp/zig/fragment/Main.fragment.zig: \".options = h.vnull(),\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.container = \"Value\" | src/cmp/zig/fragment/Main.fragment.zig: \"pub fn new(options: Value) *ProjectNameSDK {\"",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.ctor[0] = \"const sdk = @import(\\\"{module}\\\");\" | src/cmp/zig/fragment/Root.fragment.zig: \"const sdk = @import(\\\"core/sdk.zig\\\"); ... // SDK",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.ctor[1] = \"const h = sdk.h;\" | src/cmp/zig/fragment/Root.fragment.zig: \"pub const h = helpers;\" | unquoted sdk: the module root, which the line before imports as sdk [the runtime has it in 11 file(s)]",
+  "shows_value": "yes",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.client[1].kind = \"utility\" | src/cmp/zig/fragment/Main.fragment.zig: \"return Utility.copy(self.sdkUtility);\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.entity[0].copy = true | src/cmp/zig/fragment/Entity.fragment.zig: \"return h.clone(self.data);\"",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.prepare.fails = \"note\" | src/cmp/zig/fragment/Main.fragment.zig: \"pub fn prepare(self: *ProjectNameSDK, fetchargs_i",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.body.values = \"a string value holding the bytes\" | tm/zig/core/utility.zig: \".string, .integer, .float, .number_string, .bool => is_json_requ",
+  "shows_value": "pinned prose",
+  "changed": "none"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.cancel = false | tm/zig/core/utility.zig: \"absent: /\\\\b(cancel\\\\w*|abort\\\\w*|signal)\\\\b|AbortController|Wit",
+  "shows_value": "absence",
+  "changed": "was the fetcher_util signature; now an absence search over utility.zig"
+ },
+ {
+  "lang": "zig",
+  "fact": "notes.member:prepare = \"On failure it returns the error of its error union, for `try` or `catch`.\" | src/cmp/zig/fragment/Main.fragment.zig | tm/zig/core/error.zig: \"pub fn prepare(self: *Pro | unquoted try: a Zig keyword for a call to an error-union function [the runtime has it in 34 file(s)]; unquoted catch: a Zig keyword for a call to an error-union",
+  "shows_value": "pinned prose",
+  "changed": "try/catch unquoted (language keywords)"
+ },
+ {
+  "lang": "zig",
+  "fact": "notes.member:streamList = \"Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with\\nwhateve | src/cmp/zig/fragment/Entity.fragment.zig: \"// What make_error or done hands back, as a str | unquoted callopts.ctrl: the option path; stream reads the ctrl key of its callopts (stream_opts) with getp [the runtime has it in 0 file(s)]",
+  "shows_value": "pinned prose",
+  "changed": "added `.ok` and the ctrl read; callopts.ctrl unquoted (an option path)"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.lits.false = \"false\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ },
+ {
+  "lang": "zig",
+  "fact": "ref.facts.lits.true = \"true\" (cited before the provider declares it)",
+  "shows_value": "yes",
+  "changed": "new"
+ }
+]

@@ -1,0 +1,16 @@
+[rekey perl 4s] new tutorial: 64 classes
+[rekey perl 4s] new rootquick: 28 classes
+[rekey perl 5s] new reference: 178 classes
+[rekey perl 8s] old tutorial: 64 classes
+[rekey perl 8s] tutorial: renamed 64, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey perl 8s] old rootquick: 28 classes
+[rekey perl 8s] rootquick: renamed 28, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey perl 9s] old reference: 178 classes
+[rekey perl 9s] reference: renamed 177, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+rekey perl: from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tools (keyed by /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tools-pre) -> /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tools (dry run: nothing written)
+  tutorial  classes old 64 new 64: renamed 64, merged 0, split 0, CONFLICTS 0, unsourced 0, gone 0
+  rootquick classes old 28 new 28: renamed 28, merged 0, split 0, CONFLICTS 0, unsourced 0, gone 0
+  reference classes old 178 new 178: renamed 177, merged 0, split 0, CONFLICTS 0, unsourced 0, gone 0
+  records: hand 235 -> carried 204; rule records 0 -> 0; classes 263 -> 263; hand entries not carried 0
+  counts/perl.json: unchanged
+  stale before the re-key (no class of the old code has the id; kept as they are): hand f1ff9604c1 316d79799f eea7b04552 0aaaeb0644 9b32484fa9 0860511808 33526951e8 c891952d31 b4408878f8 69ec83482b a2103afb97 646792a4b9 d0885cc8ba 8efbe2e59b 17f4e10000 2d39864b8b ef35a4d88c 905b8fd076 336fea9d3b dc2822fe83 bbff8b945e f810831be4 c0e40143f1 edf86c2045 91baf1b4b6 abb698049e 1bd70c0c52 03602a7b82 ff6e6b1e22 80f77307dc 52f68eedfd; rule records 0

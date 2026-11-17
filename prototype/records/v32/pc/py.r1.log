@@ -1,0 +1,27 @@
+[portcheck py] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck py] classify (hand/py.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck py] ledger
+[portcheck py] blocks
+[portcheck py] fact sheet (and the language and convention facts against the OLD page)
+[portcheck py] purity
+[portcheck py] guard: node --test --test-name-pattern '^py: ' ts/dist-test/runtimefacts.test.js
+== portcheck py ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   61 |      40      0       31       5       4     0       0 | 0
+rootquick                  19 |       3      0        3       0       0     0       0 | 0
+reference               14958 |     117      1       77      13      19     6       0 | 1
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                  26        22       0         0 |       9    0      0 | yes (python3); 22 changed blocks compiled by nothing
+rootquick                  0        18       0         1 |      12    0      0 | yes (python3); 19 changed blocks compiled by nothing
+reference                230         0      83         0 |       2    0      0 | yes (python3); 83 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: novel-token 5, vanished-token 4; rootquick: changed 1, novel-token 4, vanished-token 5, novel-shape 2; reference: old-only 1, novel-token 1)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+contradictions (1; counted, not failed):
+  reference [91baf1b4b6] This SDK is generated without the `test` feature, so it has no mock tr | other: py/README.md:206 (no-test): 'Creates a test-mode client with | true: REFERENCE: without the test feature its 
+purity: 0 open, 1 accepted | notes declared 0, note regions found 0
+guard: pass (pass 4 fail 0 )
+facts (language and convention, against the OLD page): attested 7, recorded by hand 0, UNATTESTED 0, not printed 0, not judged 0; cited 13, pinned prose 6 (the reviewer audits each)
+shared sentences: matched 1, of which against a sentence nobody reviewed 1 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 0 (0 explained; listed in <section>.absent.json, not failed)
+fact sheet: factsheet py: 67 facts, 0 with no account, 0 unattested, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/tools/review/py/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/tools/review/py/<section>.open.json (fill into hand/py.json), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK py: FAIL

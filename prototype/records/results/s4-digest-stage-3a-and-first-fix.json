@@ -1,0 +1,1172 @@
+{
+ "key": "stage-3a-and-first-fix",
+ "what": "the third stage up to its first fix round: interface version 3, the review tools, the pilot port, the freeze, the independent check, and the round that closed its blockers (version 3.1)",
+ "digest": {
+  "part": "Stage 3, up to its first fix round: interface version 3 (s3a-shape), the review tools (s3a-tools), the freeze at v3-frozen (s3a-freeze), the Ruby pilot port (s3a-pilot), the independent check of v3-frozen (s3a-check), the fix brief (brief4.md), the three fix engineers (s3fix-guard, s3fix-shared, s3fix-tools), the merge and freeze at v31-frozen (s3fix-final), and the independent check of version 3.1 (s3fix-check). All eleven records named were present and read in full.",
+  "rounds": [
+   {
+    "round": "3a-shape (interface version 3)",
+    "purpose": "Rebuild the provider interface as version 3 and move the eight ported providers (ts go py c zig clojure rust elixir) onto it: shared example-variable names, template names from the generation substitution map, imports declared once per page, runtime notes as a mechanism, two more result styles, reference examples in the majority shape of the twenty old pages.",
+    "who": "One builder (P/v3/sdkgen, HEAD db5e5915). No independent check in this round.",
+    "produced": "Interface v3 with 16 recorded interface changes (5 breaking from this builder); 1,372 ported block pairs compared over 9 variations; five lanes passing; notes moved out of shared code into go, zig, rust and elixir providers. Clojure's REFERENCE left unported and the guard left un-rebuilt.",
+    "changed": "Handed four open decisions to the freeze: member notes per entity or per page (decides go's 20.5%), whether to re-add deprecated aliases to lower the breaking count, whether errslot/die/wrapped stay styles, and whether clojure's doseq fusion needs a look-ahead slot."
+   },
+   {
+    "round": "3a-tools (review toolset)",
+    "purpose": "Build tools that review generated output one sentence, cell, heading, comment and block at a time, driven by one registry, and measure stage-2 output with them unaided.",
+    "who": "One builder (P/v3tools). Ran over the stage-2 output; classified nothing.",
+    "produced": "ported.json, cut.js, ledger.js, blocks.js, share.js, lines.js, purity.js, portcheck.sh, recall.js, inject.js, and before/run.sh baselines for rb, php, perl, java, cpp and js. Recall 49 of 51 on the stage-2 worklists; 4 of 4 injections flagged; purity 36 open findings; lines 1.58x for the eight.",
+    "changed": "Gave porters a one-command check (portcheck.sh) and established that java and cpp README example tests are structural only and js has none."
+   },
+   {
+    "round": "3a-freeze (guard rebuilt, clojure REFERENCE, review, freeze)",
+    "purpose": "Close the shape builder's gaps, rebuild the runtime guard on per-language forms files, port clojure's REFERENCE, review all eight languages with the tools, freeze the interface and write the porting guide.",
+    "who": "One builder (P/freeze/sdkgen). No independent check inside the round (the check followed).",
+    "produced": "Tag v3-frozen (8d5ad97b); guard on ts/test/runtimeforms/<lang>.ts with 12 negative controls; all 1,666 review classes classified (132 by normalizers, about 1,490 by about 120 content rules, 44 by hand); PORTING.md v3; suite 2,546/2,551; five lanes passing.",
+    "changed": "Decided member notes print per slot (go's 20.4% reported, not hidden), no deprecated aliases, errslot/die/wrapped stay styles, doseq fusion by Scope.stmts look-ahead (not an interface limit). Added a required forms file per language (one more breaking change, about 12 in all). Added streamSync and streamFunction kinds before the ports."
+   },
+   {
+    "round": "3a-pilot (Ruby port by the guide)",
+    "purpose": "Port Ruby from v3-frozen by following PORTING.md, to test whether the guide and interface carry a new language.",
+    "who": "One porter (P/pilot-rb/sdkgen).",
+    "produced": "Ruby ported (commits 0d9e72c3, a62870e2, 2a87287f); portcheck rb PASS; rb README lane 48/49 OLD to 49/49 NEW; suite 2,549/2,554, 0 fail; one additive shared change (forms `bare`); four interface gaps and ten guide problems recorded.",
+    "changed": "Exposed that prints:'fields' could not express rb's old choice, that shown fields came from the wrong entity, that showFields never matched backticked types, and that the shared dataGet sentence dropped 'Returns a copy of the current data.'. These became items of the fix round."
+   },
+   {
+    "round": "3a-check (independent check of v3-frozen)",
+    "purpose": "Reproduce every headline number of the freeze and attack the review, guard and purity layers before six parallel ports.",
+    "who": "One independent checker, own rebuilds of v3-frozen and the pristine 9aebaf9e clone.",
+    "produced": "All headline numbers reproduced. 24 of 24 injected regressions flagged by the tools, but rules.js auto-accepted injected false sentences; note lint found 0 note regions; guard caught 27 of 52 source mutations; 276 changed blocks in zig, clojure and elixir never compiled; H2 1.39x (1.24x with the shared guard).",
+    "changed": "Verdict 'not ready as written'. Its blockers (classification accepting false facts, inert note lint, ocaml/perl unreadable by forms, untyped perl/ocaml, merge collisions, output weaker than OLD, cross-document contradictions) became brief4's reasons for the fix stage."
+   },
+   {
+    "round": "3a-fix brief (brief4.md)",
+    "purpose": "Set the fix stage: start from the pilot clone 2a87287f, make two layers real (shared sentences reviewed once; every per-language fact accounted for as derived, cited, language or convention), with Zig 0.16.0 newly available.",
+    "who": "Brief only; split work among a guard engineer, a shared-code engineer and a tools engineer, then a merge/freeze engineer and an independent check.",
+    "produced": "Records that zig's documentation lane passes 5 of 6 on both v3-frozen and the old code, failing basic-server on std.posix.getenv (a defect of main copied into Syntax_zig.ts).",
+    "changed": "Rule: no layer may accept something because of the section it sits in or because a broad pattern matched it."
+   },
+   {
+    "round": "3fix-guard",
+    "purpose": "Make the guard account for every leaf a provider declares, read all twenty runtimes, and catch the check's missed mutation classes.",
+    "who": "One builder (P/h-guard/sdkgen, 35 test-only commits on 2a87287f).",
+    "produced": "Guard 39/39 and reader 22/22; account per language (derived/cited/language/convention); forms files for all eleven unported languages (601 lines); a runtime table (872 lines); 62 of 71 mutations caught (43 of the check's 52, 19 of 19 own); six wrong declared facts found in six languages.",
+    "changed": "Found the handed guard's undocumented-member check had never fired in any language ('{ctor}' became \\w+). Recorded the wrong facts as WRONG exceptions for the merge engineer to fix."
+   },
+   {
+    "round": "3fix-shared",
+    "purpose": "Fix in shared code the pilot's interface gaps and the check's output defects and cross-document contradictions.",
+    "who": "One builder (P/h-shared/sdkgen, six commits on 2a87287f).",
+    "produced": "showFields fixed, per-entity shown fields, prints 'listFields', Member.copy, record clause on single-entity operations, action Call cell with path parameters, writeSentence, activeByDefault in three places, notes able to name layout modules, note slot 'members', zig env printer fixed (zig doc lane 6/6 against 5/6 OLD). Suite 2,556/2,561; all lanes pass.",
+    "changed": "1 breaking change (DescQuick.show removed, 0 providers forced) and 6 additive. Elixir's tutorial language-only words rose from 10.9% to 18.6% by share.js. c and rust REFERENCE examples kept bare (44 old blocks each), with the facts moved into the sentence."
+   },
+   {
+    "round": "3fix-tools",
+    "purpose": "Rebuild the review tools so nothing is accepted because a broad pattern matched it and each porter writes only their own language's files.",
+    "who": "One builder (P/h-tools).",
+    "produced": "Per-language hand/, classes/, normalizers/, counts/, purity-allow/ files; rules pinned to class ids and counts; exact shared-sentence matching with fact masking; working note lint; selftest of 83 controls, 0 failed. Positive control: rb 70 of 226 classes matched automatically, py 75 of 175; 0 when only hand-reviewed references are allowed.",
+    "changed": "115 echo classes re-opened in the eight languages; 210 missing classes left accepted by stage-3a rule records. The builder's first self-test wrote into another engineer's directory (29 files under P/pilot-rb/out/new); restoring them was refused by the permission system."
+   },
+   {
+    "round": "3fix-final (merge, review, freeze v3.1)",
+    "purpose": "Merge guard and shared work, fix the wrong facts, finish the review of nine languages by hand where required, freeze version 3.1 and prepare the base for the remaining ports.",
+    "who": "One builder (P/v31/sdkgen; base at P/base).",
+    "produced": "Tag v31-frozen (9089ed48). 35 guard commits cherry-picked cleanly; six WRONG facts fixed; 599 hand decisions; nine portchecks PASS; suite 2,588/2,593; guard and reader 61/61; selftest 84/84; all lanes pass; PORTING.md 612 lines; newport.sh.",
+    "changed": "tester() documented whenever declared; readsSecret one rule; ts README options table states which server variable defaults and shows secret only where read. A missing unit is now always by hand. About 877 ledger classes in the eight original languages remain accepted by un-re-reviewed stage-3a rule records."
+   },
+   {
+    "round": "3fix-check (independent check of v3.1)",
+    "purpose": "Reproduce v31-frozen and test whether the earlier blockers are closed and whether ports can start.",
+    "who": "One independent checker (P/check-v31).",
+    "produced": "Every headline number reproduced. Earlier blockers closed (0 of 27 output injections auto-accepted; note lint flags 7 of 8 note mutations; guard 43 of 52 with 9 in stated categories; forms read ocaml and perl). Three new blockers; lines.js gives 1.34x measured, 1.75x projected.",
+    "changed": "Verdict 'not-ready'. Blockers: masking accepts wrong language/convention facts as shared (and a hidden default prints `false` for perl's 0); the runtime table and guard cannot see swift throws, static constructors, ocaml record fields, lua's error table, ocaml's eager stream; a dropped sentence in a new port leaves no trace. H1 judged refuted."
+   }
+  ],
+  "items": [
+   {
+    "topic": "H1",
+    "claim": "Interface version 3 recorded 16 interface changes, 5 of them breaking from this builder, bringing breaking changes since the first four languages to about 11 against the line of about 10; all 5 were elective and three could have been additive with deprecated aliases.",
+    "numbers": "stage 2 about 6 + 5 = about 11 breaking; line about 10; 3 of 5 avoidable",
+    "source": "results/s3a-shape.txt: interface_changes [15], summary",
+    "by": "builder",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "At v3, go's runtime notes were 20.5% of its REFERENCE prose with features excluded, over the 15% line, because the stream note prints once per entity.",
+    "numbers": "go 5,508 of 26,917 words (20.5%); zig 12.2%; rust 2.4%; elixir 1.0%; others 0; 19 variations; tutorials 0%",
+    "source": "results/s3a-shape.txt: notes.mechanism, prose",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "At v3 the eight providers read the model 0 times; their only imports were canonToType and canonKey, with 0 pluralisation and 0 `Name +` concatenation in hooks.",
+    "numbers": "0 model reads in 8 providers",
+    "source": "results/s3a-shape.txt: prose (purity.js)",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "At v3, REFERENCE sentences shared by all seven ported languages (features excluded) were 73.7% to 78.7%, with standalone words 14.3% to 31.3%.",
+    "numbers": "shared by all seven: ts 74.3, go 73.7, py 78.7, c 77.6, zig 77.0, rust 76.7, elixir 78.1 %; standalone words ts 27.1, go 31.3, py 14.4, c 15.5, zig 17.7, rust 14.3, elixir 15.1 %",
+    "source": "results/s3a-shape.txt: prose (proseref.js)",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "At the final v3-shape HEAD all five toolchain lanes passed; the earlier run had failed on the custom-action example block, which was moved into a table cell because it can neither type-check (ts) nor run in test mode (py).",
+    "numbers": "ts 16/16, go 12/12, py 12/12 real pytest, c 6/6, rust 6/6; earlier run ts 11/16, py 9/12",
+    "source": "results/s3a-shape.txt: lanes",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "finding",
+    "claim": "A custom-action example cannot be a code block in any language with a toolchain lane: the ts payload type rejects it (TS2739) and py's test mode rejects the action, so the call now lives in an inline Call cell that no lane executes.",
+    "numbers": "ts TS2739; py 'Operation create action terraform is not valid'; 8 OLD action blocks removed",
+    "source": "results/s3a-shape.txt: surprises, defects [14]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At v3, of 1,372 ported block pairs over 9 variations, 734 were byte-identical to OLD, 179 identical after named corrections, 382 after named unifications, 69 changed otherwise and 8 removed.",
+    "numbers": "734 / 179 / 382 / 69 / 8 removed; 9 variations",
+    "source": "results/s3a-shape.txt: summary, blocks [23]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H2",
+    "claim": "At v3 shared documentation code grew by about 270 lines and providers by about 13 each, giving a projection (arithmetic, not a measurement) of about 2.5x, or about 1.9x at 1.5 times provider size.",
+    "numbers": "shared +about 270 lines; providers +100 across eight; stage 2 14,896 to 5,437 (2.74x); projected about 5,970 (about 2.5x), about 1.9x",
+    "source": "results/s3a-shape.txt: source_lines, hypotheses [1]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The v3 suite was last run whole at 9d2e1994 and not after the last change, which also replaced the load-wording regex in generate.test that the builder had widened; that regex was then checked by hand on three sentences only.",
+    "numbers": "2,538 tests, 2,532 pass, 0 fail, 6 not run; generate.test 205/205 after the change; runtimefacts 18/18",
+    "source": "results/s3a-shape.txt: stopped_at, lanes",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The OLD reference pages say csharp, java, kotlin and scala 'raise', while their runtimes throw (EntityBase fragments); settled as throw, a correction those ports will carry.",
+    "numbers": "4 languages",
+    "source": "results/s3a-shape.txt: surprises, result_styles",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The review tools flagged 49 of 51 stage-2 worklist items unaided; both misses are defects byte-identical in OLD and NEW, which no OLD-against-NEW comparison can see.",
+    "numbers": "51 items, 49 flagged, 0 partly, 2 missed (go TestSDK undefined variables; awkward load sentence)",
+    "source": "results/s3a-tools.txt: recall_summary",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "All four regressions injected by the tools builder were flagged.",
+    "numbers": "4 of 4",
+    "source": "results/s3a-tools.txt: injected",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H2",
+    "claim": "Measured on stage-2 code with all shared documentation code counted against the eight ported languages, lines fell 1.58x, not the 2.27x reported for REFERENCE alone; the projection to twenty reaches 2x only if the remaining providers are at most about 1.5 times the measured size.",
+    "numbers": "6,486/4,729 to 4,095/3,157 = 1.58x (1.50x without blanks and comments); projection 2.48x, 2.10x at 1.5 times, 1.82x at twice",
+    "source": "results/s3a-tools.txt: stage2_numbers (Lines), surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Purity on stage-2 providers found 36 open findings: `v + 's'` pluralisation in all 8 hooks, `Name + 'SDK'` in 7, naming helpers used only by README components, a clojure filter on desc.entities and a c `sym.vars + '[i]'`.",
+    "numbers": "36 open, exit 1",
+    "source": "results/s3a-tools.txt: summary (Purity), stage2_numbers",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "Before the ports, the generated java and cpp README example tests only check structure (balanced delimiters), cpp's repo lane only syntax-checks, js has no README example test, and php ran under a 40-line stand-in TestCase because composer could not fetch PHPUnit.",
+    "numbers": "rb/php/perl execute every runnable block; java 'Tests run: 4' structural; cpp own test 85 checks, DOC lane 6/6 -fsyntax-only; js NOT RUN; composer timed out at 300 s",
+    "source": "results/s3a-tools.txt: baseline_lanes, gaps",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "On the old code the rb README lane fails one test, 'the README examples run with Basic auth and a templated server', because the old rb README has no templated server (catalogued S49); that lane is a stage-1 addition in the old clone's working tree.",
+    "numbers": "OLD rb lane 49 tests, 48 pass, 1 fail, 44.3 s",
+    "source": "results/s3a-tools.txt: baseline_lanes [0], surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At the freeze all review classes were classified, mostly by content rules the builder did not re-read one by one.",
+    "numbers": "1,666 of 1,666: 132 by normalizers, about 1,490 by about 120 content rules (106 per the check), 44 by hand; 41 echo classes read individually",
+    "source": "results/s3a-freeze.txt: measurements [5], gaps",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At v3-frozen block accounting improved to 14 'changed otherwise' blocks, each explained, from 69.",
+    "numbers": "857 identical / 206 after corrections / 444 by unification / 14 otherwise / 8 removed",
+    "source": "results/s3a-freeze.txt: blocks [8], measurements [6]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H2",
+    "claim": "At v3-frozen H2 is refuted for the measured set once each language's guard forms are counted; the projection to twenty is under 2x.",
+    "numbers": "6,916/5,033 to 4,968/3,816 = 1.39x (1.32x); projection 2.19x without forms, 1.95x with, 1.63x at 1.5 times, 1.40x at twice; without forms 1.5x measured",
+    "source": "results/s3a-freeze.txt: source_lines, hypotheses [1]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "At v3-frozen breaking changes since the first four languages are about 12 (the required forms file adds one to v3's 11), and go's notes are 20.4% of its REFERENCE prose.",
+    "numbers": "about 12 vs about 10; go 5,508 of 27,007 note words (20.4%); zig 12.1%; rust 2.4%; elixir 1.0%",
+    "source": "results/s3a-freeze.txt: interface_changes [4], prose, hypotheses [0]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Three result styles in shared prose are each printed by one runtime only (errslot c, die perl, wrapped swift), crossing the single-runtime-sentence rule; they were kept because each drives five sentences.",
+    "numbers": "3 styles",
+    "source": "results/s3a-freeze.txt: left_over_done, hypotheses [0]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "The rebuilt guard found drift on its first run: ts, py and elixir signatures showed runtime-optional parameters as required, and OLD clojure documented `api/get-utility`, which sdk.api does not export.",
+    "numbers": "3 languages' signatures; 1 clojure member",
+    "source": "results/s3a-freeze.txt: surprises, guard",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "At v3-frozen the five lanes passed with nothing skipped and the suite had 0 failures.",
+    "numbers": "ts 16/16 (33 s), go 12/12 (44 s), py 12/12 (16 s), c 6/6 (26 s), rust 6/6 (23 s); suite 2,551 tests, 2,546 pass, 0 fail, 5 skipped, 248 s; golden 2/2",
+    "source": "results/s3a-freeze.txt: lanes",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "finding",
+    "claim": "Unported languages were unchanged by v3 except 4 lines from the already-shared ReadmeRefFeatures.ts, which stage 2 changed.",
+    "numbers": "456 files: 0 READMEs differ; 228 REFERENCE files differ by the same 4 line pairs, each 228 times",
+    "source": "results/s3a-freeze.txt: unported_identical",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H3",
+    "claim": "Every catalogued issue the freeze stage met was fixed by shared code in all eight languages; per-language edits were needed for wrong declared signatures and one c printer. The catalogue was not recounted.",
+    "numbers": "S09, S13, S25, S28, S49, S50, G01, G27, U34, U44, U45, M12",
+    "source": "results/s3a-freeze.txt: hypotheses [2]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "cost",
+    "claim": "The Ruby pilot ported three sections from the guide in about a quarter hour of wall time, with one additive shared change.",
+    "numbers": "step times 20:08:53 to 20:25:18 (suite 4.3 min of it); brief4 says 'about twenty minutes'; classify 174 by rules, 57 by hand; 0 breaking, 1 additive (forms `bare`)",
+    "source": "results/s3a-pilot.txt: step_times, hypotheses [0]; brief4.md",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "Ruby's three old components were replaced by a provider plus hook a quarter of their size, before counting guard forms.",
+    "numbers": "old 745 lines (530 non-blank); provider+hook 178 (137); guard forms 66 (57); other rb files +11 (6)",
+    "source": "results/s3a-pilot.txt: summary",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "Ruby's README lane went from 48/49 on OLD to 49/49 on NEW, and before/run.sh executed the same block counts on OLD and NEW with 0 failures; the Ruby gate fails only on Ruby-level errors, so a wrong-entity field print runs green.",
+    "numbers": "OLD 48/49, NEW 49/49; default 4/20/21, crud 4/18/14, basic-server 4/18/14; '4 runs, 20 assertions, 0 failures'",
+    "source": "results/s3a-pilot.txt: toolchain, hypotheses [2]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H3",
+    "claim": "Ten catalogue ids reached Ruby as corrections with zero Ruby-specific code, but shared code introduced new rb defects (wrong-entity fields, no display field) and dropped a fact (data_get returns a copy).",
+    "numbers": "S49 (34 classes), S50 (12), U34 (12), S28 (9), S09 (5), G01 (4), G27 (4), S13 (4), U45 (4), S25 (2); dropped 1 class / 94 units",
+    "source": "results/s3a-pilot.txt: hypotheses [1], sections [2]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "By the share tool, Ruby's root quick start crosses 15% language-only words, though the one unit is a shared step comment unique only through rb's fact tokens.",
+    "numbers": "tutorial 6.6% units, 10.8% words; reference 1.2%, 4.8%; rootquick 16.7% units, 38.2% words; as fact tokens about 14 of 238 words (about 6%)",
+    "source": "results/s3a-pilot.txt: hypotheses [0]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The porting guide v3 had ten problems found by the pilot, among them three wrong statements, five silent omissions and two unclear points.",
+    "numbers": "10 guide problems (wrong 3, silent 5, unclear 2); rb golden changed 11 lines where the guide said 3",
+    "source": "results/s3a-pilot.txt: guide_problems",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The independent check found the review tools sensitive (24 of 24 injected regressions flagged) but the classification rules accepted injected false sentences automatically, and the last rule echo-agrees marked every leftover echo class same-meaning in every language.",
+    "numbers": "rules.js 106 rules, 89 language-unrestricted, first match wins; 4 of 7 sampled regressions fully auto-classified (py ok True, go except non-2xx, py returns None, ts region Required from scratch)",
+    "source": "results/s3a-check.txt: summary, claims [10], [11], own_measurements [7]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The purity note lint never inspected a note at v3-frozen: its region regex needed `notes` at column 0 and every provider indents it, so five injected notes passed.",
+    "numbers": "0 note regions found in go, zig, rust, elixir; 0 of 5 note mutations flagged, 5 of 5 with the regex fixed; purity mutations 5 of 13 flagged",
+    "source": "results/s3a-check.txt: claims [9], own_measurements [9]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The v3-frozen guard caught 27 of 52 source mutations; 11 of the 25 misses were not listed anywhere as unguarded.",
+    "numbers": "27 of 52 caught; 25 missed: 14 listed unguarded, 11 not listed",
+    "source": "results/s3a-check.txt: claims [7], own_measurements [5], guard_controls",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "At v3-frozen every changed block in zig, clojure and elixir was never compiled, not only the 6 counted as 'otherwise'.",
+    "numbers": "276 changed blocks: zig 104, clojure 64, elixir 108",
+    "source": "results/s3a-check.txt: claims [13]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H2",
+    "claim": "Counting the shared guard as well, the eight ported languages fall only 1.24x.",
+    "numbers": "6,916 to 5,576 = 1.24x (guard runtimefacts.test.ts 392 + forms.ts 216 = 608 lines); 1.39x without it",
+    "source": "results/s3a-check.txt: claims [14]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "By the checker's own count, go's notes were 18.9% of its REFERENCE prose, and breaking changes from type diffs were about 10.",
+    "numbers": "go 5,400 of 28,512 (18.9%), stream note printed 108 times; zig 11.0%, rust 2.2%, elixir 0.9%; over both sections go 17.7%; breaking about 10 (4 in af89a54e, 5 in 21d40b96, 1 forms file)",
+    "source": "results/s3a-check.txt: claims [15], [16]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H3",
+    "claim": "Of the stage-2 A-list defects at v3-frozen, 13 were fixed, 5 partly and 4 not; all not-fixed ones were cross-document contradictions.",
+    "numbers": "13 fixed, 5 partly, 4 not fixed",
+    "source": "results/s3a-check.txt: hypotheses [2], defects_status",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The shared ReadmeRefFeatures change spread the 'log runs unless disabled' versus README 'no logging' contradiction into all 12 unported languages; log.aontu has active: true, so the README was the false side.",
+    "numbers": "228 REFERENCE files",
+    "source": "results/s3a-check.txt: claims [4], output_defects [0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "At v3-frozen some ported output was weaker than OLD: c's load and remove REFERENCE examples lost the NULL check and record read, rust's load lost its print, and ts's action Call cell could not fill its route.",
+    "numbers": "c doc-crud REFERENCE:146-150 vs OLD 132-136; ts /planet/{id}/terraform with no id",
+    "source": "results/s3a-check.txt: output_defects [1]-[3], misclassified [6]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "At v3-frozen ocaml's operations (record fields typed `value -> value -> entity_obj`) and perl's body-declared parameters could not be read by the forms framework without a shared forms.ts change.",
+    "numbers": "tm/ocaml/sdk_types.ml:214; Entity_ocaml.ts:82",
+    "source": "results/s3a-check.txt: ready_to_port.blockers",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H4",
+    "claim": "The checker judged H4 only partly supported at v3-frozen, because normalizer equality was treated as verification for 276 uncompiled blocks.",
+    "numbers": "lanes ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6 reproduced",
+    "source": "results/s3a-check.txt: hypotheses [3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "Under the Basic-auth model, the zig client example prints `std.posix.getenv(...)`, which Zig 0.16 does not have; the zig documentation lane fails basic-server on the old code as on v3-frozen.",
+    "numbers": "zig doc lane 5 of 6 on old code and 5 of 6 on v3-frozen",
+    "source": "brief4.md: Where things stand; results/s3fix-shared.txt: zig",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The fix-round guard caught 62 of 71 source mutations; of the check's 52 it caught 43 (against 27 before), and all nine misses are in stated categories.",
+    "numbers": "62 of 71; check's 52: 43 caught; own 19 of 19",
+    "source": "results/s3fix-guard.txt: summary, mutations",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "finding",
+    "claim": "The handed guard's undocumented-public-member check had never fired in any language, because the literal '{ctor}' in its known-names list became the wildcard \\w+.",
+    "numbers": "0 languages where it fired",
+    "source": "results/s3fix-guard.txt: checks_added [7], surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Six declared facts were wrong in six languages and would print false sentences on every page: five providers said the entity accessor takes initial data when every runtime passes it to the entity constructor's entopts, py's data_set/match_set named a keyword the runtime lacks, and rust's direct note claimed Err for a failed request though direct never returns Err.",
+    "numbers": "accessor.arg wrong in ts, go, py, rb, clojure; py dataSet/matchSet names; rust notes.member:direct",
+    "source": "results/s3fix-guard.txt: wrong_facts",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "All eleven unported runtimes were read from one forms file each with no per-language shared change; perl and ocaml needed two additive hooks added once.",
+    "numbers": "reader 22/22; forms 44 to 83 lines each (601 total); declReader and file parts",
+    "source": "results/s3fix-guard.txt: hypotheses [0], lines",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "cost",
+    "claim": "The shared guard more than doubled and the forms more than tripled in the fix round.",
+    "numbers": "shared guard 612 to 1,372 lines; forms of the nine ported 424 to 773; forms of eleven unported 601; all test/runtime* files 2,746",
+    "source": "results/s3fix-guard.txt: lines, hypotheses [1]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "After the fix round some facts are still never compared with the runtime: convention facts, language facts, prose-bearing cited facts only pinned to an audit, type printers with no column, and uncompared returns.",
+    "numbers": "convention c 10, clojure 11, elixir 5, go 6, py 7, rb 7, rust 9, ts 5, zig 9; language c 2, clojure 2, elixir 2, go 3, py 4, rb 2, rust 1, ts 2, zig 2; pinned prose 48; unquoted tokens 21; uncompared returns clojure 14, elixir 9, rb 7, py 6, c 1",
+    "source": "results/s3fix-guard.txt: still_passes",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "The zig runtime has no live transport: fetcher_util ends in ctx.fail('fetch_transport', 'live transport unavailable ...').",
+    "numbers": "tm/zig/core/utility.zig:2332-2336",
+    "source": "results/s3fix-guard.txt: surprises",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H3",
+    "claim": "The fix round's shared engineer fixed in shared code, for every ported language, the displayed fields, getter copy sentence, record clause, action call path parameters, write-step sentence and the README/REFERENCE/root README log contradiction, with data-only provider changes.",
+    "numbers": "381 language READMEs and 20 root READMEs now agree on log; providers: one token each for copy, one rb value, five notes, one zig printer line",
+    "source": "results/s3fix-shared.txt: items, hypotheses [1]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "With the shared fixes every lane passed and the zig documentation lane went from 5/6 on the old code to 6/6, the getenv defect being one of main, fixed in one printer line.",
+    "numbers": "ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, ^zig: 26 pass 2 skipped; zig doc 6/6 new vs 5/6 old; suite 2,561 tests, 2,556 pass, 0 fail, 5 skipped",
+    "source": "results/s3fix-shared.txt: lanes, zig",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "After the shared fixes, the share tool's language-only words rose in tutorials, crossing 15% for elixir by that metric (its notes alone 10.5%); for ts and c the rise is a shared sentence only their result style prints.",
+    "numbers": "elixir 10.9% to 18.6%; ts 23.5% to 28.6%; c 26.6% to 32.6%; clojure REFERENCE language words 1,203 to 2,729 (5.3%)",
+    "source": "results/s3fix-shared.txt: summary, raw_counts, hypotheses [0]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "The shared fixes added 1 breaking interface change (DescQuick.show removed), forcing work in 0 providers, and 6 additive ones.",
+    "numbers": "1 breaking, 6 additive; cumulative about 11 to 13",
+    "source": "results/s3fix-shared.txt: interface_changes, hypotheses [0]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "lua's old display-field fallback never fired (it read `.name` on a field that has `n`), so lua printed only the id like perl; and the 'no feature is active' statement was also in the root README.",
+    "numbers": "ReadmeQuick_lua.ts:77-80; ReadmeTop.ts:259-261",
+    "source": "results/s3fix-shared.txt: surprises, decisions",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The rebuilt review tools left all seven auto-accepted false-sentence injections for a person and still flagged all 24 injected regressions; its self-test of 83 controls passed.",
+    "numbers": "accept 7/7, ledger 24/24, purity 23/23, blocks 28/28, recall 1/1 (49 of 51); 83 controls, 0 failed, 88 s",
+    "source": "results/s3fix-tools.txt: summary, proofs, selftest",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Language restriction alone did not stop false acceptance: rule direct-shared, limited to the eight, still accepted py '`ok` is `True`' and go 'except for a non-2xx response'; only pinning rules to the class ids and counts they already classified did.",
+    "numbers": "2 false sentences accepted under language lists alone",
+    "source": "results/s3fix-tools.txt: classification, surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Shared-sentence matching from scratch accepted about a third of a new language's classes, all against stage-3a rule records; against hand-reviewed references only, nothing matched.",
+    "numbers": "rb 70 of 226 (reworded/added 70 of 100); py 75 of 175 (75 of 96); human-only 0 for both",
+    "source": "results/s3fix-tools.txt: positive_control, proofs [5]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Rebuilding the tools re-opened echo classes that stage 3a had closed by rule, and left missing classes accepted by rule records.",
+    "numbers": "115 echo classes open (ts 18, go 10, py 9, c 12, zig 13, clojure 15, rust 23, elixir 15); 29 were echo-agrees; 210 missing classes rule-accepted; 1,461 rule records frozen, 1,375 still apply",
+    "source": "results/s3fix-tools.txt: eight_existing, proofs [6]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "After masking each language's facts, go's tutorial is still 65.7% go-only, mostly shared sentences that only go's pair style and one-program layout select, so 'printed by one language' is not the same as per-language source.",
+    "numbers": "go tutorial 65.7% (share.js 62.6%); bold step lead-ins 221 words; pair sentences 204+126+85; program sentence 140+50",
+    "source": "results/s3fix-tools.txt: sharing",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "The tools builder's first self-test wrote injections into another engineer's output directory through copied symlinks, and the permission system refused the restore.",
+    "numbers": "29 files under P/pilot-rb/out/new",
+    "source": "results/s3fix-tools.txt: summary, gaps",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H2",
+    "claim": "At v3.1, H2 is refuted for the nine measured languages on every count; only documentation code projected to twenty at measured provider size exceeds 2x.",
+    "numbers": "6,916 to 4,182 (1.65x; 1.58x non-blank) doc code; 4,953 (1.40x; 1.29x) with forms; 6,332 (1.09x; 0.99x) with shared guard; projected x1 2.30x / 1.90x / 1.62x; x1.5 1.94x / 1.65x / 1.43x; x2 1.69x / 1.46x / 1.29x",
+    "source": "results/s3fix-final.txt: source_lines, hypotheses [1]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H2",
+    "claim": "The lines tool's own headline at v3.1, which counts the unchanged ReadmeTop.ts and the forms, is 1.34x measured and 1.75x projected.",
+    "numbers": "7,661/5,563 to 5,698/4,423 = 1.34x (1.26x); projected x1 1.75x, x1.5 1.48x, x2 1.28x",
+    "source": "results/s3fix-check.txt: claims [12], numbers [7]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "At v3.1, words printed only by go plus its notes are 25.6% of its three sections, and ts 15.4%; the other seven are 4.4 to 9.9%; notes alone reach at most 9.4% (elixir tutorial).",
+    "numbers": "go 25.6%, ts 15.4%, c 9.9%, zig 8.3%, rust 6.9%, rb 5.5%, elixir 5.0%, clojure 4.6%, py 4.4%; notes go 7.5%, zig 3.4%, clojure 2.5%, rust 0.9%, elixir 0.6%; go (1530+298+9930+4860)/(2260+317+62217)",
+    "source": "results/s3fix-final.txt: measures; results/s3fix-check.txt: claims [13]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "At the source, per-language prose literals are at most 88 words (go) against 759 shared template prose-literal words.",
+    "numbers": "notes words go 45, zig 29, clojure 29, rust 26, elixir 30; fact-table prose literals go 43, clojure 57, zig 25, rust 17, elixir 15, c 8, rb 7, ts 4; shared 759",
+    "source": "results/s3fix-final.txt: measures, hypotheses [0]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "No breaking interface change was caused by a newly ported language: rust, elixir, clojure's REFERENCE and rb each needed 0; all breaking changes came from interface rewrites.",
+    "numbers": "cumulative about 11 to 13; 0 from new languages; rb 1 additive",
+    "source": "results/s3fix-final.txt: measures (Interface changes)",
+    "by": "builder",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "At v31-frozen the guard accounts for every declared fact in all nine languages with 0 excepted leaves, and fact sheets show 0 facts without an account.",
+    "numbers": "derived/cited/language/convention ts 45/14/2/5, go 46/9/3/6, py 46/11/4/7, c 37/9/2/10, zig 38/14/2/9, clojure 41/13/2/11, rust 41/12/1/9, elixir 46/13/2/5, rb 45/11/2/7; 63 cited facts are prose pinned",
+    "source": "results/s3fix-final.txt: measures; results/s3fix-check.txt: claims [9]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "cost",
+    "claim": "Reviewing nine languages to 0 open took 599 hand decisions; about 877 ledger classes in the eight original languages still rest on stage-3a rule records not re-reviewed (20 spot-checked in py, none false).",
+    "numbers": "599 hand: ts 71, go 52, py 47, c 45, zig 74, clojure 58, rust 58, elixir 54, rb 140; rule records ts 94, go 109, py 113, c 100, zig 112, clojure 109, rust 119, elixir 121 (877)",
+    "source": "results/s3fix-final.txt: measures (Review effort), gaps",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "At v31-frozen every lane passes and nothing that ran before now fails; clojure and elixir cannot be compiled here.",
+    "numbers": "ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, ^rb: 49/49, ^zig: 26 pass 2 skipped, zig doc 6/6 (old 5/6); suite 2,593 tests, 2,588 pass, 0 fail, 5 skipped; clojure 124 and elixir 213 changed blocks unverified",
+    "source": "results/s3fix-final.txt: freeze_checks, blocks; results/s3fix-check.txt: claims [3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The shared ReadmeErrors.ts prints a TypeScript Error handling section ('Entity operations reject on failure') in 16 languages' READMEs, false for zig (and rust).",
+    "numbers": "16 languages (c clojure cpp csharp elixir java js kotlin ocaml perl rust scala swift ts zig, and go2)",
+    "source": "results/s3fix-final.txt: contradictions [5], gaps",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "Unported README sections still contradict the ported REFERENCE: no-test READMEs promise a mock transport (ts, go, py, elixir, rb), py's member table shows (data)/(match), rb's table shows load(reqmatch, ctrl) -> any and make () -> Entity.",
+    "numbers": "8 recorded contradictions",
+    "source": "results/s3fix-final.txt: contradictions",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At v3.1 none of the check's 52 guard mutations is 'not caught and not accounted': 43 caught by the guard, 2 caught downstream (one by review, one only by the ts README lane), 7 accounted in stated categories.",
+    "numbers": "43 + 2 + 7 = 52; guard engineer's 19 of 19; 5 of 5 new; 75 mutations in 6 m 5 s",
+    "source": "results/s3fix-final.txt: mutations; results/s3fix-check.txt: claims [8]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The independent check of v3.1 found the earlier classification blocker closed: no output injection was accepted automatically in either reviewed or from-scratch mode.",
+    "numbers": "0 of 27 output injections accepted (8 earlier, 19 new in rb, py, go); rules.js 105 rules, all language-restricted, no echo-agrees",
+    "source": "results/s3fix-check.txt: fixes_checked [0], numbers [10]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Fact masking accepts a wrong value in a language or convention fact as a shared sentence, with the guard passing; only classes produced because OLD stated the true value flagged it.",
+    "numbers": "rb none/maps/noun: 5 classes accepted as shared; rb lits.false 'False': 1 class accepted as shared:py:5b608e3db2; guard 4/4 and 8/8 pass",
+    "source": "results/s3fix-check.txt: blockers [0], classification [20]-[22], numbers [11]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Shared code states perl's direct `ok` as `false` by a hidden default, but perl sets it to 0; since OLD perl already prints `false` 24 times, nothing in the tools would flag a perl port that declares nothing.",
+    "numbers": "Main.fragment.pm:226,245,260,264,310 'ok' => 0; ReadmeRef.ts:177-178 lit(r,false); OLD perl B REFERENCE 24 times",
+    "source": "results/s3fix-check.txt: blockers [0], masking",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "The runtime table and the guard cannot see swift `throws`, static constructors (swift, lua, perl), ocaml record fields (listed as zero-argument functions), lua's error table, or ocaml's eager stream.",
+    "numbers": "EntityLoadOp.fragment.swift:8; Main.fragment.swift:330; make_error.lua:86; sdk_types.ml:198-204,223; Entity_ocaml.ts:141-152; Main.fragment.pm:364",
+    "source": "results/s3fix-check.txt: blockers [1], runtime_table",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "In a new port (all classes from scratch), dropping a shared sentence from one variation changed no number at all.",
+    "numbers": "rb-direct-sentence-dropped: new open 0, auto 0, unclassified 68 to 68, added classes decided 37 to 37",
+    "source": "results/s3fix-check.txt: blockers [2], classification [10]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Citations exist and quote present lines, but about half of an audited sample do not show the value they support.",
+    "numbers": "106 citations, every quote present; 19 audited across 8 languages: 9 show the value, 10 do not; `unquoted` used in 21 citations",
+    "source": "results/s3fix-check.txt: numbers [16], citations, guide [4]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The fixed note lint flags 7 of 8 note mutations; a note completed by concatenation with a constant outside the notes table is missed, caught by the guard's pin only for an existing note.",
+    "numbers": "7 of 8",
+    "source": "results/s3fix-check.txt: note_lint, numbers [12]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The elixir arity note restored in the fix round is false and passed the tools as an accepted, cited, pinned note: the runtime defines list/1, /2 and /3 and the block below calls list/1.",
+    "numbers": "EntityListOp.fragment.ex:8 'def list(ent, reqmatch \\\\ nil, ctrl \\\\ nil)'",
+    "source": "results/s3fix-check.txt: output [1], citations [14]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "At v3.1 the c REFERENCE load and remove examples still lack the NULL check and record read OLD had; only the sentence was fixed, so the root quick start (which checks) and the REFERENCE now differ.",
+    "numbers": "c 44 old blocks (load 28, remove 16), rust 44",
+    "source": "results/s3fix-check.txt: output [0]; results/s3fix-shared.txt: items [4]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "'Unverified 0' in the block tables means only that a compiler is on PATH; the 21 variations' changed blocks are not compiled, the lanes compile their own models.",
+    "numbers": "-",
+    "source": "results/s3fix-check.txt: guide [2], hypotheses [3]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H5",
+    "claim": "H5 was not exercised in any round of this part: no doctor, remove, target add, package update, pack or alias walk was run.",
+    "numbers": "not tested in s3a-shape, s3a-freeze, s3a-check, s3fix-guard, s3fix-shared, s3fix-final, s3fix-check",
+    "source": "all records: hypotheses H5",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "cost",
+    "claim": "Ports start from a base of about 223 MB with workspaces of about 180 MB each, created by newport.sh; the one command then reports NOT PORTED.",
+    "numbers": "base 223M; workspace about 180M (176M measured); eleven about 2G; 11G free of 252G; REGEN 21 variations in 14.6 s / 13.6 s",
+    "source": "results/s3fix-final.txt: base; results/s3fix-check.txt: claims [14]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   }
+  ],
+  "disagreements": [
+   {
+    "a": "Clojure's doseq fusion cannot be expressed outside an attempt: an interface limit (6 root blocks lost the idiom).",
+    "a_source": "results/s3a-shape.txt: surprises, blocks [16]",
+    "b": "Not an interface limit: Scope.stmts already gives a printer look-ahead; implemented in Syntax_clojure (fusesWith).",
+    "b_source": "results/s3a-freeze.txt: left_over_done",
+    "stands": "b"
+   },
+   {
+    "a": "A2 fixed: the ts root names the returned class.",
+    "a_source": "results/s3a-shape.txt: defects [1]",
+    "b": "The A2 fix printed 'the entity, a AmbientEntity'; fixed with the existing article helper.",
+    "b_source": "results/s3a-freeze.txt: left_over_done, surprises",
+    "stands": "b"
+   },
+   {
+    "a": "go's notes are 20.5% (shape) / 20.4% (freeze) of its REFERENCE prose.",
+    "a_source": "results/s3a-shape.txt: prose; results/s3a-freeze.txt: prose [0]",
+    "b": "18.9% (5,400 of 28,512) by the checker's own count; different denominator; either way over 15%.",
+    "b_source": "results/s3a-check.txt: claims [15]",
+    "stands": "both cross 15%; the figures measure different denominators. Later measures (sharewords) give go notes 7.8% of REFERENCE and go-only plus notes 25.6% over three sections."
+   },
+   {
+    "a": "Breaking interface changes since the first four languages: about 11 (shape), about 12 (freeze).",
+    "a_source": "results/s3a-shape.txt: interface_changes [15]; results/s3a-freeze.txt: interface_changes [4]",
+    "b": "About 10 from the type diffs, at the line, depending on how af89a54e is split.",
+    "b_source": "results/s3a-check.txt: claims [16]",
+    "stands": "The later records use 'about 10 to 12' at v3 and 'about 11 to 13' at v3.1; at or over the line in every count."
+   },
+   {
+    "a": "The guard re-derives signatures, methods, members both ways, member shapes and field types; 12 negative controls caught.",
+    "a_source": "results/s3a-freeze.txt: guard",
+    "b": "It caught 27 of 52 source mutations; method swaps, parameter types and names, clojure returns, untyped-language types, misplaced members and the record printer were missed and not listed.",
+    "b_source": "results/s3a-check.txt: claims [7]",
+    "stands": "b"
+   },
+   {
+    "a": "Public members are checked both ways, with an undocumented list (freeze).",
+    "a_source": "results/s3a-freeze.txt: guard.design",
+    "b": "The undocumented-member check never fired in any language: '{ctor}' in its known-names list became \\w+.",
+    "b_source": "results/s3fix-guard.txt: checks_added [7], surprises",
+    "stands": "b"
+   },
+   {
+    "a": "Purity: 0 open, 6 accepted, including the note lint.",
+    "a_source": "results/s3a-freeze.txt: measurements [7]",
+    "b": "The note lint found 0 note regions (indented `notes:`); 5 injected notes passed.",
+    "b_source": "results/s3a-check.txt: claims [9]",
+    "stands": "b; fixed in s3fix-tools (5 of 5 flagged) and confirmed in s3fix-check (7 of 8, one concatenation hole)."
+   },
+   {
+    "a": "1,666 classes classified; broad rules could hide a second change.",
+    "a_source": "results/s3a-freeze.txt: gaps",
+    "b": "The rules accept false facts outright (py ok True, go except non-2xx, py returns None, ts region Required).",
+    "b_source": "results/s3a-check.txt: claims [11]",
+    "stands": "b"
+   },
+   {
+    "a": "Zig, clojure and elixir unverified 'changed otherwise' blocks: 4, 1 and 1.",
+    "a_source": "results/s3a-freeze.txt: blocks",
+    "b": "Every changed block in those languages is unverified: 276 (104, 64, 108).",
+    "b_source": "results/s3a-check.txt: claims [13]",
+    "stands": "b; zig later verified by its lanes (s3fix-shared, s3fix-final)."
+   },
+   {
+    "a": "A ported language with no forms file fails (control: compiled file moved away).",
+    "a_source": "results/s3a-freeze.txt: guard",
+    "b": "Deleting the forms source passes on an incremental build because the stale compiled file stays.",
+    "b_source": "results/s3a-check.txt: claims [8]",
+    "stands": "b at v3-frozen; closed in s3fix-guard (no-forms-zig caught) and confirmed in s3fix-check."
+   },
+   {
+    "a": "Ocaml's stream shape was not surveyed (freeze); it is streamLazy (s3a-check, s3fix-guard runtime table).",
+    "a_source": "results/s3a-freeze.txt: gaps; results/s3a-check.txt: claims [21]; results/s3fix-guard.txt: runtime_table",
+    "b": "e_stream runs the operation and materialises every item before building the Seq; it is neither lazy nor a streaming read.",
+    "b_source": "results/s3fix-check.txt: runtime_table [5]",
+    "stands": "b (read, not run)"
+   },
+   {
+    "a": "OLD clojure's get-utility is dropped: sdk.api does not export it.",
+    "a_source": "results/s3a-freeze.txt: clojure_reference",
+    "b": "sdk.client/get-utility is public; dropping it leaves no route to the utility (a lost capability).",
+    "b_source": "results/s3a-check.txt: claims [18], misclassified [2]",
+    "stands": "b; restored as a note in s3fix-shared and confirmed true in s3fix-check."
+   },
+   {
+    "a": "Elixir arity and Helpers.deep/1 sentences dropped as elixir-only prose.",
+    "a_source": "results/s3a-shape.txt: facts [23],[24]; results/s3a-freeze.txt: ledger",
+    "b": "These belong in a runtime note; dropping them hides an interface limit.",
+    "b_source": "results/s3a-check.txt: misclassified [5]",
+    "stands": "b; restored as notes in s3fix-shared, but s3fix-check found the arity note false (list/1, /2, /3; the call is list/1)."
+   },
+   {
+    "a": "Rust note: '`Err` is reserved for a request that could not be made' (restored as a note at v3).",
+    "a_source": "results/s3a-shape.txt: notes.moved [3]",
+    "b": "direct never returns Err; every failure arm returns Ok with ok false.",
+    "b_source": "results/s3fix-guard.txt: wrong_facts [6]",
+    "stands": "b; corrected in s3fix-final."
+   },
+   {
+    "a": "Accessor parameter table dropped as accepted: 'Pass `undefined` for no initial data' carries the same facts.",
+    "a_source": "results/s3a-shape.txt: facts [6]; results/s3a-check.txt: misclassified [4]",
+    "b": "The accessor argument is the entity options (entopts), not initial data, in ts, go, py, rb and clojure.",
+    "b_source": "results/s3fix-guard.txt: wrong_facts",
+    "stands": "b; corrected in s3fix-final ('no initial options')."
+   },
+   {
+    "a": "The ts README region 'Required' is a contradiction with the tutorial's default eu.",
+    "a_source": "results/s3a-check.txt: output_defects [7]",
+    "b": "Half right: the server object is Required because tenant has no default, but region was listed with no default; the cell now says 'region (defaults to `eu`)'.",
+    "b_source": "results/s3fix-final.txt: surprises",
+    "stands": "b"
+   },
+   {
+    "a": "go 'direct() keys lost' (stage-2 checker).",
+    "a_source": "results/s3a-tools.txt: recall [12]",
+    "b": "Overstatement: OLD go REFERENCE never stated `status` in any of 21 variations.",
+    "b_source": "results/s3a-tools.txt: recall_summary, surprises",
+    "stands": "b"
+   },
+   {
+    "a": "H2 at v3.1: 1.65x measured, 2.30x projected (documentation code only).",
+    "a_source": "results/s3fix-final.txt: source_lines",
+    "b": "lines.js prints 1.34x measured, 1.75x projected; the 2.30x leaves out the forms every port writes.",
+    "b_source": "results/s3fix-check.txt: claims [12]",
+    "stands": "Both reconcile by counting; H2 is refuted on every count that includes forms (1.40x / 1.90x by the freeze's own figures)."
+   },
+   {
+    "a": "H1 at v3.1: partly.",
+    "a_source": "results/s3fix-final.txt: hypotheses [0]",
+    "b": "H1 refuted: 2 of 3 refutation criteria crossed (go prose 25.6%; breaking changes about 11 to 13), and needed fixes would add at least one more breaking change.",
+    "b_source": "results/s3fix-check.txt: hypotheses [0]",
+    "stands": "Both records agree the breaking-change line is crossed and go's prose is over 15% by the 'printed only by this language' measure; the final builder itself writes that 'by the fixed thresholds, H1 is refuted on the breaking-change count'."
+   },
+   {
+    "a": "H4 supported at v3-frozen.",
+    "a_source": "results/s3a-freeze.txt: hypotheses [3]",
+    "b": "H4 partly: 276 changed blocks never compiled.",
+    "b_source": "results/s3a-check.txt: hypotheses [3]",
+    "stands": "b for v3-frozen"
+   },
+   {
+    "a": "H3 supported at v3 (shape).",
+    "a_source": "results/s3a-shape.txt: hypotheses [2]",
+    "b": "H3 partly (freeze, check): cross-document contradictions remain, per-language signature edits needed.",
+    "b_source": "results/s3a-freeze.txt: hypotheses [2]; results/s3a-check.txt: hypotheses [2]",
+    "stands": "b"
+   },
+   {
+    "a": "PORTING: a per-operation null-argument form 'cannot be kept (the provider sees no operation name)'; deleting three components changes three golden lines.",
+    "a_source": "PORTING v3 as quoted in results/s3a-pilot.txt: guide_problems [4],[5]",
+    "b": "The call carries s.op (the true limit is that purity flags an operation literal); rb's golden changed 11 lines.",
+    "b_source": "results/s3a-pilot.txt: guide_problems",
+    "stands": "b"
+   },
+   {
+    "a": "PORTING section 1 quotes the start message as '<lang> is ported for no section'.",
+    "a_source": "results/s3fix-final.txt: guide",
+    "b": "The command prints '<lang>: NOT PORTED. No section is ported for it...' / 'PORTCHECK <lang>: NOT PORTED'.",
+    "b_source": "results/s3fix-check.txt: guide [0]",
+    "stands": "b"
+   },
+   {
+    "a": "Fix-round guard: of the check's 52 mutations 43 caught, run against the builder's own clone.",
+    "a_source": "results/s3fix-guard.txt: summary",
+    "b": "Independently rerun at v31-frozen: 43 caught (forms-vacuous-ts only in its adapted form).",
+    "b_source": "results/s3fix-check.txt: claims [8]",
+    "stands": "both (confirmed)"
+   }
+  ],
+  "superseded": [
+   {
+    "number": "Suite 2,538 tests / 2,532 pass (v3-shape, 9d2e1994)",
+    "replaced_by": "2,551/2,546 (v3-frozen); 2,554/2,549 (pilot); 2,586/2,581 (h-guard); 2,561/2,556 (h-shared); 2,593/2,588, 0 fail, 5 skipped (v31-frozen, confirmed independently)",
+    "source": "s3a-shape, s3a-freeze, s3a-pilot, s3fix-guard, s3fix-shared, s3fix-final, s3fix-check"
+   },
+   {
+    "number": "Blocks 734 / 179 / 382 / 69 otherwise / 8 removed (v3-shape)",
+    "replaced_by": "857 / 206 / 444 / 14 / 8 (v3-frozen, confirmed by the check); per-language tables re-recorded at v3.1",
+    "source": "s3a-freeze, s3a-check, s3fix-final"
+   },
+   {
+    "number": "go notes 20.5% of REFERENCE prose (5,508 of 26,917)",
+    "replaced_by": "20.4% (freeze), 18.9% (check, 5,400 of 28,512); at v3.1 by sharewords: go notes 7.8% of REFERENCE, 7.5% over three sections, go-only plus notes 25.6%; go note words in output 4,860",
+    "source": "s3a-freeze, s3a-check, s3fix-final"
+   },
+   {
+    "number": "Breaking interface changes about 11 (shape), about 12 (freeze), about 10 (check)",
+    "replaced_by": "about 11 to 13 at v3.1",
+    "source": "s3fix-shared, s3fix-final"
+   },
+   {
+    "number": "Lines 1.58x for eight languages, projection 2.48x / 2.10x / 1.82x (stage-2 code, tools)",
+    "replaced_by": "1.39x (1.32x), projection 1.95x / 1.63x / 1.40x at v3-frozen; at v3.1 1.65x / 1.40x / 1.09x measured and 2.30x / 1.90x / 1.62x projected; lines.js headline 1.34x / 1.75x",
+    "source": "s3a-freeze, s3fix-final, s3fix-check"
+   },
+   {
+    "number": "v3-shape projection about 2.5x (about 1.9x at 1.5 times)",
+    "replaced_by": "freeze measured 1.39x and projected 1.95x",
+    "source": "s3a-freeze"
+   },
+   {
+    "number": "Guard 26/26 tests; 27 of 52 source mutations caught",
+    "replaced_by": "guard 39/39 plus reader 22/22 = 61/61; 43 of 52 caught, 9 in stated categories",
+    "source": "s3fix-guard, s3fix-final, s3fix-check"
+   },
+   {
+    "number": "Unguarded facts per language: c 21, clojure 18, elixir 26, go 20, py 22, rust 21, ts 20, zig 22",
+    "replaced_by": "account with 0 excepted leaves in all nine (derived/cited/language/convention per language)",
+    "source": "s3fix-final"
+   },
+   {
+    "number": "Purity 36 open (stage 2); 0 open, 6 accepted (v3-frozen)",
+    "replaced_by": "0 open, 16 accepted with reasons at v3.1 (note lint working)",
+    "source": "s3fix-final"
+   },
+   {
+    "number": "1,666 classes classified (132 normalizers, about 1,490 rules, 44 hand)",
+    "replaced_by": "after the tools rebuild, 1,375 rule records apply and 115 echoes open; at v3.1 599 hand entries and 877 ledger classes still on rule records in the eight",
+    "source": "s3fix-tools, s3fix-final"
+   },
+   {
+    "number": "Unverified changed blocks zig 104, clojure 64, elixir 108 (276)",
+    "replaced_by": "zig verified by lanes (doc lane 6/6); clojure 124 and elixir 213 by the new block counting",
+    "source": "s3fix-shared, s3fix-final"
+   },
+   {
+    "number": "Unported languages: 456 files, 0 READMEs differ, 228 REFERENCE differ by 4 shared lines (twelve languages)",
+    "replaced_by": "eleven unported languages (rb ported): README 209/209 and REFERENCE 209/209 differ only by 7 + 8 shared log lines",
+    "source": "s3fix-shared, s3fix-final, s3fix-check"
+   },
+   {
+    "number": "Zig documentation lane 5/6 on v3-frozen",
+    "replaced_by": "6/6 at h-shared and v31-frozen (old code still 5/6)",
+    "source": "s3fix-shared, s3fix-final"
+   },
+   {
+    "number": "Tools selftest 83 controls",
+    "replaced_by": "84 controls, 0 failed",
+    "source": "s3fix-final, s3fix-check"
+   },
+   {
+    "number": "Shared guard 608 lines (check at v3-frozen) / 612 (h-guard handed)",
+    "replaced_by": "1,372 (h-guard) / 1,379 (v3.1)",
+    "source": "s3fix-guard, s3fix-final"
+   },
+   {
+    "number": "Forms of the ported languages 424 lines",
+    "replaced_by": "773 (h-guard, nine) / 771 (v3.1); plus 601 for the eleven unported",
+    "source": "s3fix-guard, s3fix-final"
+   },
+   {
+    "number": "elixir tutorial language-only words 10.9% (share.js at handed state)",
+    "replaced_by": "18.6% at h-shared; at v3.1 by sharewords 0% only-elixir plus 9.4% notes",
+    "source": "s3fix-shared, s3fix-final"
+   }
+  ],
+  "findings": [
+   {
+    "finding": "H2 is refuted on every count that includes what a port must write. At v3.1 the nine measured languages fall 1.65x for documentation code only, 1.40x with the per-language forms files and 1.09x with the shared guard; the only figure above 2x is the twenty-language projection of documentation code alone (2.30x), which leaves the forms out.",
+    "source": "results/s3fix-final.txt: source_lines; results/s3fix-check.txt: claims [12]"
+   },
+   {
+    "finding": "H1's breaking-change line was crossed and stayed crossed: about 11 at v3, about 12 at the freeze, about 11 to 13 at v3.1, against a line of about 10. None came from a newly ported language (rust, elixir, clojure's REFERENCE and rb each needed 0); all came from rewrites of the interface itself.",
+    "source": "results/s3a-shape.txt: interface_changes; results/s3fix-final.txt: measures"
+   },
+   {
+    "finding": "Per-language prose depends on how it is measured. go's notes were 20.4% (or 18.9% by the checker) of its REFERENCE at v3 because the stream note repeats per entity; at v3.1 notes alone are at most 9.4% in any section, but words printed only by go plus its notes are 25.6% of its three sections, mostly shared sentences only go's error style selects.",
+    "source": "results/s3a-freeze.txt: prose; results/s3a-check.txt: claims [15]; results/s3fix-final.txt: measures"
+   },
+   {
+    "finding": "The first review layer hid false facts. At v3-frozen the review tools flagged 24 of 24 injected regressions, but the classification rules (106, 89 language-unrestricted, ending in a catch-all echo rule) accepted injected false sentences automatically, and the note lint had never found a note. After the fix round, 0 of 27 output injections were accepted automatically.",
+    "source": "results/s3a-check.txt: summary, claims [9]-[11]; results/s3fix-check.txt: fixes_checked [0]"
+   },
+   {
+    "finding": "The guard went from catching 27 of 52 source mutations to 43 of 52, with every remaining miss in a stated category, and its account now covers every declared fact in nine languages with 0 exceptions. On the way it found that its own undocumented-member check had never fired in any language.",
+    "source": "results/s3a-check.txt: claims [7]; results/s3fix-guard.txt: summary, surprises; results/s3fix-check.txt: claims [8]"
+   },
+   {
+    "finding": "The guard found six wrong declared facts that printed false sentences on every page of six languages: five providers told the reader the entity accessor takes initial data (it takes entity options), py named a keyword its runtime lacks, and rust's direct note claimed an Err the runtime never returns. All six were corrected at v3.1.",
+    "source": "results/s3fix-guard.txt: wrong_facts; results/s3fix-final.txt: wrong_facts_fixed"
+   },
+   {
+    "finding": "Examples kept working: at v3.1 ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49 and the zig documentation lane 6/6, where the old code gives 5/6 because it prints std.posix.getenv, which Zig 0.16 lacks. Clojure and elixir have no toolchain here, so their 124 and 213 changed blocks are unverified.",
+    "source": "results/s3fix-final.txt: freeze_checks, blocks; results/s3fix-check.txt: claims [3]"
+   },
+   {
+    "finding": "Ruby was ported from the guide in roughly a quarter hour, with one additive shared change, and its README lane went from 48/49 on the old code to 49/49. The pilot also exposed four interface gaps and ten guide problems, and that shared code had introduced new rb defects (wrong-entity fields, no display field) and dropped a true fact.",
+    "source": "results/s3a-pilot.txt: summary, step_times, interface_gaps, guide_problems"
+   },
+   {
+    "finding": "The independent check of v3.1 judged the base not ready: masking accepts a wrong value in a language or convention fact as a shared sentence while the guard passes (shown in rb), and shared code prints `false` for perl's direct `ok`, which the runtime sets to 0, with nothing that would flag it.",
+    "source": "results/s3fix-check.txt: blockers [0], masking"
+   },
+   {
+    "finding": "The runtime table that porters follow cannot see swift `throws`, static constructors in swift, lua and perl, ocaml record fields (listed as functions), lua's error table (called a string) or ocaml's eager stream (classed lazy); a porter following the table would pass the guard with these wrong. In a new port, a sentence dropped from one variation changed no number at all.",
+    "source": "results/s3fix-check.txt: blockers [1], [2], runtime_table"
+   },
+   {
+    "finding": "Shared-sentence matching for a new language rests on unreviewed records: from scratch it matches 70 of 226 rb classes and 75 of 175 py classes, all against stage-3a rule records, and 0 when only hand-reviewed references are allowed. About 877 ledger classes in the eight original languages remain accepted by those records.",
+    "source": "results/s3fix-tools.txt: positive_control; results/s3fix-final.txt: gaps"
+   },
+   {
+    "finding": "Fixing a sentence once in shared code works in both directions. The log-default fix reached all 381 language READMEs and 20 root READMEs at once, but the earlier half-fix had first spread the 'log runs unless disabled' versus 'no logging' contradiction into 228 REFERENCE files of the twelve unported languages.",
+    "source": "results/s3a-check.txt: claims [4]; results/s3fix-shared.txt: items [7]"
+   },
+   {
+    "finding": "Some output is still weaker than the old code, and one fix-round fact is false: c's REFERENCE load and remove examples lost the NULL check and record read (only the sentence was fixed), go still discards write results, and elixir's restored note 'Named with its arity, it is `list/2`' contradicts its own citation and the call printed under it.",
+    "source": "results/s3fix-check.txt: output [0], [1], [3]"
+   },
+   {
+    "finding": "README sections the prototype has not ported still contradict the ported pages: a shared Error handling section prints TypeScript in 16 languages' READMEs, no-test READMEs promise a mock transport in five languages, and py and rb README tables disagree with the REFERENCE on signatures.",
+    "source": "results/s3fix-final.txt: contradictions, gaps"
+   },
+   {
+    "finding": "H5 (migration safety for doctor, remove, target add, package update, packs and aliases) was not tested in any round of this stage.",
+    "source": "all records in this part: hypotheses H5"
+   }
+  ],
+  "missing": [
+   "brief3.md is referenced by brief4.md as defining the principle, measures and commit rules for this stage; it was not among the records given and was not read.",
+   "No record in this part re-measures H3 against the 329-issue catalogue; every round says the catalogue was not recounted.",
+   "H5 was not exercised by any round in this part.",
+   "Timings throughout were single runs on shared CPUs, not the minimum of three the brief asks for (except before/run.sh in s3a-tools and the pilot).",
+   "Clojure and elixir examples were never compiled in any round (no toolchain here); the 'unverified 0' cells for other languages mean only that a compiler is on PATH.",
+   "The perl `ok` hidden-default problem and the runtime-table problems in s3fix-check were found by reading; no perl, swift, lua or ocaml port was run.",
+   "s3fix-tools left 29 files of another engineer's output directory (P/pilot-rb/out/new) altered; the records in this part do not say whether they were later restored."
+  ]
+ }
+}

@@ -1,0 +1,43 @@
+[portcheck java] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck java] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck java] classify (hand/java.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck java] ledger
+[portcheck java] blocks
+[portcheck java] fact sheet (and the language and convention facts against the OLD page)
+[portcheck java] hand records: does every quotation in a reason still stand on a page or in the clone
+[portcheck java] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck java] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck java] purity
+[portcheck java] guard: node --test --test-name-pattern '^java: ' ts/dist-test/runtimefacts.test.js
+== portcheck java ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   59 |      47     22        0      20       5     0       0 | 0
+rootquick                  19 |       4      0        0       3       1     0       0 | 0
+reference               13823 |     182     68        0      68      45     0       0 | 1
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                  19        16       0        13 |      21    0      0 | yes (javac); 29 changed blocks compiled by nothing
+rootquick                  0         0       0        19 |      22    0      0 | yes (javac); 19 changed blocks compiled by nothing
+reference                183         0       0       131 |      15    0      0 | yes (javac); 149 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 5, novel-token 9, vanished-token 6, novel-shape 1; rootquick: changed 9, novel-token 5, vanished-token 6, novel-shape 2; reference: changed 8, new-only 2, novel-token 5)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+contradictions (1; counted, not failed):
+  reference [bff341cf32] This SDK is generated without the `test` feature, so the client has no | other: the unported README's testSDK line (README "Reference > test | true: REFERENCE: without the test feature the 
+purity: 0 open, 4 accepted | notes declared 0, note regions found 0 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1310 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 405 calls of 20 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+guard: pass (pass 4 fail 0 )
+build: 1813 sources checked, current
+hand records: 230, 138 quote text (242 quotations); STALE 15
+  STALE class [b4ab2ad4c9]: quotes "Update/Patch — ... the id comes off the created entity's rec", on no page of java and nowhere in the clone
+  STALE class [ff1c629891]: quotes "Update/Patch — ... the id comes off the created entity's rec", on no page of java and nowhere in the clone
+  STALE class [f143373bc5]: quotes "Update/Patch — ... the id comes off the created entity's rec", on no page of java and nowhere in the clone
+  STALE class [14eb5dfde1]: quotes "Update/Patch — ... the id comes off the created entity's rec", on no page of java and nowhere in the clone
+  STALE class [70ac6b6b08]: quotes "Update/Patch — ... the id comes off the created entity's rec", on no page of java and nowhere in the clone
+  STALE class [b3e1a90434]: quotes "Update/Patch — ... the id comes off the created entity's rec", on no page of java and nowhere in the clone
+  STALE class [431e9ea0d5]: quotes "Update/Patch — ... the id comes off the created entity's rec", on no page of java and nowhere in the clone
+  STALE class [4e30f7a270]: quotes "Update/Patch — ... the id comes off the created entity's rec", on no page of java and nowhere in the clone
+facts (language and convention, against the OLD page): attested 4, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 15, pinned prose 11 (the reviewer audits each)
+shared sentences: matched 90, of which against a sentence nobody reviewed 1 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 27 (27 explained; an unexplained one FAILS)
+fact sheet: factsheet java: 67 facts, 0 with no account, 0 unattested, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/review/java/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/review/java/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/java.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK java: FAIL

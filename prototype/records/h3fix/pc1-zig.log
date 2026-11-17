@@ -1,0 +1,38 @@
+[portcheck zig] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck zig] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck zig] classify (hand/zig.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck zig] ledger
+[portcheck zig] blocks
+[portcheck zig] fact sheet (and the language and convention facts against the OLD page)
+[portcheck zig] hand records: does every quotation in a reason still stand on a page or in the clone
+[portcheck zig] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck zig] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck zig] purity
+[portcheck zig] guard: node --test --test-name-pattern '^zig: ' ts/dist-test/runtimefacts.test.js
+== portcheck zig ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   59 |      46      0       23      18       5     0       0 | 0
+rootquick                  19 |       3      0        0       3       0     0       0 | 0
+reference               14567 |     190      3       58      45      24    59       0 | 1
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                  24        17       0         7 |      30    0      0 | yes (zig); 24 changed blocks compiled by nothing
+rootquick                  0         2      15         2 |      29    0      0 | yes (zig); 19 changed blocks compiled by nothing
+reference                151         0     162         0 |       3    0      0 | yes (zig); 162 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 5, novel-token 19, vanished-token 6; rootquick: changed 2, novel-token 19, vanished-token 6, novel-shape 2; reference: old-only 1, novel-token 2)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+contradictions (1; counted, not failed):
+  reference [74e67fc6cf] On failure it returns the error of its error union, for `try` or `catc | other: zig/README.md:77-86 (Error handling, printed by the shared R | true: REFERENCE for prepare (E!Value, for try/
+purity: 0 open, 1 accepted | notes declared 2 (member:prepare, member:streamList), note regions found 1 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1339 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 761 calls of 23 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+guard: pass (pass 4 fail 0 )
+build: 1815 sources checked, current
+hand records: 160, 26 quote text (52 quotations); STALE 0
+facts (language and convention, against the OLD page): attested 8, recorded by hand 1, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 19, pinned prose 12 (the reviewer audits each)
+shared sentences: matched 3, of which against a sentence nobody reviewed 0 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 7 (5 explained; an unexplained one FAILS)
+  ABSENT, NO REASON reference [b3a8c4184d] in 1 variation(s): The first argument is set, switched on, as ⟦⟧ in the second, which holds the other client options; with no ⟦⟧ feature in this SDK, nothing r
+  ABSENT, NO REASON reference [60714446ae] in 1 variation(s): Both may be ⟦⟧.
+  say why in hand/zig.json absent: { "<id>": "<why>" } (a shared sentence this language prints nowhere) or { "<id>": { "why": "...", "variations": [...] } } (dropped from exactly those variations), or print it
+fact sheet: factsheet zig: 64 facts, 0 with no account, 0 unattested, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h3fix/tools/review/zig/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h3fix/tools/review/zig/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/zig.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK zig: FAIL

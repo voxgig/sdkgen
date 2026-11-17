@@ -1,0 +1,387 @@
+{
+ "summary": "The four tables were checked against the catalogue. They hold exactly 329 rows, one per entry. Fifteen entries were then corrected on two firm rules plus one consistency fix (pack generated code is G, as in M16 to M18 and A03). First, an entry whose Fix is entirely S11's generate and doctor error takes S11's class, K. Second, docgen text is K, because k-general lists docgen under K and two of the four tables already classed it that way. The corrected table was counted per class, per section and per distinct defect: 263 distinct defects after folding the 66 Fate repeats. The plan's 46 work packages were then mapped onto those classes. Result: the proposal's mechanism reaches about a fifth of the catalogue (T+S, 66 entries, 50 distinct). A quarter is already one shared edit (O, 81 entries, 67 distinct). 47 of those 81 need a new derivation that does not exist yet. A little over half the catalogue is consumer, generated-code, tool or pack work that the proposal does not touch (175 entries, 140 distinct). Only 2 of the 46 packages would disappear into porting a family, 9 would shrink and 35 would stay.",
+ "agreement": "61 of 65 sample entries (94 percent). The sample is every id ending in 2 or 8: 65 entries, not about 66. The sample was not blind: the classifiers' tables arrived with the instructions and had been seen before the sample was classified. Each entry was still decided again from its Fate, Class, Where and Fix lines, but the 94 percent should be read as an upper bound.",
+ "disagreements": [
+  {
+   "id": "S12",
+   "mine": "K",
+   "theirs": "S (model)",
+   "decides": "The Fix says 'No text change and no copy change: resolved by the S11 generate/doctor error'. Under the rule that the site carrying most of the Fix gives the class, it takes S11's class, K.",
+   "stands": "corrected to K; the same reading moves S14 (O), S19 (O) and S20 (S) to K, since their Fixes read 'no change once the S11 error lands'"
+  },
+  {
+   "id": "U88",
+   "mine": "G (comment)",
+   "theirs": "P",
+   "decides": "The text is comments in generated dart fragments and haskell templates. The M-D-A table classed the pack's other generated code (M16, M17, M18, A03) as G with P as the second class, so U88 is classed the same way.",
+   "stands": "corrected to G, with P as the second class"
+  },
+  {
+   "id": "U98",
+   "mine": "K",
+   "theirs": "O (needs a derivation)",
+   "decides": "The site is docgen ts/src/content.ts:160-163, and k-general lists docgen under K. U98 repeats U07, which the V-U1 table classed K at the same site.",
+   "stands": "corrected to K; the same rule moves U63, U64, U65, U66, U67, U76, U106 and A01 from O to K"
+  },
+  {
+   "id": "M48",
+   "mine": "K",
+   "theirs": "O (needs a derivation)",
+   "decides": "Same docgen site as U07 and U98, under the same rule.",
+   "stands": "corrected to K"
+  }
+ ],
+ "confused_pairs": "O and K over docgen, 10 entries. The four tables disagreed among themselves here: two classed docgen K and two classed it O. S or O against K for sentences whose whole fix is S11's tool error, 4 entries. P and G for pack generated code, 1 entry. The classifiers' own least-sure lists add two pairs this check left unmoved. S and L: S15, S27, G03, V1, V2, U42, U59, U60 and D27, where the question is whether a sentence repeated in a few install, explanation or how-to copies would be lifted into a shared frame. O and S: S05, X1 and U58, where a shared table already writes the text but the fix is a per-language idiom.",
+ "missing_or_doubled": [
+  "none: 88+86+78+77 = 329 rows, script-checked against every '### <id>.' heading; no id missing, doubled or extra; 'The 50 rated medium or low' not counted"
+ ],
+ "counts_by_class": [
+  {
+   "cls": "T",
+   "entries": "38 (yes 13, part 25)",
+   "distinct": "26 (yes 11, part 15)",
+   "note": "Copied from the scope table. 6 of them (S22, X3, U52, U53, V27, U102) are in ReadmeRefFeatures and FeatureDocs, which were shared before the prototype and are still wrong after it. N11 and M35 are js only, and js was not ported."
+  },
+  {
+   "cls": "S",
+   "entries": "28 (model 20, runtime fact 8)",
+   "distinct": "24 (model 18, runtime fact 6)",
+   "note": "The classifiers had 30. S12 and S20 moved to K."
+  },
+  {
+   "cls": "L",
+   "entries": "6",
+   "distinct": "6",
+   "note": ""
+  },
+  {
+   "cls": "O",
+   "entries": "81 (needs a derivation 47, plain 34)",
+   "distinct": "67 (needs a derivation 40, plain 27)",
+   "note": "The classifiers had 93 (55 needs a derivation, 38 plain)."
+  },
+  {
+   "cls": "C",
+   "entries": "33",
+   "distinct": "28",
+   "note": "34 of WP36's issues: C 33 and O 1."
+  },
+  {
+   "cls": "G",
+   "entries": "40 (behaviour 31, comment 9)",
+   "distinct": "29 (behaviour 21, comment 8)",
+   "note": ""
+  },
+  {
+   "cls": "K",
+   "entries": "83",
+   "distinct": "65",
+   "note": "The classifiers had 69 entries and 56 distinct. Includes all docgen."
+  },
+  {
+   "cls": "P",
+   "entries": "13",
+   "distinct": "12",
+   "note": ""
+  },
+  {
+   "cls": "N",
+   "entries": "7",
+   "distinct": "6",
+   "note": "These are the 7 entries with no work package."
+  }
+ ],
+ "counts_by_section": "Entries per section, in the order T S L O C G K P N. S (50): 7 7 0 22 7 0 6 0 1. X (7): 2 1 0 4 0 0 0 0 0. G (31): 3 3 0 5 9 7 4 0 0. V (32): 1 2 3 4 1 8 12 1 0. U (108): 9 8 3 31 11 8 22 10 6. N (24): 2 0 0 3 1 4 13 1 0. M (49): 7 2 0 6 2 8 23 1 0. D (23): 7 4 0 6 2 3 1 0 0. A (5): 0 1 0 0 0 2 2 0 0.",
+ "mechanism_addresses": "T and S together are 66 of 329 entries (20 percent) and 50 of 263 distinct defects (19 percent). The prototype tested the T share: 38 entries (12 percent), 26 distinct (10 percent). Six of those T entries (6 distinct) were not fixed by the prototype, because their component was shared before it. Range: 57 to 70 entries (17 to 21 percent), or 43 to 53 distinct. The low end moves the S and L borderline entries to L (9 entries, 7 distinct). The high end moves S05, X1 and U58 from O to S and U42 from L to S.",
+ "one_edit_today": "O is 81 entries (25 percent) and 67 distinct (25 percent). Of these, 47 entries (40 distinct) need a derivation that no shared function gives at 9aebaf9e: targetSurface, targetPlace, docLink, featureOnByDefault, modelCopyMode, a release-tag helper, apiDisplayName, definitionKind and others. That is the 'one answer per fact' half of the design, which the proposal needs but does not supply. The other 34 entries (27 distinct) are plain edits. Range: 78 to 93 entries (24 to 28 percent); the top of the range counts docgen as O.",
+ "does_nothing_for": "175 entries (53 percent) and 140 distinct (53 percent). By class: L 6 (6 distinct), C 33 (28), G 40 (29), K 83 (65), P 13 (12). Adding the 7 N entries (6 distinct) brings the share to 55 percent. Range: 165 to 184 entries (50 to 56 percent), or 131 to 147 distinct. The low end counts docgen as O; the high end moves the S and L border to L.",
+ "uncertainty": "The sample agreement of 94 percent is an upper bound, because the sample was not blind. Outside the sample, entries were not re-read against source. They carry the classifiers' classes except for the 15 corrections, each of which has a rule stated. The ranges come from the named borderline sets (S and L 9 entries, O and S 3, docgen O and K 10), not from a sampling estimate. Four inconsistencies within repeat chains were left as they are, and distinct counts follow the root: S13 (T) repeats S11 (K), U20 (P) repeats S23 (S), U75 (S) repeats G01 (T), and N15 (G), D70 (G) and M37 (T) all repeat G28 (K).",
+ "packages": [
+  {
+   "wp": "WP29",
+   "issues": "10",
+   "classes": "T9 S1",
+   "fate": "a"
+  },
+  {
+   "wp": "WP31",
+   "issues": "14",
+   "classes": "T6 S8",
+   "fate": "a"
+  },
+  {
+   "wp": "WP18",
+   "issues": "5",
+   "classes": "T3 O2",
+   "fate": "b (G29 sinks go; V27, U102, U103 are shared escapers untouched by the prototype)"
+  },
+  {
+   "wp": "WP21",
+   "issues": "8",
+   "classes": "T1 S2 O1 G3 P1",
+   "fate": "b (the DQ1 pre-pass for generated code stays)"
+  },
+  {
+   "wp": "WP28",
+   "issues": "14",
+   "classes": "T3 G11",
+   "fate": "b (the type printers go; 11 code-generator entries stay)"
+  },
+  {
+   "wp": "WP30",
+   "issues": "8",
+   "classes": "S6 G2",
+   "fate": "b (the U72 and U73 live harnesses stay)"
+  },
+  {
+   "wp": "WP32",
+   "issues": "7",
+   "classes": "S4 O1 G2",
+   "fate": "b (the ../.sdk literal in 69 files stays)"
+  },
+  {
+   "wp": "WP33",
+   "issues": "9",
+   "classes": "T5 S1 G2 K1",
+   "fate": "b (the jostraca raw mode and code escapers stay)"
+  },
+  {
+   "wp": "WP34",
+   "issues": "5",
+   "classes": "T1 S1 O2 K1",
+   "fate": "b"
+  },
+  {
+   "wp": "WP35",
+   "issues": "11",
+   "classes": "S3 L4 G4",
+   "fate": "b"
+  },
+  {
+   "wp": "WP37",
+   "issues": "9",
+   "classes": "T3 S2 L2 G2",
+   "fate": "b"
+  },
+  {
+   "wp": "WP08",
+   "issues": "15",
+   "classes": "T4 O7 K4",
+   "fate": "c (its T entries are in the already-shared ReadmeRefFeatures and were not fixed by the prototype)"
+  },
+  {
+   "wp": "WP16",
+   "issues": "5",
+   "classes": "T2 O3",
+   "fate": "c (needs featureOnByDefault)"
+  },
+  {
+   "wp": "WP22",
+   "issues": "9",
+   "classes": "T1 K8",
+   "fate": "c"
+  },
+  {
+   "wp": "WP41",
+   "issues": "14",
+   "classes": "G2 P12",
+   "fate": "c (the pack would have to port its own families)"
+  },
+  {
+   "wp": "WP36",
+   "issues": "34",
+   "classes": "O1 C33",
+   "fate": "c"
+  },
+  {
+   "wp": "WP38",
+   "issues": "6",
+   "classes": "O1 G5",
+   "fate": "c"
+  },
+  {
+   "wp": "WP07",
+   "issues": "8",
+   "classes": "O8",
+   "fate": "c"
+  },
+  {
+   "wp": "WP09",
+   "issues": "7",
+   "classes": "O5 K2",
+   "fate": "c"
+  },
+  {
+   "wp": "WP10",
+   "issues": "6",
+   "classes": "O6",
+   "fate": "c"
+  },
+  {
+   "wp": "WP13",
+   "issues": "12",
+   "classes": "O9 K3",
+   "fate": "c"
+  },
+  {
+   "wp": "WP14",
+   "issues": "12",
+   "classes": "O12",
+   "fate": "c"
+  },
+  {
+   "wp": "WP15",
+   "issues": "12",
+   "classes": "O12",
+   "fate": "c"
+  },
+  {
+   "wp": "WP17",
+   "issues": "5",
+   "classes": "O4 K1",
+   "fate": "c"
+  },
+  {
+   "wp": "WP23",
+   "issues": "4",
+   "classes": "O1 K3",
+   "fate": "c"
+  },
+  {
+   "wp": "WP25",
+   "issues": "5",
+   "classes": "O5",
+   "fate": "c"
+  },
+  {
+   "wp": "WP11",
+   "issues": "8",
+   "classes": "O1 G2 K5",
+   "fate": "c"
+  },
+  {
+   "wp": "WP39",
+   "issues": "1",
+   "classes": "G1",
+   "fate": "c"
+  },
+  {
+   "wp": "WP40",
+   "issues": "1",
+   "classes": "G1",
+   "fate": "c"
+  },
+  {
+   "wp": "WP42",
+   "issues": "3",
+   "classes": "G3",
+   "fate": "c"
+  },
+  {
+   "wp": "WP01",
+   "issues": "5",
+   "classes": "K5",
+   "fate": "c"
+  },
+  {
+   "wp": "WP02",
+   "issues": "3",
+   "classes": "K3",
+   "fate": "c"
+  },
+  {
+   "wp": "WP04",
+   "issues": "1",
+   "classes": "K1",
+   "fate": "c"
+  },
+  {
+   "wp": "WP05a",
+   "issues": "5",
+   "classes": "K5",
+   "fate": "c"
+  },
+  {
+   "wp": "WP05b",
+   "issues": "2",
+   "classes": "K2",
+   "fate": "c"
+  },
+  {
+   "wp": "WP06",
+   "issues": "2",
+   "classes": "K2",
+   "fate": "c"
+  },
+  {
+   "wp": "WP12",
+   "issues": "8",
+   "classes": "K8",
+   "fate": "c"
+  },
+  {
+   "wp": "WP20",
+   "issues": "5",
+   "classes": "K5",
+   "fate": "c"
+  },
+  {
+   "wp": "WP26a",
+   "issues": "13",
+   "classes": "K13",
+   "fate": "c"
+  },
+  {
+   "wp": "WP26b",
+   "issues": "3",
+   "classes": "K3",
+   "fate": "c"
+  },
+  {
+   "wp": "WP44a",
+   "issues": "5",
+   "classes": "K5",
+   "fate": "c"
+  },
+  {
+   "wp": "WP45",
+   "issues": "3",
+   "classes": "K3",
+   "fate": "c"
+  },
+  {
+   "wp": "WP03",
+   "issues": "0",
+   "classes": "none in appendix A",
+   "fate": "c (supplies the text guard)"
+  },
+  {
+   "wp": "WP19",
+   "issues": "0",
+   "classes": "none in appendix A",
+   "fate": "c (the derivations, which the proposal also needs)"
+  },
+  {
+   "wp": "WP27",
+   "issues": "0",
+   "classes": "none in appendix A",
+   "fate": "c"
+  },
+  {
+   "wp": "WP44b",
+   "issues": "0",
+   "classes": "none in appendix A",
+   "fate": "c"
+  }
+ ],
+ "package_counts": "Of the 46 packages: (a) 2 disappear into 'port that family' (WP29, WP31); (b) 9 shrink (WP18, WP21, WP28, WP30, WP32, WP33, WP34, WP35, WP37); (c) 35 stay as they are. Four of the 35 (WP03, WP19, WP27, WP44b) have no issue assigned in appendix A. The 7 not-a-defect entries have no package. Package membership was taken from appendix A. S09, G27 and V27 were read by hand because pipes in their titles break the table: they go to WP16, WP33 and WP18.",
+ "general_or_not": "The proposal solves part of this catalogue; it is not a general solution. Its mechanism reaches about one entry in five (66 of 329, 50 of 263 distinct), and the prototype tested about one in eight. Six of the tested entries were not fixed, because their component was shared before the prototype began. A quarter of the catalogue is already written once (O). Writing per-language families once does nothing more for it. What it needs is the other half of the design: single exported derivations such as targetSurface, targetPlace, docLink, featureOnByDefault and modelCopyMode. 40 distinct defects depend on these. Just over half the catalogue is consumer Mains, generated code and tests, the generator's tools, docgen, create-sdkgen, apidef and the packs. A documentation structure cannot touch any of that, and those defects stay individual fixes in about 35 of the 46 packages. The design principle that does span the whole catalogue is the one the proposal's first rule restates: one resolved answer per fact, read by documents, code generators, consumers and docgen alike. Writing sentences once is the documentation half of that principle, and it is worth doing for the README families: it removes WP29 and WP31 and shrinks nine more packages.",
+ "file": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/general/catalogue-classes.md",
+ "not_done": [
+  "The sample was not blind: the classifiers' rows had been seen before the sample was classified, so 94 percent agreement is an upper bound.",
+  "Entries outside the sample were not re-read against source at 9aebaf9e. Their classes are the classifiers' except for the 15 corrections, which apply stated rules.",
+  "The border between S and L (the install, explanation and how-to copies) was not settled by reading those copies. It is carried as a range.",
+  "The (a)/(b)/(c) fates of the packages are a reading of their issues' classes, not a measured port. No family beyond the prototype's three was built.",
+  "The four packages with no issues (WP03, WP19, WP27, WP44b) were judged from their titles only."
+ ]
+}

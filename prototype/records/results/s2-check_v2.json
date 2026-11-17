@@ -1,0 +1,313 @@
+{
+ "summary": "I rebuilt both clones in my own directory (check-v2/sdkgen at f9c43b19, check-v2/oldclone at 9aebaf9e) and regenerated OLD and NEW over all 19 variations. My NEW output is byte-identical to theirs. I compared the two with my own scripts (harness/mycmp.js and mychecks.js), not their diff2.js.\n\n**What holds up**\n- Nothing outside the two ported sections changed. The 14 unported languages are byte-identical in all 238 per-target READMEs. The root README outside the six ported quick-start subsections is unchanged in all 19 variations. The six ported READMEs are unchanged outside the tutorial.\n- Code-block counts match theirs exactly (identical/changed): ts 18/43, go 0/39, py 25/36, c 7/54, zig 25/36, clojure 26/35. Every one of the 17\u201319 root blocks per language changed.\n- My structural checks found 0 remaining quick-start instances of S28, U45, S49, S50, G01/M13, M12, M14 and c-getenv in NEW. OLD has 45\u201389 for several of them.\n- Lanes, NEW: ts 16/16, go 12/12, py 12/12 under real pytest, c DOC 6/6. The same lanes on OLD: 16/16, 12/12, 12/12, and c 5/6, which fails basic-server at ../README.md:53 and README.md:50. No lane was weakened: the test-file edits are only additions, and they are identical in both clones.\n- I kept a generated go SDK, extracted the go/README program and the root README program, swapped in the test constructor, and ran both with `go run`. Both exit 0.\n  - The lane alone would not prove this: runProgs tolerates a domain panic and skips a run variant that does not compile.\n- Full suite: 2528 tests, 2523 pass, 0 fail, 5 skipped. runtimefacts and retire: 14/14.\n- I re-ran the upgrade walk myself. doctor first reports 12 missing, 5 outdated and 12 retired, and exits 1. `package update --no-fetch` removes the 12 retired copies and their dist .js. doctor then exits 0.\n- The naming claim holds for every language. Each named function is called by both the code generator and the Naming hook.\n- My grep of the six Syntax files finds 0 model reads and 0 naming rules. They import only printing helpers and types from @voxgig/sdkgen.\n\n**What is wrong or missing in their report**\n1. Their summary's arithmetic is wrong: the providers total 680 lines, not 580. The 1,818 total and the 1.13x ratio are still right.\n2. Two true facts were lost, and one false comment was introduced.\n   - zig's create comment says \"Create \u2014 returns the created entity\". That is false for a result union, and it replaces OLD's true \"Create \u2014 .ok carries the created entity\". The cause is that the shared createComment adapts only to errslot, not to union or pair.\n   - The ts root quick start no longer names the class an operation returns: OLD said `PlanetEntity[]`, `SatelliteEntity`, `ConsoleEntity[]`.\n3. clojure's prose now says `((:data-get entity))`, but no `entity` symbol is bound in the code. OLD named the bound variable (`planet`).\n4. The facts guard is weaker than reported. It caught zig changed from union to throw, but it passed with go's collection set to `map[string]any` and errVar set to `e`. Its method regex accepts any indented line that starts with the method name.\n5. H1 is crossed on prose, as they say.\n   - By sentence: 31% (ts, py, c, zig, clojure) and 48% (go) of each language's tutorial sentences are not shared by all six.\n   - By words: zig's root-quick-start comments are 20.0% provider-supplied fact tokens.\n6. H2 stays refuted. The projection to 20 languages (1.75x, or 1.46x at c's provider size) assumes the remaining 14 need nothing new. But 9 of 16 were found to need additions, and the REFERENCE page is untouched.\n\n**Not checked**\n- zig and clojure: neither toolchain is installed. I checked `command -v` and searched the filesystem. Neither port was compiled or run before or after.\n- c examples are compiled with -fsyntax-only only, before and after; nothing runs them.",
+ "claims": [
+  {
+   "claim": "The 14 unported languages are byte-identical to OLD, and nothing outside the two sections changed",
+   "verdict": "confirmed",
+   "what_i_ran": "node harness/mycmp.js (my own script) after gen.js old /home/user/sdkgen/ts, oldclone alias, gen.js new on my copy",
+   "what_is_true": "238 unported per-target READMEs (14 x 17) differ 0. Root README outside the 6 ported subsections of the two Quickstart sections differs in 0 of 19 variations. Ported READMEs outside the Tutorial differ 0. My NEW output is byte-identical to their stored out/new (diff -rq)."
+  },
+  {
+   "claim": "Code blocks identical/changed: ts 18/43, go 0/39, py 25/36, c 7/54, zig 25/36, clojure 26/35",
+   "verdict": "confirmed",
+   "what_i_ran": "node harness/mycmp.js (multiset match per variation and section)",
+   "what_is_true": "Tutorial plus root, identical/changed: ts 18/26+0/17; go 0/20+0/19; py 25/19+0/17; c 7/37+0/17; zig 25/19+0/17; clojure 26/18+0/17. Every root block changed in every language."
+  },
+  {
+   "claim": "0 unexplained changed lines",
+   "verdict": "could-not-check",
+   "what_i_ran": "I read OLD and NEW side by side for doc-crud, doc-nested, B, ent-none, auth-basic, server-none, doc-list and alias-go2, for all six languages",
+   "what_is_true": "I did not reuse their reason tagger. I found no change without a cause, but some changes their reasons call deliberate lose facts. Examples: the zig create comment and the ts root class names (see defects)."
+  },
+  {
+   "claim": "Lanes: ts 16/16, go 12/12, py 12/12 under real pytest, c DOC 6/6 (5/6 at start)",
+   "verdict": "confirmed",
+   "what_i_ran": "check-v2/mylanes.sh new and old: node --test --test-name-pattern for each lane in dist-test/generatedcompile.test.js, with pytest venv and node24 on PATH",
+   "what_is_true": "NEW: ts 16/16, go 12/12, py 12/12, c 6/6. OLD (oldclone, same added lanes): ts 16/16, go 12/12, py 12/12, c 5/6, failing basic-server at ../README.md:53 and README.md:50. The lane edits are identical in both clones and only add lanes."
+  },
+  {
+   "claim": "go's README program and root program both compile and run in test mode, exit 0",
+   "verdict": "confirmed",
+   "what_i_ran": "Copied generatedcompile.test.js to gckeep.test.js with rmSync(tmp) replaced by a no-op, and ran 'go: every README example is classified, and run, with a patch' with TMPDIR in my directory. Extracted the func main block from go/README.md and ../README.md, replaced sdk.New...SDK(...) with sdk.TestSDK(seed, nil), and ran go run ./cmd/tutprog and ./cmd/rootprog",
+   "what_is_true": "Both exit 0 and print the seeded records. Note that the lane alone does not prove this: runProgs tolerates a domain panic and skips a run variant that does not compile."
+  },
+  {
+   "claim": "Providers read the model 0 times and hold 0 naming rules (purity.js 43 hits before, 1 after)",
+   "verdict": "confirmed",
+   "what_i_ran": "grep over the six Syntax_<lang>.ts for imports, model, ctx$, getModelPath, nom(, RESERVED, case changes, exampleVarName, desc.name/Name/package/quick/auth/options/server/entities, and op-name literals; plus reading each file",
+   "what_is_true": "Imports are only indentLines, jsKey, jsProp, jsQuote, uses and types. The only description read beyond layout and sym is clojure's desc.entities.filter by the entities the section uses (require list). Zero was reached by moving names into Naming_<lang> hooks that call code-generator functions, not by copying. Residual literals in hooks: 'core/api.h', 'sdk', 'sdk.api', 'api/make-sdk', model.const.Name+'SDK' (mirrors the ProjectName substitution), c ctor cIdent(model)+'_sdk_new' (mirrors the template's projectname_sdk_new, not the same function)."
+  },
+  {
+   "claim": "For one name per language, the code generator and the hook call the same function",
+   "verdict": "confirmed",
+   "what_i_ran": "grep/read Package_ts.ts:68, Main_go.ts:48, Main_py.ts:49, MainEntity_c.ts:16-17, MainEntity_zig.ts:21, Main_clojure.ts:78, MainEntity_clojure.ts:16 against Naming_<lang>.ts",
+   "what_is_true": "packageName, goModule, pyPackageDir, cIdent/cVarName, zigVarName, cljEntityNs/cljEntityAlias/cljAccessor are each called by both. The py rule is still written inline in 5 other py components (Config_py:116, Entity_py:46, PrepareAuth_py:27, ReadmeExamplesTest_py:15, TestClean_py:36), as they disclosed."
+  },
+  {
+   "claim": "Providers: ts 88, go 124, py 85, c 148, zig 126, clojure 109 (580 in all)",
+   "verdict": "imprecise",
+   "what_i_ran": "wc -l on each Syntax_<lang>.ts; node harness/metrics2.js",
+   "what_is_true": "The per-file numbers are right, but they sum to 680, not 580. The after-total of 1,818 (= 737 infrastructure + 199 ReadmeQuick + 54 root-only + 680 + 148) is correct. Not counted: utility_py +7, utility_clojure +17, sdkgen.ts +7, optional.ts +4. With them, after = 1,842, about 1.12x."
+  },
+  {
+   "claim": "Both sections, six languages, 2,060 -> 1,818 (1.13x); projected to 20: 1.75x, or 1.46x at c's size",
+   "verdict": "confirmed",
+   "what_i_ran": "wc -l on the 12 OLD components plus shared; node harness/metrics2.js",
+   "what_is_true": "Before: ReadmeQuick_<l> 1,354 + ReadmeTopQuick_<l> 659 + shared 34 + call sites 13 = 2,060. Arithmetic reproduced. The projection is optimistic: it assumes the 14 other providers need no new representation (9 of 16 were found to need additions), that shared code does not grow, and that js's Direct API section disappears rather than moves."
+  },
+  {
+   "claim": "By sentence, 31% of each language's tutorial sentences (48% for go) are result-style frames no other ported language uses; by words, zig root comments are 20% provider-supplied",
+   "verdict": "confirmed",
+   "what_i_ran": "node harness/mycmp.js (sentences of the NEW tutorial across all 6, all variations); a token count over root-README comment words against each language's fact tokens",
+   "what_is_true": "Sentences shared by all six: 49 of 71 (69.0%) for ts, py, c, zig and clojure; 49 of 95 (51.6%) for go. Words in code spans of non-shared sentences: ts 4.6%, go 10.2%, py 7.4%, c 9.7%, zig 8.2%, clojure 6.9%. Root comments: fact-token words ts 13.7%, go 11.3%, py 13.7%, c 13.7%, zig 20.0%, clojure 13.7%."
+  },
+  {
+   "claim": "The facts guard re-derives methods, record accessor and result style, and fails when any is changed",
+   "verdict": "imprecise",
+   "what_i_ran": "Edited my compiled dist-test-scaffold Syntax_zig.js (result union->throw), then Syntax_go.js (collection `[]any`->`map[string]any`, errVar err->e); ran dist-test/runtimefacts.test.js each time; restored both",
+   "what_is_true": "zig union->throw: 1 fail (caught). go collection and errVar wrong: 7/7 pass (not caught). Only load's style is checked. The method regex accepts any indented line beginning with the name, so the check is loose."
+  },
+  {
+   "claim": "Full suite: 2,528 tests, 2,523 pass, 0 fail, 5 skipped",
+   "verdict": "confirmed",
+   "what_i_ran": "node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort) in my copy",
+   "what_is_true": "2528 / 2523 / 0 / 5. The temporary gckeep file was removed before the run. runtimefacts plus retire: 14/14."
+  },
+  {
+   "claim": "Upgrade walk: 12 retired, 12 missing, 5 outdated; package update removes the retired copies and their dist; doctor ends clean",
+   "verdict": "confirmed",
+   "what_i_ran": "check-v2/mig/bin/tool.js (copied): mk walk; target add ts go py c zig clojure; feature add test; build; gen; use new; doctor; package update @voxgig/sdkgen --no-fetch; build; gen --full; doctor",
+   "what_is_true": "doctor-end '0 forked, 0 edited, 0 stale, 12 missing, 5 outdated, 12 retired', EXIT 1. Twelve 'removed src/cmp/<t>/ReadmeQuick_<t>.ts' and 'ReadmeTopQuick' lines. dist/cmp/go holds only Naming_go and Syntax_go. Final doctor: 'matches the scaffold (0 additive, 0 customized)', EXIT 0. Override, no-record and pack rows were not re-run."
+  },
+  {
+   "claim": "The catalogued quick-start issues are fixed by shared code in all six (S49, S50, M12, G01, M13, M14, S28, U45, c-getenv)",
+   "verdict": "confirmed",
+   "what_i_ran": "node harness/mychecks.js over every variation, tutorial and root, OLD and NEW",
+   "what_is_true": "NEW has 0 hits for every check (one clojure U45 hit was a checker artefact; I read the block and it is correct). OLD: G01/M13 89, S49 84, S28 lead-in 63, S28 numbering 45, U45 (c patch) 1 real, c-getenv 30, S50 20, M14 16, M12 2. Caveat: S49, S50, G01 and M12 also name ReadmeModel, ReadmeRef and ReadmeHowto sites, which are not fixed. The ts README still says region defaults to eu (line 35) and 'Required \u2026 tenant, region' (line 224), and auth-basic-query ts still shows secret 5 times."
+  },
+  {
+   "claim": "zig and clojure cannot be compiled here",
+   "verdict": "confirmed",
+   "what_i_ran": "command -v zig clojure clj lein elixir; find / -xdev -name zig -o -name 'clojure*.jar'",
+   "what_is_true": "All are MISSING, and there is no clojure jar in ~/.m2. java is present, so clojure could be run if a jar were fetched, but the brief forbids fetching anything except npm."
+  }
+ ],
+ "own_measurements": [
+  {
+   "name": "unported READMEs differing",
+   "value": "0 of 238",
+   "command": "node harness/mycmp.js"
+  },
+  {
+   "name": "outside-section changes",
+   "value": "0 in ported per-target READMEs; 0 in root README outside the 6 subsections; 19 variations",
+   "command": "node harness/mycmp.js"
+  },
+  {
+   "name": "code blocks identical/changed, tutorial | root",
+   "value": "ts 18/26 | 0/17; go 0/20 | 0/19; py 25/19 | 0/17; c 7/37 | 0/17; zig 25/19 | 0/17; clojure 26/18 | 0/17",
+   "command": "node harness/mycmp.js"
+  },
+  {
+   "name": "tutorial sentences shared by all 6 (NEW)",
+   "value": "ts, py, c, zig, clojure 49/71 (69.0%); go 49/95 (51.6%). OLD: 35.8-45.2%",
+   "command": "node harness/mycmp.js"
+  },
+  {
+   "name": "tutorial words shared (NEW)",
+   "value": "ts 65.9%, go 49.1%, py 64.4%, c 60.1%, zig 59.1%, clojure 65.9%. Code-span words in non-shared sentences: 4.6 / 10.2 / 7.4 / 9.7 / 8.2 / 6.9% of all words",
+   "command": "node harness/mycmp.js"
+  },
+  {
+   "name": "root-comment words that are fact tokens (NEW)",
+   "value": "ts 13.7%, go 11.3%, py 13.7%, c 13.7%, zig 20.0%, clojure 13.7%",
+   "command": "node -e (token count over rootParts comments, harness dir)"
+  },
+  {
+   "name": "catalogued quick-start issue hits, NEW vs OLD",
+   "value": "NEW 0 for every check. OLD: G01/M13 89, S49 84, S28 lead-in 63, S28 numbering 45, c-getenv 30, S50 20, M14 16, M12 2, U45 1 real",
+   "command": "node harness/mychecks.js"
+  },
+  {
+   "name": "lanes NEW",
+   "value": "ts 16/16, go 12/12, py 12/12 (real pytest), c DOC 6/6",
+   "command": "check-v2/mylanes.sh new <clone>/ts"
+  },
+  {
+   "name": "lanes OLD",
+   "value": "ts 16/16, go 12/12, py 12/12, c DOC 5/6 (basic-server: ../README.md:53, README.md:50)",
+   "command": "check-v2/mylanes.sh old <oldclone>/ts"
+  },
+  {
+   "name": "go programs run in test mode",
+   "value": "go/README program EXIT 0; root README program EXIT 0",
+   "command": "extract.js + go run ./cmd/tutprog and ./cmd/rootprog in a kept SDK"
+  },
+  {
+   "name": "full suite",
+   "value": "2528 tests, 2523 pass, 0 fail, 5 skipped",
+   "command": "node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name generatedcompile.test.js | sort)"
+  },
+  {
+   "name": "source lines, six languages, both sections",
+   "value": "before 2,060; after 1,818 (providers 680, hooks 148, infrastructure 737, ReadmeQuick own 199, root-only 54); 1.13x; 1,842 with the uncounted utility/export lines",
+   "command": "wc -l; node harness/metrics2.js"
+  },
+  {
+   "name": "facts guard negative controls",
+   "value": "zig result union->throw: 1 fail (caught). go collection/errVar wrong: 0 fail (not caught)",
+   "command": "sed on dist-test-scaffold Syntax_*.js; node --test dist-test/runtimefacts.test.js; restored"
+  },
+  {
+   "name": "upgrade walk",
+   "value": "doctor 12 missing / 5 outdated / 12 retired, EXIT 1; after package update --no-fetch: 12 removed, dist cleaned, doctor EXIT 0",
+   "command": "check-v2/mig/bin/tool.js walk sequence (walk.log)"
+  }
+ ],
+ "output_defects": [
+  {
+   "lang": "zig",
+   "variation": "doc-crud, doc-nested, crud-basic, crud-bare, crud-noupdate (every variation with create)",
+   "defect": "The create comment says 'Create \u2014 returns the created entity'. That is false for zig, where create returns EntResult, a union whose .ok holds the entity. The shared createComment adapts only to errslot.",
+   "evidence": "out/new/doc-crud/zig/README.md step 4; OLD said '// Create \u2014 .ok carries the created entity'; src/cmp/zig/fragment/EntityCreateOp.fragment.zig:3 'pub fn create(...) EntResult'; ts/src/helpers/runtimeprose.ts createComment",
+   "worse_than_old": true
+  },
+  {
+   "lang": "ts",
+   "variation": "all variations with entities (root README)",
+   "defect": "The root quick start no longer names the class an operation returns. OLD: '(returns PlanetEntity[], one entity per record)', '(returns the entity, a SatelliteEntity)'. NEW: 'an array of entities'.",
+   "evidence": "rootParts(out/old/doc-crud/README.md).sub.ts vs out/new; OLD-only comments listed by the per-language diff",
+   "worse_than_old": true
+  },
+  {
+   "lang": "clojure",
+   "variation": "every variation with list or load",
+   "defect": "The prose says '`((:data-get entity))` reads an entity's record', but the code binds planet, console or ambient. No `entity` symbol exists, so a reader copying the expression gets an unresolved symbol. OLD named the bound variable.",
+   "evidence": "out/new/doc-crud/clojure/README.md steps 2-3; OLD 'Read each record with `((:data-get planet))`'",
+   "worse_than_old": true
+  },
+  {
+   "lang": "go",
+   "variation": "doc-crud, doc-nested, crud-*",
+   "defect": "'// Create \u2014 returns the created entity' is imprecise for go: Create returns (value, error). The write step's list item carries no sentence, so the pair fact is stated only for List and Load. The program also prints two comments in a row ('// Create, update, patch, and remove' then '// Create \u2014 ...').",
+   "evidence": "out/new/doc-crud/go/README.md; EntityCreateOp.fragment.go:13 '(any, error)'",
+   "worse_than_old": false
+  },
+  {
+   "lang": "go",
+   "variation": "ent-none, and every variation (wording)",
+   "defect": "'The steps are one program, shown whole after them.' reads awkwardly. In ent-none it introduces a single step.",
+   "evidence": "out/new/ent-none/go/README.md",
+   "worse_than_old": false
+  },
+  {
+   "lang": "c",
+   "variation": "every variation with list then load (tutorial, and now the root)",
+   "defect": "err is never reset. After list fails, load's `if (err)` reports 'load failed' with the list's message; and because the runtime returns NULL whenever *err is already set (EntityListOp.fragment.c 'if (*err) return NULL'), every later call fails. OLD's tutorial had the same defect. OLD's root used `if (loaded)` and failed silently instead.",
+   "evidence": "out/new/doc-crud/README.md C subsection; src/cmp/c/fragment/EntityListOp.fragment.c",
+   "worse_than_old": false
+  },
+  {
+   "lang": "ts",
+   "variation": "B, server-mixed, auth-basic-query",
+   "defect": "The README still contradicts itself (brief2 item 8). The tutorial says region defaults to eu while the options table says '**Required.** \u2026 tenant, region'. Under query Basic the quick start omits secret, but 5 later lines show it.",
+   "evidence": "out/new/B/ts/README.md lines 35 and 224; grep -n secret out/new/auth-basic-query/ts/README.md (lines 143, 180, 192, 216, 230)",
+   "worse_than_old": false
+  },
+  {
+   "lang": "ts",
+   "variation": "crud variations",
+   "defect": "'Create \u2014 returns the created entity' sits beside 'resolves to' in the same document; ts create resolves (async).",
+   "evidence": "out/new/doc-crud/ts/README.md step 4 vs step 3",
+   "worse_than_old": false
+  },
+  {
+   "lang": "zig, clojure",
+   "variation": "all",
+   "defect": "Unverifiable: no toolchain. The NEW zig create binding (`const created = switch \u2026 .err => |e| return std.debug.print(\u2026)`) and the clojure blocks were never compiled or run.",
+   "evidence": "command -v zig/clojure MISSING",
+   "worse_than_old": false
+  }
+ ],
+ "facts_lost": [
+  "zig: 'Create \u2014 .ok carries the created entity' (replaced by the false 'returns the created entity').",
+  "zig: the instruction to `switch` on list's .ok ('`.ok` is a slice of entities, one per record \u2014 `switch` on it').",
+  "ts root README: the entity class each operation returns ('returns PlanetEntity[]', 'a SatelliteEntity', 'ConsoleEntity[]').",
+  "ts tutorial: 'every operation resolves to entities, not raw records' (the general contract). NEW states it per list and load only; the create comment also lost '(.data() for the record)'.",
+  "go: 'Each operation returns (value, error)' as a statement about every operation, writes included. NEW states the pair only for List and Load. Write results are no longer printed, which OLD used to show that update and patch return the entity.",
+  "py: the create comment's '(call data_get() for the record)'.",
+  "clojure: naming the bound variable in the record accessor (`((:data-get planet))`); NEW uses an unbound `entity`."
+ ],
+ "purity": "I scanned all six Syntax_<lang>.ts files by grep and read each one. Model reads: 0. Naming rules: 0. Reserved-word lists: 0. String surgery on a generated name: 0. The only near case is c's example variable `sym.vars + '[i]'` and `created_` + field, which are example-variable syntax.\n\nZero was reached by MOVING names into a per-language Naming_<lang>.ts hook, not by copying. The hooks call the code generator's own functions: packageName, goModule, pyPackageDir, cIdent/cVarName, zigVarName, cljAccessor/cljEntityNs/cljEntityAlias. C_RESERVED and ZIG_RESERVED now live only in utility_c and utility_zig.\n\nSome rules are still written twice, but in the hooks, not in providers:\n- the client class model.const.Name+'SDK' mirrors the ProjectName template substitution;\n- c's ctor cIdent(model)+'_sdk_new' mirrors the template's projectname_sdk_new;\n- the literals 'core/api.h', 'sdk' and 'sdk.api'/'api/make-sdk';\n- the py package rule, still inline in 5 other py components.\n\nWhether-decisions left in providers, all conditions on the printed section rather than on the description, so I judge them syntax:\n- go: `_ = client`, fmt/os imports, := versus =;\n- py: `import os`;\n- c: `#include <stdlib.h>`, where err and handles are hoisted;\n- zig: cx.inAttempt;\n- clojure: the requires filter and the doseq/let fusion.\n\nThe record-or-fields choice moved into the description plus facts.prints. All six declare 'record', so the `fields` printers in all six are dead, untested code.",
+ "toolchain": [
+  {
+   "lang": "ts",
+   "what_ran": "generatedcompile 'typescript: the README example tests type-check and run' (16 models)",
+   "compiled": "before and after: every README block type-checked with tsc, root README included",
+   "executed": "after: blocks that construct the client or call it run in seeded test mode, including the tutorial list step, now in try/catch",
+   "old_executed": "same; 16/16 on oldclone"
+  },
+  {
+   "lang": "go",
+   "what_ran": "generatedcompile '^go: (every README example|the README examples run)' (12), plus my own go run of the extracted go/README and root programs in test mode",
+   "compiled": "before: go/README program compiled; root fragments compiled by wrapping. After: both are whole programs, compiled as-is",
+   "executed": "after: both programs run (lane runProgs, and my direct go run: EXIT 0 for each). This is STRONGER than OLD for the root and restores what stage 1 lost. The lane alone tolerates domain panics and skips run variants that do not compile.",
+   "old_executed": "OLD: the go/README program ran; root fragments did not (12/12 on oldclone)"
+  },
+  {
+   "lang": "py",
+   "what_ran": "generatedcompile '^py: (every README example|the README examples run)' with real pytest at /root/.local/share/uv/tools/pytest/bin",
+   "compiled": "compile() of every block, before and after",
+   "executed": "runnable blocks executed in a seeded test subprocess, before and after; 12/12",
+   "old_executed": "12/12 on oldclone"
+  },
+  {
+   "lang": "c",
+   "what_ran": "generatedcompile '^c: every documented example compiles' (6 models)",
+   "compiled": "-fsyntax-only of each section's joined steps, before and after; NEW 6/6",
+   "executed": "nothing executed, before or after",
+   "old_executed": "compiled only; 5/6 (basic-server fails on getenv without stdlib.h in the root and c READMEs)"
+  },
+  {
+   "lang": "zig",
+   "what_ran": "none (zig MISSING: command -v and filesystem search)",
+   "compiled": "no, before or after",
+   "executed": "no",
+   "old_executed": "no"
+  },
+  {
+   "lang": "clojure",
+   "what_ran": "none (clojure/clj/lein MISSING; no jar on disk; java present)",
+   "compiled": "no, before or after",
+   "executed": "no",
+   "old_executed": "no"
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "partly",
+   "evidence": "On model reads and conditions in providers: met. My scan finds 0 model reads and 0 naming rules in six providers, reached by moving names to hooks, not by copying. On breaking changes: met so far, with 4 breaking changes after the first four languages (facts replacing words, Expr 'fields', builders taking facts, the sdkDescription signature), against a line of about 10. Elixir, ocaml, rust and js are still to come. On per-language prose: CROSSED. By sentence, 31% (48% for go) of each language's tutorial sentences are not shared by the six. By words, zig's root comments are 20.0% fact tokens, over the 15% line; tutorial words in non-shared code spans are 4.6-10.2%. Sharing also still costs true facts: the zig create comment became false, and the ts class names and the clojure variable naming were lost."
+  },
+  {
+   "id": "H2",
+   "verdict": "refuted",
+   "evidence": "Both sections in six languages: 2,060 -> 1,818 lines (1.13x), or 1.12x counting uncounted extractions. Projected to 20: 1.75x, or 1.46x with c-sized providers. Both under 2x, and the projection assumes no growth for 14 languages that the stage-1 probe says need additions. The tutorial alone grew, from 1,388 to 1,764."
+  },
+  {
+   "id": "H3",
+   "verdict": "partly",
+   "evidence": "Within the quick-start sections, every catalogued issue I could check (S49, S50, M12, G01, M13, M14, S28, U45, c-getenv) has 0 instances in NEW, against 1-89 in OLD, all fixed by shared code except c-getenv and M14, which are provider fixes. But S49, S50, G01 and M12 also name README options, how-to and REFERENCE sites that are unported, and the ts README still contradicts itself. So for those issue IDs as catalogued, a per-section port is still needed."
+  },
+  {
+   "id": "H4",
+   "verdict": "supported",
+   "evidence": "No example test fails in a language with a toolchain: ts 16/16, go 12/12, py 12/12, c 6/6, against OLD's c 5/6. go's whole programs run (my direct go run gives EXIT 0 for both). zig and clojure cannot be checked here, and c is compiled, never run."
+  },
+  {
+   "id": "H5",
+   "verdict": "supported",
+   "evidence": "I reproduced the upgrade walk from a 4.44.0 project. doctor reports 12 retired and exits 1; package update --no-fetch removes the 12 copies and their compiled .js; generation produces the new text; doctor exits 0. retire.test passes 7/7. I did not re-run the override, no-record and pack rows. The known hazard is unchanged: an override deleted by hand leaves stale dist that is still used."
+  }
+ ]
+}

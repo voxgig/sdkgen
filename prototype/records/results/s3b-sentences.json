@@ -1,0 +1,1011 @@
+{
+ "parts": [
+  {
+   "part": "A",
+   "ok": true,
+   "share": "90 sentences in Part A (tutorial 71, rootquick 19). I read all 90 and gave each a verdict: 72 ok, 4 false, 14 awkward.",
+   "verdict_file": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/sentences/A/sentences.json",
+   "verdicts": {
+    "ok": 72,
+    "false": 4,
+    "awkward": 14
+   },
+   "summary": "I read every sentence in Part A against the shared source that prints it (ReadmeQuick.ts, runtimeprose.ts, example.ts), against the NEW output of at least two languages per sentence, and against the runtime templates and fragments; for model facts I also read the harness models.\n\nOne sentence family is false in every language that prints it: \"The client reads its API key [and secret] from the `DEMO_APIKEY` [and `DEMO_SECRET`] environment variable[s].\" No constructor reads the environment. The example reads the variable and passes it as `apikey`, and the runtime reads only `options.apikey`. The rule records accepted this sentence (8 classes) without anyone reading it. Old pages never said it.\n\nThe server sentence (\"`server` must give `tenant`; `region` defaults to `eu`\") is true. Every target gets `options.server` defaults from the shared configDefinition, and the runtime refuses an empty placeholder. The README and REFERENCE of all nine ported languages now agree on it.\n\nThe 14 awkward sentences come from five shared spots:\n- go's pair write sentence always says \"too\", even when no list or load step comes before it (ref-issues).\n- go's program-count sentence reads oddly.\n- The union failure comment (\".err on failure\", \"Err on failure\") has no verb.\n- go's \"There is no `{ok, data}` wrapper\" is old go wording that survived.\n- The nested-load sentence and the bare \"2. Update\" heading are vague.\n\nThe sentence list splits one sentence into many. 61 of the 90 entries come from one language, but 59 of those are shared code selected by one condition, and about 28 are listed as single-language only because of a tool artefact:\n- Comments print facts without backticks, so the mask misses them.\n- clojure's record token and rb's method tokens are not masked.\n- The splitter does not split after go's bold step lead.\n- Some classes changed only in go.\n\nOnly 1 of the 61 is a runtime's own fact (elixir's getelem note) and 1 is old wording that survived (go's wrapper clause). The \"Instance <noun>\" heading is in the reference section, which is not in Part A, so I did not judge it.",
+   "false_sentences": [
+    {
+     "id": "a2bf96f937",
+     "masked": "The client reads its API key from the `DEMO_APIKEY` environment variable.",
+     "example": "ts B: The client reads its API key from the `DEMO_APIKEY` environment variable.",
+     "langs": "c clojure elixir py rust ts zig (rb prints it too)",
+     "file_line": "printed by base32/sdkgen/ts/src/cmp/ReadmeQuick.ts:79; env name recorded for the example only, ts/src/helpers/sdkdesc.ts:247; the runtime reads only options.apikey: ts/project/.sdk/src/cmp/py/PrepareAuth_py.ts:114, c/PrepareAuth_c.ts:146, rust/PrepareAuth_rust.ts:144; no Main_<lang> and no tm/<lang>/src file reads *_APIKEY (grep of tm/{ts,go,c,py,rust,zig,clojure,elixir,rb} and src/cmp/... shows only Readme*, Test*, PrepareAuth*); the secrets feature, which could resolve credentials, is opt-in (model/feature/secrets.aontu)",
+     "why_false": "The CLIENT reads nothing from the environment. The example reads the variable and passes it in: `apikey: process.env.DEMO_APIKEY` (ts), `os.Getenv(\"DEMO_APIKEY\")` (go), `getenv(\"DEMO_APIKEY\")` (c), `std::env::var(\"DEMO_APIKEY\")` (rust). `new DemoSDK()` with the variable set sends no key."
+    },
+    {
+     "id": "cfc01f1671",
+     "masked": "The client reads its API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables.",
+     "example": "ts auth-basic",
+     "langs": "c clojure elixir py rust ts zig",
+     "file_line": "ReadmeQuick.ts:82; sdkdesc.ts:248",
+     "why_false": "Same as a2bf96f937, for both the key and the secret."
+    },
+    {
+     "id": "095528ea62",
+     "masked": "**Create a client.** The client reads its API key from the `DEMO_APIKEY` environment variable.",
+     "example": "go B",
+     "langs": "go",
+     "file_line": "ReadmeQuick.ts:79 via the program form at ReadmeQuick.ts:205-206; go's example passes `\"apikey\": os.Getenv(\"DEMO_APIKEY\")`",
+     "why_false": "Same as a2bf96f937 (go's bold step lead makes it a separate entry)."
+    },
+    {
+     "id": "a73956b3fb",
+     "masked": "**Create a client.** The client reads its API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables.",
+     "example": "go auth-basic",
+     "langs": "go",
+     "file_line": "ReadmeQuick.ts:82",
+     "why_false": "Same as cfc01f1671."
+    }
+   ],
+   "fixes": [
+    {
+     "file": "ts/src/cmp/ReadmeQuick.ts:79 and :82 (clientText)",
+     "sentence": "The client reads its API key from the `X` environment variable. / The client reads its API key and secret from the `X` and `Y` environment variables.",
+     "should_say": "The example passes the API key from the `X` environment variable as `apikey`. / The example passes the API key and secret from the `X` and `Y` environment variables as `apikey` and `secret`.",
+     "why": "False in every language: constructors read only options.apikey/secret (PrepareAuth_*), and the example does the environment read."
+    },
+    {
+     "file": "ts/src/helpers/runtimeprose.ts:123 (writeSentence, case pair)",
+     "sentence": "`Update()` returns `(value, error)` too: ...",
+     "should_say": "Add \"too\" only when a list or load step came before (pass that to writeSentence). Otherwise: \"`Update()` returns `(value, error)`: the value is the entity it wrote, and a non-nil `err` reports failure.\"",
+     "why": "In ref-issues the update is the only operation step, so \"too\" refers to nothing."
+    },
+    {
+     "file": "ts/src/helpers/runtimeprose.ts:74 (listSentence, case pair)",
+     "sentence": "There is no `{ok, data}` wrapper; `Data()` reads an entity's record.",
+     "should_say": "`Data()` reads an entity's record.",
+     "why": "Old go wording that survived (OLD crud-bare go README:39-40). It names a shape the page never introduces and repeats \"Every operation returns entities, not raw records.\" If the contrast with Direct() matters, state it where Direct() is described."
+    },
+    {
+     "file": "ts/src/helpers/runtimeprose.ts:165 (failsShort, case union)",
+     "sentence": "Load a planet: .ok is the entity; .err on failure",
+     "should_say": "`${f.err} holds the failure` (\"Load a planet: .ok is the entity; .err holds the failure\")",
+     "why": "Every other style says what happens on failure (\"raises on failure\", \"err is non-nil on failure\"); the union form has no verb. 6 entries (rust, zig)."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeQuick.ts:201-203",
+     "sentence": "The program after these N steps runs them in order. / The program after this step runs it.",
+     "should_say": "The program below runs these N steps in order. / The program below runs this step.",
+     "why": "Awkward phrasing, printed only for go (p.program). Four entries with the number unmasked."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeQuick.ts:161-162",
+     "sentence": "Satellite is nested under planet, so provide the `planet_id`.",
+     "should_say": "Satellite is nested under planet, so the match gives `planet_id` as well as the satellite's own id.",
+     "why": "\"the `planet_id`\" is awkward, and the sentence does not say where planet_id goes or that the satellite's own id is still needed (the example passes both)."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeQuick.ts:174-176",
+     "sentence": "2. Update",
+     "should_say": "When there is one write op, put the entity in the title: \"2. Update a gauge\" (the lead already says \"updating a gauge\").",
+     "why": "A bare verb heading is vague."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeQuick.ts:58 (article)",
+     "sentence": "Load an \u24ba / loading an \u24ba",
+     "should_say": "Use the article rule of runtimeprose.ts (or a shared one) that knows the exceptions: \"a utility\", \"a user\", \"a unit\".",
+     "why": "Latent: /^[aeiou]/ would print \"an utility\". No variation exercises it (grep of out/new found none)."
+    },
+    {
+     "file": "tools (sentences.js/facts.js masking), not shared prose",
+     "sentence": "comment forms of listComment/loadComment/createComment",
+     "should_say": "Mask facts in comments too: runtimeprose.ts:170 strips backticks from the collection, and carries()/failsShort print nullValue, errSlot, ok and err raw. Also mask clojure's record with the bound variable, and rb's method and recordType tokens; split after a bold step lead.",
+     "why": "The same shared sentence is listed once per language (rust `Vec`, py \"list\", rb \"Array\", clojure data-get, ...), so matching a new port's comment against a reviewed reference fails, or passes only per language. Shared code really prints one sentence, but 28 of my 61 single-language entries are listed as single-language only because of this."
+    },
+    {
+     "file": "guard citation for elixir facts.collection (src/cmp/elixir/fragment/EntityListOp.fragment.ex | Main.fragment.ex)",
+     "sentence": "`list` returns a `Voxgig.Struct` list of entities",
+     "should_say": "Cite a line that shows the value is a struct list, e.g. the make_result list construction, or the example's need for Voxgig.Struct.size/getelem.",
+     "why": "The quote is \"# Returns a list of entityname entities ... | alias Voxgig.Struct, as: S\". The alias line does not show the claim. The value is pinned prose (audit only)."
+    }
+   ],
+   "awkward": [
+    {
+     "id": "e705d74e4b",
+     "text": "**Update.** `Update()` returns `(value, error)` too: the value is the entity it wrote, and a non-nil `err` reports failure.",
+     "why": "\"too\" dangles when no list or load step comes before it (go ref-issues). runtimeprose.ts:123.",
+     "better": "**Update.** `Update()` returns `(value, error)`: the value is the entity it wrote, and a non-nil `err` reports failure."
+    },
+    {
+     "id": "71b4990dcd",
+     "text": "There is no `{ok, data}` wrapper; `Data()` reads an entity's record.",
+     "why": "Old go wording that survived. It names a shape the page never introduces.",
+     "better": "`Data()` reads an entity's record."
+    },
+    {
+     "id": "aec346dc78, ea263c07cb, c88eca6d9f",
+     "text": "The program after these N steps runs them in order.",
+     "why": "Odd phrasing; one sentence split into three entries by the number.",
+     "better": "The program below runs these N steps in order."
+    },
+    {
+     "id": "e0ff605945",
+     "text": "The program after this step runs it.",
+     "why": "As above.",
+     "better": "The program below runs this step."
+    },
+    {
+     "id": "64112421c3",
+     "text": "**Load a satellite.** Satellite is nested under planet, so provide the `planet_id`.",
+     "why": "\"the `planet_id`\"; does not say where it goes.",
+     "better": "Satellite is nested under planet, so the match gives `planet_id` as well as the satellite's own id."
+    },
+    {
+     "id": "f999547282",
+     "text": "2. Update",
+     "why": "A bare verb heading for a one-op write step.",
+     "better": "2. Update a gauge"
+    },
+    {
+     "id": "805f851dc5, 5d43ee1d56, 541249a1d2",
+     "text": "Load an ambient: .ok is the entity; .err on failure",
+     "why": "No verb in the failure clause (failsShort union).",
+     "better": "Load an ambient: .ok is the entity; .err holds the failure"
+    },
+    {
+     "id": "76d2d79f05, 4f5c517896, 882eac65b5",
+     "text": "Load an ambient: Ok is the entity; Err on failure",
+     "why": "As above. The rust root example then calls .unwrap(), which panics rather than returning Err.",
+     "better": "Load an ambient: Ok is the entity; Err holds the failure (unwrap panics on it)"
+    }
+   ],
+   "pairs": [
+    {
+     "ids": "a2bf96f937 / 095528ea62; cfc01f1671 / a73956b3fb; afbad155be / 118dab2307",
+     "texts": "the same sentence with and without go's \"**Create a client.**\" lead",
+     "why_same": "Same shared text (ReadmeQuick.ts clientText). The splitter does not split after `.**`.",
+     "keep": "one each (fix the splitter)"
+    },
+    {
+     "ids": "4967fbd62e / 094f5ec892 / 9736ad7042; 89e4ec3e7c (with the bold lead); 9bbd9f45ff / f3bd7e9a0a / 62e6942ba3 / e705d74e4b",
+     "texts": "go pair load/list/write sentences with different bold leads",
+     "why_same": "Same shared functions (loadSentence, listSentence, writeSentence pair); only the lead differs.",
+     "keep": "one per function"
+    },
+    {
+     "ids": "aec346dc78 / ea263c07cb / c88eca6d9f / e0ff605945",
+     "texts": "The program after these 2/3/4 steps runs them in order. / ...this step runs it.",
+     "why_same": "One template (ReadmeQuick.ts:201-203); the number is not masked.",
+     "keep": "one"
+    },
+    {
+     "ids": "366f8e2cd2 / 0ea856bddf; a0f86c7f47 / 57eaa23251; 0b439b0c35 / d236d7548c; 805f851dc5 / 5d43ee1d56; 76d2d79f05 / 4f5c517896",
+     "texts": "\"Load a \u24ba: ...\" vs \"Load an \u24ba: ...\"",
+     "why_same": "Only the computed article differs.",
+     "keep": "one each"
+    },
+    {
+     "ids": "cb4c5bf0da / a1239b7c70 / 99a8153c15",
+     "texts": "Load an \u24ba: the entity, an \u24baEntity / a \u24ba / a \u24baEntity; throws on failure",
+     "why_same": "One loadComment with listOf. The class name is masked whole for PlanetEntity but split for SatelliteEntity/AmbientEntity.",
+     "keep": "one"
+    },
+    {
+     "ids": "366f8e2cd2 / a0f86c7f47 / 0b439b0c35 / 805f851dc5 / 76d2d79f05 / cb4c5bf0da",
+     "texts": "Load \u24ba: the entity; <failsShort>",
+     "why_same": "One function (loadComment) across result styles, which is by design. 76d2d79f05 also leaves rust's Ok unmasked where zig's .ok is masked.",
+     "keep": "by design per style; fix masking of Ok/Err"
+    },
+    {
+     "ids": "6b7dda2d14 / 7cbfe3fde1 / 6de5ea1c00 / 9bb950f3bb / e7e0248d60 / 1dc13211d0 / 541249a1d2 / 882eac65b5 / bfe2260d8d",
+     "texts": "List \u24ba \u24bas: a list / a vector / an Array / a Voxgig.Struct list / a NULL-terminated array / a []any / .ok is a slice / Ok is a Vec / a \u27e6listOf\u27e7 ...",
+     "why_same": "One listComment. runtimeprose.ts:170 strips the collection's backticks, so the mask misses it and each language becomes its own entry.",
+     "keep": "one per style; fix the mask"
+    },
+    {
+     "ids": "f11f771494 / c1b47f3295",
+     "texts": "`list()` returns a result whose \u27e6ok\u27e7 is a \u27e6collection\u27e7 / a `Vec` of entities ...",
+     "why_same": "Same union listSentence; rust's collection `Vec` is not masked.",
+     "keep": "f11f771494"
+    },
+    {
+     "ids": "563a2ccc24 / 3d0c1adcc3 / d71fee0121; 1b25034e90 / 6732c42051 / 6d96732675",
+     "texts": "raise-style list and load sentences, with and without \"(a dict/Hash)\"",
+     "why_same": "Same list/loadSentence. recordType is optional, and rb's tokens (`list`, `load`, `Hash`) are not masked.",
+     "keep": "one each"
+    },
+    {
+     "ids": "a12cc73410 / cd05688101; c9472ea53d / a4274bffdd / dbb15d380e / 5097de7b71 / 933ecb9182",
+     "texts": "Create \u2014 returns/resolves to/the value is/.ok carries/Ok carries the created entity; <record> reads its record",
+     "why_same": "One createComment. clojure's record (`((:data-get created))`), rust's Ok and c's NULL are not masked in comments.",
+     "keep": "one per style"
+    },
+    {
+     "ids": "71b4990dcd / ee58ce03de",
+     "texts": "There is no `{ok, data}` wrapper / Every operation returns entities, not raw records.",
+     "why_same": "Both say that results are entities and not an envelope. The go clause is old wording.",
+     "keep": "ee58ce03de"
+    },
+    {
+     "ids": "f2515f53be (and per-style write sentences) / a12cc73410 (and per-style createComment)",
+     "texts": "Each write returns the entity it wrote ... / Create \u2014 returns the created entity ...",
+     "why_same": "The same step states create's return twice, once in the paragraph and once in the block's comment. Redundant, not contradictory.",
+     "keep": "both acceptable; the comment could keep only the record clause"
+    }
+   ],
+   "mask_claims": [
+    {
+     "id": "bfe2260d8d",
+     "masked": "List \u24ba \u24bas: a \u27e6listOf\u27e7, one entity per \u24ba; throws on failure",
+     "fact": "ts facts.listOf = {Class}[]",
+     "account": "derived (guard report: ts account facts.listOf: derived); EntityListOp.fragment.ts:13 Promise<EntyClass[]>"
+    },
+    {
+     "id": "e5b6ebca15, d71fee0121, 563a2ccc24, 3d0c1adcc3, f11f771494, bbd7e22198, 89e4ec3e7c",
+     "masked": "\u27e6method.list\u27e7 returns/resolves to a \u27e6collection\u27e7 of entities ...",
+     "fact": "facts.collection per language: ts array, py list, rb Array, go `[]any`, c `NULL`-terminated array, zig slice, clojure vector, elixir `Voxgig.Struct` list, rust Vec",
+     "account": "ts cited prose (pinned); py, rb, rust derived; go cited (tm/go/utility/make_result.go); c cited prose (pinned, EntityListOp.fragment.c); zig cited prose (pinned, Entity.fragment.zig ok: []*EntyClass); clojure cited prose (pinned, `(vec items)`); elixir cited prose (pinned) with a quote that does not show the value"
+    },
+    {
+     "id": "9736ad7042, 094f5ec892, 4967fbd62e, 89e4ec3e7c, 9bbd9f45ff, f3bd7e9a0a, 62e6942ba3, e705d74e4b",
+     "masked": "... returns `\u27e6pairForm\u27e7`: ... a non-nil \u27e6errVar\u27e7 reports failure",
+     "fact": "go pairForm (value, error), noError nil, errVar err",
+     "account": "pairForm cited (EntityLoadOp.fragment.go); noError cited (Entity.fragment.go); errVar convention (no runtime check)"
+    },
+    {
+     "id": "487605432b, bbd7e22198, 5cc55217a8, d8ced013b2, 0b439b0c35, d236d7548c, e7e0248d60, 933ecb9182",
+     "masked": "... or \u27e6nullValue|ref.none\u27e7 with \u27e6errSlot\u27e7 set on failure, so check \u27e6errVar\u27e7",
+     "fact": "c nullValue NULL, errSlot *err, errVar err",
+     "account": "nullValue cited (EntityLoadOp.fragment.c); errSlot cited (Main.fragment.c); errVar convention"
+    },
+    {
+     "id": "cd455bcf95, e0fb6e7e3c, 4ffde2c5db, f11f771494, 805f851dc5, 5d43ee1d56, 541249a1d2, dbb15d380e",
+     "masked": "... a result whose \u27e6ok\u27e7 is ... and whose \u27e6err\u27e7 reports failure",
+     "fact": "rust Ok/Err, zig .ok/.err",
+     "account": "rust ok cited (EntityLoadOp.fragment.rs), err cited (Entity.fragment.rs); zig ok/err cited (Entity.fragment.zig)"
+    },
+    {
+     "id": "1b25034e90, 563a2ccc24",
+     "masked": "... reads its \u24ba (a \u27e6recordType|...\u27e7)",
+     "fact": "py recordType dict",
+     "account": "cited (src/cmp/py/fragment/Entity.fragment.py). rb's Hash is printed unmasked (6d96732675, d71fee0121); cited (Entity.fragment.rb)"
+    },
+    {
+     "id": "all load/list sentences",
+     "masked": "\u27e6method.load\u27e7 / \u27e6method.list\u27e7 and \u27e6record\u27e7 reads ...",
+     "fact": "method names and record accessor",
+     "account": "derived for all nine; named (`load()` vs `load`) is convention"
+    }
+   ],
+   "single_language": "61 of the 90 sentences in Part A are contributed by one language (go 24, ts 9, c 8, zig 5, rust 5, py 3, rb 3, clojure 2, elixir 2).\n- That runtime's own fact: 1 (3426e9ddb3, elixir \"`Voxgig.Struct.getelem/2` reads an item.\", correctly a note in Syntax_elixir.ts:178).\n- Old wording that survived: 1 (71b4990dcd, go \"There is no `{ok, data}` wrapper\", inside the shared 'pair' branch of runtimeprose.ts:74).\n- Shared code that one condition selects: 59. The conditions:\n  - result style: async throw gives ts; pair gives go; errslot gives c; union gives rust and zig; raise with recordType gives py and rb.\n  - `listOf` gives ts.\n  - `p.program` gives go.\n- About 28 of those 59 are single-language only because of the tools, not the code:\n  - Comment forms print facts without backticks or raw (runtimeprose.ts:144,170,164-165), so the mask misses them: about 14.\n  - The bold-lead splitter for go: about 12.\n  - Remove and Update comments that every language prints but only go's class changed: 2.\n- Worst cases:\n  - the 6 per-language listComment entries, which are one sentence;\n  - go's wrapper clause, which is old wording;\n  - e705d74e4b, where shared code prints \"too\" with nothing before it.",
+   "instance_noun": "Not in Part A: the \"Instance <noun>\" heading is in the reference section, so I did not judge it.",
+   "ran": "- Node one-liners over sentences/tools/review/sentences/sentences.json to pick out and sort my 90 sentences (written to P/sentences/A/share.txt) and to list the 61 single-language ones.\n- An awk extractor (P/sentences/A/tut.sh) that printed NEW and OLD tutorial sections for these variations and languages:\n  - B: ts, c, go, rust\n  - crud-bare: ts, c, go, py, rb, zig, rust, elixir, plus OLD go, clojure, c, zig, rust, py\n  - doc-nested: ts\n  - ref-issues: ts, go\n- sed on the root README quick starts (crud-bare).\n- greps of the runtime for: env reads of *_APIKEY, server-variable handling, configDefinition users, op signatures, remove marking deleted, and elixir make_error raising.\n- A grep for article errors in out/new (none found).\n- greps of P/v32/logs/guard-report.txt for the accounts of the masked facts.\n- mkverdicts.js, which wrote sentences.json (90 verdicts).\n\nI compiled and ran no examples, and did not run the guard (the existing report was present).",
+   "read": "- The briefs: brief.md, brief3.md, brief4.md, brief5.md.\n- base32/tools/README.md and PORTING.md section 5.\n- Shared source: ReadmeQuick.ts (whole), runtimeprose.ts (whole), example.ts lines 55-372, serverVars.ts, utility.ts lines 300-400.\n- Runtime files:\n  - ts: MakeOptionsUtility.ts lines 70-105, EntityListOp/LoadOp fragment signatures.\n  - c: make_options.c lines 80-135, core/sdk.h lines 350-363.\n  - zig: core/utility.zig server lines.\n  - go: EntityListOp, LoadOp and CreateOp fragments.\n  - elixir: EntityListOp fragment, Pipeline.fragment.ex run_op, utility.ex make_error_impl.\n  - PrepareAuth_py/c/rust.\n  - model/feature/secrets.aontu.\n- The harness model of the variations (variations.js lines 1-56).\n- The guard report sections for c, clojure, elixir, go, py, rb, rust, ts, zig.",
+   "not_done": [
+    "Not compiled or run: no example block was built. The verdicts on code-adjacent comments rest on reading signatures, not on execution.",
+    "Of the 9 ported languages I read clojure's and elixir's runtimes only where a sentence depended on them (raise behaviour, collection). I did not read rb's runtime beyond its output; its result facts are taken from the guard's derived accounts.",
+    "The reference-section sentences, including the open \"Instance <noun>\" question, are outside Part A and were not judged.",
+    "I did not search the whole 297-sentence list for pairs whose other member is in Parts B or C, apart from the tutorial/rootquick forms of the same runtimeprose functions (opText and returnClause print the reference forms; those are reviewed under B and C)."
+   ]
+  },
+  {
+   "part": "B",
+   "ok": true,
+   "share": "My share is section reference with an id starting 0 to 7: 100 sentences. I read all 100 and gave each a verdict: ok 85, false 7, awkward 8.",
+   "verdicts": {
+    "ok": 85,
+    "false": 7,
+    "awkward": 8
+   },
+   "verdict_file": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/sentences/B/sentences.json (built from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/sentences/B/work/verdicts.js; progress notes in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/sentences/B/PROGRESS.md; ordered share list in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/sentences/B/share.txt)",
+   "summary": "Seven of the 100 sentences in my share are false. They come from two lines of shared code, and both errors were there before the port; the port only made them shared.\n\n(1) The direct() **Returns** sentence (ReadmeRef.ts:209-212) says \"even for a non-2xx response; on a failure `ok` is false and `err` holds the error\". In every runtime I read, a non-2xx response with a readable body comes back with ok=false and no `err` key. `err` is set only when the request could not be made or the body could not be read. The OLD wording, \"(or `err` on failure)\", was right.\n\n(2) The ctrl example `explain: true` (ReadmeRef.ts:185) is a value the runtimes do not take. py, clojure and elixir accept only a map and silently ignore `true`. ts keeps `true` and then assigns into it, which throws a TypeError in strict mode.\n\nThe 8 awkward sentences:\n- The test-constructor wording \"merged over the test defaults\" is vague.\n- The accessor sentence dropped \"entity\" for c and clojure, so it says less than OLD did.\n- clojure's \"lazy sequence\" sits over items that are already read before the call returns.\n- c's custom-action Call cell is not self-contained.\n- elixir's \"instance\" of a module, twice: OLD said \"handle\".\n- elixir's list heading shows a signature that is not the declaration.\n\nMany of the \"distinct\" sentences are one shared template split by the mask. The mask label changes when a value equals several facts (`nil` = noError and none), when backticks fall inside or outside the mask, and when a value carries its own backticks (rust `Vec` is not masked). Entity-name masking also swallows ordinary words (\"record\", \"utility\") because the B model has entities with those names.\n\nOf the 59 sentences in my share that one language contributes:\n- 4 are that runtime's own notes, all true.\n- 8 are shared code that one condition selects.\n- 0 are surviving old wording.\n- 47 are the same shared template other languages print, separated only by masking or by the class list.\n\nOnly one place has a runtime fact written as a note where shared code covers it for the other result styles: zig's prepare-failure note.",
+   "false_sentences": [
+    {
+     "id": "75773f3022",
+     "langs": "ts",
+     "masked": "**Returns:** `\u27e6ref.direct.returns\u27e7`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is \u27e6ref.direct.okFalse\u27e7 and `err` holds the error.",
+     "example": "ts B: **Returns:** `Promise<{ ok, status, headers, data }>`, a result map holding ... on a failure `ok` is `false` and `err` holds the error.",
+     "file_line": "base32/sdkgen/ts/project/.sdk/src/cmp/ts/fragment/Main.fragment.ts:270-276 (err added only when the body was unreadable); the same file's comment at :305-306 says the raw path represents a non-2xx as { ok: false } with no err. Printed by base32/sdkgen/ts/src/cmp/ReadmeRef.ts:209-212.",
+     "why_false": "Placed right after 'even for a non-2xx response', 'on a failure ok is false and err holds the error' tells the reader a non-2xx carries err. It does not: ok is false and there is no err key. err is present only when the request could not be made or the body was unreadable."
+    },
+    {
+     "id": "4e2d4cf241",
+     "langs": "zig",
+     "masked": "**Returns:** \u27e6ref.container|ref.direct.returns\u27e7, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is \u27e6ref.direct.okFalse\u27e7 and `err` holds the error.",
+     "example": "zig B: **Returns:** `Value`, a result map holding ...",
+     "file_line": "base32/sdkgen/ts/project/.sdk/src/cmp/zig/fragment/Main.fragment.zig:335-340 (a readable non-2xx response: ok false, no err); err only on an unreadable body (:326-332)",
+     "why_false": "Same as 75773f3022."
+    },
+    {
+     "id": "7c1f7fd78c",
+     "langs": "clojure",
+     "masked": "**Returns:** \u27e6ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT\u27e7, a result map holding `ok`, `status`, `headers` and \u27e6ref.accessor.param\u27e7, even for a non-2xx response; on a failure `ok` is \u27e6ref.direct.okFalse\u27e7 and `err` holds the error.",
+     "example": "clojure B: **Returns:** `map`, a result map holding ...",
+     "file_line": "base32/sdkgen/ts/project/.sdk/tm/clojure/src/sdk/client.clj:158-160 (err set only when body-err)",
+     "why_false": "Same as 75773f3022. In this id the mask also takes the fixed key name `data` for ref.accessor.param."
+    },
+    {
+     "id": "5687a75708",
+     "langs": "elixir",
+     "masked": "**Returns:** \u27e6ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT\u27e7, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is \u27e6ref.direct.okFalse\u27e7 and `err` holds the error.",
+     "example": "elixir B: **Returns:** `map()`, a result map holding ...",
+     "file_line": "base32/sdkgen/ts/project/.sdk/src/cmp/elixir/fragment/Main.fragment.ex:273-276 (err set only if body_err != nil)",
+     "why_false": "Same as 75773f3022. The go (Main.fragment.go rawRequest out map) and c (Main.fragment.c:264-271) runtimes behave the same way, so the py, rb and go variants of this sentence in other parts are false too."
+    },
+    {
+     "id": "3a97bf6325",
+     "langs": "py",
+     "masked": "Control options (e.g. `{\"explain\": True}`).",
+     "example": "py B: fetchargs[\"ctrl\"] row of direct()",
+     "file_line": "base32/sdkgen/ts/project/.sdk/tm/py/pkg/core/context.py:53-54 (explain kept only if a dict); printed by base32/sdkgen/ts/src/cmp/ReadmeRef.ts:185 (a BOOLEAN literal)",
+     "why_false": "explain is a map the pipeline fills. py ignores True silently. The runtimes' own tests use explain: {} (tm/ts/test/pipeline.test.ts:139). In ts, tm/ts/src/Control.ts:15 keeps true, and MakeSpecUtility.ts:61-62, TestFeature.ts:455-456 and NetsimFeature.ts:143-144 assign into it, which throws a TypeError in strict mode."
+    },
+    {
+     "id": "34510704dd",
+     "langs": "clojure",
+     "masked": "Control options (e.g. `(vs/jm \"explain\" true)`).",
+     "example": "clojure B: direct() ctrl row",
+     "file_line": "base32/sdkgen/ts/project/.sdk/tm/clojure/src/sdk/core.clj:347 (explain set only when vs/ismap)",
+     "why_false": "Same as 3a97bf6325: clojure ignores true."
+    },
+    {
+     "id": "066331452e",
+     "langs": "elixir",
+     "masked": "Control options (e.g. `%{\"explain\" => true}`).",
+     "example": "elixir B: direct() ctrl row",
+     "file_line": "base32/sdkgen/ts/project/.sdk/tm/elixir/lib/projectname/context.ex:71-72 (explain set only if S.ismap)",
+     "why_false": "Same as 3a97bf6325: elixir ignores true. It is also a native %{} map, where the same page says options must go through Helpers.deep/1 (Syntax_elixir.ts:177). That second point was not run."
+    }
+   ],
+   "fixes": [
+    {
+     "file": "base32/sdkgen/ts/src/cmp/ReadmeRef.ts:209-212 (clientMember, direct)",
+     "sentence": "**Returns:** X, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is false and `err` holds the error.",
+     "should_say": "**Returns:** X, a result map. A response, 2xx or not, gives `ok` (true only for a 2xx), `status`, `headers` and `data`; a request that could not be made, or a body that could not be read, gives `ok` = <okFalse> and `err`, the error.",
+     "why": "err is absent for a readable non-2xx response in ts, go, c, zig, elixir and clojure (lines in false_sentences). OLD said '(or `err` on failure)'."
+    },
+    {
+     "file": "base32/sdkgen/ts/src/cmp/ReadmeRef.ts:185 (directRows, ctrl)",
+     "sentence": "Control options (e.g. `{ explain: true }`).",
+     "should_say": "Control options (e.g. `{ explain: {} }`, a map the call fills with what it did).",
+     "why": "The runtimes take explain only as a map: py context.py:53, clojure core.clj:347 and elixir context.ex:71-72 ignore true; ts throws a TypeError on true."
+    },
+    {
+     "file": "base32/sdkgen/ts/src/cmp/ReadmeRef.ts:276 (accessorText) and :148 (make)",
+     "sentence": "Create a new `Ambient` instance. / Create a new `Demo.Entity.Ambient` instance [with the same client and options].",
+     "should_say": "When entityBy is 'Name' or 'module': 'Create a new `Ambient` entity.' (c, clojure) / 'Create a `Demo.Entity.Ambient` entity.' (elixir).",
+     "why": "In c, clojure and elixir the name is no instance-bearing type. OLD c and clojure said 'entity instance' and OLD elixir said 'handle'; the shared sentence says less."
+    },
+    {
+     "file": "base32/sdkgen/ts/src/cmp/ReadmeRef.ts:260-261 (testText)",
+     "sentence": "The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be X.",
+     "should_say": "The first argument holds the test feature's options (its `active` is always set) and replaces any `feature.test` in the second, which holds the other client options; both may be X.",
+     "why": "There are no 'test defaults' besides active. ts Main.fragment.ts:332-337 and py Main.fragment.py:354-368 put the first argument at feature.test (setpath) and pass the second to the normal constructor."
+    },
+    {
+     "file": "base32/sdkgen/ts/project/.sdk/src/cmp/clojure/Syntax_clojure.ts:53 (stream kind streamLazy, runs call)",
+     "sentence": "Run an operation through the pipeline and return a lazy sequence of its result items.",
+     "should_say": "A kind whose sentence says the items are read before the call returns, for example: '...and return a sequence of its result items, read in full before the call returns.' Or make the clojure runtime genuinely lazy.",
+     "why": "Entity.fragment.clj:164,177-183 runs the operation and realises every item with mapv before returning; only the signal check is lazy. Brief 5 says when items are read must come from the code, not the type."
+    },
+    {
+     "file": "base32/sdkgen/ts/src/cmp/ReadmeRef.ts:375-379 (actionCall) with the c printer",
+     "sentence": "`planet->vt->create(planet, cmap(...), NULL, &err);`",
+     "should_say": "A call whose receiver comes from the client, as the other languages do (client.Planet().create(...)), or a prose line naming `planet` and `err` as the variables of the example above.",
+     "why": "The c cell uses `planet` and `err`, which nothing on the row declares. Every other language's Call cell stands alone."
+    },
+    {
+     "file": "base32/sdkgen/ts/src/cmp/ReadmeRef.ts:427-441 (wrap)",
+     "sentence": "...so branch on `getp(&result,\\n\"ok\")`.",
+     "should_say": "wrap() should never break a line inside a code span.",
+     "why": "The rust REFERENCE prints the code span across two lines (REFERENCE.md:115-116)."
+    },
+    {
+     "file": "base32/sdkgen/ts/project/.sdk/src/cmp/elixir/Syntax_elixir.ts:36 (opMatched.list)",
+     "sentence": "#### `list(entity, reqmatch, ctrl \\\\ nil) :: list()`",
+     "should_say": "The declared signature `list(entity, reqmatch \\\\ nil, ctrl \\\\ nil)`, leaving the sentence under it ('The match must include ...') to say what is required.",
+     "why": "EntityListOp.fragment.ex:8 declares a default for reqmatch, so the heading shows a signature that does not exist."
+    },
+    {
+     "file": "P/sentences/tools/sentences.js and facts.js masking (tools, not sdkgen)",
+     "sentence": "e.g. '\u27e6record\u27e7 reads its \u24ba.' and 'The SDK \u24ba object is reached through ...'",
+     "should_say": "Mask entity names only where they stand as identifiers. Normalise a mask that covers several labels, and backticks inside or outside a mask, so one template gives one id. Mask a value that carries its own backticks (rust collection '`Vec`').",
+     "why": "The B model's entities named `record` and `utility` turn the common nouns into \u24ba, so 'every record is listed' would match 'every Planet is listed'. One template is split into 2 to 7 ids (see pairs), which doubles review work and lets one copy get a verdict while another goes without."
+    },
+    {
+     "file": "P/sentences/tools/sentences.js (list contents)",
+     "sentence": "'Level \\| percent see the guide or [site](...)' and 'Words the project chose | not the spec'",
+     "should_say": "Leave these out: they are fixture model text, not sentences shared code writes.",
+     "why": "They cannot be reviewed as SDK statements, and a verdict on them means nothing for a new port."
+    }
+   ],
+   "pairs": [
+    {
+     "ids": "092f1dc649 / 2d9199cb7a",
+     "texts": "`\u27e6record\u27e7` reads its \u24ba. / \u27e6record\u27e7 reads its \u24ba.",
+     "why_same": "One template, runtimeprose.ts:232. The split is only whether the backticks fall inside the mask.",
+     "keep": "one id"
+    },
+    {
+     "ids": "1ace127b3b / 62d22019c2 / b8923f051e",
+     "texts": "...both may be \u27e6ref.none\u27e7 / \u27e6noError|ref.none\u27e7 / \u27e6nullValue|ref.none\u27e7",
+     "why_same": "One template, ReadmeRef.ts:261. The mask label changes because go's nil equals noError and c's NULL equals nullValue.",
+     "keep": "one id; the wording fix applies to all three"
+    },
+    {
+     "ids": "2cfdeb945d / 808eae570d",
+     "texts": "Its \u27e6ref.accessor.param\u27e7 argument holds the entity options: pass \u27e6noError|ref.none\u27e7 / \u27e6ref.none\u27e7 for none.",
+     "why_same": "One template, ReadmeRef.ts:279. Mask label only.",
+     "keep": "one id"
+    },
+    {
+     "ids": "75773f3022 / 4e2d4cf241 / 5687a75708 / 7c1f7fd78c / 866b167371",
+     "texts": "**Returns:** \u27e6...\u27e7, a result map holding ok, status, headers and data|\u27e6ref.accessor.param\u27e7 ...",
+     "why_same": "One template, ReadmeRef.ts:209-211. Mask labels differ, and in clojure, py and rb the fixed key `data` is masked as ref.accessor.param.",
+     "keep": "one id; all are false for the same reason"
+    },
+    {
+     "ids": "74db4cd68e / a758f137ae / 9756a185e4 / 9be5e84dbd / 4172bd615b / 3c2a4b0d55 / 0919798d12",
+     "texts": "**Returns:** \u27e6prepare.returns...\u27e7, the fetch definition: the request `direct()` would send.",
+     "why_same": "One template, ReadmeRef.ts:218-219. Mask labels and the direct() spelling differ.",
+     "keep": "one id"
+    },
+    {
+     "ids": "4864f34793 / 75c4c96d8c",
+     "texts": "The result's \u27e6ok\u27e7 is a \u27e6collection\u27e7 of entities ... / The result's \u27e6ok\u27e7 is a `Vec` of entities ...",
+     "why_same": "One template, runtimeprose.ts:214. rust's collection value '`Vec`' carries its own backticks and is not masked.",
+     "keep": "one id"
+    },
+    {
+     "ids": "1eccc7250d / 0606a89435 ; 58f6c63c63 / 2afc165624 / 7170ae33a7",
+     "texts": "Create a new `\u24ba` / `\u24c8.Entity.\u24ba` instance[ with the same client and options].",
+     "why_same": "accessorText (ReadmeRef.ts:276) and make (ReadmeRef.ts:148); the type token is masked in different shapes.",
+     "keep": "one id per template"
+    },
+    {
+     "ids": "0f06358e5b / 0a037bbbba / 418def6d36",
+     "texts": "A failed request is reported in the result, not as an error, so branch on `result[\"ok\"]` / `result.ok` / `getp(&result, \"ok\")`.",
+     "why_same": "One template, ReadmeRef.ts:211-212. The read() token is not masked.",
+     "keep": "one id"
+    },
+    {
+     "ids": "4388aa476d, 21516a568c, 03f31979fa, 0bd42bc9da vs 64e3f44a55, 50beb02467, 75581f3469 (and 7034f074ec, 440d837326, 7bebc239a6, 224b480b40)",
+     "texts": "\u27e6ref.op.X\u27e7 vs `\u27e6ref.op.X\u27e7` signature headings",
+     "why_same": "One heading template, `#### code(sig)`. The split is backticks inside or outside the mask.",
+     "keep": "one id per member slot"
+    },
+    {
+     "ids": "4785e1e14e (rust note) / 0f06358e5b family",
+     "texts": "The result map always comes back inside `Ok`, for a non-2xx response and for a request that could not be made alike; its `ok` key reports the failure. / A failed request is reported in the result, not as an error ...",
+     "why_same": "On the rust page the note restates, in other words, what the shared sentence just before it says. A genuine two-wordings case.",
+     "keep": "the shared sentence; shorten the note to what only rust adds (the map is inside `Ok`)"
+    },
+    {
+     "ids": "083fc645cd (zig note) / 4b8eb8b6bf, 4ccf17b0e9, 59d890e493 (failsSentence)",
+     "texts": "On failure it returns the error of its error union, for `try` or `catch`. / It raises on failure. / `err` is non-nil on failure. / It returns `NULL` with `*err` set on failure.",
+     "why_same": "The same fact (how prepare fails) is written once in shared code for four styles and once as a zig note, because zig declares prepare.fails none.",
+     "keep": "the shared failsSentence, with an error-union style for zig's E!Value instead of a note"
+    }
+   ],
+   "mask_claims": [
+    {
+     "id": "4f5d0aa907",
+     "masked": "\u27e6ref.valueType.OBJECT\u27e7",
+     "fact": "ref.valueType.OBJECT (`map`) for c, rust, zig",
+     "account": "convention in all three (guard report): only compared with the OLD page"
+    },
+    {
+     "id": "65e89e0eda",
+     "masked": "\u27e6ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT\u27e7",
+     "fact": "the `map` type token",
+     "account": "clojure: direct.returns cited, prepare.returns cited, valueType.OBJECT convention. elixir: cited, cited, derived"
+    },
+    {
+     "id": "4d9f342751",
+     "masked": "\u27e6ref.heading\u27e7",
+     "fact": "clojure heading sdk.api",
+     "account": "convention (OLD-page comparison only); matches Main_clojure.ts:82"
+    },
+    {
+     "id": "091c271ed5",
+     "masked": "Common \u27e6ref.noun\u27e7",
+     "fact": "c noun 'Functions'",
+     "account": "convention"
+    },
+    {
+     "id": "4ccf17b0e9",
+     "masked": "\u27e6errVar\u27e7 is non-nil on failure.",
+     "fact": "go errVar `err` (noError `nil` gives 'non-nil')",
+     "account": "errVar convention; noError cited (Entity.fragment.go)"
+    },
+    {
+     "id": "59d890e493",
+     "masked": "It returns \u27e6nullValue|ref.none\u27e7 with \u27e6errSlot\u27e7 set on failure.",
+     "fact": "c NULL and *err",
+     "account": "nullValue cited (EntityLoadOp.fragment.c), errSlot cited (Main.fragment.c); true at Main.fragment.c:118-119"
+    },
+    {
+     "id": "20d6fe3875, 293c007b60, 4864f34793",
+     "masked": "The result's \u27e6ok\u27e7 ... its \u27e6err\u27e7 reports failure.",
+     "fact": "rust Ok/Err, zig .ok/.err",
+     "account": "facts.ok and facts.err cited for both"
+    },
+    {
+     "id": "75773f3022, 4e2d4cf241, 7c1f7fd78c, 5687a75708",
+     "masked": "on a failure `ok` is \u27e6ref.direct.okFalse\u27e7",
+     "fact": "the literal ok holds on failure",
+     "account": "okFalse cited in all four (and true); the sentence is false for another reason (err), which no fact covers"
+    },
+    {
+     "id": "2d9199cb7a, 092f1dc649",
+     "masked": "\u27e6record\u27e7 reads its \u24ba.",
+     "fact": "facts.record per language",
+     "account": "derived in all eight"
+    },
+    {
+     "id": "7029749eeb, 60a01b67bd",
+     "masked": "Returns a \u27e6collection\u27e7 of entities ...",
+     "fact": "facts.collection",
+     "account": "py derived; clojure, elixir, ts cited"
+    },
+    {
+     "id": "1ace127b3b, 62d22019c2, 2cfdeb945d, 111e3864bc, 3ae117ead3",
+     "masked": "... \u27e6ref.none\u27e7 ...",
+     "fact": "the none literal accepted by the test constructor, accessor and constructor",
+     "account": "cited, but the citation for most languages is EntityLoadOp (a return NULL/nil), not the constructor that accepts it. True where I read the constructor (ts Main.fragment.ts:332-333, py :355-365, clojure client.clj:28, elixir Main.fragment.ex:12)"
+    },
+    {
+     "id": "signature headings 4af20ce756, 4388aa476d, 21516a568c, 03f31979fa, 0bd42bc9da, 64e3f44a55, 50beb02467, 75581f3469, 7034f074ec, 440d837326, 7bebc239a6, 224b480b40, 475c89eecd, 4d16943177, 04c49674ea",
+     "masked": "\u27e6ref.op.*\u27e7 / \u27e6ref.entity.N.sig\u27e7 / \u27e6ref.client.N.sig\u27e7 / \u27e6ref.accessor.sig\u27e7 / \u27e6ref.opMatched.list\u27e7",
+     "fact": "the whole signature",
+     "account": "derived. For c, the guard does not compare the receiver parameter names of the vt function pointers (guard header: paramNames 10). elixir opMatched.list is derived although it differs from the def (EntityListOp.fragment.ex:8)"
+    }
+   ],
+   "awkward": [
+    {
+     "id": "1ace127b3b",
+     "text": "...the second further client options, merged over the test defaults; both may be `undefined`.",
+     "why": "Vague: there are no test defaults except active, and the first argument replaces feature.test in the second.",
+     "better": "The first argument holds the test feature's options (its `active` is always set) and replaces any `feature.test` in the second, which holds the other client options; both may be `undefined`."
+    },
+    {
+     "id": "62d22019c2",
+     "text": "go variant of 1ace127b3b",
+     "why": "same",
+     "better": "same"
+    },
+    {
+     "id": "1eccc7250d",
+     "text": "Create a new `Ambient` instance. (c, clojure)",
+     "why": "There is no `Ambient` type in c or clojure. OLD said 'entity instance'.",
+     "better": "Create a new `Ambient` entity."
+    },
+    {
+     "id": "0606a89435",
+     "text": "Create a new `Demo.Entity.Ambient` instance.",
+     "why": "A module has no instances; OLD elixir said 'handle'.",
+     "better": "Create a `Demo.Entity.Ambient` entity."
+    },
+    {
+     "id": "7170ae33a7",
+     "text": "Create a new `Demo.Entity.Ambient` instance with the same client and options.",
+     "why": "Same as 0606a89435.",
+     "better": "Create another `Demo.Entity.Ambient` entity with the same client and options."
+    },
+    {
+     "id": "761350e4f5",
+     "text": "Run an operation through the pipeline and return a lazy sequence of its result items.",
+     "why": "In clojure every item is realised before the call returns (Entity.fragment.clj:177-183); 'lazy' implies the opposite.",
+     "better": "clojure: '...and return a sequence of its result items, all read before the call returns.' elixir keeps its sentence."
+    },
+    {
+     "id": "7ac0237c03",
+     "text": "`planet->vt->create(planet, cmap(...), NULL, &err);`",
+     "why": "Uses `planet` and `err`, which nothing on the row declares; every other language's Call cell stands alone.",
+     "better": "Bind the entity from the client in the cell, or say that `planet` and `err` come from the example above."
+    },
+    {
+     "id": "04c49674ea",
+     "text": "`list(entity, reqmatch, ctrl \\\\ nil) :: list()`",
+     "why": "Not the declaration (EntityListOp.fragment.ex:8 has reqmatch \\\\ nil).",
+     "better": "`list(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()`, with the sentence below saying the match is required."
+    }
+   ],
+   "single_language": "59 of my 100 sentences are contributed by one language.\n- 4 are that runtime's own fact, written as notes and all true: go's stream channel note (2bd8ff9d43), zig's prepare error-union note (083fc645cd), clojure's sdk.client utility note (4f794f9952) and rust's `Ok` note (4785e1e14e). The rust note restates the shared sentence before it. The zig note is a fact shared code states for the other result styles (failsSentence), so it should be a style, not a note.\n- 8 are shared code that one condition selects. Result style: 'union' gives 4864f34793 (zig) and 75c4c96d8c (rust), and these two are really one sentence split by the mask; 'pair' gives 4ccf17b0e9 (go); 'errslot' gives 59d890e493 (c). async gives 60a01b67bd (ts). The stream member kind gives 4c93659f14 (ts streamIterator), 7df20388eb (py streamGenerator) and 7ba0882026 (rb streamSync).\n- 0 are one language's old wording that survived.\n- 47 are the same shared template other languages print, listed under one language only because the mask labels differ or because the other languages' copies matched OLD and made no class: signature headings, key and type cells, action calls, the direct/prepare Returns sentences, make and accessor sentences, elixir's 'Field Usage by Operation' table.\n\nWorst cases: the direct() Returns family (false in every language that prints it, 4 ids in my share), and the explain example (false, 3 ids in my share).",
+   "read": "Briefs 1, 3, 4 and 5; tools/README.md; PORTING.md section 5; the 100 entries of P/sentences/tools/review/sentences/sentences.json.\n\nShared source: base32/sdkgen/ts/src/cmp/ReadmeRef.ts (whole), src/helpers/runtimeprose.ts (whole), src/helpers/sdkdesc.ts:255-380, src/helpers/serverVars.ts, src/utility.ts:330-400.\n\nNEW REFERENCE pages for variation B in ts, go, py, c, zig, rust, clojure, elixir and rb, plus the Actions sections; OLD B pages for the same sections.\n\nRuntimes:\n- direct and prepare: ts, go, py, c, zig, rust, elixir and clojure Main fragments / client.clj.\n- make_options: server variables and feature order in ts, c, go and clojure.\n- system.fetch: c, rust, zig.\n- explain handling: ts Control, MakeSpec, TestFeature and Netsim; py context.py; clojure core.clj; elixir context.ex.\n- stream: go, py, rb, ts EntityBase, clojure and elixir entity_base.\n- accessors and make: go, py, rust, clojure.\n- the elixir list def.\n\nSyntax providers (ts, py, go, rust, zig, clojure, elixir) for the declared facts. Guard report P/v32/logs/guard-report.txt for each fact's account. harness/variations.js for the models.",
+   "ran": "- Node 24 one-liners over sentences.json: selected my share (100 ids, 59 single-language) and grouped ids whose masks differ only in label or backticks (the mask-split pairs).\n- One-line strict-mode JS check, `\"use strict\"; ctrl={explain:true}; ctrl.explain.spec=1`. It throws \"TypeError: Cannot create property 'spec' on boolean 'true'\". That is the operation the ts runtime performs; I did not run a generated SDK.\n- grep and awk over the stored NEW and OLD outputs, the runtime templates and the guard report.\n- Built sentences.json from work/verdicts.js and checked it: 100 verdicts, none missing, none extra.\n\nNot run: no build, no suite, no lane. I did not regenerate the guard report; I read the existing one.",
+   "not_done": [
+    "No generated SDK was run to observe the direct() non-2xx result or the explain:true TypeError end to end. Both rest on reading runtime code, plus the one-line JS semantics check for ts.",
+    "The direct()/prepare runtime claims were not checked in rb, and not for elixir's prepare beyond its raise. The elixir native-map-versus-Voxgig.Struct point for the ctrl example was not verified.",
+    "Language pairs were looked for across the whole list only by normalising masks (shape). The semantic pairs listed come from reading my share against the rest; I did not read the other 197 sentences in full.",
+    "The 'Instance <noun>' heading question (ed1e41296e) is in part C, not mine. Related to it: my share's accessor and make sentences call c, clojure and elixir entities 'instances' (fix entries above).",
+    "These verdicts are not in reviewed/sentences.json, which is read-only for me. They are in P/sentences/B/sentences.json in the same format."
+   ]
+  },
+  {
+   "part": "C",
+   "ok": true,
+   "share": "107 sentences in my share (section reference, id starting 8, 9 or a to f). I read all 107 and wrote a verdict for each one. I also read the other 190 sentences in the list when looking for pairs.",
+   "verdicts": {
+    "ok": 91,
+    "awkward": 13,
+    "false": 3
+   },
+   "verdict_file": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/sentences/C/sentences.json",
+   "summary": "I gave a verdict to all 107 sentences in part C: 91 ok, 13 awkward, 3 false. All three false findings come from reading the code. I compiled and ran nothing.\n\n(1) The no-test test-client sentences (d48de033ea, 9577ba159e) are false for ts. Without the test feature, ts `test()` reaches `config.makeFeature('test')`, and that function has no fallback: `new FEATURE_CLASS['test']()` runs on undefined and throws, so no client is returned. go, c, py and rust fall back to the base feature, so the sentences are true for them.\n\n(2) \"An action returns that action's OWN response\" (cf564b5fca) contradicts the design that every entity operation returns the entity. An action is a `create` call, and `create` returns `this` with the response stored as its data.\n\nThe design weaknesses I found:\n- **The mask hides shared prose words, not just language tokens.** \"record\", \"utility\", \"id\" and \"fields\" are masked as entity or field slots because the baseline model has entities named record and utility and fields named id and fields. The literal `data` (a key of the direct result) is masked as the accessor parameter, `err` (also a result key) as errVar, and the shared word \"array\" as ts's collection fact. Wrong wording in any of those places would match a reference sentence.\n- **Some shared sentences are split into several \"single-language\" sentences.** The mask leaves printer output unmasked (the `r.read` expression, `Direct()`/`sdk_direct()`, the `Control options (e.g. ...)` example). So \"A failed request is reported in the result ...\" shows up once per language.\n- **The direct() return sentence names a hard-coded `err` (ReadmeRef.ts:211).** That misleads in go and c. Their signatures carry an error variable or out-parameter that direct() never sets; the failure is in the result map's \"err\" key.\n- **c's prose says to branch on `getp(result, \"ok\")`.** That is a pointer, so the test is always true when the key is present. c's own README example branches on `voxgig_as_bool(getp(result, \"ok\"))`.\n\nThe open question: the heading \"Instance Functions\" should be \"Client Functions\" for c, clojure and elixir.",
+   "false_sentences": [
+    {
+     "id": "d48de033ea",
+     "masked": "This SDK is generated without the `test` feature, so it has no mock transport.",
+     "example": "ts no-test REFERENCE: DemoSDK.test(testopts?, sdkopts?)",
+     "langs": "c,clojure,elixir,go,py,rust,ts,zig (false for ts)",
+     "file_line": "ts/project/.sdk/src/cmp/ts/fragment/Config.fragment.ts:19-20 (`const fc = FEATURE_CLASS[fn]; const fi = new fc()`); Config_ts.ts:103-107 (FEATURE_CLASS holds only the generated features); Main.fragment.ts:325-338 (test() sets feature.test.active) and 75-87 (an active name with no class is skipped only when `extend` supplies it)",
+     "why_false": "Read, not run. In a ts SDK without the test feature, test() throws a TypeError instead of returning a client with no mock transport. go (Config_go.ts:274-279), c (Config_c.ts make_feature -> feature_base_new()), py (Main_py.ts:191-195) and rust (Config_rust.ts:179) fall back to the base feature, so the sentence is true for them. The harness itself describes this variation as 'the test constructor does not ship' (harness/variations.js:85), which contradicts the comment at ReadmeRef.ts:249-250."
+    },
+    {
+     "id": "9577ba159e",
+     "masked": "It returns a client in test mode.",
+     "example": "ts no-test REFERENCE (also B)",
+     "langs": "c,clojure,elixir,go,py,rust,ts,zig (false for ts, no-test only)",
+     "file_line": "ts/project/.sdk/src/cmp/ts/fragment/Config.fragment.ts:19-20; Main.fragment.ts:75-87",
+     "why_false": "Same defect as d48de033ea: in ts without the test feature nothing is returned. Where it is true (go Main.fragment.go:404-405, c Main.fragment.c:355-358 set mode \"test\"), it repeats 'Create a test client in test mode.' from the same paragraph."
+    },
+    {
+     "id": "cf564b5fca",
+     "masked": "An action returns that action's OWN response, which is not necessarily a \u24ba \u24ba \u2014 check the API definition for its shape.",
+     "example": "go B: PlanetEntity > Actions",
+     "langs": "c,clojure,elixir,go,py,rust,zig",
+     "file_line": "ts/project/.sdk/src/cmp/ts/fragment/EntityCreateOp.fragment.ts:82-89 (`this._data = ctx.result.resdata` ... `return ... ? this : out`); py/fragment/Entity.fragment.py:263-270 (`return self`); printed by ReadmeRef.ts:344-345",
+     "why_false": "An action is a create call, and create resolves to the entity with the action's response absorbed as its data, not to the response itself. The claim that matters (the data is not a Planet record) holds. This is old wording kept from every OLD page."
+    }
+   ],
+   "fixes": [
+    {
+     "file": "ts/project/.sdk/src/cmp/ts/fragment/Config.fragment.ts (and Config.data.fragment.ts)",
+     "sentence": "This SDK is generated without the `test` feature, so it has no mock transport. / It returns a client in test mode.",
+     "should_say": "Keep the sentences; make ts makeFeature fall back to BaseFeature for a name it has no class for, as go, c, py and rust do. Otherwise condition the sentence on a declared fact.",
+     "why": "In ts, test() throws without the test feature, so the shared sentence is false for one runtime."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeRef.ts:255-263",
+     "sentence": "Create a test client in test mode. ... It returns a client in test mode. / Create a test client with mock features active, and no options.",
+     "should_say": "Without the test feature: 'Create a test client. This SDK is generated without the `test` feature, so it has no mock transport.' Say args:false as its own sentence, 'It takes no arguments.', instead of appending ', and no options'.",
+     "why": "The no-test paragraph says the same thing twice. In go, ', and no options' attaches to the client ('it has no mock transport, and no options')."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeRef.ts:344-345",
+     "sentence": "An action returns that action's OWN response, which is not necessarily a Planet record",
+     "should_say": "An action resolves to the entity, whose data is then that action's OWN response, which is not necessarily a Planet record \u2014 check the API definition for its shape.",
+     "why": "Operations return entities (EntityCreateOp.fragment.ts:82-89)."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeRef.ts:209-212",
+     "sentence": "...on a failure `ok` is false and `err` holds the error. A failed request is reported in the result...",
+     "should_say": "...even for a non-2xx response, where `ok` is false; when the request cannot be made, ${code(r.read('result','err'))} holds the error. Where the signature has an error return or out-parameter, say that it stays nil/NULL.",
+     "why": "go's Direct always returns a nil error (rawRequest returns `, nil` throughout) and c's sdk_direct never sets *err (Main.fragment.c:281-288). A literal `err` reads as that variable, and the tool masks it as errVar. A non-2xx response has no err."
+    },
+    {
+     "file": "ts/project/.sdk/src/cmp/c/Syntax_c.ts (ref.read)",
+     "sentence": "A failed request is reported in the result, not as an error, so branch on `getp(result, \"ok\")`.",
+     "should_say": "...so branch on `voxgig_as_bool(getp(result, \"ok\"))`.",
+     "why": "getp returns a value pointer, so the test is true whenever the key is present. c's own README example uses voxgig_as_bool (out/new/B/c/README.md:127)."
+    },
+    {
+     "file": "ts/src/helpers/runtimeprose.ts:228",
+     "sentence": "The data must include the entity id, `id`.",
+     "should_say": "Unless the entity already holds it, the data must include the entity id, `id`.",
+     "why": "A path parameter is also read from the entity's stored match and data (ParamUtility.ts:40-56, go param.go:47-68, c param.c:48-56). After a load, an update need not repeat the id."
+    },
+    {
+     "file": "ts/src/helpers/runtimeprose.ts:225",
+     "sentence": "The match is optional: without one, every record is listed.",
+     "should_say": "The match is optional: without one, the request carries no filter.",
+     "why": "'every record' overstates: the endpoint may return one page, and the entity's stored match still applies."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeRef.ts:282-284",
+     "sentence": "### Instance <noun>",
+     "should_say": "'Client Functions' for c, clojure and elixir: a declared convention value, or the shared heading `Client ${noun}` for every language.",
+     "why": "In those three languages the members are module functions taking the client as their first argument. There is no instance."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeRef.ts:375-379 (actionCall)",
+     "sentence": "zig Call cell: `switch (client.planet(...).create(...), h.vnull())) {`",
+     "should_say": "The call expression without the error-handling wrapper: `client.planet(h.vnull()).create(...)`.",
+     "why": "Keeping only the first line of the printed call leaves an unclosed switch in the cell."
+    },
+    {
+     "file": "ts/src/cmp/ReadmeRef.ts:156,159 (streamList)",
+     "sentence": "Run an operation through the pipeline and return its result items as one list.",
+     "should_say": "Run an operation through the pipeline and return its result items, all read before the call returns.",
+     "why": "rust's stream returns `Result<std::vec::IntoIter<Value>, _>` (Syntax_rust.ts:53), an iterator over items already collected, not a list."
+    },
+    {
+     "file": "ts/src/helpers/sdkdesc.ts:284",
+     "sentence": "API secret for authentication.",
+     "should_say": "Password for HTTP Basic authentication; `apikey` is the user name.",
+     "why": "The runtimes read `secret` only for Basic auth, joined with apikey (PrepareAuth_ts.ts:123-132; sdkdesc.ts:173-174)."
+    },
+    {
+     "file": "sentences tool masking (tools/sentences.js, classify)",
+     "sentence": "every masked sentence carrying record, utility, id, fields, data, err or array",
+     "should_say": "Mask only tokens printed from a declared fact or a model name in that slot, not every occurrence of a word that happens to equal an entity, field or fact value. Mask printer output (r.read, member names, p.expr).",
+     "why": "Shared words are masked today, so wrong wording there would match a reference sentence. Unmasked printer output splits one shared sentence into many single-language ones."
+    }
+   ],
+   "pairs": [
+    {
+     "ids": "9402aedbb5 + 9577ba159e",
+     "texts": "Create a test client in test mode. / It returns a client in test mode.",
+     "why_same": "The same claim twice in one paragraph (no-test).",
+     "keep": "Drop the closing sentence when there is no test feature."
+    },
+    {
+     "ids": "866b167371, c1cff7a16c, f32a88ae8f, 8ffae6e977 (+ 75773f3022, 4e2d4cf241, 7c1f7fd78c, 5687a75708)",
+     "texts": "**Returns:** X, a result map holding ok, status, headers and data ...",
+     "why_same": "One shared sentence (ReadmeRef.ts:209-212) split by mask gaps: `data` is masked as accessor.param for py, rb and clojure, `err` as errVar for go and c, and \u24c8Error for rust.",
+     "keep": "one sentence; fix the mask"
+    },
+    {
+     "ids": "8ffae6e977 + rust note 4785e1e14e",
+     "texts": "...on a failure `ok` is false ... A failed request is reported in the result... / The result map always comes back inside Ok ...; its `ok` key reports the failure.",
+     "why_same": "rust's note restates the shared sentence in other words. The shared Returns paragraph itself says it twice ('on a failure ok is false' and 'A failed request is reported in the result').",
+     "keep": "the shared sentence; the note only for 'inside Ok'"
+    },
+    {
+     "ids": "d4f559de9a, fe57ce8980, f9916ca6d7, ea307e5274 (+ 418def6d36, 0f06358e5b, 0a037bbbba)",
+     "texts": "A failed request is reported in the result, not as an error, so branch on <read>.",
+     "why_same": "One shared sentence; the r.read output is not masked.",
+     "keep": "one sentence"
+    },
+    {
+     "ids": "9756a185e4, 9f786f0b8d, a758f137ae, 9be5e84dbd (+ 4172bd615b, 74db4cd68e, 3c2a4b0d55, 0919798d12)",
+     "texts": "**Returns:** X, the fetch definition: the request <direct> would send.",
+     "why_same": "One shared sentence; the member name (`Direct()`, `sdk_direct()`, `direct`) is not masked.",
+     "keep": "one sentence"
+    },
+    {
+     "ids": "a830234333, b7fff1eb21 (+ 2ca2eaf2bf)",
+     "texts": "Accepts the same parameters as <direct>.",
+     "why_same": "As above.",
+     "keep": "one sentence"
+    },
+    {
+     "ids": "b90b5c03ed, 82c5fb6c18 (+ 1eccc7250d, 0606a89435)",
+     "texts": "Create a new `\u24baEntity` / `\u24baClient` / `\u24ba` / `\u24c8.Entity.\u24ba` instance.",
+     "why_same": "One sentence (ReadmeRef.ts:276); the class-name mask differs (PlanetEntityClient is the collision rename).",
+     "keep": "one"
+    },
+    {
+     "ids": "fbfc02b589 (+ 2afc165624, 58f6c63c63, 7170ae33a7)",
+     "texts": "Create a new `X` instance with the same client and options.",
+     "why_same": "As above, for make().",
+     "keep": "one"
+    },
+    {
+     "ids": "fdc5f931f9 + 4fb872e54f",
+     "texts": "The \u27e6collection\u27e7 form of `feature` ... / The array form of `feature` ...",
+     "why_same": "The same literal; 'array' is masked as ts's collection fact.",
+     "keep": "one"
+    },
+    {
+     "ids": "b8923f051e + 1ace127b3b (+ 62d22019c2)",
+     "texts": "The first argument holds the test feature's options ... both may be <none>.",
+     "why_same": "One sentence; c's `NULL` gets a different mask, as does go's `nil` (noError).",
+     "keep": "one"
+    },
+    {
+     "ids": "808eae570d + 2cfdeb945d",
+     "texts": "Its <param> argument holds the entity options: pass <none> for none.",
+     "why_same": "go's nil is masked as noError|ref.none.",
+     "keep": "one"
+    },
+    {
+     "ids": "c81e766e95 + 7029749eeb",
+     "texts": "Returns an `Array` of entities ... / Returns a \u27e6collection\u27e7 of entities ...",
+     "why_same": "The article (an/a) follows the token, so the masked texts differ.",
+     "keep": "one"
+    },
+    {
+     "ids": "e179fbae04 + ebb9d2605e",
+     "texts": "`(sdk.client/get-utility client)` returns a copy of it. / Return a copy of the SDK utility object.",
+     "why_same": "clojure's note restates the shared 'utility' member sentence because sdk.api does not export the member. Justified, but the same fact twice across the languages.",
+     "keep": "both (clojure has no member to hang it on)"
+    },
+    {
+     "ids": "8b566aed10 + 9c8718c05e",
+     "texts": "It is the client's own node, not a copy. / Return the SDK utility object.",
+     "why_same": "elixir's note spells out what choosing the utilityBase kind over utility already says.",
+     "keep": "the kind sentence; the note is optional"
+    }
+   ],
+   "mask_claims": [
+    {
+     "id": "a04e7e54b4",
+     "masked": "**Returns:** \u27e6ref.client.0.returns|...\u27e7.",
+     "fact": "ts options()/utility() return `object`",
+     "account": "cited (Main.fragment.ts, MakeOptionsUtility.ts)"
+    },
+    {
+     "id": "a758f137ae",
+     "masked": "**Returns:** `\u27e6ref.prepare.returns\u27e7`, the fetch definition...",
+     "fact": "ts prepare returns Promise<fetchdef | Error>",
+     "account": "cited (Main.fragment.ts | MakeFetchDefUtility.ts | Context.ts)"
+    },
+    {
+     "id": "9f786f0b8d / c1cff7a16c",
+     "masked": "**Returns:** `\u27e6ref.direct.returns|ref.prepare.returns\u27e7` ...",
+     "fact": "go (map[string]any, error)",
+     "account": "derived"
+    },
+    {
+     "id": "c1cff7a16c / f32a88ae8f",
+     "masked": "... \u27e6errVar\u27e7 holds the error",
+     "fact": "a shared literal `err` (result key) masked as go's or c's error variable",
+     "account": "errVar: convention (checked only against the OLD page). The mask makes the variable and the key indistinguishable, which is exactly the go/c ambiguity."
+    },
+    {
+     "id": "866b167371, f32a88ae8f, 8ffae6e977, c1cff7a16c",
+     "masked": "on a failure `ok` is \u27e6ref.direct.okFalse\u27e7",
+     "fact": "the literal ok holds on failure (False/false)",
+     "account": "cited in every language (Main.fragment.*)"
+    },
+    {
+     "id": "866b167371",
+     "masked": "... `headers` and \u27e6ref.accessor.param\u27e7",
+     "fact": "none: the shared key `data` hidden as py/rb's accessor parameter name",
+     "account": "accessor.param is derived, but the slot is not that fact. Wrong wording there would match."
+    },
+    {
+     "id": "e4a416734b",
+     "masked": "Returns the entity, or \u27e6nullValue|ref.none\u27e7 with \u27e6errSlot\u27e7 set on failure.",
+     "fact": "c NULL, *err",
+     "account": "cited (EntityLoadOp.fragment.c, Main.fragment.c)"
+    },
+    {
+     "id": "9d48e9af0d, d473b14593, ea391183f8, fe6f690f6a",
+     "masked": "The result's \u27e6ok\u27e7 is ..., and its \u27e6err\u27e7 reports failure.",
+     "fact": "rust Ok/Err, zig .ok/.err union fields",
+     "account": "cited (rust Entity.fragment.rs / EntityLoadOp.fragment.rs; zig Entity.fragment.zig)"
+    },
+    {
+     "id": "87f6e3aeef",
+     "masked": "Returns the entity; \u27e6errVar\u27e7 is non-nil on failure.",
+     "fact": "go err / nil",
+     "account": "errVar convention; noError cited (Entity.fragment.go)"
+    },
+    {
+     "id": "808eae570d",
+     "masked": "Its \u27e6ref.accessor.param\u27e7 argument ...: pass \u27e6ref.none\u27e7 for none.",
+     "fact": "accessor param name, null literal",
+     "account": "param derived; none cited"
+    },
+    {
+     "id": "ea66aefd24, b0b5838164, dfa5cb5552",
+     "masked": "\u27e6ref.valueType.STRING\u27e7 / \u27e6ref.container|ref.valueType.OBJECT\u27e7",
+     "fact": "type words",
+     "account": "valueType.STRING derived for ts/go/py/rb/elixir, convention for c/clojure/rust/zig; container cited"
+    },
+    {
+     "id": "e3081c2053",
+     "masked": "\u27e6method.create\u27e7",
+     "fact": "the action's operation name",
+     "account": "derived"
+    },
+    {
+     "id": "c81e766e95",
+     "masked": "Returns an \u27e6collection\u27e7 of entities ...",
+     "fact": "rb Array",
+     "account": "derived"
+    },
+    {
+     "id": "a597c33fd6, d58d5036f6, f9463bffa1, e61813ee66, 8a90021109, dc97559d3c, 9b677d094c",
+     "masked": "key cells",
+     "fact": "how a key path is written (keys enumeration)",
+     "account": "keys: convention in every language"
+    },
+    {
+     "id": "ed1e41296e",
+     "masked": "Instance \u27e6ref.noun\u27e7",
+     "fact": "Functions/Methods",
+     "account": "noun: convention"
+    },
+    {
+     "id": "9c22b8823a, cf564b5fca, c81e766e95, ed7f424dbc, eac17e410f, ebb9d2605e, fdc5f931f9",
+     "masked": "\u24ba / \u24bb / \u27e6collection\u27e7 over shared words",
+     "fact": "none: shared words record, id, fields, utility and array are masked because the baseline model or ts's facts happen to use them",
+     "account": "no account applies. These slots carry shared prose, not a fact, and a wrong word in them would be matched as reviewed."
+    }
+   ],
+   "awkward": [
+    {
+     "id": "ed7f424dbc",
+     "text": "The data must include the entity id, `id`.",
+     "why": "The entity's stored match or data can supply the id (ParamUtility.ts:40-56).",
+     "better": "Unless the entity already holds it, the data must include the entity id, `id`."
+    },
+    {
+     "id": "9c22b8823a",
+     "text": "The match is optional: without one, every record is listed.",
+     "why": "Overstates: the endpoint may page, and the stored match still applies.",
+     "better": "The match is optional: without one, the request carries no filter."
+    },
+    {
+     "id": "9402aedbb5",
+     "text": "Create a test client in test mode.",
+     "why": "Repeated by 'It returns a client in test mode.' two sentences later; 'test mode' is never explained.",
+     "better": "Create a test client."
+    },
+    {
+     "id": "b21c47b21e",
+     "text": "API secret for authentication.",
+     "why": "Vague. Only HTTP Basic reads it, as the password.",
+     "better": "Password for HTTP Basic authentication; `apikey` is the user name."
+    },
+    {
+     "id": "ed1e41296e",
+     "text": "Instance Functions",
+     "why": "c, clojure and elixir members are module functions taking the client.",
+     "better": "Client Functions"
+    },
+    {
+     "id": "b597790893",
+     "text": "Run an operation through the pipeline and return its result items as one list.",
+     "why": "rust returns an IntoIter.",
+     "better": "... return its result items, all read before the call returns."
+    },
+    {
+     "id": "866b167371",
+     "text": "... on a failure `ok` is `False` and `err` holds the error.",
+     "why": "A non-2xx response has ok False and no err.",
+     "better": "... even for a non-2xx response, where `ok` is False; when the request cannot be made, `result[\"err\"]` holds the error."
+    },
+    {
+     "id": "c1cff7a16c",
+     "text": "go: ... `err` holds the error",
+     "why": "Reads as the returned error, which is always nil (rawRequest).",
+     "better": "... `result[\"err\"]` holds the error; the returned error is always nil."
+    },
+    {
+     "id": "f32a88ae8f",
+     "text": "c: ... `err` holds the error",
+     "why": "sdk_direct declares PNError** err and never sets it.",
+     "better": "... `getp(result, \"err\")` holds the message; *err stays NULL."
+    },
+    {
+     "id": "d4f559de9a",
+     "text": "branch on `getp(result, \"ok\")`",
+     "why": "A pointer test, always true when the key is present.",
+     "better": "branch on `voxgig_as_bool(getp(result, \"ok\"))`"
+    },
+    {
+     "id": "9259ea6674",
+     "text": "zig Call cell `switch (...) {`",
+     "why": "Unclosed statement: only the first line of a switch is shown.",
+     "better": "`client.planet(h.vnull()).create(...)`"
+    },
+    {
+     "id": "a9015bfed2",
+     "text": "... so it has no mock transport, and no options.",
+     "why": "'and no options' attaches to the client.",
+     "better": "... so it has no mock transport. It takes no arguments."
+    },
+    {
+     "id": "91f89cb62e",
+     "text": "Create a test client with mock features active, and no options.",
+     "why": "Reads as a client without options.",
+     "better": "Create a test client with mock features active. It takes no arguments."
+    }
+   ],
+   "single_language": "58 of my 107 sentences are contributed by one language (ts 11, go 9, c 10, elixir 9, rb 5, zig 4, clojure 4, rust 4, py 2). Note that the 58 single-language units are 4+13+17+24 = 58: the 17 mask artefacts are counted here even though they are not really one language's.\n\n- **Runtime's own fact, declared as a note: 4, and all four are notes.** zig c0e767997c (throw:false stream), clojure e179fbae04 (get-utility route), elixir 857a1c7f50 (Helpers.deep/1) and 8b566aed10 (own node, not a copy). The zig note names an option, which the lint flags as suspect, but it states the runtime's own behaviour.\n- **Shared code that one condition selects: 13.**\n  - ts result throw+async: 6 (b1666a52ac, 9f6d56f5fb, d6fd5c15c3, 863f603c11, b7eb8b0b55, and ea3964d6ba via prepare.fails 'value')\n  - go result 'pair': 87f6e3aeef\n  - go test args:false: 91f89cb62e, a9015bfed2\n  - go stream kind 'stream' and runs 'background': 9f4a983dc3, 9f4208cfb6\n  - c result 'errslot': e4a416734b\n  - elixir utilityBase kind: 9c8718c05e\n- **Not single-language at all: 17.** These are shared sentences that look single-language because the mask missed a token or the class was attributed to one language: fdc5f931f9, a758f137ae, 9f786f0b8d, c1cff7a16c, b8923f051e, ebb9d2605e, f32a88ae8f, d4f559de9a, b7fff1eb21, fe57ce8980, 88547b1a3d, f9916ca6d7, 8ffae6e977, ea307e5274, 9be5e84dbd, 91de682ebb, c81e766e95.\n- **Whole-token units: 24.** Headings, key, type and call cells, printer examples, code comments and headers, which are the language's own token or printer output.\n- **One language's old wording that survived: 0 among the single-language sentences.**\n\nThe surviving old wording is in shared, multi-language sentences instead: cf564b5fca (false), ed7f424dbc and 9c22b8823a (awkward).\n\nWorst cases: the 17 mask artefacts. They inflate the count of \"only this language\" prose, and they hide real per-language problems such as c's pointer test in d4f559de9a and go/c's `err`.",
+   "instance_noun": "For c, clojure and elixir: \"Client Functions\". Their members (`sdk_direct(DemoSDK* client, ...)`, `(api/direct client fetchargs)`, `direct(client, fetchargs)`, `Demo.ambient(client, ...)`) are module functions whose first argument is the client, so there is no instance to call them on. The cleanest fix is a declared convention value for the heading. The alternative is to change the shared heading to `Client ${noun}` for every language, which also reads correctly for the method languages (\"Client Methods\").",
+   "ran": "- Node scripts over the sentence list: I filtered my share (107), sorted it by languages and classes, counted the verdicts and the single-language entries, and merged verdicts with a small `put.js` in my own directory.\n- grep and sed over `base32/out/new` and `out/old` (B, no-test, ref-issues, auth-basic) to read each sentence's concrete text in several languages.\n- grep over the guard report `P/v32/logs/guard-report.txt` for the accounts. The report existed, so I did not re-run the guard.\n\nNo generation, compile, suite or lane was run.",
+   "read": "- **Shared code:** ReadmeRef.ts, ReadmeRefFeatures.ts, runtimeprose.ts, FeatureDocs.ts (activeByDefault, honoursActivationOrder), applicability.ts (targetFeatures), sdkdesc.ts (option texts, readsSecret), and the optspec in model/sdkgen.aontu.\n- **Providers:** Syntax_ts, Syntax_clojure and Syntax_rust in full; Syntax_go, Syntax_py, Syntax_rb, Syntax_elixir and Syntax_zig in part.\n- **Runtimes:**\n  - ts: Main, Config, EntityCreate, EntityUpdate and EntityRemove fragments; MakeOptions, Param, TransformRequest and MakePoint utilities; Context.error.\n  - go: Main Direct/rawRequest/TestSDK, Config makeFeature, the Entity Stream goroutine, param.go.\n  - c: Main sdk_direct/sdk_raw_request/test_sdk, Config make_feature, param.c, make_options.c.\n  - py: Main direct/prepare/test, Entity _run_op, the remove op, data_get, _make_feature.\n  - elixir: entity_base.ex stream and data_get, Main get_utility, helpers.ex deep.\n  - clojure: core.clj get-utility, the remove op.\n  - zig: Entity.fragment.zig streamItems and stream, types.zig StreamResult, helpers.zig get_bool.\n  - rust: the Config_rust.ts fallback.\n  - rb: the list op and accessor.\n- **Configs:** Config_ts/go/c server and feature blocks.\n- **Pages:** the OLD ts/go/c/clojure pages for the old wording, and model/feature/log.aontu.",
+   "not_done": [
+    "Nothing compiled or run. The ts no-test TypeError (d48de033ea, 9577ba159e) comes from reading the code; generating a no-test ts SDK and calling test() would confirm it.",
+    "I did not check zig, elixir, clojure or rb make_feature fallbacks line by line (I only saw that they have a case/switch). The false verdict rests on ts alone.",
+    "I did not check whether every runtime actually applies the server-variable default (`region` 'eu') at run time beyond ts (Config_ts.ts:73-77) and c (configDef.options.server); zig and clojure go through the shared configDef, which I did not open.",
+    "For the multi-language sentences I checked each against two or three runtimes of different families, not against every language that prints them.",
+    "I did not write out the zig `h.get_bool` optional-unwrap issue (fe57ce8980) as a fix; it is minor."
+   ]
+  }
+ ]
+}

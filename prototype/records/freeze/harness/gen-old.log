@@ -1,0 +1,19 @@
+[1/19] old B: 41 READMEs in 948ms
+[2/19] old auth-basic: 41 READMEs in 638ms
+[3/19] old auth-basic-query: 41 READMEs in 629ms
+[4/19] old auth-query: 41 READMEs in 589ms
+[5/19] old auth-off: 41 READMEs in 751ms
+[6/19] old server-mixed: 41 READMEs in 745ms
+[7/19] old server-static: 41 READMEs in 774ms
+[8/19] old server-none: 41 READMEs in 611ms
+[9/19] old ex-readonly: 41 READMEs in 619ms
+[10/19] old ent-only-ambient: 41 READMEs in 688ms
+[11/19] old ent-none: 41 READMEs in 615ms
+[12/19] old doc-list: 41 READMEs in 647ms
+[13/19] old doc-crud: 41 READMEs in 581ms
+[14/19] old doc-nested: 41 READMEs in 615ms
+[15/19] old crud-basic: 41 READMEs in 582ms
+[16/19] old crud-bare: 41 READMEs in 546ms
+[17/19] old crud-noupdate: 41 READMEs in 621ms
+[18/19] old lone-go: 3 READMEs in 182ms
+[19/19] alias-go2: SKIPPED on old (alias staging cannot write /home/user)

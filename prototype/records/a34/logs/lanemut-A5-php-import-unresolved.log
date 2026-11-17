@@ -1,0 +1,8 @@
+applied A5-php-import-unresolved
+      root README    total=4 executed=4 syntaxchecked=0 illustration=0
+      php README     total=20 executed=20 syntaxchecked=0 illustration=0
+      php REFERENCE  total=21 executed=21 syntaxchecked=0 illustration=0
+    ok test_php_examples_are_completely_classified
+    4 tests, 19 assertions, 0 failures
+[php default] minimum of 3: .163154842s
+lane exit 0

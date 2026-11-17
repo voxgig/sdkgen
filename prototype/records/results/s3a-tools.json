@@ -1,0 +1,309 @@
+{
+ "summary": "I built a review toolset in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools. It reviews generated output one sentence, table cell, heading, code comment and code block at a time. It is driven by one registry, ported.json, and none of the scripts holds a language list. I ran it unaided over the stage-2 output (probe-ref/harness/out/old and new, 21 variations, the 8 ported languages).\n\n**Recall.** It flags 49 of the 51 items in stage2-worklists A and B, each with a class id and the quoted unit (`node recall.js` > runs/recall-stage2.txt: flagged 49, partly 0, missed 2). Both misses are defects that OLD and NEW share byte for byte, which no OLD-against-NEW comparison can see:\n- go's TestSDK example uses undefined variables;\n- the awkward load sentence.\n\nFlagged does not always mean judged a defect:\n- **Flagged as defects by a check:** `utilitys` (a new identifier shape), zig `any` (a changed Type cell), clojure's unbound `entity` (a dangling span), and `region` (an echo against the README's Required row).\n- **Flagged as a change, judged by the reviewer:** about 40 items show OLD and NEW side by side, and the reviewer decides.\n- **c `err` never reset:** shows only as a changed root block. That it is a defect is runtime behaviour.\n\n**Injected regressions.** All 4 were flagged (`node inject.js`, exit 0).\n\n**Stage 2 by these measures.** Every language has 86 to 241 classes left to review, and all of them are unclassified, because no classification files exist yet. Block counts are exactly those the checkers found (ts 120/192, go 82/292, py 120/192, c 131/181, zig 131/181). My tutorial counts for rust and elixir match the probe's exblocks.js (27/21/0 and 17/31/0).\n\n**Source lines.** For the 8 ported languages, 6,486 lines became 4,095 (1.58x; 1.5x without blanks and comments). This is measured with the whole shared documentation code counted against them, unlike stage 2's split. For all 20, the PROJECTION is 2.48x, 2.10x if the remaining providers come out 1.5 times the measured size, and 1.82x at twice.\n\n**Purity.** It finds 36 open findings across the 8 Naming hooks and exits 1:\n- `vars: v + 's'` in all 8 hooks;\n- `Name + 'SDK'` restated in 7;\n- goVarName and exampleVarName called by no non-README component of their language;\n- clojure's provider filters `desc.entities`;\n- c's provider builds `sym.vars + '[i]'`.\n\n**Baseline README example tests** (OLD, 9aebaf9e, three models each, minimum of 3 runs; same toolchain names as stage 2):\n- **rb, php, perl** execute every runnable block.\n- **java and cpp:** their own tests only check structure, and the repo's cpp lane only syntax-checks.\n- **js:** a generated js SDK has no README example test at all.",
+ "dir": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools",
+ "tools": [
+  {
+   "name": "ported.json",
+   "usage": "read by every tool",
+   "reports": "The one registry: languages and titles, ported sets (tutorial and rootquick: ts go py c zig clojure rust elixir; reference: the same but clojure), base 9aebaf9e, families (ReadmeQuick, ReadmeTopQuick, ReadmeRef), the shared files at base, and the compiler command per language. Whether that command exists is checked at run time with `command -v`, never recorded."
+  },
+  {
+   "name": "cut.js",
+   "usage": "module",
+   "reports": "Cuts a document into the three sections (tutorial, the root README's per-language quick start, the whole REFERENCE). Splits a section into units: heading; sentence (wrapped lines joined, code spans protected, list items separate); table header; cell, keyed by heading path, column and row; and comment (whole-line or trailing, quote-aware). Also cuts blocks with their heading path and position. Masking vocabulary comes from the output itself: entity names from the root README's Entities table, field names from REFERENCE Fields tables, the SDK name from h1, and the title from the registry."
+  },
+  {
+   "name": "ledger.js",
+   "usage": "node ledger.js --old <root> --new <root> [--lang l,..] [--section s,..] [--vars ..] [--classes dir] [--template] [--json]",
+   "reports": "Units per language and section: same, reworded (both shown), missing, added. Cells are paired by their key first, then exact text, then word similarity with a stricter threshold across headings. Classes collapse model, SDK and title names and numbers. It also reports, as classes: novel and vanished code-span identifiers; `dangling` (a prose span passing an identifier that no block of the section uses as a variable); and `echo` (a changed value still stated, unchanged, elsewhere in the same SDK's README or REFERENCE). A classification is keyed by a 10-hex class id only; a section name is rejected with an error. Outcomes: same-meaning, restored:shared/fact/printer/note, correction:<id>, unification:<name>, dropped (needs why), defect (needs why). Keeping the template's count `n` makes a class whose count changes come back as RECOUNT. Exits 1 if anything is unclassified, RECOUNT or a defect. Runtime over all 8 languages: about 3 s."
+  },
+  {
+   "name": "blocks.js",
+   "usage": "node blocks.js --old <root> --new <root> [--lang ..] [--section ..] [--corrections corrections.json] [--template]",
+   "reports": "Pairs blocks by heading path, then by the path with step numbers dropped, then by similarity under the same heading, then by document order. Each pair is identical, identical after undoing the listed corrections (corrections.json: id, why, langs, sections, undo regexes applied to both sides; seeded from mine/exblocks.js for rust and elixir), or changed, with an LCS diff written to review/<lang>/<section>.blocks.diff. Also lists OLD-only and NEW-only blocks, novel and vanished identifiers, and novel-shape (an identifier whose shape around a model name is new, e.g. \u24bas: utilitys historys). Marks a changed block `UNVERIFIED: no <compiler> here` when the compiler is absent. Uses the same classification file and exit rule as the ledger."
+  },
+  {
+   "name": "share.js",
+   "usage": "node share.js --root <root> --section <s> [--lang ..] [--providers <cmp dir>] [--exclude <heading regex>]",
+   "reports": "Units and words printed by all the languages, by at least three quarters, by 2 to under three quarters, and by only one. Code spans, title, SDK and model names are masked before comparing. Reports language-supplied words at the output (units only that language prints) and at the source (words in string literals inside a provider's `*facts*`, `*notes*` and `*words*` tables, and in prose-like literals elsewhere)."
+  },
+  {
+   "name": "lines.js",
+   "usage": "node lines.js --clone <clone> [--rev HEAD|worktree] [--base 9aebaf9e]",
+   "reports": "BEFORE: per family and per language, and the shared files of that time. AFTER: each changed ts/src file by name with its delta, and per language the Syntax_ file, the Naming_ file, guard forms, any family component left for a ported section, and the delta of other per-language files the port touched. Gives a MEASURED ratio for the ported set and a labelled PROJECTION for all 20 at provider size times 1, 1.5 and 2. Reads git with GIT_OPTIONAL_LOCKS=0, so it writes nothing into a clone."
+  },
+  {
+   "name": "purity.js",
+   "usage": "node purity.js --providers <clone>/ts/project/.sdk/src/cmp [--lang ..] [--root <new root>] [--allow purity-allow.json]",
+   "reports": "Syntax_<lang>.ts: imports other than printing helpers; model, ctx$, getModelPath, target., KIT, apidef, nom or utility_ reads; reserved lists; case changes; concatenation on a description name; an operation literal outside the fact table; conditions on desc.*. A note or a fact-table prose literal is flagged if it names a feature (from model/feature), an option key (from REFERENCE constructor tables), an entity or an operation. Naming_<lang>.ts: concatenation onto the SDK name or onto a generator name, pluralisation, a reserved list that is not imported, and for each function the hook calls, which non-README components of that language also call it. Accepted findings go in a per-language allowlist with a reason."
+  },
+  {
+   "name": "portcheck.sh",
+   "usage": "./portcheck.sh <clone> <out-root> <lang>   (REGEN=1 to regenerate <out-root>/new; GUARD=<test file>)",
+   "reports": "Runs, in order: optional regeneration, ledger and blocks with templates, sharing on NEW and OLD for each section, purity, and the guard test (runtimefacts by name pattern), then one summary screen. Exits 1 if anything is unclassified, a defect, impure or a failed guard. 4.6 s for rust on stage 2 (`time`)."
+  },
+  {
+   "name": "gen/gen.js",
+   "usage": "node gen/gen.js <out-dir> <clone>/ts [--only regex]",
+   "reports": "The harness generator with an output directory argument. It refuses alias staging unless the clone is under v3tools, because staging writes into the clone. Regenerating doc-crud from probe-ref/sdkgen gave output byte-identical to stage-2 NEW (diff -r: no output)."
+  },
+  {
+   "name": "recall.js / inject.js",
+   "usage": "node recall.js [--json]; node inject.js --old <root> --new <root>",
+   "reports": "recall: where the unaided worklists flag each stage2-worklists A and B item, with a missed reason. inject: copies new, injects 4 regressions into doc-crud, and lists the classes that appear only on the copy."
+  },
+  {
+   "name": "before/run.sh, before/gensdk.js, before/phpshim.php",
+   "usage": "before/run.sh <clone> <lang> [default crud basic-server]",
+   "reports": "Generates one SDK the way generatedcompile.test.ts generateTo does (harness makeModel and makeRoot; root files beside it) and runs that SDK's own README example test 3 times, keeping the minimum. phpshim.php is a 40-line stand-in for PHPUnit's TestCase (assertSame, assertGreaterThan, assertNotEmpty, assertFileExists) that runs the generated ReadmeExamplesTest.php's own test_* methods with the real php."
+  }
+ ],
+ "recall": [
+  {
+   "item": "A.v2.1 zig create comment 'returns the created entity'",
+   "source": "check-v2",
+   "flagged_by": "ledger zig tutorial reworded [94ea49d791]: '- Create \u2014 .ok carries the created entity' / '+ Create \u2014 returns the created entity'",
+   "missed_why": ""
+  },
+  {
+   "item": "A.v2.2 ts root no longer names the returned class",
+   "source": "check-v2",
+   "flagged_by": "ledger ts rootquick missing [6999cafc46] '- List all planets (returns PlanetEntity[], one entity per record)', [a7a2078f50] '(returns the entity, a SatelliteEntity)'",
+   "missed_why": ""
+  },
+  {
+   "item": "A.v2.3 clojure prose names unbound `entity`",
+   "source": "check-v2",
+   "flagged_by": "ledger clojure tutorial dangling [09d9dca164]: '`load` returns the entity and raises on failure; `((:data-get entity))` reads its record.' (`entity` appears in no code block of this section)",
+   "missed_why": ""
+  },
+  {
+   "item": "A.v2.4 go create comment imprecise; (value, error) for List/Load only",
+   "source": "check-v2",
+   "flagged_by": "ledger go tutorial [e8427ff569] '+ Create \u2014 returns the created entity'; [8d92fa2135] '- Each operation returns `(value, error)` \u2014 the value is the entity...'",
+   "missed_why": "the two comments in a row are visible only in the changed-block diff"
+  },
+  {
+   "item": "A.v2.5 go 'The steps are one program, shown whole after them.'",
+   "source": "check-v2",
+   "flagged_by": "ledger go tutorial added [4feb574c77]",
+   "missed_why": "awkwardness is the reviewer's judgement"
+  },
+  {
+   "item": "A.v2.6 c err never reset after list",
+   "source": "check-v2",
+   "flagged_by": "blocks c rootquick changed [b9b7e6ff58] '-if (loaded) {' -> if (err)",
+   "missed_why": "That the defect is a defect is runtime semantics. OLD's tutorial has the same code (an identical block), so no comparison calls it a defect; it needs a lane that makes list fail."
+  },
+  {
+   "item": "A.v2.7 ts README: region defaults vs Required table",
+   "source": "check-v2",
+   "flagged_by": "ledger ts tutorial echo [360f66a3d2]: the reworded 'The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`.' plus '`region` at ts/README.md:224: | `server` | `object` | **Required.** ... `tenant`, `region`'",
+   "missed_why": "The query-Basic half (secret omitted here, shown in 5 later lines) is not flagged: a removal leaves no span to echo."
+  },
+  {
+   "item": "A.v2.8 ts 'Create \u2014 returns' beside 'resolves to'",
+   "source": "check-v2",
+   "flagged_by": "ledger ts tutorial [9bd3132815] '+ Create \u2014 returns the created entity'",
+   "missed_why": "the inconsistency with step 3's wording is the reviewer's judgement"
+  },
+  {
+   "item": "A.v2.9 zig/clojure blocks never compiled",
+   "source": "check-v2",
+   "flagged_by": "blocks summary line 'changed 22 (UNVERIFIED: no zig here)', 'changed 21 (UNVERIFIED: no clojure here)'",
+   "missed_why": ""
+  },
+  {
+   "item": "A.ref.1 zig Type cells all `any`",
+   "source": "check-ref",
+   "flagged_by": "ledger zig reference reworded cell:Type [8ae2f08f70] '- `[]const u8` + `any` (Type of `id`)' x138 in 17 var; also f64->any [3adf998382], i64->any, Value (object)->any",
+   "missed_why": ""
+  },
+  {
+   "item": "A.ref.2 utilitys/historys/planet_entitys",
+   "source": "check-ref",
+   "flagged_by": "blocks novel-shape [3bf1a01a51] '+\u24bas: consoles, graph_qls, historys, planets, records, utilitys (332 times)' in c (190 go, 166 py/zig/rust); ts [4663f5a680] '+\u24ba_s: console_s'",
+   "missed_why": ""
+  },
+  {
+   "item": "A.ref.3 py `ok` is `false`",
+   "source": "check-ref",
+   "flagged_by": "ledger py reference reworded [036417f9ca] '- Returns a result `dict` with `ok`, `status`, `headers`, and `data`...' / '+ On a failure `ok` is `false` and `err` holds the error.'",
+   "missed_why": "That `false` is not Python's spelling is the reviewer's judgement; no novel token, because `false` occurs in OLD py spans (`throw: false`)."
+  },
+  {
+   "item": "A.ref.4 direct() keys lost (go py c zig)",
+   "source": "check-ref",
+   "flagged_by": "py/zig vanished-token [a36a50a508] '- status (19 times)'; c [a1848760f9] '- Returns a result map with `ok`, `status`, `headers`, and `data`'",
+   "missed_why": "go: not reproducible. OLD go REFERENCE never states `status` (grep -c over all 21 variations: old 0, new 0), so there was nothing to lose."
+  },
+  {
+   "item": "A.ref.5 c/zig 'When called without arguments'",
+   "source": "check-ref",
+   "flagged_by": "ledger c and zig reference [486e9a1df9] '+ When called without arguments, returns a copy of the current data.'",
+   "missed_why": "that C and Zig cannot make the call is judgement"
+  },
+  {
+   "item": "A.ref.6 ts Actions lost Call column and example",
+   "source": "check-ref",
+   "flagged_by": "ledger ts reference missing header [17deaf56be] '- Call'; cell [a9d28cef46] '- `client.Planet().create({ $action: 'terraform', ... })`'",
+   "missed_why": ""
+  },
+  {
+   "item": "A.ref.7 log on by default vs README Features",
+   "source": "check-ref",
+   "flagged_by": "ledger ts reference reworded [1095fa7261] '+ Each feature is inactive until switched on, except `log`, which runs unless disabled.'",
+   "missed_why": "The echo check does not connect it to the README Features text, which says 'no logging' with no `log` code span."
+  },
+  {
+   "item": "A.ref.8 no-test REFERENCE omits the test constructor",
+   "source": "check-ref",
+   "flagged_by": "ledger missing heading ts [7680682768] '- `tester(testopts?, sdkopts?)`', c [ba9b2c445a] '- `DemoSDK* test_sdk(...)`'",
+   "missed_why": "that the README of the same SDK still uses it is not connected (the headings carry the SDK name, which the echo check skips)"
+  },
+  {
+   "item": "A.ref.9 REFERENCE region defaults vs README Required",
+   "source": "check-ref",
+   "flagged_by": "ledger ts reference added [06e0e1b2b7] '+ Defaults to `eu`.' and echo [bba79fa2c4] '`options.server.region`' -> '`region` at ts/README.md:224 ... **Required.**'",
+   "missed_why": ""
+  },
+  {
+   "item": "A.ref.10 py list signature optional vs 'must include planet_id'",
+   "source": "check-ref",
+   "flagged_by": "ledger py reference added [cbcdf6e5f9] '+ The match must include `planet_id`.'",
+   "missed_why": "the unchanged signature beside it is the reviewer's to compare"
+  },
+  {
+   "item": "A.ref.11 zig stream lost throw:false and 'branded error'",
+   "source": "check-ref",
+   "flagged_by": "ledger zig reference missing [5cff859a6a] '- Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with whatever data the failure left.'; reworded with '.err the branded error'",
+   "missed_why": ""
+  },
+  {
+   "item": "A.ref.12 go TestSDK example uses undefined variables",
+   "source": "check-ref",
+   "flagged_by": "",
+   "missed_why": "Identical in OLD and NEW: an OLD-against-NEW comparison cannot see a defect both sides share. Only a lane that compiles the REFERENCE can."
+  },
+  {
+   "item": "A.ref.13 awkward load sentence",
+   "source": "check-ref",
+   "flagged_by": "",
+   "missed_why": "identical in OLD and NEW"
+  },
+  {
+   "item": "B.v2.1-7 (zig .ok create comment, zig switch on list, ts root classes, ts 'every operation resolves to entities' and '(.data() for the record)', go (value, error) for every op and write results no longer printed, py data_get create comment, clojure bound variable)",
+   "source": "check-v2",
+   "flagged_by": "zig [d9e4a5888b], [486f1d12af]; ts [6999cafc46], [dd3678c6ed], [e0acbb8559]; go echo [a0788e0dd9] '(removed) Each operation returns `(value, error)`' and blocks [57367c795f] '-    fmt.Println(created.(sdk.Entity).Data())'; py [1989b91f6f]; clojure [a7a404c62e] '- Read each record with `((:data-get planet))`.'",
+   "missed_why": ""
+  },
+  {
+   "item": "B.ref.1-15 (ts options/utility Returns object, test opts, accessor table, action call; update/patch comments; go GetName; py direct keys, result[\"ok\"], fetchdef, # str; c direct, getp, Pass a map, char*, if (result); zig get_bool, throw:false, field types, []const u8 comments)",
+   "source": "check-ref",
+   "flagged_by": "all 15 flagged, among them: ts [a27fcb0198], [89eae73929], [56e3ecb1bc], [a9d28cef46]; comments [5a93760d50] '- Fields to update' (ts go py), zig [82d60d2501]; go blocks [fd0622e203] '-fmt.Println(ambient.GetName()) // \"ambient\"'; py [c6998cc942], token [8928fd2128] fetchdef, comment [a1325c8b88] '- str'; c [74cdbb7125], [a1848760f9], [7c50ae6908], [95793d1ce1] '- char*', blocks [9496c3654b] '-if (result) {'; zig [5cff859a6a], [c8d1a57f1f] / [142ba8193e] / [068ecc620f] cells, [1d14e64f14] '- []const u8'",
+   "missed_why": ""
+  },
+  {
+   "item": "B probe-ref rust/elixir losses (getp(&result,\"ok\"), Some(&map), 'as one list', utility node, list/2 and load/2 arity, getelem/2 and Demo.Helpers.deep/1, H.deep(%{}) unification)",
+   "source": "probe-ref",
+   "flagged_by": "rust [886b78e159], [5fe556e773], [b3483ee526]; elixir [fefd0a6221] '- Return the SDK utility node.', [856866fdcb], [d94f240980], [4a4cd8d647]; H.deep(%{}) counted as the declared unification unify:no-match-load in blocks' corrections line",
+   "missed_why": ""
+  }
+ ],
+ "recall_summary": "Ran `node recall.js` over the worklists that ledger.js and blocks.js wrote unaided: 51 items, 49 flagged, 0 partly, 2 missed. Both misses (go TestSDK's undefined variables, the awkward load sentence) are byte-identical in OLD and NEW, which no OLD-against-NEW comparison can see.\n\nBeyond those, these are only partly visible:\n- **c `err` never reset:** a runtime semantic; the changed block is flagged, the defect is not.\n- **The query-Basic `secret` contradiction:** a removal leaves no span to echo.\n- **The log-on-by-default contradiction with README Features:** no code span connects them.\n- **The test-constructor contradiction in no-test:** its spans carry the SDK name, which the echo check skips.\n- **Judgements of wording:** whether `false` is Python's literal, and whether 'without arguments' is a call C can make, are judgements, not comparisons.\n\nThe tool needed these improvements to get there, each a generic check:\n- pairing table cells by row and column key, which is what made the zig `any` cells visible;\n- a novel-shape report for identifiers around a model name (`utilitys`);\n- a dangling-span check (clojure's `entity`);\n- an echo check across the same SDK's README and REFERENCE (`region`);\n- marking changed blocks UNVERIFIED when the compiler is absent;\n- RECOUNT, so a regression cannot hide in an already-reviewed class.\n\ngo 'direct() keys lost' is a checker overstatement: OLD go REFERENCE never stated `status`.",
+ "injected": [
+  {
+   "regression": "ts REFERENCE doc-crud: Type cell of `title` `string` -> `number`",
+   "flagged": true,
+   "by": "ledger reworded cell:Type [3ca2732413] '- `string` + `number` (Type of `title`)', plus echo [bcaa030816]"
+  },
+  {
+   "regression": "go README doc-crud tutorial: sentence 'There is no `{ok, data}` wrapper;' removed",
+   "flagged": true,
+   "by": "ledger added [1cc738a943] '+ `Data()` reads an entity's record.' (the remainder of the sentence), and vanished-token [78a6ffd445] '- ok'"
+  },
+  {
+   "regression": "py README doc-crud tutorial: code comment '# Update \u2014 the id comes off the created entity's record' -> '# Update \u2014 the id comes from the server'",
+   "flagged": true,
+   "by": "ledger added comment [105aa5822a] '+ Update \u2014 the id comes from the server', missing [a023721d33]; blocks changed [938c5888b4]"
+  },
+  {
+   "regression": "c README doc-crud tutorial: variable planets -> planetz (4 occurrences)",
+   "flagged": true,
+   "by": "blocks changed [d9d2abe299] '-Entity** planets = ...' / '+Entity** planetz = ...', and novel-shape [64d63e24e6] '+\u24baz: planetz (4 times)'"
+  }
+ ],
+ "baseline_lanes": [
+  {
+   "lang": "rb",
+   "command": "before/run.sh <v3tools>/oldclone rb  ->  in the generated SDK: env LANG=C LC_ALL=C ruby test/readme_examples_test.rb",
+   "compiles": "ruby -c on every ruby block of the root README, rb/README.md and rb/REFERENCE.md",
+   "runs": "Every runnable block, offline in seeded test mode. Default model: root 4 of 4, README 20 of 21 (1 syntax-checked only), REFERENCE 21 of 21. crud and basic-server: 4, 18 of 19, 14.",
+   "old_result": "Passes for all 3 models: '4 runs, 20 assertions, 0 failures, 0 errors, 0 skips'. Repo lane `node --test --test-name-pattern '^rb: ' dist-test/generatedcompile.test.js` in oldclone: 49 tests, 48 pass, 1 fail, 44.3 s. The failure is 'rb: the README examples run with Basic auth and a templated server' ('the README has no templated server'). That lane is a stage-1 addition in oldclone's working tree, not in 9aebaf9e: OLD rb README omits `tenant`, which is catalogued as S49.",
+   "seconds": "0.95 / 0.97 / 0.72 (default / crud / basic-server, minimum of 3)"
+  },
+  {
+   "lang": "php",
+   "command": "before/run.sh <v3tools>/oldclone php  ->  php before/phpshim.php test/ReadmeExamplesTest.php",
+   "compiles": "php -l on every php block (the test's own syntax step)",
+   "runs": "Every runnable block (root 4 of 4, README 20 of 20, REFERENCE 21 of 21 default; 4/18/14 for crud and basic-server). Run through a stand-in TestCase, not PHPUnit: composer's dist downloads fell back to git clones from github.com and timed out at 300 s, and I did not pursue it. The repo's only php README lane ('php: README output stays bounded...') checks the output scanner and one mock-record example (1 test, pass, 3.1 s). It does not run the suite.",
+   "old_result": "Passes for all 3 models: '4 tests, 19 assertions, 0 failures'",
+   "seconds": "0.21 / 0.14 / 0.18"
+  },
+  {
+   "lang": "perl",
+   "command": "before/run.sh <v3tools>/oldclone perl  ->  perl -Ilib t/readme_examples.t",
+   "compiles": "perl -c on every perl block",
+   "runs": "Every runnable block: README 17 of 18 (1 illustration), REFERENCE 21 of 21, root 3 of 3 (default). crud and basic-server: 15 of 16, 14, 3. No repo lane runs it.",
+   "old_result": "Passes for all 3 models: '1..7', all ok",
+   "seconds": "4.33 / 3.28 / 2.98"
+  },
+  {
+   "lang": "java",
+   "command": "before/run.sh <v3tools>/oldclone java  ->  mvn -B test -Dtest=ReadmeExamplesTest -DfailIfNoSpecifiedTests=false",
+   "compiles": "Only the JUnit test class and the SDK. No README example is compiled.",
+   "runs": "A structural gate only: the java blocks are counted and checked for balanced delimiters (root 3, README 17, REFERENCE 21 for default). No example executes. No repo lane runs it.",
+   "old_result": "Passes for all 3 models: 'Tests run: 4, Failures: 0, Errors: 0', BUILD SUCCESS",
+   "seconds": "6.05 / 6.65 / 5.11"
+  },
+  {
+   "lang": "cpp",
+   "command": "before/run.sh <v3tools>/oldclone cpp  ->  rm -f test/readme_examples_test.out && make -s test/readme_examples_test.out && ./test/readme_examples_test.out; repo DOC lane: node --test --test-name-pattern '^cpp: every documented example compiles' dist-test/generatedcompile.test.js",
+   "compiles": "The SDK's own test compiles only itself and checks 41 blocks for presence and balance. The repo DOC lane runs g++ -fsyntax-only -std=c++17 over every cpp example of README, REFERENCE and the root README, under 6 models.",
+   "runs": "No README example runs, in either.",
+   "old_result": "Own test: '1 tests, 85 checks, 0 failures' (default; 67 checks for crud and basic-server). DOC lane: 6 tests, 6 pass.",
+   "seconds": "Own test 3.24 / 2.71 / 2.90 (compile plus run); DOC lane 13.8 (one run)"
+  },
+  {
+   "lang": "js",
+   "command": "before/run.sh <v3tools>/oldclone js",
+   "compiles": "nothing",
+   "runs": "Nothing. A generated js SDK ships no README example test: there is no ReadmeExamplesTest_js component, and ts's readme_examples.test is ts-only. No lane in generatedcompile.test.ts runs js README examples.",
+   "old_result": "NOT RUN: no runner exists",
+   "seconds": "n/a"
+  }
+ ],
+ "stage2_numbers": "All numbers come from out-stage2 (a symlink to probe-ref/harness/out), sdkgen at c66142da, 19 variations (21 for go, which includes lone-go and alias-go2).\n\n**Ledger** (`node ledger.js --old out-stage2/old --new out-stage2/new`, runs/ledger-stage2.txt). Units as same/reworded/missing/added, then the class count:\n- **tutorial:**\n  - ts 61/57/35/45 (39 classes)\n  - go 23/21/106/168 (59)\n  - py 61/51/18/51 (36)\n  - c 66/56/15/41 (33)\n  - zig 61/57/19/45 (39)\n  - clojure 66/60/11/37 (35)\n  - rust 66/56/15/41 (38)\n  - elixir 66/56/8/41 (33)\n- **rootquick:** ts 21/0/34/23 (8 classes); go 22/21/0/5 (4); py, c, zig, clojure, rust and elixir each 19/23/0/0 (3).\n- **reference:**\n  - ts 15741/313/1126/640 (96 classes)\n  - go 17617/215/242/610 (70)\n  - py 15249/391/240/772 (96)\n  - c 14509/472/558/1317 (96)\n  - zig 14404/815/604/967 (124)\n  - rust 14608/596/431/1170 (125)\n  - elixir 14806/527/391/1041 (121)\n\nClasses per language, ledger plus blocks: ts 241, go 223, py 212, c 209, zig 236, clojure 86, rust 234, elixir 230. All are unclassified.\n\n**Blocks** (`node blocks.js`), as identical / identical after listed corrections / changed / OLD-only:\n- **tutorial:** ts 19/0/29/0, go 0/0/21/0, py 26/0/22/0, c 7/0/41/0, zig 26/0/22/0 (UNVERIFIED), clojure 27/0/21/0 (UNVERIFIED), rust 27/21/0/0, elixir 17/31/0/0 (UNVERIFIED).\n- **rootquick:** 0 identical in every language. rust 0/2/17, elixir 0/1/18; all others 0/0/19 (go 0/0/22).\n- **reference:** ts 120/0/192/18, go 82/0/292/2, py 120/0/192/2, c 131/0/181/2, zig 131/0/181/2, rust 131/0/181/2, elixir 131/0/181/2.\n\nCorrections are declared only for rust and elixir. Every other \"changed\" count therefore still includes catalogued corrections that nobody has declared yet.\n\n**Sharing** (`node share.js`, runs/share-stage2.txt). Units printed by all / at least 3 of 4 / only this language, NEW against OLD:\n- **tutorial, all 8:**\n  - ts 42.3/43.6/14.1% (OLD 26.1/35.9/37.9)\n  - go 35.4/2.4/62.3% (OLD 29.3/0/70.7)\n  - py 42.3/43.6/14.1 (OLD 30.8/44.6/21.5)\n  - c 42.3/40.5/17.2 (OLD 29.2/45.3/20.4)\n  - zig, clojure, rust and elixir 42.3/43.6/4.3\n- **Language words at the output, tutorial, NEW (OLD):** ts 295 (621), go 1347 (1258), py 288 (356), c 387 (329), zig 140 (219), clojure 112 (112), rust 133 (221), elixir 112 (133).\n- **reference without the feature reference** (`--exclude Features`), words printed by all 7 / only this language, NEW (OLD):\n  - ts 35.9/32.0% (20.6/33.9)\n  - go 33.5/33.7 (17.1/38.2)\n  - py 47.3/17.9 (26.8/10.9)\n  - c 39.6/15.3 (25.9/28.7)\n  - zig 41.2/8.4 (21.2/39.3)\n  - rust 39.6/6.3 (28.4/22.1)\n  - elixir 46.8/18.4 (28.6/25.5)\n- **At the source**, words in fact-table literals: ts 105, go 117, py 92, c 158, zig 117, clojure 12, rust 130, elixir 109. Of those, the prose-like literals: ts 4, c 8, zig 6, rust 5. No provider has notes yet.\n\n**Lines** (`node lines.js --clone ../probe-ref/sdkgen --rev HEAD`): 8 ported languages, 6486/4729 to 4095/3157 = 1.58x (1.50x without blanks and comments). PROJECTION for all 20: 2.48x at measured provider size, 2.10x at 1.5 times, 1.82x at twice.\n\n**Purity** (`node purity.js`): 36 open findings, exit 1:\n- vars+'s' pluralisation in 8 hooks;\n- Name+'SDK' and similar concatenations in 7 hooks;\n- exampleVarName (ts, py, elixir) and goVarName (go) called by no non-README component;\n- clojure Syntax line 60 filters `desc.entities`;\n- c Syntax line 64 builds `r.entity.sym.vars + '[i]'`.\n\n**Guard** (runtimefacts via portcheck): rust 2/2 pass.",
+ "gaps": [
+  "I classified nothing. classes/ is empty, so every language reports 86 to 241 unclassified classes and exits 1. The classifications are the reviewers' job; I tested the mechanism on throw-away data in selftest/ (deleted afterwards): a defect class and a RECOUNT class each made the run exit 1, a classification keyed by a section name was refused with an error, and with every class classified the run exited 0.",
+  "corrections.json holds only the probe's rust and elixir rules. ts, go, py, c, zig and clojure have none, so their 'changed' block counts include catalogued corrections (S49 server, S50 secret, write comments) that nobody has declared yet.",
+  "Not run on the other engineer's corrected output in P/v3, by instruction. I only listed v3/sdkgen's zig directory. portcheck's REGEN path was tested only with gen/gen.js on probe-ref/sdkgen, for doc-crud (byte-identical to stage-2 NEW) and alias-go2 (correctly skipped).",
+  "Guard coverage per language (which declared facts the guard re-derives) is not measured. portcheck only runs the runtimefacts test by name pattern.",
+  "The echo check covers the same SDK's README and REFERENCE only, by code span. It misses a contradiction stated without a code span (log vs 'no logging'), one whose span carries the SDK name, and a removal.",
+  "The ledger's novel and vanished tokens come from code spans only. Comment text is compared as units, not tokens.",
+  "js: no README example test exists, so there is no before-number. I did not write an extract-and-run harness of my own.",
+  "php ran under a stand-in TestCase, not PHPUnit, because composer could not fetch PHPUnit here.",
+  "java and cpp: their own README tests are structural. No example is compiled by the java test or run by either. cpp blocks are compiled with -fsyntax-only by the repo DOC lane, which passed 6 of 6.",
+  "Purity's option-key vocabulary comes from REFERENCE constructor tables in the given output root, not from the model's optspec.",
+  "Timings: each model ran 3 times and I report the minimum, except the repo lanes, which ran once. The CPUs were shared."
+ ],
+ "surprises": [
+  "probe-ref/oldclone is not pristine in one file. Its working tree has a 17-line addition to ts/test/generatedcompile.test.ts (BASIC_SERVER and a 'with Basic auth and a templated server' lane for ts and the README_LANES). On the old code that added rb lane fails ('rb: the README has no templated server'), which is the S49 defect showing in OLD.",
+  "Composer could not fetch PHPUnit: dist downloads fell back to git clones from github.com and timed out at 300 s. This machine has no phpunit, and the repo's php README lane does not run ReadmeExamplesTest at all.",
+  "The java and cpp generated README example tests are structure gates (balanced delimiters). Their 'pass' says nothing about whether an example compiles.",
+  "check-ref's 'go no longer states direct()'s status/headers/data' does not reproduce. OLD go REFERENCE never stated `status` in any of the 21 variations.",
+  "Including the whole shared documentation infrastructure, the 8 ported languages come to 1.58x fewer lines, not the 2.27x reported for REFERENCE alone. The projection to 20 reaches 2x only if the remaining providers are at most about 1.5 times the measured size.",
+  "In the root quick start, 0 of the 19 blocks per language are identical to OLD in every ported language. In go's tutorial, 0 of 21 are."
+ ],
+ "handoff": "To check a port, run `cd <v3tools> && ./portcheck.sh <clone> <out-root> <lang>`, where `<out-root>` holds `old/` and `new/`. Use REGEN=1 to regenerate new/ from the clone; alias-go2 is generated only from a clone copied under v3tools. Work the worklists in review/<lang>/:\n- `*.ledger.txt`, with the order dangling, echo, missing, reworded, added, tokens;\n- `*.blocks.txt` and `*.blocks.diff`.\n\nTo record a review, copy entries from `*.template.json` into `classes/<lang>.json` with an outcome. Keep `n`, so that a regression that later joins a class you reviewed comes back as RECOUNT.\n\nDeclare each correction once in corrections.json (id, languages, sections, undo regexes) rather than classifying every block it changes.\n\nWhen a language is ported, add it to ported.json `ported`; nothing else holds a language list.\n\nThe before-numbers for js, rb, php, perl, java and cpp are in before/lanes-old.log and before/lanes-old-php.log. Rerun them on a NEW clone with `before/run.sh <clone> <lang>` and compare: rb, php and perl execute their examples; java and cpp only check structure; js has nothing to run.\n\n`node recall.js` and `node inject.js` are the regression tests for the tools themselves. After changing a tool, they should still report 49 of 51 flagged and 4 of 4 injections flagged."
+}

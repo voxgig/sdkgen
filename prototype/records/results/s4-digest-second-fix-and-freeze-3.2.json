@@ -1,0 +1,758 @@
+{
+ "key": "second-fix-and-freeze-3.2",
+ "what": "the second fix round (every kind of fact gets a check) and the freeze of version 3.2 at nine languages",
+ "digest": {
+  "part": "Stage 3a-fix2 (the second fix round: every kind of fact gets a check) and the freeze of version 3.2 at nine ported languages (ts go py c zig clojure rust elixir rb). Records read: brief.md, brief5.md, results/s3fix2-guard.txt, results/s3fix2-shared.txt, results/s3fix2-tools.txt, results/s3fix2-final.txt. All were present and read completely.",
+  "rounds": [
+   {
+    "round": "Stage 3a-fix2 brief (brief5.md)",
+    "purpose": "Answer the independent re-check of v3.1, which judged it not ready for three reasons. (1) A wrong fact in the `language` or `convention` category hides behind the mask, and shared code supplies a runtime value by an undeclared default (`lit(r, false)` in ReadmeRef.ts:78). (2) The runtime reader cannot see throws, static or class receivers, fields, lua's error value, or real stream timing. (3) A dropped sentence leaves no trace in a new port. The stage's rule: every printed fact is checked by someone other than its writer, and the kind of check follows from the kind of fact (derived, cited code token, cited absence, cited prose, language or convention, sentence).",
+    "who": "Three engineers in parallel on disjoint files: i-shared (shared doc code and providers), i-guard (guard, reader, forms, runtime-table), i-tools (review tools). A fourth, v32, merges the three, reviews, freezes v3.2 and writes PORTING.md 3.2.",
+    "produced": "The task split and the fact-kind/check table.",
+    "changed": "Set the rules: shared code never supplies a runtime value by default; the reader must see every dimension a page states; `language` holds only what no runtime file can show, so null and boolean literals become cited."
+   },
+   {
+    "round": "i-guard (s3fix2-guard.txt)",
+    "purpose": "Make the reader and the guard see failure markers, receivers, field-or-callable, comment-read returns, optional parameters, absent member families and stream timing. Move none and lits from `language` to cited. Add absence citations and stricter citation rules. Audit every citation.",
+    "who": "One builder, working on test-side files only (29 commits on 9089ed48, HEAD 41a6df87). Checks were the builder's own: guard plus reader, the suite, the 75 earlier mutations re-run and 19 new mutations.",
+    "produced": "Reader and table dimensions for all 20 runtimes. runtime-table.md grew from 872 to 1108 lines. A 129-row citation audit. Stream records for all 20. Table corrections for swift, lua, ocaml, perl, java, kotlin, scala, cpp and c. Five WRONG facts in three ported languages.",
+    "changed": "Found that clojure and elixir declare streamLazy but read every item before returning; that the swift stream fits no kind; and that c's page omits sdk_options_map and sdk_get_utility. All were recorded as WRONG or NEEDS SHARED and left to the shared engineer. 3 breaking forms-framework changes and 5 additive."
+   },
+   {
+    "round": "i-shared (s3fix2-shared.txt)",
+    "purpose": "Remove every runtime value that shared code supplied by default, fix the stream sentences, decide the checked-example rule by result style, correct false notes, and fix the rb data/options sentence.",
+    "who": "One builder (4 commits, HEAD 51de033a). Checks were the builder's own: build, suite, golden, seven lanes, the unported diff and the portcheck per language.",
+    "produced": "A defaults sweep of 45 rows. Ten defaults became facts and six fallbacks now throw. New required facts: direct.okFalse, accessor.param, Member.runs, setArg, pairForm/noError, abortCode. The checked-example rule by result style. Elixir's arity claims removed.",
+    "changed": "8 breaking interface changes; 'as they arrive' was dropped from the stream sentences as false for every runtime. The suite was left with 9 failures, the guard's account tests, which needed the guard engineer's files."
+   },
+   {
+    "round": "i-tools (s3fix2-tools.txt)",
+    "purpose": "Compare language and convention facts with the OLD page, flag dropped sentences (including from scratch), export the sentences nobody read, carry out smaller fixes, and measure H1 prose by source.",
+    "who": "One builder, working on the tools only, with no sdkgen source changed. The check was the builder's own self-test: 176 controls, 0 failed.",
+    "produced": "Fact attestation, with UNATTESTED failing portcheck. A 'printed less often than its reference' check and a non-failing absent list. A from-scratch mode for every control. sentences.js with 288 distinct masked sentences, 234 of them resting only on rule records. A by-source prose measure.",
+    "changed": "Made the brief's attestation rule per context, because the brief's 'at least one unit' rule let clojure entityNoun 'Fields' through. Fixed the duplicate check, which was hiding a from-scratch hole (sentence-removed-go). Left the nine checks at 2 PASS and 7 FAIL, on 16 unattested facts."
+   },
+   {
+    "round": "v32 merge, review and freeze (s3fix2-final.txt)",
+    "purpose": "Merge the three engineers' work, settle where they disagree, review the nine languages where output changed, freeze v3.2 and write PORTING.md 3.2.",
+    "who": "One engineer (v32), who did not build the three parts. 68 commits on 9089ed48, tag v32-frozen = 3d58cb46, tools git d2e3b26. Checks: the full freeze set, mutations (75 + 19 + 12 new), end-to-end runs of the re-check's provider mutations, an injection from scratch, and newport.sh on kotlin.",
+    "produced": "v3.2 frozen in P/base32. PORTING.md has 621 lines, runtime-table.md 1119. The nine one-command checks pass. Self-test: 175 controls, 0 failed. Measures recorded for H1, H2, H3 and H4.",
+    "changed": "`runs` and accessor.param are derived by the guard; okFalse, abortCode and noError are cited, with ahead okFalse citations in all 11 unported forms. c documents options and utility. The copy claims now rest on a cited copy fact. The STREAM_RUNS.call sentence was corrected. The test sentence names its arguments by position. okFalse throws when missing. Five stale hand records were re-decided and 7 unattested facts recorded by hand. Disagreements resolved or deferred (ocaml)."
+   }
+  ],
+  "items": [
+   {
+    "topic": "method",
+    "claim": "Every freeze check held at v32-frozen: the build leaves the tree clean, the suite has no failures, the golden passes, and guard plus reader pass.",
+    "numbers": "git status 0 lines; suite 2597 tests, 2592 pass, 0 fail, 5 skipped; golden 2/2; guard and reader 61/61",
+    "source": "s3fix2-final.txt freeze_checks [0]-[3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "Every documentation lane that can run here passes at v32-frozen, with the same counts as v3.1.",
+    "numbers": "ts README 16/16 (41 s), go 12/12 (58 s), py 12/12 (17 s), c DOC 6/6 (31 s), rust DOC 6/6 (24 s), '^rb: ' 49/49 (55 s), zig documentation 6/6 (8 s); identical counts at afc9cd4c",
+    "source": "s3fix2-final.txt freeze_checks [4]; hypotheses H4",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "The new checked c examples (REFERENCE load and remove with the NULL check, the root quick start, tutorial writes each followed by an err check) compile in the c DOC lane, and rust's restored load/remove print compiles in the rust DOC lane.",
+    "numbers": "c DOC 6/6; rust DOC 6/6; i-shared lanes ts 16/16 (38s), go 12/12 (79s), py 12/12 (16s), c 6/6 (27s), rust 6/6 (26s), rb 49/49 (43s), zig 6/6 (6s)",
+    "source": "s3fix2-shared.txt lanes; hypotheses H4",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "limit",
+    "claim": "The changed clojure and elixir blocks are compiled by nothing here, because no compiler is on PATH.",
+    "numbers": "clojure 22/19/83 and elixir 32/19/162 changed blocks (tutorial/rootquick/reference) compiled by nothing",
+    "source": "s3fix2-final.txt blocks [5],[7]; gaps",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The eleven unported languages' README and REFERENCE are unchanged by this stage: they differ from OLD only in the 7+8 lines already listed at v3.1 and are byte-identical to the v3.1 output.",
+    "numbers": "README 209/209 and REFERENCE 209/209 differ only in the 7 + 8 lines, each 209 times (11 languages x 19 variations); 0 new lines; 0 files differ from base/out/new for each of js php lua csharp java kotlin scala swift cpp perl ocaml",
+    "source": "s3fix2-final.txt freeze_checks [5]; unported_changed_lines",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "All nine one-command checks pass at the freeze, with nothing open or unattested and every absent entry explained.",
+    "numbers": "PASS x9; ledger and blocks OPEN 0, defect 0, purity open 0, guard pass, 0 facts without an account, UNATTESTED 0, printed-less-often 0; absent explained zig 12, rust 12, clojure 1, elixir 1, rb 1",
+    "source": "s3fix2-final.txt freeze_checks [7]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The tools self-test passes from base32. The first full run in v32 had failures, which were re-recorded or moved after reading.",
+    "numbers": "175 controls, 0 failed (ledger 24/24, recheck 19/19, accept 7/7, missing 3/3, the same four from scratch, facts 5/5 and 5/5, sentences 2/2, purity 28/28, blocks 28/28, recall 1/1), 405 s; first run 177 controls, 6 failed (rb-none-null in both modes, 4 recorded block tables: c x3, rust reference)",
+    "source": "s3fix2-final.txt freeze_checks [8]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Of v3.1's 75 mutations, 68 are caught at the freeze. The same 7 as at v3.1 are not caught, and none is caught less than before.",
+    "numbers": "68 caught, 7 not caught, 0 errors once 9 were adapted; not caught: clj-return-changed, ts-noun, zig-type-integer, clj-type-integer, c-type-string, ts-type-comment, ts-lit-int; 106 ran first in 614 s",
+    "source": "s3fix2-final.txt mutations",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At the guard engineer's commit, re-running v3.1's 75 mutations gave 67 caught, two more than v3.1, newly caught by the cited none and lits.",
+    "numbers": "v31: 65 caught, 9 not caught, 1 build error; now: 67 caught, 7 not caught, 1 build error; newly caught ts-lit-none and py-lit-false; 367 s",
+    "source": "s3fix2-guard.txt earlier_mutations",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Of the guard engineer's 19 new mutations, 18 were caught at that engineer's commit and 17 by the guard at the freeze. Two were re-expressed as okFalse because the lits key no longer exists. The 3-line unquoted window still misses one.",
+    "numbers": "guard round: 19 new, 18 caught, miss new-ts-unquoted-near (token 8 lines from the quote); freeze: 17 caught; new-py-lits-removed ran as v32-py-okfalse-removed (build fails TS2741), new-rb-lits-false-False ran as v32-rb-okfalse-False (caught by account); new-ts-unquoted-near NOT CAUGHT",
+    "source": "s3fix2-guard.txt mutations [12]; s3fix2-final.txt mutations",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Of the v32 engineer's 12 new mutations, 11 are caught by the guard and the twelfth (py okFalse removed) fails the build.",
+    "numbers": "12 mutations; 11 caught (runs, accessor, members, account, reader); py okFalse removed: build fails TS2741",
+    "source": "s3fix2-final.txt mutations",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The re-check's provider mutations, run end to end on a copy (build, generate, one command), are caught naming the fact. A py okFalse removal is stopped only by the build: the one command, run on the previous build, still printed PASS.",
+    "numbers": "rb none 'null': guard FAILED; rb okFalse 'False': guard FAILED; rb maps 'arrays': PORTCHECK FAIL UNATTESTED, reviewed and from scratch; rb noun 'Functions': FAIL both modes; py okFalse removed: build fails TS2741, one command still printed PASS on the previous build",
+    "source": "s3fix2-final.txt recheck_evidence [0]; for_the_integration",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "A shared sentence dropped from one rb variation, classified from scratch, now leaves one open class for a person. With the tools as handed it left none.",
+    "numbers": "new open 1, auto 0, ledger unclassified 67->68 (final); tools round: with new tools new open 1, ledger 68->69; with tools-orig new open 0, 68->68",
+    "source": "s3fix2-final.txt recheck_evidence [1]; s3fix2-tools.txt missing_sentence_controls [0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The reader now shows swift `throws`, lua's sdk_err table and dot test, ocaml fields and missing members, and perl's 0/1 ok and class-method test, quoted from the regenerated table.",
+    "numbers": "runtimereader 22/22; e.g. swift '| load | ... | Value | throws | instance | callable |'; ocaml '| e_name | property or field | string |  | instance | field | name |'",
+    "source": "s3fix2-final.txt recheck_evidence [2]; table_rows_quoted",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "finding",
+    "claim": "Two ported providers stated a false stream kind: clojure and elixir declared streamLazy, but both read every item before the stream returns. Only the order of the statements in the code shows it.",
+    "numbers": "clojure Entity.fragment.clj:164,180,185; elixir entity_base.ex:150,160,172; streaming.ex:58",
+    "source": "s3fix2-guard.txt wrong_facts [2],[3]; surprises",
+    "by": "builder",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "No runtime streams items off the network: every streaming feature yields from result.resdata, a response already read whole, so 'as they arrive' was false for all twenty runtimes, ts included.",
+    "numbers": "resdata in 14 of the 15 feature files grepped; ts StreamingFeature.ts:52",
+    "source": "s3fix2-guard.txt surprises; s3fix2-shared.txt surprises, defaults [8]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Within one stream kind, runtimes differ in when the operation runs, so a second fact (`runs`) is needed. swift's async iterator runs at the call and ts's at iteration; perl's function stream runs at the call and lua's at the first pull.",
+    "numbers": "Member.runs: iterate, call or background; the 20 values agree between the two engineers 20/20",
+    "source": "s3fix2-shared.txt surprises; s3fix2-final.txt disagreements [0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The shared 'call' stream sentence 'The operation runs, and every item is read, before the call returns' was false for java, kotlin, scala and perl, which run the operation at the call but draw the feature's items as the caller iterates. None of the nine ported languages exercised it.",
+    "numbers": "java EntityBase.fragment.java:246,278,292; kotlin .kt:213,245,248; scala .scala:192,218,240; perl Entity.fragment.pm:177,202,205",
+    "source": "s3fix2-final.txt disagreements [1]; wrong_facts_fixed [4]; surprises",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "c's page omitted two client members its runtime has (sdk_options_map, sdk_get_utility), because the forms never read the file defining them. v3.2 declares and documents both, and the 8 new classes were decided by hand.",
+    "numbers": "tm/c/core/utility.c:70,72; sdk.h:477-478; 8 new classes decided by hand (restored:fact)",
+    "source": "s3fix2-guard.txt wrong_facts [4]; s3fix2-final.txt disagreements [6]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The reader found four misread rows in the unported table: kotlin's constructor return was its superclass, cpp's was `explicit`, scala's `def toString` was shown as a field, and java's two required parameters were invisible.",
+    "numbers": "4 misread rows; kotlin Main.fragment.kt:8, cpp Main.fragment.cpp:17, scala SdkClient.scala:81, java EntityLoadOp.fragment.java:22",
+    "source": "s3fix2-guard.txt table_corrections [10],[13]-[15]; surprises",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Defaults in shared code had been hiding defects. Turning memberName's fallback into an error broke clojure's REFERENCE at once, because the lisp signatures were never parsed. c and zig always printed the default 'a map', and go the default pairForm, true only by luck.",
+    "numbers": "defaults sweep 45 rows; 10 defaults became facts; 6 fallbacks now throw; 2 items not fixed (testopts/sdkopts, ReadmeRefFeatures `active: false`)",
+    "source": "s3fix2-shared.txt summary; defaults; surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "A required fact enforced only by the type checker is not enough. With okFalse bypassed, ReadmeRef.ts:81 would have printed `undefined`, so v3.2 makes okFalse() throw when it is missing.",
+    "numbers": "commit e7b9b526, with a test in refinterface.test.ts",
+    "source": "s3fix2-final.txt wrong_facts_fixed [5]; surprises",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Hand records are pinned by count only, so a shared change that makes a record's reason false leaves it decided. Five such stale records were found and re-decided.",
+    "numbers": "5 stale hand records (4 ts records from the positional test sentence; elixir d94f240980 re-decided as correction:elixir-arity)",
+    "source": "s3fix2-final.txt summary; surprises; for_the_integration",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "The OLD c page called its entity members 'Common Methods'; the new noun 'Functions' corrects this. The OLD clojure REFERENCE heading 'Client' names no runtime thing, so the true heading cannot be attested against OLD from scratch.",
+    "numbers": "OLD B/c/REFERENCE.md:134; OLD B/clojure/REFERENCE.md:6",
+    "source": "s3fix2-final.txt hand_facts [2],[4]; s3fix2-tools.txt surprises",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "Breaking provider-interface changes since the first four languages total about 20 to 22 against a line of about 10, so H1's threshold is crossed about twice over. None was caused by a newly ported language: each turned a value shared code had supplied into a declared fact.",
+    "numbers": "about 11-13 at v3.1 + i-shared 8 (6 forcing provider work: 9, 9, 9, 2, 1, 1 providers; 2 forcing none) + v32 1 (copy on options and entopts) = about 20-22; about 22-24 counting the 2 changed shared sentences; caused by a newly ported language: 0",
+    "source": "s3fix2-final.txt breaking_counts; interface_changes; hypotheses H1",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "The guard and forms framework also had breaking changes this stage, each forcing edits in existing forms files.",
+    "numbers": "i-guard 3 breaking (reader requiring a stream record and a test constructor: all 20 forms; none/lits to cited: 9; unquoted/note-token/runtime-file rules: 7) and 5 additive; v32 +1 breaking (DEFAULTS move: 9 forms, plus ahead okFalse in 11 unported forms)",
+    "source": "s3fix2-guard.txt forms_changes; s3fix2-final.txt breaking_counts",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Measured by source, the prose the providers' own literals put on the page is at most 7.4% (go, mostly its stream note), under the 15% line. Counted as 'printed by this language alone', go is 22.6%, over the line, mostly shared code that only go's result style selects.",
+    "numbers": "by source / alone / notes: ts 0.4/14.7/0; go 7.4/22.6/7.2; py 0.2/3.0/0; c 1.3/9.9/0; zig 4.5/4.8/3.4; clojure 2.8/2.8/2.4; rust 1.2/5.9/0.9; elixir 0.8/5.0/0.4; rb 0.2/4.7/0 (%); highest by section go reference by source 8.1%, c tutorial alone 32.6%; notes 0 to 45 words per provider (go 45); shared templates 876 prose-literal words",
+    "source": "s3fix2-final.txt measures (Prose); prose",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "A language must now supply more data than before: a forms file, a test-constructor name, a stream record, `on`/`fails`/`failure` where the defaults do not fit, and none, okFalse and absence citations. Forms files grew 10 to 22 lines each.",
+    "numbers": "one forms file of 54 to 113 lines; stream record 7 lines (three quotes); on in 11 of 20, fails in 6; forms of the nine 771->906, the eleven 601->746 (guard round)",
+    "source": "s3fix2-guard.txt hypotheses H1; lines",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Shared-code fixes added data, not sentences, to the providers: provider source shrank slightly while shared source grew.",
+    "numbers": "shared source +113 lines (ReadmeRef 402->459, ReadmeQuick 255->259, example 566->605, runtimeprose 247->260); providers -3 net; tests +49; diff stat 17 files +273/-114",
+    "source": "s3fix2-shared.txt source_lines",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "H2 is refuted on every count that includes the forms or the guard. For the nine ported languages only documentation code shows a reduction (1.61x), and projected to twenty only documentation code at x1 provider size stays over 2x.",
+    "numbers": "before (nine) 6,916; doc code 4,283 = 1.61x; + forms 5,190 = 1.33x; + shared guard 7,068 = 0.98x; tool headline (ReadmeTop in, guard out) 7661->5948 = 1.29x; projected to twenty (before 15,038; unported providers at mean 215): x1 6,648 2.26x / 8,344 1.80x / 10,222 1.47x; x1.5 1.92x/1.58x/1.32x; x2 1.67x/1.40x/1.19x",
+    "source": "s3fix2-final.txt measures (Source lines); hypotheses H2",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "cost",
+    "claim": "The source parts at the freeze, by line count.",
+    "numbers": "shared documentation code 2,346 (ReadmeQuick 259, ReadmeRef 461, ReadmeRefFeatures 146, example 605, sdkdesc 530, runtimeprose 260, markdown 31, media +30, optional +4, FeatureDocs +9, ReadmeFeatures +11); providers 1,937 (ts 165, go 214, py 180, rb 189, rust 199, c 269, zig 220, clojure 272, elixir 229); forms of the nine 907; forms of the eleven 789; shared guard 1,878",
+    "source": "s3fix2-final.txt measures (Source lines)",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "cost",
+    "claim": "The guard and forms grew by about a quarter in the guard round.",
+    "numbers": "shared guard 1379->1835; all test/runtime* files 2751->3487; runtime-table.md 872->1108",
+    "source": "s3fix2-guard.txt lines",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "cost",
+    "claim": "Review effort in the v32 stage, in decisions made by a person.",
+    "numbers": "67 class decisions (ts 7, go 5, py 6, c 27, zig 3, clojure 6, rust 2, elixir 6, rb 5) including 6 stale records re-decided; 7 hand facts; 28 absent reasons; counts re-recorded for c and rust; one purity record re-keyed",
+    "source": "s3fix2-final.txt measures (Review effort)",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "cost",
+    "claim": "Running the review tools grew more expensive.",
+    "numbers": "self-test 84/84 in 98 s before; 176 controls in 348 s (tools round); 175 controls in 405 s (freeze); single runs on shared CPUs",
+    "source": "s3fix2-tools.txt selftest; s3fix2-final.txt freeze_checks [8]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The guard accounts for every printed fact of the nine at the freeze, with no exceptions and no WRONG exception left in any forms file. 67 citations are pinned prose, whose values only the reviewer checks.",
+    "numbers": "derived/cited/language/convention/pinned: ts 47/19/1/5/9; go 48/14/2/6/7; py 48/14/1/7/6; c 42/14/1/10/7; zig 40/17/2/9/9; clojure 43/16/1/11/8; rust 43/14/1/9/6; elixir 48/15/1/5/9; rb 47/14/1/7/6; absences 1 each except ts 0; excepted 0; pinned prose 67; unquoted excuses 25",
+    "source": "s3fix2-final.txt measures (Guard account); account",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The guard engineer's citation audit found that 3 citations still did not show their value and 2 notes were false. At the freeze no citation claims to show what it does not: the three were replaced by open unquoted excuses.",
+    "numbers": "129 rows (113 cited + 16 ahead): yes 68 (16 ahead), pinned prose 53, absence 8; 3 not showing (py and rb direct.returns, ts prepare.returns); 28 changed or new; 2 citations removed for WRONG notes",
+    "source": "s3fix2-guard.txt citation_audit [40]; s3fix2-final.txt disagreements [9]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Language and convention facts are now compared with the OLD page per context. All 6 provider mutations fail the check naming the fact, in both modes. Against the clojure heading, the from-scratch control is not discriminating.",
+    "numbers": "6/6 fail naming the fact (rb none, maps, noun; clojure entityNoun, heading; py keys); the brief's 'at least one unit' rule gave 9 unattested and missed clojure entityNoun 'Fields'; the per-context rule gave 16 unattested at the frozen state",
+    "source": "s3fix2-tools.txt attestation; attestation_controls",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Every tools control now also runs from scratch. The only hole found was in the existing duplicate check, and it was fixed.",
+    "numbers": "ledger scratch 24/24, recheck scratch 19/19, accept scratch 7/7, missing scratch 3/3; first full run 176 controls with 1 failure (ledger sentence-removed-go [scratch]); after the fix --only ledger 48/48",
+    "source": "s3fix2-tools.txt scratch_controls; scratch_holes; selftest",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Most shared sentences have never been read by a person: at the freeze 229 of 297 distinct masked sentences rest only on stage-3a rule records, and no sentence has a verdict.",
+    "numbers": "297 distinct (tutorial 71, rootquick 19, reference 207); 68 by a person (56 by hand only, 12 both); 229 rule records only; verdicts 0; shared outcomes matched against unreviewed sentences 76 (rb 71, zig 2, ts 1, py 1, clojure 1); STRICT_SENTENCES not switched on",
+    "source": "s3fix2-final.txt sentences; measures (Shared sentences)",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H3",
+    "claim": "The issues touched this stage were fixed once in shared code for every ported language, with providers only declaring data. The elixir notes and c's members were per-language by nature. Nothing was re-measured against the 329-issue catalogue.",
+    "numbers": "fixed once: the stream item claim (all nine), copy claims, test-constructor literals, checked examples by result style (c, rust), the okFalse throw, the accessor sentence (go, py, rb, clojure at once); per-language: elixir notes, c members",
+    "source": "s3fix2-final.txt hypotheses H3; s3fix2-shared.txt hypotheses H3",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The checked-example rule by result style restored c's and rust's REFERENCE load/remove examples to match OLD.",
+    "numbers": "c: 43 of 44 identical after the one named correction (`PNError* err = NULL;`), 0 before; rust: 43 of 44 byte-identical, 0 before (reference identical 187 -> 230); go 71/89 and zig 0/80 unchanged; the 44th has no NEW block (ref-issues remove)",
+    "source": "s3fix2-shared.txt summary item 4; examples; s3fix2-final.txt blocks [3],[6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The shared changes moved many lines in the nine ported languages' pages, by cause.",
+    "numbers": "stream sentences ts/py/c/zig/clojure/rust/elixir 470 each, go 432, rb 282; checked examples c 201, root 143, rust 43; notes elixir 59; accessor sentence go 432, py 376, rb 376, clojure 376; ok literal 0; other 0; per language ts 470, go 864, py 846, c 671, zig 470, clojure 846, rust 513, elixir 529, rb 658; 205 files differ",
+    "source": "s3fix2-shared.txt changed_lines_by_cause; raw_counts",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "ReadmeRefFeatures prints `active: false` and `feature.<name>.active` to true in TypeScript form for all twenty languages, wrong for py (False) and perl (0). It is left unfixed so that the eleven unported pages stay identical.",
+    "numbers": "ReadmeRefFeatures.ts:111, :138",
+    "source": "s3fix2-shared.txt defaults [28]; s3fix2-final.txt for_the_integration",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The test pages contradict each other in no-test variations: the REFERENCE says the test client has no mock transport, while the README says it does. The REFERENCE side is judged true (S13). This was read, not run.",
+    "numbers": "ts, go (2 classes), py, elixir, rb no-test; zig README Error handling (shared ReadmeErrors.ts) says 'Entity operations reject on failure' against zig's result union",
+    "source": "s3fix2-final.txt contradictions",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "zig's `make` is reachable only as asEntity().makeEnt(), and neither OLD nor NEW documents it.",
+    "numbers": "tm/zig/core/types.zig:56,64",
+    "source": "s3fix2-final.txt absent_sentences [2]; for_the_integration",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "lua's operations declare a `string? err` second value in a doc comment, but the code returns the sdk_err table with status and code.",
+    "numbers": "EntityLoadOp.fragment.lua:10-12; make_error.lua:62,66,86",
+    "source": "s3fix2-guard.txt comment_returns [0]; table_corrections [3]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "Several statements still rest on no fact or check.",
+    "numbers": "unguarded: direct 'not as an error', remove 'marked as deleted', make 'same client and options', the request_aborted code; convention facts compared only with OLD; 25 unquoted excuses beyond a 3-line window; 8 absence patterns chosen by the porter; stream quotes chosen by the porter; returns uncompared c 1, clojure 14, elixir 9, py 6, rb 7",
+    "source": "s3fix2-guard.txt still_passes; statements_guarded",
+    "by": "builder",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "For unported languages, the new on/field/fails checks have no live provider and hold only the declarations named in forms.expect. The swift `try` call check is declared but untested.",
+    "numbers": "swift, lua, ocaml, perl held by forms.expect and failure only",
+    "source": "s3fix2-guard.txt gaps; still_passes",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "Portcheck does not check that the clone's build is current: in the e2e run with okFalse removed it printed PASS on the previous build.",
+    "numbers": "1 e2e run (py okFalse removed)",
+    "source": "s3fix2-final.txt for_the_integration; recheck_evidence [0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "H5 was not exercised and H3 was not re-measured against the catalogue in any part of this stage. Timings are single runs, not the minimum of three.",
+    "numbers": "alias-go2 generated (21 of 21) but not checked against H5",
+    "source": "s3fix2-final.txt gaps; hypotheses H5",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "The ahead okFalse citations for the eleven unported languages are checked for quote and token only. Their values rest on the two engineers agreeing; not every one of the eleven files was opened beyond a grep.",
+    "numbers": "11 ahead citations (perl '0'; scala's `java.lang.Boolean.FALSE` excused)",
+    "source": "s3fix2-final.txt gaps; disagreements [5]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "Generic shared tests that run on every port were not checked after a real deletion. A lua port must edit lines of one shared test.",
+    "numbers": "lua-table-keys.test.ts:53-55; generate.test.ts:2544/:2752, media.test.ts:375, vendored.test.ts:425",
+    "source": "s3fix2-final.txt shared_tests_per_language; for_the_integration",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The v3.2 base starts a new port cleanly: newport.sh on kotlin regenerated 21 variations and reported NOT PORTED with exit 1 and no stack trace, leaving the tools and output unchanged.",
+    "numbers": "21 variations regenerated, none skipped; exit 1; git -C tools status empty; out/new identical to base32/out/new",
+    "source": "s3fix2-final.txt base",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   }
+  ],
+  "disagreements": [
+   {
+    "a": "clojure and elixir stream kind streamLazy is WRONG: every item is read before the call returns (exception streamItems WRONG)",
+    "a_source": "s3fix2-guard.txt wrong_facts [2],[3]",
+    "b": "Keep streamLazy, with the sentence changed to 'return a lazy sequence of its result items' plus runs 'call'; the kind names the returned type, and no sentence claims item timing",
+    "b_source": "s3fix2-shared.txt streams [5],[7]; s3fix2-final.txt disagreements [2]",
+    "stands": "b, by the v32 engineer's judgment that a reader is not misled; both WRONG exceptions dropped and the reader and guard pass"
+   },
+   {
+    "a": "swift: no stream kind fits; streamItems exception, NEEDS SHARED",
+    "a_source": "s3fix2-guard.txt needs_from_shared; table_corrections [2]",
+    "b": "streamIterator with runs 'call' expresses it",
+    "b_source": "s3fix2-shared.txt streams [16]; s3fix2-final.txt disagreements [3]",
+    "stands": "b; the exception is removed and the reader passes for swift"
+   },
+   {
+    "a": "ocaml stream kind streamSync (runs and items before it returns)",
+    "a_source": "s3fix2-guard.txt table_corrections [6]",
+    "b": "ocaml streamLazy (value Seq.t) + runs call",
+    "b_source": "s3fix2-shared.txt streams [19]",
+    "stands": "Unresolved: both readings are in PORTING section 9 for the ocaml porter to settle; runs 'call' is agreed"
+   },
+   {
+    "a": "Shared 'call' stream sentence: 'The operation runs, and every item is read, before the call returns'",
+    "a_source": "s3fix2-shared.txt (i-shared STREAM_RUNS)",
+    "b": "Items are drawn as the caller iterates in java, kotlin, scala and perl although the operation runs at the call",
+    "b_source": "s3fix2-guard.txt streams [8]-[11]; s3fix2-final.txt disagreements [1]",
+    "stands": "b; the sentence changed once to 'The operation runs before the call returns.'"
+   },
+   {
+    "a": "The literal is cited as lits.true/lits.false, ahead of the declaration where needed",
+    "a_source": "s3fix2-guard.txt summary Part 2",
+    "b": "lits removed; the fact is the required direct.okFalse",
+    "b_source": "s3fix2-shared.txt interface_changes [0]",
+    "stands": "b; the guard's lits.false citations moved to okFalse, lits.true dropped, ahead okFalse citations added for all 11 unported forms"
+   },
+   {
+    "a": "Brief rule: attest a language/convention fact when the OLD side holds the value in at least one unit",
+    "a_source": "brief5.md (as reported in s3fix2-tools.txt attestation)",
+    "b": "Per-context rule: every distinct NEW unit carrying the fact must be held in OLD; the brief's rule passed clojure entityNoun 'Fields'",
+    "b_source": "s3fix2-tools.txt attestation; attestation_controls [3]",
+    "stands": "b (16 unattested at the frozen state instead of 9)"
+   },
+   {
+    "a": "H1 verdict partly (guard view: no shared file needs a per-language edit to port one of the eleven)",
+    "a_source": "s3fix2-guard.txt hypotheses H1",
+    "b": "H1 refuted: about 19-21, then about 20-22, breaking interface changes against a line of about 10",
+    "b_source": "s3fix2-shared.txt hypotheses H1; s3fix2-final.txt hypotheses H1",
+    "stands": "b, refuted on the interface-change count; prose by source is under the line"
+   },
+   {
+    "a": "16 unattested language/convention facts at the frozen state, 7 portchecks FAIL",
+    "a_source": "s3fix2-tools.txt findings_at_frozen_state; nine_now",
+    "b": "0 unattested and 9 PASS at the freeze: the `none` and literal facts moved to cited (checked by the guard) and the remaining 7 were recorded by hand",
+    "b_source": "s3fix2-final.txt freeze_checks [7]; hand_facts",
+    "stands": "b, for the frozen tree"
+   },
+   {
+    "a": "The c options/utility members are absent (table said the families were absent)",
+    "a_source": "runtime-table before the guard round (as reported in s3fix2-guard.txt table_corrections [16])",
+    "b": "c's runtime has sdk_options_map and sdk_get_utility; the forms never read utility.c",
+    "b_source": "s3fix2-guard.txt wrong_facts [4]",
+    "stands": "b; documented in v3.2"
+   },
+   {
+    "a": "Elixir notes: 'Named with its arity, it is `list/2`' / '`load/2`'",
+    "a_source": "v3.1 elixir provider (as reported in s3fix2-shared.txt notes)",
+    "b": "def list/load(ent, reqmatch \\\\ nil, ctrl \\\\ nil) defines arities 1, 2 and 3; the example calls list/1",
+    "b_source": "s3fix2-guard.txt wrong_facts [0],[1]; s3fix2-shared.txt notes [0],[2]",
+    "stands": "b; arity claims removed"
+   },
+   {
+    "a": "The 11 unported forms commits say 'WRONG exceptions ... removed'",
+    "a_source": "v32 commit messages (s3fix2-final.txt merge)",
+    "b": "Only swift's forms had one; the others add the ahead citation",
+    "b_source": "s3fix2-final.txt merge; gaps",
+    "stands": "b; history was not rewritten after the tag"
+   },
+   {
+    "a": "go has 1 class 'printed less often than its reference' from scratch (a dropped sentence in auth-off)",
+    "a_source": "s3fix2-tools.txt nine_now [1]",
+    "b": "A sentence-splitting artefact: the splitter does not split after '.**' (README.md:37-38), not a dropped sentence",
+    "b_source": "s3fix2-final.txt summary Review findings; for_the_integration",
+    "stands": "b"
+   }
+  ],
+  "superseded": [
+   {
+    "number": "Suite 2596 tests, 2582 pass, 9 fail (i-shared clone)",
+    "replaced_by": "2597 tests, 2592 pass, 0 fail, 5 skipped at v32-frozen",
+    "source": "s3fix2-shared.txt lanes -> s3fix2-final.txt freeze_checks [1]"
+   },
+   {
+    "number": "Suite 2593 tests, 2588 pass (i-guard clone)",
+    "replaced_by": "2597/2592/0 fail/5 skipped at v32-frozen",
+    "source": "s3fix2-guard.txt summary -> s3fix2-final.txt"
+   },
+   {
+    "number": "Guard plus reader 52/61 right after the merge",
+    "replaced_by": "61/61 at the freeze",
+    "source": "s3fix2-final.txt merge -> freeze_checks [3]"
+   },
+   {
+    "number": "Tools self-test 176 controls, 0 failed (purity 27/27, facts 6/6)",
+    "replaced_by": "175 controls, 0 failed from base32 (purity 28/28, facts 5/5 and 5/5; rb-none-null moved to the guard)",
+    "source": "s3fix2-tools.txt selftest -> s3fix2-final.txt freeze_checks [8]"
+   },
+   {
+    "number": "288 distinct masked sentences (tutorial 72, rootquick 19, reference 197); 43 hand only, 11 both, 234 rule records only",
+    "replaced_by": "297 distinct (71/19/207); 56 hand only, 12 both, 229 rule records only; 0 verdicts",
+    "source": "s3fix2-tools.txt sentences -> s3fix2-final.txt sentences"
+   },
+   {
+    "number": "Prose by source go 7.7%; printed by go alone 18.1% (and other per-language figures, e.g. py 4.4% alone, c 0.6% by source)",
+    "replaced_by": "go 7.4% by source, 22.6% alone; ts 0.4/14.7, py 0.2/3.0, c 1.3/9.9, zig 4.5/4.8, clojure 2.8/2.8, rust 1.2/5.9, elixir 0.8/5.0, rb 0.2/4.7",
+    "source": "s3fix2-tools.txt prose_by_source -> s3fix2-final.txt measures (Prose)"
+   },
+   {
+    "number": "16 UNATTESTED facts; nine checks 2 PASS, 7 FAIL",
+    "replaced_by": "0 UNATTESTED; 9 PASS (7 hand facts recorded; none/literal facts moved to the guard)",
+    "source": "s3fix2-tools.txt -> s3fix2-final.txt freeze_checks [7]"
+   },
+   {
+    "number": "v3.1 mutations: 67 caught, 7 not, 1 build error (guard round)",
+    "replaced_by": "68 caught, 7 not, 0 errors once 9 were adapted",
+    "source": "s3fix2-guard.txt earlier_mutations -> s3fix2-final.txt mutations"
+   },
+   {
+    "number": "Guard's 19 new mutations: 18 caught",
+    "replaced_by": "17 caught at the freeze (2 re-expressed as okFalse; new-ts-unquoted-near still missed)",
+    "source": "s3fix2-guard.txt -> s3fix2-final.txt mutations"
+   },
+   {
+    "number": "Pinned prose citations 53 (c 4, clojure 7, elixir 7, go 6, py 5, rb 5, rust 5, ts 7, zig 7); unquoted excuses 22",
+    "replaced_by": "pinned prose 67 (ts 9, go 7, py 6, c 7, zig 9, clojure 8, rust 6, elixir 9, rb 6); unquoted excuses 25",
+    "source": "s3fix2-guard.txt pinned_prose_counts; still_passes -> s3fix2-final.txt measures"
+   },
+   {
+    "number": "Guard account per language in the guard round (e.g. ts derived 45, cited 15; c derived 37, cited 10; exceptions incl. WRONG)",
+    "replaced_by": "account at the tag (ts 47/19, go 48/14, py 48/14, c 42/14, zig 40/17, clojure 43/16, rust 43/14, elixir 48/15, rb 47/14); 0 excepted",
+    "source": "s3fix2-guard.txt account -> s3fix2-final.txt account"
+   },
+   {
+    "number": "Breaking interface changes about 19-21 since the first four languages",
+    "replaced_by": "about 20-22 (22-24 counting changed sentences)",
+    "source": "s3fix2-shared.txt hypotheses H1 -> s3fix2-final.txt breaking_counts"
+   },
+   {
+    "number": "Shared guard 1835 lines; forms of the nine 906; forms of the eleven 746; runtime-table.md 1108",
+    "replaced_by": "shared guard 1,878; forms of the nine 907; forms of the eleven 789; runtime-table.md 1119",
+    "source": "s3fix2-guard.txt lines -> s3fix2-final.txt measures; base"
+   },
+   {
+    "number": "ReadmeRef.ts 459 lines (i-shared)",
+    "replaced_by": "465 at the freeze (461 in the measures' count of shared doc code)",
+    "source": "s3fix2-shared.txt source_lines -> s3fix2-final.txt source_lines"
+   },
+   {
+    "number": "Absent lists zig 12, rust 12, clojure 1, rb 1 (unexplained)",
+    "replaced_by": "all explained, plus elixir 1: zig 12, rust 12, clojure 1, elixir 1, rb 1",
+    "source": "s3fix2-tools.txt -> s3fix2-final.txt freeze_checks [7]"
+   },
+   {
+    "number": "Portcheck OPEN counts after i-shared (e.g. c blocks 22, rust blocks 1, ledger reference 1-4 per language)",
+    "replaced_by": "0 open in all nine at the freeze",
+    "source": "s3fix2-shared.txt raw_counts -> s3fix2-final.txt freeze_checks [7]"
+   },
+   {
+    "number": "Shared 'call' stream sentence 'The operation runs, and every item is read, before the call returns.'",
+    "replaced_by": "'The operation runs before the call returns.'",
+    "source": "s3fix2-shared.txt -> s3fix2-final.txt wrong_facts_fixed [4]"
+   },
+   {
+    "number": "Shared outcomes matched against unreviewed sentences: rb shared 73",
+    "replaced_by": "76 at the tag (rb 71, zig 2, ts 1, py 1, clojure 1)",
+    "source": "s3fix2-tools.txt nine_now [8] -> s3fix2-final.txt sentences"
+   }
+  ],
+  "findings": [
+   {
+    "finding": "Version 3.2 is frozen at nine languages (tag v32-frozen, 3d58cb46), and every freeze check holds there. The suite has 2597 tests with 0 failing, guard plus reader pass 61/61, the golden passes 2/2, and all seven documentation lanes that can run here pass. The nine one-command checks pass with 0 open and 0 unattested facts, and the tools self-test passes 175/175.",
+    "source": "s3fix2-final.txt summary; freeze_checks"
+   },
+   {
+    "finding": "The interface did not settle. Breaking provider-interface changes since the first four languages now total about 20 to 22 against H1's line of about 10, crossed about twice over. None came from a newly ported language: each turned a value that shared code had silently supplied into a declared fact. The eleven remaining ports will show whether it has stopped moving.",
+    "source": "s3fix2-final.txt breaking_counts; hypotheses H1"
+   },
+   {
+    "finding": "H2 is refuted wherever the checking machinery is counted. For the nine languages, documentation code alone is 1.61x smaller, 1.33x with the forms files and 0.98x with the shared guard. Projected to twenty, only documentation code at x1 provider size (2.26x) stays above the 2x line.",
+    "source": "s3fix2-final.txt measures; hypotheses H2"
+   },
+   {
+    "finding": "Prose that providers write themselves is small: at most 7.4% by source (go, mostly its stream note), under H1's 15% line. Counted as 'printed by this language alone', go is 22.6%, over the line, though most of that is shared code that only go's result style selects.",
+    "source": "s3fix2-final.txt measures (Prose); prose"
+   },
+   {
+    "finding": "Making facts explicit found real false statements that the earlier checks had passed. clojure and elixir claimed lazy streams that read every item first. c's page omitted two real client members. elixir's arity notes were false. And 'as they arrive' was false for every runtime, because every streaming feature yields from a response already read whole.",
+    "source": "s3fix2-guard.txt wrong_facts; surprises; s3fix2-shared.txt surprises"
+   },
+   {
+    "finding": "Shared defaults were hiding defects. Making fallbacks throw broke clojure's REFERENCE at once, because its signatures had never been parsed. c, zig and go had printed defaults that were true only by luck. A required fact also needs a runtime throw: with okFalse bypassed, the page would have printed `undefined`.",
+    "source": "s3fix2-shared.txt surprises; s3fix2-final.txt wrong_facts_fixed [5]"
+   },
+   {
+    "finding": "The checks now catch the re-check's attacks end to end. Wrong rb `none` and okFalse fail the guard; wrong `maps` and `noun` fail the one command in both modes; a sentence dropped from one variation leaves an open class from scratch. Mutations: 68 of v3.1's 75, 17 of the guard engineer's 19 and 11 of the 12 new ones are caught. The rest are known and accounted, and one (py okFalse removed) fails the build.",
+    "source": "s3fix2-final.txt recheck_evidence; mutations"
+   },
+   {
+    "finding": "Several checks rest on people rather than mechanism. 229 of 297 shared sentences rest only on stage-3a rule records nobody re-read, and no sentence has a verdict. 67 citations are pinned prose that only a reviewer checks. Hand records are pinned by count, and five had gone stale unseen.",
+    "source": "s3fix2-final.txt sentences; measures; surprises"
+   },
+   {
+    "finding": "H4 holds for what can run here: ts, go, py, c, rust, rb and zig documentation lanes all pass at the freeze, including c's new checked examples. clojure and elixir changed blocks are compiled by nothing, because no compiler is present.",
+    "source": "s3fix2-final.txt hypotheses H4; blocks"
+   },
+   {
+    "finding": "Within one stream kind, runtimes differ in when the operation runs, so a separate `runs` fact was needed, and it is now derived by the guard. The two engineers agreed on its value for all 20 runtimes. The change also exposed that the shared 'call' sentence was false for java, kotlin, scala and perl, which none of the nine ported languages exercises.",
+    "source": "s3fix2-final.txt disagreements [0],[1]"
+   },
+   {
+    "finding": "Some gaps remain open. Portcheck does not notice a stale build and printed PASS after a failed build. ReadmeRefFeatures still prints TypeScript-shaped `active: false` for all twenty languages. The ocaml stream kind is left for its porter. H3 was not re-measured against the 329-issue catalogue and H5 was not exercised.",
+    "source": "s3fix2-final.txt for_the_integration; gaps; hypotheses"
+   },
+   {
+    "finding": "Each language must now supply more: a forms file of 54 to 113 lines, a test-constructor name, a 7-line stream record, receiver and failure markers where the defaults do not fit, and none, okFalse and absence citations. The guard and forms framework had 3 breaking changes from the guard engineer plus 1 from the v32 engineer, each forcing edits in existing forms files.",
+    "source": "s3fix2-guard.txt hypotheses H1; forms_changes; s3fix2-final.txt breaking_counts"
+   }
+  ],
+  "missing": [
+   "No record was missing; all six named files were read in full.",
+   "H3 was not re-measured against the 329-issue catalogue in any record of this part.",
+   "H5 was not exercised in any record of this part.",
+   "Timings in every record are single runs on shared CPUs, not the minimum of three.",
+   "The v32 engineer did not re-run i-shared's printlost.js or blockident.js; the c and rust identity counts at the freeze come from the block tool."
+  ]
+ }
+}

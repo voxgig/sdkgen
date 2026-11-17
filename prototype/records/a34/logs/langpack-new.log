@@ -1,0 +1,190 @@
+
+> @voxgig/sdkgen-langpack@0.0.15 build
+> tsc --project /tmp/claude-0/-home-user/***/scratchpad/design/proto2/a34/tmp/lp-new/sdkgen-consumer-XBk8u0/tsconfig.json --outDir /tmp/claude-0/-home-user/***/scratchpad/design/proto2/a34/tmp/lp-new/sdkgen-consumer-XBk8u0/.sdk/dist/cmp
+
+
+> @voxgig/sdkgen-langpack@0.0.15 build
+> tsc --project /tmp/claude-0/-home-user/***/scratchpad/design/proto2/a34/tmp/lp-new/sdkgen-consumer-XRZRZe/tsconfig.json --outDir /tmp/claude-0/-home-user/***/scratchpad/design/proto2/a34/tmp/lp-new/sdkgen-consumer-XRZRZe/.sdk/dist/cmp
+
+▶ sdkgen-langpack
+  ✔ one package add installs every target it provides (5.780644ms)
+  ✔ dart generates, with no placeholder left in it (0.664292ms)
+  ✔ haskell generates, with no placeholder left in it (0.123156ms)
+  ✔ lean generates, with no placeholder left in it (0.113671ms)
+  ✔ each LICENSE names the model's publisher, and Voxgig when it names none (251.899863ms)
+  ✔ targets do not generate into each other (4.759985ms)
+  ✔ the cabal library declares every src module (literal) (248.141799ms)
+  ✔ the cabal library declares every src module (data) (216.732422ms)
+  ✔ the haskell config literal preserves key order, and does not sort (0.414338ms)
+  ✔ lean emits namespaced functions, not an entity class (0.329136ms)
+  ✔ the haskell tests read files as UTF-8, not through the locale (0.99659ms)
+  ✔ every target generates the patch operation (0.159294ms)
+  ✔ lean creates from an empty map when the fixture holds no new record (227.364069ms)
+  ✔ a child entity's test calls give its parent's id (260.799563ms)
+  ✔ the dart config marks HTTP Basic (literal) (435.380921ms)
+  ✔ the dart config marks HTTP Basic (data) (432.96437ms)
+  ✔ the reference says each operation returns the entity (146.092884ms)
+  ✔ each operation is declared to return the entity (0.556068ms)
+  ✔ every example prints the record of the entity an operation returns (283.885993ms)
+  ✔ each offline example seeds the mock with the record its call reads (0.988013ms)
+  ﹣ dart: each offline example runs and prints its seeded record (0.054077ms) # dart is not on PATH
+  ﹣ haskell: each offline example runs and prints its seeded record (0.032959ms) # ghc is not on PATH
+  ✔ each README takes the project's tagline over the spec's (131.747048ms)
+  ✔ each README opens with one title and names its siblings once (132.048935ms)
+  ✔ no page says an entity operation returns a record (3.611292ms)
+✔ sdkgen-langpack (3945.007306ms)
+▶ sdkgen-langpack: dart secrets
+  ✔ active secrets emits plugin defs and trims inactive groups (0.374073ms)
+  ✔ the vendored sekreto core survives the Copy exclude (0.127057ms)
+  ✔ inactive plugin groups are trimmed, shared helpers are not (0.137986ms)
+  ✔ the secrets suite is registered in the hand-listed test entry (0.113323ms)
+  ✔ an inactive secrets model emits no secrets machinery (0.150299ms)
+  ✔ lean: active secrets emits plugin defs and trims inactive groups (2363.797175ms)
+✔ sdkgen-langpack: dart secrets (3578.877757ms)
+▶ argument routing in the templates
+  ✔ dart: prepareHeaders sends the header and cookie arguments and the media headers (0.305847ms)
+  ✔ dart: prepareQuery keeps path, header and cookie arguments out, and sends a query argument under its orig (0.197024ms)
+  ✔ dart: transformRequest builds the body without the routed arguments (0.06569ms)
+  ✔ haskell: prepareHeaders sends the header and cookie arguments and the media headers (0.302684ms)
+  ✔ haskell: prepareQuery keeps path, header and cookie arguments out, and sends a query argument under its orig (0.346847ms)
+  ✔ haskell: transformRequest builds the body without the routed arguments (0.203172ms)
+  ✔ lean: prepareHeaders sends the header and cookie arguments and the media headers (0.131941ms)
+  ✔ lean: prepareQuery keeps path, header and cookie arguments out, and sends a query argument under its orig (0.154306ms)
+  ✔ lean: transformRequest builds the body without the routed arguments (0.19171ms)
+✔ argument routing in the templates (2.143127ms)
+▶ the test mock in the templates
+  ✔ dart: the test mock wraps each listed record under its key (0.129082ms)
+  ✔ haskell: the test mock wraps each listed record under its key (0.183696ms)
+  ✔ lean: the test mock wraps each listed record under its key (0.066307ms)
+  ✔ dart: the test mock rebuilds every segment of a response path (0.110428ms)
+  ✔ haskell: the test mock rebuilds every segment of a response path (0.200417ms)
+  ✔ lean: the test mock rebuilds every segment of a response path (0.095943ms)
+  ✔ every target the pack provides has its mock guarded (0.0693ms)
+✔ the test mock in the templates (0.983452ms)
+▶ parity tiers are true, not just declared
+  ✔ every provided target declares a tier (1.37595ms)
+  ✔ dart: FULL — drives every shared corpus section (4.296452ms)
+  ✔ haskell: FULL — drives every shared corpus section (2.850225ms)
+  ✔ lean: FULL — drives every shared corpus section (1.624297ms)
+✔ parity tiers are true, not just declared (11.524145ms)
+
+lean: under Lean (version 4.32.1, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.32.1-linux/bin, as lean-toolchain pins
+
+$ make test
+lake 4.32.1
+PASS 1  FAIL 0
+
+lean: PASS 1  FAIL 0
+lean: under Lean (version 4.32.1, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.32.1-linux/bin, as lean-toolchain pins
+
+lean: under Lean (version 4.33.0, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.33.0-linux/bin, as lean-toolchain pins
+
+$ make test
+lake 4.33.0
+PASS 1  FAIL 0
+
+lean: PASS 1  FAIL 0
+lean: under Lean (version 4.33.0, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.33.0-linux/bin, as lean-toolchain pins
+▶ sdks.js runs a lean SDK under the release it pins
+  ✔ each SDK root selects the release its own lean-toolchain names (26.896209ms)
+
+lean: under Lean (version 4.31.0, fake) from PATH, as lean-toolchain pins
+
+$ make test
+lake 4.31.0
+PASS 1  FAIL 0
+
+lean: PASS 1  FAIL 0
+lean: under Lean (version 4.31.0, fake) from PATH, as lean-toolchain pins
+  ✔ the lean on PATH serves when it is the pinned release (7.399975ms)
+  ✔ a lean that is not the pinned release is refused, naming both (4.715756ms)
+
+lean: under Lean (version 4.33.0-rc1, fake) from PATH, as lean-toolchain pins
+
+$ make test
+lake 4.33.0-rc1
+PASS 1  FAIL 0
+
+lean: PASS 1  FAIL 0
+lean: under Lean (version 4.33.0-rc1, fake) from PATH, as lean-toolchain pins
+leanprover/lean4:v4.32.1 at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.32.1-linux/bin
+leanprover/lean4:v4.35.0 at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.35.0-linux/bin
+  ✔ a release candidate pin is its own release (11.198843ms)
+  ✔ a lean-toolchain that names no release is refused (1.121183ms)
+
+lean: under Lean (version 4.35.0, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.35.0-linux/bin, as lean-toolchain pins
+
+$ make test
+lake 4.35.0
+PASS 1  FAIL 0
+
+lean: PASS 1  FAIL 0
+lean: under Lean (version 4.35.0, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.35.0-linux/bin, as lean-toolchain pins
+dart: nothing to install, the toolchain on PATH serves
+haskell: nothing to install, the toolchain on PATH serves
+  ✔ install fetches only a release that is absent (8.274887ms)
+  ✔ dart and haskell pin nothing, so install has nothing to fetch (6.49536ms)
+
+lean: under Lean (version 4.33.0, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.33.0-linux/bin, as lean-toolchain pins
+
+$ make test
+lake 4.33.0
+PASS 0  FAIL 1
+leanprover/lean4:v4.32.1 at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.32.1-linux/bin
+
+lean: under Lean (version 4.32.1, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.32.1-linux/bin, as lean-toolchain pins
+
+$ make test
+lake 4.32.1
+PASS 1  FAIL 0
+
+lean: PASS 1  FAIL 0
+lean: under Lean (version 4.32.1, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.32.1-linux/bin, as lean-toolchain pins
+  ✔ the base branch SDK runs under its own pin, not the change's (19.764854ms)
+leanprover/lean4:v4.32.1 at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.32.1-linux/bin
+
+lean: under Lean (version 4.32.1, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.32.1-linux/bin, as lean-toolchain pins
+
+$ make test
+lake 4.32.1
+PASS 0  FAIL 1
+
+lean: a suite ran nothing or failed: PASS 0  FAIL 1
+  ✔ a base branch SDK failing under its own pin fails as well, naming both (14.379143ms)
+leanprover/lean4:v4.36.0 at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.36.0-linux/bin
+
+lean: under Lean (version 4.36.0, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.36.0-linux/bin, as lean-toolchain pins
+
+$ make test
+lake 4.36.0
+PASS 1  FAIL 0
+
+lean: PASS 1  FAIL 0
+lean: under Lean (version 4.36.0, fake) from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tmp/lp-new/sdks-SVMyre/toolchains/lean-4.36.0-linux/bin, as lean-toolchain pins
+  ✔ the base branch pin is installed for its own run (12.222145ms)
+  ✔ a base branch pin that does not install gives no verdict (3.121861ms)
+  ✔ an unknown target is refused (1.371182ms)
+✔ sdks.js runs a lean SDK under the release it pins (118.375901ms)
+▶ vendored tree matches its manifest
+  ✔ the manifest covers every route, and only routes (1.191131ms)
+  ✔ the manifest is at the tag routes.json declares (0.151394ms)
+  ✔ omni/dart: every vendored file is present and unmodified (1.465122ms)
+  ✔ omni/dart: every vendored file carries its provenance header (0.278854ms)
+  ✔ omni/haskell: every vendored file is present and unmodified (0.273638ms)
+  ✔ omni/haskell: every vendored file carries its provenance header (0.166605ms)
+  ✔ omni/lean: every vendored file is present and unmodified (0.182227ms)
+  ✔ omni/lean: every vendored file carries its provenance header (0.253629ms)
+  ✔ plugin/dart: every vendored file is present and unmodified (0.743958ms)
+  ✔ plugin/dart: every vendored file carries its provenance header (0.549299ms)
+  ✔ sekreto/dart: every vendored file is present and unmodified (0.683224ms)
+  ✔ sekreto/dart: every vendored file carries its provenance header (0.761611ms)
+  ✔ `vendor.js --check` reports no drift (2890.031206ms)
+✔ vendored tree matches its manifest (2898.141411ms)
+ℹ tests 76
+ℹ suites 7
+ℹ pass 74
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 2
+ℹ todo 0
+ℹ duration_ms 7908.077653

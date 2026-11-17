@@ -1,0 +1,352 @@
+[
+ {
+  "part": "ledger",
+  "id": "type-cell-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (1/50, 2%)"
+ },
+ {
+  "part": "ledger",
+  "id": "type-cell-any-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (2/50, 4%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-removed-go",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (3/50, 6%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-removed-go-branch",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (4/50, 8%)"
+ },
+ {
+  "part": "ledger",
+  "id": "false-sentence-py",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), unclassified 0 -> 3 (5/50, 10%)"
+ },
+ {
+  "part": "ledger",
+  "id": "false-sentence-added-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (6/50, 12%)"
+ },
+ {
+  "part": "ledger",
+  "id": "optional-required-py",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (7/50, 14%)"
+ },
+ {
+  "part": "ledger",
+  "id": "negation-go",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es), unclassified 0 -> 4 (8/50, 16%)"
+ },
+ {
+  "part": "ledger",
+  "id": "code-comment-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), unclassified 0 -> 3 (9/50, 18%)"
+ },
+ {
+  "part": "ledger",
+  "id": "var-renamed-c",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (10/50, 20%)"
+ },
+ {
+  "part": "ledger",
+  "id": "err-reset-removed-c",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), unclassified 0 -> 1 (11/50, 22%)"
+ },
+ {
+  "part": "ledger",
+  "id": "restructure-py",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (12/50, 24%)"
+ },
+ {
+  "part": "ledger",
+  "id": "number-retries-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (13/50, 26%)"
+ },
+ {
+  "part": "ledger",
+  "id": "number-ms-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (14/50, 28%)"
+ },
+ {
+  "part": "ledger",
+  "id": "op-swap-root-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (15/50, 30%)"
+ },
+ {
+  "part": "ledger",
+  "id": "entity-swap-root-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (16/50, 32%)"
+ },
+ {
+  "part": "ledger",
+  "id": "field-swap-go",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (17/50, 34%)"
+ },
+ {
+  "part": "ledger",
+  "id": "id-literal-c",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (18/50, 36%)"
+ },
+ {
+  "part": "ledger",
+  "id": "global-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (19/50, 38%)"
+ },
+ {
+  "part": "ledger",
+  "id": "row-removed-zig",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es), unclassified 0 -> 4 (20/50, 40%)"
+ },
+ {
+  "part": "ledger",
+  "id": "zig-switch-arm",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (21/50, 42%)"
+ },
+ {
+  "part": "ledger",
+  "id": "clj-block",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es), unclassified 0 -> 4 (22/50, 44%)"
+ },
+ {
+  "part": "ledger",
+  "id": "elixir-block",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 2 (23/50, 46%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-dup-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 0 -> 1 (24/50, 48%)"
+ },
+ {
+  "part": "ledger",
+  "id": "region-required-ref-ts",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 0 -> 2 (25/50, 50%)"
+ },
+ {
+  "part": "ledger",
+  "id": "type-cell-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 74 -> 76 (26/50, 52%)"
+ },
+ {
+  "part": "ledger",
+  "id": "type-cell-any-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 74 -> 75 (27/50, 54%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-removed-go [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es) (1 printed less often than its reference), unclassified 55 -> 56 (28/50, 56%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-removed-go-branch [scratch]",
+  "ok": true,
+  "moved": true,
+  "detail": "NOT FLAGGED: 0 new open class(es), unclassified 55 -> 55 (29/50, 58%)"
+ },
+ {
+  "part": "ledger",
+  "id": "false-sentence-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 63 -> 66 (30/50, 60%)"
+ },
+ {
+  "part": "ledger",
+  "id": "false-sentence-added-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 108 -> 109 (31/50, 62%)"
+ },
+ {
+  "part": "ledger",
+  "id": "optional-required-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 63 -> 65 (32/50, 64%)"
+ },
+ {
+  "part": "ledger",
+  "id": "negation-go [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 55 -> 58 (33/50, 66%)"
+ },
+ {
+  "part": "ledger",
+  "id": "code-comment-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 47 -> 49 (34/50, 68%)"
+ },
+ {
+  "part": "ledger",
+  "id": "var-renamed-c [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 36 -> 38 (35/50, 70%)"
+ },
+ {
+  "part": "ledger",
+  "id": "err-reset-removed-c [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), unclassified 36 -> 37 (36/50, 72%)"
+ },
+ {
+  "part": "ledger",
+  "id": "restructure-py [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 63 -> 65 (37/50, 74%)"
+ },
+ {
+  "part": "ledger",
+  "id": "number-retries-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 108 -> 109 (38/50, 76%)"
+ },
+ {
+  "part": "ledger",
+  "id": "number-ms-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 108 -> 109 (39/50, 78%)"
+ },
+ {
+  "part": "ledger",
+  "id": "op-swap-root-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 20 -> 22 (40/50, 80%)"
+ },
+ {
+  "part": "ledger",
+  "id": "entity-swap-root-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 20 -> 21 (41/50, 82%)"
+ },
+ {
+  "part": "ledger",
+  "id": "field-swap-go [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 76 -> 77 (42/50, 84%)"
+ },
+ {
+  "part": "ledger",
+  "id": "id-literal-c [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 36 -> 38 (43/50, 86%)"
+ },
+ {
+  "part": "ledger",
+  "id": "global-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), unclassified 74 -> 74 (44/50, 88%)"
+ },
+ {
+  "part": "ledger",
+  "id": "row-removed-zig [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 4 new open class(es) (1 printed less often than its reference), unclassified 74 -> 78 (45/50, 90%)"
+ },
+ {
+  "part": "ledger",
+  "id": "zig-switch-arm [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 74 -> 76 (46/50, 92%)"
+ },
+ {
+  "part": "ledger",
+  "id": "clj-block [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), unclassified 30 -> 33 (47/50, 94%)"
+ },
+ {
+  "part": "ledger",
+  "id": "elixir-block [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 96 -> 98 (48/50, 96%)"
+ },
+ {
+  "part": "ledger",
+  "id": "sentence-dup-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), unclassified 108 -> 109 (49/50, 98%)"
+ },
+ {
+  "part": "ledger",
+  "id": "region-required-ref-ts [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 108 -> 110 (50/50, 100%)"
+ }
+]

@@ -1,0 +1,186 @@
+{
+ "quick": {
+  "ts": {
+   "sentences": 71,
+   "sharedAll": 49,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 2,
+   "words": 961,
+   "providerWords": 51,
+   "sharedWords": 910,
+   "providerPct": 5.3,
+   "standaloneExamples": [
+    "§ resolves to the entity and throws on failure; § reads its #.",
+    "§ resolves to an § of entities, one per #, and throws on failure; § reads an entity's #."
+   ]
+  },
+  "go": {
+   "sentences": 95,
+   "sharedAll": 49,
+   "sharedSubset": 0,
+   "standalone": 46,
+   "standaloneDistinct": 4,
+   "words": 1288,
+   "providerWords": 73,
+   "sharedWords": 1215,
+   "providerPct": 5.7,
+   "standaloneExamples": [
+    "The steps are one program, shown whole after them.",
+    "§ returns `(value, error)`: the value is the entity, and a non-nil § reports failure; § reads its #.",
+    "§ returns `(value, error)`: the value is a § of entities, one per #, and a non-nil § reports failure.",
+    "There is no `{ok, data}` wrapper; § reads an entity's #."
+   ]
+  },
+  "py": {
+   "sentences": 71,
+   "sharedAll": 49,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 2,
+   "words": 983,
+   "providerWords": 73,
+   "sharedWords": 910,
+   "providerPct": 7.4,
+   "standaloneExamples": [
+    "§ returns the entity and raises on failure; § reads its # (a §).",
+    "§ returns a § of entities, one per #, and raises on failure; § reads an entity's # (a §)."
+   ]
+  },
+  "c": {
+   "sentences": 71,
+   "sharedAll": 49,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 2,
+   "words": 1054,
+   "providerWords": 109,
+   "sharedWords": 945,
+   "providerPct": 10.3,
+   "standaloneExamples": [
+    "§ returns the entity, or § with § set on failure; § reads its #.",
+    "§ returns a § of entities, one per #, or § with § set on failure, so check § after the call; § reads an entity's #."
+   ]
+  },
+  "zig": {
+   "sentences": 71,
+   "sharedAll": 49,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 2,
+   "words": 1071,
+   "providerWords": 95,
+   "sharedWords": 976,
+   "providerPct": 8.9,
+   "standaloneExamples": [
+    "§ returns a result whose § is the entity and whose § reports failure; § reads its #.",
+    "§ returns a result whose § is a § of entities, one per #, and whose § reports failure; § reads an entity's #."
+   ]
+  },
+  "clojure": {
+   "sentences": 71,
+   "sharedAll": 49,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 2,
+   "words": 961,
+   "providerWords": 73,
+   "sharedWords": 888,
+   "providerPct": 7.6,
+   "standaloneExamples": [
+    "§ returns the entity and raises on failure; § reads its #.",
+    "§ returns a § of entities, one per #, and raises on failure; § reads an entity's #."
+   ]
+  }
+ },
+ "top": {
+  "ts": {
+   "sentences": 22,
+   "sharedAll": 0,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 3,
+   "words": 211,
+   "providerWords": 7,
+   "sharedWords": 204,
+   "providerPct": 3.3,
+   "standaloneExamples": [
+    "Load an #: the entity; throws on failure.",
+    "List # #: an § of entities, one per #; throws on failure.",
+    "Load a #: the entity; throws on failure."
+   ]
+  },
+  "go": {
+   "sentences": 22,
+   "sharedAll": 0,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 3,
+   "words": 255,
+   "providerWords": 29,
+   "sharedWords": 226,
+   "providerPct": 11.4,
+   "standaloneExamples": [
+    "Load an #: the entity; § is non-nil on failure.",
+    "List # #: a § of entities, one per #; § is non-nil on failure.",
+    "Load a #: the entity; § is non-nil on failure."
+   ]
+  },
+  "py": {
+   "sentences": 22,
+   "sharedAll": 0,
+   "sharedSubset": 22,
+   "standalone": 0,
+   "standaloneDistinct": 0,
+   "words": 211,
+   "providerWords": 7,
+   "sharedWords": 204,
+   "providerPct": 3.3,
+   "standaloneExamples": []
+  },
+  "c": {
+   "sentences": 22,
+   "sharedAll": 0,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 3,
+   "words": 262,
+   "providerWords": 36,
+   "sharedWords": 226,
+   "providerPct": 13.7,
+   "standaloneExamples": [
+    "Load an #: the entity; § is set on failure.",
+    "List # #: a § of entities, one per #; § is set on failure.",
+    "Load a #: the entity; § is set on failure."
+   ]
+  },
+  "zig": {
+   "sentences": 22,
+   "sharedAll": 0,
+   "sharedSubset": 0,
+   "standalone": 22,
+   "standaloneDistinct": 3,
+   "words": 255,
+   "providerWords": 51,
+   "sharedWords": 204,
+   "providerPct": 20,
+   "standaloneExamples": [
+    "Load an #: § is the entity; § on failure.",
+    "List # #: § is a § of entities, one per #; § on failure.",
+    "Load a #: § is the entity; § on failure."
+   ]
+  },
+  "clojure": {
+   "sentences": 22,
+   "sharedAll": 0,
+   "sharedSubset": 22,
+   "standalone": 0,
+   "standaloneDistinct": 0,
+   "words": 211,
+   "providerWords": 7,
+   "sharedWords": 204,
+   "providerPct": 3.3,
+   "standaloneExamples": []
+  }
+ }
+}

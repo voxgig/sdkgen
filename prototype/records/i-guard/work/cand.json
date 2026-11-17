@@ -1,0 +1,142 @@
+{
+ "ts": [
+  "src/cmp/ts/fragment/EntityBase.fragment.ts",
+  "async *stream(this: any, action: string",
+  "on iteration",
+  "const failed = await this._streamSteps(ctx)",
+  "for await (const item of result.stream())"
+ ],
+ "js": [
+  "src/cmp/js/fragment/EntityBase.fragment.js",
+  "async *stream(action, args, callopts)",
+  "on iteration",
+  "const failed = await this._streamSteps(ctx)",
+  "for await (const item of result.stream())"
+ ],
+ "py": [
+  "src/cmp/py/fragment/Entity.fragment.py",
+  "def stream(self, action, args=None, callopts=None):",
+  "on iteration",
+  "failed = self._stream_steps(ctx)",
+  "for item in stream_fn():"
+ ],
+ "rb": [
+  "src/cmp/rb/fragment/Entity.fragment.rb",
+  "Enumerator.new do |yielder|",
+  "on iteration",
+  "failed = _stream_steps(ctx)",
+  "stream_enum.each do |item|"
+ ],
+ "php": [
+  "src/cmp/php/fragment/Entity.fragment.php",
+  "public function stream(string $action",
+  "on iteration",
+  "$failed = $this->_stream_steps($ctx);",
+  "foreach ($streamfn() as $item) {"
+ ],
+ "lua": [
+  "src/cmp/lua/fragment/Entity.fragment.lua",
+  "local co = coroutine.create(function()",
+  "on iteration",
+  "local failed = self:_stream_steps(ctx)",
+  "for item in stream_fn() do"
+ ],
+ "go": [
+  "src/cmp/go/fragment/Entity.fragment.go",
+  "go func() {",
+  "at call",
+  "if err := e.streamSteps(ctx); err != nil {",
+  "for item := range ctx.Result.Stream() {"
+ ],
+ "csharp": [
+  "src/cmp/csharp/fragment/EntityBase.fragment.cs",
+  "public async IAsyncEnumerable<object?> Stream(",
+  "on iteration",
+  "var materialised = RunOp(ctx, () =>",
+  "source ??= stream().GetEnumerator();"
+ ],
+ "java": [
+  "src/cmp/java/fragment/EntityBase.fragment.java",
+  "Iterator<Object> guarded = new Iterator<Object>() {",
+  "on iteration",
+  "Object materialised = runOp(ctx, () -> {});",
+  "item = ready ? src.next() : null;"
+ ],
+ "kotlin": [
+  "src/cmp/kotlin/fragment/EntityBase.fragment.kt",
+  "return sequence {",
+  "on iteration",
+  "val materialised = runOp(ctx) {}",
+  "if (source.hasNext() && !aborted()) source.next() else end"
+ ],
+ "scala": [
+  "src/cmp/scala/fragment/EntityBase.fragment.scala",
+  "new Iterator[Object] {",
+  "on iteration",
+  "val materialised = runOp(ctx, () => {})",
+  "item = if (ready) source.next() else null"
+ ],
+ "swift": [
+  "src/cmp/swift/fragment/EntityBase.fragment.swift",
+  "return AsyncStream { continuation in",
+  "at call",
+  "let materialised = try runOp(ctx, {})",
+  "items = streamFn()"
+ ],
+ "cpp": [
+  "tm/cpp/core/types.hpp",
+  "return res->stream();",
+  "at call",
+  "  try {\n    u->featureHook(ctx, \"PrePoint\");\n    Value point = u->makePoint(ctx);\n    ctx->out.has_point = true;\n    ctx->out.point = point;\n\n    u->featureHook(ctx, \"PreSpec\");\n    SpecPtr spec = u->makeSpec(ctx);\n    ctx->out.spec = spec;\n\n    u->featureHook(ctx, \"PreRequest\");\n    ResponsePtr request = u->makeRequest(ctx);\n    ctx->out.request = request;\n\n    u->featureHook(ctx, \"PreResponse\");\n    ResponsePtr response = u->makeResponse(ctx);\n    ctx->out.response = response;\n\n    u->featureHook(ctx, \"PreResult\");\n    ResultPtr result = u->makeResult(ctx);\n    ctx->out.result = result;\n\n    u->featureHook(ctx, \"PreDone\");\n\n    // Inbound",
+  "return res->stream();"
+ ],
+ "c": [
+  "src/cmp/c/fragment/Entity.fragment.c",
+  "return res->stream(res->stream_ud);",
+  "at call",
+  "feature_hook_util(ctx, \"PrePoint\");",
+  "return res->stream(res->stream_ud);"
+ ],
+ "zig": [
+  "src/cmp/zig/fragment/Entity.fragment.zig",
+  "return .{ .ok = sf.call(sf.ctx) };",
+  "at call",
+  "const point = utility.make_point(ctx) catch return streamItems(self.opError(ctx));",
+  "return .{ .ok = sf.call(sf.ctx) };"
+ ],
+ "rust": [
+  "src/cmp/rust/fragment/Entity.fragment.rs",
+  "return Ok(sf().into_iter());",
+  "at call",
+  "self.utility.feature_hook(&ctx, \"PrePoint\");",
+  "return Ok(sf().into_iter());"
+ ],
+ "perl": [
+  "src/cmp/perl/fragment/Entity.fragment.pm",
+  "    return sub {\n      return undef if $aborted->();\n      my $item = eval {",
+  "on iteration",
+  "$self->_run_op($ctx, sub { return });",
+  "my $next = $src->();"
+ ],
+ "clojure": [
+  "src/cmp/clojure/fragment/Entity.fragment.clj",
+  "(letfn [(lz [xs] (lazy-seq",
+  "on iteration",
+  "(run-op ctx (fn []))\n    (let [result (core/oget ctx :result)",
+  "(vec ((core/oget result :stream)))"
+ ],
+ "elixir": [
+  "tm/elixir/lib/projectname/entity_base.ex",
+  "|> Stream.take_while(",
+  "on iteration",
+  "Pipeline.run_op(ctx, fn -> nil end)\n\n    result",
+  "        source(ctx, stream_fn)\n"
+ ],
+ "ocaml": [
+  "src/cmp/ocaml/Entity_ocaml.ts",
+  "seq_of raw);",
+  "on iteration",
+  "ignore (run_op ctx (fun () -> ()));\n      let signal",
+  "| Some fn -> fn ()"
+ ]
+}

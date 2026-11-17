@@ -1,0 +1,1815 @@
+{
+ "swift:port": {
+  "lang": "swift",
+  "ok": true,
+  "summary": "Swift was ported by the guide (version 3.2). That means a naming hook (Naming_swift.ts, 24 lines), a provider (Syntax_swift.ts, 171 lines), the porter's part of the forms file (+32/-5), and the three old components deleted (764 lines). The provider has no notes. No shared file was touched. Build exit 0 and the tree is clean after it. Guard and reader: 5/5 pass. Golden: 2/2. Suite without lanes: 2596 pass, 0 fail, 5 skipped. The final one-command run (REGEN=1) gives PORTCHECK PASS, exit 0. The SCRATCH=1 run fails as expected for a language nobody reviewed. Swift's toolchain is absent here, so none of the 172 changed blocks (47 tutorial, 19 root, 106 reference) is compiled. The swift README test only checks structure. Swift is the first port with result style 'wrapped', so its wrapped sentences in shared runtimeprose had never been printed by any language. They are now printed and were read once, but no reference language exists to compare against.",
+  "commits": [
+   "sdkgen e2909323 'Swift prints its tutorial, root quick start and reference through the shared pages': adds Syntax_swift.ts and Naming_swift.ts, edits ts/test/runtimeforms/swift.ts, deletes ReadmeQuick_swift.ts, ReadmeTopQuick_swift.ts and ReadmeRef_swift.ts (staged with git add / git add -u)",
+   "sdkgen db94e106 'Golden follows the swift provider': ts/test/golden/add-output.txt, swift lines only (+2/-3)",
+   "build: no commit needed. git status --short after npm run build is empty, because the port changes no ts/src",
+   "tools a19b52c 'swift: hand records, block counts and the accepted purity finding': hand/swift.json, counts/swift.json, purity-allow/swift.json",
+   "tools 997196b 'swift: generated classes': classes/swift.json. git -C tools status is empty"
+  ],
+  "portcheck": "== portcheck swift ==\nsection    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions\ntutorial                   61 |      45     19        0      21       5     0       0 | 0\nrootquick                  19 |       3      0        0       3       0     0       0 | 0\nreference               14013 |     143     48        0      67      27     0       0 | 1\nsection    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH\ntutorial                   1         1       0        46 |      35    0      0 | NO; 47 changed blocks compiled by nothing\nrootquick                  0         0       0        19 |      28    0      0 | NO; 19 changed blocks compiled by nothing\nreference                207         0       0       106 |      13    0      0 | NO; 106 changed blocks compiled by nothing\ncontradictions (1; counted, not failed):\n  reference [91baf1b4b6] This SDK is generated without the `test` feature, so it has no mock tr | other: swift/README.md:229 (no-test) ... | true: REFERENCE ...\npurity: 0 open, 1 accepted | notes declared 0, note regions found 0\nguard: pass (pass 4 fail 0 )\nfacts (language and convention, against the OLD page): attested 5, recorded by hand 1, UNATTESTED 0, not printed 0, not judged 0; cited 11, pinned prose 6 (the reviewer audits each)\nshared sentences: matched 67, of which against a sentence nobody reviewed 67 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 0 (0 explained; ...)\nfact sheet: factsheet swift: 61 facts, 0 with no account, 0 unattested\nPORTCHECK swift: PASS\nexit 0\n(command: REGEN=1 tools/portcheck.sh sdkgen out swift, run in P/ports/swift; full log in P/ports/swift/final.log)",
+  "scratch": "SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out swift exits 1 (PORTCHECK swift: FAIL), as expected for a new language. Full log: P/ports/swift/scratch-final.log.\n- Ledger OPEN: tutorial 26, rootquick 3, reference 95. Defect 0 in every section.\n- Shared sentences matched: 19 / 0 / 48, all 67 against sentences nobody has reviewed.\n- Blocks OPEN: 35 / 28 / 13.\n- Purity: 0 open.\n- Facts: UNATTESTED 1 (named).\n- Printed less often than its reference: 1. This was class d5b8571b7f. It is a pairing artifact: the same make sentence is spread over three classes, 16 + 77 + 1 = 94 units, which is every entity.\n- Absent: 0. No reference language uses the wrapped style.",
+  "facts": [
+   {
+    "path": "facts.method.*",
+    "value": "list/load/create/update/patch/remove",
+    "account": "derived",
+    "evidence": "EntityLoadOp.fragment.swift:8 etc."
+   },
+   {
+    "path": "facts.named",
+    "value": "call",
+    "account": "hand (convention, UNATTESTED by the tool)",
+    "evidence": "OLD README.md:55 '`load()` returns the ENTITY'; every OLD sentence carrying it was reworded, so no OLD unit pairs with it"
+   },
+   {
+    "path": "facts.async",
+    "value": "false",
+    "account": "derived",
+    "evidence": ""
+   },
+   {
+    "path": "facts.result",
+    "value": "wrapped",
+    "account": "derived",
+    "evidence": "forms style.wrapped: throws -> Value"
+   },
+   {
+    "path": "facts.collection",
+    "value": "`VList`",
+    "account": "cited",
+    "evidence": "tm/swift/.../Struct/Value.swift: 'case list(VList)'"
+   },
+   {
+    "path": "facts.record",
+    "value": "({var}.asNative as? Entity)?.data()",
+    "account": "derived (only the name 'data' is re-derived; the unwrap part is not checked)",
+    "evidence": "see interface_gaps"
+   },
+   {
+    "path": "facts.unwrap",
+    "value": "asNative as? Entity",
+    "account": "cited, pinned prose",
+    "evidence": "feature/ValidateFeature.swift:248 'if let ent = record.asNative as? Entity {'"
+   },
+   {
+    "path": "facts.prints",
+    "value": "record",
+    "account": "convention, attested",
+    "evidence": "OLD prints the whole data() everywhere"
+   },
+   {
+    "path": "ref.facts.entityBy",
+    "value": "class",
+    "account": "convention; the tool marks it ATTESTED, but this was decided by hand against OLD",
+    "evidence": "OLD headed sections with Name (## Ambient). The generated class is <Name>Entity (Entity_swift.ts cls = entityClassName). The tool's attestation is by enumeration and does not see that OLD's headings contradict it"
+   },
+   {
+    "path": "ref.facts.noun",
+    "value": "Methods",
+    "account": "convention, attested",
+    "evidence": "OLD 'Instance Methods'"
+   },
+   {
+    "path": "ref.facts.keys",
+    "value": "member",
+    "account": "convention, attested",
+    "evidence": "OLD options[\"apikey\"] rows"
+   },
+   {
+    "path": "ref.facts.maps",
+    "value": "maps",
+    "account": "language, attested",
+    "evidence": "OLD 'maps are JSON-serialized'"
+   },
+   {
+    "path": "ref.facts.none",
+    "value": "nil",
+    "account": "cited",
+    "evidence": "Main.fragment.swift:26 'public init(_ optionsIn: ProjectNameSdk.VMap? = nil) {'"
+   },
+   {
+    "path": "ref.facts.setArg",
+    "value": "a `Value`",
+    "account": "cited",
+    "evidence": "EntityBase.fragment.swift:48 'public func data(_ newdata: Value?) -> Value {'"
+   },
+   {
+    "path": "ref.facts.container",
+    "value": "VMap",
+    "account": "cited",
+    "evidence": "Main.fragment.swift:21"
+   },
+   {
+    "path": "ref.facts.valueType",
+    "value": "String/VMap/Value",
+    "account": "derived",
+    "evidence": ""
+   },
+   {
+    "path": "ref.facts.ctor[0]",
+    "value": "let client = {ctor}(options)",
+    "account": "derived",
+    "evidence": ""
+   },
+   {
+    "path": "ref.facts.test[0]",
+    "value": "{client}.testSDK(_ testopts: VMap?, _ sdkopts: VMap?) -> {client}; call 'let client = {client}.testSDK(nil, nil)'",
+    "account": "derived (on: type, Main.fragment.swift:330)",
+    "evidence": ""
+   },
+   {
+    "path": "ref.facts.accessor",
+    "value": "{accessor}(_ entopts: VMap? = nil) -> ProjectNameEntityBase, arg entopts, param entopts",
+    "account": "derived (typeNames maps ${Name}EntityBase)",
+    "evidence": "MainEntity_swift.ts:25"
+   },
+   {
+    "path": "ref.facts.op.*",
+    "value": "<op>(_ reqmatch|reqdata: VMap?, _ ctrl: VMap?) throws -> Value",
+    "account": "derived",
+    "evidence": "Entity*Op fragments"
+   },
+   {
+    "path": "ref.facts.client",
+    "value": "optionsMap() -> VMap (copy), getUtility() -> Utility, direct(_ fetchargs: VMap?) -> VMap, prepare(_ fetchargs: VMap?) throws -> VMap",
+    "account": "derived; renames fetchargsIn->fetchargs; typeNames ProjectNameSdk.VMap->VMap",
+    "evidence": "Main.fragment.swift:84-96,162"
+   },
+   {
+    "path": "ref.facts.client[0].copy",
+    "value": "true",
+    "account": "cited, pinned",
+    "evidence": "Main.fragment.swift:85 'return clone(.map(options)).asMap ?? ProjectNameSdk.VMap()'"
+   },
+   {
+    "path": "ref.facts.client[1].kind",
+    "value": "utility",
+    "account": "cited, pinned",
+    "evidence": "Main.fragment.swift:89 'return ProjectNameSdk.Utility.copy(utility)'"
+   },
+   {
+    "path": "ref.facts.entity",
+    "value": "dataArg data(_ newdata: Value?) -> Value (copy), matchArg matchv(_ newmatch: Value?) -> Value, make() -> Entity, streamIterator stream(...) throws -> AsyncStream<Value> runs call, name getName() -> String",
+    "account": "derived",
+    "evidence": "EntityBase.fragment.swift:35-65,188-189,223,236"
+   },
+   {
+    "path": "ref.facts.entity[0].copy",
+    "value": "true",
+    "account": "cited, pinned",
+    "evidence": "EntityBase.fragment.swift:54 'return clone(data)'"
+   },
+   {
+    "path": "ref.facts.direct",
+    "value": "returns VMap, okFalse false",
+    "account": "returns derived; okFalse cited ahead",
+    "evidence": "Main.fragment.swift:178 'r.entries[\"ok\"] = .bool(false)'"
+   },
+   {
+    "path": "ref.facts.prepare",
+    "value": "returns VMap, fails style",
+    "account": "returns derived; fails cited, pinned",
+    "evidence": "Main.fragment.swift:96 '... throws -> ProjectNameSdk.VMap {'"
+   },
+   {
+    "path": "ref.facts.body.values",
+    "value": "a `String`, or `Data` or `[UInt8]` as a `.native` value",
+    "account": "cited, pinned prose; unquoted excuse for String",
+    "evidence": "utility/Fetcher.swift:125-131. The excuse: 'a text body is the Value case read by body.asString' (the word String is in 104 runtime files). OLD wrote `.nat`, the convenience constructor. The case the fetcher matches is `.native`, so the value was changed to the case"
+   },
+   {
+    "path": "ref.facts.cancel",
+    "value": "false",
+    "account": "cited absence",
+    "evidence": "/\\b(cancel\\w*|abort\\w*)\\b|isCancelled|AbortController/i over utility/Fetcher.swift and EntityLoadOp.fragment.swift, empty. 'signal' was left out of the pattern because Fetcher.swift:166 has sem.signal() (a semaphore). stream's callopts signal (EntityBase.fragment.swift:193,238) is a separate, stream-only facility"
+   }
+  ],
+  "notes": [],
+  "table_rows_wrong": [
+   {
+    "row": "Record accessor: `data`, 1 parameter(s); entity members data and matchv (1 parameter, no default)",
+    "file_line": "tm/swift/Sources/ProjectNameSDK/core/Types.swift:15-18",
+    "runtime_shows": "`public extension Entity { @discardableResult func data() -> Value { data(nil) }; ... func matchv() -> Value { matchv(nil) } }` gives a no-argument form on anything typed Entity (and so on EntityBase). The OLD and NEW examples both read the record with data() and no argument, which relies on this. The table does not show it",
+    "forms_change": "none. The forms decl only reads public/open/override/static members of the three fragments, and these extension methods carry no modifier. The 1-parameter row stays true of EntityBase. Reported, not corrected"
+   },
+   {
+    "row": "client member `mode`: returns empty",
+    "file_line": "src/cmp/swift/fragment/Main.fragment.swift:20",
+    "runtime_shows": "public var mode = \"live\", a String by inference",
+    "forms_change": "none (undocumented member)"
+   },
+   {
+    "row": "all other rows (ops, constructors, testSDK on type, direct not throwing, prepare and stream throws, the accessor, the stream line runs/items 'before it returns', okFalse, field types)",
+    "file_line": "Main.fragment.swift:26,84-96,162,178,330; EntityBase.fragment.swift:48-89,188-243; Entity.fragment.swift:6; MainEntity_swift.ts:25; canonType.ts swift column",
+    "runtime_shows": "read and found correct",
+    "forms_change": "the porter's part only: sigReturns (strips throws), renames, typeNames, cite"
+   }
+  ],
+  "interface_gaps": [
+   {
+    "construct": "The wrapped result style's REFERENCE return clause and the create comment state the record read (record(f, bound)) but never the unwrap. With record '.data()' the page said 'Returns a value holding the entity ... `.data()` reads its record', which is false for swift (a Value has no data()).",
+    "file_line": "ts/src/helpers/runtimeprose.ts:142 (carries) and :207-208 (returnClause 'wrapped'); OLD ReadmeRef_swift.ts:32 named the unwrap",
+    "smallest_change": "Have the wrapped branches of returnClause/carries say '... which `${unwrap}` takes out'. Then record can stay '{var}.data()'.",
+    "breaking": true,
+    "providers_forced": "none (swift is the only wrapped provider). It counts as breaking only because it changes a sentence",
+    "worked_around": "Yes, and openly: facts.record is declared as '({var}.asNative as? Entity)?.data()'. This is real code that reads the record from the bound Value, so every record sentence is true. In the tutorial it is redundant next to the unwrap clause. The guard re-derives only the name 'data' from it, not the unwrap part",
+    "made": false
+   },
+   {
+    "construct": "A printer may not concatenate onto a description name, so the old `<var>Entity` binding for the unwrapped entity cannot be printed. The print printer instead shadows the name: `if let ambient = ambient.asNative as? Entity { print(ambient.data()) }`",
+    "file_line": "Syntax_swift.ts print printer; OLD ReadmeQuick_swift.ts:96,136",
+    "smallest_change": "Additive: an optional layout.vars-style name for the unwrapped entity supplied by the hook. Not needed",
+    "breaking": false,
+    "providers_forced": "none",
+    "worked_around": "no; shadowing in an inner scope is legal Swift (not compiled here)",
+    "made": false
+   },
+   {
+    "construct": "The client printer uses an option's key as a variable name for a map-valued option (`let server = VMap()`, `let feature = VMap()`). This is safe only because the shared option keys are identifiers",
+    "file_line": "Syntax_swift.ts client printer",
+    "smallest_change": "none",
+    "breaking": false,
+    "providers_forced": "none",
+    "worked_around": "no",
+    "made": false
+   }
+  ],
+  "shared_files_touched": [],
+  "hand_decisions": [
+   {
+    "id": "ref.facts.entityBy",
+    "kind": "fact",
+    "outcome": "class",
+    "why": "The generated class is <Name>Entity (and PlanetEntityClient on a collision). OLD named the data type"
+   },
+   {
+    "id": "facts.named",
+    "kind": "fact",
+    "outcome": "call",
+    "why": "OLD names operations with parentheses (`load()`)"
+   },
+   {
+    "id": "91baf1b4b6",
+    "kind": "echo",
+    "outcome": "contradiction",
+    "why": "no-test variation. swift/README.md:229 (ReadmeOptions, unported) says testSDK builds a client with mock transport. The REFERENCE is the true side (S13)"
+   },
+   {
+    "id": "swift-foundation-import",
+    "kind": "correction",
+    "outcome": "import Foundation printed when an option reads the environment",
+    "why": "ProcessInfo is Foundation's, and tm/swift has no @_exported import. Unverified: no swift here"
+   },
+   {
+    "id": "swift-unwrap-shadow",
+    "kind": "unification",
+    "outcome": "if let x = x.asNative as? Entity",
+    "why": "No concatenation is allowed on description names"
+   },
+   {
+    "id": "99d9f7d2a7",
+    "kind": "dropped",
+    "outcome": "'`options` is a `VMap` of `Value`.'",
+    "why": "The options table's first row states VMap"
+   },
+   {
+    "id": "d31e05e59e / 40b252d54e / d69d22366b",
+    "kind": "correction",
+    "outcome": "'Get or set' became 'Get ... Pass a `Value` to set it.'",
+    "why": "No default on the parameter, so nil gets and a value sets"
+   },
+   {
+    "id": "S49/S50/S09/S13/S25/U34/U43/U45/G27",
+    "kind": "correction",
+    "outcome": "catalogue fixes from shared code",
+    "why": "201 records in tools/hand/swift.json, each with its reason"
+   }
+  ],
+  "review_counts": [
+   {
+    "section": "tutorial",
+    "same": "61",
+    "shared_matched": "19 (19 against unreviewed sentences)",
+    "by_hand": "21",
+    "missing": "5 (all restored:shared, or correction:U45 for ref-issues' single update step)",
+    "contradictions": "0",
+    "matched_unreviewed": "19",
+    "blocks": "identical 1, corrected 1, unified 0, otherwise 46; 47 changed blocks compiled by nothing"
+   },
+   {
+    "section": "rootquick",
+    "same": "19",
+    "shared_matched": "0",
+    "by_hand": "3",
+    "missing": "0",
+    "contradictions": "0",
+    "matched_unreviewed": "0",
+    "blocks": "identical 0, corrected 0, unified 0, otherwise 19; 19 compiled by nothing"
+   },
+   {
+    "section": "reference",
+    "same": "14013",
+    "shared_matched": "48 (48 unreviewed)",
+    "by_hand": "67",
+    "missing": "27 (restored as shared sentences or facts, plus corrections S09, S13, S25, U34, U43, G27; one dropped: 99d9f7d2a7)",
+    "contradictions": "1 (91baf1b4b6, see hand_decisions)",
+    "matched_unreviewed": "48",
+    "blocks": "identical 207, corrected 0, unified 0, otherwise 106, OLD-only 1 (a heading-pairing artifact: the block is present unchanged); 106 compiled by nothing"
+   }
+  ],
+  "doubtful_lines": [
+   {
+    "line": "import Foundation (added) / ProcessInfo.processInfo.environment[...] without it (OLD)",
+    "where": "tutorial and root client blocks, 17 variations",
+    "doubt": "I believe OLD failed without `import Foundation`, because DemoSdk does not re-export Foundation (no @_exported in tm/swift). Not compiled"
+   },
+   {
+    "line": "if let ambient = ambient.asNative as? Entity { print(ambient.data()) }",
+    "where": "tutorial load/list, root quick start, REFERENCE list",
+    "doubt": "Shadowing in an inner scope should be legal. data() with no argument is the extension in core/Types.swift:16"
+   },
+   {
+    "line": "(\"id\", (created.asNative as? Entity)?.data().asMap?.entries[\"id\"] ?? .null)",
+    "where": "tutorial update/patch/remove, crud variations",
+    "doubt": "Relies on optional-chain flattening and on `.null` being inferred as Value inside a [(String, Value)] literal passed to VMap(_ pairs:) (Value.swift:53). The VMap(OrderedDictionary) init also takes a literal, which could make it ambiguous"
+   },
+   {
+    "line": "try at top level of the root quick start",
+    "where": "root README Swift block",
+    "doubt": "Legal only in main.swift top-level code. OLD had the same"
+   },
+   {
+    "line": "let result = try client.Gauge().update(VMap(), nil)",
+    "where": "ref-issues reference",
+    "doubt": "Two VMap inits (Value.swift:52 with a default, :53 without). VMap() should resolve to the first"
+   }
+  ],
+  "guide_problems": [
+   {
+    "section": "2 / 6",
+    "problem": "The record fact is 'derived', but the guard re-derives only a trailing name (forms record: /(\\w+)\\(\\)$/). In a wrapped style any prefix is unchecked. My unwrap prefix passed with no check"
+   },
+   {
+    "section": "5 (facts)",
+    "problem": "entityBy is marked ATTESTED by enumeration pairing (391 of 976 units) although OLD swift headed sections by Name, not class. A real convention change passed with no hand record. I decided it by hand anyway"
+   },
+   {
+    "section": "9 (swift row)",
+    "problem": "The row does not mention the protocol-extension data()/matchv() in core/Types.swift:15-18, which the examples depend on. Nor does it say that no ported language shares the wrapped style, so the tool's absent list and its reference comparison are empty for swift"
+   },
+   {
+    "section": "6",
+    "problem": "codeTokens treats a value with spaces and '?' ('asNative as? Entity') as prose, so the unwrap fact can only be pinned, not token-checked"
+   },
+   {
+    "section": "3 step 7 / 10",
+    "problem": "The guide does not say whether classes/<lang>.json should be committed in tools. git -C tools status stays dirty without it, so I committed it"
+   }
+  ],
+  "absent": [],
+  "purity": "node tools/purity.js (via portcheck): 0 open, 1 accepted (Naming: 'nom from @voxgig/apidef'). Reason: MainEntity_swift reads entity.Name, which apidef derives with nom(entity, 'Name'); the hook calls nom because Name is derived lazily. Notes declared 0, note regions 0. The provider reads no model, has no reserved list, no concatenation on a description name, and no operation literal outside its fact tables.",
+  "prose": "node tools/sharewords.js --clone sdkgen --root out/new --lang swift:\n- tutorial: 1741 words, shared 64.4%, only swift 35.6%, notes 0, provider literals 15 (unwrap).\n- rootquick: 238 words, shared 8.0%, only swift 92.0%, notes 0.\n- reference: 51093 words, shared 93.7%, only swift 6.3%, notes 0, provider literals 320 (setArg 188, noun 113, maps 19).\n- ALL: 53072 words, only swift 7.6%, notes 0%, provider literals 0.6%.\nThe 'only swift' share is high in the tutorial and root quick start because swift alone prints the wrapped style's shared sentences and step comments, which are written once in runtimeprose.ts. These are not provider prose: the provider supplies 0 note words and 0 prose literals.",
+  "lines": "git diff --numstat v32-frozen..HEAD:\n- Deleted: ReadmeQuick_swift.ts 0/246, ReadmeRef_swift.ts 0/409, ReadmeTopQuick_swift.ts 0/109 (764 in all).\n- Added: Syntax_swift.ts +171 (138 without blanks and comments), Naming_swift.ts +24 (15).\n- Forms: runtimeforms/swift.ts +32/-5 (75 to 102 by wc -l).\n- Golden: +2/-3.\nProvider plus hook: 195 lines against 764 removed, 3.9x. Counting the forms delta: 222 against 764, 3.4x.",
+  "other_languages_unchanged": "`diff -rq -x swift ports/swift/out/new base32/out/new` lists 19 files, all of them root README.md. A difflib check (scratchpad/swiftwork/rootdiff.py) compared 770 files: every difference in the 19 root READMEs falls inside a '### Swift' block, and the problem count is 0. The changed lines are the Swift quick start only (Foundation import, server option, step comments, unwrap name). No other language's page changed.",
+  "old_vs_new": "OLD said and NEW does not:\n- '`options` is a `VMap` of `Value`' (dropped; the table keeps VMap).\n- The 'Static Methods' heading (now 'Test client').\n- '`.nat`' in the body note (now `.native`, the case the fetcher matches).\n- OLD headings named the entity by Name.\n\nNEW says and OLD did not:\n- Typed signatures with throws and `_` labels.\n- The stream member (runs before the call returns).\n- The required server option and `import Foundation`.\n- The Basic `secret` option.\n- The VList collection.\n- A copy for data().\n- Corrections S09, S13, S25, U34, U43, U45 and G27.\n- One contradiction with the unported README test line (S13), counted, not failed.\n\nBy the tools: tutorial missing 5, reworded and added classes all decided; reference missing 27, added 59 classes, 1 contradiction.\n\nRead side by side: B and ref-issues for all three sections, auth-basic for the tutorial, doc-nested and crud-bare for the tutorial. No sentence was found false for swift after the record fact carried the unwrap.",
+  "hypotheses": [
+   {
+    "id": "H1",
+    "verdict": "held for swift",
+    "evidence": "The provider reads no model, has 0 notes and 0 prose literals, and no shared sentence was edited. The gap is a wrapped-style sentence in shared code that omits the unwrap. It is handled with a fact value rather than prose and recorded as an interface gap; it forces no other provider. 'Only swift' prose is high in the tutorial (35.6%) and root (92%), but all of it is shared wrapped-style text written once"
+   },
+   {
+    "id": "H2",
+    "verdict": "held for swift",
+    "evidence": "764 lines removed against 195 added (3.9x), 222 with the forms (3.4x), from git diff --numstat"
+   },
+   {
+    "id": "H3",
+    "verdict": "held for swift",
+    "evidence": "S49, S50, S09, S13, S25, U34, U43, U45 and G27 were fixed through shared code with 0 per-language edits"
+   },
+   {
+    "id": "H4",
+    "verdict": "not testable here",
+    "evidence": "No swift toolchain (command -v swift and swiftc: MISSING). 172 changed blocks are compiled by nothing; the doubtful lines are listed"
+   }
+  ],
+  "time": "Started 02:01 and finished about 04:15 (clock from PROGRESS.md). Reading: about 25 min. Table check against the runtime: about 10 min. Provider and hook: about 15 min. Forms and guard iterations: about 15 min. Classification and review: about 40 min. Suite, golden and measures: about 25 min (the suite alone took 8 min).",
+  "unverified": "All 172 changed swift code blocks (47 tutorial, 19 root, 106 reference) are unverified: swift is absent here, and the generated swift README test checks structure only. I read each distinct changed shape against the runtime signatures; the doubtful lines are listed. The record fact's unwrap part is not checked by the guard. entityBy's attestation by the tool is structural.",
+  "not_done": [
+   "No swift compile or run of any example: the toolchain is absent and I did not install one.",
+   "The independent reviewer's mutation checks (section 7, items 4-5) were not run by me.",
+   "The table's missing protocol-extension rows (core/Types.swift:15-18) were not added to the forms reader.",
+   "The shared change to the wrapped sentences in runtimeprose.ts was not made (recorded as a gap)."
+  ],
+  "surprises": [
+   "Swift is the first port to print the wrapped result style. Its shared sentences were never exercised before, and the REFERENCE return clause omits the unwrap.",
+   "With entityBy 'class', ref-issues headings become PlanetEntityClient and PlanetEntityEntity, which are the true generated class names.",
+   "OLD's swift tutorial skipped step 2 (S28), had no server option under a templated URL (S49), and no Foundation import."
+  ],
+  "workspace": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/swift (sdkgen clone, tools, out, PROGRESS.md, final.log, scratch-final.log)",
+  "guard": "swift: derived 45, cited 12 (pinned prose 6: unwrap, client[0].copy, client[1].kind, entity[0].copy, prepare.fails, body.values), language 1, convention 5, excepted 0. One unquoted excuse: String in body.values. The cited absence is cancel. Run: node --test --test-name-pattern '^swift: ' dist-test/runtimefacts.test.js dist-test/runtimereader.test.js gives 5 pass, 0 fail, including the negative controls.",
+  "lanes": "There is no swift lane here (swift absent). Suite: node --enable-source-maps --test --test-concurrency=2 (everything except generatedcompile) gives 2601 tests, 2596 pass, 0 fail, 5 skipped, in 7m59s."
+ },
+ "perl:port": {
+  "lang": "perl",
+  "ok": true,
+  "summary": "I ported perl to the shared README tutorial, root quick start and REFERENCE page by following PORTING v3.2. New files: Naming_perl.ts (22 lines), Syntax_perl.ts (191 lines) and the porter's part of ts/test/runtimeforms/perl.ts (+21 lines). The three old components (735 lines) are deleted. No shared source file changed.\n\nWhat I ran and what it gave:\n- `npm run build`: exit 0, and `git status` was clean afterwards.\n- The perl guard: 4/4. runtimefacts plus runtimereader: 65/65.\n- The repository suite without generatedcompile, `--test-concurrency=2`: 2601 tests, 2596 pass, 0 fail, 5 skipped.\n- The golden: only perl's 5 lines changed.\n- The one command: exit 0 with `REGEN=1` and again without it.\n- The `SCRATCH=1` run fails, as it must for a new language, because it ignores hand records.\n- The perl README example lane (`tools/before/run.sh <clone> perl`), on a copy of oldclone and on mine, gave identical results in all three models (default, crud, basic-server). Every run was 7/7 and exited 0. In the default model: README 18 blocks (17 run, 1 illustration), REFERENCE 21/21 run, root 3/3 run.\n\nOn \"both modes\": I read it as with and without `REGEN=1`. If it means `SCRATCH=1` as well, `ok` is false.\n\nInterface: one gap, additive, and I did not change shared code for it. The imports printer cannot tell the tutorial (read from perl/, OLD `use lib 'lib'`) from the root quick start (read from the repository root, OLD `use lib 'perl/lib'`). The provider therefore prints only `use DemoSDK;`, and I recorded the dropped lib lines by hand.\n\nPurity: 0 open, 1 accepted (exampleVarName). 67 facts, 0 without an account, 0 UNATTESTED after one hand-recorded fact. One runtime note, 9 words.\n\nAgainst the hypotheses, for perl:\n- H1 holds. The provider and hook read the model 0 times, and notes are 1.6% of the page's words. Breaking interface changes: 0.\n- H2 holds. 735 lines became 213 (3.45x), or 234 counting the forms additions.\n- H3, as far as I read: every catalogued correction perl shows came from shared code with no perl edit (S49, S50, S25, S13, U34, U45, ref-6, md-cell). I did not re-read the catalogue entries.\n- H4 holds on the lane: the same counts as OLD. Still, no tool compiled the 153 changed blocks of the 21 variations.",
+  "interface_gaps": [
+   {
+    "construct": "The page's imports are one printer, `Syntax.imports(desc, used)`, printed ahead of both the tutorial's client block and the root quick start. perl's import line depends on where the reader runs. OLD tutorial (ReadmeQuick_perl.ts:39 at v32-frozen) printed `use lib 'lib';` and OLD root (ReadmeTopQuick_perl.ts:265) printed `use lib '${target.name}/lib';`. The generator's own comment, Main_perl.ts:68-69, says callers write `use lib '<sdk>/lib'; use <Name>SDK;`. Nothing in `desc`, `used` or `Scope` tells the printer which section it is printing, and the provider may not read the target's directory.",
+    "file_line": "ts/src/helpers/example.ts:431 (imports signature), :497-500 (printStmts calls imports); ts/src/cmp/ReadmeQuick.ts:183 and :240 (quickText and topQuickText each make a Scope with no place)",
+    "smallest_change": "Add an optional `place?: ShowPlace` to Scope. quickText sets 'tutorial' and topQuickText sets 'top', and printStmts passes `sc.place` as a third, optional argument to `imports`. The root path also needs the target's directory: an optional `layout.names` role from the naming hook (`target.name` today; out-of-tree `output.path` targets would need the same). Two shared files (example.ts, ReadmeQuick.ts) plus one optional hook value.",
+    "breaking": false,
+    "providers_forced": "none (optional argument and optional Scope member; every existing provider ignores them)",
+    "made": false,
+    "worked_around": "Not worked around by branching. Syntax_perl.ts:144-147 prints only `use ${desc.layout.module};` in both places, with a comment saying why. OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped, recorded by hand: `dropped` 9b32484fa9, 33526951e8, 336fea9d3b, dc2822fe83, and named in the reason of every block class that also drops them. The first version printed `use lib 'lib'` in both places, which made the root README contradict its own `perl/lib` test block. I removed it as false. Cost: tutorial client blocks byte-identical to OLD went from 3 to 0."
+   }
+  ],
+  "shared_files_touched": [
+   "none of ts/src, ts/project other than perl's own directory, or the shared guard files",
+   "ts/test/golden/add-output.txt: perl's 5 lines only (golden commit 70f0be92)"
+  ],
+  "not_done": [
+   "Did not compile or run the 153 changed perl blocks of the 21 review variations (48 tutorial, 19 rootquick, 86 reference). Only the lane's own three models were executed, by the generated SDK's own README test. I did not write a `perl -c` loop over out/new.",
+   "Did not run the ts/js/go/py/rb lanes or any generatedcompile lane. No shared source changed, and the out/new diff shows no other language's page changed.",
+   "Wrote no perl normalizers (normalizers/perl.js). Every changed block is explained by a hand record, so 'corrected/unified' stay 6/0/0 and 'otherwise' is 42/19/86.",
+   "Did not open each catalogue entry (S13, S25, S49, S50, U34, U45, ref-6) in docs/design/model-dependent-text-issues.md. I reused the ids the reference languages' hand records give for the same classes.",
+   "Did not correct the reader rows I think are wrong (client TO_JSON on 'module'; optionality of $reqdata and $action). Those members are undocumented, or the page states no optionality for perl.",
+   "Did not measure per-step times (see time).",
+   "STRICT_SENTENCES=1 not run: all 66 shared matches are against sentences nobody has reviewed yet."
+  ],
+  "commits": [
+   "clone 2b8a241a perl: README tutorial, root quick start and REFERENCE through the shared page \u2014 adds ts/project/.sdk/src/cmp/perl/Naming_perl.ts and Syntax_perl.ts, modifies ts/test/runtimeforms/perl.ts, deletes ReadmeQuick_perl.ts, ReadmeRef_perl.ts and ReadmeTopQuick_perl.ts (staged by explicit path, git add -u for the deletions)",
+   "clone 70f0be92 Golden: perl's README components are its naming hook and syntax provider \u2014 ts/test/golden/add-output.txt (+2 -3, perl lines only)",
+   "clone: no build commit; `npm run build` exit 0, then `git status --short` empty (no ts/dist change)",
+   "tools 32529fe perl: hand classifications, normalizer counts and the accepted purity finding \u2014 hand/perl.json, counts/perl.json, purity-allow/perl.json, classes/perl.json",
+   "tools 61f5ba6 perl: the make sentence's count, read by hand \u2014 hand/perl.json",
+   "tools 8fc4f46 perl: classes after the final regeneration \u2014 classes/perl.json; then `git -C tools status --short` empty"
+  ],
+  "portcheck": "cd P/ports/perl && REGEN=1 tools/portcheck.sh sdkgen out perl  -> exit 0\n== portcheck perl ==\nsection    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions\ntutorial                   61 |      42     20        0      18       4     0       0 | 0\nrootquick                  19 |       3      0        0       3       0     0       0 | 0\nreference               14910 |     114     46        0      50      17     0       0 | 1\nsection    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH\ntutorial                   0         6       0        42 |      21    0      0 | yes (perl); 48 changed blocks compiled by nothing\nrootquick                  0         0       0        19 |      27    0      0 | yes (perl); 19 changed blocks compiled by nothing\nreference                227         0       0        86 |       7    0      0 | yes (perl); 86 changed blocks compiled by nothing\n  classes = \"otherwise\" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 9, novel-token 8, vanished-token 4; rootquick: changed 11, novel-token 6, vanished-token 8, novel-shape 2; reference: changed 5, old-only 1, novel-token 1)\n  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models\ncontradictions (1; counted, not failed):\n  reference [91baf1b4b6] This SDK is generated without the `test` feature, so it has no mock tr | other: perl/README.md:219 (no-test): 'Creates a test-mode client wi | true: REFERENCE: without the test feature its \npurity: 0 open, 1 accepted | notes declared 1, note regions found 1\nguard: pass (pass 4 fail 0 )\nfacts (language and convention, against the OLD page): attested 7, recorded by hand 1, UNATTESTED 0, not printed 0, not judged 1; cited 16, pinned prose 7 (the reviewer audits each)\nshared sentences: matched 66, of which against a sentence nobody reviewed 66 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 0 (0 explained; listed in <section>.absent.json, not failed)\nfact sheet: factsheet perl: 67 facts, 0 with no account, 0 unattested, guard report read: .../tools/review/perl/facts.txt (audit every fact a shared sentence carries)\nPORTCHECK perl: PASS\n(also without REGEN, after the same build: exit 0, PORTCHECK perl: PASS)",
+  "scratch": "SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out perl -> exit 1 (FAIL, expected: hand records ignored).\n\nLedger:\n- tutorial: same 61, classes 42, shared 20, OPEN 22, defect 0\n- rootquick: same 19, classes 3, shared 0, OPEN 3\n- reference: same 14910, classes 114, shared 46, OPEN 68, defect 0\n\nBlocks (identical / corrected / unified / otherwise, then OPEN):\n- tutorial: 0/6/0/42, OPEN 21\n- rootquick: 0/0/0/19, OPEN 27\n- reference: 227/0/0/86, OPEN 7\n\nOther checks:\n- Purity: 0 open, 1 accepted.\n- Guard: pass 4.\n- Facts: attested 7, UNATTESTED 1 (ref.valueType.OBJECT = hashref: 5 contexts, held 1, contradicted 3, new 1); not judged 1 (prints = fields).\n- Shared sentences: matched 66, all against unreviewed sentences. 1 is printed less often than its reference (d5b8571b7f, the make sentence, against c). That is a ledger split, not a drop: 94 make sentences over the 21 variations and 7 in B, as c prints.\n\nThe very first SCRATCH=1 run, before any hand record, gave the same ledger OPEN counts (22/3/68) and blocks OPEN 24/26/7, with purity 4 open (3 note-lint hits on the word \"record\", 1 exampleVarName).",
+  "table_rows_wrong": [
+   {
+    "row": "client member TO_JSON: on = module",
+    "file_line": "src/cmp/perl/fragment/Main.fragment.pm:122-124 (`sub TO_JSON { return { 'name' => 'ProjectName' }; }`, no `my (...) = @_`), :128 (`$self->TO_JSON`)",
+    "runtime_shows": "It is invoked as an instance method (`$self->TO_JSON`) and by JSON::PP convert_blessed on the object. The forms `on()` returns 'module' only because the body has no `my ($self)` line.",
+    "forms_change": "none: the member is undocumented (forms.undocumented), so no page fact rests on the row"
+   },
+   {
+    "row": "create/update/patch: $reqdata [optional]",
+    "file_line": "src/cmp/perl/fragment/EntityCreateOp.fragment.pm:5-6 (`reqdata: body data hashref (...). ctrl: optional per-call control.`); same in EntityUpdateOp and EntityPatchOp :5-6",
+    "runtime_shows": "Perl checks no arity, so the reader's `optional: () => true` is literally true. But the runtime's own comment calls only ctrl optional, and a create with no data posts nothing useful.",
+    "forms_change": "none: the perl page prints no optionality marker, and the forms' optional() sees only the parameter text"
+   },
+   {
+    "row": "entity stream: $action [optional]",
+    "file_line": "src/cmp/perl/fragment/Entity.fragment.pm:150,160 (`'opname' => $action`)",
+    "runtime_shows": "$action names the operation to run; without it the pipeline has no operation",
+    "forms_change": "none (same reason)"
+   },
+   {
+    "row": "missing: what a streamed item is",
+    "file_line": "src/cmp/perl/fragment/Entity.fragment.pm:141 ('# An entity is yielded as its record, the hashref its data_get returns.'), :179-188 (unwrap via data_get)",
+    "runtime_shows": "stream yields records (hashrefs), not entities, unlike the operations",
+    "forms_change": "cited as the runtime note member:streamFunction (forms cite 'notes.member:streamFunction')"
+   },
+   {
+    "row": "missing: copy on options_map and match_get",
+    "file_line": "Main.fragment.pm:105 (`Voxgig::Struct::clone($self->{options})`); Entity.fragment.pm:103 (data_get clone), :119 (match_get clone)",
+    "runtime_shows": "options_map, data_get and match_get all return clones",
+    "forms_change": "cited copy: true for client[0] (options) and entity[0] (dataGet). Not declared for matchGet, because no shared sentence states it."
+   },
+   {
+    "row": "Section 9 of PORTING.md, perl row: 'direct's ok is 0 or 1'; cited okFalse 0",
+    "file_line": "Main.fragment.pm:226,245,260,264,310 ('ok' => 0), :300 (`? 1 : 0`)",
+    "runtime_shows": "confirmed correct",
+    "forms_change": "none"
+   }
+  ],
+  "facts": [
+   {
+    "path": "facts.method.{list,load,create,update,patch,remove}",
+    "value": "list, load, create, update, patch, remove",
+    "account": "derived",
+    "evidence": "guard re-derives from Entity*Op.fragment.pm `sub <op> {`"
+   },
+   {
+    "path": "facts.named",
+    "value": "call",
+    "account": "convention, ATTESTED",
+    "evidence": "OLD tutorial '`list()` returns ...', '`load()` returns ...'"
+   },
+   {
+    "path": "facts.async",
+    "value": "false",
+    "account": "derived",
+    "evidence": "guard"
+   },
+   {
+    "path": "facts.result",
+    "value": "die",
+    "account": "derived",
+    "evidence": "guard: style.raises /\\bdie\\b/ over the runtime"
+   },
+   {
+    "path": "facts.collection",
+    "value": "`arrayref`",
+    "account": "cited",
+    "evidence": "EntityListOp.fragment.pm:8 '# Returns the matching EntityName items as an arrayref of entities, one per'"
+   },
+   {
+    "path": "facts.record",
+    "value": "${var}->data_get",
+    "account": "derived",
+    "evidence": "guard: data_get is an entity member with 0 params; the printer prints it"
+   },
+   {
+    "path": "facts.recordType",
+    "value": "hashref",
+    "account": "cited",
+    "evidence": "Entity.fragment.pm:99 '# Returns the current EntityName data (hashref).'"
+   },
+   {
+    "path": "facts.prints",
+    "value": "fields",
+    "account": "convention, 'not judged' (no reference language declares it)",
+    "evidence": "chosen as PORTING \u00a79 says. OLD printed ->{id} alone; NEW prints the shared show fields (id, then the first string field), which corrects OLD printing ->{id} on entities with no id field (ambient). I read the classes this selects: 3cd8281249, a3d3e18a58, d2255de953, 31a80d54a8, and the block classes."
+   },
+   {
+    "path": "ref.facts.entityBy",
+    "value": "class",
+    "account": "convention, ATTESTED",
+    "evidence": "OLD op signatures `load($reqmatch, $ctrl) -> PlanetEntity`"
+   },
+   {
+    "path": "ref.facts.noun",
+    "value": "Methods",
+    "account": "convention, ATTESTED",
+    "evidence": "OLD '### Instance Methods', '### Common Methods'"
+   },
+   {
+    "path": "ref.facts.none",
+    "value": "undef",
+    "account": "cited",
+    "evidence": "Entity.fragment.pm:237 'return undef unless @items;'"
+   },
+   {
+    "path": "ref.facts.keys",
+    "value": "member",
+    "account": "convention, ATTESTED",
+    "evidence": "OLD '| `$options->{apikey}` | `string` |'"
+   },
+   {
+    "path": "ref.facts.maps",
+    "value": "hashrefs",
+    "account": "language, ATTESTED",
+    "evidence": "OLD 'Request body (hashrefs are JSON-serialized).'"
+   },
+   {
+    "path": "ref.facts.container",
+    "value": "hashref",
+    "account": "cited with an unquoted excuse",
+    "evidence": "Main.fragment.pm:33 '$options = {} unless defined $options;'. unquoted hashref: 'a `{}` literal is a hash reference; the runtime never names the type' (the guard reports the token in 11 runtime files)"
+   },
+   {
+    "path": "ref.facts.valueType.STRING / OBJECT / ANY",
+    "value": "string / hashref / any",
+    "account": "convention: STRING and ANY ATTESTED; OBJECT decided by hand",
+    "evidence": "Hand record: OLD wrote `hashref` for every map option and fetcharg and for data_get's return. The 'contradicted' contexts are the new tutorial record clause '(a `hashref`)', which OLD did not have."
+   },
+   {
+    "path": "ref.facts.ctor[0]",
+    "value": "use lib 'lib';",
+    "account": "cited (weak: word tokens only)",
+    "evidence": "src/cmp/perl/Main_perl.ts:69 \"// callers write `use lib '<sdk>/lib'; use <Name>SDK;`.\" The quote shows `<sdk>/lib`, not `lib`; the check passes on the words use and lib."
+   },
+   {
+    "path": "ref.facts.ctor[1]",
+    "value": "use {module};",
+    "account": "cited",
+    "evidence": "tm/perl/t/feature.t:19 'use ProjectNameSDK;'"
+   },
+   {
+    "path": "ref.facts.ctor[2]",
+    "value": "(blank)",
+    "account": "convention (empty)",
+    "evidence": "-"
+   },
+   {
+    "path": "ref.facts.ctor[3]",
+    "value": "my $client = {ctor}($options);",
+    "account": "derived",
+    "evidence": "guard callOf: new($options) on the type (Main.fragment.pm:31-32)"
+   },
+   {
+    "path": "ref.facts.test[0]",
+    "value": "sig {client}->test($testopts, $sdkopts); call my $client = {client}->test(); args true",
+    "account": "derived",
+    "evidence": "Main.fragment.pm:364-365 `sub test { my ($class, $testopts, $sdkopts) = @_;`, on the type"
+   },
+   {
+    "path": "ref.facts.accessor",
+    "value": "sig {accessor}($data), arg entopts, param data",
+    "account": "derived",
+    "evidence": "MainEntity_perl.ts:21-24 `sub ${entity.Name} { my ($self, $data) = @_; ... ${cls}->new($self, $data)`; Entity.fragment.pm:17-18 `new { my ($class, $client, $entopts)`"
+   },
+   {
+    "path": "ref.facts.op.*",
+    "value": "list($reqmatch, $ctrl) -> arrayref; load/create/update/patch/remove(...) -> {Class}",
+    "account": "derived (returns uncompared: perl declares none)",
+    "evidence": "guard: 15 returns uncompared"
+   },
+   {
+    "path": "ref.facts.client[0..3] (kind, sig)",
+    "value": "options_map() -> hashref; get_utility() -> utility; direct($fetchargs) -> hashref; prepare($fetchargs) -> hashref",
+    "account": "derived (client[1].kind cited)",
+    "evidence": "guard; client[1].kind 'utility' pinned to Main.fragment.pm:111 'return ProjectNameUtility->copy($self->{_utility});'"
+   },
+   {
+    "path": "ref.facts.client[0].copy",
+    "value": "true",
+    "account": "cited, pinned prose",
+    "evidence": "Main.fragment.pm:105 'my $out = Voxgig::Struct::clone($self->{options});'"
+   },
+   {
+    "path": "ref.facts.entity[0..6] (kind, sig)",
+    "value": "data_get() -> hashref; data_set($data); match_get() -> hashref; match_set($match); make() -> {Class}; stream($action, $args, $callopts) -> coderef [streamFunction, runs call]; get_name() -> string",
+    "account": "derived; renames args -> data and match with namesWhy",
+    "evidence": "guard; the runtime parameter is $args (Entity.fragment.pm:91,107)"
+   },
+   {
+    "path": "ref.facts.entity[5].runs",
+    "value": "call",
+    "account": "derived",
+    "evidence": "stream quote positions: _run_op at Entity.fragment.pm:177 before `return sub` at :202/:235"
+   },
+   {
+    "path": "ref.facts.entity[0].copy",
+    "value": "true",
+    "account": "cited, pinned prose",
+    "evidence": "Entity.fragment.pm:103 'return Voxgig::Struct::clone($self->{_data});'"
+   },
+   {
+    "path": "ref.facts.direct.returns",
+    "value": "hashref",
+    "account": "cited with an unquoted excuse",
+    "evidence": "Main.fragment.pm:240-241 'it always returns a result hash ... ({ ok => ..., ... }) and never dies.' unquoted hashref: 'the result is a hash reference literal'"
+   },
+   {
+    "path": "ref.facts.direct.okFalse",
+    "value": "0",
+    "account": "cited (ahead, in the frozen forms)",
+    "evidence": "Main.fragment.pm:245 \"'ok' => 0,\""
+   },
+   {
+    "path": "ref.facts.prepare.returns",
+    "value": "hashref",
+    "account": "cited",
+    "evidence": "Main.fragment.pm:194 '# return just the fetchdef hashref (dying on error) so callers -'"
+   },
+   {
+    "path": "ref.facts.prepare.fails",
+    "value": "style",
+    "account": "cited, pinned prose",
+    "evidence": "Main.fragment.pm:198 'die $fd_err if $fd_err;'"
+   },
+   {
+    "path": "ref.facts.body.values",
+    "value": "a byte string, a character string, sent as UTF-8, or a filehandle",
+    "account": "cited, pinned prose",
+    "evidence": "tm/perl/utility/media.pm:95 '# A string of bytes, a character string (sent as UTF-8), or a filehandle. A'"
+   },
+   {
+    "path": "ref.facts.body.once",
+    "value": "a filehandle",
+    "account": "cited, pinned prose",
+    "evidence": "tm/perl/utility/media.pm:96 '# filehandle can be read once, so it is read here, before the first attempt,'"
+   },
+   {
+    "path": "ref.facts.cancel",
+    "value": "false",
+    "account": "cited absence",
+    "evidence": "pattern /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|alarm\\b/i over tm/perl/utility/fetcher.pm finds nothing"
+   },
+   {
+    "path": "notes.member:streamFunction",
+    "value": "Each item is the hashref `data_get` returns, not an entity.",
+    "account": "cited, pinned prose",
+    "evidence": "Entity.fragment.pm:141 '# An entity is yielded as its record, the hashref its data_get returns.'"
+   }
+  ],
+  "notes": [
+   {
+    "slot": "member:streamFunction",
+    "text": "Each item is the hashref `data_get` returns, not an entity.",
+    "claims": "(1) A streamed item is a hashref, the one data_get returns: Entity.fragment.pm:141 comment and :184-185 (`return $item->data_get if Scalar::Util::blessed($item) && $item->can('data_get')`). (2) It is not an entity: the same unwrap, :179-188, also recursing into chunk arrays. The fallback path (:231-234) maps every materialised item through the same unwrap. The first wording, 'Each item is a record, ...', was flagged by the note lint because the B model has an entity named `record`. I reworded it rather than accepting the finding."
+   }
+  ],
+  "hand_decisions": [
+   {
+    "id": "9b32484fa9 / 33526951e8 / 336fea9d3b / dc2822fe83",
+    "kind": "tutorial and root blocks",
+    "outcome": "dropped",
+    "why": "`use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped: one imports printer serves both places and cannot tell them apart (the interface gap)"
+   },
+   {
+    "id": "316d79799f, 0860511808, 0aaaeb0644, c891952d31, d0885cc8ba, ...",
+    "kind": "client and root blocks",
+    "outcome": "correction:S49 / correction:S50",
+    "why": "the client passes the server variables (and the Basic secret); each reason also names the lib-line drop, the shared root comments, and the display fields where present"
+   },
+   {
+    "id": "3cd8281249, a3d3e18a58, d2255de953, 31a80d54a8",
+    "kind": "blocks",
+    "outcome": "correction:display-field",
+    "why": "prints: 'fields' prints the shared show fields. OLD printed ->{id} even for ambient, which has no id field (fields flow, temperature)."
+   },
+   {
+    "id": "6e67cfc901, a2103afb97",
+    "kind": "blocks",
+    "outcome": "unification:noarg-parens",
+    "why": "no-argument calls are written with () everywhere; OLD wrote list bare and load()"
+   },
+   {
+    "id": "24d40b660d, 5a083e16cc, bafc700723, 6a8837b248",
+    "kind": "reference list blocks",
+    "outcome": "unification:ref-list-example",
+    "why": "the shared generic names results and item, plus the show fields"
+   },
+   {
+    "id": "8d4be337ab, 2166870af9, 1a12a51546",
+    "kind": "reference blocks (ref-issues)",
+    "outcome": "correction:S25",
+    "why": "a pairing shift after Planet's inactive remove was dropped. All five instance blocks are printed (NEW REFERENCE.md:122,193,321,386,452)."
+   },
+   {
+    "id": "94e4e0cb3d, 861a2bfee4, 6d946df107, d5b8571b7f, b2f8d161db, e98e84c0ec",
+    "kind": "reference headings and make",
+    "outcome": "correction:entity-class",
+    "why": "the page names the entity's package (entityClassName, MainEntity_perl.ts:17,24). make passes the same client and a copy of the options (Entity.fragment.pm:68-72). The make sentence is printed 94 times, once per entity."
+   },
+   {
+    "id": "91baf1b4b6",
+    "kind": "echo",
+    "outcome": "contradiction",
+    "why": "no-test: README:219 says the test client has a mock transport; true: the REFERENCE (S13)"
+   },
+   {
+    "id": "bbff8b945e",
+    "kind": "echo",
+    "outcome": "same-meaning",
+    "why": "README types `ok` as boolean 'True if 2xx'; the runtime writes 1/0 (Main.fragment.pm:300), Perl's truth values"
+   },
+   {
+    "id": "fef381b2a3, fd48acdf84, 057b5775f7, 07b6a683db, 7a9d5874ad, 122961dd71",
+    "kind": "reference added",
+    "outcome": "restored:fact",
+    "why": "stream is a public member OLD perl never documented (Entity.fragment.pm:149, coderef at :202,:235)"
+   },
+   {
+    "id": "846928d1e5",
+    "kind": "reference added",
+    "outcome": "restored:note",
+    "why": "the stream note"
+   },
+   {
+    "id": "2f38082332, ac1eac6be0",
+    "kind": "reference missing",
+    "outcome": "correction:S13",
+    "why": "log is active by default (model/feature/log.aontu); OLD's 'Inactive by default' was false"
+   },
+   {
+    "id": "d5ceec6bd5, 9b3a3864f9, 9833a073af",
+    "kind": "reference missing",
+    "outcome": "correction:S25",
+    "why": "ref-issues: inactive remove no longer documented"
+   },
+   {
+    "id": "1d5f2874ab",
+    "kind": "reference missing",
+    "outcome": "unification:test-client-heading",
+    "why": "'Static Methods' became the shared 'Test client' heading"
+   },
+   {
+    "id": "035bdeb70d, 92e45cf378, dac11a1691",
+    "kind": "reference",
+    "outcome": "correction:md-cell",
+    "why": "the field description's pipe is escaped; OLD's cell was split"
+   },
+   {
+    "id": "fact ref.valueType.OBJECT",
+    "kind": "fact",
+    "outcome": "recorded by hand: hashref",
+    "why": "OLD wrote hashref for every map option and fetcharg and for data_get's return"
+   },
+   {
+    "id": "(all)",
+    "kind": "count",
+    "outcome": "148 decisions",
+    "why": "Full set with reasons in P/ports/perl/tools/hand/perl.json, generated by P/ports/perl/my/hand.py. Ledger by hand: tutorial 18, rootquick 3, reference 50."
+   }
+  ],
+  "review_counts": [
+   {
+    "section": "tutorial",
+    "same": "61",
+    "shared_matched": "20",
+    "matched_unreviewed": "20",
+    "by_hand": "18",
+    "missing": "4 classes (old load sentence x10, create comment x4, patch comment x3: restored:shared; '4. Create, update, and remove' in ref-issues: correction:U45)",
+    "contradictions": "0",
+    "blocks": "identical 0, corrected 6 (write-comment-style 5, trailing-blank 1), unified 0, otherwise 42; 48 changed blocks compiled by nothing in these variations"
+   },
+   {
+    "section": "rootquick",
+    "same": "19",
+    "shared_matched": "0",
+    "matched_unreviewed": "0",
+    "by_hand": "3",
+    "missing": "0",
+    "contradictions": "0",
+    "blocks": "identical 0, corrected 0, unified 0, otherwise 19; 19 compiled by nothing in these variations"
+   },
+   {
+    "section": "reference",
+    "same": "14910",
+    "shared_matched": "46",
+    "matched_unreviewed": "46",
+    "by_hand": "50",
+    "missing": "17 classes (restored as shared sentences, or corrections S25/S13/md-cell/entity-class, each with a reason in hand/perl.json)",
+    "contradictions": "1 (91baf1b4b6, no-test: README:219 says mock transport; true: REFERENCE)",
+    "blocks": "identical 227, corrected 0, unified 0, otherwise 86; 1 OLD-only (pairing shift in ref-issues); 86 compiled by nothing in these variations"
+   }
+  ],
+  "guide_problems": [
+   {
+    "section": "2 / 13 (Imports are a fact of the page)",
+    "problem": "The guide says imports print once ahead of the tutorial and the root quick start. It does not say that the printer cannot tell which of the two it is in, so a language whose import depends on where the reader runs (perl's `use lib`) cannot express both. Not listed among known limits."
+   },
+   {
+    "section": "6 (cited) and account DEFAULTS ref.facts.ctor[i]",
+    "problem": "Every constructor line must be derived or cited, but a non-call line such as `use lib 'lib';` has no exact runtime spelling. The only quote is a comment saying `<sdk>/lib`, which passes on word tokens. The guide gives no rule for import lines in `ctor`."
+   },
+   {
+    "section": "5 (blocks, record-counts)",
+    "problem": "Before `--record-counts`, the one command showed blocks OPEN 1 in tutorial with no line naming the cause (a changed normalizer count). Only the README's table says 'and a changed normalizer count'. The screen should say it."
+   },
+   {
+    "section": "9 (perl row: prints: 'fields')",
+    "problem": "It does not say that 'fields' changes every print block from OLD's `->{id}` to id plus a display field (sdkdesc showFields). It also does not say that, with no perl normalizer and no reference language using 'fields', the fact is 'not judged' and every such block is a hand class."
+   },
+   {
+    "section": "3 step 1 / 4",
+    "problem": "It does not say whether reader rows for undocumented members (client TO_JSON on 'module') should be corrected in the forms, or only reported."
+   },
+   {
+    "section": "9 (run command on oldclone)",
+    "problem": "'P/base32/oldclone is read-only: the guide's command works on a copy' is ambiguous: tools/before/run.sh reads the clone's dist-test and chdirs into its scaffold. I used a full copy (P/ports/perl/oldcopy) to be safe."
+   },
+   {
+    "section": "task text vs section 5",
+    "problem": "The task's `ok` says the one command must pass 'in both modes'. SCRATCH=1 cannot pass for any newly ported language, because it ignores hand records by design. I read 'both modes' as with and without REGEN=1."
+   },
+   {
+    "section": "8 (note lint)",
+    "problem": "The note lint flags ordinary English words that happen to be entity names in the fixtures ('record'). The guide allows accepting it with a reason; rewording was simpler and is what I did."
+   }
+  ],
+  "old_vs_new": "Counted by the tools (ledger units, all 21 variations):\n- tutorial: OLD 130 units, NEW 187 (same 61, reworded 51, missing 18, added 75)\n- reference: same 14910, reworded 566, missing 404, added 1386\n- rootquick: same 19\nEvery missing and added class is decided in hand/perl.json.\n\nWhat OLD said that NEW does not, as I decided it:\n- `use lib 'lib'` in the tutorial and `use lib 'perl/lib'` in the root quick start: dropped, the interface gap.\n- The REFERENCE heading 'Static Methods': now 'Test client'.\n- The root comments' 'data_get reads its record': the tutorial and REFERENCE still state it.\n- The OLD wording 'Returns the `fetchdef`': now 'the fetch definition'.\n- 'Inactive by default: leaving it out costs nothing at runtime' under log: false, S13.\n- ref-issues' inactive Planet.remove: S25.\n- 'Pass `undef` for no initial data': now 'Its `data` argument holds the entity options: pass `undef` for none'. The runtime passes it as $entopts (MainEntity_perl.ts:24, Entity.fragment.pm:18), so OLD's 'data' was wrong.\n- `'GET'` quoted: now `GET`.\n- OLD's 'This escape hatch never dies': now the shared 'A failed request is reported in the result, not as an error'.\n\nWhat NEW says that OLD did not:\n- The server option rows and the client's server variables (S49).\n- The secret option (S50).\n- The fetchargs ctrl row with the explain example.\n- The stream member, its runs sentence and the note that items are hashrefs.\n- The record type '(a `hashref`)'.\n- The test client 'in test mode ... no mock transport' when the test feature is absent.\n- 'Returns a copy of the current data.' on data_get.\n- 'with the same client and options' on make.\n- The Actions table's Call cell with the path parameter.\n- The display field printed beside the id.\n- 'The data must include the entity id, `id`.'\n\nOne contradiction is counted: the no-test README test line.",
+  "lines": "From `git diff --numstat v32-frozen..HEAD` in the clone:\n- Deleted: ReadmeQuick_perl.ts 224, ReadmeRef_perl.ts 420, ReadmeTopQuick_perl.ts 91 (735 in all).\n- Added: Syntax_perl.ts 191, Naming_perl.ts 22, ts/test/runtimeforms/perl.ts +21 (94 lines in all by `wc -l`; 73 at v32-frozen).\n- Golden: +2 -3.\n\n735 lines became 213 for provider and hook (3.45x), or 234 with the forms additions (3.14x). `wc -l`: Syntax_perl.ts 191, Naming_perl.ts 22, perl.ts 94.",
+  "prose": "`node tools/sharewords.js --clone sdkgen --root out/new --lang perl` (21 variations), words outside code spans:\n\n| section | words | shared sentence | printed by perl alone | notes | provider literals |\n| --- | --- | --- | --- | --- | --- |\n| tutorial | 1553 | 1166 (75.1%) | 387 (24.9%) | 0 | 0 |\n| rootquick | 238 | 19 (8.0%) | 219 (92.0%) | 0 | 0 |\n| reference | 52584 | 47517 (90.4%) | 4221 (8.0%) | 846 (1.6%) | 978 (1.9%; facts 132: ref.noun 113, ref.maps 19) |\n| ALL | 54375 | | 4827 (8.9%) | 846 (1.6%) | 978 (1.8%) |\n\nAt the source: perl notes 9 words, fact-table prose literals 21, other prose literals 0.\n\nThe 'perl alone' units are shared sentences and comments carrying perl's tokens (arrayref, hashref, `$x->data_get`, the root step comments), not prose the provider wrote.",
+  "other_languages_unchanged": "- `diff -r -x perl -x README.md P/ports/perl/out/new P/base32/out/new` printed nothing: no other language's file and no other language's directory changed.\n- Root README.md: a python check that blanks every ```perl fenced block and diffs the rest against P/base32/out/new found 0 changed lines outside perl blocks, over all 21 variations. Raw diff lines per variation are 0 to 16, all inside perl blocks.",
+  "purity": "`node tools/purity.js` via portcheck: 0 open, 1 accepted.\n\nAccepted: Naming, 'naming function no non-README component calls: exampleVarName'. Reason in purity-allow/perl.json: it adapts the shared example names to Perl identifiers and suffixes `client`; the perl code generator names no example variables.\n\nNotes declared 1, regions found 1.\n\nNot flagged by the tool, so I declare it myself: Syntax_perl.ts `const scalar = (name) => '$' + name` adds Perl's scalar sigil to description names (Ref.name, sym.var, and the 'options'/'fetchargs' container word). It is used by name(), ref.key, ref.instance and ref.read. I count it as syntax (how Perl writes a variable), not a naming rule. A reviewer may read it as concatenation on a description name.\n\nThe attempt printer (Syntax_perl.ts, attempt) shapes its output on the statement: a body opening with a bound call becomes OLD's `my $x = eval { call }; if (my $err = $@) {...} else {...}`. That is a pure function of the statement; it reads no model and tests no operation name.",
+  "unverified": "- No tool compiled the 153 changed perl blocks of the 21 review variations; only the lane's three models ran.\n- The ctor[0] citation shows `use lib '<sdk>/lib'`, not `use lib 'lib'` (passes on word tokens).\n- The 7 pinned-prose citations rest on my reading: client[0].copy, client[1].kind, entity[0].copy, prepare.fails, body.values, body.once, and the stream note.\n- The catalogue ids used in hand reasons (S13, S25, S49, S50, U34, U45, ref-6) are taken from the reference languages' hand records for the same classes; I did not re-read the catalogue entries.",
+  "hypotheses": [
+   {
+    "id": "H1",
+    "verdict": "holds for perl",
+    "evidence": "Ran:\n- purity: 0 open; Syntax_perl.ts has no model read, no operation literal outside the fact tables, and no condition on what the description shows.\n- sharewords: notes 846 of 54375 words (1.6%); provider literals 978 (1.8%).\nRead:\n- Interface changes: 0 breaking; 1 additive gap (imports place), not made.\n- The 'perl alone' share (tutorial 24.9%, rootquick 92%) is shared sentences carrying perl fact tokens, not provider prose.\n- One printer choice (the sigil concatenation) is declared openly in purity."
+   },
+   {
+    "id": "H2",
+    "verdict": "holds for perl",
+    "evidence": "git diff --numstat v32-frozen..HEAD: the 735 lines of the three components became 213 for provider and hook (3.45x), 234 with the forms additions (3.14x). Shared code is not counted here."
+   },
+   {
+    "id": "H3",
+    "verdict": "holds for what perl shows (read, not audited against the catalogue)",
+    "evidence": "Every catalogued correction in perl's classes came from shared code with no perl-specific edit: S49 server variables, S50 Basic secret, S25 inactive remove, S13 test client and log default, U34 class collision, U45 step heading, ref-6 action Call cell, the md-cell escape. One perl-specific loss is not a catalogued issue: the import lib line (interface gap)."
+   },
+   {
+    "id": "H4",
+    "verdict": "holds on the lane; 153 changed review-variation blocks not compiled",
+    "evidence": "Ran tools/before/run.sh (perl -Ilib t/readme_examples.t), OLD on a copy of oldclone and NEW on my clone.\nFor all three models, NEW = OLD: exit 0 on every run, 7/7 tests.\n- default: README 18 blocks (17 executed, 1 illustration), REFERENCE 21/21, root 3/3\n- crud and basic-server: README 16 (15 executed), REFERENCE 14/14, root 3/3\nMinimum of 3 runs, OLD vs NEW: default 4.50s vs 4.35s, crud 3.45s vs 3.53s, basic-server 3.62s vs 3.59s."
+   }
+  ],
+  "surprises": [
+   "The make sentence's 'printed less often than c' warning in SCRATCH mode came from the ledger splitting pairs by which OLD entity each NEW sentence met. A grep counts 94 make sentences in all, 7 in B, as c prints.",
+   "ref-issues block pairing shifted after the S25 removal and reported `my $utility = $client->Utility;` as OLD-only, although NEW prints it at REFERENCE.md:452.",
+   "OLD perl printed `->{id}` for ambient, which has no id field. The shared show fields correct this without a perl rule.",
+   "OLD perl's accessor sentence ('Pass `undef` for no initial data') was false: the argument is passed on as the entity options.",
+   "Without a `use lib` line in imports, no tutorial client block stays byte-identical to OLD (3 were before). That is the visible cost of the gap.",
+   "The clock: `date` read 02:01:03 UTC at the start and 02:31:46 at the end, yet the suite alone measured 8m01s and the two lanes 38s each. I cannot vouch for per-step times."
+  ],
+  "time": "Not measured per step. `date` read 02:01:03 UTC at the start (before reading) and 02:31:46 UTC after the last check.\n\nMeasured with `time` or by the tools:\n- the suite: 8m01s\n- each README lane run (3 models x 3 runs): about 38s\n- each REGEN=1 portcheck: about 17s\n- each incremental `npm run build`: 3 to 4s\n\nOrder of work: reading (briefs, guide, runtime table, runtime fragments), table check, provider/hook/forms, build and guard, three provider revisions (imports, attempt shape, note wording), classification, lane, commits, suite, measures. PROGRESS.md at P/ports/perl/PROGRESS.md records each step; its clock-like labels were estimates and are removed.",
+  "workspace": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/perl:\n- sdkgen/ (clone, HEAD 70f0be92 on v32-frozen 3d58cb46)\n- tools/ (HEAD 8fc4f46)\n- out/new\n- PROGRESS.md\n- my/hand.py\n- oldcopy/ (copy of the pristine old clone, for the OLD lane)\n- before-old-work/ and before-new-work/ (lane SDKs and logs)\n- logs: before-old-perl.log, before-new-perl.log, suite.log, pc-final.log, pc-final-plain.log, pc-scratch-final.log"
+ },
+ "lua:port": {
+  "lang": "lua",
+  "ok": true,
+  "summary": "I ported lua by the guide v3.2 in P/ports/lua. The provider is Syntax_lua.ts (164 lines) and the hook is Naming_lua.ts (26 lines). I completed and corrected the forms file and deleted the three old components (749 lines). I extracted one function, luaSdkModule, into utility_lua.ts and Main_lua now calls it. I changed no shared source file. In shared tests I changed only lua's three lines in lua-table-keys.test.ts.\n\nChecks I ran:\n- Each build (npm run build) exited 0.\n- Guard and reader for lua: 5 of 5 pass.\n- Golden: only lua's lines changed.\n- Suite without the toolchain lanes, at concurrency 2: 2601 tests, 2596 pass, 0 fail, 5 skipped, exit 0.\n- Final `REGEN=1 tools/portcheck.sh sdkgen out lua`: PASS, exit 0.\n- `SCRATCH=1 REGEN=1` run: exit 1, with ledger OPEN 23/3/71, blocks OPEN 26/27/24 and errVar UNATTESTED. That is the expected from-scratch state.\n- `diff -r` against base32/out/new: only the ```lua blocks of the 21 root READMEs differ. A script that blanks every lua block found 0 differences outside them.\n\nNo lua toolchain is here: lua, lua5.4, lua5.3, luajit, busted and luarocks are all absent per `command -v`. Every changed example is therefore unverified (45 tutorial, 19 root, 162 reference).\n\nH1: holds for lua.\n- The provider reads no model: purity has 0 open findings and 3 accepted, each with a reason.\n- 0 breaking interface changes, 0 shared files touched.\n- Prose lua supplies at the source: tutorial 0.4%, root 2.5%, reference 4.4% (notes are 4.0% of reference words).\n- sharewords also reports 26.6% and 37% \"only this lang\" for the tutorial and root. That comes from go printing the same sentences after bold step leads in its one-program tutorial, not from lua prose.\n- I found one shared-sentence gap (accessor caching), listed in interface_gaps.\n\nH2: holds for lua. 749 lines became 190 (3.9x). Without blanks and comments, 529 became 142 (3.7x). Counting the 33 net lines added to the forms file, 3.4x.\n\nH3: holds for lua. The catalogued fixes S49, S50, S09, S13, S25, U34, U45 and G27 reached lua's pages through shared code, with no lua-specific edit.\n\nH4: not testable for lua here, since there is no toolchain.",
+  "commits": [
+   "sdkgen d1fe7418 'lua-table-keys: the lua provider replaces the three retired README components as a luaKey caller' (ts/test/lua-table-keys.test.ts, lua lines only)",
+   "sdkgen 664994ef 'lua: tutorial, root quick start and reference page from the shared code, through a naming hook and a syntax provider' (Syntax_lua.ts, Naming_lua.ts new; ReadmeQuick_lua.ts, ReadmeTopQuick_lua.ts, ReadmeRef_lua.ts deleted; utility_lua.ts +luaSdkModule; Main_lua.ts calls it; ts/test/runtimeforms/lua.ts)",
+   "sdkgen fa2ffcac 'Golden follows the lua port' (ts/test/golden/add-output.txt, lua lines only)",
+   "build: npm run build after the last source change exited 0 and `git status --short` was empty, so there was no dist commit",
+   "tools 59dfdba 'lua: hand classification, accepted purity findings, normalizer counts' (hand/lua.json, purity-allow/lua.json, counts/lua.json)",
+   "tools bce2d23 'lua: generated classes' (classes/lua.json); `git -C tools status` is empty"
+  ],
+  "portcheck": "== portcheck lua ==\nsection    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions\ntutorial                   61 |      44     21        0      17       6     0       0 | 0\nrootquick                  19 |       3      0        0       3       0     0       0 | 0\nreference               15091 |     129     58        0      52      18     0       0 | 1\nsection    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH\ntutorial                   3        15       0        30 |      26    0      0 | NO; 45 changed blocks compiled by nothing\nrootquick                  0         2       0        17 |      27    0      0 | NO; 19 changed blocks compiled by nothing\nreference                151         0       0       162 |      24    0      0 | NO; 162 changed blocks compiled by nothing\ncontradictions (1; counted, not failed):\n  reference [91baf1b4b6] This SDK is generated without the `test` feature, so it has no mock tr | other: lua/README.md:205 (no-test) | true: REFERENCE\npurity: 0 open, 3 accepted | notes declared 2, note regions found 1\nguard: pass (pass 4 fail 0 )\nfacts (language and convention, against the OLD page): attested 4, recorded by hand 1, UNATTESTED 0, not printed 1, not judged 1; cited 17, pinned prose 11\nshared sentences: matched 79, of which against a sentence nobody reviewed 79; printed less often than its reference 0; absent here but printed by every reference of this result style 35 (35 explained)\nfact sheet: factsheet lua: 67 facts, 0 with no account, 0 unattested\nPORTCHECK lua: PASS\nexit=0 (command: cd P/ports/lua && REGEN=1 tools/portcheck.sh sdkgen out lua; log P/ports/lua/portcheck-final.log)",
+  "scratch": "SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out lua, exit 1 (log P/ports/lua/portcheck-scratch.log).\n- Ledger OPEN: tutorial 23, rootquick 3, reference 71. Shared matched: 21/0/58. Units same: 61/19/15091.\n- Blocks OPEN: 26/27/24.\n- Purity: 0 open.\n- Guard: pass.\n- Facts: errVar UNATTESTED (held 0, contradicted 3, new 9 contexts).\n- Absent list: 35 entries, 0 explained.\nThis matches the first run after the port, before any hand record.",
+  "interface_gaps": [
+   {
+    "construct": "When called with nil, an entity accessor returns the one instance the client keeps for that entity, made on the first call; only a non-nil argument makes a new instance. Source: MainEntity_lua.ts:20-26 (`if data == nil then if self._<field> == nil then ... end return self._<field> end`). php does the same (MainEntity_php.ts:43-46). The shared accessorText (ReadmeRef.ts:272-280) says 'Create a new `PlanetEntity` instance ... pass `nil` for none', which is false for these two runtimes. OLD lua said the same false thing.",
+    "file_line": "ts/project/.sdk/src/cmp/lua/MainEntity_lua.ts:20; ts/src/cmp/ReadmeRef.ts:272",
+    "smallest_change": "An optional `RefFacts.accessor.cached?: boolean`, cited to the accessor, plus one sentence in accessorText written once: 'Called with `<none>`, it returns the instance the client keeps for this entity; with options, a new one.'",
+    "breaking": false,
+    "providers_forced": "lua, php (both have the cache); no other provider, since the member is optional",
+    "made": false,
+    "worked_around": "No. Two runtimes share the fact, so a lua note would be the wrong form. I left the page saying what OLD said and recorded it here."
+   },
+   {
+    "construct": "Purity's PRINTING list (tools/purity.js:21) has jsKey and jsQuote but not their lua equivalents luaKey and luaString. Lua needs both: luaKey carries the shared reserved-word list, and ts/test/lua-table-keys.test.ts requires lua components to import it. JSON.stringify cannot stand in for luaString because its \\uXXXX escapes are not Lua syntax.",
+    "file_line": "tools/purity.js:21",
+    "smallest_change": "Add luaKey and luaString to PRINTING.",
+    "breaking": false,
+    "providers_forced": "none (later: any lua-like provider)",
+    "made": false,
+    "worked_around": "Accepted in purity-allow/lua.json, with reasons."
+   }
+  ],
+  "shared_files_touched": [
+   "ts/test/lua-table-keys.test.ts: the lua line list only (the guide's section 4 names it)",
+   "ts/test/golden/add-output.txt: lua lines only, regenerated"
+  ],
+  "table_rows_wrong": [
+   {
+    "row": "operations: returns 'EntyClass, string? (from a comment)' and fails 'second value string?'",
+    "file_line": "src/cmp/lua/fragment/EntityLoadOp.fragment.lua:10-11 (`---@return string? err`) vs tm/lua/utility/make_error.lua:57-86 (returns the sdk_err table)",
+    "runtime_shows": "The second value is the sdk_err table, not a string. The comment names it err.",
+    "forms_change": "In ts/test/runtimeforms/lua.ts, docReturns now reads a later `---@return` line by the name it gives the value. Returns are now 'EntyClass, err' (list 'EntyClass[], err'); fails is 'second value err'; style.pair matches /^\\S+, err$/. failure.shows changed from 'second value' to 'err', because the guard requires the shows token inside the signature string and no signature can contain 'second value'."
+   },
+   {
+    "row": "client member direct: returns and fails are empty",
+    "file_line": "src/cmp/lua/fragment/Main.fragment.lua:267,300,315,323,368,374",
+    "runtime_shows": "Every return path gives two values, and the second is always nil. Failures are only in the result table. The reader cannot see this because direct has no ---@return comment.",
+    "forms_change": "None to the reader. I cited ref.facts.direct.returns 'table' and the note notes.member:direct."
+   },
+   {
+    "row": "client member prepare: returns and fails are empty",
+    "file_line": "src/cmp/lua/fragment/Main.fragment.lua:201,255,258; tm/lua/utility/make_fetch_def.lua:8,21,36",
+    "runtime_shows": "prepare returns (fetchdef, nil), or nil plus an error, so it reports failure as a second value, like an operation.",
+    "forms_change": "Cited ref.facts.prepare.returns 'table, err' and prepare.fails 'style'."
+   },
+   {
+    "row": "Stream line: missing how a failure shows",
+    "file_line": "src/cmp/lua/fragment/Entity.fragment.lua:238 `error(item, 0)`, :254 `error(err, 0)`",
+    "runtime_shows": "Unlike the operations' value-and-error pair, the function the stream returns raises a failure with error() as the caller iterates.",
+    "forms_change": "Cited note notes.member:streamFunction."
+   },
+   {
+    "row": "Entity accessor `${entity.Name}(data)`: missing that a nil argument returns a cached instance",
+    "file_line": "src/cmp/lua/MainEntity_lua.ts:20-26",
+    "runtime_shows": "Called with nil, the accessor returns the instance kept on the client, not a new one.",
+    "forms_change": "None. Recorded as an interface gap (php shares it)."
+   }
+  ],
+  "facts": [
+   {
+    "path": "facts.method.{list..remove}",
+    "value": "list load create update patch remove",
+    "account": "derived",
+    "evidence": "the guard (opMethod over the Entity*Op fragments)"
+   },
+   {
+    "path": "facts.named",
+    "value": "bare",
+    "account": "convention; not printed (it selects sentences)",
+    "evidence": "OLD says '`load` returns the entity'"
+   },
+   {
+    "path": "facts.async / facts.result",
+    "value": "false / pair",
+    "account": "derived",
+    "evidence": "style.pair applied to load's returns 'EntyClass, err'"
+   },
+   {
+    "path": "facts.collection",
+    "value": "array",
+    "account": "cited, pinned prose",
+    "evidence": "tm/lua/utility/make_result.lua: 'local entities = {} ... table.insert(entities, ent) ... result.resdata = entities'; OLD wording 'an array of entities'"
+   },
+   {
+    "path": "facts.record",
+    "value": "data_get()",
+    "account": "derived",
+    "evidence": "the guard: entity member data_get, which the record printer calls"
+   },
+   {
+    "path": "facts.errVar",
+    "value": "err",
+    "account": "convention, decided by hand (hand/lua.json facts)",
+    "evidence": "OLD lua code binds `local x, err` and OLD prose says '(value, err)'; the new contexts are the pair sentences"
+   },
+   {
+    "path": "facts.pairForm",
+    "value": "value, err",
+    "account": "cited, pinned prose",
+    "evidence": "EntityLoadOp.fragment.lua: '---@return EntyClass\\n---@return string? err'. This follows the guide's row; OLD wrote '(value, err)', but in Lua parentheses around a call keep only the first value"
+   },
+   {
+    "path": "facts.noError",
+    "value": "nil",
+    "account": "cited",
+    "evidence": "Entity.fragment.lua:437 'return self, nil'"
+   },
+   {
+    "path": "facts.prints",
+    "value": "fields",
+    "account": "convention; 'not judged' by the tools; decided by hand",
+    "evidence": "OLD lua's tutorial printed chosen fields (rec[\"id\"]) for list and load, and a key-value loop where it had no column. Printing a whole record in Lua needs a JSON encoder, which a standalone REFERENCE block cannot require, so 'fields' needs no import anywhere. The cost: the root quick start drops OLD's json.encode of the whole record"
+   },
+   {
+    "path": "ref.facts.entityBy / noun / keys",
+    "value": "class / Methods / member",
+    "account": "convention, ATTESTED against OLD",
+    "evidence": "OLD headings '## PlanetEntity', 'Instance Methods', `options.apikey`"
+   },
+   {
+    "path": "ref.facts.maps",
+    "value": "tables",
+    "account": "language",
+    "evidence": "OLD 'tables are JSON-serialized'"
+   },
+   {
+    "path": "ref.facts.none",
+    "value": "nil",
+    "account": "cited",
+    "evidence": "MainEntity_lua.ts 'if data == nil then'"
+   },
+   {
+    "path": "ref.facts.container",
+    "value": "table",
+    "account": "cited",
+    "evidence": "Main.fragment.lua options_map 'local out = vs.clone(self.options)\\n  if type(out) == \"table\" then'"
+   },
+   {
+    "path": "ref.facts.valueType.{STRING,OBJECT,ANY}",
+    "value": "string, table, any",
+    "account": "derived",
+    "evidence": "canonToType column lua"
+   },
+   {
+    "path": "ref.facts.ctor[0]",
+    "value": "local sdk = require(\"{module}\")",
+    "account": "cited, with an unquoted excuse for `sdk`",
+    "evidence": "Main.fragment.lua 'local config = require(\"config_shared\")()'. Excuse: no runtime file requires the SDK module itself; only the generated tests bind it to sdk (tm/lua/test/extend_test.lua:14), and test files are not runtime files"
+   },
+   {
+    "path": "ref.facts.ctor[1]",
+    "value": "local client = {ctor}(options)",
+    "account": "derived",
+    "evidence": "callOf: new(options) on the type"
+   },
+   {
+    "path": "ref.facts.test[0].{sig,call,args}",
+    "value": "sdk.test(testopts?, sdkopts?) / local client = sdk.test() / true",
+    "account": "derived",
+    "evidence": "Main.fragment.lua:432 'function ProjectNameSDK.test(' on the type"
+   },
+   {
+    "path": "ref.facts.accessor.{sig,arg,param}",
+    "value": "{accessor}(data) / entopts / data",
+    "account": "derived",
+    "evidence": "the accessor in MainEntity_lua.ts; the entity constructor new(client, entopts)"
+   },
+   {
+    "path": "ref.facts.op.*",
+    "value": "list(reqmatch, ctrl) -> {Class}[], err; load/remove(reqmatch, ctrl) -> {Class}, err; create/update/patch(reqdata, ctrl) -> {Class}, err",
+    "account": "derived",
+    "evidence": "the guard against the fragments and their corrected comment returns"
+   },
+   {
+    "path": "ref.facts.client[*].sig/kind",
+    "value": "options_map() -> table; get_utility() -> Utility; direct(fetchargs) -> table; prepare(fetchargs) -> table, err",
+    "account": "derived; client[1].kind 'utility' is cited",
+    "evidence": "Main.fragment.lua 'return Utility.copy(self._utility)'"
+   },
+   {
+    "path": "ref.facts.client[0].copy",
+    "value": "true",
+    "account": "cited, pinned",
+    "evidence": "Main.fragment.lua:160 'local out = vs.clone(self.options)'"
+   },
+   {
+    "path": "ref.facts.entity[*]",
+    "value": "data_get() -> table (copy); data_set(data); match_get() -> table (copy); match_set(match); make() -> {Class}; stream(action, args, callopts) -> function (streamFunction, runs iterate); get_name() -> string",
+    "account": "sig, kind and runs derived; copy cited (Entity.fragment.lua:102 'return vs.clone(self._data)', :116 'return vs.clone(self._match)')",
+    "evidence": "renames {args: [data, match]}"
+   },
+   {
+    "path": "ref.facts.direct.returns",
+    "value": "table",
+    "account": "cited, with an unquoted excuse for `table`",
+    "evidence": "Main.fragment.lua:359-360 'local out = {\\n      ok = ...' ... 'return out, nil'"
+   },
+   {
+    "path": "ref.facts.direct.okFalse",
+    "value": "false",
+    "account": "cited ahead",
+    "evidence": "Main.fragment.lua:300 'return { ok = false, err = err }, nil'"
+   },
+   {
+    "path": "ref.facts.prepare.returns / fails",
+    "value": "table, err / style",
+    "account": "cited, pinned prose",
+    "evidence": "Main.fragment.lua:253-258; make_fetch_def.lua:36"
+   },
+   {
+    "path": "ref.facts.body.values",
+    "value": "a string",
+    "account": "cited, pinned prose",
+    "evidence": "tm/lua/utility/fetcher.lua:243 'if type(body_str) ~= \"string\" then\\n    body_str = nil'"
+   },
+   {
+    "path": "ref.facts.cancel",
+    "value": "false",
+    "account": "cited absence",
+    "evidence": "the cancel|abort|signal pattern finds nothing in tm/lua/utility/fetcher.lua"
+   },
+   {
+    "path": "guard account line",
+    "value": "lua: derived 47, cited 17, language 1, convention 6, excepted 0; types column lua; uncompared returns 9 (with reason)",
+    "account": "SDKGEN_GUARD_REPORT=1",
+    "evidence": "pinned-prose citations: collection, pairForm, client[0].copy, client[1].kind, entity[0].copy, entity[2].copy, prepare.returns, prepare.fails, body.values, and the two notes. Unquoted excuses: `table` for direct.returns, `sdk` for ctor[0]"
+   }
+  ],
+  "notes": [
+   {
+    "slot": "member:direct",
+    "text": "It also returns a second value, which is always `nil`: a failure is reported in the result, never in the second value.",
+    "claims": "1) direct returns a second value. 2) It is always nil (Main.fragment.lua:267, 300, 315, 323, 368, 374: every return ends `, nil`). 3) Every failure is in the result table (:284, :300, :315, :320-323, :360, :372-374). Cited and pinned; the quote holds `nil`."
+   },
+   {
+    "slot": "member:streamFunction",
+    "text": "Unlike an operation, it reports a failure by raising it with `error` from the returned function, as the caller iterates.",
+    "claims": "1) The function the stream returns raises failures with error() (Entity.fragment.lua:238 `error(item, 0)`, :254 `error(err, 0)`). 2) Raising happens inside that function (:229 `return function()`), that is, as the caller iterates. 3) Operations return the value and error instead (make_error.lua:86). Cited and pinned; the quote holds `error`."
+   }
+  ],
+  "review_counts": [
+   {
+    "section": "tutorial",
+    "same": "61",
+    "shared_matched": "21",
+    "matched_unreviewed": "21 (79 across the three sections, all against sentences nobody reviewed)",
+    "by_hand": "17",
+    "missing": "6: OLD load sentence and 'Entity operations return `(value, err)`' restored as the shared pair sentences; the comments Create, Update and Patch restored as the shared write comments; ref-issues heading '4. Create, update, and remove' is correction U45",
+    "contradictions": "0",
+    "blocks": "identical 3, corrected 15, unified 0, otherwise 30 (45 changed, compiled by nothing)"
+   },
+   {
+    "section": "rootquick",
+    "same": "19",
+    "shared_matched": "0",
+    "matched_unreviewed": "0",
+    "by_hand": "3",
+    "missing": "0",
+    "contradictions": "0",
+    "blocks": "identical 0, corrected 2, unified 0, otherwise 17 (19 changed, compiled by nothing)"
+   },
+   {
+    "section": "reference",
+    "same": "15091",
+    "shared_matched": "58",
+    "matched_unreviewed": "58",
+    "by_hand": "52",
+    "missing": "18: Static Methods and 'Both arguments are optional' restored in the Test client section; '**Returns:** `table, err`' restored as the shared direct and prepare return sentences; the five 'or `nil` and an error' clauses restored in the shared pair form; the two OLD feature sentences are correction S09; ref-issues units are G27, U34 and S25; '`make() -> Entity`' corrected to the entity class; the no-test sentence is S13",
+    "contradictions": "1: no-test. lua/README.md:205 says the test client has a mock transport; the REFERENCE is right (S13)",
+    "blocks": "identical 151, corrected 0, unified 0, otherwise 162, OLD-only 1 (ref-issues remove, S25); 162 changed, compiled by nothing"
+   }
+  ],
+  "hand_decisions": [
+   {
+    "id": "prints",
+    "kind": "fact",
+    "outcome": "fields",
+    "why": "See facts.prints. The root quick start therefore prints chosen fields instead of OLD's json.encode of the whole record (unification:show-fields, 10 rootquick block classes)."
+   },
+   {
+    "id": "errVar",
+    "kind": "fact",
+    "outcome": "err, recorded",
+    "why": "OLD lua binds and checks err; the new contexts are the pair sentences."
+   },
+   {
+    "id": "ctor 'sdk.new'",
+    "kind": "naming",
+    "outcome": "layout.ctor = 'sdk.new'",
+    "why": "The generated tests bind the module to sdk, and the lua README test rewrites only `sdk.new`/`sdk.test` to its seeded client. A `DemoSDK.new` call would fail it with a nil index."
+   },
+   {
+    "id": "pairForm",
+    "kind": "fact",
+    "outcome": "value, err (no parentheses)",
+    "why": "The guide's row. In Lua, `(f())` keeps only the first value."
+   },
+   {
+    "id": "direct sig",
+    "kind": "fact",
+    "outcome": "direct(fetchargs) -> table, plus a note",
+    "why": "OLD said `-> table, err`, but the second value is always nil."
+   },
+   {
+    "id": "stream",
+    "kind": "fact",
+    "outcome": "declared as streamFunction, runs iterate",
+    "why": "OLD did not document stream. The guard reports a runtime member that is neither declared nor listed as undocumented, and the coroutine runs on the first pull (Entity.fragment.lua:179, 233)."
+   },
+   {
+    "id": "174 classes",
+    "kind": "classification",
+    "outcome": "hand/lua.json, written by P/ports/lua/my/mkhand.py",
+    "why": "About 60 reuse the same-id decision of another language (rb/go/zig/ts) after checking it holds for lua; the rest are lua-specific (checked-examples, show-fields, op-failure-clause, ref-create-runnable, runtime-forms, the two notes)."
+   }
+  ],
+  "absent": [
+   {
+    "sentence": "16 go tutorial units with bold step leads ('**Create a client.** ...', '**Load an ambient.** `Load()` returns ...') and 4 'The program after these N steps runs them in order.'",
+    "reason": "go's tutorial is one program. lua has no program printer: its README test loads each block on its own, so it prints the same shared sentences under ### headings."
+   },
+   {
+    "sentence": "tutorial go step comments 57eaa23251, a0f86c7f47",
+    "reason": "lua's tutorial blocks carry no step comments; lua's root quick start prints the same comments."
+   },
+   {
+    "sentence": "1dc13211d0 (tutorial and rootquick), 6c802d4607",
+    "reason": "lua prints the same unit with 'an array of entities'. The mask replaces lua's collection word, and the article follows it."
+   },
+   {
+    "sentence": "91f89cb62e, 0bff6392b7 (test client 'and no options')",
+    "reason": "go has a no-argument Test(); lua has only sdk.test(testopts, sdkopts) (Main.fragment.lua:432)."
+   },
+   {
+    "sentence": "d17ddb7202 (direct Returns)",
+    "reason": "lua prints the same sentence with `table`; go's pair return masks differently."
+   },
+   {
+    "sentence": "10b1ab0918, 1bd6ec9f3b, cb12faf375, d3b38f1ebb, c3946be2bf",
+    "reason": "go's single data/match getter-setter. lua has data_get/data_set and match_get/match_set (Entity.fragment.lua:92-117), with their own sentences."
+   },
+   {
+    "sentence": "9f4a983dc3, 9f4208cfb6, 2bd8ff9d43, 80f242d653, 711892fffd",
+    "reason": "go's channel stream (background) and its note. lua's is streamFunction, runs iterate, with lua's own note."
+   },
+   {
+    "sentence": "5098861599 'The array form of `feature` is significant...'",
+    "reason": "lua prints it word for word (B/lua/REFERENCE.md:737). The word 'array' is lua's collection fact, so the mask relabels it in lua's unit: a mask artifact."
+   }
+  ],
+  "purity": "0 open, 3 accepted:\n- luaKey import: lua's jsKey; it carries the shared reserved list, and lua-table-keys.test requires the import.\n- luaString import: lua's jsQuote; JSON escapes are not Lua.\n- exampleVarName in the hook: no generator equivalent; ReadmeEntity_lua uses it.\nNotes: 2 declared, each one plain literal; lint 0; notesMissed []. The tool prints 'note regions found 1' for 2 declared notes; I did not find out why.\nThe hook calls luaSdkModule (Main_lua also calls it), nom (TestEntity_lua also calls it) and exampleVarName.",
+  "lines": "From `git diff --numstat v32-frozen..HEAD` in the clone.\n\nDeleted:\n- ReadmeQuick_lua.ts: 0/232\n- ReadmeRef_lua.ts: 0/419\n- ReadmeTopQuick_lua.ts: 0/98\n- Total 749. Without blanks and comments: 175 + 285 + 69 = 529.\n\nAdded or changed:\n- Syntax_lua.ts: +164 (126 without blanks and comments)\n- Naming_lua.ts: +26 (16 without blanks and comments)\n- runtimeforms/lua.ts: +41/-8 (now 115 lines by `wc -l`)\n- utility_lua.ts: +7\n- Main_lua.ts: +2/-1\n- lua-table-keys.test.ts: +1/-3\n- golden: +4/-5\n\nRatios: provider plus hook 190 against 749, 3.9x. Without blanks and comments, 142 against 529, 3.7x. Counting the forms delta, 3.4x.",
+  "prose": "Command: `node tools/sharewords.js --clone sdkgen --root out/new --lang lua`.\n\nShare of prose words, by where the unit comes from:\n\n| Section | Words | Shared sentence | Printed by lua alone | Notes | Provider literals |\n| --- | --- | --- | --- | --- | --- |\n| tutorial | 1697 | 73.4% | 26.6% | 0 | 0.4% (collection) |\n| rootquick | 284 | 63.0% | 37.0% | 0 | 2.5% |\n| reference | 54382 | 89.2% | 6.7% | 4.0% | 4.4% (ref.noun 113, collection 102, maps 19) |\n| all | 56363 | | 7.5% | 3.9% | 4.3% |\n\nAt the source: 40 words of notes, 39 words of fact-table prose and 5 of other prose literals.\n\nThe tutorial and rootquick 'printed by lua alone' figures are units go, the only other pair-style language, prints in another form (bold leads, one program). They are not lua prose; the 0.4% and 2.5% source figures are the measure of what lua supplies.",
+  "other_languages_unchanged": "`diff -rq P/ports/lua/out/new P/base32/out/new -x lua`: only the root README.md of the 21 variations differs. A script that replaces every ```lua fenced block with a placeholder found 0 of 21 root READMEs different outside lua blocks. No other language's directory changed.",
+  "old_vs_new": "What the OLD page said that NEW does not:\n- `direct -> table, err`. Now `table`, plus a note that the second value is always nil.\n- `any, err` returns. Now the entity class.\n- Static Methods and 'Both arguments are optional'. Now the Test client section.\n- OLD's false 'Pass `nil` for no initial data'. The argument is the entity options; the NEW sentence still misses the nil cache, see interface_gaps.\n- `make() -> Entity`. Now the class.\n- The root quick start's json.encode of the whole record and its dkjson import. Now chosen fields.\n- 'iterate it directly'. The loop shows it.\n- The `--[[ string ]]` create placeholders. Now runnable typed literals.\n\nWhat NEW says that OLD did not:\n- The server variables (S49) and the secret (S50).\n- How each write fails, and every write is now checked.\n- The stream member, its runs sentence and its failure note.\n- The Actions table (ref-6).\n- The direct result sentence.\n- log on by default (S09).\n- 'There is no `{ok, data}` wrapper'.\n- prepare's err sentence.\n\nTool counts, final run: ledger missing 6/0/18 and by hand 17/3/52. Blocks otherwise 30/17/162, all 77 classes decided.",
+  "doubtful_lines": [
+   {
+    "line": "local _, err = client:Planet():update({...}) repeated three times in one tutorial block",
+    "where": "tutorial write step, every variation with writes",
+    "doubt": "Redeclaring `local _, err` in the same chunk is legal Lua (shadowing), but no compiler checked it here."
+   },
+   {
+    "line": "if err then error(err) end, where err is the sdk_err table",
+    "where": "every pair call",
+    "doubt": "The README test tolerates a raised error whose tostring has no 'nil value'. ProjectNameError (tm/lua/core/error.lua:5-6) has no __tostring, so it prints 'table: 0x..'. I believe this is tolerated, as OLD's identical line was, but I did not run it."
+   },
+   {
+    "line": "  id = \"example_id\", -- string",
+    "where": "REFERENCE create examples",
+    "doubt": "A line comment after a table field comma is valid Lua. The block is new: OLD's was an unparsed illustration, so it now runs under the README test where before it did not."
+   },
+   {
+    "line": "local rec = planet:data_get() at top level after the same name inside the for loop",
+    "where": "root quick start, list then load",
+    "doubt": "Scoping is legal. Not run."
+   }
+  ],
+  "guide_problems": [
+   {
+    "section": "2, Signatures (failure) and the lua forms",
+    "problem": "The table states lua's failure shows as 'second value'. The guard (guard.ts sig) requires that token literally inside the declared signature string, so no lua signature can pass. I changed failure.shows to 'err' and made the reader name the second return by its comment name. The guide does not say the shows token must be spellable in a signature."
+   },
+   {
+    "section": "9, lua row",
+    "problem": "'say \"table\" where the page states it': no shared sentence states the type of an operation's error value, so there was nowhere to say it. I said nothing."
+   },
+   {
+    "section": "6, ctor[0]",
+    "problem": "ref.facts.ctor lines without {ctor} default to 'derived', but the guard verifies only {ctor} lines. An import line has to be cited, and lua has no non-test runtime file that requires the SDK module (test files are excluded by NOT_RUNTIME). An unquoted excuse was the only way. The guide is silent on this."
+   },
+   {
+    "section": "5 / tools",
+    "problem": "*.open.json is regenerated on every run. A script that builds hand/<lang>.json from it empties the classification on the next run, which happened to me once. The guide should say hand/<lang>.json is the only state."
+   },
+   {
+    "section": "5, blocks",
+    "problem": "The blocks line prints '(unported)' because tools/ported.json does not list lua, and section 4 does not let a porter edit ported.json."
+   },
+   {
+    "section": "8",
+    "problem": "'notes declared 2, note regions found 1' is printed with notesMissed [] and no explanation."
+   },
+   {
+    "section": "5 / mask",
+    "problem": "A collection word that is an ordinary English word ('array') is masked inside unrelated shared sentences, such as ReadmeRefFeatures' 'The array form of `feature`'. Those sentences then land in the absent list."
+   },
+   {
+    "section": "shared sentence (not a guide fault)",
+    "problem": "The direct return sentence says 'on a failure `ok` is false and `err` holds the error'. For a non-2xx response lua sets ok=false and leaves err nil (Main.fragment.lua:359-367). The page reads as if err is set."
+   }
+  ],
+  "surprises": [
+   "lua and php are the only runtimes whose accessor returns a cached instance when called with nil, so 'Create a new X instance ... pass `nil` for none' is false for them. That is an interface gap, not a note.",
+   "The unported lua README (ReadmeModel_lua) still lists direct as `(fetchargs) -> table, err` while the REFERENCE now says the second value is always nil. The two documents of one SDK differ on this.",
+   "The guard's literal shows-in-signature check had never been exercised with lua's 'second value'.",
+   "The machine's `date -u` advanced only about 30 minutes over the whole port, while the suite alone reported duration_ms 469475 (about 7.8 minutes)."
+  ],
+  "time": "Wall-clock times from `date -u` in PROGRESS.md:\n\n| Time | Step |\n| --- | --- |\n| 02:01 | workspace |\n| 02:01\u201302:05 | reading |\n| 02:05\u201302:08 | table check and forms |\n| 02:08\u201302:11 | provider, hook, build, guard |\n| 02:11\u201302:18 | review and classification |\n| 02:18\u201302:21 | golden and scratch run |\n| 02:21\u201302:31 | suite and checks |\n\nThe suite itself reported duration_ms 469475 (7.8 minutes).",
+  "unverified": "No lua example ran or compiled: lua, lua5.4, lua5.3, luajit, busted and luarocks are absent per `command -v`. Changed blocks across the 21 variations: tutorial 45 (9 distinct masked classes), rootquick 19 (10 classes), reference 162 (8 classes). I checked them by reading only, against Main.fragment.lua, Entity.fragment.lua, the op fragments and the README test's rewrite rules (ReadmeExamplesTest_lua.ts).",
+  "not_done": [
+   "No lua toolchain run: none is on PATH, so the README examples test (busted) and any lane were not run.",
+   "I did not make the accessor-cache shared change (interface gap 1). The NEW page still says 'Create a new ... instance' for a nil argument.",
+   "STRICT_SENTENCES=1 not run: all 79 shared matches are against sentences nobody has reviewed yet.",
+   "No independent mutation of my facts (the reviewer's step 4) beyond the guard's built-in negative controls, which pass."
+  ],
+  "workspace": "P/ports/lua (P = /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2)\n\n- Clone: P/ports/lua/sdkgen, HEAD fa2ffcac\n- Tools copy: P/ports/lua/tools, HEAD bce2d23\n- Progress log: P/ports/lua/PROGRESS.md\n- Hand writer: P/ports/lua/my/mkhand.py\n- Logs: P/ports/lua/portcheck-final.log, portcheck-scratch.log, suite.log"
+ },
+ "ocaml:port": {
+  "lang": "ocaml",
+  "ok": false,
+  "summary": "I ported OCaml by the guide (v3.2): a naming hook, a syntax provider, the porter's part of the forms file, and deletion of the three old components. No shared file was touched.\n\n**What passes (ran):**\n- `npm run build` exits 0 and `git status` is empty.\n- Guard and reader: 5/5.\n- Generic suites (`generate`, `media`, `vendored`, `runtimefacts`, `runtimereader`): 474/474.\n- Golden: 2/2.\n- The one command with `REGEN=1` (normal mode): PASS, exit 0.\n- **SCRATCH mode exits 1.** With hand records ignored it leaves 28/3/104 ledger classes and 35/32/34 block classes open, so `ok` is false. As far as I can tell scratch mode cannot pass for any language, because it ignores all hand records.\n\n**Interface gaps found (none changed in shared code):**\n1. `memberName` in `ReadmeRef.ts:95-97` adds `()` to member names. The page therefore says \"the request `direct()` would send\", which is not OCaml call syntax.\n2. The forms cannot read the names of operation parameters. The runtime names them only inside a TS template (`EntityOperation_ocaml.ts:62`), so a named signature fails the guard's \"parameter of load renamed\" check. The headings now read `e_load (value) (value) : entity_obj`, and a note carries the old names.\n3. There is no note slot for a single operation, so the remove sentence lost `e_deleted` and \"it keeps the data it held\".\n4. The block-pairing tool (`blocks.js`, `AT` keys) cannot pair the old OCaml headings, which have no parentheses. It falls back to document order, and the new `test_with` block shifts every pair after it. So the tool's reference \"changed\" classes are mispairs.\n   - My own pairing by entity and function (`mine/refpairs.py`, ran) gives: 151 identical; 79 that only lose the `let result_data = result.e_data_get ()` read; 83 list blocks changed in shape; 1 old-only (an inactive remove); 19 new-only (`test_with`).\n\n**Two choices I made:**\n- `okFalse` is declared as `Bool false`, not the `false` the guide and table give. In OCaml the result holds a `value`, and the unported README also says `Bool false`.\n- Statements outside error handling print as top-level definitions. This makes the root quick start and the write steps valid OCaml files. The old root was one `let () = ... in` program, and in two variations it had an empty body.\n\nNo OCaml toolchain is here: `ocaml`, `ocamlc`, `ocamlfind`, `dune` and `opam` are all missing. So all 37 distinct changed blocks are unverified; I read each one by eye.",
+  "commits": [
+   "sdkgen 146c2abc ocaml: tutorial, root quick start and reference from the shared page (Syntax_ocaml.ts, Naming_ocaml.ts new; ReadmeQuick_ocaml.ts, ReadmeTopQuick_ocaml.ts, ReadmeRef_ocaml.ts deleted; utility_ocaml.ts +CLIENT_FILE/ERROR_FILE/ocamlModule/ocamlQualified; Main_ocaml.ts, MainEntity_ocaml.ts, SdkError_ocaml.ts call them; ts/test/runtimeforms/ocaml.ts porter's part)",
+   "sdkgen a21aeb2a ocaml: direct's failed ok is the value Bool false (Syntax_ocaml.ts, runtimeforms/ocaml.ts)",
+   "sdkgen 1e9cf150 Golden follows the ocaml port (ts/test/golden/add-output.txt, ocaml lines only: 6+/7-)",
+   "build: no commit; git status --short after npm run build is empty (ts/dist unchanged)",
+   "tools fa9c146 ocaml: hand records, block counts and classes (hand/ocaml.json, counts/ocaml.json, classes/ocaml.json); git -C tools status empty"
+  ],
+  "portcheck": "REGEN=1 tools/portcheck.sh sdkgen out ocaml  (final, after the last commit) -> exit 0\n== portcheck ocaml ==\nsection    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions\ntutorial                   56 |      50     22        0      20       8     0       0 | 0\nrootquick                  19 |       3      0        0       3       0     0       0 | 0\nreference               13998 |     161     57        0      71      31     0       0 | 2\nsection    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH\ntutorial                  19         0       0        29 |      35    0      0 | NO; 29 changed blocks compiled by nothing\nrootquick                  0         0       0        19 |      32    0      0 | NO; 19 changed blocks compiled by nothing\nreference                151         0       0       163 |      34    0      0 | NO; 181 changed blocks compiled by nothing\ncontradictions (2; counted, not failed): reference [60c6b0b417], [91baf1b4b6] no-test: README.md:202 says mock transport; true: REFERENCE (S13)\npurity: 0 open, 0 accepted | notes declared 3, note regions found 1\nguard: pass (pass 4 fail 0 )\nfacts: attested 9, recorded by hand 2, UNATTESTED 0, not printed 0, not judged 0; cited 15, pinned prose 11\nshared sentences: matched 79, of which against a sentence nobody reviewed 79; printed less often than its reference 0; absent 1 (1 explained)\nfact sheet: 70 facts, 0 with no account, 0 unattested\nPORTCHECK ocaml: PASS",
+  "scratch": "SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out ocaml -> exit 1 (expected: no hand records). Ledger OPEN: tutorial 28, rootquick 3, reference 104 (shared matched 22/0/57; units same 56/19/13998). Blocks OPEN: tutorial 35, rootquick 32, reference 34; identical 19/0/151, otherwise 29/19/163. Purity open 0. Guard pass 4/4. UNATTESTED 2 (ref.maps, ref.valueType.ANY). Shared matched 79 (79 against unreviewed sentences). Absent 1 (2e09bb327d, unexplained in scratch).",
+  "facts": [
+   {
+    "path": "facts.method.*",
+    "value": "e_list e_load e_create e_update e_patch e_remove",
+    "account": "derived",
+    "evidence": "guard opMethod over sdk_types.ml entity_obj (mutable e_<op>)"
+   },
+   {
+    "path": "facts.named",
+    "value": "bare",
+    "account": "convention",
+    "evidence": "ATTESTED against OLD (113 of 207 units)"
+   },
+   {
+    "path": "facts.async",
+    "value": "false",
+    "account": "derived",
+    "evidence": "guard"
+   },
+   {
+    "path": "facts.result",
+    "value": "raise",
+    "account": "derived",
+    "evidence": "guard style raises /\\braise\\b/"
+   },
+   {
+    "path": "facts.collection",
+    "value": "`list`",
+    "account": "derived",
+    "evidence": "guard: e_list returns entity_obj list"
+   },
+   {
+    "path": "facts.record",
+    "value": "{var}.e_data_get ()",
+    "account": "derived",
+    "evidence": "guard record accessor e_data_get, 0 params"
+   },
+   {
+    "path": "facts.recordType",
+    "value": "value",
+    "account": "cited",
+    "evidence": "tm/ocaml/sdk_types.ml: \"mutable e_data_get : unit -> value;\""
+   },
+   {
+    "path": "facts.prints",
+    "value": "record",
+    "account": "convention",
+    "evidence": "ATTESTED (925 of 1459)"
+   },
+   {
+    "path": "ref.facts.entityBy",
+    "value": "Name",
+    "account": "convention",
+    "evidence": "ATTESTED"
+   },
+   {
+    "path": "ref.facts.noun",
+    "value": "functions",
+    "account": "convention",
+    "evidence": "ATTESTED: OLD 'Instance functions'"
+   },
+   {
+    "path": "ref.facts.entityNoun",
+    "value": "Fields",
+    "account": "convention",
+    "evidence": "ATTESTED: OLD 'Common Fields'"
+   },
+   {
+    "path": "ref.facts.heading",
+    "value": "{module}",
+    "account": "convention",
+    "evidence": "ATTESTED: OLD '## Sdk_client'"
+   },
+   {
+    "path": "ref.facts.none",
+    "value": "Noval",
+    "account": "cited",
+    "evidence": "src/cmp/ocaml/Main_ocaml.ts: \"let make0 () : sdk_client = make Noval\""
+   },
+   {
+    "path": "ref.facts.keys",
+    "value": "bare",
+    "account": "convention",
+    "evidence": "ATTESTED (396 of 708); chosen by hand: options is one value map, OLD's Name/Type table listed its keys as parameters"
+   },
+   {
+    "path": "ref.facts.maps",
+    "value": "maps",
+    "account": "language, recorded by hand",
+    "evidence": "OLD 'Request body (Maps are JSON-serialized).': same word capitalised"
+   },
+   {
+    "path": "ref.facts.container",
+    "value": "value",
+    "account": "cited",
+    "evidence": "Main_ocaml.ts: \"let make (options : value) : sdk_client =\""
+   },
+   {
+    "path": "ref.facts.valueType.STRING/OBJECT/ANY",
+    "value": "string / map / value",
+    "account": "convention (ANY recorded by hand)",
+    "evidence": "OLD tables; ANY held in the body row, other contexts are recordType/container 'value'"
+   },
+   {
+    "path": "ref.facts.ctor[0..2]",
+    "value": "open Voxgig_struct / open Sdk_helpers / open Sdk_types",
+    "account": "cited, pinned prose",
+    "evidence": "Main_ocaml.ts 'open Voxgig_struct', 'open Sdk_types'; Entity_ocaml.ts 'open Sdk_helpers'"
+   },
+   {
+    "path": "ref.facts.ctor[3]",
+    "value": "''",
+    "account": "convention",
+    "evidence": "blank line"
+   },
+   {
+    "path": "ref.facts.ctor[4]",
+    "value": "let client = {ctor} options",
+    "account": "derived",
+    "evidence": "guard callOf: make (options : value)"
+   },
+   {
+    "path": "ref.facts.ctorAlts[0].call",
+    "value": "{module}.make0 ()",
+    "account": "cited",
+    "evidence": "Main_ocaml.ts: \"let make0 () : sdk_client = make Noval\""
+   },
+   {
+    "path": "ref.facts.ctorAlts[0].kind",
+    "value": "defaults",
+    "account": "cited, pinned prose",
+    "evidence": "Main_ocaml.ts: '(* No-argument convenience constructor. *)' ... make0 line"
+   },
+   {
+    "path": "ref.facts.test[0]",
+    "value": "test () : {client}; call let client = {module}.test (); args false",
+    "account": "derived",
+    "evidence": "guard: let test () : sdk_client, on module"
+   },
+   {
+    "path": "ref.facts.test[1]",
+    "value": "test_with (testopts : value) (sdkopts : value) : {client}; call ...test_with Noval Noval; args true",
+    "account": "derived",
+    "evidence": "guard"
+   },
+   {
+    "path": "ref.facts.accessor",
+    "value": "sig {accessor} (client : {client}) (entopts : value) : entity_obj; arg entopts; param entopts",
+    "account": "derived",
+    "evidence": "guard: MainEntity_ocaml let ${fn}; Entity_ocaml make ... entopts_in"
+   },
+   {
+    "path": "ref.facts.op.*",
+    "value": "e_x (value) (value) : entity_obj (list: entity_obj list)",
+    "account": "derived",
+    "evidence": "guard vs sdk_types.ml arrows"
+   },
+   {
+    "path": "ref.facts.client[0..1]",
+    "value": "direct/prepare (client : {client}) (fetchargs : value) : value",
+    "account": "derived",
+    "evidence": "guard"
+   },
+   {
+    "path": "ref.facts.entity[*].sig/kind",
+    "value": "e_data_get () : value; e_data_set (value) : unit; e_match_get () : value; e_match_set (value) : unit; e_make () : entity_obj; e_stream (string) (value) (value) : value Seq.t (streamSync); e_name : string (field)",
+    "account": "derived",
+    "evidence": "guard, incl. field/callable"
+   },
+   {
+    "path": "ref.facts.entity[5].runs",
+    "value": "call",
+    "account": "derived",
+    "evidence": "forms.stream positions in Entity_ocaml.ts"
+   },
+   {
+    "path": "ref.facts.entity[0].copy",
+    "value": "true",
+    "account": "cited, pinned",
+    "evidence": "Entity_ocaml.ts: ent.e_data_get <- (fun () -> ...; clone ent.e_data);"
+   },
+   {
+    "path": "ref.facts.direct.returns / prepare.returns",
+    "value": "value",
+    "account": "derived",
+    "evidence": "guard"
+   },
+   {
+    "path": "ref.facts.direct.okFalse",
+    "value": "Bool false",
+    "account": "cited (ahead)",
+    "evidence": "tm/ocaml/sdk_features.ml: jo [(\"ok\", Bool false); \u2014 I changed the forms' ahead value from 'false' to 'Bool false'"
+   },
+   {
+    "path": "ref.facts.prepare.fails",
+    "value": "style",
+    "account": "cited, pinned",
+    "evidence": "sdk_features.ml: raise (Sdk_error_exc (ctx_make_error ctx \"spec_method_allow\""
+   },
+   {
+    "path": "ref.facts.body.values",
+    "value": "a `Str` holding the bytes",
+    "account": "cited, pinned prose",
+    "evidence": "sdk_runtime.ml make_fetch_def_util: '(Str _ | Num _ | Bool _) as b when is_json_request ...' and '| b -> setp fetchdef \"body\" b);' (Anything else goes as given)"
+   },
+   {
+    "path": "ref.facts.cancel",
+    "value": "false",
+    "account": "cited absence",
+    "evidence": "/\\b(cancel\\w*|abort\\w*|signal)\\b/i over sdk_runtime.ml, EntityOperation_ocaml.ts, RunOp.fragment.ml: empty"
+   }
+  ],
+  "notes": [
+   {
+    "slot": "operations",
+    "text": "Each operation takes its match or data, then a control map, `ctrl`,\nboth by position: pass `Noval` for either to give none.",
+    "claims": "(1) the two arguments are positional, match/data then ctrl: EntityOperation_ocaml.ts:62 `fun ${arg} ctrl ->`; (2) Noval gives no match/data: :63 `if is_nullish ${arg} then empty_map ()`; (3) Noval gives no ctrl: `cs_ctrl = (match ctrl with Noval | Null -> None | c -> Some c);`"
+   },
+   {
+    "slot": "member:name",
+    "text": "`e_name` is a field of the entity, read without a call.",
+    "claims": "e_name is a record field, not a function: tm/ocaml/sdk_types.ml entity_obj `mutable e_name : string;` (line ~199)"
+   },
+   {
+    "slot": "member:streamSync",
+    "text": "Its arguments are the name of the operation, its match, and `callopts`.",
+    "claims": "argument order action, args (match), callopts: sdk_types.ml comment `(* stream action args callopts -> ... *)` and `mutable e_stream : string -> value -> value -> value Seq.t;`; Entity_ocaml.ts `fun action args callopts`, reqmatch from args"
+   }
+  ],
+  "interface_gaps": [
+   {
+    "construct": "memberName appends `()` to a member's name in prose ('Accepts the same parameters as `direct()`', 'the request `direct()` would send'); in OCaml, `direct ()` would apply direct to unit",
+    "file_line": "ts/src/cmp/ReadmeRef.ts:95-97",
+    "smallest_change": "an optional RefFacts field (e.g. memberNamed: 'call'|'bare') read by memberName, default as today",
+    "breaking": false,
+    "providers_forced": "none (optional); elixir and clojure might opt in",
+    "made": false,
+    "worked_around": "no; the page prints `direct()`, recorded under restored:shared with the gap named"
+   },
+   {
+    "construct": "the runtime names operation parameters only in a TS template (EntityOperation_ocaml.ts:62 `fun ${arg} ctrl`); the record type (sdk_types.ml e_load : value -> value -> entity_obj) has none, so the guard's 'parameter of load renamed' control fails for any named declaration",
+    "file_line": "ts/project/.sdk/src/cmp/ocaml/EntityOperation_ocaml.ts:62; ts/test/runtimeforms/guard.ts:574-583",
+    "smallest_change": "let a forms file cite parameter names (a cite path for op params) or let the control skip when uncompared.paramNames gives a reason",
+    "breaking": false,
+    "providers_forced": "none",
+    "made": false,
+    "worked_around": "operation and entity-record signatures are unnamed `(value)`; the operations note names match/data and ctrl"
+   },
+   {
+    "construct": "no per-operation note slot: remove's `e_deleted` field and 'it keeps the data it held' (old page) have nowhere to go",
+    "file_line": "ts/src/helpers/example.ts NoteSlot (lines 455-458); ts/src/cmp/ReadmeRef.ts:351-360",
+    "smallest_change": "an additive NoteSlot `op:<OpName>` printed after an operation's sentence",
+    "breaking": false,
+    "providers_forced": "none",
+    "made": false,
+    "worked_around": "no; dropped and recorded"
+   },
+   {
+    "construct": "blocks.js pairs blocks by heading, cutting a signature to its name only when it has a `(`; the old OCaml headings `e_load reqmatch ctrl : entity_obj` have none, so all REFERENCE op blocks are paired by document order and the new test_with block shifts them",
+    "file_line": "tools/blocks.js:84-86 (AT keys)",
+    "smallest_change": "an AT key that cuts a backticked heading to its first identifier",
+    "breaking": false,
+    "providers_forced": "none (tools only)",
+    "made": false,
+    "worked_around": "classified by hand as unification:ref-op-block, with the true pairing from mine/refpairs.py in the why"
+   },
+   {
+    "construct": "a member that is a record field (e_name) gets the shared callable sentence 'Return the entity name.'",
+    "file_line": "ts/src/cmp/ReadmeRef.ts:149",
+    "smallest_change": "Member.field optional flag choosing 'The entity name.'",
+    "breaking": false,
+    "providers_forced": "none",
+    "made": false,
+    "worked_around": "no; a note on member:name says it is a field"
+   }
+  ],
+  "shared_files_touched": [],
+  "table_rows_wrong": [
+   {
+    "row": "Members the runtime does not have: options, utility",
+    "file_line": "tm/ocaml/sdk_types.ml sdk_client record (cl_options, cl_utility, ~lines 186-189)",
+    "runtime_shows": "the sdk_client record exposes live fields cl_options and cl_utility; the client module has no options/utility functions. The reader reads only Main_ocaml/MainEntity_ocaml for the client, so it never sees them",
+    "forms_change": "none; left undocumented, explained in hand/ocaml.json absent 2e09bb327d"
+   },
+   {
+    "row": "ref.facts.direct.okFalse: false (and guide section 9 'okFalse: false')",
+    "file_line": "tm/ocaml/sdk_features.ml:1775 `jo [(\"ok\", Bool false);`",
+    "runtime_shows": "the result holds the value `Bool false`, which getp returns; README:257 also says `Bool false`",
+    "forms_change": "cite value changed to \"Bool false\""
+   },
+   {
+    "row": "stream kind: guide offers streamLazy or streamSync",
+    "file_line": "src/cmp/ocaml/Entity_ocaml.ts e_stream (seq_of raw after run_op and rt_stream)",
+    "runtime_shows": "the Seq is built over a finished list; I chose streamSync (the guard's reading) because 'lazy sequence' suggests laziness the code does not have",
+    "forms_change": "none"
+   },
+   {
+    "row": "forms tokens / sig parsing (porter's part, not a wrong row)",
+    "file_line": "ts/test/runtimeforms/ocaml.ts",
+    "runtime_shows": "the default sig parser cannot read `name (p : t) (q : u) : r`",
+    "forms_change": "added sigParts (sigName/sigParams/sigReturns) and 13 citations"
+   }
+  ],
+  "hand_decisions": [
+   {
+    "id": "facts ref.maps",
+    "kind": "fact",
+    "outcome": "maps",
+    "why": "OLD capitalised the same word"
+   },
+   {
+    "id": "facts ref.valueType.ANY",
+    "kind": "fact",
+    "outcome": "value",
+    "why": "held in OLD's body row; the other contexts are the same token for recordType and container"
+   },
+   {
+    "id": "absent 2e09bb327d",
+    "kind": "absent",
+    "outcome": "explained",
+    "why": "no options function; cl_options is a live record field"
+   },
+   {
+    "id": "236 classes",
+    "kind": "ledger+blocks",
+    "outcome": "see tools/hand/ocaml.json (generated by mine/mkhand.py)",
+    "why": "tutorial 20 by hand + 8 missing; rootquick 3; reference 71 + 31 missing; 2 contradictions (S13, no-test); blocks 35/32/34"
+   },
+   {
+    "id": "60c6b0b417 91baf1b4b6",
+    "kind": "contradiction",
+    "outcome": "REFERENCE true",
+    "why": "no-test: README.md:202 claims a mock transport; S13"
+   }
+  ],
+  "review_counts": [
+   {
+    "section": "tutorial",
+    "same": "56",
+    "shared_matched": "22 (all against unreviewed sentences)",
+    "by_hand": "20",
+    "missing": "8 (all restored:shared except U45 heading correction)",
+    "contradictions": "0",
+    "blocks": "identical 19, corrected 0, unified 0, otherwise 29 (29 compiled by nothing)",
+    "matched_unreviewed": "22"
+   },
+   {
+    "section": "rootquick",
+    "same": "19",
+    "shared_matched": "0",
+    "by_hand": "3",
+    "missing": "0",
+    "contradictions": "0",
+    "blocks": "identical 0, otherwise 19 (all: top-level definitions instead of OLD's let () program; plus S49/S50/step comments)",
+    "matched_unreviewed": "0"
+   },
+   {
+    "section": "reference",
+    "same": "13998",
+    "shared_matched": "57",
+    "by_hand": "71",
+    "missing": "31 (restored:shared/note, corrections S09 S13 S25 G27 U43, 2 dropped: Name/Type table headers; e_deleted named only as dropped token)",
+    "contradictions": "2",
+    "blocks": "tools: identical 151, otherwise 163, NEW-only 18; by my own pairing: 151 identical, 79 lose only the result_data read, 83 lists reshaped, 1 OLD-only (S25), 19 NEW-only test_with",
+    "matched_unreviewed": "57"
+   }
+  ],
+  "absent": [
+   {
+    "sentence": "Return a deep copy of the current SDK options. (2e09bb327d)",
+    "reason": "the ocaml client module defines no options function; options are the sdk_client record field cl_options, the live value, not a copy, and the page does not document it"
+   }
+  ],
+  "doubtful_lines": [
+   {
+    "where": "tutorial list/load blocks (all variations)",
+    "line": "(try\n   let planets = ... in ...\n with Sdk_error.E err -> ...)",
+    "doubt": "a toplevel expression: valid on its own or as a file's first item, but not right after `let client = ...` in one file. This is OLD's shape, kept byte-identical"
+   },
+   {
+    "where": "REFERENCE examples",
+    "line": "let result = (Sdk_client.planet client Noval).e_load ...",
+    "doubt": "`client` is unbound in a standalone block (as in OLD)"
+   },
+   {
+    "where": "client blocks",
+    "line": "Str (Sys.getenv \"DEMO_APIKEY\")",
+    "doubt": "Sys.getenv raises Not_found when the variable is unset (as in OLD)"
+   },
+   {
+    "where": "REFERENCE prepare",
+    "line": "the request `direct()` would send",
+    "doubt": "not OCaml call syntax (interface gap 1)"
+   }
+  ],
+  "guide_problems": [
+   {
+    "section": "9 (ocaml row) and 2 table",
+    "problem": "says okFalse 'false' for every runtime but perl; in OCaml the result holds `Bool false`, and `false` misleads a reader who branches on getp"
+   },
+   {
+    "section": "2 'callable or field'",
+    "problem": "says a callable must not be written as a field, but does not say that the guard only sees a call through `name (`, which forces the paren signature style and unnamed operation params (the renamed-parameter control)"
+   },
+   {
+    "section": "5 Blocks",
+    "problem": "does not warn that pairing needs `(` in headings; an old page with juxtaposition signatures pairs by document order"
+   },
+   {
+    "section": "7 / 12",
+    "problem": "'the one command passes in both modes', yet SCRATCH ignores all hand records and therefore cannot pass for a port with hand-decided classes"
+   },
+   {
+    "section": "2 hook rules",
+    "problem": "silent on non-template generator names (sdk_client.ml, sdk_error.ml); I extracted constants and an ocamlQualified function into utility_ocaml so the hook concatenates nothing"
+   }
+  ],
+  "old_vs_new": "Old pages said things the new ones do not (tools: 39 missing classes; my decisions):\n- the operation parameter names `reqmatch`/`ctrl` in the headings (now in a note);\n- `e_deleted` and \"it keeps the data it held\" for remove (dropped);\n- the old REFERENCE `let result_data = result.e_data_get ()` lines (79 blocks; replaced by a sentence);\n- the write results printed in the tutorial (shared decision);\n- the `options` Name/Type rows (now a map-key table).\n\nNew pages say things the old ones did not:\n- `test` and `test_with` with their true signatures (old: `test testopts sdkopts`);\n- `e_stream`;\n- the server variables, and the secret under Basic auth;\n- the Actions table;\n- \"`options` is a `value` map (`Noval` for none)\";\n- `Bool false`;\n- the field / record-type facts;\n- three notes;\n- the shared features corrections (S09).",
+  "lines": "From `git diff --numstat v32-frozen..HEAD`:\n- Deleted: ReadmeQuick_ocaml.ts 213, ReadmeRef_ocaml.ts 423, ReadmeTopQuick_ocaml.ts 87, a total of 723.\n- Added: Syntax_ocaml.ts 237, Naming_ocaml.ts 24, runtimeforms/ocaml.ts +40/-2 (137 lines from `wc -l`), utility_ocaml.ts +19, Main_ocaml +5/-7, MainEntity +2/-4, SdkError +3/-1.\n\nProvider plus hook come to 261 lines against 723 removed (2.77x). Counting the forms delta and the generator edits, it is 723 against 330 added (2.2x).",
+  "prose": "From `node tools/sharewords.js --clone sdkgen --root out/new --lang ocaml`:\n\n| section | words | shared sentence | only this lang | notes |\n| --- | --- | --- | --- | --- |\n| tutorial | 1553 | 78.6% | 21.4% | 0% |\n| rootquick | 238 | 100% | 0% | 0% |\n| reference | 54484 | 90.9% | 2.0% | 7.1% |\n| all | 56275 | | 2.5% | 6.8% |\n\n- By source, provider literals are 7.3%, with facts accounting for 242 words.\n- At the source, the notes are 41 words and the fact-table prose literals 45.\n- I did not investigate why 333 tutorial words count as printed by OCaml alone.",
+  "other_languages_unchanged": "I ran `diff -rq ports/ocaml/out/new base32/out/new`. Outside the ocaml/ directories, only the root README.md differs, in 19 variations.\n\nEvery differing hunk sits under \"## Quickstart in other languages\". With both \"### OCaml\" subsections removed, each root README is identical to `base32/out/new` (awk filter, then diff: no output). No other file differs.",
+  "purity": "`purity.js` (run through portcheck): 0 open, 0 accepted; 3 notes declared, 1 notes region found.\n\nAn earlier version of the e_name note said \"entity record\" and was flagged three times, because one model has an entity named `record`. I reworded the note rather than accepting the finding.\n\nThe hook calls `ocamlVarName`, `ocamlModule` and `ocamlQualified`. Non-README components call each of them too: MainEntity_ocaml and Main_ocaml.",
+  "unverified": "**No OCaml toolchain here:** `command -v` shows ocaml, ocamlc, ocamlfind, dune and opam all missing.\n\n- There are 37 distinct NEW ocaml code blocks across the README, REFERENCE and root README that do not occur in OLD. Each was read by eye against `sdk_types.ml`, `Main_ocaml.ts` and `sdk_helpers` (`jo`, `getp`, `stringify`). My doubts are in doubtful_lines.\n- The generated SDK's own `readme_examples_test` checks structure only, and it was not run.\n- I did not compile-check that the refactor in Main_ocaml, MainEntity and SdkError leaves the generated `.ml` byte-identical. I read it: the same strings come out. The `generate.test` suite, which renders every target, passed.",
+  "time": "Started 02:01; final runs about 04:15. I did not log an end time for each step, so these are approximate:\n- reading: about 35 minutes;\n- runtime table against the runtime: about 10;\n- forms: about 15;\n- provider and hook: about 25, including two guard rounds;\n- review and classification: about 50;\n- golden, generic tests and measures: about 15.",
+  "workspace": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/ocaml (sdkgen clone HEAD 1e9cf150; tools HEAD fa9c146; PROGRESS.md; mine/refpairs.py, mine/mkhand.py; logs final.log, scratch-final.log, generic.log)",
+  "not_done": [
+   "no OCaml compile or run of any example (toolchain absent)",
+   "did not run the full repository suite; ran generate, media, vendored, runtimefacts, runtimereader (474/474) and characterize (2/2)",
+   "no normalizers/ocaml.js: the reference pairs are document-order mispairs, so normalizers would not apply",
+   "did not fully explain the tutorial's 21.4% 'only this lang' words",
+   "did not document client fields cl_options/cl_utility",
+   "no shared change for the gaps found"
+  ],
+  "surprises": [
+   "the table and guide give okFalse 'false'; the OCaml value is `Bool false`",
+   "naming operation parameters fails the guard's renamed-parameter control, because the runtime names them only inside a TS template",
+   "the old OCaml root quick start in ent-none and ref-issues was `let () = let client = ... in` with no body, which is invalid OCaml",
+   "the unported ocaml README prints a TypeScript line (`console.log(ambient.data())`, README.md:68)",
+   "the block tool cannot pair the old OCaml headings"
+  ]
+ }
+}

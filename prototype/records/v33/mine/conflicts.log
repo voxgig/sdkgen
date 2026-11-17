@@ -1,0 +1,3 @@
+e9df0f73: conflicts account.ts (union: testMock+streamSignal DEFAULTS; AHEAD okFalse|testMock|streamSignal), forms c clojure elixir go py rb rust zig (guard's cancel region + v33m testMock line kept)
+4e6a6b0c: account.ts codeTokens: v33m's testMock exclusion kept + guard's VERBATIM unwrap line
+fd3203e6: account.ts DEFAULTS union (testMock + NEW_FACTS rows), AHEAD union (okFalse|testMock|streamSignal|accessor.cached|copy); ocaml.ts cite: v33m testMock citation + guard's entity[2].copy ahead

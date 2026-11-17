@@ -1,0 +1,81 @@
+▶ runtimefacts
+  ✔ js: the language declares its runtime forms (2.095594ms)
+  ✖ js: the declared facts are what its runtime defines (18.030753ms)
+  ✖ js: every declared fact is accounted for (14.082076ms)
+  ✔ js: each check fails when its fact is changed (negative controls) (320.365358ms)
+✖ runtimefacts (356.434526ms)
+ℹ tests 4
+ℹ suites 1
+ℹ pass 2
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 812.191769
+
+✖ failing tests:
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ js: the declared facts are what its runtime defines (18.030753ms)
+  AssertionError [ERR_ASSERTION]: js: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'optional',
+  +     what: 'entity streamIterator: stream parameters ??? declared, !?? in the runtime (stream(action?: string, args?: object, callopts?: object))'
+  +   },
+  +   {
+  +     check: 'returns',
+  +     what: 'entity name: name returns string in the runtime, number declared'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Promise.all (index 18)
+      at async Suite.run (node:internal/test_runner/test:1905:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'optional', what: 'entity streamIterator: stream parameters ??? declared, !?? in the runtime (stream(action?: string, args?: object, callopts?: object))' }, { check: 'returns', what: 'entity name: name returns string in the runtime, number declared' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ js: every declared fact is accounted for (14.082076ms)
+  AssertionError [ERR_ASSERTION]: js: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   'cite ref.facts.container: the fact is "Array"; the citation pins "object"',
+  +   'ref.facts.entity[3].kind: the guard could not re-derive it from the runtime and the forms do not cite it',
+  +   'ref.facts.entity[3].sig: the guard could not re-derive it from the runtime and the forms do not cite it',
+  +   'ref.facts.entity[6].kind: the guard could not re-derive it from the runtime and the forms do not cite it',
+  +   'ref.facts.entity[6].sig: the guard could not re-derive it from the runtime and the forms do not cite it',
+  +   'ref.facts.entity[6].field: the guard could not re-derive it from the runtime and the forms do not cite it',
+  +   'cite ref.facts.direct.returns: the fact is "Promise<{ ok, status, data }>"; the citation pins "Promise<{ ok, status, headers, data }>"'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'cite ref.facts.container: the fact is "Array"; the citation pins "object"', 'ref.facts.entity[3].kind: the guard could not re-derive it from the runtime and the forms do not cite it', 'ref.facts.entity[3].sig: the guard could not re-derive it from the runtime and the forms do not cite it', 'ref.facts.entity[6].kind: the guard could not re-derive it from the runtime and the forms do not cite it', 'ref.facts.entity[6].sig: the guard could not re-derive it from the runtime and the forms do not cite it', 'ref.facts.entity[6].field: the guard could not re-derive it from the runtime and the forms do not cite it', 'cite ref.facts.direct.returns: the fact is "Promise<{ ok, status, data }>"; the citation pins "Promise<{ ok, status, headers, data }>"' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,622 @@
+{
+ "ok": true,
+ "summary": "Work in P/n-guard/sdkgen, copied from v33p (cd8196db). 11 commits, ee029f09..68c1b1c8. They touch only ts/test/runtimefacts.test.ts, ts/test/runtimereader.test.ts and ts/test/runtimeforms/** (26 files, +1051/-100), plus one new framework file, runtimeforms/calls.ts. Nothing under ts/src or ts/project changed, and `git status` is empty after the build.\n\nRan, at 68c1b1c8, with PATH=/opt/node24/bin:$PATH:\n- `npm run build`: exit 0.\n- Guard and reader: 77/77 pass, all twenty forms files.\n- Suite without the toolchain lanes: 2613 tests, 2608 pass, 0 fail, 5 skipped (the same as the merge).\n- runtime-table.md regenerated: P/n-guard/runtime-table.md, 1277 lines.\n\nAttacks: 37 run on a copy (work/att-all.json -> att-all.out.json) with work/mutate.js. 31 fail in the guard with a message naming the fact. Six do not:\n- the G5 arrow experiment, which is meant to pass;\n- five with no mechanical place in the guard: ocaml keys, ocaml match/ctrl swapped, swift entityBy, perl prints, perl none quoting an unrelated line.\n\nThe freeze's 108 mutations (work/freeze-muts.json):\n- 97 caught. Three of them are newly caught: zig-type-integer, clj-type-integer, c-type-string.\n- 5 not caught: the freeze's known misses less those three.\n- None is caught less. The one that errored because my forms moved was adapted and is caught.\n\nEach item G1 to G8 has a control that fails as described. No provider is shown wrong in a way that fails the guard today. Missing facts that need the shared decisions are staged as citations ahead of the providers and listed in providers_wrong.",
+ "items": [
+  {
+   "item": "G1 a pinned value is always compared",
+   "checks": "When a citation carries `value:`, it must equal the declared value, whatever the fact's kind. Before, it was compared only when the value was prose.",
+   "where": "ts/test/runtimeforms/account.ts checkCitation (commit ee029f09)",
+   "control": "work/att-g1.json: lua okFalse 'false'->'nil'; ocaml okFalse 'Bool false'->'false'",
+   "message": "cite ref.facts.direct.okFalse: the fact is \"nil\"; the citation pins \"false\" / the fact is \"false\"; the citation pins \"Bool false\"",
+   "forms_changed": "none",
+   "found": "Ran the guard over all twenty forms files with the change: 0 citations now fail. Every forms file that pins a value pins the one its provider declares, and the unported files pin their ahead values."
+  },
+  {
+   "item": "G2 the constructor exists; calls are made on what the runtime declares",
+   "checks": "The guard calls the provider's Naming hook on a probe model, with names left as the templates spell them. It prints the client with 0 and 1 options and reads the constructor call in the forms' own notation. Then it checks:\n- the declaration the call runs exists (calls.ctor maps rb `new` to `initialize`; a class called as itself runs ctorDecl);\n- it is not on an instance;\n- it is called through the separator `calls.on[decl.on]` gives;\n- its qualifier is bound by the imports the provider prints (imports printer, else go's program printer) or is the client type or module.\nThe same holds for the reference's {ctor} lines, the test constructors, ctorAlts, and for the accessor and method in every operation call the call printer prints. With no options the printer may use a declared ctorAlt (ocaml make0). The report says whether layout.ctor goes through tm or is a hook literal or generator function (lua sdk.new, clojure api/make-sdk, ocaml Sdk_client.make).",
+   "where": "guard.ts check() block 'Calls as the provider prints them' with namingOf, probeDesc, importsOf, boundBy, spellLayout, ctorSource; calls.ts readCalls, chainBefore, receiverFits (commits 18a23ef2, be57b9a5)",
+   "control": "work/att-g2.json: lua Naming ctor 'sdk.create'; 'lib.new'; call printer client.Planet(); test call client:test(); controls 'a test constructor called on an instance' (now through the forms' instance separator)",
+   "message": "the naming hook's constructor sdk.create runs create, which the lua runtime does not declare | lib.new is called on lib, which the imports the provider prints do not bind | op list accessor: Planet is declared on the instance, called through :; \"local planet, err = client.Planet():list()...\" calls it through . | test: test is declared on the type; \"local client = client:test()\" calls it on client (instance)",
+   "forms_changed": "calls:{on,args,parenless,ctor} added to all 13 provider forms (ts go py c zig clojure rust elixir rb lua perl swift ocaml). ocaml's ctorAlts[0].call citation was dropped because it is now derived.",
+   "found": "The first run gave three false findings in the framework, all fixed there: c's signatures reach members through `vt->` (a struct member, not a type); ocaml's no-option client uses make0; py and swift call the class itself with nothing before it. After that: no provider wrong."
+  },
+  {
+   "item": "G3 arity",
+   "checks": "Every printed constructor, test, ctorAlts, accessor and operation call passes as many arguments as the runtime declaration takes, from the required ones up to all of them (rest parameters allowed). Operations are probed through the provider's own call printer: list, load and remove with no argument, a 1-member map and a 3-member map; create, update and patch with 1 and 3 members. The 3-member map shows a printer that spreads a map into separate arguments.",
+   "where": "guard.ts judge()/arityFits (calls.ts); probes in the same block (commits 18a23ef2, 4e6a6b0c)",
+   "control": "ocaml test_with Noval; swift call printer `(${argOf(s)})` (load(nil)); go ctor (nil, nil); perl argOf spreading the map (verifier V2)",
+   "message": "test: test_with takes 2 argument(s) in the runtime; \"let client = Sdk_client.test_with Noval\" passes 1 | op list: list takes 2 argument(s) in the runtime; \"let planet = try client.Planet().list(nil)\" passes 1 | ctor: NewProjectNameSDK takes 1 argument(s) in the runtime; ... passes 2 | perl V2 caught by arity (3 arguments against load($reqmatch,$ctrl))",
+   "forms_changed": "none beyond calls",
+   "found": "No provider wrong in the 13."
+  },
+  {
+   "item": "G4 `on` from the signature",
+   "checks": "A signature's own receiver is read with the call reader. Written on a bound variable (instance) while the runtime declares the member on the type or module: fails. Qualified by the client type or module name while the runtime declares it on an instance: fails. A qualifier that is neither, such as c's `vt`, decides nothing.",
+   "where": "guard.ts sig() 'What the signature writes the member on' (commit 18a23ef2)",
+   "control": "perl test sig '{client}->test(...)' -> '$client->test(...)' (reviewer a10)",
+   "message": "test: the signature writes test on $client ($client->test($testopts, $sdkopts)); the runtime declares it on the type",
+   "forms_changed": "none",
+   "found": "0 failures in the 13."
+  },
+  {
+   "item": "G5 a call told from a field in the runtime's notation",
+   "checks": "forms.called(sig, name) says whether a signature writes its member as called. When it is given, a parenless form keeps the callable-written-as-field check on.",
+   "where": "forms.ts Forms.called; guard.ts sig(); ocaml.ts sigParts reads both the paren form and the arrow form `name : t -> u -> r` (commit 18a23ef2)",
+   "control": "G5-ocaml-E1: e_load in arrow form plus e_make as `e_make : entity_obj`. Also G5-ocaml-arrow-signatures, the experiment, which must pass.",
+   "message": "entity make: e_make is called in the runtime, declared as a field (e_make : entity_obj)",
+   "forms_changed": "ocaml (sigParts arrow form, called); rb (called: () => true, with the reason)",
+   "found": "What it takes for ocaml to move to the arrow form: only the provider's signature strings. The six operations and six entity members were moved to `e_load : value -> value -> entity_obj` on a copy, and the guard passed with no forms change. The callable-as-field check stays on. The client functions (direct, prepare, test, accessor) carry named parameters; in arrows their names would be lost and counted under uncompared.paramNames. rb was parenless with the check off. It is now on, but has nothing to find: every public member of a Ruby runtime is a method, so neither direction can fire. Not changed: the provider."
+  },
+  {
+   "item": "G6 an absence is searched everywhere",
+   "checks": "An absence runs its pattern over runtimeFiles(lang): every file under src/cmp/<lang>/ and tm/<lang>/, minus documentation components, test generators and test trees. A region it leaves out is `except: {file, quote(s), why, fact?}`. Each quote must occur exactly once in its file. A region with no reason fails. A region naming a fact the forms do not cite fails. A region holding no match is stale and fails. Any match outside the regions fails, naming file:line and the word. The old `files` key is refused. NOT_RUNTIME was corrected: the test feature's own source (tm/ts/src/feature/test/TestFeature.ts, TestFeature.kt...) is runtime; perl t/ and swift Tests/ are not.",
+   "where": "account.ts checkAbsence, NOT_RUNTIME, runtimeFiles; forms.ts Exclusion (commit e9df0f73)",
+   "control": "work/att-g6.json: verifier A1 (lua _run_op reads ctx.ctrl.signal); ocaml RunOp reads 'abort'; a new go file with CancelRequest; swift Task.isCancelled in the stream; an empty reason. Guard controls 'a region an absence leaves out with no reason' and 'a region left out for a fact the forms no longer cite'.",
+   "message": "cite ref.facts.cancel: the absence of /.../i no longer holds: src/cmp/lua/fragment/Entity.fragment.lua:327 has \"signal\" (and ocaml RunOp.fragment.ml:6 \"abort\", tm/go/utility/cancel.go:3 \"CancelRequest\", EntityBase.fragment.swift:223 \"isCancelled\") | the region left out of tm/lua/feature/timeout_feature.lua gives no reason",
+   "forms_changed": "All 12 forms files with an absence: c, clojure, elixir, go, lua, ocaml, perl, py, rb, rust, swift, zig. One shared word list (cancel*, abort* except C's abort(), signal, signalled?, AbortController, isCancelled, CancellationToken, WithContext, context.Context), plus interrupt/future-cancel for clojure, :abort for elixir, alarm for perl. Also perl ctor[1], whose quote was in a test file.",
+   "found": "Run over the whole runtime, the old patterns hit: c 49, clojure 9, elixir 9, go 5, lua 13, ocaml 5, perl 27, py 22, rb 16, rust 1, swift 4, zig 14 (work/absence-before.txt). swift's pattern had no `signal` at all. With the new word list, each region read and excused (excused hits / regions): c 5/5, clojure 14/11, elixir 11/8, go 5/5, lua 25/20, ocaml 12/9, perl 14/12, py 21/17, rb 16/10, rust 1/1, swift 14/13, zig 14/14. Kinds of region: the stream reading callopts.signal (fact ref.facts.streamSignal, cited ahead) in clojure, elixir, go, lua, ocaml, perl, py, rb and swift; the timeout feature; cost comments ('catastrophic cancellation'); the secrets feature's own clients; rbac short-circuits ('abort the operation'); a DispatchSemaphore's signal(); POSIX signal 11 notes; zig's context.Context; elixir's :global.trans :aborted. No operation cancel was found in any runtime."
+  },
+  {
+   "item": "G7 type words",
+   "checks": "types.column must be the column the generator's EntityTypes_<lang>.ts (or the utility_<lang>.ts helper it calls) passes to canonToType; a forms file may not name another. With no column, every canonical type word is pinned in types.words and compared with ref.type. A word that differs from the column with a reason (an exception) is pinned too. The report counts pinned type words as a kind of its own.",
+   "where": "forms.ts generatorColumn; guard.ts types block; runtimereader problems(); runtimefacts report line (commit bc53234e)",
+   "control": "work/att-g7.json: perl INTEGER integer->int (verifier V1); ocaml int->float (verifier a2); zig i64->f64; clojure long->string; c list/map swapped; elixir forms column 'ts'. New guard control 'a type word changed'.",
+   "message": "INTEGER prints int; the forms pin the type word integer | INTEGER prints float; the forms pin the type word int | types: the forms give column ts; src/cmp/elixir/EntityTypes_elixir.ts uses elixir",
+   "forms_changed": "clojure, ocaml, perl, zig (8 words each); c (ARRAY and OBJECT words)",
+   "found": "Columns: all 16 that declare one match their generator; elixir's is read through elixirType in utility_elixir.ts. Pinned words, for the reviewer to audit:\n- perl: string integer number boolean undef arrayref hashref scalar\n- ocaml: string int float bool value 'value list' 'value map' value\n- clojure: string long double boolean any vector map any\n- zig: []const u8 i64 f64 bool Value 'Value (array)' 'Value (object)' Value\n- c: 'voxgig_value* (list)' and 'voxgig_value* (map)'"
+  },
+  {
+   "item": "G8 the record expression whole",
+   "checks": "In the shared framework, for every language:\n- an unwrap in facts.record must be facts.unwrap verbatim, as a whole word;\n- every other member or type it names (zig asEntity, c vt) must be declared somewhere in the runtime, by a generic declaration search, or be cited in recordParts;\n- a record of more than one part must be printed whole by the expr printer;\n- the print printer must unwrap with facts.unwrap;\n- facts.unwrap's quote must hold it verbatim, operators included.",
+   "where": "guard.ts recordWhole, declaredInRuntime, printStmt; account.ts VERBATIM (commits 41417b7b, 4e6a6b0c, 8784f758)",
+   "control": "work/att-g8.json and att-more.json: swift record `({var}.asNative)?.data()` (verifier); `{var}.asEntity().data()` (reviewer); zig asEntty; c vtab; swift unwrap and its pin both changed to `as!`; swift print printer `as? EntityBase`. New guard control 'the record expression names a member the runtime does not declare'.",
+   "message": "facts.record ({var}.asNative)?.data() does not unwrap with facts.unwrap, `asNative as? Entity`, as cited | facts.record asEntty().data(null) names asEntty, which the zig runtime does not declare | cite facts.unwrap: the quote does not contain \"asNative as! Entity\" | the print printer shows a record as \"if let planet = planet.asNative as? EntityBase {...\", which does not unwrap with facts.unwrap",
+   "forms_changed": "swift: its own record reader, which accepted any substring of the unwrap's quote, is now the generic trailing accessor",
+   "found": "0 failures. go's printer reads the record as `planet.(sdk.Entity).Data()`: a type assertion that facts.record ('Data()') does not state. Reported, not failed, because the fact is contained in what is printed."
+  },
+  {
+   "item": "Accounts for the shared engineer's facts",
+   "checks": "NEW_FACTS in account.ts holds the keys the guard expects:\n- accessor.cached: cited, may come ahead;\n- streamSignal: cited, may come ahead;\n- memberNamed: derived (bare iff calls.args is space or lisp);\n- (client|entity)[i].field: derived from the runtime declaration;\n- deleted: derived (a member or field the entity declares);\n- direct.*: cited;\n- imports.*: cited.\nAny ref.facts value instance/type/module (the heading) is derived from the client members' `on`; entityBy is excluded. copy may be cited ahead only on a match getter.",
+   "where": "account.ts NEW_FACTS, ON_VALUES, AHEAD, aheadOk; guard.ts 'The optional facts brief 7 adds' (commits fd3203e6, 68c1b1c8)",
+   "control": "ocaml m07 (copy removed from e_data_get): caught again by the orphaned citation after aheadOk. Ahead citations are checked: an altered quote failed with 'no longer contains'.",
+   "message": "cite ref.facts.entity[0].copy: the provider declares no such fact",
+   "forms_changed": "Staged ahead:\n- streamSignal true: ts, js, php, java, kotlin, scala, csharp, plus the 9 that cite it in G6;\n- streamSignal false (an absence): cpp;\n- accessor.cached true: lua, php;\n- entity copy true on the match getter: elixir[2], go[1], perl[2], py[2], rb[2], rust[1], ts[1], ocaml[2].",
+   "found": "see providers_wrong"
+  }
+ ],
+ "attacks": [
+  {
+   "attack": "perl root quick start loses `use lib 'perl/lib'`",
+   "lang": "perl",
+   "should_fail_in": "shared code (decision 1) and the perl lane run from the page's directory; not the guard (an include path is not a binding the guard can read)",
+   "now": "not mine; not run"
+  },
+  {
+   "attack": "perl stream note false when chunkSize>0",
+   "lang": "perl",
+   "should_fail_in": "nowhere mechanical: pinned prose, the reviewer reads it",
+   "now": "unchanged"
+  },
+  {
+   "attack": "showFields picks a hashref, prints HASH(0x..)",
+   "lang": "perl",
+   "should_fail_in": "shared code (decision 3) and a lane that checks output, not exit code",
+   "now": "not mine"
+  },
+  {
+   "attack": "a10 test signature on an instance",
+   "lang": "perl",
+   "should_fail_in": "guard",
+   "now": "FAILS: test: the signature writes test on $client (...); the runtime declares it on the type"
+  },
+  {
+   "attack": "a17 naming rule hidden in a helper",
+   "lang": "perl",
+   "should_fail_in": "tools (T3 purity)",
+   "now": "not mine"
+  },
+  {
+   "attack": "a19 shared sentence dropped, SCRATCH",
+   "lang": "perl/swift",
+   "should_fail_in": "tools (T1/T2)",
+   "now": "not mine"
+  },
+  {
+   "attack": "a07 prints 'fields'->'record'",
+   "lang": "perl",
+   "should_fail_in": "tools (T4): no runtime file shows how a page prints a record",
+   "now": "guard passes (ran: perl-a07-prints-record NOT CAUGHT)"
+  },
+  {
+   "attack": "ref.facts.none cites an unrelated line",
+   "lang": "perl",
+   "should_fail_in": "nowhere mechanical: a token in a line does not prove the line means it. Reviewer aid added: the report marks citations that quote only comments (12: perl 8, c 2, clojure 1, ts 1).",
+   "now": "guard passes (ran: none re-cited to 'return undef if $aborted->();' NOT CAUGHT)"
+  },
+  {
+   "attack": "a14 notes.top declared",
+   "lang": "perl",
+   "should_fail_in": "shared code (decision 2) / tools purity",
+   "now": "not mine"
+  },
+  {
+   "attack": "V1 type word integer->int",
+   "lang": "perl",
+   "should_fail_in": "guard",
+   "now": "FAILS: INTEGER prints int; the forms pin the type word integer"
+  },
+  {
+   "attack": "V2 argOf spreads the map into a flat list",
+   "lang": "perl",
+   "should_fail_in": "guard (arity, 3-member probe)",
+   "now": "FAILS (check arity)"
+  },
+  {
+   "attack": "swift shared sentence removed, SCRATCH (1 and 19 variations)",
+   "lang": "swift",
+   "should_fail_in": "tools (T2)",
+   "now": "not mine"
+  },
+  {
+   "attack": "entityBy 'name' (invalid): TS2820 but portcheck PASS",
+   "lang": "swift",
+   "should_fail_in": "compiler plus tools (T5 build check)",
+   "now": "not mine"
+  },
+  {
+   "attack": "cancel: true makes generation throw; stale out/new measured",
+   "lang": "swift",
+   "should_fail_in": "tools (T5); the guard already failed",
+   "now": "guard fails (G6 absence would also match)"
+  },
+  {
+   "attack": "facts.unwrap and its pin both changed (as!)",
+   "lang": "swift",
+   "should_fail_in": "guard",
+   "now": "FAILS: cite facts.unwrap: the quote does not contain \"asNative as! Entity\""
+  },
+  {
+   "attack": "print printer `as? EntityBase`",
+   "lang": "swift",
+   "should_fail_in": "guard",
+   "now": "FAILS: the print printer shows a record as ..., which does not unwrap with facts.unwrap"
+  },
+  {
+   "attack": "facts.record {var}.asEntity().data()",
+   "lang": "swift",
+   "should_fail_in": "guard",
+   "now": "FAILS: ... names asEntity, which the swift runtime does not declare"
+  },
+  {
+   "attack": "entityBy 'class'->'Name'",
+   "lang": "swift",
+   "should_fail_in": "tools (T4): a convention no runtime file shows",
+   "now": "guard passes (ran)"
+  },
+  {
+   "attack": "record cast dropped ({var}.asNative)?.data()",
+   "lang": "swift",
+   "should_fail_in": "guard",
+   "now": "FAILS: does not unwrap with facts.unwrap"
+  },
+  {
+   "attack": "call printer load(nil)",
+   "lang": "swift",
+   "should_fail_in": "guard",
+   "now": "FAILS: op list: list takes 2 argument(s) in the runtime; ... passes 1"
+  },
+  {
+   "attack": "m04 okFalse 'false'",
+   "lang": "ocaml",
+   "should_fail_in": "guard",
+   "now": "FAILS: the citation pins \"Bool false\""
+  },
+  {
+   "attack": "m07 copy removed from e_data_get",
+   "lang": "ocaml",
+   "should_fail_in": "guard",
+   "now": "FAILS: cite ref.facts.entity[0].copy: the provider declares no such fact (briefly lost in fd3203e6, restored in 68c1b1c8)"
+  },
+  {
+   "attack": "cancel absence never searches Entity_ocaml.ts",
+   "lang": "ocaml",
+   "should_fail_in": "guard",
+   "now": "FAILS: whole runtime searched (ocaml RunOp attack: ... RunOp.fragment.ml:6 has \"abort\")"
+  },
+  {
+   "attack": "m11 keys 'bare'->'member'",
+   "lang": "ocaml",
+   "should_fail_in": "tools (T4)",
+   "now": "guard passes (ran)"
+  },
+  {
+   "attack": "m20 List.iter->List.map",
+   "lang": "ocaml",
+   "should_fail_in": "an OCaml compiler (absent here)",
+   "now": "not run; nowhere in the guard"
+  },
+  {
+   "attack": "m21 ctrl and match swapped",
+   "lang": "ocaml",
+   "should_fail_in": "nowhere mechanical here: the arity is the same and the behaviour shows only when run (no OCaml toolchain)",
+   "now": "guard passes (ran)"
+  },
+  {
+   "attack": "E1 arrow signatures, then a callable written as a field",
+   "lang": "ocaml",
+   "should_fail_in": "guard",
+   "now": "FAILS: entity make: e_make is called in the runtime, declared as a field"
+  },
+  {
+   "attack": "a1 test_with Noval",
+   "lang": "ocaml",
+   "should_fail_in": "guard",
+   "now": "FAILS: test: test_with takes 2 argument(s) in the runtime; ... passes 1"
+  },
+  {
+   "attack": "a2 INTEGER int->float",
+   "lang": "ocaml",
+   "should_fail_in": "guard",
+   "now": "FAILS: INTEGER prints float; the forms pin the type word int"
+  },
+  {
+   "attack": "sentence dropped from every REFERENCE",
+   "lang": "lua",
+   "should_fail_in": "tools (T1)",
+   "now": "not mine"
+  },
+  {
+   "attack": "okFalse 'nil'",
+   "lang": "lua",
+   "should_fail_in": "guard",
+   "now": "FAILS: the citation pins \"false\""
+  },
+  {
+   "attack": "layout.ctor 'sdk.create'",
+   "lang": "lua",
+   "should_fail_in": "guard",
+   "now": "FAILS: the naming hook's constructor sdk.create runs create, which the lua runtime does not declare"
+  },
+  {
+   "attack": "call printer client.Planet()",
+   "lang": "lua",
+   "should_fail_in": "guard",
+   "now": "FAILS: ... Planet is declared on the instance, called through :; ... calls it through ."
+  },
+  {
+   "attack": "A1 operation cancel in _run_op",
+   "lang": "lua",
+   "should_fail_in": "guard",
+   "now": "FAILS: ... Entity.fragment.lua:327 has \"signal\""
+  },
+  {
+   "attack": "A2 pairForm '(value, err)'",
+   "lang": "lua",
+   "should_fail_in": "guard",
+   "now": "fails as before"
+  }
+ ],
+ "providers_wrong": [
+  {
+   "fact": "copy on the match getter (a clone the page does not state)",
+   "lang": "ocaml, elixir, go, perl, py, rb, rust, ts",
+   "provider_line": "Syntax_ocaml.ts entity[2] { kind: 'matchGet', sig: 'e_match_get () : value' }; elixir/perl/py/rb entity[2]; go/rust/ts entity[1], none with copy",
+   "runtime_line": "Entity_ocaml.ts:107 `clone ent.e_match`; entity_base.ex:102 `S.clone(S.getprop(ent, \"_match\"))`; Entity.fragment.go:119 `out := vs.Clone(e.match)`; Entity.fragment.pm:119; Entity.fragment.py:72; Entity.fragment.rb:92; Entity.fragment.rs:301; EntityBase.fragment.ts:105",
+   "why": "The getters return a copy; with no shared sentence for it (decision 7) the providers cannot say so. Staged as ahead citations, so a declaration must say true. Does not fail today."
+  },
+  {
+   "fact": "streamSignal (the stream reads callopts.signal although the operations cannot be cancelled)",
+   "lang": "clojure, elixir, go, lua, ocaml, perl, py, rb, swift (ported; ts cancels)",
+   "provider_line": "no such fact yet; each provider's cancel: false",
+   "runtime_line": "see stream_signal",
+   "why": "A true runtime fact that no page states. It is now cited ahead and excluded from the cancel search as a named region. Does not fail."
+  },
+  {
+   "fact": "accessor.cached",
+   "lang": "lua",
+   "provider_line": "accessor: { sig: '{accessor}(data)', ... } with no cached fact",
+   "runtime_line": "MainEntity_lua.ts:20-26 `if data == nil then if self._${field} == nil then ... return self._${field}`",
+   "why": "The shared sentence 'Create a new ... instance' is false for lua (and php). Cited ahead; needs decision 4."
+  }
+ ],
+ "for_freeze": "Start by running the guard on your merged tree. Every quote my forms hold must still be in the files the shared engineer edits; a moved line shows as 'no longer contains' or 'region ... must occur once'.\n\n1. Key names. Open ts/test/runtimeforms/account.ts NEW_FACTS. Where the shared code named a fact differently, rename it there, once:\n   - accessor.cached\n   - streamSignal\n   - memberNamed\n   - (client|entity)[i].field\n   - deleted\n   - direct.*\n   - imports.*\n   If the heading fact for the client's members carries the value instance/type/module, it is derived automatically, wherever it sits under ref.facts. If it uses other values, add a DEFAULTS row and a check beside guard.ts 'What members are called on'.\n\n2. Ahead citations become ordinary ones. When a provider declares a fact cited ahead, the citation is compared with its pin (G1); nothing else is needed:\n   - streamSignal: true for 16 languages, an absence (false) for cpp; c, rust and zig have none and need no declaration;\n   - accessor.cached: lua, php;\n   - copy on the match getter: elixir[2], go[1], perl[2], py[2], rb[2], rust[1], ts[1], ocaml[2].\n   If the shared engineer puts streamSignal elsewhere (on the stream member, say), rename the path in AHEAD and in each forms file's cite. Each cancel exclusion's `fact: 'ref.facts.streamSignal'` must name the cited path.\n\n3. Copy on the utility getter (decision 13). It comes under the existing DEFAULTS ref.facts.(client|entity)[i].copy, cited. ts/js utility() returns the live instance through struct.clone (brief 7). A quote cannot show that, so ts declares copy:false or omits it, with a pinned citation and a reason. Do not cite the clone call as proof of a copy.\n\n4. Member field flag (decision 9): ocaml name `field: true`. It is derived: verified when it equals the runtime's e_name record field.\n\n5. memberNamed bare (decision 8) is derived for ocaml (calls.args 'space') and clojure ('lisp'). The guard fails if a provider in paren notation declares bare.\n\n6. Imports with a place (decision 1). If imports takes a third argument, pass it in guard.ts importsOf for each place ('tutorial', 'top', 'reference'), so the constructor's qualifier is checked as bound in every place. Today importsOf calls imports(desc, used) only.\n\n7. The call that a sentence names (decision 14, swift list(nil, nil)). If shared code builds it from the operation's facts, add a probe beside the operation probes in guard.ts. Feed the built call through readCalls and arityFits, as for S.call.\n\n8. The seven ports to come (js php csharp java kotlin scala cpp) must add `calls` to their forms; the guard fails until they do. They should also cite copy and streamSignal as staged.\n\n9. If ocaml's signatures move to the arrow form, nothing in the forms changes (the G5 experiment passed). Only the provider's strings change.",
+ "not_done": [
+  "perl optionality: the table still marks every perl parameter [optional]. The porter showed the runtime's comments call reqdata and a stream's action required. Parameter text cannot tell the page's $data as optional (accessor) from required (setter). Recorded in perl.ts.",
+  "The call a sentence names (decision 14) is not checked; only the calls the call printer prints are.",
+  "Clojure keyword calls such as ((:data-get x)) are not read by the call reader. The reader needs `(name` or `(ns/name`, so clojure's entity-member calls are not receiver-checked.",
+  "Comment-only citations are counted (12), not failed. Each needs a reviewer: perl 8 (none, collection, recordType, direct.returns, prepare.returns, body.values, body.once, a note), c 2, clojure 1, ts 1.",
+  "The seven unported forms carry no calls notation: their porters must add it.",
+  "Ahead citations: none written for csharp, java, kotlin, scala or cpp copy getters, or for php's other facts.",
+  "Not run: any toolchain lane, the review tools (n-tools), make comments-test or the comment gate. Not needed for test-only changes, but not shown.",
+  "Timings: single runs on a shared machine (mutation runs about 11 s each).",
+  "I did not read P/survey or s3c-survey.md; my stream-signal reading is independent."
+ ],
+ "account": [
+  {
+   "language": "c",
+   "derived": "42",
+   "cited": "14 (pinned prose 7, absence 1)",
+   "absence": "1 (cancel; whole runtime, 5 regions)",
+   "pinned_prose": "7",
+   "lang": "c",
+   "convention": "10",
+   "type_words": "column c (derived from EntityTypes_c); 2 words pinned for the excepted ARRAY/OBJECT"
+  },
+  {
+   "lang": "clojure",
+   "derived": "43",
+   "cited": "16 (pinned prose 8, absence 1) + 1 ahead",
+   "absence": "1 (14 hits in 11 regions)",
+   "pinned_prose": "8",
+   "language": "1",
+   "convention": "11",
+   "type_words": "8 pinned (no column), for the reviewer"
+  },
+  {
+   "lang": "elixir",
+   "derived": "48",
+   "cited": "15 (pinned 9, absence 1) + 2 ahead",
+   "absence": "1",
+   "pinned_prose": "9",
+   "language": "1",
+   "convention": "5",
+   "type_words": "column elixir (via utility_elixir.ts)"
+  },
+  {
+   "lang": "go",
+   "derived": "48",
+   "cited": "14 (pinned 7, absence 1) + 2 ahead",
+   "absence": "1",
+   "pinned_prose": "7",
+   "language": "2 (maps, unusedError)",
+   "convention": "6",
+   "type_words": "column go"
+  },
+  {
+   "lang": "lua",
+   "derived": "47",
+   "cited": "18 (pinned 11, absence 1) + 2 ahead",
+   "absence": "1 (25 hits in 20 regions)",
+   "pinned_prose": "11",
+   "language": "1",
+   "convention": "6",
+   "type_words": "column lua"
+  },
+  {
+   "lang": "ocaml",
+   "derived": "48",
+   "cited": "15 (pinned 11, absence 1) + 2 ahead",
+   "absence": "1",
+   "pinned_prose": "11",
+   "language": "1",
+   "convention": "11",
+   "type_words": "8 pinned (no column)"
+  },
+  {
+   "lang": "perl",
+   "derived": "44",
+   "cited": "17 (pinned 7, absence 1) + 2 ahead",
+   "absence": "1",
+   "pinned_prose": "7",
+   "language": "1",
+   "convention": "9",
+   "type_words": "8 pinned (no column)"
+  },
+  {
+   "lang": "py",
+   "derived": "48",
+   "cited": "14 (pinned 6, absence 1) + 2 ahead",
+   "absence": "1",
+   "pinned_prose": "6",
+   "language": "1",
+   "convention": "7",
+   "type_words": "column py"
+  },
+  {
+   "lang": "rb",
+   "derived": "47",
+   "cited": "14 (pinned 6, absence 1) + 2 ahead",
+   "absence": "1",
+   "pinned_prose": "6",
+   "language": "1",
+   "convention": "7",
+   "type_words": "column rb"
+  },
+  {
+   "lang": "rust",
+   "derived": "43",
+   "cited": "14 (pinned 6, absence 1) + 1 ahead",
+   "absence": "1",
+   "pinned_prose": "6",
+   "language": "1",
+   "convention": "9",
+   "type_words": "column rust"
+  },
+  {
+   "lang": "swift",
+   "derived": "45",
+   "cited": "13 (pinned 6, absence 1) + 1 ahead",
+   "absence": "1",
+   "pinned_prose": "6",
+   "language": "1",
+   "convention": "5",
+   "type_words": "column swift"
+  },
+  {
+   "lang": "ts",
+   "derived": "47",
+   "cited": "19 (pinned 9, absence 0) + 2 ahead",
+   "absence": "0 (cancel true)",
+   "pinned_prose": "9",
+   "language": "1",
+   "convention": "5",
+   "type_words": "column ts"
+  },
+  {
+   "lang": "zig",
+   "derived": "40",
+   "cited": "17 (pinned 9, absence 1)",
+   "absence": "1",
+   "pinned_prose": "9",
+   "language": "2",
+   "convention": "9",
+   "type_words": "8 pinned (no column)"
+  }
+ ],
+ "stream_signal": [
+  {
+   "lang": "ts",
+   "reads_signal": "yes (cancel true anyway)",
+   "file_line": "src/cmp/ts/fragment/EntityBase.fragment.ts:121-124,151,160"
+  },
+  {
+   "lang": "js",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/js/fragment/EntityBase.fragment.js:117-120,147,156"
+  },
+  {
+   "lang": "py",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/py/fragment/Entity.fragment.py:88,113-118,134,148"
+  },
+  {
+   "lang": "rb",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/rb/fragment/Entity.fragment.rb:107,130-133,159,167"
+  },
+  {
+   "lang": "php",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/php/fragment/Entity.fragment.php:152,179-187"
+  },
+  {
+   "lang": "lua",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/lua/fragment/Entity.fragment.lua:133,166-174,193,219"
+  },
+  {
+   "lang": "go",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/go/fragment/Entity.fragment.go:151-156,189"
+  },
+  {
+   "lang": "java",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/java/fragment/EntityBase.fragment.java:214-216,285"
+  },
+  {
+   "lang": "kotlin",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/kotlin/fragment/EntityBase.fragment.kt:187,233-235"
+  },
+  {
+   "lang": "scala",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/scala/fragment/EntityBase.fragment.scala:166,210"
+  },
+  {
+   "lang": "csharp",
+   "reads_signal": "yes (plus an EnumeratorCancellation token)",
+   "file_line": "src/cmp/csharp/fragment/EntityBase.fragment.cs:261,267-270,342,370"
+  },
+  {
+   "lang": "swift",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/swift/fragment/EntityBase.fragment.swift:193,238"
+  },
+  {
+   "lang": "perl",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/perl/fragment/Entity.fragment.pm:153,190-191,203,236"
+  },
+  {
+   "lang": "clojure",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/clojure/fragment/Entity.fragment.clj:166-167,186"
+  },
+  {
+   "lang": "elixir",
+   "reads_signal": "yes",
+   "file_line": "tm/elixir/lib/projectname/entity_base.ex:153,172"
+  },
+  {
+   "lang": "ocaml",
+   "reads_signal": "yes",
+   "file_line": "src/cmp/ocaml/Entity_ocaml.ts:142-143,153"
+  },
+  {
+   "lang": "c",
+   "reads_signal": "no (the whole-runtime cancel search leaves no stream region out)",
+   "file_line": "-"
+  },
+  {
+   "lang": "cpp",
+   "reads_signal": "no (absence of \\bsignal\\b; only Httpjson.cpp #include <signal.h>)",
+   "file_line": "-"
+  },
+  {
+   "lang": "rust",
+   "reads_signal": "no",
+   "file_line": "-"
+  },
+  {
+   "lang": "zig",
+   "reads_signal": "no",
+   "file_line": "-"
+  }
+ ],
+ "mutations": "The freeze's mutations, run on my final guard: work/freeze-muts.json, 108 entries. That is mutsall.json with the adapted ones from muts-adapt*.json swapped in; two ids occur twice, as in the freeze's own sets.\n- Freeze outcome for the same entries: 97 caught, 8 not caught, 3 errors.\n- Now: 97 caught, 5 not caught, 4 errors, 2 whose `from` no longer matches.\n- Newly caught: zig-type-integer, clj-type-integer, c-type-string.\n- Still not caught: clj-return-changed, ts-noun, ts-type-comment, ts-lit-int, new-ts-unquoted-near.\n- The errors are the freeze's own build errors: v32-py-okfalse-removed (TS2741), new-rb-lits-false-False, and the first copies of my-new-provider-php-adapted and my-types-reason-blanked-zig. The second php copy is caught.\n- my-types-reason-blanked-zig's second copy no longer matched because zig's types line now pins words. Adapted (my-types-reason-blanked-zig-adapted2), it is caught.\n- new-py-lits-removed had a stale `from` at the freeze too.\n\nCaught less: none. ocaml m07 was briefly caught less by my own change (fd3203e6). Found by running it, fixed in 68c1b1c8, and run again: caught.\n\nMy attacks (work/att-all.json, 37): 31 caught, 6 not caught. The six are the G5 arrow experiment, meant to pass, and the five listed in attacks as nowhere in the guard.",
+ "breaking": [
+  {
+   "change": "An absence searches the whole runtime; `files` is refused; a region left out is quoted with its reason. NOT_RUNTIME narrowed: perl t/ and swift Tests/ are no longer citable, and the test feature's source is.",
+   "forms_forced": "c, clojure, elixir, go, lua, ocaml, perl, py, rb, rust, swift, zig (absences); perl ctor[1] (it cited tm/perl/t/feature.t)"
+  },
+  {
+   "change": "types.column must be the generator's column; with none, every type word is pinned in types.words; a word excepted from the column is pinned too",
+   "forms_forced": "clojure, ocaml, perl, zig, c"
+  },
+  {
+   "change": "Every provider's forms must state calls (separators by on, argument notation, parenless, ctor map). A fact the guard now derives may not be cited.",
+   "forms_forced": "all 13 provider forms; ocaml (ctorAlts[0].call citation dropped). The 7 unported, when they gain a provider."
+  },
+  {
+   "change": "A copy citation with no declaration is an orphan unless it is on a match getter",
+   "forms_forced": "none"
+  },
+  {
+   "change": "swift's own record reader replaced by the shared whole-record check",
+   "forms_forced": "swift"
+  }
+ ],
+ "table_rows_corrected": [
+  "perl TO_JSON: on module -> instance (a sub with no receiver line is a method; Main.fragment.pm:122-128)",
+  "swift mode: returns '' -> String (`public var mode = \"live\"`, Main.fragment.swift:20)",
+  "ocaml client: a 'shows' row now states that options and utility are the sdk_client record fields cl_options and cl_utility (tm/ocaml/sdk_types.ml:188-189). The family list still reads 'Members the runtime does not have: options, utility' because no function exists.",
+  "New rows for all twenty: Calls (how a call is written), Stream signal, Deleted mark (public entity members named *delet*), Accessor called with no options (kept instance: lua MainEntity_lua.ts:20, php MainEntity_php.ts:43)",
+  "Not corrected: perl create/update/patch/stream optionality (see not_done); lua direct and prepare returns stay empty in the table (no ---@return; the porter cited them); swift Types.swift no-argument data()/matchv() was already read by the forms at v33p"
+ ],
+ "commits": [
+  "ee029f09 G1 pinned value always compared",
+  "e9df0f73 G6 absence over the whole runtime, quoted regions; streamSignal cited",
+  "bc53234e G7 type column derived; type words pinned",
+  "41417b7b G8 record expression whole",
+  "18a23ef2 G2-G5 printed calls in the runtime's notation; arity, receiver, called",
+  "4e6a6b0c unwrap verbatim; print printer unwrap; 3-member map probe",
+  "8784f758 unwrap whole word",
+  "fd3203e6 accounts for brief 7's facts; ahead citations",
+  "be57b9a5 report: hook constructor spelling",
+  "f4b2692d runtime table rows; porter-found rows",
+  "68c1b1c8 copy ahead only on match getters; comment-only marker"
+ ],
+ "ran": "All runs used PATH=/opt/node24/bin:$PATH.\n\nIn P/n-guard/sdkgen/ts:\n- After each change: `npm run build` (exit 0 every time) and `node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js` (77/77 at the end).\n- `node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)`: 2613 tests, 2608 pass, 0 fail, 5 skipped.\n- `SDKGEN_RUNTIME_TABLE=P/n-guard/runtime-table.md node --test dist-test/runtimereader.test.js`\n- `SDKGEN_GUARD_REPORT=1 ... 'account, per language'`, output in work/report.txt.\n\nIn P/n-guard/work, mutations through `node mutate.js <set>.json <out>.json` on the copy P/n-guard/mut (synced to HEAD by sync-mut.sh):\n- att-g1, att-g6, att-g7, att-g8, att-g2, att-more, att-final, att-all;\n- freeze-muts (108).\n\nMeasurement scripts, also in work: absence.js and absence2.js (whole-runtime hits), gen.js, final.js and splice.js (the absences written into the forms), probe.js (what each provider prints).",
+ "read": "Read in full:\n- brief.md, brief3.md to brief7.md;\n- results/s3b-wave1-consolidated.md;\n- results/s3fix2-guard.txt (summary, gaps, mutations, account);\n- results/s3fix2-final.txt (account, mutations);\n- base32/PORTING.md sections 2, 3 and 6.\n\nCode read: the guard framework, the forms of lua, ocaml, swift and perl, Syntax_lua and Naming_lua, and sdkdesc.ts (the Naming hook). Runtime code read: the stream functions of all twenty (signal reads), the match getters, lua and php accessors, and canonType.ts with the EntityTypes LANG constants.",
+ "surprises": [
+  "My own change (fd3203e6) let any copy citation stand ahead of a declaration, which silently hid the reviewers' ocaml m07. Only re-running the freeze set showed it; fixed in 68c1b1c8.",
+  "elixir's entityBy 'module' was swept into the new on-value rule and passed by coincidence (elixir's client members are on its module); excluded explicitly.",
+  "The old NOT_RUNTIME dropped the runtime's own test-feature source (tm/ts/src/feature/test/TestFeature.ts, Test* files under tm/) and kept perl's t/ and swift's Tests/ test trees as runtime.",
+  "swift's cancel pattern had no `signal` at all, while its stream reads callopts.signal; c's old pattern would have matched 44 abort() calls in the vendored struct library had it searched beyond http.c.",
+  "A substring check for the unwrap (`as? Entity` inside `as? EntityBase`) let the print-printer attack pass on the first try; fixed with word boundaries.",
+  "go's record printer adds a type assertion `.(sdk.Entity)` that facts.record ('Data()') does not state.",
+  "A clone word in a getter's body is not usable as a check: ts's utility() clones and returns the live object (brief 7), so it became a report and staged citations instead."
+ ]
+}

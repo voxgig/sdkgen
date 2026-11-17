@@ -1,0 +1,326 @@
+▶ runtimefacts
+  ✔ every provider is checked (1.050927ms)
+  ✔ every compiled forms file has its source, and every provider a forms source (1.198617ms)
+  ✔ c: the language declares its runtime forms (0.86537ms)
+  ✔ c: the declared facts are what its runtime defines (13.681421ms)
+  ✖ c: every declared fact is accounted for (10.603363ms)
+  ✔ c: each check fails when its fact is changed (negative controls) (171.152849ms)
+  ✔ clojure: the language declares its runtime forms (0.846018ms)
+  ✔ clojure: the declared facts are what its runtime defines (5.949742ms)
+  ✖ clojure: every declared fact is accounted for (7.542308ms)
+  ✔ clojure: each check fails when its fact is changed (negative controls) (124.086273ms)
+  ✔ elixir: the language declares its runtime forms (0.898445ms)
+  ✔ elixir: the declared facts are what its runtime defines (5.031893ms)
+  ✖ elixir: every declared fact is accounted for (5.051216ms)
+  ✔ elixir: each check fails when its fact is changed (negative controls) (107.077782ms)
+  ✔ go: the language declares its runtime forms (0.761992ms)
+  ✔ go: the declared facts are what its runtime defines (4.663685ms)
+  ✖ go: every declared fact is accounted for (3.769743ms)
+  ✔ go: each check fails when its fact is changed (negative controls) (85.543138ms)
+  ✔ py: the language declares its runtime forms (0.977093ms)
+  ✔ py: the declared facts are what its runtime defines (5.749945ms)
+  ✖ py: every declared fact is accounted for (5.213098ms)
+  ✔ py: each check fails when its fact is changed (negative controls) (108.98577ms)
+  ✔ rb: the language declares its runtime forms (0.870676ms)
+  ✔ rb: the declared facts are what its runtime defines (5.367642ms)
+  ✖ rb: every declared fact is accounted for (3.713125ms)
+  ✔ rb: each check fails when its fact is changed (negative controls) (81.48671ms)
+  ✔ rust: the language declares its runtime forms (0.80329ms)
+  ✔ rust: the declared facts are what its runtime defines (6.082233ms)
+  ✖ rust: every declared fact is accounted for (5.010051ms)
+  ✔ rust: each check fails when its fact is changed (negative controls) (123.537293ms)
+  ✔ ts: the language declares its runtime forms (0.888532ms)
+  ✔ ts: the declared facts are what its runtime defines (5.276104ms)
+  ✖ ts: every declared fact is accounted for (4.774768ms)
+  ✔ ts: each check fails when its fact is changed (negative controls) (97.985414ms)
+  ✔ zig: the language declares its runtime forms (0.77663ms)
+  ✔ zig: the declared facts are what its runtime defines (4.655649ms)
+  ✖ zig: every declared fact is accounted for (5.248616ms)
+  ✔ zig: each check fails when its fact is changed (negative controls) (134.825665ms)
+  ✔ the account, per language (SDKGEN_GUARD_REPORT=1 prints it) (98.662197ms)
+✖ runtimefacts (1254.282737ms)
+▶ runtimereader
+  ✔ forms files for every language (0.953615ms)
+  ✔ c: the forms read the runtime (21.148084ms)
+  ✔ clojure: the forms read the runtime (6.871216ms)
+  ✔ cpp: the forms read the runtime (32.369265ms)
+  ✔ csharp: the forms read the runtime (12.250971ms)
+  ✔ elixir: the forms read the runtime (7.158611ms)
+  ✔ go: the forms read the runtime (5.310566ms)
+  ✔ java: the forms read the runtime (8.211987ms)
+  ✔ js: the forms read the runtime (6.957636ms)
+  ✔ kotlin: the forms read the runtime (7.827827ms)
+  ✔ lua: the forms read the runtime (5.670647ms)
+  ✔ ocaml: the forms read the runtime (8.001538ms)
+  ✔ perl: the forms read the runtime (4.322249ms)
+  ✔ php: the forms read the runtime (6.122353ms)
+  ✔ py: the forms read the runtime (5.437357ms)
+  ✔ rb: the forms read the runtime (9.406863ms)
+  ✔ rust: the forms read the runtime (6.498908ms)
+  ✔ scala: the forms read the runtime (8.701119ms)
+  ✔ swift: the forms read the runtime (11.242428ms)
+  ✔ ts: the forms read the runtime (5.84216ms)
+  ✔ zig: the forms read the runtime (5.744758ms)
+  ✔ the table (SDKGEN_RUNTIME_TABLE=<path>) (0.140935ms)
+✔ runtimereader (188.57742ms)
+ℹ tests 61
+ℹ suites 2
+ℹ pass 52
+ℹ fail 9
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1735.46121
+
+✖ failing tests:
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ c: every declared fact is accounted for (10.603363ms)
+  AssertionError [ERR_ASSERTION]: c: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   'ref.facts.setArg: cite the runtime file and a quote that shows "a map"',
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[3].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'ref.facts.setArg: cite the runtime file and a quote that shows "a map"', "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[3].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ clojure: every declared fact is accounted for (7.542308ms)
+  AssertionError [ERR_ASSERTION]: clojure: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[5].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[5].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ elixir: every declared fact is accounted for (5.051216ms)
+  AssertionError [ERR_ASSERTION]: elixir: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[5].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS",
+  +   'exception notes.tutorial:load: the provider declares no such fact'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[5].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS", 'exception notes.tutorial:load: the provider declares no such fact' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ go: every declared fact is accounted for (3.769743ms)
+  AssertionError [ERR_ASSERTION]: go: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   'facts.pairForm: cite the runtime file and a quote that shows "(value, error)"',
+  +   "facts.noError: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[3].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'facts.pairForm: cite the runtime file and a quote that shows "(value, error)"', "facts.noError: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[3].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ py: every declared fact is accounted for (5.213098ms)
+  AssertionError [ERR_ASSERTION]: py: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[5].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS",
+  +   'cite ref.facts.lits.false: a fact not yet declared is cited with the value the runtime shows (value: ...)',
+  +   'cite ref.facts.lits.true: a fact not yet declared is cited with the value the runtime shows (value: ...)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[5].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS", 'cite ref.facts.lits.false: a fact not yet declared is cited with the value the runtime shows (value: ...)', 'cite ref.facts.lits.true: a fact not yet declared is cited with the value the runtime shows (value: ...)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ rb: every declared fact is accounted for (3.713125ms)
+  AssertionError [ERR_ASSERTION]: rb: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[5].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[5].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ rust: every declared fact is accounted for (5.010051ms)
+  AssertionError [ERR_ASSERTION]: rust: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[3].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[3].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ ts: every declared fact is accounted for (4.774768ms)
+  AssertionError [ERR_ASSERTION]: ts: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[3].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.abortCode: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[3].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.abortCode: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ zig: every declared fact is accounted for (5.248616ms)
+  AssertionError [ERR_ASSERTION]: zig: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   'ref.facts.setArg: cite the runtime file and a quote that shows "a map"',
+  +   "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.entity[2].runs: no default category in the shared account; add the key's category to DEFAULTS",
+  +   "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS"
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v32/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'ref.facts.setArg: cite the runtime file and a quote that shows "a map"', "ref.facts.accessor.param: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.entity[2].runs: no default category in the shared account; add the key's category to DEFAULTS", "ref.facts.direct.okFalse: no default category in the shared account; add the key's category to DEFAULTS" ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

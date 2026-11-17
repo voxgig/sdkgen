@@ -1,0 +1,80 @@
+[portcheck rb] regenerate NEW from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/sdkgen (21 variations; a progress line per variation)
+[1/21] new B: 41 READMEs in 1221ms
+[2/21] new auth-basic: 41 READMEs in 782ms
+[3/21] new auth-basic-query: 41 READMEs in 835ms
+[4/21] new auth-query: 41 READMEs in 799ms
+[5/21] new auth-off: 41 READMEs in 611ms
+[6/21] new server-mixed: 41 READMEs in 700ms
+[7/21] new server-static: 41 READMEs in 714ms
+[8/21] new server-none: 41 READMEs in 663ms
+[9/21] new ex-readonly: 41 READMEs in 635ms
+[10/21] new ent-only-ambient: 41 READMEs in 602ms
+[11/21] new ent-none: 41 READMEs in 582ms
+[12/21] new doc-list: 41 READMEs in 604ms
+[13/21] new doc-crud: 41 READMEs in 587ms
+[14/21] new doc-nested: 41 READMEs in 609ms
+[15/21] new crud-basic: 41 READMEs in 641ms
+[16/21] new crud-bare: 41 READMEs in 562ms
+[17/21] new crud-noupdate: 41 READMEs in 548ms
+[18/21] new ref-issues: 41 READMEs in 584ms
+[19/21] new no-test: 41 READMEs in 546ms
+[20/21] new lone-go: 3 READMEs in 169ms
+[21/21] alias-go2: SKIPPED (alias staging would write into /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/sdkgen/ts; copy the clone under /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools to generate it)
+[portcheck rb] sections: tutorial,rootquick,reference
+[portcheck rb] ledger
+ledger rb      tutorial  (unported) vars 19 | units OLD 130 NEW 181: same 61 reworded 47 missing 22 added 73 | classes 44 (echo 3, reworded 14, missing 5, added 10, novel-token 12) | unclassified 0, defect 0 -> tools/review/rb/tutorial.ledger.txt
+ledger rb      rootquick (unported) vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 | classes 3 (reworded 3) | unclassified 0, defect 0 -> tools/review/rb/rootquick.ledger.txt
+ledger rb      reference (unported) vars 19 | units OLD 16050 NEW 16529: same 15059 reworded 497 missing 494 added 973 | classes 117 (echo 9, reworded 30, missing 20, added 43, novel-token 14, vanished-token 1) | unclassified 0, defect 0 -> tools/review/rb/reference.ledger.txt
+[portcheck rb] blocks
+blocks rb      tutorial  (unported) vars 19 | OLD 48 NEW 48: identical 3, after corrections 0, changed 45, OLD-only 0, NEW-only 0 | classes 37 (changed 11, novel-token 11, vanished-token 15) | unclassified 0, defect 0 -> tools/review/rb/tutorial.blocks.txt
+blocks rb      rootquick (unported) vars 19 | OLD 19 NEW 19: identical 0, after corrections 0, changed 19, OLD-only 0, NEW-only 0 | classes 28 (changed 11, novel-token 8, vanished-token 7, novel-shape 2) | unclassified 0, defect 0 -> tools/review/rb/rootquick.blocks.txt
+blocks rb      reference (unported) vars 19 | OLD 314 NEW 313: identical 303, after corrections 0, changed 10, OLD-only 1, NEW-only 0 | classes 2 (changed 1, old-only 1) | unclassified 0, defect 0 -> tools/review/rb/reference.blocks.txt
+[portcheck rb] sharing (NEW, then OLD), over the languages ported for the section
+new: share tutorial over 9 languages (ts go py c zig clojure rust elixir rb), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 9 | at least 7 | 2..6 | only this language   -- code spans, title, SDK and model names masked
+new:   rb         181 units  48.1%  36.5%   8.8%   6.6% |   1454 words  50.9%  26.2%  12.1%  10.8% | language words at output 157 (2 distinct units) | at source: fact/notes tables facts,refFacts 107 words (7 in prose literals), other prose literals 0 words
+old: share tutorial over 9 languages (ts go py c zig clojure rust elixir rb), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 9 | at least 7 | 2..6 | only this language   -- code spans, title, SDK and model names masked
+old:   rb         130 units  30.8%  44.6%     0%  24.6% |   1000 words  38.1%    23%     0%  38.9% | language words at output 389 (4 distinct units) | at source: fact/notes tables facts,refFacts 107 words (7 in prose literals), other prose literals 0 words
+new: share rootquick over 9 languages (ts go py c zig clojure rust elixir rb), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 9 | at least 7 | 2..6 | only this language   -- code spans, title, SDK and model names masked
+new:   rb          42 units  45.2%     0%  38.1%  16.7% |    238 words     8%     0%  53.8%  38.2% | language words at output 91 (1 distinct units) | at source: fact/notes tables facts,refFacts 107 words (7 in prose literals), other prose literals 0 words
+old: share rootquick over 9 languages (ts go py c zig clojure rust elixir rb), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 9 | at least 7 | 2..6 | only this language   -- code spans, title, SDK and model names masked
+old:   rb          42 units  45.2%     0%     0%  54.8% |    334 words   5.7%     0%     0%  94.3% | language words at output 315 (2 distinct units) | at source: fact/notes tables facts,refFacts 107 words (7 in prose literals), other prose literals 0 words
+new: share reference over 9 languages (ts go py c zig clojure rust elixir rb), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/new
+new:   units (words) printed by: all 9 | at least 7 | 2..6 | only this language   -- code spans, title, SDK and model names masked
+new:   rb       16529 units  91.9%   2.6%   4.3%   1.2% |  48602 words  84.9%   4.9%   5.4%   4.8% | language words at output 2324 (3 distinct units) | at source: fact/notes tables facts,refFacts 107 words (7 in prose literals), other prose literals 0 words
+old: share reference over 9 languages (ts go py c zig clojure rust elixir rb), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/out/old
+old:   units (words) printed by: all 9 | at least 7 | 2..6 | only this language   -- code spans, title, SDK and model names masked
+old:   rb       16050 units  88.2%   3.4%   5.8%   2.6% |  46265 words  78.5%   4.8%   9.5%   7.3% | language words at output 3355 (7 distinct units) | at source: fact/notes tables facts,refFacts 107 words (7 in prose literals), other prose literals 0 words
+[portcheck rb] purity
+purity over rb (vocabulary: 20 features, 10 option keys, 36 entity name forms, 6 operations)
+  rb      Syntax 155 lines, Naming present: 0 open, 1 accepted
+     naming calls exampleVarName (@voxgig/sdkgen); also called by: NO non-README component
+     naming calls nom (@voxgig/apidef); also called by: TestEntity_rb.ts
+     naming calls rbSdkFile (./utility_rb); also called by: Main_rb.ts
+[portcheck rb] guard: node --test --test-name-pattern rb ts/dist-test/runtimefacts.test.js
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+ℹ skipped 0
+[portcheck rb] summary
+  ledger rb      tutorial  (unported) vars 19 | units OLD 130 NEW 181: same 61 reworded 47 missing 22 added 73 
+        classes 44 (echo 3, reworded 14, missing 5, added 10, novel-token 12) | unclassified 0, defect 0
+  ledger rb      rootquick (unported) vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 
+        classes 3 (reworded 3) | unclassified 0, defect 0
+  ledger rb      reference (unported) vars 19 | units OLD 16050 NEW 16529: same 15059 reworded 497 missing 494 added 973 
+        classes 117 (echo 9, reworded 30, missing 20, added 43, novel-token 14, vanished-token 1) | unclassified 0, defect 0
+  blocks rb      tutorial  (unported) vars 19 | OLD 48 NEW 48: identical 3, after corrections 0, changed 45, OLD-only 0, NEW-only 0 
+        classes 37 (changed 11, novel-token 11, vanished-token 15) | unclassified 0, defect 0
+  blocks rb      rootquick (unported) vars 19 | OLD 19 NEW 19: identical 0, after corrections 0, changed 19, OLD-only 0, NEW-only 0 
+        classes 28 (changed 11, novel-token 8, vanished-token 7, novel-shape 2) | unclassified 0, defect 0
+  blocks rb      reference (unported) vars 19 | OLD 314 NEW 313: identical 303, after corrections 0, changed 10, OLD-only 1, NEW-only 0 
+        classes 2 (changed 1, old-only 1) | unclassified 0, defect 0
+  worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/review/rb/*.ledger.txt, *.blocks.txt, *.blocks.diff; templates *.template.json -> fill into /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/classes/rb.json
+PORTCHECK rb: PASS
+
+real	0m17.345s
+user	0m21.746s
+sys	0m1.351s

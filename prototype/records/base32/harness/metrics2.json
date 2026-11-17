@@ -1,0 +1,146 @@
+{
+ "before": {
+  "quickShared": {
+   "total": 34,
+   "ncnb": 21
+  },
+  "quickSix": {
+   "total": 1354,
+   "ncnb": 1044
+  },
+  "quickAll": {
+   "total": 4503,
+   "ncnb": 3458
+  },
+  "topShared": {
+   "total": 13,
+   "ncnb": 12
+  },
+  "topSix": {
+   "total": 659,
+   "ncnb": 474
+  },
+  "topAll": {
+   "total": 2000,
+   "ncnb": 1422
+  }
+ },
+ "after": {
+  "infrastructure": {
+   "helpers/sdkdesc.ts": {
+    "total": 298,
+    "ncnb": 231
+   },
+   "helpers/example.ts": {
+    "total": 338,
+    "ncnb": 242
+   },
+   "helpers/runtimeprose.ts": {
+    "total": 101,
+    "ncnb": 75
+   }
+  },
+  "quickShared": {
+   "total": 212,
+   "ncnb": 160
+  },
+  "topOnly": {
+   "total": 54,
+   "ncnb": 51
+  },
+  "providers": {
+   "ts": {
+    "total": 88,
+    "ncnb": 68
+   },
+   "go": {
+    "total": 124,
+    "ncnb": 96
+   },
+   "py": {
+    "total": 85,
+    "ncnb": 66
+   },
+   "c": {
+    "total": 148,
+    "ncnb": 118
+   },
+   "zig": {
+    "total": 126,
+    "ncnb": 98
+   },
+   "clojure": {
+    "total": 109,
+    "ncnb": 84
+   }
+  },
+  "naming": {
+   "ts": {
+    "total": 24,
+    "ncnb": 17
+   },
+   "go": {
+    "total": 23,
+    "ncnb": 15
+   },
+   "py": {
+    "total": 26,
+    "ncnb": 18
+   },
+   "c": {
+    "total": 27,
+    "ncnb": 18
+   },
+   "zig": {
+    "total": 21,
+    "ncnb": 13
+   },
+   "clojure": {
+    "total": 27,
+    "ncnb": 19
+   }
+  }
+ },
+ "summary": {
+  "beforeSix": {
+   "total": 2060,
+   "ncnb": 1551
+  },
+  "afterSix": {
+   "total": 1818,
+   "ncnb": 1377
+  },
+  "ratioSix": "1.13x / 1.13x",
+  "beforeAll": {
+   "total": 6550,
+   "ncnb": 4913
+  },
+  "afterAll": {
+   "total": 3750,
+   "ncnb": 2847
+  },
+  "ratioAll": "1.75x / 1.73x",
+  "afterAllAtC": {
+   "total": 4490,
+   "ncnb": 3467
+  },
+  "ratioAllAtC": "1.46x / 1.42x",
+  "quickOnly": {
+   "before": {
+    "total": 1388,
+    "ncnb": 1065
+   },
+   "after": {
+    "total": 1764,
+    "ncnb": 1326
+   }
+  },
+  "secondSection": {
+   "sharedLines": {
+    "total": 54,
+    "ncnb": 51
+   },
+   "providerLines": "see git: lines the providers gained for it"
+  }
+ }
+}

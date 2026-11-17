@@ -1,0 +1,17 @@
+== README.md: 133 of 133 files differ, over 19 variations
+   133  -switch it on**, so an SDK you have not configured behaves exactly as if none of
+   133  -them existed — no retries, no cache, no logging, no measurable overhead.
+   133  +switch it on**, except `log`, which runs unless disabled. Every other
+   133  +feature you have not configured behaves exactly as if it did not exist,
+   133  +with no measurable overhead.
+   133  -Set `feature.log.active` to enable it, then override any of the options above.
+   133  +It is active by default: set `feature.log.active` to false to switch it off, or override any of the options above.
+== REFERENCE.md: 133 of 133 files differ, over 19 variations
+   133  -Each feature is inactive until switched on, and an SDK with no feature
+   133  -configured does no feature work at all. Every option below keeps its default
+   133  +Each feature is inactive until switched on, except `log`, which
+   133  +runs unless disabled. Every option below keeps its default
+   133  -The array form of \`feature\` is significant: several features wrap the
+   133  +The array form of `feature` is significant: several features wrap the
+   133  -- Inactive by default: leaving it out costs nothing at runtime.
+   133  +- Active by default: set `active: false` to switch it off.

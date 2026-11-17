@@ -1,0 +1,10 @@
+- 15:05 step 1 workspace made by newport.sh (clone 0065f1e2). Reading finished 15:00-15:05.
+- 15:05 step 2 (table vs runtime) read: rows wrong/missing noted: opAllowed/opDenied/rawRequest private (types.hpp:673-676), runOp protected (757-759) -- table shows no access; deleted 'whether remove succeeded' false under ctrl.throw false (EntityRemoveOp.fragment.cpp:47-60 markDeleted unconditional; pipeline.hpp:466 makeError returns under throw:false).
+- decision: client constructor stays std::make_shared<DemoSDK>(...) (OLD, idiomatic); the call reader (calls.ts readCalls) cannot read a template call -> interface gap, guard 'ctor' expected to fail. No workaround (no `new`, no stack object).
+- decision: imports print <iostream> where a block prints (OLD omitted it; correction).
+- 15:25 provider/hook/forms written, components deleted, build 0; guard: only the 2 ctor messages (make_shared gap); account clean
+- 15:50 review: hand records 202, all ledger/blocks/absent/facts decided; one command fails only on guard ctor gap; tools commit c6a61ab
+- 16:05 lanes: cpp DOC lane NEW 6/6, OLD 6/6; run.sh structural NEW 87/69/69 checks pass, OLD 85/67/67 pass; root quick start from repo root: both need -iquote cpp, both compile, both abort at fetch_no_transport (no live transport in cpp runtime: interface gap)
+- 16:35 suite 2635/2629 pass, 1 fail (cpp ctor gap), 5 skip; golden committed cda64e0c; mutation control: arity, deleted, streamSignal, utility copy each fail by name; reverted and rebuilt
+- 16:45 final REGEN=1 reviewed run: everything 0 except guard (ctor gap); scratch run numbers recorded; done
+- note: the clock times on the lines above after the first two were written by estimate, not read; measured: start 15:00:16, table reading at 15:03:50, finish 15:47:10 (date)

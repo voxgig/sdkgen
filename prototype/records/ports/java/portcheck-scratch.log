@@ -1,0 +1,70 @@
+[portcheck java] regenerate NEW from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/sdkgen (a progress line per variation)
+[1/21] new B: 41 READMEs in 2054ms
+[2/21] new auth-basic: 41 READMEs in 1965ms
+[3/21] new auth-basic-query: 41 READMEs in 1381ms
+[4/21] new auth-query: 41 READMEs in 1758ms
+[5/21] new auth-off: 41 READMEs in 1731ms
+[6/21] new server-mixed: 41 READMEs in 1759ms
+[7/21] new server-static: 41 READMEs in 2002ms
+[8/21] new server-none: 41 READMEs in 1575ms
+[9/21] new ex-readonly: 41 READMEs in 1828ms
+[10/21] new ent-only-ambient: 41 READMEs in 1131ms
+[11/21] new ent-none: 41 READMEs in 1162ms
+[12/21] new doc-list: 41 READMEs in 1837ms
+[13/21] new doc-crud: 41 READMEs in 1441ms
+[14/21] new doc-nested: 41 READMEs in 1449ms
+[15/21] new crud-basic: 41 READMEs in 1143ms
+[16/21] new crud-bare: 41 READMEs in 1244ms
+[17/21] new crud-noupdate: 41 READMEs in 1312ms
+[18/21] new ref-issues: 41 READMEs in 1464ms
+[19/21] new no-test: 41 READMEs in 1514ms
+[20/21] new lone-go: 3 READMEs in 763ms
+[21/21] new alias-go2: 5 READMEs in 601ms
+[portcheck java] regenerated 21 of the 21 variations old/ holds; SKIPPED: none
+[portcheck java] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck java] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck java] FROM SCRATCH: no hand entries, no rule records, no hand-recorded facts; classes in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/review/java/scratch-classes
+[portcheck java] classify (hand/java.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck java] ledger
+[portcheck java] blocks
+[portcheck java] fact sheet (and the language and convention facts against the OLD page)
+[portcheck java] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck java] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck java] purity
+[portcheck java] guard: node --test --test-name-pattern '^java: ' ts/dist-test/runtimefacts.test.js
+== portcheck java ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   59 |      47     22        0       0       0    25       0 | 0
+rootquick                  19 |       4      0        0       0       0     4       0 | 0
+reference               13823 |     182     68        0       0       0   114       0 | 0
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                  19        16       0        13 |      21   21      0 | yes (javac); 29 changed blocks compiled by nothing
+rootquick                  0         0       0        19 |      22   22      0 | yes (javac); 19 changed blocks compiled by nothing
+reference                183         0       0       131 |      15   15      0 | yes (javac); 149 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 5, novel-token 9, vanished-token 6, novel-shape 1; rootquick: changed 9, novel-token 5, vanished-token 6, novel-shape 2; reference: changed 8, new-only 2, novel-token 5)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+purity: 0 open, 4 accepted | notes declared 0, note regions found 0 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1310 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 405 calls of 20 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+guard: pass (pass 4 fail 0 )
+build: 1813 sources checked, current
+facts (language and convention, against the OLD page; from scratch, hand records ignored): attested 4, recorded by hand 0, UNATTESTED or NOT JUDGED 2, not printed 0, not judged 1; cited 15, pinned prose 11 (the reviewer audits each)
+  NOT JUDGED named = "call" (convention): minimal pair against bare: 82 prose units and 0 blocks differ; OLD reads as call in 0, as another value in 0, 
+  UNATTESTED ref.noun = "Methods" (convention): 2 context(s): held 1, contradicted 0, new 1; 113 units
+  record each in hand/java.json facts: { "<path>": { "value", "why", "evidence" } }, or fix the provider
+shared sentences: matched 90, of which against a sentence nobody reviewed 1 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 27 (0 explained; an unexplained one FAILS)
+  ABSENT, NO REASON tutorial [ed44d07e36] in 16 variation(s): ⟦⟧ resolves to the entity and throws on failure; ⟦⟧ reads its record.
+  ABSENT, NO REASON tutorial [5e178e9588] in 7 variation(s): ⟦⟧ resolves to a ⟦⟧ of entities, one per record, and throws on failure; ⟦⟧ reads an entity's record.
+  ABSENT, NO REASON tutorial [6d459aa83b] in 5 variation(s): Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure.
+  ABSENT, NO REASON tutorial [64560e9dff] in 5 variation(s): Create — resolves to the created entity; ⟦⟧ reads its record
+  ABSENT, NO REASON tutorial [78dac4093d] in 1 variation(s): ⟦⟧ resolves to the entity it wrote, and throws on failure.
+  ABSENT, NO REASON rootquick [99a8153c15] in 16 variation(s): Load a Ⓔ: the entity, a ⒺEntity; throws on failure
+  ABSENT, NO REASON rootquick [7ab5ba644d] in 2 variation(s): The client sends the API key as the ⟦⟧ query parameter.
+  ABSENT, NO REASON rootquick [a0b269a293] in 7 variation(s): ⟦⟧ Ⓔ records: a ⟦⟧, one entity per record; throws on failure
+  ABSENT, NO REASON reference [f3e421e046] in 19 variation(s): Return the SDK utility object.
+  ABSENT, NO REASON reference [f30b7d4864] in 19 variation(s): Aborts the request in flight: ⟦⟧ is then ⟦⟧ and ⟦⟧ is ⟦⟧.
+  ... 17 more in review/java/<section>.absent.json
+  say why in hand/java.json absent: { "<id>": "<why>" } (a shared sentence this language prints nowhere) or { "<id>": { "why": "...", "variations": [...] } } (dropped from exactly those variations), or print it
+fact sheet: factsheet java: 67 facts, 0 with no account, 2 unattested (named, ref.noun), guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/review/java/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/review/java/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/java.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK java: FAIL

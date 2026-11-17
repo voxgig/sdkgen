@@ -1,0 +1,690 @@
+ok: True
+summary: |
+  H3 measured against the whole catalogue at v33-frozen (0065f1e2). The catalogue has 329 entries, not 330: the 330th '### ' heading is 'The 50 rated medium or low'. Of the 329, 38 are in scope (13 yes, 25 part), 5 are about the language pack only, and 286 are outside the three sections. The 38 entries are 30 distinct defects when grouped by the catalogue's own 'Repeats' notes.
+  
+  Every in-scope entry got a check that a machine runs. The checks are in P/h3/issuecheck33.js. Each one is true on OLD for at least one language, and all 28 checks were run on OLD and NEW for all 20 languages. Five new variations (no-cache, one-wrap, only-wrap, feat-text, ref-dollar) were added so that S22, U52, U53, V27, U102 and M37 could show at all. D04 shows in no variation and was only read.
+  
+  Results for the 13 ported languages, counted per entry:
+  - 29 are fixed by shared code only ('once'). This includes N04/U06/M04 and M14 under the rule's exemption for type and constructor printers.
+  - 1 needed lines of each language's own (S13): the testMock fact in 13 Syntax files, citations in 20 forms files, and a fix to the ts/js runtime Config fragments.
+  - 6 are NOT fixed: X3, S22, U52, U53, V27 and U102. All six are in ReadmeRefFeatures.ts or FeatureDocs.ts, which were already shared at main and which the prototype never touched. NEW still shows each of them in all 20 languages. Each needs one shared edit.
+  - 2 show only in an unported language: N11/M35, the ts fence on js pages.
+  
+  The H3 ratio, counted per entry over 36 entries (fixed or should be):
+  - Per-language edit, by the brief's rule: 1/36 = 2.8%. Strictest reading, which also counts the type printers and go's printer: 5/36 = 13.9%.
+  - With the six unfixed entries counted against the proposal: 7/36 = 19.4% by the rule, 11/36 = 30.6% strictest.
+  
+  Counted per distinct defect (29): 3.4%, 10.3%, 24.1% and 31.0%, in the same order.
+  
+  Verdict: H3 is not refuted on its per-language criterion. It is not confirmed as stated, because 6 of 36 in-scope entries are not fixed at all at the frozen state. It is not decided until the six shared edits are made and the seven remaining ports pass issuecheck33.js.
+verdict: H3 is not decided. It is not refuted on its criterion: of the 36 in-scope entries that are fixed or should be, 1 (S13) needed a per-language edit. That is 2.8% by the brief's rule (3.4% per distinct defect), or 13.9% under the strictest reading that also counts the 13 type printers and go's printer. But H3 claims more than that: 'the catalogued issues in those sections are fixed once, for every language'. Six in-scope entries (X3 S22 U52 U53 V27 U102, 17% of entries, 21% of distinct defects) are not fixed at all at v33-frozen; NEW still shows them in all 20 languages. Counted against the proposal, that gives 19.4% by the rule, past the 10% line. My reading: the per-language criterion holds (about 3%), because the six unfixed entries each need one shared edit in a component that was already shared at main, not an edit per language. But the frozen state does not show 'fixed once', and the prototype never took the features half of the REFERENCE into scope. What would decide it: make the six shared edits; port the last seven languages; run `node P/h3/issuecheck33.js P/h3/out --ported <all 20>` after regenerating out/new and require exit 0, js clearing N11/M35 included; and count S13's testMock lines in the seven ports (expected: one Syntax line each).
+scope_counts:
+  - [0]
+    section: S
+    total: 50
+    yes: S22 S25 S28 S49 (4)
+    part: S09 S13 S50 (3)
+    pack: 0
+    no: 43
+  - [1]
+    section: X
+    total: 7
+    yes: X3 (1)
+    part: X6 (1)
+    pack: 0
+    no: 5
+  - [2]
+    section: G
+    total: 31
+    yes: 0
+    part: G01 G27 G29 (3)
+    pack: 0
+    no: 28
+  - [3]
+    section: V
+    total: 32
+    yes: V27 (1)
+    part: 0
+    pack: 0
+    no: 31
+  - [4]
+    section: U
+    total: 108
+    yes: U43 U45 U52 U53 U102 (5)
+    part: U06 U34 U36 U44 (4)
+    pack: U10 U19 U20 (3)
+    no: 96
+  - [5]
+    section: N
+    total: 24
+    yes: 0
+    part: N04 N11 (2)
+    pack: N21 (1)
+    no: 21
+  - [6]
+    section: M
+    total: 49
+    yes: M13 M14 (2)
+    part: M04 M12 M35 M37 M38 (5)
+    pack: M19 (1)
+    no: 41
+  - [7]
+    section: D
+    total: 23
+    yes: 0
+    part: D04 D05 D10 D23 D26 D55 D69 (7)
+    pack: 0
+    no: 16
+  - [8]
+    section: A
+    total: 5
+    yes: 0
+    part: 0
+    pack: 0
+    no: 5
+  - [9]
+    section: all
+    total: 329 (the brief's 330 counts the heading 'The 50 rated medium or low')
+    yes: 13
+    part: 25
+    pack: 5
+    no: 286
+in_scope:
+  - [0]
+    id: S28
+    scope: yes
+    title: Tutorial lead-in promises listing; steps numbered 1 then 3
+    variation: B
+    check: T: '### N.' not 1..n, or 'listing entities'
+    old_new: OLD X in all 20; NEW clean in 13 ported, X in 7 unported. Read NEW py and elixir: 'creating a client and loading an ambient', steps 1, 2
+    decided_in: ts/src/cmp/ReadmeQuick.ts:142-185 (quickSteps lead/steps), :198 lead-in, :222 `### ${i+1}.`
+    language_lines: none
+    cls: once
+    repeats: distinct
+  - [1]
+    id: U45
+    scope: yes
+    title: '### 4. Create, update, and remove' over ops the entity lacks
+    variation: crud-noupdate
+    check: T: a '###' heading names update
+    old_new: OLD X in 15 (go/js use other headings); NEW clean in 13 ported, X in php csharp java kotlin scala cpp. Read NEW rust and ocaml: '### 4. Create and remove a planet'
+    decided_in: ts/src/cmp/ReadmeQuick.ts:179-183 (title from the ops present)
+    language_lines: none
+    cls: once
+    repeats: distinct
+  - [2]
+    id: S49
+    scope: yes
+    title: Quick starts omit the required server option
+    variation: B
+    check: T,R: no 'tenant'
+    old_new: OLD X in 16; NEW clean in 13 ported, X in js php csharp kotlin scala cpp. Read NEW rust T and perl R: server block with tenant only
+    decided_in: ts/src/helpers/sdkdesc.ts:240-249 (server vars, required); ReadmeQuick.ts:91-97
+    language_lines: none for the issue (providers print the option map as for every option)
+    cls: once
+    repeats: distinct
+  - [3]
+    id: G01
+    scope: part (ReadmeQuick_ts, ReadmeTopQuick_ts; the ReadmeModel_ts table is outside the sections)
+    title: ts calls every server variable Required
+    variation: B
+    check: T,R: '<region>' placeholder; F: region row says Required
+    old_new: OLD X ts go py java; NEW clean in 13 ported, java XX. Read NEW go and py: '`region` defaults to `eu`', no region key
+    decided_in: sdkdesc.ts:32,245 (required = referenced, no default); ReadmeQuick.ts:91-97; sdkdesc.ts:305-310 (REFERENCE rows)
+    language_lines: none
+    cls: once
+    repeats: group {G01,M13,D55}
+  - [4]
+    id: M13
+    scope: yes
+    title: go/java/py print the defaulted variable as required
+    variation: B
+    check: same as G01
+    old_new: as G01
+    decided_in: as G01
+    language_lines: none
+    cls: once
+    repeats: repeats G01
+  - [5]
+    id: D55
+    scope: part (ReadmeTopQuick_ts:25-28 only)
+    title: 'Required' server variable read five ways
+    variation: B
+    check: same as G01
+    old_new: as G01
+    decided_in: as G01
+    language_lines: none
+    cls: once
+    repeats: repeats G01
+  - [6]
+    id: M14
+    scope: yes
+    title: go quick start indents server four spaces short
+    variation: B
+    check: T,R: apikey and server key lines indented differently in one block
+    old_new: OLD X go only; NEW clean. Read NEW go T and R: apikey and server both 8 spaces
+    decided_in: go's own printer, ts/project/.sdk/src/cmp/go/Syntax_go.ts:95 (object entries at one pad)
+    language_lines: none added for the issue; the fix lives in go's printer, which every provider has
+    cls: once (strictest reading: per-language, 1 language)
+    strict: 1 (go printer)
+    lenient: 0
+    repeats: distinct
+  - [7]
+    id: S50
+    scope: part (ReadmeQuick, ReadmeTopQuick, ReadmeRef; ReadmeModel and ReadmeHowto are outside)
+    title: HTTP Basic: secret undocumented in 19 targets
+    variation: auth-basic
+    check: T,R, F constructor table: no 'secret'
+    old_new: OLD X in 19 (all but ts); NEW clean in 13 ported, X in 6 unported. Read NEW swift T: apikey and secret from DEMO_APIKEY/DEMO_SECRET; clojure F: secret row
+    decided_in: sdkdesc.ts:174-176 readsSecret (Basic AND header AND not suppressed), :249, :285; ReadmeQuick.ts:87
+    language_lines: none
+    cls: once
+    repeats: distinct
+  - [8]
+    id: D23
+    scope: part (ReadmeQuick, ReadmeTopQuick; ReadmeModel, ReadmeTop:80-96, TestEntity, docgen are outside)
+    title: What the constructor needs, derived 20 ways
+    variation: auth-basic
+    check: T,R: missing tenant or secret
+    old_new: OLD X in 19; NEW clean in 13 ported
+    decided_in: sdkdesc.ts:236-250 (requiredOptions equivalent)
+    language_lines: none
+    cls: once
+    repeats: distinct (overlaps S49+S50)
+  - [9]
+    id: M12
+    scope: part (ReadmeQuick_ts, ReadmeTopQuick_ts, ReadmeRef_ts; ReadmeHowto and ReadmeModel are outside)
+    title: ts prints secret under query Basic
+    variation: auth-basic-query
+    check: T,R, F constructor table: mentions secret
+    old_new: OLD X ts only (js clean); NEW clean everywhere. Read NEW ts T/F and py R: apikey only
+    decided_in: sdkdesc.ts:174-176
+    language_lines: none
+    cls: once
+    repeats: distinct
+  - [10]
+    id: X6
+    scope: part (go ReadmeQuick_go:188; rust/zig ReadmeModel/ReadmeEntity are outside)
+    title: go prose describes the list result with no list
+    variation: ent-only-ambient
+    check: T: 'one per record'
+    old_new: OLD X go; NEW clean. Read NEW go: only 'Load returns (value, error)'
+    decided_in: ReadmeQuick.ts quickSteps (list step and sentence only with list)
+    language_lines: none
+    cls: once
+    repeats: repeats S29 (out of scope)
+  - [11]
+    id: S25
+    scope: yes
+    title: REFERENCE documents an active:false remove
+    variation: ref-issues
+    check: F planet section: a '####' heading naming remove
+    old_new: OLD X in 18 (go and ocaml clean: go gated it); NEW clean in 13 ported. Read NEW py and elixir: list, load, create, update, patch
+    decided_in: sdkdesc.ts:337 (CANON_OP_ORDER filtered on op.active), :357 refOps
+    language_lines: none
+    cls: once
+    repeats: repeats S23 (out of scope); same defect as D10's REFERENCE half
+  - [12]
+    id: D10
+    scope: part (ReadmeRef half only)
+    title: Which operations exist, decided in circulation
+    variation: ref-issues
+    check: same as S25
+    old_new: as S25
+    decided_in: sdkdesc.ts:334-337
+    language_lines: none
+    cls: once
+    repeats: distinct by Fate; the same in-section defect as S25
+  - [13]
+    id: U43
+    scope: yes
+    title: 'must include the entity id' for an id-less entity
+    variation: ref-issues
+    check: F gauge section: 'must include the entity'
+    old_new: OLD X in 19 (ocaml too); NEW clean in 13. Read NEW rust and perl gauge update: no id sentence
+    decided_in: sdkdesc.ts:391 idInData (sendsId)
+    language_lines: none
+    cls: once
+    repeats: distinct
+  - [14]
+    id: U44
+    scope: part (ReadmeRef; ReadmeModel rb/php are outside)
+    title: 'match is optional' for a nested list
+    variation: doc-nested
+    check: F satellite section: 'match is optional'
+    old_new: OLD X in 14; NEW clean in 13. Read NEW c and ocaml: 'The match must include `planet_id`'
+    decided_in: sdkdesc.ts:390 needs = requiredItems(e,'list')
+    language_lines: none
+    cls: once
+    repeats: distinct
+  - [15]
+    id: U34
+    scope: part (ReadmeRef; ReadmeModel.ts:70 is outside)
+    title: Class named PlanetEntity where the collision renames it
+    variation: ref-issues
+    check: F: the section documenting create is headed exactly PlanetEntity
+    old_new: OLD X in 11; NEW clean in 13; X js php cpp. Read NEW rb and swift: '## PlanetEntityClient'
+    decided_in: sdkdesc.ts:272 entityClassName(e, coll)
+    language_lines: none (entityBy is declared by every provider anyway)
+    cls: once
+    repeats: distinct
+  - [16]
+    id: U36
+    scope: part (ReadmeRef; ReadmeEntity is outside)
+    title: Project entity_desc ignored
+    variation: ref-issues
+    check: F: no 'Words the project chose'
+    old_new: OLD X in 20; NEW clean in 13. Read NEW lua and zig: the project's words printed
+    decided_in: sdkdesc.ts:258 modelText(model).entity_desc; ReadmeRef.ts:339 mdInline
+    language_lines: none
+    cls: once
+    repeats: distinct
+  - [17]
+    id: G27
+    scope: part (ReadmeRef cell sink)
+    title: A pipe in a field description breaks the row
+    variation: ref-issues
+    check: F: raw 'Level | percent' or a line starting 'see ['
+    old_new: OLD X in 20; NEW clean in 13. Read NEW py and clojure: 'Level \| percent see the guide or [site](...)' in one row
+    decided_in: ts/src/helpers/markdown.ts:12 mdCell; ReadmeRef.ts:346
+    language_lines: none
+    cls: once
+    repeats: group {G27,M38,D69}
+  - [18]
+    id: M38
+    scope: part
+    title: Pipe or line break breaks 120 rows
+    variation: ref-issues
+    check: as G27
+    old_new: as G27
+    decided_in: as G27
+    language_lines: none
+    cls: once
+    repeats: repeats G27
+  - [19]
+    id: D69
+    scope: part
+    title: Vendor text in cells never escaped
+    variation: ref-issues
+    check: as G27
+    old_new: as G27
+    decided_in: as G27
+    language_lines: none
+    cls: once
+    repeats: repeats G27
+  - [20]
+    id: G29
+    scope: part (ReadmeRef)
+    title: Relative link in a field description dangles
+    variation: ref-issues
+    check: F: '](guide.md)'
+    old_new: OLD X in 20; NEW clean in 13. Read NEW py and clojure: 'see the guide' kept as text, the absolute link kept
+    decided_in: markdown.ts:12-22 mdCell/mdInline
+    language_lines: none
+    cls: once
+    repeats: distinct
+  - [21]
+    id: M37
+    scope: part (ReadmeRef cell sink; README tables and Config sources are outside)
+    title: $$name$$ in vendor text substituted
+    variation: ref-dollar (new)
+    check: F: 'Flow rate of demo units'
+    old_new: OLD X in 20; NEW clean in 13. Read NEW rust and elixir: 'Flow rate of $&#36;name$&#36; units'. The README tables (out of scope) still substitute on NEW
+    decided_in: markdown.ts:12 mdCell
+    language_lines: none
+    cls: once
+    repeats: repeats G28 (out of scope)
+  - [22]
+    id: S13
+    scope: part (ReadmeRef; ReadmeModel is outside)
+    title: test() documented as a mock client without the test feature
+    variation: no-test
+    check: F client section: a test constructor documented and no 'generated without the `test` feature' (zig and clojure excluded: testMock 'always', the runtime ships the mock)
+    old_new: OLD X in 18; NEW clean in 13 ported, X in 7 unported. Read NEW go, c, elixir: 'generated without the `test` feature, so the client has no mock transport and refuses every request'; zig and clojure: 'with mock features active' (true for them)
+    decided_in: ts/src/cmp/ReadmeRef.ts:266-273 (desc.ref.test || testMock 'always')
+    language_lines: testMock in Syntax_{c,clojure,elixir,go,lua,ocaml,perl,py,rb,rust,swift,ts,zig}.ts (13 lines; commits 65a16aef, f8dcd446, 904fd0d2); a cited ref.facts.testMock in all 20 ts/test/runtimeforms/*.ts; ts and js Config fragments (Config.fragment.ts/.js and Config.data.fragment.ts/.js, b09502f1) changed so that test() no longer throws without the feature
+    cls: per-language (strict and lenient: the fact differs between runtimes, so shared code alone could not state it). Other reading: the catalogue's own fix was a generate-time error with no text change, i.e. not a documentation fix
+    strict: 13 languages now, 20 after the ports
+    lenient: 13 (the fact cannot be known in shared code)
+    repeats: repeats S11 (out of scope)
+  - [23]
+    id: N04
+    scope: part (ReadmeRef; ReadmeEntity is outside; pack sites excluded)
+    title: Aliased language types every field any
+    variation: alias-go2
+    check: F go2: '| `any` |' rows and no float64 radius
+    old_new: OLD X go2 (16 any rows); NEW clean (1, a genuine any). Read NEW go2: '| `radius` | `float64` |'. Only go has an alias variation
+    decided_in: each provider's type printer `type: (t) => canonToType(t, '<lang>')` (Syntax_go.ts:154 etc.), called from ReadmeRef.ts:346
+    language_lines: the type printer of every provider (one line each; exempt by the rule as 'a type printer')
+    cls: once (strictest reading: per-language, 13 type-printer lines)
+    strict: 13 (strictest)
+    lenient: 0
+    repeats: group {N04,U06,M04}
+  - [24]
+    id: U06
+    scope: part
+    title: Aliased language documents any
+    variation: alias-go2
+    check: as N04
+    old_new: as N04
+    decided_in: as N04
+    language_lines: as N04
+    cls: once (strictest: per-language)
+    repeats: repeats N04
+  - [25]
+    id: M04
+    scope: part (ReadmeRef only; the Schema header is outside)
+    title: 30 components pass target.name to canonToType
+    variation: alias-go2
+    check: as N04
+    old_new: as N04
+    decided_in: as N04
+    language_lines: as N04
+    cls: once (strictest: per-language)
+    repeats: repeats N04
+  - [26]
+    id: S09
+    scope: part (ReadmeRefFeatures; ReadmeFeatures is outside)
+    title: Every feature said inactive; log defaults on
+    variation: B
+    check: F: log section 'Inactive by default', or 'Each feature is inactive until switched on' without 'except'
+    old_new: OLD X in all 20; NEW clean in all 20 (shared already). Read NEW rb and c: 'except `log`, which runs unless disabled'; log 'Active by default'
+    decided_in: ts/src/cmp/ReadmeRefFeatures.ts:18-28, :137-139 (activeByDefault)
+    language_lines: none
+    cls: once
+    repeats: group {S09,D05}
+  - [27]
+    id: D05
+    scope: part (ReadmeRefFeatures:24,:133)
+    title: 'Inactive until you switch it on' constant in six writers
+    variation: B
+    check: as S09
+    old_new: as S09
+    decided_in: as S09
+    language_lines: none
+    cls: once
+    repeats: repeats S09
+  - [28]
+    id: D26
+    scope: part (the 20 ReadmeRef option row sets)
+    title: Client option rows hand-written, not from optspec
+    variation: B
+    check: F constructor table: no server row although optspec has server and the URL is templated
+    old_new: OLD X in 20; NEW clean in 13. Read NEW py and elixir: rows apikey ... system, server, server.tenant Required, server.region default
+    decided_in: sdkdesc.ts:281-310 (one hand list OPTION_TEXT, each row kept only if a key of main.kit.optspec)
+    language_lines: none
+    cls: once (partial against the catalogue's fix: one hand list gated by optspec, not rows derived from optspec; auth, allow, extend and others have no row)
+    repeats: distinct
+  - [29]
+    id: D04
+    scope: part (the 20 ReadmeRef feature lists)
+    title: Which features a target has: six predicates
+    variation: read (no variation gives a target a different feature set; the tables are identical across the 20 on B and no-test)
+    check: none run; read
+    old_new: read: NEW REFERENCE features come from featureDocs(model, target), applicability included
+    decided_in: sdkdesc.ts:319 featureDocs(model, target)
+    language_lines: none
+    cls: once (read)
+    repeats: distinct
+  - [30]
+    id: X3
+    scope: yes
+    title: test listed among hook features, then said to install the BASE transport
+    variation: B
+    check: F: the 'attach to pipeline hooks' line lists `test`, or test's section says 'Attaches to pipeline hooks'
+    old_new: OLD X in 20; NEW X in 20. Read NEW ts: '... `telemetry`, `test`, `validate` attach to pipeline hooks'; test's section says both 'Attaches to pipeline hooks' and 'Installs the BASE transport'
+    decided_in: ReadmeRefFeatures.ts (hooked = !wraps), unchanged
+    language_lines: none needed
+    cls: not fixed: one shared edit (classify by feature.transport); not made because ReadmeRefFeatures was shared at main and outside the port work
+    repeats: distinct
+  - [31]
+    id: S22
+    scope: yes
+    title: Ordering note names 'a cache serving a hit' with no cache
+    variation: no-cache (new)
+    check: F: 'cache serving a hit'
+    old_new: OLD X in 20; NEW X in 20
+    decided_in: ReadmeRefFeatures.ts else branch, unchanged
+    language_lines: none needed
+    cls: not fixed: one shared edit
+    repeats: distinct
+  - [32]
+    id: U52
+    scope: yes
+    title: 'several features wrap' with one wrapper
+    variation: one-wrap (new)
+    check: F: 'several features wrap' or '`x` wrap the transport'
+    old_new: OLD X in 20; NEW X in 20 ('several features wrap the transport'; '`retry` wrap the transport')
+    decided_in: ReadmeRefFeatures.ts, unchanged
+    language_lines: none needed
+    cls: not fixed: one shared edit
+    repeats: distinct
+  - [33]
+    id: U53
+    scope: yes
+    title: ' attach to pipeline hooks' with an empty subject
+    variation: only-wrap (new)
+    check: F: a line beginning ' attach to pipeline hooks'
+    old_new: OLD X in 20; NEW X in 20
+    decided_in: ReadmeRefFeatures.ts, unchanged
+    language_lines: none needed
+    cls: not fixed: one shared edit
+    repeats: distinct
+  - [34]
+    id: V27
+    scope: yes
+    title: Union option type printed raw into a two-column row
+    variation: feat-text (new: netsim optspec shape union with no default)
+    check: F: '| `shape` | number | map |'
+    old_new: OLD X in 20; NEW X in 20
+    decided_in: ReadmeRefFeatures.ts row + FeatureDocs.ts sentinelName, unchanged (mdCell exists in markdown.ts but is not applied there)
+    language_lines: none needed
+    cls: not fixed: one shared edit
+    repeats: distinct
+  - [35]
+    id: U102
+    scope: yes
+    title: A | or ` in an option default breaks the row and the code span
+    variation: feat-text (new: log option tag 'a|b`c')
+    check: F: "`'a|b`c'`"
+    old_new: OLD X in 20; NEW X in 20
+    decided_in: FeatureDocs.ts renderValue + ReadmeRefFeatures row, unchanged
+    language_lines: none needed
+    cls: not fixed: one shared edit
+    repeats: distinct
+  - [36]
+    id: N11
+    scope: part (ReadmeRef_js; ReadmeEntity_js and the neutral default rows are outside)
+    title: js REFERENCE blocks fenced ts
+    variation: B
+    check: F: a ```ts fence on a page other than ts
+    old_new: OLD X js; NEW X js (unported); 0 elsewhere
+    decided_in: to be Syntax_js fence when js is ported
+    language_lines: the js provider's fence (declared by every provider anyway)
+    cls: unported only: the js port must make B/js/REFERENCE.md carry no ```ts
+    repeats: group {N11,M35}
+  - [37]
+    id: M35
+    scope: part
+    title: js blocks fenced ts
+    variation: B
+    check: as N11
+    old_new: as N11
+    decided_in: as N11
+    language_lines: as N11
+    cls: unported only
+    repeats: repeats N11
+numbers: |
+  Per entry, 38 in scope: once 29; per-language 1 (S13); not fixed 6 (X3 S22 U52 U53 V27 U102); unported only 2 (N11 M35); not a documentation fix 0 (S13 could also be read this way: the catalogue's fix was a generate-time error). Strictest reading moves N04 U06 M04 (13 type printers) and M14 (go's printer) from once to per-language: once 25, per-language 5.
+  
+  Per distinct defect, 30: once 22; per-language 1; not fixed 6; unported only 1. Strictest: once 20, per-language 3. S25 and D10's REFERENCE half are arguably one defect, which makes 29 distinct.
+  
+  The H3 ratio is per-language over the entries that are fixed or should be (36 entries, 29 distinct). Each cell below is per entry, then per distinct defect:
+  
+  | Reading | Not fixed counted for the proposal | Not fixed counted against |
+  | --- | --- | --- |
+  | Rule (lenient = strict by the brief's exemptions) | 1/36 = 2.8%; 1/29 = 3.4% | 7/36 = 19.4%; 7/29 = 24.1% |
+  | Strictest | 5/36 = 13.9%; 3/29 = 10.3% | 11/36 = 30.6%; 9/29 = 31.0% |
+  
+  S13's lines: 13 Syntax lines now (20 after the ports), 20 forms citations, and 4 ts/js runtime fragment files.
+ratio_readings:
+  - [0]
+    reading: by the brief's rule (type and constructor printers exempt), not fixed counted for the proposal
+    per_language: 1 entry (S13)
+    of: 36 entries / 29 distinct
+    ratio: 2.8% per entry / 3.4% per distinct
+    side_of_line: under 10%
+  - [1]
+    reading: strictest (every own line that carries the fix, type printers and go printer included), not fixed counted for the proposal
+    per_language: 5 entries (S13, N04, U06, M04, M14) / 3 distinct
+    of: 36 / 29
+    ratio: 13.9% / 10.3%
+    side_of_line: over 10% per entry, at the line per distinct defect
+  - [2]
+    reading: by the rule, not fixed counted against the proposal
+    per_language: 1 + 6 not fixed
+    of: 36 / 29
+    ratio: 19.4% / 24.1%
+    side_of_line: over 10%
+  - [3]
+    reading: strictest, not fixed counted against the proposal
+    per_language: 5 + 6 entries / 3 + 6 distinct
+    of: 36 / 29
+    ratio: 30.6% / 31.0%
+    side_of_line: over 10%
+my_reading: |
+  The right reading for H3's criterion ('still need a per-language edit') counts the six unfixed entries as shared edits, not per-language edits. Each sits in ReadmeRefFeatures.ts or FeatureDocs.ts, which have been one shared file for all 20 languages since main, and each needs one shared change. The type printer and go's printer are exempt under the brief's own rule: a provider has to print types and constructors anyway, and under the design it never sees target.name, so it cannot repeat N04's defect. By that reading the per-language share is 2.8% per entry (3.4% per distinct defect), well under 10%, and the criterion holds.
+  
+  H3 as worded, however, says the issues ARE fixed once. At the frozen state 6 of 36 are not fixed at all; NEW still prints each of them in all 20 languages. I therefore call H3 not decided rather than confirmed.
+  
+  The one per-language entry, S13, needs a declared runtime fact in every provider: zig and clojure ship the mock whatever the model, the rest do not. It also needed a ts/js runtime change. That is the design working as intended (a runtime difference is data), but it costs 20 lines plus 20 citations.
+other_direction: |
+  Defects the prototype found that the catalogue does not list (read from the records, not re-run):
+  
+  1. **Sentence review** (s3b-sentences.txt, brief6). 14 false ids, which are 6 distinct false sentences: the env-var sentence, direct's err, explain:true, two test-client sentences, and action returns. All 6 were fixed in shared code (sfix 2608dd45). Two also needed per-language declarations: testMock in every provider, and a truth read for direct's ok in c, go, rust and zig, later swift and ocaml. One needed a runtime fix in ts/js (b09502f1). So 4 of 6 were fixed by one shared edit alone, and 2 by a shared edit plus per-language facts. The review also found 8 per-language defects of single providers (c getp, elixir list heading, clojure lazy seq, zig switch, c undeclared vars, rust code span, a rust note and a zig note). These are by nature per-language, except the 'Instance Functions' heading, which became one shared rule (decision 10).
+  2. **Wave 1** (s3b-wave1-consolidated.md). The 14 numbered shared decisions of brief7 were each made once in shared code. Most were additive optional facts that the languages having the property declare: accessor.cached for lua; streamSignal; copy on the match getter; the field flag and bare member name for ocaml; the deleted mark; swift's unwrap; the utility copy, where ts declares copy:false. The freeze report says the per-language parts were 'all facts, not prose'.
+  3. **s2-ref uncatalogued** (5 items):
+     - backtick leak, Actions shown in ts only, direct ctrl: fixed by one shared edit each.
+     - stream missing: per-language; every provider declares the member, enforced by the guard.
+     - perl ->{id}: shared showFields (decision 3) plus the perl port.
+  
+     Totals for these three sources: 25 items; about 17 fixed by one shared edit; about 8 needed per-language lines or are per-language by nature.
+  
+  Regressions and residues on NEW, found while reading:
+  - The REFERENCE ordering note still prints escaped backticks ('\\`cost\\` activated before \\`cache\\`') in all 20 languages, on OLD and NEW. The s2 'backtick' fix covered only '\\`feature\\`'.
+  - log's REFERENCE section still says 'Set `feature.log.active` to true' although log is on by default. This is uncatalogued and on OLD too.
+  - The freeze report's own open items: 4 changed sentences have no verdict (42aedb7ce3, fe4d5d27e7, fdfa305bc4, 0612fc4d79); 1 unreviewed lua sentence; attacks still accepted (a zig .ok/.err swap, py list(), rb Hash, a wrong step number or article). These are matching holes, not page defects shown on NEW.
+  - Earlier regressions I re-checked on NEW are gone: c's REFERENCE load example now checks NULL; swift's list(nil, nil) is restored; zig field types match OLD (1 `any` each, on doc-crud).
+  
+  No new regression of a catalogued kind was found by issuecheck33: no check is clean on OLD and true on NEW for any language.
+command: |
+  export PATH=/opt/node24/bin:$PATH
+  P=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2
+  # regenerate NEW after the ports (26 variations: the 21 plus 5 added in h3/gen/variations.js)
+  node $P/h3/gen/gen.js $P/h3/out/new <clone>/ts
+  node $P/h3/issuecheck33.js $P/h3/out --ported ts,js,go,py,php,rb,lua,csharp,java,kotlin,scala,swift,rust,c,cpp,zig,perl,clojure,elixir,ocaml [--langs ...] [--detail] [--json f]
+  # exit 1, naming each (entry, variation, language, section) when a check is true on NEW for a ported language
+command_output: |
+  Run at v33-frozen with --ported set to the 13 ported languages: exit 1. Full output: P/h3/work/issuecheck33.out; JSON: P/h3/work/issuecheck33.json. Cells are OLD then NEW.
+  
+  ```
+  entry        variation        sec ts  js  go  py  php rb  lua csh jav kot sca swi rus c   cpp zig per clo eli oca
+  S28          B                T   X-  XX  X-  X-  XX  X-  X-  XX  XX  XX  XX  X-  X-  X-  XX  X-  X-  X-  X-  X-
+  U45          crud-noupdate    T   X-  --  --  X-  XX  X-  X-  XX  XX  XX  XX  X-  X-  X-  XX  X-  X-  X-  X-  X-
+  S49          B                TR  --  XX  --  --  XX  X-  X-  XX  --  XX  XX  X-  X-  X-  XX  X-  X-  X-  X-  X-
+  G01 M13 D55  B                TRF X-  --  X-  X-  --  --  --  --  XX  --  --  --  --  --  --  --  --  --  --  --
+  M14          B                TR  --  --  X-  --  ...all others --
+  S50          auth-basic       TRF --  XX  X-  X-  XX  X-  X-  XX  XX  XX  XX  X-  X-  X-  XX  X-  X-  X-  X-  X-
+  D23          auth-basic       TR  (same as S50)
+  M12          auth-basic-query TRF X-  --  ...all others --
+  X6           ent-only-ambient T   --  --  X-  ...all others --
+  S25 D10      ref-issues       F   X-  XX  --  X-  XX  X-  X-  XX  XX  XX  XX  X-  X-  X-  XX  X-  X-  X-  X-  --
+  U43          ref-issues       F   X-  XX  X-  X-  XX  X-  X-  XX  XX  XX  XX  X-  X-  X-  XX  X-  X-  X-  X-  X-
+  U44          doc-nested       F   --  --  --  X-  --  --  --  XX  XX  XX  XX  X-  X-  X-  XX  X-  X-  X-  X-  X-
+  U34          ref-issues       F   X-  XX  X-  X-  XX  X-  X-  --  --  --  --  --  X-  --  XX  X-  --  --  --  --
+  U36, G27 M38 D69, G29, M37 (ref-issues / ref-dollar) F: X- in the 13 ported, XX in js php csharp java kotlin scala cpp
+  S13          no-test          F   X-  XX  X-  X-  XX  X-  X-  XX  XX  XX  XX  X-  X-  X-  XX  ·   X-  ·   X-  X-
+  N04 U06 M04  alias-go2        F   go column (go2): X-; others ·
+  S09 D05      B                F   X- in all 20
+  X3           B                F   XX in all 20
+  S22          no-cache         F   XX in all 20
+  U52          one-wrap         F   XX in all 20
+  U53          only-wrap        F   XX in all 20
+  V27          feat-text        F   XX in all 20
+  U102         feat-text        F   XX in all 20
+  N11 M35      B                F   ·   XX  -- in the other 18
+  D26          B                F   X- in the 13 ported, XX in the 7 unported
+  ```
+  
+  FAIL: 78 checks true on NEW for a ported language. That is X3, S22, U52, U53, V27 and U102, each for all 13 ported languages; nothing else. No 'NO OLD SIGNAL' line was printed, so every check fires on OLD somewhere.
+  
+  A second run from another working directory with `--langs js,php,cpp --ported js` listed js's N11 M35 and the six shared defects, as expected.
+only_read:
+  - D04: no variation gives two targets different feature sets, so the defect never shows; read only. NEW takes the REFERENCE feature list from featureDocs(model, target) at sdkdesc.ts:319.
+  - Every row of the scope table: decided from each entry's Where and from the source at 9aebaf9e (git grep/show on the clone). The 286 'no' rows were decided from Where, with the arguable ones checked in source: D25, U74, U75, U49.
+  - Where each decision is made now (the file:line citations) and the per-language lines: read from the clone, plus git log/show of 65a16aef, f8dcd446, 904fd0d2 and b09502f1.
+  - S13 for ts: that ts's test() now returns a client whose requests are refused rests on b09502f1 and its featurefallback.test.ts. I did not run it. Brief6 had reported that test() throws in ts.
+  - zig and clojure 'always' shipping the mock: taken from their runtimeforms citations, not run (no zig or clojure compiler was used).
+  - U34: that rb, swift, go, py and the others really name the class PlanetEntityClient is taken from entityClassName and the earlier stages; I only checked that the page follows it.
+  - Part 3 counts: from s3b-sentences.txt, s3c-sfix-shared.txt, s3b-wave1-consolidated.md, s2-ref.txt and s3c-freeze33.txt; not re-run.
+not_done:
+  - No compiler or example lane was run. H3 is about text, and the brief asked for no builds beyond the clone's.
+  - S13: the ts runtime claim ('refuses every request') was not checked by generating and running a ts SDK without the test feature.
+  - issuecheck33.js checks the in-section half of each 'part' entry only. The other half (ReadmeModel, ReadmeEntity, ReadmeHowto, README tables, which still substitute $$name$$ on NEW) is not measured.
+  - No checks were written for the 5 pack entries (U10, U19, U20, N21, M19): the pack is outside the twenty.
+  - N04/U06/M04 are shown only for go, through alias-go2. No alias variation exists for other languages.
+  - I did not re-run the generator on the old clone for the 21 existing variations. out/old links to base32/out/old as the brief says; only the 5 new variations were generated from P/freeze/oldclone.
+  - The two setup deviations, stated: gen.js needs an absolute clone path (a relative one fails with 'Cannot find module'), and out/old is a directory of per-variation links plus my 5 generated OLD variations, not one link, because base32/out/old is read-only.
+ran: |
+  Setup:
+  - Cloned P/v33/sdkgen to P/h3/sdkgen at v33-frozen (0065f1e2) and copied node_modules. `npm run build` exited 0 and the tree stayed clean.
+  - Ran `node P/h3/gen/gen.js P/h3/out/new <abs clone>/ts`: 21 of 21 variations generated, none SKIPPED.
+  
+  The 5 new variations:
+  - Added no-cache, one-wrap, only-wrap, feat-text and ref-dollar to my copy, P/h3/gen/variations.js.
+  - Generated NEW for them from the clone, and OLD from P/freeze/oldclone/ts with `--only`. oldclone's git status is unchanged.
+  
+  Measurement:
+  - Wrote P/h3/issuecheck33.js: 28 checks covering 38 entries, page sections inlined.
+  - Ran it over all 20 languages with `--ported` set to the 13 ported languages: exit 1, the 78 cells listed in the output.
+  - Ran it again with a language subset from another working directory.
+  
+  Reading the pages:
+  - Read the NEW pages of two ported languages of different families for every check that came back clean, with grep/awk via work/show.sh and work/pages.js.
+  
+  Supporting runs: the git grep, log and show commands on the clone; the catalogue extractor (work/extract.js, giving work/entries.json and 329 entries); and the scope passes (work/hits.txt, maybe.txt, rest.txt).
+  
+  Progress is in P/h3/PROGRESS.md.
+read: |
+  Briefs:
+  - P/brief.md, brief5.md, brief6.md, brief7.md, prompts/k-h3.md.
+  
+  The catalogue:
+  - The 'How to read an entry' section, and every entry's Fate, Class and Where (all 329).
+  - The full text of the 38 in-scope entries and of V6 and U87.
+  - The plan was not needed: no in-scope Fate depended on it.
+  
+  Earlier work on H3:
+  - stage1.md (H3).
+  - s2-ref.txt: issues and uncatalogued items.
+  - s2-check_ref.txt.
+  - base32/harness/issuecheck.js and harness/README.txt.
+  
+  The frozen state's records:
+  - s3c-freeze33.txt: summary, not_done, hypotheses, surprises.
+  - s3c-sfix-shared.txt (summary).
+  - s3b-sentences.txt (false sentences).
+  - s3b-wave1-consolidated.md (reviewer shared fixes, verifier still-wrong).
+  - P/v33/tools/README.md (gen and portcheck parts).
+  
+  Source:
+  - At 9aebaf9e: FeatureDocs.ts, parts of ReadmeTop.ts, the entityOps/introOps callers, netsim.aontu and the transports of the wrapping features.
+  - At v33-frozen: sdkdesc.ts:236-320 and :330-391, ReadmeQuick.ts, the ReadmeRef.ts lines cited, ReadmeRefFeatures.ts:18-28 and :137-139, and the Syntax_<lang>.ts lines for testMock and the type printers.
+surprises:
+  - Six catalogued defects (X3 S22 U52 U53 V27 U102) are still present at the frozen state in all 20 languages. They live in ReadmeRefFeatures.ts and FeatureDocs.ts, which were shared before the prototype began. The earlier H3 notes ('held for the shared changes of this round') never looked there. Being written once is not the same as being fixed.
+  - X3 is visible on the baseline B with no special variation: NEW still lists `test` among the hook features and says both 'Attaches to pipeline hooks' and 'Installs the BASE transport'.
+  - The s2 'backtick leak' fix was partial: '\`cost\` activated before \`cache\`' still leaks in every language.
+  - S13 is fixed only through a per-language runtime fact (testMock), and zig and clojure differ. Without that fact the check would wrongly have marked zig and clojure as defective on OLD.
+  - M37 is fixed in the REFERENCE, but the README tables of the same languages (ReadmeModel and ReadmeEntity, outside the sections) still substitute $$name$$ on NEW.
+  - The catalogue holds 329 entries, not the 330 the brief states.
+  - Some inherited commits in the clone (b09502f1 and others) carry model-naming trailers; the freeze report already notes this.

@@ -1,0 +1,120 @@
+summary: The blind sample (100 entries ending in 2, 5 or 8) matches the first round's table closely. Of the 7 disagreements, 1 shows an error in the table, 3 show errors in the blind rows, and 3 sit on borders the rules do not draw. No class in the table was found wrong. One sub-class was wrong: U15 is a plain edit, not one that needs a derivation, and it has been corrected. V2 stays S. The rust sentence is a drifted copy of a sentence the other 18 how-to copies print identically, so it is not L. M18 stays G (behaviour), and G18 stays G (behaviour). Three entries remain open. S05 and U58 sit between O and S: the rules say O, but the fix is what a provider would supply. U88 sits between G and P (generated source the language pack owns). These borders, together with the S and L border and the clash between the "resolved by" rule and the T rule for S13, set the ranges. Docgen text is K by rule, so the first round's alternative of counting docgen as O no longer bounds any range. The work-package counts stay at 2 / 9 / 35. One border could move WP07 from stay to shrink. The first round's conclusion stands.
+sample_size: 100 entries: every catalogue entry whose number ends in 2, 5 or 8. By section: S 15, X 2, G 9, V 10, U 33, N 7, M 15, D 7, A 2. 65 of them overlap the first round's non-blind sample (entries ending in 2 or 8), and 35 are new (entries ending in 5).
+agreement: Class: 95 of 100 (95 percent). Class plus sub-class: 93 of 100 (93 percent); T rows were compared on class only, because the blind rows give T no yes/part. On the 65 entries shared with the first sample: 60 of 65 on class plus sub-class. On the 35 entries ending in 5: 33 of 35. The blind classifier agreed with three of the first round's corrections (S12, U98, M48) and disagreed with the fourth (U88). Once the disagreements were decided, the table had 0 class errors and 1 sub-class error (U15). The blind rows had 2 class errors (V2, M18) and 1 sub-class error (G18), and 3 entries stay undecided (S05, U58, U88).
+disagreements:
+  - [0]
+    id: S05
+    blind: S (runtime fact)
+    first: O (plain)
+    decides: k-general's S requires the wrong text to come from a per-language documentation component. ReadmeErrors.ts is shared (catalogue Class: neutral-component; LANGS[target.name] || DEFAULT_LANG at :212). So the letter of the rules gives O. In substance, the Fix is fifteen per-language failure idioms, which is exactly the brief's provider 'error-handling block'. The rules do not say whether a shared writer that holds a per-language wording table counts as written once.
+    stands: O kept in the table; carried as an O/S border in the ranges
+    sure: rules undecided; O by the letter, medium
+  - [1]
+    id: U58
+    blind: S (runtime fact)
+    first: O (plain)
+    decides: Its Fix is 'See S05/X1', so by the resolved-by rule it takes S05's class.
+    stands: O, following S05; the same border
+    sure: follows S05
+  - [2]
+    id: V2
+    blind: L
+    first: S (model)
+    decides: At 9aebaf9e, 18 ReadmeHowto_<lang>.ts copies print 'Create a `.env.local` file at the project root:'. Only ReadmeHowto_rust.ts:138 says 'at the crate root'. The rust harness (tm/rust/tests/common/mod.rs load_env_local) reads ../.env.local, the same place. The defect is a drifted copy of a sentence other languages repeat, and L's definition excludes that case. A shared sentence written once would fix it.
+    stands: S (table)
+    sure: sure
+  - [3]
+    id: U88
+    blind: P
+    first: G (comment)
+    decides: The text is comments in the language pack's generated dart fragments and haskell templates. G covers 'a comment in generated code'. P covers a pack's text 'which would follow whatever sdkgen does', and the Fix is literally 'follow whatever the bundled comment pass does'. The rules do not settle generated source that a pack owns. G was kept for consistency with M16, M17, M18 and A03.
+    stands: G kept; carried as a G/P border (with M16, M17, M18 and A03, 5 entries); does not change the 'does nothing for' total
+    sure: rules undecided
+  - [4]
+    id: M18
+    blind: P
+    first: G (behaviour)
+    decides: The defect is in the lean runtime's behaviour: Config_lean.ts writes no server option, and SdkUtility.lean has no Basic branch and leaves an unfilled {variable} in the URL. The catalogue Class reads 'changes generated code'. The README half of the Fix only follows from that.
+    stands: G (behaviour) (table)
+    sure: fairly sure
+  - [5]
+    id: G18
+    blind: G (comment)
+    first: G (behaviour)
+    decides: Sub-class only. G's 'comment' sub-class means a source comment that depends on the model, and the '# #BuildFeatures' marker does not; the blind row's own reason says so. The defect is a handler key that never matches, plus dead handlers in Main_<lang>: generator emission behaviour. Neither sub-class fits exactly.
+    stands: G (behaviour) (table)
+    sure: fairly sure
+  - [6]
+    id: U15
+    blind: O (plain)
+    first: O (needs a derivation)
+    decides: Sub-class only. The paragraph 'Entity instances are stateful' is in the DEFAULT_LANG row of ReadmeExplanation.ts (line 46 at 9aebaf9e). The Fix's own route is 'no row for lean once rows are keyed by origin with no default', which needs only originName, and originName already exists. U14, on the same row, is plain.
+    stands: O (plain): the blind row; table corrected
+    sure: sure
+confused_pairs: O and S: S05 and U58 in the sample; X1 outside it. These are shared components holding a per-language wording table whose fix is a per-language idiom. G and P: U88 and M18 in the sample; M16, M17 and A03 outside it. These are generated source owned by the language pack. S and L: V2, settled as S. G behaviour and G comment: G18. O plain and O needs a derivation: U15. The rules also collide on S13 (and S25). The T rule says to copy the scope table, while the resolved-by rule would give S13 the class of S11 (K). The first round's O/K confusion over docgen no longer applies: docgen text is K by rule, and the first round had already moved those entries.
+error_rate_estimate: Confirmed class errors in the table: 0 of 100. Undecidable class cases: 3 of 100 (S05, U58, U88). Sub-class errors: 1 of about 45 sub-classed rows (U15), about 2 percent. Extrapolated to the 229 entries outside the sample, the expected number of definite class errors is close to 0. With 0 errors in 100, the 95 percent upper bound is about 3 percent, so up to about 7 entries could still be wrong. Those would fall most likely in the observed pairs. O/S: X1 is the known member. G/P: M16, M17 and A03 are the known members. S/L: S27, G03, V1, U59, U60 and D27 are the known members outside the sample. Sub-class: about 2 to 3 of the roughly 57 O rows outside the sample may sit on the wrong side of the plain/needs-a-derivation line. None of these moves an entry between 'addressed' and 'does nothing for' except the S/L and O/S borders, and those are already in the ranges.
+corrected_counts:
+  - [0]
+    cls: T
+    entries: 38 (yes 13, part 25)
+    range: 37 to 38 (S13 could be K by the resolved-by rule)
+    distinct: 26
+  - [1]
+    cls: S
+    entries: 28 (model 20, runtime fact 8)
+    range: 21 to 32 (minus 7 if the S/L border goes to L; plus S05, U58, X1 from O and U42 from L)
+    distinct: 24; range 18 to 27
+  - [2]
+    cls: L
+    entries: 6
+    range: 5 to 13
+    distinct: 6; range 5 to 12
+  - [3]
+    cls: O
+    entries: 81 (needs a derivation 46, plain 35)
+    range: 78 to 81; derivation 46, give or take 3
+    distinct: 67 (39, 28); range 65 to 67
+  - [4]
+    cls: C
+    entries: 33
+    range: 33 (no movement seen; sampling bound only)
+    distinct: 28
+  - [5]
+    cls: G
+    entries: 40 (behaviour 31, comment 9)
+    range: 35 to 40 (G/P border)
+    distinct: 29; range 24 to 29
+  - [6]
+    cls: K
+    entries: 83
+    range: 83 to 84 (S13)
+    distinct: 65
+  - [7]
+    cls: P
+    entries: 13
+    range: 13 to 18 (G/P border)
+    distinct: 12; range 12 to 17
+  - [8]
+    cls: N
+    entries: 7
+    range: 7
+    distinct: 6
+three_numbers: 1. Addressed by the proposal's mechanism (T and S): 66 of 329 entries (20 percent), 50 of 263 distinct (19 percent). Range: 58 to 70 entries (18 to 21 percent), 44 to 53 distinct. Of those, the prototype tested T: 38 entries (12 percent), 26 distinct (10 percent). Within T, 6 entries (S22, X3, U52, U53, V27, U102) are in ReadmeRefFeatures and FeatureDocs, which were already shared and which the prototype did not fix. Two more (N11, M35) are js-only, and js was not ported. 2. One edit today (O): 81 entries (25 percent), 67 distinct. Range: 78 to 81 entries, 65 to 67 distinct. Of these, 46 entries (39 distinct), give or take 3, need a derivation that no shared function gives at 9aebaf9e. The other 35 (28 distinct) are plain edits. 3. Does nothing for (L, C, G, K, P): 175 entries (53 percent), 140 distinct: L 6, C 33, G 40, K 83, P 13. Range: 174 to 183 entries (53 to 56 percent), 139 to 146 distinct. The G/P border shifts entries between G and P but leaves this total unchanged. N adds 7 entries (6 distinct).
+package_counts_changed: No change: (a) disappear 2, (b) shrink 9, (c) stay 35, of 46. No class moved in the sample. One border could move one package. If S05, U58 and X1 fell to S, WP07 would shrink rather than stay, giving (b) 10 and (c) 34. Moving the S/L border to L leaves WP30, WP35 and WP37 as shrinking, because each keeps other T or S issues.
+conclusion_stands: Yes. Even at the upper end, T and S together are at most 70 of 329 entries (21 percent). At least 53 percent of the catalogue (174 entries) is tools, generated code, consumer targets, pack text or one language's own text, and the proposal does nothing for it. Another 24 to 25 percent is already written once, and fixing it needs the 'one answer per fact' derivations, which the proposal does not supply. 'The proposal solves part of this catalogue; it is not a general solution' stands. The blind sample tightens the ranges rather than widening them.
+file_changes:
+  - Section 1: added a paragraph saying a second, blind sample was taken (every entry ending in 2, 5 or 8; 100 entries; the classifier had not seen the table), with the agreement rates (95/100 on class, 93/100 on class plus sub-class, 60/65 on the overlap, 33/35 on the entries ending in 5) and a table of the 7 disagreements, each with its decision and how sure it is.
+  - Section 1: added the confused pairs from the blind comparison and the result 'no class error in 100, one sub-class error (U15)'. The first sample's comparison is kept, labelled as the first sample's.
+  - Section 1: removed V2 from the S/L border list and noted that the blind comparison settled it as S.
+  - Section 1: added to the 'inconsistencies left' paragraph that S13 (and S25) sit where the resolved-by rule and the copy-T rule collide, carried in the range.
+  - U15 row: sub-class changed from 'needs a derivation' to 'plain', marked CORRECTED, with the reason.
+  - Counts table, O row: needs a derivation 47 to 46, plain 34 to 35; distinct 40/27 to 39/28.
+  - Section 3, the three numbers: rewritten with the new ranges (T+S 58 to 70 entries, 44 to 53 distinct; O 78 to 81, derivation 46 give or take 3; 'does nothing for' 174 to 183, 139 to 146 distinct; G 35 to 40 and P 13 to 18 on the G/P border). Dropped the first round's 'docgen as O' ends of the ranges, since docgen text is K by rule. Added the sampling bound (about 7 of 229 entries).
+  - Section 4: added after the package counts that the blind sample changes no package's fate, and that WP07 could move from stay to shrink only if the O/S border fell to S.
+  - Section 6, not done: updated the sample bullet (second sample blind, but reading the same structured catalogue lines) and the corrections count (sixteen: fifteen from the first check, U15 from the second).
+not_done:
+  - Entries outside both samples were not re-read against source; only the resolved-by rule was re-checked across the whole catalogue, by script on the Fix lines.
+  - The O/S border (S05, U58, X1) and the G/P border (U88, M16, M17, M18, A03) are left undecided: the rules in k-general do not draw them, so they are carried as ranges and not settled.
+  - The S/L border entries outside the sample (S27, G03, V1, U59, U60, D27) were not re-read against the per-language copies.
+  - Each package's fate was not re-derived issue by issue; only the packages touched by the borders (WP07, WP30, WP35, WP37) were reconsidered.
+  - The T yes/part sub-class was not compared, because the blind rows do not carry it.

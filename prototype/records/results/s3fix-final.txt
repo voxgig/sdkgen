@@ -1,0 +1,922 @@
+ok: True
+summary: |
+  Version 3.1 is frozen at tag v31-frozen (9089ed48), in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v31/sdkgen. Every check in part 3 holds at that commit, and the review is complete for all nine languages: the one command (tools/portcheck.sh) passes for ts, go, py, c, zig, clojure, rust, elixir and rb, with ledger and blocks at 0 open and no fact without an account.
+  
+  How I got there:
+  - **Merge.** The 35 guard commits cherry-picked cleanly onto the shared engineer's HEAD (11fff52d). Meeting the shared changes, the guard failed 9 tests: the new `copy` fact had no account category, and the elixir and clojure notes had no citations. I fixed both.
+  - **Wrong facts.** I corrected all six facts the guard had marked WRONG, in the providers:
+    - the accessor argument in ts, go, py, rb and clojure;
+    - py's `data_set`/`match_set` parameter name;
+    - rust's note on `direct`.
+  
+    No WRONG exception remains.
+  - **Review.** I made 599 hand decisions across the nine languages. This covers all 115 open echoes, every missing unit (they are now always by hand) and Ruby redone from scratch.
+  - **Source fixes the review led to:**
+    - `tester()` is now documented whenever the runtime has it (it was dropped in the no-test variation);
+    - one shared rule (`readsSecret`) decides whether the secret option exists;
+    - the ts README options table now says which server variables have defaults, and shows `secret` only where the runtime reads it (the check's defects 6 and 17).
+  - **Tools.** The fact sheet now takes each fact's account from the guard and fails on a blank one. A rule record can no longer accept a missing unit. A hand entry at the current count settles a class even when an older rule record holds another count.
+  
+  Thresholds, plainly:
+  - **H2 is refuted for the nine measured languages.** Documentation code gives 1.65x fewer lines, 1.40x once the forms files count, and 1.09x once the shared guard counts. Projected to twenty languages it is 2.30x, 1.90x and 1.62x.
+  - **H1 crosses its line on breaking interface changes.** The total since the first four languages is about 11 to 13, against a line of about 10. None was caused by a newly ported language.
+  - **H1 on per-language prose depends on the measure.** go's words printed by go alone, plus its notes, are 25.6% of its three sections, mostly shared sentences that only go's error style prints. Counting notes alone, no language passes 9.4% in any section.
+  - **H4 holds.** Every lane passes, and the zig documentation lane went from 5/6 on the old code to 6/6.
+  
+  Not done: about 877 ledger classes in the eight original reference languages are still accepted by stage-3a rule records that I did not re-review (I spot-checked 20 in py). The shared-sentence matching a porter relies on stands on them.
+stopped_at: All six parts are done. The base the ports start from is P/base (sdkgen at v31-frozen, built; tools; harness; out/old and out/new; oldclone link; runtime-table.md; newport.sh; PORTING.md). Measures and hypotheses are reported here.
+frozen_commit: 9089ed48 (tag v31-frozen), in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v31/sdkgen. The same commit is copied, built and clean, to /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/base/sdkgen.
+base: |
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/base. It holds:
+  - `sdkgen`: the clone at v31-frozen. It was rebuilt in place and `git status` is empty. It holds no absolute path to the v31 clone (checked with grep).
+  - `tools`: everything except review, runs, inject and before/work. classes/ and hand/ hold the nine languages' classifications, which are the reference set; ported.json now lists rb. mkworkspace.sh defaults to base.
+  - `harness`: without its out/ directory.
+  - `out/old`: a copy of freeze/harness/out/old (`diff -rq` empty). `out/new`: NEW at the tag.
+  - `oldclone`: a link to freeze/oldclone.
+  - `runtime-table.md`: 872 lines, regenerated from base/sdkgen by `SDKGEN_RUNTIME_TABLE=... node --test dist-test/runtimereader.test.js` (22/22). It is identical to the guard engineer's table.
+  - `newport.sh <lang> <dir>`.
+  - `PORTING.md`: 612 lines.
+  
+  newport.sh run once: `newport.sh kotlin P/v31/ws-demo` made the workspace (clone 9089ed48, 176M). Then `REGEN=1 tools/portcheck.sh sdkgen out kotlin` regenerated 21 variations, skipped none, in 14.6 s, and printed `kotlin: NOT PORTED. No section is ported for it ...` and `PORTCHECK kotlin: NOT PORTED`, exit 1 (the expected start, with no stack trace). The workspace's out/new is byte-identical to base/out/new (`diff -rq` empty). Log: v31/logs/newport-kotlin.log.
+  
+  The tools' self-test run from P/base: 84 controls, 0 failed (log v31/logs/selftest-base.log).
+  
+  Disk (`df -h /`): 11G free of 252G (74% used). base is 223M and a workspace about 180M, so eleven workspaces take about 2G.
+merge: |
+  I started from `cp -a P/h-shared/sdkgen` (HEAD 11fff52d) and removed the origin remote, which pointed at /home/user/sdkgen. I fetched P/h-guard/sdkgen and ran `git cherry-pick 2a87287f..guard`: 35 commits, no conflicts, on branch v31.
+  
+  `npm run build`, then the guard and reader (`node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js`), gave 52 of 61 passing. The 9 failures were the per-language account tests:
+  - `ref.facts.entity[0].copy` had no default category (a new fact from the shared engineer);
+  - elixir notes ctor, tutorial:list and tutorial:load were uncited;
+  - clojure notes instance and members were uncited.
+  
+  Fixes:
+  - account.ts DEFAULTS gains `ref.facts.(client|entity)[n].copy` as cited.
+  - Each forms file cites the clone line its runtime uses for the getter (for example go `out := vs.Clone(e.data)`, elixir entity_base.ex `S.clone(S.getprop(ent, "_data"))`), with the value pinned to true.
+  - The notes are cited: elixir helpers.ex `def deep(v) do`, EntityListOp/EntityLoadOp `def list(ent, reqmatch \\ nil, ctrl \\ nil)`, voxgig_struct.ex `def getelem`; clojure client.clj:69, core.clj:227 and Entity.fragment.clj `:data-get`.
+  
+  Then I fixed the six WRONG facts in the providers and deleted their exceptions. Result: guard and reader 61/61.
+  
+  Commits after the cherry-picks, in order:
+  1. 1ac66964: shared test (account.ts).
+  2. Nine per-language commits (provider and forms; c, zig and elixir have forms changes only, though their message also mentions corrected facts): 0cfcaf6b ts, b3de7c13 go, 1cee285a py, 6cdb7595 c, 05fd2dfc zig, ea15da52 clojure, 9b61e7f4 rust, 7a8ecb69 elixir, 7f97852a rb.
+  3. a5c601a5: shared source and test (ReadmeRef tester, sdkdesc readsSecret, sdkgen export, guard report lines).
+  4. ffeddb74: ts (ReadmeModel_ts, ReadmeHowto_ts).
+  5. f3d094fc: build.
+  6. 9089ed48: golden (8 hash lines).
+  
+  None of these messages names a tool or a model.
+wrong_facts_fixed:
+  - [0]
+    lang: ts
+    fact: ref.facts.accessor.arg and accessor.sig
+    was: arg 'data', sig '{accessor}(data?: object)'; the page said 'Pass `undefined` for no initial data.'
+    now: arg 'entopts', sig '{accessor}(entopts?: object)'; the page says 'Pass `undefined` for no initial options.'
+    evidence: MainEntity_ts.ts:20-25 `${entity.Name}(entopts?: Record<string, any>) { ... return new ${cls}(self, entopts) }`. The guard derives the argument from the entity constructor (derived). Mutation v31-accessor-arg-data-ts (reverting it) is caught by paramNames, accessor and account.
+  - [1]
+    lang: go
+    fact: ref.facts.accessor.arg
+    was: 'data'
+    now: 'entopts'
+    evidence: Entity.fragment.go:23 `func NewEntyClass(client *core.ProjectNameSDK, entopts map[string]any)`; derived by the guard.
+  - [2]
+    lang: py
+    fact: ref.facts.accessor.arg
+    was: 'data'
+    now: 'entopts'
+    evidence: Entity.fragment.py:12 `def __init__(self, client, entopts=None):`; derived.
+  - [3]
+    lang: py
+    fact: entity dataSet / matchSet signatures
+    was: 'data_set(data=None)', 'match_set(match=None)'
+    now: 'data_set(args=None)', 'match_set(args=None)'
+    evidence: Entity.fragment.py:56 `def data_set(self, args=None):` and :65 `def match_set(self, args=None):`. paramNames now compares them with no exception. Mutation v31-py-dataset-keyword is caught. The py README member table (ReadmeModel_py.ts:90, unported) still prints (data)/(match).
+  - [4]
+    lang: rb
+    fact: ref.facts.accessor.arg
+    was: 'data'
+    now: 'entopts'
+    evidence: Entity.fragment.rb:7 `def initialize(client, entopts = nil)`; derived.
+  - [5]
+    lang: clojure
+    fact: ref.facts.accessor.arg
+    was: 'data'
+    now: 'entopts'
+    evidence: Entity.fragment.clj:54 make passes to :32 `(defn- new-entity [client entopts]`; derived.
+  - [6]
+    lang: rust
+    fact: notes.member:direct
+    was: 'The result map comes back inside `Ok` even for a non-2xx response; `Err` is reserved for a request that could not be made.'
+    now: 'The result map always comes back inside `Ok`, for a non-2xx response and for a request that could not be made alike; its `ok` key reports the failure.'
+    evidence: Main.fragment.rs: `direct` calls raw_request, and every failure arm returns Ok(jo(... ("ok", Value::Bool(false)) ...)). I read lines 212-345 and grepped for `?;` and `return Err`: none. The note is cited with three quotes and its value pinned. Mutation v31-rust-direct-note-wrong is caught (account).
+review:
+  - [0]
+    lang: ts
+    section: tutorial
+    same: 61
+    shared_matched: 0 (ts is a reference language; 30 stage-3a rule records for ts apply)
+    by_hand: 8
+    missing: 5 by hand: 3 restored (list sentence, record read, write sentence), 2 corrections (G01: the comment called region required; U45: ref-issues has update only)
+    contradictions: 0
+    unclassified: 0
+  - [1]
+    lang: ts
+    section: rootquick
+    same: 21
+    shared_matched: 0 (5 rule records)
+    by_hand: 0
+    missing: 1 by hand: correction G01
+    contradictions: 0
+    unclassified: 0
+  - [2]
+    lang: ts
+    section: reference
+    same: 15470
+    shared_matched: 1 (59 rule records)
+    by_hand: 17
+    missing: 34 by hand. 16 restored (accessor and test sentences, Returns lines, op sentences). 6 dropped: parameter-table headers and cells that became sentences, and the `data` parameter cell, which named a parameter that does not exist. 12 corrections (S09 log active, S13 no-test, S25 remove inactive, S50, G27, U34, ref-6, guard-accessor-arg).
+    contradictions: 1 (no-test README feature/test-mode lines against REFERENCE)
+    unclassified: 0
+  - [3]
+    lang: go
+    section: tutorial
+    same: 23
+    shared_matched: 0 (40 rule records)
+    by_hand: 9
+    missing: 9 by hand: 8 restored (pair-style step sentences, comments, program lead); 1 dropped (the 'Quickstart' sub-heading; the one-program tutorial has bold steps)
+    contradictions: 0
+    unclassified: 0
+  - [4]
+    lang: go
+    section: rootquick
+    same: 22
+    shared_matched: 0 (4 rule records)
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [5]
+    lang: go
+    section: reference
+    same: 17481
+    shared_matched: 0 (65 rule records)
+    by_hand: 9
+    missing: 12 by hand: 7 restored, 5 corrections
+    contradictions: 2 (two classes, one statement: go/README.md:221 'mock transport' in no-test)
+    unclassified: 0
+  - [6]
+    lang: py
+    section: tutorial
+    same: 61
+    shared_matched: 0 (31 rule records)
+    by_hand: 5
+    missing: 4 by hand: 3 restored, 1 correction (U45)
+    contradictions: 0
+    unclassified: 0
+  - [7]
+    lang: py
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3 rule records)
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [8]
+    lang: py
+    section: reference
+    same: 14958
+    shared_matched: 1 (79 rule records)
+    by_hand: 16
+    missing: 19 by hand: 7 restored, 12 corrections (including guard-param-name for data_set/match_set)
+    contradictions: 1 (py/README.md:206, no-test)
+    unclassified: 0
+  - [9]
+    lang: c
+    section: tutorial
+    same: 61
+    shared_matched: 0 (29 rule records)
+    by_hand: 5
+    missing: 4 by hand: 3 restored, 1 correction
+    contradictions: 0
+    unclassified: 0
+  - [10]
+    lang: c
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3 rule records)
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [11]
+    lang: c
+    section: reference
+    same: 14872
+    shared_matched: 0 (68 rule records)
+    by_hand: 14
+    missing: 18 by hand: 10 restored, including direct 'never sets *err', checked against Main.fragment.c sdk_raw_request (it only sets *err = NULL and returns err_map(...)); 8 corrections
+    contradictions: 0
+    unclassified: 0
+  - [12]
+    lang: zig
+    section: tutorial
+    same: 61
+    shared_matched: 0 (32 rule records)
+    by_hand: 5 ledger; plus 11 block token classes for the environment idiom (correction zig-env-io)
+    missing: 5 by hand: 4 restored, 1 correction
+    contradictions: 1 (zig/README.md:77-86, the shared Error handling section: 'Entity operations reject on failure, so wrap them in try/catch', with TypeScript code)
+    unclassified: 0
+  - [13]
+    lang: zig
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3 rule records)
+    by_hand: 0 ledger; 12 block classes (11 environment tokens and the doc-nested root block)
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [14]
+    lang: zig
+    section: reference
+    same: 15019
+    shared_matched: 2 (77 rule records)
+    by_hand: 13
+    missing: 19 by hand: 5 restored, 14 corrections (S09, S13, S25, G27, U34)
+    contradictions: 1 (the same README Error handling section, against prepare and the operation sentences; the check's misclassified item 2)
+    unclassified: 0
+  - [15]
+    lang: clojure
+    section: tutorial
+    same: 61
+    shared_matched: 0 (29 rule records)
+    by_hand: 5
+    missing: 4 by hand: 3 restored, 1 correction
+    contradictions: 0
+    unclassified: 0
+  - [16]
+    lang: clojure
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3 rule records)
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [17]
+    lang: clojure
+    section: reference
+    same: 14983
+    shared_matched: 1 (77 rule records)
+    by_hand: 20
+    missing: 24 by hand. 14 restored: the route to the utility is restored as a note (the check's misclassified item 3). 9 corrections: correction:clojure-utility for `(api/get-utility client)`, which is false because sdk.api (Main_clojure.ts:85-90) has no get-utility. 1 dropped (an options table header).
+    contradictions: 0
+    unclassified: 0
+  - [18]
+    lang: rust
+    section: tutorial
+    same: 61
+    shared_matched: 0 (32 rule records)
+    by_hand: 9
+    missing: 5 by hand: 4 restored, 1 correction
+    contradictions: 0
+    unclassified: 0
+  - [19]
+    lang: rust
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3 rule records)
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [20]
+    lang: rust
+    section: reference
+    same: 15019
+    shared_matched: 0 (84 rule records)
+    by_hand: 24
+    missing: 18 by hand: 5 restored, 13 corrections. ref-issues 6b6c33954a, the remove sentence, is now 'same-meaning' because remove is inactive (S25), as the check's misclassified item 4 asked.
+    contradictions: 0
+    unclassified: 0
+  - [21]
+    lang: elixir
+    section: tutorial
+    same: 61
+    shared_matched: 0 (30 rule records)
+    by_hand: 7, including the arity notes as restored:note (the check's misclassified item 6)
+    missing: 4 by hand: 3 restored, 1 correction
+    contradictions: 0
+    unclassified: 0
+  - [22]
+    lang: elixir
+    section: rootquick
+    same: 19
+    shared_matched: 0 (3 rule records)
+    by_hand: 0
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [23]
+    lang: elixir
+    section: reference
+    same: 14802
+    shared_matched: 0 (88 rule records)
+    by_hand: 18, including Helpers.deep/1 as restored:note
+    missing: 22 by hand: 10 restored, 10 corrections (including the runtime defaulting fetchargs, Main.fragment.ex:103 and :176), 2 dropped (table headers)
+    contradictions: 1 (elixir/README.md:232, no-test)
+    unclassified: 0
+  - [24]
+    lang: rb
+    section: tutorial
+    same: 61
+    shared_matched: 23
+    by_hand: 19 ledger and 26 block classes, all redone (pilot entries discarded)
+    missing: 5 by hand: 4 restored, 1 correction
+    contradictions: 0
+    unclassified: 0
+  - [25]
+    lang: rb
+    section: rootquick
+    same: 19
+    shared_matched: 0
+    by_hand: 3 ledger and 17 block classes
+    missing: 0
+    contradictions: 0
+    unclassified: 0
+  - [26]
+    lang: rb
+    section: reference
+    same: 15059
+    shared_matched: 50
+    by_hand: 48 ledger and 1 block class. Notable: runtime-forms corrections from the rb runtime, where load and remove default their match (EntityLoadOp.fragment.rb:14, EntityRemoveOp.fragment.rb:12) and make returns EntyClass (Entity.fragment.rb:64-66). stream is restored as a fact (Entity.fragment.rb:104, :140 Enumerator).
+    missing: 19 by hand: 9 restored, 10 corrections
+    contradictions: 1 (rb/README.md:211, no-test)
+    unclassified: 0
+contradictions:
+  - [0]
+    lang: ts
+    statement: REFERENCE (no-test): 'This SDK is generated without the `test` feature, so it has no mock transport.'
+    other_statement: ts/README.md:230 `feature` cell 'Feature activation flags (e.g. `{ test: { active: true } }`)', and the README's 'Use test mode ... mock client' section (ts/README.md:133-144)
+    where: no-test variation, ts README vs ts REFERENCE
+    true_side: REFERENCE. Without the test feature its source does not ship (AGENTS.md 'Trimming the feature set'; catalogue S13). I read this; I did not generate and run a no-test SDK.
+  - [1]
+    lang: go
+    statement: REFERENCE (no-test): Test() and TestSDK() have no mock transport (classes 60c6b0b417 and 91baf1b4b6)
+    other_statement: go/README.md:221 'Creates a test-mode client with mock transport. Both arguments may be `nil`.'
+    where: no-test, go README Reference section (unported)
+    true_side: REFERENCE (S13), as above
+  - [2]
+    lang: py
+    statement: REFERENCE (no-test): no mock transport
+    other_statement: py/README.md:206 'Creates a test-mode client with mock transport.'
+    where: no-test, py README (unported section)
+    true_side: REFERENCE (S13)
+  - [3]
+    lang: elixir
+    statement: REFERENCE (no-test): no mock transport
+    other_statement: elixir/README.md:232 'Creates a test-mode client with mock transport. Both arguments may be `nil`.'
+    where: no-test, elixir README (unported section)
+    true_side: REFERENCE (S13)
+  - [4]
+    lang: rb
+    statement: REFERENCE (no-test): no mock transport
+    other_statement: rb/README.md:211 'Creates a test-mode client with mock transport.'
+    where: no-test, rb README (unported section)
+    true_side: REFERENCE (S13)
+  - [5]
+    lang: zig
+    statement: Tutorial (ent-only-ambient): '`load()` returns a result whose `.ok` is the entity and whose `.err` reports failure'; REFERENCE prepare: 'On failure it returns the error of its error union, for `try` or `catch`.'
+    other_statement: zig/README.md:77-86 Error handling (printed by the shared ts/src/cmp/ReadmeErrors.ts, unported): 'Entity operations reject on failure, so wrap them in `try` / `catch`', followed by a TypeScript block
+    where: every zig README. The same TypeScript Error handling section prints in 16 languages' READMEs (c clojure cpp csharp elixir java js kotlin ocaml perl rust scala swift ts zig, and go2), counted with grep -l over out/new.
+    true_side: Tutorial and REFERENCE: EntityLoadOp.fragment.zig returns EntResult (.ok/.err), and only prepare returns E!Value. The README section is false for zig (the check's misclassified item 2).
+  - [6]
+    lang: py
+    statement: REFERENCE: `data_set(args=None)`, `match_set(args=None)`
+    other_statement: py/README.md:236-238 member table '| `data_set` | `(data)` |', '| `match_set` | `(match)` |' (ReadmeModel_py.ts:90, unported). No echo class flags this; the review found it.
+    where: every py README
+    true_side: REFERENCE (Entity.fragment.py:56, :65). Positional use is the same either way; a keyword `data=` raises TypeError.
+  - [7]
+    lang: rb
+    statement: REFERENCE: `load(reqmatch = nil, ctrl = nil) -> AmbientEntity`, `make -> AmbientEntity`
+    other_statement: rb/README.md:235 '| `load` | `(reqmatch, ctrl) -> any` |', :244 '| `make` | `() -> Entity` |' (ReadmeModel_rb.ts, unported; pilot fact 10). No echo class flags this.
+    where: every rb README
+    true_side: REFERENCE (EntityLoadOp.fragment.rb:14, Entity.fragment.rb:64-66)
+blocks:
+  - [0]
+    lang: ts
+    identical: tutorial 19, rootquick 0, reference 195
+    after_named_corrections: 16, 13, 0
+    by_named_unification: 12, 5, 118
+    changed_otherwise: 1, 1, 0 (each classified; ts reference also 17 OLD-only action examples, now the Call cell)
+    unverified: 0
+    verified_by: ts README lane 16/16
+  - [1]
+    lang: go
+    identical: 0, 0, 337
+    after_named_corrections: 12, 14, 21
+    by_named_unification: 1, 4, 18
+    changed_otherwise: 8, 4, 0
+    unverified: 0
+    verified_by: go README lane 12/12
+  - [2]
+    lang: py
+    identical: 26, 0, 230
+    after_named_corrections: 22, 18, 0
+    by_named_unification: 0, 0, 83
+    changed_otherwise: 0, 1, 0
+    unverified: 0
+    verified_by: py README lane 12/12 (real pytest)
+  - [3]
+    lang: c
+    identical: 0, 0, 151
+    after_named_corrections: 47, 17, 100
+    by_named_unification: 0, 0, 62
+    changed_otherwise: 1, 2, 0
+    unverified: 0
+    verified_by: c DOC lane 6/6
+  - [4]
+    lang: zig
+    identical: 24, 0, 151
+    after_named_corrections: 17, 2, 0 (new correction zig-env-io: 17 tutorial and 16 root pairs)
+    by_named_unification: 0, 15, 162
+    changed_otherwise: 7, 2, 0
+    unverified: 0 (zig 0.16.0 is on the brief's PATH)
+    verified_by: '^zig: ' 26 pass with 2 skipped (no live transport here, no built-in transport here); zig documentation lane 6/6 models on NEW, 5/6 on the old clone (basic-server fails: 'struct posix has no member named getenv')
+  - [5]
+    lang: clojure
+    identical: 26, 0, 230
+    after_named_corrections: 21, 16, 0
+    by_named_unification: 0, 0, 83
+    changed_otherwise: 1, 3, 0
+    unverified: 22 + 19 + 83 = 124 changed blocks (no clojure on PATH)
+    verified_by: nothing: no toolchain here
+  - [6]
+    lang: rust
+    identical: 26, 0, 187
+    after_named_corrections: 22, 18, 0
+    by_named_unification: 0, 0, 126
+    changed_otherwise: 0, 1, 0
+    unverified: 0
+    verified_by: rust DOC lane 6/6
+  - [7]
+    lang: elixir
+    identical: 16, 0, 151
+    after_named_corrections: 22, 18, 0
+    by_named_unification: 10, 0, 162
+    changed_otherwise: 0, 1, 0
+    unverified: 32 + 19 + 162 = 213 changed blocks (no elixir on PATH)
+    verified_by: nothing: no toolchain here
+  - [8]
+    lang: rb
+    identical: 3, 0, 303
+    after_named_corrections: 21, 2, 0
+    by_named_unification: 23, 15, 10
+    changed_otherwise: 1, 2, 0 (plus 1 OLD-only: ref-issues remove, S25). Before normalizers/rb.js the tables were 29, 17 and 10 otherwise.
+    unverified: 0
+    verified_by: '^rb: ' lane 49/49
+freeze_checks:
+  - [0]
+    check: build leaves the tree clean
+    result: pass: 0 lines from git status after the build, at 9089ed48, in both the v31 clone and P/base/sdkgen
+    command: cd sdkgen/ts && npm run build && git status --short | wc -l
+  - [1]
+    check: suite without the toolchain lanes
+    result: 2,593 tests, 2,588 pass, 0 fail, 5 skipped; 4 m 16 s (single run, shared CPUs). Log v31/suite1.log.
+    command: node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)
+  - [2]
+    check: golden
+    result: 1 pass, 1 fail before the update (provider and ts README hashes); 2/2 with the update; 2/2 after, without it. Committed as 9089ed48 (8 hash lines: Syntax_{ts,go,py,rb,rust,clojure}, ReadmeModel_ts, ReadmeHowto_ts).
+    command: SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js; node --test dist-test/characterize.test.js
+  - [3]
+    check: guard and reader
+    result: 61/61 (guard 39, reader 22: all twenty forms files read)
+    command: node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js
+  - [4]
+    check: lanes on NEW
+    result: ts README 16/16 (45 s); go README 12/12 (68 s); py README 12/12 (15 s); c DOC 6/6 (28 s); rust DOC 6/6 (25 s); '^rb: ' 49/49 (48 s); '^zig: ' 26 pass, 0 fail, 2 skipped (96 s). The zig documentation lane is 6/6 (singleton, list, crud, nested, quoted-name, basic-server). Logs: v31/logs/lane-*-new.log, progress in lanes-new.progress.
+    command: v31/lanes.sh <clone>/ts new ts go py c rust rb zig (TMPDIR inside v31; node --test --test-name-pattern '<lane>' dist-test/generatedcompile.test.js)
+  - [5]
+    check: zig documentation lane on the old clone
+    result: 5/6: basic-server fails with '_readme/examples.zig:24:34: error: root source file struct posix has no member named getenv'. The old clone had ' M ts/test/generatedcompile.test.ts' before my run and after it. I did not build there.
+    command: v31/lanes.sh P/freeze/oldclone/ts old zigdoc
+  - [6]
+    check: eleven unported languages, README and REFERENCE against OLD
+    result: Over 19 variations (alias-go2 holds only go2), README.md differs in 209 of 209 files and REFERENCE.md in 209 of 209, only by lines of already-shared components (listed under unported_changed_lines).
+    command: python3 v31/unported.py (difflib over out/old vs out/new)
+  - [7]
+    check: NEW reproducible from the tag
+    result: 21 variations regenerated from v31-frozen, none skipped. `diff -rq` against out/new is empty, and the kotlin workspace's REGEN output is identical to base/out/new.
+    command: node tools/gen/gen.js tmp/regen-check <abs clone>/ts; diff -rq out/new tmp/regen-check
+  - [8]
+    check: the nine portchecks
+    result: PASS for ts go py c zig clojure rust elixir rb. Ledger OPEN 0 and defect 0; blocks OPEN 0; purity open 0; guard pass; fact sheet 0 facts with no account. Logs v31/pc-<lang>.log.
+    command: PATH=<zig>:<node24>:$PATH tools/portcheck.sh sdkgen out <lang>
+  - [9]
+    check: the tools' own controls
+    result: 84 controls, 0 failed: ledger 24/24, accept 7/7, purity 24/24, blocks 28/28, recall 1/1 (49 of 51). 95-117 s. Run from v31 (selftest2.log) and from P/base (logs/selftest-base.log). The first run at v31 failed 6: 2 note controls counted accepted findings as open, which I fixed in selftest.js, and 4 recorded block tables (zig tutorial, rb), which I re-recorded in controls/blocktables.txt.
+    command: node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --tmp <inside v31>
+  - [10]
+    check: the check's 52 guard mutations: none not caught and not accounted
+    result: |
+      Of the 52: 43 caught by the guard. Two more caught downstream:
+      - ts-type-comment, by the review: ledger 1 open and blocks 1 open for ts reference after regeneration.
+      - ts-lit-int, by the ts README lane: 3 of 16 fail. Its output changes in none of the 21 variations, so the review cannot see it.
+      
+      The remaining 7 are accounted:
+      - clj-return-changed: uncompared returns, with reason;
+      - ts-noun: convention;
+      - ts-lit-none and py-lit-false: language;
+      - zig-type-integer and clj-type-integer: types column null, with reason;
+      - c-type-string: types exception, with reason.
+      
+      Plus the guard engineer's 19 (the WRONG-exception one replaced): 19/19 caught. my-types-reason-dropped-zig was a build-time type error, so I rewrote it to blank the reason, and the types check catches it. Plus 5 of mine (accessor arg reverted, copy flipped, copy citation moved, rust note reverted, py keyword reverted): 5/5.
+    command: node v31/mutwork/mutate.js muts.json muts.out.json (copy of the clone at 9089ed48); v31/mutwork/lanemut.sh for the two printer mutations
+  - [11]
+    check: tag
+    result: v31-frozen = 9089ed48; git status empty
+    command: git tag v31-frozen; git rev-parse --short v31-frozen HEAD
+unported_changed_lines: |
+  Languages: js php lua csharp java kotlin scala swift cpp perl ocaml. Variations: 19 per language (alias-go2 holds only go2), so 209 files of each document. Command: python3 /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v31/unported.py (difflib, out/old against out/new).
+  
+  README.md: 209 of 209 files differ, only in the shared ReadmeFeatures lines. Each line below occurs 209 times:
+  - `-switch it on**, so an SDK you have not configured behaves exactly as if none of`
+  - `-them existed — no retries, no cache, no logging, no measurable overhead.`
+  - `+switch it on**, except `log`, which runs unless disabled. Every other`
+  - `+feature you have not configured behaves exactly as if it did not exist,`
+  - `+with no measurable overhead.`
+  - `-Set `feature.log.active` to enable it, then override any of the options above.`
+  - `+It is active by default: set `feature.log.active` to false to switch it off, or override any of the options above.`
+  
+  REFERENCE.md: 209 of 209 files differ, only in the shared ReadmeRefFeatures lines. Each occurs 209 times:
+  - `-Each feature is inactive until switched on, and an SDK with no feature`
+  - `-configured does no feature work at all. Every option below keeps its default`
+  - `+Each feature is inactive until switched on, except `log`, which`
+  - `+runs unless disabled. Every option below keeps its default`
+  - `-The array form of \`feature\` is significant: several features wrap the`
+  - `+The array form of `feature` is significant: several features wrap the`
+  - `-- Inactive by default: leaving it out costs nothing at runtime.`
+  - `+- Active by default: set `active: false` to switch it off.`
+  
+  Nothing else differs. The root README.md also changes in 20 of 20 variations, through the shared ReadmeTop features line. My own source changes touch no unported language's pages: the tester change prints only for a provider that declares tester (ts), and readsSecret is used by the description and by the ts README components.
+guide: |
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/base/PORTING.md (612 lines; the working copy is v31/PORTING.md). It replaces P/freeze/PORTING.md and is complete for a reader of brief.md, brief3.md and brief4.md.
+  
+  Contents:
+  - **Base and environment:** where everything is in P/base; the PATH; check toolchains with `command -v`; never rebuild during a lane.
+  - **Workspace:** newport.sh and the expected NOT PORTED start.
+  - **What a language supplies:** notes may name `{module}`, `{client}`, `{ctor}` and `{names.*}`, and are cited and linted.
+  - **Guard-first order of work:** read the runtime table, then what the page prints, then write the facts to the table, complete the porter's part of the forms file (sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite), then hook and printers, then delete the components with rm, then build, the command and the lanes. It names the two traps the guard found in five providers: the accessor argument is entopts; parameter names are compared.
+  - **What a port may touch:** each path listed exactly. What to do when a shared file seems to need a change: stop; record file, line, the smallest change, breaking or additive, and the providers it would force; only if blocked, make a separate additive commit of shared files only. A missing DEFAULTS category is named as such a change.
+  - **The review:** the one command, a table of what each number must be, and how to classify. Shared sentences are matched automatically; everything else is by hand; a missing unit is restored or dropped with its reason; an echo is a contradiction with where, which side is true and the evidence, or same-meaning with a reason. Also the fact sheet (a citation shows the value or pins it), blocks (normalizers/<lang>.js, record-counts after reading, unverified reported as such, zig now verifiable).
+  - **The guard and the account:** with the report command.
+  - **What the independent reviewer will do:** audit citations, read three variations side by side, re-run, inject regressions, re-run lanes.
+  - **Purity:** what it flags and the expected exampleVarName finding.
+  - **The eleven-language table:** corrected against runtime-table.md. ocaml is streamLazy (sdk_types.ml:226; the old guide had "not surveyed"). Also: csharp Stream's 4th parameter and required fetchargs; java overloads and required operation parameters; scala matchArgs; swift dataArg/matchArg; cpp access sections; php, lua and perl accessors pass to entopts; php/perl copy facts; lua's dead display fallback. Each row gives the exact command: before/run.sh for php, perl, java and cpp; the cpp documentation lane; NOT RUN for js; none for lua, csharp, kotlin, scala, swift and ocaml.
+  - **Commits:** the four kinds apart; stage by explicit path, with no `git rm` sweep; no build commit for a port; regenerate the golden, never merge it; no tool or model name in a message.
+  - **Baselines:** the nine languages' baseline table, the contradictions and the account per language.
+  - **What a porter reports:** 11 items.
+  - **Traps.**
+  
+  All ten pilot guide problems are fixed in the text:
+  1. Forms read a declaration with no parameter list (`bare`, `declReader`).
+  2. The single tools directory and per-language files, so classify writes only the language's own file.
+  3. One source of normalizers, with per-language files.
+  4. `prints` as listFields/fields/record, with fields per shown entity and showFields fixed.
+  5. A per-operation null form needs an operation literal, which purity flags; s.op is available.
+  6. The golden changes one line per changed file of the language (rb had 11).
+  7. Delete with rm and stage by path.
+  8. REGEN prints SKIPPED, and the workspace generates alias-go2.
+  9. What to read: ReadmeQuick.ts, ReadmeRef.ts, runtimeprose.ts and the lanes.
+  10. The exampleVarName purity finding is expected.
+account:
+  - [0]
+    lang: ts
+    derived: 45
+    cited: 14
+    language: 2
+    convention: 5
+    cited_detail: see below
+  - [1]
+    lang: go
+    derived: 46
+    cited: 9
+    language: 3
+    convention: 6
+  - [2]
+    lang: py
+    derived: 46
+    cited: 11
+    language: 4
+    convention: 7
+  - [3]
+    lang: c
+    derived: 37
+    cited: 9
+    language: 2
+    convention: 10
+  - [4]
+    lang: zig
+    derived: 38
+    cited: 14
+    language: 2
+    convention: 9
+  - [5]
+    lang: clojure
+    derived: 41
+    cited: 13
+    language: 2
+    convention: 11
+  - [6]
+    lang: rust
+    derived: 41
+    cited: 12
+    language: 1
+    convention: 9
+  - [7]
+    lang: elixir
+    derived: 46
+    cited: 13
+    language: 2
+    convention: 5
+  - [8]
+    lang: rb
+    derived: 45
+    cited: 11
+    language: 2
+    convention: 7
+measures: |
+  All numbers here were run. Commands are given; logs are in v31/logs.
+  
+  **Guard account** (`SDKGEN_GUARD_REPORT=1 node --test --test-name-pattern 'account, per language' dist-test/runtimefacts.test.js`, log logs/guard-report.txt):
+  - derived/cited/language/convention: ts 45/14/2/5, go 46/9/3/6, py 46/11/4/7, c 37/9/2/10, zig 38/14/2/9, clojure 41/13/2/11, rust 41/12/1/9, elixir 46/13/2/5, rb 45/11/2/7.
+  - Excepted leaves: 0 in every language.
+  - Uncompared returns, each with a reason: c 1, py 6, rb 7, elixir 9, clojure 14.
+  - Type column null with a reason: zig, clojure.
+  - 63 cited facts are prose (pinned to the audited value): only an audit of the citation checks them.
+  
+  **Fact sheets:** 0 facts with no account in all nine (ts 65 facts, go 60, py 66, c 56, zig 58, clojure 63, rust 61, elixir 62, rb 63).
+  
+  **Purity** (`purity.js` via portcheck):
+  - 0 open in all nine.
+  - Accepted with a reason: ts 1, go 1, py 1, c 0, zig 0, clojure 7, rust 0, elixir 5, rb 1 (16 in all).
+  - New acceptances at v3.1: 6 clojure note findings, where "utility" (the SDK utility object) matches entity Utility of model B; 3 elixir findings, for the arity notes naming list and load on their own tutorial slots and for "options", the constructor argument.
+  
+  **Prose shared by sentence** (`node tools/sharewords.js --clone sdkgen --root out/new --lang <nine>`, logs/sharewords.txt). Words per section as shared sentence / only this language / notes:
+  - ts: tutorial 71.4/28.6/0; rootquick 6.7/93.3/0; reference 85.3/14.7/0
+  - go: tutorial 32.3/67.7/0; rootquick 6.0/94.0/0; reference 76.2/16.0/7.8
+  - py: tutorial 92.8/7.2/0; rootquick 61.8/38.2/0; reference 95.9/4.1/0
+  - c: tutorial 67.4/32.6/0; rootquick 6.5/93.5/0; reference 91.3/8.7/0
+  - zig: tutorial 88.5/11.5/0; rootquick 6.7/93.3/0; reference 92.2/4.2/3.5
+  - clojure: tutorial 96.8/3.2/0; rootquick 61.8/38.2/0; reference 95.5/2.0/2.6
+  - rust: tutorial 88.9/11.1/0; rootquick 6.7/93.3/0; reference 93.7/5.3/1.0
+  - elixir: tutorial 90.6/0/9.4; rootquick 60.0/40.0/0; reference 95.4/4.3/0.3
+  - rb: tutorial 92.8/7.2/0; rootquick 61.8/38.2/0; reference 94.7/5.3/0
+  
+  Over the three sections, words printed by this language alone plus notes: go 25.6%, ts 15.4%, c 9.9%, zig 8.3%, rust 6.9%, rb 5.5%, elixir 5.0%, clojure 4.6%, py 4.4%. Notes alone: go 7.5%, zig 3.4%, clojure 2.5%, rust 0.9%, elixir 0.6%.
+  
+  "Only this language" mostly counts sentences written once in shared code that only one ported result style selects (go's pair sentences, the root comments carrying "throws" or "raises"), not per-language source.
+  
+  Notes words in output: go reference 4,860; zig 1,826; clojure 1,317; rust 494; elixir tutorial 159 and reference 171.
+  
+  **At the source,** per-language prose: notes words go 45, zig 29, clojure 29, rust 26, elixir 30, others 0. Fact-table prose literals: go 43, clojure 57, zig 25, rust 17, elixir 15, c 8, rb 7, ts 4. The shared templates hold 759 prose-literal words (runtimeprose 101, ReadmeRef 397, ReadmeQuick 100, ReadmeRefFeatures 161).
+  
+  **Review effort:** 599 hand entries over the nine languages (ts 71, go 52, py 47, c 45, zig 74, clojure 58, rust 58, elixir 54, rb 140). The stage-3a rule records still accepting ledger classes in the eight languages: ts 94, go 109, py 113, c 100, zig 112, clojure 109, rust 119, elixir 121; rb 0.
+  
+  **Interface changes:**
+  - Cumulative breaking since the first four languages is about 11 to 13: the check's 10 to 12 at v3, plus the shared engineer's removal of DescQuick.show. I added 0 breaking.
+  - Additive at v3.1: 2 shared changes from me (readsSecret export; tester documented whenever declared) on top of the shared engineer's 6.
+  - Breaking changes caused by a newly ported language: 0. rust, elixir, clojure's REFERENCE and rb each needed 0; rb needed 1 additive, the forms `bare` declaration.
+  - The guard's behaviour change (members looked up on their own side; the undocumented check live) forced additions in all 9 existing forms files. That is test framework, not provider interface.
+source_lines: |
+  Command: `node tools/lines.js --clone sdkgen --rev HEAD` (logs/lines.txt), then my arithmetic over its numbers (logs/lines-summary.txt). Values are total lines / lines without blanks and comments.
+  
+  **Before (nine ported languages):** 6,916 / 5,007. That is the three family components per language (6,711 / 4,869) plus the shared shells of that time (ReadmeQuick, ReadmeRef and ReadmeRefFeatures: 205 / 138). ReadmeTop is excluded, as in the earlier stages.
+  
+  **After, shared documentation code:** 2,244 / 1,682, counting new files whole and changed files by their delta. Per file:
+  - ReadmeQuick.ts 255/193
+  - ReadmeRef.ts 402/316
+  - ReadmeRefFeatures.ts 146/108
+  - example.ts 566/388
+  - sdkdesc.ts 530/420
+  - runtimeprose.ts 247/191
+  - markdown.ts 31/20
+  - media.ts +30/23
+  - optional.ts +4/2
+  - ReadmeTop.ts +13/8
+  - FeatureDocs.ts +9/4
+  - ReadmeFeatures.ts +11/9
+  
+  Outside the documentation, not counted: action/doctor.ts +35, action/target.ts +82, edition.ts +4, remove.ts +1, sdkgen.ts +9.
+  
+  **After, per language** (provider + naming hook + other files of the language touched by the port, then forms):
+  - ts 140+22+3 = 165/130, forms 102/95
+  - go 191+24 = 215/169, forms 79/69
+  - py 149+24+8 = 181/141, forms 73/68
+  - c 232+28+5 = 265/206, forms 94/81
+  - zig 198+22 = 220/169, forms 78/71
+  - clojure 226+27+20 = 273/211, forms 87/74
+  - rust 176+24 = 200/154, forms 82/74
+  - elixir 186+34+10 = 230/173, forms 84/76
+  - rb 154+24+11 = 189/143, forms 92/81
+  - Sum: 1,938/1,496 for the providers and hooks; 771/689 for the forms.
+  
+  Forms already written for the eleven unported languages: 601 total (js 44, php 45, lua 56, csharp 47, java 47, kotlin 52, scala 51, swift 56, cpp 69, perl 51, ocaml 83).
+  
+  **Shared guard:** 1,379/1,197 (runtimefacts.test.ts 93, runtimereader.test.ts 128, forms.ts 330, account.ts 207, guard.ts 621). The base commit has no guard.
+  
+  **Measured, nine languages, before → after:**
+  
+  | What is counted | Total | Without blanks and comments |
+  | --- | --- | --- |
+  | Documentation code only | 4,182 (1.65x) | 3,178 (1.58x) |
+  | + forms | 4,953 (1.40x) | 3,867 (1.29x) |
+  | + shared guard | 6,332 (1.09x) | 5,064 (0.99x) |
+  
+  **Projected to twenty:** the eleven languages' families measure 15,038/10,871 before. Each unported provider and hook is taken as the measured mean of 215 lines, times 1, 1.5 or 2:
+  
+  | Provider size | Documentation code only | + forms | + guard |
+  | --- | --- | --- | --- |
+  | x1 | 6,551 (2.30x) | 7,923 (1.90x) | 9,302 (1.62x) |
+  | x1.5 | 1.94x | 1.65x | 1.43x |
+  | x2 | 1.69x | 1.46x | 1.29x |
+  
+  Without blanks and comments at x1: 2.17x, 1.75x and 1.47x.
+  
+  **My own source changes:**
+  - sdkdesc.ts: 524 → 530 lines (+6, readsSecret).
+  - ReadmeRef.ts: 401 → 402.
+  - sdkgen.ts: same line count, export widened.
+  - ReadmeModel_ts.ts and ReadmeHowto_ts.ts: +3 net.
+  - Providers: one token or line each (Syntax_ts/go/py/rb/clojure accessor; py two signatures; rust note text).
+  - account.ts: +2. runtimefacts.test.ts: +5. Forms files: +1 to +4 citations each, minus the WRONG exceptions.
+interface_changes:
+  - [0]
+    change: readsSecret(model) exported from sdkgen (sdkdesc.ts); the description's auth.secret and the ts README components use it
+    breaking: False
+    why: one rule for 'the runtime reads secret only for Basic in the header'; the ts README showed secret under Basic in the query (the check's defects 17)
+    rework_forced_in: none: ts chose to call it from its own README components
+  - [1]
+    change: ReadmeRef documents every client member a provider declares; tester() is no longer dropped when the test feature is off
+    breaking: False
+    why: tester() exists in the runtime regardless (Main.fragment.ts:344); the no-test REFERENCE omitted a real member
+    rework_forced_in: none. The page changes for ts only (no-test variation), the one provider that declares tester.
+  - [2]
+    change: guard account DEFAULTS: `ref.facts.(client|entity)[n].copy` is cited
+    breaking: False
+    why: the shared engineer's new Member.copy fact had no category
+    rework_forced_in: each of the nine forms files gained one citation (required content, not a changed shape)
+  - [3]
+    change: the guard report prints one line per declared leaf (`<lang> account <path>: <category> (file)`)
+    breaking: False
+    why: the fact sheet read the account from a line no guard printed, so every account was blank
+    rework_forced_in: none
+  - [4]
+    change: tools: classify never applies a rule record to a missing class; ledger marks such an outcome, or a missing outcome without why, INVALID; a hand entry at the current count settles a class over a stale rule record; the fact sheet fails on a blank account
+    breaking: True
+    why: brief rules (a missing unit is always by hand; no blank account); a stale pinned record blocked a hand decision forever (RECOUNT)
+    rework_forced_in: the nine languages' hand files: 210 formerly rule-accepted missing classes classified by hand. Behaviour of shared tools, not of the provider interface.
+  - [5]
+    change: tools: selftest counts accepted note findings as not open; controls/blocktables.txt re-recorded (zig tutorial, rb); portcheck prints NOT PORTED for a language with no provider
+    breaking: False
+    why: the controls must pass on the reviewed state; a clear start for a porter
+    rework_forced_in: none
+mutations: |
+  Harness: a copy of the clone at 9089ed48 (v31/mut), with v31/mutwork/mutate.js (the guard engineer's script, re-pointed). Each mutation is applied, the copy rebuilt, the guard and reader run, then restored. 75 mutations ran in 6 m 5 s; log mutwork/muts.log, results mutwork/muts.out.json.
+  
+  **The check's 52.** 43 caught by the guard:
+  - method and signature: all the swaps and typos;
+  - optional, paramTypes, paramNames, parameters;
+  - returns (py), style ×3, the account (collections, nullvalue, direct return), members, kind, signature;
+  - async, record (py, ts printer), ctor, test signature, the rt-* runtime edits, stale forms, vacuous forms.
+  
+  Not caught by the guard: 9, all in a stated category.
+  - **ts-type-comment:** caught by the review. Re-generated through the mutated provider (mutwork/lanemut.sh), portcheck ts FAILs with 1 open ledger class and 1 open block class.
+  - **ts-lit-int:** caught by the ts README lane (3 of 16 fail). It changes no file in the 21 variations, so the review cannot see it.
+  - **clj-return-changed:** uncompared; the clojure runtime declares no types, and the reason is in the forms.
+  - **ts-noun:** convention.
+  - **ts-lit-none, py-lit-false:** language.
+  - **zig-type-integer, clj-type-integer:** type column null with a reason; the printer is checked for totality only.
+  - **c-type-string:** a types:ARRAY/OBJECT exception with its reason.
+  
+  None is "not caught, not accounted".
+  
+  **The guard engineer's 19**, with my-wrong-exception-removed-ts replaced by v31-accessor-arg-data-ts because the WRONG exception no longer exists: 18 caught by the guard. my-types-reason-dropped-zig failed the build with a type error, as it did in that engineer's run. I rewrote it to blank the reason in a well-typed way (my-types-reason-blanked-zig), and the types check catches it.
+  
+  **Mine, 5 of 5 caught:**
+  - v31-accessor-arg-data-ts: paramNames, accessor, account;
+  - v31-copy-false-go: account (pinned boolean);
+  - v31-copy-cite-gone-rb: account;
+  - v31-rust-direct-note-wrong: account (pinned note);
+  - v31-py-dataset-keyword: paramNames.
+  
+  The first run also used the guard engineer's py-member-removed-pair with its `from` updated to `data_set(args=None)`; it is caught.
+gaps:
+  - The eight original reference languages still have ledger classes accepted by stage-3a rule records that I did not re-review: ts 94, go 109, py 113, c 100, zig 112, clojure 109, rust 119, elixir 121 (877), plus block classes. Each is pinned to its language and class id and never applies to a new id or a missing unit. I spot-checked 20 in py's reference and found none false; that is a sample, not a review. A new port's shared-sentence matching stands on these records together with my hand decisions.
+  - |
+    Not fixed in source; left as recorded disagreements:
+    - the shared ReadmeErrors.ts prints a TypeScript Error handling section in 16 languages' READMEs (false for zig and rust in particular);
+    - the no-test README lines promising a mock transport (go, py, elixir, rb, ts);
+    - py's README member table `(data)`/`(match)`;
+    - rb's README table `load(reqmatch, ctrl)` and `make -> Entity`.
+    All are in unported README sections.
+  - |
+    Not fixed, from the earlier lists:
+    - the c root quick start calls load after an unchecked, unreset err;
+    - go's write results are discarded (`_, err =`);
+    - `utilitys`/`historys` in unported README entity sections (ReadmeEntity_ts and siblings).
+  - The no-test contradictions rest on reading (catalogue S13, AGENTS.md, and the fact that feature source ships only for active features). I did not generate a no-test SDK and run its test client.
+  - clojure (124 changed blocks) and elixir (213) are unverified: neither toolchain is here.
+  - H3 was not re-measured against the 329-issue catalogue. H5 (lifecycle actions, packs, aliases) was not exercised in this stage.
+  - Timings are single runs on shared CPUs, not the minimum of three. None feeds a hypothesis.
+  - Commit messages for c, zig and elixir say 'facts the guard found wrong are corrected' although those three commits only add citations; I did not rewrite them after tagging.
+  - The tools are not under git, so 'at one commit' covers the clone. The tools' state is P/base/tools, and its self-test passes there (84/84).
+  - A self-test control for the new 'missing is never accepted by a rule record' rule was not added; ledger.js enforces it, and the nine portchecks ran under it.
+surprises:
+  - A stale stage-3a rule record at another count blocked a person's hand entry at the current count forever (RECOUNT on ts 556db3c91e), so a reviewed class could never close. classify.js now lets a hand entry at the current count settle the class.
+  - The fact sheet's account column could never fill: it parsed a report line no guard printed. Every language's sheet was blank in every account, while portcheck passed.
+  - The shared server-required-given normalizer over-reaches on Ruby's `"server" => { ... },\n})`: its trailing `\s*\}?\)?` consumes the client's closing `})`. rb needed its own variant, as c, clojure and elixir already had.
+  - No-test variation: the REFERENCE dropped tester() although every ts runtime has it (Main.fragment.ts:344).
+  - The check's ts 'region Required' item was half right. The README cell says the `server` object is Required, which is true because tenant has no default, but it listed region with no default, so a reader infers both are required. I fixed the cell to say which variable defaults rather than record a contradiction; it now prints 'region (defaults to `eu`)'.
+  - The check's ts-lit-int mutation changes no line of any of the 21 variations: no example prints an INTEGER literal there. Only the ts README lane's own models catch it.
+  - The clojure note on the SDK utility object and elixir's arity notes are flagged by the now-working note lint for naming 'utility' (an entity in model B), list/load and 'options'. Each is accepted with a reason. In a model with an entity called Utility, the lint cannot tell the SDK object from the entity.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: partly
+    evidence: |
+      RAN:
+      - Purity: 0 open in all nine; no provider reads the model. The 16 accepted findings are hook adapters, clojure's require list and note words.
+      - The guard accounts for every declared fact in all nine (0 excepted), and the reader reads all twenty runtimes from one forms file each.
+      - Interface: cumulative breaking changes since the first four languages are about 11 to 13, over the line of about 10. That was crossed at v3 and h-shared added one; I added none. None was caused by a newly ported language: rust, elixir, clojure's REFERENCE and rb each needed 0 breaking changes.
+      - Per-language prose by sharewords.js: words printed by this language alone plus notes, over the three sections, are go 25.6% and ts 15.4%; the other seven are 4.4 to 9.9%. That is over 15% for go, and at the line for ts. Most of it is shared sentences that only one result style selects (go tutorial 67.7%), not per-language source.
+      - Notes alone: no language over 9.4% in any section (elixir tutorial), and go reference 7.8%.
+      - At the source, per-language prose literals are at most 88 words (go) against 759 shared template words.
+      
+      By the fixed thresholds, H1 is refuted on the breaking-change count, and on prose for go if 'cannot be shared' means 'printed only by this language'.
+  - [1]
+    id: H2
+    verdict: refuted
+    evidence: |
+      RAN (lines.js plus my arithmetic): for the nine measured languages, 6,916 lines become 4,182 counting documentation code only (1.65x; 1.58x without blanks and comments). With the forms they become 4,953 (1.40x), and with the shared guard 6,332 (1.09x; 0.99x without blanks and comments).
+      
+      Projected to twenty with unported providers at the measured mean: 2.30x for documentation code only, 1.90x with forms, 1.62x with the guard. At 1.5x provider size: 1.94x, 1.65x and 1.43x.
+      
+      Under 2x everywhere the guard or the forms are counted, and under 2x for the measured nine on any count.
+  - [2]
+    id: H3
+    verdict: partly
+    evidence: |
+      Fixed once, in shared code or one per-language rule, at v3.1 or earlier in stage 4:
+      - the log default (all 20 READMEs and REFERENCEs);
+      - tester() in no-test;
+      - the secret rule;
+      - action path parameters;
+      - the write-step sentences;
+      - the getter copy;
+      - the record read on every single-entity operation.
+      
+      Still needing per-language or unported-section edits:
+      - the README Error handling section (shared, but printing TypeScript for 16 languages);
+      - README tables in py and rb;
+      - the README no-test lines in go, py, elixir, rb and ts;
+      - c and go code shape (err checks, discarded writes);
+      - utilitys in unported README sections.
+      
+      I did not re-measure the share of the 329 catalogued issues.
+  - [3]
+    id: H4
+    verdict: supported
+    evidence: |
+      RAN at v31-frozen:
+      - ts README 16/16;
+      - go README 12/12;
+      - py README 12/12 with real pytest;
+      - c DOC 6/6;
+      - rust DOC 6/6;
+      - '^rb: ' 49/49;
+      - '^zig: ' 26 pass, 0 fail, 2 skipped (no transport here); zig documentation lane 6/6 on NEW against 5/6 on the old clone (getenv).
+      
+      The suite has 0 failures in 2,593 tests. Nothing that ran before now fails. clojure and elixir cannot be compiled here (unverified, counted).
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: I did not run the lifecycle actions (doctor, remove, target add, package update), packs or aliases in this stage. The alias-go2 variation was generated (21 of 21) but not checked for H5's rules.
+reproduce: |
+  export PATH=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang:/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH
+  V=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v31
+  B=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/base
+  cd $B/sdkgen && git rev-parse --short v31-frozen && cd ts && npm run build && git status --short    # 9089ed48, empty
+  node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js                          # 61/61
+  node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)   # 2593/2588/0/5
+  node --test dist-test/characterize.test.js                                                           # 2/2
+  SDKGEN_GUARD_REPORT=1 node --test --test-name-pattern 'account, per language' dist-test/runtimefacts.test.js
+  $V/lanes.sh $B/sdkgen/ts new ts go py c rust rb zig ; $V/lanes.sh $B/oldclone/ts old zigdoc
+  cd $B && for l in ts go py c zig clojure rust elixir rb; do tools/portcheck.sh sdkgen out $l | tail -1; done   # 9 x PASS
+  node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-ref/harness/out --tmp $V/tmp   # 84/84
+  python3 $V/unported.py                                                                               # 209/209 shared lines only (reads $V/out)
+  cd $V/mutwork && node mutate.js muts.json muts.out.json                                              # needs $V/mut, a copy of the clone
+  node $B/tools/sharewords.js --clone $B/sdkgen --root $B/out/new --lang ts,go,py,c,zig,clojure,rust,elixir,rb
+  node $B/tools/lines.js --clone $B/sdkgen --rev HEAD
+  $B/newport.sh kotlin <dir> && cd <dir>/kotlin && REGEN=1 tools/portcheck.sh sdkgen out kotlin   # PORTCHECK kotlin: NOT PORTED
+  Hand decisions are in $V/dec/<lang>.py (applied with $V/apply.py) and in $B/tools/hand/<lang>.json.

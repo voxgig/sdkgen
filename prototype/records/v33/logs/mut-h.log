@@ -1,0 +1,27 @@
+== k-new start 11:47:35
+[1/14 7% 10s] K-go-arity-0: CAUGHT arity,account
+[2/14 14% 19s] K-swift-arity-0: CAUGHT arity,account
+[3/14 21% 29s] K-ts-arity-2: CAUGHT arity,account
+[4/14 29% 38s] K-ts-utility-copy-true: CAUGHT account
+[5/14 36% 49s] K-py-utility-copy-false: CAUGHT account
+[6/14 43% 58s] K-c-match-copy-dropped: NOT CAUGHT
+[7/14 50% 68s] K-go-deleted-wrong-member: CAUGHT deleted,account
+[8/14 57% 78s] K-swift-record-unwrap-dropped: CAUGHT record,account
+[9/14 64% 88s] K-ts-name-not-field: CAUGHT field,account
+[10/14 71% 97s] K-ocaml-name-not-field: NOT CAUGHT
+[11/14 79% 107s] K-perl-streamSignal-false: CAUGHT account
+[12/14 86% 117s] K-rust-streamSignal-true: CAUGHT account
+[13/14 93% 128s] K-lua-cached-false: CAUGHT account,controls
+[14/14 100% 138s] K-ocaml-named-call: CAUGHT named,account
+== k-new done 11:49:56
+== att-all start 11:49:56
+[1/37 3% 10s] G1-lua-okfalse-nil: CAUGHT account
+[2/37 5% 21s] G1-ocaml-okfalse-false: CAUGHT account
+[3/37 8% 31s] G6-lua-A1-run-op-cancel: CAUGHT account
+[4/37 11% 41s] G6-ocaml-run-op-cancel: CAUGHT account
+[5/37 14% 51s] G6-go-new-file: CAUGHT account
+Terminated
+== att-all done 11:50:50
+== freeze-muts-v33 start 11:50:50
+[1/108 1% 10s] ts-method-typo: NOT CAUGHT
+[2/108 2% 16s] ts-method-swap: CAUGHT controls,account,reader

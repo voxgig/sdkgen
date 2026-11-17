@@ -1,0 +1,17 @@
+- 15:46 step 1 workspace made (newport.sh), clone 0065f1e2
+- 15:48 step reading: briefs, guide, table, shared code read
+- 16:20 table read against runtime. Wrong/missing rows: client ctor misses secondary `constructor() : this(null)` (Main.fragment.kt:10); `deleted` row does not say it is on EntityBase only (EntityBase.fragment.kt:83), not on SdkEntity (Interfaces.kt:19-40) which accessor returns; stream signal counts only a Function0 (EntityBase:233-240).
+- decisions: record 'data()' (go-style, cast is printer output); prints 'record'; collection 'list' (prose); entityBy 'Name' (OLD); deleted undeclared (bound type SdkEntity lacks it); arity 2; kotlinCorePackage extracted for layout.module.
+- 15:55 hook, provider, forms written; old 3 components deleted; build 0; guard ^kotlin: 4/4 pass (ctorAlts dropped: guard calledAs ignores classCall -> gap)
+- 15:59 SCRATCH run 1 done (scratch1.log): callcheck 6 ARITY findings = callcheck argsAt splits on the comma inside mutableMapOf<String, Any?> (tools gap); decision: keep OLD's explicit generic form, record gap
+- 16:04 tried entityBy class: heading change breaks block pairing (ref identical 274->183), reverted to Name (OLD)
+- 16:08 commit f7b0815b: per-language files (provider, hook, forms, utility, deletions)
+- 16:11 FOUND: gradle --offline compiles a generated kotlin SDK (kotlin 2.2.0 from ~/.gradle cache, nothing downloaded); compileKotlin crud NEW exit 0 in 1m56s
+- 16:13 lanes (OLD/NEW x default/crud/basic-server, gradle --offline compile of every kotlin block) running: run/lanes.log
+- 16:16 lanes v1 (record cast at read): OLD+NEW x default/crud/basic-server compileKotlin exit 0, 0 errors; control (import removed, ctrl arg dropped) -> 12 errors. Now: cast at bind where read (Syntax edit), reference hand records merged (run/hand_ref.py)
+- 16:26 classification done (run/hand_ref.py, run/hand_tut.py): every OPEN 0, STALE 0, facts 0 unattested, 29 absent explained; one command FAILS only on callcheck 6 ARITY (tools/callcheck.js argsAt splits mutableMapOf<String, Any?>); patched copy run/callcheck-generic.js gives 0 findings and still catches a dropped ctrl (control)
+- 16:28 commit 4061be0b (cast at bind); tools commit 51dedfc; lanes2 NEW compile 3/3 exit 0; running examples in test mode (run/runs.log)
+- 16:29 runs: tutorial program + root quick start in test mode (constructor replaced by seeded testSDK) OLD and NEW x crud/default/basic-server: 2/2 functions end, records printed
+- 16:30 golden commit; suite running (suite.log)
+- 16:45 suite (no generatedcompile): 2635 tests, 2630 pass, 0 fail, exit 0
+- 16:51 FINAL: build 0, tree clean; REGEN reviewed run: all numbers 0 except callcheck 6 ARITY (tools gap) -> PORTCHECK FAIL exit 1 (final.log); SCRATCH run numbers in scratch2.log

@@ -1,0 +1,4 @@
+STALE class [3942dce840] restored:shared: quotes "This escape hatch never throws — branch on result.entries[", on no OLD or NEW page of swift and nowhere in the clone
+STALE class [6ae77474cd] restored:shared: quotes "Returns the `fetchdef`", on no OLD or NEW page of swift and nowhere in the clone
+STALE fact [named]: quotes "`list(nil, nil)` returns ...", "`load()` returns the ENTITY", on no OLD or NEW page of swift and nowhere in the clone
+hand records swift: 219, 43 quote text (80 quotations), STALE 3

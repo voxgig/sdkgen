@@ -1,0 +1,190 @@
+ac969fd7fb tuto c,clojure,elixir,py,rust,ts,zig | 2. Load an Ⓔ
+d079618e6e tuto ts | ⟦method.load⟧ resolves to the entity and throws on failure; `⟦record⟧` reads its Ⓔ.
+509df65eab tuto c,clojure,elixir,go,py,rust,ts,zig | This tutorial walks through creating a client and loading an Ⓔ.
+ee58ce03de tuto c,clojure,elixir,go,py,rust,ts,zig | Every operation returns entities, not raw Ⓔs.
+a2bf96f937 tuto c,clojure,elixir,py,rust,ts,zig | The client reads its API key from the `DEMO_APIKEY` environment variable.
+afbad155be tuto c,clojure,elixir,go,py,rust,ts,zig | The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`.
+cfc01f1671 tuto c,clojure,elixir,py,rust,ts,zig | The client reads its API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables.
+c246e90164 tuto c,clojure,elixir,py,rust,ts,zig | 4. Create, update, patch, and remove
+3b42b780fa tuto c,clojure,elixir,go,py,rust,ts,zig | This tutorial walks through creating a client, listing Ⓔ Ⓔs, loading a Ⓔ, and creating, updating, patching, and removing a Ⓔ.
+ac63285763 tuto c,clojure,elixir,go,py,rust,ts,zig | Patch — sends only the Ⓕ given; the Ⓕ comes off the created entity's Ⓔ
+3b2733cb55 tuto c,clojure,elixir,go,py,rust,ts,zig | Update — the Ⓕ comes off the created entity's Ⓔ
+e5b6ebca15 tuto ts | ⟦method.list⟧ resolves to an ⟦collection⟧ of entities, one per Ⓔ, and throws on failure; `⟦record⟧` reads an entity's Ⓔ.
+6d459aa83b tuto ts | Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure.
+c9472ea53d tuto ts | Create — resolves to the created entity; ⟦record⟧ reads its Ⓔ
+4633b64615 tuto c,clojure,elixir,py,rust,ts,zig | 4. Create and remove
+8e422a85a8 tuto c,clojure,elixir,go,py,rust,ts,zig | This tutorial walks through creating a client, listing Ⓔ Ⓔs, loading a Ⓔ, and creating and removing a Ⓔ.
+95064ad01e tuto c,clojure,elixir,go,py,rust,ts,zig | This tutorial walks through creating a client and listing Ⓔ Ⓔs.
+59ac8a63ea tuto c,clojure,elixir,go,py,rust,ts,zig | This tutorial walks through creating a client, listing Ⓔ Ⓔs, loading a Ⓔ, and creating, updating, and removing a Ⓔ.
+bcbefa9d5b tuto c,clojure,elixir,go,py,rust,ts,zig | This tutorial walks through creating a client.
+5f48968a61 tuto c,clojure,elixir,go,py,rust,ts,zig | This tutorial walks through creating a client, listing Ⓔ Ⓔs, and loading a Ⓔ.
+fc11508b53 tuto c,clojure,elixir,go,py,rust,ts,zig | This tutorial walks through creating a client and updating a Ⓔ.
+f999547282 tuto c,clojure,elixir,py,rust,ts,zig | 2. Update
+6adfda349a tuto ts | ⟦method.update⟧ resolves to the entity it wrote, and throws on failure.
+2873e86578 tuto c,clojure,elixir,go,py,rust,ts,zig | The server URL is templated, so `server` must give `account`; `region` defaults to `eu`.
+aec346dc78 tuto go | The program after these 2 steps runs them in order.
+ea263c07cb tuto go | The program after these 4 steps runs them in order.
+c88eca6d9f tuto go | The program after these 3 steps runs them in order.
+095528ea62 tuto go | **Create a client.** The client reads its API key from the `DEMO_APIKEY` environment variable.
+9736ad7042 tuto go | **Load an Ⓔ.** ⟦method.load⟧ returns `⟦pairForm⟧`: the value is the entity, and a non-nil ⟦errVar⟧ reports failure; ⟦record⟧ reads its Ⓔ.
+57eaa23251 tuto go | Load an Ⓔ: the entity; err is non-nil on failure
+a73956b3fb tuto go | **Create a client.** The client reads its API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables.
+118dab2307 tuto go | **Create a client.** The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`.
+a4274bffdd tuto go | Create — the value is the created entity; ⟦record⟧ reads its Ⓔ
+3cba044db7 tuto go | **Create a client.**
+89e4ec3e7c tuto go | **List Ⓔ Ⓔs.** ⟦method.list⟧ returns `⟦pairForm⟧`: the value is a ⟦collection⟧ of entities, one per Ⓔ, and a non-nil ⟦errVar⟧ reports failure.
+71b4990dcd tuto go | There is no `{ok, data}` wrapper; ⟦record⟧ reads an entity's Ⓔ.
+094f5ec892 tuto go | **Load a Ⓔ.** ⟦method.load⟧ returns `⟦pairForm⟧`: the value is the entity, and a non-nil ⟦errVar⟧ reports failure; ⟦record⟧ reads its Ⓔ.
+9bbd9f45ff tuto go | **Create, update, patch, and remove.** Each write returns `⟦pairForm⟧` too: the value is the entity it wrote (a removed one is marked as deleted), and
+1dc13211d0 tuto go | List Ⓔ Ⓔs: a []any of entities, one per Ⓔ; err is non-nil on failure
+a0f86c7f47 tuto go | Load a Ⓔ: the entity; err is non-nil on failure
+4235f37e3f tuto go | Remove
+f3bd7e9a0a tuto go | **Create and remove.** Each write returns `⟦pairForm⟧` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil ⟦errV
+64112421c3 tuto go | **Load a Ⓔ.** Ⓔ is nested under Ⓔ, so provide the `Ⓔ_id`.
+4967fbd62e tuto go | ⟦method.load⟧ returns `⟦pairForm⟧`: the value is the entity, and a non-nil ⟦errVar⟧ reports failure; ⟦record⟧ reads its Ⓔ.
+62e6942ba3 tuto go | **Create, update, and remove.** Each write returns `⟦pairForm⟧` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-
+e0ff605945 tuto go | The program after this step runs it.
+e705d74e4b tuto go | **Update.** ⟦method.update⟧ returns `⟦pairForm⟧` too: the value is the entity it wrote, and a non-nil ⟦errVar⟧ reports failure.
+fa74e53c4a tuto go | Update
+1b25034e90 tuto py | ⟦method.load⟧ returns the entity and raises on failure; ⟦record⟧ reads its Ⓔ (a ⟦recordType|ref.container|ref.direct.returns|ref.prepare.returns|ref.v
+563a2ccc24 tuto py | ⟦method.list⟧ returns a ⟦collection⟧ of entities, one per Ⓔ, and raises on failure; ⟦record⟧ reads an entity's Ⓔ (a ⟦recordType|ref.container|ref.dire
+f2515f53be tuto clojure,elixir,py | Each write returns the entity it wrote (a removed one is marked as deleted), and raises on failure.
+a12cc73410 tuto elixir,py,rb | Create — returns the created entity; ⟦record⟧ reads its Ⓔ
+2e3c8aae76 tuto clojure,elixir,py | ⟦method.update⟧ returns the entity it wrote, and raises on failure.
+487605432b tuto c | ⟦method.load⟧ returns the entity, or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure; ⟦record⟧ reads its Ⓔ.
+bbd7e22198 tuto c | ⟦method.list⟧ returns a ⟦collection⟧ of entities, one per Ⓔ, or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure, so check ⟦errVar⟧ after the call; 
+933ecb9182 tuto c | Create — returns the created entity, or NULL with ⟦errSlot⟧ set; ⟦record⟧ reads its Ⓔ
+5cc55217a8 tuto c | Each write returns the entity it wrote (a removed one is marked as deleted), or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure, so check ⟦errVar⟧ 
+d8ced013b2 tuto c | ⟦method.update⟧ returns the entity it wrote, or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure, so check ⟦errVar⟧ after each call.
+cd455bcf95 tuto rust,zig | ⟦method.load⟧ returns a result whose ⟦ok⟧ is the entity and whose ⟦err⟧ reports failure; ⟦record⟧ reads its Ⓔ.
+f11f771494 tuto zig | ⟦method.list⟧ returns a result whose ⟦ok⟧ is a ⟦collection⟧ of entities, one per Ⓔ, and whose ⟦err⟧ reports failure; ⟦record⟧ reads an entity's Ⓔ.
+e0fb6e7e3c tuto rust,zig | Each write returns a result whose ⟦ok⟧ is the entity it wrote (a removed one is marked as deleted) and whose ⟦err⟧ reports failure.
+dbb15d380e tuto zig | Create — ⟦ok⟧ carries the created entity; ⟦record⟧ reads its Ⓔ
+4ffde2c5db tuto rust,zig | ⟦method.update⟧ returns a result whose ⟦ok⟧ is the entity it wrote and whose ⟦err⟧ reports failure.
+6732c42051 tuto clojure,elixir | ⟦method.load⟧ returns the entity and raises on failure; ⟦record⟧ reads its Ⓔ.
+3d0c1adcc3 tuto clojure,elixir | ⟦method.list⟧ returns a ⟦collection⟧ of entities, one per Ⓔ, and raises on failure; ⟦record⟧ reads an entity's Ⓔ.
+cd05688101 tuto clojure | Create — returns the created entity; ((:data-get created)) reads its Ⓔ
+c1b47f3295 tuto rust | ⟦method.list⟧ returns a result whose ⟦ok⟧ is a `Vec` of entities, one per Ⓔ, and whose ⟦err⟧ reports failure; ⟦record⟧ reads an entity's Ⓔ.
+5097de7b71 tuto rust | Create — Ok carries the created entity; ⟦record⟧ reads its Ⓔ
+3426e9ddb3 tuto elixir | `Voxgig.Struct.getelem/2` reads an item.
+d71fee0121 tuto rb | `list` returns an ⟦collection⟧ of entities, one per Ⓔ, and raises on failure; `⟦record⟧` reads an entity's Ⓔ (a `Hash`).
+6d96732675 tuto rb | `load` returns the entity and raises on failure; `⟦record⟧` reads its Ⓔ (a `Hash`).
+cb4c5bf0da root ts | Load an Ⓔ: the entity, an ⒺEntity; throws on failure
+bfe2260d8d root ts | List Ⓔ Ⓔs: a ⟦listOf⟧, one entity per Ⓔ; throws on failure
+a1239b7c70 root ts | Load a Ⓔ: the entity, a Ⓔ; throws on failure
+99a8153c15 root ts | Load a Ⓔ: the entity, a ⒺEntity; throws on failure
+366f8e2cd2 root clojure,elixir,py,rb | Load an Ⓔ: the entity; raises on failure
+6b7dda2d14 root py | List Ⓔ Ⓔs: a list of entities, one per Ⓔ; raises on failure
+0ea856bddf root clojure,elixir,py,rb | Load a Ⓔ: the entity; raises on failure
+0b439b0c35 root c | Load an Ⓔ: the entity; ⟦errSlot⟧ is set on failure
+d236d7548c root c | Load a Ⓔ: the entity; ⟦errSlot⟧ is set on failure
+e7e0248d60 root c | List Ⓔ Ⓔs: a NULL-terminated array of entities, one per Ⓔ; ⟦errSlot⟧ is set on failure
+805f851dc5 root zig | Load an Ⓔ: ⟦ok⟧ is the entity; ⟦err⟧ on failure
+5d43ee1d56 root zig | Load a Ⓔ: ⟦ok⟧ is the entity; ⟦err⟧ on failure
+541249a1d2 root zig | List Ⓔ Ⓔs: ⟦ok⟧ is a slice of entities, one per Ⓔ; ⟦err⟧ on failure
+7cbfe3fde1 root clojure | List Ⓔ Ⓔs: a vector of entities, one per Ⓔ; raises on failure
+76d2d79f05 root rust | Load an Ⓔ: Ok is the entity; Err on failure
+4f5c517896 root rust | Load a Ⓔ: Ok is the entity; Err on failure
+882eac65b5 root rust | List Ⓔ Ⓔs: Ok is a Vec of entities, one per Ⓔ; Err on failure
+9bb950f3bb root elixir | List Ⓔ Ⓔs: a ⟦ref.container⟧ list of entities, one per Ⓔ; raises on failure
+6de5ea1c00 root rb | List Ⓔ Ⓔs: an Array of entities, one per Ⓔ; raises on failure
+49431fb9be refe ts | `await client.Ⓔ().create({ $action: 'terraform', Ⓕ: 'Ⓔ_id' })`
+64e3f44a55 refe ts | `⟦ref.op.create⟧`
+50beb02467 refe ts | `⟦ref.op.update⟧`
+4af20ce756 refe rust,ts,zig | ⟦ref.accessor.sig⟧
+1eccc7250d refe c,clojure,go,ts | Create a new `Ⓔ` instance.
+60a01b67bd refe ts | Resolves to an ⟦collection⟧ of entities, one per Ⓔ, and throws on failure.
+4eea983832 refe c,clojure,elixir,go,py,rust,ts,zig | Values for the variables the server URL is templated on.
+5c71a59923 refe ts | `options.server.tenant`
+7247de945f refe c,clojure,elixir,go,py,rust,ts,zig | Required.
+6c3aa41f7c refe ts | `options.server.region`
+1ace127b3b refe clojure,elixir,py,rb,rust,ts,zig | The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be ⟦ref.none⟧.
+75773f3022 refe ts | **Returns:** `⟦ref.direct.returns⟧`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is ⟦ref
+0a037bbbba refe ts | A failed request is reported in the result, not as an error, so branch on `result.ok`.
+092f1dc649 refe ts | `⟦record⟧` reads its Ⓔ.
+224b480b40 refe ts | `⟦ref.entity.3.sig⟧`
+4c93659f14 refe ts | Run an operation through the pipeline and yield its result items as an async iterator.
+5003b705ca refe py,rb,ts | The operation runs when iteration starts, not when the call returns.
+75581f3469 refe ts | `⟦ref.op.patch⟧`
+0676c37240 refe c,clojure,elixir,go,py,rust,ts,zig | Level \| percent see the guide or [site](https://example.com/x)
+58f6c63c63 refe go,py,rust,ts | Create a new `ⒺClient` instance with the same client and options.
+20aa105d6b refe c,clojure,elixir,go,py,rust,ts,zig | Words the project chose | not the spec
+74c9db4d88 refe ts | `options.server.account`
+5ddee20721 refe c,clojure,elixir,go,py,rust,zig | HTTP method (default: `GET`).
+4fb872e54f refe c,clojure,elixir,go,py,rust,zig | The array form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest.
+2bd8ff9d43 refe go | It sends the items on the returned channel, which closes when the stream ends.
+2cfdeb945d refe go | Its ⟦ref.accessor.param⟧ argument holds the entity options: pass ⟦noError|ref.none⟧ for none.
+6afe3f6b0d refe go,py | `options["server"]`
+0daa28353f refe go | Create a test client with mock features active.
+62d22019c2 refe go | The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be ⟦noError|ref.non
+0f06358e5b refe go,py | A failed request is reported in the result, not as an error, so branch on `result["ok"]`.
+4ccf17b0e9 refe go | ⟦errVar⟧ is non-nil on failure.
+2d9199cb7a refe c,clojure,elixir,go,py,rust,zig | ⟦record⟧ reads its Ⓔ.
+185f26bc68 refe c,clojure,elixir,go,py,rust,zig | Actions
+2b8bc511e9 refe c,clojure,elixir,go,py,rust,zig | Action
+120aec2437 refe c,clojure,elixir,go,py,rust,zig | Route
+22bdd0ff18 refe c,clojure,elixir,go,py,rust,zig | Call
+2a8d9aa773 refe c,clojure,elixir,go,py,rust,zig | `terraform`
+799b8582a8 refe go,py | `options["server"]["account"]`
+7d64fb6cb3 refe c,clojure,elixir,py,rust,zig | Path parameter values for `{param}` substitution.
+4388aa476d refe py,rb | ⟦ref.op.load⟧
+21516a568c refe py,rb | ⟦ref.op.remove⟧
+2afc165624 refe py,rust | Create a new `ⒺEntity` instance with the same client and options.
+3cd4c3ecdc refe c,clojure,elixir,py,rust,zig | Prepare a fetch definition without sending the request.
+7029749eeb refe clojure,elixir,py | Returns a ⟦collection⟧ of entities, one per Ⓔ, and raises on failure.
+04d3017bb0 refe clojure,elixir,py | Returns the created entity, and raises on failure.
+1c3e043734 refe clojure,elixir,py | Returns the updated entity, and raises on failure.
+440d837326 refe py | ⟦ref.entity.1.sig⟧
+7034f074ec refe c,py | ⟦ref.entity.3.sig⟧
+107a756204 refe py | `fetchargs["ctrl"]`
+3a97bf6325 refe py | Control options (e.g. `{"explain": True}`).
+4b8eb8b6bf refe clojure,elixir,py,rb | It raises on failure.
+7df20388eb refe py | Run an operation through the pipeline and yield its result items as a generator.
+76fabc0077 refe py | `client.Ⓔ().create({"$action": "terraform", "Ⓕ": "Ⓔ_id"})`
+5338ac6916 refe clojure,elixir,py | Returns the patched entity, and raises on failure.
+38db57bb5d refe c,rust,zig | System overrides (e.g. custom fetch).
+475c89eecd refe c | ⟦ref.client.0.sig⟧
+2e09bb327d refe c | Return a deep copy of the current SDK options.
+4f5d0aa907 refe c,rust,zig | ⟦ref.valueType.OBJECT⟧
+186e69881f refe c,clojure,elixir,rust,zig | `ctrl`
+4172bd615b refe c | **Returns:** ⟦ref.container|ref.direct.returns|ref.prepare.returns⟧, the fetch definition: the request `sdk_direct()` would send.
+59d890e493 refe c | It returns ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure.
+091c271ed5 refe c | Common ⟦ref.noun⟧
+7ac0237c03 refe c | `Ⓔ->vt->create(Ⓔ, cmap(2, "$action", v_str("terraform"), "Ⓕ", v_str("Ⓔ_id")), NULL, &err);`
+56cbce4ad6 refe c,clojure,elixir,rust,zig | `secret`
+0808ae08e7 refe c,clojure,elixir,rust,zig | `server.account`
+293c007b60 refe rust,zig | The result's ⟦ok⟧ is the entity, marked as deleted, and its ⟦err⟧ reports failure.
+4864f34793 refe zig | The result's ⟦ok⟧ is a ⟦collection⟧ of entities, one per Ⓔ, and its ⟦err⟧ reports failure.
+4e2d4cf241 refe zig | **Returns:** ⟦ref.container|ref.direct.returns⟧, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure 
+083fc645cd refe zig | On failure it returns the error of its error union, for `try` or `catch`.
+20d6fe3875 refe rust,zig | The result's ⟦ok⟧ is the created entity, and its ⟦err⟧ reports failure.
+74db4cd68e refe zig | **Returns:** ⟦ref.prepare.returns⟧, the fetch definition: the request `direct()` would send.
+3ae117ead3 refe clojure,elixir | `options` is a ⟦ref.container⟧ map (⟦ref.none⟧ for none).
+4d9f342751 refe clojure | ⟦ref.heading⟧
+4f794f9952 refe clojure | The SDK Ⓔ object is reached through `sdk.client`, which ⟦layout.module|ref.heading⟧ does not re-export:
+65e89e0eda refe clojure,elixir | ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧
+34510704dd refe clojure | Control options (e.g. `(vs/jm "explain" true)`).
+7c1f7fd78c refe clojure | **Returns:** ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, a result map holding `ok`, `status`, `headers` and ⟦ref.accessor.param⟧, e
+2ca2eaf2bf refe clojure | Accepts the same parameters as `direct`.
+3c2a4b0d55 refe clojure | **Returns:** ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, the fetch definition: the request `direct` would send.
+761350e4f5 refe clojure,elixir | Run an operation through the pipeline and return a lazy sequence of its result items.
+75c4c96d8c refe rust | The result's ⟦ok⟧ is a `Vec` of entities, one per Ⓔ, and its ⟦err⟧ reports failure.
+418def6d36 refe rust | A failed request is reported in the result, not as an error, so branch on `getp(&result, "ok")`.
+4785e1e14e refe rust | The result map always comes back inside ⟦ok⟧, for a non-2xx response and for a request that could not be made alike; its `ok` key reports the failure.
+0919798d12 refe rust | **Returns:** `Result<Value, ⓈError>`, the fetch definition: the request `direct()` would send.
+4b1f2e32dd refe elixir | Create a new SDK client instance.
+7170ae33a7 refe elixir | Create a new `Ⓢ.Entity.Ⓔ` instance with the same client and options.
+0606a89435 refe elixir | Create a new `Ⓢ.Entity.Ⓔ` instance.
+111e3864bc refe elixir | Pass ⟦ref.none⟧ for no initial options.
+4d16943177 refe elixir | `⟦ref.client.2.sig⟧`
+066331452e refe elixir | Control options (e.g. `%{"explain" => true}`).
+5687a75708 refe elixir | **Returns:** ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, a result map holding `ok`, `status`, `headers` and `data`, even for a non-
+04c49674ea refe elixir | `⟦ref.opMatched.list⟧`
+22cfc13b27 refe elixir | Field Usage by Operation
+30308ece64 refe elixir | update
+3531b58c59 refe elixir | `Ⓕ`
+114c546be5 refe elixir | Field
+03f31979fa refe rb | ⟦ref.op.create⟧
+0bd42bc9da refe rb | ⟦ref.op.update⟧
+7bebc239a6 refe rb | ⟦ref.entity.4.sig⟧
+7ba0882026 refe rb | Run an operation through the pipeline and return an iterator over its result items.

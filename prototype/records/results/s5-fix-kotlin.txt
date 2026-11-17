@@ -1,0 +1,348 @@
+lang: kotlin
+ok: False
+summary: |
+  I settled all of the reviewer's findings, and the port is still not passing. The one command, run with REGEN=1 after a build that exited 0, exits 1 for two reasons, both waiting on shared files:
+  - 2 reference classes I recorded as `defect`: the stream note, which states a fact other runtimes have too;
+  - the 6 callcheck ARITY lines, which come from a reader gap in tools/callcheck.js.
+  
+  Every other number is 0: ledger OPEN, block OPEN (after the recount), STALE, unattested facts, unexplained ABSENT, DROPPED, purity open and pagecheck. The guard passes 4/4.
+  
+  What I RAN:
+  - **Build and tree:** `npm run build` exits 0 and `git status` is empty.
+  - **Guard and reader:** the kotlin guard passes 4/4; runtimefacts plus runtimereader pass 81/81.
+  - **Golden:** 2/2. Only the kotlin provider's hash line changed.
+  - **Suite:** without generatedcompile, 2635 tests: 2630 pass, 0 fail, 5 skipped (5m18s).
+  - **One command, reviewed:** fix-final.log.
+  - **One command, from scratch:** fix-scratch.log.
+  - **Other languages:** no page of another language changed. A diff of the root README with the `### Kotlin` part removed shows 0 variations differing from base33.
+  - **Compile lane (reviewer's method):** `gradle --offline compileKotlin` uses the Kotlin 2.2.0 compiler already in ~/.gradle; kotlinc is not on PATH and I downloaded nothing. Each REFERENCE block is compiled with only the imports the tutorial prints. For ref-issues, B, crud-basic, auth-basic and ent-none, OLD and NEW alike, compileKotlin exits 0 with 0 errors: 97 NEW blocks and 93 OLD.
+    - Negative control: the NEW ref-issues page with the tutorial's SdkEntity import removed gives 8 errors, the reviewer's number.
+  - **Run lane:** the tutorial program and the root quick start run in test mode against a seeded mock. B, crud-basic and ref-issues, OLD and NEW: 2/2 functions completed in each.
+  
+  What I READ to check the reviewer:
+  - tools/callcheck.js:71-84 has no `<...>` bracket. Its overload scan at :52-59 reads `val list = parent as MutableList<Any?>` (tm/kotlin/utility/struct/Struct.kt:434,460) as a `list` declared with 0 parameters.
+  - EntityBase.fragment.kt:187/233/248 for the stream signal.
+  - The streamSignal citations in all 16 forms files. Each runtime accepts its own signal form, so the form is a shared fact and not a kotlin note.
+  - SdkClient.kt:282-355: a readable non-2xx response sets no `err`.
+  - Struct.kt:468-491: `clone` deep-copies maps and lists and hands other objects back as they are.
+  
+  **Lines:** 753 deleted against 222 added (provider 191, hook 23, utility 8), 3.39x; 264 with forms and generator lines, 2.85x. **Prose:** text only Kotlin prints 4.0%, the note 4.0%, unchanged.
+outcomes:
+  - [0]
+    finding: Required fix 1: Syntax_kotlin.ts imports. ref-issues' tutorial imports no SdkEntity while its REFERENCE list examples cast to it, giving 8 compile errors.
+    outcome: fixed
+    how: |
+      I read OLD first: the OLD tutorial imported SdkEntity in all 19 variations, and the OLD root quick start imported it only where it read a record (ref-issues and ent-none root blocks: DemoSDK only). The imports printer now prints SdkEntity whenever `place` is 'tutorial', or where a record is read, which leaves the root as OLD had it.
+      
+      Result: the ref-issues and ent-none tutorial blocks now differ from OLD only by the S49 server option, so blocks corrected went from 14 to 16 and otherwise from 15 to 13. Hand record 474e2b7332, whose reason had become false, is removed.
+      
+      Lane: NEW ref-issues compiles with 0 errors; the control without the import gives 8.
+    commit: sdkgen 84bde870; tools 3a40b33
+  - [1]
+    finding: Required fix 2: tools/callcheck.js. argsAt splits `mutableMapOf<String, Any?>(...)` at the comma inside the type arguments (6 false ARITY findings, and a dropped ctrl reads as correct), and the overload scan reads local `val list` as an overload (`list(null)` passes).
+    outcome: needs a shared change
+    how: |
+      Both confirmed by reading:
+      - argsAt (callcheck.js:71-84) opens brackets only on `([{`.
+      - The tree scan (callcheck.js:52-59) feeds every file under tm/kotlin outside test and feature trees to F.findDecls. The kotlin forms' decl regex matches `val|var`, so `val list = parent as MutableList<Any?>` (Struct.kt:434,460) adds a 0-parameter `list`, and required becomes 0. callcheck prints "declares 2 or 0".
+      
+      This is a shared tools file, so I did not edit it. No class can be marked: callcheck findings are not classes, and no hand record accepts one. The one command keeps failing on these 6 lines. Recorded in shared_changes_needed.
+    commit: none
+  - [2]
+    finding: Required fix 3: the member:streamLazy note is a shared fact written as a note. Every runtime that reads the signal has its own form.
+    outcome: needs a shared change
+    how: |
+      Checked against the 16 streamSignal citations in ts/test/runtimeforms/*.ts:
+      - ts and js: `signal.aborted`, an AbortSignal
+      - go: a channel
+      - csharp: CancellationToken
+      - java: BooleanSupplier
+      - kotlin, scala, elixir, py, rb, lua, perl, ocaml, clojure, swift: a function of no arguments
+      
+      So it is one fact with a value per runtime (guide section 2, item 4). The note stays, still true and cited. Its classes 30bf0a94df (the sentence, x94) and 8ff27d81e0 (the `Function0` token) are recorded as `defect` in hand/kotlin.json, naming ts/src/helpers/example.ts RefFacts and ts/src/cmp/ReadmeRef.ts STREAM_SIGNAL. The one command fails on them until the optional fact lands, and then the note goes.
+    commit: tools 3a40b33
+  - [3]
+    finding: Required fix 4: the forms' streamSignal citation lacks the early end (EntityBase.fragment.kt:248).
+    outcome: fixed
+    how: Confirmed at :248: `if (source.hasNext() && !aborted()) source.next() else end`. Added as a third quote in ts/test/runtimeforms/kotlin.ts. Guard 4/4 and reader 81/81 after the build.
+    commit: sdkgen 84bde870
+  - [4]
+    finding: Page: the note's first line is 74 characters, past the 72-column wrap.
+    outcome: fixed
+    how: The same words, rewrapped at 72 in the provider and in the pinned citation. The ledger class id did not change (units are whitespace-normalised).
+    commit: sdkgen 84bde870
+  - [5]
+    finding: Page: `callopts.signal` is printed in ts notation for every language; in Kotlin it is `callopts["signal"]`.
+    outcome: needs a shared change
+    how: |
+      STREAM_SIGNAL (ReadmeRef.ts:123) is a literal, while the same page already prints `fetchargs` ctrl.signal through `r.key(...)` (ReadmeRef.ts:215), which every provider defines.
+      
+      The sentence is awkward rather than false: the key it names is right. So class 80f77307dc stays a shared match and is not recorded as defect. The change is recorded in shared_changes_needed, alongside the signal-form fact.
+    commit: none
+  - [6]
+    finding: Page: the OLD wording 'read-only property' and the list sentence's '(as `Any?`)' are gone (reviewer: acceptable).
+    outcome: not a defect
+    how: The cast in each block carries the `Any?` return. EntityBase.fragment.kt:18 declares `override var name`, so 'read-only' held only through SdkEntity (Interfaces.kt:5 `val name: String`). The porter's additive gap for an `Any?`-return fact stays recorded in shared_changes_needed.
+    commit: none
+  - [7]
+    finding: Hand records 9c6d819441 and 9efa1d0afc were recorded same-meaning, but README:259 implies `err` on every error.
+    outcome: fixed
+    how: |
+      SdkClient.kt:343-349 sets `ok` from the status and sets `err` only when the body cannot be read. :290, :300, :306 and :353 set it on the other failure paths. So a readable non-2xx response has no `err`, and the README's direct how-to ("On error, `ok` is `false` and `err` contains the error value.") disagrees with the REFERENCE.
+      
+      Both records are now `contradiction`, with where, true side (the REFERENCE) and evidence. That sentence comes from ReadmeModel_kotlin.ts, an unported section a port may not touch; the same sentence is in 10 ReadmeModel_<lang>.ts files.
+    commit: tools 3a40b33
+  - [8]
+    finding: Reviewer's fact audit: the `none` citation is weak but acceptable.
+    outcome: not a defect
+    how: Main.fragment.kt:17 `fun testSDK(): ProjectNameSDK = testSDK(null, null)` passes null for absent options, which means none. Left as is.
+    commit: none
+  - [9]
+    finding: Reviewer's fact audit: the shared wording 'deep copy' for optionsMap overstates slightly.
+    outcome: not a defect
+    how: kotlin's `copy: true` holds: Struct.kt:484-488 allocates a new map and Struct.kt:478-482 a new list, recursively. Functions and other objects come back by reference (Struct.kt:475, 490). The word 'deep' is in shared code (ReadmeRef.ts:136) and is true of the map structure. Forwarded as a shared wording observation, with no kotlin change.
+    commit: none
+  - [10]
+    finding: Reviewer's fact audit: the hook's module (kotlinCorePackage = kotlinPackage(model)+'.core') restates the template's `.core`, and about 10 components still spell it inline (f08, f09).
+    outcome: not fixed
+    how: This is the reviewer's process finding f09 (nothing catches a moved template package) and f08 (purity does not see a concatenation in a helper). Per the instructions it is copied, unchanged, into not_caught_by_process. The generated package lines are byte-identical today.
+    commit: none
+  - [11]
+    finding: Reviewer's fact audit: `prints: 'listFields'` is called ATTESTED on the same 114 blocks as 'record' (f03b).
+    outcome: not fixed
+    how: The value 'record' is true (OLD prints the whole record). The unsound attestation is in the tools' minimal-pair judge, a process finding copied into not_caught_by_process.
+    commit: none
+  - [12]
+    finding: H4 regression: ref-issues REFERENCE blocks did not compile with the page's own imports.
+    outcome: fixed
+    how: Same change as required fix 1. Lanes after the fix, OLD and NEW, compileKotlin exit 0 with 0 errors each: ref-issues (NEW 21 blocks), B (25), crud-basic (20), auth-basic (25), ent-none (6).
+    commit: sdkgen 84bde870
+shared_changes_needed:
+  - [0]
+    file: tools/callcheck.js (argsAt, lines 71-84)
+    change: Treat a type-argument list `<...>` that follows a word character as a bracket: open on `<`, close on a `>` not preceded by `-` or `=`, as ts/test/runtimeforms/forms.ts bracketed() does.
+    why: Today `client.planet(null).load(mutableMapOf<String, Any?>("id" to "planet_id"), null)` is split at the comma inside `<String, Any?>`. That gives 3 arguments and 6 false ARITY findings, which no hand record can accept. The reverse case is worse: a call that drops ctrl inside a typed map reads as 2 arguments and passes (reviewer attacks p04, f11). The porter's run/callcheck-generic.js gives 0 findings on the clean pages and still catches a dropped ctrl.
+    breaking: False
+    providers_forced: None. Any port that prints generic arguments inside a call is affected the same way: csharp `new Dictionary<string, object?>`, java `new java.util.LinkedHashMap<>()`, cpp `std::make_shared<X>(a, b)`.
+  - [1]
+    file: tools/callcheck.js (overload scan over the whole runtime tree, lines 52-59)
+    change: Count as an overload only a declaration with a parameter list, at member level. A local `val`/`var` binding inside a function body is not a member.
+    why: tm/kotlin/utility/struct/Struct.kt:434 and :460 `val list = parent as MutableList<Any?>` match the kotlin forms' decl regex (`fun|val|var|class`). That sets `list`'s required arity to 0 ("declares 2 or 0"), so a printed `list(null)` passes (reviewer attack p05). The patched argsAt alone does not catch it.
+    breaking: False
+    providers_forced: none
+  - [2]
+    file: ts/src/helpers/example.ts (RefFacts) and ts/src/cmp/ReadmeRef.ts (streamText / STREAM_SIGNAL)
+    change: Add an optional cited fact for the stream signal's accepted form, for example `streamSignalForm: 'a function of no arguments, a `Function0`, that returns `true`'`, pinned prose cited to the stream's read. Write one shared sentence after STREAM_SIGNAL: "The signal is read only as <form>; any other value is ignored." Once it lands, kotlin drops its `member:streamLazy` note and its two `defect` classes (30bf0a94df, 8ff27d81e0) close.
+    why: Guide section 2, item 4: a fact two runtimes share is a fact or an interface gap, never a note. Every runtime that reads the signal has its own form, per the forms' citations: ts and js an AbortSignal (`signal.aborted`); go a channel; csharp a CancellationToken; java a BooleanSupplier; kotlin and scala a Function0; elixir, py, rb, lua, perl, ocaml, clojure and swift a function of no arguments. kotlin's note is 2350 printed words, 4.0% of its pages.
+    breaking: False
+    providers_forced: None forced: the fact is optional. To print the true form, each of the 16 runtimes that read the signal would declare it: ts, js, go, py, rb, php, lua, perl, elixir, ocaml, clojure, swift, java, kotlin, scala, csharp.
+  - [3]
+    file: ts/src/cmp/ReadmeRef.ts (STREAM_SIGNAL, line 123)
+    change: Print the key through the language's key printer, `code(r.key('callopts', ['signal']))`, as line 215 already does for fetchargs ctrl.signal, instead of the literal `callopts.signal`.
+    why: In Kotlin `callopts.signal` does not compile on a MutableMap. The same page writes keys as `callopts["signal"]` / `result["err"]` elsewhere, so the sentence uses ts notation only here (the reviewer's 'awkward (shared)').
+    breaking: True
+    providers_forced: No provider code: every provider defines ref.key. It is breaking by the guide's definition because it changes a reviewed sentence: the printed sentence changes in each of the 16 stream-signal runtimes and needs a fresh verdict.
+  - [4]
+    file: ts/test/runtimeforms/guard.ts (ctorAlts loop, about lines 441-452)
+    change: Compute classCall for the alternative's name and pass it through calledAs, as the ctor check does at about :386 and :424.
+    why: The porter's gap, confirmed by the reviewer's attack a15: declaring `val client = DemoSDK()` (the secondary `constructor() : this(null)`, Main.fragment.kt:10) fails with 'calls it on (nothing) (free)'. So the true sentence "`val client = DemoSDK()` uses the defaults" cannot be printed.
+    breaking: False
+    providers_forced: none (it lets kotlin, scala and java declare the optional ctorAlts)
+  - [5]
+    file: ts/src/helpers/example.ts RuntimeFacts and ts/src/helpers/runtimeprose.ts (listSentence)
+    change: Add an optional fact naming an operation's static return type and the cast that reads it (for example `{ returns: 'Any?', cast: 'SdkEntity' }`), with one shared sentence.
+    why: The porter's gap: kotlin operations return `Any?` (EntityListOp.fragment.kt:54), and OLD said so in prose. NEW shows it only as the casts in the blocks. The page is true without it.
+    breaking: False
+    providers_forced: none forced (go, java, scala, csharp and kotlin could declare it)
+  - [6]
+    file: ts/project/.sdk/src/cmp/<lang>/ReadmeModel_<lang>.ts (unported README direct how-to: py, kotlin, perl, csharp, java, php, swift, scala, clojure, cpp)
+    change: Replace "On error, `ok` is `false` and `err` contains the error value." with a sentence that holds in every runtime. A readable non-2xx response gives `ok` false and no `err`; `err` is set when the body cannot be read or no request is made. Better still, print it from the shared direct facts when this section is ported.
+    why: It contradicts the REFERENCE's direct Returns paragraph. kotlin SdkClient.kt:343-349 sets `err` only `if (bodyErr != null)`. Recorded as contradictions 9c6d819441 and 9efa1d0afc; earlier ports recorded the same echo as same-meaning.
+    breaking: False
+    providers_forced: none; it belongs to porting the README's direct section
+commits:
+  - sdkgen 84bde870 'kotlin: the tutorial imports SdkEntity always, as the old tutorial did; the stream note wraps at 72 columns; the stream signal is cited by its read, its test and its early end'. Body: 'The reference examples print no imports and cast a list's items to SdkEntity, so the tutorial's imports must hold it whether or not the tutorial itself reads a record (ref-issues and ent-none had lost it).' Files: ts/project/.sdk/src/cmp/kotlin/Syntax_kotlin.ts, ts/test/runtimeforms/kotlin.ts.
+  - sdkgen 3179dc04 'kotlin: golden, the kotlin provider's hash line only'. No body. File: ts/test/golden/add-output.txt (+1 -1, src/cmp/kotlin/Syntax_kotlin.ts hash).
+  - tools 3a40b33 'kotlin: the stream note's classes wait on a shared signal fact (defect); direct's two sentences contradict the README's direct how-to, the reference the true side; block counts and classes after the tutorial import change'. Body: 'The ent-none and ref-issues tutorial record is gone: their first block now differs from the old one only by the required server option.' Files: hand/kotlin.json, classes/kotlin.json, counts/kotlin.json.
+  - The porter's commits are unchanged under these: sdkgen f7b0815b, 4061be0b, 07751743; tools 51dedfc.
+  - Trailer check: `git log --format=%B v33-frozen..HEAD` in sdkgen and `51dedfc..HEAD` in tools, grepped for co-authored, session, claude, anthropic and 'generated with': 0 matches in each. git status --short is empty in both after the final build.
+final_state: |
+  The one command, reviewed, `REGEN=1 tools/portcheck.sh sdkgen out kotlin` after `npm run build` (exit 0); log ports/kotlin/fix-final.log. It exits 1 and prints PORTCHECK kotlin: FAIL.
+  
+  - Regeneration: 21 of 21 variations regenerated. Build: 1813 sources checked, current.
+  - Ledger (units same | classes shared rule-rec by-hand missing OPEN defect | contradictions):
+  
+  | section | ledger line |
+  | --- | --- |
+  | tutorial | 59 \| 46 22 0 19 5 0 0 \| 0 |
+  | rootquick | 19 \| 4 0 0 3 1 0 0 \| 0 |
+  | reference | 13937 \| 162 70 0 49 38 0 2 \| 3 |
+  
+  - Blocks (identical / corrected / unified / otherwise; classes; OPEN; defect):
+  
+  | section | blocks | classes | OPEN | defect |
+  | --- | --- | --- | --- | --- |
+  | tutorial | 19 / 16 / 0 / 13 | 22 | 0 | 0 |
+  | rootquick | 0 / 11 / 0 / 8 | 21 | 0 | 0 |
+  | reference | 274 / 0 / 0 / 40 | 11 | 0 | 0 |
+  
+  - Contradictions: 3 (9c6d819441, 9efa1d0afc, bff341cf32; counted, not failed).
+  - Purity: 0 open, 1 accepted. Notes declared: 1; note regions found: 1.
+  - pagecheck: 1404 articles and 48 headings checked, 0 findings.
+  - callcheck: 405 calls checked, 6 ARITY findings, the tools gap:
+    - B reference: load, create, update, remove
+    - crud-bare tutorial: patch
+    - doc-nested reference: list ('2 or 0')
+  - Guard: pass 4, fail 0.
+  - Hand records: 205, STALE 0.
+  - Facts: attested 6, recorded by hand 2, UNATTESTED or NOT JUDGED 0. Cited 15, pinned 12. Fact sheet: 63 facts, 0 without an account.
+  - Shared sentences: 92 matched, of which 2 match a sentence nobody reviewed. Printed less often than the reference: 0. Absent: 29, all explained.
+  - **Fails only on:**
+    - reference defect 2: 30bf0a94df and 8ff27d81e0, the stream note, waiting on the optional signal-form fact in ts/src/helpers/example.ts and ts/src/cmp/ReadmeRef.ts;
+    - the 6 callcheck lines, waiting on tools/callcheck.js.
+  
+  SCRATCH=1 run (fix-scratch.log): exit 1 by design.
+  - Ledger OPEN: tutorial 24, rootquick 4, reference 92. Defect 0.
+  - Blocks OPEN: tutorial 22 (23 before the fix), rootquick 21, reference 11.
+  - Facts: NOT JUDGED named='call', UNATTESTED ref.noun='Methods'.
+  - ABSENT, no reason: 29. DROPPED: 0. Shared matches: 92, of which 2 unreviewed.
+  - The parts that read no hand record are the same as the reviewed run: build current, guard 4/4, purity 0 open, pagecheck 0, callcheck 6 (the same tools gap).
+  
+  After the final build, `git status --short` is empty in sdkgen and in tools.
+lanes: |
+  On PATH (the guide's command -v loop):
+  - present: node v24.22.1, npm 11.19.1, php 8.3.6, composer, javac and java 21.0.12.1, mvn 3.9.11, gradle (/opt/gradle/bin/gradle), g++ 13.3.0, make 4.3
+  - MISSING: kotlinc, kotlin, scala, scala-cli, sbt, dotnet
+  
+  The Kotlin compiler used is 2.2.0 from ~/.gradle/caches (kotlin-compiler-embeddable 2.2.0), through `gradle --offline`. Nothing was downloaded.
+  
+  **Compile lane, RAN** (run/fix/lane.sh, the reviewer's method). It generates the variation's full kotlin SDK (genvar.js; ref-issues needs two stub flows with `active: false`, as the reviewer added) and writes the stored page's blocks: the tutorial as one program, the root quick start alone, and each REFERENCE block with only the tutorial's imports. Then `gradle --offline -q compileKotlin`. Log: run/fix/lanes.log.
+  
+  | variation | NEW | OLD |
+  | --- | --- | --- |
+  | ref-issues | exit 0, 0 errors (21 blocks) | exit 0, 0 errors (21) |
+  | B | 0 errors (25) | 0 errors (24) |
+  | crud-basic | 0 errors (20) | 0 errors (19) |
+  | auth-basic | 0 errors (25) | 0 errors (24) |
+  | ent-none | 0 errors (6) | 0 errors (5) |
+  
+  That is 97 NEW blocks and 93 OLD blocks, each compile 4-5 s with a warm daemon. For ref-issues, 20 docex classes were found in build/.
+  
+  Negative control: the NEW ref-issues page with `import voxgig.demosdk.core.SdkEntity` removed from the tutorial gives exit 1 with 8 errors (Unresolved reference 'SdkEntity'/'data' in Rx009, Rx015, Rx017, Rx019). That is the reviewer's pre-fix result.
+  
+  **Run lane, RAN** (run/fix/runlane.sh with docrun.js). The tutorial program and the root quick start run in test mode, with the constructor replaced by a seeded testSDK. `gradle --offline test --tests '*DocRunTest*'` exits 0 with 2 of 2 functions run to the end for B, crud-basic and ref-issues, OLD and NEW.
+  
+  Root quick start from the repository root: not run that way. Kotlin's import is package-addressed (`import voxgig.demosdk.core.DemoSDK`) and there is no script runner here, so it was run as a function inside the generated gradle module, with the SDK on the classpath.
+  
+  Not run: generatedcompile.test.js's kotlin lanes (excluded by the suite command).
+lines: |
+  Final, by wc -l:
+  
+  | file | lines |
+  | --- | --- |
+  | Syntax_kotlin.ts (provider) | 191 (was 189) |
+  | Naming_kotlin.ts (hook) | 23 |
+  | ts/test/runtimeforms/kotlin.ts (forms) | 112 |
+  
+  `git diff --numstat v33-frozen..HEAD`:
+  - deleted: ReadmeQuick_kotlin.ts 241, ReadmeRef_kotlin.ts 408, ReadmeTopQuick_kotlin.ts 104 (753 in all)
+  - added: Syntax_kotlin.ts +191, Naming_kotlin.ts +23, utility_kotlin.ts +8, Config_kotlin.ts +2 -1, Schema_kotlin.ts +2 -1, runtimeforms/kotlin.ts +44 -4, golden +5 -6
+  
+  Provider, hook and utility: 753 -> 222, 3.39x. With the forms' net change (+40) and the generator lines (+2): 753 -> 264, 2.85x.
+  
+  Prose (`node tools/sharewords.js --clone sdkgen --root out/new --lang kotlin`), over 58511 words:
+  - only kotlin prints it: 2366 (4.0%)
+  - the note: 2350 (4.0%)
+  - provider literals: 2636 (4.5%)
+  - at the source: notes 25 words, fact-table prose literals 0
+  
+  Unchanged by the fix: the reflow kept the words. The note is now recorded as a defect waiting on a shared fact. Once that lands, kotlin-supplied prose falls to about 4.0%.
+not_caught_by_process:
+  - [0]
+    attack: f05: declare ref.facts.deleted '{var}.deleted()' (SdkEntity, the type the examples bind, lacks it; Interfaces.kt:19-40)
+    consequence: Guard passes: guard.ts:547-555 accepts `deleted` because EntityBase.fragment.kt:83 is among the entity files. The page says `result.deleted()` reads the mark, where `result` is `Any?`, and this would not compile. The one command fails only on 2 OPEN reference classes, which a hand record closes. The now-stale absent reason 808ab9f422 is not flagged.
+  - [1]
+    attack: f06: a false note ('a value of true also ends it') changed in both the provider and its pinned citation
+    consequence: Guard and purity pass. Fails only on 2 OPEN reference classes, which are hand-decidable.
+  - [2]
+    attack: f09: client class's package moved in the template (Main.fragment.kt:1 `package KOTLINPACKAGE.core` -> `.client`), pages unchanged
+    consequence: Nothing fails beyond the baseline 6 callcheck findings. Every page's `import voxgig.demosdk.core.DemoSDK` would be false. The hook's module (kotlinCorePackage = kotlinPackage(model)+'.core') restates the template's `.core` and is not derived from it.
+  - [3]
+    attack: f08: hook module changed to '.kore' (utility_kotlin.ts kotlinCorePackage)
+    consequence: Guard and purity pass. Purity examines helper bodies only for pluralisation, name surgery and reserved lists (purity.js:243-249), never for concatenation. Fails only through OPEN and RECOUNT block classes against OLD.
+  - [4]
+    attack: f10: operation calls made on the type (`DemoSDK.planet(null).load(...)`)
+    consequence: Guard passes. callcheck reports no RECEIVER, because kotlin uses '.' for both instance and type, and a lowercase accessor is not in callcheck's accessor set. Fails only via OPEN blocks.
+  - [5]
+    attack: f12 and p03: the `as SdkEntity` cast dropped, so `created.data()` is called on `Any?` (does not compile)
+    consequence: Guard and callcheck pass (casts are invisible). Fails only on OPEN block classes.
+  - [6]
+    attack: a13/f15: test-constructor signature written without its type receiver (`testSDK(): {client}`)
+    consequence: Guard passes: guard.ts:150-160 skips a signature whose call reads as free. On kotlin's page, a member without a receiver is how instance members are written. 1 OPEN class only.
+  - [7]
+    attack: a16/f16: facts.arity removed (the runtime's list requires both parameters)
+    consequence: Guard passes: arity is checked only when declared. The tutorial reverts to `load()` and `list()`, which no kotlin call can be. Fails only on OPEN 3, STALE 2 and ABSENT 1, all hand-decidable.
+  - [8]
+    attack: f14: match getter's copy removed together with its citation
+    consequence: Guard passes. Only ABSENT 'Returns a copy of the current match criteria.', which an absent reason closes.
+  - [9]
+    attack: p04 and p05: a page with `load(mutableMapOf<String, Any?>(...))` missing ctrl, and `list(null)`
+    consequence: callcheck is silent on both. The B false finding merely moves to auth-basic's identical line. Caught only as 1 OPEN block class.
+  - [10]
+    attack: f03b: prints 'record' -> 'listFields'
+    consequence: Fact sheet: ATTESTED ('OLD reads as listFields in 114'), the same 114 blocks that attest `record`; the minimal pair cannot tell record from listFields. Fails only on 2 OPEN tutorial block classes.
+  - [11]
+    attack: f01, f02, f04: language and convention values (maps 'dictionaries', noun 'Functions', keys 'bare')
+    consequence: Caught, but only by the comparison with OLD (UNATTESTED, a hand value that differs, STALE). That comparison is a reading aid that a hand record could override.
+not_done:
+  - The one command does not pass. It fails on 2 defect classes waiting for the shared signal-form fact (example.ts, ReadmeRef.ts) and on 6 callcheck lines waiting for tools/callcheck.js. Both are shared files a port may not change.
+  - The kotlin lanes in generatedcompile.test.js were not run (excluded by the suite command).
+  - I compiled 5 of the 21 variations' own pages (ref-issues, B, crud-basic, auth-basic, ent-none). The other 16 variations' blocks were not compiled by me.
+  - I did not identify the 2 shared matches against sentences nobody reviewed (they fail only with STRICT_SENTENCES=1).
+  - No new attacks of my own: the reviewer's 34 stand. The process findings they exposed are copied unchanged above.
+  - Reviewer f08/f09 (the hook's `.core` restates the template; about 10 components still spell `${kotlinpackage}.core` inline) was not acted on: it is a process finding, not a required fix.
+notes:
+  - [0]
+    slot: member:streamLazy
+    text: |
+      The signal is read only as a function of no arguments, a `Function0`,
+      that returns `true` once the stream is to end; any other value is
+      ignored.
+      
+      The same words as before, rewrapped at 72 columns. Cited to EntityBase.fragment.kt:234 (`is Function0<*> -> {`), :235 (`{ (signal as Function0<Any?>).invoke() == true }`) and :238 (`{ false }`); the early end is at :248. It prints under every entity's stream member: 94 units, 2350 words, 4.0% of kotlin's printed words. Its two classes are recorded `defect` until the shared signal-form fact replaces it.
+review_counts:
+  - [0]
+    section: tutorial
+    same: 59 units
+    shared_matched: 22 (of 46 classes)
+    by_hand: 19
+    missing: 5 classes, each restored or corrected (unchanged from the port)
+    contradictions: 0
+    blocks: Identical 19, corrected 16, unified 0, otherwise 13. 22 classes, OPEN 0, defect 0. Counts recorded after the import change (server-required-given 13 -> 15). 29 changed blocks are compiled by no tool; my lane compiled the tutorials of 5 variations, OLD and NEW, with 0 errors.
+    matched_unreviewed: part of the 2 page-wide
+  - [1]
+    section: rootquick
+    same: 19 units
+    shared_matched: 0 (of 4 classes)
+    by_hand: 3
+    missing: 1 class, restored as the shared step comment
+    contradictions: 0
+    blocks: Identical 0, corrected 11, unified 0, otherwise 8. 21 classes, OPEN 0. 19 changed blocks compiled by no tool; my lane compiled and ran it (B, crud-basic, ref-issues, OLD and NEW).
+    matched_unreviewed: part of the 2 page-wide
+  - [2]
+    section: reference
+    same: 13937 units
+    shared_matched: 70 (of 162 classes)
+    by_hand: 49
+    missing: 38 classes (unchanged from the port)
+    contradictions: 3: bff341cf32 (README test-mode how-to); 9c6d819441 and 9efa1d0afc (README direct how-to: on error `err`). The REFERENCE is the true side in each. Defect 2: 30bf0a94df and 8ff27d81e0, the stream note, waiting on the shared signal-form fact.
+    blocks: Identical 274, corrected 0, unified 0, otherwise 40, NEW-only 18. 11 classes, OPEN 0. 58 changed blocks compiled by no tool; my lane compiled every REFERENCE block of 5 variations using only the tutorial's imports, with 0 errors (control: 8).
+    matched_unreviewed: 2 page-wide
+unverified: |
+  Still unverified because no tool or lane compiles them:
+  - Blocks of 16 of the 21 variations. The tools count 106 changed blocks (29 tutorial, 19 root quick start, 58 reference) that nothing compiles. I compiled 5 variations' pages, 97 NEW blocks, with the Kotlin 2.2.0 compiler that gradle reaches offline. The other 16 variations are covered only through the porter's 3 lane models.
+  - The constructor options of every example: each run lane replaces the constructor with a seeded testSDK.
+  - REFERENCE operation blocks: compiled, never run.
+  - The root quick start from a repository root: it ran only as a function inside the generated gradle module.
+  - The Actions table's Call cell: a code span, not a block, so it was not compiled.
+  - generatedcompile.test.js's kotlin lanes.

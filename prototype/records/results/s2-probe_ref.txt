@@ -1,0 +1,279 @@
+summary: |
+  I ported rust and elixir completely: the README tutorial, the root README quick start and the REFERENCE page, three components each retired. Both fit interface v2 with 5 ADDITIVE changes and 0 BREAKING ones. Providers: 0 model reads (purity.js: one hit each, the allowed canonToType import). Names come from Naming hooks that call the code generator's own functions. elixir's accessor is elixirAccessor over the WHOLE entity collection, called in the hook, so the hardest naming case works by design. I extracted elixirEntityModule into utility_elixir; MainEntity_elixir and the hook both call it. Every changed line has a reason: diff2.js and diffref.js give 0 UNEXPLAINED, the other 18 languages stay byte-identical, and nothing outside the sections changed.
+  
+  rust (toolchain present): the DOC lane compiles every documented block, 6/6 on NEW, as on OLD (6/6, run on oldclone). An intermediate build failed 2/6. I had made the tutorial import `getp` only when the section reads a field, and the unported How-to section on the same page compiles against the tutorial's `use` line. A section's imports are load-bearing for other sections. I reverted to the old import list. The suite without toolchain lanes: 2538 tests, 2532 pass, 0 fail, 6 skipped.
+  
+  elixir (no toolchain; `command -v elixir mix iex` finds nothing):
+  - Tutorial: 17 blocks identical and 31 identical once the listed corrections are undone. The corrections are S49 server (16), S50 secret (2), the shared write comments (4), created bound only when chained (4), no-match load takes no argument (10) and an OLD trailing blank line (1). 0 changed otherwise (mine/exblocks.js).
+  - Root quick start: 0/19 identical. Every block is restructured into try/rescue by the shared topQuickText.
+  - REFERENCE: 131 identical. 181 changed: 162 operation examples restructured by the shared refOpBlock, and 19 feature snippets that now carry the alias line and use H.deep. These are structure decisions of the shared page, not compiled anywhere.
+  
+  Facts lost: rust's 'direct resolves to Ok even on a non-2xx', 'Pass Some(&map)', create type comments, 'Fields to update'. elixir's arity names (list/2), the getelem clause, 'build options with Demo.Helpers.deep/1', and the rebinding idiom on writes in the REFERENCE.
+  
+  The survey found none of the 14 inexpressible. 13 need an extension: a guard or an interface field. rb and scala need nothing in the interface, though scala's options member is invisible to the guard.
+  
+  The biggest guide error is that the runtimefacts guard does NOT re-derive the members of most languages. Its STYLE, declares and PRESENT regexes know only the ts, go, py, c, zig and clojure forms. rust failed until I extended them, and PRESENT would have silently passed an undeclared rust stream, options_map, get_utility, make and get_name. It also read elixir's `String.t()` return type as a member named `t`. For java, kotlin, csharp, php, perl, swift, cpp and ocaml the declares/STYLE checks do not match their load signatures at all.
+  
+  Verdicts: H1 is supported for rust and elixir, with caveats: true facts were dropped, and elixir's REFERENCE has 15.4% of words in sentences no other ported language prints. Those are shared frames filled by facts; provider-supplied words are 0.6% for elixir and 0.1% for rust. H4 is supported for rust and not tested for elixir.
+clone: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-ref/sdkgen (commit c66142da on c41dcdf0). Harness copy: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-ref/harness (diff2.js, diffref.js, issuecheck.js, purity.js and prose.js extended to rust and elixir; reports diff2-report.txt and diffref-report.txt; NEW output in out/new, pre-port v2 output in out/new-ref). My own checks: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-ref/mine/exblocks.js (tutorial blocks after undoing the listed corrections), refblocks.js (REFERENCE blocks by kind), m.js (line counts). Lane logs: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-ref/lane-rust-old.log, lane-rust-new.log (the 2/6 failure), lane-rust-new2.log (6/6), suite.log.
+per_language:
+  - [0]
+    lang: rust
+    expressible: with-extension
+    constructs_not_expressible:
+      - The use line names a third SDK name, the entity-base trait DemoEntityBase (old ReadmeQuick_rust.ts:51, ReadmeRef_rust.ts:80). DescLayout had only module, client and ctor. Added layout.names (additive).
+      - {sdk} in direct.returns and prepare.returns (Result<Value, DemoError>) was not filled: ReadmeRef.ts clientMember printed the raw token. Fixed with fill() (shared, additive).
+      - The direct envelope is inside Ok: 'resolves to Ok even on a non-2xx response, branch on getp(&result, "ok")' (ReadmeRef_rust.ts:148-151). The shared sentence 'A failed request is reported in the result, not as an error' sits beside a Result<..> return type. Lost, not expressed.
+      - data(Option<&Value>): 'Pass Some(&map) to set it' (ReadmeRef_rust.ts:337). The shared data sentence is true but drops the Option idiom.
+      - stream returns Result<IntoIter<Value>, Error>. The closest kind, streamList, says 'as one list'. Approximate.
+      - Guard: STYLE.union required `pub fn load(...) XResult`, while rust's is `fn load(...) -> Result<` (EntityLoadOp.fragment.rs:3). declares() missed `fn list` at column 0. PRESENT missed `pub fn stream/options_map/get_utility`, `fn make(&self)` and `fn get_name`. Extended the regexes (test only).
+    evidence: Ported. rust DOC lane: 6/6 on NEW and 6/6 on OLD (singleton, list, crud, nested, quoted-name, basic-server), via cd sdkgen/ts && node --test --test-name-pattern '^rust: every documented example compiles' dist-test/generatedcompile.test.js. diff2: tutorial 27/48 blocks identical, the other 21 identical after undoing the listed corrections (mine/exblocks.js rust); root 0/19 identical (match blocks). diffref: 131 identical, 181 changed, 0 unexplained. issuecheck: every catalogued REFERENCE issue that showed in OLD (S25, U43, U44, U34, U36, S50, D23/D55, G27, G29, S13, S09, backtick, actions, stream, ctrl) is gone in NEW.
+  - [1]
+    lang: elixir
+    expressible: with-extension
+    constructs_not_expressible:
+      - The entity is named by its module Demo.Entity.Planet, which is neither its className nor its Name (heading at ReadmeRef_elixir.ts:154, handle sentence :103, make :295). RefFacts.classes cannot express it. Added DescSymbols.type (additive).
+      - The Helpers module (alias Demo.Helpers, as: H; Demo.Helpers.deep at ReadmeQuick_elixir.ts:39, ReadmeRef_elixir.ts:69,215) needs a name with no slot. Added layout.names.helpers (additive).
+      - get_utility/1 returns the client's own node, not a copy (Main.fragment.ex:84; old text 'Return the SDK utility node', ReadmeRef_elixir.ts:115). The shared 'Return a copy of the SDK utility object' is false. Added MemberKind utilityShared (additive).
+      - stream/4 returns a lazy Elixir Stream (lib/projectname/entity_base.ex:105-118). No kind said that. Added MemberKind streamLazy (additive).
+      - Arity naming `list/2`, `load/2` (ReadmeQuick_elixir.ts:58,97): RuntimeFacts.named is only 'call' or 'bare'. Lost.
+      - 'Voxgig.Struct.getelem/2 reads an item' (ReadmeQuick_elixir.ts:59) and 'build one from a native map with Demo.Helpers.deep/1' (ReadmeRef_elixir.ts:68-69). Lost.
+      - The null-argument form depended on the operation: load passed H.deep(%{}) (ReadmeQuick_elixir.ts:120; ReadmeRef_elixir.ts:218), while list and remove passed nothing. It cannot be kept without an operation name in the provider, so it was unified to no argument, which the old root quick start already printed.
+      - attempt, each, print and expr receive no description. The handle bound inside try needs the client module, so the hook qualifies the accessor itself (sym.accessor = 'Demo.planet').
+      - Whether the H alias is in scope (tutorial) or not (a REFERENCE example) is inferred from sc.declared, which the client printer sets. No interface notion separates a standalone snippet from a step.
+    evidence: Ported, and no toolchain here. Tutorial: 17 blocks identical; 31 identical once the listed corrections are undone (S49 server 16, no-match load 10, write comments 4, created binding 4, S50 secret 2, trailing blank 1); 0 otherwise (mine/exblocks.js elixir). Root: 0/19 identical (try/rescue per step, from the shared topQuickText). REFERENCE: constructor 19, test constructor 18 and instance 94 blocks identical; 162 operation examples changed (shared refOpBlock: list/load in try/rescue with a handle, writes as a bare call after the handle) and 19 feature snippets changed (alias line, H.deep) (mine/refblocks.js elixir). diffref: 0 unexplained after adding elixir's '### Functions' and '### Constructors' headings to its rules.
+  - [2]
+    lang: js
+    expressible: with-extension
+    constructs_not_expressible:
+      - '### Direct API Access' inside the quick start (js/ReadmeQuick_js.ts:156): a client.direct({...}) call with an ok envelope, for which no Stmt exists. It must move to another section (a placement decision) or get a new Stmt kind (breaking).
+      - Prints write results and has no error handling (js/ReadmeQuick_js.ts:106,121,138). These are drift the builder unifies, not missing constructs.
+    evidence: Read only. The REFERENCE matches ts (cancel and tester are already declared as facts). The test-constructor table, 'Returns: DemoSDK instance in test mode' and the accessor parameter table were already dropped for ts.
+  - [3]
+    lang: php
+    expressible: with-extension
+    constructs_not_expressible:
+      - The options table names the container `$options`, with keys `$options["apikey"]` (php/ReadmeRef_php.ts:94). keyTable hard-codes the container row as `options` (ReadmeRef.ts keyTable). It needs r.key('options', []) for that row; go, py and ts return the same string for an empty path, so the change is additive.
+      - Guard: `public function load(` (php/fragment/EntityLoadOp.fragment.php:15) matches neither declares() nor the throw STYLE (which requires `async`).
+    evidence: Read: the old B REFERENCE and the fragments. Chosen-field printing is already covered by desc.quick.show and Expr 'fields'.
+  - [4]
+    lang: rb
+    expressible: yes
+    constructs_not_expressible:
+    evidence: Read. The raise STYLE (`def load(`) and PRESENT (def stream, def make, def options_map, def get_utility at rb/fragment/Entity.fragment.rb:64,104 and Main.fragment.rb:85,90) match. Bare map keys `options["apikey"]` come from the key() printer. Fields printing uses desc.quick.show.
+  - [5]
+    lang: lua
+    expressible: with-extension
+    constructs_not_expressible:
+      - Guard only: STYLE.pair matches go's `(any, error)` alone; lua's is `function EntyClass:load(` (lua/fragment/EntityLoadOp.fragment.lua:12), returning value, err. A lua pattern is needed.
+      - Per-call `if err then error(err) end` outside an attempt can be expressed through cx.inAttempt. 'Both arguments are optional' (lua/ReadmeRef_lua.ts:113) becomes the shared 'may be nil'.
+    evidence: Read only.
+  - [6]
+    lang: csharp
+    expressible: with-extension
+    constructs_not_expressible:
+      - Guard only: `public override object? Load(` (csharp/fragment/EntityLoadOp.fragment.cs:11). The throw STYLE requires `async` and declares() does not match the form.
+      - The accessor's declared return (DemoEntityBase) goes into the accessor sig string. Expressible.
+    evidence: Read only. Casts in examples belong to the call printer.
+  - [7]
+    lang: java
+    expressible: with-extension
+    constructs_not_expressible:
+      - Guard only: `public Object load(` (java/fragment/EntityLoadOp.fragment.java:22) matches neither declares() nor any STYLE.
+      - The record_ keyword escape belongs in the Naming hook. '(returns SdkEntity)' (java/ReadmeRef_java.ts:121) goes into the accessor sig.
+    evidence: Read only. Imperative options.put is a client-printer matter. Imports that depend on later blocks go through sc.section.
+  - [8]
+    lang: kotlin
+    expressible: with-extension
+    constructs_not_expressible:
+      - Guard: `override fun load(` (kotlin/fragment/EntityLoadOp.fragment.kt:16) is not matched.
+      - name is a read-only property (kotlin/ReadmeRef_kotlin.ts:358). MemberKind 'name' says 'Return the entity name.' and loses 'property'. A minor additive kind if it matters.
+    evidence: Read only.
+  - [9]
+    lang: scala
+    expressible: yes
+    constructs_not_expressible:
+    evidence: Read. `override def load(` (scala/fragment/EntityLoadOp.fragment.scala:12) matches the raise STYLE. Its optionsMap/getUtility members are invisible to PRESENT (which knows options_map and GetUtility), so the guard would not catch an omission. That is a guard gap, not an interface one.
+  - [10]
+    lang: swift
+    expressible: with-extension
+    constructs_not_expressible:
+      - Operations return Value, `throws -> Value` (swift/fragment/EntityLoadOp.fragment.swift:8), unwrapped with `asNative as? Entity` (swift/ReadmeRef_swift.ts:32; ReadmeQuick_swift.ts:89,96). No ResultStyle says 'returns the entity wrapped in a Value'. Needs a new style with its sentences and a STYLE check (additive for providers; runtimeprose's switches gain a case).
+      - The module ${Name}Sdk comes from templates. It belongs in the hook as layout.module.
+    evidence: Read only.
+  - [11]
+    lang: cpp
+    expressible: with-extension
+    constructs_not_expressible:
+      - Guard: `SdkEntityPtr load(` (cpp/fragment/EntityLoadOp.fragment.cpp:3) is not matched by declares() or any STYLE.
+      - The no-arg test overload (cpp/ReadmeRef_cpp.ts:117) is expressible as a second test entry with args:false. The 'getenv hoisted into const char* apikey' line is the client printer's own.
+    evidence: Read only. cpp is in DOC_LANES, so it can be compiled here (g++ present) once ported.
+  - [12]
+    lang: perl
+    expressible: with-extension
+    constructs_not_expressible:
+      - 'dies on error' (perl/ReadmeRef_perl.ts:40-50): the throw and raise sentences print `${result}s`, which gives no 'dies'. Needs a ResultStyle 'die' with its sentences and a STYLE check for `sub load {` (perl/fragment/EntityLoadOp.fragment.pm:10).
+      - The `$options` container row and `$options->{apikey}` keys: same keyTable limitation as php.
+    evidence: Read only. The old list example's hard-coded ->{id} is now covered by desc.quick.show.
+  - [13]
+    lang: ocaml
+    expressible: with-extension
+    constructs_not_expressible:
+      - Two nouns: '### Instance functions' for the client and '### Common Fields' for entity record fields (ocaml/ReadmeRef_ocaml.ts:141,346). RefFacts.noun is one value of 'Methods'|'Functions'. Needs separate client and entity nouns and 'Fields' (additive).
+      - Alternate constructors `Sdk_client.make0 ()` and `Sdk_client.test_with` (ocaml/ReadmeRef_ocaml.ts:105,130) have no fact: ctor is one block, and test entries carry no own sentence.
+      - Guard: no STYLE or declares pattern for record-field operations (e_load).
+      - cx.last covers `let ... in` / `;`.
+    evidence: Read only. ocaml is in DOC_LANES, but no ocaml toolchain is here.
+ported:
+  - [0]
+    lang: rust
+    sections: README tutorial, root README quick start, REFERENCE.md; ReadmeQuick_rust, ReadmeTopQuick_rust and ReadmeRef_rust deleted (711 lines)
+    provider_lines: 162
+    naming_lines: 26
+    code_blocks_identical: 158
+    code_blocks_changed: 221
+    unexplained: 0
+    toolchain: cargo 1.97.0, rustc 1.97.0. DOC lane (cargo check of every rust block in the root README, README and REFERENCE): NEW 6/6 pass, OLD 6/6 pass (oldclone). An intermediate NEW build failed 2/6 (singleton, list): E0425 getp not found in README How-to blocks, after I trimmed the tutorial's getp import; reverted. The blocks are compiled, not run; no rust lane executes README code.
+    what_was_hard: (1) The tutorial's import line is load-bearing for the unported README sections on the same page (the lane prepends a page's `use` lines to blocks without one), so the import set cannot be decided per section. (2) The guard had to be taught rust's forms (fn at column 0, `-> Result<`, `fn make(&self)`). Its first widening (`fn make\(`) false-matched zig's Response.make/Point.make. (3) Template names (DemoEntityBase, DemoError) appear in two mechanisms: {sdk}EntityBase/{sdk}Error in the facts' signature strings, layout.names in printers. (4) direct's Ok-wrapped envelope has no fact. Counts: tutorial 27 identical / 21 changed; root 0 / 19; REFERENCE 131 / 181. Prose: provider-supplied words are 8.5% of the tutorial, 20% of the root comments (99/1161 and 53/265 words) and 0.1% of the REFERENCE; 6.8% of REFERENCE words are in sentences no other ported language prints (2 distinct, one the unmasked title).
+    interface_changes_needed:
+      - DescLayout.names?: Record<string,string> (additive)
+      - fill() applied to direct.returns and prepare.returns (additive, shared bug fix)
+      - runtimefacts guard: union STYLE `(pub )?fn load(...) (-> )?Result`; declares `(pub )?fn`; PRESENT fn stream/options_map/get_utility/make(&self)/get_name (test only)
+  - [1]
+    lang: elixir
+    sections: README tutorial, root README quick start, REFERENCE.md; ReadmeQuick_elixir, ReadmeTopQuick_elixir and ReadmeRef_elixir deleted (645 lines)
+    provider_lines: 181
+    naming_lines: 34
+    code_blocks_identical: 148
+    code_blocks_changed: 231
+    unexplained: 0
+    toolchain: none: `command -v elixir mix iex` finds nothing, and elixir has no DOC lane. Tested by reasoned diff: tutorial blocks are byte-identical or differ only by the listed corrections (17 + 31, 0 otherwise). The 19 root blocks and 181 REFERENCE blocks that changed did so by the shared structure (try/rescue, handle bound in each block, alias line) and are not compiled anywhere.
+    what_was_hard: (1) Names: the accessor needs the whole collection. That is no problem because the hook may read the model, so elixirAccessor(e, entityCollection(model)) runs there. The entity module was an inline expression in MainEntity_elixir, which I extracted as elixirEntityModule. (2) The entity is named by a module, so neither className nor Name fits; added sym.type. (3) attempt has no description, so the handle line inside try needs a module-qualified accessor, put into the hook. (4) Two runtime facts the shared sentences stated falsely: utility is not a copy, and stream is lazy (two new MemberKinds). (5) H.deep vs Demo.Helpers.deep depends on whether the client block printed the alias, inferred from sc.declared. (6) The op-specific null argument cannot be reproduced without an operation name, so it was unified. (7) The diffref/issuecheck heading regexes did not know '### Functions', '### Constructors' or 'Demo.Entity.X' (304 lines UNEXPLAINED until the regexes were extended). Counts: tutorial 17 identical / 31 changed; root 0 / 19; REFERENCE 131 / 181. Prose: provider words 5.8% of the tutorial, 6.2% of the root comments, 0.6% of the REFERENCE; 15.4% of REFERENCE words are in sentences no other ported language prints (4 distinct: the op frames with '`Voxgig.Struct` list', utilityShared, streamLazy, the title).
+    interface_changes_needed:
+      - DescSymbols.type?: string, used by the page's typeOf (additive)
+      - DescLayout.names?: Record<string,string> (additive)
+      - MemberKind 'utilityShared' and 'streamLazy' with sentences in memberText (additive)
+      - runtimefacts guard: memberPattern strips a receiver only before the first parenthesis (a `String.t()` return type was read as member `t`); kindOf maps utilityShared to utility (test only)
+      - utility_elixir.elixirEntityModule extracted; MainEntity_elixir now calls it (no output change)
+interface_changes:
+  - [0]
+    change: DescSymbols gains optional `type`: what the reference names an entity by when it is neither its class nor its Name. typeOf() prefers it.
+    breaking: False
+    why: elixir's entity is the module Demo.Entity.Planet; RefFacts.classes could only print PlanetEntity or Planet.
+    languages: elixir (made); likely ocaml or clojure if their heading is not Name
+  - [1]
+    change: DescLayout gains optional `names: Record<string,string>`: further names an example imports, by role, set by the Naming hook.
+    breaking: False
+    why: rust's use line needs the DemoEntityBase trait and elixir's alias needs Demo.Helpers. Without a slot the printer must concatenate onto desc.Name.
+    languages: rust, elixir (made); likely java (SdkEntity), csharp (namespace), swift (module), cpp (header)
+  - [2]
+    change: MemberKind gains 'utilityShared' ('Return the SDK utility object itself, not a copy.') and 'streamLazy' ('...return a lazy stream of its result items.').
+    breaking: False
+    why: elixir's get_utility returns the live node and its stream is a lazy Stream. The existing sentences would be false.
+    languages: elixir (made)
+  - [3]
+    change: ReadmeRef clientMember fills {sdk}/{client}/... tokens in direct.returns and prepare.returns.
+    breaking: False
+    why: rust's Result<Value, DemoError> carries the SDK name; the token was printed raw.
+    languages: rust (made); any language whose error type carries the SDK name
+  - [4]
+    change: runtimefacts.test: union STYLE accepts `fn load(...) -> Result`; declares() accepts `fn name`; PRESENT knows rust's fn forms (make narrowed to `fn make(&self)` after a zig false positive); memberPattern stops a dotted return type (String.t()) being read as the member name; utilityShared counts as utility.
+    breaking: False
+    why: Without it rust failed the guard and an undeclared rust member would have passed silently; elixir's get_name and stream signatures were reported as undefined.
+    languages: rust, elixir (made)
+  - [5]
+    change: RECOMMENDED before the other twelve: give the guard a declared per-family form table (method declaration, op signature per ResultStyle, each PRESENT member) instead of regexes grown per port.
+    breaking: False
+    why: Today's regexes match neither the declaration nor the result style of java, kotlin, csharp, php, perl, swift, cpp or ocaml, and miss scala's optionsMap. So the guide's 'runtimefacts.test re-derives both' does not hold for them.
+    languages: js php lua csharp java kotlin scala swift cpp perl ocaml
+  - [6]
+    change: RECOMMENDED: keyTable prints the container row through r.key('options', []) instead of the literal `options`.
+    breaking: False
+    why: php and perl name it `$options`. go, py and ts already return the container for an empty path, so their output is unchanged.
+    languages: php, perl
+  - [7]
+    change: RECOMMENDED: ResultStyle 'die' (perl) and a Value-wrapped style (swift: ops `throws -> Value`, unwrapped with asNative as? Entity), with sentences in runtimeprose and STYLE checks.
+    breaking: False
+    why: 'dies' is not producible from the throw/raise frames, and 'returns the entity' is false for swift. Providers do not switch on ResultStyle, so only runtimeprose changes.
+    languages: perl, swift
+  - [8]
+    change: RECOMMENDED: separate client and entity nouns in RefFacts, and the union widened with 'Fields' and 'Members' (or made a string).
+    breaking: False
+    why: ocaml prints 'Instance functions' and 'Common Fields'; clojure prints 'Members'.
+    languages: ocaml, clojure
+  - [9]
+    change: RECOMMENDED: a client-heading fact (or layout field) for '## {client}'.
+    breaking: False
+    why: clojure's client has no type; '## api' would print.
+    languages: clojure
+  - [10]
+    change: RECOMMENDED: give attempt, each, print and expr the description, as client, call and before already have it (a trailing parameter TS implementers may ignore).
+    breaking: False
+    why: elixir had to qualify its accessor in the hook because attempt cannot read layout. The alternative is hidden module state, which I first wrote and then removed.
+    languages: elixir; any language whose handle or import is printed inside error handling
+  - [11]
+    change: RECOMMENDED: a context flag telling a printer whether its block stands alone (a REFERENCE example) or follows the section's client block.
+    breaking: False
+    why: elixir chooses H.deep or Demo.Helpers.deep by peeking at sc.declared. The rust, ts, c and zig feature snippets now repeat their imports.
+    languages: elixir, rust, and any language with an import alias
+  - [12]
+    change: RECOMMENDED: a fact that direct's envelope is wrapped by the result style (rust: inside Ok).
+    breaking: False
+    why: The shared 'reported in the result, not as an error' sits beside `Result<Value, DemoError>`; the rust-specific branch hint was lost.
+    languages: rust
+  - [13]
+    change: RECOMMENDED: alternate constructors and test-constructor variants with their own text (ocaml make0, test_with).
+    breaking: False
+    why: ocaml documents three entry points that no RefFacts field holds.
+    languages: ocaml
+  - [14]
+    change: RECOMMENDED (decision, no interface change): move js's 'Direct API Access' out of the tutorial before porting js.
+    breaking: False
+    why: No Stmt represents it; adding one would be a new Stmt kind and BREAKING for every exhaustive switch.
+    languages: js
+facts_in_providers:
+  - Syntax_clojure.ts:59-60: reads desc.entities, filtered by uses(sc.section).entities, to choose which namespaces to require. A description lookup and a which-to-show decision made in the provider.
+  - Syntax_go.ts:149-161: imports fmt and os by uses(sc.section), and pushes `_ = client` when the section calls no entity. A decision on what the program contains.
+  - Syntax_c.ts:120 and Syntax_py.ts:93: include stdlib.h or import os when an option reads an environment variable. Statement-derived, but a whether.
+  - Syntax_c.ts:134: declares `PNError* err` only when the block calls an operation.
+  - Syntax_elixir.ts (mine): binds entity handles from the statements (inside each attempt, and in before for bare calls). Picks H.deep or Demo.Helpers.deep by sc.declared.has('H'). Lays a map out multi-line when one member is a map of maps (c's option() rule is the same kind of thing).
+  - Syntax_rust.ts (mine): imports getp always. Trimming it by uses() broke other README sections, so the import set is a page fact the provider cannot see.
+  - Every RefFacts table is hand-declared. The guard cannot check semantics: utility() returns a copy in ts, go, py and rust and the live node in elixir; body.values, container, maps, valueType and none are unchecked. The guard's syntax checks only cover six language families.
+  - Signature strings carry template naming rules: rust's `{sdk}Error` and `{sdk}EntityBase` repeat Main.fragment.rs and core/types.rs (ProjectNameError, ProjectNameEntityBase). The printers instead read layout.names, so the same name has two sources.
+  - Naming hooks hold template names as literals: rust `Name+'SDK'`, `Name+'SDK::new'`, `Name+'EntityBase'`; elixir `Name+'.new'`, `Name+'.Helpers'`, and `Name+'.'+elixirAccessor(...)` as the qualified accessor. elixir's entity module now comes from the extracted elixirEntityModule, shared with MainEntity_elixir.
+  - Naming_c.ts computes field identifiers with cVarName over e.fields (allowed in a hook, but it is the only hook that walks fields).
+guide_problems:
+  - Step 5 and the Rules say runtimefacts.test 're-derives both' (declared signatures defined; defined members declared). It does so only for forms it has regexes for. rust failed STYLE.union (`pub fn`, no `->`) and declares() (`fn list` at column 0). PRESENT would have silently accepted a rust page missing stream, options_map, get_utility, make and get_name. memberPattern read elixir's `String.t()` return as member `t`. For java, kotlin, csharp, php, perl, swift, cpp and ocaml, neither declares() nor any STYLE matches the load signature. The guide should say the guard must be extended per language, and how.
+  - Silent on page coupling: in the rust DOC lane (and c and cpp, via pageImports) a block with no own import is compiled with every import line on its page. So the tutorial's client block supplies imports to unported sections (How-to). Trimming imports to what the section uses broke 2 of 6 lanes.
+  - Silent that the printers which receive no description (attempt, each, print, expr) cannot reach layout. A handle printed inside error handling (elixir) needs a pre-qualified accessor from the hook.
+  - Silent on names beyond module, client and ctor: rust's use line and elixir's Helpers alias need more. Silent on whether template-derived names in signatures should use {sdk}Suffix or come from the hook.
+  - The token list says {sdk} etc. are filled in signatures, but direct.returns and prepare.returns were not filled (shared bug).
+  - Step 5 'classes: true where Entity_<lang> declares a class...; false for ... clojure namespaces' gives no answer for elixir, whose entity is a module named by entity.Name, neither className nor Name.
+  - Silent on the closed MemberKind sentences being FALSE for a runtime ('Return a copy of the SDK utility object' for elixir) and on how to notice: the guard cannot.
+  - Silent on null-argument forms that the old component chose per operation (elixir: load passed H.deep(%{}), list and remove nothing). Such a form cannot be kept without an operation name in the provider and must be listed as a unification.
+  - Silent that topQuickText reuses the tutorial's attempt blocks. Every root block of a language whose old root used bare calls (rust unwrap, elixir) changes, so 0 identical root blocks is expected.
+  - Per-language table: rust 'Functions? check' is Methods. elixir 'raise | module per entity | Functions' omits the module-name, utility, stream and arity issues. 'raise' is right.
+  - How to check: diff2.js, purity.js, issuecheck.js and prose.js hard-code their language lists (only diffref.js and proseref.js take an env var). diffref.js and issuecheck.js heading regexes do not know elixir's '### Functions', '### Constructors' or 'Demo.Entity.X' (304 lines UNEXPLAINED until edited). diffref's reasons are by section and heading, so rust reached 0 UNEXPLAINED with no new rule. 0 UNEXPLAINED there is not a line-by-line review; I wrote per-block normalizers (mine/exblocks.js, refblocks.js) to get one.
+  - metrics3.js measures provider growth since v2, which does not exist for a newly ported language. I counted per language with mine/m.js.
+  - 'A REFERENCE block gets a fresh Scope' is stated, but not its consequence: feature snippets now print their imports (ts, c, zig, rust, elixir all gained them), a code change in every toolchain-less language.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: supported
+    evidence: For rust and elixir: 0 model reads in providers (purity.js: one hit each, the allowed canonToType import). Naming hooks call the generator's own functions: crateIdent, rustMethodName and rustVarName for rust; elixirAccessor over the whole collection and elixirEntityModule (extracted) for elixir. 5 interface changes, all ADDITIVE, 0 breaking. Provider-supplied prose words: rust 8.5% of the tutorial, 20% of the root comments (53 of 265 words, the same as zig), 0.1% of the REFERENCE; elixir 5.8%, 6.2% and 0.6%. Over the three sections both are under 1%. Caveats: elixir's REFERENCE has 15.4% of words in sentences no other ported language prints (frames filled by its collection phrase and two member kinds only it uses), which crosses the 15% line if read at the output level. True facts were dropped: rust's Ok-wrapped direct envelope, Some(&map) and create type comments; elixir's arity names, the getelem clause, the Helpers.deep hint and write rebinding. The survey of the other 12 finds none inexpressible, but 10 need an interface or fact addition (perl die, swift Value, ocaml nouns and constructors, php/perl $options, clojure heading) and at least 8 need guard extensions. All of these are additive, so the breaking-change threshold is not approached on this evidence.
+  - [1]
+    id: H4
+    verdict: supported
+    evidence: rust DOC lane (cargo check of every rust block in the root README, README and REFERENCE across 6 models): NEW 6/6, OLD 6/6. The one failure on the way (2/6, E0425 getp in unported How-to blocks) came from my own import trimming. It was fixed inside the interface by printing the old import list, so it is not intrinsic. It does show that one section's imports serve others on the page. Nothing executes rust README code (blocks are type-checked only, as before). elixir: not tested. There is no toolchain or lane; its tutorial blocks are byte-identical up to listed corrections, but 19 root and 181 REFERENCE blocks changed structure and are unverified.
+  - [2]
+    id: H2
+    verdict: partly
+    evidence: Not re-measured across 20. For these two: rust's 3 components (711 lines) became a 162-line provider and a 26-line hook (3.8x); elixir's 645 lines became 181 + 34 (3.0x). Shared additions: ReadmeRef.ts +4 net, example.ts and sdkdesc.ts +3, guard +8, utility_elixir +8. The fixed shared cost is not apportioned here (mine/m.js).
+  - [3]
+    id: H3
+    verdict: supported
+    evidence: issuecheck.js with rust and elixir added: every catalogued REFERENCE issue that shows in OLD for them is gone in NEW (S25/D10, U43, U44, U34, U36, S50, D23/D55, G27/M38/D69, G29, S13, S09, backtick, actions, stream, ctrl), with no per-language edit beyond the provider. Quick-start issues (S28, U45, S49, S50, G01) are fixed by the shared code (diff2 reasons). The elixir check needed its heading regexes extended.
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: No upgrade walk was run for rust or elixir. The retirement goes through the same lifecycle path as v2's (deleted components, golden refreshed); the suite passes: 2538 tests, 2532 pass, 0 fail, 6 skipped.

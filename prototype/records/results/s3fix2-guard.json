@@ -1,0 +1,1201 @@
+{
+ "summary": "I worked in `P/i-guard/sdkgen`, which started as a copy of `P/base/sdkgen` at `v31-frozen` (9089ed48). I added 29 commits there, all test-side. Nothing under `ts/src` or `ts/project` changed, and `ts/dist` is unchanged: `git status` is empty after a full `npm run build`.\n\n**What I ran:**\n- Guard plus reader: 61/61 (39 + 22).\n- Suite without the toolchain lanes: 2593 tests, 2588 pass, 0 fail, 5 skipped.\n- The last stage's 75 mutations, re-run on a copy: 65 \u2192 67 caught, and none is caught less.\n- 19 new mutations: 18 caught. The one miss is a planted gap: an excused token 8 lines from the quote (see `mutations`).\n\n**Part 1, the reader.** The reader and the table now show, for every declaration of all twenty runtimes:\n- how a failure shows (`fails`): swift `throws`, go's second `error`, c's `PNError**`, rust `Result`, zig `*Result`, lua's second value;\n- what a member is called on (instance, type or module);\n- whether it is a field or something called;\n- whether its return was read from a comment (lua, rb);\n- which parameters may be left out;\n- which member families a runtime lacks.\n\nEach language also gets a constructor and test-constructor row, and a stream line saying when the operation runs and when the streaming feature's items are read.\n\nThree kinds of check enforce these:\n- **Text invariants.** A declaration whose own text shows `throws`, `static`, `def self.` or `@classmethod` must be read that way, whatever the forms say.\n- **Per-forms pins.** `failure` and `expect` hold what was read off the runtime, so a changed runtime fails the reader test even in an unported language.\n- **Guard checks for providers:**\n  - `fails`: the signature carries the marker, and the printed call carries the call word (go `err`, c `&err`, rust `unwrap`, zig `.err`; swift `try` is declared but untested, since swift has no provider).\n  - `on`: a member declared on the type cannot be listed among instance members, and constructor and test-constructor calls must be made on what the runtime declares.\n  - `field`: a field is not declared as called, and the reverse.\n  - `streamItems`: a stream kind whose sentence says items arrive as iterated must match what the code does.\n\nReading the table against the runtimes found:\n- **Stream kinds wrong in two ported languages:** clojure and elixir say `streamLazy`, but both read every item before returning. Recorded as `WRONG:`.\n- **swift streams claim too much:** swift is `streamIterator` but collects every item before it returns. No stream kind fits it, so it is listed as needed from the shared engineer.\n- **c's page omits two members** the runtime has: `sdk_options_map` and `sdk_get_utility`. Recorded as `WRONG:`.\n- Four rows of the unported table were misread: scala `toString` (a method shown as a field), cpp's client constructor (return shown as `explicit`), kotlin's client constructor (return shown as its superclass), and ocaml's stream kind.\n\n**Part 2, the categories.**\n- `none` and `lits.*` are now cited, with the value's token required in the quote. For the 8 providers that do not declare `lits` yet, it is cited ahead of the declaration, so the merged guard fails if the shared engineer declares any other literal.\n- What remains in `language` is `maps` (9 languages) and `unusedError` (go, zig).\n- A citation can now be an absence: a search over named runtime files that must find nothing, run every time. All 8 `cancel: false` facts use it.\n- A note's citation must hold every code token the note names.\n- An `unquoted` token is refused when it stands within 3 lines of a quote. This is not the repo-wide check the brief asked for (see `gaps`).\n- I audited all 113 cited facts, plus 16 cited ahead of a declaration:\n  - **Changed:** 28 citations, including the 8 `cancel` absences and new `none` citations.\n  - **Still not showing the value:** 3 (py and rb `direct.returns`, ts `prepare.returns`).\n  - **Pinned prose:** 53.\n  - **WRONG exceptions:** elixir's `list/2` and `load/2` notes; clojure's and elixir's stream kinds; c's missing options and utility members.\n\n**Against H1:** a language now also has to supply a test-constructor name, a stream record (7 lines), and `on`, `fails` or `failure` where the defaults do not fit, plus none, lits and absence citations. Forms files grew by 10 to 22 lines each. The framework had 3 breaking changes, each forcing edits in existing forms files; everything else was additive (see `forms_changes`).",
+ "clone": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-guard/sdkgen (from P/base/sdkgen at 9089ed48; HEAD 41a6df87). Mutation copy: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-guard/mut. Scripts and logs: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-guard/work (dbg.js guard findings and control misses per language; cites.js; audit.js -> audit.json, the full 129-row citation audit; streams2.js; cand.json the stream quotes; addforms.py; mutate.js with muts.json/muts.out.json/muts.log (the 75), muts-new.json/muts-new.out.json and muts-new2.json/muts-new2.out.json (the new ones); report1.txt the account report; suite.log; build-final.log; lines-before.txt/lines-after.txt). Table: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-guard/runtime-table.md (1108 lines; was 872).",
+ "commits": "29 commits on 9089ed48, test files only, staged by explicit path. Shared commits:\n- the first: guard reads failure, receiver, field and stream timing; lits and none cited; absence citations; unquoted and note tokens checked (runtimefacts.test.ts, runtimereader.test.ts, runtimeforms/forms.ts, account.ts, guard.ts);\n- 0a9204e0 (reader: optional params, absent members, no-parameter-list rows; members exception per family);\n- the reader commit requiring a failure record;\n- f87426cc (comments within the comment policy).\n\nPer-language commits: one per forms file for all 20 (the \"runtime forms state failure, receiver, field and stream timing; citations audited\" series ending f7970204); then c 6f56843c, scala b8edb838, cpp 5088c1b2, kotlin d39a0174 (table rows corrected against the runtime); ocaml 41a6df87 (comment).\n\nNo build commit and no golden commit: ts/dist and the golden did not change.",
+ "dimensions": [
+  {
+   "dimension": "how a failure shows (throws / second value / error parameter / Result / error union)",
+   "how_read": "Decl.fails, filled from forms.fails(d). swift reads `throws` after the bracketed parameter list; go a returns ending `error)`; c a last parameter `PNError**`; rust a returns starting `Result<`; zig a returns ending `Result`; lua a second `---@return` value. Every other runtime returns ''. The forms' `failure: {shows, call}` says what every operation shows and what a call needs.",
+   "how_compared": "Reader: every op decl's fails must include failure.shows. Operations that show a failure without a failure record fail. Any declaration whose own text has `throws` after its parameters must read as throws, whatever forms.fails says. Guard: sig() requires failure.shows in the provider's signature when the runtime declaration shows it (exception key fails:<where>). The provider's printed load call, run through S.call outside an attempt, must contain failure.call.",
+   "negative_control": "Controls 'a failure marker dropped from the load signature' and 'the printed call drops what a failing call needs' (applicable for go, c, rust, zig). Mutations new-swift-throws-runtime, new-swift-throws-view and new-swift-try-dropped: caught (reader)."
+  },
+  {
+   "dimension": "what a member is called on (instance, type, module)",
+   "how_read": "Decl.on, from forms.on(d) or the default: a constructor's name or a `static` head is on the type. Overrides: go `func (` instance else module; py __init__ or @classmethod/@staticmethod type; rb `def self.` type; lua `.name(` type and `:name(` instance; kotlin companion-object funs type; scala members of `object X` type; rust/zig `self` receiver instance, indented type, column-0 module; c `(*fn)` instance else module; perl `my ($class` type and `my ($self` instance; clojure keyword fns instance else module; elixir module; ocaml record fields instance and `let` module.",
+   "how_compared": "Reader: a `static` head, `def self.` or a @classmethod/@staticmethod line above must read as type. forms.expect pins named declarations (test constructors of js, php, lua, csharp, java, kotlin, scala, swift, cpp, perl, ocaml). Guard: a member whose runtime declaration is on the type, listed in ref.facts.client or entity, fails 'on'. The test-constructor call's receiver (the bound client variable means instance, a qualifier means type or module, nothing means free) must fit the runtime's `on`. The client constructor's call must not be on an instance.",
+   "negative_control": "Controls 'a test constructor called on an instance' (all 9) and 'a member the runtime declares on the type listed among the instance members' (ts, py, rb). Mutations new-ts-static-test-instance and new-py-classmethod-test-instance (guard 'on'), and new-swift-static-testsdk-instance (reader expect): caught."
+  },
+  {
+   "dimension": "a callable or a field",
+   "how_read": "Decl.field: forms.field(d), default the declaration has no parameter list. ocaml's declReader marks a record field whose type has no arrow. scala treats only val/var as fields; rb never has fields and is parenless.",
+   "how_compared": "Reader: a field may not take parameters, and forms.expect pins fields (ocaml e_name, e_deleted, e_data; e_load not a field; kotlin name). Guard sig(): a runtime field declared with a call, or a runtime callable declared without a parameter list (unless forms.parenless), fails 'field'.",
+   "negative_control": "Control 'a called member declared as a field' (ts, go, py, zig, rust; n/a for c, clojure, elixir, rb). Mutation new-ocaml-field-to-function: caught (reader expect)."
+  },
+  {
+   "dimension": "a return read from a comment",
+   "how_read": "Decl.from from forms.returnsFrom: lua and rb say 'comment'. The table cell carries '(from a comment)'.",
+   "how_compared": "Shown in the table. For lua, a `shows` citation of make_error.lua states what the second value really is. For rb, the facts resting on @return are cited (uncompared returns 7).",
+   "negative_control": "None mechanical for the label itself. The lua shows citation fails if its quotes leave make_error.lua (checkCitation)."
+  },
+  {
+   "dimension": "when a stream's items are read",
+   "how_read": "forms.stream: file, construct, starts ('at call' or 'on iteration'), run, draw, and runs/items as declared. Each quote must occur exactly once in a runtime file. A run or draw quote before the construct happens before the stream returns; after it, 'as the caller iterates' (or 'from the call, beside the caller' when the construct starts at the call, go's goroutine).",
+   "how_compared": "Reader: the declared runs and items must equal what the positions give. The kind the forms read must not claim incremental items (streamIterator, streamGenerator, streamLazy) when the code reads them before returning, nor one list (streamList) when it does not; exception key streamItems. Guard: the same, against the provider's declared kind.",
+   "negative_control": "Control 'a stream recorded as read as the caller iterates when the code reads it first' (7 of 9; clojure and elixir carry WRONG exceptions). Mutations new-swift-stream-incremental, new-clojure-stream-incremental and new-ocaml-stream-incremental-code: caught (reader)."
+  },
+  {
+   "dimension": "which parameters may be left out; which member families a runtime lacks",
+   "how_read": "forms.optional on each parameter, marked '[optional]' in the table. FAMILIES not in forms.members are listed.",
+   "how_compared": "Optional was already compared by the guard ('optional'). Absent families feed the existing members check; a WRONG exception per family now exists (members:<fam>).",
+   "negative_control": "Existing control 'an optional parameter shown required'. c options and utility: a members finding unless excepted (ran)."
+  }
+ ],
+ "statements_guarded": [
+  {
+   "statement_kind": "constructor signature and call",
+   "example": "ts `new DemoSDK(options?: object)`; c `DemoSDK* client = demo_sdk_new(options);`",
+   "guarded_by": "ctor (the function exists and takes that many arguments) and on (not on an instance)"
+  },
+  {
+   "statement_kind": "options table: names, types, Required or default",
+   "example": "`options.server.region` | Defaults to `eu`",
+   "guarded_by": "not guarded here: it comes from the model's optspec and description, not a runtime declaration"
+  },
+  {
+   "statement_kind": "test constructor signature, call, arguments",
+   "example": "`DemoSDK.test(testopts?, sdkopts?)`, `const client = DemoSDK.test()`",
+   "guarded_by": "signature, parameters, optional, paramNames, test (call names it, args), on (receiver)"
+  },
+  {
+   "statement_kind": "'both may be `undefined`' / 'Pass `NULL` for no initial options'",
+   "example": "ts undefined, c NULL",
+   "guarded_by": "account: ref.facts.none cited, token in quote (new)"
+  },
+  {
+   "statement_kind": "section heading noun",
+   "example": "'Instance Methods' / 'Instance Functions'",
+   "guarded_by": "not guarded: convention, compared with the old page by the review tools"
+  },
+  {
+   "statement_kind": "entity accessor signature and what its argument is",
+   "example": "`Planet(entopts?: object)` ... 'initial options'",
+   "guarded_by": "signature (accessor.sig), accessor (arg from the entity constructor's parameter)"
+  },
+  {
+   "statement_kind": "options() 'Return a deep copy'",
+   "example": "ts options()",
+   "guarded_by": "not guarded: there is no copy fact for client[0]. The shared sentence asserts it. Needs a cited copy fact like entity[0].copy"
+  },
+  {
+   "statement_kind": "utility() copy or live",
+   "example": "'Return a copy of the SDK utility object.'",
+   "guarded_by": "account: client[1].kind cited (utility vs utilityBase)"
+  },
+  {
+   "statement_kind": "member return types",
+   "example": "**Returns:** `object`",
+   "guarded_by": "returns (derived where the runtime declares one) or account (cited); uncompared returns with reasons (c 1, clojure 14, elixir 9, py 6, rb 7)"
+  },
+  {
+   "statement_kind": "direct's result keys and ok literal",
+   "example": "'on a failure `ok` is `false`'",
+   "guarded_by": "direct.returns (derived or cited); lits.false and lits.true now cited (ahead of declaration in 8 languages)"
+  },
+  {
+   "statement_kind": "'A failed request is reported in the result, not as an error'",
+   "example": "direct",
+   "guarded_by": "not guarded: a shared sentence about direct never throwing. No fact or check reads that direct has no throw path"
+  },
+  {
+   "statement_kind": "ctrl.signal and the request_aborted error code",
+   "example": "ts `fetchargs.ctrl.signal` AbortSignal; 'err.code is request_aborted'",
+   "guarded_by": "direct.signal cited; cancel cited (ts) or absence (8). The `request_aborted` code itself is not guarded"
+  },
+  {
+   "statement_kind": "prepare's return and how it fails",
+   "example": "'On failure it resolves to the error instead'",
+   "guarded_by": "prepare.returns (derived or cited), prepare.fails (pinned prose)"
+  },
+  {
+   "statement_kind": "operation signatures, optional match, method names",
+   "example": "`list(match?: object, ctrl?: object)`",
+   "guarded_by": "method, signature, parameters, optional, paramNames, paramTypes, returns"
+  },
+  {
+   "statement_kind": "'Resolves to an array of entities, one per record, and throws on failure'",
+   "example": "ts list",
+   "guarded_by": "async, listOf, collection (cited or derived), style; fails (marker, where the runtime shows one)"
+  },
+  {
+   "statement_kind": "'Returns ... or `NULL` with `*err` set on failure'",
+   "example": "c load",
+   "guarded_by": "errSlot and nullValue cited; style errslot; fails (PNError** in signature, &err in the printed call)"
+  },
+  {
+   "statement_kind": "'marked as deleted' (remove)",
+   "example": "remove",
+   "guarded_by": "not guarded: a shared sentence; no fact reads markDeleted being called by remove"
+  },
+  {
+   "statement_kind": "'.data() reads its record' / record accessor",
+   "example": "`vt->data` reads its record",
+   "guarded_by": "record (accessor exists, arity, printer calls it)"
+  },
+  {
+   "statement_kind": "data/match get-set shape and 'returns a copy of the current data'",
+   "example": "data(data?: object)",
+   "guarded_by": "kind (shape), entity[0].copy cited"
+  },
+  {
+   "statement_kind": "make() 'with the same client and options'",
+   "example": "make()",
+   "guarded_by": "members/kind (make exists); 'same client and options' not guarded"
+  },
+  {
+   "statement_kind": "stream signature and when items arrive",
+   "example": "'yield its result items as they arrive, as an async iterator' / 'return its result items as one list'",
+   "guarded_by": "kind (stream kind) and streamItems (new: the code's positions)"
+  },
+  {
+   "statement_kind": "client()/entopts()/get_name",
+   "example": "'Return a copy of the entity options.'",
+   "guarded_by": "members and kind for the member; the 'copy' in entopts is not guarded"
+  },
+  {
+   "statement_kind": "field types in the Fields table",
+   "example": "`radius` `number`",
+   "guarded_by": "types (canonToType column) or printer totality (zig, clojure)"
+  },
+  {
+   "statement_kind": "code examples",
+   "example": "every ```ts block",
+   "guarded_by": "not by the guard: printers and lanes or the review tools; the record and call printers are probed (record, fails)"
+  }
+ ],
+ "table_corrections": [
+  {
+   "lang": "swift",
+   "row": "every operation, prepare, stream",
+   "was": "returns `Value`, `VMap`, `AsyncStream<Value>` with no failure",
+   "now": "fails `throws`; failure record: a call needs `try`",
+   "file_line": "src/cmp/swift/fragment/EntityLoadOp.fragment.swift:8 (and the five other ops), Main.fragment.swift:96, EntityBase.fragment.swift:188-189"
+  },
+  {
+   "lang": "swift",
+   "row": "testSDK",
+   "was": "a client member like the instance ones",
+   "now": "on type (static); expect pins it",
+   "file_line": "src/cmp/swift/fragment/Main.fragment.swift:330"
+  },
+  {
+   "lang": "swift",
+   "row": "stream timing",
+   "was": "streamIterator, read as lazy",
+   "now": "runs before it returns; items before it returns (items = streamFn() into an array, then AsyncStream over it); streamItems exception NEEDS SHARED",
+   "file_line": "src/cmp/swift/fragment/EntityBase.fragment.swift:223,229,236; tm/swift/Sources/ProjectNameSDK/core/Result.swift:19"
+  },
+  {
+   "lang": "lua",
+   "row": "operations' second value",
+   "was": "'EntyClass, string?' as if code",
+   "now": "'string? (from a comment)', fails 'second value string?', and a shows citation: the sdk_err table with status and code, not a string",
+   "file_line": "src/cmp/lua/fragment/EntityLoadOp.fragment.lua:10-12; tm/lua/utility/make_error.lua:62,66,86"
+  },
+  {
+   "lang": "lua",
+   "row": "test (and new)",
+   "was": "indistinguishable from `:` methods",
+   "now": "on type (dot function); expect pins test, new and load",
+   "file_line": "src/cmp/lua/fragment/Main.fragment.lua:432 against :159"
+  },
+  {
+   "lang": "ocaml",
+   "row": "e_name, e_client, e_utility, e_entopts, e_data, e_match, e_entctx, e_deleted",
+   "was": "'()' parameters, as functions",
+   "now": "field ('property or field'); e_load and the other arrows stay callable",
+   "file_line": "tm/ocaml/sdk_types.ml:198-204,223"
+  },
+  {
+   "lang": "ocaml",
+   "row": "stream kind",
+   "was": "streamLazy (from `value Seq.t`)",
+   "now": "streamSync; runs and items before it returns",
+   "file_line": "src/cmp/ocaml/Entity_ocaml.ts:141,148,154"
+  },
+  {
+   "lang": "ocaml",
+   "row": "client members",
+   "was": "(absence not stated)",
+   "now": "'Members the runtime does not have: options, utility.'",
+   "file_line": "src/cmp/ocaml/Main_ocaml.ts:168-200"
+  },
+  {
+   "lang": "perl",
+   "row": "direct's ok",
+   "was": "not in the table",
+   "now": "shows: `0` or `1`, not a boolean (cited)",
+   "file_line": "src/cmp/perl/fragment/Main.fragment.pm:245,300"
+  },
+  {
+   "lang": "perl",
+   "row": "test (and new)",
+   "was": "an instance member",
+   "now": "on type (`my ($class, ...)`); expect pins it",
+   "file_line": "src/cmp/perl/fragment/Main.fragment.pm:364-365"
+  },
+  {
+   "lang": "java",
+   "row": "operations' parameters",
+   "was": "parameters listed with no optionality",
+   "now": "both shown required (no [optional] mark)",
+   "file_line": "src/cmp/java/fragment/EntityLoadOp.fragment.java:22"
+  },
+  {
+   "lang": "java",
+   "row": "stream timing",
+   "was": "streamLazy, no timing",
+   "now": "runs before it returns (runOp); items as the caller iterates (src.next())",
+   "file_line": "src/cmp/java/fragment/EntityBase.fragment.java:246,278,292"
+  },
+  {
+   "lang": "kotlin",
+   "row": "stream timing",
+   "was": "streamLazy, no timing",
+   "now": "runs before it returns; items as the caller iterates",
+   "file_line": "src/cmp/kotlin/fragment/EntityBase.fragment.kt:213,245,248"
+  },
+  {
+   "lang": "kotlin",
+   "row": "client constructor return",
+   "was": "`SdkClient(options)` (the superclass read as a return)",
+   "now": "'' (a class header has no return)",
+   "file_line": "src/cmp/kotlin/fragment/Main.fragment.kt:8"
+  },
+  {
+   "lang": "scala",
+   "row": "toString",
+   "was": "'property or field'",
+   "now": "callable, 'no parameter list' (a def, not a val)",
+   "file_line": "tm/scala/core/SdkClient.scala:81"
+  },
+  {
+   "lang": "cpp",
+   "row": "client constructor return",
+   "was": "`explicit`",
+   "now": "''",
+   "file_line": "src/cmp/cpp/fragment/Main.fragment.cpp:17"
+  },
+  {
+   "lang": "c",
+   "row": "options and utility members (ported language)",
+   "was": "not read: the forms did not include the file defining them",
+   "now": "read from tm/c/core/utility.c; the guard reports the page omits them; WRONG exceptions members:options and members:utility",
+   "file_line": "tm/c/core/utility.c:70,72; tm/c/core/sdk.h:477-478"
+  },
+  {
+   "lang": "js php csharp scala cpp",
+   "row": "all other rows (read)",
+   "was": "-",
+   "now": "no further error found. php's accessor takes `$data` and passes it to `__construct(... ?array $entopts)`: the accessor-arg trap for the porter. csharp Stream's 4th CancellationToken parameter is shown as [optional].",
+   "file_line": "src/cmp/php/MainEntity_php.ts:40; src/cmp/csharp/fragment/EntityBase.fragment.cs:257-261"
+  }
+ ],
+ "ok_literals": [
+  {
+   "lang": "ts",
+   "value_true": "true (computed, not spelled: unquoted)",
+   "value_false": "false",
+   "file_line": "src/cmp/ts/fragment/Main.fragment.ts:211 (false), :271 (computed)"
+  },
+  {
+   "lang": "go",
+   "value_true": "true (computed)",
+   "value_false": "false",
+   "file_line": "src/cmp/go/fragment/Main.fragment.go:251, :321"
+  },
+  {
+   "lang": "py",
+   "value_true": "True (computed; declared by the provider)",
+   "value_false": "False",
+   "file_line": "src/cmp/py/fragment/Main.fragment.py:242, :297"
+  },
+  {
+   "lang": "c",
+   "value_true": "true (computed in v_bool)",
+   "value_false": "false (v_bool(false))",
+   "file_line": "src/cmp/c/fragment/Main.fragment.c:174, :265"
+  },
+  {
+   "lang": "zig",
+   "value_true": "true (computed in h.vbool)",
+   "value_false": "false (h.vbool(false))",
+   "file_line": "src/cmp/zig/fragment/Main.fragment.zig:257, :336"
+  },
+  {
+   "lang": "clojure",
+   "value_true": "true (computed)",
+   "value_false": "false",
+   "file_line": "tm/clojure/src/sdk/client.clj:135, :158"
+  },
+  {
+   "lang": "rust",
+   "value_true": "true (computed in Value::Bool)",
+   "value_false": "false (Value::Bool(false))",
+   "file_line": "src/cmp/rust/fragment/Main.fragment.rs:231, :327"
+  },
+  {
+   "lang": "elixir",
+   "value_true": "true (computed)",
+   "value_false": "false",
+   "file_line": "src/cmp/elixir/fragment/Main.fragment.ex:216, :273"
+  },
+  {
+   "lang": "rb",
+   "value_true": "true (computed)",
+   "value_false": "false",
+   "file_line": "src/cmp/rb/fragment/Main.fragment.rb:214, :267"
+  },
+  {
+   "lang": "perl (table only, unported)",
+   "value_true": "1",
+   "value_false": "0",
+   "file_line": "src/cmp/perl/fragment/Main.fragment.pm:245, :300"
+  }
+ ],
+ "none_literals": [
+  {
+   "lang": "ts",
+   "value": "undefined",
+   "file_line": "src/cmp/ts/fragment/EntityBase.fragment.ts:267 `return undefined`"
+  },
+  {
+   "lang": "go",
+   "value": "nil",
+   "file_line": "src/cmp/go/fragment/Main.fragment.go:211 `return nil, err`"
+  },
+  {
+   "lang": "py",
+   "value": "None",
+   "file_line": "src/cmp/py/fragment/EntityLoadOp.fragment.py:8 `def load(self, reqmatch=None, ctrl=None)`"
+  },
+  {
+   "lang": "c",
+   "value": "NULL",
+   "file_line": "src/cmp/c/fragment/EntityLoadOp.fragment.c:27 `if (*err) return NULL;`"
+  },
+  {
+   "lang": "zig",
+   "value": "h.vnull()",
+   "file_line": "src/cmp/zig/fragment/Main.fragment.zig:62 `.options = h.vnull(),`"
+  },
+  {
+   "lang": "clojure",
+   "value": "nil",
+   "file_line": "src/cmp/clojure/fragment/EntityLoadOp.fragment.clj:2 (a comment: no code line spells the default)"
+  },
+  {
+   "lang": "rust",
+   "value": "Value::Noval",
+   "file_line": "src/cmp/rust/fragment/Main.fragment.rs:28 `options: RefCell::new(Value::Noval),`"
+  },
+  {
+   "lang": "elixir",
+   "value": "nil",
+   "file_line": "src/cmp/elixir/fragment/EntityLoadOp.fragment.ex:8 `def load(ent, reqmatch \\\\ nil, ctrl \\\\ nil) do`"
+  },
+  {
+   "lang": "rb",
+   "value": "nil",
+   "file_line": "src/cmp/rb/fragment/EntityLoadOp.fragment.rb:14 `def load(reqmatch = nil, ctrl = nil)`"
+  }
+ ],
+ "streams": [
+  {
+   "lang": "ts",
+   "kind": "streamIterator",
+   "items_read": "op on first iteration; feature items as the caller iterates",
+   "depends_on_feature": "yes: without it the whole result, then yielded",
+   "file_line": "src/cmp/ts/fragment/EntityBase.fragment.ts:111,142,150"
+  },
+  {
+   "lang": "js",
+   "kind": "streamIterator",
+   "items_read": "op on first iteration; feature items as iterated",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/js/fragment/EntityBase.fragment.js:107,138,146"
+  },
+  {
+   "lang": "py",
+   "kind": "streamGenerator",
+   "items_read": "op on first iteration; feature items as iterated",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/py/fragment/Entity.fragment.py:74,123,133"
+  },
+  {
+   "lang": "rb",
+   "kind": "streamSync",
+   "items_read": "op on first iteration (Enumerator); feature items as iterated",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/rb/fragment/Entity.fragment.rb:140,149,158"
+  },
+  {
+   "lang": "php",
+   "kind": "streamGenerator",
+   "items_read": "op on first iteration; feature items as iterated",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/php/fragment/Entity.fragment.php:148,195,205"
+  },
+  {
+   "lang": "lua",
+   "kind": "streamFunction",
+   "items_read": "op on the first call of the returned function (coroutine); feature items as iterated",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/lua/fragment/Entity.fragment.lua:179,180,192"
+  },
+  {
+   "lang": "csharp",
+   "kind": "streamIterator",
+   "items_read": "op (RunOp) on first MoveNextAsync; feature items as iterated",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/csharp/fragment/EntityBase.fragment.cs:257,306,333"
+  },
+  {
+   "lang": "go",
+   "kind": "stream (channel)",
+   "items_read": "op and items in a goroutine started at the call, beside the caller (unbuffered sends)",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/go/fragment/Entity.fragment.go:217,229,239"
+  },
+  {
+   "lang": "java",
+   "kind": "streamLazy",
+   "items_read": "op before it returns (runOp); feature items as iterated (src.next())",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/java/fragment/EntityBase.fragment.java:246,278,292"
+  },
+  {
+   "lang": "kotlin",
+   "kind": "streamLazy",
+   "items_read": "op before it returns; feature items as iterated",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/kotlin/fragment/EntityBase.fragment.kt:213,245,248"
+  },
+  {
+   "lang": "scala",
+   "kind": "streamSync",
+   "items_read": "op before it returns; feature items as iterated (pull in hasNext)",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/scala/fragment/EntityBase.fragment.scala:192,218,240"
+  },
+  {
+   "lang": "perl",
+   "kind": "streamFunction",
+   "items_read": "op before it returns (_run_op); feature items per pull",
+   "depends_on_feature": "yes",
+   "file_line": "src/cmp/perl/fragment/Entity.fragment.pm:177,202,205"
+  },
+  {
+   "lang": "swift",
+   "kind": "streamIterator (claims as they arrive; exception NEEDS SHARED)",
+   "items_read": "everything before it returns: runOp, then items = streamFn(), then AsyncStream over the array",
+   "depends_on_feature": "no: before return either way",
+   "file_line": "src/cmp/swift/fragment/EntityBase.fragment.swift:223,229,236"
+  },
+  {
+   "lang": "cpp",
+   "kind": "streamList",
+   "items_read": "before it returns (std::vector; the feature's producer returns a vector)",
+   "depends_on_feature": "no",
+   "file_line": "tm/cpp/core/types.hpp:1424,1454; :295"
+  },
+  {
+   "lang": "c",
+   "kind": "streamList",
+   "items_read": "before it returns (StreamFn returns a List)",
+   "depends_on_feature": "no",
+   "file_line": "src/cmp/c/fragment/Entity.fragment.c:187,220; tm/c/core/sdk.h:258"
+  },
+  {
+   "lang": "zig",
+   "kind": "streamList",
+   "items_read": "before it returns (StreamFn.call returns []Value)",
+   "depends_on_feature": "no",
+   "file_line": "src/cmp/zig/fragment/Entity.fragment.zig:224,251; tm/zig/core/result.zig:9-11"
+  },
+  {
+   "lang": "rust",
+   "kind": "streamList",
+   "items_read": "before it returns (StreamFn is Fn() -> Vec<Value>)",
+   "depends_on_feature": "no",
+   "file_line": "src/cmp/rust/fragment/Entity.fragment.rs:189,234; tm/rust/core/result.rs:10"
+  },
+  {
+   "lang": "clojure",
+   "kind": "streamLazy (WRONG)",
+   "items_read": "before it returns: run-op, then (vec ((stream))) and mapv; lazy-seq walks the realised vector",
+   "depends_on_feature": "no",
+   "file_line": "src/cmp/clojure/fragment/Entity.fragment.clj:164,180,185"
+  },
+  {
+   "lang": "elixir",
+   "kind": "streamLazy (WRONG)",
+   "items_read": "before it returns: run_op, then source(ctx, stream_fn) calls the feature (which builds its items eagerly as a list); the Stream is lazy over that list",
+   "depends_on_feature": "no",
+   "file_line": "tm/elixir/lib/projectname/entity_base.ex:150,160,172; tm/elixir/lib/projectname/feature/streaming.ex:58"
+  },
+  {
+   "lang": "ocaml",
+   "kind": "streamSync (was streamLazy)",
+   "items_read": "before it returns: run_op, then fn () (a value list), then a Seq over it",
+   "depends_on_feature": "no",
+   "file_line": "src/cmp/ocaml/Entity_ocaml.ts:141,148,154; tm/ocaml/sdk_types.ml:100"
+  }
+ ],
+ "comment_returns": [
+  {
+   "lang": "lua",
+   "what": "every op return (`---@return EntyClass` / `string? err`)",
+   "code_shows": "the second value is the sdk_err table with .status and .code (cited in shows), not a string",
+   "file_line": "src/cmp/lua/fragment/EntityLoadOp.fragment.lua:10-12; tm/lua/utility/make_error.lua:62,66,86"
+  },
+  {
+   "lang": "rb",
+   "what": "`@return [...]` above methods (ops, data_get, match_get)",
+   "code_shows": "data_get returns VoxgigStruct.clone(@_data), a Hash; the uncompared reason covers the methods without @return (7)",
+   "file_line": "src/cmp/rb/fragment/Entity.fragment.rb:76"
+  },
+  {
+   "lang": "elixir",
+   "what": "@spec (classed as code: an attribute the compiler parses, though nothing enforces it)",
+   "code_shows": "ops `:: term()`, excepted with reasons; members carry no @spec (uncompared 9)",
+   "file_line": "src/cmp/elixir/fragment/EntityLoadOp.fragment.ex:7"
+  },
+  {
+   "lang": "py",
+   "what": "`->` annotations (code), on the ops and data_get/match_get only; no docstring is read",
+   "code_shows": "-",
+   "file_line": "src/cmp/py/fragment/EntityLoadOp.fragment.py:8"
+  },
+  {
+   "lang": "perl, clojure, js",
+   "what": "no return read at all (returns '')",
+   "code_shows": "facts resting on a return are cited (clojure) or the language is unported (perl, js)",
+   "file_line": "test/runtimeforms/perl.ts, clojure.ts, js.ts returns: () => ''"
+  }
+ ],
+ "citation_audit": [
+  {
+   "lang": "c",
+   "fact": "ref.facts.cancel = false",
+   "shows_value": "absence",
+   "changed": "was the http.c header comment; now an absence search over tm/c/utility/http.c"
+  },
+  {
+   "lang": "c",
+   "fact": "ref.facts.none = NULL",
+   "shows_value": "yes",
+   "changed": "new: EntityLoadOp.fragment.c `if (*err) return NULL;`"
+  },
+  {
+   "lang": "c",
+   "fact": "ref.facts.lits.false/true = false/true (ahead)",
+   "shows_value": "yes",
+   "changed": "new (true is computed: unquoted)"
+  },
+  {
+   "lang": "c",
+   "fact": "8 others: collection, errSlot, nullValue, container, ctor[0], entity[0].copy, prepare.fails, body.values",
+   "shows_value": "yes",
+   "changed": "none (of these, 4 are pinned prose: collection, entity[0].copy, prepare.fails, body.values)"
+  },
+  {
+   "lang": "clojure",
+   "fact": "ref.facts.cancel = false",
+   "shows_value": "absence",
+   "changed": "was the http-client def; now an absence over tm/clojure/src/sdk/core.clj"
+  },
+  {
+   "lang": "clojure",
+   "fact": "notes.instance",
+   "shows_value": "pinned prose",
+   "changed": "added `(ns sdk.client`; `(sdk.client/get-utility client)` unquoted (the call a caller writes)"
+  },
+  {
+   "lang": "clojure",
+   "fact": "ref.facts.none = nil",
+   "shows_value": "yes",
+   "changed": "new: EntityLoadOp.fragment.clj:2. A comment: no code line spells the default"
+  },
+  {
+   "lang": "clojure",
+   "fact": "ref.facts.lits.false/true (ahead)",
+   "shows_value": "yes",
+   "changed": "new"
+  },
+  {
+   "lang": "clojure",
+   "fact": "12 others incl. direct.returns, prepare.returns = map (unquoted map), body.values (unquoted String)",
+   "shows_value": "yes",
+   "changed": "none (6 of them pinned prose). No 'map' within 3 lines once a hyphen counts as part of an identifier (to-map, options-map)"
+  },
+  {
+   "lang": "elixir",
+   "fact": "ref.facts.cancel = false",
+   "shows_value": "absence",
+   "changed": "was the :httpc.request line; now an absence over utility.ex (pattern narrowed: `:aborted` there is a :global.trans result)"
+  },
+  {
+   "lang": "elixir",
+   "fact": "notes.ctor",
+   "shows_value": "pinned prose",
+   "changed": "added `def new(options \\\\ nil)` for `options`; `{names.helpers}.deep/1` unquoted (arity name)"
+  },
+  {
+   "lang": "elixir",
+   "fact": "notes.tutorial:list and notes.tutorial:load",
+   "shows_value": "no",
+   "changed": "citations removed; WRONG exceptions (list/1, /2 and /3)"
+  },
+  {
+   "lang": "elixir",
+   "fact": "ref.facts.none = nil; lits ahead",
+   "shows_value": "yes",
+   "changed": "new"
+  },
+  {
+   "lang": "elixir",
+   "fact": "9 others",
+   "shows_value": "yes",
+   "changed": "none (6 of them pinned prose)"
+  },
+  {
+   "lang": "go",
+   "fact": "ref.facts.cancel = false",
+   "shows_value": "absence",
+   "changed": "was http.NewRequest (cannot show absence); now an absence over fetcher.go"
+  },
+  {
+   "lang": "go",
+   "fact": "notes.member:stream",
+   "shows_value": "pinned prose",
+   "changed": "added the `callopts[\"ctrl\"]` read, a token the note names"
+  },
+  {
+   "lang": "go",
+   "fact": "ref.facts.none = nil; lits ahead",
+   "shows_value": "yes",
+   "changed": "new"
+  },
+  {
+   "lang": "go",
+   "fact": "7 others",
+   "shows_value": "yes",
+   "changed": "none (5 of them pinned prose)"
+  },
+  {
+   "lang": "py",
+   "fact": "ref.facts.cancel = false",
+   "shows_value": "absence",
+   "changed": "was `timeout = fetchdef.get(\"timeout\")` (unrelated); now an absence over fetcher.py"
+  },
+  {
+   "lang": "py",
+   "fact": "ref.facts.direct.returns = dict",
+   "shows_value": "no",
+   "changed": "added `if isinstance(fetched, dict):`. That is the response, not the result. The result is a dict literal; dict is still not spelled for it"
+  },
+  {
+   "lang": "py",
+   "fact": "ref.facts.none = None; lits.true/false = True/False (declared)",
+   "shows_value": "yes",
+   "changed": "new (True computed: unquoted)"
+  },
+  {
+   "lang": "py",
+   "fact": "9 others",
+   "shows_value": "yes",
+   "changed": "none (5 of them pinned prose)"
+  },
+  {
+   "lang": "rb",
+   "fact": "ref.facts.cancel = false",
+   "shows_value": "absence",
+   "changed": "was the Net::HTTP.new line; now an absence over fetcher.rb"
+  },
+  {
+   "lang": "rb",
+   "fact": "ref.facts.direct.returns = Hash",
+   "shows_value": "no",
+   "changed": "added the comment `({ \"ok\" => ..., ... })`; Hash still unquoted"
+  },
+  {
+   "lang": "rb",
+   "fact": "ref.facts.prepare.returns = Hash",
+   "shows_value": "yes",
+   "changed": "unquoted Hash replaced by the comment naming 'the fetchdef Hash' (a comment, where the code returns make_fetch_def's value)"
+  },
+  {
+   "lang": "rb",
+   "fact": "none = nil; lits ahead",
+   "shows_value": "yes",
+   "changed": "new"
+  },
+  {
+   "lang": "rb",
+   "fact": "9 others",
+   "shows_value": "yes",
+   "changed": "none (5 of them pinned prose)"
+  },
+  {
+   "lang": "rust",
+   "fact": "ref.facts.cancel = false",
+   "shows_value": "absence",
+   "changed": "was the ureq agent line; now an absence over fetcher.rs"
+  },
+  {
+   "lang": "rust",
+   "fact": "lits ahead",
+   "shows_value": "yes",
+   "changed": "new"
+  },
+  {
+   "lang": "rust",
+   "fact": "12 others (setArg, ctor[0], body.values with unquoted tokens)",
+   "shows_value": "yes",
+   "changed": "none (5 of them pinned prose)"
+  },
+  {
+   "lang": "ts",
+   "fact": "ref.facts.client[0].returns = object",
+   "shows_value": "yes",
+   "changed": "unquoted object replaced by the MakeOptionsUtility layer line"
+  },
+  {
+   "lang": "ts",
+   "fact": "ref.facts.prepare.returns = Promise<... | Error>",
+   "shows_value": "no",
+   "changed": "Promise now quoted from async direct beside it; prepare itself has no annotation"
+  },
+  {
+   "lang": "ts",
+   "fact": "ref.facts.body.values",
+   "shows_value": "pinned prose",
+   "changed": "Uint8Array quoted (`return new Uint8Array(chunk)`); Buffer unquoted"
+  },
+  {
+   "lang": "ts",
+   "fact": "ref.facts.none = undefined; lits ahead",
+   "shows_value": "yes",
+   "changed": "new"
+  },
+  {
+   "lang": "ts",
+   "fact": "11 others",
+   "shows_value": "yes",
+   "changed": "none (6 of them pinned prose)"
+  },
+  {
+   "lang": "zig",
+   "fact": "ref.facts.cancel = false",
+   "shows_value": "absence",
+   "changed": "was the fetcher_util signature; now an absence over utility.zig"
+  },
+  {
+   "lang": "zig",
+   "fact": "notes.member:prepare",
+   "shows_value": "pinned prose",
+   "changed": "try and catch unquoted (Zig keywords)"
+  },
+  {
+   "lang": "zig",
+   "fact": "notes.member:streamList",
+   "shows_value": "pinned prose",
+   "changed": "added `.ok` and the getp ctrl read; `callopts.ctrl` unquoted (an option path)"
+  },
+  {
+   "lang": "zig",
+   "fact": "ref.facts.body.values = 'a string value holding the bytes'",
+   "shows_value": "pinned prose",
+   "changed": "none; the re-check's point stands: the quoted line also accepts .integer, .float, .number_string and .bool"
+  },
+  {
+   "lang": "zig",
+   "fact": "lits ahead",
+   "shows_value": "yes",
+   "changed": "new"
+  },
+  {
+   "lang": "all",
+   "fact": "TOTAL: 113 cited facts plus 16 cited ahead (129 rows in work/audit.json)",
+   "shows_value": "yes",
+   "changed": "counts: yes 68 (16 of them ahead), pinned prose 53, absence 8; 3 do not show the value. 28 changed or new: 8 cancel absences, 7 none, 16 lits ahead or py lits, notes and returns fixes. 2 citations removed for WRONG notes"
+  }
+ ],
+ "pinned_prose_counts": "Pinned prose citations (only a reviewer checks the value) per language: c 4, clojure 7, elixir 7, go 6, py 5, rb 5, rust 5, ts 7, zig 7. Total 53.\n\nCounted from SDKGEN_GUARD_REPORT=1 on the final tree: report1.txt lines marked 'cited (prose: audit only)'.",
+ "remaining_language_convention": [
+  {
+   "lang": "c",
+   "language": "ref.facts.maps",
+   "convention": "facts.named facts.errVar facts.prints ref.facts.entityBy ref.facts.noun ref.facts.keys ref.facts.valueType.STRING ref.facts.valueType.OBJECT ref.facts.valueType.ANY ref.facts.ctor[1] (blank line)"
+  },
+  {
+   "lang": "clojure",
+   "language": "ref.facts.maps",
+   "convention": "facts.named facts.prints ref.facts.entityBy ref.facts.noun ref.facts.entityNoun ref.facts.heading ref.facts.keys ref.facts.valueType.STRING ref.facts.valueType.OBJECT ref.facts.valueType.ANY ref.facts.ctor[2]"
+  },
+  {
+   "lang": "elixir",
+   "language": "ref.facts.maps",
+   "convention": "facts.named facts.prints ref.facts.entityBy ref.facts.noun ref.facts.keys"
+  },
+  {
+   "lang": "go",
+   "language": "facts.unusedError ref.facts.maps",
+   "convention": "facts.named facts.errVar facts.prints ref.facts.entityBy ref.facts.noun ref.facts.keys"
+  },
+  {
+   "lang": "py",
+   "language": "ref.facts.maps",
+   "convention": "facts.named facts.prints ref.facts.entityBy ref.facts.noun ref.facts.keys ref.facts.valueType.ANY ref.facts.ctor[1]"
+  },
+  {
+   "lang": "rb",
+   "language": "ref.facts.maps",
+   "convention": "facts.named facts.prints ref.facts.entityBy ref.facts.noun ref.facts.keys ref.facts.valueType.ANY ref.facts.ctor[1]"
+  },
+  {
+   "lang": "rust",
+   "language": "ref.facts.maps",
+   "convention": "facts.named facts.prints ref.facts.entityBy ref.facts.noun ref.facts.keys ref.facts.valueType.STRING ref.facts.valueType.OBJECT ref.facts.valueType.ANY ref.facts.ctor[1]"
+  },
+  {
+   "lang": "ts",
+   "language": "ref.facts.maps",
+   "convention": "facts.named facts.prints ref.facts.entityBy ref.facts.noun ref.facts.keys"
+  },
+  {
+   "lang": "zig",
+   "language": "facts.unusedError ref.facts.maps",
+   "convention": "facts.named facts.prints ref.facts.entityBy ref.facts.noun ref.facts.keys ref.facts.valueType.STRING ref.facts.valueType.OBJECT ref.facts.valueType.ANY ref.facts.ctor[2]"
+  }
+ ],
+ "wrong_facts": [
+  {
+   "lang": "elixir",
+   "fact": "notes.tutorial:list",
+   "declared": "'Named with its arity, it is `list/2`; ...'",
+   "runtime_shows": "EntityListOp.fragment.ex:8 `def list(ent, reqmatch \\\\ nil, ctrl \\\\ nil)` defines list/1, list/2 and list/3; the tutorial calls list(planet), which is list/1 (WRONG exception)"
+  },
+  {
+   "lang": "elixir",
+   "fact": "notes.tutorial:load",
+   "declared": "'Named with its arity, it is `load/2`.'",
+   "runtime_shows": "EntityLoadOp.fragment.ex:8 `def load(ent, reqmatch \\\\ nil, ctrl \\\\ nil)` defines load/1, /2 and /3 (WRONG exception)"
+  },
+  {
+   "lang": "clojure",
+   "fact": "ref.facts.entity stream kind",
+   "declared": "streamLazy ('return a lazy stream of its result items')",
+   "runtime_shows": "Entity.fragment.clj:164 run-op, :180 (vec ((stream))) inside mapv, :185 lazy-seq over the realised vector: every item is read before stream returns (WRONG exception streamItems)"
+  },
+  {
+   "lang": "elixir",
+   "fact": "ref.facts.entity stream kind",
+   "declared": "streamLazy",
+   "runtime_shows": "entity_base.ex:150 run_op, :160 source(ctx, stream_fn) calls the feature before return; streaming.ex:58 'Produce the streamed items eagerly as a plain Elixir list'; the Stream at :172 walks that list (WRONG exception streamItems)"
+  },
+  {
+   "lang": "c",
+   "fact": "client members (options, utility)",
+   "declared": "not declared: the c REFERENCE has no options or utility member",
+   "runtime_shows": "tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }`, :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`; sdk.h:477-478 (WRONG exceptions members:options and members:utility, and undocumented entries)"
+  }
+ ],
+ "forms_changes": [
+  {
+   "change": "Decl gains on, field, fails and from, filled by dims() from optional forms functions with defaults",
+   "breaking": false,
+   "why": "Computed. No existing forms file had to change for these alone."
+  },
+  {
+   "change": "The reader requires a test constructor (testDecl or members.tester) and a stream record (forms.stream) for every language, and a failure record where operations show a failure",
+   "breaking": true,
+   "why": "Forced an edit in all 20 forms files: testDecl plus a 7-line stream record; failure records in go, c, rust, zig, swift and lua."
+  },
+  {
+   "change": "Forms gains on, field, fails, failure, parenless, returnsFrom, expect, shows (optional); declReader may return field",
+   "breaking": false,
+   "why": "Optional. They were supplied where the defaults did not fit (on in 11 languages, fails in 6, returnsFrom in 2, field in 2, parenless in rb, expect in 10, shows in lua and perl). That is new content, not a changed shape."
+  },
+  {
+   "change": "account DEFAULTS move ref.facts.none and ref.facts.lits.* from language to cited; a lits citation may come ahead of the declaration and must then carry value",
+   "breaking": true,
+   "why": "Forced none citations in 7 forms (zig and rust already cited theirs) and lits citations in all 9."
+  },
+  {
+   "change": "Citation gains an absence variant {absent: {pattern, files}, value}; checked every run",
+   "breaking": false,
+   "why": "Additive. All 8 cancel:false citations were moved to it by choice: the old quotes could not show an absence."
+  },
+  {
+   "change": "An unquoted token is refused when it stands within 3 lines of a quote. A note's citation must hold its backticked code tokens. Citations may not quote Readme*, Syntax*, Naming*, Test* or utility_ files or test directories",
+   "breaking": true,
+   "why": "Forced edits in ts, py, rb, clojure, elixir, go and zig forms (quotes added, unquoted reasons, two notes turned WRONG)."
+  },
+  {
+   "change": "Guard exception keys members:<family>, streamItems, field:<where>, fails:<where>, on:<where>",
+   "breaking": false,
+   "why": "Additive."
+  },
+  {
+   "change": "Guard controls: test constructor on an instance; type member among instance members; failure marker dropped; printed call drops the call word; stream recorded as incremental; called member declared as a field; absence starts to match; unquoted token beside its quote; note naming code its citation lacks. firstCited now skips absence and undeclared citations",
+   "breaking": false,
+   "why": "Test-side only."
+  },
+  {
+   "change": "Since the handed state (cumulative over this stage)",
+   "breaking": true,
+   "why": "3 breaking changes to the forms framework: the reader requirements, the none/lits recategorisation, and the unquoted/note/runtime-file citation rules. 5 additive."
+  }
+ ],
+ "account": [
+  {
+   "lang": "c",
+   "derived": "37",
+   "cited": "10 (cancel is an absence; the 2 lits cited ahead are not counted)",
+   "language": "1 (maps)",
+   "convention": "10",
+   "exceptions": "0 leaves; check exceptions types:ARRAY, types:OBJECT, members:options and members:utility (both WRONG); uncompared returns 1, paramNames 10"
+  },
+  {
+   "lang": "clojure",
+   "derived": "41",
+   "cited": "14",
+   "language": "1 (maps)",
+   "convention": "11",
+   "exceptions": "streamItems WRONG; uncompared returns 14; types printer total only"
+  },
+  {
+   "lang": "elixir",
+   "derived": "46",
+   "cited": "12",
+   "language": "1 (maps)",
+   "convention": "5",
+   "exceptions": "2 leaves WRONG (notes.tutorial:list, notes.tutorial:load); streamItems WRONG; returns:* and optional:opMatched list kept; uncompared returns 9"
+  },
+  {
+   "lang": "go",
+   "derived": "46",
+   "cited": "10",
+   "language": "2 (unusedError, maps)",
+   "convention": "6",
+   "exceptions": "0"
+  },
+  {
+   "lang": "py",
+   "derived": "46",
+   "cited": "14",
+   "language": "1 (maps)",
+   "convention": "7",
+   "exceptions": "optional:opMatched list, returns:entity dataGet/matchGet kept; uncompared returns 6"
+  },
+  {
+   "lang": "rb",
+   "derived": "45",
+   "cited": "12",
+   "language": "1 (maps)",
+   "convention": "7",
+   "exceptions": "uncompared returns 7"
+  },
+  {
+   "lang": "rust",
+   "derived": "41",
+   "cited": "12",
+   "language": "1 (maps)",
+   "convention": "9",
+   "exceptions": "0"
+  },
+  {
+   "lang": "ts",
+   "derived": "45",
+   "cited": "15",
+   "language": "1 (maps)",
+   "convention": "5",
+   "exceptions": "0"
+  },
+  {
+   "lang": "zig",
+   "derived": "38",
+   "cited": "14",
+   "language": "2 (unusedError, maps)",
+   "convention": "9",
+   "exceptions": "0; types printer total only"
+  }
+ ],
+ "mutations": [
+  {
+   "mutation": "new-swift-throws-runtime: `throws` removed from EntityLoadOp.fragment.swift's load",
+   "lang": "swift",
+   "caught": true,
+   "by_or_account": "reader: load does not show the failure record's `throws`"
+  },
+  {
+   "mutation": "new-swift-throws-view: swift forms' fails reader never reports throws (the table's view)",
+   "lang": "swift",
+   "caught": true,
+   "by_or_account": "reader: the text invariant (declared `throws`, read as '')"
+  },
+  {
+   "mutation": "new-swift-try-dropped: swift's failure record (throws/try) removed from the forms",
+   "lang": "swift",
+   "caught": true,
+   "by_or_account": "reader: operations show a failure, no failure record (caught after adding that check; first run NOT CAUGHT)"
+  },
+  {
+   "mutation": "new-ts-static-test-instance: `static test(` made an instance method",
+   "lang": "ts",
+   "caught": true,
+   "by_or_account": "on (the provider's call is on the type), account, controls"
+  },
+  {
+   "mutation": "new-py-classmethod-test-instance: @classmethod removed from test, cls made self",
+   "lang": "py",
+   "caught": true,
+   "by_or_account": "on, account, controls"
+  },
+  {
+   "mutation": "new-swift-static-testsdk-instance: `public static func testSDK` made an instance method",
+   "lang": "swift",
+   "caught": true,
+   "by_or_account": "reader: expect testSDK on type"
+  },
+  {
+   "mutation": "new-ocaml-field-to-function: `mutable e_name : string;` became `unit -> string`",
+   "lang": "ocaml",
+   "caught": true,
+   "by_or_account": "reader: expect e_name field"
+  },
+  {
+   "mutation": "new-rb-none-null: rb none 'null'",
+   "lang": "rb",
+   "caught": true,
+   "by_or_account": "account: the none quote does not contain null (passed 4/4 before)"
+  },
+  {
+   "mutation": "new-rb-lits-false-False: rb declares lits.false 'False'",
+   "lang": "rb",
+   "caught": true,
+   "by_or_account": "account: the lits.false quote does not contain False (passed before)"
+  },
+  {
+   "mutation": "new-py-lits-removed: py's lits declaration deleted",
+   "lang": "py",
+   "caught": true,
+   "by_or_account": "account: a lits citation for an undeclared fact must carry the runtime's value (passed 8/8 before)"
+  },
+  {
+   "mutation": "new-go-absence-matches: `// abort is not wired` added beside http.NewRequest in fetcher.go",
+   "lang": "go",
+   "caught": true,
+   "by_or_account": "account: the cancel absence no longer holds"
+  },
+  {
+   "mutation": "new-rb-unquoted-near: rb none quote cut to `def load(reqmatch = ` and nil marked unquoted",
+   "lang": "rb",
+   "caught": true,
+   "by_or_account": "account: unquoted nil within 3 lines of the quote"
+  },
+  {
+   "mutation": "new-ts-unquoted-near: Uint8Array quote removed, Uint8Array marked unquoted (it stands 8 lines from the remaining quote)",
+   "lang": "ts",
+   "caught": false,
+   "by_or_account": "NOT CAUGHT: the near rule looks 3 lines either side only"
+  },
+  {
+   "mutation": "new-go-note-token-missing: go stream note (and its pin) gains `StreamZz`",
+   "lang": "go",
+   "caught": true,
+   "by_or_account": "account: the note's citation does not contain StreamZz"
+  },
+  {
+   "mutation": "new-swift-stream-incremental: swift forms record items 'as the caller iterates'",
+   "lang": "swift",
+   "caught": true,
+   "by_or_account": "reader: positions give 'before it returns'"
+  },
+  {
+   "mutation": "new-clojure-stream-incremental: clojure (ported) forms record items as iterated",
+   "lang": "clojure",
+   "caught": true,
+   "by_or_account": "reader: positions disagree"
+  },
+  {
+   "mutation": "new-ocaml-stream-incremental-code: the draw quote duplicated in Entity_ocaml.ts",
+   "lang": "ocaml",
+   "caught": true,
+   "by_or_account": "reader: a stream quote must occur exactly once"
+  }
+ ],
+ "earlier_mutations": "The 75 mutations of the last stage were re-run with P/v31/mutwork/mutate.js, pointed at a copy of this clone made at d39a0174:\n`node work/mutate.js muts.json muts.out.json`, 367 s.\n\n| | caught | not caught | build error |\n|---|---|---|---|\n| v31 | 65 | 9 | 1 |\n| now | 67 | 7 | 1 |\n\n- **Caught less:** none.\n- **Newly caught:** ts-lit-none and py-lit-false, by the cited none and lits.\n- **Still not caught:** clj-return-changed, ts-noun, zig-type-integer, clj-type-integer, c-type-string, ts-type-comment, ts-lit-int.\n- **Build error:** my-types-reason-dropped-zig. Its edit does not type-check, before and now.\n\nThe final reader commit, which requires a failure record, came after the copy. It adds a check only.",
+ "still_passes": [
+  "Convention facts are compared with nothing: 69 leaves (c 10, clojure 11, elixir 5, go 6, py 7, rb 7, rust 9, ts 5, zig 9). A noun 'Functions' for 'Methods' passes (ts-noun).",
+  "Language facts are compared with nothing: 11 leaves (maps in all 9; unusedError in go and zig).",
+  "Pinned prose: 53 citations. A wrong value fails only while the pin keeps the audited value; changing fact and pin together passes.",
+  "Unquoted tokens: 22 excused (clojure 4, elixir 3, py 3, rb 1, rust 4, ts 3, zig 4). A token that stands more than 3 lines from every quote passes (new-ts-unquoted-near, ran).",
+  "Absences: 8. The pattern is the porter's; a cancellation spelled outside it (say Thread.interrupt) passes.",
+  "The stream record rests on three quotes the porter picks. A draw quote that is not where items are really taken passes.",
+  "Returns compared with nothing, each with a reason: c 1, clojure 14, elixir 9, py 6, rb 7 (clj-return-changed passes).",
+  "Field types with no generator column (zig, clojure): any non-any type passes (zig-type-integer, clj-type-integer). c's ARRAY and OBJECT exceptions (c-type-string).",
+  "Printer internals that are not facts: an example's type comment and an INTEGER literal (ts-type-comment, ts-lit-int).",
+  "The swift `try` call check is declared but untested: swift has no provider. go `err`, c `&err`, rust `unwrap` and zig `.err` are tested by control.",
+  "Statements with no fact: options() 'deep copy', entopts() 'copy', remove 'marked as deleted', make 'same client and options', direct 'not as an error', the request_aborted code.",
+  "For unported languages, `on` and `field` are checked against forms.expect only for the declarations it names. A wrong reading of an unnamed member passes until a provider exists."
+ ],
+ "needs_from_shared": [
+  "swift: a stream kind with an async call form whose sentence does not say the items arrive as iterated. AsyncStream is built over items already read (EntityBase.fragment.swift:223-236). Until it exists, swift's forms carry exceptions.streamItems.",
+  "clojure and elixir providers: the stream kind streamLazy is false. Both read every item before returning, so they need a kind whose sentence says so. Their forms carry WRONG streamItems exceptions; drop them when the providers change.",
+  "elixir provider: notes tutorial:list and tutorial:load ('list/2', 'load/2') are false; the functions have three arities each. Recorded as WRONG; the citations were removed.",
+  "c provider: the REFERENCE omits sdk_options_map and sdk_get_utility (tm/c/core/utility.c:70,72). Declare them as client members with kinds options and utility, then drop c's members:* exceptions and undocumented entries.",
+  "All providers but py: declare ref.facts.lits as the runtime shows them: false/true for ts, go, c, zig, clojure, rust, elixir, rb (citations are already written ahead of the declaration). ReadmeRef must stop printing lit(r,false) by default. perl, when ported: 0 and 1 (perl forms `shows` cites Main.fragment.pm:245,300).",
+  "A copy fact for options (client[0]) and entopts, so 'Return a deep copy' and 'Return a copy of the entity options' can be cited like entity[0].copy.",
+  "After merging: every quote my forms hold must still be in the files the shared engineer edits. Run the guard after the merge; a moved line shows up as 'no longer contains'."
+ ],
+ "lines": "Measured with `wc -l` on ts/test/runtimefacts.test.ts, ts/test/runtimereader.test.ts and ts/test/runtimeforms/*.ts, before (P/base/sdkgen) and after (final HEAD).\n\nShared guard: 1379 \u2192 1835.\n- runtimefacts.test.ts 93 \u2192 95\n- runtimereader.test.ts 128 \u2192 245\n- forms.ts 330 \u2192 369\n- account.ts 207 \u2192 302\n- guard.ts 621 \u2192 824\n\nForms of the nine ported languages: 771 \u2192 906.\n- c 94 \u2192 113\n- clojure 87 \u2192 104\n- elixir 84 \u2192 98\n- go 79 \u2192 95\n- py 73 \u2192 86\n- rb 92 \u2192 108\n- rust 82 \u2192 96\n- ts 102 \u2192 112\n- zig 78 \u2192 94\n\nForms of the eleven unported languages: 601 \u2192 746.\n- cpp 69 \u2192 81\n- csharp 47 \u2192 57\n- java 47 \u2192 57\n- js 44 \u2192 54\n- kotlin 52 \u2192 64\n- lua 56 \u2192 78\n- ocaml 83 \u2192 95\n- perl 51 \u2192 69\n- php 45 \u2192 55\n- scala 51 \u2192 64\n- swift 56 \u2192 72\n\nAll test/runtime* files: 2751 \u2192 3487. runtime-table.md: 872 \u2192 1108 lines.",
+ "gaps": [
+  "The brief asks that `unquoted` excuse a token only when it occurs nowhere in the runtime, and I did not build that as written. Counted repo-wide (work/unq.js), the common type words occur in many runtime files: dict 56 py files, Hash 59 rb, map 38 clojure, object 27 ts. The citation would then have to quote an unrelated line, which the same audit forbids. I implemented a narrower rule: refused within 3 lines of a quote, with a hyphen counted as part of an identifier. The report prints, for each unquoted token, how many runtime files hold it. A 12-line window still hit only unrelated code (`is True`, `options-map`, a nearby `Promise<DirectResult>`).",
+  "Three citations still do not show their value (py and rb direct.returns: dict and Hash are literals; ts prepare.returns: Promise quoted from direct). No line spells them.",
+  "The new checks have no live provider in swift, lua, ocaml or perl. Those languages are held by forms.expect and failure only, for the declarations named there.",
+  "I read all eleven unported sections against the runtime. Rows I did not open the source for, beyond the ones listed in table_corrections, rest on the forms' readers (csharp ops, php returns, js members were spot-checked against the source, not all opened).",
+  "Not run: any toolchain lane, the golden test, or the review tools (i-tools), per mutation. Only the guard and the reader.",
+  "The full 75 were not re-run after the last reader commit (failure-record check), which only adds a check.",
+  "`make comments-test` not run. The comment gate (`node ../tools/comment-gate.cjs`) reports no finding in my files; the gate itself still exits 1 on other files, as on the handed tree.",
+  "The swift `try` call-word check cannot run until swift has a provider.",
+  "zig body.values ('a string value holding the bytes'): the re-check said the quoted line accepts more types. I left it pinned and did not decide whether it is WRONG."
+ ],
+ "surprises": [
+  "Two ported providers state a false stream kind. clojure and elixir say streamLazy, and both read every item before stream returns. The type and the word lazy-seq or Stream in the body hid it; only the order of the statements shows it.",
+  "Every runtime's streaming feature produces its items from result.resdata, the response already read (resdata in 14 of the 15 feature files grepped). So no runtime streams items off the network; 'as they arrive' at most paces a read response.",
+  "go's stream starts a goroutine at the call. The request runs beside the caller, not on first read.",
+  "c's runtime has sdk_options_map and sdk_get_utility, and its page omits both. The forms never read tm/c/core/utility.c, so the table said the families were absent.",
+  "The reader turned up four misreadings in the unported table: kotlin's constructor return was its superclass, cpp's was `explicit`, scala's `def toString` was shown as a field, and the old table had no optional marks (java's two required parameters were invisible).",
+  "elixir's utility.ex contains `:aborted` (a :global.trans result). A naive cancel-absence pattern matched it; the pattern had to be narrowed per language."
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "partly",
+   "evidence": "RAN: guard 39/39, reader 22/22, suite 2593 tests with 0 failing. All twenty runtimes are read on the new dimensions from their forms files alone.\n\nWhat a language must supply now:\n- one forms file of 54 to 113 lines;\n- a test-constructor name and a 7-line stream record (three quotes);\n- `on`, `fails` and `failure` where the defaults do not fit (on 11 of 20, fails 6);\n- `expect` pins until it has a provider;\n- citations for none and lits (lits ahead of the declaration where the provider has none);\n- absences for facts that something is missing.\n\nForms framework this stage: 3 breaking changes (they forced edits in existing forms files) and 5 additive.\n- Breaking: the reader requiring a stream record and a test constructor (all 20); none and lits moved to cited (9); the unquoted, note-token and runtime-file citation rules (7).\n- Additive: the Decl dimensions, the optional forms fields, the absence citation, the exception keys, the controls.\n\nNo shared file needs a per-language edit to port one of the eleven. The new dimensions found 5 false facts in 3 ported languages (clojure, elixir, c)."
+  },
+  {
+   "id": "H2",
+   "verdict": "not-tested",
+   "evidence": "Test code only; the guard and forms grew from 2751 to 3487 lines."
+  },
+  {
+   "id": "H3",
+   "verdict": "not-tested",
+   "evidence": "No catalogued issue re-measured."
+  },
+  {
+   "id": "H4",
+   "verdict": "not-tested",
+   "evidence": "No example lane run."
+  },
+  {
+   "id": "H5",
+   "verdict": "not-tested",
+   "evidence": "Not exercised."
+  }
+ ],
+ "reproduce": "```\nexport PATH=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang:/root/.local/share/uv/tools/pytest/bin:/opt/node24/bin:$PATH\ncd /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-guard/sdkgen/ts\nnpm run build && git -C .. status --short                       # empty\nnode --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js   # 61/61\nSDKGEN_RUNTIME_TABLE=/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-guard/runtime-table.md node --test dist-test/runtimereader.test.js\nSDKGEN_GUARD_REPORT=1 node --test --test-name-pattern 'account, per language' dist-test/runtimefacts.test.js\nnode --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)   # 2593/2588/0 fail/5 skipped\nnode ../../work/dbg.js            # findings and control misses per provider (NA=1 lists inapplicable controls)\n```\n\nMutations: from `i-guard/work`, with the copy at `i-guard/mut`:\n- the last stage's 75: `node mutate.js muts.json muts.out.json`\n- the new ones: `node mutate.js muts-new.json muts-new.out.json` and `node mutate.js muts-new2.json muts-new2.out.json`\n\n`mutate.js` restores tracked files with `git checkout` after each mutation, so commit any change in the mut copy first."
+}

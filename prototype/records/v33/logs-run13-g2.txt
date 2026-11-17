@@ -1,0 +1,8 @@
+[1/8 12%] ts PORTCHECK ts: FAIL
+[2/8 25%] go PORTCHECK go: PASS
+[3/8 37%] elixir PORTCHECK elixir: PASS
+[4/8 50%] rb PORTCHECK rb: PASS
+[5/8 62%] perl PORTCHECK perl: FAIL
+[6/8 75%] swift PORTCHECK swift: PASS
+[7/8 87%] ocaml PORTCHECK ocaml: FAIL
+[8/8 100%] lua PORTCHECK lua: PASS

@@ -1,0 +1,80 @@
+[portcheck kotlin] regenerate NEW from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/kotlin/sdkgen (a progress line per variation)
+[1/21] new B: 41 READMEs in 1572ms
+[2/21] new auth-basic: 41 READMEs in 1360ms
+[3/21] new auth-basic-query: 41 READMEs in 1364ms
+[4/21] new auth-query: 41 READMEs in 1349ms
+[5/21] new auth-off: 41 READMEs in 1070ms
+[6/21] new server-mixed: 41 READMEs in 1097ms
+[7/21] new server-static: 41 READMEs in 1175ms
+[8/21] new server-none: 41 READMEs in 1222ms
+[9/21] new ex-readonly: 41 READMEs in 914ms
+[10/21] new ent-only-ambient: 41 READMEs in 757ms
+[11/21] new ent-none: 41 READMEs in 844ms
+[12/21] new doc-list: 41 READMEs in 1188ms
+[13/21] new doc-crud: 41 READMEs in 1112ms
+[14/21] new doc-nested: 41 READMEs in 1402ms
+[15/21] new crud-basic: 41 READMEs in 1373ms
+[16/21] new crud-bare: 41 READMEs in 1431ms
+[17/21] new crud-noupdate: 41 READMEs in 1089ms
+[18/21] new ref-issues: 41 READMEs in 1606ms
+[19/21] new no-test: 41 READMEs in 1066ms
+[20/21] new lone-go: 3 READMEs in 306ms
+[21/21] new alias-go2: 5 READMEs in 514ms
+[portcheck kotlin] regenerated 21 of the 21 variations old/ holds; SKIPPED: none
+[portcheck kotlin] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck kotlin] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck kotlin] classify (hand/kotlin.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck kotlin] ledger
+[portcheck kotlin] blocks
+[portcheck kotlin] fact sheet (and the language and convention facts against the OLD page)
+[portcheck kotlin] hand records: does every quotation in a reason still stand on a page or in the clone
+[portcheck kotlin] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck kotlin] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck kotlin] purity
+[portcheck kotlin] guard: node --test --test-name-pattern '^kotlin: ' ts/dist-test/runtimefacts.test.js
+== portcheck kotlin ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   59 |      46     22        0       0       0    24       0 | 0
+rootquick                  19 |       4      0        0       0       0     4       0 | 0
+reference               13937 |     162     70        0       0       0    92       0 | 0
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                   3        14       0        31 |      26   27      0 | NO; 45 changed blocks compiled by nothing
+rootquick                  0         2       0        17 |      25   26      0 | NO; 19 changed blocks compiled by nothing
+reference                274         0       0        40 |      11   11      0 | NO; 58 changed blocks compiled by nothing
+  RECOUNT tutorial: normalizer counts not recorded (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/kotlin/tools/counts/kotlin.json): review the pairs, then --record-counts (counted in OPEN above; read the pairs in *.blocks.diff, then blocks.js --record-counts)
+  RECOUNT rootquick: normalizer counts not recorded (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/kotlin/tools/counts/kotlin.json): review the pairs, then --record-counts (counted in OPEN above; read the pairs in *.blocks.diff, then blocks.js --record-counts)
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 9, novel-token 12, vanished-token 4, novel-shape 1; rootquick: changed 10, novel-token 8, vanished-token 5, novel-shape 2; reference: changed 5, new-only 1, novel-token 4, vanished-token 1)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+purity: 0 open, 1 accepted | notes declared 1 (member:streamLazy), note regions found 1 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1404 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 405 calls of 24 runtime members checked; ARITY/RECEIVER/MEMBER findings 6
+  ARITY B reference: load passes 3 argument(s); the runtime declares 2 (reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>?) | val result = client.planet(null).load(mutableMapOf<String, Any?>("id" to "planet
+  ARITY B reference: create passes 3 argument(s); the runtime declares 2 (reqdata: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>? | val result = client.planet(null).create(mutableMapOf<String, Any?>(
+  ARITY B reference: update passes 3 argument(s); the runtime declares 2 (reqdata: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>? | val result = client.planet(null).update(mutableMapOf<String, Any?>(
+  ARITY B reference: remove passes 3 argument(s); the runtime declares 2 (reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?> | val result = client.planet(null).remove(mutableMapOf<String, Any?>("id" to "plan
+  ARITY crud-bare tutorial: patch passes 3 argument(s); the runtime declares 2 (reqdata: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>?) | client.planet(null).patch(mutableMapOf<String, Any?>("id" to ((created as SdkEnt
+  ARITY doc-nested reference: list passes 3 argument(s); the runtime declares 2 or 0 (reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, An | val results = client.satellite(null).list(mutableMapOf<String, Any?>("planet_id"
+guard: pass (pass 4 fail 0 )
+build: 1813 sources checked, current
+hand records: 0, 0 quote text (0 quotations); STALE 0
+facts (language and convention, against the OLD page): attested 6, recorded by hand 0, UNATTESTED or NOT JUDGED 2, not printed 0, not judged 1; cited 15, pinned prose 12 (the reviewer audits each)
+  NOT JUDGED named = "call" (convention): minimal pair against bare: 82 prose units and 0 blocks differ; OLD reads as call in 0, as another value in 0, 
+  UNATTESTED ref.noun = "Methods" (convention): 2 context(s): held 1, contradicted 0, new 1; 113 units
+  record each in hand/kotlin.json facts: { "<path>": { "value", "why", "evidence" } }, or fix the provider
+shared sentences: matched 92, of which against a sentence nobody reviewed 2 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 29 (0 explained; an unexplained one FAILS)
+  ABSENT, NO REASON tutorial [ed44d07e36] in 16 variation(s): ⟦⟧ resolves to the entity and throws on failure; ⟦⟧ reads its record.
+  ABSENT, NO REASON tutorial [5e178e9588] in 7 variation(s): ⟦⟧ resolves to a ⟦⟧ of entities, one per record, and throws on failure; ⟦⟧ reads an entity's record.
+  ABSENT, NO REASON tutorial [6d459aa83b] in 5 variation(s): Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure.
+  ABSENT, NO REASON tutorial [64560e9dff] in 5 variation(s): Create — resolves to the created entity; ⟦⟧ reads its record
+  ABSENT, NO REASON tutorial [78dac4093d] in 1 variation(s): ⟦⟧ resolves to the entity it wrote, and throws on failure.
+  ABSENT, NO REASON rootquick [99a8153c15] in 16 variation(s): Load a Ⓔ: the entity, a ⒺEntity; throws on failure
+  ABSENT, NO REASON rootquick [7ab5ba644d] in 2 variation(s): The client sends the API key as the ⟦⟧ query parameter.
+  ABSENT, NO REASON rootquick [a0b269a293] in 7 variation(s): List Ⓔ records: a ⟦⟧, one entity per record; throws on failure
+  ABSENT, NO REASON reference [0071df96c2] in 18 variation(s): Create a new ⟦⟧ instance.
+  ABSENT, NO REASON reference [f3e421e046] in 19 variation(s): Return the SDK utility object.
+  ... 19 more in review/kotlin/<section>.absent.json
+  say why in hand/kotlin.json absent: { "<id>": "<why>" } (a shared sentence this language prints nowhere) or { "<id>": { "why": "...", "variations": [...] } } (dropped from exactly those variations), or print it
+fact sheet: factsheet kotlin: 63 facts, 0 with no account, 2 unattested (named, ref.noun), guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/kotlin/tools/review/kotlin/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/kotlin/tools/review/kotlin/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/kotlin.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK kotlin: FAIL
+EXIT 1

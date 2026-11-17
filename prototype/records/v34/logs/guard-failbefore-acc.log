@@ -1,0 +1,264 @@
+▶ runtimefacts
+  ✔ every provider is checked (1.263404ms)
+  ✔ every compiled forms file has its source, and every provider a forms source (0.909915ms)
+  ✔ c: the language declares its runtime forms (0.7201ms)
+  ✔ c: the declared facts are what its runtime defines (23.531574ms)
+  ✔ c: every declared fact is accounted for (22.610818ms)
+  ✔ c: each check fails when its fact is changed (negative controls) (594.916211ms)
+  ✔ clojure: the language declares its runtime forms (0.738499ms)
+  ✔ clojure: the declared facts are what its runtime defines (6.770368ms)
+  ✔ clojure: every declared fact is accounted for (12.940493ms)
+  ✔ clojure: each check fails when its fact is changed (negative controls) (293.807643ms)
+  ✔ cpp: the language declares its runtime forms (0.882011ms)
+  ✖ cpp: the declared facts are what its runtime defines (11.791241ms)
+  ✔ cpp: every declared fact is accounted for (16.799455ms)
+  ✔ cpp: each check fails when its fact is changed (negative controls) (555.796671ms)
+  ✔ csharp: the language declares its runtime forms (0.974738ms)
+  ✔ csharp: the declared facts are what its runtime defines (16.120466ms)
+  ✔ csharp: every declared fact is accounted for (12.60563ms)
+  ✔ csharp: each check fails when its fact is changed (negative controls) (373.072829ms)
+  ✔ elixir: the language declares its runtime forms (0.708179ms)
+  ✖ elixir: the declared facts are what its runtime defines (6.724423ms)
+  ✔ elixir: every declared fact is accounted for (10.1754ms)
+  ✔ elixir: each check fails when its fact is changed (negative controls) (280.343509ms)
+  ✔ go: the language declares its runtime forms (0.668251ms)
+  ✔ go: the declared facts are what its runtime defines (5.452265ms)
+  ✔ go: every declared fact is accounted for (8.035791ms)
+  ✔ go: each check fails when its fact is changed (negative controls) (246.999202ms)
+  ✔ java: the language declares its runtime forms (0.651025ms)
+  ✖ java: the declared facts are what its runtime defines (9.656374ms)
+  ✔ java: every declared fact is accounted for (10.56196ms)
+  ✔ java: each check fails when its fact is changed (negative controls) (356.330084ms)
+  ✔ js: the language declares its runtime forms (0.749407ms)
+  ✔ js: the declared facts are what its runtime defines (6.448883ms)
+  ✔ js: every declared fact is accounted for (7.311594ms)
+  ✔ js: each check fails when its fact is changed (negative controls) (230.342411ms)
+  ✔ kotlin: the language declares its runtime forms (0.633095ms)
+  ✖ kotlin: the declared facts are what its runtime defines (7.761548ms)
+  ✔ kotlin: every declared fact is accounted for (8.470601ms)
+  ✔ kotlin: each check fails when its fact is changed (negative controls) (278.253703ms)
+  ✔ lua: the language declares its runtime forms (0.83046ms)
+  ✔ lua: the declared facts are what its runtime defines (5.31239ms)
+  ✔ lua: every declared fact is accounted for (8.881364ms)
+  ✔ lua: each check fails when its fact is changed (negative controls) (308.698821ms)
+  ✔ ocaml: the language declares its runtime forms (0.836713ms)
+  ✔ ocaml: the declared facts are what its runtime defines (8.910424ms)
+  ✔ ocaml: every declared fact is accounted for (13.484583ms)
+  ✔ ocaml: each check fails when its fact is changed (negative controls) (297.715039ms)
+  ✔ perl: the language declares its runtime forms (0.754294ms)
+  ✔ perl: the declared facts are what its runtime defines (5.234728ms)
+  ✔ perl: every declared fact is accounted for (8.493269ms)
+  ✔ perl: each check fails when its fact is changed (negative controls) (249.57077ms)
+  ✔ php: the language declares its runtime forms (0.660806ms)
+  ✖ php: the declared facts are what its runtime defines (5.659418ms)
+  ✔ php: every declared fact is accounted for (9.706826ms)
+  ✔ php: each check fails when its fact is changed (negative controls) (332.152909ms)
+  ✔ py: the language declares its runtime forms (0.791318ms)
+  ✔ py: the declared facts are what its runtime defines (5.492437ms)
+  ✔ py: every declared fact is accounted for (9.027065ms)
+  ✔ py: each check fails when its fact is changed (negative controls) (291.266147ms)
+  ✔ rb: the language declares its runtime forms (0.684694ms)
+  ✔ rb: the declared facts are what its runtime defines (5.73476ms)
+  ✔ rb: every declared fact is accounted for (7.361969ms)
+  ✔ rb: each check fails when its fact is changed (negative controls) (291.136145ms)
+  ✔ rust: the language declares its runtime forms (0.874863ms)
+  ✔ rust: the declared facts are what its runtime defines (7.860048ms)
+  ✔ rust: every declared fact is accounted for (13.391295ms)
+  ✔ rust: each check fails when its fact is changed (negative controls) (394.795474ms)
+  ✔ scala: the language declares its runtime forms (1.118686ms)
+  ✖ scala: the declared facts are what its runtime defines (11.780777ms)
+  ✔ scala: every declared fact is accounted for (13.21951ms)
+  ✔ scala: each check fails when its fact is changed (negative controls) (390.825781ms)
+  ✔ swift: the language declares its runtime forms (0.863993ms)
+  ✔ swift: the declared facts are what its runtime defines (10.872208ms)
+  ✔ swift: every declared fact is accounted for (9.906936ms)
+  ✔ swift: each check fails when its fact is changed (negative controls) (317.47873ms)
+  ✔ ts: the language declares its runtime forms (0.842728ms)
+  ✔ ts: the declared facts are what its runtime defines (6.293099ms)
+  ✔ ts: every declared fact is accounted for (4.727942ms)
+  ✔ ts: each check fails when its fact is changed (negative controls) (169.634306ms)
+  ✔ zig: the language declares its runtime forms (0.790414ms)
+  ✔ zig: the declared facts are what its runtime defines (8.468336ms)
+  ✔ zig: every declared fact is accounted for (13.693619ms)
+  ✔ zig: each check fails when its fact is changed (negative controls) (462.255212ms)
+  ✔ the account, per language (SDKGEN_GUARD_REPORT=1 prints it) (293.944486ms)
+✖ runtimefacts (7429.999906ms)
+ℹ tests 83
+ℹ suites 1
+ℹ pass 77
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7831.158256
+
+✖ failing tests:
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ cpp: the declared facts are what its runtime defines (11.791241ms)
+  AssertionError [ERR_ASSERTION]: cpp: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'on',
+  +     what: 'the accessor ${accessor} is declared in none of tm/cpp/core/types.hpp#class SdkClient {#\n' +
+  +       '};, src/cmp/cpp/fragment/Main.fragment.cpp, src/cmp/cpp/MainEntity_cpp.ts#Content(`#`), so no accessor call can be judged'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'on', what: 'the accessor ${accessor} is declared in none of tm/cpp/core/types.hpp#class SdkClient {#\n};, src/cmp/cpp/fragment/Main.fragment.cpp, src/cmp/cpp/MainEntity_cpp.ts#Content(`#`), so no accessor call can be judged' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ elixir: the declared facts are what its runtime defines (6.724423ms)
+  AssertionError [ERR_ASSERTION]: elixir: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'on',
+  +     what: 'the accessor ${accessor} is declared in none of src/cmp/elixir/fragment/Main.fragment.ex, src/cmp/elixir/MainEntity_elixir.ts, so no accessor call can be judged'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'on', what: 'the accessor ${accessor} is declared in none of src/cmp/elixir/fragment/Main.fragment.ex, src/cmp/elixir/MainEntity_elixir.ts, so no accessor call can be judged' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ java: the declared facts are what its runtime defines (9.656374ms)
+  AssertionError [ERR_ASSERTION]: java: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'on',
+  +     what: 'the accessor ${accessor} is declared in none of src/cmp/java/fragment/Main.fragment.java, tm/java/core/SdkClient.java, src/cmp/java/MainEntity_java.ts, so no accessor call can be judged'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'on', what: 'the accessor ${accessor} is declared in none of src/cmp/java/fragment/Main.fragment.java, tm/java/core/SdkClient.java, src/cmp/java/MainEntity_java.ts, so no accessor call can be judged' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ kotlin: the declared facts are what its runtime defines (7.761548ms)
+  AssertionError [ERR_ASSERTION]: kotlin: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'on',
+  +     what: 'the accessor ${accessor} is declared in none of src/cmp/kotlin/fragment/Main.fragment.kt, tm/kotlin/core/SdkClient.kt, src/cmp/kotlin/MainEntity_kotlin.ts, so no accessor call can be judged'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'on', what: 'the accessor ${accessor} is declared in none of src/cmp/kotlin/fragment/Main.fragment.kt, tm/kotlin/core/SdkClient.kt, src/cmp/kotlin/MainEntity_kotlin.ts, so no accessor call can be judged' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ php: the declared facts are what its runtime defines (5.659418ms)
+  AssertionError [ERR_ASSERTION]: php: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'on',
+  +     what: 'the accessor ${accessor} is declared in none of src/cmp/php/fragment/Main.fragment.php, src/cmp/php/MainEntity_php.ts, so no accessor call can be judged'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'on', what: 'the accessor ${accessor} is declared in none of src/cmp/php/fragment/Main.fragment.php, src/cmp/php/MainEntity_php.ts, so no accessor call can be judged' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ scala: the declared facts are what its runtime defines (11.780777ms)
+  AssertionError [ERR_ASSERTION]: scala: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'on',
+  +     what: 'the accessor ${accessor} is declared in none of src/cmp/scala/fragment/Main.fragment.scala, tm/scala/core/SdkClient.scala, src/cmp/scala/MainEntity_scala.ts, so no accessor call can be judged'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'on', what: 'the accessor ${accessor} is declared in none of src/cmp/scala/fragment/Main.fragment.scala, tm/scala/core/SdkClient.scala, src/cmp/scala/MainEntity_scala.ts, so no accessor call can be judged' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

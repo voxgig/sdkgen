@@ -1,0 +1,230 @@
+[
+ {
+  "id": "K-go-arity-0",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "arity",
+   "account"
+  ],
+  "fails": [
+   "✖ go: the declared facts are what its runtime defines",
+   "✖ go: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.arity: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "K-swift-arity-0",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "arity",
+   "account"
+  ],
+  "fails": [
+   "✖ swift: the declared facts are what its runtime defines",
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.arity: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "K-ts-arity-2",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "arity",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.arity: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "K-ts-utility-copy-true",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.client[1].copy: the fact is true; the citation pins false"
+  ]
+ },
+ {
+  "id": "K-py-utility-copy-false",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ py: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.client[1].copy: the fact is false; the citation pins true"
+  ]
+ },
+ {
+  "id": "K-c-match-copy-dropped",
+  "lang": "c",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ c: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.entity[1].copy: the provider declares no such fact"
+  ]
+ },
+ {
+  "id": "K-go-deleted-wrong-member",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "deleted",
+   "account"
+  ],
+  "fails": [
+   "✖ go: the declared facts are what its runtime defines",
+   "✖ go: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.deleted: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.deleted names {var}.IsDeleted(), which the entity does not declare"
+  ]
+ },
+ {
+  "id": "K-swift-record-unwrap-dropped",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ swift: the declared facts are what its runtime defines",
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "the provider prints a record as \"planet.data()\", which is not facts.record whole (planet.data())"
+  ]
+ },
+ {
+  "id": "K-ts-name-not-field",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "field",
+   "account"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[6].field: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ },
+ {
+  "id": "K-ocaml-name-not-field",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "field"
+  ],
+  "fails": [
+   "✖ ocaml: the declared facts are what its runtime defines"
+  ],
+  "whats": []
+ },
+ {
+  "id": "K-perl-streamSignal-false",
+  "lang": "perl",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ perl: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.streamSignal: the fact is false; the citation pins true"
+  ]
+ },
+ {
+  "id": "K-rust-streamSignal-true",
+  "lang": "rust",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ rust: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.streamSignal: cite the runtime file and a quote that shows true"
+  ]
+ },
+ {
+  "id": "K-lua-cached-false",
+  "lang": "lua",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ lua: every declared fact is accounted for",
+   "✖ lua: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "cite ref.facts.accessor.cached: the fact is false; the citation pins true",
+   "a cited prose value changed (account): []"
+  ]
+ },
+ {
+  "id": "K-ocaml-named-call",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "named",
+   "account"
+  ],
+  "fails": [
+   "✖ ocaml: the declared facts are what its runtime defines",
+   "✖ ocaml: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.memberNamed: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "ref.facts.memberNamed is call; in this notation (space) a member is named bare"
+  ]
+ }
+]

@@ -1,0 +1,59 @@
+
+##### [new] R16 package check: both
+   exit 0
+   [14:28:21.662] INFO: sdkgen                 package-check-start  ./packs/chk-both: checking ./packs/chk-both
+   [14:28:21.824] INFO: sdkgen                 package-check-end    ./packs/chk-both: no findings
+   add: EXIT 0 (926 ms)
+   TSC EXIT 0
+   gen: GEN ok=true ms=141
+
+##### [new] R16 package check: provider
+   exit 0
+   [14:28:25.101] INFO: sdkgen                 package-check-start  ./packs/chk-provider: checking ./packs/chk-provider
+   [14:28:25.259] INFO: sdkgen                 package-check-end    ./packs/chk-provider: no findings
+   add: EXIT 0 (1103 ms)
+   TSC EXIT 0
+   gen: GENERATE THREW: Error: lp: a syntax provider needs a Naming hook (cmp/lp/Naming_lp) |     at describeTarget (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/s
+   gen: GEN ok=false ms=84
+
+##### [new] R16 package check: hook
+   exit 0
+   [14:28:28.648] INFO: sdkgen                 package-check-start  ./packs/chk-hook: checking ./packs/chk-hook
+   [14:28:28.825] INFO: sdkgen                 package-check-end    ./packs/chk-hook: no findings
+   add: EXIT 0 (912 ms)
+   TSC EXIT 0
+   gen:   optional-component-missing: lp: no ReadmeTopQuick_lp component, so the top-level README.md's quickstart has no lp example. The SDK code is complete; only this documentation is affected. To add it, w
+   gen:   optional-component-missing: lp: no ReadmeQuick_lp component, so lp/README.md's tutorial is empty. The SDK code is complete; only this documentation is affected. To add it, write .sdk/src/cmp/lp/Read
+   gen:   optional-component-missing: lp: no ReadmeRef_lp component, so lp/REFERENCE.md is not written, though lp/README.md links to it. The SDK code is complete; only this documentation is affected. To add i
+   gen: GEN ok=true ms=112
+
+##### [new] R16 package check: neither
+   exit 0
+   [14:28:31.948] INFO: sdkgen                 package-check-start  ./packs/chk-neither: checking ./packs/chk-neither
+   [14:28:32.104] INFO: sdkgen                 package-check-end    ./packs/chk-neither: no findings
+   add: EXIT 0 (1033 ms)
+   TSC EXIT 0
+   gen: GEN ok=true ms=131
+
+##### [new] R7b a pack that retires its own components: installed old-style, then the pack moves to a provider
+   add v0.1.0: EXIT 0 (946 ms)
+   TSC EXIT 0
+   GEN ok=true ms=116
+   doctor-finding       MISSING (would be written by `target add`): src/cmp/lp/Naming_lp.ts
+   doctor-finding       MISSING (would be written by `target add`): src/cmp/lp/Syntax_lp.ts
+   doctor-finding       RETIRED (an unchanged copy its source no longer ships; the next add removes it): src/cmp/lp/ReadmeQuick_lp.ts
+   doctor-finding       RETIRED (an unchanged copy its source no longer ships; the next add removes it): src/cmp/lp/ReadmeRef_lp.ts
+   doctor-finding       RETIRED (an unchanged copy its source no longer ships; the next add removes it): src/cmp/lp/ReadmeTopQuick_lp.ts
+   doctor-finding       OUTDATED (unchanged since it was copied, but its source has moved on): src/cmp/lp/Main_lp.ts
+   doctor-finding       OUTDATED (unchanged since it was copied, but its source has moved on): src/cmp/lp/utility_lp.ts
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 2 missing, 2 outdated, 3 retired, 0 orphan compiled, 0 unresolved
+   EXIT 1 (781 ms)
+   re-add v0.2.0: target-template-prune-file removed src/cmp/lp/ReadmeQuick_lp.ts
+   re-add v0.2.0: target-template-prune-file removed src/cmp/lp/ReadmeRef_lp.ts
+   re-add v0.2.0: target-template-prune-file removed src/cmp/lp/ReadmeTopQuick_lp.ts
+   re-add v0.2.0: EXIT 0 (1033 ms)
+   files: Naming_lp.ts Syntax_lp.ts 
+   TSC EXIT 0
+   GEN ok=true ms=85
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (944 ms)

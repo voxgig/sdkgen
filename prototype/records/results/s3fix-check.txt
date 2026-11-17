@@ -1,0 +1,796 @@
+summary: |
+  I rebuilt v31-frozen (9089ed48) in P/check-v31 and regenerated NEW myself. It is identical to the handed out/new (`diff -rq` empty, 21 variations). Every headline number reproduces: suite 2593/2588/0 fail/5 skipped; golden 2/2; guard and reader 61/61; lanes ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49 and zig documentation 6/6, against 5/6 on the old clone (getenv). The nine portchecks pass and the selftest gives 84/84.
+  
+  **The last check's blockers are closed.**
+  - **Rules:** none spans languages, `echo-agrees` is gone, and classify writes only its own language's file.
+  - **Injected false sentences:** all were left for a person, with 0 accepted automatically. That covers the earlier check's 7 plus the from-scratch region case, and 19 of my own in rb, py and go, in both the reviewed (hand) and from-scratch modes.
+  - **Note lint:** it flags all 5 earlier notes, and a provider whose notes it cannot find is an error.
+  - **Guard:** it catches 43 of the 52 earlier mutations, plus a deleted forms source on an incremental build and a provider with no forms. The 9 it misses are each in a stated category.
+  - **Forms:** the reader reads ocaml and perl.
+  
+  **Not ready as written: three new problems would let a port print false facts with nothing failing.**
+  
+  1. **Masking hides wrong language and convention facts.** Shared-sentence matching replaces a fact's value with its slot label, so a sentence carrying a wrong value is accepted as `shared`. I showed this in rb with a wrong `none`, `maps`, `noun` and `lits.false`. The guard passed, and 1 to 5 classes per mutation were accepted automatically. Other classes flagged each mutation only because OLD rb had stated the true value differently. Perl is the case where nothing would flag it: its `direct` sets `ok` to 0 (Main.fragment.pm:226, 245, 260, 310). The shared sentence prints `false` by a hidden default (`lit(r,false)`, ReadmeRef.ts:177-178). OLD perl has `false` 24 times, so it is not a new token, and neither the table nor PORTING mentions it. I worked this out by reading; I did not run a perl port.
+  2. **The runtime table, and so the guard, cannot see some forms.** It does not see swift's `throws` (EntityLoadOp.fragment.swift:8, Main.fragment.swift:96, EntityBase.fragment.swift:189). It does not see static constructors (swift `static func testSDK`; lua `ProjectNameSDK.test` with a dot; perl `test($class, ...)`). It lists ocaml record fields as if they were functions with no arguments. lua's error value is a table with `status` and `code` (make_error.lua:86), not the string the table says. ocaml's stream is listed as lazy but runs and materialises everything before returning (Entity_ocaml.ts:118-152).
+  3. **A dropped sentence leaves no trace in a new port.** Run from scratch, removing the direct sentence from one of 19 rb variations changed no number at all.
+  
+  **Output:**
+  - The c REFERENCE load and remove examples still lack the NULL check and the record read that OLD had. Only the prose was fixed.
+  - The elixir note "Named with its arity, it is `list/2`" contradicts its own citation (`def list(ent, reqmatch \\ nil, ctrl \\ nil)` defines list/1, list/2 and list/3) and the `list(planet)` call printed under it.
+  
+  **H2 stays refuted.** lines.js gives 1.34x measured and 1.75x projected. The freeze's figures (1.65x measured, 2.30x projected) are for documentation code only, without the forms; every figure that counts the forms is under 2x. **H1 is crossed:** words printed only by go, plus its notes, are 25.6% of its three sections.
+verdict: not-ready
+blockers:
+  - [0]
+    blocker: A wrong or missing value in a fact counted as 'language' or 'convention' (none, maps, noun, lits) slips past shared-sentence matching. Shared code also states a runtime fact by a hidden default: `ok` is `false` when lits is not declared. The guard never compares these facts, so the page can say something false and nothing fails.
+    evidence: RAN: mut2 copy with rb `none` 'null', `maps` 'arrays', `noun` 'Functions', then rb `lits.false` 'False'. Rebuilt; the rb guard passed 4/4 each time; regenerated; classified with factcls.js in from-scratch and reviewed (hand) modes. 5 classes were accepted automatically as `shared:<ref>` in the first case (for example 'both may be `null`' as shared:ts:abdec9857b). The lits case was accepted as shared:py:5b608e3db2. Other classes flagged each mutation (a token new to the language, 'Instance Methods' missing, a reworded OLD pair), but only because OLD rb stated the true value. READ: perl's direct sets 'ok' => 0 (Main.fragment.pm:226,245,260,264,310). ReadmeRef.ts:177-178 prints `lit(r,false)`, which is `false` unless lits is declared. OLD perl REFERENCE B has `false` 24 times, so it is not a new token. Neither runtime-table.md nor PORTING section 9 mentions it.
+    smallest_fix: Make the result's ok literal a required, cited fact with no default in ReadmeRef. Move ref.facts.lits.* and none from 'language' to 'cited' in account.ts DEFAULTS wherever they describe a runtime value. Add perl `ok` = 0/1 to its row in section 9 and its table section.
+  - [1]
+    blocker: The runtime table, and the guard reading the same forms, cannot see some facts a porter writes. Swift `throws` is missing, so a signature without `throws` matches the runtime's bare return. A static constructor looks like an instance member. OCaml record fields are listed as if they were functions with no arguments. Lua's error value is called a string. OCaml's stream is classed as lazy. A porter who follows the table passes the guard with these wrong.
+    evidence: |
+      READ:
+      - runtime-table.md swift lists returns `Value`, `VMap`, `AsyncStream<Value>`; the runtime has `throws -> Value` (EntityLoadOp.fragment.swift:8), `throws -> VMap` (Main.fragment.swift:96) and `throws -> AsyncStream<Value>` (EntityBase.fragment.swift:188-189), and `public static func testSDK` (Main.fragment.swift:330).
+      - lua: the table says ops return 'EntyClass, string?' (from the `---@return string? err` comment, EntityLoadOp.fragment.lua:11), but make_error.lua:86 returns sdk_err, a table with .status and .code. `ProjectNameSDK.test` is a dot function (Main.fragment.lua:432) where every other member is a `:` method. The table cannot show this.
+      - ocaml: e_name : string, e_client, e_utility, e_entopts, e_data, e_match, e_entctx and e_deleted : bool are record fields (sdk_types.ml:198-204,223), listed with '()' parameters. e_stream is classed streamLazy, but Entity_ocaml.ts:141-152 runs run_op and materialises `raw` (calling rt_stream eagerly) before building the Seq.
+      - perl: test is a class method (Main.fragment.pm:364 `my ($class, $testopts, $sdkopts)`).
+    smallest_fix: Before the ports start, add a column for throws, static or class-level, and field versus function to the forms reader for swift, lua, perl and ocaml (or record each in the forms as a cited fact). Correct the lua error type and the ocaml stream kind in runtime-table.md and PORTING section 9.
+  - [2]
+    blocker: In a new port (every class from scratch), a shared sentence that OLD never printed and that NEW drops in some variations leaves no trace: no new class and no change in any count.
+    evidence: RAN: mine/inj.js myinj.json --scratch. 'rb-direct-sentence-dropped' removes 'A failed request is reported in the result, not as an error, so branch on `result["ok"]`.' from doc-crud/rb only. Result: new open 0, auto 0, ledger unclassified 68->68, added classes decided 37->37 (inj-dbg.js). In reviewed (hand) mode the same injection is flagged as RECOUNT, but a new port has no earlier count.
+    smallest_fix: In classify.js, beside the existing duplicate check (`tooOften`), add the opposite check: a shared sentence printed in fewer variations than every reference language prints it is left for a person.
+claims:
+  - [0]
+    claim: Frozen at v31-frozen = 9089ed48; build leaves the tree clean
+    verdict: confirmed
+    what_i_ran: cp -a P/base/sdkgen P/check-v31/sdkgen; git rev-parse --short HEAD v31-frozen; npm run build; git status --short | wc -l
+    what_is_true: 9089ed48 and 0 changed files after a rebuild (the build was incremental: 2.3 s). P/base/sdkgen also has 0.
+  - [1]
+    claim: Suite without the toolchain lanes: 2,593 tests, 2,588 pass, 0 fail, 5 skipped
+    verdict: confirmed
+    what_i_ran: check-v31/mine/suite.sh suite1.log (node --enable-source-maps --test $(find dist-test -name '*.test.js' ! -name generatedcompile.test.js | sort))
+    what_is_true: tests 2593, pass 2588, fail 0, skipped 5, 257 s (one run, shared CPUs).
+  - [2]
+    claim: Golden 2/2 and guard and reader 61/61
+    verdict: confirmed
+    what_i_ran: node --test dist-test/characterize.test.js; node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js
+    what_is_true: characterize 2/2; guard and reader 61/61.
+  - [3]
+    claim: Lanes: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig documentation 6/6 on NEW and 5/6 on the old clone (getenv)
+    verdict: confirmed
+    what_i_ran: check-v31/mine/lanes.sh <clone>/ts new ts go py c rust rb zigdoc; lanes.sh P/freeze/oldclone/ts old zigdoc
+    what_is_true: ts 16/16 (35 s), go 12/12 (73 s), py 12/12 (17 s), c 6/6 (30 s), rust 6/6 (30 s), rb 49/49 (52 s), zigdoc 6/6 (9 s). The old clone gives 5/6 with '_readme/examples.zig:24:34: error: root source file struct 'posix' has no member named 'getenv''. Its git status was ' M ts/test/generatedcompile.test.ts' before and after the run. I did not run the whole '^zig: ' lane (the 26 tests).
+  - [4]
+    claim: NEW is reproducible from the tag
+    verdict: confirmed
+    what_i_ran: node tools/gen/gen.js check-v31/out/new check-v31/sdkgen/ts; diff -rq out/new P/base/out/new
+    what_is_true: 21 variations, none skipped, identical. OLD regenerated from P/base/oldclone is identical to base/out/old apart from alias-go2, which the generator skips because that clone is not inside a workspace.
+  - [5]
+    claim: Eleven unported languages: README and REFERENCE differ from OLD in 209 of 209 files each, only by the shared log lines
+    verdict: confirmed
+    what_i_ran: python difflib over out/old vs out/new for js php lua csharp java kotlin scala swift cpp perl ocaml
+    what_is_true: 209/209 README and 209/209 REFERENCE differ. The only changed lines are the 7 README lines and 8 REFERENCE lines the freeze names, each 209 times.
+  - [6]
+    claim: The nine portchecks pass
+    verdict: confirmed
+    what_i_ran: tools/portcheck.sh sdkgen out <lang> for ts go py c zig clojure rust elixir rb
+    what_is_true: PASS x9. rb: tutorial 61 same / 47 classes / 23 shared / 19 by hand / 5 missing; reference 15059 / 118 / 50 / 48 / 19 / 1 contradiction, matching PORTING section 11.
+  - [7]
+    claim: The tools' selftest: 84 controls, 0 failed
+    verdict: confirmed
+    what_i_ran: node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --tmp check-v31/tmp
+    what_is_true: 84 controls, 0 failed (ledger 24/24, accept 7/7, purity 24/24, blocks 28/28, recall 1/1), 96 s. None of the controls covers a new port run from scratch, or a wrong language or convention fact.
+  - [8]
+    claim: Guard: 43 of the check's 52 caught; the other 9 accounted (clj-return uncompared; ts-noun convention; ts-lit-none and py-lit-false language; zig and clj types column null; c-type-string exception; ts-type-comment by the review; ts-lit-int by the ts lane)
+    verdict: confirmed
+    what_i_ran: check-v31/mine/mut/mutate.js muts1.json in a copy at 9089ed48 (rebuilt each time). forms-vacuous-ts was rerun in the freeze's adapted form; py-member-removed-pair's from was updated to data_set(args=None). ts-type-comment and ts-lit-int were regenerated in mut2 and checked with portcheck ts, and the ts README lane was run there.
+    what_is_true: 43 caught (forms-vacuous-ts only in its adapted form: the original 'from' no longer matches). Not caught: clj-return-changed, ts-noun, zig-type-integer, clj-type-integer, c-type-string, ts-type-comment, ts-lit-none, py-lit-false, ts-lit-int. ts-type-comment makes portcheck ts FAIL (reference: ledger OPEN 1, blocks OPEN 1). ts-lit-int changes no line of the 21 variations (no `"1"` in the diff); the ts lane with both mutations is 13/16. Deleting a forms source with an incremental build is now caught ('every compiled forms file has its source'), and so is a provider with no forms (php).
+  - [9]
+    claim: Guard account per language: ts 45/14/2/5, go 46/9/3/6, py 46/11/4/7, c 37/9/2/10, zig 38/14/2/9, clojure 41/13/2/11, rust 41/12/1/9, elixir 46/13/2/5, rb 45/11/2/7, 0 excepted
+    verdict: confirmed
+    what_i_ran: SDKGEN_GUARD_REPORT=1 node --test --test-name-pattern 'account, per language' dist-test/runtimefacts.test.js
+    what_is_true: Exactly these. The uncompared returns and type-column reasons are printed as claimed.
+  - [10]
+    claim: No accepted false sentence: the classification hides nothing
+    verdict: imprecise
+    what_i_ran: mine/inj.js over inj3/inj4 and my 19 injections, reviewed (hand) mode and --scratch; mine/factcls.js after provider fact mutations
+    what_is_true: For OUTPUT injections, 0 of 27 were accepted automatically, in both modes. For PROVIDER facts counted as language or convention, the sentence carrying the wrong value IS accepted as shared (5 classes for rb none/maps/noun; 1 for rb lits.false). Only other classes, produced because OLD differed, flagged them. In from-scratch mode, a sentence dropped from one variation changed no number.
+  - [11]
+    claim: The note lint now reads notes; a declared note outside every region is an error
+    verdict: confirmed
+    what_i_ran: mine/pnote.js pnotes.json against a mirror of the provider tree; mut2 build for the note-tail case
+    what_is_true: The 5 earlier note mutations are flagged. A notes table renamed to a const without 'notes' in its name is an error: 'notes declared but no notes region found by the lint'. A note in ref.notes is flagged. One hole: a note completed by concatenation with a constant outside the table (TAIL naming 'retry', 'planet', '3') is MISSED by purity, even after a build. For an existing note the guard's pinned value catches it; a new note's pin is written by the porter.
+  - [12]
+    claim: H2 measures: 6,916 -> 4,182 (1.65x) documentation only; 1.40x with forms; projection 2.30x / 1.90x / 1.62x
+    verdict: imprecise
+    what_i_ran: node tools/lines.js --clone check-v31/sdkgen --rev HEAD
+    what_is_true: The tool itself prints MEASURED 7661/5563 -> 5698/4423 = 1.34x (1.26x) and PROJECTION x1 1.75x, x1.5 1.48x, x2 1.28x. It counts the unchanged ReadmeTop.ts (745 lines) in both 'before' and 'after', and includes the forms. The freeze's figures reconcile by arithmetic once ReadmeTop is excluded and the forms are dropped (15,038 -> 6,551). The only figure over 2x leaves out the forms every port must write. H2 is refuted on every count that includes them.
+  - [13]
+    claim: Prose: go 25.6% printed only by go plus notes over three sections; notes alone at most 9.4%
+    verdict: confirmed
+    what_i_ran: node tools/sharewords.js --clone sdkgen --root out/new --lang ts,go,py,c,zig,clojure,rust,elixir,rb
+    what_is_true: go: (1530+298+9930+4860)/(2260+317+62217) = 25.6%. elixir tutorial notes 9.4%; go reference notes 7.8%.
+  - [14]
+    claim: The base the ports start from works: newport.sh makes a workspace whose one command says NOT PORTED
+    verdict: confirmed
+    what_i_ran: P/base/newport.sh ocaml check-v31/ports; P/base/newport.sh perl check-v31/ports; cd ports/ocaml && REGEN=1 tools/portcheck.sh sdkgen out ocaml
+    what_is_true: The workspace was made at clone 9089ed48. REGEN regenerated 21 variations, SKIPPED none, and its out/new is identical to mine. The command printed 'ocaml: NOT PORTED. No section is ported for it...' and 'PORTCHECK ocaml: NOT PORTED', exit 1. PORTING section 1 quotes the message differently ('<lang> is ported for no section').
+  - [15]
+    claim: Stage fixes: c load/remove sentences carry the NULL result and the record read; the action Call cell; go's write sentence; README Features against REFERENCE; the elixir and clojure notes
+    verdict: imprecise
+    what_i_ran: read out/new against out/old for doc-crud, doc-nested and B (rb, c, go, ts, elixir, clojure)
+    what_is_true: |
+      - **c:** the prose is fixed ('or `NULL` with `*err` set on failure. `vt->data` reads its record'), but the load and remove code blocks still lack the `if (result) { printf(... vt->data ...) }` OLD had (doc-crud/c/REFERENCE.md load and remove), so they remain weaker than before.
+      - **Action Call cell:** now carries the route id (ts `create({ $action: 'terraform', id: 'planet_id' })`; rb the same).
+      - **go:** step 4 now has its sentence; writes still discard results (`_, err =`).
+      - **Features wording:** README and REFERENCE now agree on log.
+      - **clojure:** the note is true (core.clj:227 get-utility returns utility-copy).
+      - **elixir:** 'Named with its arity, it is `list/2`' is wrong. The runtime defines list/1, list/2 and list/3 (EntityListOp.fragment.ex:8), and the block below calls list(planet), which is list/1.
+      - **rb doc-nested:** prints the first string field (title) where OLD printed radius.
+classification:
+  - [0]
+    injection: region-required-ref-ts (Defaults to eu -> Required.)
+    lang: ts
+    left_for_human: True
+    fact_sheet_shows: no (an output edit; no declared fact changed)
+    note: hand mode: 2 new open, 0 auto; scratch: 1 new open
+  - [1]
+    injection: ok-true-py
+    lang: py
+    left_for_human: True
+    fact_sheet_shows: no
+    note: hand 4 open (echo + reworded), scratch 2 open, 0 auto
+  - [2]
+    injection: apikey-env-go (DEMO_TOKEN)
+    lang: go
+    left_for_human: True
+    fact_sheet_shows: no
+    note: 3 open, including the token new to the language
+  - [3]
+    injection: raises-returns-py (returns None)
+    lang: py
+    left_for_human: True
+    fact_sheet_shows: no
+    note: 3 open, 0 auto
+  - [4]
+    injection: negation-go (except for a non-2xx)
+    lang: go
+    left_for_human: True
+    fact_sheet_shows: no
+    note: 4 open hand, 2 open scratch
+  - [5]
+    injection: type-cell-zig i64->f64 (the zig type echo)
+    lang: zig
+    left_for_human: True
+    fact_sheet_shows: no
+    note: echo and reworded open, both modes
+  - [6]
+    injection: region Required, rebuilt from scratch (inj4)
+    lang: ts
+    left_for_human: True
+    fact_sheet_shows: no
+    note: --scratch: 1 open, 0 auto
+  - [7]
+    injection: rb-load-returns-nil (wrong failure word)
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: hand 3 open; scratch 2 open (echo + added)
+  - [8]
+    injection: rb-list-reqmatch-required (optional parameter shown as required)
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: hand 4 open, scratch 2
+  - [9]
+    injection: rb-match-optional-required (prose)
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: hand 2, scratch 1
+  - [10]
+    injection: rb-direct-sentence-dropped (one variation)
+    lang: rb
+    left_for_human: False
+    fact_sheet_shows: no
+    note: Hand mode: flagged (1 open, by recount). SCRATCH (a new port): 0 new open, 0 auto, unclassified 68->68. Invisible.
+  - [11]
+    injection: rb-retries-number 2->5
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: 1 open, both modes
+  - [12]
+    injection: rb-get-utility-return Utility->Hash
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: 1 open
+  - [13]
+    injection: rb-utility-live (copy -> live)
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: 1 open
+  - [14]
+    injection: rb-tut-list-hash (Array->Hash)
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: tutorial, 1-2 open
+  - [15]
+    injection: rb-tut-write-record (entity -> record)
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: 1-2 open
+  - [16]
+    injection: rb-region-required
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: 1-2 open
+  - [17]
+    injection: rb-dataget-nocopy (copy sentence dropped)
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: no
+    note: scratch: missing class open
+  - [18]
+    injection: py-list-sig-required, py-load-returns-none, py-tut-dict, py-dataget-nocopy
+    lang: py
+    left_for_human: True
+    fact_sheet_shows: no
+    note: each 1-4 open, 0 auto, both modes
+  - [19]
+    injection: go-list-map, go-err-nil, go-stream-dropped, go-tut-step4-dropped
+    lang: go
+    left_for_human: True
+    fact_sheet_shows: no
+    note: each 1-2 open, 0 auto, both modes
+  - [20]
+    injection: PROVIDER: rb none 'null', maps 'arrays', noun 'Functions'
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: yes: ref.none "null", ref.maps "arrays", ref.noun "Functions" with an OLD example, but the sheet does not fail; guard 4/4 pass
+    note: 5 classes ACCEPTED automatically as shared (e.g. 'both may be `null`', 'Instance Functions'). Still flagged by other classes because OLD rb had the true values: 'null' new to the language (113 times), 'Instance Methods' missing, reworded 'hashes'->'arrays'.
+  - [21]
+    injection: PROVIDER: rb lits.false 'False'
+    lang: rb
+    left_for_human: True
+    fact_sheet_shows: yes (ref.lits.false), account 'language'; guard pass
+    note: The direct sentence was ACCEPTED as shared:py:5b608e3db2. Flagged only because 'False' is a token new to rb, plus an echo. A value already present in OLD (perl's `false`, 24 times) would not be.
+  - [22]
+    injection: PROVIDER: py lits removed (porter forgets)
+    lang: py
+    left_for_human: True
+    fact_sheet_shows: no (the fact no longer exists)
+    note: Left open only because py's OLD sentence makes a reworded pair that matches no reviewed pair. Nothing records that the hidden default `false` is wrong.
+masking: |
+  Masking (tools/facts.js) replaces every declared fact value in a unit with a label listing every path where this language declares that value, for example `⟦ref.none⟧` or `⟦collection⟧`. It does this in three places: a whole code span, a fragment value (with a space, backtick or leading dot), and a bare word only in the prose slots (collection, noun, entityNoun, maps). Each reference language's units are masked with that language's own facts. A 'reworded' or 'added' unit whose masked text equals a reviewed reference unit is recorded as `shared:<ref>:<id>` with no person involved (for a pair, the OLD side must match too).
+  
+  So the mask removes exactly the fact value. Whether the value is TRUE is never looked at, so a wrong value in the same slot is accepted. Only the guard (for derived and cited facts) and the fact sheet (which lists values but fails only on a missing account) speak to truth. Facts counted as 'language' (none, maps, lits) and 'convention' (noun, entityNoun, heading, named, prints) are never compared with the runtime.
+  
+  RAN: in rb, a wrong none, maps or noun made 5 classes shared automatically, and a wrong lits.false made the direct sentence shared:py, all with the guard passing. Other classes flagged them only because OLD rb had stated the true value (a new token, a missing heading, a reworded pair).
+  
+  READ: shared code also states some facts by a default nobody declares: `lit(r,false)` in ReadmeRef.ts:177-178 prints `false` unless lits is declared. perl's direct returns 'ok' => 0 (Main.fragment.pm:226,245,260,264,310), OLD perl already prints `false` (24 times in B/perl/REFERENCE.md), and no table row or PORTING row mentions it. So a perl port that declares nothing would print a false sentence, matched as shared, with no token new to the language, no fact on the sheet and no guard check: nothing else would show it.
+note_lint: |
+  RAN: mine/pnote.js on a mirror of the provider tree, which links the built scaffold. The earlier check's 5 note mutations (naming the retry feature, the apikey option, the planet entity, the load operation, and a server claim with a number) are all FLAGGED, rc=1.
+  
+  My own:
+  - notes moved to `notes: streamText` (a const without 'notes' in its name): FLAGGED as 'notes declared but no notes region found by the lint'.
+  - a note added under ref.notes: FLAGGED.
+  - note-tail-from-const (the note text ends with `+ TAIL`, where TAIL, defined outside the table, names retry, planet and 3): MISSED by purity, 0 open, and also after a real build in mut2.
+  
+  For that existing go note the guard catches the change, because the citation pins the note's value ('the fact is ...; the citation audited ...'). For a new port's note, the porter writes the pin with the note, so only the reviewer's audit stands between it and the page. The declared-notes check compares only the first 6 words of each note against the text it read.
+guard:
+  - [0]
+    mutation: ts-method-typo, ts-method-swap, c-method-swap, clj-method-typo
+    lang: ts,c,clojure
+    caught: True
+    by_or_account: method,signature
+  - [1]
+    mutation: ts-param-required, ts-param-type, ts-param-renamed, c-param-type, c-param-dropped, clj-param-added
+    lang: ts,c,clojure
+    caught: True
+    by_or_account: optional, paramTypes, paramNames, parameters
+  - [2]
+    mutation: clj-return-changed
+    lang: clojure
+    caught: False
+    by_or_account: accounted: uncompared returns 14 with reason (the clojure runtime declares no types)
+  - [3]
+    mutation: py-return-changed, py-direct-return
+    lang: py
+    caught: True
+    by_or_account: returns; account (direct.returns cited)
+  - [4]
+    mutation: ts-style-raise, c-style-pair, clj-style-throw
+    lang: ts,c,clojure
+    caught: True
+    by_or_account: style
+  - [5]
+    mutation: ts-collection, c-collection, clj-collection
+    lang: ts,c,clojure
+    caught: True
+    by_or_account: account (cited, quote or pin)
+  - [6]
+    mutation: ts-noun
+    lang: ts
+    caught: False
+    by_or_account: accounted: convention
+  - [7]
+    mutation: ts-type-integer
+    lang: ts
+    caught: True
+    by_or_account: types
+  - [8]
+    mutation: zig-type-integer, clj-type-integer
+    lang: zig,clojure
+    caught: False
+    by_or_account: accounted: types column null with reason (printer total only)
+  - [9]
+    mutation: c-type-string
+    lang: c
+    caught: False
+    by_or_account: accounted: exceptions types:ARRAY and types:OBJECT with reason (c.ts:88-90)
+  - [10]
+    mutation: ts-type-comment
+    lang: ts
+    caught: False
+    by_or_account: neither a fact nor guarded (printer output). Caught downstream: portcheck ts FAIL, reference ledger OPEN 1 and blocks OPEN 1 (ran)
+  - [11]
+    mutation: ts-lit-none, py-lit-false
+    lang: ts,py
+    caught: False
+    by_or_account: accounted: language
+  - [12]
+    mutation: ts-lit-int
+    lang: ts
+    caught: False
+    by_or_account: neither (printer literal). No variation prints it (diff shows no '"1"'); the ts README lane fails 3/16 (ran with ts-type-comment also applied)
+  - [13]
+    mutation: c-nullvalue
+    lang: c
+    caught: True
+    by_or_account: account (cited quote 'if (*err) return NULL;')
+  - [14]
+    mutation: member removed/invented/misplaced (ts, c, clojure, py), ts-utility-kind, ts-cancel
+    lang: ts,c,clojure,py
+    caught: True
+    by_or_account: members, kind, signature, parameters, account
+  - [15]
+    mutation: ts-async-false, py-record, ts-record-expr, ts-ctor-sig, py-test-sig
+    lang: ts,py
+    caught: True
+    by_or_account: async, record, ctor, parameters
+  - [16]
+    mutation: rt-ts-load-renamed, rt-ts-load-param-required, rt-ts-load-sync, rt-clj-load-param, rt-clj-getname-renamed, rt-c-fnptr-renamed
+    lang: ts,clojure,c
+    caught: True
+    by_or_account: method, optional, async, parameters, signature, members
+  - [17]
+    mutation: no-forms-zig (forms source deleted, incremental build)
+    lang: zig
+    caught: True
+    by_or_account: 'every compiled forms file has its source, and every provider a forms source'
+  - [18]
+    mutation: forms-vacuous-ts (original text no longer applies; freeze-adapted form)
+    lang: ts
+    caught: True
+    by_or_account: method, members ('declares 0 public members')
+  - [19]
+    mutation: php provider (copy of Syntax_ts) with php forms deleted
+    lang: php
+    caught: True
+    by_or_account: 'php has a syntax provider and no test/runtimeforms/php.ts'
+  - [20]
+    mutation: php provider (copy of Syntax_ts) with the pre-written php forms
+    lang: php
+    caught: True
+    by_or_account: async, listOf, record, types, optional, signature, members, kind
+  - [21]
+    mutation: go note completed by + TAIL naming retry/planet/3 (mut2, built)
+    lang: go
+    caught: True
+    by_or_account: account: pinned note value differs (purity missed it)
+  - [22]
+    mutation: rb none 'null', maps 'arrays', noun 'Functions'; rb lits.false 'False'; py lits removed (mut2, built)
+    lang: rb,py
+    caught: False
+    by_or_account: accounted as language or convention; guard 4/4 and 8/8 pass
+guard_neither:
+  - ts-type-comment: a printer's example type comment is not a fact and the guard does not check printer output. It is caught only by the review: portcheck ts FAIL with reference ledger OPEN 1 and blocks OPEN 1 (ran).
+  - ts-lit-int: a printer's example INTEGER literal. It changes no line of the 21 variations, so the review cannot see it; it is caught only by the ts README lane (13/16 with it applied together with ts-type-comment; ran).
+  - rb `lits.false` mutated to 'False', which no reference language uses for rb: counted as 'language' and so accounted, but shared-sentence matching accepted the sentence carrying it. In a language without a toolchain here, only a token new to the language flagged it, and only because OLD lacked it (ran).
+citations:
+  - [0]
+    lang: go
+    fact: facts.collection = `[]any`
+    file: tm/go/utility/make_result.go:37
+    quote_exists: True
+    shows_value: True
+    note: 'var entities []any'
+  - [1]
+    lang: go
+    fact: ref.facts.container = map[string]any
+    file: src/cmp/go/fragment/Main.fragment.go:19
+    quote_exists: True
+    shows_value: True
+    note: 'func NewProjectNameSDK(options map[string]any)'
+  - [2]
+    lang: go
+    fact: ref.facts.cancel = false
+    file: tm/go/utility/fetcher.go:115
+    quote_exists: True
+    shows_value: False
+    note: 'http.NewRequest(...)' with no context. It suggests the absence and the value is pinned, but the line does not prove nothing else cancels.
+  - [3]
+    lang: py
+    fact: ref.facts.cancel = false
+    file: tm/py/pkg/utility/fetcher.py:97
+    quote_exists: True
+    shows_value: False
+    note: 'timeout = fetchdef.get("timeout")': unrelated to cancelling; pinned only
+  - [4]
+    lang: py
+    fact: ref.facts.prepare.returns = dict
+    file: tm/py/pkg/utility/make_fetch_def.py:26-27
+    quote_exists: True
+    shows_value: False
+    note: Quotes two dict members; the 'dict' token itself is excused by `unquoted` with the porter's own sentence
+  - [5]
+    lang: c
+    fact: facts.nullValue = NULL
+    file: src/cmp/c/fragment/EntityLoadOp.fragment.c:27
+    quote_exists: True
+    shows_value: True
+    note: 'if (*err) return NULL;'
+  - [6]
+    lang: c
+    fact: ref.facts.cancel = false
+    file: tm/c/utility/http.c:1
+    quote_exists: True
+    shows_value: False
+    note: The file's header comment 'HTTP/1.1 over a socket, one request per connection' does not show that nothing cancels
+  - [7]
+    lang: zig
+    fact: ref.facts.none = h.vnull()
+    file: src/cmp/zig/fragment/Main.fragment.zig:62
+    quote_exists: True
+    shows_value: True
+    note: '.options = h.vnull(),'
+  - [8]
+    lang: zig
+    fact: ref.facts.body.values = 'a string value holding the bytes'
+    file: tm/zig/core/utility.zig:1277,1283
+    quote_exists: True
+    shows_value: False
+    note: The quoted line accepts .string, .integer, .float, .number_string and .bool, so the code accepts more than the pinned prose says
+  - [9]
+    lang: clojure
+    fact: ref.facts.prepare.returns = map
+    file: tm/clojure/src/sdk/client.clj:72
+    quote_exists: True
+    shows_value: False
+    note: '(defn prepare [client fetchargs]': 'map' excused by `unquoted`
+  - [10]
+    lang: clojure
+    fact: notes.instance (get-utility returns a copy)
+    file: tm/clojure/src/sdk/client.clj:69 and core.clj:227
+    quote_exists: True
+    shows_value: True
+    note: core.clj:227 '(defn get-utility [client] (utility-copy (:utility client)))' shows the copy
+  - [11]
+    lang: rust
+    fact: facts.ok = Ok
+    file: src/cmp/rust/fragment/EntityLoadOp.fragment.rs:38
+    quote_exists: True
+    shows_value: True
+    note: 'Ok(self.clone())'
+  - [12]
+    lang: rust
+    fact: ref.facts.setArg = `Some(&map)`
+    file: src/cmp/rust/fragment/Entity.fragment.rs:276
+    quote_exists: True
+    shows_value: True
+    note: 'fn data(&self, args: Option<&Value>)'
+  - [13]
+    lang: elixir
+    fact: ref.facts.client[1].kind = utilityBase
+    file: src/cmp/elixir/fragment/Main.fragment.ex:84
+    quote_exists: True
+    shows_value: True
+    note: 'S.getprop(client, "_utility")': the live node, no copy
+  - [14]
+    lang: elixir
+    fact: notes.tutorial:list = 'Named with its arity, it is `list/2`...'
+    file: src/cmp/elixir/fragment/EntityListOp.fragment.ex:8
+    quote_exists: True
+    shows_value: False
+    note: The quote 'def list(ent, reqmatch \\ nil, ctrl \\ nil) do' defines list/1, /2 and /3, and the tutorial calls list(planet), which is list/1. The quote contradicts the note.
+  - [15]
+    lang: elixir
+    fact: facts.collection = '`Voxgig.Struct` list'
+    file: src/cmp/elixir/fragment/EntityListOp.fragment.ex:3
+    quote_exists: True
+    shows_value: False
+    note: Cites a comment, 'Returns a list of entityname entities', which does not say Voxgig.Struct
+  - [16]
+    lang: rb
+    fact: facts.recordType = Hash
+    file: src/cmp/rb/fragment/Entity.fragment.rb:76
+    quote_exists: True
+    shows_value: True
+    note: '@return [EntityName, Hash]' (a doc comment)
+  - [17]
+    lang: rb
+    fact: ref.facts.prepare.returns = Hash
+    file: src/cmp/rb/fragment/Main.fragment.rb:170
+    quote_exists: True
+    shows_value: False
+    note: 'fetchdef, fd_err = utility.make_fetch_def.call(ctx)': 'Hash' excused by `unquoted`
+  - [18]
+    lang: ts
+    fact: ref.facts.client[1].returns = object
+    file: src/cmp/ts/fragment/Main.fragment.ts:110
+    quote_exists: True
+    shows_value: False
+    note: 'clone(this._utility)': 'object' excused by `unquoted`
+runtime_table:
+  - [0]
+    lang: swift
+    problem: `throws` is missing from every operation's, prepare's and stream's return. The table and the guard read `Value`, `VMap` and `AsyncStream<Value>`, so a signature without `throws`, or an example without `try`, passes the guard.
+    evidence: EntityLoadOp.fragment.swift:8 'public override func load(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value'; Main.fragment.swift:96 'func prepare(...) throws -> ProjectNameSdk.VMap'; EntityBase.fragment.swift:188-189 'func stream(...)\n    throws -> AsyncStream<Value>'
+  - [1]
+    lang: swift
+    problem: testSDK is static (called on the type) but listed as a client member like the instance methods; the table has no static column
+    evidence: Main.fragment.swift:330 'public static func testSDK(...)'
+  - [2]
+    lang: lua
+    problem: Operations are said to return 'EntyClass, string?', taken from the doc comment. The second value is an SDK error table with .status and .code, not a string.
+    evidence: EntityLoadOp.fragment.lua:10-12 '---@return string? err'; tm/lua/utility/make_error.lua:62,66,86 'sdk_err.status = ...', 'return nil, sdk_err'
+  - [3]
+    lang: lua
+    problem: test is a dot function and every other member a colon method; the table cannot show the call form
+    evidence: Main.fragment.lua:432 'function ProjectNameSDK.test(testopts, sdkopts)' against :159 'function ProjectNameSDK:options_map()'
+  - [4]
+    lang: ocaml
+    problem: Record fields are listed as if they were functions with no arguments ('()'): e_name, e_client, e_utility, e_entopts, e_data, e_match, e_entctx, e_deleted. A page would write `ent.e_name ()`.
+    evidence: tm/ocaml/sdk_types.ml:198-204 'mutable e_name : string; ... e_entctx : ctx', :223 'mutable e_deleted : bool'
+  - [5]
+    lang: ocaml
+    problem: e_stream is classed streamLazy, but the runtime runs the operation and materialises every item (calling rt_stream eagerly) before building a Seq over the finished list. It is neither lazy nor a streaming read.
+    evidence: src/cmp/ocaml/Entity_ocaml.ts:141 'ignore (run_op ctx (fun () -> ()));', :145-150 'let raw = ... Some fn -> fn () ...' then 'seq_of raw'
+  - [6]
+    lang: perl
+    problem: direct's `ok` is 0 or 1, not a boolean; nothing in the table or PORTING row says so, so the shared sentence 'on a failure `ok` is `false`' would be false
+    evidence: src/cmp/perl/fragment/Main.fragment.pm:226,245,260,264,310 "'ok' => 0", :300 '? 1 : 0'
+  - [7]
+    lang: perl
+    problem: test is a class method (`DemoSDK->test`), not an instance member; the table has no static column
+    evidence: Main.fragment.pm:364-365 'sub test { my ($class, $testopts, $sdkopts) = @_;'
+  - [8]
+    lang: java
+    problem: (nuance, not an error) stream is classed streamLazy, but runOp runs before the Stream is returned; only the streaming feature's closure is iterated lazily
+    evidence: src/cmp/java/fragment/EntityBase.fragment.java ~246 'Object materialised = runOp(ctx, () -> {});'
+  - [9]
+    lang: kotlin
+    problem: (nuance) the same as java: runOp runs before the sequence is returned
+    evidence: src/cmp/kotlin/fragment/EntityBase.fragment.kt ~213 'val materialised = runOp(ctx) {}', ~245 'return sequence {'
+guide:
+  - [0]
+    section: 1 (Make your workspace)
+    problem: The quoted start message '<lang> is ported for no section' is not what the command prints ('<lang>: NOT PORTED. No section is ported for it...' / 'PORTCHECK <lang>: NOT PORTED')
+    kind: inaccurate
+  - [1]
+    section: 5 (Blocks)
+    problem: 'Only "otherwise" makes a class for you', but the screen's blocks 'classes' column shows rb tutorial 27 classes with otherwise 1, and zig rootquick 27 with otherwise 2. The column is not explained.
+    kind: unexplained number
+  - [2]
+    section: 5 (unverified)
+    problem: '0 (zig here)' and the other '0 unverified' cells mean only that a compiler is on PATH (command -v). The 21 variations' changed blocks are not compiled; the lanes compile their own models. A reader takes 0 to mean verified.
+    kind: misleading
+  - [3]
+    section: 9 (eleven languages) and runtime-table.md
+    problem: These rows will lead porters into wrong facts the guard cannot catch: swift throws and static testSDK; lua's error type and its dot `test`; ocaml record fields shown as functions; ocaml's stream is not lazy; perl's ok is 0 and its test is a class method
+    kind: wrong facts
+  - [4]
+    section: 6 and 7 (citations)
+    problem: Nothing says that `unquoted` lets a porter excuse a missing token with their own sentence. It is used in 21 citations across 8 of the 9 forms (ts 4, py 3, clojure 3, rust 3, elixir 2, rb 2, zig 1; go and c none), and a cancel=false citation can quote an unrelated line (c http.c:1, py fetcher.py:97). The reviewer's 'shows the value' audit is the only check and the guide does not point at these.
+    kind: gap
+  - [5]
+    section: 8 (Purity)
+    problem: Not stated: a note assembled by concatenation from a constant outside the notes table is not linted. The pin catches a change to an existing note, but not a new port's note.
+    kind: gap
+  - [6]
+    section: 4 / 10 (collisions)
+    problem: Checked, no new collision: classify writes only classes/<lang>.json; hand/, normalizers/, counts/ and purity-allow/ are per language; the guard finds providers itself. The remaining shared points are the golden (regenerate on conflict) and lua-table-keys.test.ts (lua only). Whether other shared tests break when ReadmeQuick_<lang> is deleted was NOT tested: I did not port.
+    kind: risk (not run)
+output:
+  - [0]
+    lang: c
+    variation: doc-crud, B
+    finding: The REFERENCE load and remove examples still have no NULL check and no record read (OLD had `if (result) { printf("%s\n", voxgig_to_json(result->vt->data(result, NULL))); }`). Only the sentence above was fixed. The root quick start does check `if (loaded)`, so the two pages are now inconsistent.
+    worse_than_old: True
+  - [1]
+    lang: elixir
+    variation: every variation (tutorial list and load)
+    finding: 'Named with its arity, it is `list/2`' / '`load/2`' is wrong. The runtime defines list/1, /2 and /3 (EntityListOp.fragment.ex:8), and the block directly below calls `Demo.Entity.Planet.list(planet)`, which is list/1. The tools passed it as an accepted, cited, pinned note.
+    worse_than_old: True
+  - [2]
+    lang: c
+    variation: doc-nested root quick start
+    finding: load still runs after a list whose err is neither checked nor reset. Known and not fixed.
+    worse_than_old: False
+  - [3]
+    lang: go
+    variation: doc-crud tutorial
+    finding: Step 4 now has its sentence (fixed); the writes still discard their results with `_, err =`
+    worse_than_old: False
+  - [4]
+    lang: rb
+    variation: doc-crud REFERENCE
+    finding: Awkward: '`Planet(data = nil)` ... Pass `nil` for no initial options.' The signature names the parameter data and the sentence calls it options. True to the runtime (MainEntity_rb.ts:21 passes data to entopts), but a reader sees two names.
+    worse_than_old: False
+  - [5]
+    lang: rb
+    variation: doc-nested tutorial
+    finding: The display-field fix holds: the planet list prints the first string field (title) where OLD printed radius; the satellite load prints the record
+    worse_than_old: False
+  - [6]
+    lang: ts, rb
+    variation: doc-crud
+    finding: The action Call cell now carries the route's id (`create({ $action: 'terraform', id: 'planet_id' })`): fixed
+    worse_than_old: False
+  - [7]
+    lang: js php lua csharp java kotlin scala swift cpp perl ocaml
+    variation: all 19
+    finding: The README Features and REFERENCE features wording now agree on log ('except `log`, which runs unless disabled'), consistent with log.aontu active: true and with the per-target config. The stray escaped \`feature\` in OLD is fixed.
+    worse_than_old: False
+fixes_checked:
+  - [0]
+    fix: rules.js accepting false facts (earlier blocker 1)
+    status: closed
+    evidence: 0 of 27 output injections accepted automatically, in hand and from-scratch modes (mine/inj.js). rules.js has 105 rules, all with a langs restriction; no echo-agrees; rules apply only through pinned/<lang>.json records.
+  - [1]
+    fix: Note lint inert (blocker 2)
+    status: closed with a residual hole
+    evidence: 5/5 earlier notes flagged; a renamed notes const and a ref.notes entry are flagged; a note concatenated from a constant outside the table is missed by purity (caught by the pin for an existing note only)
+  - [2]
+    fix: Guard narrower than reported (blocker 3)
+    status: closed for the listed gaps
+    evidence: Method swaps, parameter types and names, the misplaced member, the record printer, collections, nullValue, cancel, ctor, utility kind and deleted forms are now caught (43/52 plus the extras). The rest are accounted, except two printer mutations caught downstream.
+  - [3]
+    fix: ocaml and perl unreadable by forms (blocker 4)
+    status: closed for reading
+    evidence: runtimereader 22/22; the table shows ocaml ops as 'value, value' and perl '$reqmatch, $ctrl'. But see the runtime-table problems (fields, throws, statics).
+  - [4]
+    fix: perl and ocaml types unguarded
+    status: closed by stating it
+    evidence: types.column null with reason ('printer total only') in the forms; zig and clojure the same
+  - [5]
+    fix: Merge collisions in rules/manual/classify (blocker 5)
+    status: closed
+    evidence: classify.js writes only classes/<lang>.json (code read); hand, pinned, counts, normalizers and purity-allow are per language
+  - [6]
+    fix: Output: c load/remove record read
+    status: partly
+    evidence: Prose fixed; the code blocks still lack the NULL check and the record read (doc-crud/c/REFERENCE.md)
+  - [7]
+    fix: Output: ts action Call cell; go write sentence; README Features vs REFERENCE; elixir and clojure notes kept
+    status: mostly closed
+    evidence: Call cell carries the id; go step 4 has its sentence; Features consistent; clojure note true; the elixir arity note is false
+  - [8]
+    fix: Deleted forms source passing on an incremental build
+    status: closed
+    evidence: no-forms-zig: 'every compiled forms file has its source, and every provider a forms source' fails
+numbers:
+  - [0]
+    name: suite without toolchain lanes
+    value: 2593 tests, 2588 pass, 0 fail, 5 skipped, 257 s (one run)
+    command: check-v31/mine/suite.sh suite1.log
+  - [1]
+    name: golden
+    value: 2/2
+    command: node --test dist-test/characterize.test.js
+  - [2]
+    name: guard and reader
+    value: 61/61
+    command: node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js
+  - [3]
+    name: lanes on NEW
+    value: ts 16/16 (35 s), go 12/12 (73 s), py 12/12 (17 s), c 6/6 (30 s), rust 6/6 (30 s), rb 49/49 (52 s), zig documentation 6/6 (9 s)
+    command: check-v31/mine/lanes.sh check-v31/sdkgen/ts new ts go py c rust rb zigdoc
+  - [4]
+    name: zig documentation lane on the old clone
+    value: 5/6 (basic-server: std.posix has no getenv)
+    command: check-v31/mine/lanes.sh P/freeze/oldclone/ts old zigdoc
+  - [5]
+    name: NEW regenerated vs handed
+    value: 21 variations, diff -rq empty
+    command: node tools/gen/gen.js check-v31/out/new check-v31/sdkgen/ts; diff -rq
+  - [6]
+    name: unported byte-identity
+    value: README 209/209 and REFERENCE 209/209 differ, only by the 7 + 8 shared log lines, each 209 times
+    command: python difflib over out/old vs out/new, 11 languages x 19 variations
+  - [7]
+    name: source lines (tool's own headline)
+    value: measured 7661 -> 5698 = 1.34x (1.26x without blanks/comments); projected x1 1.75x, x1.5 1.48x, x2 1.28x
+    command: node tools/lines.js --clone check-v31/sdkgen --rev HEAD
+  - [8]
+    name: guard account
+    value: ts 45/14/2/5, go 46/9/3/6, py 46/11/4/7, c 37/9/2/10, zig 38/14/2/9, clojure 41/13/2/11, rust 41/12/1/9, elixir 46/13/2/5, rb 45/11/2/7; excepted 0
+    command: SDKGEN_GUARD_REPORT=1 node --test --test-name-pattern 'account, per language' dist-test/runtimefacts.test.js
+  - [9]
+    name: guard source mutations
+    value: 43 of 52 caught (+ zig forms deleted and php with no forms caught); 9 not caught: 7 accounted, 2 printer mutations caught only downstream
+    command: node check-v31/mine/mut/mutate.js muts1.json muts1.out.json (4 m 36 s)
+  - [10]
+    name: output injections accepted automatically
+    value: 0 of 27 (8 earlier: 7 inj3 plus the inj4 region case run from scratch; 19 mine), both modes; 1 of my 19 (rb-direct-sentence-dropped) invisible in from-scratch mode
+    command: node check-v31/mine/inj.js inj3.json | inj34.json --scratch | myinj.json [--scratch]
+  - [11]
+    name: wrong language/convention facts accepted as shared
+    value: rb none/maps/noun: 5 classes; rb lits.false 'False': 1 class; guard pass in each
+    command: mut2 edit + npm run build + gen.js + node check-v31/mine/factcls.js rb reference scratch|hand
+  - [12]
+    name: note lint
+    value: 7 of 8 note mutations flagged; the concatenation from a constant missed
+    command: node check-v31/mine/pnote.js pnotes.json
+  - [13]
+    name: portcheck x9
+    value: PASS for ts go py c zig clojure rust elixir rb
+    command: tools/portcheck.sh sdkgen out <lang>
+  - [14]
+    name: selftest
+    value: 84 controls, 0 failed, 96 s
+    command: node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --tmp check-v31/tmp
+  - [15]
+    name: prose printed only by one language, plus notes, over the three sections
+    value: go 25.6%; notes alone: elixir tutorial 9.4%, go reference 7.8%
+    command: node tools/sharewords.js --clone sdkgen --root out/new --lang ts,go,py,c,zig,clojure,rust,elixir,rb
+  - [16]
+    name: citations audited
+    value: 106 citations, every quote present; of 19 audited across 8 languages, 9 show the value and 10 do not (they rely on `unquoted`, quote an unrelated line, cite a comment, or contradict the note)
+    command: node check-v31/mine/cites.js check-v31/sdkgen/ts
+  - [17]
+    name: newport start
+    value: ocaml and perl workspaces at 9089ed48; REGEN 21 variations, none skipped; 'PORTCHECK ocaml: NOT PORTED', exit 1; 13.6 s
+    command: P/base/newport.sh ocaml check-v31/ports; REGEN=1 tools/portcheck.sh sdkgen out ocaml
+merge_risks:
+  - The golden (ts/test/golden/add-output.txt) changes in every port. Each port's lines are its own, so a conflict is resolved by regenerating, never by merging by hand.
+  - Any port that needs a ref.facts key DEFAULTS lacks, or the forms reader change for swift throws, statics or ocaml fields, edits shared account.ts or forms.ts, a conflict with up to ten others. The reader change should land before the ports start.
+  - perl and any runtime whose result `ok` is not a boolean need a declared lits value or a new fact. If the fix is a new required fact, it is a breaking interface change that all nine providers must answer.
+  - The lua port must edit ts/test/lua-table-keys.test.ts (lua only, no conflict). I did not test whether other shared tests break when an unported language's ReadmeQuick, ReadmeTopQuick or ReadmeRef is deleted.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: refuted
+    evidence: |
+      RAN:
+      - sharewords: words printed only by go, plus its notes, are 25.6% of its three sections (tutorial 67.7% only-go), over the 15% line; ts is 15.4%; notes alone are at most 9.4%.
+      - purity 0 open in all nine (portcheck).
+      - 2 of 3 refutation criteria are crossed.
+      
+      READ (not recounted): breaking interface changes since the first four languages are about 11 to 13 by the freeze's count, over the line of about 10.
+      
+      The fixes this stage still needs (a required ok-literal fact, and a reader change for throws, statics and fields) would add at least one more breaking change.
+  - [1]
+    id: H2
+    verdict: refuted
+    evidence: |
+      RAN lines.js: measured 1.34x (1.26x without blanks and comments), projected 1.75x / 1.48x / 1.28x, counting the forms and the unchanged ReadmeTop.ts.
+      
+      The freeze's 1.65x and 2.30x leave out the forms that every port writes (771 lines for the nine; 601 already written for the eleven). With the forms, the freeze's own numbers are 1.40x measured and 1.90x projected. Under 2x on every count that includes what a port must write.
+  - [2]
+    id: H3
+    verdict: not-tested
+    evidence: I did not recount the 329-issue catalogue. READ: the log default, the Call cell and the go write sentence are fixed once in shared code. The c REFERENCE examples, the elixir arity note, the README no-test and Error-handling sections and the py and rb README tables still need per-language or unported-section edits.
+  - [3]
+    id: H4
+    verdict: supported
+    evidence: RAN at v31-frozen: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig documentation 6/6 (5/6 on the old code); suite 0 fail. clojure and elixir cannot be compiled here. 'Unverified 0' in the block tables means a compiler is on PATH, not that the variations' changed blocks were compiled.
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: Not exercised: doctor, remove, target add, package update, packs or aliases.

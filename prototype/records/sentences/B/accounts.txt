@@ -1,0 +1,154 @@
+c facts.collection: cited (src/cmp/c/fragment/EntityListOp.fragment.c)
+c facts.errSlot: cited (src/cmp/c/fragment/Main.fragment.c)
+c facts.errVar: convention 
+c facts.nullValue: cited (src/cmp/c/fragment/EntityLoadOp.fragment.c)
+c facts.record: derived 
+c facts.result: derived 
+c ref.facts.accessor.arg: derived 
+c ref.facts.accessor.param: derived 
+c ref.facts.container: cited (src/cmp/c/fragment/Main.fragment.c)
+c ref.facts.direct.okFalse: cited (src/cmp/c/fragment/Main.fragment.c)
+c ref.facts.direct.returns: derived 
+c ref.facts.keys: convention 
+c ref.facts.maps: language 
+c ref.facts.none: cited (src/cmp/c/fragment/EntityLoadOp.fragment.c)
+c ref.facts.noun: convention 
+c ref.facts.prepare.fails: cited (src/cmp/c/fragment/Main.fragment.c)
+c ref.facts.prepare.returns: derived 
+c ref.facts.valueType.OBJECT: convention 
+c ref.facts.valueType.STRING: convention 
+clojure facts.collection: cited (src/cmp/clojure/fragment/EntityListOp.fragment.clj)
+clojure facts.record: derived 
+clojure facts.result: derived 
+clojure ref.facts.accessor.arg: derived 
+clojure ref.facts.accessor.param: derived 
+clojure ref.facts.container: cited (tm/clojure/src/sdk/client.clj)
+clojure ref.facts.direct.okFalse: cited (tm/clojure/src/sdk/client.clj)
+clojure ref.facts.direct.returns: cited (tm/clojure/src/sdk/client.clj)
+clojure ref.facts.heading: convention 
+clojure ref.facts.keys: convention 
+clojure ref.facts.maps: language 
+clojure ref.facts.none: cited (src/cmp/clojure/fragment/EntityLoadOp.fragment.clj)
+clojure ref.facts.noun: convention 
+clojure ref.facts.prepare.fails: cited (tm/clojure/src/sdk/client.clj)
+clojure ref.facts.prepare.returns: cited (tm/clojure/src/sdk/client.clj)
+clojure ref.facts.valueType.OBJECT: convention 
+clojure ref.facts.valueType.STRING: convention 
+elixir facts.collection: cited (src/cmp/elixir/fragment/EntityListOp.fragment.ex
+elixir facts.record: derived 
+elixir facts.result: derived 
+elixir ref.facts.accessor.arg: derived 
+elixir ref.facts.accessor.param: derived 
+elixir ref.facts.container: cited (src/cmp/elixir/fragment/Main.fragment.ex)
+elixir ref.facts.direct.okFalse: cited (src/cmp/elixir/fragment/Main.fragment.ex)
+elixir ref.facts.direct.returns: cited (src/cmp/elixir/fragment/Main.fragment.ex)
+elixir ref.facts.keys: convention 
+elixir ref.facts.maps: language 
+elixir ref.facts.none: cited (src/cmp/elixir/fragment/EntityLoadOp.fragment.ex)
+elixir ref.facts.noun: convention 
+elixir ref.facts.prepare.fails: cited (src/cmp/elixir/fragment/Main.fragment.ex)
+elixir ref.facts.prepare.returns: cited (src/cmp/elixir/fragment/Main.fragment.ex)
+elixir ref.facts.valueType.OBJECT: derived 
+elixir ref.facts.valueType.STRING: derived 
+go facts.collection: cited (tm/go/utility/make_result.go)
+go facts.errVar: convention 
+go facts.noError: cited (src/cmp/go/fragment/Entity.fragment.go)
+go facts.record: derived 
+go facts.result: derived 
+go ref.facts.accessor.arg: derived 
+go ref.facts.accessor.param: derived 
+go ref.facts.container: cited (src/cmp/go/fragment/Main.fragment.go)
+go ref.facts.direct.okFalse: cited (src/cmp/go/fragment/Main.fragment.go)
+go ref.facts.direct.returns: derived 
+go ref.facts.keys: convention 
+go ref.facts.maps: language 
+go ref.facts.none: cited (src/cmp/go/fragment/Main.fragment.go)
+go ref.facts.noun: convention 
+go ref.facts.prepare.fails: cited (src/cmp/go/fragment/Main.fragment.go)
+go ref.facts.prepare.returns: derived 
+go ref.facts.valueType.OBJECT: derived 
+go ref.facts.valueType.STRING: derived 
+py facts.collection: derived 
+py facts.record: derived 
+py facts.result: derived 
+py ref.facts.accessor.arg: derived 
+py ref.facts.accessor.param: derived 
+py ref.facts.container: cited (src/cmp/py/fragment/Main.fragment.py)
+py ref.facts.direct.okFalse: cited (src/cmp/py/fragment/Main.fragment.py)
+py ref.facts.direct.returns: cited (src/cmp/py/fragment/Main.fragment.py)
+py ref.facts.keys: convention 
+py ref.facts.maps: language 
+py ref.facts.none: cited (src/cmp/py/fragment/EntityLoadOp.fragment.py)
+py ref.facts.noun: convention 
+py ref.facts.prepare.fails: cited (src/cmp/py/fragment/Main.fragment.py)
+py ref.facts.prepare.returns: cited (tm/py/pkg/utility/make_fetch_def.py)
+py ref.facts.valueType.OBJECT: derived 
+py ref.facts.valueType.STRING: derived 
+rb facts.collection: derived 
+rb facts.record: derived 
+rb facts.result: derived 
+rb ref.facts.accessor.arg: derived 
+rb ref.facts.accessor.param: derived 
+rb ref.facts.container: cited (src/cmp/rb/fragment/Main.fragment.rb)
+rb ref.facts.direct.okFalse: cited (src/cmp/rb/fragment/Main.fragment.rb)
+rb ref.facts.direct.returns: cited (src/cmp/rb/fragment/Main.fragment.rb)
+rb ref.facts.keys: convention 
+rb ref.facts.maps: language 
+rb ref.facts.none: cited (src/cmp/rb/fragment/EntityLoadOp.fragment.rb)
+rb ref.facts.noun: convention 
+rb ref.facts.prepare.fails: cited (src/cmp/rb/fragment/Main.fragment.rb)
+rb ref.facts.prepare.returns: cited (src/cmp/rb/fragment/Main.fragment.rb)
+rb ref.facts.valueType.OBJECT: derived 
+rb ref.facts.valueType.STRING: derived 
+rust facts.collection: derived 
+rust facts.err: cited (src/cmp/rust/fragment/Entity.fragment.rs)
+rust facts.ok: cited (src/cmp/rust/fragment/EntityLoadOp.fragment.rs)
+rust facts.record: derived 
+rust facts.result: derived 
+rust ref.facts.accessor.arg: derived 
+rust ref.facts.accessor.param: derived 
+rust ref.facts.container: cited (src/cmp/rust/fragment/Main.fragment.rs)
+rust ref.facts.direct.okFalse: cited (src/cmp/rust/fragment/Main.fragment.rs)
+rust ref.facts.direct.returns: derived 
+rust ref.facts.keys: convention 
+rust ref.facts.maps: language 
+rust ref.facts.none: cited (src/cmp/rust/fragment/Main.fragment.rs)
+rust ref.facts.noun: convention 
+rust ref.facts.prepare.fails: cited (src/cmp/rust/fragment/Main.fragment.rs)
+rust ref.facts.prepare.returns: derived 
+rust ref.facts.valueType.OBJECT: convention 
+rust ref.facts.valueType.STRING: convention 
+ts facts.collection: cited (src/cmp/ts/fragment/EntityListOp.fragment.ts)
+ts facts.record: derived 
+ts facts.result: derived 
+ts ref.facts.accessor.arg: derived 
+ts ref.facts.accessor.param: derived 
+ts ref.facts.container: cited (tm/ts/src/utility/MakeOptionsUtility.ts)
+ts ref.facts.direct.okFalse: cited (src/cmp/ts/fragment/Main.fragment.ts)
+ts ref.facts.direct.returns: cited (src/cmp/ts/fragment/Main.fragment.ts)
+ts ref.facts.keys: convention 
+ts ref.facts.maps: language 
+ts ref.facts.none: cited (src/cmp/ts/fragment/EntityBase.fragment.ts)
+ts ref.facts.noun: convention 
+ts ref.facts.prepare.fails: cited (src/cmp/ts/fragment/Main.fragment.ts)
+ts ref.facts.prepare.returns: cited (src/cmp/ts/fragment/Main.fragment.ts
+ts ref.facts.valueType.OBJECT: cited (tm/ts/src/utility/MakeOptionsUtility.ts)
+ts ref.facts.valueType.STRING: derived 
+zig facts.collection: cited (src/cmp/zig/fragment/Entity.fragment.zig)
+zig facts.err: cited (src/cmp/zig/fragment/Entity.fragment.zig)
+zig facts.ok: cited (src/cmp/zig/fragment/Entity.fragment.zig)
+zig facts.record: derived 
+zig facts.result: derived 
+zig ref.facts.accessor.arg: derived 
+zig ref.facts.accessor.param: derived 
+zig ref.facts.container: cited (src/cmp/zig/fragment/Main.fragment.zig)
+zig ref.facts.direct.okFalse: cited (src/cmp/zig/fragment/Main.fragment.zig)
+zig ref.facts.direct.returns: derived 
+zig ref.facts.keys: convention 
+zig ref.facts.maps: language 
+zig ref.facts.none: cited (src/cmp/zig/fragment/Main.fragment.zig)
+zig ref.facts.noun: convention 
+zig ref.facts.prepare.fails: cited (src/cmp/zig/fragment/Main.fragment.zig)
+zig ref.facts.prepare.returns: derived 
+zig ref.facts.valueType.OBJECT: convention 
+zig ref.facts.valueType.STRING: convention 

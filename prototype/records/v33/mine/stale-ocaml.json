@@ -1,0 +1,313 @@
+{
+ "lang": "ocaml",
+ "file": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/hand/ocaml.json",
+ "records": 242,
+ "checkable": 161,
+ "quotes": 460,
+ "stale": [
+  {
+   "id": "5154a8de87",
+   "where": "class",
+   "outcome": "unification:ocaml-noarg",
+   "missing": [
+    "if is_nullish reqmatch then empty_map ()"
+   ]
+  },
+  {
+   "id": "cbe7331d90",
+   "where": "class",
+   "outcome": "unification:ocaml-noarg",
+   "missing": [
+    "if is_nullish reqmatch then empty_map ()"
+   ]
+  },
+  {
+   "id": "0ac70c9214",
+   "where": "class",
+   "outcome": "unification:ocaml-noarg",
+   "missing": [
+    "if is_nullish reqmatch then empty_map ()"
+   ]
+  },
+  {
+   "id": "d978e00f4c",
+   "where": "class",
+   "outcome": "unification:ocaml-signature",
+   "missing": [
+    "e_x (value) (value) : t"
+   ]
+  },
+  {
+   "id": "08fd14b4ae",
+   "where": "class",
+   "outcome": "unification:ocaml-signature",
+   "missing": [
+    "e_x (value) (value) : t"
+   ]
+  },
+  {
+   "id": "80f2137ae9",
+   "where": "class",
+   "outcome": "unification:ocaml-signature",
+   "missing": [
+    "e_x (value) (value) : t"
+   ]
+  },
+  {
+   "id": "e19ec2d014",
+   "where": "class",
+   "outcome": "unification:ocaml-signature",
+   "missing": [
+    "e_x (value) (value) : t"
+   ]
+  },
+  {
+   "id": "c2ec44f9f9",
+   "where": "class",
+   "outcome": "unification:ocaml-signature",
+   "missing": [
+    "e_x (value) (value) : t"
+   ]
+  },
+  {
+   "id": "c4d1457db0",
+   "where": "class",
+   "outcome": "unification:member-sentence",
+   "missing": [
+    "Sdk_entity_ambient.make client entopts"
+   ]
+  },
+  {
+   "id": "3538e6b4b8",
+   "where": "class",
+   "outcome": "dropped",
+   "missing": [
+    "keys: bare"
+   ]
+  },
+  {
+   "id": "0ccd61dc70",
+   "where": "class",
+   "outcome": "dropped",
+   "missing": [
+    "keys: bare"
+   ]
+  },
+  {
+   "id": "fd8af2cd3f",
+   "where": "class",
+   "outcome": "unification:ocaml-signature",
+   "missing": [
+    "e_x (value) (value) : t"
+   ]
+  },
+  {
+   "id": "e8844e5109",
+   "where": "class",
+   "outcome": "unification:member-sentence",
+   "missing": [
+    "Sdk_entity_ambient.make client entopts"
+   ]
+  },
+  {
+   "id": "eaa8f0fd34",
+   "where": "class",
+   "outcome": "unification:ocaml-signature",
+   "missing": [
+    "e_x (value) (value) : t"
+   ]
+  },
+  {
+   "id": "8c09a3ded1",
+   "where": "class",
+   "outcome": "unification:ocaml-noarg",
+   "missing": [
+    "if is_nullish reqmatch then empty_map ()"
+   ]
+  },
+  {
+   "id": "9838d0827d",
+   "where": "class",
+   "outcome": "unification:ocaml-signature",
+   "missing": [
+    "e_x (value) (value) : t"
+   ]
+  },
+  {
+   "id": "402fe9c3f0",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "8e07a58e74",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "e41de61ee0",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "ba961d8726",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "82a4a3fdfe",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "40be3fd4c2",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "47e50abd3c",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "b899502014",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "47694c5f85",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "ea7782f69a",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "f4a8da91da",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "ddd31e4eda",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "4dc9474ebb",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "4db2cd36e2",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "7a7cf5a828",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "201cf2784e",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "12444df968",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "d79a3095b4",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "acf3528ea7",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "12fb5a4cfb",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "ce8a55587b",
+   "where": "class",
+   "outcome": "unification:ref-op-block",
+   "missing": [
+    "e_x reqmatch ctrl : t"
+   ]
+  },
+  {
+   "id": "7138a8d54a",
+   "where": "class",
+   "outcome": "unification:ocaml-noarg",
+   "missing": [
+    "if is_nullish reqmatch then empty_map ()"
+   ]
+  }
+ ]
+}

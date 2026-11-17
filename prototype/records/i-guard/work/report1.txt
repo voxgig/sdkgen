@@ -1,0 +1,304 @@
+c: derived 37, cited 10, language 1, convention 10, excepted 0; types: column c; uncompared returns 1 (the accessor is declared in MainEntity_c.ts under a name the generator spells (${cAccessorName(...)}), past which the return reader cannot see), paramNames 10 (the EntityVT function pointers in core/sdk.h leave their receiver parameter unnamed (Entity*))
+  cited (prose: audit only) facts.collection = "`NULL`-terminated array"
+    src/cmp/c/fragment/EntityListOp.fragment.c: "// array is NULL-terminated. ... items[n] = NULL;"
+  cited facts.errSlot = "*err"
+    src/cmp/c/fragment/Main.fragment.c: "*err = context_make_error(ctx, \"spec_method_allow\", buf);"
+  cited facts.nullValue = "NULL"
+    src/cmp/c/fragment/EntityLoadOp.fragment.c: "if (*err) return NULL;"
+  cited ref.facts.none = "NULL"
+    src/cmp/c/fragment/EntityLoadOp.fragment.c: "if (*err) return NULL;"
+  cited ref.facts.container = "voxgig_value*"
+    src/cmp/c/fragment/Main.fragment.c: "ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {"
+  cited ref.facts.ctor[0] = "#include \"{module}\""
+    src/cmp/c/fragment/Main.fragment.c: "#include \"api.h\""
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/c/fragment/Entity.fragment.c: "return voxgig_clone(self->data);"
+  cited (prose: audit only) ref.facts.prepare.fails = "style"
+    src/cmp/c/fragment/Main.fragment.c: "voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err) {"
+  cited (prose: audit only) ref.facts.body.values = "a string value holding the bytes, such as `voxgig_new_string_n`"
+    tm/c/utility/http.c: "if (voxgig_is_string(body)) {\n    bytes = voxgig_as_string(body);\n    blen = voxgig_string_len(body); ... \"body\", voxgig_new_string_n(text, len),"
+  cited (absence: searched) ref.facts.cancel = false
+    tm/c/utility/http.c: "absent: /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|WithContext|context\\.Context|cancel_request|sendAsync/i"
+  cited ahead of a declaration ref.facts.lits.false = "false"
+  cited ahead of a declaration ref.facts.lits.true = "true"
+  exception members:options: WRONG: c: the reference declares no options member; tm/c/core/utility.c:70 defines voxgig_value* sdk_options_map(ProjectNameSDK* sdk), a deep clone of the options (sdk.h:477)
+  exception members:utility: WRONG: c: the reference declares no utility member; tm/c/core/utility.c:72 defines Utility* sdk_get_utility(ProjectNameSDK* sdk), a copy (sdk.h:478)
+  exception types:ARRAY: the code generator's map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did
+  exception types:OBJECT: the code generator's map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did
+clojure: derived 41, cited 14, language 1, convention 11, excepted 0; types: printer total only (the code generator has no clojure column in canonToType; the page's type words are the provider's own); uncompared returns 14 (the clojure runtime declares no types, so a signature's `-> x` is compared with nothing; the facts that rest on one are cited)
+  cited (prose: audit only) facts.collection = "vector"
+    src/cmp/clojure/fragment/EntityListOp.fragment.clj: ";; Resolves to a vector of entities, one per record, as make-result builds ... (if (vs/islist items) (vec items) items)"
+  cited ref.facts.none = "nil"
+    src/cmp/clojure/fragment/EntityLoadOp.fragment.clj: ";; Load a single EntityName (reqmatch: id/query fields; nil = empty match)."
+  cited ref.facts.container = "voxgig.struct"
+    tm/clojure/src/sdk/client.clj: "[voxgig.struct :as vs]"
+  cited ref.facts.ctor[0] = "(require '[{module} :as {client}]"
+    src/cmp/clojure/Main_clojure.ts: "(ns sdk.api ... (:require [sdk.client :as client]${requires}))"
+  cited ref.facts.ctor[1] = "         '[voxgig.struct :as vs])"
+    tm/clojure/src/sdk/client.clj: "[voxgig.struct :as vs]"
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/clojure/fragment/Entity.fragment.clj: "(vs/clone (deref (:_data ent)))"
+  cited ref.facts.direct.returns = "map"
+    tm/clojure/src/sdk/client.clj: "(vs/jm \"ok\" false \"err\" (core/ucall ctx :clean fetch-err))"
+    unquoted map: vs/jm builds a map [the runtime has it in 32 file(s)]
+  cited ref.facts.prepare.returns = "map"
+    tm/clojure/src/sdk/client.clj: "(defn prepare [client fetchargs]"
+    unquoted map: the fetch definition make-fetch-def builds, a voxgig.struct map [the runtime has it in 32 file(s)]
+  cited (prose: audit only) ref.facts.prepare.fails = "style"
+    tm/clojure/src/sdk/client.clj: "(core/sdk-throw (core/ctx-error ctx \"spec_method_allow\""
+  cited (prose: audit only) ref.facts.body.values = "a byte array, a `String` or an `InputStream`"
+    tm/clojure/src/sdk/core.clj: ";; A byte array, an InputStream or a string, sent as it is. An InputStream is ... (or (bytes? body) (instance? java.io.InputStream body)) body"
+    unquoted String: a string, which the comment above raw-body names [the runtime has it in 23 file(s)]
+  cited (prose: audit only) ref.facts.body.once = "an `InputStream`"
+    tm/clojure/src/sdk/core.clj | tm/clojure/src/sdk/core.clj: ";; read here, once, before the first attempt, so that a retry sends the same | (if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)"
+  cited (absence: searched) ref.facts.cancel = false
+    tm/clojure/src/sdk/core.clj: "absent: /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|WithContext|context\\.Context|cancel_request|sendAsync/i"
+  cited (prose: audit only) notes.instance = "The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-export: `(sdk.client/get-utility client)` returns a copy of it."
+    tm/clojure/src/sdk/client.clj | tm/clojure/src/sdk/core.clj: "(ns sdk.client ... (defn get-utility [client] (core/get-utility client)) | (defn get-utility [client] (utility-copy (:utility client)))"
+    unquoted (sdk.client/get-utility client): the call a caller writes to the defn the quote shows [the runtime has it in 0 file(s)]
+  cited (prose: audit only) notes.members = "State accessors are stored on the entity map and called via keyword lookup."
+    src/cmp/clojure/fragment/Entity.fragment.clj: ":data-get (fn [] (ent-data-get ent))"
+  cited ahead of a declaration ref.facts.lits.false = "false"
+  cited ahead of a declaration ref.facts.lits.true = "true"
+  exception streamItems: WRONG: clojure: ref.facts.entity stream kind streamLazy ("return a lazy stream of its result items"); Entity.fragment.clj runs run-op and realises the streaming feature's items with vec and mapv before it returns; the lazy-seq walks the realised vector
+elixir: derived 46, cited 12, language 1, convention 5, excepted 2; types: column elixir; uncompared returns 9 (the runtime writes @spec on the operations only; the client and entity members carry none, so their declared returns are compared with nothing)
+  cited (prose: audit only) facts.collection = "`Voxgig.Struct` list"
+    src/cmp/elixir/fragment/EntityListOp.fragment.ex | src/cmp/elixir/fragment/Main.fragment.ex: "# Returns a list of entityname entities, one per record, whose data_get/1 | alias Voxgig.Struct, as: S"
+  cited ref.facts.none = "nil"
+    src/cmp/elixir/fragment/EntityLoadOp.fragment.ex: "def load(ent, reqmatch \\\\ nil, ctrl \\\\ nil) do"
+  cited ref.facts.container = "Voxgig.Struct"
+    src/cmp/elixir/fragment/Main.fragment.ex: "alias Voxgig.Struct, as: S ... fetchargs = if S.ismap(fetchargs), do: fetchargs, else: S.jm([])"
+  cited (prose: audit only) ref.facts.client[1].kind = "utilityBase"
+    src/cmp/elixir/fragment/Main.fragment.ex: "def get_utility(client), do: S.getprop(client, \"_utility\")"
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    tm/elixir/lib/projectname/entity_base.ex: "S.clone(S.getprop(ent, \"_data\"))"
+  cited ref.facts.direct.returns = "map()"
+    src/cmp/elixir/fragment/Main.fragment.ex: "S.jm([\"ok\", false, \"err\", err])"
+    unquoted map(): S.jm builds a map [the runtime has it in 6 file(s)]
+  cited ref.facts.prepare.returns = "map()"
+    src/cmp/elixir/fragment/Main.fragment.ex: "def prepare(client, fetchargs \\\\ nil) do"
+    unquoted map(): the fetch definition, a map [the runtime has it in 6 file(s)]
+  cited (prose: audit only) ref.facts.prepare.fails = "style"
+    src/cmp/elixir/fragment/Main.fragment.ex: "raise Context.make_error(ctx, \"spec_method_allow\","
+  cited (prose: audit only) ref.facts.body.values = "a binary"
+    tm/elixir/lib/projectname/utility.ex: "scalar = is_binary(body) or is_number(body) or is_boolean(body) ... S.setprop(fetchdef, \"body\", body)"
+  cited (absence: searched) ref.facts.cancel = false
+    tm/elixir/lib/projectname/utility.ex: "absent: /\\b(cancel\\w*|signal)\\b|cancel_request|:abort\\b/i"
+  cited (prose: audit only) notes.member:utilityBase = "It is the client's own node, not a copy."
+    src/cmp/elixir/fragment/Main.fragment.ex: "def get_utility(client), do: S.getprop(client, \"_utility\")"
+  cited (prose: audit only) notes.ctor = "Build `options` from a native map with `{names.helpers}.deep/1`."
+    tm/elixir/lib/projectname/helpers.ex | src/cmp/elixir/fragment/Main.fragment.ex: "def deep(v) do | def new(options \\\\ nil) do"
+    unquoted {names.helpers}.deep/1: the arity name of def deep(v), behind the helpers module the slot names [the runtime has it in 0 file(s)]
+  excepted notes.tutorial:list: WRONG: elixir: notes.tutorial:list says "Named with its arity, it is `list/2`"; EntityListOp.fragment.ex defines def list(ent, reqmatch \\ nil, ctrl \\ nil), which is list/1, list/2 and list/3, and the tutorial calls list(planet), list/1
+  excepted notes.tutorial:load: WRONG: elixir: notes.tutorial:load says "Named with its arity, it is `load/2`"; EntityLoadOp.fragment.ex defines def load(ent, reqmatch \\ nil, ctrl \\ nil), which is load/1, load/2 and load/3
+  cited ahead of a declaration ref.facts.lits.false = "false"
+  cited ahead of a declaration ref.facts.lits.true = "true"
+  exception streamItems: WRONG: elixir: ref.facts.entity stream kind streamLazy ("return a lazy stream of its result items"); entity_base.ex runs run_op and calls the streaming feature's function before it returns (source(ctx, stream_fn), whose items streaming.ex produces eagerly as a list), and the Stream it returns is a lazy walk over that list
+  exception optional:opMatched list: the runtime defaults the match, and a nested entity's list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)
+  exception returns:op list: the @spec says term(); the page names what the term is, as the old page did
+  exception returns:op load: the @spec says term(); the page names what the term is, as the old page did
+  exception returns:op create: the @spec says term(); the page names what the term is, as the old page did
+  exception returns:op update: the @spec says term(); the page names what the term is, as the old page did
+  exception returns:op patch: the @spec says term(); the page names what the term is, as the old page did
+  exception returns:op remove: the @spec says term(); the page names what the term is, as the old page did
+  exception returns:opMatched list: the @spec says term(); the page names what the term is, as the old page did
+go: derived 46, cited 10, language 2, convention 6, excepted 0; types: column go; uncompared none
+  cited facts.collection = "`[]any`"
+    tm/go/utility/make_result.go: "var entities []any"
+  cited ref.facts.none = "nil"
+    src/cmp/go/fragment/Main.fragment.go: "return nil, err"
+  cited ref.facts.container = "map[string]any"
+    src/cmp/go/fragment/Main.fragment.go: "func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {"
+  cited (prose: audit only) ref.facts.client[1].kind = "utility"
+    src/cmp/go/fragment/Main.fragment.go: "return CopyUtility(sdk.utility)"
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/go/fragment/Entity.fragment.go: "out := vs.Clone(e.data)"
+  cited (prose: audit only) ref.facts.prepare.fails = "style"
+    src/cmp/go/fragment/Main.fragment.go: "func (sdk *ProjectNameSDK) Prepare(fetchargs map[string]any) (map[string]any, error) {"
+  cited (prose: audit only) ref.facts.body.values = "a `[]byte`, a `string` or an `io.Reader`"
+    tm/go/utility/fetcher.go: "\tcase string:\n\t\tif body != \"\" {\n\t\t\tbodyReader = strings.NewReader(body)\n\t\t}\n\tcase []byte:\n\t\tbodyReader = bytes.NewReader(body)\n\tcase io.Reader:"
+  cited (prose: audit only) ref.facts.body.once = "an `io.Reader`"
+    tm/go/utility/media.go: "if r, ok := body.(io.Reader); ok {\n\t\tdata, err := io.ReadAll(r)"
+  cited (absence: searched) ref.facts.cancel = false
+    tm/go/utility/fetcher.go: "absent: /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|WithContext|context\\.Context|cancel_request|sendAsync/i"
+  cited (prose: audit only) notes.member:stream = "It sends the items on the returned channel, which closes when the stream\nends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: the error the operation itself would return, sent as the\nlast value. Under `throw: false` in `callopts[\"ctrl\"]`, no error is sent."
+    src/cmp/go/fragment/Entity.fragment.go | tm/go/core/types.go: "func (e *EntyClass) Stream(action string, args map[string]any, callopts map[string]any) <-chan core.StreamItem { ... defer close(out) ... // What MakeError or Done hands back: the error, as the last value, or\n\t// under `throw: false` the data there is. ... if c := core.ToMapAny(callopts[\"ctrl\"]); c != nil { | type StreamItem struct {\n\tItem any\n\tErr  error\n}"
+  cited ahead of a declaration ref.facts.lits.false = "false"
+  cited ahead of a declaration ref.facts.lits.true = "true"
+py: derived 46, cited 14, language 1, convention 7, excepted 0; types: column py; uncompared returns 6 (the runtime annotates the returns of the operations and data_get/match_get only; the others are cited where a fact rests on them)
+  cited facts.recordType = "dict"
+    src/cmp/py/fragment/Entity.fragment.py: "def data_get(self) -> EntityName: ... return vs.clone(self._data)"
+    unquoted dict: EntityName is a TypedDict, so a dict at run time [the runtime has it in 56 file(s)]
+  cited ref.facts.none = "None"
+    src/cmp/py/fragment/EntityLoadOp.fragment.py: "def load(self, reqmatch=None, ctrl=None) -> EntyClass:"
+  cited ref.facts.lits.true = "True"
+    src/cmp/py/fragment/Main.fragment.py: "\"ok\": body_err is None and status >= 200 and status < 300,"
+    unquoted True: ok is the bool the status test computes; True is not spelled [the runtime has it in 56 file(s)]
+  cited ref.facts.lits.false = "False"
+    src/cmp/py/fragment/Main.fragment.py: "return {\"ok\": False, \"err\": utility.clean(self._rootctx, err)}"
+  cited ref.facts.container = "dict"
+    src/cmp/py/fragment/Main.fragment.py: "extend = options.get(\"extend\") if isinstance(options, dict) else None"
+  cited ref.facts.ctor[0] = "from {module} import {client}"
+    src/cmp/py/Main_py.ts | src/cmp/py/fragment/Main.fragment.py: "File({ name: '__init__.' + target.ext }, () => { ... from ${model.const.Name.toLowerCase()}_sdk.feature.base_feature import ${model.const.Name}BaseFeature | class ProjectNameSDK"
+  cited (prose: audit only) ref.facts.client[1].kind = "utility"
+    src/cmp/py/fragment/Main.fragment.py: "return ProjectNameUtility.copy(self._utility)"
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/py/fragment/Entity.fragment.py: "return vs.clone(self._data)"
+  cited ref.facts.direct.returns = "dict"
+    src/cmp/py/fragment/Main.fragment.py: "def direct(self, fetchargs=None): ... return {\"ok\": False, \"err\": utility.clean(self._rootctx, err)} ... if isinstance(fetched, dict):"
+  cited ref.facts.prepare.returns = "dict"
+    tm/py/pkg/utility/make_fetch_def.py: "\"url\": url, ... \"method\": spec.method,"
+    unquoted dict: the fetch definition is a dict literal [the runtime has it in 56 file(s)]
+  cited (prose: audit only) ref.facts.prepare.fails = "style"
+    src/cmp/py/fragment/Main.fragment.py: "raise ctx.make_error(\"spec_method_allow\","
+  cited (prose: audit only) ref.facts.body.values = "`bytes`, `bytearray`, `memoryview`, a `str` or a file object"
+    tm/py/pkg/utility/fetcher.py: "if isinstance(body, str):\n        return body.encode(\"utf-8\") ... if isinstance(body, (bytearray, memoryview)): ... if isinstance(body, bytes) or hasattr(body, \"read\"):"
+  cited (prose: audit only) ref.facts.body.once = "a file object"
+    tm/py/pkg/utility/media.py: "if body is not None and callable(getattr(body, \"read\", None)):\n        return body.read()"
+  cited (absence: searched) ref.facts.cancel = false
+    tm/py/pkg/utility/fetcher.py: "absent: /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|WithContext|context\\.Context|cancel_request|sendAsync/i"
+  exception optional:opMatched list: the runtime defaults the match, and a nested entity's list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)
+  exception returns:entity dataGet: EntityName is a TypedDict, so a dict; the page names the dict, as the old page did
+  exception returns:entity matchGet: EntityName is a TypedDict, so a dict; the page names the dict, as the old page did
+rb: derived 45, cited 12, language 1, convention 7, excepted 0; types: column rb; uncompared returns 7 (the runtime documents a return with `@return` on some methods only; the facts that rest on the others are cited)
+  cited facts.recordType = "Hash"
+    src/cmp/rb/fragment/Entity.fragment.rb: "@return [EntityName, Hash]"
+  cited ref.facts.none = "nil"
+    src/cmp/rb/fragment/EntityLoadOp.fragment.rb: "def load(reqmatch = nil, ctrl = nil)"
+  cited ref.facts.container = "Hash"
+    src/cmp/rb/fragment/Main.fragment.rb: "out.is_a?(Hash) ? out : {}"
+  cited ref.facts.ctor[0] = "require_relative '{module}'"
+    src/cmp/rb/Main_rb.ts: "require_relative 'feature/base_feature'"
+  cited (prose: audit only) ref.facts.client[1].kind = "utility"
+    src/cmp/rb/fragment/Main.fragment.rb: "def get_utility\n    ProjectNameUtility.copy(@_utility)"
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/rb/fragment/Entity.fragment.rb: "VoxgigStruct.clone(@_data)"
+  cited ref.facts.direct.returns = "Hash"
+    src/cmp/rb/fragment/Main.fragment.rb: "\"ok\" => false, ... # ({ \"ok\" => ..., ... }) and never raises."
+    unquoted Hash: the result is a Hash literal [the runtime has it in 59 file(s)]
+  cited ref.facts.prepare.returns = "Hash"
+    src/cmp/rb/fragment/Main.fragment.rb: "fetchdef, fd_err = utility.make_fetch_def.call(ctx) ... # return just the fetchdef Hash (raising on error) so callers"
+  cited (prose: audit only) ref.facts.prepare.fails = "style"
+    src/cmp/rb/fragment/Main.fragment.rb: "raise fd_err if fd_err"
+  cited (prose: audit only) ref.facts.body.values = "a `String`, or an IO that responds to `read`"
+    tm/rb/utility/fetcher.rb: "if body_str.is_a?(String)\n        request.body = body_str\n      elsif body_str.respond_to?(:read)"
+  cited (prose: audit only) ref.facts.body.once = "an IO"
+    tm/rb/utility/media.rb: "body.respond_to?(:read) ? body.read : body"
+  cited (absence: searched) ref.facts.cancel = false
+    tm/rb/utility/fetcher.rb: "absent: /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|WithContext|context\\.Context|cancel_request|sendAsync/i"
+  cited ahead of a declaration ref.facts.lits.false = "false"
+  cited ahead of a declaration ref.facts.lits.true = "true"
+  exception returns:entity dataGet: the runtime documents `[EntityName, Hash]`: the typed Struct name or a Hash; the page names the Hash, as the old page did
+rust: derived 41, cited 12, language 1, convention 9, excepted 0; types: column rust; uncompared none
+  cited facts.ok = "Ok"
+    src/cmp/rust/fragment/EntityLoadOp.fragment.rs: "Ok(self.clone())"
+  cited facts.err = "Err"
+    src/cmp/rust/fragment/Entity.fragment.rs: "Err(err) => return utility.make_error(ctx, Some(err)),"
+  cited ref.facts.none = "Value::Noval"
+    src/cmp/rust/fragment/Main.fragment.rs: "options: RefCell::new(Value::Noval),"
+  cited ref.facts.setArg = "`Some(&map)`"
+    src/cmp/rust/fragment/Entity.fragment.rs: "fn data(&self, args: Option<&Value>) -> Value {\n        if let Some(arg) = args {"
+    unquoted Some(&map): an Option<&Value> argument, written for a map value named map [the runtime has it in 0 file(s)]
+  cited ref.facts.container = "Value"
+    src/cmp/rust/fragment/Main.fragment.rs: "pub fn new(options: Value) -> Rc<ProjectNameSDK> {"
+  cited ref.facts.ctor[0] = "use {module}::{jo, ProjectNameEntityBase, {client}, Entity, Value};"
+    src/cmp/rust/Main_rust.ts: "call_json, call_vfn, getp, ja, jo, json_thunk, to_map, unsupported_op, vfn, ...     Entity, Feature, FeatureRef, FetcherFn, OutVal, ${model.const.Name}EntityBase, ... pub use crate::core::sdk::{test_sdk, ${model.const.Name}SDK}; ... pub use crate::utility::voxgigstruct::Value;"
+    unquoted ProjectNameEntityBase: the generator spells it ${model.const.Name}EntityBase [the runtime has it in 4 file(s)]
+    unquoted ProjectNameSDK: the generator spells it ${model.const.Name}SDK [the runtime has it in 5 file(s)]
+  cited (prose: audit only) ref.facts.client[1].kind = "utility"
+    src/cmp/rust/fragment/Main.fragment.rs: "pub fn get_utility(&self) -> Rc<Utility> {\n        Utility::copy(&self.utility)"
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/rust/fragment/Entity.fragment.rs: "vs::clone(&self.data.borrow())"
+  cited (prose: audit only) ref.facts.prepare.fails = "style"
+    src/cmp/rust/fragment/Main.fragment.rs: "pub fn prepare(&self, fetchargs: Value) -> Result<Value, ProjectNameError> {"
+  cited (prose: audit only) ref.facts.body.values = "a string, or bytes as `bytes_value(&[u8])`"
+    tm/rust/utility/media.rs: "pub fn bytes_value(bytes: &[u8]) -> Value { ... Value::Str(s) => Some(s.as_bytes().to_vec()),"
+    unquoted bytes_value(&[u8]): the signature bytes_value(bytes: &[u8]) with its parameter name left out [the runtime has it in 0 file(s)]
+  cited (absence: searched) ref.facts.cancel = false
+    tm/rust/utility/fetcher.rs: "absent: /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|WithContext|context\\.Context|cancel_request|sendAsync/i"
+  cited (prose: audit only) notes.member:direct = "The result map always comes back inside `Ok`, for a non-2xx response and\nfor a request that could not be made alike; its `ok` key reports the failure."
+    src/cmp/rust/fragment/Main.fragment.rs: "        self.raw_request(fetchargs) ...             Err(err) => {\n                return Ok(jo(vec![ ...         Ok(jo(vec![\n            (\"ok\", Value::Bool(false)),"
+  cited ahead of a declaration ref.facts.lits.false = "false"
+  cited ahead of a declaration ref.facts.lits.true = "true"
+ts: derived 45, cited 15, language 1, convention 5, excepted 0; types: column ts; uncompared none
+  cited (prose: audit only) facts.collection = "array"
+    src/cmp/ts/fragment/EntityListOp.fragment.ts: "async list(this: any, reqmatch?: EntityNameListMatch, ctrl?: Control): Promise<EntyClass[]>"
+  cited ref.facts.none = "undefined"
+    src/cmp/ts/fragment/EntityBase.fragment.ts: "return undefined"
+  cited ref.facts.container = "object"
+    tm/ts/src/utility/MakeOptionsUtility.ts: "const layer = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {}"
+  cited ref.facts.valueType.OBJECT = "object"
+    tm/ts/src/utility/MakeOptionsUtility.ts: "const layer = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {}"
+  cited ref.facts.client[0].returns = "object"
+    src/cmp/ts/fragment/Main.fragment.ts | tm/ts/src/utility/MakeOptionsUtility.ts: "return this._utility.struct.clone(this._options) | const layer = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {}"
+  cited (prose: audit only) ref.facts.client[1].kind = "utility"
+    src/cmp/ts/fragment/Main.fragment.ts: "return this._utility.struct.clone(this._utility)"
+  cited ref.facts.client[1].returns = "object"
+    src/cmp/ts/fragment/Main.fragment.ts: "return this._utility.struct.clone(this._utility)"
+    unquoted object: a clone of the Utility instance [the runtime has it in 27 file(s)]
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/ts/fragment/EntityBase.fragment.ts: "let out = struct.clone(this._data)"
+  cited ref.facts.direct.returns = "Promise<{ ok, status, headers, data }>"
+    src/cmp/ts/fragment/Main.fragment.ts: "async direct(fetchargs?: any): Promise<DirectResult> ... { ok: boolean, status: number, headers: any, data: any, err?: any }"
+  cited ref.facts.direct.signal = "AbortSignal"
+    tm/ts/src/Control.ts: "signal?: AbortSignal"
+  cited ref.facts.prepare.returns = "Promise<{ url, method, headers, body } | Error>"
+    src/cmp/ts/fragment/Main.fragment.ts | tm/ts/src/utility/MakeFetchDefUtility.ts | tm/ts/src/Context.ts: "async prepare(fetchargs?: any) ... return ctx.error('spec_method_allow' ... return makeFetchDef(ctx) ... async direct(fetchargs?: any): Promise<DirectResult> |     url,\n    method: spec.method,\n    headers: spec.headers, ... fetchdef.body = | return new ProjectNameError(code, msg, this)"
+    unquoted Error: ctx.error returns a ProjectNameError, which extends Error [the runtime has it in 33 file(s)]
+  cited (prose: audit only) ref.facts.prepare.fails = "value"
+    src/cmp/ts/fragment/Main.fragment.ts: "return ctx.error('spec_method_allow'"
+  cited (prose: audit only) ref.facts.body.values = "a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string"
+    tm/ts/src/utility/MediaUtility.ts | tm/ts/src/utility/MakeFetchDefUtility.ts: "return value instanceof ArrayBuffer || ArrayBuffer.isView(value) || ... ('undefined' !== typeof Blob && value instanceof Blob) || isStream(value) ... return new Uint8Array(chunk) | fetchdef.body = isRawValue(body) || ('object' !== typeof body && !isJsonRequest(ctx.point)) ?"
+    unquoted Buffer: a Node Buffer is a Uint8Array, which ArrayBuffer.isView accepts [the runtime has it in 5 file(s)]
+  cited (prose: audit only) ref.facts.body.once = "a stream"
+    tm/ts/src/utility/MakeRequestUtility.ts: "// A stream can be read once; read it now, so that a retry sends the same bytes."
+  cited (prose: audit only) ref.facts.cancel = true
+    tm/ts/src/utility/MakeFetchDefUtility.ts: "fetchdef.signal = ctx.ctrl.signal"
+  cited ahead of a declaration ref.facts.lits.false = "false"
+  cited ahead of a declaration ref.facts.lits.true = "true"
+zig: derived 38, cited 14, language 2, convention 9, excepted 0; types: printer total only (the code generator has no zig column in canonToType: every field is a Value, so the page's type words are the provider's own); uncompared none
+  cited (prose: audit only) facts.collection = "slice"
+    src/cmp/zig/fragment/Entity.fragment.zig: "pub const EntListResult = union(enum) {\n    ok: []*EntyClass,"
+  cited facts.ok = ".ok"
+    src/cmp/zig/fragment/Entity.fragment.zig: ".ok => EntResult{ .ok = self },"
+  cited facts.err = ".err"
+    src/cmp/zig/fragment/Entity.fragment.zig: ".err => |e| EntResult{ .err = e },"
+  cited ref.facts.none = "h.vnull()"
+    src/cmp/zig/fragment/Main.fragment.zig: ".options = h.vnull(),"
+  cited ref.facts.container = "Value"
+    src/cmp/zig/fragment/Main.fragment.zig: "pub fn new(options: Value) *ProjectNameSDK {"
+  cited ref.facts.ctor[0] = "const sdk = @import(\"{module}\");"
+    src/cmp/zig/fragment/Root.fragment.zig: "const sdk = @import(\"core/sdk.zig\"); ... // SDK graph (core -> config -> features/utility/entities) so `@import(\"sdk\")`"
+  cited ref.facts.ctor[1] = "const h = sdk.h;"
+    src/cmp/zig/fragment/Root.fragment.zig: "pub const h = helpers;"
+    unquoted sdk: the module root, which the line before imports as sdk [the runtime has it in 11 file(s)]
+  cited (prose: audit only) ref.facts.client[1].kind = "utility"
+    src/cmp/zig/fragment/Main.fragment.zig: "return Utility.copy(self.sdkUtility);"
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/zig/fragment/Entity.fragment.zig: "return h.clone(self.data);"
+  cited (prose: audit only) ref.facts.prepare.fails = "note"
+    src/cmp/zig/fragment/Main.fragment.zig: "pub fn prepare(self: *ProjectNameSDK, fetchargs_in: Value) E!Value {"
+  cited (prose: audit only) ref.facts.body.values = "a string value holding the bytes"
+    tm/zig/core/utility.zig: ".string, .integer, .float, .number_string, .bool => is_json_request(ctx.point), ... h.setp(fetchdef, \"body\", body);"
+  cited (absence: searched) ref.facts.cancel = false
+    tm/zig/core/utility.zig: "absent: /\\b(cancel\\w*|abort\\w*|signal)\\b|AbortController|WithContext|context\\.Context|cancel_request|sendAsync/i"
+  cited (prose: audit only) notes.member:prepare = "On failure it returns the error of its error union, for `try` or `catch`."
+    src/cmp/zig/fragment/Main.fragment.zig | tm/zig/core/error.zig: "pub fn prepare(self: *ProjectNameSDK, fetchargs_in: Value) E!Value { | pub const E = error{Sdk};"
+    unquoted try: a Zig keyword for a call to an error-union function [the runtime has it in 34 file(s)]
+    unquoted catch: a Zig keyword for a call to an error-union function [the runtime has it in 61 file(s)]
+  cited (prose: audit only) notes.member:streamList = "Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with\nwhatever data the failure left; otherwise `.err` holds the branded error."
+    src/cmp/zig/fragment/Entity.fragment.zig: "// What make_error or done hands back, as a stream: the error, or under\n    // `throw: false` the data there is. ... .err => |e| return .{ .err = e }, ... return .{ .ok = sf.call(sf.ctx) }; ... const given = h.to_map(h.getp(stream_opts, \"ctrl\"));"
+    unquoted callopts.ctrl: the option path; stream reads the ctrl key of its callopts (stream_opts) with getp [the runtime has it in 0 file(s)]
+  cited ahead of a declaration ref.facts.lits.false = "false"
+  cited ahead of a declaration ref.facts.lits.true = "true"
+▶ runtimefacts
+  ✔ the account, per language (SDKGEN_GUARD_REPORT=1 prints it) (164.534903ms)
+✔ runtimefacts (165.879243ms)
+ℹ tests 1
+ℹ suites 1
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 669.472326

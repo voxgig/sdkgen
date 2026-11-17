@@ -1,0 +1,186 @@
+[selftest 0s] page numbers and articles (controls/pages.json)
+  ok   pages clean:go: 0 finding(s) on the unchanged pages (21 step counts, 0 numbered headings, 21 lists, 1423 articles, 102 not judged)
+  ok   pages clean:ts: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1477 articles, 0 not judged)
+  ok   pages clean:py: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1314 articles, 0 not judged)
+  ok   pages clean:c: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1134 articles, 0 not judged)
+  ok   pages clean:zig: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1339 articles, 0 not judged)
+  ok   pages clean:clojure: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1134 articles, 0 not judged)
+  ok   pages clean:rust: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1151 articles, 0 not judged)
+  ok   pages clean:elixir: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1160 articles, 0 not judged)
+  ok   pages clean:rb: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1232 articles, 0 not judged)
+  ok   pages clean:js: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1461 articles, 0 not judged)
+  ok   pages clean:php: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1314 articles, 0 not judged)
+  ok   pages clean:lua: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1464 articles, 0 not judged)
+  ok   pages clean:csharp: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1385 articles, 0 not judged)
+  ok   pages clean:java: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1310 articles, 0 not judged)
+  ok   pages clean:kotlin: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1404 articles, 0 not judged)
+  ok   pages clean:scala: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1216 articles, 0 not judged)
+  ok   pages clean:swift: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1675 articles, 0 not judged)
+  ok   pages clean:cpp: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1145 articles, 0 not judged)
+  ok   pages clean:perl: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1408 articles, 0 not judged)
+  ok   pages clean:ocaml: 0 finding(s) on the unchanged pages (0 step counts, 48 numbered headings, 0 lists, 1232 articles, 0 not judged)
+  ok   pages number-steps-go: 1 finding(s): STEPS says 3 step(s); the list that follows has 2 item(s)
+  ok   pages number-heading-ts: 1 finding(s): HEADING numbered 5, but it is the 2nd numbered heading under " > Tutorial: your first API call"
+  ok   pages article-a-ambient-ts: 1 finding(s): ARTICLE "a" before "ambient", which takes "an"
+  ok   pages number-steps-go [scratch]: 1 finding(s): STEPS says 3 step(s); the list that follows has 2 item(s)
+  ok   pages number-heading-ts [scratch]: 1 finding(s): HEADING numbered 5, but it is the 2nd numbered heading under " > Tutorial: your first API call"
+  ok   pages article-a-ambient-ts [scratch]: 1 finding(s): ARTICLE "a" before "ambient", which takes "an"
+[selftest 1s] fact mutations (controls/factmut)
+  ok   facts clojure-entitynoun-fields: ref.facts.entityNoun 'Members' -> 'Fields': fact sheet fails, unattested ref.entityNoun (names ref.entityNoun: 2 context(s): held 1, contradicted 0, new 1; 188 units); unmutated: none (1/16)
+  ok   facts clojure-entitynoun-fields [scratch]: ref.facts.entityNoun 'Members' -> 'Fields': fact sheet fails, unattested ref.noun, ref.entityNoun, ref.heading, ref.valueType.OBJECT (names ref.entityNoun: 2 context(s): held 1, contradicted 0, new 1; 188 units); unmutated: ref.noun, ref.heading, ref.valueType.OBJECT (2/16)
+  ok   facts rb-maps-arrays: ref.facts.maps 'hashes' -> 'arrays': fact sheet fails, unattested named, ref.maps (names ref.maps: 1 context(s): held 0, contradicted 1, new 0; 19 units; OLD says otherwise in 1); unmutated: named (3/16)
+  ok   facts rb-maps-arrays [scratch]: ref.facts.maps 'hashes' -> 'arrays': fact sheet fails, unattested named, ref.noun, ref.maps (names ref.maps: 1 context(s): held 0, contradicted 1, new 0; 19 units; OLD says otherwise in 1); unmutated: named, ref.noun (4/16)
+  ok   facts clojure-heading-client: ref.facts.heading '{module}' -> '{client}': fact sheet fails, unattested ref.heading (names ref.heading: hand/clojure.json decided "{module}" (CONTROL ONLY: stands for the porter's reco); unmutated: none (5/16)
+  ok   facts clojure-heading-client [scratch]: ref.facts.heading '{module}' -> '{client}': fact sheet fails, unattested ref.noun, ref.heading, ref.valueType.OBJECT (names ref.heading: 1 context(s): held 0, contradicted 0, new 1; 19 units; OLD has no such sentence); unmutated: ref.noun, ref.heading, ref.valueType.OBJECT (the true value is itself unattested in this mode) (6/16)
+  ok   facts rb-noun-functions: ref.facts.noun 'Methods' -> 'Functions': fact sheet fails, unattested named, ref.noun (names ref.noun: hand/rb.json decided "Methods" (CONTROL ONLY: stands for the porter's record of ); unmutated: named (7/16)
+  ok   facts rb-noun-functions [scratch]: ref.facts.noun 'Methods' -> 'Functions': fact sheet fails, unattested named, ref.noun (names ref.noun: 2 context(s): held 0, contradicted 0, new 2; 113 units; OLD has no such sentence); unmutated: named, ref.noun (the true value is itself unattested in this mode) (8/16)
+  ok   facts py-keys-bare: ref.facts.keys 'member' -> 'bare' (an enumeration): fact sheet fails, unattested ref.noun, ref.keys (names ref.keys: minimal pair against member: 133 prose units and 0 blocks differ; OLD reads as b); unmutated: ref.noun (9/16)
+  ok   facts py-keys-bare [scratch]: ref.facts.keys 'member' -> 'bare' (an enumeration): fact sheet fails, unattested ref.noun, ref.keys (names ref.keys: minimal pair against member: 133 prose units and 0 blocks differ; OLD reads as b); unmutated: ref.noun (10/16)
+  ok   facts perl-prints-record: prints 'fields' -> 'record': fact sheet fails, unattested prints, ref.noun (names prints: hand/perl.json decided "fields" (control: the true value, recorded so that the u); unmutated: ref.noun (11/16)
+  ok   facts perl-prints-record [scratch]: prints 'fields' -> 'record': fact sheet fails, unattested prints, ref.noun, ref.valueType.OBJECT (names prints: minimal pair against fields, listFields: 0 prose units and 130 blocks differ; OL); unmutated: prints, ref.noun, ref.valueType.OBJECT (the true value is itself unattested in this mode) (12/16)
+  ok   facts ocaml-keys-member: ref.facts.keys 'bare' -> 'member' (back to the OLD page's convention): fact sheet fails, unattested ref.noun, ref.keys (names ref.keys: hand/ocaml.json decided "bare" (control: the true value, recorded so that the un); unmutated: ref.noun (13/16)
+  ok   facts swift-entityby-name: ref.facts.entityBy 'class' -> 'Name' (back to the OLD page's convention): fact sheet fails, unattested ref.entityBy, ref.noun (names ref.entityBy: hand/swift.json decided "class" (Decided by hand; the tool marks it ATTESTED by ); unmutated: ref.noun (14/16)
+[selftest 396s] sentence verdicts
+  ok   sentences shared-records-verdict: 95 shared matches, each records its reference sentences and how many have no verdict
+  ok   sentences false-never-matched: class 2910759209 (shared:py:593ef47de1) with its sentence marked false: left open
+[selftest 519s] regeneration: a generation that throws, and one that regenerates fewer variations than old/ holds
+  ok   regen generation-throws: exit 1: REGENERATION FAILED (exit 1): the generator threw; new/ holds the pages of an earlier run and nothing is measured
+  ok   regen regeneration-short: exit 1: REGENERATION SHORT: 21 variations regenerated, old/ holds 22 (skipped: none); a variation not regenerated keeps an earlier run's pages, so n
+[selftest 532s] printed calls (controls/calls.json)
+  ok   calls clean:swift: 0 finding(s) on the unchanged pages
+  ok   calls clean:lua: 0 finding(s) on the unchanged pages
+  ok   calls clean:ocaml: 0 finding(s) on the unchanged pages
+  ok   calls clean:perl: 0 finding(s) on the unchanged pages
+  ok   calls clean:kotlin: 0 finding(s) on the unchanged pages
+  ok   calls clean:scala: 0 finding(s) on the unchanged pages
+  ok   calls clean:php: 0 finding(s) on the unchanged pages
+  ok   calls swift-load-one-arg: 1 finding(s): ARITY - load passes 1 argument(s); the runtime declares 2 (_ reqmatch: VMap?, _ ctrl: VMap?), 2 required
+  ok   calls lua-accessor-dot: 2 finding(s): RECEIVER - the entity accessor Ambient is made on the client instance; '.' makes it on the module
+  ok   calls lua-ctor-create: 1 finding(s): RECEIVER - create is declared on the instance; '.' calls it on the module
+  ok   calls ocaml-test-one-arg: 1 finding(s): ARITY - test_with passes 1 argument(s); the runtime declares 2 (testopts : value, sdkopts : value), 2 requir
+  ok   calls swift-record-asentity: 1 finding(s): MEMBER - ambient.asEntity(...): the runtime declares no member asEntity
+  ok   calls lua-load-three-args: 1 finding(s): ARITY - load passes 3 argument(s); the runtime declares 2 (reqmatch, ctrl), 0 required
+  info calls swift-cast-entitybase: not caught, as stated (NOT CAUGHT by design: a cast names a type, not a call)
+  info calls ocaml-list-map: not caught, as stated (NOT CAUGHT by design: a standard-library call, a type error only a compiler sees)
+  info calls ocaml-args-swapped: not caught, as stated (NOT CAUGHT by design: two arguments of one type swapped keep the count)
+  info calls perl-flat-list: not caught, as stated (NOT CAUGHT by design: perl declares every parameter optional, so a hash flattened into two)
+  ok   calls kotlin-ctrl-dropped-typed-map: 1 finding(s): ARITY - load passes 1 argument(s); the runtime declares 2 (reqmatch: MutableMap<String, Any?>?, ctrl: Mutabl
+  ok   calls kotlin-list-one-arg: 1 finding(s): ARITY - list passes 1 argument(s); the runtime declares 2 (reqmatch: MutableMap<String, Any?>?, ctrl: Mutabl
+  ok   calls scala-list-one-arg: 1 finding(s): ARITY - list passes 1 argument(s); the runtime declares 2 (reqmatch: JMap[String, Object], ctrl: JMap[String
+  ok   calls php-accessor-on-type: 2 finding(s): RECEIVER - the entity accessor Ambient is made on the client instance; '::' makes it on the type
+[selftest 534s] identity: one template one sentence, the bold lead, comment facts, model text, re-key, stale build, stale hand record
+  ok   identity template-two-langs: one id expected: ts 010ab525bc "A failure is reported in the result, not as an err" | py 010ab525bc "A failure is reported in the result, not as an err" | rust 010ab525bc "A failure is reported in the result, not as an err"
+  ok   identity member-name: one id expected: ts 581898e092 "Accepts the same parameters as `direct()`." | go 581898e092 "Accepts the same parameters as `Direct()`." | c 581898e092 "Accepts the same parameters as `sdk_direct()`."
+  ok   identity label-none: one id expected: ts 746a31db3f "The first argument holds the test feature's option" | go 746a31db3f "The first argument holds the test feature's option" | c 746a31db3f "The first argument holds the test feature's option"
+  ok   identity article-and-class: one id expected: ts 0071df96c2 "Create a new `AmbientEntity` instance." | c 0071df96c2 "Create a new `Ambient` instance." | elixir 0071df96c2 "Create a new `Demo.Entity.Ambient` instance."
+  ok   identity number: one id expected: go b4e03207de "The program below runs these 2 steps in order." | go b4e03207de "The program below runs these 4 steps in order."
+  ok   identity comment-fact: one id expected: rust 23dc789f01 "Load an ambient: Ok is the entity; Err holds the f" | zig 23dc789f01 "Load an ambient: .ok is the entity; .err holds the"
+  ok   identity comment-collection: one id expected: py ae972576e9 "List planet records: a list of entities, one per r" | clojure ae972576e9 "List planet records: a vector of entities, one per"
+  ok   identity vec-own-backticks: one id expected: rust bea4cfb8e1 "The result's `Ok` is a `Vec` of entities, one per " | zig bea4cfb8e1 "The result's `.ok` is a slice of entities, one per"
+  ok   identity shared-word-stays: different ids expected: ts a32ec5077c "Resolves to an array of entities, one per record, " | ts 3006eded11 "Resolves to an array of entities, one per planet, "
+  ok   identity shared-literal-stays: different ids expected: ts 010ab525bc "A failure is reported in the result, not as an err" | ts 5ee363d15a "A failure is reported in the result, not as an err"
+  ok   identity bold-step-lead: split into 2: "**Create a client.**" | "The client reads its API key from the `D"
+  ok   identity returns-lead-kept: **Returns:** lead kept with its sentence (1 unit)
+  ok   identity model-text-left-out: the fixture model's descriptions are model text; a shared sentence is not
+  ok   identity build-current: the clone: 1805 sources, 0 stale
+  ok   identity stale-build: STALE BUILD: ts/src/helpers/x.ts is 794871160s newer than ts/dist/helpers/x.js
+  ok   identity stale-staged-model: STALE BUILD: ts/project/.sdk/model/feature/log.aontu differs from its staged copy ts/dist-test-scaffold/.sdk/model/feature/log.aontu, which generation reads
+  ok   identity stale-hand-record: 1 stale: bbbbbbbbbb voxgig_branch_on_okay(result)
+  ok   identity old-only-quotation: 1 stale: cccccccccc (a quotation only OLD holds, unmarked, is stale; marked OLD, it stands)
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 183 classes
+[rekey clojure 2s] keys known: this code 254, the v3.2 code 220, of 295
+[rekey clojure 2s] records are keyed by this code already: nothing to map
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 183 classes
+[rekey clojure 2s] keys known: this code 254, the v3.2 code 220, of 295
+[rekey clojure 2s] records are keyed by this code already: nothing to map
+  ok   identity rekey-idempotent: records keyed by this code: left alone, twice: left alone
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 183 classes
+[rekey clojure 2s] keys known: this code 142, the v3.2 code 166, of 200
+[rekey clojure 2s] old tutorial: 52 classes
+[rekey clojure 2s] tutorial: renamed 43, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 2s] old rootquick: 19 classes
+[rekey clojure 2s] rootquick: renamed 19, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 3s] old reference: 181 classes
+[rekey clojure 3s] reference: renamed 104, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 183 classes
+[rekey clojure 2s] keys known: this code 166, the v3.2 code 142, of 200
+[rekey clojure 2s] records are keyed by this code already: nothing to map
+  ok   identity rekey-never-loses: clojure: 64 hand entries -> carried 55 (stale before 9, not carried 0, conflicts 0); re-keyed again: nothing to do
+[selftest 559s] purity mutations and the real notes
+  ok   purity note-names-feature: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names feature "retry": 1; Syntax: note names opti
+  ok   purity note-names-option: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names option "apikey": 1
+  ok   purity note-names-entity: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names entity "Planet": 1; Syntax: note names enti
+  ok   purity note-names-op: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note names operation "load": 1
+  ok   purity note-model-claim: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note states a number: 1; Syntax: note names option "se
+  ok   purity hook-concat: FLAGGED rc=1 | Naming: concatenation onto a generator name: 1
+  ok   purity hook-plural: FLAGGED rc=1 | Naming: pluralisation: 1
+  ok   purity hook-reserved: FLAGGED rc=1 | Naming: inline reserved-word test: 1
+  ok   purity printer-op-literal: FLAGGED rc=1 | Syntax: operation name outside the fact table: 1
+  ok   purity printer-desc-condition: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-model-read: FLAGGED rc=1 | Syntax: model read: 1
+  ok   purity printer-case-change: FLAGGED rc=1 | Syntax: case change on a name: 1
+  ok   purity fact-prose-names-feature: FLAGGED rc=1 | Syntax: fact prose names feature "cache": 1; Syntax: fact prose names option "feature": 1
+  ok   purity note-number-claim: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note states a number: 1
+  ok   purity printer-desc-alias: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-desc-bracket: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-desc-destructure: FLAGGED rc=1 | Syntax: condition on what the description shows: 1
+  ok   purity printer-model-param-kit: FLAGGED rc=1 | Syntax: model read: 1
+  ok   purity hook-reserved-eq: FLAGGED rc=1 | Naming: inline reserved-word test: 1
+  ok   purity recheck-notes-renamed-const: FLAGGED rc=1 | Syntax: notes declared but no notes region found by the lint: 1
+  ok   purity recheck-note-tail-from-const: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note is not one plain string literal: 1
+  ok   purity recheck-note-in-ref-notes: FLAGGED rc=1 | Syntax: note names feature "retry": 1; Syntax: note names option "apikey": 1; Syntax: note names option "feature": 1
+  ok   purity v32-note-joined-literals: FLAGGED rc=1 | Syntax: a declared note is not, whole, the literals of a notes entry: 1; Syntax: note is not one plain string literal: 1
+  ok   purity perl-scalar-helper-depluralise: FLAGGED rc=1 | Syntax: name surgery: 1
+  ok   purity go-hook-helper-depluralise: FLAGGED rc=1 | Naming: name surgery in helper goVarName (go/utility_go.ts): 1
+  ok   purity perl-scalar-helper-slice: FLAGGED rc=1 | Syntax: name surgery: 1
+  ok   purity notes:clojure: 2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 3 accepted
+  ok   purity notes:csharp: 1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:elixir: 3 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 2 accepted
+  ok   purity notes:go: 1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:lua: 2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:ocaml: 2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:perl: 1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:rust: 1 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+  ok   purity notes:zig: 2 declared, 1 region(s) found, 0 outside a region, 0 open lint finding(s), 0 accepted
+[selftest 570s] block tables
+  ok   blocks ts tutorial:  identical 19, corrected 16, unified 12, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks ts rootquick:  identical 0, corrected 13, unified 5, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks ts reference:  identical 195, corrected 0, unified 118, otherwise 0, oldOnly 17, newOnly 0
+  ok   blocks go tutorial:  identical 0, corrected 12, unified 1, otherwise 8, oldOnly 0, newOnly 0
+  ok   blocks go rootquick:  identical 0, corrected 14, unified 4, otherwise 4, oldOnly 0, newOnly 0
+  ok   blocks go reference:  identical 337, corrected 21, unified 18, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks py tutorial:  identical 26, corrected 22, unified 0, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks py rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks py reference:  identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks c tutorial:  identical 0, corrected 41, unified 0, otherwise 7, oldOnly 0, newOnly 0
+  ok   blocks c rootquick:  identical 0, corrected 2, unified 0, otherwise 17, oldOnly 0, newOnly 0
+  ok   blocks c reference:  identical 151, corrected 143, unified 19, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks zig tutorial:  identical 24, corrected 17, unified 0, otherwise 7, oldOnly 0, newOnly 0
+  ok   blocks zig rootquick:  identical 0, corrected 2, unified 15, otherwise 2, oldOnly 0, newOnly 0
+  ok   blocks zig reference:  identical 151, corrected 0, unified 162, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks clojure tutorial:  identical 26, corrected 21, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks clojure rootquick:  identical 0, corrected 16, unified 0, otherwise 3, oldOnly 0, newOnly 0
+  ok   blocks clojure reference:  identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks rust tutorial:  identical 26, corrected 22, unified 0, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks rust rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks rust reference:  identical 230, corrected 0, unified 83, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks elixir tutorial:  identical 16, corrected 22, unified 10, otherwise 0, oldOnly 0, newOnly 0
+  ok   blocks elixir rootquick:  identical 0, corrected 18, unified 0, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks elixir reference:  identical 151, corrected 0, unified 162, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks rb tutorial:  identical 3, corrected 21, unified 23, otherwise 1, oldOnly 0, newOnly 0
+  ok   blocks rb rootquick:  identical 0, corrected 2, unified 15, otherwise 2, oldOnly 0, newOnly 0
+  ok   blocks rb reference:  identical 303, corrected 0, unified 10, otherwise 0, oldOnly 1, newOnly 0
+  ok   blocks unexplained-block: otherwise 1 -> 2
+[selftest 571s] recall on the stage-2 worklists
+  ok   recall stage2-worklists: 49 of 51 flagged (floor 49)
+
+selftest: 145 controls, 0 failed, 0 moved (pages 23/23, pages scratch 3/3, facts 8/8, facts scratch 6/6, sentences 2/2, regen 2/2, calls 17/17, identity 20/20, purity 35/35, blocks 28/28, recall 1/1) in 582s; scratch /tmp/selftest-5gOtqh
+exit 0

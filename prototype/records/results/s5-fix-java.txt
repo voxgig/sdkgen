@@ -1,0 +1,380 @@
+lang: java
+ok: False
+summary: |
+  Status: the java fix round is done; ok is false for one reason only.
+  
+  The reviewed one command, run after a fresh build and a regeneration, exits 1 only because of two classes recorded as defect: the remove sentence c56f7ac39f and its cast token 2fc5c0888f. They wait for a shared change to ts/src/helpers/runtimeprose.ts. A control run with those two records set back to their earlier outcomes exits 0 (PASS).
+  
+  Everything else holds at my last commit (ran):
+  - npm run build exits 0, and git status --short is empty in sdkgen and in tools.
+  - Guard 4/4; guard plus reader 81/81; golden (characterize) 2/2.
+  - Suite without the lanes (node --enable-source-maps --test --test-concurrency=2 ...): 2635 tests, 2630 pass, 0 fail, 5 skipped. The reviewer's run had 3 java failures.
+  - Lane, NEW: BUILD SUCCESS for default, crud and basic-server, 4 tests each.
+  - Root quick start, run from the repository root with jshell: 5 of 5 reach the live request. The control run with an empty class path fails at the import.
+  
+  The reviewer's one blocking finding is fixed in ef7f7d63:
+  - Syntax_java.ts had its own copy of the example-literal table. That copy had lost the generator's rule, so a member whose only type is null was printed as Map.of("z", null), which throws NullPointerException.
+  - Literals now come from utility_java's javaLit, and every Map.of argument goes through javaMapItems.
+  - The fix changes no page of the 21 review variations: on java pages, the count of '"key", null' pairs is 0.
+  - I generated the two null-only fixtures of generate.test.ts as real SDKs (mvn compile exit 0). No Map.of carries "z" and no run throws NullPointerException. crate: 11/11 blocks compile and 7 run, the other 4 being mock 404s; tally: 8/8 compile and run.
+  
+  The other six required fixes need shared files, so I did not make them:
+  - Four are guard holes. Each one lets a wrong page pass, but no java page is wrong today, so no class is affected.
+  - One is the deleted cast. I confirmed with javac: cannot find symbol without `import voxgig.demosdk.entity.EntityBase`, exit 0 with the import or with the class named in full. I recorded the defect.
+  - One is the declared Object return type. The page is not false without it (the reviewer agrees), so the two same-meaning records now cite the gap instead of being marked defect.
+  
+  Sizes: the provider went from 191 to 199 lines. The ratio is 746 deleted lines against 223 (provider and hook), 3.35x; with forms, utility and Main lines, 268, 2.78x.
+outcomes:
+  - [0]
+    finding: R1 Syntax_java.ts:70-72 holds its own example-literal table, and :105-121 put a null-only member into Map.of. generate.test.ts:6289, :6321 and :6337 fail, and the examples throw NullPointerException.
+    outcome: fixed
+    how: |
+      Checked first (ran). On the porter's build the 3 tests fail with java lines such as `list(Map.of("z", null), null)`, `load(Map.of("id", "example_id", "z", null), null)` and the wide create form `"z", null  // Object`. jshell `java.util.Map.of("z", null)` gives java.lang.NullPointerException, and `Map.of().get("z")` gives null.
+      
+      The change, in Syntax_java.ts:
+      - lit() now calls utility_java's javaLit, the one table that ReadmeEntity_java, ReadmeHowto_java and ReadmeTopTest_java already use.
+      - A new kept() helper passes every Map.of argument through javaMapItems, the generator's own rule, in both mapOf and argOf. That covers the one-line and wide forms and nested maps.
+      - Client options still use LinkedHashMap.put, which accepts null.
+      
+      Two purity-allow entries give the reasons for the javaMapItems import and the './utility_java' import (tools 5104f95).
+      
+      Verification (ran):
+      - build exit 0
+      - the null tests: 6/6 pass
+      - suite: 2635 tests, 2630 pass, 0 fail, 5 skipped
+      - golden regenerated (one Syntax_java hash line) and checked 2/2
+      - the two null fixtures generated as real SDKs, compiled and run: no "z" in any Map.of and no NullPointerException.
+    commit: ef7f7d63 (provider); 87c3f5f3 (golden); tools 5104f95 (purity-allow)
+  - [1]
+    finding: R2 The guard cannot read `static` in a Java signature. Dropping it from the test signature passes the guard (attack g20/q20).
+    outcome: needs a shared change
+    how: |
+      Read, consistent with the reviewer.
+      - guard.ts:149-160 compares `on` only through readCalls of the signature text, and a Java signature has no receiver.
+      - The Forms interface (forms.ts:100) reads `on` only from the runtime declaration (`on?: (d: Decl)`), never from a signature.
+      
+      The page is true today: both test signatures carry `static`, and the runtime declares them `public static` (Main.fragment.java:24,28). No class is affected, so there is no defect record. Once the shared hook exists, runtimeforms/java.ts would add sigOn(sig) => /\bstatic\b/.test(sig) ? 'type' : 'instance'.
+    commit: none (recorded in shared_changes_needed)
+  - [2]
+    finding: R3 The guard and callcheck cannot tell a call on the client type from a call on an instance when both use '.'. `DemoSDK.planet(null)` passes (attack g25/q25).
+    outcome: needs a shared change
+    how: |
+      Read, consistent with the reviewer.
+      - calls.ts:115 sets the kind from the head of the chain.
+      - The accessor's declaration is spelled `${accessor}` in MainEntity_java.ts, so the guard finds no declaration and judges nothing (guard.ts:475 runs only when there is one). The operation called on the accessor's result is kind 'result', which fits an instance.
+      
+      The page is true today: callcheck reports 0 RECEIVER findings over 405 calls, and every accessor call is on `client`. No defect.
+    commit: none (recorded in shared_changes_needed)
+  - [3]
+    finding: R4 The guard checks only the last identifier of ref.facts.deleted (attack g15/q15).
+    outcome: needs a shared change
+    how: |
+      Read guard.ts:547-556. The check takes only the last identifier and checks it against the entity's declarations, so EntityBaseX passes.
+      
+      The page's EntityBase does exist: `public abstract class EntityBase implements SdkEntity`, EntityBase.fragment.java:28. The page's real problem with this span is R6, recorded there. No separate defect.
+    commit: none (recorded in shared_changes_needed)
+  - [4]
+    finding: R5 The guard does not require facts.arity where the runtime's list has required parameters (attack g19/q19).
+    outcome: needs a shared change
+    how: |
+      Read guard.ts:237-240. The arity check runs only when arity is declared.
+      
+      java declares arity 2. The guard derives it: list(reqmatch, ctrl), both required (EntityListOp.fragment.java:20, no overload). The page names `list(null, null)`. No defect.
+    commit: none (recorded in shared_changes_needed)
+  - [5]
+    finding: R6 `((EntityBase) result).deleted()` compiles only with `import voxgig.demosdk.entity.EntityBase`, which no page states. The deleted template fills only {var}.
+    outcome: needs a shared change
+    how: |
+      Checked (ran) against the crud SDK in my/probe-deleted: javac exit 1 ('cannot find symbol') without the import; exit 0 with it; exit 0 with the class named in full and no import.
+      
+      Read:
+      - EntityBase.fragment.java:1 is `package JAVAPACKAGE.entity;`.
+      - No java page names that package (grep).
+      - runtimeprose.ts:258-260 replaces only {var}.
+      
+      The provider cannot name the package, because it never sees the model, and a note is barred: kotlin and scala cast the same way, so it is not one runtime alone. So the page is wrong because shared code cannot say the true thing.
+      
+      Recorded as defect in hand/java.json:
+      - c56f7ac39f, the remove sentence as java prints it (n 15);
+      - 2fc5c0888f, the cast token.
+      Both reasons name runtimeprose.ts.
+      
+      The one command fails on exactly these 2, and on nothing else (control run with them reverted: PASS).
+      
+      I did not add the hook half now (a names.entity role, from a JAVA_ENTITY constant extracted from EntityBase_java.ts:25 and Entity_java.ts:39). It changes no page until runtimeprose fills placeholders, and a new constant beside JAVA_CORE trips purity's known misreading of a non-function constant. It is listed as the java work the shared change forces.
+    commit: tools 5104f95
+  - [6]
+    finding: R7 OLD said list returns '(as `Object`)'. NEW cannot state the declared return type (porter gap 1); the reviewer says it is recommended, not blocking, and that 3b6556a083 and 39a9cc2d2c should cite the gap.
+    outcome: needs a shared change
+    how: |
+      Read the declarations:
+      - java: EntityListOp.fragment.java:20 `public Object list(`, EntityLoadOp.fragment.java:22
+      - kotlin: EntityListOp.fragment.kt:14 `: Any?`
+      - scala: EntityListOp.fragment.scala:11 `: Object`
+      - csharp: EntityListOp.fragment.cs:11 `object?`
+      
+      The page is not false: the `(List<?>)` cast in the block and the REFERENCE heading `Object list(...)` show the declared type. The reviewer's own verdict is 'not false'. So I kept both classes same-meaning rather than defect, and their reasons now cite the gap and runtimeprose.ts.
+      
+      This departs on purpose from 'record the affected classes as defect': the guide reserves defect for a page that is wrong. The shared change is recorded.
+    commit: tools 5104f95
+  - [7]
+    finding: Doubtful line (reviewer): '`data()` reads its record.' beside `Object result = ...` in REFERENCE examples.
+    outcome: not fixed
+    how: Not a defect. It is OLD's wording too. The sentence names the member with no receiver, and every block that reads the record binds SdkEntity: the binding rule in Syntax_java.ts call() casts a result exactly where the block reads it. The reader of a block that does not read it needs the cast that the `(SdkEntity)` blocks show.
+    commit: none
+  - [8]
+    finding: Doubtful line (reviewer): the tutorial update `Map.of("id", ((Map<?, ?>) created.data()).get("id"), ...)` throws NullPointerException if the created record has no id.
+    outcome: not fixed
+    how: Not a defect of the page. An update whose created entity has no id addresses nothing and fails either way; Map.of only moves the failure ahead of the SDK's own error. The mock always sets an id (TestFeature.java:321 `entm.put("id", id);`, read). A null-tolerant map here would restructure the block against OLD for no true-ness gain.
+    commit: none
+  - [9]
+    finding: Provider code (reviewer): Syntax_java.ts:141-144 uses a map-valued option key raw as a Java variable (`Map<String, Object> server`).
+    outcome: not fixed
+    how: |
+      Not a defect today, and OLD did the same.
+      - The keys are the shared option names `server` and `feature`, and no variation has an entity with those names.
+      - Renaming the variable would be a suffix or concatenation rule in the provider, which guide 2.7 forbids.
+      - Inlining Map.of would hand the runtime an immutable map. EntityBase.fragment.java:56-63 writes into a caller's entopts map, and the reviewer ran that write throwing UnsupportedOperationException on Map.of.
+    commit: none
+  - [10]
+    finding: Weaker than OLD (reviewer): the stream-signal sentence does not say that only a BooleanSupplier counts.
+    outcome: needs a shared change
+    how: |
+      Read EntityBase.fragment.java:214-216 and 285.
+      
+      The sentence 'It ends early once `callopts.signal` reports an abort' is true: only a BooleanSupplier can report one. The type is still unstated, and kotlin (() -> Boolean) and scala (Function0) differ in the same way. So it is a fact two or more runtimes share, not a note: it needs an additive optional fact for the signal's type. No defect.
+    commit: none (recorded in shared_changes_needed)
+  - [11]
+    finding: Porter gap 2 (Uses.ops, for the unused java.util.List import); the reviewer judges it not needed.
+    outcome: not fixed
+    how: Agreed with the reviewer. An unused import compiles, and the call printer could qualify java.util.List if anyone wanted it gone. Changing it would only churn the root and tutorial blocks. No change.
+    commit: none
+  - [12]
+    finding: Runtime defects found by the reviewer: the java mock drops created records when its seed has none for the entity (TestFeature.java:228-231), and the accessor writes `active` into the caller's map (EntityBase.fragment.java:56-63).
+    outcome: not fixed
+    how: Read and confirmed. Both are java runtime behaviour, not the port's pages. The port prints no sentence that hides either one. They are listed for whoever owns the runtime.
+    commit: none
+shared_changes_needed:
+  - [0]
+    file: ts/src/helpers/runtimeprose.ts (opText, the remove sentence, :258-260), then ts/project/.sdk/src/cmp/java/{utility_java.ts, EntityBase_java.ts, Entity_java.ts, Naming_java.ts, Syntax_java.ts}
+    change: |
+      Fill {module} and {names.<role>} in ref.facts.deleted, as notes already may. Then java:
+      - extracts JAVA_ENTITY = 'entity' (spelled inline at EntityBase_java.ts:25 and Entity_java.ts:39) into utility_java.ts;
+      - gives the hook names.entity;
+      - declares deleted as '(({module}.{names.entity}.EntityBase) {var}).deleted()', which prints ((voxgig.demosdk.entity.EntityBase) result).deleted().
+      The guard's deleted check must then accept those placeholders (see the next entry).
+    why: The java span does not compile without an import that no page names. javac (ran): exit 1 without the import, exit 0 with it, exit 0 with the class named in full. java's defect classes c56f7ac39f and 2fc5c0888f fail the one command until this lands.
+    breaking: False
+    providers_forced: java (the hook role and the template); kotlin and scala cast to EntityBase the same way (guide section 9: deleted() is not on SdkEntity), when they port. No ported provider is forced: the placeholders are optional.
+  - [1]
+    file: ts/test/runtimeforms/guard.ts:547-556
+    change: Check every identifier in ref.facts.deleted (the cast type too) against the runtime, as recordWhole does for facts.record, with placeholders read as layout names.
+    why: Attack g15/q15: `((EntityBaseX) {var}).deleted()` passed the guard. Read: only the last identifier is checked.
+    breaking: False
+    providers_forced: none (java is the only provider that declares a cast today)
+  - [2]
+    file: ts/test/runtimeforms/forms.ts and guard.ts (the signature on-check, :149-160); then ts/test/runtimeforms/java.ts
+    change: Add an optional forms hook sigOn(sig) => On. guard.ts compares it with the declaration's `on` for every signature, the test entries included. java.ts implements it as /\bstatic\b/ ? 'type' : 'instance'.
+    why: Attack g20/q20: dropping `static` from `static {client} testSDK()` passed the guard. Read: Java signatures have no receiver for readCalls, and forms.ts reads `on` only from declarations. Guide 2.2 promises this dimension.
+    breaking: False
+    providers_forced: java (one line in its forms); kotlin, scala, csharp and cpp, whose signatures mark the type side with a keyword, when they port
+  - [3]
+    file: ts/test/runtimeforms/calls.ts:115 and guard.ts (judge, :384-400, :475); tools/callcheck.js
+    change: Where the instance and type separators coincide, class a chain head that is the client type token (or an imported type name) as 'type' and a bound variable as 'instance'. Also judge the accessor call even when its declaration is spelled through the `${accessor}` template token.
+    why: Attack g25/q25: `DemoSDK.planet(null)...`, which javac rejects (non-static method from a static context), passed the guard and callcheck (0 RECEIVER). Read: the accessor declaration is not found, so it is never judged.
+    breaking: False
+    providers_forced: none (java, kotlin, scala and csharp benefit)
+  - [4]
+    file: ts/test/runtimeforms/guard.ts (facts.arity, :237-240)
+    change: Where the runtime's list declares required parameters, fail when facts.arity is not declared.
+    why: Attack g19/q19: with arity removed the guard passes, and the page names list() and load(), which Java cannot call.
+    breaking: False
+    providers_forced: any ported provider whose runtime list requires parameters and that omits arity (to be checked when the change lands; java declares 2)
+  - [5]
+    file: ts/src/helpers/runtimeprose.ts (the list and load return clauses) + RuntimeFacts in ts/src/helpers/example.ts
+    change: An optional fact for the declared return type (e.g. facts.declared: 'Object'). Where it is set, the operation sentences add once that the call is declared as that type and the caller casts.
+    why: OLD java said '(as `Object`)'. NEW's '`list` returns a `List`' sits beside a declaration of Object (EntityListOp.fragment.java:20). It is not false, since the cast and the REFERENCE heading show the type, but it is weaker for a Java reader. Recommended, not blocking: java's records 3b6556a083 and 39a9cc2d2c cite it.
+    breaking: False
+    providers_forced: none forced (optional). It would serve java (Object), kotlin (Any?, EntityListOp.fragment.kt:14), scala (Object, EntityListOp.fragment.scala:11) and csharp (object?, EntityListOp.fragment.cs:11).
+  - [6]
+    file: ts/src/cmp/ReadmeRef.ts (STREAM_SIGNAL) + RefFacts
+    change: An optional fact for the type a stream signal must have (java BooleanSupplier, kotlin () -> Boolean, scala Function0), printed in the stream-signal sentence where it is declared.
+    why: Read: EntityBase.fragment.java:214-216 ignores any signal that is not a BooleanSupplier, and the shared sentence does not say so. It is not false, so it is not recorded as a defect.
+    breaking: False
+    providers_forced: none forced (optional): java, kotlin, scala
+commits:
+  - sdkgen ef7f7d63 'java: example literals from the generator's table, and no null-only member in a Map.of'. Body: the provider's own literal table had lost the generator's Map.of null rule; literals now come from javaLit, and every Map.of argument goes through javaMapItems; no page of the 21 variations changes. File: ts/project/.sdk/src/cmp/java/Syntax_java.ts (+18 -10).
+  - sdkgen 87c3f5f3 'Golden: java's provider line'. File: ts/test/golden/add-output.txt (1 line: the Syntax_java.ts hash).
+  - tools 5104f95 'java: the deleted cast recorded as a defect, the declared-type gap cited, two accepted imports'. Files: hand/java.json (2 defects, 2 reasons rewritten), purity-allow/java.json (+2 entries), classes/java.json (from the final reviewed REGEN run).
+  - Unchanged porter commits below them: 19ac9ff7, 151dd223, 7834f129; tools 085bc9a.
+  - Checked with git log --format=%B v33-frozen..HEAD in sdkgen and 085bc9a~1..HEAD in tools: 0 lines match co-authored-by, claude-session, signed-off-by or 'generated with'. No message names a tool or a model. Nothing needed amending.
+final_state: |
+  Final reviewed run (ran): REGEN=1 tools/portcheck.sh sdkgen out java, after npm run build exit 0. It exits 1 (portcheck-fix-final.log, 1m02s). 21 of 21 variations regenerated, SKIPPED none.
+  
+  | section | units same | classes | shared | rule-rec | by hand | missing | OPEN | defect | contradictions |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | tutorial | 59 | 47 | 22 | 0 | 20 | 5 | 0 | 0 | 0 |
+  | rootquick | 19 | 4 | 0 | 0 | 3 | 1 | 0 | 0 | 0 |
+  | reference | 13823 | 182 | 67 | 0 | 67 | 45 | 0 | 2 | 1 |
+  
+  | section | identical | corrected | unified | otherwise | classes | OPEN | defect | changed blocks compiled by nothing |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | tutorial | 19 | 16 | 0 | 13 | 21 | 0 | 0 | 29 |
+  | rootquick | 0 | 0 | 0 | 19 | 22 | 0 | 0 | 19 |
+  | reference | 183 | 0 | 0 | 131 | 15 | 0 | 0 | 149 |
+  
+  The rest of the screen:
+  - contradictions: 1, bff341cf32 (the unported README promises a mock without the test feature; the REFERENCE is the true side)
+  - purity: 0 open, 6 accepted; notes declared 0, regions 0
+  - pagecheck: 1310 articles checked, 48 numbered headings, findings 0
+  - callcheck: 405 calls of 20 members, ARITY/RECEIVER/MEMBER 0
+  - guard: pass 4, fail 0
+  - build: 1813 sources checked, current
+  - hand records: 231, STALE 0
+  - facts: attested 4, by hand 2, UNATTESTED or NOT JUDGED 0; cited 15, pinned prose 11
+  - shared sentences: matched 89, of which 1 against an unreviewed sentence; printed less often 0; absent 27, all 27 explained
+  - fact sheet: 67 facts, 0 with no account, 0 unattested
+  - PORTCHECK java: FAIL, caused only by reference defect 2 (c56f7ac39f, 2fc5c0888f)
+  
+  Control (ran): the same command with those two records set back to their earlier outcomes gives PORTCHECK java: PASS, exit 0 (my/portcheck-control-nodefect.log). The records were restored before the final run.
+  
+  SCRATCH=1 REGEN=1 (ran; exit 1 by design; portcheck-fix-scratch.log):
+  - ledger OPEN: tutorial 25, rootquick 4, reference 114; defect 0 (scratch ignores hand records)
+  - blocks OPEN: 21 / 22 / 15
+  - UNATTESTED or NOT JUDGED: 2 (named, ref.noun)
+  - ABSENT, NO REASON: 27; DROPPED: 0
+  - these equal the porter's and the reviewer's scratch numbers
+  - parts that read no hand record, clean in both runs: build current, 21/21 regenerated, guard 4/4, purity 0 open (6 accepted), pagecheck 0, callcheck 0
+  
+  Trees after the final build: git status --short is empty in sdkgen and in tools.
+  
+  Other languages' pages:
+  - diff -rq -x java -x README.md out/new P/base33/out/new: 0 files.
+  - 19 root READMEs differ (the variations with a java target).
+  - node my/rootdiff.js: 0 differ outside java's quick start block (control against out/old: 21).
+  
+  Prose (node tools/sharewords.js --clone sdkgen --root out/new --lang java): java-only 4.0% of 56361 words; provider literal words 132 (0.2%: ref.noun 113, ref.maps 19); notes 0 words.
+  
+  Progress log: P/ports/java/FIX-PROGRESS.md.
+lanes: |
+  Toolchain (ran command -v): node v24.22.1, npm, php 8.3.6, composer, javac, java, jshell, mvn, gradle, g++ 13.3, make present. kotlinc, kotlin, scala, scala-cli, sbt and dotnet missing.
+  
+  java lane, NEW (ran: tools/before/run.sh sdkgen java, exit 0; lane-fix-new.log):
+  - default: BUILD SUCCESS, Tests run 4, 0 failures; minimum of 3 runs 7.70 s
+  - crud: BUILD SUCCESS, Tests run 4, 0 failures; minimum 7.53 s
+  - basic-server: BUILD SUCCESS, Tests run 4, 0 failures; minimum 7.69 s
+  The lane checks structure only.
+  
+  OLD lane: not rerun. The fix changes no page of these models (none has a null-only member). The porter's and the reviewer's OLD runs stand (read): BUILD SUCCESS, 4 tests.
+  
+  javac on every block of the three lane models (ran: node my/compileblocks.js <sdk> <out> --run):
+  - compiles 24/24, 19/19, 19/19
+  - under the test constructor, exit 0 for 20, 14 and 14
+  - every failure is a mock 404 on update, load or patch of unseeded data, the same as the porter's and the reviewer's runs on NEW and OLD
+  - note: the porter's harness adds the EntityBase import to every block
+  
+  Null-only fixtures (H.namedFieldEntity('z','crate',$NULL), H.listOnly('tally',[['z',$NULL]]); ran: my/gennull.js, then mvn -B -q compile exit 0, then compileblocks --run):
+  - crate: compiles 11/11, runs 7 (4 mock 404s)
+  - tally: compiles 8/8, runs 8
+  - no "z" in any Map.of; no NullPointerException in any log
+  
+  Root quick start from the repository root (ran: node my/rootrun.js; jshell with --class-path java/target/classes; my/rootrun-new.log):
+  - default, crud, basic-server, null-crate and null-tally all resolve their imports, construct the client and reach the live request, which fails at the fetch: 'invalid url: ambient', 'invalid url: planet', 'https://<tenant>.example.com/eu/planet' and so on. The models' servers are placeholders.
+  - Control with an empty class path: 'package voxgig.demosdk.core does not exist'.
+  - The import is package-addressed (guide 2.5), so the SDK must be built.
+  - OLD root quick starts were not rerun (unchanged by this fix; the reviewer ran all 19 variations, read).
+lines: |
+  From wc -l and git diff --numstat:
+  - Syntax_java.ts: 199 lines (porter 191; +18 -10 in ef7f7d63)
+  - Naming_java.ts: 24 (unchanged)
+  - runtimeforms/java.ts: 103, which is +38 over the base (unchanged in this round)
+  - unchanged since the porter: utility_java.ts +5, Main_java.ts +2 -2
+  - old components deleted: 746 lines (ReadmeQuick_java 242, ReadmeRef_java 398, ReadmeTopQuick_java 106)
+  
+  Ratios:
+  - 746 against 223 (provider and hook): 3.35x (porter 3.47x)
+  - 746 against 268 (with forms, utility and Main): 2.78x (porter 2.87x)
+  
+  Shared code is not counted.
+notes:
+  - [0]
+    slot: (none)
+    text: java declares no notes. Purity: notes declared 0, regions 0, note lint 0. sharewords: 0 note words and 0 fact-table prose literals at the source.
+review_counts:
+  - [0]
+    section: tutorial
+    same: 59
+    shared_matched: 22
+    matched_unreviewed: 1 across all sections (STRICT_SENTENCES off)
+    by_hand: 20
+    missing: 5 (the porter's, unchanged: ab76c4efa0, 454d326c2d, 77832f0697, 691bdc9ddb restored:shared; 9562ae8fc5 correction:U45)
+    contradictions: 0
+    blocks: identical 19, corrected 16, unified 0, otherwise 13; classes 21, OPEN 0, defect 0; 29 changed blocks compiled by nothing in the 21 variations
+  - [1]
+    section: rootquick
+    same: 19
+    shared_matched: 0
+    matched_unreviewed: -
+    by_hand: 3
+    missing: 1 (2eb69fa8a2, unchanged)
+    contradictions: 0
+    blocks: identical 0, corrected 0, unified 0, otherwise 19; classes 22, OPEN 0, defect 0; 19 changed blocks compiled by nothing
+  - [2]
+    section: reference
+    same: 13823
+    shared_matched: 67 (90 before: c56f7ac39f moved from a shared match to a hand defect)
+    matched_unreviewed: -
+    by_hand: 67, plus 2 defect (c56f7ac39f the remove sentence, 2fc5c0888f the EntityBase cast token; both wait on runtimeprose.ts)
+    missing: 45 (unchanged)
+    contradictions: 1: bff341cf32. The README promises a mock without the test feature; the REFERENCE is the true side.
+    blocks: identical 183, corrected 0, unified 0, otherwise 131; classes 15, OPEN 0, defect 0; 149 changed blocks compiled by nothing
+not_caught_by_process:
+  - [0]
+    attack: g06/q06: ref.facts.none 'null' -> 'this' (the token stands in the cited quote `this(null);`)
+    consequence: The guard passes and the facts line is clean. Only reference ledger OPEN 4 fails, and a porter can decide those by hand. The page would say "Pass `this` for no initial options".
+  - [1]
+    attack: g15/q15: deleted '((EntityBaseX) {var}).deleted()'
+    consequence: The guard passes, checking only `deleted`. Only reference OPEN 1 fails. The page would print a cast to a type that does not exist.
+  - [2]
+    attack: g19/q19: facts.arity removed
+    consequence: The guard passes. The page names `list()` and `load()`, which Java cannot call. Only ABSENT fdfa305bc4 and tutorial OPEN 3 fail, and both can be closed by hand.
+  - [3]
+    attack: g20/q20: test signature without `static`
+    consequence: The guard passes. Only reference OPEN 1 fails, plus a STALE hand record by accident of a quotation.
+  - [4]
+    attack: g23/q23: load signature with `throws SdkError`
+    consequence: The guard passes. Only reference OPEN 2 fails.
+  - [5]
+    attack: g25/q25: accessor called on DemoSDK (the type)
+    consequence: The guard and callcheck pass. javac would reject it. Only blocks OPEN 9/8/10 and ledger OPEN 2 fail.
+  - [6]
+    attack: g26/q26 and x04: result or list-item cast to SdkClient
+    consequence: The guard and callcheck pass. javac would reject it. Only blocks OPEN 7/8 (q26) or OPEN 2 (x04) fail.
+  - [7]
+    attack: the provider's Map.of("z", null) with a null-only member (found by the suite, not injected)
+    consequence: Nothing in the port's pass criteria (one command, guard, tools, lane) runs a model with a null-only member, so the reviewed one command PASSES. Only the repository suite (generate.test.ts:6289/6321/6337) fails. The examples throw NullPointerException at run time.
+  - [8]
+    attack: g09: ctorAlts[0].kind 'empty'
+    consequence: Caught by the build (TS2322 CtorKind). But the guard alone then ran on the previous dist and reported nothing about the change. Only the one command's freshness check (STALE BUILD) would stop it.
+not_done:
+  - I did not rerun the reviewer's 26 guard mutations or the 7 one-command attacks. Fixes 2 to 5 are confirmed by reading guard.ts and calls.ts (the lines are cited in the outcomes), not by rerunning the attacks.
+  - I did not compile the java blocks of the 21 review variations myself. The fix changes none of their pages (0 '"key", null' pairs on java pages), so the reviewer's run on the porter's commit stands: NEW 351/351 compile (read, not rerun).
+  - OLD was not rerun (lane, javac blocks, root quick start), because this round changes no OLD output and no lane-model page. The porter's and the reviewer's OLD runs are cited as read.
+  - I did not prepare the java half of the deleted-cast change (JAVA_ENTITY constant, names.entity in the hook, a qualified template). It changes no page until runtimeprose.ts fills placeholders. It is listed under shared_changes_needed.
+  - The live API was never reached: the models' servers are placeholders, so no root quick start completed a real request, and no constructor option was executed live.
+  - kotlin, scala and csharp: only their list and load declarations were read, to size gap R7.
+unverified: |
+  For want of a compiler: nothing in java. javac, jshell and mvn are all on PATH.
+  
+  What no tool compiles, as the one command counts it, in the 21 review variations: tutorial 29, rootquick 19 and reference 149 changed blocks (197 in all). The reviewer compiled all of them (NEW 351/351 blocks across 19 variations, on the porter's commit). This round leaves those pages byte-identical, so the result stands, but it is read, not rerun by me.
+  
+  What I ran myself:
+  - javac on 62 lane-model blocks and 19 null-fixture blocks: all compile
+  - runs under the test constructor
+  - 5 root quick starts from the repository root with jshell
+  
+  Read only, not run:
+  - The guard holes behind fixes 2 to 5. The attacks are the reviewer's runs; my evidence is guard.ts and calls.ts.
+  - The runtime defects: TestFeature.java:228-231 and EntityBase.fragment.java:56-63.
+  
+  Never executed: the live request, and the constructor options of any example.

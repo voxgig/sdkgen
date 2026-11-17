@@ -1,0 +1,100 @@
+[
+ {
+  "id": "K-go-arity-0",
+  "lang": "go",
+  "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+  "from": "  arity: 2,",
+  "to": "  arity: 0,"
+ },
+ {
+  "id": "K-swift-arity-0",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "  arity: 2,",
+  "to": "  arity: 0,"
+ },
+ {
+  "id": "K-ts-arity-2",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "  arity: 0,",
+  "to": "  arity: 2,"
+ },
+ {
+  "id": "K-ts-utility-copy-true",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "returns: 'object', copy: false }",
+  "to": "returns: 'object', copy: true }"
+ },
+ {
+  "id": "K-py-utility-copy-false",
+  "lang": "py",
+  "file": "project/.sdk/src/cmp/py/Syntax_py.ts",
+  "from": "{ kind: 'utility', sig: 'get_utility() -> Utility', copy: true },",
+  "to": "{ kind: 'utility', sig: 'get_utility() -> Utility', copy: false },"
+ },
+ {
+  "id": "K-c-match-copy-dropped",
+  "lang": "c",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "vt->matchv(Entity* e, voxgig_value* args)', copy: true },",
+  "to": "vt->matchv(Entity* e, voxgig_value* args)' },"
+ },
+ {
+  "id": "K-go-deleted-wrong-member",
+  "lang": "go",
+  "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+  "from": "deleted: '{var}.Deleted()',",
+  "to": "deleted: '{var}.IsDeleted()',"
+ },
+ {
+  "id": "K-swift-record-unwrap-dropped",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "const recordOf = (v: string): string => entityRecord(`(${v}.${unwrap})?`)",
+  "to": "const recordOf = (v: string): string => entityRecord(v)"
+ },
+ {
+  "id": "K-ts-name-not-field",
+  "lang": "ts",
+  "file": "project/.sdk/src/cmp/ts/Syntax_ts.ts",
+  "from": "{ kind: 'name', sig: 'name: string', field: true },",
+  "to": "{ kind: 'name', sig: 'name: string', field: false },"
+ },
+ {
+  "id": "K-ocaml-name-not-field",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+  "from": "{ kind: 'name', sig: 'e_name : string', field: true },",
+  "to": "{ kind: 'name', sig: 'e_name : string' },"
+ },
+ {
+  "id": "K-perl-streamSignal-false",
+  "lang": "perl",
+  "file": "project/.sdk/src/cmp/perl/Syntax_perl.ts",
+  "from": "streamSignal: true,",
+  "to": "streamSignal: false,"
+ },
+ {
+  "id": "K-rust-streamSignal-true",
+  "lang": "rust",
+  "file": "project/.sdk/src/cmp/rust/Syntax_rust.ts",
+  "from": "  deleted: '{var}.deleted()',",
+  "to": "  deleted: '{var}.deleted()',\n  streamSignal: true,"
+ },
+ {
+  "id": "K-lua-cached-false",
+  "lang": "lua",
+  "file": "project/.sdk/src/cmp/lua/Syntax_lua.ts",
+  "from": "cached: true",
+  "to": "cached: false"
+ },
+ {
+  "id": "K-ocaml-named-call",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+  "from": "memberNamed: 'bare'",
+  "to": "memberNamed: 'call'"
+ }
+]

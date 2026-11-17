@@ -1,0 +1,12 @@
+[1/13 7%] ts PORTCHECK ts: PASS
+[2/13 15%] go PORTCHECK go: PASS
+[3/13 23%] py PORTCHECK py: PASS
+[4/13 30%] c PORTCHECK c: PASS
+[5/13 38%] zig PORTCHECK zig: PASS
+[6/13 46%] clojure PORTCHECK clojure: PASS
+[7/13 53%] rust PORTCHECK rust: PASS
+[8/13 61%] elixir PORTCHECK elixir: PASS
+[9/13 69%] rb PORTCHECK rb: PASS
+[10/13 76%] perl PORTCHECK perl: PASS
+[11/13 84%] swift PORTCHECK swift: PASS
+[12/13 92%] ocaml PORTCHECK ocaml: PASS

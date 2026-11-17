@@ -1,0 +1,54 @@
+sharewords over 21 variations of out/new: words outside code spans of every unit (sentence, cell, header, heading, comment)
+lang    section     words |  shared sentence |   only this lang |            notes | BY SOURCE: provider literals (notes + prose facts)
+ts      tutorial     1571 |   1121    71.4% |    450    28.6% |      0     0.0% |      7     0.4% (facts 7: collection 7)
+ts      rootquick     283 |     19     6.7% |    264    93.3% |      0     0.0% |      0     0.0% (facts 0: -)
+ts      reference   54799 |  47176    86.1% |   7623    13.9% |      0     0.0% |    234     0.4% (facts 234: ref.noun 113, collection 102, ref.maps 19)
+ts      ALL         56653 |                  |   8337    14.7% |      0     0.0% |    241     0.4%
+go      tutorial     2260 |    730    32.3% |   1530    67.7% |      0     0.0% |      0     0.0% (facts 0: -)
+go      rootquick     317 |     19     6.0% |    298    94.0% |      0     0.0% |      0     0.0% (facts 0: -)
+go      reference   64914 |  46634    71.8% |  13420    20.7% |   4860     7.5% |   5010     7.7% (facts 150: ref.noun 129, ref.maps 21)
+go      ALL         67491 |                  |  15248    22.6% |   4860     7.2% |   5010     7.4%
+py      tutorial     1553 |   1441    92.8% |    112     7.2% |      0     0.0% |      0     0.0% (facts 0: -)
+py      rootquick     238 |    147    61.8% |     91    38.2% |      0     0.0% |      0     0.0% (facts 0: -)
+py      reference   51174 |  49769    97.3% |   1405     2.7% |      0     0.0% |    132     0.3% (facts 132: ref.noun 113, ref.maps 19)
+py      ALL         52965 |                  |   1608     3.0% |      0     0.0% |    132     0.2%
+c       tutorial     1663 |   1121    67.4% |    542    32.6% |      0     0.0% |     14     0.8% (facts 14: collection 14)
+c       rootquick     291 |     19     6.5% |    272    93.5% |      0     0.0% |      0     0.0% (facts 0: -)
+c       reference   51783 |  47265    91.3% |   4518     8.7% |      0     0.0% |    674     1.3% (facts 674: ref.setArg 376, collection 166, ref.noun 113)
+c       ALL         53737 |                  |   5332     9.9% |      0     0.0% |    688     1.3%
+zig     tutorial     1658 |   1468    88.5% |    190    11.5% |      0     0.0% |      7     0.4% (facts 7: collection 7)
+zig     rootquick     284 |     19     6.7% |    265    93.3% |      0     0.0% |      7     2.5% (facts 7: collection 7)
+zig     reference   52387 |  48385    92.4% |   2176     4.2% |   1826     3.5% |   2417     4.6% (facts 591: ref.setArg 376, ref.noun 113, collection 83)
+zig     ALL         54329 |                  |   2631     4.8% |   1826     3.4% |   2431     4.5%
+clojure tutorial     1542 |   1492    96.8% |     50     3.2% |      0     0.0% |      7     0.5% (facts 7: collection 7)
+clojure rootquick     238 |    147    61.8% |     91    38.2% |      0     0.0% |      7     2.9% (facts 7: collection 7)
+clojure reference   52501 |  49818    94.9% |   1366     2.6% |   1317     2.5% |   1532     2.9% (facts 215: ref.entityNoun 94, collection 83, ref.noun 19)
+clojure ALL         54281 |                  |   1507     2.8% |   1317     2.4% |   1546     2.8%
+rust    tutorial     1651 |   1468    88.9% |    183    11.1% |      0     0.0% |      0     0.0% (facts 0: -)
+rust    rootquick     284 |     19     6.7% |    265    93.3% |      0     0.0% |      0     0.0% (facts 0: -)
+rust    reference   51561 |  48378    93.8% |   2689     5.2% |    494     1.0% |    626     1.2% (facts 132: ref.noun 113, ref.maps 19)
+rust    ALL         53496 |                  |   3137     5.9% |    494     0.9% |    626     1.2%
+elixir  tutorial     1558 |   1537    98.7% |      0     0.0% |     21     1.3% |     28     1.8% (facts 7: collection 7)
+elixir  rootquick     245 |    147    60.0% |     98    40.0% |      0     0.0% |      0     0.0% (facts 0: -)
+elixir  reference   50979 |  48283    94.7% |   2525     5.0% |    171     0.3% |    386     0.8% (facts 215: ref.noun 113, collection 83, ref.maps 19)
+elixir  ALL         52782 |                  |   2623     5.0% |    192     0.4% |    414     0.8%
+rb      tutorial     1553 |   1441    92.8% |    112     7.2% |      0     0.0% |      0     0.0% (facts 0: -)
+rb      rootquick     238 |    147    61.8% |     91    38.2% |      0     0.0% |      0     0.0% (facts 0: -)
+rb      reference   51174 |  48888    95.5% |   2286     4.5% |      0     0.0% |    132     0.3% (facts 132: ref.noun 113, ref.maps 19)
+rb      ALL         52965 |                  |   2489     4.7% |      0     0.0% |    132     0.2%
+
+at the source (words of literals; notes are each provider's `notes`, from the compiled provider)
+  ts      notes 0 words; fact-table prose literals 4; other prose literals 0
+  go      notes 45 words; fact-table prose literals 42; other prose literals 0
+  py      notes 0 words; fact-table prose literals 0; other prose literals 4
+  c       notes 0 words; fact-table prose literals 8; other prose literals 0
+  zig     notes 29 words; fact-table prose literals 18; other prose literals 0
+  clojure notes 29 words; fact-table prose literals 49; other prose literals 3
+  rust    notes 26 words; fact-table prose literals 5; other prose literals 0
+  elixir  notes 18 words; fact-table prose literals 12; other prose literals 0
+  rb      notes 0 words; fact-table prose literals 7; other prose literals 0
+  shared ts/src/helpers/runtimeprose.ts: 97 words in 15 prose literals (561 words in all literals)
+  shared ts/src/cmp/ReadmeRef.ts: 509 words in 64 prose literals (825 words in all literals)
+  shared ts/src/cmp/ReadmeQuick.ts: 109 words in 11 prose literals (197 words in all literals)
+  shared ts/src/cmp/ReadmeRefFeatures.ts: 161 words in 10 prose literals (254 words in all literals)
+  shared templates total: 876 prose-literal words (1837 in all literals)

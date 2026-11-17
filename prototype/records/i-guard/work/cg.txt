@@ -1,0 +1,56 @@
+ts/project/.sdk/src/cmp/clojure/Syntax_clojure.ts:62: narrative: "the old"
+    Field types as the old reference named them; clojure emits no typed mode
+ts/project/.sdk/src/cmp/go/Syntax_go.ts:84: count-claim: "two levels down stays"
+    A map two levels down stays on its member's line; a member's type, where
+ts/project/.sdk/src/cmp/py/Syntax_py.ts:82: count-claim: "two levels down stays"
+    A map two levels down stays on its member's line; a member's type, where
+ts/project/.sdk/src/cmp/rust/Syntax_rust.ts:85: count-claim: "two levels down stays"
+    One member per line; a map two levels down stays on its member's line; a
+ts/project/.sdk/src/cmp/ts/Syntax_ts.ts:78: count-claim: "two levels down stays"
+    One member per line, closed with a trailing comma and its type where it
+ts/project/.sdk/src/cmp/zig/Syntax_zig.ts:61: narrative: "the old"
+    Zig emits no typed models (everything is a Value), so the reference name
+ts/project/.sdk/src/cmp/zig/Syntax_zig.ts:89: count-claim: "two levels down stays"
+    A map two levels down stays on its member's line; a member's type, where
+ts/project/.sdk/src/cmp/zig/Syntax_zig.ts:128: commented-code: "switch is the attempt's; a call outside one is s"
+    The switch is how zig handles the result union. Inside an attempt the
+ts/src/cmp/FeatureDocs.ts:94: stale-path: model/feature/log.aontu
+    Whether a feature runs without being switched on: its own `active` optio
+ts/src/cmp/ReadmeQuick.ts:95: count-claim: "72 columns"
+    Prose is wrapped at 72 columns, as the hand-written sections are. A list
+ts/src/cmp/ReadmeQuick.ts:232: narrative: "the old"
+    The root README's quick start for one language: the tutorial's first ste
+ts/src/cmp/ReadmeRef.ts:363: count-claim: "72 columns"
+    Prose is wrapped at 72 columns, as the hand-written pages are.
+ts/src/helpers/example.ts:95: long-block: 7 lines (max 5)
+    A fixed member of the client or of an entity, as the runtime declares it
+ts/src/helpers/example.ts:95: count-claim: "twenty runtimes"
+    A fixed member of the client or of an entity, as the runtime declares it
+ts/src/helpers/example.ts:160: narrative: "the old"
+    What an example calls each value. The tutorial and the root quick start 
+ts/src/helpers/example.ts:280: long-block: 7 lines (max 5)
+    The reference's example for one operation, in the shape most of the
+ts/src/helpers/example.ts:280: count-claim: "twenty old pages"
+    The reference's example for one operation, in the shape most of the
+ts/src/helpers/example.ts:302: narrative: "the old"
+    A reference example's match stays on one line, as the old pages had it.
+ts/src/helpers/example.ts:365: long-block: 6 lines (max 5)
+    What one section's printing has declared so far; a printer that hoists a
+ts/src/helpers/example.ts:1: dense-file: 159 comment lines over 388 code lines = 41.0% (max 12%)
+ts/src/helpers/runtimeprose.ts:28: count-claim: "three styles"
+    The failure verb of the three styles that return the value directly.
+ts/src/helpers/runtimeprose.ts:1: dense-file: 24 comment lines over 191 code lines = 12.6% (max 12%)
+ts/src/helpers/sdkdesc.ts:67: long-block: 6 lines (max 5)
+    A target's naming hook: the code generator's own naming functions, which
+ts/src/helpers/sdkdesc.ts:1: dense-file: 89 comment lines over 420 code lines = 21.2% (max 12%)
+ts/test/runtimefacts.test.ts:82: narrative: "reviewer"
+    One line per declared leaf, for a reviewer's fact sheet.
+ts/test/runtimeforms/account.ts:297: narrative: "reviewer"
+    The runtime files a token occurs in, for a reviewer of an unquoted token
+ts/test/runtimeforms/forms.ts:39: long-block: 6 lines (max 5)
+    `also`: quotes from further files; `unquoted`: a token the fact states
+ts/test/runtimeforms/forms.ts:53: commented-code: "function is one; the final return where nothing "
+    Where a stream's items come from, read off its implementation by positio
+ts/test/runtimeforms/forms.ts:1: dense-file: 54 comment lines over 293 code lines = 18.4% (max 12%)
+ts/test/runtimeforms/ocaml.ts:1: dense-file: 10 comment lines over 82 code lines = 12.2% (max 12%)
+comment gate: 30 finding(s) in 16 file(s) — COMMENT-POLICY.md

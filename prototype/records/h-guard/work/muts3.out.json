@@ -1,0 +1,17 @@
+[
+ {
+  "id": "my-types-reason-dropped-zig",
+  "lang": "zig",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "types"
+  ],
+  "fails": [
+   "✖ zig: the declared facts are what its runtime defines"
+  ],
+  "whats": [
+   "the forms give no type column and no reason: say why the printer is checked for totality only"
+  ]
+ }
+]

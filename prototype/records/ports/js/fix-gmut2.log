@@ -1,0 +1,18 @@
+baseline findings: 0
+CAUGHT  container Array (token in Array.isArray of the layer line) :: account: cite ref.facts.container: the fact is "Array"; the citation pins "object"
+CAUGHT  client[0].returns Array (same line) :: account: cite ref.facts.client[0].returns: the fact is "Array"; the citation pins "object"
+CAUGHT  client[1].returns clone (token in the quote) :: account: cite ref.facts.client[1].returns: the fact is "clone"; the citation pins "object"
+CAUGHT  direct.signal signal (token fetchdef.signal) :: account: cite ref.facts.direct.signal: the fact is "signal"; the citation pins "AbortSignal"
+CAUGHT  none undefined -> return (token in quote) :: account: cite ref.facts.none: the quote does not contain "return", which the fact states
+CAUGHT  abortCode request (substring of request_aborted) :: account: cite ref.facts.direct.abortCode: the fact is "request"; the citation pins "request_aborted"
+CAUGHT  direct.returns ok, data only :: account: cite ref.facts.direct.returns: the fact is "Promise<{ ok, data }>"; the citation pins "Promise<{ ok, status, headers, data }>"
+CAUGHT  prepare.returns drops Error :: account: cite ref.facts.prepare.returns: the fact is "Promise<{ url, method, headers, body }>"; the citation pins "Promise<{ url, method, headers, body } | Error>"
+CAUGHT  body.values drops string :: account: cite ref.facts.body.values: the fact is "a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob` or stream"; the citation pins "a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, s
+MISSED  valueType.STRING number
+CAUGHT  accessor sig with data param :: paramNames: accessor: parameter 1 is entopts in the runtime, data declared | accessor: the accessor's signature names its argument data; declared param: entopts
+CAUGHT  test sig on type, 3 params :: parameters: test: test takes 2 parameters in the runtime, 3 declared ({client}.test(testopts?, sdkopts?, extra?)) | account: ref.facts.test[0].sig: the guard could not re-derive it from the runtime and the forms do not cite it
+MISSED  op create returns marked
+CAUGHT  stream kind streamGenerator :: kind: stream is streamGenerator in the reference; the runtime's is streamIterator | account: ref.facts.entity[3].kind: the guard could not re-derive it from the runtime and the forms do not cite it
+CAUGHT  entopts copy false :: account: cite ref.facts.entity[5].copy: the fact is false; the citation pins true
+CAUGHT  name sig number type :: returns: entity name: name returns string in the runtime, number declared | account: ref.facts.entity[6].kind: the guard could not re-derive it from the runtime and the forms do not cite it
+MISSED  note top, cited to an unrelated quote

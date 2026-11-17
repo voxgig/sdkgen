@@ -1,0 +1,720 @@
+{
+ "lang": "php",
+ "verdict": "accept-with-fixes",
+ "summary": "Status: the review is complete. I accept the php port with fixes. I found no false php sentence in the four variations I read side by side (B, auth-basic, ref-issues, and crud-basic, chosen as the variation where php differs most because of its cached accessor). Each runtime claim I could run held. The porter's numbers reproduce exactly: suite 2635 tests, 2630 pass, 0 fail, 5 skipped; guard ^php 4/4; guard plus reader 81/81; golden 2/2; reviewed one command PASS with exit 0 and identical numbers; scratch run exit 1 with the porter's numbers; line counts and prose shares identical. The port touches only php's files and the golden, carries no commit trailer, and changes no other language's page.\n\nThe fixes are all small. In php's own files: four citations in ts/test/runtimeforms/php.ts quote a line that does not show the value, or quote it ambiguously (prepare.returns, testMock, streamSignal's early end, and none, which has no value pin). Five php generator components still spell the SDK file name that phpSdkFile was extracted to own.\n\nThe shared findings matter more for the evidence. (1) The guard and callcheck do not check the receiver of the entity accessor. `$client::Planet()` passes both in the call printer and in ref.instance, although guide 2.3 says this is checked, and it is a fatal error at run time. (2) The minimal pair calls prints 'record' ATTESTED just as it calls 'listFields', so it does not tell the two values apart. (3) A pinned-prose fact flipped together with its pin passes everything: utility copy set to false prints a false sentence, and nothing fails.\n\nH1 held for php: 0 shared changes forced (0 breaking, 0 additive). 3 additive gaps recorded, all confirmed (one is latent). 8.8% of words are php's own, with 0 notes. H3 held for php: the ref-issues catalogue items are fixed by shared code, and php's own corrections (the GraphQl_ accessor, the root require path) come through the hook and the facts. H4 held for php: the README lane is the same on OLD and NEW; NEW's root quick start now gets past the require from the repository root, where OLD fails; all 714 NEW php blocks lint clean.\n\nThis run resumed an interrupted earlier one: attacks a01 to a24 and p1 to p3, the lanes and the root runs came from that run. Today (11:03 to 11:39 UTC) I restored the workspace, finished the facts, pages, code, numbers and remaining attacks, and left the workspace clean.",
+ "required_fixes": [
+  {
+   "file": "ts/test/runtimeforms/php.ts (cite 'ref.facts.prepare.returns')",
+   "change": "Quote tm/php/utility/MakeFetchDef.php:30 `$fetchdef = ['url' => $url, 'method' => $spec->method, 'headers' => $spec->headers];` (and keep `return $fetchdef;` from Main.fragment.php:216). Drop `public static function call(ProjectNameContext $ctx): array`.",
+   "why": "The quoted `: array` is the return type of the [fetchdef, err] pair, not of the fetch definition prepare returns. The token stands in a line that means something else. The value 'array' is true: I ran it, and prepare returns an array with keys url, method, headers.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/php.ts (cite 'ref.facts.testMock')",
+   "change": "Quote the fallback with its branch: `default:\\n                return new ${model.const.Name}BaseFeature();` (Main_php.ts:146-147).",
+   "why": "The current quote occurs twice in Main_php.ts: :134 under `case \"base\"` and :147 under `default:`. Only the default branch shows the fallback the fact rests on. The fact itself is true: I ran a no-test SDK, and its test client throws `Request blocked by mode: \"test\"` on load and list.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/php.ts (cite 'ref.facts.streamSignal')",
+   "change": "Replace the second quote (`$aborted = function () use ($signal): bool {`, the closure's definition) with the early end: `if ($aborted()) {\\n                    return;` (Entity.fragment.php:206-207 or :226-227).",
+   "why": "Guide 2.1 asks for two quotes, the read and the early end. The closure definition shows neither the check nor the return. The fact is true: I ran it, and a callable or an object signal reporting an abort yields 0 items.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/php.ts (cite 'ref.facts.none')",
+   "change": "Add `value: 'null'` to the citation.",
+   "why": "Attack a03: a wrong `none` whose token stands in the quoted line (e.g. 'mixed', from `): mixed`) passes the guard, and only 6 open classes flag it, which a porter decides by hand. A pinned value makes the guard compare the declaration (G1).",
+   "shared": false
+  },
+  {
+   "file": "ts/project/.sdk/src/cmp/php/Package_php.ts:69, Test_php.ts:33, TestEntity_php.ts:185, TestDirect_php.ts:190, TestClean_php.ts:54",
+   "change": "Call phpSdkFile(model) (utility_php.ts:11) instead of restating `${model.const.Name.toLowerCase()}_sdk.php`.",
+   "why": "Guide 2.1 item 1 and the repository's 'one rule, one place': the porter extracted the rule but switched only Main_php.ts, so five php generator components still spell it inline (the composer autoload included). Guide 4 allows these edits (a generator component of the language that calls the extracted function). Note also that phpSdkFile hardcodes '.php' where Main_php used target.ext; this is equivalent for every php target today.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/calls.ts / guard.ts (shared guard), and tools/callcheck.js",
+   "change": "Render the entity accessor through the provider's `call` printer and `ref.instance`, and check its separator against `calls.on.instance`, as is already done for operations (a16 caught `$client->Planet()::list()`).",
+   "why": "b01 (ref.instance) and b02/a14 (call printer) wrote `$client::Planet()`. The guard exited 0 and callcheck reported 0 findings on 386 calls, although guide 2.3 lists the accessor among what is checked. I ran it in php: `Non-static method DemoSDK::Planet() cannot be called statically` (fatal). Only open block classes flagged it, which a porter decides by hand.",
+   "shared": true
+  },
+  {
+   "file": "tools (enumgen.js / facts judgement of enumerated facts)",
+   "change": "Count a unit or block as attesting the declared value only where the declared value prints differently from every alternative. Report NOT JUDGED otherwise.",
+   "why": "a25: prints set to 'record' was reported `ATTESTED (... OLD reads as record in 32, as another value in 2)`, while the port's 'listFields' is also ATTESTED (33/0). Blocks where record and listFields print the same (load's print_r) count for whichever value is declared. That is the brief 7 T4 hole: attested by the presence of a pair.",
+   "shared": true
+  },
+  {
+   "file": "P/base33/PORTING.md",
+   "change": "Section 2.3: state that the accessor's receiver is not checked, until the guard checks it. Section 2.1: move listOf from the required row to the optional table, with its account. Section 9 php row: say that the minimal pair attests keys 'member' (171/0), not 3.2's 'bare'. Section 5: say that an echo class may be only same-meaning, contradiction or defect. Section 2.5/6: say that a line citing the SDK file cannot quote utility_<lang>.ts, which the guard refuses (b03).",
+   "why": "The porter's guide problems, each confirmed (b03 ran: `src/cmp/php/utility_php.ts is not one of the php runtime's files`), plus the false claim in section 2.3 that b01 and b02 show.",
+   "shared": true
+  }
+ ],
+ "not_caught": [
+  {
+   "attack": "a24: ref.facts.client[1].copy set to false, together with its pinned citation",
+   "consequence": "PORTCHECK PASS, exit 0. The page prints 'Return the SDK utility object.', which is false for php: I ran it, and get_utility() returns a new DemoUtility on every call (UtilityType.php:58-60). By design (pinned prose is the reviewer's), so a reviewer who does not run it lets a false sentence through."
+  },
+  {
+   "attack": "a06: ref.facts.body.once changed together with its pin",
+   "consequence": "PASS. The body facts print on no page of the 21 variations, so neither a page nor a check can see them."
+  },
+  {
+   "attack": "a08: accessor.cached fact and its citation both removed",
+   "consequence": "The guard passes. OLD's false 'Create a new X instance.' returns and is counted 'same' with OLD (+93 units, 14766 to 14859). Only 1 unrelated open class remains, which a porter can decide by hand, and the page is then false for php (I ran it: `$client->Planet() === $client->Planet()` is true). The guard does not derive `cached` from MainEntity_php.ts."
+  },
+  {
+   "attack": "a03: ref.facts.none set to a token that stands in the quoted line",
+   "consequence": "The guard passes (the token is in the quote and there is no value pin); 6 open classes, decided by hand."
+  },
+  {
+   "attack": "a14, b01, b02: entity accessor called through `::` (call printer, ref.instance)",
+   "consequence": "Guard exit 0 and callcheck 0 findings in all three; only open block classes flag it. At run time it is a fatal error."
+  },
+  {
+   "attack": "a23: root import place removed (root require back to 'demo_sdk.php')",
+   "consequence": "The guard passes. Only `RECOUNT rootquick` (corrected 0 to 11) fails, and the porter clears it by re-recording the counts. The php lane strips require_once (ReadmeExamplesTest_php.ts:304-318), so it cannot see the import either. OLD's form fails from the repository root (I ran it)."
+  },
+  {
+   "attack": "a25: prints set to 'record'",
+   "consequence": "Called ATTESTED by the minimal pair; only 3 open tutorial block classes, decided by hand."
+  },
+  {
+   "attack": "a17 noun, a18 keys, a19 maps set to wrong values",
+   "consequence": "UNATTESTED, so the run fails, but a hand record closes it by design (convention and language facts)."
+  },
+  {
+   "attack": "a09: deleted removed",
+   "consequence": "ABSENT, NO REASON, so the run fails, but an absent reason closes it."
+  }
+ ],
+ "attacks": [
+  {
+   "by": "guard",
+   "caught": true,
+   "change": "a01 arity changed"
+  },
+  {
+   "by": "guard",
+   "caught": true,
+   "change": "a02 none = NULL (token not in quote)"
+  },
+  {
+   "by": "tools: 6 OPEN classes only (porter-decidable)",
+   "caught": false,
+   "change": "a03 none = a token in the quoted line"
+  },
+  {
+   "by": "guard (pin mismatch)",
+   "caught": true,
+   "change": "a04 body.values changed, pin kept"
+  },
+  {
+   "by": "guard (pin mismatch)",
+   "caught": true,
+   "change": "a05 entity[2].copy changed, pin kept"
+  },
+  {
+   "by": "nothing (PASS)",
+   "caught": false,
+   "change": "a06 body.once changed with its pin"
+  },
+  {
+   "by": "guard (citation of an undeclared fact)",
+   "caught": true,
+   "change": "a07 accessor.cached removed, citation kept"
+  },
+  {
+   "by": "tools: 1 unrelated OPEN; the false sentence counted same",
+   "caught": false,
+   "change": "a08 accessor.cached and citation removed"
+  },
+  {
+   "by": "tools: ABSENT NO REASON [808ab9f422]",
+   "caught": true,
+   "change": "a09 deleted removed"
+  },
+  {
+   "by": "guard",
+   "caught": true,
+   "change": "a10 deleted = ${var}->isDeleted()"
+  },
+  {
+   "by": "guard",
+   "caught": true,
+   "change": "a11 test signature written on the instance"
+  },
+  {
+   "by": "guard",
+   "caught": true,
+   "change": "a12 entity name declared as a field"
+  },
+  {
+   "by": "guard (arity)",
+   "caught": true,
+   "change": "a13 test call with 3 arguments"
+  },
+  {
+   "by": "tools: blocks OPEN only; guard and callcheck silent",
+   "caught": false,
+   "change": "a14 accessor called with :: in the call printer"
+  },
+  {
+   "by": "guard (arity)",
+   "caught": true,
+   "change": "a15 op calls with 3 arguments"
+  },
+  {
+   "by": "guard (on)",
+   "caught": true,
+   "change": "a16 op called with ::"
+  },
+  {
+   "by": "tools UNATTESTED (closable by a hand record)",
+   "caught": true,
+   "change": "a17 ref.noun = Functions"
+  },
+  {
+   "by": "tools UNATTESTED plus an ABSENT (closable by hand)",
+   "caught": true,
+   "change": "a18 keys = bare"
+  },
+  {
+   "by": "tools UNATTESTED (closable by hand)",
+   "caught": true,
+   "change": "a19 maps = hashes"
+  },
+  {
+   "by": "guard (absence)",
+   "caught": true,
+   "change": "a20 abortsig added to EntityLoadOp.fragment.php"
+  },
+  {
+   "by": "guard (note needs a citation) and purity (6 OPEN)",
+   "caught": true,
+   "change": "a21 note naming an entity and a feature and stating numbers"
+  },
+  {
+   "by": "guard (the cancel region shows streamSignal)",
+   "caught": true,
+   "change": "a22 streamSignal and its citation removed"
+  },
+  {
+   "by": "tools: RECOUNT rootquick only (porter re-records)",
+   "caught": false,
+   "change": "a23 import place removed"
+  },
+  {
+   "by": "nothing (PASS)",
+   "caught": false,
+   "change": "a24 utility copy false, fact and pin"
+  },
+  {
+   "by": "tools: blocks OPEN 3 only; ATTESTED",
+   "caught": false,
+   "change": "a25 prints = record"
+  },
+  {
+   "by": "nothing (guard exit 0)",
+   "caught": false,
+   "change": "b01 ref.instance accessor via ::"
+  },
+  {
+   "by": "nothing (guard exit 0)",
+   "caught": false,
+   "change": "b02 call printer accessor via ::"
+  },
+  {
+   "by": "guard (refuses the file)",
+   "caught": true,
+   "change": "b03 ctor[0] also-quote from utility_php.ts (checks the porter's gap 3)"
+  },
+  {
+   "by": "tools: reference OPEN 1",
+   "caught": true,
+   "change": "p1 shared sentence dropped from one variation (pages edited)"
+  },
+  {
+   "by": "tools: ABSENT NO REASON [28235772cb]",
+   "caught": true,
+   "change": "p2 stream-signal sentence dropped from every variation"
+  },
+  {
+   "by": "tools: tutorial blocks OPEN 2",
+   "caught": true,
+   "change": "p3 example line changed"
+  }
+ ],
+ "facts_audit": [
+  {
+   "fact": "facts.method.*, async, result, record, arity",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Spot-checked against Entity*Op.fragment.php:12/15 (`public function list(?array $reqmatch = null, $ctrl = null): mixed`, all parameters defaulted, so arity 0) and Entity.fragment.php:111 data_get. I ran list, load and remove: plain returns, and load returns $this."
+  },
+  {
+   "fact": "ref.facts.op.*, test[0], accessor.sig/param/arg, entity[1,3,4,5,6], client sigs",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Main.fragment.php:34,114,133,143,222,393; Entity.fragment.php:48,90,99,120,148; MainEntity_php.ts:40 `public function ${accessor}($data = null)`, with $data passed to `new ${cls}($this, $data)` as entopts."
+  },
+  {
+   "fact": "facts.collection = array (pinned)",
+   "account": "cited, pinned prose",
+   "verdict": "true; the quote shows it",
+   "evidence": "MakeResult.php:35,42,44. I ran it: list returns a PHP array of PlanetEntity."
+  },
+  {
+   "fact": "facts.recordType = array; entity[0].returns, entity[2].returns",
+   "account": "cited",
+   "verdict": "true, but comment-only citations",
+   "evidence": "A docblock `@return EntityName|array` (Entity.fragment.php:109,129); data_get/match_get declare no return type."
+  },
+  {
+   "fact": "ref.facts.none = null",
+   "account": "cited",
+   "verdict": "true; the line means none (the default of an optional parameter)",
+   "evidence": "EntityLoadOp.fragment.php:15. There is no value pin (see fix)."
+  },
+  {
+   "fact": "ref.facts.container = array",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "Main.fragment.php:34 `__construct(array $options = [])`"
+  },
+  {
+   "fact": "ref.facts.ctor[0] = require_once __DIR__ . '/{module}';",
+   "account": "cited",
+   "verdict": "true; no quote holds the file name",
+   "evidence": "Main_php.ts `File({ name: phpSdkFile(model) }` plus Main.fragment.php:6. I ran the block from php/ with $options set: it works from any working directory. As printed, $options is undefined and the call throws a TypeError, the same as OLD."
+  },
+  {
+   "fact": "ref.facts.testMock = generated (pinned)",
+   "account": "cited ahead, pinned",
+   "verdict": "true; the quote is ambiguous (two occurrences)",
+   "evidence": "I ran a no-test SDK: `Request blocked by mode: \"test\"` on load, list and direct."
+  },
+  {
+   "fact": "ref.facts.accessor.cached = true (pinned)",
+   "account": "cited, pinned",
+   "verdict": "true",
+   "evidence": "MainEntity_php.ts:43-49. I ran it: the same instance with null, a new one with options."
+  },
+  {
+   "fact": "ref.facts.client[0].copy (options_map)",
+   "account": "cited, pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.php:116 Struct::clone of an array."
+  },
+  {
+   "fact": "ref.facts.client[1].kind/copy/returns (get_utility)",
+   "account": "cited, pinned, cited to the allocation",
+   "verdict": "true (a shallow copy; the closures are shared)",
+   "evidence": "UtilityType.php:58-60. I ran it: a new DemoUtility on each call."
+  },
+  {
+   "fact": "ref.facts.entity[0].copy, entity[2].copy",
+   "account": "cited, pinned",
+   "verdict": "true",
+   "evidence": "Entity.fragment.php:114,134. I ran it: mutating the returned array leaves the data unchanged."
+  },
+  {
+   "fact": "ref.facts.direct.returns = array; okFalse = false",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "Main.fragment.php:237-246,262,277,321-330,333-336: every path returns an array, with `\"ok\" => false` literals."
+  },
+  {
+   "fact": "ref.facts.prepare.returns = array",
+   "account": "cited",
+   "verdict": "value true; quote wrong",
+   "evidence": "The quote is the pair type (MakeFetchDef.php:11). The value is shown at :30. I ran it: keys url, method, headers."
+  },
+  {
+   "fact": "ref.facts.prepare.fails = style (pinned)",
+   "account": "cited, pinned",
+   "verdict": "true by default",
+   "evidence": "MakeError.php:74 `throw $sdk_err`, except under ctrl throw false (:71-72 returns resdata). I ran it: a BREW method throws DemoError."
+  },
+  {
+   "fact": "ref.facts.body.values / body.once (pinned)",
+   "account": "cited, comment-only",
+   "verdict": "true by the code too",
+   "evidence": "Media.php:104-110 rawBody reads a resource once with stream_get_contents. Printed on no page of the 21 variations."
+  },
+  {
+   "fact": "ref.facts.cancel = false (absence)",
+   "account": "cited absence over 137 files",
+   "verdict": "true",
+   "evidence": "Regions read: the Entity stream (shows streamSignal); CostFeature:156,178, SecretsFeature:37 and TimeoutFeature:10-11,60 are comments. I searched other spellings (interrupt, halt, deadline, CURLOPT_*, mid-word abort): only the paging 'signals' (English) and the timeout deadline (not a caller cancel), and Fetcher.php:272 CURLOPT_TIMEOUT."
+  },
+  {
+   "fact": "ref.facts.streamSignal = true",
+   "account": "cited ahead",
+   "verdict": "true",
+   "evidence": "Entity.fragment.php:152,179-190,206,226. I ran a callable and an object->aborted signal: 0 items."
+  },
+  {
+   "fact": "ref.facts.deleted = ${var}->deleted()",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Entity.fragment.php:85. I ran remove: deleted() is true and the data is kept when the mock returns no record."
+  },
+  {
+   "fact": "facts.named = call; ref.noun = Methods",
+   "account": "hand-recorded convention",
+   "verdict": "right",
+   "evidence": "OLD uses load(), list() in prose and headings 'Instance Methods'/'Common Methods'; php members are -> methods."
+  },
+  {
+   "fact": "prints = listFields; entityBy = class; keys = member; maps = arrays",
+   "account": "convention/language, ATTESTED",
+   "verdict": "values true; the attestation of prints is not discriminating (a25)",
+   "evidence": "OLD tutorial list `echo $item[\"id\"] . \" \" . ...`; `$options[\"apikey\"]`; 'arrays are JSON-serialized'."
+  },
+  {
+   "fact": "valueType STRING string, OBJECT array, ANY mixed",
+   "account": "derived (canonToType column php)",
+   "verdict": "true",
+   "evidence": "runtime-table: column php"
+  },
+  {
+   "fact": "guard account line",
+   "account": "SDKGEN_GUARD_REPORT=1",
+   "verdict": "derived 49, cited 23, language 1, convention 6",
+   "evidence": "The porter reports cited 22 (taken before the utility returns citation). The fact sheet's cited 20 / pinned 10 matches."
+  }
+ ],
+ "optional_facts": [
+  {
+   "fact": "ref.facts.accessor.cached",
+   "file_line": "src/cmp/php/MainEntity_php.ts:43-49",
+   "port_declared": "true",
+   "right": "yes",
+   "runtime_shows": "null: the kept instance (ran: identical object); options: new instance"
+  },
+  {
+   "fact": "ref.facts.streamSignal",
+   "file_line": "src/cmp/php/fragment/Entity.fragment.php:152,179-190,206,226",
+   "port_declared": "true",
+   "right": "yes",
+   "runtime_shows": "ends between items when the callable or ->aborted reports true (ran: 0 items)"
+  },
+  {
+   "fact": "copy on match getter",
+   "file_line": "Entity.fragment.php:134",
+   "port_declared": "copy: true",
+   "right": "yes",
+   "runtime_shows": "Struct::clone of an array"
+  },
+  {
+   "fact": "copy on utility getter",
+   "file_line": "Main.fragment.php:135; tm/php/core/UtilityType.php:58-60",
+   "port_declared": "copy: true",
+   "right": "yes",
+   "runtime_shows": "new ProjectNameUtility with members copied (shallow); ran: a different object per call"
+  },
+  {
+   "fact": "memberNamed",
+   "file_line": "n/a",
+   "port_declared": "not declared (call)",
+   "right": "yes",
+   "runtime_shows": "calls written with parentheses"
+  },
+  {
+   "fact": "field flag",
+   "file_line": "Entity.fragment.php:48",
+   "port_declared": "none",
+   "right": "yes",
+   "runtime_shows": "get_name() is a method. The client's public properties $mode, $features, $options (Main.fragment.php:27-29) are undocumented"
+  },
+  {
+   "fact": "ref.facts.deleted",
+   "file_line": "Entity.fragment.php:85",
+   "port_declared": "${var}->deleted()",
+   "right": "yes",
+   "runtime_shows": "deleted(): bool. The data is replaced by a returned record (EntityRemoveOp:31-33); the page says nothing about the data, correctly"
+  },
+  {
+   "fact": "facts.arity",
+   "file_line": "Entity*Op.fragment.php:12/15",
+   "port_declared": "0",
+   "right": "yes",
+   "runtime_shows": "every parameter defaulted"
+  },
+  {
+   "fact": "layout.dir + imports(place)",
+   "file_line": "Syntax_php.ts:113-116",
+   "port_declared": "dir: target.name; top prints php/demo_sdk.php",
+   "right": "yes",
+   "runtime_shows": "ran from the repository root: NEW reaches the request, OLD fails at require_once"
+  },
+  {
+   "fact": "notes.top",
+   "file_line": "n/a",
+   "port_declared": "none",
+   "right": "yes",
+   "runtime_shows": "no php-only fact after the root quick start"
+  },
+  {
+   "fact": "listOf (not in the optional table, but optional in practice)",
+   "file_line": "Entity*Op.fragment.php docblocks `@return EntyClass[]`; declared `: mixed`",
+   "port_declared": "none",
+   "right": "yes (it cannot be derived from `mixed`)",
+   "runtime_shows": "the class is named only in comments; the root comment says 'the entity', which is true"
+  }
+ ],
+ "pages": [
+  {
+   "section": "tutorial",
+   "variation": "B",
+   "kind": "better",
+   "finding": "NEW adds the server tenant and region sentence and the record type '(an `array`)', and renumbers OLD's missing step 2. No false sentence."
+  },
+  {
+   "section": "tutorial",
+   "variation": "auth-basic",
+   "kind": "better",
+   "finding": "NEW passes `secret` and `server` (runtime: PrepareAuth_php.ts:219-227, MakeOptions.php:232-262). OLD passed only apikey."
+  },
+  {
+   "section": "tutorial",
+   "variation": "crud-basic",
+   "kind": "awkward (not false)",
+   "finding": "With php's cached accessor, `$created` and the loaded `$planet` are one object. Ran in test mode: `$created === $planet` is true, and `$planet->deleted()` is true after step 4. The tutorial binds them as if distinct and never mentions the cache; only the REFERENCE does. Every step runs."
+  },
+  {
+   "section": "tutorial",
+   "variation": "crud-basic",
+   "kind": "changed",
+   "finding": "The display field is title (string) where OLD showed radius, from the fixed showFields. True."
+  },
+  {
+   "section": "rootquick",
+   "variation": "B, crud-basic",
+   "kind": "corrected",
+   "finding": "`require_once 'php/demo_sdk.php'` works from the repository root (ran). Weaker: the load comment lost 'data_get() reads its record', though the next line shows it."
+  },
+  {
+   "section": "reference",
+   "variation": "B",
+   "kind": "corrected",
+   "finding": "GraphQl_ accessor (OLD's GraphQl() hits graphql(): ran, ArgumentCountError); make(): self; true optional signatures; cached accessor sentence; utility copy with Returns DemoUtility; stream member; deleted mark; actions table with a compilable `\"\\$action\"`."
+  },
+  {
+   "section": "reference",
+   "variation": "all",
+   "kind": "lost",
+   "finding": "The `: array` on the data_get/match_get headings (the runtime declares none, and ReadmeRef prints no Returns for entity members: porter's gap 2); `\\Exception` as err's type (dropped rightly: direct catches \\Throwable)."
+  },
+  {
+   "section": "reference",
+   "variation": "all",
+   "kind": "awkward (shared)",
+   "finding": "'It ends early once `callopts.signal` reports an abort.': `callopts.signal` is a shared constant (ReadmeRef.ts:123) printed for every language. The page's own key form is `$callopts[\"signal\"]`. Not false."
+  },
+  {
+   "section": "reference",
+   "variation": "ref-issues",
+   "kind": "corrected",
+   "finding": "PlanetEntityClient (OLD said PlanetEntity; computed with entityClassName fold true and false: both PlanetEntityClient). Remove not listed (S25). Id-less gauge update has no id sentence (U43). The pipe and link field cell is fixed."
+  },
+  {
+   "section": "reference",
+   "variation": "ref-issues",
+   "kind": "shared, known",
+   "finding": "Features section: TS-form defaults ('anonymous'), `feature.audit.active`, and literal \\`cost\\` backticks (ReadmeRefFeatures.ts; the guide's known item for integration)."
+  },
+  {
+   "section": "reference constructor block",
+   "variation": "all",
+   "kind": "illustrative",
+   "finding": "`$client = new DemoSDK($options);` with $options undefined throws a TypeError if run as printed (ran). Identical in OLD; the parameter table defines $options."
+  }
+ ],
+ "hand_records": [
+  {
+   "id": "393a02c223 (dropped)",
+   "verdict": "right",
+   "why": "\\Exception is too narrow: direct catches \\Throwable (Main.fragment.php:261), and the page still says err holds the error. Not a page shared code makes wrong."
+  },
+  {
+   "id": "9a06a9079a, fdc80fe847, ef282389f3 (contradiction)",
+   "verdict": "right",
+   "why": "The unported README table says each accessor call creates an instance (and names PlanetEntity in ref-issues). Ran: the same instance with null; the class is PlanetEntityClient."
+  },
+  {
+   "id": "8456c2ee6c (contradiction)",
+   "verdict": "right",
+   "why": "A read non-2xx response carries no err (Main.fragment.php:321-330)."
+  },
+  {
+   "id": "bff341cf32 (contradiction)",
+   "verdict": "right",
+   "why": "Ran a no-test SDK: the test client blocks every request, so README:219's 'mock transport' is false."
+  },
+  {
+   "id": "20 same-meaning",
+   "verdict": "right",
+   "why": "Each pairs an echo that does not disagree (the README test line, the result-shape keys, the throws wording). 40619d86b7's label is odd: the echo is about another member, so 'no conflict' would be more exact."
+  },
+  {
+   "id": "facts.named, ref.noun",
+   "verdict": "right",
+   "why": "Attested in OLD's prose and headings."
+  },
+  {
+   "id": "33 absent",
+   "verdict": "right",
+   "why": "Each checked against the runtime: no tester, private _client/_entopts, get_name a method, a generator stream, split getters and setters, prepare throws, no operation cancel, cached accessor, utility copy, sync returns, listOf not derivable from `mixed`."
+  },
+  {
+   "id": "rootquick correction:root-import-place",
+   "verdict": "right",
+   "why": "Ran: OLD fails at require_once, NEW reaches the request."
+  },
+  {
+   "id": "correction:php-accessor-graphql",
+   "verdict": "right",
+   "why": "Ran: GraphQl() raises ArgumentCountError; GraphQl_() returns a GraphQlEntity."
+  },
+  {
+   "id": "STALE",
+   "verdict": "0, confirmed",
+   "why": "Reviewed run: hand records 237, STALE 0."
+  }
+ ],
+ "gaps_judged": [
+  {
+   "gap": "Porter 1: page class name from entityClassName without fold; the php runtime folds (MainEntity_php.ts:20)",
+   "needed": false,
+   "breaking": false,
+   "why": "Computed for B and ref-issues: the folded and unfolded names are equal (guardModelNames already renames case collisions). Latent, as the porter said."
+  },
+  {
+   "gap": "Porter 2: entity member `returns` not printed (ReadmeRef.ts:236)",
+   "needed": true,
+   "breaking": false,
+   "why": "Additive. The array record type survives only in the tutorial."
+  },
+  {
+   "gap": "Porter 3: the ctor non-call line cannot cite the file name",
+   "needed": true,
+   "breaking": false,
+   "why": "Ran b03: the guard refuses utility_php.ts. Additive (rb and lua have the same shape)."
+  },
+  {
+   "gap": "Reviewer: the accessor receiver is unchecked by the guard and callcheck",
+   "needed": true,
+   "breaking": false,
+   "why": "b01, b02, a14. It is a check, not an interface change."
+  },
+  {
+   "gap": "Reviewer: the STREAM_SIGNAL key form",
+   "needed": false,
+   "breaking": false,
+   "why": "Wording only. Could print through ref.key."
+  }
+ ],
+ "provider_code": [
+  {
+   "file_line": "Syntax_php.ts (whole), Naming_php.ts",
+   "finding": "Reads no model, changes no case, holds no reserved list. The hook calls only generator functions: phpSdkFile (also Main_php), phpEntityAccessor (also MainEntity_php, TestEntity_php), tm('ProjectNameSDK'), and exampleVarName (README-only, allowed as for perl and rb). No notes. Purity: 0 open, 2 accepted, both reasons right."
+  },
+  {
+   "file_line": "Syntax_php.ts:138",
+   "finding": "The print printer writes a provider-chosen `$item` (rb does the same with `record`). Harmless in every page read, but it is a name outside the scope mechanism."
+  },
+  {
+   "file_line": "utility_php.ts:11",
+   "finding": "phpSdkFile hardcodes '.php' where Main_php used target.ext. Five components still inline the rule (fix)."
+  },
+  {
+   "file_line": "diff 0065f1e2..HEAD",
+   "finding": "Only php files and the golden changed (v33-frozen is not a tag in this clone). No trailer and no tool name in any sdkgen or tools commit. The tools commit holds php files only. Other languages: 0 per-language files and 0 of 21 root READMEs differ from P/base33/out/new outside the PHP blocks."
+  }
+ ],
+ "numbers": [
+  {
+   "what": "suite without lanes",
+   "porter": "2635 / 2630 pass / 0 fail / 5 skipped, 771 s",
+   "mine": "2635 / 2630 / 0 / 5, 559.8 s (load average about 10)"
+  },
+  {
+   "what": "guard ^php",
+   "porter": "4/4",
+   "mine": "4/4; guard plus reader 81/81"
+  },
+  {
+   "what": "golden",
+   "porter": "regenerated, php lines",
+   "mine": "characterize.test.js 2/2 pass; tree clean after build"
+  },
+  {
+   "what": "reviewed REGEN run",
+   "porter": "PASS, exit 0, OPEN 0, contradictions 5",
+   "mine": "identical, exit 0, 3m22s; pages byte-identical to the snapshot"
+  },
+  {
+   "what": "SCRATCH run",
+   "porter": "exit 1; OPEN 28/4/100; blocks OPEN 27/30/13; ABSENT 33 (0 explained); 2 unattested",
+   "mine": "identical"
+  },
+  {
+   "what": "STRICT_SENTENCES=1",
+   "porter": "not run",
+   "mine": "exit 1, only on the 2 unreviewed sentences (both read true for php)"
+  },
+  {
+   "what": "lines",
+   "porter": "-734 (224/420/90); +168 provider, +26 hook, +40 forms, +7 utility, +2/-1 Main",
+   "mine": "identical (git diff --numstat 0065f1e2..HEAD)"
+  },
+  {
+   "what": "prose (sharewords)",
+   "porter": "only php 8.8%, notes 0, literals 0.4%",
+   "mine": "identical"
+  },
+  {
+   "what": "guard account cited",
+   "porter": "22",
+   "mine": "23 (the utility returns citation added later)"
+  },
+  {
+   "what": "php README lane (run.sh, OLD and NEW)",
+   "porter": "4 tests / 19 / 0 x3",
+   "mine": "same (earlier run of this review)"
+  },
+  {
+   "what": "repository php lanes",
+   "porter": "not run",
+   "mine": "38 tests: 33 pass, 0 fail, 5 skipped (phpunit missing), 553.6 s"
+  },
+  {
+   "what": "php -l over all php blocks",
+   "porter": "not run",
+   "mine": "NEW 714 (90 distinct), 0 errors; OLD 715 (81 distinct), 0 errors"
+  }
+ ],
+ "could_not_check": [
+  "phpunit is not on PATH: 5 repository php lanes skipped (feature corpus, and four credential lanes).",
+  "The changed blocks of the 21 variations were syntax-checked (php -l, 90 distinct) and call-checked, not executed, except the B claims and the crud-basic tutorial, which I ran in test mode. Argument types and missing methods outside callcheck's 23 members remain unverified for the others.",
+  "ref-issues: the full Root generation throws (no flow for gauge in TestEntity_php), so its examples were not run. Class names were computed with the generator's functions instead.",
+  "No live request was made. The constructor options were run only up to the network (root quick start), never against a server.",
+  "A no-test REFERENCE claim was run on a generated SDK; the other 18 variations' pages were read only through the tools."
+ ],
+ "doubtful_lines": [
+  {
+   "where": "REFERENCE Constructor block (all variations)",
+   "line": "$client = new DemoSDK($options);",
+   "why": "$options is undefined in the block. Run as printed: a warning, then a TypeError. Identical in OLD; illustrative.",
+   "runtime_line": "Main.fragment.php:34 public function __construct(array $options = [])"
+  }
+ ],
+ "interface": "H1 (php): the interface held. 0 shared changes forced (0 breaking, 0 additive). 3 additive gaps recorded and confirmed: the fold is latent; entity Returns; ctor citation file (b03). No provider reads the model. php's own prose is 8.8% of words (4970/56758) with 0 notes and 0.4% provider literals. The tutorial 24.2% and root 92% 'only php' shares are shared sentences that say 'returns' where ts, the only throw-style reference, says 'resolves to'; they are not provider prose. H3 (php): the catalogue items in ref-issues (S25, U34, U43, the pipe and link cells, S49 type cells, decision 14) come out right from shared code, and php's own corrections (GraphQl_, the root require) come from the hook and the facts, with 0 per-language edits to sentences. H4 (php): no example fails for a reason intrinsic to the approach. Lane OLD = NEW; NEW's root quick start now passes the require from the root, where OLD fails; 0 syntax errors.",
+ "ran": "This session (11:03 to 11:39 UTC): restored ws (out/new from the clean snapshot, tools checkout); npm run build (exit 0, tree clean); guard ^php 4/4; guard plus reader 81/81; golden 2/2; suite (2635/2630/0/5); SCRATCH=1 REGEN=1 portcheck (exit 1, numbers as the porter's); REGEN=1 reviewed portcheck (exit 0 PASS, identical); STRICT_SENTENCES=1 (fails only on 2 unreviewed sentences); attacks b01, b02, b03 (guard) and a25 (full); sharewords; php -l over all 1429 OLD and NEW php blocks; full php SDKs for B, crud-basic and no-test (mine/fullgen.js), with PHP runs of every claim (mine/claims.php, mine/notest.php); the crud-basic tutorial in test mode; the B root quick start from the repository root (NEW and OLD path); the REFERENCE ctor block. Earlier run of this review, from its files: attacks a01-a24, p1-p3; run.sh lanes OLD and NEW (4/19/0 x3); repository ^php lanes 33/0/5; root quick start OLD and NEW x3 models.",
+ "read": "The briefs (1, 3-7) and PORTING.md v3.3; Syntax_php.ts, Naming_php.ts, utility_php.ts, the Main_php.ts diff, runtimeforms/php.ts; Main.fragment.php, Entity.fragment.php, the Entity*Op fragments, MainEntity_php.ts, MakeError.php, MakeFetchDef.php, MakeResult.php, UtilityType.php copy, Media.php, Main_php.ts features factory, MakeOptions/PrepareAuth (server, secret); runtime-table php section; OLD and NEW tutorial, root quick start and REFERENCE for B, auth-basic, ref-issues and crud-basic; hand/php.json (all dropped, contradiction and same-meaning records, facts, 33 absent); purity json and allow list; facts.txt; the guard account report; the attack screens a01-a24 and p1-p3.",
+ "touched": "Only under P/reviews/php: PROGRESS.md, attacks/ (b01-b03, a25 added), mine/ (fullgen.js, classnames.js, claims.php, notest.php, generated SDKs, lint/, suite.txt, pc-scratch.txt, pc-reviewed.txt, pc-strict.txt), ws (copy). ws is left clean: sdkgen and tools git status empty, out/new identical to newsnap. Nothing under /home/user or P/ports/php was modified."
+}

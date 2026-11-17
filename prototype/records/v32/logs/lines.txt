@@ -1,0 +1,40 @@
+lines (total/without blanks and comments), base 9aebaf9e, after HEAD, clone sdkgen
+BEFORE per family (all 20): ReadmeQuick_ 4503/3458, ReadmeTopQuick_ 2000/1422, ReadmeRef_ 8330/5853 | shared then: ReadmeQuick.ts 34/21, ReadmeTop.ts 745/556, ReadmeRef.ts 29/13, ReadmeRefFeatures.ts 142/104
+  ts      before 242/180 + 123/89 + 473/326  | after: Syntax 140/114, Naming 22/15, guard 115/107, family left 0/0, other files 3/1 (ReadmeHowto_ts.ts,ReadmeModel_ts.ts)
+  js      before 179/134 + 110/79 + 445/303  | after (not ported): Syntax 0/0, Naming 0/0, guard 58/49, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  go      before 203/155 + 132/99 + 435/304  | after: Syntax 190/152, Naming 24/16, guard 97/86, family left 0/0, other files 0/0
+  py      before 225/171 + 100/72 + 416/285  | after: Syntax 148/119, Naming 24/16, guard 86/80, family left 0/0, other files 8/5 (Main_py.ts,utility_py.ts)
+  php     before 224/170 + 90/61 + 420/287  | after (not ported): Syntax 0/0, Naming 0/0, guard 59/51, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  rb      before 228/175 + 91/64 + 426/291  | after: Syntax 154/121, Naming 24/16, guard 108/96, family left 0/0, other files 11/6 (Main_rb.ts,ReadmeExamplesTest_rb.ts,utility_rb.ts)
+  lua     before 232/175 + 98/69 + 419/285  | after (not ported): Syntax 0/0, Naming 0/0, guard 82/70, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  csharp  before 232/179 + 96/67 + 413/295  | after (not ported): Syntax 0/0, Naming 0/0, guard 61/51, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  java    before 242/185 + 106/77 + 398/283  | after (not ported): Syntax 0/0, Naming 0/0, guard 61/51, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  kotlin  before 241/183 + 104/74 + 408/290  | after (not ported): Syntax 0/0, Naming 0/0, guard 68/57, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  scala   before 226/171 + 87/62 + 396/281  | after (not ported): Syntax 0/0, Naming 0/0, guard 68/57, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  swift   before 246/190 + 109/77 + 409/291  | after (not ported): Syntax 0/0, Naming 0/0, guard 75/64, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  rust    before 218/168 + 93/64 + 400/285  | after: Syntax 175/138, Naming 24/15, guard 96/87, family left 0/0, other files 0/0
+  c       before 241/190 + 104/72 + 418/304  | after: Syntax 236/187, Naming 28/19, guard 111/97, family left 0/0, other files 5/3 (MainEntity_c.ts,utility_c.ts)
+  cpp     before 233/179 + 95/70 + 406/286  | after (not ported): Syntax 0/0, Naming 0/0, guard 85/73, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  zig     before 223/178 + 100/71 + 425/310  | after: Syntax 198/155, Naming 22/14, guard 95/87, family left 0/0, other files 0/0
+  perl    before 224/172 + 91/64 + 420/296  | after (not ported): Syntax 0/0, Naming 0/0, guard 73/63, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+  clojure before 220/170 + 100/71 + 430/304  | after: Syntax 225/177, Naming 27/19, guard 103/89, family left 0/0, other files 20/14 (MainEntity_clojure.ts,Main_clojure.ts,utility_clojure.ts)
+  elixir  before 211/168 + 84/59 + 350/244  | after: Syntax 185/143, Naming 34/24, guard 96/87, family left 0/0, other files 10/5 (MainEntity_elixir.ts,utility_elixir.ts)
+  ocaml   before 213/165 + 87/61 + 423/303  | after (not ported): Syntax 0/0, Naming 0/0, guard 99/85, family left 0/0 (ReadmeQuick (not ported, not counted),ReadmeTopQuick (not ported, not counted),ReadmeRef (not ported, not counted)), other files 0/0
+AFTER shared files (before -> after, delta):
+  M ts/src/cmp/FeatureDocs.ts: 108/77 -> 117/81 (+9/4)
+  M ts/src/cmp/ReadmeFeatures.ts: 104/78 -> 115/87 (+11/9)
+  M ts/src/cmp/ReadmeQuick.ts: 34/21 -> 259/195 (+225/174)
+  M ts/src/cmp/ReadmeRef.ts: 29/13 -> 461/355 (+432/342)
+  M ts/src/cmp/ReadmeRefFeatures.ts: 142/104 -> 146/108 (+4/4)
+  M ts/src/cmp/ReadmeTop.ts: 745/556 -> 758/564 (+13/8)
+  A ts/src/helpers/example.ts: 0/0 -> 605/401 (+605/401)
+  A ts/src/helpers/markdown.ts: 0/0 -> 31/20 (+31/20)
+  M ts/src/helpers/media.ts: 79/52 -> 109/75 (+30/23)
+  M ts/src/helpers/optional.ts: 76/56 -> 80/58 (+4/2)
+  A ts/src/helpers/runtimeprose.ts: 0/0 -> 260/200 (+260/200)
+  A ts/src/helpers/sdkdesc.ts: 0/0 -> 530/420 (+530/420)
+  outside cmp/ and helpers/ (not counted to the documentation): ts/src/action/doctor.ts +35, ts/src/action/edition.ts +4, ts/src/action/remove.ts +1, ts/src/action/target.ts +82, ts/src/sdkgen.ts +9
+MEASURED (ts go py rb rust c zig clojure elixir): before 7661/5563 -> after 5948/4611: 1.29x (1.21x without blanks and comments)
+PROJECTION, all 20, unported providers x1: 15783/11427 -> 9424/7434: 1.67x (1.54x)
+PROJECTION, all 20, unported providers x1.5: 15783/11427 -> 11162/8846: 1.41x (1.29x)
+PROJECTION, all 20, unported providers x2: 15783/11427 -> 12900/10258: 1.22x (1.11x)

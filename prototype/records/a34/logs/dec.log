@@ -1,0 +1,26 @@
+[1/18 6% 1s] DT0-factory-reader: ERROR build failed: 
+> @voxgig/sdkgen@4.44.0 build
+> tsc --build src test && npm run prune-dist-test && npm run check-scaffold && npm run check-fixture && npm run stage-scaffold
+
+test/runtimeforms/calls.ts( ()
+[2/18 11% 13s] DT0-factory-required: NOT CAUGHT (ℹ tests 105, ℹ pass 105, ℹ fail 0)
+[3/18 17% 24s] DT8-accessor-lookup-only: CAUGHT on | ✖ cpp: the declared facts are what its runtime defines ; ✖ elixir: the declared facts are what its runtime defines ; ✖ java: the declared facts are what its runtime defines (ℹ tests 105, ℹ pass 99, ℹ fail 6)
+[4/18 22% 32s] DT8-accessor-lookup-and-nonefinding: CAUGHT  | ✖ cpp: the declared facts are what its runtime defines ; ✖ cpp: every declared fact is accounted for ; ✖ cpp: each check fails when its fact is changed (negative controls) (ℹ tests 105, ℹ pass 86, ℹ fail 19)
+[5/18 28% 42s] DT8-ocaml-binding: CAUGHT arity | ✖ ocaml: the declared facts are what its runtime defines ; ✖ runtimefacts (ℹ tests 105, ℹ pass 104, ℹ fail 1)
+[6/18 33% 54s] DT15-notruntime-sdktest: CAUGHT  | ✖ scala: every declared fact is accounted for ; ✖ runtimefacts (ℹ tests 105, ℹ pass 104, ℹ fail 1)
+[7/18 39% 65s] DT14-deleted-names: CAUGHT  | ✖ c: each check fails when its fact is changed (negative controls) ; ✖ java: each check fails when its fact is changed (negative controls) ; ✖ runtimefacts (ℹ tests 105, ℹ pass 103, ℹ fail 2)
+[8/18 44% 76s] DT14-deleted-layout: CAUGHT  | ✖ java: each check fails when its fact is changed (negative controls) ; ✖ runtimefacts (ℹ tests 105, ℹ pass 104, ℹ fail 1)
+[9/18 50% 79s] DT14-deleted-fill: NOT CAUGHT (ℹ tests 5, ℹ pass 5, ℹ fail 0)
+[10/18 56% 79s] DT3-blockscope: ERROR build failed: 
+> @voxgig/sdkgen@4.44.0 build
+> tsc --build src test && npm run prune-dist-test && npm run check-scaffold && npm run check-fixture && npm run stage-scaffold
+
+src/helpers/example.ts(296, ()
+[11/18 61% 82s] DT4-removekeeps: CAUGHT  | ✖ a remove that keeps the entity's data says so instead of the record sentence ; ✖ integration 3.4: shared changes (ℹ tests 5, ℹ pass 4, ℹ fail 1)
+[12/18 67% 84s] DT13-streamsignal-old: CAUGHT  | ✖ the stream signal is named in words, with the one form a runtime reads where it declares one ; ✖ integration 3.4: shared changes ; ✖ streamSignal: on the stream member, never in the cancel paragraph (ℹ tests 14, ℹ pass 12, ℹ fail 2)
+[13/18 72% 87s] DT13-streamsignalform-dropped: CAUGHT  | ✖ the stream signal is named in words, with the one form a runtime reads where it declares one ; ✖ integration 3.4: shared changes (ℹ tests 5, ℹ pass 4, ℹ fail 1)
+[14/18 78% 90s] DT16-utility-row-ts: CAUGHT  | ✖ the README methods row for the utility getter agrees with the provider's copy fact ; ✖ integration 3.4: shared changes (ℹ tests 5, ℹ pass 4, ℹ fail 1)
+[15/18 83% 98s] DT10-F6: CAUGHT  | ✖ a record that calls it changed outweighs the release ; ✖ an override the model declares outweighs the release ; ✖ a retired copy recognised without the record (ℹ tests 23, ℹ pass 21, ℹ fail 2)
+[16/18 89% 105s] DT11-F11: CAUGHT  | ✖ a changed copy of an optional component the list names fails doctor until declared ; ✖ a retired copy recognised without the record (ℹ tests 23, ℹ pass 22, ℹ fail 1)
+[17/18 94% 117s] DT17-pins-csharp-dropped: NOT CAUGHT (ℹ tests 105, ℹ pass 105, ℹ fail 0)
+[18/18 100% 128s] DT17-pins-java-dropped: NOT CAUGHT (ℹ tests 105, ℹ pass 105, ℹ fail 0)

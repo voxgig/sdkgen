@@ -1,0 +1,593 @@
+lang: cpp
+ok: False
+summary: |
+  I ported cpp by the guide. The README tutorial, root quick start and REFERENCE now print from shared code plus Naming_cpp.ts (24 lines) and Syntax_cpp.ts (187 lines). ReadmeQuick_cpp, ReadmeTopQuick_cpp and ReadmeRef_cpp are deleted (734 lines). The forms file gained 41 lines. I touched no shared source.
+  
+  After a fresh build and REGEN=1, the reviewed one-command run shows 0 in every number except one: the guard fails, so `ok` is false. The failure is an interface gap the guide predicted (section 2.3). The call reader (calls.ts readCalls) cannot read a template call, so the true and idiomatic C++ constructor `auto client = std::make_shared<DemoSDK>(vmap({...}));` reads as "does not call the naming hook's constructor". This matches the OLD page and how the runtime builds its own clients (Main.fragment.cpp:28,35).
+  
+  I did not work around it. A `std::shared_ptr<DemoSDK>(new DemoSDK(...))` or a stack object would pass the reader but would bend the page to the tool. No class is recorded as `defect`, because every page line is true. The failing check is in the guard's reader, not in the shared page.
+  
+  What I ran:
+  - cpp documentation lane (g++ -fsyntax-only over every cpp block of the root README, README and REFERENCE, 6 models): NEW 6/6, OLD 6/6.
+  - Structural README example test (tools/before/run.sh): NEW 87/69/69 checks pass, OLD 85/67/67.
+  - Suite without lanes: 2635 tests, 2629 pass, 1 fail (the same ctor message), 5 skipped.
+  - Golden updated: only cpp's 3 lines.
+  - 4 injected wrong facts (arity, deleted, streamSignal, utility copy) each failed the guard by name; reverted and rebuilt.
+  - Root quick start from the repository root of a generated SDK, OLD and NEW: both need `-iquote cpp` (an include path, kept as c does). Both compile. Both abort with SdkError fetch_no_transport, because the cpp runtime has no live HTTP transport (pipeline.hpp:608-613). ocaml has the same (sdk_runtime.ml:1574-1579). No page says so: a second, additive interface gap.
+interface_gaps:
+  - [0]
+    construct: The client constructor is called through a template, std::make_shared<DemoSDK>(options): the runtime's own spelling (Main.fragment.cpp:28 `auto sdk = std::make_shared<ProjectNameSDK>(...)`, :35 in create()), and the OLD page's form. ts/test/runtimeforms/calls.ts readCalls (lines 89-115) finds a call only where the name is followed by `(`; after DemoSDK comes `>`, so no call is read. guard.ts:418-421 then reports 'the client printer does not call the naming hook's constructor ProjectNameSDK', and guard.ts:435 reports 'ref.facts.ctor[4]: "auto client = std::make_shared<ProjectNameSDK>(options);" does not call ProjectNameSDK'.
+    file_line: ts/test/runtimeforms/calls.ts:89-115 (readCalls), guard.ts:418-421 and :435; runtime: src/cmp/cpp/fragment/Main.fragment.cpp:17 `explicit ProjectNameSDK(Value options = Value::undef())`, :28, :35
+    smallest_change: In readCalls, read `name<Args>(...)` where the template argument is the declared class (a factory call such as std::make_shared<X>(args) or std::make_unique<X>(args)) as a call of X's constructor on the type, passing its arguments. Or let CallNotation take a `factory` regexp that the guard maps to the constructor declaration.
+    breaking: False
+    providers_forced: none: no ported provider prints a template-factory call; cpp alone needs it (csharp, java, kotlin and scala use `new`, a plain call or a constructor call, which readCalls already reads)
+    made: False
+    worked_around: no: the page keeps make_shared, the guard fails on it, and ok is false
+  - [1]
+    construct: The cpp runtime has no live HTTP transport. Without options.system.fetch, every live request throws fetch_no_transport (tm/cpp/utility/pipeline.hpp:608-613: 'No live HTTP transport is built into the generated C++ SDK; supply a system.fetch callable'). ocaml does the same (tm/ocaml/sdk_runtime.ml:1574-1579). The tutorial and the root quick start show a live client whose first call can only fail. OLD said nothing about it either. Run: the root quick start, compiled from the repository root and run, aborts with 'SdkError fetch_no_transport: DemoSDK: load: live HTTP transport not available; provide options.system.fetch' on OLD and NEW.
+    file_line: tm/cpp/utility/pipeline.hpp:600-613; tm/ocaml/sdk_runtime.ml:1574-1579
+    smallest_change: Add an optional RuntimeFacts `liveTransport: false`, a cited absence, with one shared sentence written once and printed in the tutorial's client step and after the root quick start, for example 'This SDK has no built-in HTTP transport: a live request needs `options["system"]["fetch"]`' (key spelled through ref.key).
+    breaking: False
+    providers_forced: cpp and ocaml (both runtimes read; the other eleven ported runtimes not re-read for this)
+    made: False
+    worked_around: no: no note added. A note would be prose about a fact two runtimes share, which the rules forbid.
+  - [2]
+    construct: The shared throw-style sentences cannot name the thrown type. OLD cpp said 'throws `sdk::SdkErrorPtr` on error'. NEW says 'throws on failure', and the type is now shown only by the attempt printer's `catch (const SdkErrorPtr& err)` in the tutorial blocks, not in the REFERENCE.
+    file_line: ts/src/helpers/runtimeprose.ts listSentence/loadSentence (verb()); OLD component ReadmeQuick_cpp.ts (deleted) list sentence
+    smallest_change: An optional RuntimeFacts `thrown` (cited), printed once in the throw clause as 'throws `X` on failure'.
+    breaking: False
+    providers_forced: none required; java, kotlin, csharp and scala would gain from it (not read for this)
+    made: False
+    worked_around: no: recorded restored:printer for the tutorial, where the catch clause names the type
+shared_files_touched:
+  - none of ts/src/**, the shared guard files or another language's directory. The one shared file changed is ts/test/golden/add-output.txt, and only cpp's 3 lines (Naming_cpp and Syntax_cpp added, the three deleted components removed), as guide section 4 allows
+not_done:
+  - The changed blocks of the 21 review variations were not compiled one by one. The cpp lane compiles every page block for its own 6 models (singleton, list, crud, nested, quoted-name, basic-server), and callcheck checked 441 calls with 0 findings; the review variations' 25+19+146 changed blocks were compiled by nothing else.
+  - No example was RUN against a working transport. The lane is -fsyntax-only, and the cpp runtime has no live transport. Only the root quick start was linked and run, and it aborts at fetch_no_transport on OLD and NEW.
+  - STRICT_SENTENCES=1 was not run. 2 matched shared sentences have no verdict from anyone.
+  - No control showing the lane fails on a broken block (the 4 fact mutations were guard controls only).
+  - The interface gaps were not fixed (not a port's job), so the guard and the one command stay failing.
+table_rows_wrong:
+  - [0]
+    row: client member opAllowed, opDenied, rawRequest: shown as instance callables
+    runtime_shows: they are private (`private:` at tm/cpp/core/types.hpp:673-676). The table shows no access dimension.
+    file_line: tm/cpp/core/types.hpp:673-676
+    forms_change: none: already in `undocumented` as private, and no page fact rests on them
+  - [1]
+    row: entity member runOp: shown as an instance callable
+    runtime_shows: protected (types.hpp:757-759)
+    file_line: tm/cpp/core/types.hpp:757-759
+    forms_change: none (undocumented, already says protected)
+  - [2]
+    row: Deleted mark: deleted = 'whether remove succeeded on this instance'
+    runtime_shows: remove calls markDeleted() unconditionally after runOp (EntityRemoveOp.fragment.cpp:47-60). Under ctrl.throw false, runOp returns makeError's value instead of throwing (types.hpp:1383, pipeline.hpp:466-468), so a failed remove is marked deleted too.
+    file_line: src/cmp/cpp/fragment/EntityRemoveOp.fragment.cpp:47-60; tm/cpp/utility/pipeline.hpp:466
+    forms_change: none: the page only says `result->deleted()` reads the mark, which stays true; reported as a runtime defect (survey Q6 found the same)
+  - [3]
+    row: Calls: not stated yet
+    runtime_shows: instance members through `->` on a shared handle, static members (testSDK, create, testOptions) through `::`
+    file_line: src/cmp/cpp/fragment/Main.fragment.cpp:23,27,34; tm/cpp/core/types.hpp
+    forms_change: made: calls: { on: { instance: ['->'], type: ['::'] } }
+  - [4]
+    row: client constructor (Value options = Value::undef() [optional]), on type
+    runtime_shows: correct, but missing: the runtime builds its client only through std::make_shared<ProjectNameSDK>(...) (Main.fragment.cpp:28,35), which the call reader cannot read (interface gap 1)
+    file_line: src/cmp/cpp/fragment/Main.fragment.cpp:17,28,35
+    forms_change: none possible inside the forms; ref.facts.ctor[4] cited to :17 and :28
+optional_facts_read:
+  - [0]
+    fact: ref.facts.accessor.cached
+    runtime_shows: no: the accessor makes a new entity on every call: `return std::make_shared<${cls}>(this, entopts);`
+    file_line: src/cmp/cpp/MainEntity_cpp.ts:25-27
+    declared: not declared (the page says 'Create a new X instance', true)
+  - [1]
+    fact: ref.facts.streamSignal
+    runtime_shows: no signal anywhere. /\bsignal\b/i matches only Httpjson.cpp's `#include <signal.h>`.
+    file_line: tm/cpp/core/types.hpp:1390-1475 (EntityBase::stream); tm/cpp/feature/secrets/plugins/Httpjson.cpp:10
+    declared: false (absence, cited ahead in the forms)
+  - [2]
+    fact: copy on the match getter
+    runtime_shows: yes: `return Struct::clone(match_);`
+    file_line: tm/cpp/core/types.hpp:1344
+    declared: copy: true (cited)
+  - [3]
+    fact: copy on the utility getter
+    runtime_shows: yes: `return utility->copy();`, and copy() allocates `std::shared_ptr<Utility>(new Utility(NoRegister{}))`
+    file_line: tm/cpp/core/types.hpp:988, 587-588
+    declared: copy: true (cited, with the allocation in `also`)
+  - [4]
+    fact: copy on the data and options getters (required)
+    runtime_shows: yes: `return Struct::clone(data_);` and `Value out = Struct::clone(options);`
+    file_line: tm/cpp/core/types.hpp:1334, 984
+    declared: copy: true on both (cited)
+  - [5]
+    fact: ref.facts.memberNamed
+    runtime_shows: calls are written with parentheses
+    file_line: Main.fragment.cpp, types.hpp
+    declared: not declared (default 'call')
+  - [6]
+    fact: field: true on a member
+    runtime_shows: the name member is a method, `std::string getName() override { return name_; }`; name_ is an undocumented public field
+    file_line: tm/cpp/core/types.hpp:728
+    declared: not declared (getName is callable)
+  - [7]
+    fact: ref.facts.deleted
+    runtime_shows: `virtual bool deleted() = 0;` on Entity (reachable through the bound SdkEntityPtr, since SdkEntity : Entity), defined in EntityBase
+    file_line: tm/cpp/core/types.hpp:418, 701, 731
+    declared: '{var}->deleted()' (derived)
+  - [8]
+    fact: facts.arity
+    runtime_shows: list(const Value& reqmatch, const Value& ctrl): both required, no defaults
+    file_line: tm/cpp/core/types.hpp:704; src/cmp/cpp/fragment/EntityListOp.fragment.cpp:3
+    declared: 2 (derived)
+  - [9]
+    fact: layout.dir and place-aware imports
+    runtime_shows: the import is an include path (`#include "core/sdk.hpp"`), which needs `-iquote cpp` from the root; it is not a path a source line can fix
+    file_line: tm/cpp/core/sdk.hpp; tm/cpp/test/testlib.hpp:13
+    declared: not declared: the same import in both places, as c does
+  - [10]
+    fact: notes.top
+    runtime_shows: nothing true of cpp alone to say there (the missing transport is shared with ocaml: a gap, not a note)
+    file_line: tm/cpp/utility/pipeline.hpp:608-613
+    declared: no notes at all (0 declared)
+facts:
+  - [0]
+    path: facts.method.*
+    value: list/load/create/update/patch/remove
+    account: derived
+    evidence: types.hpp:703-708 and the Entity<Op>Op fragments
+  - [1]
+    path: facts.named
+    value: call
+    account: convention, decided by hand (NOT JUDGED: 0 OLD counterparts)
+    evidence: OLD named calls with parentheses; with arity 2 operations print bare, members called
+  - [2]
+    path: facts.result / async
+    value: throw / false
+    account: derived
+    evidence: style raises /\bthrow\b/; operations return SdkEntityPtr
+  - [3]
+    path: facts.collection
+    value: `std::vector`
+    account: derived (my first citation was refused: 'the guard re-derives this fact')
+    evidence: EntityListOp.fragment.cpp:3
+  - [4]
+    path: facts.record
+    value: data()
+    account: derived
+    evidence: types.hpp:738
+  - [5]
+    path: facts.recordType
+    value: Value
+    account: cited
+    evidence: types.hpp:738 'Value data(const Value& arg = Value::undef()) override;'
+  - [6]
+    path: facts.arity
+    value: 2
+    account: derived
+    evidence: types.hpp:704
+  - [7]
+    path: facts.prints
+    value: record
+    account: convention, ATTESTED
+    evidence: OLD prints Struct::jsonify(x->data())
+  - [8]
+    path: ref.facts.entityBy / keys
+    value: class / member
+    account: convention, ATTESTED (keys: 171 units read as member)
+    evidence: OLD '## PlanetEntity', 'options["apikey"]'
+  - [9]
+    path: ref.facts.noun
+    value: Methods
+    account: convention, decided by hand
+    evidence: OLD B/cpp/REFERENCE.md '### Instance Methods'; the new context is the shared 'Client Methods'
+  - [10]
+    path: ref.facts.maps
+    value: maps
+    account: language
+    evidence: OLD 'maps are JSON-serialized'
+  - [11]
+    path: ref.facts.none
+    value: Value::undef()
+    account: cited
+    evidence: Main.fragment.cpp:17 'explicit ProjectNameSDK(Value options = Value::undef()) : SdkClient(options) {}'
+  - [12]
+    path: ref.facts.container
+    value: Value
+    account: cited
+    evidence: Main.fragment.cpp:17 (same quote)
+  - [13]
+    path: ref.facts.valueType
+    value: STRING std::string (derived), OBJECT Value (convention, decided by hand), ANY Value (derived)
+    account: mixed
+    evidence: OLD options table; core/struct.hpp:32 vmap returns Value
+  - [14]
+    path: ref.facts.ctor[0]
+    value: #include "{module}"
+    account: cited
+    evidence: Config_cpp.ts:126 '#include "../../core/sdk.hpp"'; also a comment-only quote of tm/cpp/core/sdk.hpp:1
+  - [15]
+    path: ref.facts.ctor[2]
+    value: using namespace sdk;
+    account: cited, with an `unquoted` excuse for the keyword `using`
+    evidence: Main.fragment.cpp:13 'namespace sdk {'
+  - [16]
+    path: ref.facts.ctor[4]
+    value: auto client = std::make_shared<{ctor}>(options);
+    account: cited; `unquoted` excuse for `client`. The guard's derivation still FAILS on it (gap 1)
+    evidence: Main.fragment.cpp:17 and :28
+  - [17]
+    path: ref.facts.ctorAlts[0]
+    value: {client}::create(), kind defaults
+    account: call derived; kind cited as pinned prose
+    evidence: Main.fragment.cpp:33-35
+  - [18]
+    path: ref.facts.test[0..1]
+    value: {client}::testSDK(Value testopts, Value sdkopts) and {client}::testSDK()
+    account: derived (static, on the type, through ::)
+    evidence: Main.fragment.cpp:23,27
+  - [19]
+    path: ref.facts.testMock
+    value: generated
+    account: cited ahead, pinned
+    evidence: Config_cpp.ts:335 'return std::make_shared<BaseFeature>();'
+  - [20]
+    path: ref.facts.accessor
+    value: {accessor}(Value entopts = Value::undef()) -> std::shared_ptr<{Class}>, arg and param entopts
+    account: derived, with typeNames std::shared_ptr<${cls}> -> std::shared_ptr<EntyClass> and namesWhy
+    evidence: MainEntity_cpp.ts:25
+  - [21]
+    path: ref.facts.op.*
+    value: typed trailing-arrow signatures, for example 'load(const Value& reqmatch, const Value& ctrl) -> SdkEntityPtr'
+    account: derived
+    evidence: types.hpp:703-708
+  - [22]
+    path: ref.facts.client
+    value: options optionsMap() copy; utility getUtility() copy; direct; prepare
+    account: signatures derived; copies cited as pinned prose (types.hpp:984; :988 plus :588)
+    evidence: types.hpp:663-671
+  - [23]
+    path: ref.facts.entity
+    value: data, match (copy, cited at :1334 and :1344), make, streamList stream(...) runs call (derived), name getName()
+    account: derived and cited
+    evidence: types.hpp:728-748, 1328-1345, 1390
+  - [24]
+    path: ref.facts.direct
+    value: returns Value; okFalse false
+    account: returns derived; okFalse cited ahead, pinned
+    evidence: types.hpp:1085 'map_put(out, "ok", Value(false));'
+  - [25]
+    path: ref.facts.prepare
+    value: returns Value, fails style
+    account: returns derived; fails cited as pinned prose
+    evidence: types.hpp:1021 'throw ctx->makeError("spec_method_allow",'
+  - [26]
+    path: ref.facts.body.values
+    value: a string `Value` holding the bytes, which is sent as given
+    account: cited as pinned prose
+    evidence: pipeline.hpp:644-649
+  - [27]
+    path: ref.facts.cancel
+    value: false
+    account: cited absence over the whole cpp runtime; 4 excluded regions, each with a reason: cost.hpp comment, Httpjson.cpp '#include <signal.h>', Tls.cpp two comments, sekreto/Provider.cpp:242 comment
+    evidence: grep -P over src/cmp/cpp and tm/cpp found those 5 lines only
+  - [28]
+    path: ref.facts.streamSignal
+    value: false
+    account: cited absence (ahead)
+    evidence: /\bsignal\b/i: Httpjson.cpp only
+  - [29]
+    path: ref.facts.deleted
+    value: {var}->deleted()
+    account: derived
+    evidence: types.hpp:418
+  - [30]
+    path: layout (Naming_cpp)
+    value: module 'core/sdk.hpp', client and ctor tm('ProjectNameSDK'), names.namespace 'sdk', accessor and var cppVarName
+    account: hook. Module and namespace are hook literals of template spellings (the factsheet labels them 'generator function'): the reviewer should read them
+    evidence: tm/cpp/core/sdk.hpp; Main.fragment.cpp:13; MainEntity_cpp.ts:21
+notes:
+review_counts:
+  - [0]
+    section: tutorial
+    same: 59
+    shared_matched: 44 classes (21 masked as shared)
+    by_hand: 20
+    missing: 3 (restored as shared create and patch comments; 9562ae8fc5 correction U45)
+    contradictions: 0
+    blocks: identical 23, corrected 6, unified 0, otherwise 19; 17 classes, 0 open; 25 changed blocks compiled by nothing in these variations
+    matched_unreviewed: part of the 2 overall
+  - [1]
+    section: rootquick
+    same: 19
+    shared_matched: 3
+    by_hand: 3
+    missing: 0
+    contradictions: 0
+    blocks: identical 0, otherwise 19 (every block: <iostream>, server vars S49, shared step comments); 27 classes, 0 open; 19 compiled by nothing here
+    matched_unreviewed: part of the 2 overall
+  - [2]
+    section: reference
+    same: 13975
+    shared_matched: 163 classes (68 masked)
+    by_hand: 59
+    missing: 36 (each restored or corrected, see hand_decisions)
+    contradictions: 0
+    blocks: identical 186, otherwise 128, NEW-only 18; 6 classes, 0 open; 146 changed blocks compiled by nothing in these variations
+    matched_unreviewed: 2 overall (fail only with STRICT_SENTENCES=1)
+hand_decisions:
+  - [0]
+    id: all ledger and block classes
+    kind: count
+    outcome: 171 classes: correction 81, restored 42, same-meaning 24, unification 24; 0 defect, 0 dropped
+    why: decided one at a time in work/decide.js and merged into tools/hand/cpp.json, never replacing a record
+  - [1]
+    id: iostream-include (39fd7fb6ab, 20e1f83164, 2b7c065103 and the block classes)
+    kind: correction
+    outcome: correction:iostream-include
+    why: a block that prints now includes <iostream>. core/sdk.hpp does not include it (types.hpp has only <ostream>), so OLD blocks did not compile alone; the lane hid it by adding <iostream> itself
+  - [2]
+    id: a6d6f7b357 / bd420dcfaf / 93774815b8
+    kind: correction
+    outcome: correction:direct-truth-test
+    why: OLD said to branch on getp(result, "ok"), a Value with no bool conversion. NEW branches on is_true(getp(result, "ok")) (core/struct.hpp:81)
+  - [3]
+    id: S49/S50 classes
+    kind: correction
+    outcome: correction:S49 / S50
+    why: the client passes the server variables that have no default (OLD auth-off used DemoSDK::create() against a templated server) and the Basic-auth secret
+  - [4]
+    id: 316fb70214, b4c2479efb
+    kind: restored
+    outcome: restored:shared
+    why: the shared list and load sentences: the same facts as OLD; operations named bare (arity 2); the record type Value added
+  - [5]
+    id: 61ddd5c2dc
+    kind: restored
+    outcome: restored:printer
+    why: OLD named the thrown sdk::SdkErrorPtr in prose; NEW shows it only in the catch clause (gap 3)
+  - [6]
+    id: dfd47eedbf
+    kind: unification
+    outcome: unification:ref-examples-print-none
+    why: WEAKER: the REFERENCE load, create, update, patch and remove examples no longer print the record (43 blocks). Decided once in shared refOpBlock; the sentence keeps 'data() reads its record'
+  - [7]
+    id: 3804708696, 6a8837b248
+    kind: unification
+    outcome: unification:ref-generic-names
+    why: the list example's loop variable is `item` for every entity
+  - [8]
+    id: 8790812725, f37b7d5e54
+    kind: correction
+    outcome: correction:list-no-match-call
+    why: OLD said `Value::undef()` lists all records; NEW names the compiling call list(Value::undef(), Value::undef()) and no longer claims every record
+  - [9]
+    id: 46dc1a3462
+    kind: correction
+    outcome: correction:test-without-feature
+    why: no-test: OLD claimed mock features without the test feature; Config_cpp falls back to BaseFeature
+  - [10]
+    id: facts named, ref.noun, ref.valueType.OBJECT
+    kind: fact
+    outcome: recorded by hand
+    why: named NOT JUDGED (no OLD counterpart); noun new context Client Methods; OBJECT Value as in OLD's options table
+  - [11]
+    id: absent (28)
+    kind: absent
+    outcome: each explained
+    why: see the absent field
+absent:
+  - [0]
+    sentence: 11 'resolves to' sentences (tutorial ed44d07e36, 5e178e9588, 6d459aa83b, 64560e9dff, 78dac4093d; reference 9f6d56f5fb, a32ec5077c, d6fd5c15c3, 863f603c11, b1666a52ac, b7eb8b0b55)
+    reason: cpp operations return synchronously (async false), so cpp prints the 'returns' form
+  - [1]
+    sentence: rootquick 99a8153c15 'Load a Ⓔ: the entity, a ⒺEntity' and a0b269a293 'a PlanetEntity[]'
+    reason: printed where listOf names the class; cpp returns SdkEntityPtr handles typed as the base SdkEntity, so no listOf is declared
+  - [2]
+    sentence: rootquick 7ab5ba644d 'The client sends the API key as the api_key query parameter.'
+    reason: printed only in the root README's primary ts Quickstart; cpp prints it in its own tutorial lead
+  - [3]
+    sentence: f3e421e046 'Return the SDK utility object.'
+    reason: getUtility returns a copy (cited): the copy sentence prints instead
+  - [4]
+    sentence: f30b7d4864 ctrl.signal row; 9efa1b3a1e, bb93495ee9, d86e9841eb, cad5dfc5f6 cancelling paragraph
+    reason: cancel false, a cited absence; direct takes no signal
+  - [5]
+    sentence: ea3964d6ba 'On failure it resolves to the error instead.'
+    reason: prepare throws (fails style, cited)
+  - [6]
+    sentence: abe923e0b2 'Alias for DemoSDK.test()'
+    reason: cpp has no tester alias
+  - [7]
+    sentence: 4c93659f14, 5003b705ca (async iterator; runs at iteration)
+    reason: cpp's stream returns a std::vector<Value> already read, runs call (derived)
+  - [8]
+    sentence: 28235772cb stream signal
+    reason: streamSignal false, a cited absence
+  - [9]
+    sentence: 2d65ce1465 'Return the parent DemoSDK instance.'
+    reason: the client is a public field SdkClient* client, not a getter returning DemoSDK
+  - [10]
+    sentence: 74dc5866b7 'Return a copy of the entity options.'
+    reason: entopts is a public field Value, not a copying getter
+  - [11]
+    sentence: f1bcce31a0 'The entity name.'
+    reason: getName() is a method: prints 'Return the entity name.'
+defects_recorded:
+doubtful_lines:
+  - [0]
+    line: auto client = std::make_shared<DemoSDK>(vmap({ ... }));
+    where: every tutorial and root client block with options, and REFERENCE Constructor and Features
+    doubt: No doubt it compiles: the lane passed 6/6, and the root quick start was linked and run. The guard cannot read it (gap 1).
+  - [1]
+    line: SdkEntityPtr ambient = client->ambient()->load(...); (root quick start)
+    where: root README, every variation
+    doubt: Compiles. Running it from the repository root of a generated SDK aborts with fetch_no_transport unless options["system"]["fetch"] is given (pipeline.hpp:608-613), which no page says (gap 2).
+guide_problems:
+  - [0]
+    section: 4 and 'What ok means'
+    problem: The guide routes a gap of the call reader (2.3) through section 4, which records `defect` classes in hand/<lang>.json. Here every page line is true and only the guard's reader fails, so there is no class to record as defect, and the guide does not say how to record a guard-reader gap. I left the guard failing and reported it.
+  - [1]
+    section: 9 (cpp row)
+    problem: It says to run `tools/before/run.sh sdkgen cpp` without saying that the cpp README test is structural only (non-empty, balanced delimiters). The compile lane is the real check, and neither runs an example.
+  - [2]
+    section: 9 / 2.5
+    problem: Nothing warns that cpp (and ocaml) have no live transport, so a root quick start 'run from the repository root' can only reach fetch_no_transport on OLD and NEW. The guide's run instruction yields only that the import resolves with -iquote cpp.
+  - [3]
+    section: 6
+    problem: Citing a fact the guard derives is refused ('cite facts.collection: the guard re-derives this fact; drop the citation'). The table in 2.1 lists collection as 'cited'.
+  - [4]
+    section: 8
+    problem: The purity screen reports '1 accepted' with no purity-allow file of mine: a built-in acceptance of cppVarName's reserved list (a generator helper). The guide does not say acceptances come from anywhere but purity-allow/<lang>.json.
+  - [5]
+    section: 12 / sharewords
+    problem: rootquick prints '92.0% only this lang' for words that come from shared templates (listComment/loadComment) carrying cpp tokens; the guide does not say how to read that column.
+  - [6]
+    section: 6 / factsheet
+    problem: Hook literals (layout.module 'core/sdk.hpp', names.namespace 'sdk') are labelled 'naming hook (generator function)' although they are literals; nothing checks them.
+old_vs_new: |
+  As the tools counted it (reviewed run): tutorial 59 units same, 62 reworded, 9 missing, 66 added. Missing in the reference: 36 classes (by hand). Every missing class was restored or corrected; 0 dropped, 0 defect.
+  
+  As I decided it:
+  
+  NEW says what OLD did not:
+  - The server variables are passed and named (S49).
+  - The Basic-auth secret is passed (S50).
+  - `<iostream>` is included where a block prints.
+  - direct's branch is a real truth test, `is_true(getp(result, "ok"))`.
+  - The record type is `Value`.
+  - `DemoSDK::create()` uses the defaults.
+  - Both testSDK overloads are documented with types, and the two-argument one gets its own example.
+  - stream is documented (runs before the call returns; throws on failure).
+  - `result->deleted()` reads remove's mark.
+  - An Actions table with a Call cell.
+  - Typed signatures (`const Value&`).
+  - Without the test feature, the test client refuses every request.
+  - `list(Value::undef(), Value::undef())` replaces 'pass Value::undef() to list all records'.
+  
+  OLD said what NEW does not:
+  - The REFERENCE single-entity examples printed the record (`std::cout << Struct::jsonify(result->data())`, 43 blocks). NEW prints nothing there. This is weaker, decided once in shared code.
+  - The list example's loop variable was the entity name; it is now `item`.
+  - The list sentence named the thrown type `sdk::SdkErrorPtr`; it is now only in the catch clause.
+  - 'bound to this client' in the accessor sentence.
+  - 'a no-arg overload is also provided' (now its own entry).
+  - OLD's 'Static Methods' / 'Instance Methods' headings are now 'Test client' / 'Client Methods'.
+  - ref-issues: planet's inactive remove is no longer documented (S25), and the class is PlanetEntityClient (true, entityClassName).
+  
+  Found by reading but not a page change: the unported README still says to branch on `getp(result, "ok")`, which cannot be a condition.
+lines: |
+  From `git diff --numstat v33-frozen..HEAD`:
+  - deleted: ReadmeQuick_cpp.ts 233, ReadmeRef_cpp.ts 406, ReadmeTopQuick_cpp.ts 95 (734 in all)
+  - added: Syntax_cpp.ts 187, Naming_cpp.ts 24, runtimeforms/cpp.ts +41 -0 (now 133 lines by `wc -l`), golden +2 -3
+  
+  Totals: 734 removed against 211 added in provider and hook (3.48x), or 252 with the forms lines (2.91x).
+prose: |
+  From `node tools/sharewords.js --clone sdkgen --root out/new --lang cpp`:
+  
+  | section | words | shared sentence | only this lang | notes | provider literals |
+  | --- | --- | --- | --- | --- | --- |
+  | tutorial | 1620 | 1233 (76.1%) | 387 (23.9%) | 0 | 0 |
+  | rootquick | 238 | 19 (8.0%) | 219 (92.0%) | 0 | 0 |
+  | reference | 54338 | 52250 (96.2%) | 2088 (3.8%) | 0 | 132 (0.2%: ref.noun 113, ref.maps 19) |
+  | ALL | 56196 | | 2694 (4.8%) | 0 | 132 (0.2%) |
+  
+  At the source, the provider's fact-table prose literals are 10 words, its other prose literals 0 and its notes 0.
+  
+  The rootquick 'only this lang' share is the shared step-comment templates carrying cpp tokens, not cpp prose.
+other_languages_unchanged: `diff -rq -x cpp P/base33/out/new out/new` shows only the 19 root README.md files differ. work/rootdiff.py does a fence-aware heading walk with difflib over all 21 root READMEs: 134 changed lines, 0 outside a '### C++' section. No other language's page changed.
+purity: |
+  From `tools/purity.js`, via portcheck:
+  - 0 open, 1 accepted (the tool's own acceptance): the CPP_RESERVED list in cppVarName (utility_cpp.ts:28), which a non-README component also calls (EntityBase_cpp, Entity_cpp, MainEntity_cpp, TestClean_cpp, TestDirect_cpp, TestEntity_cpp).
+  - 0 notes declared, 0 regions.
+  - Syntax_cpp.ts has 0 findings. It reads no model and branches on no entity or operation.
+  
+  The client printer names a held environment variable after the option key (`const char* apikey = std::getenv(...)`); purity did not flag it, and a reviewer should judge it.
+portcheck: |
+  REGEN=1 tools/portcheck.sh sdkgen out cpp   (exit 1)
+  == portcheck cpp ==
+  section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+  tutorial                   59 |      44     21        0      20       3     0       0 | 0
+  rootquick                  19 |       3      0        0       3       0     0       0 | 0
+  reference               13975 |     163     68        0      59      36     0       0 | 0
+  section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+  tutorial                  23         6       0        19 |      17    0      0 | yes (g++); 25 changed blocks compiled by nothing
+  rootquick                  0         0       0        19 |      27    0      0 | yes (g++); 19 changed blocks compiled by nothing
+  reference                186         0       0       128 |       6    0      0 | yes (g++); 146 changed blocks compiled by nothing
+    classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 6, novel-token 10, vanished-token 1; rootquick: changed 11, novel-token 10, vanished-token 4, novel-shape 2; reference: changed 4, new-only 1, novel-token 1)
+    a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+  purity: 0 open, 1 accepted | notes declared 0, note regions found 0 (a region holds any number of notes); every declared note is in a region the lint read
+  page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1145 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+  printed calls (callcheck, no compiler): 441 calls of 39 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+  guard: FAILED (pass 3 fail 1 )
+  build: 1813 sources checked, current
+  hand records: 202, 128 quote text (205 quotations); STALE 0
+  facts (language and convention, against the OLD page): attested 4, recorded by hand 3, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 15, pinned prose 9 (the reviewer audits each)
+  shared sentences: matched 89, of which against a sentence nobody reviewed 2 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 28 (28 explained; an unexplained one FAILS)
+  fact sheet: factsheet cpp: 69 facts, 0 with no account, 0 unattested, guard report read: .../tools/review/cpp/facts.txt (audit every fact a shared sentence carries)
+  PORTCHECK cpp: FAIL
+  (guard failure, the only one: check 'ctor' twice: "the client printer does not call the naming hook's constructor ProjectNameSDK: \"auto client = std::make_shared<ProjectNameSDK>(vmap({...}));\"" and "ref.facts.ctor[4]: \"auto client = std::make_shared<ProjectNameSDK>(options);\" does not call ProjectNameSDK")
+scratch: |
+  SCRATCH=1 tools/portcheck.sh sdkgen out cpp: exit 1.
+  
+  | section | ledger OPEN | blocks OPEN | defect |
+  | --- | --- | --- | --- |
+  | tutorial | 23 | 17 (18 on the first scratch run, with the RECOUNT) | 0 |
+  | rootquick | 3 | 27 | 0 |
+  | reference | 95 | 6 | 0 |
+  
+  - facts: UNATTESTED or NOT JUDGED 3 (named NOT JUDGED, ref.noun, ref.valueType.OBJECT).
+  - ABSENT, NO REASON: 28 (0 explained). DROPPED: 0.
+  
+  The parts that read no hand record are the same as the reviewed run and clean, except the guard: build current (1813 sources), 21 of 21 variations regenerated, purity 0 open, pagecheck 0 findings, callcheck 0 of 441, fact sheet 0 without an account; guard FAILED (the ctor gap).
+commits:
+  - sdkgen fd1b2c69 'cpp: print the tutorial, root quick start and reference from shared code' (Syntax_cpp.ts, Naming_cpp.ts and runtimeforms/cpp.ts added or changed; ReadmeQuick_cpp.ts, ReadmeTopQuick_cpp.ts and ReadmeRef_cpp.ts deleted with git add -u)
+  - sdkgen cda64e0c 'golden: cpp's Naming and Syntax in place of its three README components' (ts/test/golden/add-output.txt, +2 -3)
+  - tools c6a61ab 'cpp: hand records, classes and normalizer counts' (hand/cpp.json, classes/cpp.json, counts/cpp.json)
+  - `git status --short` after the final `npm run build` is empty in sdkgen and in tools. No shared-source commit and no ts/dist commit (the build left dist unchanged). `git log --format=%B` shows no trailer on any commit.
+workspace: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/cpp (sdkgen clone at cda64e0c on v33-frozen, tools at c6a61ab, out/new, PROGRESS.md, oldcopy, logs: final.log, scratch-final.log, scratch-first.log, lane-new.log, lane-old.log, runsh-new.log, runsh-old.log, suite.log; work/ holds decide.js, absent.js, rootrun.sh, rootdiff.py)
+time: |
+  About 47 minutes of wall time by `date` (15:00:16 to 15:47:10).
+  - Reading the briefs, the guide and the cpp runtime, plus the table check: about 10 minutes.
+  - Forms and provider: about 10 minutes (two builds of about 12 s each).
+  - Review, the hand classification of 171 classes, 28 absent sentences and 3 facts: about 12 minutes.
+  - Lanes:
+    - cpp documentation lane: 24.6 s on NEW, 25.5 s on OLD.
+    - run.sh structural test: 51 s on NEW, 55 s on OLD.
+    - root quick start: about 12 s to compile each side.
+  - Suite: 786 s.
+  - Each REGEN=1 portcheck: about 34 s.
+  
+  The clock times written in PROGRESS.md after its first two lines were estimates; a note there says so.
+guard: |
+  Run with `node --test --test-name-pattern '^cpp: ' dist-test/runtimefacts.test.js`:
+  - 'declares its runtime forms' passes, 'every declared fact is accounted for' passes, and 'negative controls' passes.
+  - 'the declared facts are what its runtime defines' FAILS, with the two 'ctor' messages of gap 1 only.
+  
+  Reader (`node --test dist-test/runtimereader.test.js`): 22/22, cpp included.
+  
+  My own controls, injected one batch and then reverted: arity 0, deleted '{var}->isDeleted()', streamSignal true, and utility copy false. Each failed by name:
+  - "facts.arity is 0; the runtime's list requires 2 of its 2 parameters"
+  - "ref.facts.deleted names {var}->isDeleted(), which the entity does not declare"
+  - "cite ref.facts.streamSignal: the fact is true; the absence shows false"
+  - "cite ref.facts.client[1].copy: the fact is false; the citation pins true"
+  
+  The guard re-derives everything listed derived in `facts`. It does not compare the pinned prose (ctorAlts kind, testMock, the copies, prepare.fails, body.values), the hook literals, or the constructor line (gap 1).
+unverified: |
+  What I ran:
+  - The cpp documentation lane, NEW and OLD (6/6 each).
+  - run.sh, NEW and OLD.
+  - The root quick start, compiled and run from a generated SDK root, OLD and NEW.
+  - The suite, the golden, the guard and the reader, and both portcheck modes.
+  
+  What I read and did not run:
+  - the 21 variations' changed blocks (compiled only via the lane's own 6 models, plus callcheck);
+  - that the copy citations mean real copies: Struct::clone is a deep clone of plain Value data, by reading;
+  - the purity acceptance;
+  - the absent reasons against ts.
+  
+  No example was executed against a working transport.
+  
+  Hypotheses for cpp:
+  - H1 holds: 0 model reads in the provider, 0 notes, provider prose literals 0.2%, 0 breaking interface changes needed, 3 additive gaps found.
+  - H2 holds: 734 lines became 211 (3.48x), or 252 with the forms (2.91x).
+  - H3 holds for cpp, by reading: the catalogued corrections (S49, S50, S25, U45, class name, md-cell, test without the feature, list no-match call) came from shared code, with no cpp edit beyond the provider.
+  - H4 holds: the lane passes 6/6 on OLD and NEW, and the root quick start fails at runtime for a reason in the cpp runtime (no transport), identical on OLD and NEW, not in the approach.

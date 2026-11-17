@@ -1,0 +1,760 @@
+{
+ "lang": "java",
+ "verdict": "accept-with-fixes",
+ "summary": "Each fact java declares is true of its runtime. I found no false sentence on the four pages I read, and every java code block in the 19 variations that have java compiles. I ran them on OLD and NEW: NEW 351/351 and OLD 333/333, compiled with javac against a full SDK generated for each variation. The tutorial was compiled as one program with only the imports it prints. Under the test constructor, OLD and NEW fail in the same ways (mock 404s, and fetch_mode_block in no-test). Run from the repository root in jshell, every root quick start, OLD and NEW, gets as far as the live request. The reviewed one command passes again with the porter's exact numbers, and the scratch run gives the porter's exact numbers.\n\nBut the port breaks the repository's own suite, which the porter did not run. Ran from scratch: 2635 tests, 2627 pass, 3 fail. All three are java tests in test/generate.test.ts, and all three pass at v33-frozen (4/4 with the same pattern) and fail on the port (1/4):\n- Syntax_java.ts holds a second example-literal table (lines 70-72, a copy of utility_java.ts javaLit).\n- It writes a null-only member into Map.of, e.g. `client.tally(null).list(Map.of(\"z\", null), null)` and `load(Map.of(\"id\", \"example_id\", \"z\", null), null)`. Map.of throws NullPointerException on a null value (ran in jshell). The old components left such members out.\nNone of the 21 variations has a null-only member, so the one command, the tools and the lane (structure only) cannot see this.\n\nWhat I attacked:\n- 26 single-change attacks against the guard. It names 18. One more (a wrong ctorAlts kind) fails the build.\n- The other 7 pass the guard, and with the one command each fails only as open, absent or stale classes, which a porter decides by hand:\n  - `none: 'this'`, a token that stands in the cited quote;\n  - a bogus cast in `deleted`;\n  - `arity` removed, so the page names `list()`;\n  - `static` dropped from a test signature;\n  - a `throws` marker added;\n  - an accessor called on the type, `DemoSDK.planet(null)`, which javac rejects;\n  - a wrong result cast;\n  - also a wrong cast written into the pages.\n- Every enumerated, language and convention change and every dropped shared sentence fails by name.\n\nWeaker than OLD:\n- OLD's \"(as `Object`)\" is gone (porter's gap 1). It is real for kotlin, scala and csharp too.\n- `((EntityBase) result).deleted()` compiles only with `import voxgig.demosdk.entity.EntityBase`, which no page states. The deleted template fills only {var}.\n- The stream-signal sentence does not say that only a BooleanSupplier counts.\n\nRuntime defects (not the port):\n- The java mock drops created records when its seed has none for the entity (TestFeature.java:228-231). This explains the update-after-create 404.\n- The accessor writes `active` into the caller's map, so passing `Map.of(...)` as entopts throws UnsupportedOperationException (ran).",
+ "required_fixes": [
+  {
+   "file": "ts/project/.sdk/src/cmp/java/Syntax_java.ts (lit at :70-72, mapOf/argOf at :105-121)",
+   "change": "Drop the provider's own literal table. Print example literals through the one table the generator uses (utility_java.ts javaLit, :121-130, with a purity-allow entry naming why). Leave a NULL-literal entry out of every Map.of argument, as javaMapItems and the old components did, or print a map form that accepts null.",
+   "why": "Three repository tests that pass at v33-frozen fail on the port: generate.test.ts:6289, :6321 and :6337. The examples it prints put a null into Map.of, which throws NullPointerException at run time (checked: jshell `java.util.Map.of(\"z\", null)` gives java.lang.NullPointerException). The porter never ran the suite, and no variation has a null-only member.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/forms.ts + guard.ts (signature `on` check, guard.ts:149-160); then ts/test/runtimeforms/java.ts",
+   "change": "Add a forms hook (e.g. sigOn(sig) => /\\bstatic\\b/ ? 'type' : 'instance') so that a signature's `static` is compared with the declaration's `on`. java.ts should then implement it.",
+   "why": "Attack g20/q20: dropping `static` from `static {client} testSDK()` passes the guard (4/4). The one command failed only on a reference OPEN class and, by accident, a STALE hand record that quoted the old heading. Guide 2.2 promises this dimension.",
+   "shared": true
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts:533-541 (call receivers) and tools/callcheck.js",
+   "change": "Where an instance call and a type call share a separator ('.'), tell them apart by the call's head: the client type name versus a bound variable. A member declared on the instance must fail when it is called on the client type.",
+   "why": "Attack g25/q25: `DemoSDK.planet(null)...`, which javac rejects (non-static method from a static context), passed the guard and callcheck (0 RECEIVER). The one command failed only on blocks OPEN 9/8/10, which can be decided by hand.",
+   "shared": true
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts:547-556",
+   "change": "Check every name in ref.facts.deleted (the cast type too), not only the last identifier, as recordWhole checks facts.record.",
+   "why": "Attack g15/q15: `((EntityBaseX) {var}).deleted()` passed the guard. The one command failed only on reference ledger OPEN 1. This confirms the porter's gap 3.",
+   "shared": true
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts (optional-fact accounting)",
+   "change": "Require facts.arity wherever the runtime's list has required parameters.",
+   "why": "Attack g19/q19: with arity removed, the guard passes and the page names `list()` and `load()`, calls Java cannot make. The one command failed only on ABSENT fdfa305bc4 and tutorial OPEN 3, which a porter can explain away by hand.",
+   "shared": true
+  },
+  {
+   "file": "ts/src/helpers/runtimeprose.ts:258-260 (deleted template) and Naming_java.ts",
+   "change": "Fill {module} and {names.<role>} in the deleted template, and give the hook names.entity = the generator's entity subpackage. java can then print `((voxgig.demosdk.entity.EntityBase) result).deleted()`, or the page can name the import.",
+   "why": "The span as printed does not compile without `import voxgig.demosdk.entity.EntityBase;` (ran: javac `cannot find symbol` without it, `deleted=true` with it), and no page says where EntityBase lives. kotlin and scala have the same cast (guide section 9). Additive.",
+   "shared": true
+  },
+  {
+   "file": "ts/src/helpers/runtimeprose.ts (list/load sentences) + RuntimeFacts",
+   "change": "Add the porter's gap 1 as an optional fact `declared` (the declared return type), so that where it is set the operation sentences say \"declared as `Object`; cast it\". Until then, java's hand records 3b6556a083 and 39a9cc2d2c should cite the gap.",
+   "why": "OLD said \"(as `Object`)\". NEW's \"`list` returns a `List`\" states the runtime class beside a declaration of Object (EntityListOp.fragment.java:20). It is not false, but it is weaker for a Java reader. The same holds for kotlin (Any?), scala (Object) and csharp (object?): read in their op fragments. Additive. Recommended rather than blocking.",
+   "shared": true
+  }
+ ],
+ "not_caught": [
+  {
+   "attack": "g06/q06: ref.facts.none 'null' -> 'this' (the token stands in the cited quote `this(null);`)",
+   "consequence": "The guard passes and the facts line is clean. Only reference ledger OPEN 4 fails, and a porter can decide those by hand. The page would say \"Pass `this` for no initial options\"."
+  },
+  {
+   "attack": "g15/q15: deleted '((EntityBaseX) {var}).deleted()'",
+   "consequence": "The guard passes, checking only `deleted`. Only reference OPEN 1 fails. The page would print a cast to a type that does not exist."
+  },
+  {
+   "attack": "g19/q19: facts.arity removed",
+   "consequence": "The guard passes. The page names `list()` and `load()`, which Java cannot call. Only ABSENT fdfa305bc4 and tutorial OPEN 3 fail, and both can be closed by hand."
+  },
+  {
+   "attack": "g20/q20: test signature without `static`",
+   "consequence": "The guard passes. Only reference OPEN 1 fails, plus a STALE hand record by accident of a quotation."
+  },
+  {
+   "attack": "g23/q23: load signature with `throws SdkError`",
+   "consequence": "The guard passes. Only reference OPEN 2 fails."
+  },
+  {
+   "attack": "g25/q25: accessor called on DemoSDK (the type)",
+   "consequence": "The guard and callcheck pass. javac would reject it. Only blocks OPEN 9/8/10 and ledger OPEN 2 fail."
+  },
+  {
+   "attack": "g26/q26 and x04: result or list-item cast to SdkClient",
+   "consequence": "The guard and callcheck pass. javac would reject it. Only blocks OPEN 7/8 (q26) or OPEN 2 (x04) fail."
+  },
+  {
+   "attack": "the provider's Map.of(\"z\", null) with a null-only member (found by the suite, not injected)",
+   "consequence": "Nothing in the port's pass criteria (one command, guard, tools, lane) runs a model with a null-only member, so the reviewed one command PASSES. Only the repository suite (generate.test.ts:6289/6321/6337) fails. The examples throw NullPointerException at run time."
+  },
+  {
+   "attack": "g09: ctorAlts[0].kind 'empty'",
+   "consequence": "Caught by the build (TS2322 CtorKind). But the guard alone then ran on the previous dist and reported nothing about the change. Only the one command's freshness check (STALE BUILD) would stop it."
+  }
+ ],
+ "attacks": [
+  {
+   "by": "guard",
+   "change": "g01 facts.arity 2->1",
+   "caught": true
+  },
+  {
+   "by": "guard",
+   "change": "g02 op.list reqmatch type Map<String,String>",
+   "caught": true
+  },
+  {
+   "by": "guard",
+   "change": "g03 record 'getData()'",
+   "caught": true
+  },
+  {
+   "by": "guard",
+   "change": "g04 async true",
+   "caught": true
+  },
+  {
+   "by": "guard",
+   "change": "g05 accessor.param 'data'",
+   "caught": true
+  },
+  {
+   "by": "nothing but by-hand classes (one command reference OPEN 4)",
+   "change": "g06/q06 none 'this' (token in quote)",
+   "caught": false
+  },
+  {
+   "by": "guard ('quote does not contain HashMap')",
+   "change": "g07 container HashMap<String, Object>",
+   "caught": true
+  },
+  {
+   "by": "guard ('citation pins generated')",
+   "change": "g08 testMock 'always' (pinned prose)",
+   "caught": true
+  },
+  {
+   "by": "build (TS2322); the guard ran on a stale dist",
+   "change": "g09 ctorAlts[0].kind 'empty'",
+   "caught": true
+  },
+  {
+   "by": "guard ('absence shows false')",
+   "change": "g10 cancel true",
+   "caught": true
+  },
+  {
+   "by": "guard (SdkClient.java:107 has \"signal\")",
+   "change": "g11 a 'signal' comment added to the runtime",
+   "caught": true
+  },
+  {
+   "by": "guard (CostFeature.java:178 has \"cancellation\")",
+   "change": "g12 CostFeature excepted region dropped",
+   "caught": true
+  },
+  {
+   "by": "guard ('citation pins true')",
+   "change": "g13 streamSignal false",
+   "caught": true
+  },
+  {
+   "by": "guard ('provider declares no such fact')",
+   "change": "g14 streamSignal removed",
+   "caught": true
+  },
+  {
+   "by": "by-hand class only (OPEN 1)",
+   "change": "g15/q15 deleted cast EntityBaseX",
+   "caught": false
+  },
+  {
+   "by": "guard ('names isDeleted(), which the entity does not declare')",
+   "change": "g16 deleted member isDeleted()",
+   "caught": true
+  },
+  {
+   "by": "guard",
+   "change": "g17 utility copy removed",
+   "caught": true
+  },
+  {
+   "by": "guard",
+   "change": "g18 match copy removed",
+   "caught": true
+  },
+  {
+   "by": "tools ABSENT + OPEN only (by hand)",
+   "change": "g19/q19 arity removed",
+   "caught": false
+  },
+  {
+   "by": "by-hand class + accidental STALE",
+   "change": "g20/q20 test sig without static",
+   "caught": false
+  },
+  {
+   "by": "guard ('declared on the type; calls it on client')",
+   "change": "g21 test call on instance",
+   "caught": true
+  },
+  {
+   "by": "guard ('declared field: true; the runtime's getName is called')",
+   "change": "g22 field flag on getName()",
+   "caught": true
+  },
+  {
+   "by": "by-hand class only (OPEN 2)",
+   "change": "g23/q23 'throws SdkError' on load sig",
+   "caught": false
+  },
+  {
+   "by": "guard (G3: create/list take 2 arguments, printed call passes 1)",
+   "change": "g24 printer drops the ctrl argument",
+   "caught": true
+  },
+  {
+   "by": "blocks OPEN only (by hand); guard and callcheck pass",
+   "change": "g25/q25 accessor on DemoSDK type",
+   "caught": false
+  },
+  {
+   "by": "blocks OPEN only (by hand)",
+   "change": "g26/q26 result cast (SdkClient)",
+   "caught": false
+  },
+  {
+   "by": "one command: UNATTESTED ref.maps",
+   "change": "p01 maps 'dicts' (language)",
+   "caught": true
+  },
+  {
+   "by": "one command: UNATTESTED ref.noun (hand decided Methods)",
+   "change": "p02 noun 'Functions' (convention)",
+   "caught": true
+  },
+  {
+   "by": "one command: UNATTESTED prints + blocks OPEN",
+   "change": "p03 prints 'fields' (enumerated)",
+   "caught": true
+  },
+  {
+   "by": "one command: UNATTESTED ref.keys + ABSENT",
+   "change": "p04 keys 'bare' (enumerated)",
+   "caught": true
+  },
+  {
+   "by": "one command: 2 ABSENT NO REASON + OPEN 15 (the facts line called Name ATTESTED, since OLD used Name)",
+   "change": "p05 entityBy 'Name' (enumerated)",
+   "caught": true
+  },
+  {
+   "by": "guard (note uncited) + purity 4 open",
+   "change": "p06 a note naming an entity and a number",
+   "caught": true
+  },
+  {
+   "by": "one command: ABSENT NO REASON 808ab9f422",
+   "change": "p07 deleted removed",
+   "caught": true
+  },
+  {
+   "by": "one command: DROPPED NO REASON 010ab525bc",
+   "change": "x01 direct sentence dropped from doc-crud only",
+   "caught": true
+  },
+  {
+   "by": "one command: ABSENT NO REASON 010ab525bc",
+   "change": "x02 direct sentence dropped from all 19",
+   "caught": true
+  },
+  {
+   "by": "callcheck ARITY",
+   "change": "x03 example line load(null)",
+   "caught": true
+  },
+  {
+   "by": "blocks OPEN 2 only (by hand)",
+   "change": "x04 page cast (SdkClient) in 83 REFERENCE lines",
+   "caught": false
+  },
+  {
+   "by": "one command: ABSENT NO REASON 28235772cb",
+   "change": "x05 stream-signal sentence dropped everywhere",
+   "caught": true
+  }
+ ],
+ "could_not_check": [
+  "Live API behaviour: example.com is not reachable here (the proxy gives 502), so no root quick start completed a real request. They reach it and fail at the fetch.",
+  "Whether the stream really ends early on a BooleanSupplier signal. My scripted-fetcher run gave 0 items even without a signal, so that finding rests on reading EntityBase.fragment.java:214-216, 285.",
+  "kotlin, scala and csharp runtimes: I read only their op signatures, to size gap 1.",
+  "The page mutations (x01-x05) ran on a baseline that already carried p07's pages (ABSENT 808ab9f422) and a stale dist (2 STALE). Each verdict is the finding the edit added.",
+  "My final.sh echoed $? after a $(date) substitution, so its 'exit' fields for the guard, golden, one command and suite read 0 whatever happened. The record is the PASS/FAIL lines and the pass counts in mine/final/*.log (the suite failed 3).",
+  "The full ref-issues SDK cannot be generated (TestEntity_java needs flows the fixture lacks, OLD and NEW alike). I generated it with `main: kit: target: java: phase: test: active: false` and checked that its pages equal out/new and out/old."
+ ],
+ "doubtful_lines": [
+  {
+   "where": "generate.test.ts fixtures (null-only member z), README tutorial/root and REFERENCE",
+   "line": "List<?> tallies = (List<?>) client.tally(null).list(Map.of(\"z\", null), null);  /  client.crate(null).load(Map.of(\"id\", \"example_id\", \"z\", null), null)",
+   "why": "Map.of rejects a null value: it throws NullPointerException at run time. The old components left the member out.",
+   "runtime_line": "java.util.Map.of contract; the jshell run gave java.lang.NullPointerException"
+  },
+  {
+   "where": "REFERENCE remove sentence, every variation with remove",
+   "line": "`((EntityBase) result).deleted()` reads the mark.",
+   "why": "It compiles only with `import voxgig.demosdk.entity.EntityBase;`, which no page states. With ctrl throw:false, a failed remove returns the error payload, so the cast would throw ClassCastException.",
+   "runtime_line": "EntityBase.fragment.java:1 (package JAVAPACKAGE.entity), :47 deleted(); :165 `return out;` on failure"
+  },
+  {
+   "where": "tutorial write step (crud variations)",
+   "line": "client.planet(null).update(Map.of(\"id\", ((Map<?, ?>) created.data()).get(\"id\"), ...), null);",
+   "why": "If the created record has no `id`, Map.of throws NullPointerException instead of an SDK error. The mock sets one; a live API might not.",
+   "runtime_line": "Map.of null-hostility; TestFeature.java:321 sets id"
+  },
+  {
+   "where": "REFERENCE, every single-entity operation",
+   "line": "`data()` reads its record. (beside `Object result = ...`)",
+   "why": "result is declared Object, so `result.data()` needs a cast. OLD had the same wording.",
+   "runtime_line": "EntityLoadOp.fragment.java:22 `public Object load(`"
+  }
+ ],
+ "examples": "Ran with javac 21.0.12.1, java and jshell, mvn here; kotlinc, scala and dotnet are missing.\n\n1. For each of the 19 variations that have a java target I generated a full java SDK, OLD (oldcopy) and NEW (mine/genv.js), and javac'd its sources (mine/jbuild.sh). mine/strict2.js then compiled every java block:\n   - the tutorial as ONE program with only its printed imports;\n   - the root quick start with only its imports;\n   - each REFERENCE block with java.util.*, the client class and SdkEntity (not EntityBase).\n   It ran each block with the constructor swapped for testSDK.\n   - NEW: 351/351 compile; 274/351 exit 0.\n   - OLD: 333/333 compile; 256/333 exit 0.\n   - The failures are identical in kind and count in both: 61 mock 404s on unseeded data, 4 tutorials (update after create: TestFeature.java:228-231 keeps no created record), and 12 fetch_mode_block in no-test.\n   - ref-issues needed `phase: test: active: false` to generate at all (OLD and NEW alike). Its blocks compile 19/19 OLD and NEW.\n\n2. The REFERENCE features block compiles and constructs a 20-feature client, OLD and NEW.\n\n3. Root quick start from the repository root: `jshell --class-path java/classes` on the block as printed, all 19 variations OLD and NEW (mine/rootall2.log).\n   - Each reaches the live request (invalid placeholder URL; no base for server-none; proxy 502 for server-static), or only constructs the client (ent-none, ref-issues).\n   - Control: with an empty class path, 'package voxgig.demosdk.core does not exist'.\n\n4. Lane `tools/before/run.sh <clone> java default`: NEW BUILD SUCCESS (min 9.48 s), OLD BUILD SUCCESS (min 8.97 s), Tests run 4. It checks structure only.\n\n5. The deleted span: javac 'cannot find symbol' without the EntityBase import; `deleted=true` with it; `(SdkEntity)` gives cannot find symbol.\n\n6. jshell `Map.of(\"z\", null)` gives NullPointerException.",
+ "facts_audit": [
+  {
+   "fact": "facts.method.* / ref.facts.op.*",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "EntityListOp.fragment.java:20 `public Object list(Map<String, Object> reqmatch, Map<String, Object> ctrl)`; Load/Create/Remove/Update/Patch :22; SdkEntity.java:13-23"
+  },
+  {
+   "fact": "facts.async false / result throw",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "ops return Object; EntityBase.fragment.java:167-183 rethrows; SdkError extends RuntimeException (SdkError.fragment.java:12)"
+  },
+  {
+   "fact": "facts.record data()",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Entity.java `Object data(Object... args)`; EntityBase.fragment.java:85-95"
+  },
+  {
+   "fact": "facts.arity 2",
+   "account": "derived (optional)",
+   "verdict": "true",
+   "evidence": "SdkEntity.java:15 list(reqmatch, ctrl), no overload"
+  },
+  {
+   "fact": "facts.collection `List`",
+   "account": "cited",
+   "verdict": "true; the quote shows the value",
+   "evidence": "MakeResult.java:50 `List<Object> entities = new ArrayList<>();`; Done.java:24 returns resdata"
+  },
+  {
+   "fact": "ref.facts.none null",
+   "account": "cited",
+   "verdict": "true; the quote is weak but means none",
+   "evidence": "Main.fragment.java:13 `this(null);` (no options). EntityBase.fragment.java:53 `if (entopts == null)` would be stronger. A token-in-quote attack (none 'this') passes the guard."
+  },
+  {
+   "fact": "ref.facts.container Map<String, Object>",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "Main.fragment.java:16"
+  },
+  {
+   "fact": "ref.facts.ctor/ctorAlts call; ctorAlts[0].kind defaults (pinned)",
+   "account": "derived / pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.java:12-18; ran: jshell constructs live clients"
+  },
+  {
+   "fact": "ref.facts.test[0..1]",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Main.fragment.java:24,28 public static; SdkClient.java:386-401 testOptions replaces feature.test with testopts (+active), both may be null"
+  },
+  {
+   "fact": "ref.facts.testMock generated (pinned)",
+   "account": "cited",
+   "verdict": "true (confirmed by run)",
+   "evidence": "Config_java.ts default BaseFeature; Fetcher.java:272-275; ran no-test: every request -> fetch_mode_block (12 runs)"
+  },
+  {
+   "fact": "ref.facts.accessor sig/param/arg",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "MainEntity_java.ts:31-33; the sentence 'Create a new `XEntity` instance' is true (new on every call). Unstated: the accessor writes `active` into the caller's map (EntityBase.fragment.java:56-63; ran: Map.of entopts -> UnsupportedOperationException)."
+  },
+  {
+   "fact": "ref.facts.client[0] options copy (pinned)",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "SdkClient.java:99-105 Struct.clone; Struct.java:598-613 allocates a new map/list (other objects by reference)"
+  },
+  {
+   "fact": "ref.facts.client[1] utility kind+copy (pinned)",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "SdkClient.java:107-109; Utility.java:99-137 new Utility(true), function refs shared, custom copied"
+  },
+  {
+   "fact": "ref.facts.entity[0..1] data/match copy (pinned)",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "EntityBase.fragment.java:94,106 Struct.clone"
+  },
+  {
+   "fact": "ref.facts.entity[2] make",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "Entity.fragment.java:21-24 new EntyClass(this.client, copy of entopts)"
+  },
+  {
+   "fact": "ref.facts.entity[3] streamLazy, runs call",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "EntityBase.fragment.java:246 runOp before :278 iterator"
+  },
+  {
+   "fact": "ref.facts.entity[4] name getName() (no field)",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "EntityBase.fragment.java:30 protected field, :80 method"
+  },
+  {
+   "fact": "ref.facts.direct.returns / okFalse false",
+   "account": "derived / cited",
+   "verdict": "true",
+   "evidence": "SdkClient.java:217, 314-382; Returns paragraph checked line by line"
+  },
+  {
+   "fact": "ref.facts.prepare.fails style (pinned)",
+   "account": "cited",
+   "verdict": "true",
+   "evidence": "SdkClient.java:145 throw ctx.makeError"
+  },
+  {
+   "fact": "ref.facts.body.values / once (pinned)",
+   "account": "cited",
+   "verdict": "true (printed in no variation)",
+   "evidence": "Fetcher.java:100-108; Media.java:65, 102-110 readAllBytes; RAW_BODY '$body' :19"
+  },
+  {
+   "fact": "ref.facts.cancel false (absence)",
+   "account": "cited absence, 156 files",
+   "verdict": "true",
+   "evidence": "my own grep (interrupt|cancel|abort|signal|stop|shutdown) finds only the excepted stream lines, a CostFeature comment and Thread.interrupt re-assertions in features; no operation reads a signal"
+  },
+  {
+   "fact": "ref.facts.streamSignal true (pinned)",
+   "account": "cited, two quotes",
+   "verdict": "true, incomplete",
+   "evidence": "EntityBase.fragment.java:214-216 only a BooleanSupplier counts; :285"
+  },
+  {
+   "fact": "ref.facts.deleted ((EntityBase) {var}).deleted()",
+   "account": "derived (last identifier only)",
+   "verdict": "true, compiles only with an import no page prints",
+   "evidence": "EntityBase.fragment.java:43-49; ran javac with/without import"
+  },
+  {
+   "fact": "ref.facts.entityBy class (attested)",
+   "account": "convention",
+   "verdict": "true",
+   "evidence": "Entity_java.ts writes <Name>Entity; generated B SDK has AmbientEntity... PlanetEntityClient in ref-issues (U34)"
+  },
+  {
+   "fact": "named call, ref.noun Methods (hand)",
+   "account": "convention, recorded",
+   "verdict": "acceptable",
+   "evidence": "OLD `load()`; OLD '### Instance Methods'"
+  },
+  {
+   "fact": "prints record, keys member, maps maps (attested)",
+   "account": "convention/language",
+   "verdict": "true",
+   "evidence": "OLD pages; minimal pairs"
+  },
+  {
+   "fact": "layout.module/client/ctor/names.core",
+   "account": "naming hook",
+   "verdict": "true",
+   "evidence": "javaPackage, tm('ProjectNameSDK'), JAVA_CORE used by Main_java.ts:70 Folder"
+  }
+ ],
+ "optional_facts": [
+  {
+   "fact": "ref.facts.accessor.cached",
+   "port_declared": "no",
+   "runtime_shows": "a new entity on every call",
+   "file_line": "src/cmp/java/MainEntity_java.ts:31-33",
+   "right": "right not to declare"
+  },
+  {
+   "fact": "ref.facts.streamSignal",
+   "port_declared": "true",
+   "runtime_shows": "reads callopts.get(\"signal\"), only a BooleanSupplier, and ends hasNext early",
+   "file_line": "EntityBase.fragment.java:214-216, 285",
+   "right": "right; the sentence omits the BooleanSupplier restriction"
+  },
+  {
+   "fact": "copy on data, match, options, utility getters",
+   "port_declared": "copy: true on all four",
+   "runtime_shows": "Struct.clone / Utility.copy allocate new objects",
+   "file_line": "EntityBase.fragment.java:94,106; SdkClient.java:100,108; Utility.java:99-100; Struct.java:598-613",
+   "right": "right"
+  },
+  {
+   "fact": "entopts/client getters",
+   "port_declared": "none",
+   "runtime_shows": "protected fields, no public getter",
+   "file_line": "EntityBase.fragment.java:31,33",
+   "right": "right"
+  },
+  {
+   "fact": "field flag",
+   "port_declared": "none",
+   "runtime_shows": "getName() is a method; name is protected",
+   "file_line": "EntityBase.fragment.java:30,80",
+   "right": "right"
+  },
+  {
+   "fact": "ref.facts.deleted",
+   "port_declared": "((EntityBase) {var}).deleted()",
+   "runtime_shows": "deleted() on EntityBase only; SdkEntity/Entity lack it",
+   "file_line": "EntityBase.fragment.java:43-49; tm/java/core/SdkEntity.java, Entity.java",
+   "right": "a defensible choice the guide allows; the page needs the EntityBase import, which it never states"
+  },
+  {
+   "fact": "facts.arity",
+   "port_declared": "2",
+   "runtime_shows": "list(reqmatch, ctrl), both required",
+   "file_line": "SdkEntity.java:15",
+   "right": "right; removing it passes the guard (attack q19)"
+  },
+  {
+   "fact": "ref.facts.memberNamed",
+   "port_declared": "default (call)",
+   "runtime_shows": "calls written with parentheses",
+   "file_line": "runtimeforms/java.ts calls",
+   "right": "right"
+  },
+  {
+   "fact": "layout.dir / imports(place)",
+   "port_declared": "no",
+   "runtime_shows": "package-addressed imports",
+   "file_line": "Main.fragment.java:1",
+   "right": "right: the root quick start ran from the repository root with java/classes on the class path"
+  },
+  {
+   "fact": "notes.top",
+   "port_declared": "none",
+   "runtime_shows": "nothing runtime-only to add",
+   "file_line": "-",
+   "right": "right"
+  }
+ ],
+ "pages": [
+  {
+   "variation": "B",
+   "section": "tutorial / root / REFERENCE",
+   "kind": "weaker",
+   "finding": "The list sentence drops OLD's '(as `Object`)'. `((EntityBase) result).deleted()` needs an unstated import. The stream-signal sentence omits that only a BooleanSupplier counts, and spells `callopts.signal` (shared). Everything else I read is true; I checked direct's Returns, prepare, the test client sentences, the copy sentences, make and the update 'unless the entity already holds it' (Param.java:56-77)."
+  },
+  {
+   "variation": "auth-basic",
+   "section": "tutorial / REFERENCE",
+   "kind": "improved",
+   "finding": "S50 secret: `options.put(\"secret\", ...)` and the table row are true (PrepareAuth_java.ts:95-123). Region now defaults. No false sentence."
+  },
+  {
+   "variation": "ref-issues",
+   "section": "tutorial / REFERENCE",
+   "kind": "improved",
+   "finding": "U34: PlanetEntityClient and PlanetEntityEntity match the generated classes. G27 escapes the pipe, the inactive remove is absent and the id-less gauge update is shown. Blocks compile 19/19 (generated with the test phase off)."
+  },
+  {
+   "variation": "doc-crud (chosen: full CRUD, where java's casts, two-argument calls, the id read off the created entity and the deleted cast all print)",
+   "section": "tutorial / root / REFERENCE",
+   "kind": "weaker in one line",
+   "finding": "The write step builds `Map.of(\"id\", ((Map<?, ?>) created.data()).get(\"id\"), ...)`, which throws NullPointerException if the record lacks an id (OLD used a literal). Everything else is true; the blocks compile 16/16."
+  },
+  {
+   "variation": "generate.test fixture (null-only member)",
+   "section": "tutorial / REFERENCE",
+   "kind": "false at run time",
+   "finding": "`Map.of(\"z\", null)` in list, load, create and update examples. The suite fails 3 tests that pass at v33-frozen."
+  }
+ ],
+ "hand_records": [
+  {
+   "id": "3b6556a083 / 39a9cc2d2c",
+   "verdict": "weak",
+   "why": "Classed same-meaning for losing OLD's '(as `Object`)'. Defensible, since the cast and the REFERENCE heading show it, but it is a lost true fact that shared code cannot state (gap 1). It should cite that gap."
+  },
+  {
+   "id": "9c6d819441 / afe39b8d17",
+   "verdict": "ok",
+   "why": "Classed the same as the 13 other languages' records."
+  },
+  {
+   "id": "f64ae2f4fc",
+   "verdict": "ok",
+   "why": "The NEW README already says 'except log', so the echo is a word match."
+  },
+  {
+   "id": "bff341cf32 (contradiction)",
+   "verdict": "right",
+   "why": "The no-test run confirms that the REFERENCE is the true side (fetch_mode_block)."
+  },
+  {
+   "id": "facts named / ref.noun",
+   "verdict": "acceptable",
+   "why": "Evidence quoted from OLD."
+  },
+  {
+   "id": "27 absent reasons",
+   "verdict": "right",
+   "why": "Each one checked against the runtime (async, cancel absence, getUtility copy, prepare throws, no tester alias, the protected client/entopts, getName)."
+  },
+  {
+   "id": "unification:entity-heading (pairing artefact)",
+   "verdict": "right",
+   "why": "The instance blocks are byte-identical but shifted one place."
+  },
+  {
+   "id": "no dropped or defect records",
+   "verdict": "incomplete",
+   "why": "The suite failure was never recorded. The porter did not run the suite."
+  }
+ ],
+ "gaps_judged": [
+  {
+   "gap": "porter 1: declared return Object (fact `declared`)",
+   "needed": true,
+   "breaking": false,
+   "why": "Real, and shared by kotlin (Any?), scala (Object) and csharp (object?) according to their op fragments. A note would be wrong because four runtimes share it."
+  },
+  {
+   "gap": "porter 2: Uses.ops for the List import",
+   "needed": false,
+   "breaking": false,
+   "why": "Expressible today: the call printer can write java.util.List qualified, as the client printer already writes java.util.LinkedHashMap. An unused import is harmless."
+  },
+  {
+   "gap": "porter 3: guard checks only the last identifier of deleted",
+   "needed": true,
+   "breaking": false,
+   "why": "Confirmed by attack q15."
+  },
+  {
+   "gap": "reviewer: deleted template fills only {var}",
+   "needed": true,
+   "breaking": false,
+   "why": "The page cannot name EntityBase's package, so the span needs an unprinted import (also kotlin and scala)."
+  },
+  {
+   "gap": "reviewer: guard cannot read `static` in a Java signature",
+   "needed": true,
+   "breaking": false,
+   "why": "Attack q20."
+  },
+  {
+   "gap": "reviewer: guard and callcheck cannot tell a type call from an instance call when both use '.'",
+   "needed": true,
+   "breaking": false,
+   "why": "Attack q25."
+  }
+ ],
+ "provider_code": [
+  {
+   "file_line": "Syntax_java.ts:70-72",
+   "finding": "A second example-literal table that duplicates utility_java.ts javaLit (:121-130) and loses the generator's rule of leaving a null-only member out. generate.test.ts:6321 fails on it, and Map.of(\"z\", null) follows."
+  },
+  {
+   "file_line": "Syntax_java.ts:105-108, 112-121",
+   "finding": "Map.of is used for every argument map, including entries that are null literals or run-time reads, which throws NullPointerException on null."
+  },
+  {
+   "file_line": "Syntax_java.ts:141-144",
+   "finding": "A map-valued option key is used raw as a Java variable (`Map<String, Object> server`), not through the hook's ident. This is harmless for `server` and `feature`; it would collide with an entity variable of the same name or a keyword key. OLD did the same."
+  },
+  {
+   "file_line": "Syntax_java.ts:62",
+   "finding": "The deleted template prints `EntityBase` with no package, and nothing on the page imports it."
+  },
+  {
+   "file_line": "Syntax_java.ts:76-86, 150-155",
+   "finding": "The binding rule (SdkEntity only where the block reads it) is a pure function of the statements. Acceptable."
+  },
+  {
+   "file_line": "Naming_java.ts:10-19",
+   "finding": "Clean: it calls only javaPackage, javaVarName and JAVA_CORE, which Main_java and MainEntity_java also use. No concatenation and no model read in the provider (purity 0 open, 4 accepted). I confirmed the purity misreading of JAVA_CORE/mavenGroupId in utility_java.ts:37-49."
+  },
+  {
+   "file_line": "git diff --stat v33-frozen..HEAD",
+   "finding": "Only java files and the golden changed. There are no trailers or tool names in the 3 sdkgen commits or the tools commit. No other language's page changed: 0 of 21 root READMEs differ outside the java sections (control new vs old: 21); diff -rq -x java shows only root READMEs."
+  }
+ ],
+ "numbers": [
+  {
+   "what": "lines",
+   "porter": "746 deleted; 191+24 (3.47x); +38 forms +5 utility +2/-2 Main (2.87x)",
+   "mine": "identical (git diff --numstat v33-frozen..HEAD)"
+  },
+  {
+   "what": "reviewed one command (REGEN=1)",
+   "porter": "PASS; ledger 59/19/13823; by hand 20/3/68; missing 5/1/45; contradictions 0/0/1; blocks 19-16-0-13 / 0-0-0-19 / 183-0-0-131",
+   "mine": "PASS, identical (mine/final/pc-reviewed.log)"
+  },
+  {
+   "what": "SCRATCH=1 REGEN=1",
+   "porter": "OPEN 25/4/114; blocks OPEN 21/22/15; 2 unattested; 27 absent",
+   "mine": "identical, PORTCHECK FAIL by design"
+  },
+  {
+   "what": "guard java / guard+reader / golden",
+   "porter": "4/4; 81/81; golden committed",
+   "mine": "4/4; 81/81; characterize 2/2"
+  },
+  {
+   "what": "repository suite without lanes",
+   "porter": "not run",
+   "mine": "tests 2635, pass 2627, fail 3 (generate.test.ts:6289, 6321, 6337, all java); those 3 pass at v33-frozen"
+  },
+  {
+   "what": "examples compiled",
+   "porter": "lane models NEW 62/62, OLD 59/59",
+   "mine": "19 variations NEW 351/351, OLD 333/333; run under testSDK NEW 274, OLD 256 exit 0"
+  },
+  {
+   "what": "sharewords",
+   "porter": "java-only 4.0%, provider literals 0.2%",
+   "mine": "identical"
+  },
+  {
+   "what": "lane default",
+   "porter": "BUILD SUCCESS",
+   "mine": "NEW BUILD SUCCESS min 9.48 s; OLD min 8.97 s, Tests run 4"
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "holds for java, with additive shared changes",
+   "evidence": "0 breaking changes forced. Additive changes needed: 2 to the interface (the declared-type fact; deleted-template placeholders) and 3 to the guard (static in signatures, receiver by head, whole deleted template). Not needed: gap 2. Per-language prose by source: notes 0 and provider literals 132 words (0.2%); java-only sentence share 4.0% of all words (sharewords, ran). Purity 0 open. The provider reads no model, but it carried a literal table of its own that drops a generator rule (the null-only member)."
+  },
+  {
+   "id": "H2",
+   "verdict": "holds",
+   "evidence": "746 -> 215 lines (3.47x), 260 with forms, utility and Main (2.87x): git diff --numstat, ran."
+  },
+  {
+   "id": "H3",
+   "verdict": "holds",
+   "evidence": "S49 (region default), S50 (secret), U34 (PlanetEntityClient), G27 (pipe), S25 (remove gone), S13 (no-test refusal, confirmed by run) and U45 all reach java through shared code. The provider has no branch on any of them."
+  },
+  {
+   "id": "H4",
+   "verdict": "holds for the 19 variations; violated by the port in the suite fixture, though the cause is not intrinsic to the approach",
+   "evidence": "351/351 NEW blocks compile, and the run failures are identical to OLD's (mock). The suite's null-only fixture prints Map.of(\"z\", null), which throws NullPointerException. It is a printer choice in Syntax_java.ts that the old component avoided, fixable in the provider."
+  }
+ ],
+ "interface": "Java fits interface 3.3 with no breaking change. It is missing:\n- a way to state a declared return type that differs from the runtime value (Object);\n- deleted-template placeholders for a package;\n- guard support for Java signatures: `static` as `on`, and a type call versus an instance call through the same '.'.\n\nA printer can still restate a generator rule wrongly (the literal table) with no check except the repository suite.",
+ "ran": "Everything in mine/ is under P/reviews/java.\n1. Build: npm run build (exit 0) and git status, which was empty before and after.\n2. Guard and reader: guard 4/4; guard + reader 81/81. Golden: characterize 2/2.\n3. One command:\n   - REGEN=1 reviewed: PASS.\n   - SCRATCH=1 REGEN=1: FAIL, as designed.\n4. Repository suite with --test-concurrency=2: 2627 pass, 3 fail.\n   - The 3 failing tests, rerun at v33-frozen in my copy and then on the port: 4/4 at the tag, 1/4 on the port.\n5. purity.js and sharewords.js.\n6. Other languages unchanged: diff and a section-cut comparison of the root READMEs.\n7. Examples:\n   - genv.js generated 38 full SDKs (OLD and NEW), compiled with javac;\n   - strict2.js compiled and ran every block;\n   - jshell ran the root quick start from the repository root for all variations, plus an empty-class-path control;\n   - lane run.sh default, OLD and NEW.\n8. Runtime probes: the deleted span with and without its import; the accessor mutating the caller's map; Map.of with a null; the mock losing created records.\n9. Mutations: 26 at guard level, 7 with the one command, 5 page edits and 7 one-command follow-ups, each restored after it ran. The tree is clean at the end (git status 0/0).",
+ "read": "- The briefs and PORTING.md 3.3.\n- The provider, the hook and the forms.\n- utility_java and Main_java diffs.\n- The java runtime:\n  - Main.fragment, SdkClient, EntityBase, Entity and every op fragment;\n  - SdkEntity and Entity;\n  - MainEntity_java and Config_java;\n  - MakeResult, Done, Fetcher, Media and PrepareBody;\n  - Param, PrepareParams and TransformRequest;\n  - Utility.copy, Struct.clone and TestFeature;\n  - MakeOptions (the server check) and PrepareAuth_java.\n- facts.txt and the guard account report.\n- Every same-meaning record, the contradiction, the 2 hand facts and the 27 absent reasons, plus the hand records of 13 other languages for the same ids.\n- The block and ledger classes.\n- OLD and NEW for B, auth-basic, ref-issues and doc-crud: tutorial, root and REFERENCE. I also looked at crud-basic, doc-nested, ent-none and no-test.\n- The op signatures of kotlin, scala and csharp.\n- runtime-table java section.",
+ "touched": "Only my own directory, P/reviews/java:\n- ws, a copy of ports/java. It is restored to its branch v33 at 7834f129, rebuilt, with git status empty in sdkgen and tools.\n- mine/: harness scripts, generated SDKs, logs and mutation logs.\n- PROGRESS.md.\n\nNothing under ports/java, base33 or /home/user was modified. No push or publish."
+}

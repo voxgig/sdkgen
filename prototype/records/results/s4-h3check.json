@@ -1,0 +1,256 @@
+{
+ "ok": true,
+ "summary": "The engineer's measurement mostly holds up. Their scope matches mine. Their table reproduces byte for byte, and once their section extractor is fixed it gives the same result. The six unfixed defects are really there on NEW, and broader checks I wrote found none of the 'fixed' defects back on NEW, even in other words. I found five problems:\n(1) Every regex check can be fooled. I put six defects back into copies of NEW pages in other words, and all six checks still said clean (S49, S50, X6, S25, U43, U44).\n(2) The root-quick-start extractor stops at the first '# comment' line inside a code block. For py, rb, perl and elixir it sees only a prefix of the R section. This does not change today's result, because every R check is about the constructor, which comes before the first comment.\n(3) D26 is only partly fixed. NEW gates a hand list of 8 rows on optspec. The catalogue's fix (rows from optspec, both ways) is not done: optspec's auth, allow, entity, extend, utility, test and clean have no row.\n(4) U44 has per-language lines under the strict reading: 'optional:opMatched list' guard exceptions in ts/test/runtimeforms/py.ts:93 and elixir.ts:97. They are left over from a dropped per-language opMatched fact.\n(5) Their claim that the prototype 'never touched' ReadmeRefFeatures.ts or FeatureDocs.ts is false. Commits 81f51194 and eed7d7db changed them (S09 was fixed there). So the six unfixed entries were not out of reach.\n\nRecomputed per entry over 36. With unfixed entries counted on the proposal's side: 2.8% by the brief's rule, 5.6% strict, 16.7% strictest. Counted against the proposal: 22.2%, 25.0% and 36.1%. H3 is not decided, as they said, but the margin against it is wider than they reported.",
+ "verdict": "Not decided. I am fairly sure the per-language criterion holds: by the brief's rule, 1 of 36 in-scope entries needed a per-language edit (S13), or 2 of 36 (5.6%) under the strict reading with U44. Both are under 10%. Only the strictest reading crosses the line, at 16.7%, and that reading counts the type printers and the go printer, which the brief exempts. The claim as worded is that the issues ARE fixed once, and the frozen state does not show that:\n- 7 of 36 entries are not fixed, or only partly: X3, S22, U52, U53, V27, U102, and D26 partly.\n- All seven sit in shared code the prototype already edited.\n- Counted against the proposal they give 22-36%, over the line on every reading.\nWhat would decide it:\n- make those 7 shared edits;\n- port js, php, csharp, java, kotlin, scala and cpp;\n- regenerate NEW and run the fence-fixed checker over all 20 languages, adding code-only and any-wording variants of the regex checks;\n- confirm the seven ports add no per-language line beyond S13's testMock.",
+ "how_sure": "Sure of these: the scope agreement on my 66-entry blind sample, the reproduction, the six fooled checks, the extractor defect, D26's missing rows, and the edits to ReadmeRefFeatures.ts and FeatureDocs.ts. All of them come from commands I ran or files I opened. Moderately sure of the U44 strict move: the lines exist and name the nested-list-match topic, but they are guard exceptions left behind, not lines that carry the fix. Less sure that no other 'once' entry hides a per-language line. I read the 13 Syntax and forms files for facts, notes and exceptions, and used git log -S on entityBy and opMatched, but I did not trace the history of every fact.",
+ "scope_disagreements": [
+  {
+   "id": "U37",
+   "mine": "Arguably part. The go REFERENCE title 'Demo Golang SDK Reference' is written by ReadmeRef_go at main (target.title). It is still 'Golang' on NEW, while the README says 'The Go SDK' further down.",
+   "theirs": "no",
+   "decides": "The entry's Where names only ts/project/.sdk/model/target/go.aontu:4 and ts/src/helpers/packageMeta.ts:14-29, neither of which is in the sections. On the rule (every site the entry names) theirs is right. If it were counted, it is not fixed, and the fix is either one line in go's own target model or one shared label rule."
+  },
+  {
+   "id": "S46",
+   "mine": "Arguably part, as 'not a documentation fix'. The title says README/REFERENCE describe entity classes when ts phase.entity is off, and the REFERENCE is ReadmeRef_ts.",
+   "theirs": "no",
+   "decides": "Where lists only Main_ts.ts, ReadmeModel_ts.ts and ReadmeEntity_ts.ts. The Fix is a guardModel error, not a text change. 'no' stands on the rule, and counting it would add no per-language edit."
+  }
+ ],
+ "scope_missed": [],
+ "once_moved": [
+  {
+   "id": "U44",
+   "line": "ts/test/runtimeforms/py.ts:93 and ts/test/runtimeforms/elixir.ts:97: 'optional:opMatched list': 'the runtime defaults the match, and a nested entity's list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)'",
+   "why": "Strict reading only. These are per-language forms lines that exist because of the nested-list required-match topic. py's Syntax once declared opMatched: { list: 'list(reqmatch, ctrl=None) ...' } (git log -p -S opMatched). Today no provider declares opMatched, the shared sentence carries the fix (sdkdesc.ts:390), and NEW py still shows the optional signature 'list(reqmatch=None, ...)' beside 'The match must include `planet_id`'. So the lines are left over, and the lenient class stays 'once'. That makes 2 languages under strict."
+  },
+  {
+   "id": "D26",
+   "line": "ts/src/helpers/sdkdesc.ts:281-310 (OPTION_TEXT, a hand list of 8 rows, each kept only if it is a key of optspec)",
+   "why": "Moved from 'once' to 'not fixed (partial)'. It needs one shared edit, not a per-language one. The catalogue's fix and check are that rows come from optspec, both ways. On NEW (B/ts REFERENCE) the constructor table has no row for optspec's auth, allow, entity, extend, utility, test or clean, and utility is the documented transport seam. Their check tests only that a server row exists."
+  }
+ ],
+ "once_upheld": "I read and upheld the other 'once' entries. For each I opened the shared line they cite and found it reads the model:\n- sdkdesc.ts:174-176, readsSecret. I also checked that all 20 PrepareAuth_<lang>.ts handle secret, and lua's only under header.\n- sdkdesc.ts:236-250 (server, options) and :337 (methods filtered on active).\n- sdkdesc.ts:390-391 (needs, idInData).\n- markdown.ts:12-22 (mdCell, mdInline).\n- ReadmeRef.ts:266-273 (testMock).\n- ReadmeRefFeatures.ts:18-28 and :137-139.\n\nI then searched the 13 ported Syntax and Naming files and runtimeforms for issue-specific lines:\n- entityBy is a general naming fact. git log -S shows it came with interface v3, not with U34.\n- The notes (member:*, elixir's tutorial:list) concern none of the 'once' entries.\n- The only guard exceptions are dataGet/matchGet returns, types, and the opMatched pair above.\n\nM14 and N04/U06/M04 remain 'once' only under the brief's exemption for printers.",
+ "checks_fooled": [
+  {
+   "id": "S49",
+   "how": "In a copy of NEW B/ts/README.md I deleted the `server: { tenant }` block from the constructor and kept the sentence '`server` must give `tenant`'.",
+   "result": "Fooled: the ts cell stays clean, because the check is !/tenant/ over the whole section."
+  },
+  {
+   "id": "S50 (and D23)",
+   "how": "In NEW auth-basic/lua/README.md I deleted the `secret = os.getenv(...)` line from the code. The prose still names secret.",
+   "result": "Fooled: lua stays X- for both S50 and D23."
+  },
+  {
+   "id": "X6",
+   "how": "In NEW ent-only-ambient/go tutorial step 2 I added 'A `List` call would return a slice holding an entity for each record.'",
+   "result": "Fooled: the check only matches the words 'one per record'."
+  },
+  {
+   "id": "S25 D10",
+   "how": "In NEW ref-issues/ocaml REFERENCE, Planet section, I added 'The planet also offers `e_remove (match) (ctrl)`, which deletes it.' under ### Operations.",
+   "result": "Fooled: the check only looks at '####' headings."
+  },
+  {
+   "id": "U43",
+   "how": "In NEW ref-issues/swift REFERENCE, gauge update, I added 'The record you pass has to carry the gauge's `id`.'",
+   "result": "Fooled: the check only matches 'must include the entity'."
+  },
+  {
+   "id": "U44",
+   "how": "In NEW doc-nested/perl REFERENCE, satellite list, I replaced 'The match must include `planet_id`.' with 'You may call it with no match at all.'",
+   "result": "Fooled: the check only matches 'match is optional'."
+  },
+  {
+   "id": "all R-section checks (S49, G01, M14, S50, D23, M12)",
+   "how": "I probed the extracted sections. h3() treats a line starting with '# ' inside a code fence as a heading.",
+   "result": "For py, rb, perl and elixir the root quick-start section is cut at the first '# comment' in the code: 1 fence instead of a closed block. Today's verdicts are unaffected, since the constructor comes first. A fence-aware copy (h3check/issuecheck33-fenced.js) gives an identical table. Any future R check about later lines is blind for those four languages."
+  }
+ ],
+ "checks_cannot_fail": [
+  "None in the 'true on OLD' sense. Every check fires on OLD for at least one language (I reproduced their run, no 'NO OLD SIGNAL' line), and the probe found every needed section and subsection non-empty for all 20 languages, except OLD clojure's constructor table.",
+  "Weak in practice: M14's keyIndents only reads blocks where its key regex matches. N04/U06/M04 can only fire for go, since only alias-go2 exists. S13 excludes zig and clojure by hand, on the strength of testMock 'always'."
+ ],
+ "recomputed": [
+  {
+   "reading": "Per entry, by the brief's rule (type and constructor printers exempt), not fixed counted for the proposal",
+   "theirs": "1/36 = 2.8%",
+   "mine": "1/36 = 2.8% (S13)",
+   "side_of_line": "under 10%"
+  },
+  {
+   "reading": "Per entry, strict (any own line that exists because of the issue, printers exempt), not fixed for the proposal",
+   "theirs": "not separated (taken as equal to the rule: 2.8%)",
+   "mine": "2/36 = 5.6% (S13, U44)",
+   "side_of_line": "under 10%"
+  },
+  {
+   "reading": "Per entry, strictest (type printers and go printer counted), not fixed for the proposal",
+   "theirs": "5/36 = 13.9%",
+   "mine": "6/36 = 16.7% (S13, U44, N04, U06, M04, M14)",
+   "side_of_line": "over 10%"
+  },
+  {
+   "reading": "Per entry, rule, not fixed counted against",
+   "theirs": "7/36 = 19.4%",
+   "mine": "8/36 = 22.2% (S13 + X3 S22 U52 U53 V27 U102 + D26 partial)",
+   "side_of_line": "over 10%"
+  },
+  {
+   "reading": "Per entry, strict, not fixed against",
+   "theirs": "n/a",
+   "mine": "9/36 = 25.0%",
+   "side_of_line": "over 10%"
+  },
+  {
+   "reading": "Per entry, strictest, not fixed against",
+   "theirs": "11/36 = 30.6%",
+   "mine": "13/36 = 36.1%",
+   "side_of_line": "over 10%"
+  },
+  {
+   "reading": "Per distinct defect (29: 30 distinct minus the unported N11/M35), rule, for the proposal",
+   "theirs": "1/29 = 3.4%",
+   "mine": "1/29 = 3.4%",
+   "side_of_line": "under 10%"
+  },
+  {
+   "reading": "Per distinct, strict, for the proposal",
+   "theirs": "n/a",
+   "mine": "2/29 = 6.9%",
+   "side_of_line": "under 10%"
+  },
+  {
+   "reading": "Per distinct, strictest, for the proposal",
+   "theirs": "3/29 = 10.3%",
+   "mine": "4/29 = 13.8% (S13, U44, the N04 group, M14)",
+   "side_of_line": "over 10%"
+  },
+  {
+   "reading": "Per distinct, rule, against",
+   "theirs": "7/29 = 24.1%",
+   "mine": "8/29 = 27.6%",
+   "side_of_line": "over 10%"
+  },
+  {
+   "reading": "Per distinct, strict, against",
+   "theirs": "n/a",
+   "mine": "9/29 = 31.0%",
+   "side_of_line": "over 10%"
+  },
+  {
+   "reading": "Per distinct, strictest, against",
+   "theirs": "9/29 = 31.0%",
+   "mine": "11/29 = 37.9%",
+   "side_of_line": "over 10%"
+  },
+  {
+   "reading": "Sensitivity: U37 counted in scope (not fixed)",
+   "theirs": "not in scope",
+   "mine": "Rule against becomes 9/37 = 24.3%. If its fix is read as go's own target model line, the rule for the proposal becomes 2/37 = 5.4%.",
+   "side_of_line": "unchanged sides"
+  }
+ ],
+ "reading_called_for": "H3's refutation test is 'more than about 10% of them still need a per-language edit'. That counts per-language edits, so the unfixed entries belong on the proposal's side of the per-language ratio, because each needs one shared edit. The brief's rule exempts printers every provider declares anyway. On that reading the ratio is 2.8% (5.6% strict), under the line. But H3's claim is 'fixed once, for every language', and a hypothesis is confirmed only when its claim is shown. At the frozen state 7 of 36 entries (19%) are not fixed or only partly fixed. So the right report is: the criterion is not crossed, the claim is not shown, and H3 is not decided. It is not confirmed.",
+ "cannot_show": [
+  "D04 is read only: no variation gives two targets different feature sets.",
+  "N04/U06/M04 are shown only for go, through alias-go2. No alias variation exists for the other 12 ported languages.",
+  "The seven unported languages (js, php, csharp, java, kotlin, scala, cpp) still use their old components. N11/M35 (js) and every entry's NEW state there can only be measured after their ports.",
+  "No compiler is on PATH here for lua, busted, swift, zig, clojure, elixir or ocaml (ported, examples changed), nor for dotnet, kotlinc, scala or sbt (unported). Whether their changed examples compile is not shown. go, python3, ruby, php, perl, javac, rustc, gcc and g++ are present.",
+  "Regex checks miss the same defect in other words (6 of 6 attempts fooled). A clean NEW is backed by reading three or more ported pages per entry and by broader code-only and any-wording variants, not by the checks alone.",
+  "Only the in-section half of each 'part' entry is measured. M37's README tables, for example, are not.",
+  "S13's ts runtime claim ('refuses every request') rests on commit b09502f1; nobody ran it. zig and clojure 'always' rest on their forms citations.",
+  "The 'part' entries' out-of-section halves, and the 286 'no' entries, are not measured on NEW."
+ ],
+ "not_done": [
+  "I judged blind only the 66 entries ending in 3 or 7. For the other 'no' entries that name README, REFERENCE, quick start or example (146 of them), I only machine-filtered to the 7 whose Where or title names a quick start, REFERENCE, tutorial or quick-start helper, and read those (S05, S30, S46, G07, U75, D25, A01). I did not read all 146.",
+  "I did not regenerate any pages. I worked on copies of their out/old and out/new (h3check/out), so the 5 new variations' OLD pages are theirs, unverified.",
+  "I did not trace the history of every RefFacts field to check it was not added for one catalogue entry. I did it only for entityBy and opMatched.",
+  "I did not check S13's residue: on NEW no-test the test-client text says the client 'refuses every request', then says testopts are 'the test feature's options, which the call switches on' with no test feature present. This may be S13 in other words. I did not score it.",
+  "The log REFERENCE section still says 'Set `feature.log.active` to true' although log defaults on (OLD and NEW, all 13 languages I read). I did not score whether this is S09 in other words or a defect the catalogue does not list.",
+  "No compiler or example lane was run."
+ ],
+ "pages_read": [
+  {
+   "id": "S28",
+   "lang": "ts swift lua",
+   "says": "Lead-in 'creating a client and loading an ambient'; steps 1, 2",
+   "right": "yes"
+  },
+  {
+   "id": "U45",
+   "lang": "ts swift perl",
+   "says": "'### 4. Create and remove a planet'",
+   "right": "yes"
+  },
+  {
+   "id": "S49/G01",
+   "lang": "ts swift lua (T), ocaml perl (R)",
+   "says": "server block with tenant only; 'region defaults to eu'",
+   "right": "yes"
+  },
+  {
+   "id": "S50/D23",
+   "lang": "ts perl ocaml",
+   "says": "apikey and secret in code and prose; secret row in the constructor table",
+   "right": "yes"
+  },
+  {
+   "id": "M12",
+   "lang": "go swift lua",
+   "says": "apikey only, no secret, in tutorial and table",
+   "right": "yes"
+  },
+  {
+   "id": "X6",
+   "lang": "ts swift ocaml",
+   "says": "only the load step; no list sentence",
+   "right": "yes"
+  },
+  {
+   "id": "S25/U34/U36/G27/G29",
+   "lang": "ts swift lua (and ocaml for S25)",
+   "says": "Planet section headed PlanetEntityClient, project words printed, no remove; Level \\| percent in one row; relative link unwrapped",
+   "right": "yes"
+  },
+  {
+   "id": "U43",
+   "lang": "swift lua ocaml",
+   "says": "gauge update without an id sentence",
+   "right": "yes"
+  },
+  {
+   "id": "U44",
+   "lang": "ts swift lua",
+   "says": "'The match must include `planet_id`'. py and elixir signatures still show the match optional",
+   "right": "yes (sentence)"
+  },
+  {
+   "id": "M37",
+   "lang": "ts perl swift",
+   "says": "'Flow rate of $&#36;name$&#36; units', which renders as $$name$$",
+   "right": "yes"
+  },
+  {
+   "id": "S13",
+   "lang": "ts swift lua (and zig)",
+   "says": "'generated without the `test` feature ... refuses every request', then 'test feature's options, which the call switches on'",
+   "right": "mostly; second sentence questionable"
+  },
+  {
+   "id": "S09",
+   "lang": "ts swift lua",
+   "says": "'except `log`'; log 'Active by default'; but log Usage still 'Set `feature.log.active` to true'",
+   "right": "partly"
+  },
+  {
+   "id": "X3 S22 U52 U53 V27 U102",
+   "lang": "ocaml lua swift perl",
+   "says": "test listed among hook features; 'cache serving a hit' with no cache; '`retry` wrap the transport'; line ' attach to pipeline hooks'; '| `shape` | number | map |'; '`'a|b`c'`'",
+   "right": "no: all six still show"
+  }
+ ],
+ "ran": "All runs used PATH=/opt/node24/bin:$PATH, in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h3check.\n\nCatalogue extraction:\n- extract.js: 329 entries (S50 X7 G31 V32 U108 N24 M49 D23 A5), and the 66 whose number ends in 3 or 7 (sample.txt).\n- nos.js: filtered the 286 'no' entries for documentation words (146), then for the 7 quick-start or REFERENCE candidates.\n\nSource reads with git show/grep/log on their clone (read-only):\n- at 9aebaf9e: ReadmeQuick_ts, the java and rust utilities, and grep for target.title, packageName and javaPackage;\n- at v33-frozen: sdkdesc.ts, markdown.ts, ReadmeRef.ts, ReadmeRefFeatures.ts, example.ts, Syntax_go.ts, runtimeforms py.ts;\n- git log -S for entityBy and opMatched, and git log/diff on ReadmeRefFeatures.ts and FeatureDocs.ts.\n\nChecker runs:\n- Copied out/old (dereferenced), out/new and issuecheck33.js to h3check, then ran `node issuecheck33.js out --ported <13>`: exit 1, output identical to their work/issuecheck33.out.\n- probe.js: checks section extraction per check, language and side.\n- issuecheck33-fenced.js: fence-aware h2/h3, exit 1, identical table.\n- strict.js: code-only and any-wording variants, NEW clean on all 13 ported.\n- outm (mutated copies of 6 NEW pages): `node issuecheck33.js outm --langs ts,go,lua,swift,ocaml,perl` (mut.out); all 6 fooled.\n- dump.js: read the NEW sections listed in pages_read.\n- `command -v` loop for compilers.",
+ "read": "Briefs:\n- P/brief.md\n- P/prompts/k-h3check.md\n- P/prompts/k-h3.md\n\nThe catalogue:\n- the 'How to read an entry' section;\n- the full text of S13, S09, S30, S46, U37, D26 and D27;\n- Fate, Class and Where of all 66 sample entries.\n\nTheir records:\n- P/h3/PROGRESS.md\n- P/h3/issuecheck33.js\n- the report given in the task\n\nSource on their clone (cited above), including the 13 ported Syntax_<lang>.ts files for facts and notes, and the exceptions blocks of the 13 runtimeforms files.\n\nNEW pages: the sections listed in pages_read.\n\nProgress is kept in P/h3check/PROGRESS.md."
+}

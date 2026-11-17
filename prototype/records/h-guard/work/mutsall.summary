@@ -1,0 +1,71 @@
+ts-method-typo CAUGHT method,signature,account
+ts-method-swap CAUGHT method,signature,account,controls
+c-method-swap CAUGHT method,signature,account
+clj-method-typo CAUGHT method,signature,account
+ts-param-required CAUGHT optional,account
+ts-param-type CAUGHT paramTypes,account
+ts-param-renamed CAUGHT paramNames,account
+c-param-type CAUGHT paramTypes,account
+c-param-dropped CAUGHT parameters,account
+clj-param-added CAUGHT parameters,account
+clj-return-changed NOT
+py-return-changed CAUGHT returns,account
+py-direct-return CAUGHT account
+ts-style-raise CAUGHT style,account
+c-style-pair CAUGHT style,account
+clj-style-throw CAUGHT style,account
+ts-collection CAUGHT account
+c-collection CAUGHT account
+clj-collection CAUGHT account
+ts-noun NOT
+ts-type-integer CAUGHT types
+zig-type-integer NOT
+clj-type-integer NOT
+c-type-string NOT
+ts-type-comment NOT
+ts-lit-none NOT
+py-lit-false NOT
+ts-lit-int NOT
+c-nullvalue CAUGHT account
+ts-member-removed CAUGHT members
+c-member-removed CAUGHT members
+clj-member-removed CAUGHT members,kind,account
+py-member-removed-pair CAUGHT kind,account
+ts-member-invented CAUGHT parameters,kind,account
+ts-member-misplaced CAUGHT signature,account
+c-member-invented CAUGHT signature,account
+clj-member-invented CAUGHT account
+ts-utility-kind CAUGHT account
+ts-cancel CAUGHT account
+ts-async-false CAUGHT async,account,controls
+py-record CAUGHT record,account
+ts-record-expr CAUGHT record,account
+ts-ctor-sig CAUGHT ctor,account
+py-test-sig CAUGHT parameters,account
+rt-ts-load-renamed CAUGHT method,signature,account,controls
+rt-ts-load-param-required CAUGHT optional,account
+rt-ts-load-sync CAUGHT async,account,controls
+rt-clj-load-param CAUGHT parameters,account,controls
+rt-clj-getname-renamed CAUGHT signature,members,account,reader
+rt-c-fnptr-renamed CAUGHT signature,members,account,reader
+no-forms-zig CAUGHT stale-forms,forms-missing,account,controls
+forms-vacuous-ts CAUGHT method,members,account,controls,reader
+my-cite-quote-gone-ts CAUGHT account
+my-cite-quote-gone-go CAUGHT account
+my-cite-token-ts CAUGHT account
+my-cite-token-rust CAUGHT account
+my-method-swap-go CAUGHT method,signature,account,controls
+my-method-swap-elixir CAUGHT method,signature,account
+my-method-swap-clojure CAUGHT method,signature,account,controls
+my-rt-op-file-swap-ts CAUGHT method,signature,account
+my-param-renamed-rust CAUGHT paramNames,account
+my-param-renamed-rb CAUGHT paramNames,account
+my-param-type-go CAUGHT paramTypes,account
+my-member-client-to-entity-go CAUGHT signature,account
+my-member-entity-to-client-rust CAUGHT signature,account
+my-wrong-exception-removed-ts CAUGHT accessor,account,controls
+my-types-reason-dropped-zig ERROR
+my-reader-ocaml-op-renamed CAUGHT reader
+my-reader-perl-style CAUGHT reader
+my-undocumented-member-ts CAUGHT members
+my-new-provider-php CAUGHT async,listOf,record,types,optional,signature,accessor,members,kind,account,controls

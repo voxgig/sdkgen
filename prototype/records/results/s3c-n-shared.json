@@ -1,0 +1,571 @@
+{
+ "ok": false,
+ "summary": "All four ports are now on the sentence round's clone, tagged v33m at cda43a59 in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/n-shared/ws/sdkgen. Twelve of brief 7's fourteen decisions are made in shared code, and the providers that need the new facts declare them. Decision 5 needed no change: the sentence was checked against the runtimes. Decision 10 was already settled by the sentence round ('Client <noun>' for every language). The perl example test now runs each block from the directory its page addresses, and adds no import to a block that has one. I also made rb's root quick start place-aware, after running it showed the same broken path as perl's. The final HEAD is 76779043 and the tree is clean.\n\nWhat I ran at the final commit:\n- **Build:** exits 0, tree clean.\n- **Golden:** 2/2.\n- **Regeneration:** 21 of 21 variations.\n- **Lanes:** ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig documentation 6/6. perl 7/7 in each of three models. On the port as delivered, the new perl test fails with \"Can't locate DemoSDK.pm\".\n- **Seven unported languages:** README and REFERENCE are 266/266 identical to out/new-v33m.\n- **Suite:** 2631 tests, 2611 pass, 15 fail, 5 skipped. One failure was a load regex in generate.test.ts that did not allow the unwrap clause; I widened it and checked it alone afterwards (1/1). The suite was not re-run after that fix. Running the guard alone afterwards gives 77 tests, 63 pass, 14 fail.\n\n**ok is false.** All 14 remaining failures are in runtimefacts.test.ts, but not all are the accounts of new facts:\n- **New facts:** streamSignal, deleted, facts.arity, memberNamed, accessor.cached, entity[i].field.\n- **Copy citations (existing paths):** copy on the match and utility getters has no citation in this clone. The guard engineer's ahead citations for the match getter are in their own clone, and they do not cover c, clojure, zig or the utility getter.\n- **swift record:** its forms parser expects the unwrapped expression, so \"declared facts are what its runtime defines\" fails.\n- **ocaml:** its forms still cite the name note, which decision 3 removes.",
+ "step0": "The ports were brought over in the given order.\n\n1. **Base:** `cp -a P/sfix/sdkgen ws/sdkgen` at v33s e84d3525, tree clean. Build exit 0.\n2. **Tools, assembled in ws/tools:**\n   - `git clone P/n-tools/tools` on branch ntools at f731fae.\n   - Cherry-picked sfix/tools dff5559 and f348718 with no conflict.\n   - Later, sfix/tools 740dc90 appeared (control adaptations, a rekey.js fix, stale explain-token pins dropped). I cherry-picked it as 53dfbab, also with no conflict, but AFTER the v33m table was recorded.\n3. **Ports:** fetched v33p as a branch and cherry-picked the ten commits in order, leaving the golden out.\n   - **Conflicts:** only in ts/test/runtimeforms/{perl,ocaml,lua,swift}.ts. The sentence round's staged testMock citation clashed with the ports' cite lines. I resolved each as a union; where both sides had the same key, the port's line won, since it was decided last (perl ctor[0], ocaml okFalse 'Bool false', lua pairForm). swift ended up with two `cite:` blocks, which I merged by hand in 025d091f.\n   - **Trailers:** the port commits carry none. The sfix commits on v33s do (Co-Authored-By and Claude-Session); that history is inherited and was not rewritten.\n4. **Meeting v33s (904fd0d2):** generation did not throw for the ports, but check-scaffold would have failed, because testMock is required. perl, lua, swift and ocaml now declare `testMock: 'generated'`; their factories fall back to the base feature, as the staged citations already said. swift's `read` gains the truth form `== .bool(true)` (Value is Equatable, Value.swift:156) and ocaml's gains `= Bool true`. perl's `$result->{ok}` (0/1) and lua's `result.ok` are already truth tests.\n5. **Golden:** regenerated once (cda43a59); only the four languages' hash lines changed.\n6. **Nine at v33s:** run with the n-tools tools (logs/pc/*.v33s.log) after checking out v33s and rebuilding. They do NOT all pass with these tools: py, c, zig, clojure and rust PASS; ts, go, elixir and rb FAIL on the new checks' openings. With the sentence round's own tools, the nine passed (its logs pc/*.r5.log, read, not re-run).\n\nTable at tag v33m = cda43a59, from `REGEN=1 tools/portcheck.sh` (logs/pc/<lang>.v33m.log):\n\n| lang | result | opening |\n|---|---|---|\n| ts | FAIL | ABSENT, NO REASON 'Return the entity name.' in 18 variations |\n| go | FAIL | named NOT JUDGED; 6 ABSENT go bold step leads |\n| py | PASS | |\n| c | PASS | |\n| zig | PASS | |\n| clojure | PASS | |\n| rust | PASS | |\n| elixir | FAIL | named NOT JUDGED |\n| rb | FAIL | named NOT JUDGED |\n| perl | FAIL | defect 13 rootquick + 1 reference, as expected; ledger OPEN 4/0/16 from the sentence fixes; prints NOT JUDGED; ref.noun UNATTESTED |\n| swift | FAIL | ledger OPEN 4/0/11, STALE 4, ref.noun UNATTESTED |\n| ocaml | FAIL | ledger OPEN 4/0/20, reference blocks OPEN 5, STALE 38 |\n| lua | FAIL | ledger OPEN 3/0/16, STALE 2, prints and ref.noun UNATTESTED |\n\nIn every language the printed-call check found 0 problems and the guard passed 4/4. A copy of that output is out/new-v33m.",
+ "sfix_report_seen": "yes. P/results/s3c-sfix-shared.txt appeared while I was working. I read its interface_changes, for_the_ports, tools_changes and surprises.\n\nIt changed one thing in what I did: it names tools commit 740dc90, which had not been in sfix/tools when I assembled the tools. I cherry-picked it afterwards (ws/tools 53dfbab). So the v33m table above was measured WITHOUT 740dc90. The commit drops stale explain-token pins in py, c, zig, clojure, rust and elixir.\n\nIt confirms what I had already done for the ports:\n- testMock 'generated' in perl, swift, ocaml and lua;\n- the truth forms swift `== .bool(true)` and ocaml `= Bool true`;\n- keeping both sides of the forms conflicts.\n\nIt warns that ocaml's `let ... in` could break the action Call cell. I checked the four ports' Call cells in out/new: each is a single statement, with no stray '; '.",
+ "decisions": [
+  {
+   "n": "1",
+   "title": "Imports know their place",
+   "where": "ts/src/helpers/example.ts (Scope.place; imports(desc, used, place); newScope(standalone, place)); ts/src/cmp/ReadmeQuick.ts (quickText 'tutorial', topQuickText 'top'); ts/src/helpers/sdkdesc.ts (DescLayout.dir); perl and rb Naming hooks (dir: target.name) and Syntax imports",
+   "old": "perl tutorial and root: `use DemoSDK;`. rb root: `require_relative \"Demo_sdk\"`.",
+   "now": "perl tutorial: `use lib 'lib'; use DemoSDK;`. perl root: `use lib 'perl/lib'; use DemoSDK;`. rb root: `require_relative \"rb/Demo_sdk\"`; rb tutorial unchanged. Either provider throws if place is 'top' and the hook gives no dir.",
+   "forced": "perl, rb (by choice); no other provider",
+   "runtimes": "From survey question 12; I read perl Main_perl.ts:68-69 and rb rbSdkFile. Path-relative imports: perl (`use lib` is relative to the working directory), rb (`require_relative` is relative to the reading file), lua (`require` searches package.path from the working directory). Package-addressed (installed or built): ts, js, py, go, rust, zig, swift, java, kotlin, scala, csharp, ocaml. c needs include flags. php `require_once 'demo_sdk.php'` is path-relative too (unported, not changed).",
+   "survey_right": "yes, for perl and rb (ran: from the repository root, perl's v33m root block fails with \"Can't locate\", and rb's fails with LoadError on both OLD and v33m)",
+   "breaking": false,
+   "providers_changed": "perl, rb"
+  },
+  {
+   "n": "2",
+   "title": "The top note slot is printed",
+   "where": "ReadmeQuick.ts topQuickText: note(p, 'top', desc) after the block",
+   "old": "declared, never printed",
+   "now": "printed after the root quick start block; no provider declares it, so no page changed",
+   "forced": "none",
+   "runtimes": "n/a",
+   "survey_right": "n/a",
+   "breaking": false,
+   "providers_changed": "none"
+  },
+  {
+   "n": "3",
+   "title": "The display field is a scalar",
+   "where": "sdkdesc.ts showFields: STRING, then INTEGER, NUMBER, BOOLEAN; otherwise the id alone (exported as showFieldsOf for the test)",
+   "old": "`other.find(STRING) || other[0]`, which picks Record's map field `fields`",
+   "now": "Record list examples print the id alone. Pages changed: perl 32 lines, lua 32, py 15, rb 15, ocaml 15. The Record list blocks in lua and perl are now `print(rec[\"id\"])` and `->{id}`.",
+   "forced": "none",
+   "runtimes": "perl prints HASH(0x...) for a hashref (reviewer ran it)",
+   "survey_right": "n/a",
+   "breaking": false,
+   "providers_changed": "none"
+  },
+  {
+   "n": "4",
+   "title": "accessor.cached",
+   "where": "example.ts RefFacts.accessor.cached?; ReadmeRef.ts accessorText",
+   "old": "Create a new `PlanetEntity` instance. Its `data` argument holds the entity options: pass `nil` for none.",
+   "now": "Called with `nil`, return the `PlanetEntity` instance the client keeps, made by the first such call; called with entity options, create a new one. Its `data` argument holds the entity options.",
+   "forced": "lua",
+   "runtimes": "cached: lua MainEntity_lua.ts:20-26 and php MainEntity_php.ts:43-46 (both read). Every other runtime makes a new entity on each call (survey question 1, read and certain for all 18).",
+   "survey_right": "yes (lua and php lines opened)",
+   "breaking": false,
+   "providers_changed": "lua"
+  },
+  {
+   "n": "5",
+   "title": "direct's err",
+   "where": "no change",
+   "old": "For a response, 2xx or not, keys ok, status, headers, data ... when the body cannot be read, ok is false and err holds the error; a request that cannot be made gives only ok and err",
+   "now": "unchanged",
+   "forced": "none",
+   "runtimes": "Survey question 9, opened for perl Main.fragment.pm:243-305, lua Main.fragment.lua:298-368, swift Main.fragment.swift:196-263, ocaml sdk_features.ml:1786-1817. In all four: a readable non-2xx response has no err; an unreadable body gives err with status (ok false even on a 2xx); a request that cannot be made gives ok and err only. True of all 20 by the survey.",
+   "survey_right": "yes",
+   "breaking": false,
+   "providers_changed": "none"
+  },
+  {
+   "n": "6",
+   "title": "streamSignal",
+   "where": "RefFacts.streamSignal?; ReadmeRef.ts streamText appends STREAM_SIGNAL; the cancel paragraph loses its stream sentence",
+   "old": "cancel paragraph (ts only): \"`stream()` takes the signal as `callopts.signal`, and ends when it aborts.\"",
+   "now": "on the stream member: \"It ends early once `callopts.signal` reports an abort.\" The cancel paragraph speaks of operations only.",
+   "forced": "ts go py rb perl lua elixir swift clojure ocaml declare true",
+   "runtimes": "Reads callopts.signal (opened): go Entity.fragment.go:151-189; py Entity.fragment.py:88-118; rb Entity.fragment.rb:107-133; perl Entity.fragment.pm:153,191; lua Entity.fragment.lua:133; clojure Entity.fragment.clj:166; ocaml Entity_ocaml.ts:142; swift EntityBase.fragment.swift:185 (comment; the survey cites the loop); ts (survey). Survey only: elixir and the unported js php java kotlin scala csharp. None: c, rust, zig (not declared). cpp is an absence.",
+   "survey_right": "yes where opened",
+   "breaking": false,
+   "providers_changed": "ts go py rb perl lua elixir swift clojure ocaml"
+  },
+  {
+   "n": "7",
+   "title": "copy on a match getter",
+   "where": "ReadmeRef.ts memberText: match, matchArg and matchGet append 'Returns a copy of the current match criteria.' when Member.copy is set (wrapped at 72 columns)",
+   "old": "Get the entity match criteria.",
+   "now": "Get the entity match criteria. Returns a copy of the current match criteria.",
+   "forced": "declared copy:true on c clojure elixir go ocaml perl py rb rust ts zig (lua and swift already declared it)",
+   "runtimes": "Clone, opened: ts EntityBase.fragment.ts:105; go Entity.fragment.go (Match); py Entity.fragment.py:72; rb Entity.fragment.rb:92; perl Entity.fragment.pm:119; rust Entity.fragment.rs:291; elixir entity_base.ex:102; lua Entity.fragment.lua:116; c Entity.fragment.c:260; clojure Entity.fragment.clj:30; zig Entity.fragment.zig:315; ocaml Entity_ocaml.ts:107 (from the reviewer); swift EntityBase.fragment.swift:64 (from the reviewer).",
+   "survey_right": "yes; the guard engineer's ahead list missed c, clojure and zig",
+   "breaking": false,
+   "providers_changed": "c clojure elixir go ocaml perl py rb rust ts zig"
+  },
+  {
+   "n": "8",
+   "title": "How prose names a member",
+   "where": "RefFacts.memberNamed?: 'call'|'bare'; ReadmeRef.ts memberName",
+   "old": "ocaml: same parameters as `direct()` / the request `direct()` would send",
+   "now": "ocaml: `direct` (38 lines)",
+   "forced": "ocaml; clojure declares 'bare' too (its output is unchanged: memberName already names a Lisp form by its head)",
+   "runtimes": "ocaml applies `direct ()` to unit (call by juxtaposition); clojure is a Lisp form",
+   "survey_right": "n/a",
+   "breaking": false,
+   "providers_changed": "ocaml, clojure"
+  },
+  {
+   "n": "9",
+   "title": "A member that is a field",
+   "where": "Member.field?; ReadmeRef.ts 'name' kind",
+   "old": "ocaml: \"Return the entity name.\" followed by the note \"`e_name` is a field of the entity, read without a call.\"",
+   "now": "\"The entity name.\"; the note is removed",
+   "forced": "ocaml",
+   "runtimes": "Fields: ocaml e_name (sdk_types.ml), zig fields, cpp name_, kotlin name (property), ts name (a field, but ts declares no name member). Every other runtime uses a method (survey question 8).",
+   "survey_right": "yes",
+   "breaking": false,
+   "providers_changed": "ocaml"
+  },
+  {
+   "n": "10",
+   "title": "Heading over the client's members",
+   "where": "none (the sentence round already prints 'Client <noun>' for every language)",
+   "old": "Instance <noun>",
+   "now": "Client <noun>: one rule, true whatever the members are called on (instance, type or module)",
+   "forced": "none",
+   "runtimes": "Survey question 7: c, clojure, elixir, ocaml are module functions taking the client; lua constructor and test are dot calls on the module; the rest are instance methods",
+   "survey_right": "yes",
+   "breaking": false,
+   "providers_changed": "none"
+  },
+  {
+   "n": "11",
+   "title": "The deleted mark",
+   "where": "RefFacts.deleted? ('{var}' template); runtimeprose.ts opText(remove) adds '`X` reads the mark.'; it says nothing about the data",
+   "old": "Remove ... Returns the entity, marked as deleted, ...",
+   "now": "... `result.deleted()` reads the mark.",
+   "forced": "declared for ts go py rb perl lua rust c zig ocaml",
+   "runtimes": "Readers, opened: ts EntityBase.fragment.ts:65 deleted(); go Entity.fragment.go:85 Deleted(); py Entity.fragment.py:46; rb Entity.fragment.rb:59 (deleted, no parens); perl Entity.fragment.pm:84; lua Entity.fragment.lua:87 (:deleted()); rust types.rs:76 (trait Entity); c sdk.h:357 vt->deleted; zig Entity.fragment.zig:47 (pub field deleted); ocaml sdk_types.ml:223 e_deleted. Not declared: swift (deleted() is on EntityBase, not on the Entity protocol the unwrap gives: Types.swift:8-13), elixir (EntityBase.deleted/1) and clojure (e-<name>/deleted), whose reads name a module the {var} template cannot.",
+   "survey_right": "yes (survey question 6)",
+   "breaking": false,
+   "providers_changed": "ts go py rb perl lua rust c zig ocaml"
+  },
+  {
+   "n": "12",
+   "title": "Wrapped style names its unwrap",
+   "where": "runtimeprose.ts readsRecord (opText) and createComment; swift Syntax: record '{var}.data()', printers build the record expression from facts.unwrap",
+   "old": "swift record fact `({var}.asNative as? Entity)?.data()`: \"`(result.asNative as? Entity)?.data()` reads its record.\"",
+   "now": "\"`asNative as? Entity` takes the entity out, and `result.data()` reads its record.\" The create comment says \"asNative as? Entity takes it out, and created.data() reads its record\". The printed code is unchanged.",
+   "forced": "swift",
+   "runtimes": "swift only (wrapped)",
+   "survey_right": "n/a",
+   "breaking": true,
+   "providers_changed": "swift (counted as breaking only as a changed sentence; it forces no other provider)"
+  },
+  {
+   "n": "13",
+   "title": "Copy on the utility getter is a fact",
+   "where": "ReadmeRef.ts memberText 'utility': m.copy ? 'Return a copy of the SDK utility object.' : 'Return the SDK utility object.'",
+   "old": "kind 'utility' always printed 'Return a copy ...'",
+   "now": "ts prints \"Return the SDK utility object.\" (19x)",
+   "forced": "copy:true added on c go lua perl py rb rust swift zig",
+   "runtimes": "Copy: go Main.fragment.go:112-113 CopyUtility; c utility.c:72 utility_copy; py Main.fragment.py:114; rb Main.fragment.rb:91; perl, lua, swift, zig, rust (survey; Utility.copy). Live: ts and js (struct.clone keeps a class instance: StructUtility.ts:752, survey), elixir (already utilityBase). clojure and ocaml have no utility member.",
+   "survey_right": "yes",
+   "breaking": true,
+   "providers_changed": "c go lua perl py rb rust swift zig (they must declare copy or their page changes)"
+  },
+  {
+   "n": "14",
+   "title": "A sentence names a call that compiles",
+   "where": "RuntimeFacts.arity?; runtimeprose.ts opName (where arity > 0, the operation is named bare) and opText list",
+   "old": "The match is optional.; swift, go, rust and zig named `list()` / `List()` in the tutorial",
+   "now": "\"The match is optional: `list(nil, nil)` lists every record.\" (swift); go `List(nil, nil)`; rust `list(Value::Noval, Value::Noval)`; zig `list(h.vnull(), h.vnull())`; ts, py and perl `list()`. Where arity > 0, tutorial sentences name `List`/`list` with no ().",
+   "forced": "declared arity on ts py perl (0) and go rust zig swift (2)",
+   "runtimes": "From the op signatures in each provider: swift EntityBase.fragment.swift:71 has no defaults; go, rust and zig take two required parameters. c not declared: vt->list(e, reqmatch, ctrl, &err) cannot be composed from a name and a none value, so it keeps 'The match is optional.' The bare-named rb, lua, elixir, clojure and ocaml keep 'The match is optional.'",
+   "survey_right": "n/a",
+   "breaking": true,
+   "providers_changed": "ts py perl go rust zig swift (opt in; sentences change for go rust zig swift ts py perl)"
+  }
+ ],
+ "facts_added": [
+  {
+   "path": "ref.facts.accessor.cached",
+   "type": "boolean (optional)",
+   "values": "lua true; php true when ported",
+   "read_from": "lua MainEntity_lua.ts:20-26; php MainEntity_php.ts:43-46",
+   "account": "cited (the guard engineer staged it ahead)"
+  },
+  {
+   "path": "ref.facts.streamSignal",
+   "type": "boolean (optional)",
+   "values": "true: ts go py rb perl lua elixir swift clojure ocaml; c, rust and zig undeclared; cpp would be false (an absence)",
+   "read_from": "each stream fragment's callopts['signal'] read (see decision 6)",
+   "account": "cited (staged ahead as ref.facts.streamSignal; same path)"
+  },
+  {
+   "path": "ref.facts.memberNamed",
+   "type": "'call' | 'bare' (optional; default call)",
+   "values": "ocaml bare, clojure bare",
+   "read_from": "calls notation (ocaml space, clojure lisp)",
+   "account": "derived (bare iff calls.args is space or lisp, as the guard engineer proposed)"
+  },
+  {
+   "path": "ref.facts.entity[i].field",
+   "type": "boolean (optional, on Member)",
+   "values": "ocaml entity[6] (e_name) true",
+   "read_from": "sdk_types.ml `mutable e_name : string;`",
+   "account": "derived (the reader already classes it as a field)"
+  },
+  {
+   "path": "ref.facts.deleted",
+   "type": "string template with {var} (optional)",
+   "values": "ts '{var}.deleted()', go '{var}.Deleted()', py '{var}.deleted()', rb '{var}.deleted', perl '{var}->deleted', lua '{var}:deleted()', rust '{var}.deleted()', c '{var}->vt->deleted({var})', zig '{var}.deleted', ocaml '{var}.e_deleted'",
+   "read_from": "see decision 11 lines",
+   "account": "derived (a member or field the entity declares, the guard engineer's name)"
+  },
+  {
+   "path": "facts.arity",
+   "type": "number (optional, RuntimeFacts)",
+   "values": "ts 0, py 0, perl 0, go 2, rust 2, zig 2, swift 2",
+   "read_from": "each runtime's op signatures (default arguments or none)",
+   "account": "derived from the op signature's parameter count and defaults (the guard has no entry yet)"
+  },
+  {
+   "path": "ref.facts.entity[i].copy on match getters (existing path, new values)",
+   "type": "boolean",
+   "values": "true: c[1], clojure[2], elixir[2], go[1], ocaml[2], perl[2], py[2], rb[2], rust[1], ts[1], zig[1]",
+   "read_from": "see decision 7",
+   "account": "cited (staged ahead by the guard engineer except c, clojure and zig)"
+  },
+  {
+   "path": "ref.facts.client[1].copy on the utility getter (existing path, new values)",
+   "type": "boolean",
+   "values": "true: c go lua perl py rb rust swift zig; ts absent (live)",
+   "read_from": "see decision 13",
+   "account": "cited; ts gets a pinned reason (a clone call is no proof of a copy)"
+  },
+  {
+   "path": "layout.dir (DescLayout, from the naming hook)",
+   "type": "string (optional)",
+   "values": "perl 'perl', rb 'rb' (target.name)",
+   "read_from": "the naming hook (target)",
+   "account": "a layout role, like module and ctor (not a ref fact)"
+  }
+ ],
+ "interface_changes": [
+  {
+   "change": "Scope.place?: ShowPlace; Syntax.imports(desc, used, place?); newScope(standalone, place?)",
+   "breaking": false,
+   "providers_forced": "none (perl and rb opt in)",
+   "why": "decision 1"
+  },
+  {
+   "change": "DescLayout.dir? from the naming hook",
+   "breaking": false,
+   "providers_forced": "none (perl and rb set it)",
+   "why": "decision 1"
+  },
+  {
+   "change": "note slot 'top' printed after the root quick start",
+   "breaking": false,
+   "providers_forced": "none",
+   "why": "decision 2"
+  },
+  {
+   "change": "showFields falls back only to a scalar field",
+   "breaking": false,
+   "providers_forced": "none (output changes for perl, lua, py, rb, ocaml Record blocks)",
+   "why": "decision 3"
+  },
+  {
+   "change": "RefFacts.accessor.cached?",
+   "breaking": false,
+   "providers_forced": "lua",
+   "why": "decision 4"
+  },
+  {
+   "change": "RefFacts.streamSignal?; the cancel paragraph no longer names the stream",
+   "breaking": false,
+   "providers_forced": "ts (to keep its stream sentence) plus 9 that opt in",
+   "why": "decision 6"
+  },
+  {
+   "change": "copy honoured on match, matchArg and matchGet",
+   "breaking": false,
+   "providers_forced": "none (11 opt in)",
+   "why": "decision 7"
+  },
+  {
+   "change": "RefFacts.memberNamed?",
+   "breaking": false,
+   "providers_forced": "ocaml",
+   "why": "decision 8"
+  },
+  {
+   "change": "Member.field?",
+   "breaking": false,
+   "providers_forced": "ocaml",
+   "why": "decision 9"
+  },
+  {
+   "change": "RefFacts.deleted?; opText takes a ref argument { none?, deleted? }",
+   "breaking": false,
+   "providers_forced": "none (10 opt in)",
+   "why": "decision 11"
+  },
+  {
+   "change": "wrapped style: unwrap named in opText and createComment",
+   "breaking": true,
+   "providers_forced": "swift (record fact back to the plain accessor)",
+   "why": "decision 12"
+  },
+  {
+   "change": "'utility' kind sentence follows Member.copy (no longer implies a copy)",
+   "breaking": true,
+   "providers_forced": "c go lua perl py rb rust swift zig (declare copy:true); ts changes its printed sentence",
+   "why": "decision 13"
+  },
+  {
+   "change": "RuntimeFacts.arity?; opName names an op bare where arity > 0; the list sentence gives the no-match call where named 'call' and arity is declared",
+   "breaking": false,
+   "providers_forced": "none (7 opt in)",
+   "why": "decision 14"
+  }
+ ],
+ "no_verdict": [
+  {
+   "sentence": "Called with `<none>`, return the `<Type>` <instance|entity> the client keeps, made by the first such call; called with entity <options|data>, create a new one. [Its `<param>` argument holds the entity <options>.]",
+   "runtime_lines": "lua MainEntity_lua.ts:20-26; php MainEntity_php.ts:43-46",
+   "was": "Create a new `<Type>` instance. Its `data` argument holds the entity options: pass `nil` for none."
+  },
+  {
+   "sentence": "It ends early once `callopts.signal` reports an abort.",
+   "runtime_lines": "go Entity.fragment.go:151-189; py Entity.fragment.py:88-118; rb :107-133; perl Entity.fragment.pm:153,191; lua Entity.fragment.lua:133; clojure Entity.fragment.clj:166; ocaml Entity_ocaml.ts:142; swift EntityBase.fragment.swift:185; ts (survey question 3)",
+   "was": "(ts only, cancel paragraph) `stream()` takes the signal as `callopts.signal`, and ends when it aborts."
+  },
+  {
+   "sentence": "Returns a copy of the current match criteria.",
+   "runtime_lines": "see decision 7",
+   "was": "(nothing)"
+  },
+  {
+   "sentence": "Return the SDK utility object. (ts, kind utility without copy)",
+   "runtime_lines": "ts StructUtility.ts:752 (survey: clone keeps class instances)",
+   "was": "Return a copy of the SDK utility object."
+  },
+  {
+   "sentence": "The entity name. (a field member)",
+   "runtime_lines": "ocaml sdk_types.ml `mutable e_name : string;`",
+   "was": "Return the entity name. + note"
+  },
+  {
+   "sentence": "Accepts the same parameters as `direct`. / the request `direct` would send (bare naming)",
+   "runtime_lines": "ocaml call by juxtaposition",
+   "was": "`direct()`"
+  },
+  {
+   "sentence": "`<deleted read>` reads the mark. (remove operation)",
+   "runtime_lines": "see decision 11",
+   "was": "(nothing)"
+  },
+  {
+   "sentence": "`<unwrap>` takes the entity out, and `<record>` reads its record. (wrapped, operations); create comment '<unwrap> takes it out, and <record> reads its record'",
+   "runtime_lines": "swift ValidateFeature.swift unwrap quote; Types.swift:15-18 data()",
+   "was": "`(result.asNative as? Entity)?.data()` reads its record."
+  },
+  {
+   "sentence": "The match is optional: `<list(none, ...)>` lists every record.",
+   "runtime_lines": "swift EntityBase.fragment.swift:71; go, rust and zig list signatures; ts/py/perl optional parameters",
+   "was": "The match is optional."
+  },
+  {
+   "sentence": "Tutorial/list sentences name `List`/`list` bare where arity > 0 (go rust zig swift)",
+   "runtime_lines": "the same signatures",
+   "was": "`List()` / `list()`"
+  },
+  {
+   "sentence": "perl tutorial `use lib 'lib';`, perl root `use lib 'perl/lib';`, rb root `require_relative \"rb/Demo_sdk\"`",
+   "runtime_lines": "perl Main_perl.ts:68-69; rb gemspec require_paths and rbSdkFile",
+   "was": "`use DemoSDK;` alone; `require_relative \"Demo_sdk\"`"
+  }
+ ],
+ "diff_by_cause": "From `python3 scripts/paracause.py out/new-v33m out/new` (logs/paracause.txt). Counts are changed NEW paragraphs over 21 variations; the old versions are not counted. The seven unported languages are unchanged.\n\n| cause | language: count |\n|---|---|\n| d1 imports place | ROOT 38 blocks (19 perl gain `use lib 'perl/lib';`, 19 rb require_relative gain `rb/`); perl tutorial client blocks 19 |\n| d3 display field | Record list blocks print the id only: lua 17, perl 17; py, rb, ocaml line changes 15 each (lines) |\n| d4 accessor cached | lua 94 |\n| d6 streamSignal | 94 each in clojure, elixir, lua, ocaml, perl, py, rb, swift, ts; go 108 (+7 in go2); ts cancel paragraph also changed (19) |\n| d7 match copy | 94 each in c, clojure, elixir, lua, ocaml, perl, py, rb, rust, swift, ts, zig; go 108 (+7 in go2) |\n| d8 memberNamed | ocaml 38 |\n| d9 field | ocaml 94 (paragraph and note removed) |\n| d11 deleted | 15 each in c, lua, ocaml, perl, py, rb, rust, ts, zig; go 17 (+1 in go2) |\n| d12 unwrap | swift 95 prose + 5 create-comment blocks |\n| d13 utility copy | ts 19 |\n| d14 call names | 82 each in perl, py, ts (list sentence); go 113; rust and zig 104 (plus tutorial 'other' 2); swift 89 |\n\nRemaining 'other': ts 19 (cancel paragraph); go 1 and swift 1 (tutorial sentence naming a bare op); rust 2 and zig 2 (nested load sentence naming `load`).",
+ "root_quickstart": [
+  {
+   "lang": "perl",
+   "command": "cd <repo root> && perl -c q.pl (block from the root README, default model; scripts/rootquick.sh)",
+   "old": "exit 0, syntax OK (OLD printed use lib 'perl/lib')",
+   "now": "exit 0, syntax OK; v33m as delivered: Can't locate DemoSDK.pm in @INC"
+  },
+  {
+   "lang": "rb",
+   "command": "cd <repo root> && timeout 30 ruby q.rb",
+   "old": "exit 1: require_relative cannot load such file -- <root>/Demo_sdk (LoadError)",
+   "now": "the SDK loads (require_relative \"rb/Demo_sdk\"); exit 1 later on the live request: 'not an HTTP URI', since the default model has no server and nothing offline; v33m: same LoadError as OLD"
+  },
+  {
+   "lang": "py",
+   "command": "cd <repo root> && python3 q.py; and PYTHONPATH=py python3 q.py (standing in for an installed package)",
+   "old": "as written: ModuleNotFoundError demo_sdk; with PYTHONPATH it imports, then fails: No module named 'requests' (not installed here)",
+   "now": "identical to OLD"
+  },
+  {
+   "lang": "go",
+   "command": "temporary module at the root with replace => ./go; go build",
+   "old": "exit 1: the OLD block is a fragment ('expected package, found import')",
+   "now": "exit 0, builds"
+  },
+  {
+   "lang": "c",
+   "command": "make -C c core/prefix_api.h; gcc -fsyntax-only -std=c11 -Ic -Ic/core -Ic/utility/struct -Ic/feature q.c",
+   "old": "exit 1: statements at file scope ('initializer element is not constant'); headers resolve",
+   "now": "same as OLD (c's root block is a fragment in both)"
+  },
+  {
+   "lang": "ts, rust, zig",
+   "command": "not run",
+   "old": "package-addressed import (needs npm install and a build, a cargo dependency, or build.zig)",
+   "now": "not run; not a working-directory path"
+  },
+  {
+   "lang": "lua, swift, ocaml, elixir, clojure",
+   "command": "not run",
+   "old": "no toolchain on the PATH (command -v: lua, lua5.4, swift, ocamlc, elixir and clojure missing)",
+   "now": "not run"
+  }
+ ],
+ "perl_lane": "ReadmeExamplesTest_perl.ts (adbb0944) now does the following:\n- runs every block, for syntax and for execution, with the working directory set to the place its page addresses: the repository root for the root README, perl/ for the README and REFERENCE;\n- gives a block that has its own `use DemoSDK;` neither an import nor -I;\n- gives a fragment with no import of its own `use DemoSDK;` plus -I lib, as the page context it follows;\n- still replaces the constructor with ->test(fixtures) for offline execution.\n\nResults:\n- **Before (the port as delivered, v33m plus this test):** `tools/before/run.sh sdkgen perl default` exits 2 in all three runs. \"not ok 2 - all perl doc blocks have valid syntax\" and \"not ok 4 - ... run offline\", each with \"Can't locate DemoSDK.pm in @INC\" (logs/lane-perl-asdelivered.log).\n- **After (final commit):** exit 0 in every run, 7/7 in default, crud and basic-server. REFERENCE 21/21 and 14/14 executed, root 3/3. Minimums 4.85 s, 3.80 s and 4.02 s (logs/lane-perl-mine.log).\n- **Still not seen:** wrong constructor options, because the constructor is still replaced.",
+ "suite_failures": [
+  "runtimefacts: c: every declared fact is accounted for (client[1].copy and entity[1].copy uncited; ref.facts.deleted has no default category)",
+  "runtimefacts: clojure: accounted (entity[2].copy uncited; streamSignal and memberNamed have no category)",
+  "runtimefacts: elixir: accounted (entity[2].copy; streamSignal)",
+  "runtimefacts: go: accounted (client[1].copy, entity[1].copy; streamSignal, deleted, facts.arity)",
+  "runtimefacts: lua: accounted (client[1].copy; accessor.cached, streamSignal, deleted)",
+  "runtimefacts: ocaml: accounted (entity[2].copy; streamSignal, deleted, memberNamed, entity[6].field; orphaned 'cite notes.member:name')",
+  "runtimefacts: perl: accounted (client[1].copy, entity[2].copy; streamSignal, deleted, facts.arity)",
+  "runtimefacts: py: accounted (client[1].copy, entity[2].copy; streamSignal, deleted, facts.arity)",
+  "runtimefacts: rb: accounted (client[1].copy, entity[2].copy; streamSignal, deleted)",
+  "runtimefacts: rust: accounted (client[1].copy, entity[1].copy; deleted, facts.arity)",
+  "runtimefacts: swift: the declared facts are what its runtime defines (forms record parser expects ({var}.<unwrap>)?.data(); facts.record is now {var}.data())",
+  "runtimefacts: swift: accounted (client[1].copy; streamSignal; facts.arity; facts.record not re-derived)",
+  "runtimefacts: ts: accounted (entity[1].copy; streamSignal, deleted, facts.arity)",
+  "runtimefacts: zig: accounted (client[1].copy, entity[1].copy; deleted, facts.arity)",
+  "generate.test.ts 'the reference says each operation returns the entity': fixed in 76779043 by widening the load regex (1/1 pass afterwards); the full suite was not re-run after this fix"
+ ],
+ "lanes": "On NEW at 1de5407f / 76779043, with scripts/lanes.sh (a copy of P/v32/mine/lanes.sh pointed at my clone):\n\n| lane | result |\n|---|---|\n| ts README | 16/16 |\n| go README | 12/12 |\n| py README | 12/12 |\n| c DOC | 6/6 |\n| rust DOC | 6/6 |\n| `^rb: ` | 49/49 |\n| zig documentation | 6/6 |\n| perl (`tools/before/run.sh sdkgen perl`) | 7/7 in default, crud and basic-server |\n\nLogs are in n-shared/logs/lane-*-new.log.",
+ "unported_lines": "js, php, csharp, java, kotlin, scala and cpp: README.md and REFERENCE.md are 266/266 byte-identical to out/new-v33m across 21 variations (ran cmp). Their sections of the root README are unchanged too. The root README's only changed lines, over 19 variations:\n- `require_relative \"Demo_sdk\"` became `require_relative \"rb/Demo_sdk\"` (19);\n- `use lib 'perl/lib';` was added (19).\n\nBoth are in ported languages' blocks. No new line comes from an already-shared component.",
+ "runtime_defects": [
+  {
+   "what": "c's root quick start block is statements at file scope, so it does not compile as written, from any directory",
+   "where": "shared topQuickText with the c provider (printJoined of client, list and load); OLD had the same",
+   "evidence": "gcc -fsyntax-only ... q.c: 'initializer element is not constant' (rq/old/c and rq/new/c)",
+   "fixed": "no (a documentation defect, recorded; out of this round's decisions)"
+  },
+  {
+   "what": "py root quick start fails as written from the repository root: demo_sdk is not importable without installing py/",
+   "where": "root README py block; the Install section is the only route",
+   "evidence": "python3 q.py: ModuleNotFoundError (OLD and NEW)",
+   "fixed": "no"
+  },
+  {
+   "what": "swift deleted() is not on the Entity protocol, so a caller holding the unwrapped Entity cannot read the mark without a cast to EntityBase",
+   "where": "tm/swift/Sources/ProjectNameSDK/core/Types.swift:8-13 against EntityBase.fragment.swift:100",
+   "evidence": "read",
+   "fixed": "no (deleted not declared for swift)"
+  },
+  {
+   "what": "elixir's per-entity module does not delegate deleted/1 (survey); the mark is read only via EntityBase.deleted(ent)",
+   "where": "elixir entity modules",
+   "evidence": "survey question 6, not opened",
+   "fixed": "no"
+  },
+  {
+   "what": "csharp and scala accessors write `active` into the caller's entopts map",
+   "where": "unported runtimes (survey question 1)",
+   "evidence": "survey, not opened",
+   "fixed": "no (runtime defect, not stated in prose)"
+  },
+  {
+   "what": "ts `explain: true` makes an operation throw TypeError; js ignores it silently",
+   "where": "ts pipeline utility steps (the sentence round's finding)",
+   "evidence": "P/sfix/SHARED-PROGRESS.md (ran by them)",
+   "fixed": "no"
+  },
+  {
+   "what": "ocaml marks an entity deleted even when a remove failed under throw:false",
+   "where": "ocaml e_remove (survey question 6)",
+   "evidence": "survey, not opened",
+   "fixed": "no"
+  }
+ ],
+ "beyond": [
+  {
+   "item": "rb root `require_relative \"Demo_sdk\"` cannot load from the repository root (OLD and v33m)",
+   "decided": "fixed with the same imports place: the rb hook gives dir, and imports prints `rb/Demo_sdk` for 'top'",
+   "why": "ran: LoadError before; after the fix the SDK loads"
+  },
+  {
+   "item": "php `require_once 'demo_sdk.php'` at the root",
+   "decided": "not changed (php is unported); the same mechanism applies when it is ported",
+   "why": "outside the ported set"
+  },
+  {
+   "item": "ocaml per-operation note slot (op:<name>) for e_deleted and 'keeps its data'",
+   "decided": "not added: the deleted fact covers the mark, and 'keeps its data' is half true (the survey found the data is replaced when the response has a record), so nothing is said about the data",
+   "why": "decision 11"
+  },
+  {
+   "item": "go and c `direct` never set their error return",
+   "decided": "no change: the shared Returns sentence already says 'A failure is reported in the result, not as an error'",
+   "why": "true of every runtime"
+  },
+  {
+   "item": "A 2xx response whose body is not JSON gives ok false",
+   "decided": "already stated: 'When the body cannot be read, ok is false'",
+   "why": "survey question 9"
+  },
+  {
+   "item": "Accessor argument is the entity options everywhere, though several runtimes name it data",
+   "decided": "already handled by accessor.param in accessorText",
+   "why": "existing"
+  },
+  {
+   "item": "ocaml signatures in arrow notation; op parameter names cited from a generator template",
+   "decided": "not decided here (brief 7 leaves them to the engineer who meets them)",
+   "why": "the guard needs the G5 hook first"
+  },
+  {
+   "item": "lua says 'table' for the err type",
+   "decided": "nothing: no shared sentence states the error value's type",
+   "why": "porter's note"
+  }
+ ],
+ "not_done": [
+  "The thirteen one commands were not re-run at the final commit; only perl was (defects 13+1 -> 0, block classes OPEN 4/11/2 to re-decide, guard FAIL on new facts). The freeze engineer classifies the changed pages.",
+  "The guard's accounts for the new facts and the copy citations (c, clojure and zig match getters; the utility getters; a pinned reason for ts's live utility) are not written: those files belong to the guard engineer. swift's forms record parser must accept '{var}.data()' with the unwrap fact. ocaml's 'notes.member:name' citation must go.",
+  "deleted is not declared for swift, elixir or clojure (reasons above); arity is not declared for c.",
+  "The tools self-test was not run.",
+  "STRICT_SENTENCES=1 was not run.",
+  "Root quick starts for ts, rust and zig (package-addressed) were not run; lua, swift, ocaml, elixir and clojure have no toolchain on the PATH.",
+  "The suite was not re-run in full after the generate.test.ts regex fix (that test alone, and the guard alone, were run).",
+  "Decisions were committed as one shared commit plus one per-language commit (they edit the same files), not one commit per decision; PROGRESS.md maps each decision to them.",
+  "The sentence round's commits on v33s carry trailers (Co-Authored-By, Claude-Session); that history is inherited and was not rewritten."
+ ],
+ "surprises": [
+  "With the n-tools tools, the nine languages do not all pass at v33s: ts, go, elixir and rb fail on the new checks' openings (absent sentences, named not judged), as the tools engineer reported.",
+  "rb's root quick start has never loaded from the repository root (OLD included); go's OLD root block was not a program, NEW builds.",
+  "The guard engineer's ahead list for copy on the match getter misses c, clojure and zig, whose getters clone too (Entity.fragment.c:260, Entity.fragment.clj:30, Entity.fragment.zig:315).",
+  "ts's REFERENCE never documents a name member, yet the new tools flag 'Return the entity name.' as an absent sentence for ts. ts's name is a field (survey question 8), so the field flag would be the true wording if ts ever documents it."
+ ],
+ "commits": [
+  "6aeafe10 perl port (cherry-pick of 5ad207a1; forms union-resolved)",
+  "7cd4cfaf perl (3885cb32; forms union-resolved)",
+  "c1fff913 ocaml (d2429bf4; forms union-resolved)",
+  "3c161ab8 ocaml (9b28c633; forms union-resolved)",
+  "fb34699a ocaml (fa8c648b)",
+  "181d152f lua (51dbfd0e)",
+  "64e473cd lua (340e0beb; forms union-resolved)",
+  "ef9950e1 lua (1e0b6bda; forms union-resolved)",
+  "802170da swift (aa63cf44; forms union-resolved)",
+  "c64b5ebf swift (b5484fab)",
+  "025d091f swift forms: one cite block",
+  "904fd0d2 four ports: testMock and truth reads",
+  "cda43a59 golden (tag v33m)",
+  "adbb0944 perl example test",
+  "862f0e42 shared decisions",
+  "4fde2041 per-language facts",
+  "cadf01d8 build",
+  "1a2875ee golden",
+  "ed05cf2a match sentences wrapped",
+  "1de5407f build",
+  "76779043 generate test regex"
+ ],
+ "ran": "All runs used the brief's PATH; logs are in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/n-shared/logs.\n\n- **Builds:** `npm run build`, exit 0 every time (build0, build-v33s, build-v33m, build-pl, build-d1, build-d2, build-d3 logs).\n- **Golden:** `SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js`, then 2/2.\n- **One commands:**\n  - `REGEN=1 tools/portcheck.sh sdkgen out <lang>`: nine at v33s, thirteen at v33m (pc/*.v33s.log, pc/*.v33m.log), via run9.sh.\n  - perl at the final commit with no regeneration (pc/perl.final.log).\n- **Regeneration:** `node tools/gen/gen.js out/new sdkgen/ts`, 21/21.\n- **Diffs and comparisons:**\n  - `scripts/diffcause.py` and `scripts/paracause.py` against out/new-v33m.\n  - `cmp` over the seven unported languages.\n- **Root quick starts:** `scripts/rootquick.sh` on oldcopy (a cp -a of P/freeze/oldclone) and on mine, plus the v33m perl and rb root blocks run in the same generated repositories.\n- **perl lane:** `tools/before/run.sh sdkgen perl`, on the port as delivered and on mine.\n- **Lanes:** `scripts/lanes.sh ts go py c rust rb zigdoc`.\n- **Suite:** `node --enable-source-maps --test --test-concurrency=2` over dist-test without generatedcompile.\n- **Guard alone:** `node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js`.\n- **My test:** `node --test dist-test/nshared.test.js`, 9/9.\n- **Toolchains:** `command -v` for each.",
+ "read": "Read in full:\n- k-nshared.md;\n- briefs 1, 3, 4, 5, 6 and 7;\n- s3b-wave1-consolidated.md;\n- P/sfix/SHARED-PROGRESS.md;\n- s3c-merge1.txt;\n- s3c-survey-short.md.\n\nRead in part:\n- **s3c-sfix-shared.txt:** interface_changes, for_the_ports, tools_changes, surprises.\n- **s3c-survey.md:** question 9 for perl, lua, swift and ocaml.\n- **s3c-n-guard.txt:** the NEW_FACTS, ahead-citation and for_freeze sections.\n- **n-tools PROGRESS.md.**\n- **Shared code:** ReadmeRef.ts, ReadmeQuick.ts, runtimeprose.ts, example.ts (types and printers), sdkdesc.ts (layout, showFields).\n- **Port providers:** Syntax for perl, swift, ocaml and lua, and the swift and ocaml forms.\n- **Example test:** ReadmeExamplesTest_perl.ts.\n- **Runtime lines for each fact,** at the file and line given in the decisions.\n\nNot read: PORTING.md sections 2, 4, 6, 8 and 13 (skipped for time)."
+}

@@ -1,0 +1,1190 @@
+{
+ "base": "9aebaf9e",
+ "rev": "HEAD",
+ "before": {
+  "perLang": {
+   "ts": {
+    "tutorial": {
+     "total": 242,
+     "ncnb": 180
+    },
+    "rootquick": {
+     "total": 123,
+     "ncnb": 89
+    },
+    "reference": {
+     "total": 473,
+     "ncnb": 326
+    }
+   },
+   "js": {
+    "tutorial": {
+     "total": 179,
+     "ncnb": 134
+    },
+    "rootquick": {
+     "total": 110,
+     "ncnb": 79
+    },
+    "reference": {
+     "total": 445,
+     "ncnb": 303
+    }
+   },
+   "go": {
+    "tutorial": {
+     "total": 203,
+     "ncnb": 155
+    },
+    "rootquick": {
+     "total": 132,
+     "ncnb": 99
+    },
+    "reference": {
+     "total": 435,
+     "ncnb": 304
+    }
+   },
+   "py": {
+    "tutorial": {
+     "total": 225,
+     "ncnb": 171
+    },
+    "rootquick": {
+     "total": 100,
+     "ncnb": 72
+    },
+    "reference": {
+     "total": 416,
+     "ncnb": 285
+    }
+   },
+   "php": {
+    "tutorial": {
+     "total": 224,
+     "ncnb": 170
+    },
+    "rootquick": {
+     "total": 90,
+     "ncnb": 61
+    },
+    "reference": {
+     "total": 420,
+     "ncnb": 287
+    }
+   },
+   "rb": {
+    "tutorial": {
+     "total": 228,
+     "ncnb": 175
+    },
+    "rootquick": {
+     "total": 91,
+     "ncnb": 64
+    },
+    "reference": {
+     "total": 426,
+     "ncnb": 291
+    }
+   },
+   "lua": {
+    "tutorial": {
+     "total": 232,
+     "ncnb": 175
+    },
+    "rootquick": {
+     "total": 98,
+     "ncnb": 69
+    },
+    "reference": {
+     "total": 419,
+     "ncnb": 285
+    }
+   },
+   "csharp": {
+    "tutorial": {
+     "total": 232,
+     "ncnb": 179
+    },
+    "rootquick": {
+     "total": 96,
+     "ncnb": 67
+    },
+    "reference": {
+     "total": 413,
+     "ncnb": 295
+    }
+   },
+   "java": {
+    "tutorial": {
+     "total": 242,
+     "ncnb": 185
+    },
+    "rootquick": {
+     "total": 106,
+     "ncnb": 77
+    },
+    "reference": {
+     "total": 398,
+     "ncnb": 283
+    }
+   },
+   "kotlin": {
+    "tutorial": {
+     "total": 241,
+     "ncnb": 183
+    },
+    "rootquick": {
+     "total": 104,
+     "ncnb": 74
+    },
+    "reference": {
+     "total": 408,
+     "ncnb": 290
+    }
+   },
+   "scala": {
+    "tutorial": {
+     "total": 226,
+     "ncnb": 171
+    },
+    "rootquick": {
+     "total": 87,
+     "ncnb": 62
+    },
+    "reference": {
+     "total": 396,
+     "ncnb": 281
+    }
+   },
+   "swift": {
+    "tutorial": {
+     "total": 246,
+     "ncnb": 190
+    },
+    "rootquick": {
+     "total": 109,
+     "ncnb": 77
+    },
+    "reference": {
+     "total": 409,
+     "ncnb": 291
+    }
+   },
+   "rust": {
+    "tutorial": {
+     "total": 218,
+     "ncnb": 168
+    },
+    "rootquick": {
+     "total": 93,
+     "ncnb": 64
+    },
+    "reference": {
+     "total": 400,
+     "ncnb": 285
+    }
+   },
+   "c": {
+    "tutorial": {
+     "total": 241,
+     "ncnb": 190
+    },
+    "rootquick": {
+     "total": 104,
+     "ncnb": 72
+    },
+    "reference": {
+     "total": 418,
+     "ncnb": 304
+    }
+   },
+   "cpp": {
+    "tutorial": {
+     "total": 233,
+     "ncnb": 179
+    },
+    "rootquick": {
+     "total": 95,
+     "ncnb": 70
+    },
+    "reference": {
+     "total": 406,
+     "ncnb": 286
+    }
+   },
+   "zig": {
+    "tutorial": {
+     "total": 223,
+     "ncnb": 178
+    },
+    "rootquick": {
+     "total": 100,
+     "ncnb": 71
+    },
+    "reference": {
+     "total": 425,
+     "ncnb": 310
+    }
+   },
+   "perl": {
+    "tutorial": {
+     "total": 224,
+     "ncnb": 172
+    },
+    "rootquick": {
+     "total": 91,
+     "ncnb": 64
+    },
+    "reference": {
+     "total": 420,
+     "ncnb": 296
+    }
+   },
+   "clojure": {
+    "tutorial": {
+     "total": 220,
+     "ncnb": 170
+    },
+    "rootquick": {
+     "total": 100,
+     "ncnb": 71
+    },
+    "reference": {
+     "total": 430,
+     "ncnb": 304
+    }
+   },
+   "elixir": {
+    "tutorial": {
+     "total": 211,
+     "ncnb": 168
+    },
+    "rootquick": {
+     "total": 84,
+     "ncnb": 59
+    },
+    "reference": {
+     "total": 350,
+     "ncnb": 244
+    }
+   },
+   "ocaml": {
+    "tutorial": {
+     "total": 213,
+     "ncnb": 165
+    },
+    "rootquick": {
+     "total": 87,
+     "ncnb": 61
+    },
+    "reference": {
+     "total": 423,
+     "ncnb": 303
+    }
+   }
+  },
+  "perFamily": {
+   "tutorial": {
+    "total": 4503,
+    "ncnb": 3458
+   },
+   "rootquick": {
+    "total": 2000,
+    "ncnb": 1422
+   },
+   "reference": {
+    "total": 8330,
+    "ncnb": 5853
+   }
+  },
+  "shared": {
+   "ts/src/cmp/ReadmeQuick.ts": {
+    "total": 34,
+    "ncnb": 21
+   },
+   "ts/src/cmp/ReadmeTop.ts": {
+    "total": 745,
+    "ncnb": 556
+   },
+   "ts/src/cmp/ReadmeRef.ts": {
+    "total": 29,
+    "ncnb": 13
+   },
+   "ts/src/cmp/ReadmeRefFeatures.ts": {
+    "total": 142,
+    "ncnb": 104
+   }
+  }
+ },
+ "shared": {
+  "ts/src/cmp/FeatureDocs.ts": {
+   "status": "M",
+   "before": {
+    "total": 108,
+    "ncnb": 77
+   },
+   "after": {
+    "total": 117,
+    "ncnb": 81
+   },
+   "delta": {
+    "total": 9,
+    "ncnb": 4
+   }
+  },
+  "ts/src/cmp/ReadmeFeatures.ts": {
+   "status": "M",
+   "before": {
+    "total": 104,
+    "ncnb": 78
+   },
+   "after": {
+    "total": 115,
+    "ncnb": 87
+   },
+   "delta": {
+    "total": 11,
+    "ncnb": 9
+   }
+  },
+  "ts/src/cmp/ReadmeQuick.ts": {
+   "status": "M",
+   "before": {
+    "total": 34,
+    "ncnb": 21
+   },
+   "after": {
+    "total": 267,
+    "ncnb": 199
+   },
+   "delta": {
+    "total": 233,
+    "ncnb": 178
+   }
+  },
+  "ts/src/cmp/ReadmeRef.ts": {
+   "status": "M",
+   "before": {
+    "total": 29,
+    "ncnb": 13
+   },
+   "after": {
+    "total": 504,
+    "ncnb": 385
+   },
+   "delta": {
+    "total": 475,
+    "ncnb": 372
+   }
+  },
+  "ts/src/cmp/ReadmeRefFeatures.ts": {
+   "status": "M",
+   "before": {
+    "total": 142,
+    "ncnb": 104
+   },
+   "after": {
+    "total": 146,
+    "ncnb": 108
+   },
+   "delta": {
+    "total": 4,
+    "ncnb": 4
+   }
+  },
+  "ts/src/cmp/ReadmeTop.ts": {
+   "status": "M",
+   "before": {
+    "total": 745,
+    "ncnb": 556
+   },
+   "after": {
+    "total": 758,
+    "ncnb": 564
+   },
+   "delta": {
+    "total": 13,
+    "ncnb": 8
+   }
+  },
+  "ts/src/helpers/example.ts": {
+   "status": "A",
+   "before": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "after": {
+    "total": 632,
+    "ncnb": 406
+   },
+   "delta": {
+    "total": 632,
+    "ncnb": 406
+   }
+  },
+  "ts/src/helpers/markdown.ts": {
+   "status": "A",
+   "before": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "after": {
+    "total": 45,
+    "ncnb": 30
+   },
+   "delta": {
+    "total": 45,
+    "ncnb": 30
+   }
+  },
+  "ts/src/helpers/media.ts": {
+   "status": "M",
+   "before": {
+    "total": 79,
+    "ncnb": 52
+   },
+   "after": {
+    "total": 109,
+    "ncnb": 75
+   },
+   "delta": {
+    "total": 30,
+    "ncnb": 23
+   }
+  },
+  "ts/src/helpers/optional.ts": {
+   "status": "M",
+   "before": {
+    "total": 76,
+    "ncnb": 56
+   },
+   "after": {
+    "total": 80,
+    "ncnb": 58
+   },
+   "delta": {
+    "total": 4,
+    "ncnb": 2
+   }
+  },
+  "ts/src/helpers/runtimeprose.ts": {
+   "status": "A",
+   "before": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "after": {
+    "total": 292,
+    "ncnb": 218
+   },
+   "delta": {
+    "total": 292,
+    "ncnb": 218
+   }
+  },
+  "ts/src/helpers/sdkdesc.ts": {
+   "status": "A",
+   "before": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "after": {
+    "total": 533,
+    "ncnb": 423
+   },
+   "delta": {
+    "total": 533,
+    "ncnb": 423
+   }
+  }
+ },
+ "otherShared": {
+  "ts/src/action/doctor.ts": {
+   "status": "M",
+   "before": {
+    "total": 1232,
+    "ncnb": 866
+   },
+   "after": {
+    "total": 1267,
+    "ncnb": 892
+   },
+   "delta": {
+    "total": 35,
+    "ncnb": 26
+   }
+  },
+  "ts/src/action/edition.ts": {
+   "status": "M",
+   "before": {
+    "total": 259,
+    "ncnb": 179
+   },
+   "after": {
+    "total": 263,
+    "ncnb": 183
+   },
+   "delta": {
+    "total": 4,
+    "ncnb": 4
+   }
+  },
+  "ts/src/action/remove.ts": {
+   "status": "M",
+   "before": {
+    "total": 504,
+    "ncnb": 374
+   },
+   "after": {
+    "total": 505,
+    "ncnb": 375
+   },
+   "delta": {
+    "total": 1,
+    "ncnb": 1
+   }
+  },
+  "ts/src/action/target.ts": {
+   "status": "M",
+   "before": {
+    "total": 624,
+    "ncnb": 447
+   },
+   "after": {
+    "total": 706,
+    "ncnb": 509
+   },
+   "delta": {
+    "total": 82,
+    "ncnb": 62
+   }
+  },
+  "ts/src/sdkgen.ts": {
+   "status": "M",
+   "before": {
+    "total": 1336,
+    "ncnb": 1024
+   },
+   "after": {
+    "total": 1345,
+    "ncnb": 1033
+   },
+   "delta": {
+    "total": 9,
+    "ncnb": 9
+   }
+  }
+ },
+ "perLang": {
+  "ts": {
+   "provider": {
+    "total": 145,
+    "ncnb": 119
+   },
+   "naming": {
+    "total": 22,
+    "ncnb": 15
+   },
+   "guard": {
+    "total": 131,
+    "ncnb": 116
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 7,
+    "ncnb": 1
+   },
+   "otherFiles": [
+    "ReadmeHowto_ts.ts",
+    "ReadmeModel_ts.ts",
+    "Config.data.fragment.ts",
+    "Config.fragment.ts"
+   ]
+  },
+  "js": {
+   "provider": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "naming": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "guard": {
+    "total": 62,
+    "ncnb": 51
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [
+    "ReadmeQuick (not ported, not counted)",
+    "ReadmeTopQuick (not ported, not counted)",
+    "ReadmeRef (not ported, not counted)"
+   ],
+   "otherDelta": {
+    "total": 2,
+    "ncnb": 0
+   },
+   "otherFiles": [
+    "Config.data.fragment.js",
+    "Config.fragment.js"
+   ]
+  },
+  "go": {
+   "provider": {
+    "total": 194,
+    "ncnb": 156
+   },
+   "naming": {
+    "total": 24,
+    "ncnb": 16
+   },
+   "guard": {
+    "total": 110,
+    "ncnb": 94
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "py": {
+   "provider": {
+    "total": 151,
+    "ncnb": 122
+   },
+   "naming": {
+    "total": 24,
+    "ncnb": 16
+   },
+   "guard": {
+    "total": 109,
+    "ncnb": 98
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 8,
+    "ncnb": 5
+   },
+   "otherFiles": [
+    "Main_py.ts",
+    "utility_py.ts"
+   ]
+  },
+  "php": {
+   "provider": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "naming": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "guard": {
+    "total": 64,
+    "ncnb": 54
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [
+    "ReadmeQuick (not ported, not counted)",
+    "ReadmeTopQuick (not ported, not counted)",
+    "ReadmeRef (not ported, not counted)"
+   ],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "rb": {
+   "provider": {
+    "total": 162,
+    "ncnb": 127
+   },
+   "naming": {
+    "total": 26,
+    "ncnb": 17
+   },
+   "guard": {
+    "total": 126,
+    "ncnb": 107
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 11,
+    "ncnb": 6
+   },
+   "otherFiles": [
+    "Main_rb.ts",
+    "ReadmeExamplesTest_rb.ts",
+    "utility_rb.ts"
+   ]
+  },
+  "lua": {
+   "provider": {
+    "total": 167,
+    "ncnb": 129
+   },
+   "naming": {
+    "total": 26,
+    "ncnb": 16
+   },
+   "guard": {
+    "total": 148,
+    "ncnb": 125
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 8,
+    "ncnb": 5
+   },
+   "otherFiles": [
+    "Main_lua.ts",
+    "utility_lua.ts"
+   ]
+  },
+  "csharp": {
+   "provider": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "naming": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "guard": {
+    "total": 65,
+    "ncnb": 53
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [
+    "ReadmeQuick (not ported, not counted)",
+    "ReadmeTopQuick (not ported, not counted)",
+    "ReadmeRef (not ported, not counted)"
+   ],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "java": {
+   "provider": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "naming": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "guard": {
+    "total": 65,
+    "ncnb": 53
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [
+    "ReadmeQuick (not ported, not counted)",
+    "ReadmeTopQuick (not ported, not counted)",
+    "ReadmeRef (not ported, not counted)"
+   ],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "kotlin": {
+   "provider": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "naming": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "guard": {
+    "total": 72,
+    "ncnb": 59
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [
+    "ReadmeQuick (not ported, not counted)",
+    "ReadmeTopQuick (not ported, not counted)",
+    "ReadmeRef (not ported, not counted)"
+   ],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "scala": {
+   "provider": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "naming": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "guard": {
+    "total": 72,
+    "ncnb": 59
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [
+    "ReadmeQuick (not ported, not counted)",
+    "ReadmeTopQuick (not ported, not counted)",
+    "ReadmeRef (not ported, not counted)"
+   ],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "swift": {
+   "provider": {
+    "total": 184,
+    "ncnb": 145
+   },
+   "naming": {
+    "total": 24,
+    "ncnb": 15
+   },
+   "guard": {
+    "total": 136,
+    "ncnb": 112
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "rust": {
+   "provider": {
+    "total": 178,
+    "ncnb": 141
+   },
+   "naming": {
+    "total": 24,
+    "ncnb": 15
+   },
+   "guard": {
+    "total": 107,
+    "ncnb": 94
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "c": {
+   "provider": {
+    "total": 238,
+    "ncnb": 189
+   },
+   "naming": {
+    "total": 28,
+    "ncnb": 19
+   },
+   "guard": {
+    "total": 128,
+    "ncnb": 110
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 5,
+    "ncnb": 3
+   },
+   "otherFiles": [
+    "MainEntity_c.ts",
+    "utility_c.ts"
+   ]
+  },
+  "cpp": {
+   "provider": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "naming": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "guard": {
+    "total": 92,
+    "ncnb": 78
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [
+    "ReadmeQuick (not ported, not counted)",
+    "ReadmeTopQuick (not ported, not counted)",
+    "ReadmeRef (not ported, not counted)"
+   ],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "zig": {
+   "provider": {
+    "total": 201,
+    "ncnb": 158
+   },
+   "naming": {
+    "total": 22,
+    "ncnb": 14
+   },
+   "guard": {
+    "total": 115,
+    "ncnb": 103
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "otherFiles": []
+  },
+  "perl": {
+   "provider": {
+    "total": 197,
+    "ncnb": 149
+   },
+   "naming": {
+    "total": 24,
+    "ncnb": 16
+   },
+   "guard": {
+    "total": 122,
+    "ncnb": 97
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 34,
+    "ncnb": 29
+   },
+   "otherFiles": [
+    "ReadmeExamplesTest_perl.ts"
+   ]
+  },
+  "clojure": {
+   "provider": {
+    "total": 228,
+    "ncnb": 180
+   },
+   "naming": {
+    "total": 27,
+    "ncnb": 19
+   },
+   "guard": {
+    "total": 125,
+    "ncnb": 107
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 20,
+    "ncnb": 14
+   },
+   "otherFiles": [
+    "MainEntity_clojure.ts",
+    "Main_clojure.ts",
+    "utility_clojure.ts"
+   ]
+  },
+  "elixir": {
+   "provider": {
+    "total": 186,
+    "ncnb": 144
+   },
+   "naming": {
+    "total": 34,
+    "ncnb": 24
+   },
+   "guard": {
+    "total": 113,
+    "ncnb": 100
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 10,
+    "ncnb": 5
+   },
+   "otherFiles": [
+    "MainEntity_elixir.ts",
+    "utility_elixir.ts"
+   ]
+  },
+  "ocaml": {
+   "provider": {
+    "total": 240,
+    "ncnb": 188
+   },
+   "naming": {
+    "total": 24,
+    "ncnb": 15
+   },
+   "guard": {
+    "total": 170,
+    "ncnb": 142
+   },
+   "familyLeft": {
+    "total": 0,
+    "ncnb": 0
+   },
+   "familyLeftNames": [],
+   "otherDelta": {
+    "total": 17,
+    "ncnb": 9
+   },
+   "otherFiles": [
+    "MainEntity_ocaml.ts",
+    "Main_ocaml.ts",
+    "SdkError_ocaml.ts",
+    "utility_ocaml.ts"
+   ]
+  }
+ },
+ "measured": {
+  "languages": [
+   "ts",
+   "go",
+   "py",
+   "rb",
+   "lua",
+   "swift",
+   "rust",
+   "c",
+   "zig",
+   "perl",
+   "clojure",
+   "elixir",
+   "ocaml"
+  ],
+  "before": {
+   "total": 10632,
+   "ncnb": 7711
+  },
+  "after": {
+   "total": 7791,
+   "ncnb": 6017
+  },
+  "ratio": 1.36,
+  "ratioNcnb": 1.28
+ },
+ "projection": {
+  "unported providers x1": {
+   "before": {
+    "total": 15783,
+    "ncnb": 11427
+   },
+   "after": {
+    "total": 10246,
+    "ncnb": 7980
+   },
+   "ratio": 1.54,
+   "ratioNcnb": 1.43
+  },
+  "unported providers x1.5": {
+   "before": {
+    "total": 15783,
+    "ncnb": 11427
+   },
+   "after": {
+    "total": 11474,
+    "ncnb": 8962
+   },
+   "ratio": 1.38,
+   "ratioNcnb": 1.28
+  },
+  "unported providers x2": {
+   "before": {
+    "total": 15783,
+    "ncnb": 11427
+   },
+   "after": {
+    "total": 12702,
+    "ncnb": 9943
+   },
+   "ratio": 1.24,
+   "ratioNcnb": 1.15
+  }
+ },
+ "note": "measured: ported languages, every family they are ported for; projection: PROJECTION, the unported languages assumed to need a provider+hook the average size of the ported ones times k"
+}

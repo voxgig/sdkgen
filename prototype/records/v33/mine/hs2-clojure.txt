@@ -1,0 +1,1 @@
+hand records clojure: 99, 12 quote text (21 quotations), STALE 0

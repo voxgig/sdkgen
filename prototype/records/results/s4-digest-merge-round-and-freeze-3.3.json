@@ -1,0 +1,828 @@
+{
+ "key": "merge-round-and-freeze-3.3",
+ "what": "the round that merged the four ports and the sentence fixes, made the shared decisions once, closed the guard and tools holes, and froze version 3.3 at thirteen languages",
+ "digest": {
+  "part": "Brief 7 round (stage s3c): merge of the four wave-1 ports (perl, swift, ocaml, lua) with the sentence-round fixes, the fourteen shared decisions made once, the guard (G1-G8) and tools (T1-T6) holes closed, a parallel tools round (t7) on the sentence check's identity holes, and the freeze of version 3.3 at thirteen languages (tag v33-frozen = 0065f1e2, tools v33-frozen-tools = d3b258d). Records read in full: brief.md, brief7.md, s3c-merge1.txt, s3c-n-guard.txt, s3c-n-tools.txt, s3c-n-shared.txt, s3c-freeze33a.txt, s3c-t7.txt, s3c-freeze33.txt. Referenced by these records but not given to me: s3c-survey.md (the ten-reader runtime survey), s3c-sfix-shared.txt, s3c-sfix-verify.txt, s3b-wave1-consolidated.md.",
+  "rounds": [
+   {
+    "round": "brief7 (the plan for the round)",
+    "purpose": "After four ports (perl, swift, ocaml, lua) were made from the v3.2 guide, reviewed, fixed and verified, merge them, make shared changes once, and close the holes the reviewers found. It sets a rule: what a porter can decide by hand is not a check. A wrong fact, a call the runtime lacks, or a vanished sentence must fail in the guard or tools before any hand record is read.",
+    "who": "Plan only. It names the stages: merge, survey (ten readers, two runtimes each), three engineers (guard, tools, shared), freeze, base.",
+    "produced": "14 shared decisions (all additive, optional facts), guard items G1-G8, tools items T1-T6, and a perl lane change.",
+    "changed": "It records that no port needed a breaking interface change, but reviewers found pages that were wrong although every check passed, and checks that passed a wrong port. Almost all of those were caught only as open classes in the comparison with the old page, which the porter then decided by hand."
+   },
+   {
+    "round": "merge1 (v33p)",
+    "purpose": "Put the four ports and their records on the v3.2 base on one clone, so that thirteen languages stand together. Nothing else was to change.",
+    "who": "One merging engineer. Each port's screen was compared byte for byte with its verifier's log, and the swift screen with the in-progress verify log and the fixer's final log.",
+    "produced": "Tag v33p = cd8196db, tools 1c97282. 10 source commits were cherry-picked with no conflicts. Trailers were stripped from 2 commits. The six port golden commits were left out and the golden was regenerated once.",
+    "changed": "Nothing was decided. perl was left failing on purpose on its 14 defect classes (13 rootquick, 1 reference), which wait for shared changes."
+   },
+   {
+    "round": "n-guard",
+    "purpose": "Make the guard fail, naming the fact, on every attack the reviewers ran (G1-G8), and add accounts for the new facts.",
+    "who": "One guard engineer, from v33p. Their reading of the runtimes was independent of the survey, which they did not read.",
+    "produced": "11 commits touching only the guard test files and forms (26 files, +1051/-100, plus a new calls.ts). They ran 37 attacks and the last freeze's 108 mutations, regenerated the runtime table (1277 lines), and staged ahead citations for facts not yet declared.",
+    "changed": "Forms files were forced to change: all 13 provider forms gained `calls`, 12 absences now search the whole runtime, and 5 forms pin type words. The engineer found and fixed their own regression, which had briefly hidden ocaml m07."
+   },
+   {
+    "round": "n-tools",
+    "purpose": "Close T1-T5 in the review tools, and re-key the four ports' records to the sentence round's identity.",
+    "who": "One tools engineer.",
+    "produced": "Tools branch ntools, HEAD d6eabfc, 9 commits. New pieces: callcheck.js (a printed-call check), enumgen.js (minimal-pair judgement of enumerated facts), name-surgery purity, the absent list for a language alone in its result style, and a fix to handstale. The self-test reached 231 controls.",
+    "changed": "T6 was not done: the sentence round's independent check did not exist yet. The new checks opened decisions in ts, go, elixir, rb, perl, swift, ocaml and lua. The engineer listed them and decided none."
+   },
+   {
+    "round": "n-shared",
+    "purpose": "Bring the four ports onto the sentence round's clone (v33s) and make brief 7's 14 decisions in shared code. Also make the perl lane change and declare the new facts in the providers.",
+    "who": "One shared engineer. They ran root quick starts from the repository root, on OLD and on NEW, where toolchains existed.",
+    "produced": "Tag v33m = cda43a59 (ports on v33s), final HEAD 76779043. Twelve decisions were made in code. Decision 5 needed no change, and decision 10 had already been settled by the sentence round. The perl example test now runs each block from its page's directory. rb's root import was made place-aware too.",
+    "changed": "The record is ok: false. The suite had 15 failures. 14 of them were in runtimefacts, where the guard had no account for the new facts or no citations for them. The shared engineer did not write those accounts, because the files belong to the guard engineer. Three interface changes were marked breaking (decisions 12, 13 and 14)."
+   },
+   {
+    "round": "freeze33a (first half of the freeze)",
+    "purpose": "Merge the guard onto v33m, bring the tools together, decide the openings in the thirteen languages, and apply what the sentence round's independent check required of the tools.",
+    "who": "One freeze engineer. They re-ran the guard engineer's 37 attacks and 108 mutations as an independent check.",
+    "produced": "Tag v33a = 21397ef9: v33m plus the guard's 11 commits, 3 of which conflicted and were settled as unions. Tools freeze33a, HEAD 6e224b8. Results: 11 PASS, with ts and perl failing on purpose. The tools self-test ran 235 controls with 0 failed.",
+    "changed": "Openings were decided: 70 classes by the sentence round's written rules, 19 that keep their v33p decision, and 14 by hand. Recorded facts: go named, elixir and rb bare, ocaml keys bare, perl and lua prints fields. ocaml lost 21 stale records and had 15 reworded. Fixes 1 and 2 of the sentence check (identity) and the second half of fix 3 were passed on."
+   },
+   {
+    "round": "t7 (tools: the matching holes the sentence check found)",
+    "purpose": "Close items 1-3 of the sentence round's independent check: same-fact-path masking; numbers and articles; a sentence dropped from every variation or from one.",
+    "who": "One tools engineer, working in parallel with the second half of the freeze. They also attacked items 4 and 5, which the first half had done, as an independent check.",
+    "produced": "Tools branch t7, HEAD 225a0de, 6 commits on 6e224b8. Item 1 is in ident.js. Item 2 is a new pagecheck.js. Item 3 adds an absent list on slot forms, with a per-variation DROPPED check. The self-test reached 266 controls with 0 failed.",
+    "changed": "Sentence identity did not change, so nothing was re-keyed, and the thirteen languages' rows were identical to the baseline. Items 4 and 5 fell to the engineer's own attacks (2 of 3 on item 4, 3 of 3 on item 5), which were reported and not fixed. The record says the branch must still be brought into the frozen tools; within these records it is not part of v33-frozen-tools."
+   },
+   {
+    "round": "freeze33 (second half; version 3.3 frozen)",
+    "purpose": "Merge the shared engineer's work onto v33a, make the guard meet the new facts, have all thirteen languages pass, re-run every attack, and freeze.",
+    "who": "One freeze engineer. They compared three readings of each new fact (provider, guard and survey) against the runtime line, and re-ran every attack on a copy of the clone.",
+    "produced": "Tag v33-frozen = 0065f1e2 and tools v33-frozen-tools = d3b258d. All 13 one commands pass with nothing open. 14 new attacks were all caught. Of the 37 earlier attacks, 31 are caught; of the 108 mutations, 97 are caught. The suite ran 2631 tests with 0 failures.",
+    "changed": "The engineer fixed the guard (deleted read, arity, plain-accessor record), closed two guard holes found under attack, declared ts's utility getter copy:false and its name as a field, reworded two shared sentences (direct's Returns and the list sentence), and fixed perl's deleted sigil. They report H1 refuted on its breaking-changes criterion, at about 25-27 breaking changes."
+   }
+  ],
+  "items": [
+   {
+    "topic": "method",
+    "claim": "The four ports were merged onto the v3.2 base with no conflicts and no file outside each port's own section, and each port's one-command screen reproduced its verifier's log byte for byte.",
+    "numbers": "10 source commits cherry-picked, 0 conflicts; trailers stripped from 2 commits (perl 52f711fe, swift 824c5d41); the six golden commits left out and the golden regenerated once (only the four languages' lines changed, 14+/18-); 4 port screens byte-identical to the verifiers' logs",
+    "source": "s3c-merge1.txt summary, ports, checks[2], checks[3]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "At v33p the nine base languages passed with the PORTING section-11 numbers, perl failed only on its 14 deliberate defect classes, and the other three ports passed.",
+    "numbers": "9 PASS, 27/27 rows equal section 11; 12 PASS, perl FAIL (rootquick 13, reference 1); SCRATCH=1: all four ports exit 1, as designed",
+    "source": "s3c-merge1.txt table, scratch, fails_on_purpose",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "At v33p every lane with a toolchain on the machine passed.",
+    "numbers": "ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig documentation 6/6; perl 7/7 in each of 3 models, REFERENCE 21/21 and 14/14 executed, root 3/3; minimum times 4.76/3.65/3.61 s",
+    "source": "s3c-merge1.txt checks[7], checks[8]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "At v33p the seven unported languages were unchanged, and root READMEs differed only inside the four ports' code blocks.",
+    "numbers": "README+REFERENCE 266/266 identical to base32/out/new; 19 root READMEs differ, 0 outside the four ports' blocks",
+    "source": "s3c-merge1.txt checks[9]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "At v33p the suite, the guard and the tools self-test were green.",
+    "numbers": "suite 2613 tests, 2608 pass, 0 fail, 5 skipped, 348 s; guard and reader 77/77 (61 at v32 + 4 per port); self-test 178 controls, 0 failed (v32 had 175; purity 28 -> 31), 407 s",
+    "source": "s3c-merge1.txt checks[5], checks[6], checks[10]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Brief 7 records that, although no port needed a breaking interface change, the reviewers found pages that were wrong while every check passed, and checks that a wrong port passes; almost all of them were caught only as open classes that the porter then decides by hand.",
+    "numbers": "Wrong pages listed: perl root `use lib 'perl/lib'` lost; HASH(0x...) from a map display field; shared sentences false for lua/php/ocaml; old-page facts the new page cannot say. Checks passed by wrong ports: wrong okFalse with the right token in the quote, sdk.create, client.Planet(), missing argument, test signature on an instance, absence searched in porter-chosen files, dropped sentence, wrong enumerated value, naming rule in a helper, type word",
+    "source": "brief7.md 'What the four ports showed'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The guard was changed so that every item G1-G8 has a control that fails as described, while touching only the guard's own test files and forms.",
+    "numbers": "11 commits; 26 files, +1051/-100, plus the new file calls.ts; nothing under ts/src or ts/project changed; guard and reader 77/77; suite 2613/2608/0 fail/5 skipped",
+    "source": "s3c-n-guard.txt summary, items",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "On the guard engineer's own attack set, the guard now fails on most attacks; the remaining ones have no mechanical place in the guard.",
+    "numbers": "37 attacks: 31 fail in the guard naming the fact; 6 do not (the G5 arrow experiment, meant to pass, and 5 with no mechanical place: ocaml keys, ocaml match/ctrl swapped, swift entityBy, perl prints, perl none quoting an unrelated line)",
+    "source": "s3c-n-guard.txt summary, mutations",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "On the last freeze's mutation set, the new guard caught three mutations it had not caught before and caught none fewer.",
+    "numbers": "108 mutations: freeze outcome 97 caught, 8 not caught, 3 errors; now 97 caught, 5 not caught, 4 errors, 2 with a stale `from`; newly caught zig-type-integer, clj-type-integer, c-type-string; still not caught clj-return-changed, ts-noun, ts-type-comment, ts-lit-int, new-ts-unquoted-near",
+    "source": "s3c-n-guard.txt mutations",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Searched over the whole runtime instead of porter-chosen files, the old cancel-absence patterns matched many lines; with the new word list each hit had to be excused as a quoted region with a reason, and no operation cancel was found in any runtime.",
+    "numbers": "old patterns hit: c 49, clojure 9, elixir 9, go 5, lua 13, ocaml 5, perl 27, py 22, rb 16, rust 1, swift 4, zig 14; excused hits/regions with the new list: c 5/5, clojure 14/11, elixir 11/8, go 5/5, lua 25/20, ocaml 12/9, perl 14/12, py 21/17, rb 16/10, rust 1/1, swift 14/13, zig 14/14; swift's old pattern had no `signal`",
+    "source": "s3c-n-guard.txt items[5] (G6)",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "cost",
+    "claim": "The guard changes forced edits to the forms files of every ported provider (an interface change on the forms side).",
+    "numbers": "calls added to all 13 provider forms; 12 absences rewritten (c, clojure, elixir, go, lua, ocaml, perl, py, rb, rust, swift, zig); type words pinned for clojure, ocaml, perl, zig (8 each) and c (2); swift's record reader replaced; 5 breaking forms changes listed",
+    "source": "s3c-n-guard.txt breaking, items[1], items[6]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "The stream reads callopts.signal in 16 of the 20 runtimes, although their operations cannot be cancelled; c, cpp, rust and zig do not read it.",
+    "numbers": "reads_signal yes: ts, js, py, rb, php, lua, go, java, kotlin, scala, csharp, swift, perl, clojure, elixir, ocaml (16); no: c, cpp, rust, zig",
+    "source": "s3c-n-guard.txt stream_signal",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "Some attacks cannot be caught by any text check here.",
+    "numbers": "perl ref.facts.none citing an unrelated line (12 comment-only citations marked: perl 8, c 2, clojure 1, ts 1); perl stream note false when chunkSize>0; ocaml m20 List.iter->List.map and m21 ctrl/match swapped (no OCaml compiler); clojure keyword calls are not read by the call reader",
+    "source": "s3c-n-guard.txt attacks, not_done",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The four ports' hand records were re-keyed to the sentence round's identity, and none was lost.",
+    "numbers": "hand records in/out: perl 148->150, swift 200->204, ocaml 236->239, lua 174->173; 0 conflicts, 0 unsourced, 0 hand entries not carried, LOST 0 by content check; lua's 34 absent reasons mapped onto 30 ids",
+    "source": "s3c-n-tools.txt summary, items[0], rekey_ports",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Every reviewer attack that belongs to the tools now fails in the one command: the dropped shared sentence, the depluralising helper, perl prints:record, ocaml keys:member and swift entityBy:Name (reviewed mode only), and a throwing or short regeneration.",
+    "numbers": "purity mutations: new tools flag 3 of 3, old 7d5dab2 tools flag 0 of 3; dropped sentence: lua absent 23 -> 24, exit 1 (before: PASS); perl prints-record: was ATTESTED (607 of 701), now NOT JUDGED, exit 1",
+    "source": "s3c-n-tools.txt items[2]-[6], attacks",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Two of the enumerated-fact attacks move a port back to its old page's convention, so no comparison with the old page can call them wrong; only a reviewed decision can.",
+    "numbers": "OLD ocaml reads as member 152 to 0; OLD swift reads as Name 282 to 0; the true values contradict OLD: ocaml keys 'bare' 0:19, perl entityBy 'class' 0:188; old rule: units selected were 391 of 748 (swift entityBy) and 578 of 736 (ocaml keys)",
+    "source": "s3c-n-tools.txt items[5] (T4), surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The new printed-call check finds nothing on the real pages of all thirteen languages and catches 6 of the reviewers' 10 changed examples.",
+    "numbers": "calls checked: ts 374, go 650, py 386, c 97, zig 761, clojure 0, rust 486, elixir 117, rb 34, perl 30, swift 374, ocaml 481, lua 429 (5,215 calls); 0 findings; 6 of 10 caught; 4 false-finding fixes were needed to reach 0",
+    "source": "s3c-n-tools.txt items[8], printed_call_check",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "The printed-call check cannot see casts to missing types, standard-library calls, swapped arguments of the same type, flattened perl hashes, property reads, calls without parentheses, or any clojure call.",
+    "numbers": "clojure calls read: 0; not caught by design: swift-cast-entitybase, ocaml-list-map, ocaml-args-swapped, perl-flat-list",
+    "source": "s3c-n-tools.txt printed_call_check",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "With the n-tools changes, several languages that had passed under the v3.2 tools now fail on openings that a person must decide.",
+    "numbers": "PASS py, c, zig, clojure, rust; FAIL on openings ts, go, elixir, rb; FAIL on sentence-round false verdicts and openings: perl, swift, ocaml, lua (perl also on its 14 defects); ocaml STALE 38, swift STALE 1",
+    "source": "s3c-n-tools.txt summary, thirteen",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Correct pairing of parenless headings removed ocaml block classes that had been mispair artefacts, and exposed one real loss: the new load block no longer shows the e_data_get read.",
+    "numbers": "ocaml reference block classes 34 -> 17; 5 true differences now open, incl. 82a4a3fdfe x79; nine reference languages' block tables unchanged",
+    "source": "s3c-n-tools.txt items[6], surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The tools self-test grew and stayed green.",
+    "numbers": "231 controls, 0 failed, 1 moved (go-tut-step4-dropped [scratch]); 28 new controls against 203 at 7d5dab2; 1222 s",
+    "source": "s3c-n-tools.txt selftest",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "A sentence dropped from only one variation, by a language alone in its result style, was still not caught from scratch after n-tools.",
+    "numbers": "swift doc-crud-only drop: from scratch OPEN 99 = baseline 99; reviewed mode: reference OPEN 3 -> 4",
+    "source": "s3c-n-tools.txt attacks[10], not_done",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Brief 7's shared decisions were made in shared code, and most were additive optional facts that a provider opts into.",
+    "numbers": "14 decisions: 12 made in code, decision 5 no change, decision 10 already settled; 13 interface changes listed, 3 marked breaking (decision 12 wrapped unwrap, 13 utility copy, 14 call names)",
+    "source": "s3c-n-shared.txt summary, decisions, interface_changes",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H3",
+    "claim": "Each shared decision changed every affected language's pages through one change in shared code; the per-language part was a fact declaration.",
+    "numbers": "changed NEW paragraphs over 21 variations: d4 cached lua 94; d6 streamSignal 94 each in 9 languages, go 108; d7 match copy 94 each in 12 languages, go 108; d8 ocaml 38; d9 ocaml 94; d11 deleted 15 each in 9 languages, go 17; d12 swift 95 prose + 5 blocks; d13 ts 19; d14 82 each in perl, py, ts, go 113, rust and zig 104, swift 89; d1 ROOT 38 blocks + perl tutorial 19",
+    "source": "s3c-n-shared.txt diff_by_cause",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "The root quick start of perl and rb was run from the repository root: perl had lost its include path in the port, and rb's root block had never loaded, on OLD either; both now load.",
+    "numbers": "perl: OLD exit 0; v33m as delivered 'Can't locate DemoSDK.pm in @INC'; now exit 0. rb: OLD exit 1 LoadError; now loads, then exit 1 on the live request ('not an HTTP URI', no server in the default model). go: OLD exit 1 (fragment), NEW exit 0. py and c: same failure on OLD and NEW",
+    "source": "s3c-n-shared.txt root_quickstart",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "The perl example test now runs each block from the directory its page addresses; it fails on the port as delivered and passes after the shared imports change.",
+    "numbers": "as delivered: exit 2 in all three runs, 'not ok 2' and 'not ok 4' with \"Can't locate DemoSDK.pm\"; after: 7/7 in default, crud and basic-server, REFERENCE 21/21 and 14/14, root 3/3, minimums 4.85/3.80/4.02 s",
+    "source": "s3c-n-shared.txt perl_lane",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The shared engineer's round ended ok: false: the suite and guard failed on facts the guard had no account for.",
+    "numbers": "suite 2631 tests, 2611 pass, 15 fail, 5 skipped; guard alone 77 tests, 63 pass, 14 fail (all in runtimefacts); the suite was not re-run after the generate.test.ts regex fix",
+    "source": "s3c-n-shared.txt summary, suite_failures",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "At the shared engineer's final commit, all lanes with a toolchain passed and the seven unported languages were unchanged.",
+    "numbers": "ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig documentation 6/6, perl 7/7 x3 models; unported README+REFERENCE 266/266 identical to out/new-v33m",
+    "source": "s3c-n-shared.txt lanes, unported_lines",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "The shared round recorded defects of generated runtimes and pages that it did not hide in prose and did not fix.",
+    "numbers": "7 recorded: c root quick start is statements at file scope (gcc 'initializer element is not constant', OLD too); py root quick start ModuleNotFoundError from the repository root; swift deleted() not on the Entity protocol; elixir entity modules do not delegate deleted/1; csharp and scala accessors write `active` into the caller's map; ts explain:true throws TypeError, js ignores it; ocaml marks an entity deleted after a failed remove under throw:false",
+    "source": "s3c-n-shared.txt runtime_defects",
+    "by": "builder",
+    "basis": "unclear",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The survey found that ts and js return the live utility object, not a copy, because struct.clone keeps class instances by reference; a quoted clone call is not proof of a copy.",
+    "numbers": "ran in node on the vendored js StructUtility: clone(classInstance) === instance is true; a plain object clones to a new object; go, c, py, rb, perl, lua, swift, zig, rust allocate a new Utility (each allocation line opened)",
+    "source": "brief7.md decision 13; s3c-freeze33.txt disagreements[1]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The guard merged onto v33m with only union conflicts, and its new checks found nothing wrong in any provider there.",
+    "numbers": "11 guard commits, 3 conflicted (unions); guard and reader 77/77; the thirteen one commands identical line for line to the shared engineer's v33m logs, except 'build: 996 sources' vs 995 and the facts line's cited/pinned counts",
+    "source": "s3c-freeze33a.txt summary, checks[5], surprises",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "An independent re-run of the guard engineer's attacks and mutations at v33a reproduced their results.",
+    "numbers": "attacks 31 of 37 caught, 6 not caught (the same ids); mutations 96 caught, 5 not caught, 7 errors, then 97 of 108 caught after adapting one to the required testMock fact",
+    "source": "s3c-freeze33a.txt attacks, checks[10]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "cost",
+    "claim": "Deciding the openings in the four ports took one written rule per changed template, carry-overs of earlier decisions, and some decisions by hand.",
+    "numbers": "70 classes decided by the sentence round's written rules; 19 re-paired classes kept their v33p decision (4 of those carry another language's class outcome by hand); 14 decided by hand; opened before: perl 4/0/16, swift 4/0/11, ocaml 4/0/20, lua 3/0/16; ocaml STALE 38 -> 15 reworded, 21 removed, 2 rewritten",
+    "source": "s3c-freeze33a.txt openings_decided[4], [17]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "At v33a, 11 of 13 languages passed; ts and perl failed on purpose, each waiting for a decision of brief 7.",
+    "numbers": "11 PASS; ts FAIL (ABSENT 57d77b63f4 'Return the entity name.' in 18 variations); perl FAIL (blocks defect rootquick 13, reference 1); build 1814 sources current; handstale STALE 0 in all 13",
+    "source": "s3c-freeze33a.txt checks[6], checks[7]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At v33a the suite, golden and tools self-test were green.",
+    "numbers": "suite 2622 tests, 2617 pass, 0 fail, 5 skipped, 5m12s; golden 2/2; runtime table 1297 lines; self-test 235 controls, 0 failed, 2 moved, 1429 s (first run 231 controls, 7 failed, fixed in 6e224b8)",
+    "source": "s3c-freeze33a.txt checks[1]-[4], checks[8]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The old page was itself wrong for some enumerated facts that the minimal pair judges against it.",
+    "numbers": "ocaml ref.keys: OLD reads member 152:0, but make takes one value map (Main_ocaml.ts:168); swift ref.entityBy: OLD heads by Name, the reader holds AmbientEntity; perl entityBy: OLD '## Ambient entity' names no package; ts: OLD never documented the name member",
+    "source": "s3c-freeze33a.txt old_page_wrong",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The t7 round closed items 1-3 of the sentence round's check without changing sentence identity; the thirteen languages' tables are unchanged and the new page check finds nothing on real pages.",
+    "numbers": "6 commits; ledger and block rows identical to baseline in all 13; ts and perl FAIL on purpose as before; 4 shared matches name ts as reference instead of go or clojure, same outcome; pagecheck 0 findings, 965 to 1424 articles per language (go 1134 articles, 102 not judged)",
+    "source": "s3c-t7.txt summary, thirteen, items[1]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The check's own attacks on items 1-3 now fail in both modes; before, the item-1 attacks were accepted automatically and the one-variation drop left no trace from scratch.",
+    "numbers": "before (6e224b8): item-1 attacks reviewed OPEN+AUTO with auto 1 each, scratch ACCEPTED with auto 1 each; drop-branch-go-one [scratch]: NO TRACE (open 0, absent+0); after: '2 new class(es) ... accepted automatically: none', DROPPED flagged",
+    "source": "s3c-t7.txt items[0], items[2]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The t7 tools self-test is green with the new controls.",
+    "numbers": "266 controls, 0 failed, 1 moved (go-tut-step4-dropped [scratch]), 1582 s; 31 controls new; sentence-removed-go-branch [scratch] now passes and was taken out of moved.json",
+    "source": "s3c-t7.txt selftest",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "The t7 engineer's own attacks found holes left in items 1 and 2, and the sentence-identity matching can still be fooled in the cases listed.",
+    "numbers": "item 1: 1 of 3 own attacks unsound (ocaml 'map' where recordType belongs: same match form as py; opened only because of reworded pairing); item 2: 'an `[]any`' and a heading moved to a deeper level, NOT CAUGHT; item 3: a sentence printed by all references but one is not covered",
+    "source": "s3c-t7.txt attacks_own, items[*].still_fooled_by",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "Items 4 (buildfresh) and 5 (handstale), done in the first half of the freeze, pass the sentence check's own attacks but fall to new ones.",
+    "numbers": "item 4: own attacks a1 (staged file deleted from project) NOT CAUGHT, a2 (source time set back) NOT CAUGHT, a3 CAUGHT; item 5: own attacks 1, 2 and 3 all NOT CAUGHT (loose OLD marker, correction quoting OLD as NEW, quote found only in another language's component)",
+    "source": "s3c-t7.txt done_before_me",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Run against the shared engineer's new facts, the guard first failed widely; the failures were mostly the guard reading a fact differently from the provider, not wrong runtimes.",
+    "numbers": "guard 54/77 after the merge; then 73, 75, 76, 77/77 after guard, forms and provider fixes",
+    "source": "s3c-freeze33.txt summary, merge, ran",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "For each new fact, provider, guard and survey readings were compared with the runtime line; the provider was right in every disagreement, and the guard had omissions.",
+    "numbers": "10 disagreement entries: match-getter copy (guard missed c, clojure, zig); utility copy (no citations in 9 languages; ts declared copy:false); deleted read (guard took `var` as the member); arity (no account, guard failed in 7 languages); swift record (guard assumed unwrap inside); ts name field; streamSignal, accessor.cached, memberNamed: all agree",
+    "source": "s3c-freeze33.txt disagreements",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The mutation runs at the freeze found two more guard holes, both closed before the tag.",
+    "numbers": "copy:true dropped from c's match getter passed at 93060a64 (an undeclared-fact citation excused as 'ahead'); ocaml's field flag dropped passed; both caught after 0065f1e2",
+    "source": "s3c-freeze33.txt summary, attack_table[2], [5]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At the freeze, every attack aimed at the new checks was caught, and the earlier attack and mutation sets came out as before or better.",
+    "numbers": "14 new attacks: 14 caught; 37 earlier attacks: 31 caught (after re-aiming 2 at the new swift form), 6 not (G5 meant to pass plus 5); 108 mutations: 97 caught, 5 not caught (clj-return-changed, ts-noun, ts-type-comment, ts-lit-int, new-ts-unquoted-near), 7 errors as before",
+    "source": "s3c-freeze33.txt summary, freeze_checks[8], attack_table[29]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At v33-frozen all thirteen one commands pass with nothing open, no defect, nothing unattested or unjudged, and every absent sentence explained.",
+    "numbers": "13 PASS; each: build 1815 sources current, guard 4/4, STALE 0, OPEN 0, defect 0; lua matches 1 unreviewed sentence (fails only with STRICT_SENTENCES=1); earlier runs h2 13 FAIL on openings, h3 12 PASS",
+    "source": "s3c-freeze33.txt freeze_checks[9], ran",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The freeze's checks at the tag were green.",
+    "numbers": "build exit 0, tree clean; suite 2631 tests, 2626 pass, 0 fail, 5 skipped, 6m37s; golden 2/2; guard and reader 77/77; runtime table 1312 lines; tools self-test 235 controls, 0 failed, 2 moved (sentence-removed-go-branch [scratch], go-tut-step4-dropped [scratch]), 2046 s, after re-aiming 16 controls",
+    "source": "s3c-freeze33.txt freeze_checks[0]-[3], [7]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "At the freeze, every lane with a toolchain passed, perl's root quick start runs from the repository root, and the perl lane fails when that import is removed.",
+    "numbers": "ts README 16/16, go 12/12, py 12/12, c DOC 6/6, rust DOC 6/6, rb 49/49, zig documentation 6/6; perl 7/7 in each of 3 models, exit 0 in 3 runs each; with the import removed: exit 2 in all 3 runs, \"Can't locate DemoSDK.pm in @INC\"",
+    "source": "s3c-freeze33.txt freeze_checks[4], [5]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "limit",
+    "claim": "Examples in lua, swift, ocaml, elixir and clojure were verified only by structure and by reading; ts, rust and zig root quick starts were not run from the repository root.",
+    "numbers": "no compiler on the PATH for lua, swift, ocaml, elixir, clojure",
+    "source": "s3c-freeze33.txt not_done; s3c-n-shared.txt root_quickstart",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "At the freeze the seven unported languages' documents are byte-identical to v32-frozen's output.",
+    "numbers": "266 files byte-identical; differ from OLD only in ReadmeFeatures and ReadmeRefFeatures lines (README 6 changed lines, REFERENCE 7, each 133 times); the last freeze had counted 7 and 8, not reconciled",
+    "source": "s3c-freeze33.txt freeze_checks[6], not_done",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "Breaking interface changes since the first four languages now stand at about 25 to 27, well over H1's limit of about 10, so H1 is refuted on that criterion.",
+    "numbers": "about 22 to 24 at the sentence round, plus 3 in this round (streamSignal, the wrapped unwrap, the utility copy) and the guard's forms changes; 2 of this round's 3 caused by newly ported languages (swift's unwrap; the stream signal from perl, lua and ocaml reviews), a third (utility copy) if the survey wave 1 prompted is counted; interface_changes table: 20 entries, of which breaking True: 0, 1, 8, 13, 14, 17, 18",
+    "source": "s3c-freeze33.txt summary, hypotheses[0], interface_changes",
+    "by": "builder",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "Providers still read no model facts in any of the thirteen languages.",
+    "numbers": "purity 0 open in all 13; rb and perl carry path-join allowances with reasons",
+    "source": "s3c-freeze33.txt hypotheses[0]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "H2 was not re-measured in this round; for the four ports, about 723 to 764 old lines were deleted per language against provider plus hook plus forms of about 270 to 340 lines.",
+    "numbers": "deleted (ReadmeQuick/ReadmeRef/ReadmeTopQuick): perl 735 (224/420/91), swift 764 (246/409/109), ocaml 723 (213/423/87), lua 749 (232/419/98); added: provider perl 197, swift 184, ocaml 240, lua 167; hook 24, 24, 24, 26; forms +51/-2, +69/-8, +74/-3, +74/-8; other perl ReadmeExamplesTest +47/-13, ocaml Main/MainEntity/SdkError/utility small, lua small (git diff --numstat v32-frozen v33-frozen)",
+    "source": "s3c-freeze33.txt lines, hypotheses[1]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H3",
+    "claim": "In this round the per-language fixes were facts, not prose: each shared decision changed every ported language's page through shared code.",
+    "numbers": "per-language fixes named: ts copy:false and name field, perl's deleted sigil",
+    "source": "s3c-freeze33.txt hypotheses[2]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "H5",
+    "claim": "H5 was not tested in this round.",
+    "numbers": "lifecycle untouched; golden changed only in provider hash lines",
+    "source": "s3c-freeze33.txt hypotheses[4]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The shared engineer's new list sentence brought back an overstatement the sentence round had removed, and no check could see it until someone read it.",
+    "numbers": "'`list(nil, nil)` lists every record': go's List and ts's list both pass the entity's stored match; reworded in 281dde5a",
+    "source": "s3c-freeze33.txt summary, attack_table[24], surprises",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Several defects passed every mechanical check and were found only by reading: perl's deleted read printed without its sigil, a shared sentence that overstates, a citation that holds the token but means something else, and prose false under some feature option.",
+    "numbers": "perl `result->deleted` (fixed 120a3c0c; the guard strips `$?{var}`); list sentence (281dde5a); perl none citation; perl stream note with chunkSize > 0; ocaml m20/m21 need a compiler",
+    "source": "s3c-freeze33.txt attack_table[19]-[24], for_guide 'What only a reviewer can find'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "limit",
+    "claim": "At the freeze, the sentence-identity holes were still open in the frozen tools; they were addressed in the separate t7 branch.",
+    "numbers": "still accepted at v33-frozen-tools: zig .ok/.err swap, py list(), rb Hash, wrong step number or article; go branch drop and go tutorial step 4 drop from scratch: NOT FLAGGED (moved)",
+    "source": "s3c-freeze33.txt attack_table[26], [27], not_done",
+    "by": "builder",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "cost",
+    "claim": "Self-test controls keyed on wrapped text are brittle: re-wrapping two paragraphs broke 16 controls, and the port drop controls broke when sentences changed.",
+    "numbers": "16 controls failing with 'text to inject not found' (freeze); 7 failed in the first full v33a self-test of 231 controls (three port drop controls in both modes plus regeneration-short)",
+    "source": "s3c-freeze33.txt freeze_checks[7], surprises; s3c-freeze33a.txt checks[8]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The unported READMEs' test-mode sections promise a mock without the test feature, which contradicts the REFERENCE; this is recorded as a contradiction in all thirteen languages and was not fixed.",
+    "numbers": "contradictions: 1 in each of 13, true side REFERENCE",
+    "source": "s3c-freeze33.txt for_guide, not_done, sverify_items[6]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   }
+  ],
+  "disagreements": [
+   {
+    "a": "Copy on the match getter needs ahead citations for elixir, go, perl, py, rb, rust, ts and ocaml (8 languages).",
+    "a_source": "s3c-n-guard.txt items[8], for_freeze",
+    "b": "c, clojure and zig clone their match too (Entity.fragment.c:260, .clj:30, .zig:315); the guard's list missed them.",
+    "b_source": "s3c-n-shared.txt decisions[6], surprises; s3c-freeze33.txt disagreements[0]",
+    "stands": "b: the freeze added citations for c, clojure and zig. The guard's list was an omission, not a contradiction."
+   },
+   {
+    "a": "The deleted read is a member name; the guard took the first identifier and could not see C function pointers or zig fields.",
+    "a_source": "s3c-freeze33.txt disagreements[2] (the guard's reading)",
+    "b": "The provider's templates ('{var}->vt->deleted({var})', '{var}.deleted', and so on) are right.",
+    "b_source": "s3c-n-shared.txt facts_added[4]",
+    "stands": "b: the guard was fixed (93060a64). perl's template was separately wrong (no sigil) and was fixed in 120a3c0c."
+   },
+   {
+    "a": "swift's record check requires the unwrap inside facts.record.",
+    "a_source": "s3c-n-guard.txt items[7] (G8)",
+    "b": "Decision 12 moves the unwrap out: facts.record is '{var}.data()' and facts.unwrap is separate.",
+    "b_source": "s3c-n-shared.txt decisions[11]; s3c-freeze33.txt disagreements[4]",
+    "stands": "b: the guard was changed so that a plain-accessor record must be printed as facts.unwrap followed by the record."
+   },
+   {
+    "a": "swift's true entityBy 'class' is UNATTESTED against OLD unless recorded; perl entityBy 'class' contradicts OLD 0:188.",
+    "a_source": "s3c-n-tools.txt items[5], surprises, thirteen[9]",
+    "b": "At v33a the minimal pair calls perl's and swift's entityBy 'class' ATTESTED (OLD reads as class 94:0).",
+    "b_source": "s3c-freeze33a.txt surprises, old_page_wrong[1], [2]",
+    "stands": "b is the later measurement, on the clone with the guard merged. Both say the hand record decides swift's value."
+   },
+   {
+    "a": "go's or c's branch sentence dropped from every variation still leaves no trace in either mode.",
+    "a_source": "s3c-freeze33a.txt sverify (fix 3), not_done",
+    "b": "At 6e224b8 that drop was already an absent entry in both modes, because the n-tools T2 rule holds go and c, each alone in its style, to the every-reference list. Only the one-variation drop from scratch was open.",
+    "b_source": "s3c-t7.txt items[2], surprises",
+    "stands": "b: it was measured with attacks/drop.json against 6e224b8."
+   },
+   {
+    "a": "Breaking interface changes this round: decision 12 (wrapped unwrap), 13 (utility copy) and 14 (call names). streamSignal is not breaking.",
+    "a_source": "s3c-n-shared.txt interface_changes",
+    "b": "Breaking this round: streamSignal (ts must declare it to keep its sentence), the wrapped unwrap and the utility copy. RuntimeFacts.arity (decision 14) is not breaking. Forms changes from the guard are also breaking.",
+    "b_source": "s3c-freeze33.txt interface_changes, hypotheses[0]",
+    "stands": "b is the freeze's later classification, used for the H1 count of about 25-27. Both records count 3 breaking shared-code changes, but they differ on which three."
+   },
+   {
+    "a": "Suite at the shared engineer's final commit: 2631 tests, 2611 pass, 15 fail; ok: false.",
+    "a_source": "s3c-n-shared.txt summary",
+    "b": "Suite at v33-frozen: 2631 tests, 2626 pass, 0 fail.",
+    "b_source": "s3c-freeze33.txt freeze_checks[1]",
+    "stands": "b: the freeze wrote the missing guard accounts and citations."
+   },
+   {
+    "a": "Brief 7: no port needed a breaking change to the interface.",
+    "a_source": "brief7.md 'What the four ports showed'",
+    "b": "Counting the changes made to answer the ports' reviews, about 25-27 breaking changes since the first four languages (3 more in this round), so H1 is refuted on that criterion.",
+    "b_source": "s3c-freeze33.txt summary, hypotheses[0]",
+    "stands": "Both stand. The ports themselves needed none when written, but the reviewers' findings led to breaking changes in shared code and forms."
+   },
+   {
+    "a": "perl prints 'record' is a wrong value (attack a07), caught by the tools as NOT JUDGED.",
+    "a_source": "s3c-n-tools.txt attacks[6]",
+    "b": "After decision 3, 'record' is no longer clearly a false page for perl; the attack is no longer real and only a reviewer can judge it.",
+    "b_source": "s3c-freeze33.txt attack_table[19]",
+    "stands": "b, for the frozen state. The freeze did not open the self-test's output for that control."
+   },
+   {
+    "a": "The perl reviewer's V2 (argOf spreads the map) is not caught by callcheck, because perl declares every parameter optional.",
+    "a_source": "s3c-n-tools.txt attacks[9]",
+    "b": "V2 is caught by the guard's arity check (3-member probe).",
+    "b_source": "s3c-n-guard.txt attacks[10]; s3c-freeze33.txt attack_table[17]",
+    "stands": "Both: the guard catches it, and the tools' callcheck does not."
+   },
+   {
+    "a": "T6 (what the sentence round's independent check requires) could not be done, because s3c-sfix-verify.txt did not exist.",
+    "a_source": "s3c-n-tools.txt items[7]",
+    "b": "The check appeared during freeze33a. Fixes 4, 5 and 6 were done there; fixes 1-3 were done in t7, with their own remaining holes.",
+    "b_source": "s3c-freeze33a.txt sverify; s3c-t7.txt items",
+    "stands": "b. t7 is a separate tools branch that, within these records, is not yet merged into v33-frozen-tools."
+   }
+  ],
+  "superseded": [
+   {
+    "number": "suite 2613 tests, 2608 pass, 0 fail, 5 skipped (v33p and n-guard)",
+    "replaced_by": "2622/2617/0/5 at v33a, then 2631/2626/0/5 at v33-frozen",
+    "source": "s3c-merge1.txt checks[6]; s3c-freeze33a.txt checks[1]; s3c-freeze33.txt freeze_checks[1]"
+   },
+   {
+    "number": "suite 2631 tests, 2611 pass, 15 fail; guard 63/77 (n-shared)",
+    "replaced_by": "2631/2626/0 fail; guard 77/77 at v33-frozen",
+    "source": "s3c-n-shared.txt summary; s3c-freeze33.txt freeze_checks"
+   },
+   {
+    "number": "guard 54/77 after merging the shared work",
+    "replaced_by": "77/77 at v33-frozen",
+    "source": "s3c-freeze33.txt merge"
+   },
+   {
+    "number": "tools self-test 178 controls (v33p), 231 (n-tools), 235 (v33a)",
+    "replaced_by": "235 controls, 0 failed, 2 moved at v33-frozen-tools (t7's branch: 266, 0 failed, 1 moved, not merged in these records)",
+    "source": "s3c-merge1.txt; s3c-n-tools.txt; s3c-freeze33a.txt; s3c-freeze33.txt; s3c-t7.txt"
+   },
+   {
+    "number": "perl 14 defect classes (rootquick 13, reference 1)",
+    "replaced_by": "defect 0 at v33-frozen",
+    "source": "s3c-merge1.txt; s3c-freeze33.txt table[9]"
+   },
+   {
+    "number": "ts FAIL on absent 57d77b63f4 'Return the entity name.'",
+    "replaced_by": "ts declares name as a field; PASS at v33-frozen",
+    "source": "s3c-freeze33a.txt openings_left[0]; s3c-freeze33.txt providers_fixed[1]"
+   },
+   {
+    "number": "v33a: 11 PASS, ts and perl FAIL; n-tools at v33p: 5 PASS, 8 FAIL",
+    "replaced_by": "13 PASS at v33-frozen",
+    "source": "s3c-freeze33a.txt; s3c-n-tools.txt; s3c-freeze33.txt freeze_checks[9]"
+   },
+   {
+    "number": "runtime table 1277 lines (n-guard), 1297 (v33a)",
+    "replaced_by": "1312 lines at v33-frozen",
+    "source": "s3c-n-guard.txt; s3c-freeze33a.txt; s3c-freeze33.txt freeze_checks[3]"
+   },
+   {
+    "number": "ocaml STALE 48 -> 38 (n-tools)",
+    "replaced_by": "STALE 0 in all 13 (v33a and v33-frozen)",
+    "source": "s3c-n-tools.txt items[1]; s3c-freeze33a.txt checks[7]; s3c-freeze33.txt"
+   },
+   {
+    "number": "ocaml reference block classes 34",
+    "replaced_by": "17 after heading pairing",
+    "source": "s3c-n-tools.txt items[6]"
+   },
+   {
+    "number": "guard attacks on mutations: 97 caught, 8 not caught, 3 errors (the last freeze's outcome)",
+    "replaced_by": "97 caught, 5 not caught (n-guard; v33a; v33-frozen)",
+    "source": "s3c-n-guard.txt mutations; s3c-freeze33.txt"
+   },
+   {
+    "number": "H1 breaking changes 'about 22 to 24 at the sentence round'",
+    "replaced_by": "about 25 to 27 after this round",
+    "source": "s3c-freeze33.txt hypotheses[0]"
+   },
+   {
+    "number": "perl lane minimums 4.76/3.65/3.61 s (v33p)",
+    "replaced_by": "4.85/3.80/4.02 s (n-shared, after the lane change)",
+    "source": "s3c-merge1.txt checks[8]; s3c-n-shared.txt perl_lane"
+   },
+   {
+    "number": "shared list sentence '`list(nil, nil)` lists every record' (n-shared)",
+    "replaced_by": "reworded at the freeze (281dde5a)",
+    "source": "s3c-n-shared.txt decisions[13]; s3c-freeze33.txt"
+   }
+  ],
+  "findings": [
+   {
+    "finding": "Version 3.3 is frozen at thirteen languages (tag v33-frozen = 0065f1e2, tools v33-frozen-tools = d3b258d). All thirteen one commands pass with nothing open, no defect, nothing unattested and every absent sentence explained. The suite ran 2631 tests with 0 failures, and the guard 77/77.",
+    "source": "s3c-freeze33.txt summary, freeze_checks"
+   },
+   {
+    "finding": "H1 is refuted on its breaking-changes criterion. The freeze counts about 25 to 27 breaking interface changes since the first four languages, against a limit of about 10. Three of them came in this round (stream signal, swift's unwrap, utility copy), and 2 or 3 of those were caused by newly ported languages. Providers still read no model: purity is 0 open in all 13.",
+    "source": "s3c-freeze33.txt hypotheses[0], summary"
+   },
+   {
+    "finding": "The four ports needed no breaking change when written. But reviewers found pages that were wrong while every check passed: perl's root quick start could not load its module, perl printed HASH(0x...), and shared sentences were false for lua, php and ocaml. Almost all were caught only as open classes that the porter decided by hand. Brief 7's rule followed: what a porter can decide by hand is not a check.",
+    "source": "brief7.md 'What the four ports showed', 'The rule this round adds'"
+   },
+   {
+    "finding": "The 14 shared decisions were each made once, in shared code, and reached every affected language's page through one change. Examples: the stream-signal sentence changed 94 paragraphs in each of 9 languages, and the match-copy sentence 94 in each of 12. The per-language part was a fact declaration. The freeze reads this as support for H3 in this round.",
+    "source": "s3c-n-shared.txt decisions, diff_by_cause; s3c-freeze33.txt hypotheses[2]"
+   },
+   {
+    "finding": "Example lanes pass wherever a toolchain exists: ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig 6/6, and perl 7/7 in three models. perl's example test now runs blocks from the directory each page addresses. It fails with \"Can't locate DemoSDK.pm\" when the root import is removed, which the old lane could not see. lua, swift, ocaml, elixir and clojure have no compiler here and were checked only by structure and by reading.",
+    "source": "s3c-freeze33.txt freeze_checks[4], [5]; s3c-n-shared.txt perl_lane"
+   },
+   {
+    "finding": "Running root quick starts from the repository root found that rb's root block had never loaded, on OLD either, and that go's OLD root block was not a program. Both are fixed at NEW. The c and py root blocks still fail, as on OLD, and are recorded as defects.",
+    "source": "s3c-n-shared.txt root_quickstart, runtime_defects"
+   },
+   {
+    "finding": "The guard now fails, naming the fact, on 31 of 37 recorded attacks, and the freeze caught 14 of 14 new attacks. The 108 mutations of the last freeze come out 97 caught and 5 not caught. Under attack the freeze found two more guard holes and closed them: an 'ahead' citation excused a dropped copy fact, and a missing field flag was never checked.",
+    "source": "s3c-n-guard.txt; s3c-freeze33.txt attack_table, summary"
+   },
+   {
+    "finding": "Several kinds of error are still found only by a reviewer. In this round: perl's deleted read printed without its `$`, a new shared sentence that overstated what `list(nil, nil)` does, a citation whose quoted line holds the token but means something else, and prose false under some feature option. Argument order cannot be checked in languages with no compiler here. Every check passed on the first two until the freeze engineer read the pages.",
+    "source": "s3c-freeze33.txt attack_table[19]-[24], for_guide"
+   },
+   {
+    "finding": "Comparison with the old page cannot judge facts where the old page was itself wrong or used another convention. ocaml keys 'member' and swift entityBy 'Name' agree with OLD (152:0 and 282:0), yet are wrong. They now fail only in the reviewed mode, against a hand decision.",
+    "source": "s3c-n-tools.txt items[5], surprises; s3c-freeze33a.txt old_page_wrong"
+   },
+   {
+    "finding": "A runtime survey found facts no page stated. The stream reads callopts.signal in 16 of 20 runtimes, although their operations cannot be cancelled. lua and php keep the accessor's instance. ts and js return the live utility object because struct.clone keeps class instances by reference, which was run in node. A quoted clone call is therefore not proof of a copy.",
+    "source": "s3c-n-guard.txt stream_signal; s3c-freeze33.txt disagreements[1]; brief7.md decision 13"
+   },
+   {
+    "finding": "The method has a cost in hand decisions and brittle controls. Merging the sentence fixes into the four ports opened classes, which were decided as 70 by written rules, 19 by carry-over and 14 by hand. ocaml's 38 stale records needed rewording or removal. 16 self-test controls broke only because two paragraphs were re-wrapped.",
+    "source": "s3c-freeze33a.txt openings_decided; s3c-freeze33.txt freeze_checks[7], surprises"
+   },
+   {
+    "finding": "Holes remain in the review tools. At the freeze, the sentence-identity holes were still accepted (zig .ok/.err swapped, py list(), rb Hash, a wrong step number or article). A parallel round (t7) closed them on its own branch: 266 controls, 0 failed, no change to the thirteen tables. Its own attacks still beat it in 3 named ways, and beat items 4 and 5 in 5 of 6 attacks. Within these records, t7 is not yet merged into the frozen tools.",
+    "source": "s3c-freeze33.txt attack_table[27], not_done; s3c-t7.txt summary, attacks_own, done_before_me"
+   },
+   {
+    "finding": "H2 was not re-measured in this round. For the four ports alone, about 723 to 764 old lines per language were replaced by a provider of 167 to 240 lines, a hook of 24 to 26 lines and forms additions of 51 to 74 lines.",
+    "source": "s3c-freeze33.txt lines, hypotheses[1]"
+   },
+   {
+    "finding": "The shared round recorded runtime defects instead of writing prose around them. Examples: swift's deleted() is not on the Entity protocol, csharp and scala accessors write `active` into the caller's map, ts explain:true throws, and ocaml marks an entity deleted after a failed remove. None was fixed in this round.",
+    "source": "s3c-n-shared.txt runtime_defects"
+   },
+   {
+    "finding": "H5 was not tested in this round: the lifecycle was untouched. The seven unported languages' pages are byte-identical to v32-frozen's output.",
+    "source": "s3c-freeze33.txt hypotheses[4], freeze_checks[6]"
+   }
+  ],
+  "missing": [
+   "s3c-survey.md (the ten-reader survey of the twenty runtimes) is cited by n-shared and the freeze but was not in my list and was not read; its results are known here only as other records quote them.",
+   "s3c-sfix-shared.txt and s3c-sfix-verify.txt (the sentence round's shared step and its independent check) are referenced but were not given to me; their required fixes are known only as freeze33a and t7 report them.",
+   "The record does not say whether the t7 tools branch (225a0de) was brought into v33-frozen-tools; s3c-freeze33.txt says the identity work was left to t7 and lists those attacks as still accepted.",
+   "No record in this part re-measures H2 (source lines for the two sections) or tests H5.",
+   "The freeze did not reconcile the unported diff line counts (6 and 7) with the last freeze's (7 and 8).",
+   "The freeze did not open the self-test output for the perl-prints-record control to see what the fact sheet now says."
+  ]
+ }
+}

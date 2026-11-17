@@ -1,0 +1,727 @@
+{
+ "lang": "cpp",
+ "verdict": "accept-with-fixes",
+ "summary": "I reproduced every number the porter reported, and the port is close to right, but not every claim holds.\n\n**Reproduced (each from a clean rebuild and regeneration):**\n- Line counts: 734 removed, 211 added (3.48x), or 252 with the forms (2.91x).\n- The one command's screen, reviewed mode, with REGEN: exit 1; the only failure is the guard's constructor check (gap 1).\n- The suite: 2,635 tests, 2,629 pass, 1 fails (that same check), 5 skipped.\n- Golden 2/2; reader 22/22.\n- Share of words: the porter's numbers exactly (provider literals 0.2%, notes 0).\n- Commits: cpp files only, no trailer. No other language's page changed (19 root READMEs differ, only inside `### C++`).\n\n**Facts against the runtime.** Every declared fact checks out: derived, cited, pinned prose, absences, hand-recorded. I found no false declared fact.\n\n**What I found that the port gets wrong or misses:**\n1. **Hand record `bff341cf32` is `same-meaning`, but it is a contradiction.** ts, rb, lua and perl record this class as a contradiction. In `no-test` the cpp README promises a mock: README.md:158-159 (\"The test feature installs an in-memory mock transport\") and :218 (\"Creates a test-mode client with mock transport\"). The REFERENCE, rightly, says the client has none and refuses every request. The echo tool pointed at the word \"test\" at README.md:171, and the porter judged that word only.\n2. **Five `iostream-include` correction reasons are false.** They say OLD's blocks did not compile without `<iostream>`. They did: config.hpp:19 includes `feature/log.hpp`, which includes `<iostream>` (log.hpp:12), and the log feature is generated in every variation. I compiled OLD B's 40 blocks with no `<iostream>` line at all: exit 0.\n3. **The shared remove sentence misleads for cpp.** It ends \"`data()` reads its record\". cpp's remove takes only `resmatch` from the response, never `resdata` (EntityRemoveOp.fragment.cpp:12-18; survey s3c line 1725). So `data()` on the page's own example, a fresh entity, returns `{}`. Brief 7 decision 11 and PORTING.md 2.1 say every runtime replaces the data; cpp does not. The porter recorded nothing about it.\n4. **A shared guard defect blinds the accessor check in six languages.** guard.ts:452 passes `forms.tokens.accessor` through `pattern()`, which spells it again: `'${accessor}'` becomes `'$${accessor}'`, so no accessor declaration is found. The printed accessor call is then never judged for arity, receiver or separator, in cpp, elixir, java, kotlin, php and scala.\n   - Proven: `client.planet()` and `planet(Value::undef(), Value::undef())` both passed the guard; callcheck also reported 0 RECEIVER findings.\n   - With `esc()` in place of `pattern()`, a14 fails by name, and none of the 59 guard tests changes result.\n5. **Gap 2 (no live transport) also holds for zig**: tm/zig/core/utility.zig:2328-2337. The porter named only cpp and ocaml.\n6. **One forms text is false.** `undocumented.deleted` says \"whether remove succeeded\". `markDeleted()` runs whatever the outcome (EntityRemoveOp.fragment.cpp:25), so a failed remove under `throw: false` is marked too.\n\n**Examples (ran):**\n- The lane ran 6/6 on OLD and on NEW, and run.sh's structural checks passed on both (logs from the earlier run of this review).\n- I compiled every cpp block of my four variations against a full SDK generated from each one: NEW 146/146, OLD 143/143. A negative control, a type error injected into B, fails with 2 errors.\n- The root quick start from the repository root needs `-iquote cpp` on OLD and NEW, compiles, and aborts with `fetch_no_transport` on both.\n\n**Attacks:** 33 runs, 7 not caught mechanically. Pinned prose changed together with its pin, an early end spelled with another word, a bare static signature, the accessor's receiver and its argument count, the hook's module name, and a type error in an example all get past every mechanical check.",
+ "required_fixes": [
+  {
+   "file": "tools/hand/cpp.json (class bff341cf32)",
+   "change": "Change the outcome from same-meaning to contradiction. where: cpp/README.md:156-159 and :218 (no-test), 'The test feature installs an in-memory mock transport' and 'Creates a test-mode client with mock transport'. true: the REFERENCE. evidence: Config_cpp.ts falls back to `return std::make_shared<BaseFeature>();`, and pipeline.hpp:589-591 throws fetch_mode_block in test mode.",
+   "why": "Two documents of one SDK disagree. ts, rb, lua and perl record this same class id as a contradiction. The porter's reason judged only the word the echo tool matched ('test/' suite, README.md:171).",
+   "shared": false
+  },
+  {
+   "file": "tools/hand/cpp.json (39fd7fb6ab, 20e1f83164, 2b7c065103 and the other iostream-include records, 5 in all)",
+   "change": "Reword the reason. OLD's blocks compiled because core/config.hpp:19 includes feature/log.hpp, which includes <iostream> (log.hpp:12), and the log feature is in every variation. NEW names the header a printing block needs instead of relying on a feature's header. The outcome stays.",
+   "why": "As written the reason is false. I ran OLD B's 40 blocks through g++ -fsyntax-only with no <iostream> line in the file: exit 0. The earlier root run (rr-old) also compiled without it.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/cpp.ts:57 (undocumented.deleted)",
+   "change": "Replace 'whether remove succeeded on this instance' with: the mark remove sets after the operation, whatever its outcome (EntityRemoveOp.fragment.cpp:25).",
+   "why": "markDeleted() runs unconditionally after runOp. Under ctrl throw:false, a failed remove is marked deleted too.",
+   "shared": false
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts:452",
+   "change": "`findDecls(forms, client, pattern(forms.tokens.accessor || ''))` becomes `findDecls(forms, client, esc(forms.tokens.accessor || ''))`.",
+   "why": "spell() (guard.ts:81) re-substitutes `{accessor}` inside the token `${accessor}`, giving `$${accessor}`. accDecls is then empty and the per-operation accessor check is skipped for cpp, elixir, java, kotlin, php and scala. Patched in my copy: all 59 guard tests give the same results as before, and the a14 attack fails by name ('planet is declared on the instance, called through ->; ... calls it through .').",
+   "shared": true
+  },
+  {
+   "file": "ts/src/cmp/ReadmeRef.ts and runtimeprose.ts (the remove sentence); PORTING.md 2.1, the deleted row; brief 7 decision 11",
+   "change": "Add an optional, cited fact that remove keeps the entity's data. cpp declares it, citing EntityRemoveOp.fragment.cpp:12-18. Where it is declared, the shared remove sentence drops '`data()` reads its record' or says the entity keeps what it held. Correct the guide's claim that every runtime replaces the data. Until then cpp records the remove-sentence class as defect.",
+   "why": "In cpp, `client->planet()->remove(...)->data()` returns `{}` (data_ is set to vmap() in the constructor, types.hpp:1317, and is never replaced on remove). The page implies the removed record. The survey (s3c, line 1725) already says cpp keeps data_.",
+   "shared": true
+  },
+  {
+   "file": "ts/test/runtimeforms/calls.ts readCalls (89-115) and guard.ts:418-421, :435 (the porter's gap 1)",
+   "change": "Read `std::make_shared<X>(args)` and `std::make_unique<X>(args)` as a call of X's constructor on the type, with those arguments.",
+   "why": "This is the only check that keeps cpp's one command failing. The constructor line is true: it is the runtime's own spelling (Main.fragment.cpp:28, 35). The existing interface cannot express it: a `ctor` of the form 'std::make_shared<' + name + '>' is a concatenation onto a generator name, which purity forbids, and readCalls needs '(' straight after the name.",
+   "shared": true
+  },
+  {
+   "file": "interface gap 2 (no live transport), as the porter reported it",
+   "change": "Name zig among the runtimes the optional fact must cover, with cpp and ocaml.",
+   "why": "tm/zig/core/utility.zig:2328-2337: default_http_fetch fails with 'live transport unavailable' unless system.fetch is supplied.",
+   "shared": true
+  }
+ ],
+ "not_caught": [
+  {
+   "attack": "a03b: ref.facts.body.values ('...which is JSON-encoded first') and ref.facts.testMock ('always') changed in the provider and in their pins together",
+   "consequence": "The guard passes; only the constructor gap fails. The one command catches testMock only as an ABSENT sentence (dd74ff9ab6), because ts prints the no-test sentence. The body.values change fails nowhere: no variation prints the body note. Pinned prose rests on the reviewer alone."
+  },
+  {
+   "attack": "a04c: the runtime's stream ends early on `getp(streamOpts, \"stop\")` (types.hpp, after line 1395)",
+   "consequence": "Neither absence (cancel, streamSignal) notices: the search is a word list. A cancel spelled any other way passes."
+  },
+  {
+   "attack": "a12: the two-argument test signature written bare, without `{client}::`",
+   "consequence": "The guard passes, so a static member could be documented as if it were not. Written on `client->`, it is caught (a12b). Not run with the tools."
+  },
+  {
+   "attack": "a14: the call printer writes `client.planet()->load(...)` (`.` on a shared_ptr)",
+   "consequence": "The guard passes (guard.ts:452 defect) and callcheck reports 0 RECEIVER findings over 441 calls. Only open block classes in the OLD comparison (9/10/9) show it, and a porter can close those by hand."
+  },
+  {
+   "attack": "a14b: the accessor called with two arguments, `client->planet(Value::undef(), Value::undef())`",
+   "consequence": "The guard passes (same defect). Not run with the tools."
+  },
+  {
+   "attack": "a16: the naming hook's module set to 'core/sdkx.hpp'",
+   "consequence": "The guard passes: ref.facts.ctor[0] is checked before `{module}` is spelled, so hook literals (module, namespace) are never compared with the runtime. The lanes would fail to compile; not run."
+  },
+  {
+   "attack": "a11b: a page example binds the load result as `Value ambient = ...` (a type error)",
+   "consequence": "callcheck finds nothing (it sees no types). Only an open block class in the OLD comparison marks it, and a porter can close that by hand. My g++ compile of the variation's blocks fails with 2 errors, but no repository tool compiles the variations' blocks."
+  }
+ ],
+ "attacks": [
+  {
+   "by": "a01: derived op.load parameter renamed to `match`",
+   "caught": true,
+   "change": "guard: paramNames 'op load: parameter 1 is reqmatch in the runtime, match declared'"
+  },
+  {
+   "by": "a02: cited ref.facts.none set to 'Value(nullptr)'",
+   "caught": true,
+   "change": "guard account: 'cite ref.facts.none: the quote does not contain \"Value(nullptr)\"'"
+  },
+  {
+   "by": "a03: pinned body.values changed",
+   "caught": true,
+   "change": "guard: 'the fact is ...; the citation pins ...'"
+  },
+  {
+   "by": "a03b: body.values and testMock changed together with their pins",
+   "caught": false,
+   "change": "guard passes; tools: testMock as ABSENT dd74ff9ab6 plus 1 open class; body.values nowhere"
+  },
+  {
+   "by": "a04: cancel declared true",
+   "caught": true,
+   "change": "guard: 'cite ref.facts.cancel: the fact is true; the absence shows false'"
+  },
+  {
+   "by": "a04b: a read of callopts['signal'] added to the runtime stream",
+   "caught": true,
+   "change": "guard: both absences name tm/cpp/core/types.hpp:1396 'signal'"
+  },
+  {
+   "by": "a04c: an early end on a 'stop' key added to the stream",
+   "caught": false,
+   "change": "nothing"
+  },
+  {
+   "by": "a05: language fact maps set to 'dicts'",
+   "caught": true,
+   "change": "tools: UNATTESTED ref.maps = \"dicts\" (OLD says otherwise)"
+  },
+  {
+   "by": "a06: convention noun set to 'Functions'",
+   "caught": true,
+   "change": "tools: UNATTESTED ref.noun, hand decided \"Methods\""
+  },
+  {
+   "by": "a07: enumerated prints set to 'fields'",
+   "caught": true,
+   "change": "tools: UNATTESTED prints = \"fields\" (minimal pair; 239 blocks differ)"
+  },
+  {
+   "by": "a09: a note naming planet and retry and stating a number",
+   "caught": true,
+   "change": "guard: notes.top uncited; purity: 5 lint findings (number, feature, option, entity x2)"
+  },
+  {
+   "by": "a10: shared action sentence removed from B only",
+   "caught": true,
+   "change": "tools: DROPPED, NO REASON 7e4d6fd58f (B)"
+  },
+  {
+   "by": "a10b: the same sentence removed from all 16 variations that print it",
+   "caught": true,
+   "change": "tools: ABSENT, NO REASON 7e4d6fd58f in 16 (ledger OPEN stays 0)"
+  },
+  {
+   "by": "a11: B tutorial load given one argument",
+   "caught": true,
+   "change": "callcheck ARITY 'load passes 1 argument(s); the runtime declares 2'; blocks OPEN 1"
+  },
+  {
+   "by": "a11b: B tutorial result bound as Value (a type error)",
+   "caught": false,
+   "change": "callcheck 0; blocks OPEN 1 only (decidable by hand)"
+  },
+  {
+   "by": "a12: bare test signature, no {client}::",
+   "caught": false,
+   "change": "guard passes"
+  },
+  {
+   "by": "a12b: test signature on client->",
+   "caught": true,
+   "change": "guard: 'the signature writes testSDK on client ...; the runtime declares it on the type'"
+  },
+  {
+   "by": "a12c: test call made on the instance",
+   "caught": true,
+   "change": "guard: 'testSDK is declared on the type; ... calls it on client (instance)'"
+  },
+  {
+   "by": "a13: getName declared as a field",
+   "caught": true,
+   "change": "guard: 'getName is called in the runtime, declared as a field'"
+  },
+  {
+   "by": "a14: call printer `client.planet()`",
+   "caught": false,
+   "change": "guard passes; callcheck 0; blocks OPEN 9/10/9"
+  },
+  {
+   "by": "a14b: accessor called with 2 args",
+   "caught": false,
+   "change": "guard passes"
+  },
+  {
+   "by": "a15: call printer drops the ctrl argument",
+   "caught": true,
+   "change": "guard: 'op list: list takes 2 argument(s) in the runtime; ... passes 1' (and load, create)"
+  },
+  {
+   "by": "a16: hook module 'core/sdkx.hpp'",
+   "caught": false,
+   "change": "guard passes"
+  },
+  {
+   "by": "a17: streamSignal removed",
+   "caught": true,
+   "change": "guard: 'cite ref.facts.streamSignal: the provider declares no such fact'"
+  },
+  {
+   "by": "a18: deleted removed",
+   "caught": true,
+   "change": "guard passes; tools: ABSENT, NO REASON 808ab9f422 in 15"
+  },
+  {
+   "by": "a19: arity removed",
+   "caught": true,
+   "change": "guard passes; tools: ABSENT, NO REASON fdfa305bc4 in 17, tutorial OPEN 3"
+  },
+  {
+   "by": "a20: match copy removed",
+   "caught": true,
+   "change": "guard: 'cite ref.facts.entity[1].copy: the provider declares no such fact'"
+  },
+  {
+   "by": "the porter's 4 controls (arity 0, deleted isDeleted, streamSignal true, utility copy false)",
+   "caught": true,
+   "change": "guard, as the porter reported (logs of the porter's run, not re-run)"
+  }
+ ],
+ "facts_audit": [
+  {
+   "fact": "facts.method.*, ref.facts.op.* (typed signatures)",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "tm/cpp/core/types.hpp:703-708 `virtual SdkEntityPtr load(const Value& reqmatch, const Value& ctrl) = 0;` etc.; the Entity<Op>Op fragments"
+  },
+  {
+   "fact": "facts.arity = 2",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "types.hpp:704, list has no default arguments"
+  },
+  {
+   "fact": "facts.collection = `std::vector`, record = data(), async false, result throw",
+   "account": "derived",
+   "verdict": "true",
+   "evidence": "types.hpp:704, 738; `throw raised;` pipeline.hpp:470"
+  },
+  {
+   "fact": "facts.recordType = Value",
+   "account": "cited",
+   "verdict": "true; the quote shows the value",
+   "evidence": "types.hpp:738 `Value data(const Value& arg = Value::undef()) override;`"
+  },
+  {
+   "fact": "ref.facts.none = Value::undef(), container = Value",
+   "account": "cited",
+   "verdict": "true; the quoted line means 'no options'",
+   "evidence": "Main.fragment.cpp:17 `explicit ProjectNameSDK(Value options = Value::undef())`; every op does `reqmatch.is_map() ? reqmatch : vmap()`"
+  },
+  {
+   "fact": "ref.facts.ctor[0] #include \"{module}\"",
+   "account": "cited (the guard labels it 'a comment only')",
+   "verdict": "true by reading, but the label is wrong and the check is weak",
+   "evidence": "Config_cpp.ts:126 `#include \"../../core/sdk.hpp\"` is generator code, not a comment. The guard checks the line before `{module}` is spelled, so the hook's module is unchecked (a16)."
+  },
+  {
+   "fact": "ref.facts.ctor[2] using namespace sdk; (unquoted `using`)",
+   "account": "cited with an excuse",
+   "verdict": "true; the excuse is reasonable",
+   "evidence": "Main.fragment.cpp:13 `namespace sdk {`"
+  },
+  {
+   "fact": "ref.facts.ctor[4] auto client = std::make_shared<{ctor}>(options); (unquoted `client`)",
+   "account": "cited; the guard's derivation fails (gap 1)",
+   "verdict": "true",
+   "evidence": "Main.fragment.cpp:28, 35; entities hold the client as `SdkClient*` and features capture the pointer, so make_shared is the right form"
+  },
+  {
+   "fact": "ref.facts.ctorAlts[0] {client}::create(), kind defaults",
+   "account": "call derived; kind pinned",
+   "verdict": "true",
+   "evidence": "Main.fragment.cpp:34-36 `return std::make_shared<ProjectNameSDK>(Value::undef());`"
+  },
+  {
+   "fact": "ref.facts.test[0..1] testSDK(Value, Value) and testSDK()",
+   "account": "derived",
+   "verdict": "true; the test sentence is also true",
+   "evidence": "Main.fragment.cpp:23, 27; testOptions (types.hpp:990-996) sets feature.test with active true and replaces the one in sdkopts"
+  },
+  {
+   "fact": "ref.facts.testMock = generated",
+   "account": "pinned",
+   "verdict": "true",
+   "evidence": "Config_cpp.ts makeFeature falls back to `std::make_shared<BaseFeature>()`; pipeline.hpp:589-591 throws fetch_mode_block when mode != live"
+  },
+  {
+   "fact": "ref.facts.accessor sig/arg/param entopts",
+   "account": "derived",
+   "verdict": "true; cached correctly undeclared",
+   "evidence": "MainEntity_cpp.ts:25-27: a new entity on every call"
+  },
+  {
+   "fact": "ref.facts.client[0].copy (optionsMap)",
+   "account": "pinned true",
+   "verdict": "true",
+   "evidence": "types.hpp:982-986 `Value out = Struct::clone(options);`"
+  },
+  {
+   "fact": "ref.facts.client[1] utility kind and copy true",
+   "account": "pinned",
+   "verdict": "true: a new Utility, sharing only function references",
+   "evidence": "types.hpp:988 and 587-599 `auto u = std::shared_ptr<Utility>(new Utility(NoRegister{}));`"
+  },
+  {
+   "fact": "ref.facts.entity[0].copy, [1].copy",
+   "account": "pinned",
+   "verdict": "true",
+   "evidence": "types.hpp:1334 `return Struct::clone(data_);`, :1344 `return Struct::clone(match_);`"
+  },
+  {
+   "fact": "ref.facts.entity stream: streamList, runs call",
+   "account": "derived",
+   "verdict": "true; the page's 'throws on failure' holds under the default ctrl",
+   "evidence": "types.hpp:1390-1475: the pipeline runs before `return res->stream()` or the materialised vector. Under ctrl throw:false a failure returns an empty vector (1466-1469), like the ops' non-throwing mode."
+  },
+  {
+   "fact": "ref.facts.entity name getName()",
+   "account": "derived",
+   "verdict": "true (a method, not a field)",
+   "evidence": "types.hpp:728"
+  },
+  {
+   "fact": "ref.facts.direct returns Value, okFalse false",
+   "account": "derived / cited",
+   "verdict": "true; the Returns paragraph holds too",
+   "evidence": "types.hpp:1216-1300 rawRequest. Caveats: `err` is a `{\"message\": ...}` map, not an error object, and an exception other than SdkErrorPtr from a user's system.fetch escapes (only SdkErrorPtr is caught, :1243)."
+  },
+  {
+   "fact": "ref.facts.prepare returns Value, fails style",
+   "account": "derived / pinned",
+   "verdict": "true",
+   "evidence": "types.hpp:1021 `throw ctx->makeError(\"spec_method_allow\",`"
+  },
+  {
+   "fact": "ref.facts.body.values",
+   "account": "pinned",
+   "verdict": "true for a raw-body point (`$body`, pipeline.hpp:1442); printed in 0 of 21 variations",
+   "evidence": "pipeline.hpp:644-649: a scalar is JSON-encoded only when the point declares JSON"
+  },
+  {
+   "fact": "ref.facts.cancel = false",
+   "account": "absence over 143 files, 4 regions left out",
+   "verdict": "true; each reason is true",
+   "evidence": "Also searched interrupt/stop_token/deadline: timeout.hpp is a deadline race with no caller abort. Httpjson.cpp:48-64 is the SIGPIPE hush; Tls.cpp:191, 241 and cost.hpp, Provider.cpp are comments."
+  },
+  {
+   "fact": "ref.facts.streamSignal = false",
+   "account": "absence",
+   "verdict": "true",
+   "evidence": "the stream reads only `ctrl` and `body` from callopts (types.hpp:1395-1418)"
+  },
+  {
+   "fact": "ref.facts.deleted = {var}->deleted()",
+   "account": "derived",
+   "verdict": "true (reachable through SdkEntityPtr)",
+   "evidence": "types.hpp:418, 731"
+  },
+  {
+   "fact": "named = call (NOT JUDGED, by hand)",
+   "account": "convention",
+   "verdict": "right",
+   "evidence": "OLD named members with parentheses; operations are named bare by shared code at arity 2"
+  },
+  {
+   "fact": "ref.noun = Methods (by hand)",
+   "account": "convention",
+   "verdict": "right",
+   "evidence": "OLD '### Instance Methods'"
+  },
+  {
+   "fact": "ref.valueType.OBJECT = Value (by hand)",
+   "account": "convention",
+   "verdict": "right; the 2 'contradicted' contexts are the record-type sentence pairing",
+   "evidence": "OLD B/cpp/REFERENCE.md:29-31, 94-97 give `Value` for headers, feature, system, params, query, headers, body"
+  },
+  {
+   "fact": "layout.module 'core/sdk.hpp', names.namespace 'sdk' (hook literals)",
+   "account": "'naming hook (generator function)', unchecked",
+   "verdict": "true by reading; nothing checks them (a16)",
+   "evidence": "tm/cpp/core/sdk.hpp; Main.fragment.cpp:13"
+  }
+ ],
+ "optional_facts": [
+  {
+   "fact": "accessor.cached",
+   "runtime_shows": "no cache: `return std::make_shared<${cls}>(this, entopts);`",
+   "file_line": "src/cmp/cpp/MainEntity_cpp.ts:25-27",
+   "port_declared": "not declared",
+   "right": "yes"
+  },
+  {
+   "fact": "streamSignal",
+   "runtime_shows": "no signal: the stream reads only ctrl and body from callopts",
+   "file_line": "tm/cpp/core/types.hpp:1390-1418",
+   "port_declared": "false (cited absence)",
+   "right": "yes"
+  },
+  {
+   "fact": "copy on the match getter",
+   "runtime_shows": "`return Struct::clone(match_);`",
+   "file_line": "tm/cpp/core/types.hpp:1344",
+   "port_declared": "true",
+   "right": "yes"
+  },
+  {
+   "fact": "copy on the utility getter",
+   "runtime_shows": "`return utility->copy();`, which allocates a new Utility and copies the function references",
+   "file_line": "tm/cpp/core/types.hpp:988, 587-599",
+   "port_declared": "true",
+   "right": "yes"
+  },
+  {
+   "fact": "memberNamed",
+   "runtime_shows": "calls written with parentheses",
+   "file_line": "Main.fragment.cpp, types.hpp",
+   "port_declared": "default (call)",
+   "right": "yes"
+  },
+  {
+   "fact": "field on a member",
+   "runtime_shows": "getName() is a method; name_, client, entopts are undocumented public fields",
+   "file_line": "tm/cpp/core/types.hpp:715-728",
+   "port_declared": "none",
+   "right": "yes"
+  },
+  {
+   "fact": "deleted",
+   "runtime_shows": "deleted() on Entity, reachable through SdkEntityPtr; markDeleted() runs whatever the outcome; remove does NOT replace the data (only resmatch is absorbed)",
+   "file_line": "types.hpp:418, 731; EntityRemoveOp.fragment.cpp:12-25",
+   "port_declared": "{var}->deleted()",
+   "right": "the fact is right, but the shared sentence beside it ('data() reads its record') misleads for cpp, and a fact for the kept data is missing (required fix)"
+  },
+  {
+   "fact": "facts.arity",
+   "runtime_shows": "list(const Value& reqmatch, const Value& ctrl): 2 required",
+   "file_line": "types.hpp:704",
+   "port_declared": "2",
+   "right": "yes"
+  },
+  {
+   "fact": "layout.dir / place-aware imports",
+   "runtime_shows": "an include path; the root needs -iquote cpp (run: without it, core/sdk.hpp is not found on OLD and NEW)",
+   "file_line": "tm/cpp/core/sdk.hpp",
+   "port_declared": "not declared (as c)",
+   "right": "yes"
+  },
+  {
+   "fact": "notes.top",
+   "runtime_shows": "the missing transport is shared by cpp, ocaml and zig, so it is a fact, not a note",
+   "file_line": "tm/cpp/utility/pipeline.hpp:608-613; tm/zig/core/utility.zig:2328-2337; tm/ocaml/sdk_runtime.ml:1574-1579",
+   "port_declared": "none",
+   "right": "yes (reported as gap 2)"
+  }
+ ],
+ "pages": [
+  {
+   "variation": "B",
+   "section": "tutorial",
+   "kind": "better",
+   "finding": "Steps renumbered correctly: OLD had '### 3. Load an ambient' with no step 2. The client passes server.tenant (S49), the record type `Value` is stated, and the catch clause names SdkErrorPtr."
+  },
+  {
+   "variation": "B",
+   "section": "rootquick",
+   "kind": "awkward",
+   "finding": "'// Load an ambient: the entity; throws on failure' replaces OLD's '(returns the entity, throws on error)'. It is the shared step-comment template, printed the same in every language, not cpp's."
+  },
+  {
+   "variation": "B",
+   "section": "reference",
+   "kind": "weaker",
+   "finding": "The single-entity examples no longer print the record (43 blocks, a shared unification). 'bound to this client' is gone from the accessor sentence. '`options` is an `sdk::Value` map' and '(a map)' are gone: the type cell says only `Value`."
+  },
+  {
+   "variation": "B",
+   "section": "reference",
+   "kind": "misleading for cpp",
+   "finding": "remove: 'Returns the entity, marked as deleted ... `data()` reads its record.' cpp's remove keeps the entity's prior data and takes no record from the response (EntityRemoveOp.fragment.cpp:12-18), so on the example's fresh entity data() is `{}`."
+  },
+  {
+   "variation": "B",
+   "section": "reference",
+   "kind": "better",
+   "finding": "direct's Returns is true of rawRequest (types.hpp:1216-1300); branching on `is_true(getp(result, \"ok\"))` compiles (struct.hpp:81), where OLD's `getp(...)` cannot be a condition (value.hpp has no operator bool). stream is documented. Both testSDK overloads are typed and true (testOptions, types.hpp:990-996). The update id fallback is true (pipeline.hpp:752). The `$action` Call cell compiles and is read by makePoint (pipeline.hpp:840)."
+  },
+  {
+   "variation": "B",
+   "section": "README, unported",
+   "kind": "false (not this port's)",
+   "finding": "cpp/README.md:85-111 'Error handling' shows TypeScript code; :138-139 says branch on `getp(result, \"ok\")`. The same on OLD."
+  },
+  {
+   "variation": "auth-basic",
+   "section": "tutorial, rootquick, reference",
+   "kind": "better",
+   "finding": "The client passes `secret`, held from DEMO_SECRET; the runtime reads it (PrepareAuth_cpp.ts:191-195). The reference row 'Password ...; `apikey` is the user name' is true."
+  },
+  {
+   "variation": "ref-issues",
+   "section": "tutorial, rootquick, reference",
+   "kind": "better / same",
+   "finding": "The step is '2. Update a gauge' (U45), and the class is PlanetEntityClient. The inactive remove is gone (S25), and the pipe in the field description is escaped. The root quick start builds only the client, as ts does in this variation."
+  },
+  {
+   "variation": "crud-basic (cpp's largest README change: 41 lines; two held `const char*` credentials plus all four writes)",
+   "section": "tutorial",
+   "kind": "same / better",
+   "finding": "Every write compiles and matches the runtime. 'Each write returns the entity it wrote (a removed one is marked as deleted)' holds by the mark. The patch comment and S50 are true."
+  },
+  {
+   "variation": "no-test",
+   "section": "README vs REFERENCE",
+   "kind": "contradiction unrecorded",
+   "finding": "The README (:158-159, :218) promises a mock transport; the REFERENCE says the client has none and refuses every request (true: pipeline.hpp:589). The cpp record bff341cf32 calls it same-meaning."
+  }
+ ],
+ "hand_records": [
+  {
+   "id": "bff341cf32",
+   "verdict": "wrong",
+   "why": "same-meaning should be contradiction, as in ts/rb/lua/perl. The reason judged the echo's word 'test' in 'test/ suite' (README.md:171) and missed the README test-mode promise at :158-159 and :218."
+  },
+  {
+   "id": "39fd7fb6ab, 20e1f83164, 2b7c065103 and the other iostream-include records (5)",
+   "verdict": "outcome right, reason false",
+   "why": "OLD blocks compiled alone: config.hpp:19 includes feature/log.hpp, which includes <iostream>. Run: OLD B's 40 blocks with no <iostream>, exit 0."
+  },
+  {
+   "id": "the other same-meaning records (23)",
+   "verdict": "right",
+   "why": "Read each one; each matches the pages and the runtime (base row, DEMO_APIKEY, direct echoes, prepare's fetchdef, the secret row, the accessor binding)."
+  },
+  {
+   "id": "dropped / defect / contradiction",
+   "verdict": "0 recorded",
+   "why": "There should be 1 contradiction (bff341cf32), and a defect for the remove sentence once shared code can say the kept data, or now if the port must stay failing."
+  },
+  {
+   "id": "hand facts (named, ref.noun, ref.valueType.OBJECT)",
+   "verdict": "right",
+   "why": "Checked against OLD B/cpp/REFERENCE.md and core/struct.hpp:32."
+  },
+  {
+   "id": "absent list (28)",
+   "verdict": "right",
+   "why": "Each reason checked against types.hpp, Main.fragment.cpp and the facts: async false, no listOf, copy, no signal, no tester alias, the entopts and client fields, getName a method."
+  },
+  {
+   "id": "restored / unification records (66)",
+   "verdict": "right",
+   "why": "I read every distinct reason; each is true of the runtime, and the log default holds (log.hpp:6-7, :35-36)."
+  }
+ ],
+ "gaps_judged": [
+  {
+   "gap": "1: the call reader cannot read std::make_shared<X>(args) (calls.ts readCalls; guard.ts:418-421, 435)",
+   "needed": true,
+   "breaking": false,
+   "why": "Genuine, and the only failure left. The page line is the runtime's own form. The existing interface cannot express it: a hook ctor built by concatenation is forbidden, and readCalls needs '(' after the name."
+  },
+  {
+   "gap": "2: no live HTTP transport (an optional fact and one shared sentence)",
+   "needed": true,
+   "breaking": false,
+   "why": "True for cpp (pipeline.hpp:608-613) and ocaml, and also for zig (utility.zig:2328-2337), which the porter missed. The root quick start can only abort with fetch_no_transport (run on OLD and NEW)."
+  },
+  {
+   "gap": "3: the thrown type in the throw clause",
+   "needed": false,
+   "breaking": false,
+   "why": "OLD's REFERENCE never named the type either; the tutorial's catch clause names SdkErrorPtr. Nice to have."
+  },
+  {
+   "gap": "4 (mine): remove keeps the entity's data in cpp",
+   "needed": true,
+   "breaking": false,
+   "why": "The shared '`data()` reads its record' after remove implies the response record (EntityRemoveOp.fragment.cpp:12-18). Additive: an optional cited fact plus one shared sentence. PORTING.md 2.1's premise is false for cpp."
+  },
+  {
+   "gap": "5 (mine): guard.ts:452 accessor lookup",
+   "needed": true,
+   "breaking": false,
+   "why": "A defect in a shared check, not an interface change. A one-word fix, proven in my copy. Affects six languages."
+  },
+  {
+   "gap": "6 (mine): hook literals and bare static signatures unchecked by the guard",
+   "needed": false,
+   "breaking": false,
+   "why": "a16 and a12 pass the guard; the lanes would catch the module. Additive checks."
+  }
+ ],
+ "provider_code": [
+  {
+   "file_line": "Syntax_cpp.ts (187 lines), Naming_cpp.ts (24 lines)",
+   "finding": "No model read, no entity or operation literal outside the fact tables (`facts.method[s.op]`), no case change, no notes. Purity: 0 open, 1 accepted (built in at purity.js:295: cppVarName's reserved list, which 6 non-README components also call). Run: tools/purity.js."
+  },
+  {
+   "file_line": "Syntax_cpp.ts:144-146, 111",
+   "finding": "The client printer names a C++ variable after the option key (`const char* apikey`). The keys come from the client's own option names (example.ts:246: apikey, secret), and OLD cpp did the same, so I accept it; purity does not see it."
+  },
+  {
+   "file_line": "Naming_cpp.ts:12, 15",
+   "finding": "module 'core/sdk.hpp' and namespace 'sdk' are literals of template spellings, unchecked by the guard (a16 passes). The guide asks for a constant the generator uses, but templates cannot call one. Acceptable, unchecked."
+  },
+  {
+   "file_line": "Syntax_cpp.ts:86, 167",
+   "finding": "The printers write `->data()` and `err->msg` directly. Both exist (types.hpp:738, 112); nothing compares them with facts.record."
+  },
+  {
+   "file_line": "ts/test/runtimeforms/cpp.ts",
+   "finding": "Correct throughout, except `undocumented.deleted`, whose text is false under throw:false (required fix 3)."
+  },
+  {
+   "file_line": "git diff --numstat v33-frozen..HEAD; git -C tools log",
+   "finding": "Only cpp's files and cpp's 3 golden lines changed; the one tools commit touches only cpp's files; no trailer, no tool name in any of the 3 messages."
+  }
+ ],
+ "hypotheses": [
+  {
+   "id": "H1",
+   "verdict": "holds for cpp",
+   "evidence": "Interface: 0 breaking changes; 3 additive gaps that cpp forces (call reader, no transport, remove keeps data) plus 1 optional (thrown type), and 1 shared guard defect (guard.ts:452). Provider and hook read the model 0 times. Per-language prose: provider literals 132 of 56,196 words (0.2%: ref.noun 113, ref.maps 19), notes 0 (tools/sharewords.js, reproduced exactly). sharewords' 'only this lang' 4.8% is mostly shared templates carrying cpp tokens."
+  },
+  {
+   "id": "H2",
+   "verdict": "holds for cpp",
+   "evidence": "git diff --numstat v33-frozen..HEAD: 734 lines deleted against 211 added (3.48x), 252 with the forms (2.91x)."
+  },
+  {
+   "id": "H3",
+   "verdict": "holds for cpp, by reading",
+   "evidence": "S49, S50, S25, U45, md-cell, class-name, test-without-feature and list-no-match all come from shared code. cpp's only own corrections are printer form: the is_true read and the <iostream> include. The README/REFERENCE no-test contradiction remains in the unported README."
+  },
+  {
+   "id": "H4",
+   "verdict": "holds for cpp",
+   "evidence": "Lane 6/6 on OLD and NEW (earlier run's logs). My compile of the 4 variations: NEW 146/146 blocks, OLD 143/143, with the negative control failing. The root quick start compiles from the root with -iquote cpp on both and aborts with fetch_no_transport on both: a property of the runtime, not of the approach."
+  }
+ ],
+ "numbers": [
+  {
+   "what": "line counts",
+   "porter": "734 deleted; Syntax 187, Naming 24, forms +41, golden +2 -3; 3.48x (2.91x)",
+   "mine": "identical (git diff --numstat v33-frozen..HEAD)"
+  },
+  {
+   "what": "one command, reviewed, REGEN",
+   "porter": "exit 1; ledger OPEN 0; blocks OPEN 0; guard 3 pass 1 fail (ctor)",
+   "mine": "identical, twice (pc-clean.log, pc-final.log); classes 44/3/163, by hand 20/3/59, missing 3/0/36; blocks 23/6/0/19, 0/0/0/19, 186/0/0/128"
+  },
+  {
+   "what": "SCRATCH=1",
+   "porter": "ledger OPEN 23/3/95; blocks OPEN 17/27/6; 3 not judged; 28 absent",
+   "mine": "identical (the earlier run of this review, pc-scratch.log)"
+  },
+  {
+   "what": "suite without lanes",
+   "porter": "2635 tests, 2629 pass, 1 fail, 5 skipped, 786 s",
+   "mine": "2635, 2629 pass, 1 fail (same ctor), 5 skipped, 548 s"
+  },
+  {
+   "what": "golden",
+   "porter": "only cpp's 3 lines",
+   "mine": "characterize.test.js 2/2 pass"
+  },
+  {
+   "what": "guard / reader",
+   "porter": "3 pass 1 fail; reader 22/22",
+   "mine": "same; account report: derived 50, cited 18, language 1, convention 8"
+  },
+  {
+   "what": "cpp doc lane",
+   "porter": "NEW 6/6, OLD 6/6",
+   "mine": "NEW 6/6 (27 s), OLD 6/6 (26 s)"
+  },
+  {
+   "what": "run.sh structural test",
+   "porter": "NEW 87/69/69, OLD 85/67/67",
+   "mine": "identical"
+  },
+  {
+   "what": "sharewords",
+   "porter": "ref 54338 words; provider literals 132 (0.2%)",
+   "mine": "identical after a clean regeneration"
+  },
+  {
+   "what": "my compile of variation blocks",
+   "porter": "not done (compiled by nothing)",
+   "mine": "NEW B 41, auth-basic 41, ref-issues 34, crud-basic 30 = 146 blocks, g++ exit 0; OLD 40+40+34+29 = 143, exit 0"
+  }
+ ],
+ "could_not_check": [
+  "No example ran against a working transport: the cpp runtime has none without a system.fetch callable. Everything compiled is -fsyntax-only, except the root quick start, which aborts with fetch_no_transport.",
+  "The changed blocks of the other 17 variations were not compiled. I compiled all 146 cpp blocks of B, auth-basic, ref-issues and crud-basic; the tools count 25+19+146 changed blocks across 21 variations.",
+  "STRICT_SENTENCES=1 was not run (2 matched shared sentences have no verdict).",
+  "a12 (bare test signature), a14b (accessor arity) and a16 (hook module) were run only against the guard, not the tools or the lanes.",
+  "run.sh's cpp README test checks structure only; it says nothing about meaning.",
+  "Struct::clone being a deep copy of plain Value data: read, not run."
+ ],
+ "doubtful_lines": [
+  {
+   "line": "`result->deleted()` reads the mark. `data()` reads its record.",
+   "where": "REFERENCE remove, 15 variations",
+   "why": "In cpp remove keeps the entity's prior data; on the page's fresh-entity example data() is `{}`, not the removed record.",
+   "runtime_line": "EntityRemoveOp.fragment.cpp:12-18 (only match_ is absorbed); types.hpp:1317 `data_ = vmap();`"
+  },
+  {
+   "line": "// Load an ambient: the entity; throws on failure",
+   "where": "root quick start, every variation",
+   "why": "Awkward: the shared template, the same in every language.",
+   "runtime_line": "n/a"
+  },
+  {
+   "line": "auto client = std::make_shared<DemoSDK>(vmap({...}));  then the first operation",
+   "where": "tutorial and root client blocks",
+   "why": "Compiles (run), but any live call aborts unless options[\"system\"][\"fetch\"] is given; no page says so (gap 2).",
+   "runtime_line": "pipeline.hpp:608-613"
+  }
+ ],
+ "interface": "For cpp the interface held: no breaking change. cpp forces three additive changes: the call reader learning `std::make_shared<X>(...)`, an optional no-live-transport fact (cpp, ocaml and zig), and an optional fact that remove keeps the entity's data. The thrown-type fact is optional and not needed. Separately, a one-word defect in the shared guard (guard.ts:452) hides the printed accessor call from every check in six languages.",
+ "ran": "All runs were in my copy, /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/reviews/cpp/ws, with node 24.22.1 and g++.\n\n**Builds and checks:**\n- `npm run build`, several times, exit 0 each.\n- Guard (`^cpp: `), the reader, and the guard account report (`SDKGEN_GUARD_REPORT=1`).\n- Golden: `characterize.test.js`.\n- The suite without lanes, at concurrency 2.\n- `REGEN=1 tools/portcheck.sh sdkgen out cpp`: clean, twice, plus once per attack.\n- `SCRATCH=1`, the doc lane on OLD and NEW, run.sh on OLD and NEW, and the root quick start: run by the earlier, interrupted pass of this review, kept from its logs.\n- `tools/purity.js` and `tools/sharewords.js`.\n\n**My own tools (under .../reviews/cpp/my):**\n- `my/attack.sh`: 33 attack runs. Logs are in .../reviews/cpp/attacks/.\n- `my/varcompile.js`: generates a full cpp SDK per variation and compiles every block of the reviewed pages as the lane does. Run on NEW and OLD, plus a negative control and an OLD run with no `<iostream>`.\n- A one-word patch of guard.ts:452 in my copy, run across all languages' guard tests, then restored.\n\nBoth work trees were clean at the end, and `out/new` was identical to the port's.",
+ "read": "- The briefs (1, 3-7) and PORTING.md, in full.\n- From the port: Syntax_cpp.ts, Naming_cpp.ts, runtimeforms/cpp.ts, hand/cpp.json (every same-meaning record, every distinct correction, restored and unification reason, the absent list and the hand facts), facts.txt and the ledgers.\n- The cpp runtime:\n  - types.hpp: SdkError, Entity, SdkClient, SdkEntity, EntityBase, data, match, runOp, stream, optionsMap, getUtility, testOptions, prepare, opDenied, direct, rawRequest, Utility::copy.\n  - pipeline.hpp: makeError, fetcher, makeFetchDef, the param fallback, `$action`.\n  - Main.fragment.cpp, Entity.fragment.cpp, the Load, Update and Remove op fragments, MainEntity_cpp.ts, Config_cpp.ts, PrepareAuth_cpp.ts, log.hpp, timeout.hpp, value.hpp, struct.hpp.\n- The zig fetcher, and the survey's cpp section.\n- The guard's calls.ts and guard.ts constructor and accessor paths.\n- OLD against NEW for B, auth-basic, ref-issues and crud-basic: the README tutorial, the root C++ section and the REFERENCE; and no-test's README against its REFERENCE.",
+ "touched": "I changed nothing under /home/user and nothing in P/ports/cpp. I wrote only under /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/reviews/cpp/: PROGRESS.md, my/, attacks/, vc-new/, vc-old/, vc-ctl/, ctlpages/, outnew-clean/, and the logs. The ws copy was mutated only temporarily, one attack at a time, and each attack was restored with `git checkout -- .`. Nothing was committed, pushed or published.",
+ "examples": "I compiled every cpp block of four variations myself, beyond the lane's own 6 models. NEW: B 41 blocks, auth-basic 41, ref-issues 34, crud-basic 30, 146 in all, g++ -fsyntax-only exit 0. OLD: 40, 40, 34 and 29, 143 in all, exit 0. A negative control (B's load result bound as `Value`) fails with 2 errors.\n\nThe root quick start, compiled from the generated repository root: both OLD and NEW need `-iquote cpp`, both compile, and both abort with 'SdkError fetch_no_transport: ... provide options.system.fetch'.\n\nEvery block-level count above is a compile; no example ran against a working transport."
+}

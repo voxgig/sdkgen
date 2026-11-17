@@ -1,0 +1,5 @@
+[portcheck lua] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck lua] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck lua] classify (hand/lua.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck lua] ledger
+[portcheck lua] blocks

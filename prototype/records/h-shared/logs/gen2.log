@@ -1,0 +1,21 @@
+[1/21] new B: 41 READMEs in 1098ms
+[2/21] new auth-basic: 41 READMEs in 803ms
+[3/21] new auth-basic-query: 41 READMEs in 750ms
+[4/21] new auth-query: 41 READMEs in 685ms
+[5/21] new auth-off: 41 READMEs in 737ms
+[6/21] new server-mixed: 41 READMEs in 742ms
+[7/21] new server-static: 41 READMEs in 633ms
+[8/21] new server-none: 41 READMEs in 646ms
+[9/21] new ex-readonly: 41 READMEs in 572ms
+[10/21] new ent-only-ambient: 41 READMEs in 640ms
+[11/21] new ent-none: 41 READMEs in 510ms
+[12/21] new doc-list: 41 READMEs in 617ms
+[13/21] new doc-crud: 41 READMEs in 632ms
+[14/21] new doc-nested: 41 READMEs in 615ms
+[15/21] new crud-basic: 41 READMEs in 568ms
+[16/21] new crud-bare: 41 READMEs in 568ms
+[17/21] new crud-noupdate: 41 READMEs in 624ms
+[18/21] new ref-issues: 41 READMEs in 752ms
+[19/21] new no-test: 41 READMEs in 637ms
+[20/21] new lone-go: 3 READMEs in 191ms
+[21/21] alias-go2: SKIPPED (alias staging would write into /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/sdkgen/ts; copy the clone under /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools to generate it)

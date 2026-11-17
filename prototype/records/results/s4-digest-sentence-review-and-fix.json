@@ -1,0 +1,647 @@
+{
+ "key": "sentence-review-and-fix",
+ "what": "the independent reading of every shared sentence, the round that fixed the false ones and the unsound matching, its independent check, and the survey of the twenty runtimes",
+ "digest": {
+  "part": "The independent reading of every shared sentence (s3b, three reviewers, 297 sentences), brief 6 that set the fix round, the tools round (sound masking and sentence identity, re-key), the shared round (false sentences fixed once, frozen at v33s), its independent check (ok: false), and the survey of the twenty runtimes (12 questions, one reader's claim per line). All six records were present and read in full; brief.md was read for H1-H5.",
+  "rounds": [
+   {
+    "round": "s3b sentence review",
+    "purpose": "Read every distinct shared sentence once against the runtimes. Until then most shared sentences had been accepted by pattern rules and never read (brief6).",
+    "who": "Three independent reviewers, parts A (tutorial 71 + rootquick 19 = 90), B (reference ids 0-7, 100) and C (reference ids 8-f, 107). All three say they read; none compiled or ran an example. B ran one strict-mode JS one-liner; A and C ran only node, grep and awk scripts over stored output.",
+    "produced": "297 verdicts. A: 72 ok, 4 false, 14 awkward. B: 85 ok, 7 false, 8 awkward. C: 91 ok, 3 false, 13 awkward. Merged (brief6): 248 ok, 35 awkward, 14 false. The 14 false ids are six distinct sentences. They also produced fix entries, per-language defects, and two findings that the matching itself is unsound: the mask hides shared words, and one template is counted as many sentences.",
+    "changed": "Brief 6 opened a fix round with a new rule: a sentence is reviewed once only if the tools can tell what the same sentence is; one template gives one verdict; a token is masked only where a language or the model supplied it; a false sentence is fixed once in shared code and must be true of all twenty runtimes; a changed sentence has no verdict until someone other than its author reads it."
+   },
+   {
+    "round": "brief 6",
+    "purpose": "Turn the review into a fix round with three roles.",
+    "who": "The workflow brief. Roles: tools (P/sfix/tools), shared (P/sfix/sdkgen, after tools), verify (independent reader and adversary).",
+    "produced": "The work list: five false-sentence topics, the 35 awkward ids, the per-language defects, and the two matching flaws.",
+    "changed": "Set the base: v3.2 frozen (tag v32-frozen); nine languages (ts go py c zig clojure rust elixir rb) ported; perl, swift, ocaml and lua being ported in parallel; seven to follow."
+   },
+   {
+    "round": "s3c tools (sfix-tools)",
+    "purpose": "Make sentence identity and masking sound, re-key every record keyed by a class or sentence id, carry the verdicts over, and close three holes in the one command.",
+    "who": "One tools engineer. No independent check inside this record; the verify round checked it.",
+    "produced": "Tools at 7d5dab2 (later 740dc90 after the shared round). Learned model slots per template across 21 variations with the language under review left out; a new sentence identity (ident.js); a bold-lead split; rekey.js; buildfresh.js (stale build); handstale.js (stale hand records); sharewords.js on the new identity. The 297 old ids map to 227, all with a verdict (ok 194, awkward 26, false 7). Self-test 203 controls, 0 failed, 1 moved.",
+    "changed": "Nine one commands pass after the re-key. 10 classes were recorded by hand by the tools engineer (go 3 conflicts and 2 split parts, rb 5 false-verdict classes). The tools engineer predicted 5 open classes for each port, which the verify round later measured as 16 for lua."
+   },
+   {
+    "round": "s3c shared (sfix-shared)",
+    "purpose": "Check each false sentence against the runtimes (run where possible), fix each once in shared code, decide the awkward ones, fix the per-language defects in providers, re-review the nine languages with the new tools, freeze.",
+    "who": "One engineer. Ran probes in ts, py and go; read the other runtimes and relied on the survey for questions 9 to 11.",
+    "produced": "sdkgen tagged v33s at e84d3525 (9 commits on v32-frozen 3d58cb46); tools at 740dc90. One runtime fix (b09502f1, ts and js makeFeature fallback, with a test). All six false sentences fixed once in shared code. 20 awkward decisions (applied, improved or left). 10 per-language defect fixes. Two breaking interface changes (read truth flag, required ref.facts.testMock) and three additive ones. 376 classes reopened, 361 hand records added, 16 stale reasons rewritten. 41 changed or new sentences left without a verdict, for an independent reader.",
+    "changed": "H1 breaking-change count now about 22 to 24 against a line of about 10. The eleven unported languages' pages stayed byte-identical (418 files). The four ports in progress must declare testMock 'generated' and, for swift and ocaml, a truth read."
+   },
+   {
+    "round": "s3c verify (sfix-verify)",
+    "purpose": "Independently read every changed sentence and attack the new matching.",
+    "who": "One independent verifier, on copies of sfix/sdkgen (v33s), sfix/tools (740dc90) and ports/lua. Re-ran the freeze checks, the probes (ts, py, go, including an own go probe), a revert of the runtime fix, 26 attacks in both modes, re-keys, the lua port procedure and the stale checks.",
+    "produced": "ok: False. Verdicts on the 41: 39 ok, 2 awkward, 0 false. Every freeze number reproduced. Six required failures: the match form accepts any own fact anywhere (4 wrong-prose changes accepted automatically); numbers and the a/an article are masked; dropping go's or c's branch sentence leaves no trace; buildfresh misses model files; handstale accepts OLD-page quotes; the lua port procedure run literally fails with 16 open classes, not 5.",
+    "changed": "Ten required fixes listed (tools ident.js/classify.js, controls, buildfresh, handstale, the port procedure, two wordings in ReadmeRef.ts, the unported README test-mode sections, commit trailers, re-reading 3 carried awkward verdicts). The round is not accepted as ready."
+   },
+   {
+    "round": "s3c survey of the twenty runtimes (short form)",
+    "purpose": "Answer twelve questions about runtime behaviour for all 20 bundled languages, so sentences can be checked against every runtime rather than the nine ported ones.",
+    "who": "Readers of the runtime source; 'every line is one reader's claim'. Each answer is marked 'read and certain' or 'read and inferred'; nothing in the short form says it was run. Full answers with file, line and quote are in P/results/s3c-survey.md (not in my records).",
+    "produced": "One line per runtime for: accessor and cache, getters copy or live, stream signal, cancelling an operation, when a stream's operation runs, after remove, what each thing is called on, fields or calls, direct's result in four cases, the test constructor without the test feature, ctrl.explain, what a standalone program must import.",
+    "changed": "Questions 9 to 11 were used by the shared round for the direct, explain and no-test sentences. The shared engineer's mechanical check of 417 quotes for questions 9 to 11: 225 at the cited line, 127 elsewhere in the same file, 65 multi-line or elided and unmatched; none quoting a line that does not exist."
+   }
+  ],
+  "items": [
+   {
+    "topic": "method",
+    "claim": "Three reviewers read all 297 distinct shared sentences and gave each a verdict; merged, 14 were false and 35 awkward.",
+    "numbers": "297 sentences (A 90: tutorial 71, rootquick 19; B 100; C 107). A 72 ok / 4 false / 14 awkward; B 85 / 7 / 8; C 91 ok / 13 awkward / 3 false. Merged 248 ok, 35 awkward, 14 false; the 14 false ids are six distinct sentences.",
+    "source": "results/s3b-sentences.txt parts[0..2] verdicts; brief6.md 'Where things stand'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The shared code introduced a false sentence that no old page said: 'The client reads its API key from the X environment variable'; eight rule records accepted it without anyone reading it.",
+    "numbers": "4 false ids in part A (a2bf96f937, cfc01f1671, 095528ea62, a73956b3fb); printed by c clojure elixir py rust ts zig (rb too) and go; 8 rule-record classes accepted it.",
+    "source": "s3b-sentences.txt part A false_sentences and summary; brief6.md item 1",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Running ts and py SDKs with DEMO_APIKEY set and no apikey option sent no credential, confirming the environment sentence was false; no runtime of the 20 reads a *_APIKEY variable.",
+    "numbers": "headers sent: content-type, accept, user-agent only; option reads cited in all 20 PrepareAuth files (e.g. ts :116, go :122, py :114, c :148).",
+    "source": "s3c-sfix-shared.txt false_sentences[0]; s3c-sfix-verify.txt false_checks[0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "direct()'s Returns sentence was false: a readable non-2xx response has ok false and no err key; err appears only for an unreadable body or a request that could not be made. The old wording was right.",
+    "numbers": "Run in ts and py (shared) and ts, py, go (verify), four cases each: 2xx ok true no err; readable 404 ok false with data, no err; unreadable 200 ok false with err; failed fetch only ok and err. go Direct's second return nil every time. Read in the other 17.",
+    "source": "s3b part B false_sentences[0..3]; s3c-sfix-shared.txt false_sentences[1]; s3c-sfix-verify.txt false_checks[1]; survey question 9",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The ctrl example `explain: true` was false on the old pages too: every runtime takes explain only as a map, ts throws on true, and direct() records nothing in explain, so the reviewer's proposed `{ explain: {} }` would also have been false; the example was removed ('Control options.').",
+    "numbers": "ts load with explain true: TypeError 'Cannot create property 'err' on boolean 'true''. py and go ignore true. direct recorded nothing in explain in ts or py. Survey question 11: all 20 ignore a non-map (js silently, ts throws). php ignores an empty array.",
+    "source": "s3c-sfix-shared.txt false_sentences[2]; s3c-sfix-verify.txt false_checks[2]; s3b part B false_sentences[4..6]; survey question 11",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The no-test test-client sentences were false for ts because ts test() threw without the test feature; zig and clojure, which the reviewers did not check, keep the real mock, so the sentence became conditioned on a new declared fact testMock ('generated' | 'always').",
+    "numbers": "ts before fix: 'fc is not a constructor'. After b09502f1, and in py and go: mode test, list refused with fetch_mode_block. Verify generated the no-test SDK for all 20: only zig and clojure keep a test factory entry; the other 18 drop it.",
+    "source": "s3c-sfix-shared.txt false_sentences[3], surprises; s3c-sfix-verify.txt false_checks[3]; survey question 10",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "'An action returns that action's OWN response' was false on every old page: an action is a create call, which returns the entity whose data is the action's response.",
+    "numbers": "Run in ts and py with $action 'terraform': same entity instance returned, data() equal to the response. Read in go, c, php, java, lua, rust, cpp.",
+    "source": "s3b part C false_sentences[2]; s3c-sfix-shared.txt false_sentences[5]; s3c-sfix-verify.txt false_checks[5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The v3.2 matching was unsound in two ways: shared words equal to a model or fact value were masked as if a language supplied them, and one shared template was split into many 'distinct' sentences, most listed as printed by one language.",
+    "numbers": "Masked shared words: record, utility, id, fields, data, err, array. 178 of 297 entries named one language; reviewers judged 9 a runtime's own fact, 1 surviving old wording, about 80 shared code that one condition selects, the rest artefact. Part A: 61 of 90 single-language, about 28 by tool artefact. Part B: 59 of 100 single-language, 47 the same shared template. Part C: 58 of 107, 17 mask artefacts.",
+    "source": "brief6.md 'The matching itself is unsound'; s3b parts A/B/C single_language",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The tools round made one template one sentence id: the 297 old ids map to 227, all with a carried verdict.",
+    "numbers": "227 (tutorial 63, rootquick 8, reference 156) plus 2 fixture-model texts left out; carried verdicts ok 194, awkward 26, false 7; 8 mixed (worst taken); 10 marked fromSplit; one language prints 107 (tutorial 35, rootquick 4, reference 68).",
+    "source": "s3c-sfix-tools.txt sentences, verdicts",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Five new masking controls catch a shared word replaced by another word under v3.3 that v3.2 missed.",
+    "numbers": "v3.2: 3 of 5 not flagged in either mode, 6 of 10 runs failed. v3.3: 10 of 10 pass. The headers-and-body-py control sits on a sentence now marked false, so it proves less.",
+    "source": "s3c-sfix-tools.txt masking, controls_added",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Tools self-test after the tools round: 203 controls, 0 failed, 1 moved; the moved control is a real hole: from scratch, dropping a sentence only go's result style prints leaves no trace.",
+    "numbers": "203 controls (v3.2 had 175), 0 failed, 1 moved (go-tut-step4-dropped, scratch), 1058 s. Reviewed and scratch: ledger 24/24, recheck 19/19, accept 7/7, masking 5/5, missing 3/3; facts 5/5 and 5/5; sentences 2/2; identity 18/18; purity 28/28; blocks 28/28; recall 1/1.",
+    "source": "s3c-sfix-tools.txt selftest, holes[3]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The re-key carried every hand decision for the nine languages; the before/after table moved only by merges and splits plus 10 classes the tools engineer recorded by hand.",
+    "numbers": "Hand entries not carried: 0. Kept as stale before re-key: 18 hand, 56 pinned. go tutorial 87->88 (3 merges, 14 split parts, 3 conflicts); rb ref 120->118 (5 merges). 10 hand-decided classes. Verify: lost 0 in all nine; re-key twice is a no-op.",
+    "source": "s3c-sfix-tools.txt rekey, not_carried; s3c-sfix-verify.txt rekey",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "Measured by source (provider literals: notes plus prose facts), per-language prose stays under the 15% line in the nine ported languages; the highest is go.",
+    "numbers": "By source at v33s, 21 variations, all sections: ts 0.4, go 7.4, py 0.2, c 1.3, zig 4.4, clojure 2.8, rust 0.5, elixir 0.8, rb 0.2 (%). Tools-round figures: ts 0.4, go 7.4, py 0.2, c 1.3, zig 4.5, clojure 2.8, rust 1.2, elixir 0.8, rb 0.2.",
+    "source": "s3c-sfix-verify.txt numbers; s3c-sfix-tools.txt holes[2]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "'Printed by this language alone' overstated per-language prose because mask splits counted as a language's own; after the identity fix it falls, but the column still counts shared code selected by a style.",
+    "numbers": "Only-this-language old -> new (tools): ts 14.7 -> 11.4, go 22.6 -> 18.9, py 3.0 -> 2.5, c 9.9 -> 6.3, zig 4.8 -> 0.1, clojure 2.8 -> 0.4, rust 5.9 -> 1.4, elixir 5.0 -> 0.7, rb 4.7 -> 2.5 (%). go over 19 shared variations 10.4. At v33s (verify): ts 11.3, go 18.6 (10.1 over 19), py 2.5, c 6.3, zig 0.1, clojure 0.4, rust 1.4, elixir 0.7, rb 2.5.",
+    "source": "s3c-sfix-tools.txt holes[2]; s3c-sfix-verify.txt numbers",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "Of the sentences one language prints alone, recounted by page at v33s, only 9 are a runtime's own fact; most are shared code selected by one condition.",
+    "numbers": "Tool lists 106 (tutorial 34, rootquick 4, reference 68); recount by page 77 (30/4/43). Of 77: runtime's own fact 9; printer output 15; declared fact as heading 1; shared code one condition selects 50; listed but on no page 2. 29 of the tool's 106 are printed by several languages.",
+    "source": "s3c-sfix-verify.txt numbers",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "The fix round added two breaking interface changes, bringing breaking changes since the first four languages to about 22 to 24, over H1's line of about 10; neither came from a newly ported language.",
+    "numbers": "Breaking: RefSyntax.read(value, key, truth?) (code forced in c, go, rust, zig; ports swift and ocaml need it) and required RefFacts.testMock (all 9 providers and 9 forms citations; 11 unported forms carry ahead citations). Additive: 3 (action Call cell, shared sentence changes, py and elixir drop opMatched.list). Total about 22 to 24 against about 10.",
+    "source": "s3c-sfix-shared.txt interface_changes, hypotheses[0], summary",
+    "by": "builder",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "A runtime difference was carried as data rather than a separate paragraph: zig and clojure keeping the mock became the declared fact testMock 'always', the other 18 'generated'.",
+    "numbers": "2 runtimes 'always' (zig Config_zig.ts:172-180, clojure features.clj:1604-1608), 18 'generated'.",
+    "source": "s3c-sfix-shared.txt interface_changes[1], false_sentences[3]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "finding",
+    "claim": "Each false sentence was fixed once in shared code, and the eleven unported languages' pages did not move; the review's false sentences are not catalogue issues, so this is not an H3 measure.",
+    "numbers": "6 false sentences fixed in ReadmeQuick.ts, ReadmeRef.ts, runtimeprose.ts, sdkdesc.ts, example.ts (commit 2608dd45). Unported: 418 files byte-identical to base32/out/new; against OLD only the same 7 README and 8 REFERENCE lines, each 209 times.",
+    "source": "s3c-sfix-shared.txt commits, freeze_checks[8], unported_lines",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "Example lanes pass at v33s, but no lane compiles the changed blocks or the new Action Call cells.",
+    "numbers": "ts README 16/16 (52 s), go 12/12 (70 s), py 12/12 (17 s), c DOC 6/6 (32 s), rust DOC 6/6 (33 s), rb 49/49 (62 s), zig documentation 6/6 (9 s). Verify reproduced the same. Call cells of go, c, zig, elixir: 'compiled by nothing'.",
+    "source": "s3c-sfix-shared.txt lanes; s3c-sfix-verify.txt checks[4], sentences[32,36,37,40]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Freeze checks at v33s were reproduced number for number by the verifier.",
+    "numbers": "Suite without lanes 2606 tests, 2601 pass, 0 fail, 5 skipped (6m30s builder; 359 s verifier). Golden 2/2 (verifier without regenerating). Guard and reader 61/61. Nine one commands PASS. From scratch open: ts 28/5/96, go 47/4/53, py 19/0/61, c 21/3/63, zig 22/2/71, clojure 19/0/72, rust 26/2/78, elixir 19/0/75, rb 25/2/70. 21 variations regenerated byte-identical. Build leaves 0 lines in git status.",
+    "source": "s3c-sfix-shared.txt freeze_checks; s3c-sfix-verify.txt checks",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The independent reader gave verdicts to all 41 changed or new sentences; none is false and two are awkward.",
+    "numbers": "41 read; 39 ok, 2 awkward, 0 false. Awkward: 663d6ed57c ('holds `data`': ts and js drop data on an unreadable body, py and go keep data null) and eefd70afa7 ('A key is read as', reads as a rule for every key).",
+    "source": "s3c-sfix-verify.txt verdicts, sentences[22], sentences[24]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The v3.3 match form can be fooled into accepting wrong prose automatically, because it masks any position whose text is any of the language's own facts, whichever fact belongs there.",
+    "numbers": "Accepted in both modes: zig .ok/.err swapped (as shared:rust 330eda8294); py `list()` for `data_get()` (shared:ts 051bd06f0c); rb `Hash` for `Array` (shared:py 190f1a9e6b); rb comment 'a list of entities' (shared:clojure 8df51be291).",
+    "source": "s3c-sfix-verify.txt summary 'What fails' 1, required_fixes[0], attacks[14,16,18,19]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Numbers and the a/an article before a model name are masked, so a wrong step count, a wrong heading number or a wrong article leaves no trace.",
+    "numbers": "'these 3 steps' over 2 and heading '5. Load': 0 open, 0 unclassified change, both modes. 'Load a ambient' accepted as shared:clojure (ad69938daf).",
+    "source": "s3c-sfix-verify.txt attacks[8], attacks[10], required_fixes[1]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Dropping go's or c's branch sentence from every variation leaves no trace even in the reviewed mode, and the self-test control that covered it was retargeted rather than recorded as moved.",
+    "numbers": "B only: open in reviewed, no trace from scratch. Every variation: no trace in reviewed and from scratch, for go and for c.",
+    "source": "s3c-sfix-verify.txt attacks[20], required_fixes[2]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Of the verifier's attacks on the new matching, most were caught, but seven were not.",
+    "numbers": "22 attack entries listed (from 23 + 3 attacks run in both modes); sound: 15, not sound: 7 (attacks 8, 10, 14, 15, 16, 18, 19, 20 marked False minus none; listed False: 8, 10, 14, 15, 16, 18, 19, 20). Shared words once masked (record, utility, id, fields, data, err, array) now open in both modes. Id merge check: 609 ids, 23 with more than one shape, no two templates merged.",
+    "source": "s3c-sfix-verify.txt attacks",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The stale-build check misses model files: a model edit without a build passes unnoticed.",
+    "numbers": "log.aontu edited to active:false, not re-staged: buildfresh 'current', 0 files differ on regeneration; with the edit staged, 787 files differ. A touched ReadmeRef.ts is caught ('1655s newer', exit 1).",
+    "source": "s3c-sfix-verify.txt stale_checks, required_fixes[3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The stale-hand-record check accepts a quotation found only on an OLD page.",
+    "numbers": "A reason quoting 'Create a new SDK client instance.' stayed green after the text left source and NEW; a NEW-only quote removed the same way was flagged STALE. All 173 hand quotations of the nine are also in the source.",
+    "source": "s3c-sfix-verify.txt stale_checks, required_fixes[4]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The documented port procedure, run literally on a copy of the lua port, re-keys cleanly but its one command fails with 16 open classes rather than the 5 the tools report expected, because it has no step that moves the port onto v33s.",
+    "numbers": "rekey exit 0 (5 merges, 6 split parts, 0 conflicts); portcheck lua FAIL: OPEN tutorial 6, rootquick 0, reference 10; blocks OPEN 0; guard 4/4; hand 204, STALE 0; 1 accepted class with a false verdict (3f33c6f26f); 1 shared match on an unreviewed sentence.",
+    "source": "s3c-sfix-verify.txt rekey_port, required_fixes[5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "cost",
+    "claim": "Fixing a handful of shared sentences reopened hundreds of classes across the nine languages, each decided by hand or by carrying a v3.2 decision.",
+    "numbers": "376 classes reopened; 361 hand records added; 16 stale reasons rewritten. The 'Client' heading change re-paired about 100 classes per language. Per-language hand decisions base -> sfix (verify): ts 74 -> 120, go 56 -> 107, py 53 -> 90, c 72 -> 106, zig 77 -> 131, clojure 64 -> 93, rust 60 -> 107, elixir 60 -> 95, rb 145 -> 183.",
+    "source": "s3c-sfix-shared.txt summary, surprises; s3c-sfix-verify.txt rekey",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "cost",
+    "claim": "Any shared sentence change breaks the self-test controls written against its text, independent of the tools' logic.",
+    "numbers": "Self-test after the sentence fixes: 40 failed, then 2, then 0 (203 controls, 1 moved, 1033 s). 16 injections, 2 purity edits and 6 identity controls retargeted.",
+    "source": "s3c-sfix-shared.txt freeze_checks[7], tools_changes, surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "cost",
+    "claim": "Self-test and suite timings on the shared four-CPU machine.",
+    "numbers": "Self-test 1058 s (tools), 1033 s (shared), 1020 s (verify). Suite without lanes 6m30s (shared, concurrency 2), 359 s (verify).",
+    "source": "s3c-sfix-tools.txt selftest; s3c-sfix-shared.txt freeze_checks[1,7]; s3c-sfix-verify.txt checks[1,8]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "In ts and js, test() threw when the SDK had no test feature, because makeFeature had no fallback; fixed in its own commit with a test that fails without it.",
+    "numbers": "'fc is not a constructor'; featurefallback.test.ts fails 4 of 4 without b09502f1. Verify reverted the fix: 4/4 fail, ts guard citation fails, generated no-test ts SDK throws. The js 'ahead' citation does not fail with js's fix reverted.",
+    "source": "s3c-sfix-shared.txt runtime_defects[0]; s3c-sfix-verify.txt false_checks[3]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "ts throws a TypeError when an operation gets ctrl explain: true; not fixed.",
+    "numbers": "About 8 pipeline assignment sites; 'Cannot create property 'err' on boolean 'true''.",
+    "source": "s3c-sfix-shared.txt runtime_defects[1]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "php copies explain into the context so the caller never sees the record, and an empty array records nothing; not fixed.",
+    "numbers": "tm/php/core/Context.php:55; utility/Done.php:25",
+    "source": "s3c-sfix-shared.txt runtime_defects[2]; survey question 11 php",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "py direct() lets an exception from a caller-supplied system.fetch propagate; the survey reads the same in rb, php, perl, lua, elixir, clojure, ocaml and cpp.",
+    "numbers": "py run: probe_py.py case 2e raised 'ECONNREFUSED'; the rest read.",
+    "source": "s3c-sfix-shared.txt runtime_defects[3]; s3c-sfix-verify.txt false_checks[1]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "The survey found behavioural differences between runtimes that shared sentences must either condition on or avoid.",
+    "numbers": "Accessor caches with no argument in php and lua only (Q1). Options getter returns the live value in py and rb; elixir get_utility returns the live node; ocaml has no getters (Q2). No stream signal in c, cpp, zig, rust (Q3). Cancellation only in ts and js (Q4). Stream runs at the call in c, perl, elixir, java, kotlin, scala, swift, cpp, zig, rust, clojure, ocaml; lazily in ts, js, py, php, lua, csharp; go in a goroutine; rb split (Q5). ocaml and cpp mark deleted whatever the outcome; java deleted() not on SdkEntity; elixir Demo.Entity.Planet.deleted/1 does not exist (Q6). scala and csharp mutate the caller's entopts (Q1).",
+    "source": "results/s3c-survey-short.md questions 1-6",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "Two of the six false sentences were already false on main's old pages: the explain: true example and the action-response sentence.",
+    "numbers": "explain: 'This one was wrong on the old pages too'; action sentence: 'old wording kept from every OLD page'.",
+    "source": "brief6.md items 3 and 5; s3b part C false_sentences[2]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "In a no-test SDK, the unported per-language README 'Use test mode' section still promises a mock client, true only for zig and clojure; the ts example throws.",
+    "numbers": "20 READMEs in the no-test variation say 'Create a mock client for unit testing'; ran ts: 'Request blocked by mode: \"test\"'. Counted as a contradiction, not failed.",
+    "source": "s3c-sfix-verify.txt summary 'Also', required_fixes[7]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "elixir's own unported README transport section breaks a code span across lines.",
+    "numbers": "38 lines over 19 variations; prose lines with an odd number of backticks in the ported sections: 112 at base32 NEW, 0 now.",
+    "source": "s3c-sfix-shared.txt runtime_defects[4], per_language[7]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The review also found per-language defects in the providers' output, two of which the reviewers did not name and the shared engineer found.",
+    "numbers": "c branched on a pointer `getp(result, \"ok\")` (now voxgig_as_bool); elixir and py list headings showed a signature that is not the declaration (py not named by reviewers); clojure 'lazy sequence' over items already read; zig Call cell an unclosed switch; c and elixir Call cells used undeclared variables (elixir not named); rust code span broken across lines; 'Instance Functions' heading for c, clojure, elixir (now 'Client <noun>' for all 20).",
+    "source": "s3b parts B and C fixes; s3c-sfix-shared.txt per_language",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Survey: direct()'s result shape is the same in all 20 runtimes, and every runtime ignores a non-map explain, so these sentences can be written once.",
+    "numbers": "Q9: all 20 give a readable non-2xx ok false with data and no err. Q11: all 20 take explain only as a map (ts throws on true; js silently ignores).",
+    "source": "s3c-survey-short.md questions 9 and 11",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "limit",
+    "claim": "Most sentence verdicts rest on reading for the runtimes without a toolchain here, and several claims were run in ts, py and go only.",
+    "numbers": "No toolchain runs clojure, elixir, lua, kotlin, scala, swift, csharp or ocaml; direct's four cases run in ts, py, go only (17 read); zig's no-test mock confirmed by generation, not running; the survey short form is all 'read' (certain or inferred; question 10 and 12 answers all 'read and inferred').",
+    "source": "s3c-sfix-verify.txt could_not_check; s3c-survey-short.md",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "Several decisions in the fix round were made by one engineer and not re-read by another.",
+    "numbers": "10 classes decided by the tools engineer (go 3 conflicts + 2 split parts, rb 5); go 9363faf207 accepted with no entry; 10 fromSplit and 8 mixed verdicts carried mechanically; re-paired classes reuse v3.2 decisions without re-argument; 3 carried awkward verdicts (0071df96c2, f6b8425ed5, e9015df1ee) not re-read.",
+    "source": "s3c-sfix-tools.txt not_done; s3c-sfix-shared.txt not_done; s3c-sfix-verify.txt required_fixes[9]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "The s3b reviewers compiled and ran no example; their verdicts rest on reading, and part C's no-test verdict rested on ts alone.",
+    "numbers": "Part A: 'I compiled and ran no examples'; part B: one strict-mode JS one-liner only; part C: 'No generation, compile, suite or lane was run'.",
+    "source": "s3b-sentences.txt parts A/B/C ran, not_done",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   }
+  ],
+  "disagreements": [
+   {
+    "a": "Each port should expect 5 open classes (the false-verdict sentences) after the re-key and one command.",
+    "a_source": "s3c-sfix-tools.txt for_ports",
+    "b": "The lua port procedure run literally fails with 16 open classes (tutorial 6, reference 10), because nothing moves the port onto v33s; the shared engineer also says the 5 expected classes no longer exist.",
+    "b_source": "s3c-sfix-verify.txt rekey_port; s3c-sfix-shared.txt for_the_ports",
+    "stands": "b: 16 open, measured; the procedure needs a step that rebases the port on v33s."
+   },
+   {
+    "a": "Match form: a position is masked only if its text is one of the language's own declared facts and no other language prints it as plain text; one template gives one id, and the masking is sound against a port or regression.",
+    "a_source": "s3c-sfix-tools.txt masking, summary",
+    "b": "The match form accepts any own fact at any position: four wrong-prose changes were accepted automatically in both modes; numbers and the a/an article are also masked.",
+    "b_source": "s3c-sfix-verify.txt attacks[8,10,14,16,18,19], required_fixes[0,1]",
+    "stands": "b"
+   },
+   {
+    "a": "Retargeting sentence-removed-go to drop go's 'A key is read as ...' sentence keeps the control's intent.",
+    "a_source": "s3c-sfix-shared.txt tools_changes 1",
+    "b": "The control should have kept its v3.2 intent (drop go's branch sentence) and been recorded as moved: dropping go's or c's branch sentence from every variation leaves no trace even in the reviewed mode.",
+    "b_source": "s3c-sfix-verify.txt attacks[20], required_fixes[2]",
+    "stands": "b"
+   },
+   {
+    "a": "buildfresh closes the hole that the one command passed on an old build.",
+    "a_source": "s3c-sfix-tools.txt holes[0]",
+    "b": "buildfresh does not compare ts/project/.sdk/model/** with its staged copy: a model edit without a build passes (787 files would differ once staged).",
+    "b_source": "s3c-sfix-verify.txt stale_checks, required_fixes[3]",
+    "stands": "b"
+   },
+   {
+    "a": "handstale closes the hole of a hand record that stays decided after its quoted text changed.",
+    "a_source": "s3c-sfix-tools.txt holes[1]",
+    "b": "handstale accepts a quotation found on any OLD page, so a reason quoting text that left NEW and the source stays green.",
+    "b_source": "s3c-sfix-verify.txt stale_checks, required_fixes[4]",
+    "stands": "b"
+   },
+   {
+    "a": "Proposed fix for the ctrl example: `{ explain: {} }`, a map the call fills.",
+    "a_source": "s3b part B fixes[1]",
+    "b": "Also false: direct() records nothing in explain, and php ignores an empty array; the example was removed ('Control options.').",
+    "b_source": "s3c-sfix-shared.txt false_sentences[2]; confirmed in s3c-sfix-verify.txt false_checks[2]",
+    "stands": "b"
+   },
+   {
+    "a": "The no-test test-client sentences are false for ts and true for the other runtimes (go, c, py, rust fall back to the base feature).",
+    "a_source": "s3b part C false_sentences[0]",
+    "b": "zig and clojure keep the real mock without the test feature, so 'no mock transport' is false for them too; it became the declared fact testMock.",
+    "b_source": "s3c-sfix-shared.txt false_sentences[3]; s3c-sfix-verify.txt false_checks[3]; survey question 10",
+    "stands": "b"
+   },
+   {
+    "a": "Proposed rewording 'The match is optional: without one, the request carries no filter.'",
+    "a_source": "s3b part C fixes[6]",
+    "b": "False where the entity holds a stored match (ts list passes this._match); only 'The match is optional.' kept.",
+    "b_source": "s3c-sfix-shared.txt awkward[13]",
+    "stands": "b (verifier gave the new sentence ok)"
+   },
+   {
+    "a": "Proposed rewording '...so the match gives `planet_id` as well as the satellite's own id.'",
+    "a_source": "s3b part A fixes[5]",
+    "b": "A singleton nested under a parent has no own id; 'the match also gives `planet_id`' used.",
+    "b_source": "s3c-sfix-shared.txt awkward[3]",
+    "stands": "b (verifier gave it ok)"
+   },
+   {
+    "a": "zig's prepare-failure note should become an error-union style of the shared failsSentence.",
+    "a_source": "s3b part B pairs[10], single_language",
+    "b": "Kept as a note: zig alone returns a native error union beside its result union, and one runtime's own fact is a note by the design's rule.",
+    "b_source": "s3c-sfix-shared.txt awkward[19]",
+    "stands": "b, as a decision; not reviewed by the verifier beyond noting it"
+   },
+   {
+    "a": "Sentences printed by one language alone: 107 (tutorial 35, rootquick 4, reference 68).",
+    "a_source": "s3c-sfix-tools.txt sentences",
+    "b": "The tool lists 106 at v33s, but counted by page only 77 (30/4/43); 29 of the 106 are printed by several languages because the tool attributes by class list; 2 match no page unit.",
+    "b_source": "s3c-sfix-verify.txt numbers",
+    "stands": "b: 77 by page at v33s"
+   },
+   {
+    "a": "Commits carry the session's co-author lines because the system attribution instruction outranks the brief.",
+    "a_source": "s3c-sfix-shared.txt summary",
+    "b": "9 sdkgen and 3 tools commits carry a model-naming trailer against brief 4's rule; remove them if the rule stands.",
+    "b_source": "s3c-sfix-verify.txt required_fixes[8]",
+    "stands": "open: listed as a required fix, not decided in these records"
+   }
+  ],
+  "superseded": [
+   {
+    "number": "297 distinct shared sentences (tutorial 71, rootquick 19, reference 207)",
+    "replaced_by": "227 after the identity fix (63/8/156), then 230 at v33s (64/8/158)",
+    "source": "s3c-sfix-tools.txt sentences; s3c-sfix-verify.txt checks[10], numbers"
+   },
+   {
+    "number": "Merged verdicts 248 ok, 35 awkward, 14 false (over 297 ids)",
+    "replaced_by": "194 ok, 26 awkward, 7 false over 227 ids after re-key; at v33s the six false sentences are fixed and the 41 changed or new sentences got 39 ok, 2 awkward, 0 false",
+    "source": "s3c-sfix-tools.txt verdicts; s3c-sfix-verify.txt verdicts"
+   },
+   {
+    "number": "178 of 297 entries printed by one language",
+    "replaced_by": "107 (tools), then 106 listed / 77 by page at v33s",
+    "source": "s3c-sfix-tools.txt sentences; s3c-sfix-verify.txt numbers"
+   },
+   {
+    "number": "go 'printed by this language alone' 22.6% at the v3.2 freeze",
+    "replaced_by": "18.9% (tools; 10.4% over 19 variations), then 18.6% at v33s (10.1% over 19)",
+    "source": "s3c-sfix-tools.txt holes[2]; s3c-sfix-verify.txt numbers"
+   },
+   {
+    "number": "By-source share zig 4.5%, rust 1.2% (tools round)",
+    "replaced_by": "zig 4.4%, rust 0.5% at v33s",
+    "source": "s3c-sfix-verify.txt numbers"
+   },
+   {
+    "number": "Expected 5 open classes per port after re-key",
+    "replaced_by": "16 measured on lua (tutorial 6, reference 10)",
+    "source": "s3c-sfix-verify.txt rekey_port"
+   },
+   {
+    "number": "175 self-test controls at v3.2",
+    "replaced_by": "203 controls (0 failed, 1 moved)",
+    "source": "s3c-sfix-tools.txt selftest"
+   },
+   {
+    "number": "Tools at 7d5dab2",
+    "replaced_by": "740dc90 after the shared round's control and rekey fixes",
+    "source": "s3c-sfix-shared.txt frozen_commit"
+   },
+   {
+    "number": "Prose lines with an odd number of backticks in the ported sections: 112 at base32 NEW",
+    "replaced_by": "0 at v33s (38 remain in elixir's unported transport section)",
+    "source": "s3c-sfix-shared.txt per_language[7]"
+   },
+   {
+    "number": "go conflicts 3 and rb 5 false-verdict classes recorded by hand in the tools round",
+    "replaced_by": "The rb/lua false-verdict classes no longer exist at v33s (sentences fixed); the replacements had no verdict until the verify round",
+    "source": "s3c-sfix-shared.txt for_the_ports"
+   }
+  ],
+  "findings": [
+   {
+    "finding": "Reading every shared sentence once found real errors: of 297 distinct sentences, 14 ids (six distinct sentences) were false and 35 awkward. One false sentence (the client reads the API key from the environment) was introduced by the shared code itself and accepted by eight rule records nobody read; two others were false on main's old pages already.",
+    "source": "s3b-sentences.txt; brief6.md"
+   },
+   {
+    "finding": "Each false sentence was checked by running ts, py and (for two topics) go SDKs, then fixed once in shared code; an independent verifier re-ran all six and agreed. The eleven unported languages' pages did not change (418 files byte-identical).",
+    "source": "s3c-sfix-shared.txt false_sentences, freeze_checks[8]; s3c-sfix-verify.txt false_checks"
+   },
+   {
+    "finding": "Writing a sentence once forces it to be true of all twenty runtimes, which surfaced differences nobody had listed: zig and clojure keep the mock without the test feature, ts and js test() threw, ts throws on explain true. The first became a declared fact (testMock), the second a runtime fix with a test.",
+    "source": "s3c-sfix-shared.txt surprises, runtime_defects; s3c-survey-short.md question 10"
+   },
+   {
+    "finding": "H1's interface threshold is crossed: the fix round added two breaking changes (a truth flag on the read printer, a required testMock fact), for about 22 to 24 breaking changes since the first four languages against a line of about 10. Neither came from a newly ported language.",
+    "source": "s3c-sfix-shared.txt interface_changes, hypotheses[0]"
+   },
+   {
+    "finding": "By source, per-language prose stays well under H1's 15% line in the nine ported languages (highest go 7.4%). By page, only 9 of 77 sentences printed by one language are a runtime's own fact; 50 are shared code that one condition selects.",
+    "source": "s3c-sfix-verify.txt numbers"
+   },
+   {
+    "finding": "The v3.2 matching was unsound: shared words were masked as model names, and one template counted as many sentences (178 of 297 named one language). The tools round fixed both kinds of split (297 ids to 227) and passed 5 new masking controls that v3.2 failed in 6 of 10 runs.",
+    "source": "brief6.md; s3c-sfix-tools.txt masking, sentences"
+   },
+   {
+    "finding": "The independent check failed the round (ok: false). The v3.3 match form still accepts wrong prose automatically when a language's own fact of another kind stands in the slot: four such attacks were accepted in both modes. Wrong numbers and a wrong article before a model name leave no trace, and dropping go's or c's branch sentence from every variation is not detected even in the reviewed mode.",
+    "source": "s3c-sfix-verify.txt summary, attacks, required_fixes[0..2]"
+   },
+   {
+    "finding": "Two of the tools' new safety checks have holes. The stale-build check misses model files: an unstaged model edit is reported current, though 787 output files would differ. The stale-record check accepts quotations found only on OLD pages.",
+    "source": "s3c-sfix-verify.txt stale_checks"
+   },
+   {
+    "finding": "Changing a few shared sentences is expensive under the current tools. It reopened 376 classes and needed 361 new hand records. The heading change alone re-paired about 100 classes per language, and 40 self-test controls failed because their text had changed.",
+    "source": "s3c-sfix-shared.txt summary, surprises, freeze_checks[7]"
+   },
+   {
+    "finding": "The documented procedure for moving an in-progress port onto the new tools does not reach a passing one command. On lua it left 16 open classes against the 5 predicted, because no step rebases the port on v33s.",
+    "source": "s3c-sfix-verify.txt rekey_port"
+   },
+   {
+    "finding": "Example lanes pass at v33s. The lanes were ts README 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49 and zig 6/6. No lane compiles the changed blocks or the new self-contained Action Call cells (go, c, zig, elixir), so H4 holds only for what the lanes cover.",
+    "source": "s3c-sfix-shared.txt lanes; s3c-sfix-verify.txt could_not_check"
+   },
+   {
+    "finding": "The survey of all 20 runtimes is read, not run, and each line is one reader's claim. It shows where a shared sentence can be one sentence and where a declared fact is needed. direct()'s result and explain handling are the same in all 20. Stream signals, cancellation, when a stream's operation runs, accessor caching and live-or-copy getters differ by runtime.",
+    "source": "s3c-survey-short.md"
+   },
+   {
+    "finding": "Several fix-round decisions were made by one engineer and never re-read by another. These are 10 hand-decided classes, mechanically carried mixed and fromSplit verdicts, and re-paired classes reusing v3.2 decisions. Verdicts for the runtimes without a toolchain rest on reading.",
+    "source": "s3c-sfix-tools.txt not_done; s3c-sfix-shared.txt not_done; s3c-sfix-verify.txt could_not_check"
+   }
+  ],
+  "missing": [
+   "The full survey with file, line and quote (P/results/s3c-survey.md) is not in my records; only the short form was read. The short form does not say how many readers took part.",
+   "The merged verdict file P/sentences/merged.json and the reviewers' per-part sentences.json are cited but were not given to me.",
+   "Brief 3, 4 and 5 are referenced by brief 6 but were not in my list.",
+   "Part B's s3b mask_claims block was read only from its continuation; its first entry may be truncated in my reading."
+  ]
+ }
+}

@@ -1,0 +1,63 @@
+lang section   | code blocks identical/changed (old->new) | prose lines same/chg/add/rem | changed lines | unexplained
+c quick        | 7/41 (48->48)                            | 59/100/44/0                  | 357           | 0
+c top          | 0/19 (19->19)                            | 0/0/0/0                      | 321           | 0
+clojure quick  | 27/21 (48->48)                           | 52/100/44/0                  | 291           | 0
+clojure top    | 0/19 (19->19)                            | 0/0/0/0                      | 252           | 0
+elixir quick   | 17/31 (48->48)                           | 67/92/36/0                   | 287           | 0
+elixir top     | 0/19 (19->19)                            | 0/0/0/0                      | 336           | 0
+go quick       | 0/21 (21->21)                            | 21/160/43/8                  | 664           | 0
+go top         | 0/21 (21->21)                            | 0/0/0/0                      | 711           | 0
+go2 quick      | 0/1 (1->1)                               | 1/8/0/0                      | 26            | 0
+py quick       | 26/22 (48->48)                           | 59/77/60/0                   | 257           | 0
+py top         | 0/19 (19->19)                            | 0/0/0/0                      | 251           | 0
+rust quick     | 27/21 (48->48)                           | 52/100/51/0                  | 319           | 0
+rust top       | 0/19 (19->19)                            | 0/0/0/0                      | 315           | 0
+ts quick       | 19/29 (48->48)                           | 52/91/53/0                   | 386           | 0
+ts top         | 0/19 (19->19)                            | 2/0/0/0                      | 265           | 0
+zig quick      | 26/22 (48->48)                           | 52/100/51/0                  | 419           | 0
+zig top        | 0/19 (19->19)                            | 0/0/0/0                      | 115           | 0
+
+changed lines by reason:
+  649  B one program: go's steps are one program again (package main, imports, func main), which its README test runs (re-indented into main)
+  595  C runtime facts: the list/load sentence written once per result style, filled from the declared table
+  561  S28/U45 lead-in follows the steps written
+  466  structure: re-indented under the error handling the step now has
+  443  top: list and load wrapped in the language's error handling, as in the tutorial (OLD root: none, or ad hoc)
+  343  D25/S49/G01 client prose states the env vars and server variables from the description
+  309  B one program: go's steps are one program again (package main, imports, func main), which its README test runs (the steps become a numbered list of the same sentences)
+  253  top: each step is commented with the shared title and its runtime fact (OLD: per-language comment text)
+  172  B one program: go's steps are one program again (package main, imports, func main), which its README test runs
+  162  S49 zig/clojure constructor carries the required server variables
+  162  S49 rust/elixir constructor carries the required server variables
+  156  S49 c constructor carries the required server variables
+  152  S28 steps numbered as written
+  146  top: the step bodies are the tutorial's (re-indented under the error handling)
+  133  S49/G01/M13/D55 server block lists only required variables
+  128  unified wording: write-step comments
+  120  B one program: go's steps are one program again (package main, imports, func main), which its README test runs (step comments carry the runtime fact)
+  115  top: the load shown is the description's choice (the nested entity if any, else the example entity), as in the tutorial; OLD root showed the example entity
+   98  blank lines follow the statements
+   70  U45 write heading names the operations present
+   38  rust: one client statement, so the root quick start imports getp as the tutorial does (OLD root did not; the other README sections compile against the imports of the tutorial)
+   36  structure: ts list wrapped in error handling like every other language
+   35  structure: zig binds create outside its switch so the chained id is in scope
+   34  DEFECT c-getenv: getenv without <stdlib.h> (fails -Werror=implicit-function-declaration)
+   31  structure: write results are not printed (one builder decision)
+   30  S50/D23/M12 secret exactly when the runtime reads it
+   24  unified: the description decides id chaining once (zig never chained)
+   20  elixir: an operation called with no match takes no match argument (OLD tutorial passed H.deep(%{}) to load alone; OLD root passed nothing)
+   20  top: the load shown is the description's choice (the nested entity if any), as in the tutorial
+   16  top rust: the loaded record is printed in the Ok arm (OLD root unwrapped, then printed on its own line)
+   16  S28/U45 lead-in: the placement sentence reflows with it
+   16  structure: unused write results are not bound (one builder decision)
+    7  top: go's loop variable is the tutorial's `item` (OLD root named it after the entity)
+    7  top: list loop and handles as the tutorial prints them
+    4  D (one constructor): go prints NewDemoSDK(nil) instead of choosing New() by option count
+    3  D (decision out of the c provider): err is declared ahead of the first block that calls an operation, not in the client block
+    1  top: the load shown is the description's choice (the nested entity if any), as in the tutorial (elixir print of the OLD entity)
+    1  top elixir: a handle is bound by the step that calls through it (OLD root bound one even when no step used it)
+
+variations: 21 B alias-go2 auth-basic auth-basic-query auth-off auth-query crud-bare crud-basic crud-noupdate doc-crud doc-list doc-nested ent-none ent-only-ambient ex-readonly lone-go no-test ref-issues server-mixed server-none server-static
+UNEXPLAINED in ported languages: 0
+unported languages differing from OLD (README files and root subsections): 0 
+changes outside the two sections: 0 

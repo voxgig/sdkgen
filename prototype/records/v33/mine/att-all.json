@@ -1,0 +1,301 @@
+[
+ {
+  "id": "G1-lua-okfalse-nil",
+  "lang": "lua",
+  "file": "project/.sdk/src/cmp/lua/Syntax_lua.ts",
+  "from": "direct: { returns: 'table', okFalse: 'false' }",
+  "to": "direct: { returns: 'table', okFalse: 'nil' }"
+ },
+ {
+  "id": "G1-ocaml-okfalse-false",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+  "from": "okFalse: 'Bool false'",
+  "to": "okFalse: 'false'"
+ },
+ {
+  "id": "G6-lua-A1-run-op-cancel",
+  "lang": "lua",
+  "file": "project/.sdk/src/cmp/lua/fragment/Entity.fragment.lua",
+  "from": "function EntyClass:_run_op(ctx, post_done)\n  local utility = self._utility\n",
+  "to": "function EntyClass:_run_op(ctx, post_done)\n  local utility = self._utility\n  local signal = ctx.ctrl and ctx.ctrl.signal\n  if signal ~= nil and signal.aborted then return nil, ctx:make_error(\"request_aborted\", \"aborted\") end\n"
+ },
+ {
+  "id": "G6-ocaml-run-op-cancel",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/fragment/RunOp.fragment.ml",
+  "from": "let unexpected (ctx : ctx) (e : exn) : value =\n",
+  "to": "let unexpected (ctx : ctx) (e : exn) : value =\n  let _aborted = getp ctx.c_ctrl \"abort\" in\n"
+ },
+ {
+  "id": "G6-go-new-file",
+  "lang": "go",
+  "edits": [
+   {
+    "file": "project/.sdk/tm/go/utility/cancel.go",
+    "create": true,
+    "content": "package utility\n\n// CancelRequest stops a running request.\nfunc CancelRequest() {}\n"
+   }
+  ]
+ },
+ {
+  "id": "G6-swift-op-cancel",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/fragment/EntityBase.fragment.swift",
+  "from": "    // Run the same pipeline the op methods run.\n",
+  "to": "    // Run the same pipeline the op methods run.\n    if Task.isCancelled { return AsyncStream { $0.finish() } }\n"
+ },
+ {
+  "id": "G6-lua-reason-empty",
+  "lang": "lua",
+  "file": "test/runtimeforms/lua.ts",
+  "from": "why: \"the timeout feature's own deadline on the transport, which ends a request by time; no caller can cancel an operation through it\"",
+  "to": "why: \"\""
+ },
+ {
+  "id": "G7-perl-V1-integer-int",
+  "lang": "perl",
+  "file": "project/.sdk/src/cmp/perl/Syntax_perl.ts",
+  "from": "STRING: 'string', INTEGER: 'integer', NUMBER: 'number',",
+  "to": "STRING: 'string', INTEGER: 'int', NUMBER: 'number',"
+ },
+ {
+  "id": "G7-ocaml-a2-int-float",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+  "from": "STRING: 'string', INTEGER: 'int', NUMBER: 'float'",
+  "to": "STRING: 'string', INTEGER: 'float', NUMBER: 'float'"
+ },
+ {
+  "id": "zig-type-integer",
+  "lang": "zig",
+  "file": "project/.sdk/src/cmp/zig/Syntax_zig.ts",
+  "from": "INTEGER: 'i64', NUMBER: 'f64', BOOLEAN",
+  "to": "INTEGER: 'f64', NUMBER: 'f64', BOOLEAN"
+ },
+ {
+  "id": "clj-type-integer",
+  "lang": "clojure",
+  "file": "project/.sdk/src/cmp/clojure/Syntax_clojure.ts",
+  "from": "INTEGER: 'long', NUMBER",
+  "to": "INTEGER: 'string', NUMBER"
+ },
+ {
+  "id": "c-type-string",
+  "lang": "c",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "('ARRAY' === k ? ' (list)' : ('OBJECT' === k ? ' (map)' : ''))",
+  "to": "('ARRAY' === k ? ' (map)' : ('OBJECT' === k ? ' (list)' : ''))"
+ },
+ {
+  "id": "G7-elixir-column-claimed",
+  "lang": "elixir",
+  "file": "test/runtimeforms/elixir.ts",
+  "from": "types: { column: 'elixir' }",
+  "to": "types: { column: 'ts' }"
+ },
+ {
+  "id": "G8-swift-cast-dropped",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "record: `({var}.${unwrap})?.${read}`,",
+  "to": "record: `({var}.asNative)?.${read}`,"
+ },
+ {
+  "id": "G8-swift-asEntity",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "record: `({var}.${unwrap})?.${read}`,",
+  "to": "record: `{var}.asEntity().${read}`,"
+ },
+ {
+  "id": "G8-zig-member-typo",
+  "lang": "zig",
+  "file": "project/.sdk/src/cmp/zig/Syntax_zig.ts",
+  "from": "record: 'asEntity().data(null)',",
+  "to": "record: 'asEntty().data(null)',"
+ },
+ {
+  "id": "G8-c-member-typo",
+  "lang": "c",
+  "file": "project/.sdk/src/cmp/c/Syntax_c.ts",
+  "from": "record: 'vt->data',",
+  "to": "record: 'vtab->data',"
+ },
+ {
+  "id": "G2-lua-ctor-create",
+  "lang": "lua",
+  "file": "project/.sdk/src/cmp/lua/Naming_lua.ts",
+  "from": "ctor: 'sdk.new',",
+  "to": "ctor: 'sdk.create',"
+ },
+ {
+  "id": "G2-lua-ctor-unbound",
+  "lang": "lua",
+  "file": "project/.sdk/src/cmp/lua/Naming_lua.ts",
+  "from": "ctor: 'sdk.new',",
+  "to": "ctor: 'lib.new',"
+ },
+ {
+  "id": "G2-lua-receiver-dot",
+  "lang": "lua",
+  "file": "project/.sdk/src/cmp/lua/Syntax_lua.ts",
+  "from": "= client:${s.entity.sym.accessor}():${(facts.method as any)[s.op]}(${argOf(s)})`",
+  "to": "= client.${s.entity.sym.accessor}():${(facts.method as any)[s.op]}(${argOf(s)})`"
+ },
+ {
+  "id": "G2-lua-test-on-instance",
+  "lang": "lua",
+  "file": "project/.sdk/src/cmp/lua/Syntax_lua.ts",
+  "from": "call: 'local client = sdk.test()'",
+  "to": "call: 'local client = client:test()'"
+ },
+ {
+  "id": "G3-ocaml-a1-test-with-one-arg",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+  "from": "call: 'let client = {module}.test_with Noval Noval'",
+  "to": "call: 'let client = {module}.test_with Noval'"
+ },
+ {
+  "id": "G3-swift-load-nil",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "(${argOf(s)}, nil)`",
+  "to": "(${argOf(s)})`"
+ },
+ {
+  "id": "G3-go-ctor-two-args",
+  "lang": "go",
+  "file": "project/.sdk/src/cmp/go/Syntax_go.ts",
+  "from": "? `client := sdk.${desc.layout.ctor}(nil)`",
+  "to": "? `client := sdk.${desc.layout.ctor}(nil, nil)`"
+ },
+ {
+  "id": "G4-perl-a10-test-sig-instance",
+  "lang": "perl",
+  "file": "project/.sdk/src/cmp/perl/Syntax_perl.ts",
+  "from": "sig: '{client}->test($testopts, $sdkopts)'",
+  "to": "sig: '$client->test($testopts, $sdkopts)'"
+ },
+ {
+  "id": "G5-ocaml-arrow-signatures",
+  "lang": "ocaml",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+    "from": "    list: 'e_list (value) (value) : entity_obj list',\n    load: 'e_load (value) (value) : entity_obj',\n    create: 'e_create (value) (value) : entity_obj',\n    update: 'e_update (value) (value) : entity_obj',\n    patch: 'e_patch (value) (value) : entity_obj',\n    remove: 'e_remove (value) (value) : entity_obj',",
+    "to": "    list: 'e_list : value -> value -> entity_obj list',\n    load: 'e_load : value -> value -> entity_obj',\n    create: 'e_create : value -> value -> entity_obj',\n    update: 'e_update : value -> value -> entity_obj',\n    patch: 'e_patch : value -> value -> entity_obj',\n    remove: 'e_remove : value -> value -> entity_obj',"
+   },
+   {
+    "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+    "from": "    { kind: 'dataGet', sig: 'e_data_get () : value', copy: true },\n    { kind: 'dataSet', sig: 'e_data_set (value) : unit' },\n    { kind: 'matchGet', sig: 'e_match_get () : value' },\n    { kind: 'matchSet', sig: 'e_match_set (value) : unit' },\n    { kind: 'make', sig: 'e_make () : entity_obj' },\n    { kind: 'streamSync', sig: 'e_stream (string) (value) (value) : value Seq.t', runs: 'call' },",
+    "to": "    { kind: 'dataGet', sig: 'e_data_get : unit -> value', copy: true },\n    { kind: 'dataSet', sig: 'e_data_set : value -> unit' },\n    { kind: 'matchGet', sig: 'e_match_get : unit -> value' },\n    { kind: 'matchSet', sig: 'e_match_set : value -> unit' },\n    { kind: 'make', sig: 'e_make : unit -> entity_obj' },\n    { kind: 'streamSync', sig: 'e_stream : string -> value -> value -> value Seq.t', runs: 'call' },"
+   }
+  ]
+ },
+ {
+  "id": "G5-ocaml-E1-arrow-callable-as-field",
+  "lang": "ocaml",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+    "from": "    load: 'e_load (value) (value) : entity_obj',",
+    "to": "    load: 'e_load : value -> value -> entity_obj',"
+   },
+   {
+    "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+    "from": "    { kind: 'make', sig: 'e_make () : entity_obj' },",
+    "to": "    { kind: 'make', sig: 'e_make : entity_obj' },"
+   }
+  ]
+ },
+ {
+  "id": "swift-unwrap-and-pin-changed",
+  "lang": "swift",
+  "edits": [
+   {
+    "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+    "from": "const unwrap = 'asNative as? Entity'",
+    "to": "const unwrap = 'asNative as! Entity'"
+   },
+   {
+    "file": "test/runtimeforms/swift.ts",
+    "from": "'facts.unwrap': { value: 'asNative as? Entity',",
+    "to": "'facts.unwrap': { value: 'asNative as! Entity',"
+   }
+  ]
+ },
+ {
+  "id": "swift-print-as-EntityBase",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "? [`if let ${name(s.what.of)} = ${name(s.what.of)}.${facts.unwrap} {`,",
+  "to": "? [`if let ${name(s.what.of)} = ${name(s.what.of)}.asNative as? EntityBase {`,"
+ },
+ {
+  "id": "perl-V2-flat-map",
+  "lang": "perl",
+  "file": "project/.sdk/src/cmp/perl/Syntax_perl.ts",
+  "from": "  if (!laid) return '(' + expr({ k: 'map', entries: s.arg }) + ')'",
+  "to": "  if (!laid) return '(' + expr({ k: 'map', entries: s.arg }).replace(/^\\{ /, '').replace(/ \\}$/, '') + ')'"
+ },
+ {
+  "id": "my-types-reason-blanked-zig-adapted2",
+  "lang": "zig",
+  "edits": [
+   {
+    "file": "test/runtimeforms/zig.ts",
+    "from": "types: { column: null, reason: 'the code generator",
+    "to": "types: { column: null, reason: ((_s: string) => '')('the code generator"
+   },
+   {
+    "file": "test/runtimeforms/zig.ts",
+    "from": "type words are the provider\\'s own',\n",
+    "to": "type words are the provider\\'s own'),\n"
+   }
+  ]
+ },
+ {
+  "id": "ocaml-m07-data-copy-removed",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+  "from": "{ kind: 'dataGet', sig: 'e_data_get () : value', copy: true },",
+  "to": "{ kind: 'dataGet', sig: 'e_data_get () : value' },"
+ },
+ {
+  "id": "ocaml-m11-keys-member",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+  "from": "  keys: 'bare',",
+  "to": "  keys: 'member',"
+ },
+ {
+  "id": "ocaml-m21-ctrl-match-swapped",
+  "lang": "ocaml",
+  "file": "project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts",
+  "from": "  `${argOf(s, refFacts.none)} ${refFacts.none}`",
+  "to": "  `${refFacts.none} ${argOf(s, refFacts.none)}`"
+ },
+ {
+  "id": "swift-entityBy-Name",
+  "lang": "swift",
+  "file": "project/.sdk/src/cmp/swift/Syntax_swift.ts",
+  "from": "  entityBy: 'class',",
+  "to": "  entityBy: 'Name',"
+ },
+ {
+  "id": "perl-a07-prints-record",
+  "lang": "perl",
+  "file": "project/.sdk/src/cmp/perl/Syntax_perl.ts",
+  "from": "  prints: 'fields',",
+  "to": "  prints: 'record',"
+ },
+ {
+  "id": "perl-none-cites-a-comment",
+  "lang": "perl",
+  "file": "test/runtimeforms/perl.ts",
+  "from": "'ref.facts.none': { file: 'src/cmp/perl/fragment/EntityLoadOp.fragment.pm', quote: '# (undef is treated as an empty match). ctrl: optional per-call control.' }",
+  "to": "'ref.facts.none': { file: 'src/cmp/perl/fragment/Entity.fragment.pm', quote: 'return undef if $aborted->();' }"
+ }
+]

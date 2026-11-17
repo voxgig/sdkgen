@@ -1,0 +1,95 @@
+[selftest 0s] injections: 25 regressions, 7 false sentences, 19 of the re-check's, 6 dropped sentences; modes reviewed, scratch (124 runs)
+[selftest 0s] mode reviewed
+  ok   ledger type-cell-zig: flagged: 2 new open class(es), unclassified 0 -> 2 (1/124, 1%)
+  ok   ledger type-cell-any-zig: flagged: 1 new open class(es), unclassified 0 -> 1 (2/124, 2%)
+  FAIL ledger sentence-removed-go: doc-crud/go/REFERENCE.md: text to inject not found
+  FAIL ledger sentence-removed-go-branch: doc-crud/go/REFERENCE.md: text to inject not found
+  FAIL ledger false-sentence-py: doc-crud/py/REFERENCE.md: text to inject not found
+  ok   ledger false-sentence-added-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (6/124, 5%)
+  FAIL ledger optional-required-py: doc-crud/py/REFERENCE.md: text to inject not found
+  ok   ledger negation-go: flagged: 4 new open class(es), unclassified 0 -> 4 (8/124, 6%)
+  ok   ledger code-comment-ts: flagged: 3 new open class(es), unclassified 0 -> 3 (9/124, 7%)
+  ok   ledger var-renamed-c: flagged: 1 new open class(es), unclassified 0 -> 2 (10/124, 8%)
+  ok   ledger err-reset-removed-c: flagged: 0 new open class(es), unclassified 0 -> 1 (11/124, 9%)
+  ok   ledger restructure-py: flagged: 1 new open class(es), unclassified 0 -> 2 (12/124, 10%)
+  ok   ledger number-retries-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (13/124, 10%)
+  ok   ledger number-ms-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (14/124, 11%)
+  ok   ledger op-swap-root-ts: flagged: 1 new open class(es), unclassified 0 -> 2 (15/124, 12%)
+  ok   ledger entity-swap-root-ts: flagged: 2 new open class(es), unclassified 0 -> 2 (16/124, 13%)
+  ok   ledger field-swap-go: flagged: 2 new open class(es), unclassified 0 -> 2 (17/124, 14%)
+  ok   ledger id-literal-c: flagged: 1 new open class(es), unclassified 0 -> 2 (18/124, 15%)
+  ok   ledger global-zig: flagged: 2 new open class(es), unclassified 0 -> 2 (19/124, 15%)
+  ok   ledger row-removed-zig: flagged: 4 new open class(es), unclassified 0 -> 4 (20/124, 16%)
+  ok   ledger zig-switch-arm: flagged: 1 new open class(es), unclassified 0 -> 2 (21/124, 17%)
+  ok   ledger clj-block: flagged: 4 new open class(es), unclassified 0 -> 4 (22/124, 18%)
+  ok   ledger elixir-block: flagged: 1 new open class(es), unclassified 0 -> 2 (23/124, 19%)
+  ok   ledger sentence-dup-ts: flagged: 1 new open class(es), unclassified 0 -> 1 (24/124, 19%)
+  ok   ledger region-required-ref-ts: flagged: 2 new open class(es), unclassified 0 -> 2 (25/124, 20%)
+  ok   recheck rb-load-returns-nil: flagged: 3 new open class(es), unclassified 5 -> 8 (26/124, 21%)
+  ok   recheck rb-list-reqmatch-required: flagged: 4 new open class(es), unclassified 5 -> 9 (27/124, 22%)
+  ok   recheck rb-match-optional-required: flagged: 2 new open class(es), unclassified 5 -> 7 (28/124, 23%)
+  FAIL recheck rb-direct-sentence-dropped: doc-crud/rb/REFERENCE.md: text to inject not found
+  ok   recheck rb-retries-number: flagged: 1 new open class(es), unclassified 5 -> 6 (30/124, 24%)
+  ok   recheck rb-get-utility-return: flagged: 2 new open class(es), unclassified 5 -> 7 (31/124, 25%)
+  ok   recheck rb-utility-live: flagged: 1 new open class(es), unclassified 5 -> 6 (32/124, 26%)
+  ok   recheck rb-tut-list-hash: flagged: 2 new open class(es), unclassified 1 -> 3 (33/124, 27%)
+  ok   recheck rb-tut-write-record: flagged: 2 new open class(es), unclassified 1 -> 3 (34/124, 27%)
+  ok   recheck rb-region-required: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 5 -> 7 (35/124, 28%)
+  ok   recheck rb-dataget-nocopy: flagged: 2 new open class(es), unclassified 5 -> 7 (36/124, 29%)
+  ok   recheck py-list-sig-required: flagged: 4 new open class(es), unclassified 0 -> 4 (37/124, 30%)
+  ok   recheck py-load-returns-none: flagged: 3 new open class(es), unclassified 0 -> 3 (38/124, 31%)
+  ok   recheck py-tut-dict: flagged: 2 new open class(es), unclassified 0 -> 2 (39/124, 31%)
+  ok   recheck py-dataget-nocopy: flagged: 2 new open class(es), unclassified 0 -> 2 (40/124, 32%)
+  FAIL recheck go-list-map: doc-crud/go/REFERENCE.md: text to inject not found
+  ok   recheck go-err-nil: flagged: 2 new open class(es), unclassified 0 -> 2 (42/124, 34%)
+  ok   recheck go-stream-dropped: flagged: 1 new open class(es), unclassified 0 -> 1 (43/124, 35%)
+  ok   recheck go-tut-step4-dropped: flagged: 1 new open class(es), unclassified 0 -> 1 (44/124, 35%)
+  ok   accept region-required-ref-ts: 2 new class(es) left for a person; accepted automatically: none (45/124, 36%)
+  FAIL accept ok-true-py: doc-crud/py/REFERENCE.md: text to inject not found
+  FAIL accept raises-returns-py: doc-crud/py/REFERENCE.md: text to inject not found
+  ok   accept negation-go: 4 new class(es) left for a person; accepted automatically: none (48/124, 39%)
+  ok   accept type-cell-zig: 2 new class(es) left for a person; accepted automatically: none (49/124, 40%)
+  FAIL accept ok-true-rb-new-language: B/rb/REFERENCE.md: text to inject not found
+  ok   accept raises-returns-rb-new-language: 3 new class(es) left for a person; accepted automatically: none (51/124, 41%)
+  ok   masking record-to-item-rb: 2 new class(es) left for a person; accepted automatically: none (52/124, 42%)
+  ok   masking record-to-planet-rb: 2 new class(es) left for a person; accepted automatically: none (53/124, 43%)
+  FAIL masking record-to-utility-go: B/go/REFERENCE.md: text to inject not found
+  ok   masking reads-its-utility-ts: 4 new class(es) left for a person; accepted automatically: none (55/124, 44%)
+  FAIL masking headers-and-body-py: B/py/REFERENCE.md: text to inject not found
+  FAIL missing missing-direct-one-variation: doc-crud/rb/REFERENCE.md: text to inject not found
+  FAIL missing missing-direct-every-variation: NOT FLAGGED: 0 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 5 -> 5 (58/124, 47%)
+  ok   missing missing-table-row: flagged: 2 new open class(es), 2 printed less often than its reference, 0 new absent sentence(s), unclassified 5 -> 7 (59/124, 48%)
+  FAIL missing missing-direct-every-variation-lua: NOT FLAGGED: 0 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 21 -> 21 (60/124, 48%)
+  FAIL missing missing-direct-every-variation-perl: NOT FLAGGED: 0 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 8 -> 8 (61/124, 49%)
+  FAIL missing missing-direct-every-variation-swift: NOT FLAGGED: 0 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 14 -> 14 (62/124, 50%)
+[selftest 488s] mode scratch
+  ok   ledger type-cell-zig [scratch]: flagged: 2 new open class(es), unclassified 78 -> 80 (63/124, 51%)
+  ok   ledger type-cell-any-zig [scratch]: flagged: 1 new open class(es), unclassified 78 -> 79 (64/124, 52%)
+  FAIL ledger sentence-removed-go [scratch]: doc-crud/go/REFERENCE.md: text to inject not found
+  MOVED ledger sentence-removed-go-branch [scratch]: doc-crud/go/REFERENCE.md: text to inject not found -- moved: the sentence round's check (required fix 3): go's branch sentence reads `result["ok"] == true`, a read no reference prints, so its class is go's alone; from scr
+  FAIL ledger false-sentence-py [scratch]: doc-crud/py/REFERENCE.md: text to inject not found
+  ok   ledger false-sentence-added-ts [scratch]: flagged: 1 new open class(es), unclassified 113 -> 114 (68/124, 55%)
+  FAIL ledger optional-required-py [scratch]: doc-crud/py/REFERENCE.md: text to inject not found
+  ok   ledger negation-go [scratch]: flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 58 -> 61 (70/124, 56%)
+  ok   ledger code-comment-ts [scratch]: flagged: 2 new open class(es), unclassified 47 -> 49 (71/124, 57%)
+  ok   ledger var-renamed-c [scratch]: flagged: 1 new open class(es), unclassified 36 -> 38 (72/124, 58%)
+  ok   ledger err-reset-removed-c [scratch]: flagged: 0 new open class(es), unclassified 36 -> 37 (73/124, 59%)
+  ok   ledger restructure-py [scratch]: flagged: 1 new open class(es), unclassified 67 -> 69 (74/124, 60%)
+  ok   ledger number-retries-ts [scratch]: flagged: 1 new open class(es), unclassified 113 -> 114 (75/124, 60%)
+  ok   ledger number-ms-ts [scratch]: flagged: 1 new open class(es), unclassified 113 -> 114 (76/124, 61%)
+  ok   ledger op-swap-root-ts [scratch]: flagged: 1 new open class(es), unclassified 20 -> 22 (77/124, 62%)
+  ok   ledger entity-swap-root-ts [scratch]: flagged: 1 new open class(es), unclassified 20 -> 21 (78/124, 63%)
+  ok   ledger field-swap-go [scratch]: flagged: 2 new open class(es), unclassified 76 -> 77 (79/124, 64%)
+  ok   ledger id-literal-c [scratch]: flagged: 1 new open class(es), unclassified 36 -> 38 (80/124, 65%)
+  ok   ledger global-zig [scratch]: flagged: 2 new open class(es), unclassified 78 -> 78 (81/124, 65%)
+  ok   ledger row-removed-zig [scratch]: flagged: 4 new open class(es) (1 printed less often than its reference), unclassified 78 -> 82 (82/124, 66%)
+  ok   ledger zig-switch-arm [scratch]: flagged: 1 new open class(es), unclassified 78 -> 80 (83/124, 67%)
+  ok   ledger clj-block [scratch]: flagged: 3 new open class(es), unclassified 30 -> 33 (84/124, 68%)
+  ok   ledger elixir-block [scratch]: flagged: 1 new open class(es), unclassified 97 -> 99 (85/124, 69%)
+  ok   ledger sentence-dup-ts [scratch]: flagged: 1 new open class(es), unclassified 113 -> 114 (86/124, 69%)
+  ok   ledger region-required-ref-ts [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 113 -> 115 (87/124, 70%)
+  ok   recheck rb-load-returns-nil [scratch]: flagged: 3 new open class(es) (1 printed less often than its reference), unclassified 79 -> 82 (88/124, 71%)
+  ok   recheck rb-list-reqmatch-required [scratch]: flagged: 2 new open class(es), unclassified 79 -> 81 (89/124, 72%)
+  ok   recheck rb-match-optional-required [scratch]: flagged: 2 new open class(es) (1 printed less often than its reference), unclassified 79 -> 81 (90/124, 73%)
+  FAIL recheck rb-direct-sentence-dropped [scratch]: doc-crud/rb/REFERENCE.md: text to inject not found
+  ok   recheck rb-retries-number [scratch]: flagged: 1 new open class(es), unclassified 79 -> 80 (92/124, 74%)

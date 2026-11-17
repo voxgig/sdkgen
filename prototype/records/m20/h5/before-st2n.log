@@ -1,0 +1,142 @@
+
+##### [new] S4 merge mode: Syntax_ts edited after the first upgrade, then a second build moves the interface and the same line
+   first upgrade (4.45.0): EXIT 0 (6126 ms)
+   TSC EXIT 0
+   GEN ok=true ms=1181
+   ts README: NOTE comments 0
+   doctor 4.45.0: doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor 4.45.0: doctor-end           .sdk matches the scaffold (0 additive, 1 customized)
+   doctor 4.45.0: EXIT 0 (1758 ms)
+   state: NOTE-printer=1 iface=3.3 trim=0 conflict-markers=0 howto-src=yes howto-dist=yes sha=6ac260fcbf35
+   -- 4.46.0 installed, nothing run:
+   TSC EXIT 0
+   GEN ok=true ms=723
+   ts README: NOTE comments 0
+   doctor: doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer ships; the next add removes it): src/cmp/ts/ReadmeTopHowto_ts.ts
+   doctor: doctor-end           .sdk has drifted: 1 forked, 0 edited, 0 stale, 0 missing, 4 outdated, 1 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   doctor: EXIT 1 (1820 ms)
+   -- target add ts (merge mode):
+   target-template-prune-file removed src/cmp/ts/ReadmeTopHowto_ts.ts
+   target-template-prune src/cmp/ts: removed 1 stale template(s) the toolchain no longer provides for this SDK
+   Voxgig SDK Generation Error: target add ts: 1 locally changed file(s) cannot take the incoming copy, so nothing was changed:
+     src/cmp/ts/Syntax_ts.ts (no record of what the toolchain wrote here, so nothing to merge against; a base is found in git once the copies an add writes are committed)
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+       - fold the incoming change into the local file by hand and re-run with --keep, which keeps the local files and records the incoming copies as their base;
+       - or re-run with --force, which takes the incoming copies and discards the local changes.
+   EXIT 1 (3664 ms)
+   state: NOTE-printer=1 iface=3.3 trim=0 conflict-markers=0 howto-src=yes howto-dist=yes sha=6ac260fcbf35
+   conflict preview: Syntax_ts.ts
+   -- package update (merge mode):
+   package-update-merge @voxgig/sdkgen: 1 locally-changed file(s) will take the update by merge: src/cmp/ts/Syntax_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopHowto_ts.ts
+   target-template-prune src/cmp/ts: removed 1 stale template(s) the toolchain no longer provides for this SDK
+   Voxgig SDK Generation Error: package update @voxgig/sdkgen: 1 locally changed file(s) cannot take the incoming copy, so nothing was changed:
+     src/cmp/ts/Syntax_ts.ts (no record of what the toolchain wrote here, so nothing to merge against; a base is found in git once the copies an add writes are committed)
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+       - fold the incoming change into the local file by hand and re-run with --keep, which keeps the local files and records the incoming copies as their base;
+       - or re-run with --force, which takes the incoming copies and discards the local changes.
+   EXIT 1 (6534 ms)
+   state: NOTE-printer=1 iface=3.3 trim=0 conflict-markers=0 howto-src=yes howto-dist=yes sha=6ac260fcbf35
+   -- -y target add ts:
+   target-template-prune src/cmp/ts: would remove 1 stale template(s) — ** DRY RUN **, nothing was written
+   target-template-prune-file would remove src/cmp/ts/ReadmeTopHowto_ts.ts
+   target-result        ** DRY RUN ** 1 file would change; nothing was written
+   feature-result       ** DRY RUN ** 0 files would change; nothing was written
+   EXIT 0 (1162 ms)
+   state: NOTE-printer=1 iface=3.3 trim=0 conflict-markers=0 howto-src=yes howto-dist=yes sha=6ac260fcbf35
+   -- target add ts --keep:
+   target-template-prune-file removed src/cmp/ts/ReadmeTopHowto_ts.ts
+   target-template-prune src/cmp/ts: removed 1 stale template(s) the toolchain no longer provides for this SDK
+   copy-merge-kept      target add ts: --keep, kept 1 local file(s) as they are: src/cmp/ts/Syntax_ts.ts
+   EXIT 0 (1644 ms)
+   state: NOTE-printer=1 iface=3.3 trim=0 conflict-markers=0 howto-src=no howto-dist=no sha=59f8d2a49102
+   TSC EXIT 0
+   GEN ok=true ms=593
+   ts README: NOTE comments 0
+   doctor: doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-end           .sdk has drifted: 1 forked, 0 edited, 0 stale, 0 missing, 4 outdated, 0 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   doctor: EXIT 1 (1994 ms)
+   -- then the project declares 3.4 itself, as the refusal says:
+   state: NOTE-printer=1 iface=3.4 trim=0 conflict-markers=0 howto-src=no howto-dist=no sha=e1275fd2218c
+   TSC EXIT 0
+   GEN ok=true ms=644
+   ts README: NOTE comments 0
+   doctor: doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-end           .sdk has drifted: 1 forked, 0 edited, 0 stale, 0 missing, 4 outdated, 0 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   doctor: EXIT 1 (1571 ms)
+   -- target add ts --force:
+   target-template-prune-file removed src/cmp/ts/ReadmeTopHowto_ts.ts
+   target-template-prune src/cmp/ts: removed 1 stale template(s) the toolchain no longer provides for this SDK
+   EXIT 0 (2969 ms)
+   state: NOTE-printer=0 iface=3.4 trim=1 conflict-markers=0 howto-src=no howto-dist=no sha=0150c24be677
+   TSC EXIT 0
+   GEN ok=true ms=743
+   ts README: NOTE comments 0
+
+##### [new] S4b merge mode: Syntax_ts edited on a line the next build does NOT change
+   first upgrade: EXIT 0 (6849 ms)
+   edited lines: 1
+   target-template-prune-file removed src/cmp/ts/ReadmeTopHowto_ts.ts
+   target-template-prune src/cmp/ts: removed 1 stale template(s) the toolchain no longer provides for this SDK
+   Voxgig SDK Generation Error: target add ts: 1 locally changed file(s) cannot take the incoming copy, so nothing was changed:
+     src/cmp/ts/Syntax_ts.ts (no record of what the toolchain wrote here, so nothing to merge against; a base is found in git once the copies an add writes are committed)
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+       - fold the incoming change into the local file by hand and re-run with --keep, which keeps the local files and records the incoming copies as their base;
+       - or re-run with --force, which takes the incoming copies and discards the local changes.
+   EXIT 1 (3248 ms)
+   state: NOTE-printer=0 iface=3.3 trim=0 conflict-markers=0 howto-src=yes howto-dist=yes sha=b8b6ec220dec
+   edit kept: 1
+   TSC EXIT 0
+   GEN ok=true ms=1239
+   ts README: NOTE comments 0
+   doctor: doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-finding       RETIRED (an unchanged copy its source no longer ships; the next add removes it): src/cmp/ts/ReadmeTopHowto_ts.ts
+   doctor: doctor-end           .sdk has drifted: 1 forked, 0 edited, 0 stale, 0 missing, 4 outdated, 1 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   doctor: EXIT 1 (1966 ms)
+
+##### [new] S4g (git) merge mode, Syntax_ts edited after the first upgrade, committed, then 4.46.0
+   first upgrade: EXIT 0 (4313 ms)
+   -- package update (merge):
+   package-update-merge @voxgig/sdkgen: 1 locally-changed file(s) will take the update by merge: src/cmp/ts/Syntax_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopHowto_ts.ts
+   target-template-prune src/cmp/ts: removed 1 stale template(s) the toolchain no longer provides for this SDK
+   Voxgig SDK Generation Error: package update @voxgig/sdkgen: 1 locally changed file(s) cannot take the incoming copy, so nothing was changed:
+     The incoming copies are in log/conflict/, with conflict markers where both sides changed the same lines. Then either:
+       - fold the incoming change into the local file by hand and re-run with --keep, which keeps the local files and records the incoming copies as their base;
+       - or re-run with --force, which takes the incoming copies and discards the local changes.
+   EXIT 1 (9104 ms)
+   state: NOTE-printer=1 iface=3.3 trim=0 conflict-markers=0 howto-src=yes howto-dist=yes sha=f976439e1e54
+   edit '// each' kept: 0
+     preview: 
+     preview: <<<<<<< LOCAL
+     preview:   comment: (text) => '// NOTE: ' + text,
+     preview: =======
+     preview:   comment: (text) => '// ' + text.trim(),
+     preview: >>>>>>> INCOMING (package update @voxgig/sdkgen)
+     preview: 
+   TSC EXIT 0
+   GEN ok=true ms=638
+   ts README: NOTE comments 0
+   ts README '// each' lines: 0
+   doctor: doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-end           .sdk has drifted: 1 forked, 0 edited, 0 stale, 0 missing, 4 outdated, 1 retired, 0 orphan compiled, 0 undeclared override, 0 damaged record line, 0 unresolved
+   doctor: EXIT 1 (1169 ms)
+
+##### [new] S4gb (git) merge mode, Syntax_ts edited after the first upgrade, committed, then 4.46.0
+   first upgrade: EXIT 0 (2934 ms)
+   -- package update (merge):
+   package-update-merge @voxgig/sdkgen: 1 locally-changed file(s) will take the update by merge: src/cmp/ts/Syntax_ts.ts
+   target-template-prune-file removed src/cmp/ts/ReadmeTopHowto_ts.ts
+   target-template-prune src/cmp/ts: removed 1 stale template(s) the toolchain no longer provides for this SDK
+   copy-merge-merged    package update @voxgig/sdkgen: merged the incoming copy into 1 locally changed file(s): src/cmp/ts/Syntax_ts.ts
+   EXIT 0 (6389 ms)
+   state: NOTE-printer=0 iface=3.4 trim=1 conflict-markers=0 howto-src=no howto-dist=no sha=40c1a6b3ab47
+   edit '// each' kept: 1
+   TSC EXIT 0
+   GEN ok=true ms=976
+   ts README: NOTE comments 0
+   ts README '// each' lines: 0
+   doctor: doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor: doctor-end           .sdk matches the scaffold (0 additive, 1 customized)
+   doctor: EXIT 0 (2847 ms)

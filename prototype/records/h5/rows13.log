@@ -1,0 +1,50 @@
+
+##### [new] R13 upgraded: 4.44.0-made go~go2 js~js2, re-added on the new build
+   before src/cmp/go2: ReadmeQuick_go2.ts ReadmeRef_go2.ts ReadmeTopQuick_go2.ts 
+   before src/cmp/js2: ReadmeQuick_js2.ts ReadmeRef_js2.ts ReadmeTopQuick_js2.ts 
+   target-template-prune-file removed src/cmp/go2/ReadmeQuick_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeRef_go2.ts
+   target-template-prune-file removed src/cmp/go2/ReadmeTopQuick_go2.ts
+   EXIT 0 (1401 ms)
+   after src/cmp/go2: Naming_go2.ts Syntax_go2.ts 
+   after src/cmp/js2: ReadmeQuick_js2.ts ReadmeRef_js2.ts ReadmeTopQuick_js2.ts 
+   [up] GEN ok=true ms=548
+   doctor-end           .sdk has drifted: 0 forked, 0 edited, 0 stale, 10 missing, 11 outdated, 15 retired, 0 orphan compiled, 0 unresolved
+   EXIT 1 (1077 ms)
+
+##### [new] R13 fresh: go~go2 js~js2 made on the new build
+   EXIT 0 (2627 ms)
+   fresh src/cmp/go2: Naming_go2.ts Syntax_go2.ts 
+   fresh src/cmp/js2: ReadmeQuick_js2.ts ReadmeRef_js2.ts ReadmeTopQuick_js2.ts 
+   [fresh] GEN ok=true ms=503
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (1063 ms)
+
+##### [new] R13 pages
+   go2/README.md: upgraded == fresh
+   go2/REFERENCE.md: upgraded == fresh
+   js2/README.md: upgraded == fresh
+   js2/REFERENCE.md: upgraded == fresh
+   README.md: upgraded != fresh (38 lines)
+   go  field types:       3 `float64`       1 `int`       1 `map[string]any`      10 `string` 
+   go2 field types:       3 `float64`       1 `int`       1 `map[string]any`      10 `string` 
+   go2 REFERENCE with go2 read as go, against go: 0 differing lines
+   go2 README with go2 read as go, against go: 98 differing lines
+   js  field types:       1 `Object`       4 `number`      10 `string` 
+   js2 field types:      15 `any` 
+   js2 REFERENCE with js2 read as js, against js: 30 differing lines
+   js2 README with js2 read as js, against js: 30 differing lines
+   root README heading: 71:### Golang
+   root README heading: 87:### Golang
+   root README heading: 96:### JavaScript
+   root README heading: 105:### JavaScript
+   root README heading: 206:### Golang
+   root README heading: 242:### Golang
+   root README heading: 264:### JavaScript
+   root README heading: 276:### JavaScript
+
+##### [new] R13 remove
+   [r13u-new remove go2] EXIT 0 (879 ms)
+   [r13u-new remove js2] EXIT 0 (914 ms)
+   [r13f remove go2] EXIT 0 (815 ms)
+   [r13f remove js2] EXIT 0 (726 ms)

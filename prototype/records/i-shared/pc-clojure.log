@@ -1,0 +1,24 @@
+[portcheck clojure] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck clojure] classify (hand/clojure.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck clojure] ledger
+[portcheck clojure] blocks
+[portcheck clojure] fact sheet
+[portcheck clojure] purity
+[portcheck clojure] guard: node --test --test-name-pattern '^clojure: ' ts/dist-test/runtimefacts.test.js
+== portcheck clojure ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   61 |      38      0       29       5       4     0       0 | 0
+rootquick                  19 |       3      0        3       0       0     0       0 | 0
+reference               14983 |     124      1       76      19      24     4       0 | 0
+section    blocks: identical corrected unified otherwise | classes OPEN defect | unverified
+tutorial                  26        21       0         1 |      10    0      0 | 22 changed blocks, no compiler here
+rootquick                  0        16       0         3 |      16    0      0 | 19 changed blocks, no compiler here
+reference                230         0      83         0 |       2    0      0 | 83 changed blocks, no compiler here
+purity: 3 open, 1 accepted | notes declared 2, note regions found 1
+  OPEN Syntax:217 note names entity "Utility": The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-expo
+  OPEN Syntax:217 note names entity "utility": The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-expo
+  OPEN Syntax:217 note names entity "UTILITY": The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-expo
+guard: FAILED (pass 3 fail 1 )
+fact sheet: factsheet clojure: 66 facts, 0 with no account, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-shared/ws/tools/review/clojure/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-shared/ws/tools/review/clojure/<section>.open.json (fill into hand/clojure.json), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK clojure: FAIL

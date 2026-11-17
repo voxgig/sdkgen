@@ -1,0 +1,46 @@
+▶ the documented c, cpp, rust, zig and ocaml examples compile
+  ✔ zig: every documented example compiles, singleton first (1274.565084ms)
+  ✔ zig: every documented example compiles, list first (861.580545ms)
+  ✔ zig: every documented example compiles, crud first (886.238091ms)
+  ✔ zig: every documented example compiles, nested first (692.117518ms)
+  ✔ zig: every documented example compiles, quoted-name first (744.948458ms)
+  ✖ zig: every documented example compiles, basic-server first (725.413583ms)
+✖ the documented c, cpp, rust, zig and ocaml examples compile (5215.088369ms)
+ℹ tests 6
+ℹ suites 1
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8107.797715
+
+✖ failing tests:
+
+test at dist-test/generatedcompile.test.js:8045:34
+✖ zig: every documented example compiles, basic-server first (725.413583ms)
+  AssertionError [ERR_ASSERTION]: zig: 1 of 1 compile(s) of 29 documented example(s) failed:
+  every zig example:
+  _readme/examples.zig:24:34: error: root source file struct 'posix' has no member named 'getenv'
+      .{ "apikey", h.vstr(std.posix.getenv("DEMO_APIKEY") orelse "") },
+                          ~~~~~~~~~^~~~~~~
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang/lib/std/posix.zig:1:1: note: struct declared here
+  //! POSIX API layer.
+  ^~~~~~~~~~~~~~~~~~~~
+  referenced by:
+      main: _readme/examples.zig:377:17
+      callMain [inlined]: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang/lib/std/start.zig:698:59
+      callMainWithArgs [inlined]: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang/lib/std/start.zig:638:20
+      posixCallMainAndExit: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/zigenv/lib/python3.12/site-packages/ziglang/lib/std/start.zig:590:38
+      2 reference(s) hidden; use '-freference-trace=6' to see all references
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/freeze/oldclone/ts/dist-test/generatedcompile.test.js:8064:38)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

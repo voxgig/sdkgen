@@ -1,0 +1,149 @@
+{
+ "committable": true,
+ "summary": "I checked the updated record and the new classes file against the seven reports and the committed record, and corrected both files in place. My notes are in record2/CHECK.md, and I wrote nothing else.\n\nAlmost every changed or added figure matches its report, including who measured it and whether it was run or read. I found 13 problems and corrected all of them. Most are about wording or how something is attributed. Two are more than that:\n- **H5, older interface.** The record said \"six of the seven breaking changes applied\". The report counts six cases: three per provider, from four distinct changes.\n- **H5, packs that ship providers.** The status row and section 3.5 stated as measured that such a pack \"stops generating at each raise\". The checker inferred this and never ran it as a pack. All three places now say it is inferred.\n\nThe standings for H1 to H5 follow from the reports. I tightened two of them:\n- **H3:** the status row said 16.7% was under the limit. It is over the limit, on the strictest reading.\n- **H5:** the safe condition is now \"holds the retired copy as unchanged\", which matches section 3.5 and the truncated-record case.\n\nSection 4 gives the shares from the blind sample's report. The first round's ranges were wider (57 to 70, 78 to 93, 165 to 184); the files use the narrower ones the blind report gives instead. It does not overstate the reach and does not hide the six unfixed entries.\n\nIt gave the plain answer only in 4.5. The answer is now also in:\n- the section's first paragraph;\n- the status lead;\n- a new \"Reach\" row in the standings table.\n\nThe classes file matches the working table row by row (checked by script):\n- 329 rows, in the same order, each one a heading of the catalogue.\n- Id, class and sub-class are identical in every row.\n- 45 rows have a changed reason, each for a stated cause.\n- Every count recomputed from the table equals the printed one.\n\nRemoved sentences were out of date, not inconvenient. Both files can be committed as a record in progress.",
+ "figures_checked": "About 360 figures checked across both files against s3c-base33, s3c-guide33, s4-h3 and s4-h3check, s4-h5 and s4-h5check, s4-general-sum and s4-general-blind. That covers sections 2.1, 2.3, 2.4, 3.1 to 3.5, 4, 5.2, 5.3, 5.8, 6.1, 6.3, 7, 8 and appendices A and C, plus every number in sections 1 to 5 of the classes file. The 329-row table and its per-class and per-section counts were also checked by script.\n- Mismatched: 13, all corrected; see mismatches.\n- Not found: 0.\n- Superseded figures used as current: 0. The first-round ranges in s4-general-sum (57 to 70, 78 to 93, 165 to 184) were correctly replaced by the blind report's (58 to 70, 78 to 81, 174 to 183).\n- Ran or read: every attribution in the new text matches its report, except the rules-bent paragraph of 3.5. It said \"read\", but the checker also saw two of those bends in runs (now marked).",
+ "mismatches": [
+  {
+   "where": "3.5, a provider written for an older interface",
+   "document": "Of the seven breaking changes since 3.2 ... six applied",
+   "report": "Six applicable cases: lua 3 ([1],[8],[14]) and ocaml 3 ([0],[1],[8]); 4 distinct changes",
+   "source": "s4-h5 interface_version.counts",
+   "fixed": "Now reads: three applied to each provider, four distinct changes in all: six cases"
+  },
+  {
+   "where": "3.3 count table, row 'Language pack only / outside'",
+   "document": "66 entries re-judged blind, scope agreed",
+   "report": "Agreed except two arguable cases, U37 and S46",
+   "source": "s4-h3check scope_disagreements",
+   "fixed": "Added 'except two arguable cases (U37, S46, below)'"
+  },
+  {
+   "where": "4.5",
+   "document": "seven, all in shared code, were not fixed",
+   "report": "Six not fixed; D26 fixed only in part",
+   "source": "s4-h3check once_moved",
+   "fixed": "Now 'were not fixed or (D26) only in part'"
+  },
+  {
+   "where": "4.3, the Stays row",
+   "document": "WP36 (34 consumer issues)",
+   "report": "34 issues: C 33, O 1",
+   "source": "s4-general-sum packages",
+   "fixed": "Now 'WP36 (34 issues, 33 of them a consumer target's)'"
+  },
+  {
+   "where": "8, integration at twenty",
+   "document": "including the first lanes for php, java, cpp and js",
+   "report": "php, java and cpp already have README example tests on main (java and cpp check structure only; php strips the page's import); js has none",
+   "source": "record 2.4; s3c-guide33",
+   "fixed": "Rewritten: lanes that run php, java and cpp examples, and a first lane for js"
+  },
+  {
+   "where": "3.5, rules the changes bend",
+   "document": "(checker, read)",
+   "report": "The interface-reader disagreement and the copy-record bend were also seen in runs (S2b, packs/own-const)",
+   "source": "s4-h5check rules_bent",
+   "fixed": "Now '(checker, read; the last two also seen in runs)'"
+  },
+  {
+   "where": "Status table, H5 row",
+   "document": "where the project's copy record holds the retired copy",
+   "report": "The unsafe S2b state has the record holding an earlier fingerprint, so the condition is 'holds the retired copy as unchanged'",
+   "source": "s4-h5check worst/states S2b",
+   "fixed": "Added 'as unchanged', matching 3.5"
+  },
+  {
+   "where": "Status table H5; 3.5 attack paragraph; 3.5 standing",
+   "document": "a pack that ships providers ... stops generating at each raise (stated as a measured fact)",
+   "report": "Not tested end to end; inferred from S4 and the m8/m9 mutations",
+   "source": "s4-h5check not_done",
+   "fixed": "Marked as inferred, not run as a pack, in all three places"
+  },
+  {
+   "where": "3.3, what the check corrected (D26)",
+   "document": "`ts/src/helpers/sdkdesc.ts` lines 281 to 310 at `v33-frozen`",
+   "report": "The file exists only in the prototype; it is absent from /home/user/sdkgen",
+   "source": "ls in /home/user/sdkgen",
+   "fixed": "Added that the file is the prototype's and does not exist on main"
+  },
+  {
+   "where": "5.8, tools defects (incremental build)",
+   "document": "the scaffold's generate relies on it",
+   "report": "The report says only that the scaffold's generate runs tsc --build first",
+   "source": "s4-h5 read; s4-h5check",
+   "fixed": "Now 'the scaffold's generate runs that build first'"
+  },
+  {
+   "where": "5.8, tools defects (copy record reader)",
+   "document": "listed as a defect of main without qualification",
+   "report": "On main, skipping an unreadable line is deliberate (comment above readCopies). It becomes a hazard only once retirement is gated on the record.",
+   "source": "/home/user/sdkgen/ts/src/action/copies.ts; s4-h5check rules_bent [4]",
+   "fixed": "Said that it is deliberate on main and why it matters with record-gated retirement"
+  },
+  {
+   "where": "Status table, H3 row",
+   "document": "(2.8%; 5.6% on a strict reading, 16.7% on the strictest), under the limit of about 10%",
+   "report": "16.7% is over the limit",
+   "source": "s4-h3check recomputed",
+   "fixed": "Now: both under the limit; 16.7%, over it, on the strictest reading, which counts the exempt printers"
+  },
+  {
+   "where": "5.2, runtime-table omissions",
+   "document": "bare `Main.fragment.kt:10`, `Main.fragment.scala:10`, `EntityBase.fragment.js:7`",
+   "report": "Correct lines, but not given as repository paths",
+   "source": "s3c-guide33; checked in /home/user/sdkgen/ts/project/.sdk/src/cmp/{kotlin,scala,js}/fragment/",
+   "fixed": "Expanded to repository paths"
+  }
+ ],
+ "not_found": [],
+ "standing_changes": [
+  {
+   "hypothesis": "H3 (status table)",
+   "was": "1 needed a line in each language (2.8%; 5.6% strict, 16.7% strictest), under the limit of about 10%",
+   "now": "2.8% and 5.6%, both under the limit; 16.7%, over it, on the strictest reading, which counts the exempt printers. 7 not fixed or only partly fixed; not decided",
+   "why": "The old sentence put the strictest figure under the limit. s4-h3check puts it over."
+  },
+  {
+   "hypothesis": "H5 (status table and 3.5)",
+   "was": "Safe where the copy record holds the retired copy. A pack that ships providers stops generating at each raise, stated as measured.",
+   "now": "Safe where the record holds the retired copy as unchanged. The pack stopping is marked as inferred from the raise and the mutations, not run as a pack. Still not decided.",
+   "why": "In S2b the record holds the copy under an earlier fingerprint. The checker's not_done says no pack was upgraded across a raise end to end."
+  },
+  {
+   "hypothesis": "Reach (section 4; new row in the standings table)",
+   "was": "The plain answer appeared only in 4.5; the section's first paragraph gave numbers without a conclusion",
+   "now": "Stated in the status lead, in a new 'Reach' row and in the section's first paragraph. Not a general solution to the catalogue: a general mechanism for the per-language documentation text, reaching 66 of 329 (58 to 70). Of the 38 tested, 28 fixed once and 7 not fixed or only partly fixed. A reading checked by two samples, not a measurement.",
+   "why": "Check 6 requires the answer plainly in the first screen of the section. Wording and figures are from s4-general-blind and s4-h3check."
+  },
+  {
+   "hypothesis": "Section 4.5 (tested entries)",
+   "was": "seven ... were not fixed",
+   "now": "seven ... were not fixed or (D26) only in part",
+   "why": "s4-h3check: D26 is partly fixed."
+  }
+ ],
+ "table_check": "Checked by script against general/catalogue-classes.md:\n- Both tables have 329 rows, in the same catalogue order, with none missing, doubled or extra.\n- Every id is a '### <id>.' heading of /home/user/sdkgen/docs/design/model-dependent-text-issues.md (329 headings), and every heading has a row.\n- Id, class, sub-class, where-written, component, repeats and also are identical in all 329 rows. Only the reason changes, in 45 rows:\n  - 38 rows change wording only ('Scope table: yes/part/pack-only' became 'In the H3 scope, wholly/in part/as language pack only').\n  - U63's reason drops a working name.\n  - S22, X3 and V27 lose the 'component untouched' claim, which s4-h3check refuted.\n  - U37, U44 and D26 gain notes from s4-h3check.\n- In the package table, only WP18's fate text changed, for the same refuted 'untouched' claim. All 46 packages have the same counts, and the fates are (a) 2, (b) 9, (c) 35.\n- No class changed without a reason. The table header now says which rows the H3 check revised and why the four reasons changed.",
+ "recomputed_counts": "Recomputed from the classes file's table (entries / distinct, where distinct means a row with no Repeats):\n- T 38/26 (yes 13, part 25; 11, 15)\n- S 28/24 (model 20, runtime fact 8; 18, 6)\n- L 6/6\n- O 81/67 (needs a derivation 46, plain 35; 39, 28)\n- C 33/28\n- G 40/29 (behaviour 31, comment 9; 21, 8)\n- K 83/65\n- P 13/12\n- N 7/6\n- Total 329/263\n\nPer section (T S L O C G K P N):\n- S: 7 7 0 22 7 0 6 0 1\n- X: 2 1 0 4 0 0 0 0 0\n- G: 3 3 0 5 9 7 4 0 0\n- V: 1 2 3 4 1 8 12 1 0\n- U: 9 8 3 31 11 8 22 10 6\n- N: 2 0 0 3 1 4 13 1 0\n- M: 7 2 0 6 2 8 23 1 0\n- D: 7 4 0 6 2 3 1 0 0\n- A: 0 1 0 0 0 2 2 0 0\n\nAll equal the counts printed in the classes file, the record's section 4 and s4-general-blind. Derived figures:\n- T+S: 66/50.\n- Does nothing for (L, C, G, K, P): 175/140.\n- Ranges re-derived from the named borders match: 58 to 70 and 44 to 53; 78 to 81 and 65 to 67; 174 to 183 and 139 to 146; S 21 to 32; L 5 to 13.\n- T distinct 26 against H3's 30: explained by four cross-class repeats, which the script confirms (S13 to S11 K, M37 to G28 K, X6 to S29 S, S25 to S23 S).",
+ "house": [
+  "No AI model or tool is named in either file, and neither file contains a temporary-directory path or uses first person (grep).",
+  "No dash is used as punctuation: no spaced hyphen, em dash or en dash outside list markers (grep).",
+  "In the classes file, 'DQ1' was used without saying it is a plan identifier, and 'appendix A' in four package rows did not say it is the plan's. Both are now defined (DQ1: the plan's decision on what operation-level active: false means).",
+  "Every new repository path exists in /home/user/sdkgen, except the prototype's own files. `ts/src/helpers/sdkdesc.ts` is now marked as the prototype's; `ts/test/runtimeforms/py.ts` and `elixir.ts` were already marked 'in the prototype'. Bare fragment file names in 5.2 were expanded to repository paths.",
+  "Some 5.8 bullets run longer than 76 columns. They are one-line list entries, which the house rules allow."
+ ],
+ "still_ask": [
+  "What landing the proposal on main would cost, including porting the other ten README families. Only three sections were built.",
+  "How many distinct derivations the 46 'needs a derivation' entries require, and how much of the catalogue one answer per fact would reach. The classification says where text is written, not how many derivations fix how many entries.",
+  "Whether the 28 S entries would really be fixed once their families are written once. No family beyond the three sections was built, and part of them is one language's text.",
+  "How common projects without an intact copy record are, which decides how much H5's unsafe class matters.",
+  "Whether interface churn settles at twenty languages. Without that, a versioned interface stops packs that ship providers at every raise, and that cost is inferred, not run.",
+  "Whether the changed examples compile in clojure, elixir, swift, ocaml and lua, and later in csharp, kotlin and scala. There is no toolchain for them where the work ran.",
+  "Whether the seven H3 shared edits (X3, S22, U52, U53, V27, U102, D26's rows) land without a per-language line, and whether the seven ports add none beyond S13's testMock.",
+  "Behaviour on real API specifications rather than one demonstration model and its variations."
+ ],
+ "must_change": [],
+ "ran_read_changes": [
+  "3.5, rules the changes bend: '(checker, read)' became '(checker, read; the last two also seen in runs)'. s4-h5check marks the interface-reader disagreement and the copy-record bend as Ran.",
+  "Status table H5 and 3.5 (twice): the pack that ships providers stopping at each raise is now marked as inferred, not run as a pack (s4-h5check not_done)."
+ ]
+}

@@ -1,0 +1,53 @@
+
+##### [new] R14 base: made on the new build, target add ts go js
+   EXIT 0 (1606 ms)
+   [base] GEN ok=true ms=275
+   [base] 'NOTE:' comments 0, 'MyClient' 0, test-feature-always sentence: 0
+
+##### [new] R14 the project edits the printer, the fact and the hook
+   edited: 2 lines in Syntax_ts, 1 in Naming_ts
+   [edited] GEN ok=true ms=222
+   [edited] 'NOTE:' comments 1, 'MyClient' 13, test-feature-always sentence: 0
+   ref diff: < ## DemoSDK
+   ref diff: < #### `DemoSDK.test(testopts?, sdkopts?)`
+   ref diff: < const client = DemoSDK.test()
+   ref diff: < Alias for `DemoSDK.test()`.
+   ref diff: < Return the parent `DemoSDK` instance.
+   ref diff: < Return the parent `DemoSDK` instance.
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Naming_ts.ts
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor-end           .sdk matches the scaffold (0 additive, 2 customized)
+   EXIT 0 (1053 ms)
+
+##### [new] R14 target add ts, merge mode
+   copy-merge-merged    target add ts: merged the incoming copy into 2 locally changed file(s): src/cmp/ts/Naming_ts.ts, src/cmp/ts/Syntax_ts.ts
+   EXIT 0 (1152 ms)
+   [merged] GEN ok=true ms=238
+   [merged] 'NOTE:' comments 1, 'MyClient' 13, test-feature-always sentence: 0
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Naming_ts.ts
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor-end           .sdk matches the scaffold (0 additive, 2 customized)
+   EXIT 0 (858 ms)
+
+##### [new] R14 package update --no-fetch, merge mode
+   EXIT 0 (1567 ms)
+   [updated] GEN ok=true ms=252
+   [updated] 'NOTE:' comments 1, 'MyClient' 13, test-feature-always sentence: 0
+
+##### [new] R14 target add ts, copies overwrite
+   EXIT 0 (942 ms)
+   [overwritten] GEN ok=true ms=294
+   [overwritten] 'NOTE:' comments 0, 'MyClient' 0, test-feature-always sentence: 0
+   doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   EXIT 0 (932 ms)
+
+##### [new] R14 a declared runtime fact edited: async true to false, in merge mode
+   [async] GEN ok=true ms=270
+   'await' in ts README+REFERENCE: before 30 after 30
+   < `load()` resolves to the entity and throws on failure; `.data()` reads
+   < its record.
+   > `load()` returns the entity and throws on failure; `.data()` reads its
+   > record.
+   doctor-finding       CUSTOMIZED (an add merges its updates into it): src/cmp/ts/Syntax_ts.ts
+   doctor-end           .sdk matches the scaffold (0 additive, 1 customized)
+   EXIT 0 (869 ms)

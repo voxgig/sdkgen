@@ -1,0 +1,24 @@
+
+##### R12 langpack against old: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/old
+   suite exit 0
+   ℹ tests 76 ℹ pass 74 ℹ fail 0 ℹ skipped 2 
+   
+   > @voxgig/sdkgen-langpack@0.0.15 build
+   > tsc --project /tmp/sdkgen-consumer-NBne2p/tsconfig.json --outDir /tmp/sdkgen-consumer-NBne2p/.sdk/dist/cmp
+   
+   wrote 12 md files; sdkgen at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/old
+
+##### R12 langpack against new: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/sdkgen/ts
+   suite exit 0
+   ℹ tests 76 ℹ pass 74 ℹ fail 0 ℹ skipped 2 
+   
+   > @voxgig/sdkgen-langpack@0.0.15 build
+   > tsc --project /tmp/sdkgen-consumer-y4R0FM/tsconfig.json --outDir /tmp/sdkgen-consumer-y4R0FM/.sdk/dist/cmp
+   
+   wrote 12 md files; sdkgen at /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/sdkgen/ts
+
+##### R12 compare
+   md files: old 12, new 12
+   DIFFER: 2 file(s)
+   diff -r /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/out/lp-md-old/dart/REFERENCE.md /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/out/lp-md-new/dart/REFERENCE.md
+   diff -r /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/out/lp-md-old/lean/REFERENCE.md /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h5/out/lp-md-new/lean/REFERENCE.md

@@ -1,0 +1,41 @@
+[
+ {
+  "id": "new-ts-unquoted-near",
+  "lang": "ts",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "new-swift-try-dropped-provider-na",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ swift: the forms read the runtime"
+  ],
+  "whats": [
+   "the operations show their failure in the declaration (throws); the forms state no failure record (failure: { shows, call })"
+  ]
+ },
+ {
+  "id": "new-rb-unquoted-near",
+  "lang": "rb",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ rb: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.none: unquoted nil occurs within 3 lines of the quote at src/cmp/rb/fragment/EntityLoadOp.fragment.rb:14; quote it there"
+  ]
+ }
+]

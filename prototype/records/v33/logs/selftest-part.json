@@ -1,0 +1,233 @@
+[
+ {
+  "part": "missing",
+  "id": "missing-direct-one-variation",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 0 -> 1 (1/12, 8%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (2/12, 17%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-table-row",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 3 new open class(es), 0 printed less often than its reference, 0 new absent sentence(s), unclassified 0 -> 3 (3/12, 25%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-lua",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (4/12, 33%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-perl",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (5/12, 42%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-swift",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (6/12, 50%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-one-variation [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 1 new open class(es), 1 printed less often than its reference, 0 new absent sentence(s), unclassified 71 -> 72 (7/12, 58%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 71 -> 71 (8/12, 67%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-table-row [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 2 new open class(es), 2 printed less often than its reference, 0 new absent sentence(s), unclassified 71 -> 73 (9/12, 75%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-lua [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 103 -> 103 (10/12, 83%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-perl [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 86 -> 85 (11/12, 92%)"
+ },
+ {
+  "part": "missing",
+  "id": "missing-direct-every-variation-swift [scratch]",
+  "ok": true,
+  "moved": false,
+  "detail": "flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 109 -> 107 (12/12, 100%)"
+ },
+ {
+  "part": "regen",
+  "id": "generation-throws",
+  "ok": true,
+  "moved": false,
+  "detail": "exit 1: REGENERATION FAILED (exit 1): the generator threw; new/ holds the pages of an earlier run and nothing is measured"
+ },
+ {
+  "part": "regen",
+  "id": "regeneration-short",
+  "ok": true,
+  "moved": false,
+  "detail": "exit 1: REGENERATION SHORT: 21 variations regenerated, old/ holds 22 (skipped: none); a variation not regenerated keeps an earlier run's pages, so n"
+ },
+ {
+  "part": "identity",
+  "id": "template-two-langs",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: ts 010ab525bc \"A failure is reported in the result, not as an err\" | py 010ab525bc \"A failure is reported in the result, not as an err\" | rust 010ab525bc \"A failure is reported in the result, not as an err\""
+ },
+ {
+  "part": "identity",
+  "id": "member-name",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: ts 581898e092 \"Accepts the same parameters as `direct()`.\" | go 581898e092 \"Accepts the same parameters as `Direct()`.\" | c 581898e092 \"Accepts the same parameters as `sdk_direct()`.\""
+ },
+ {
+  "part": "identity",
+  "id": "label-none",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: ts 746a31db3f \"The first argument holds the test feature's option\" | go 746a31db3f \"The first argument holds the test feature's option\" | c 746a31db3f \"The first argument holds the test feature's option\""
+ },
+ {
+  "part": "identity",
+  "id": "article-and-class",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: ts 0071df96c2 \"Create a new `AmbientEntity` instance.\" | c 0071df96c2 \"Create a new `Ambient` instance.\" | elixir 0071df96c2 \"Create a new `Demo.Entity.Ambient` instance.\""
+ },
+ {
+  "part": "identity",
+  "id": "number",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: go b4e03207de \"The program below runs these 2 steps in order.\" | go b4e03207de \"The program below runs these 4 steps in order.\""
+ },
+ {
+  "part": "identity",
+  "id": "comment-fact",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: rust 23dc789f01 \"Load an ambient: Ok is the entity; Err holds the f\" | zig 23dc789f01 \"Load an ambient: .ok is the entity; .err holds the\""
+ },
+ {
+  "part": "identity",
+  "id": "comment-collection",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: py ae972576e9 \"List planet records: a list of entities, one per r\" | clojure ae972576e9 \"List planet records: a vector of entities, one per\""
+ },
+ {
+  "part": "identity",
+  "id": "vec-own-backticks",
+  "ok": true,
+  "moved": false,
+  "detail": "one id expected: rust bea4cfb8e1 \"The result's `Ok` is a `Vec` of entities, one per \" | zig bea4cfb8e1 \"The result's `.ok` is a slice of entities, one per\""
+ },
+ {
+  "part": "identity",
+  "id": "shared-word-stays",
+  "ok": true,
+  "moved": false,
+  "detail": "different ids expected: ts a32ec5077c \"Resolves to an array of entities, one per record, \" | ts 3006eded11 \"Resolves to an array of entities, one per planet, \""
+ },
+ {
+  "part": "identity",
+  "id": "shared-literal-stays",
+  "ok": true,
+  "moved": false,
+  "detail": "different ids expected: ts 010ab525bc \"A failure is reported in the result, not as an err\" | ts 5ee363d15a \"A failure is reported in the result, not as an err\""
+ },
+ {
+  "part": "identity",
+  "id": "bold-step-lead",
+  "ok": true,
+  "moved": false,
+  "detail": "split into 2: \"**Create a client.**\" | \"The client reads its API key from the `D\""
+ },
+ {
+  "part": "identity",
+  "id": "returns-lead-kept",
+  "ok": true,
+  "moved": false,
+  "detail": "**Returns:** lead kept with its sentence (1 unit)"
+ },
+ {
+  "part": "identity",
+  "id": "model-text-left-out",
+  "ok": true,
+  "moved": false,
+  "detail": "the fixture model's descriptions are model text; a shared sentence is not"
+ },
+ {
+  "part": "identity",
+  "id": "build-current",
+  "ok": true,
+  "moved": false,
+  "detail": "the clone: 1814 sources, 0 stale"
+ },
+ {
+  "part": "identity",
+  "id": "stale-build",
+  "ok": true,
+  "moved": false,
+  "detail": "STALE BUILD: ts/src/helpers/x.ts is 794734144s newer than ts/dist/helpers/x.js"
+ },
+ {
+  "part": "identity",
+  "id": "stale-staged-model",
+  "ok": true,
+  "moved": false,
+  "detail": "STALE BUILD: ts/project/.sdk/model/feature/log.aontu differs from its staged copy ts/dist-test-scaffold/.sdk/model/feature/log.aontu, which generation reads"
+ },
+ {
+  "part": "identity",
+  "id": "stale-hand-record",
+  "ok": true,
+  "moved": false,
+  "detail": "1 stale: bbbbbbbbbb voxgig_branch_on_okay(result)"
+ },
+ {
+  "part": "identity",
+  "id": "rekey-idempotent",
+  "ok": true,
+  "moved": false,
+  "detail": "records keyed by this code: left alone, twice: left alone"
+ },
+ {
+  "part": "identity",
+  "id": "rekey-never-loses",
+  "ok": true,
+  "moved": false,
+  "detail": "clojure: 64 hand entries -> carried 55 (stale before 9, not carried 0, conflicts 0); re-keyed again: nothing to do"
+ }
+]

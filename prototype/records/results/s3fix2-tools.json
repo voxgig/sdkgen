@@ -1,0 +1,300 @@
+{
+ "summary": "I extended the review tools in P/i-tools/ws/tools. I did not change any sdkgen source. The self-test now runs **176 controls, 0 failed** (selftest-2.log, 348 s). Before my changes it was 84/84.\n\n**What each part found:**\n- **1. Wrong language or convention facts.** The fact sheet now compares every such fact with the OLD page, and `portcheck` fails with `UNATTESTED <path> = <value>` until a hand record names it. All 6 provider mutations fail the check by name, in the reviewed mode and from scratch: rb `none`, `maps` and `noun`, clojure `entityNoun` and `heading`, and py `keys` (an enumeration). I built them once in P/i-tools/mut.\n- **The brief's \"at least one unit\" rule is too weak.** It accepted clojure `entityNoun` 'Fields', because 'Fields' is also a heading of its own in OLD. I made the rule per context: every distinct NEW unit carrying the fact must be held in OLD.\n- **2. Dropped sentences.** classify now leaves open a shared sentence printed less often than the reference it matched, naming the variations. It also writes a non-failing list of sentences that every reference of the same result style prints and this language does not. The re-check's invisible `rb-direct-sentence-dropped` is now flagged from scratch; it was 0 new open with the old tools.\n- **3. From scratch.** Every control now runs from scratch too. That exposed one hole, `sentence-removed-go`. Its cause was the existing duplicate check counting variations no reference has (lone-go, alias-go2). I fixed it, and from scratch now has 0 holes.\n- **4. Sentences nobody read.** `sentences.js` exports 288 distinct masked reference sentences. 234 of them rest only on stage-3a rule records. Verdicts go in `reviewed/sentences.json`; a `false` verdict is never matched, and `STRICT_SENTENCES=1` fails on matches against sentences with no verdict.\n- **5. Smaller items.** All done: the notes lint, the renamed block column, the `classes` explanation, and cited quotes with PINNED marks on the fact sheet.\n- **6. H1 by source.** Words from the providers' own literals are at most 7.7% (go overall). That is far below the \"only this language\" figure (go 18.1%).\n\n**The nine one-command checks now:** zig and rust PASS. The other seven FAIL, and only because of unattested facts at the frozen state (16 in all). These are findings for the next engineer; I recorded none of them.",
+ "dir": "/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-tools (tools: i-tools/ws/tools; pristine copy of the tools I started from: i-tools/tools-orig; mutated second clone: i-tools/mut; generated mutation output: i-tools/mutout/R1..R3; my scripts: i-tools/scripts/{mutbuild.sh,packmut.js,tryfm.sh,e2e.sh}; re-pointed re-check scripts: i-tools/check; logs: i-tools/selftest-{0,1,2}.log, i-tools/pc/<lang>.log, i-tools/pc/<lang>.scratch.log, i-tools/sharewords-new.txt, i-tools/sentences.log, i-tools/classify-nine.txt)",
+ "attestation": "factsheet.js (READ AND RAN) reads each fact's account from the guard report (SDKGEN_GUARD_REPORT=1). For every non-enumerated string fact whose account is `language` or `convention`, it collects every NEW unit whose masked text carries the fact's label (facts.js masking).\n\n**Contexts.** Each such unit is paired with OLD through ledger.pairSection, either identical or the OLD side of a reworded pair, in the same variation. The units are grouped by context, meaning each distinct masked NEW unit:\n- **held:** some pair's OLD unit, masked with the same facts, holds the label beside the same left or right token, or is the label alone;\n- **contradicted:** it has paired OLD units and none holds the label;\n- **new:** every unit is added.\n\n**The verdict.**\n- ATTESTED only when at least one context is held and none is contradicted or new.\n- Otherwise UNATTESTED, and the sheet exits 1. `portcheck` prints `UNATTESTED <path> = <value> (<account>): <contexts>` and FAILs.\n- A record `hand/<lang>.json` \u2192 `facts: { \"<path>\": { value, why, evidence } }` at the current value turns it into RECORDED. A record for another value says \"hand record is for ...\" and does not count. `--scratch` / `SCRATCH=1` ignore these records.\n\n**Why it is stricter than the brief.** The brief's rule was \"the OLD side holds the same value in the same place in at least one unit\". I measured that rule first:\n- 9 unattested at the frozen state;\n- it MISSED clojure entityNoun 'Members'->'Fields', because 'Fields' is also the \"#### Fields\" heading, which is identical in OLD;\n- so I added the contradicted and new conditions.\n\nThe cost: 16 unattested facts at the frozen state instead of 9.\n\n**Two masking changes, needed so that the wrong values show:**\n- `ref.heading` is now masked as a whole heading unit; it had been masked nowhere, so its label never appeared.\n- `TOOLS_SYNTAX_OVERRIDE`, used only by the controls.",
+ "attestation_controls": [
+  {
+   "control": "rb ref.facts.none 'nil' -> 'null'",
+   "lang": "rb",
+   "fails_naming_the_fact": true,
+   "reviewed_mode": "fails, UNATTESTED ref.none (1 context, contradicted: OLD says otherwise); unmutated with the control hand file: no unattested fact",
+   "from_scratch": "fails, names ref.none; the true value 'nil' is itself unattested from scratch (a context OLD lacks), so a new port records it by hand and the reviewer audits the record"
+  },
+  {
+   "control": "rb ref.facts.maps 'hashes' -> 'arrays'",
+   "lang": "rb",
+   "fails_naming_the_fact": true,
+   "reviewed_mode": "fails, UNATTESTED ref.maps (contradicted 1); unmutated: none. Also through the one command: e2e.sh -> 'UNATTESTED ref.maps = \"arrays\"', PORTCHECK rb: FAIL",
+   "from_scratch": "fails, names ref.maps (unmutated from scratch: ref.none only); one command SCRATCH=1 likewise"
+  },
+  {
+   "control": "rb ref.facts.noun 'Methods' -> 'Functions'",
+   "lang": "rb",
+   "fails_naming_the_fact": true,
+   "reviewed_mode": "fails, UNATTESTED ref.noun (2 contexts, both new: OLD has no 'Instance Functions'); unmutated: none",
+   "from_scratch": "fails, names ref.noun"
+  },
+  {
+   "control": "clojure ref.facts.entityNoun 'Members' -> 'Fields'",
+   "lang": "clojure",
+   "fails_naming_the_fact": true,
+   "reviewed_mode": "fails, UNATTESTED ref.entityNoun (held 1 = the homonym '#### Fields' heading, new 1 = 'Common Fields'); unmutated (with the control hand file holding the true noun, heading, none and valueType.OBJECT): none. The brief's at-least-one rule passed this mutation.",
+   "from_scratch": "fails, names ref.entityNoun (clojure also has 4 base unattested facts from scratch)"
+  },
+  {
+   "control": "clojure ref.facts.heading '{module}' -> '{client}'",
+   "lang": "clojure",
+   "fails_naming_the_fact": true,
+   "reviewed_mode": "fails, UNATTESTED ref.heading, 'hand record is for \"{module}\"'; unmutated with the control hand file: none",
+   "from_scratch": "names ref.heading, but NOT discriminating: the true heading '{module}' (sdk.api) is itself unattested, because OLD clojure's heading was 'Client'. From scratch the porter's hand record and the reviewer are the only check."
+  },
+  {
+   "control": "py ref.facts.keys 'member' -> 'bare' (enumeration)",
+   "lang": "py",
+   "fails_naming_the_fact": true,
+   "reviewed_mode": "fails, UNATTESTED ref.keys: 197 units it selects (the sentences of c, zig, clojure, rust, elixir), 121 paired with OLD, none identical or using a word only 'bare' sentences use; unmutated: none. Through the one command: PORTCHECK py: FAIL naming ref.keys",
+   "from_scratch": "fails, names ref.keys (plus base ref.none and ref.lits.false)"
+  }
+ ],
+ "enumerated_facts": "Enumerated facts (named, prints, entityBy, keys, and any enumeration accounted `language` or `convention`) are not printed: they choose which sentence prints.\n\n**How a wrong one shows** (in the README):\n- This language prints another value's sentences instead of its own.\n- In classes, those are reworded classes whose NEW side matches the other value's reviewed sentences and whose OLD side matches no reviewed pair. They are left for a person with that hint, and come with vanished tokens.\n- From scratch, an `added` unit can still be matched as shared. That is why the fact sheet also judges the fact itself.\n\n**The fact-sheet check (heuristic, RAN):**\n- Marker units for (fact, value): masked units printed by a reference declaring that value and by no reference declaring another.\n- Value words: words in those markers that no other-value reference prints.\n- ATTESTED when a NEW marker unit pairs with an OLD unit that is identical or uses a value word. UNATTESTED when markers are printed but none pairs that way.\n- \"not judged\" when no reference declares the value; elixir entityBy 'module' and rb prints 'listFields' are in this case.\n- \"not printed\" when no marker is printed; rb named 'bare' is in this case.\n\n**Control** (controls/factmut/py-keys-bare): py `keys` 'member' -> 'bare' fails naming ref.keys in both modes; unmutated py is ATTESTED.\n\n**Limits:**\n- At the frozen state every judged enumeration is ATTESTED, but often by a minority of units (zig named: 365 of 673).\n- A wrong value whose words already appear in the language's OLD page would pass.\n- I tested only one enumeration mutation.",
+ "missing_sentence": "classify.js (RAN), beside the existing duplicate check:\n\n**Printed less often than its reference** (left open):\n- For a reworded or added class whose every masked instance matches reviewed sentences, the reference it matched is the first reference holding every instance that prints none of them more often than this language does, in any variation both have the section in.\n- When every candidate prints it more often somewhere, the class is left open with a hint naming the reference and the variations. For example: \"prints it in fewer variations, or fewer times, than ts does: auth-off (0 < 1): a dropped sentence?\".\n- `portcheck` prints \"printed less often than its reference N\"; these classes are open and fail.\n\n**The absent list** (not failing), `review/<lang>/<section>.absent.json`:\n- Masked units that every reference of the same `result` style prints in a variation (all of them having the section there) and this language prints in no variation.\n- Code spans are compared as `\u2026`, because a key read like `result[\"ok\"]` vs `(vs/getprop result \"ok\")` is printer output.\n- The porter explains each in `hand/<lang>.json` \u2192 `absent: { id: why }`.\n- `portcheck` prints the count and how many are explained. ts, go and c have no reference of their style, so their list is always empty (stated).\n\n**Also fixed:** the existing duplicate check counted variations that no reference has (lone-go, alias-go2). It took go's direct() sentence for a duplicate and left it open, which made dropping it invisible from scratch. It now counts only variations some reference has.",
+ "missing_sentence_controls": [
+  {
+   "control": "direct() sentence dropped from one variation (rb doc-crud)",
+   "reviewed_mode": "flagged: 1 new open (RECOUNT), unclassified 0->1",
+   "from_scratch": "flagged: 1 new open, printed less often than its reference (py); re-check's inj.js --scratch with my tools: new open 1, ledger 68->69; with the tools as handed (tools-orig): new open 0, 68->68"
+  },
+  {
+   "control": "direct() sentence dropped from every rb variation",
+   "reviewed_mode": "flagged: 1 new open + 1 new entry in reference.absent.json",
+   "from_scratch": "flagged: 1 new open + 1 new absent entry"
+  },
+  {
+   "control": "options['server']['tenant'] table row dropped (rb doc-crud)",
+   "reviewed_mode": "flagged: 3 new open (RECOUNT of the cells' classes)",
+   "from_scratch": "flagged: 2 new open, both printed less often than their reference"
+  }
+ ],
+ "scratch_controls": [
+  {
+   "injection": "controls/injections.json (24 regressions)",
+   "lang": "ts go py c zig clojure elixir",
+   "open_from_scratch": true,
+   "note": "24/24 flagged from scratch, after the duplicate-check fix. 23/24 in the first run (selftest-1.log); sentence-removed-go was the hole. err-reset-removed-c is flagged only by its normalizer count (0 new open, unclassified 30->31); global-zig by 2 new open with unclassified unchanged."
+  },
+  {
+   "injection": "sentence-removed-go",
+   "lang": "go",
+   "open_from_scratch": true,
+   "note": "Was a hole (0 new open, 80->80). Fixed in classify.js: the duplicate check no longer counts variations no reference has. Now 1 new open, printed less often than its reference."
+  },
+  {
+   "injection": "controls/accept.json (7 false sentences)",
+   "lang": "ts py go zig rb",
+   "open_from_scratch": true,
+   "note": "7/7: each leaves 2-3 classes open from scratch and 0 accepted automatically"
+  },
+  {
+   "injection": "controls/recheck.json (the re-check's 19, myinj.json)",
+   "lang": "rb py go",
+   "open_from_scratch": true,
+   "note": "19/19 from scratch, 1-3 new open each, including rb-direct-sentence-dropped (1 new open, printed less often than its reference)"
+  },
+  {
+   "injection": "controls/missing.json (3 dropped-sentence controls)",
+   "lang": "rb",
+   "open_from_scratch": true,
+   "note": "3/3 both modes"
+  }
+ ],
+ "scratch_holes": [
+  "None at the end (selftest-2.log: 'ledger scratch 24/24, recheck scratch 19/19, accept scratch 7/7, missing scratch 3/3').",
+  "Only hole found: sentence-removed-go [scratch], in selftest-1.log. Fixed as described.",
+  "Known blind spot: an injection that only changes the count of a class that is already open from scratch is caught only when the class matches a reference sentence (the new fewer check). An open class that matches nothing carries no earlier count in a new port. The person reading it sees its count but no comparison.",
+  "Not discriminating from scratch: clojure heading. The true value is itself unattested from scratch, so the control only shows the fact is named."
+ ],
+ "sentences": "sentences.js (RAN: `node tools/sentences.js --clone sdkgen --old out/old --new out/new --match`, 64 s).\n\n**What it exports.** Every distinct masked sentence: the NEW side of each reference language's decided reworded or added class (not one itself matched as shared), masked with that language's facts exactly as classify builds its reference set. For each:\n- its id, the masked text and one example (language, variation, text);\n- how many languages and classes contribute it;\n- how those classes were accepted (hand, stage-3a rule record);\n- the shared source file whose literals hold the most four-word runs of the example (found for 153 of 288);\n- its verdict.\n\n**The files.**\n- Output: `tools/review/sentences/sentences.{json,txt}`.\n- Verdicts: `tools/reviewed/sentences.json`, empty at this stage. I wrote no verdicts.\n\n**How the verdicts are used.**\n- classify skips a reference sentence whose verdict is `false`. The selftest control \"false-never-matched\" marks one sentence false, and its rb class is left open.\n- Every shared record carries `sentences` and `unreviewed` (control \"shared-records-verdict\").\n- `portcheck` prints the count matched against sentences with no verdict, and fails with STRICT_SENTENCES=1.\n\n**Counts.** 288 distinct masked sentences: tutorial 72, rootquick 19, reference 197. Of these, 43 were accepted by hand only, 234 by stage-3a rule records only, and 11 both.\n\nMatched from scratch against the other eight, as \"classes matched / classes\", all against sentences with no verdict:\n\n| Language | Tutorial | Rootquick | Reference |\n| --- | --- | --- | --- |\n| ts | 17/62 | 0/21 | 26/124 |\n| go | 10/87 | 0/20 | 10/90 |\n| py | 22/49 | 2/15 | 57/118 |\n| c | 19/49 | 0/24 | 46/108 |\n| zig | 21/73 | 0/30 | 51/115 |\n| clojure | 21/48 | 2/19 | 56/124 |\n| rust | 21/58 | 0/21 | 54/128 |\n| elixir | 22/51 | 2/17 | 56/144 |\n| rb | 23/74 | 0/20 | 50/119 |\n\nThe \"about 877 classes\" of the brief come to 288 distinct sentences.",
+ "sentence_counts": [
+  {
+   "section": "tutorial",
+   "distinct_masked_sentences": "72",
+   "reviewed_by_hand": "16 hand only (+1 both)",
+   "by_rule_record": "55 rule records only"
+  },
+  {
+   "section": "rootquick",
+   "distinct_masked_sentences": "19",
+   "reviewed_by_hand": "1 hand only (+2 both)",
+   "by_rule_record": "16"
+  },
+  {
+   "section": "reference",
+   "distinct_masked_sentences": "197",
+   "reviewed_by_hand": "26 hand only (+8 both)",
+   "by_rule_record": "163"
+  },
+  {
+   "section": "all",
+   "distinct_masked_sentences": "288 (template file found for 153)",
+   "reviewed_by_hand": "43 hand only, 11 both",
+   "by_rule_record": "234 only; verdicts in reviewed/sentences.json: 0"
+  }
+ ],
+ "smaller": [
+  {
+   "item": "Notes: a note that is not plain string literals in the table is a finding",
+   "done": true,
+   "note": "purity.js: each notes entry must be string literals only. I allow several literals joined by '+', because zig's and clojure's real notes are written 'a\\n' + 'b' and every part is inside the linted region (a deviation from 'one literal'). Every declared note must also equal, whole, one entry's literals. note-tail-from-const is now FLAGGED ('note is not plain string literals' + 'a declared note is not, whole, the literals of a notes entry'). The re-check's three extra note mutations are in controls/purity.json (22 mutations; purity 27/27). Real providers: 0 open."
+  },
+  {
+   "item": "'Unverified 0' renamed",
+   "done": true,
+   "note": "Block column is now 'compiler on PATH' (yes (ruby) / NO) plus '<n> changed blocks compiled by nothing'. One line on the screen: 'a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models'."
+  },
+  {
+   "item": "Block 'classes' column explained",
+   "done": true,
+   "note": "Screen line: classes = 'otherwise' pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code, with the per-section split. rb tutorial: changed 1, novel-token 11, vanished-token 15 = 27. Also in the README."
+  },
+  {
+   "item": "Fact sheet lists cited facts' file and quote, marks pinned prose",
+   "done": true,
+   "note": "Parsed from the guard report's 'cited (prose: audit only) path = value / file: quote' lines. Each cited fact prints its file and quote; prose ones are marked PINNED. The footer lists them: rb 11 cited / 6 pinned, go 9 / 7 incl. notes.member:stream."
+  }
+ ],
+ "prose_by_source": [
+  {
+   "lang": "ts",
+   "section": "all three (tutorial / rootquick / reference)",
+   "provider_words_pct": "0.4% (0.4 / 0.0 / 0.4)",
+   "printed_by_this_language_alone_pct": "15.4% (28.6 / 93.3 / 14.7)",
+   "notes_pct": "0.0%"
+  },
+  {
+   "lang": "go",
+   "section": "all three",
+   "provider_words_pct": "7.7% (0.0 / 0.0 / 8.1)",
+   "printed_by_this_language_alone_pct": "18.1% (67.7 / 94.0 / 16.0)",
+   "notes_pct": "7.5% (reference 7.8%)"
+  },
+  {
+   "lang": "py",
+   "section": "all three",
+   "provider_words_pct": "0.3% (0 / 0 / 0.3)",
+   "printed_by_this_language_alone_pct": "4.4% (7.2 / 38.2 / 4.1)",
+   "notes_pct": "0.0%"
+  },
+  {
+   "lang": "c",
+   "section": "all three",
+   "provider_words_pct": "0.6% (0.8 / 0 / 0.6)",
+   "printed_by_this_language_alone_pct": "9.9% (32.6 / 93.5 / 8.7)",
+   "notes_pct": "0.0%"
+  },
+  {
+   "lang": "zig",
+   "section": "all three",
+   "provider_words_pct": "3.8% (0.4 / 2.5 / 4.0)",
+   "printed_by_this_language_alone_pct": "4.9% (11.5 / 93.3 / 4.2)",
+   "notes_pct": "3.4% (reference 3.5%)"
+  },
+  {
+   "lang": "clojure",
+   "section": "all three",
+   "provider_words_pct": "2.9% (0.5 / 2.9 / 3.0)",
+   "printed_by_this_language_alone_pct": "2.2% (3.2 / 38.2 / 2.0)",
+   "notes_pct": "2.5%"
+  },
+  {
+   "lang": "rust",
+   "section": "all three",
+   "provider_words_pct": "1.2% (0 / 0 / 1.2)",
+   "printed_by_this_language_alone_pct": "5.9% (11.1 / 93.3 / 5.3)",
+   "notes_pct": "0.9%"
+  },
+  {
+   "lang": "elixir",
+   "section": "all three",
+   "provider_words_pct": "1.1% (9.8 / 0 / 0.8)",
+   "printed_by_this_language_alone_pct": "4.3% (0.0 / 40.0 / 4.3)",
+   "notes_pct": "0.6% (tutorial 9.4%)"
+  },
+  {
+   "lang": "rb",
+   "section": "all three",
+   "provider_words_pct": "0.3% (0 / 0 / 0.3)",
+   "printed_by_this_language_alone_pct": "5.5% (7.2 / 38.2 / 5.3)",
+   "notes_pct": "0.0%"
+  }
+ ],
+ "prose_measures_defined": "Command: `node tools/sharewords.js --clone sdkgen --root out/new --lang ts,go,py,c,zig,clojure,rust,elixir,rb` (output in P/i-tools/sharewords-new.txt). It runs over 21 variations; words are counted outside code spans in every unit (sentence, table cell, header, heading, code comment).\n\n**all**\n- Every such word in the section.\n\n**provider (BY SOURCE; the H1 measure)**\n- Words that come from the provider's own string literals:\n  - every word of a unit that is part of one of its notes;\n  - in any other unit, each occurrence, outside a code span, of a prose-valued fact as substituted into a shared sentence, counted as that value's words outside its own code spans and capped at the unit's words.\n- \"Prose-valued\" means either a single word at a slot shared code prints unquoted (collection, ref.noun, ref.entityNoun, ref.maps) or a value containing a space with words outside code spans (body.values, collection '`NULL`-terminated array').\n- Not counted: enumerations, the naming hook's names, and code-token facts printed in code spans.\n- Facts actually counted in the nine: ref.noun, ref.maps, collection and ref.entityNoun. No body.values occurrence is printed in these 21 variations.\n\n**only this language**\n- Unchanged: a unit that, masked with its language's facts, no other of the nine prints in the same variation and section, whoever wrote it.\n- Mostly shared code selected by a result style (go's pair sentences, its one-program tutorial, the root quick start's code comments).\n\n**notes**\n- The units that are notes; a subset of provider.\n\n**For H1, \"prose that cannot be shared\"** (BY SOURCE, the brief's 15% line): the most for any of the nine is go at 7.7% over three sections (8.1% of its REFERENCE, almost all its stream note). By \"only this language\", go is 18.1%: still over the 15% line, but by shared code that only go selects.",
+ "nine_now": [
+  {
+   "lang": "ts",
+   "result": "PORTCHECK ts: FAIL",
+   "new_findings": "UNATTESTED ref.none = 'undefined' (2 contexts, both new: OLD never printed `undefined` there). Otherwise 0 open, purity 0, guard pass; shared 1 (against an unreviewed sentence 1)."
+  },
+  {
+   "lang": "go",
+   "result": "PORTCHECK go: FAIL",
+   "new_findings": "UNATTESTED errVar = 'err' (16 contexts: held 6, new 10); ref.none = 'nil' (held 1, new 1). 0 open. From scratch (SCRATCH=1): 1 class printed less often than its reference: 'The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`.' is absent in auth-off where ts prints it."
+  },
+  {
+   "lang": "py",
+   "result": "PORTCHECK py: FAIL",
+   "new_findings": "UNATTESTED ref.none = 'None' (held 1, new 1); ref.lits.false = 'False' (contradicted: OLD's direct() sentence states no boolean). 0 open."
+  },
+  {
+   "lang": "c",
+   "result": "PORTCHECK c: FAIL",
+   "new_findings": "UNATTESTED errVar = 'err' (held 1, new 3); ref.noun = 'Functions' (OLD has no 'Instance Functions'); ref.none = 'NULL' (14 contexts: held 8, contradicted 2, new 4). 0 open."
+  },
+  {
+   "lang": "zig",
+   "result": "PORTCHECK zig: PASS",
+   "new_findings": "none failing; absent list 12 entries (sentences rust, the other 'union' language, prints and zig does not, e.g. rust's '`list()` returns a result whose `Ok` is a `Vec`...'); shared 2 against unreviewed sentences"
+  },
+  {
+   "lang": "clojure",
+   "result": "PORTCHECK clojure: FAIL",
+   "new_findings": "UNATTESTED ref.noun = 'Functions' (new); ref.heading = '{module}' (new: OLD's heading was 'Client'); ref.none = 'nil' (contradicted 1); ref.valueType.OBJECT = 'map' (held 1, new 2). Absent 1."
+  },
+  {
+   "lang": "rust",
+   "result": "PORTCHECK rust: PASS",
+   "new_findings": "none failing; absent list 12 entries (zig's sentences rust does not print)"
+  },
+  {
+   "lang": "elixir",
+   "result": "PORTCHECK elixir: FAIL",
+   "new_findings": "UNATTESTED ref.noun = 'Functions' (contradicted 1); ref.none = 'nil' (3 contexts, all new). 0 open."
+  },
+  {
+   "lang": "rb",
+   "result": "PORTCHECK rb: FAIL",
+   "new_findings": "UNATTESTED ref.none = 'nil' (held 1, new 1). Absent 1: 'Returns a `list` of entities, one per record, and raises on failure.' (py, clojure and elixir; rb prints 'an `Array`', a different masked article). Shared 73, all against unreviewed sentences."
+  }
+ ],
+ "findings_at_frozen_state": [
+  "16 UNATTESTED language or convention facts (portcheck, reviewed mode, P/i-tools/pc/<lang>.log). With the brief's lenient 'at least one unit' rule there were 9 (ts none; py lits.false; c noun, none; clojure noun, heading, none; elixir noun, none). Each needs a hand record (value, why, evidence) or a provider fix; I recorded none.",
+  "ts ref.none='undefined': 113 units in 2 contexts; OLD never printed it in those sentences. Example: B reference",
+  "go errVar='err' (16 contexts, 10 new) and ref.none='nil' (1 new)",
+  "py ref.none='None' (1 new context); py ref.lits.false='False': contradicted. B reference OLD 'Returns a result `dict` with `ok`, `status`, `headers`, and `data` (or `err` on failure).' vs NEW '... on a failure `ok` is `False` and `err` holds the error.' (i-guard is moving lits to cited, which will take this off the attestation list)",
+  "c errVar='err', ref.noun='Functions' (OLD has no 'Instance Functions'), ref.none='NULL' (contradicted in 2 contexts)",
+  "clojure ref.noun='Functions', ref.heading='{module}' (OLD heading 'Client', NEW 'sdk.api'), ref.none='nil' (contradicted: OLD '`options` is a `voxgig.struct` map.' vs NEW '... (`nil` for none).'), ref.valueType.OBJECT='map'",
+  "elixir ref.noun='Functions' (contradicted 1), ref.none='nil' (3 new contexts)",
+  "rb ref.none='nil' (held 1, new 1)",
+  "Printed less often than its reference: 0 in reviewed mode for all nine. From scratch, go has 1: 'The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`.' is not printed in go's auth-off, where ts prints it once.",
+  "Absent lists (not failing): zig 12, rust 12, clojure 1, rb 1; ts, go and c have no reference of their result style, so their lists are empty by construction"
+ ],
+ "selftest": "`node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --tmp P/i-tools/tmp` (P/i-tools/selftest-2.log, 348 s on 4 shared CPUs, one run): **176 controls, 0 failed.**\n\nThe baseline before my changes was 84/84 in 98 s (selftest-0.log). All 84 earlier controls still pass (ledger, accept, purity, blocks, recall); purity grew from 24 to 27 with the 3 re-check note mutations.\n\n| Group | Reviewed mode | From scratch |\n| --- | --- | --- |\n| ledger | 24/24 | 24/24 |\n| recheck (the re-check's 19) | 19/19 | 19/19 |\n| accept | 7/7 | 7/7 |\n| missing | 3/3 | 3/3 |\n| facts | 6/6 | 6/6 |\n\nSingle-mode groups: sentences 2/2, purity 27/27 (22 mutations + 5 real-notes checks), blocks 28/28, recall 1/1 (49 of 51).\n\nThe first full run (selftest-1.log) gave 176 controls with 1 failure: `ledger sentence-removed-go [scratch]`. That led to the duplicate-check fix; after it, `--only ledger` gave 48/48, then the full run above.",
+ "layout_changes": "All changes are under ws/tools/. Changed shared files:\n- `facts.js`: heading masking and `TOOLS_SYNTAX_OVERRIDE`.\n- `factsheet.js`: attestation of values and enumerations, cited quotes, `facts.json`, `--scratch`, `--hand`, `--guard-report`.\n- `classify.js`: printed less often than its reference, the absent list, verdicts, the duplicate-check fix, `review/<lang>/sentences.json`.\n- `purity.js`, `puritymut.js` (multi-edit).\n- `sharewords.js`: the by-source measure.\n- `selftest.js`: `--modes`; parts recheck, missing, facts, sentences.\n- `portcheck.sh`: `SCRATCH=1`, `STRICT_SENTENCES=1`.\n- `summary.js`: the facts and sentences lines, the renamed block column, the classes split.\n- `README.md`.\n\nNew files:\n- `sentences.js`;\n- `reviewed/sentences.json` (empty verdicts);\n- `controls/recheck.json`, `controls/missing.json`;\n- `controls/factmut/` (index.json; 6 mutation directories with syntax-<lang>.json, override.json and the differing generated files; hand/{rb,clojure,py}.json, used by the controls only; 4.3 MB);\n- `controls/purity.json`, now with 22 mutations.\n\n**Per-language files porters write:**\n- `hand/<lang>.json` gains `facts` and `absent` keys.\n- `review/<lang>/` gains `*.absent.json`, `facts.json` and `sentences.json`.\n- With `SCRATCH=1`, classes go to `review/<lang>/scratch-classes/` and never to `classes/<lang>.json`.\n\nThe portcheck runs regenerated `classes/<lang>.json` for the nine; their reviewed outcomes did not change.",
+ "gaps": [
+  "The enumeration check is a heuristic based on marker words. Only one enumeration mutation was tested (py keys). result, async and the other derived enumerations are left to the guard.",
+  "Attestation is only as good as the masking: a fact that masking never labels (a value printed only inside a longer code span, or with a placeholder filled differently in another variation, since the layout comes from model B) is 'not printed' and not compared. 11-23 printed facts per language are substituted in no unit.",
+  "I wrote no hand fact records and no sentence verdicts for the nine. The 16 unattested facts, the absent lists and the 288 sentences are for the next engineer and the sentence reviewer.",
+  "The fact controls run factsheet.js, the step portcheck fails on. Only two mutations (rb-maps-arrays, py-keys-bare) were also run end to end through portcheck.sh, in both modes (scripts/e2e.sh).",
+  "The template-file lookup in sentences.js finds 153 of 288; a sentence assembled across `${}` boundaries is not found.",
+  "I did not port a language. I did not re-run the guard's mutation suite, any toolchain lane or the sdkgen test suite, and I made no change to sdkgen.",
+  "Timings are single runs on shared CPUs, not the minimum of three.",
+  "The from-scratch selftest uses the reviewed classes of the other eight as references. When classes are rewritten by rule records, the reference set changes, and these controls should be re-run."
+ ],
+ "surprises": [
+  "The brief's attestation rule ('at least one unit') let clojure entityNoun 'Fields' through. The word is also a heading of its own, identical in OLD. A per-context rule closes it at the cost of 7 more frozen-state findings.",
+  "The from-scratch hole came from the existing duplicate check, not from the new missing-sentence check. Variations where go is the only language (lone-go, alias-go2) made go's shared direct() sentence look like a duplicate, so it was never matched, and its count was then nothing to compare.",
+  "From scratch, the true clojure heading is itself unattested: OLD's REFERENCE heading was 'Client' and NEW's is 'sdk.api'. For that fact, a new-language port cannot be checked against the old page at all.",
+  "The shared direct() sentence is not one masked sentence across the raise languages, because the key read in its code span is printer output (`result[\"ok\"]` vs `(vs/getprop result \"ok\")`). The absent list compares code spans as placeholders for this reason.",
+  "The 'about 877' rule-accepted reference classes come to 288 distinct masked sentences; 234 of them rest on rule records alone."
+ ],
+ "handoff": "**Before the ports:**\n- Merge ws/tools into the base tools: every file listed under layout. Keep `controls/factmut` with its hand files. The control hand files must never be copied into `hand/`.\n- **Next engineer:** decide each of the 16 unattested facts at the frozen state, by a hand record (value, why, evidence) or a provider fix, and explain or fix the absent entries (zig 12, rust 12, clojure 1, rb 1). Until then, portcheck FAILs for ts, go, py, c, clojure, elixir and rb.\n- **Sentence reviewer:** give verdicts in `reviewed/sentences.json` to the 288 sentences listed in `review/sentences/sentences.txt`, after which switch `STRICT_SENTENCES=1` on.\n\n**For porters:**\n- Run `SCRATCH=1 tools/portcheck.sh sdkgen out <lang>` to see the page as a new language, then the normal mode.\n- Record every UNATTESTED fact in `hand/<lang>.json` \u2192 `facts`.\n- Say why for each entry of `<section>.absent.json` in `hand/<lang>.json` \u2192 `absent`.\n- A class left open with the hint \"printed in fewer variations\" is a dropped sentence until shown otherwise.\n\n**Needed from other engineers:**\n- i-guard is moving `none` and the boolean literals to `cited`. When it lands, those facts leave attestation automatically: the account is read from the guard report. Some of the findings above will then move to the guard (ts/py/c/clojure/elixir/rb none, py lits.false).\n- No change is needed in i-shared's files. The notes-literal rule accepts zig's and clojure's 'a' + 'b' notes; if one-literal-only is wanted, those two providers must join their notes.\n\n**Commands to re-check:**\n- `node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --tmp <dir>` (176/176).\n- `node tools/sentences.js --clone sdkgen --old out/old --new out/new --match`.\n- `node tools/sharewords.js --clone sdkgen --root out/new --lang ts,go,py,c,zig,clojure,rust,elixir,rb`."
+}

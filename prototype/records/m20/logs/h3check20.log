@@ -1,0 +1,48 @@
+defect shown OLD/NEW (X shows, - clean, · not applicable, ? page missing); sections T tutorial, R root quick start, F REFERENCE; out=h3out
+ported: ts js go py php rb lua csharp java kotlin scala swift rust c cpp zig perl clojure elixir ocaml
+entry        variation        sec ts  js  go  py  php rb  lua csh jav kot sca swi rus c   cpp zig per clo eli oca  what
+S28          B                T   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   tutorial steps not numbered 1..n, or the lead-in promises listing (example entity has no list)
+U45          crud-noupdate    T   X-  --  --  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   a tutorial heading names update; the entity has no update
+S49          B                TR  --  X-  --  --  X-  X-  X-  X-  --  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   templated server URL: the required variable `tenant` is not given
+G01 M13 D55  B                TRF X-  --  X-  X-  --  --  --  --  X-  --  --  --  --  --  --  --  --  --  --  --   the defaulted variable `region` is asked for as if required
+M14          B                TR  --  --  X-  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --   the `server` key is indented differently from `apikey` in the constructor
+S50          auth-basic       TRF --  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   HTTP Basic in the header: `secret` is not documented
+D23          auth-basic       TR  --  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   the constructor misses something the model requires (`tenant` or `secret`)
+M12          auth-basic-query TRF X-  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --   Basic with the key in the query: a `secret` no runtime reads is documented
+X6           ent-only-ambient T   --  --  X-  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --   the list result is described when no entity has list
+S25 D10      ref-issues       F   X-  X-  --  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   planet remove is active: false, yet documented
+U43          ref-issues       F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   id-less gauge update: "must include the entity id"
+U44          doc-nested       F   --  --  --  X-  --  --  --  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   nested satellite list: the match is said to be optional
+U34          ref-issues       F   X-  X-  X-  X-  X-  X-  X-  --  --  --  --  --  X-  --  X-  X-  --  --  --  --   planet class renamed PlanetEntityClient; the page names PlanetEntity
+U36          ref-issues       F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   project entity_desc for planet ignored
+G27 M38 D69  ref-issues       F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   a pipe or line break in a field description breaks the row
+G29          ref-issues       F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   relative link (guide.md) left dangling
+M37          ref-dollar       F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   $$name$$ in a field description is substituted
+S13          no-test          F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  ·   X-  ·   X-  X-   test constructor documented as a mock client without the test feature (zig and clojure ship the mock whatever the model: testMock always, read from runtimeforms)
+N04 U06 M04  alias-go2        F   ·   ·   X-  ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·   ·    the aliased go2 types every field `any`
+S09 D05      B                F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   log is on by default; the page says every feature, or log, is inactive by default
+X3           B                F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   test (the BASE transport) listed among the hook features, or said to attach to hooks
+S22          no-cache         F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   ordering note names "a cache serving a hit" with no cache feature
+U52          one-wrap         F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   one wrapping feature: "several features wrap" / "`x` wrap the transport"
+U53          only-wrap        F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   every feature wraps: " attach to pipeline hooks" with no subject
+V27          feat-text        F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   a defaultless union option prints `number | map` raw into a two-column row
+U102         feat-text        F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   an option default holding | and ` breaks the row and the code span
+N11 M35      B                F   ·   X-  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --   code fenced ts on a page of another language
+D26          B                F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   the option rows are not derived from optspec: `server`, an optspec option this model needs, has no row
+X3 any       B                F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   any wording: test's section mentions hooks, or an ordering line names `test` beside hooks
+S22 any      no-cache         F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   any wording: the features prose names a cache with no cache feature
+U52 any      one-wrap         F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   any wording: with one wrapper, a plural wrap, or any nesting or order-of-wrappers claim
+U53 any      only-wrap        F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   any wording: with no hook feature, the ordering prose speaks of hooks
+V27 U102 any feat-text        F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   any table row of the page whose cells do not match its header, or a stray backtick in a feature row
+D26 both     B                F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   the constructor rows and the schema differ: a key the model applies has no row, or a row is no schema key
+S09r         B                F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   log (on by default) is told to be switched on, or its section names a TypeScript literal
+lit          B                F   --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  --   the Usage sentence's true is not the true the page's own activation snippet writes on its active lines
+S13r         no-test          F   --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  ·   --  ·   --  --   without the test feature the test client still calls its argument the test feature's options
+bt           B                F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   an escaped backtick anywhere on the page
+S22 any2     no-cache         F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   post-attack: any word built on "cach" in the features prose with no cache feature
+S13r2        no-test          F   --  --  --  --  --  --  --  --  --  --  --  --  --  --  --  ·   --  ·   --  --   post-attack: the test client section names "the test feature" (unquoted) without the test feature
+bt2          B                F   X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-  X-   post-attack: an escaped or entity-coded backtick anywhere on the page
+
+NO OLD SIGNAL (check never true on OLD for the languages given): lit, S13r, S13r2
+
+OK: no check is true on NEW for a ported language

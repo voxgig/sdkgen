@@ -1,0 +1,456 @@
+=== py
+### Constructor
+```python
+from demo_sdk import DemoSDK
+client = DemoSDK(options)
+```
+Create a new SDK client instance.
+**Parameters:**
+| Name | Type | Description |
+| --- | --- | --- |
+| `options` | `dict` | SDK configuration options. |
+| `options["apikey"]` | `str` | API key for authentication. |
+| `options["base"]` | `str` | Base URL for API requests. |
+| `options["prefix"]` | `str` | URL prefix appended after base. |
+| `options["suffix"]` | `str` | URL suffix appended after path. |
+| `options["headers"]` | `dict` | Custom headers for all requests. |
+| `options["feature"]` | `dict` | Feature configuration. |
+| `options["system"]` | `dict` | System overrides (e.g. custom fetch). |
+| `options["server"]` | `dict` | Values for the variables the server URL is templated on. |
+| `options["server"]["tenant"]` | `str` | Required. |
+| `options["server"]["region"]` | `str` | Defaults to `eu`. |
+### Test client
+#### `DemoSDK.test(testopts=None, sdkopts=None)`
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `None`. It returns a client in test
+mode.
+```python
+client = DemoSDK.test()
+```
+### Instance Methods
+#### `Ambient(data=None)`
+entity options: pass `None` for none.
+#### `Console(data=None)`
+entity options: pass `None` for none.
+#### `GraphQl(data=None)`
+entity options: pass `None` for none.
+#### `History(data=None)`
+entity options: pass `None` for none.
+#### `Planet(data=None)`
+entity options: pass `None` for none.
+#### `Record(data=None)`
+entity options: pass `None` for none.
+#### `Utility(data=None)`
+entity options: pass `None` for none.
+#### `options_map() -> dict`
+Return a deep copy of the current SDK options.
+#### `get_utility() -> Utility`
+Return a copy of the SDK utility object.
+#### `direct(fetchargs=None) -> dict`
+Make a direct HTTP request to any API endpoint.
+**Parameters:**
+| Name | Type | Description |
+| --- | --- | --- |
+| `fetchargs["path"]` | `str` | URL path with optional `{param}` placeholders. |
+| `fetchargs["method"]` | `str` | HTTP method (default: `GET`). |
+| `fetchargs["params"]` | `dict` | Path parameter values for `{param}` substitution. |
+| `fetchargs["query"]` | `dict` | Query string parameters. |
+| `fetchargs["headers"]` | `dict` | Request headers (merged with defaults). |
+| `fetchargs["body"]` | `any` | Request body (dicts are JSON-serialized). |
+| `fetchargs["ctrl"]` | `dict` | Control options (e.g. `{"explain": True}`). |
+**Returns:** `dict`, a result map holding `ok`, `status`, `headers` and
+`data`, even for a non-2xx response; on a failure `ok` is `False` and
+`err` holds the error. A failed request is reported in the result, not
+as an error, so branch on `result["ok"]`.
+#### `prepare(fetchargs=None) -> dict`
+Prepare a fetch definition without sending the request. Accepts the
+same parameters as `direct()`.
+**Returns:** `dict`, the fetch definition: the request `direct()` would
+send. It raises on failure.
+=== c
+### Constructor
+```c
+#include "core/api.h"
+DemoSDK* client = demo_sdk_new(options);
+```
+Create a new SDK client instance. `options` is a `voxgig_value*` map
+(`NULL` for none).
+**Parameters (`options` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `apikey` | `string` | API key for authentication. |
+| `base` | `string` | Base URL for API requests. |
+| `prefix` | `string` | URL prefix appended after base. |
+| `suffix` | `string` | URL suffix appended after path. |
+| `headers` | `map` | Custom headers for all requests. |
+| `feature` | `map` | Feature configuration. |
+| `system` | `map` | System overrides (e.g. custom fetch). |
+| `server` | `map` | Values for the variables the server URL is templated on. |
+| `server.tenant` | `string` | Required. |
+| `server.region` | `string` | Defaults to `eu`. |
+### Test client
+#### `DemoSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts)`
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `NULL`. It returns a client in test
+mode.
+```c
+DemoSDK* client = test_sdk(NULL, NULL);
+```
+### Instance Functions
+Create a new `Ambient` instance. Pass `NULL` for no initial
+Create a new `Console` instance. Pass `NULL` for no initial
+Create a new `GraphQl` instance. Pass `NULL` for no initial
+Create a new `History` instance. Pass `NULL` for no initial
+Create a new `Planet` instance. Pass `NULL` for no initial
+Create a new `Record` instance. Pass `NULL` for no initial
+Create a new `Utility` instance. Pass `NULL` for no initial
+#### `voxgig_value* sdk_options_map(DemoSDK* client)`
+Return a deep copy of the current SDK options.
+#### `Utility* sdk_get_utility(DemoSDK* client)`
+Return a copy of the SDK utility object.
+#### `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`
+Make a direct HTTP request to any API endpoint.
+**Parameters (`fetchargs` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `path` | `string` | URL path with optional `{param}` placeholders. |
+| `method` | `string` | HTTP method (default: `GET`). |
+| `params` | `map` | Path parameter values for `{param}` substitution. |
+| `query` | `map` | Query string parameters. |
+| `headers` | `map` | Request headers (merged with defaults). |
+| `body` | `any` | Request body (maps are JSON-serialized). |
+| `ctrl` | `map` | Control options (e.g. `cmap(1, "explain", v_bool(true))`). |
+**Returns:** `voxgig_value*`, a result map holding `ok`, `status`,
+`headers` and `data`, even for a non-2xx response; on a failure `ok` is
+`false` and `err` holds the error. A failed request is reported in the
+result, not as an error, so branch on `getp(result, "ok")`.
+#### `voxgig_value* sdk_prepare(DemoSDK* client, voxgig_value* fetchargs, PNError** err)`
+Prepare a fetch definition without sending the request. Accepts the
+same parameters as `sdk_direct()`.
+**Returns:** `voxgig_value*`, the fetch definition: the request
+`sdk_direct()` would send. It returns `NULL` with `*err` set on failure.
+=== zig
+### Constructor
+```zig
+const sdk = @import("sdk");
+const h = sdk.h;
+const client = sdk.DemoSDK.new(options);
+```
+Create a new SDK client instance. `options` is a `Value` map
+(`h.vnull()` for none).
+**Parameters (`options` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `apikey` | `string` | API key for authentication. |
+| `base` | `string` | Base URL for API requests. |
+| `prefix` | `string` | URL prefix appended after base. |
+| `suffix` | `string` | URL suffix appended after path. |
+| `headers` | `map` | Custom headers for all requests. |
+| `feature` | `map` | Feature configuration. |
+| `system` | `map` | System overrides (e.g. custom fetch). |
+| `server` | `map` | Values for the variables the server URL is templated on. |
+| `server.tenant` | `string` | Required. |
+| `server.region` | `string` | Defaults to `eu`. |
+### Test client
+#### `test_sdk(testopts: Value, sdkopts: Value) *DemoSDK`
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `h.vnull()`. It returns a client in
+test mode.
+```zig
+const client = sdk.test_sdk(h.vnull(), h.vnull());
+```
+### Instance Methods
+#### `options_map() Value`
+Return a deep copy of the current SDK options.
+#### `get_utility() *Utility`
+Return a copy of the SDK utility object.
+#### `direct(fetchargs: Value) Value`
+Make a direct HTTP request to any API endpoint.
+**Parameters (`fetchargs` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `path` | `string` | URL path with optional `{param}` placeholders. |
+| `method` | `string` | HTTP method (default: `GET`). |
+| `params` | `map` | Path parameter values for `{param}` substitution. |
+| `query` | `map` | Query string parameters. |
+| `headers` | `map` | Request headers (merged with defaults). |
+| `body` | `any` | Request body (maps are JSON-serialized). |
+| `ctrl` | `map` | Control options (e.g. `h.jo(&.{.{ "explain", h.vbool(true) }})`). |
+**Returns:** `Value`, a result map holding `ok`, `status`, `headers` and
+`data`, even for a non-2xx response; on a failure `ok` is `false` and
+`err` holds the error. A failed request is reported in the result, not
+as an error, so branch on `h.get_bool(result, "ok")`.
+#### `prepare(fetchargs: Value) E!Value`
+Prepare a fetch definition without sending the request. Accepts the
+same parameters as `direct()`.
+**Returns:** `E!Value`, the fetch definition: the request `direct()`
+would send.
+On failure it returns the error of its error union, for `try` or `catch`.
+=== rust
+### Constructor
+```rust
+use demo_sdk::{jo, DemoEntityBase, DemoSDK, Entity, Value};
+let client = DemoSDK::new(options);
+```
+Create a new SDK client instance. `options` is a `Value` map
+(`Value::Noval` for none).
+**Parameters (`options` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `apikey` | `string` | API key for authentication. |
+| `base` | `string` | Base URL for API requests. |
+| `prefix` | `string` | URL prefix appended after base. |
+| `suffix` | `string` | URL suffix appended after path. |
+| `headers` | `map` | Custom headers for all requests. |
+| `feature` | `map` | Feature configuration. |
+| `system` | `map` | System overrides (e.g. custom fetch). |
+| `server` | `map` | Values for the variables the server URL is templated on. |
+| `server.tenant` | `string` | Required. |
+| `server.region` | `string` | Defaults to `eu`. |
+### Test client
+#### `test_sdk(testopts: Value, sdkopts: Value) -> Rc<DemoSDK>`
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `Value::Noval`. It returns a client
+in test mode.
+```rust
+use demo_sdk::{test_sdk, Value};
+let client = test_sdk(Value::Noval, Value::Noval);
+```
+### Instance Methods
+#### `options_map() -> Value`
+Return a deep copy of the current SDK options.
+#### `get_utility() -> Rc<Utility>`
+Return a copy of the SDK utility object.
+#### `direct(fetchargs: Value) -> Result<Value, DemoError>`
+Make a direct HTTP request to any API endpoint.
+**Parameters (`fetchargs` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `path` | `string` | URL path with optional `{param}` placeholders. |
+| `method` | `string` | HTTP method (default: `GET`). |
+| `params` | `map` | Path parameter values for `{param}` substitution. |
+| `query` | `map` | Query string parameters. |
+| `headers` | `map` | Request headers (merged with defaults). |
+| `body` | `any` | Request body (maps are JSON-serialized). |
+| `ctrl` | `map` | Control options (e.g. `jo(vec![("explain", Value::Bool(true))])`). |
+**Returns:** `Result<Value, DemoError>`, a result map holding `ok`,
+`status`, `headers` and `data`, even for a non-2xx response; on a
+failure `ok` is `false` and `err` holds the error. A failed request is
+reported in the result, not as an error, so branch on `getp(&result,
+"ok")`.
+The result map always comes back inside `Ok`, for a non-2xx response and
+for a request that could not be made alike; its `ok` key reports the failure.
+#### `prepare(fetchargs: Value) -> Result<Value, DemoError>`
+Prepare a fetch definition without sending the request. Accepts the
+same parameters as `direct()`.
+**Returns:** `Result<Value, DemoError>`, the fetch definition: the
+request `direct()` would send. Its `Err` reports failure.
+=== clojure
+### Constructor
+```clojure
+(require '[sdk.api :as api]
+         '[voxgig.struct :as vs])
+(def client (api/make-sdk options))
+```
+Create a new SDK client instance. `options` is a `voxgig.struct` map
+(`nil` for none).
+**Parameters (`options` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `apikey` | `string` | API key for authentication. |
+| `base` | `string` | Base URL for API requests. |
+| `prefix` | `string` | URL prefix appended after base. |
+| `suffix` | `string` | URL suffix appended after path. |
+| `headers` | `map` | Custom headers for all requests. |
+| `feature` | `map` | Feature configuration. |
+| `system` | `map` | System overrides (e.g. custom fetch). |
+| `server` | `map` | Values for the variables the server URL is templated on. |
+| `server.tenant` | `string` | Required. |
+| `server.region` | `string` | Defaults to `eu`. |
+### Test client
+#### `(api/test-sdk testopts sdkopts)`
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `nil`. It returns a client in test
+mode.
+```clojure
+(def client (api/test-sdk nil nil))
+```
+### Instance Functions
+The SDK utility object is reached through `sdk.client`, which `sdk.api`
+does not re-export: `(sdk.client/get-utility client)` returns a copy of it.
+#### `(api/ambient client data)`
+Create a new `Ambient` instance. Its `data` argument holds the entity
+options: pass `nil` for none.
+#### `(api/console client data)`
+Create a new `Console` instance. Its `data` argument holds the entity
+options: pass `nil` for none.
+#### `(api/graph_ql client data)`
+Create a new `GraphQl` instance. Its `data` argument holds the entity
+options: pass `nil` for none.
+#### `(api/history client data)`
+Create a new `History` instance. Its `data` argument holds the entity
+options: pass `nil` for none.
+#### `(api/planet client data)`
+Create a new `Planet` instance. Its `data` argument holds the entity
+options: pass `nil` for none.
+#### `(api/record client data)`
+Create a new `Record` instance. Its `data` argument holds the entity
+options: pass `nil` for none.
+#### `(api/utility client data)`
+Create a new `Utility` instance. Its `data` argument holds the entity
+options: pass `nil` for none.
+#### `(api/options-map client) -> map`
+Return a deep copy of the current SDK options.
+#### `(api/direct client fetchargs) -> map`
+Make a direct HTTP request to any API endpoint.
+**Parameters (`fetchargs` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `path` | `string` | URL path with optional `{param}` placeholders. |
+| `method` | `string` | HTTP method (default: `GET`). |
+| `params` | `map` | Path parameter values for `{param}` substitution. |
+| `query` | `map` | Query string parameters. |
+| `headers` | `map` | Request headers (merged with defaults). |
+| `body` | `any` | Request body (maps are JSON-serialized). |
+| `ctrl` | `map` | Control options (e.g. `(vs/jm "explain" true)`). |
+**Returns:** `map`, a result map holding `ok`, `status`, `headers` and
+`data`, even for a non-2xx response; on a failure `ok` is `false` and
+`err` holds the error. A failed request is reported in the result, not
+as an error, so branch on `(vs/getprop result "ok")`.
+#### `(api/prepare client fetchargs) -> map`
+Prepare a fetch definition without sending the request. Accepts the
+same parameters as `direct`.
+**Returns:** `map`, the fetch definition: the request `direct` would
+send. It raises on failure.
+=== elixir
+### Constructor
+```elixir
+sdk = Demo.new(options)
+```
+Create a new SDK client instance. `options` is a `Voxgig.Struct` map
+(`nil` for none).
+Build `options` from a native map with `Demo.Helpers.deep/1`.
+**Parameters (`options` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `apikey` | `String.t()` | API key for authentication. |
+| `base` | `String.t()` | Base URL for API requests. |
+| `prefix` | `String.t()` | URL prefix appended after base. |
+| `suffix` | `String.t()` | URL suffix appended after path. |
+| `headers` | `map()` | Custom headers for all requests. |
+| `feature` | `map()` | Feature configuration. |
+| `system` | `map()` | System overrides (e.g. custom fetch). |
+| `server` | `map()` | Values for the variables the server URL is templated on. |
+| `server.tenant` | `String.t()` | Required. |
+| `server.region` | `String.t()` | Defaults to `eu`. |
+### Test client
+#### `Demo.test(testopts \\ nil, sdkopts \\ nil)`
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `nil`. It returns a client in test
+mode.
+```elixir
+sdk = Demo.test()
+```
+### Instance Functions
+#### `options_map(client) :: map()`
+Return a deep copy of the current SDK options.
+#### `get_utility(client) :: map()`
+Return the SDK utility object.
+It is the client's own node, not a copy.
+#### `direct(client, fetchargs \\ nil) :: map()`
+Make a direct HTTP request to any API endpoint.
+**Parameters (`fetchargs` map keys):**
+| Key | Value type | Description |
+| --- | --- | --- |
+| `path` | `String.t()` | URL path with optional `{param}` placeholders. |
+| `method` | `String.t()` | HTTP method (default: `GET`). |
+| `params` | `map()` | Path parameter values for `{param}` substitution. |
+| `query` | `map()` | Query string parameters. |
+| `headers` | `map()` | Request headers (merged with defaults). |
+| `body` | `any()` | Request body (maps are JSON-serialized). |
+| `ctrl` | `map()` | Control options (e.g. `%{"explain" => true}`). |
+**Returns:** `map()`, a result map holding `ok`, `status`, `headers` and
+`data`, even for a non-2xx response; on a failure `ok` is `false` and
+`err` holds the error. A failed request is reported in the result, not
+as an error, so branch on `Voxgig.Struct.getprop(result, "ok")`.
+#### `prepare(client, fetchargs \\ nil) :: map()`
+Prepare a fetch definition without sending the request. Accepts the
+same parameters as `direct()`.
+**Returns:** `map()`, the fetch definition: the request `direct()` would
+send. It raises on failure.
+=== rb
+### Constructor
+```ruby
+require_relative 'Demo_sdk'
+client = DemoSDK.new(options)
+```
+Create a new SDK client instance.
+**Parameters:**
+| Name | Type | Description |
+| --- | --- | --- |
+| `options` | `Hash` | SDK configuration options. |
+| `options["apikey"]` | `String` | API key for authentication. |
+| `options["base"]` | `String` | Base URL for API requests. |
+| `options["prefix"]` | `String` | URL prefix appended after base. |
+| `options["suffix"]` | `String` | URL suffix appended after path. |
+| `options["headers"]` | `Hash` | Custom headers for all requests. |
+| `options["feature"]` | `Hash` | Feature configuration. |
+| `options["system"]` | `Hash` | System overrides (e.g. custom fetch). |
+| `options["server"]` | `Hash` | Values for the variables the server URL is templated on. |
+| `options["server"]["tenant"]` | `String` | Required. |
+| `options["server"]["region"]` | `String` | Defaults to `eu`. |
+### Test client
+#### `DemoSDK.test(testopts = nil, sdkopts = nil)`
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `nil`. It returns a client in test
+mode.
+```ruby
+client = DemoSDK.test
+```
+### Instance Methods
+#### `Ambient(data = nil)`
+entity options: pass `nil` for none.
+#### `Console(data = nil)`
+entity options: pass `nil` for none.
+#### `GraphQl(data = nil)`
+entity options: pass `nil` for none.
+#### `History(data = nil)`
+entity options: pass `nil` for none.
+#### `Planet(data = nil)`
+entity options: pass `nil` for none.
+#### `Record(data = nil)`
+entity options: pass `nil` for none.
+#### `Utility(data = nil)`
+entity options: pass `nil` for none.
+#### `options_map -> Hash`
+Return a deep copy of the current SDK options.
+#### `get_utility -> Utility`
+Return a copy of the SDK utility object.
+#### `direct(fetchargs = {}) -> Hash`
+Make a direct HTTP request to any API endpoint.
+**Parameters:**
+| Name | Type | Description |
+| --- | --- | --- |
+| `fetchargs["path"]` | `String` | URL path with optional `{param}` placeholders. |
+| `fetchargs["method"]` | `String` | HTTP method (default: `GET`). |
+| `fetchargs["params"]` | `Hash` | Path parameter values for `{param}` substitution. |
+| `fetchargs["query"]` | `Hash` | Query string parameters. |
+| `fetchargs["headers"]` | `Hash` | Request headers (merged with defaults). |
+| `fetchargs["body"]` | `any` | Request body (hashes are JSON-serialized). |
+| `fetchargs["ctrl"]` | `Hash` | Control options (e.g. `{ "explain" => true }`). |
+**Returns:** `Hash`, a result map holding `ok`, `status`, `headers` and
+`data`, even for a non-2xx response; on a failure `ok` is `false` and
+`err` holds the error. A failed request is reported in the result, not
+as an error, so branch on `result["ok"]`.
+#### `prepare(fetchargs = {}) -> Hash`
+Prepare a fetch definition without sending the request. Accepts the
+same parameters as `direct()`.
+**Returns:** `Hash`, the fetch definition: the request `direct()` would
+send. It raises on failure.

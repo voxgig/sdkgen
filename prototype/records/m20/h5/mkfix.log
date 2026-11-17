@@ -1,0 +1,26 @@
+   base target add: EXIT 0 (1606 ms)
+   base feature add: EXIT 0 (574 ms)
+   base TSC EXIT 0
+   edited lines: 1
+   base-edited TSC EXIT 0
+   base-alias add: EXIT 0 (845 ms)
+   base-alias TSC EXIT 0
+   base-owned add mine: EXIT 0 (621 ms)
+   base-owned TSC EXIT 0
+   base: targets go js lua perl php py ts  | log 2
+   base-edited: targets go js lua perl php py ts  | log 2
+bin/mkfix.sh: line 49: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/m20/h5/work/base-norecord/.sdk/log/copies.jsonl: No such file or directory
+   base-norecord: targets go js lua perl php py ts  | log none
+   base-alias: targets go go2 js js2 lua perl php py ts  | log 3
+   base-owned: targets go js lua mine perl php py ts  | log 3
+   fresh7 add: EXIT 0 (1386 ms)
+   fresh7 feature: EXIT 0 (566 ms)
+   fresh7 TSC EXIT 0
+   fresh7 GEN ok=true ms=319
+   oldcmp TSC EXIT 0
+   oldcmp GEN ok=true ms=333
+
+real	0m11.286s
+user	0m13.073s
+sys	0m3.023s
+exit 0

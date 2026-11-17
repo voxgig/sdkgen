@@ -1,0 +1,39 @@
+  generated java (default): 165 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/before/work/default/java/java
+[java default] run 1: exit 0, 22.391784720s
+[java default] run 2: exit 0, 24.684961116s
+[java default] run 3: exit 0, 22.348643810s
+[java default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/before/work/default/java/java): mvn -B test -Dtest=ReadmeExamplesTest -DfailIfNoSpecifiedTests=false
+[java default] last lines:
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD SUCCESS
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Total time:  18.261 s
+    [INFO] Finished at: 2026-11-15T15:46:55Z
+    [INFO] ------------------------------------------------------------------------
+[java default] minimum of 3: 22.348643810s
+  generated java (crud): 153 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/before/work/crud/java/java
+[java crud] run 1: exit 0, 16.027749253s
+[java crud] run 2: exit 0, 14.563829586s
+[java crud] run 3: exit 0, 13.606341447s
+[java crud] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/before/work/crud/java/java): mvn -B test -Dtest=ReadmeExamplesTest -DfailIfNoSpecifiedTests=false
+[java crud] last lines:
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD SUCCESS
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Total time:  10.926 s
+    [INFO] Finished at: 2026-11-15T15:47:42Z
+    [INFO] ------------------------------------------------------------------------
+[java crud] minimum of 3: 13.606341447s
+  generated java (basic-server): 153 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/before/work/basic-server/java/java
+[java basic-server] run 1: exit 0, 15.420934183s
+[java basic-server] run 2: exit 0, 13.479371125s
+[java basic-server] run 3: exit 0, 14.297542216s
+[java basic-server] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/java/tools/before/work/basic-server/java/java): mvn -B test -Dtest=ReadmeExamplesTest -DfailIfNoSpecifiedTests=false
+[java basic-server] last lines:
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD SUCCESS
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Total time:  11.969 s
+    [INFO] Finished at: 2026-11-15T15:48:26Z
+    [INFO] ------------------------------------------------------------------------
+[java basic-server] minimum of 3: 13.479371125s

@@ -1,0 +1,131 @@
+▶ the documented c, cpp, rust, zig and ocaml examples compile
+  ✖ rust: every documented example compiles, singleton first (9704.333294ms)
+  ✖ rust: every documented example compiles, list first (2470.013588ms)
+  ✔ rust: every documented example compiles, crud first (1908.913479ms)
+  ✔ rust: every documented example compiles, nested first (2247.803378ms)
+  ✔ rust: every documented example compiles, quoted-name first (1928.760763ms)
+  ✔ rust: every documented example compiles, basic-server first (2315.498951ms)
+✖ the documented c, cpp, rust, zig and ocaml examples compile (20666.016566ms)
+ℹ tests 6
+ℹ suites 1
+ℹ pass 4
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 22601.09195
+
+✖ failing tests:
+
+test at dist-test/generatedcompile.test.js:8045:34
+✖ rust: every documented example compiles, singleton first (9704.333294ms)
+  AssertionError [ERR_ASSERTION]: rust: 1 of 1 compile(s) of 40 documented example(s) failed:
+  every rust example:
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_5.rs:19:18
+     |
+  19 | println!("{:?}", getp(&fetchdef, "headers"));
+     |                  ^^^^ not found in this scope
+  
+  For more information about this error, try `rustc --explain E0425`.
+  error: could not compile `voxgig-demo-sdk` (example "readme_5") due to 3 previous errors
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_4.rs:16:4
+     |
+  16 | if getp(&result, "ok") == Value::Bool(true) {
+     |    ^^^^ not found in this scope
+  
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_4.rs:17:22
+     |
+  17 |     println!("{:?}", getp(&result, "status"));  // 200
+     |                      ^^^^ not found in this scope
+  
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_4.rs:18:22
+     |
+  18 |     println!("{:?}", getp(&result, "data"));    // response body
+     |                      ^^^^ not found in this scope
+  
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_4.rs:22:27
+     |
+  22 |     println!("{:?} {:?}", getp(&result, "status"), getp(&result, "err"));
+     |                           ^^^^ not found in this scope
+  
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_4.rs:22:52
+     |
+  22 |     println!("{:?} {:?}", getp(&result, "status"), getp(&result, "err"));
+     |                                                    ^^^^ not found in this scope
+  
+  error: could not compile `voxgig-demo-sdk` (example "readme_4") due to 5 previous errors
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-ref/sdkgen/ts/dist-test/generatedcompile.test.js:8064:38)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Promise.all (index 12)
+      at async Suite.run (node:internal/test_runner/test:1905:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at dist-test/generatedcompile.test.js:8045:34
+✖ rust: every documented example compiles, list first (2470.013588ms)
+  AssertionError [ERR_ASSERTION]: rust: 1 of 1 compile(s) of 37 documented example(s) failed:
+  every rust example:
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_4.rs:18:22
+     |
+  18 |     println!("{:?}", getp(&result, "data"));    // response body
+     |                      ^^^^ not found in this scope
+  
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_4.rs:22:27
+     |
+  22 |     println!("{:?} {:?}", getp(&result, "status"), getp(&result, "err"));
+     |                           ^^^^ not found in this scope
+  
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_4.rs:22:52
+     |
+  22 |     println!("{:?} {:?}", getp(&result, "status"), getp(&result, "err"));
+     |                                                    ^^^^ not found in this scope
+  
+  For more information about this error, try `rustc --explain E0425`.
+  error: could not compile `voxgig-demo-sdk` (example "readme_4") due to 5 previous errors
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_5.rs:17:18
+     |
+  17 | println!("{:?}", getp(&fetchdef, "url"));
+     |                  ^^^^ not found in this scope
+  
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_5.rs:18:18
+     |
+  18 | println!("{:?}", getp(&fetchdef, "method"));
+     |                  ^^^^ not found in this scope
+  
+  error[E0425]: cannot find function `getp` in this scope
+    --> examples/readme_5.rs:19:18
+     |
+  19 | println!("{:?}", getp(&fetchdef, "headers"));
+     |                  ^^^^ not found in this scope
+  
+  error: could not compile `voxgig-demo-sdk` (example "readme_5") due to 3 previous errors
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/probe-ref/sdkgen/ts/dist-test/generatedcompile.test.js:8064:38)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+EXIT 1

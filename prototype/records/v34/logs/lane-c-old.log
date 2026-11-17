@@ -1,0 +1,74 @@
+▶ the documented c, cpp, rust, zig and ocaml examples compile
+  ✔ c: every documented example compiles, singleton first (5036.943289ms)
+  ✔ c: every documented example compiles, list first (4497.064951ms)
+  ✔ c: every documented example compiles, crud first (3777.770309ms)
+  ✔ c: every documented example compiles, nested first (4157.134149ms)
+  ✔ c: every documented example compiles, quoted-name first (3796.476208ms)
+  ✖ c: every documented example compiles, basic-server first (3990.855548ms)
+✖ the documented c, cpp, rust, zig and ocaml examples compile (25289.26057ms)
+ℹ tests 6
+ℹ suites 1
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 27028.687977
+
+✖ failing tests:
+
+test at dist-test/generatedcompile.test.js:8045:34
+✖ c: every documented example compiles, basic-server first (3990.855548ms)
+  AssertionError [ERR_ASSERTION]: c: 2 of 31 compile(s) of 30 documented example(s) failed:
+  ../README.md:53:
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_1.c: In function 'readme_example':
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_1.c:15:21: error: implicit declaration of function 'getenv' [-Werror=implicit-function-declaration]
+     15 |     "apikey", v_str(getenv("DEMO_APIKEY"))));
+        |                     ^~~~~~
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_1.c:3:1: note: 'getenv' is defined in header '<stdlib.h>'; did you forget to '#include <stdlib.h>'?
+      2 | #include "core/api.h"
+    +++ |+#include <stdlib.h>
+      3 | 
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_1.c:15:21: error: passing argument 1 of 'demo_v_str' makes pointer from integer without a cast [-Werror=int-conversion]
+     15 |     "apikey", v_str(getenv("DEMO_APIKEY"))));
+        |                     ^~~~~~~~~~~~~~~~~~~~~
+        |                     |
+        |                     int
+  In file included from ./core/api.h:6,
+                   from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_1.c:2:
+  ./core/sdk.h:81:33: note: expected 'const char *' but argument is of type 'int'
+     81 | voxgig_value* v_str(const char* s);
+        |                     ~~~~~~~~~~~~^
+  cc1: some warnings being treated as errors
+  
+  README.md:50:
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_3.c: In function 'readme_example':
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_3.c:15:21: error: implicit declaration of function 'getenv' [-Werror=implicit-function-declaration]
+     15 |     "apikey", v_str(getenv("DEMO_APIKEY"))));
+        |                     ^~~~~~
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_3.c:3:1: note: 'getenv' is defined in header '<stdlib.h>'; did you forget to '#include <stdlib.h>'?
+      2 | #include "core/api.h"
+    +++ |+#include <stdlib.h>
+      3 | 
+  /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_3.c:15:21: error: passing argument 1 of 'demo_v_str' makes pointer from integer without a cast [-Werror=int-conversion]
+     15 |     "apikey", v_str(getenv("DEMO_APIKEY"))));
+        |                     ^~~~~~~~~~~~~~~~~~~~~
+        |                     |
+        |                     int
+  In file included from ./core/api.h:6,
+                   from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/lanes/sdkgen-docex-AqeT0Z/c-basic-server/c/_readme/example_3.c:2:
+  ./core/sdk.h:81:33: note: expected 'const char *' but argument is of type 'int'
+     81 | voxgig_value* v_str(const char* s);
+        |                     ~~~~~~~~~~~~^
+  cc1: some warnings being treated as errors
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/oldcopy/ts/dist-test/generatedcompile.test.js:8064:38)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

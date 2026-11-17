@@ -1,0 +1,281 @@
+{
+ "lang": "js",
+ "ok": true,
+ "summary": "I fixed the js port from its review, and the one command passes with the port's records. Final run: `npm run build` exit 0, then `REGEN=1 tools/portcheck.sh sdkgen out js`, exit 0, PORTCHECK js: PASS, 21 of 21 variations regenerated, 145 s. Nothing is recorded as defect.\n\n**What changed:**\n- **Import.** The js provider now prints `import { DemoSDK } from '<pkg>'` instead of `require`. Run as written from the repository root on node v24.22.1, NEW runs in all six SDKs I generated: default 24/24, crud 17/17, basic-server 17/17, B 24/24, auth-basic 24/24, crud-basic 17/17. OLD's tutorial and root quick start are refused before their first statement (ERR_AMBIGUOUS_MODULE_SYNTAX). A control with 3 injected faults caught all 3.\n- **Citations.** Every weak citation is re-cited to code that shows its value, and the values are pinned. That covers the options container, options() return, valueType.OBJECT, none, direct.signal (no longer a comment) and body.once (no longer a comment). Pins were also added on abortCode and on direct's and prepare's returns.\n- **Forms.** The stream exception that covered the whole member is gone: the forms now read stream's `action` as required. The name field's type is compared with its initialiser. The graphql reason is corrected.\n- **Hand records.** The absent reasons now name the JSDoc. A js correction normalizer, js-esm-import, names the import change. Nine block records were carried to their new ids.\n\n**Where the reviewer was wrong** (checked against the code):\n- The guard does not re-derive valueType.OBJECT. guard.ts:302 compares it with the js type column, which gives `Object`, and the account lists it as cited. So I re-cited it rather than dropping it.\n- 39aecae10e cannot be `dropped`. tools/ledger.js:199 accepts only contradiction, defect or same-meaning on an echo class. The drop is already recorded on the missing class 9c1038b6ae, so I kept same-meaning and reworded the reason to say it is that drop's echo.\n\n**The reviewer's attacks, re-run:**\n- In-memory guard mutations: gmut 48/59 caught (was 44), gmut2 14/17 (was 7).\n- Source attack e4: the guard now fails on 4 of 5 (stream action optional, `name: number`, direct.returns without headers, container 'Array'). `options() throws` still passes.\n\n**Other checks:** guard ^js: 4/4; guard and reader 81/81; golden 2/2. Suite without the toolchain lanes: 2635 tests, 2630 pass, 0 fail, 5 skipped (319 s). No other language's page changed.\n\nThree findings need shared changes, which I recorded and did not make: the guide (PORTING.md 2.5 and the js row of 9), the README methods row calling utility() a \"Deep copy\" (ReadmeModel_js.ts:79, ReadmeModel_ts.ts:103), and the shared guard and tools checks.",
+ "outcomes": [
+  {
+   "finding": "R1 Syntax_js.ts:100: the imports printer prints require beside top-level await, so the tutorial and root quick start do not run as written",
+   "outcome": "fixed",
+   "how": "The imports printer now prints `import { ${client} } from '${module}'`, as Syntax_ts.ts does. Ran on node v24.22.1 with fixmy/runasis.js, from the repository root of generated SDKs, as ES modules with no wrapper. NEW, as written: the tutorial and root quick start reach the live request in default, crud, basic-server, B, auth-basic and crud-basic. Seeded test mode: 24/24, 17/17, 17/17, 24/24, 24/24, 17/17. OLD default, crud and basic-server: the tutorial and root are refused before their first statement (ERR_AMBIGUOUS_MODULE_SYNTAX). A control with 3 injected faults was all caught (20/24). The tools now name the change as a correction: normalizers/js.js js-esm-import, 18 tutorial and 5 root pairs. Nine block records were carried to their new ids, and 6 import/from/require token classes recorded.",
+   "commit": "sdkgen cce651f2; tools d373e62"
+  },
+  {
+   "finding": "R2 base33/PORTING.md section 2.5 and the js row of section 9: js's import must be an ES import (or the program wrapped)",
+   "outcome": "needs a shared change",
+   "how": "The guide is read-only for a port, so the change is recorded in shared_changes_needed. No class is wrong: after R1 the page is right.",
+   "commit": "-"
+  },
+  {
+   "finding": "R3 runtimeforms/js.ts:99-106: container and client[0].returns are cited to MakeOptionsUtility.js:43 `layer`; drop the valueType.OBJECT citation, which the guard re-derives",
+   "outcome": "fixed, except the drop, which is not a defect",
+   "how": "container is now cited to MakeOptionsUtility.js `let opts = struct.clone(options || {})` and `opts = validate(opts, optspec)`, plus StructUtility.js:82 `const S_object = 'object'` and :188 the ismap test. client[0].returns is cited to Main.fragment.js `this._options = this._utility.makeOptions(this._rootctx)` and `return this._utility.struct.clone(this._options)`, plus the same options and struct lines. Both are pinned to 'object'. The reviewer is wrong that the guard re-derives valueType.OBJECT: guard.ts:302 verifies a valueType only when it equals canonToType's js column, which gives 'Object' (run: node -e over dist canonToType), and the account lists it as 'cited'. Dropping it would leave it as an unchecked convention. So it is re-cited to MakeOptionsUtility.js `: null != opts.feature && 'object' === typeof opts.feature` and StructUtility.js:1634-1635 (the validator rejects a non-map with S_object), pinned 'object'. The attacks container 'Array' and client[0].returns 'Array' now fail on the pins.",
+   "commit": "sdkgen cce651f2"
+  },
+  {
+   "finding": "R4 runtimeforms/js.ts:103: ref.facts.none is cited to `return undefined` in _unexpected",
+   "outcome": "fixed",
+   "how": "Cited to StructUtility.js:150 `const NONE = undefined` (\"The standard undefined value for this language\") and getdef `if (NONE === val) {`. Also cited: Main.fragment.js:341 `const sdkopts = getdef(clone(sdkoptsarg), {})` and EntityBase.fragment.js:20 `entopts = entopts || {}`. Pinned 'undefined'. The attack none 'return' now fails.",
+   "commit": "sdkgen cce651f2"
+  },
+  {
+   "finding": "R5 runtimeforms/js.ts:134 and :111-115: body.once and the AbortSignal type rest on comments",
+   "outcome": "fixed",
+   "how": "body.once is cited to MakeRequestUtility.js:38-39 `if (isStream(fetchdef.body)) {` and `fetchdef.body = await readStream(fetchdef.body)`. direct.signal no longer quotes the comment at EntityBase.fragment.js:105. It is cited to MakeRequestUtility.js:33-34 (signal.aborted, signal.reason), MakeFetchDefUtility.js:36, TimeoutFeature.js:47-58 (the caller's signal listened to for 'abort', swapped for an AbortController's signal) and FetcherUtility.js:67 `fetch(fullurl, fetchdef)`. `AbortSignal` is excused as unquoted with its reason and pinned. Comment-only citations went from 1 to 0 (account report). The attacks direct.signal 'signal' and abortCode 'request' (abortCode now pinned 'request_aborted') fail.",
+   "commit": "sdkgen cce651f2"
+  },
+  {
+   "finding": "R6 hand/js.json absent 99a8153c15, a0b269a293: the reasons say the runtime names no type",
+   "outcome": "fixed",
+   "how": "Reworded: js declares no listOf because its methods declare no return type (the forms read none). The class is named only in a JSDoc comment, `@returns {Promise<EntyClass>}` (EntityLoadOp.fragment.js) and `@returns {Promise<EntyClass[]>}` (EntityListOp.fragment.js), which no check reads. STALE 0.",
+   "commit": "tools d373e62"
+  },
+  {
+   "finding": "R7 hand/js.json 39aecae10e: record as dropped, not same-meaning",
+   "outcome": "not a defect as asked",
+   "how": "tools/ledger.js:199 (invalidFor) accepts only contradiction, defect or same-meaning on an echo class: 'dropped' would be INVALID and reopen it. 39aecae10e is the echo of the removed sentence. The drop itself is recorded on the missing class 9c1038b6ae (dropped, with the reason). I kept same-meaning and reworded the reason to say it is that drop's echo and that what remains on the page agrees with what was removed.",
+   "commit": "tools d373e62"
+  },
+  {
+   "finding": "R8 runtimeforms/js.ts:37: the graphql reason says 'through the pipeline'",
+   "outcome": "fixed",
+   "how": "It now reads 'a GraphQL request over the prepare and fetch path direct uses, bypassing the feature pipeline' (Main.fragment.js:287, 292).",
+   "commit": "sdkgen cce651f2"
+  },
+  {
+   "finding": "R9 ReadmeModel_js.ts:79 (and ReadmeModel_ts.ts:103): the README methods table says utility() is a 'Deep copy'",
+   "outcome": "needs a shared change",
+   "how": "The component is outside the files a port may touch (guide section 4). The README methods table is not a ported section, so no ledger class exists to record as defect. The change is recorded in shared_changes_needed. The REFERENCE (true side) says 'Return the SDK utility object.'.",
+   "commit": "-"
+  },
+  {
+   "finding": "R10 shared guard and tools checks: return key sets, cited tokens as whole values, exceptions narrowed to one parameter, NEW-only headings matched with masked values",
+   "outcome": "needs a shared change (partly closed for js in its own files)",
+   "how": "Recorded in shared_changes_needed. In js's forms: direct.returns and prepare.returns are pinned (a subset or an added key fails). The stream exception is replaced by the forms' optional reading `action` as required (stream reads it unguarded as opname, EntityBase.fragment.js:123). A field signature's type is compared with its initialiser (`name = ''` gives string). With these, the guard fails on the e4 source attack's stream action optional, name: number and direct.returns without headers. The shared checks are still needed for the other languages and for the attacks listed under not_caught.",
+   "commit": "sdkgen cce651f2"
+  },
+  {
+   "finding": "provider_code runtimeforms/js.ts:65: the exception 'optional:entity streamIterator' is broader than its reason",
+   "outcome": "fixed",
+   "how": "The exception was removed. forms.optional returns false for the bare runtime parameter `action` (the only `action` parameter in the files the guard reads). The guard compares stream's optionality per parameter: '!??' in the runtime. gmut's 'stream action optional' and 'stream args required' are now caught.",
+   "commit": "sdkgen cce651f2"
+  },
+  {
+   "finding": "doubtful line: `new DemoSDK(options?: object)` under a ```js fence",
+   "outcome": "not fixed",
+   "how": "Cosmetic: it is signature notation, and every example block is JavaScript. A per-provider signature fence needs a shared additive member (the porter's sigFence gap), listed in shared_changes_needed.",
+   "commit": "-"
+  }
+ ],
+ "shared_changes_needed": [
+  {
+   "file": "P/base33/PORTING.md section 2.5 and the js row of section 9",
+   "change": "Say that the js tutorial and root quick start import with `import { X } from '<package>'`, not require, because the shared steps use top-level await. Say that a runner which wraps each program in an async function cannot hold that import, so the blocks are run as ES modules.",
+   "why": "The porter followed the guide's 'package-addressed require/import ... keep it'. node 24 refuses require beside top-level await (ERR_AMBIGUOUS_MODULE_SYNTAX), and js has no lane to show it.",
+   "breaking": false,
+   "providers_forced": "none (js is fixed; ts already prints import)"
+  },
+  {
+   "file": "ts/project/.sdk/src/cmp/js/ReadmeModel_js.ts:79 and ts/project/.sdk/src/cmp/ts/ReadmeModel_ts.ts:103",
+   "change": "The README methods-table row for utility() should stop saying 'Deep copy of the SDK utility object.'. Either print the wording from the provider's `copy` fact, as the REFERENCE does, or 'The SDK utility object.' for ts and js.",
+   "why": "utility() returns the live Utility: Main.fragment.js:104 runs struct.clone on a class instance, which StructUtility.js:681-690 hands back by reference. The reviewer's probe found utility() === _utility. The README and the REFERENCE of one SDK disagree, and no class exists to record it.",
+   "breaking": false,
+   "providers_forced": "none (ts and js already declare copy: false). The other languages' rows say 'Copy of the SDK utility object.'; I did not re-read their runtimes."
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts (exceptions)",
+   "change": "Allow an exception narrowed to one parameter, e.g. 'optional:<where>:<param>'.",
+   "why": "A member-wide 'optional:' exception switches off the check for every parameter (stream action shown optional passed).",
+   "breaking": false,
+   "providers_forced": "none for js (it no longer needs one); the other languages' optional exceptions not read"
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts / account.ts (direct.returns, prepare.returns)",
+   "change": "Compare a returned object's key set with the quoted object's keys, not only the presence of each declared token.",
+   "why": "A subset ({ ok, data }) or an added key passed the guard and the tools.",
+   "breaking": false,
+   "providers_forced": "none for js (pinned now); other providers that cite returns without a pin would be checked (not read)"
+  },
+  {
+   "file": "ts/test/runtimeforms/account.ts (checkCitation, wordIn)",
+   "change": "A cited code token must be the value at the place the quote shows it, not any word anywhere in the quote. Alternatively require a pin for single-token cited facts.",
+   "why": "'Array' passed on Array.isArray, 'signal' on fetchdef.signal, 'request' on 'request aborted', 'return' on `return undefined`.",
+   "breaking": false,
+   "providers_forced": "any provider whose citation relies on an incidental word (not read); js re-cited and pinned"
+  },
+  {
+   "file": "ts/test/runtimeforms/forms.ts (defaultSigReturns) and the forms of languages with field members",
+   "change": "Read and compare the type a field signature writes (`name: type`). The default reader returns '' for it, so the type is not even counted as uncompared.",
+   "why": "`name: number` passed with no class and no uncompared count.",
+   "breaking": false,
+   "providers_forced": "ts (declares `name: string`); kotlin and others with field members not read; js closed in its own forms (sigReturns plus the initialiser read)"
+  },
+  {
+   "file": "ts/test/runtimeforms/account.ts:189-191",
+   "change": "A valueType the guard cannot derive from the type column should be a finding unless it is cited, not silently 'convention'.",
+   "why": "valueType.STRING 'number' passes the guard (gmut2, still missed after this fix).",
+   "breaking": false,
+   "providers_forced": "js would have to cite valueType.ANY ('any' against the column's '*'); others not read"
+  },
+  {
+   "file": "P tools: sentence matching (classify/sentences)",
+   "change": "Do not count a NEW-only signature heading matched as shared with masked fact values as a check of those values.",
+   "why": "stream action optional, name: number and direct.returns without headers opened no class in the reviewer's e4 run.",
+   "breaking": false,
+   "providers_forced": "none"
+  },
+  {
+   "file": "P tools: callcheck.js",
+   "change": "Report the calls it cannot place (a member the runtime lacks, a constructor without new) instead of dropping them from its count.",
+   "why": "The reviewer's p3 run: 372 of 374 calls were checked and 0 findings reported for `.fetch(` and `DemoSDK(`.",
+   "breaking": false,
+   "providers_forced": "none"
+  },
+  {
+   "file": "ts/test/runtimeforms/guard.ts (fails)",
+   "change": "For a throw-style language, fail a signature that carries a failure marker.",
+   "why": "`options() throws` passes the guard; it was re-run here as part of e4.",
+   "breaking": false,
+   "providers_forced": "none"
+  },
+  {
+   "file": "ts/src/helpers/example.ts:440 (fence)",
+   "change": "An optional fence for signature blocks (the porter's sigFence).",
+   "why": "js signature notation prints under ```js. Cosmetic.",
+   "breaking": false,
+   "providers_forced": "none (optional)"
+  }
+ ],
+ "commits": [
+  "sdkgen cce651f2 'js: ES import in the tutorial and root quick start; citations that show their values' (body: the import reason; the citations re-cited and pinned; body.once cited to code; direct's and prepare's returns pinned; stream's action read as required and the member-wide exception gone; the name field's type compared with its initialiser; the graphql reason). Files: Syntax_js.ts +3 -1, runtimeforms/js.ts +44 -18",
+  "sdkgen 9c85bcdb 'golden: js provider' (no body): ts/test/golden/add-output.txt +1 -1, the Syntax_js.ts hash line only",
+  "tools d373e62 'js: the ES import correction, carried block records, reasons that name the JSDoc and the drop' (body: the normalizer, the carried records, the JSDoc reasons, the echo reason). Files: hand/js.json, classes/js.json, counts/js.json, normalizers/js.js (new)",
+  "`git log --format=%B` over the port's and my ranges (sdkgen v33-frozen..HEAD, tools a3fd3b8..HEAD) finds 0 trailer lines. Trailers do appear in inherited base history: sdkgen e84d3525 and older, all before v33-frozen; tools 499e4df and a006f3e, in the base. None is mine or the porter's.",
+  "After `npm run build` (exit 0), `git status --short` is empty in sdkgen (HEAD 9c85bcdb) and in tools (HEAD d373e62)"
+ ],
+ "final_state": "Final reviewed run: `npm run build` exit 0, then `REGEN=1 tools/portcheck.sh sdkgen out js`, exit 0, 145 s, 21 of 21 regenerated (log ports/js/fix-final.log).\n== portcheck js ==\nsection    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions\ntutorial                   21 |      59     25        0      27       7     0       0 | 0\nrootquick                  19 |       5      0        0       4       1     0       0 | 0\nreference               15259 |     142     73        0      30      37     0       0 | 2\nsection    blocks: identical corrected unified otherwise | classes OPEN defect\ntutorial                   0        18       0        30 |      57    0      0 | 48 changed blocks compiled by nothing\nrootquick                  0         4       1        14 |      22    0      0 | 19 compiled by nothing\nreference                195         0      98        20 |       8    0      0 | 118 compiled by nothing\ncontradictions 2: reference [9c6d819441], [bff341cf32] (REFERENCE the true side)\npurity: 0 open, 1 accepted (exampleVarName) | notes declared 0\npagecheck: 1461 articles, 48 numbered headings, findings 0\ncallcheck: 374 calls of 25 members, findings 0\nguard: pass 4 fail 0\nbuild: 1813 sources checked, current\nhand records: 200, STALE 0\nfacts: attested 5, recorded by hand 2, UNATTESTED or NOT JUDGED 0; cited 23, pinned prose 13\nshared sentences: matched 98 (4 against unreviewed sentences); absent 3, all explained\nfact sheet: 72 facts, 0 with no account, 0 unattested\nPORTCHECK js: PASS\n\nBlocks moved against the porter's run because the import line now differs in every tutorial and root block. Tutorial identical 3 became corrected 18; js-esm-import is counted on 18 tutorial and 5 root pairs.\n\n`SCRATCH=1 tools/portcheck.sh sdkgen out js`: exit 1 by design, 46 s (fix-scratch.log).\n- Ledger OPEN: tutorial 34, rootquick 5, reference 69 (the same as the porter's).\n- Blocks OPEN: 57, 22, 8 (the porter's 54, 19, 8 plus the import/from/require token classes).\n- NOT JUDGED named = \"call\"; UNATTESTED ref.noun = \"Methods\".\n- ABSENT, NO REASON: 3 (99a8153c15, 7ab5ba644d, a0b269a293). DROPPED: 0.\n- The parts that read no hand record are clean: build current, guard pass, purity 0 open, pagecheck 0, callcheck 0.\n\n`STRICT_SENTENCES=1`: exit 1 only on the 4 reference matches against unreviewed sentences (falseVerdict 0).\n\nGuard ^js: 4/4. Guard and reader (`--test-concurrency=2`): 81/81. Account: js: derived 50, cited 23, language 1, convention 6, excepted 0; comment-only citations 0. Golden: characterize 2/2. Suite without lanes: 2635 tests, 2630 pass, 0 fail, 5 skipped, 319 s.\n\nOther languages are unchanged against P/base33/out/new: only root README.md files differ outside js/, and 21 of 21 are identical once the JavaScript quick start block is removed. sharewords: 58,936 words, 219 js-only (0.4%), notes 0, provider literals 248.",
+ "lanes": "js has no lane, so every example run is by hand. Toolchain present: node v24.22.1 at /opt/node24/bin (also php, javac, java, mvn, gradle, g++, make; kotlinc, kotlin, scala, scala-cli, sbt and dotnet missing).\n\nThe runner is fixmy/runasis.js. It runs each program as written, as an ES module with no wrapper, from the repository root of a generated SDK, with the package linked in node_modules. Mode asis is live: the program must get past the loader and the constructor and reach the live request. Mode test uses a seeded test client: the program must run to its end and print no caught failure.\n\nNEW, after the fix (exit 0 in every SDK):\n- tools/before/gensdk.js models: default 24/24, crud 17/17, basic-server 17/17.\n- tools genvar variations: B 24/24, auth-basic 24/24, crud-basic 17/17.\n- In every one, the tutorial and the root quick start, as written, reach the live request.\n\nOLD (the porter's run/old-*): default 20/24, crud 13/17, basic-server 13/17. The tutorial and root quick start are refused by the loader before their first statement in both modes: \"Cannot determine intended module format because both 'require' and top-level await are present\" (ERR_AMBIGUOUS_MODULE_SYNTAX).\n\nControl (run/fixctl): `.fetch()` in the tutorial, a wrong import name at the root, and `.fetch(` in a REFERENCE block. All three were reported: 20/24, exit 1. Its first version missed the tutorial fault, which a try block caught, and I fixed the runner before relying on it.\n\nThe porter's runner (my/runblocks.js) wraps programs in an async function, which cannot hold an import, so it no longer applies.",
+ "lines": "From `git diff --numstat v33-frozen..HEAD` in sdkgen:\n- Syntax_js.ts +147 (147 lines)\n- Naming_js.ts +22 (22 lines)\n- runtimeforms/js.ts +116 -13 (165 lines)\n- golden +2 -3\n- deleted: ReadmeQuick_js.ts 179, ReadmeRef_js.ts 445, ReadmeTopQuick_js.ts 110 (734 in all)\n\nThis fix alone (6062b88a..HEAD): Syntax_js.ts +3 -1, runtimeforms/js.ts +44 -18, golden +1 -1.\n\nProvider and hook: 169 lines against 734 removed (4.34x). With the forms' added lines: 285 against 734 (2.58x).\n\nRuntime notes: 0 declared, 0 note regions. Prose literals in the provider: 4, all fact-table values.",
+ "notes": [],
+ "review_counts": [
+  {
+   "section": "tutorial",
+   "same": "21",
+   "shared_matched": "25",
+   "matched_unreviewed": "0",
+   "by_hand": "27",
+   "missing": "7",
+   "contradictions": "0",
+   "blocks": "identical 0 / corrected 18 / unified 0 / otherwise 30; 57 classes, OPEN 0, defect 0; 48 changed blocks compiled by nothing; callcheck 0, pagecheck 0"
+  },
+  {
+   "section": "rootquick",
+   "same": "19",
+   "shared_matched": "0",
+   "matched_unreviewed": "0",
+   "by_hand": "4",
+   "missing": "1",
+   "contradictions": "0",
+   "blocks": "identical 0 / corrected 4 / unified 1 / otherwise 14; 22 classes, OPEN 0, defect 0; 19 changed blocks compiled by nothing"
+  },
+  {
+   "section": "reference",
+   "same": "15259",
+   "shared_matched": "73",
+   "matched_unreviewed": "4",
+   "by_hand": "30",
+   "missing": "37",
+   "contradictions": "2",
+   "blocks": "identical 195 / corrected 0 / unified 98 / otherwise 20; 8 classes, OPEN 0, defect 0; 118 changed blocks compiled by nothing"
+  }
+ ],
+ "not_caught_by_process": [
+  {
+   "attack": "stream's action shown optional: `stream(action?: string, args?: object, callopts?: object)` (source, through build, guard and one command)",
+   "consequence": "Nothing failed and no class opened. The page would say stream can be called without an action, but `stream()` throws \"Cannot read properties of undefined (reading 'name')\" (probe). The exception 'optional:entity streamIterator' covers the whole member, and the tools matched the heading as shared."
+  },
+  {
+   "attack": "`name: number` for the entity name field (source, one command)",
+   "consequence": "Nothing failed and no class opened. js parameter and return types are uncompared, and the NEW-only heading was matched as shared with the fact masked."
+  },
+  {
+   "attack": "direct.returns without headers: `Promise<{ ok, status, data }>` (source, one command); `{ ok, data }` (guard)",
+   "consequence": "Nothing failed and no class opened. The guard checks only that each declared token stands in the quote, so any subset passes."
+  },
+  {
+   "attack": "direct.returns with an `err` key added (earlier part of this review, e2)",
+   "consequence": "The guard passed. The tools opened only classes decided by hand."
+  },
+  {
+   "attack": "container 'Array' and client[0].returns 'Array'",
+   "consequence": "The guard passed: the token stands in `Array.isArray` on the unrelated `layer` line. The one command opened only classes decided by hand."
+  },
+  {
+   "attack": "direct.signal 'signal', abortCode 'request', none 'return' (guard only)",
+   "consequence": "The guard passed: each token or substring stands in its quote."
+  },
+  {
+   "attack": "`options() throws`, a failure marker on a throw-style signature",
+   "consequence": "The guard passed. The tools opened a heading class and a token class, both decided by hand."
+  },
+  {
+   "attack": "deleted as a non-call, `{var}.deleted`",
+   "consequence": "The guard passed. The tools opened only classes decided by hand, and the call-versus-field check does not cover the deleted template."
+  },
+  {
+   "attack": "deleted removed",
+   "consequence": "The guard passed. The tools reported ABSENT NO REASON [808ab9f422], which a porter can explain by hand."
+  },
+  {
+   "attack": "wrong language, convention and enumerated values: maps 'arrays', noun 'Functions', valueType.ANY 'unknown', keys 'bare', prints 'fields', named 'bare'",
+   "consequence": "The guard passed. The tools reported UNATTESTED, settled by a hand record; this is by design, but it is a hand decision."
+  },
+  {
+   "attack": "a shared sentence dropped from variation B only",
+   "consequence": "No DROPPED: one OPEN class decided by hand. Dropping it from every variation was caught as ABSENT NO REASON."
+  },
+  {
+   "attack": "receiver without the accessor's parentheses, `client.Ambient.load()` (page edit and printer edit)",
+   "consequence": "The guard and callcheck both passed (0 findings). Only block classes decided by hand opened."
+  },
+  {
+   "attack": "page edits: `.fetch(` (a member the runtime lacks), `planet.data` (a method read as a field), `DemoSDK(` without `new`, root `require('./js')`",
+   "consequence": "callcheck reported 0 because it checked 372 of 374 calls: the two bad calls fell out of its view. pagecheck 0, guard pass. Only block classes decided by hand opened."
+  },
+  {
+   "attack": "a shared sentence made false in one variation (\"returns `undefined` on failure\")",
+   "consequence": "Only a ledger class decided by hand opened."
+  },
+  {
+   "attack": "op create declared with a return type `: Promise<object>`",
+   "consequence": "The guard passed: js returns are uncompared."
+  },
+  {
+   "attack": "README methods table `utility()` \"Deep copy\" against the REFERENCE's live object",
+   "consequence": "No tool flagged the disagreement, and no class exists to record it."
+  },
+  {
+   "attack": "examples run as written (require plus top-level await)",
+   "consequence": "js has no lane. Nothing mechanical runs its pages as written, and the porter's runner wraps each program in an async function."
+  }
+ ],
+ "not_done": [
+  "I re-ran the reviewer's in-memory guard mutations (gmut 48/59, gmut2 14/17 caught) and the e4 source attack through the build and guard only (guard fails on 4 of 5), not through the one command. The page attacks p1, p2 and p3 and the e1 to e3 runs were not repeated.",
+  "Run here: B, auth-basic and crud-basic of the 21 variations, plus the three lane models. Not run: the other 18 variations. ref-issues was not generated as a whole SDK (the reviewer found it fails on OLD and NEW: TestEntity_js has no BasicGaugeFlow).",
+  "The README methods-table 'Deep copy' row and the DirectResult/Error-handling text are unported components. They are not changed and could not be recorded as classes.",
+  "Weaker spots the reviewer noted in shared code are untouched: the test and tester Returns lines, and the write step that no longer prints the create, update and patch results.",
+  "STRICT_SENTENCES=1 was run (exit 1 on 4 reference matches against unreviewed sentences), but the 4 ids were not identified: sentences.json gives counts only.",
+  "The 5 skipped suite tests were not examined.",
+  "H3 was not re-measured catalogue-wide."
+ ],
+ "unverified": "node is on the PATH, so nothing here is unverified for want of a compiler. What remains unverified is what was not run.\n\nThe tools count 185 changed blocks in the 21 variations that no tool compiles: 48 tutorial, 19 rootquick, 118 reference. I ran six generated SDKs (B, auth-basic, crud-basic, and the default, crud and basic-server lane models), every program in them, as written and in seeded test mode. The other 18 variations' changed blocks were not run.\n\nLive requests were made only against placeholder URLs, with no server answering. So a live response path and the constructor options beyond construction are unexercised: test mode replaces the constructor with the test constructor.\n\nThe REFERENCE blocks are fragments. They ran with the page's own import line and a test client put in front of them."
+}

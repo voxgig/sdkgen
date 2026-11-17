@@ -1,0 +1,15 @@
+- 15:01 workspace made by newport.sh (clone 0065f1e2). Next: first REGEN run (expect NOT PORTED).
+- 15:12 read briefs, guide, js table section, js runtime (Main/EntityBase/Entity/ops), old components (js = old ts minus later fixes). Next: table check, then provider from Syntax_ts.
+- 15:30 forms, Syntax_js (from Syntax_ts), Naming_js written; old three components deleted. Next: build.
+- 15:42 guard ^js: 4/4 pass (added bare:true, sig-reading optional, stream optional exception). Next: SCRATCH run.
+- 15:50 SCRATCH=1 REGEN=1 run: exit 1 (log ports/js/scratch1.log). Next: reviewed run, classify.
+- 15:58 reviewed run 1: exit 1; ledger OPEN 34/5/69, blocks OPEN 55/20/9, 2 unattested facts, 3 absent, purity 1 open (exampleVarName). Optional facts read (see report). Next: classify.
+- 16:25 hand/js.json: 189 class decisions, 2 facts, 3 absent (my/mk.py + my/fill.py merge). Next: reviewed run.
+- 16:35 reviewed run 3: PASS exit 0 (run3.log). Next: commit, golden, examples run by hand, diff -r.
+- 16:40 sdkgen commits: port + golden (see git log). Next: tools commit, then examples by hand.
+- 16:50 generated NEW and OLD js SDKs (default, crud, basic-server) in ports/js/run; oldcopy is a copy of the pristine old clone. Next: run blocks by hand.
+- 17:05 examples run by hand (my/runblocks.js): NEW 24/24,17/17,17/17; OLD 24/24,17/17,15/17 (basic: live ctor throws w/o server); control run/ctl fails as expected.
+- 17:20 final REGEN reviewed run PASS exit 0 (final.log); tools commit made. Next: SCRATCH rerun for numbers, guard report, suite.
+- 17:30 SCRATCH final run done (scratch-final.log). Running the suite (no lanes).
+- 17:40 suite running in background (suite.log).
+- 17:45 suite 2635 tests: 2630 pass, 0 fail, 5 skipped (755 s). All steps done; report next.

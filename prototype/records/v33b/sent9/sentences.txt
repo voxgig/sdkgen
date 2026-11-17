@@ -1,0 +1,957 @@
+# reference sentences: 235 distinct masked sentences (NEW side of the reference languages' reworded and added classes)
+# text the fixture model holds, left out: 2 ("Level \\| percent see the guide or [site](https://e", "Words the project chose | not the spec")
+# tutorial: printed by one language 34: shared-condition 19, unexplained 14, note 1
+# rootquick: printed by one language 4: unexplained 1, shared-condition 3
+# reference: printed by one language 69: code 25, shared-condition 23, unexplained 13, note 6, provider-literal 2
+# tutorial: 64 (accepted by hand only 35, by stage-3a rule records only 26, both 3; template found 41; verdicts ok 64, false 0, awkward 0, none 0)
+# rootquick: 8 (accepted by hand only 2, by stage-3a rule records only 4, both 2; template found 5; verdicts ok 8, false 0, awkward 0, none 0)
+# reference: 163 (accepted by hand only 57, by stage-3a rule records only 95, both 11; template found 70; verdicts ok 159, false 0, awkward 0, none 4)
+# matched from scratch, ts: tutorial 19 of 66 classes (0 against a sentence with no verdict); rootquick 0 of 20 classes (0 against a sentence with no verdict); reference 38 of 151 classes (2 against a sentence with no verdict)
+# matched from scratch, go: tutorial 16 of 92 classes (0 against a sentence with no verdict); rootquick 0 of 20 classes (0 against a sentence with no verdict); reference 48 of 106 classes (2 against a sentence with no verdict)
+# matched from scratch, py: tutorial 24 of 52 classes (0 against a sentence with no verdict); rootquick 3 of 15 classes (0 against a sentence with no verdict); reference 67 of 134 classes (3 against a sentence with no verdict)
+# matched from scratch, c: tutorial 21 of 57 classes (0 against a sentence with no verdict); rootquick 0 of 37 classes (0 against a sentence with no verdict); reference 50 of 121 classes (1 against a sentence with no verdict)
+# matched from scratch, zig: tutorial 24 of 76 classes (0 against a sentence with no verdict); rootquick 0 of 32 classes (0 against a sentence with no verdict); reference 57 of 136 classes (1 against a sentence with no verdict)
+# matched from scratch, clojure: tutorial 24 of 52 classes (0 against a sentence with no verdict); rootquick 2 of 19 classes (0 against a sentence with no verdict); reference 57 of 127 classes (1 against a sentence with no verdict)
+# matched from scratch, rust: tutorial 24 of 62 classes (0 against a sentence with no verdict); rootquick 1 of 24 classes (0 against a sentence with no verdict); reference 60 of 145 classes (1 against a sentence with no verdict)
+# matched from scratch, elixir: tutorial 24 of 53 classes (0 against a sentence with no verdict); rootquick 3 of 17 classes (0 against a sentence with no verdict); reference 60 of 151 classes (1 against a sentence with no verdict)
+# matched from scratch, rb: tutorial 25 of 77 classes (0 against a sentence with no verdict); rootquick 0 of 21 classes (0 against a sentence with no verdict); reference 61 of 135 classes (2 against a sentence with no verdict)
+
+[7e4d6fd58f] reference sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 10 class(es) | accepted: hand 10 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (23 of 30 runs)
+   masked:  Like any operation, an action's call gives back the entity; its data is then that action's OWN response, which is not necessarily a Planet record — check the API definition for its shape.
+   example: ts B: Like any operation, an action's call gives back the entity; its data is then that action's OWN response, which is not necessarily a Planet record — check the API definition for its shape.
+
+[0a6358906c] reference sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  **Returns:** ⟦⟧, a result map.
+   example: ts B: **Returns:** `Promise<{ ok, status, headers, data }>`, a result map.
+
+[746a31db3f] reference sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (14 of 22 runs)
+   masked:  The first argument holds the test feature's options, which the call switches on, and replaces any ⟦⟧ in the second, which holds the other client options; both may be ⟦⟧.
+   example: ts B: The first argument holds the test feature's options, which the call switches on, and replaces any `options.feature.test` in the second, which holds the other client options; both may be `undefined`.
+
+[5266d8cbf2] reference heading | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: not found
+   masked:  Client ⟦⟧
+   example: ts B: Client Methods
+
+[7a3e73d523] reference cell | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  Control options.
+   example: ts B: Control options.
+
+[42aedb7ce3] reference sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: NONE | template: ts/src/cmp/ReadmeRef.ts (11 of 13 runs)
+   masked:  For a response whose body is read, 2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and `ok` is ⟦⟧ unless the status is 2xx.
+   example: ts B: For a response whose body is read, 2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and `ok` is `false` unless the status is 2xx.
+
+[fe4d5d27e7] reference sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: NONE | template: ts/src/cmp/ReadmeRef.ts (9 of 11 runs)
+   masked:  When the body cannot be read, `ok` is ⟦⟧ and the key `err` holds the error, read as ⟦⟧; a request that cannot be made gives only `ok` (⟦⟧) and `err`.
+   example: ts B: When the body cannot be read, `ok` is `false` and the key `err` holds the error, read as `result.err`; a request that cannot be made gives only `ok` (`false`) and `err`.
+
+[010ab525bc] reference sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (8 of 11 runs)
+   masked:  A failure is reported in the result, not as an error, so branch on ⟦⟧.
+   example: ts B: A failure is reported in the result, not as an error, so branch on `result.ok`.
+
+[3c3c04f33c] reference sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (5 of 5 runs)
+   masked:  Returns a copy of the current match criteria.
+   example: ts B: Returns a copy of the current match criteria.
+
+[6cfad26916] reference sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 13 class(es) | accepted: hand 13 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (8 of 8 runs)
+   masked:  The data must include the entity id, `Ⓕ`, unless the entity already holds it.
+   example: ts B: The data must include the entity id, `id`, unless the entity already holds it.
+
+[05a5a62f89] reference cell | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/helpers/sdkdesc.ts (3 of 3 runs)
+   masked:  Password for HTTP Basic authentication; `apikey` is the user name.
+   example: ts auth-basic: Password for HTTP Basic authentication; `apikey` is the user name.
+
+[4fb872e54f] reference sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeRefFeatures.ts (14 of 17 runs)
+   masked:  The array form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest.
+   example: ts B: The array form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest.
+
+[4eea983832] reference cell | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/helpers/sdkdesc.ts (7 of 7 runs)
+   masked:  Values for the variables the server URL is templated on.
+   example: ts B: Values for the variables the server URL is templated on.
+
+[7247de945f] reference cell | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: not found
+   masked:  Required.
+   example: ts B: Required.
+
+[9c7c471a05] reference cell | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/Registered.ts (1 of 1 runs)
+   masked:  Defaults to `eu`.
+   example: ts B: Defaults to `eu`.
+
+[ea66aefd24] reference cell | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: not found
+   masked:  ⟦ref.valueType.STRING⟧
+   example: ts B: `string`
+
+[3bb5d3a968] reference sentence | 8 language(s) c clojure elixir go py rust ts zig, 9 class(es) | accepted: hand 7, rule record 2 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 1 runs)
+   masked:  ⟦⟧ reads its record.
+   example: ts B: `.data()` reads its record.
+
+[c151802d4a] reference header | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: not found
+   masked:  Operation
+   example: ts B: Operation
+
+[e3081c2053] reference cell | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: not found
+   masked:  ⟦method.create⟧
+   example: ts B: `create`
+
+[8d6016d7e2] reference sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeRefFeatures.ts (5 of 7 runs)
+   masked:  Each feature is inactive until switched on, except `log`, which runs unless disabled.
+   example: ts B: Each feature is inactive until switched on, except `log`, which runs unless disabled.
+
+[d77745e7ee] reference sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeRefFeatures.ts (2 of 2 runs)
+   masked:  Active by default: set `active: false` to switch it off.
+   example: ts B: Active by default: set `active: false` to switch it off.
+
+[d3d603d612] reference sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 1 runs)
+   masked:  The match must include `Ⓔ_id`.
+   example: ts doc-nested: The match must include `planet_id`.
+
+[82e6814387] reference sentence | 7 language(s) c clojure elixir go py rust ts, 8 class(es) | accepted: hand 8 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (20 of 26 runs)
+   masked:  Select one with `$action` in the call's argument, beside the route's path parameters, as the Call column shows; the action's own arguments go beside them too, and are sent as that action's payload.
+   example: ts B: Select one with `$action` in the call's argument, beside the route's path parameters, as the Call column shows; the action's own arguments go beside them too, and are sent as that action's payload.
+
+[ffe4eb970b] reference heading | 7 language(s) c elixir go py rust ts zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  Test client
+   example: ts B: Test client
+
+[808ab9f422] reference sentence | 7 language(s) c go py rb rust ts zig, 7 class(es) | accepted: hand 7 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 1 runs)
+   masked:  ⟦⟧ reads the mark.
+   example: ts B: `result.deleted()` reads the mark.
+
+[f616466503] reference sentence | 7 language(s) c elixir go py rb rust ts, 7 class(es) | accepted: hand 7 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  Create a test client.
+   example: ts no-test: Create a test client.
+
+[dd74ff9ab6] reference sentence | 7 language(s) c elixir go py rb rust ts, 7 class(es) | accepted: hand 7 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (9 of 12 runs)
+   masked:  This SDK is generated without the `test` feature, so the client has no mock transport and refuses every request.
+   example: ts no-test: This SDK is generated without the `test` feature, so the client has no mock transport and refuses every request.
+
+[5ddee20721] reference cell | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: not found
+   masked:  HTTP method (default: `GET`).
+   example: go B: HTTP method (default: `GET`).
+
+[5c8f458658] reference sentence | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: hand 1, rule record 6 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 3 runs)
+   masked:  **Returns:** ⟦⟧, the fetch definition: the request ⟦⟧ would send.
+   example: go B: **Returns:** `(map[string]any, error)`, the fetch definition: the request `Direct()` would send.
+
+[185f26bc68] reference heading | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: not found
+   masked:  Actions
+   example: go B: Actions
+
+[abe9546ee3] reference sentence | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (8 of 9 runs)
+   masked:  This entity exposes custom API actions in addition to the standard operations.
+   example: go B: This entity exposes custom API actions in addition to the standard operations.
+
+[2b8bc511e9] reference header | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: not found
+   masked:  Action
+   example: go B: Action
+
+[120aec2437] reference header | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: not found
+   masked:  Route
+   example: go B: Route
+
+[22bdd0ff18] reference header | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: not found
+   masked:  Call
+   example: go B: Call
+
+[2a8d9aa773] reference cell | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: not found
+   masked:  `terraform`
+   example: go B: `terraform`
+
+[ebea8de27f] reference cell | 7 language(s) c clojure elixir go py rust zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: not found
+   masked:  `/Ⓔ/{Ⓕ}/terraform`
+   example: go B: `/planet/{id}/terraform`
+
+[28235772cb] reference sentence | 6 language(s) clojure elixir go py rb ts, 6 class(es) | accepted: hand 6 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  It ends early once `callopts.signal` reports an abort.
+   example: ts B: It ends early once `callopts.signal` reports an abort.
+
+[3cd4c3ecdc] reference sentence | 6 language(s) c clojure elixir py rust zig, 6 class(es) | accepted: rule record 6 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (5 of 5 runs)
+   masked:  Prepare a fetch definition without sending the request.
+   example: py B: Prepare a fetch definition without sending the request.
+
+[581898e092] reference sentence | 6 language(s) c clojure elixir py rust zig, 6 class(es) | accepted: rule record 6 | verdict: ok | template: not found
+   masked:  Accepts the same parameters as ⟦⟧.
+   example: py B: Accepts the same parameters as `direct()`.
+
+[0071df96c2] reference sentence | 5 language(s) go py rust ts zig, 9 class(es) | accepted: rule record 9 | verdict: ok | template: ts/src/cmp/ReadmeModel.ts (1 of 1 runs)
+   masked:  Create a new ⟦⟧ instance.
+   example: ts B: Create a new `PlanetEntity` instance.
+
+[fdfa305bc4] reference sentence | 5 language(s) go py rust ts zig, 8 class(es) | accepted: hand 8 | verdict: NONE | template: ts/src/helpers/runtimeprose.ts (6 of 6 runs)
+   masked:  The match is optional; a call without one is ⟦⟧.
+   example: ts B: The match is optional; a call without one is `list()`.
+
+[9fe8f9d917] reference heading | 5 language(s) go py rust ts zig, 5 class(es) | accepted: rule record 5 | verdict: ok | template: not found
+   masked:  PlanetEntityClient
+   example: ts ref-issues: PlanetEntityClient
+
+[f2901d9293] reference sentence | 5 language(s) c clojure elixir py rust, 5 class(es) | accepted: hand 5 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (4 of 4 runs)
+   masked:  Returns a copy of the current data.
+   example: py B: Returns a copy of the current data.
+
+[a597c33fd6] reference cell | 5 language(s) c clojure elixir rust zig, 5 class(es) | accepted: rule record 5 | verdict: ok | template: not found
+   masked:  `server`
+   example: c B: `server`
+
+[d58d5036f6] reference cell | 5 language(s) c clojure elixir rust zig, 5 class(es) | accepted: rule record 5 | verdict: ok | template: not found
+   masked:  `server.tenant`
+   example: c B: `server.tenant`
+
+[f9463bffa1] reference cell | 5 language(s) c clojure elixir rust zig, 5 class(es) | accepted: rule record 5 | verdict: ok | template: not found
+   masked:  `server.region`
+   example: c B: `server.region`
+
+[186e69881f] reference cell | 5 language(s) c clojure elixir rust zig, 5 class(es) | accepted: rule record 5 | verdict: ok | template: not found
+   masked:  `ctrl`
+   example: c B: `ctrl`
+
+[e866dc0d3c] reference sentence | 5 language(s) c clojure elixir rust zig, 5 class(es) | accepted: hand 5 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (4 of 4 runs)
+   masked:  The operation runs before the call returns.
+   example: c B: The operation runs before the call returns.
+
+[56cbce4ad6] reference cell | 5 language(s) c clojure elixir rust zig, 5 class(es) | accepted: rule record 5 | verdict: ok | template: not found
+   masked:  `secret`
+   example: c auth-basic: `secret`
+
+[0808ae08e7] reference cell | 5 language(s) c clojure elixir rust zig, 5 class(es) | accepted: rule record 5 | verdict: ok | template: not found
+   masked:  `server.account`
+   example: c server-mixed: `server.account`
+
+[4388aa476d] reference heading | 4 language(s) elixir py rb ts, 6 class(es) | accepted: rule record 4, hand 2 | verdict: ok | template: not found
+   masked:  ⟦ref.op.load⟧
+   example: ts B: `load(match?: object, ctrl?: object)`
+
+[21516a568c] reference heading | 4 language(s) elixir py rb ts, 4 class(es) | accepted: rule record 3, hand 1 | verdict: ok | template: not found
+   masked:  ⟦ref.op.remove⟧
+   example: ts B: `remove(match?: object, ctrl?: object)`
+
+[f6b8425ed5] reference sentence | 4 language(s) go py rust ts, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (3 of 4 runs)
+   masked:  Create a new ⟦⟧ instance with the same client and options.
+   example: ts ref-issues: Create a new `PlanetEntityClient` instance with the same client and options.
+
+[b04b0bd470] reference sentence | 4 language(s) clojure elixir py rb, 4 class(es) | accepted: rule record 3, hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 6 runs)
+   masked:  Returns a ⟦⟧ of entities, one per record, and raises on failure.
+   example: py B: Returns a `list` of entities, one per record, and raises on failure.
+
+[4cc33fe3da] reference sentence | 4 language(s) c clojure elixir rb, 4 class(es) | accepted: hand 4 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 1 runs)
+   masked:  The match is optional.
+   example: c B: The match is optional.
+
+[a669448486] reference sentence | 4 language(s) clojure elixir rust zig, 6 class(es) | accepted: rule record 6 | verdict: ok | template: not found
+   masked:  **Parameters (⟦⟧ map keys):**
+   example: zig B: **Parameters (`options` map keys):**
+
+[4af20ce756] reference heading | 3 language(s) rust ts zig, 4 class(es) | accepted: hand 4 | verdict: ok | template: not found
+   masked:  ⟦ref.accessor.sig⟧
+   example: ts B: `Ambient(entopts?: object)`
+
+[7034f074ec] reference heading | 3 language(s) c py ts, 4 class(es) | accepted: rule record 3, hand 1 | verdict: ok | template: not found
+   masked:  ⟦ref.entity.3.sig⟧
+   example: ts B: `stream(action: string, args?: object, callopts?: object)`
+
+[5003b705ca] reference sentence | 3 language(s) py rb ts, 3 class(es) | accepted: hand 3 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (8 of 8 runs)
+   masked:  The operation runs when iteration starts, not when the call returns.
+   example: ts B: The operation runs when iteration starts, not when the call returns.
+
+[04d3017bb0] reference sentence | 3 language(s) clojure elixir py, 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  Returns the created entity, and raises on failure.
+   example: py B: Returns the created entity, and raises on failure.
+
+[1c3e043734] reference sentence | 3 language(s) clojure elixir py, 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  Returns the updated entity, and raises on failure.
+   example: py B: Returns the updated entity, and raises on failure.
+
+[f28445713f] reference sentence | 3 language(s) clojure elixir py, 3 class(es) | accepted: rule record 3 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 7 runs)
+   masked:  Returns the entity, marked as deleted, and raises on failure.
+   example: py B: Returns the entity, marked as deleted, and raises on failure.
+
+[4b8eb8b6bf] reference sentence | 3 language(s) clojure elixir py, 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  It raises on failure.
+   example: py B: It raises on failure.
+
+[943a2c940d] reference sentence | 3 language(s) clojure elixir py, 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  Returns the entity, and raises on failure.
+   example: py B: Returns the entity, and raises on failure.
+
+[957a8c7efa] reference heading | 3 language(s) clojure elixir py, 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  ⟦ref.entity.5.sig⟧
+   example: py B: `stream(action, args=None, callopts=None)`
+
+[5338ac6916] reference sentence | 3 language(s) clojure elixir py, 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  Returns the patched entity, and raises on failure.
+   example: py crud-bare: Returns the patched entity, and raises on failure.
+
+[38db57bb5d] reference cell | 3 language(s) c rust zig, 3 class(es) | accepted: rule record 3 | verdict: ok | template: ts/src/helpers/sdkdesc.ts (2 of 2 runs)
+   masked:  System overrides (e.g. custom fetch).
+   example: c B: System overrides (e.g. custom fetch).
+
+[57d83d252b] reference sentence | 3 language(s) c clojure elixir, 6 class(es) | accepted: hand 6 | verdict: ok | template: ts/src/cmp/ReadmeModel.ts (1 of 1 runs)
+   masked:  Create a new ⟦⟧ entity.
+   example: c B: Create a new `Ambient` entity.
+
+[0d2b7ebded] reference sentence | 3 language(s) c clojure elixir, 6 class(es) | accepted: hand 6 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (3 of 4 runs)
+   masked:  Create another ⟦⟧ entity with the same client and options.
+   example: c B: Create another `Ambient` entity with the same client and options.
+
+[7d64fb6cb3] reference cell | 3 language(s) c clojure elixir, 3 class(es) | accepted: rule record 3 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  Path parameter values for `{param}` substitution.
+   example: c B: Path parameter values for `{param}` substitution.
+
+[4f5d0aa907] reference cell | 3 language(s) c rust zig, 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  ⟦ref.valueType.OBJECT⟧
+   example: c B: `map`
+
+[aa27f7dd7e] reference sentence | 3 language(s) c rust zig, 3 class(es) | accepted: hand 3 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (9 of 12 runs)
+   masked:  Run an operation through the pipeline and return its result items, every one already read.
+   example: c B: Run an operation through the pipeline and return its result items, every one already read.
+
+[fa8637c0bd] reference heading | 2 language(s) rb ts, 4 class(es) | accepted: rule record 1, hand 3 | verdict: ok | template: not found
+   masked:  ⟦ref.op.list⟧
+   example: ts B: `list(match?: object, ctrl?: object)`
+
+[03f31979fa] reference heading | 2 language(s) rb ts, 3 class(es) | accepted: rule record 1, hand 2 | verdict: ok | template: not found
+   masked:  ⟦ref.op.create⟧
+   example: ts B: `create(data?: object, ctrl?: object)`
+
+[0bd42bc9da] reference heading | 2 language(s) rb ts, 3 class(es) | accepted: rule record 1, hand 2 | verdict: ok | template: not found
+   masked:  ⟦ref.op.update⟧
+   example: ts B: `update(data?: object, ctrl?: object)`
+
+[f3e421e046] reference sentence | 2 language(s) elixir ts, 2 class(es) | accepted: hand 1, rule record 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (2 of 2 runs)
+   masked:  Return the SDK utility object.
+   example: ts B: Return the SDK utility object.
+
+[bced6e2f5f] reference comment | 2 language(s) go ts, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  string
+   example: ts B: string
+
+[a5e47cfb6f] reference heading | 2 language(s) rb ts, 3 class(es) | accepted: rule record 1, hand 2 | verdict: ok | template: not found
+   masked:  ⟦ref.op.patch⟧
+   example: ts crud-bare: `patch(data?: object, ctrl?: object)`
+
+[6afe3f6b0d] reference cell | 2 language(s) go py, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  `options["server"]`
+   example: go B: `options["server"]`
+
+[e61813ee66] reference cell | 2 language(s) go py, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  `options["server"]["tenant"]`
+   example: go B: `options["server"]["tenant"]`
+
+[8a90021109] reference cell | 2 language(s) go py, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  `options["server"]["region"]`
+   example: go B: `options["server"]["region"]`
+
+[dc97559d3c] reference cell | 2 language(s) go py, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  `options["secret"]`
+   example: go auth-basic: `options["secret"]`
+
+[799b8582a8] reference cell | 2 language(s) go py, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  `options["server"]["account"]`
+   example: go server-mixed: `options["server"]["account"]`
+
+[858d89077c] reference sentence | 2 language(s) rust zig, 2 class(es) | accepted: rule record 2 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 5 runs)
+   masked:  The result's ⟦⟧ is the entity, marked as deleted, and its ⟦⟧ reports failure.
+   example: zig B: The result's `.ok` is the entity, marked as deleted, and its `.err` reports failure.
+
+[bea4cfb8e1] reference sentence | 2 language(s) rust zig, 4 class(es) | accepted: rule record 4 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 7 runs)
+   masked:  The result's ⟦⟧ is a ⟦⟧ of entities, one per record, and its ⟦⟧ reports failure.
+   example: zig B: The result's `.ok` is a slice of entities, one per record, and its `.err` reports failure.
+
+[ec57fa7390] reference sentence | 2 language(s) rust zig, 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  The result's ⟦⟧ is the created entity, and its ⟦⟧ reports failure.
+   example: zig B: The result's `.ok` is the created entity, and its `.err` reports failure.
+
+[a819580a76] reference sentence | 2 language(s) rust zig, 4 class(es) | accepted: rule record 4 | verdict: ok | template: not found
+   masked:  The result's ⟦⟧ is the updated entity, and its ⟦⟧ reports failure.
+   example: zig B: The result's `.ok` is the updated entity, and its `.err` reports failure.
+
+[a96f8d1f55] reference sentence | 2 language(s) rust zig, 3 class(es) | accepted: rule record 3 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 2 runs)
+   masked:  The result's ⟦⟧ is the entity, and its ⟦⟧ reports failure.
+   example: zig B: The result's `.ok` is the entity, and its `.err` reports failure.
+
+[3a4a68b9c0] reference sentence | 2 language(s) rust zig, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  Its ⟦⟧ reports failure.
+   example: zig B: Its `.err` reports failure.
+
+[9c7c8ac25c] reference sentence | 2 language(s) rust zig, 4 class(es) | accepted: rule record 4 | verdict: ok | template: not found
+   masked:  The result's ⟦⟧ is the patched entity, and its ⟦⟧ reports failure.
+   example: zig crud-bare: The result's `.ok` is the patched entity, and its `.err` reports failure.
+
+[12182a3155] reference sentence | 2 language(s) clojure elixir, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  `options` is a ⟦⟧ map (⟦⟧ for none).
+   example: clojure B: `options` is a `voxgig.struct` map (`nil` for none).
+
+[fbcf071a11] reference header | 2 language(s) clojure elixir, 2 class(es) | accepted: rule record 2 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  Value type
+   example: clojure B: Value type
+
+[65e89e0eda] reference cell | 2 language(s) clojure elixir, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧
+   example: clojure B: `map`
+
+[72922e3782] reference sentence | 2 language(s) clojure elixir, 2 class(es) | accepted: hand 2 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (8 of 11 runs)
+   masked:  Run an operation through the pipeline and return a sequence of its result items.
+   example: clojure B: Run an operation through the pipeline and return a sequence of its result items.
+
+[49431fb9be] reference cell | 1 language(s) ts (code), 2 class(es) | accepted: hand 2 | verdict: ok | template: not found
+   masked:  `await client.Ⓔ().create({ $action: 'terraform', Ⓕ: 'Ⓔ_id' })`
+   example: ts B: `await client.Planet().create({ $action: 'terraform', id: 'planet_id' })`
+
+[a32ec5077c] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 10 runs)
+   masked:  Resolves to an array of entities, one per record, and throws on failure.
+   example: ts B: Resolves to an array of entities, one per record, and throws on failure.
+
+[b1666a52ac] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 8 runs)
+   masked:  Resolves to the entity, marked as deleted, and throws on failure.
+   example: ts B: Resolves to the entity, marked as deleted, and throws on failure.
+
+[9b677d094c] reference cell | 1 language(s) ts (code), 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  `options.server`
+   example: ts B: `options.server`
+
+[5c71a59923] reference cell | 1 language(s) ts (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  `options.server.tenant`
+   example: ts B: `options.server.tenant`
+
+[6c3aa41f7c] reference cell | 1 language(s) ts (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  `options.server.region`
+   example: ts B: `options.server.region`
+
+[c002d31995] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  **Returns:** `object`.
+   example: ts B: **Returns:** `object`.
+
+[ea3964d6ba] reference sentence | 1 language(s) ts (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  On failure it resolves to the error instead.
+   example: ts B: On failure it resolves to the error instead.
+
+[9f6d56f5fb] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 5 runs)
+   masked:  Resolves to the entity, and throws on failure.
+   example: ts B: Resolves to the entity, and throws on failure.
+
+[4c93659f14] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (9 of 12 runs)
+   masked:  Run an operation through the pipeline and yield its result items as an async iterator.
+   example: ts B: Run an operation through the pipeline and yield its result items as an async iterator.
+
+[0612fc4d79] reference heading | 1 language(s) ts (code), 1 class(es) | accepted: hand 1 | verdict: NONE | template: not found
+   masked:  ⟦ref.entity.6.sig⟧
+   example: ts B: `name: string`
+
+[f1bcce31a0] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  The entity name.
+   example: ts B: The entity name.
+
+[d6fd5c15c3] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 6 runs)
+   masked:  Resolves to the created entity, and throws on failure.
+   example: ts B: Resolves to the created entity, and throws on failure.
+
+[863f603c11] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 6 runs)
+   masked:  Resolves to the updated entity, and throws on failure.
+   example: ts B: Resolves to the updated entity, and throws on failure.
+
+[b7eb8b0b55] reference sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 6 runs)
+   masked:  Resolves to the patched entity, and throws on failure.
+   example: ts crud-bare: Resolves to the patched entity, and throws on failure.
+
+[74c9db4d88] reference cell | 1 language(s) ts (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  `options.server.account`
+   example: ts server-mixed: `options.server.account`
+
+[0bf479489c] reference sentence | 1 language(s) go (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Returns the entity; `err` is non-nil on failure.
+   example: go B: Returns the entity; `err` is non-nil on failure.
+
+[2bd8ff9d43] reference sentence | 1 language(s) go (note), 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  It sends the items on the returned channel, which closes when the stream ends.
+   example: go B: It sends the items on the returned channel, which closes when the stream ends.
+
+[0daa28353f] reference sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (5 of 5 runs)
+   masked:  Create a test client with mock features active.
+   example: go B: Create a test client with mock features active.
+
+[1f08cc692d] reference sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  It takes no arguments.
+   example: go B: It takes no arguments.
+
+[b0b5838164] reference cell | 1 language(s) go (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  ⟦ref.container|ref.valueType.OBJECT⟧
+   example: go B: `map[string]any`
+
+[ab92519649] reference sentence | 1 language(s) go (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  `err` is non-nil on failure.
+   example: go B: `err` is non-nil on failure.
+
+[9f4a983dc3] reference sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (5 of 8 runs)
+   masked:  Run an operation through the pipeline and stream its result items.
+   example: go B: Run an operation through the pipeline and stream its result items.
+
+[9f4208cfb6] reference sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (17 of 17 runs)
+   masked:  The operation starts at the call and runs beside the caller, handing over each item as the caller takes it.
+   example: go B: The operation starts at the call and runs beside the caller, handing over each item as the caller takes it.
+
+[b1e62e338a] reference cell | 1 language(s) go (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `_, err := client.Ⓔ(nil).Create(map[string]any{"$action": "terraform", "Ⓕ": "Ⓔ_id"}, nil); if err != nil { panic(err) }`
+   example: go B: `_, err := client.Planet(nil).Create(map[string]any{"$action": "terraform", "id": "planet_id"}, nil); if err != nil { panic(err) }`
+
+[440d837326] reference heading | 1 language(s) py (code), 2 class(es) | accepted: hand 2 | verdict: ok | template: not found
+   masked:  ⟦ref.entity.1.sig⟧
+   example: py B: `data_set(args=None)`
+
+[dfa5cb5552] reference cell | 1 language(s) py (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  ⟦recordType|ref.container|ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧
+   example: py B: `dict`
+
+[107a756204] reference cell | 1 language(s) py (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  `fetchargs["ctrl"]`
+   example: py B: `fetchargs["ctrl"]`
+
+[7df20388eb] reference sentence | 1 language(s) py (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (8 of 11 runs)
+   masked:  Run an operation through the pipeline and yield its result items as a generator.
+   example: py B: Run an operation through the pipeline and yield its result items as a generator.
+
+[76fabc0077] reference cell | 1 language(s) py (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `client.Ⓔ().create({"$action": "terraform", "Ⓕ": "Ⓔ_id"})`
+   example: py B: `client.Planet().create({"$action": "terraform", "id": "planet_id"})`
+
+[b677be31b2] reference sentence | 1 language(s) c (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Returns the entity, or `NULL` with `*err` set on failure.
+   example: c B: Returns the entity, or `NULL` with `*err` set on failure.
+
+[475c89eecd] reference heading | 1 language(s) c (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  ⟦ref.client.0.sig⟧
+   example: c B: `voxgig_value* sdk_options_map(DemoSDK* client)`
+
+[2e09bb327d] reference sentence | 1 language(s) c (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (6 of 6 runs)
+   masked:  Return a deep copy of the current SDK options.
+   example: c B: Return a deep copy of the current SDK options.
+
+[fb0d7d681d] reference heading | 1 language(s) c (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  ⟦ref.client.1.sig⟧
+   example: c B: `Utility* sdk_get_utility(DemoSDK* client)`
+
+[2666022713] reference sentence | 1 language(s) c (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (5 of 5 runs)
+   masked:  Return a copy of the SDK utility object.
+   example: c B: Return a copy of the SDK utility object.
+
+[c7a96c7e57] reference sentence | 1 language(s) c (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  It returns `NULL` with `*err` set on failure.
+   example: c B: It returns `NULL` with `*err` set on failure.
+
+[b1c01c6444] reference heading | 1 language(s) c (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Common ⟦⟧
+   example: c B: Common Functions
+
+[c0e844726c] reference cell | 1 language(s) c (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `PNError* err = NULL; Entity* Ⓔ = demo_Ⓔ(client, NULL); Ⓔ->vt->create(Ⓔ, cmap(2, "$action", v_str("terraform"), "Ⓕ", v_str("Ⓔ_id")), NULL, &err);`
+   example: c B: `PNError* err = NULL; Entity* planet = demo_planet(client, NULL); planet->vt->create(planet, cmap(2, "$action", v_str("terraform"), "id", v_str("planet_id")), NULL, &err);`
+
+[847a5afbe6] reference comment | 1 language(s) c (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/example.ts (1 of 1 runs)
+   masked:  Fields to update
+   example: c B: Fields to update
+
+[6c805e005d] reference comment | 1 language(s) c (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/example.ts (2 of 2 runs)
+   masked:  Only the fields to change
+   example: c crud-bare: Only the fields to change
+
+[b7514cf478] reference sentence | 1 language(s) zig (note), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with whatever data the failure left; otherwise `.err` holds the branded error.
+   example: zig B: Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with whatever data the failure left; otherwise `.err` holds the branded error.
+
+[083fc645cd] reference sentence | 1 language(s) zig (note), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  On failure it returns the error of its error union, for `try` or `catch`.
+   example: zig B: On failure it returns the error of its error union, for `try` or `catch`.
+
+[cca0deacc3] reference cell | 1 language(s) zig (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `switch (client.Ⓔ(h.vnull()).create(h.jo(&.{.{ "$action", h.vstr("terraform") }, .{ "Ⓕ", h.vstr("Ⓔ_id") }}), h.vnull())) { .ok => {}, .err => \|e\| std.debug.print("create failed: {s}\n", .{e.msg}), }`
+   example: zig B: `switch (client.planet(h.vnull()).create(h.jo(&.{.{ "$action", h.vstr("terraform") }, .{ "id", h.vstr("planet_id") }}), h.vnull())) { .ok => {}, .err => \|e\| std.debug.print("create failed: {s}\n", .{e.msg}), }`
+
+[939f3f59bd] reference heading | 1 language(s) clojure (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  sdk.api
+   example: clojure B: sdk.api
+
+[88547b1a3d] reference heading | 1 language(s) clojure (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Constructor
+   example: clojure B: Constructor
+
+[bce8a9347a] reference sentence | 1 language(s) clojure (provider-literal), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  The SDK utility object is reached through `sdk.client`, which `sdk.api` does not re-export:
+   example: clojure B: The SDK utility object is reached through `sdk.client`, which `sdk.api` does not re-export:
+
+[e179fbae04] reference sentence | 1 language(s) clojure (note), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/example.ts (1 of 2 runs)
+   masked:  `(sdk.client/get-Ⓔ client)` returns a copy of it.
+   example: clojure B: `(sdk.client/get-utility client)` returns a copy of it.
+
+[afa4347469] reference sentence | 1 language(s) clojure (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 3 runs)
+   masked:  Its `data` argument holds the entity options: pass ⟦⟧ for none.
+   example: clojure B: Its `data` argument holds the entity options: pass `nil` for none.
+
+[cebb5984c9] reference cell | 1 language(s) clojure (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `(e-Ⓔ/create (api/Ⓔ client nil) (vs/jm "$action" "terraform" "Ⓕ" "Ⓔ_id") nil)`
+   example: clojure B: `(e-planet/create (api/planet client nil) (vs/jm "$action" "terraform" "id" "planet_id") nil)`
+
+[3deec669ce] reference sentence | 1 language(s) rust (note), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  The result map always comes back inside `Ok`.
+   example: rust B: The result map always comes back inside `Ok`.
+
+[94f6b2ab2b] reference heading | 1 language(s) rust (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  `stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, ⓈError>`
+   example: rust B: `stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, DemoError>`
+
+[ed524ea13a] reference cell | 1 language(s) rust (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `client.Ⓔ(Value::Noval).create(jo(vec![("$action", Value::str("terraform")), ("Ⓕ", Value::str("Ⓔ_id"))]), Value::Noval).unwrap();`
+   example: rust B: `client.planet(Value::Noval).create(jo(vec![("$action", Value::str("terraform")), ("id", Value::str("planet_id"))]), Value::Noval).unwrap();`
+
+[4b1f2e32dd] reference sentence | 1 language(s) elixir (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (3 of 3 runs)
+   masked:  Create a new SDK client instance.
+   example: elixir B: Create a new SDK client instance.
+
+[857a1c7f50] reference sentence | 1 language(s) elixir (provider-literal), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  Build `options` from a native map with `Ⓢ.Helpers.deep/1`.
+   example: elixir B: Build `options` from a native map with `Demo.Helpers.deep/1`.
+
+[fef59d5955] reference sentence | 1 language(s) elixir (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Pass ⟦⟧ for no initial options.
+   example: elixir B: Pass `nil` for no initial options.
+
+[8b566aed10] reference sentence | 1 language(s) elixir (note), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  It is the client's own node, not a copy.
+   example: elixir B: It is the client's own node, not a copy.
+
+[78e12a7505] reference heading | 1 language(s) elixir (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  ⟦ref.client.2.sig⟧
+   example: elixir B: `direct(client, fetchargs \\ nil) :: map()`
+
+[eecb230369] reference header | 1 language(s) elixir (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Key
+   example: elixir B: Key
+
+[4fd58b94dc] reference heading | 1 language(s) elixir (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  ⟦ref.client.3.sig⟧
+   example: elixir B: `prepare(client, fetchargs \\ nil) :: map()`
+
+[72c41ba898] reference cell | 1 language(s) elixir (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `Ⓔ = Ⓢ.Ⓔ(sdk); Ⓢ.Entity.Ⓔ.create(Ⓔ, Ⓢ.Helpers.deep(%{"$action" => "terraform", "Ⓕ" => "Ⓔ_id"}))`
+   example: elixir B: `planet = Demo.planet(sdk); Demo.Entity.Planet.create(planet, Demo.Helpers.deep(%{"$action" => "terraform", "id" => "planet_id"}))`
+
+[22cfc13b27] reference heading | 1 language(s) elixir (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (1 of 1 runs)
+   masked:  Field Usage by Operation
+   example: elixir ref-issues: Field Usage by Operation
+
+[30308ece64] reference header | 1 language(s) elixir (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  update
+   example: elixir ref-issues: update
+
+[3531b58c59] reference cell | 1 language(s) elixir (code), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  `Ⓕ`
+   example: elixir ref-issues: `level`
+
+[e078a02b2e] reference cell | 1 language(s) elixir (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Yes
+   example: elixir ref-issues: Yes
+
+[114c546be5] reference header | 1 language(s) elixir (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Field
+   example: elixir ref-issues: Field
+
+[7bebc239a6] reference heading | 1 language(s) rb (code), 3 class(es) | accepted: hand 3 | verdict: ok | template: not found
+   masked:  ⟦ref.entity.4.sig⟧
+   example: rb B: `make -> AmbientEntity`
+
+[7ba0882026] reference sentence | 1 language(s) rb (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeRef.ts (8 of 11 runs)
+   masked:  Run an operation through the pipeline and return an iterator over its result items.
+   example: rb B: Run an operation through the pipeline and return an iterator over its result items.
+
+[91de682ebb] reference sentence | 1 language(s) rb (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 3 runs)
+   masked:  List entities matching the given criteria.
+   example: rb B: List entities matching the given criteria.
+
+[b5b5c85e92] reference cell | 1 language(s) rb (code), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `client.Ⓔ.create({ "$action" => "terraform", "Ⓕ" => "Ⓔ_id" })`
+   example: rb B: `client.Planet.create({ "$action" => "terraform", "id" => "planet_id" })`
+
+[0ea856bddf] rootquick comment | 4 language(s) clojure elixir py rb, 8 class(es) | accepted: rule record 6, hand 2 | verdict: ok | template: not found
+   masked:  Load a Ⓔ: the entity; raises on failure
+   example: py B: Load an ambient: the entity; raises on failure
+
+[ae972576e9] rootquick comment | 4 language(s) clojure elixir py rb, 4 class(es) | accepted: rule record 3, hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 10 runs)
+   masked:  List Ⓔ records: a ⟦⟧ of entities, one per record; raises on failure
+   example: py crud-bare: List planet records: a list of entities, one per record; raises on failure
+
+[23dc789f01] rootquick comment | 2 language(s) rust zig, 4 class(es) | accepted: hand 4 | verdict: ok | template: not found
+   masked:  Load a Ⓔ: ⟦⟧ is the entity; ⟦⟧ holds the failure
+   example: zig B: Load an ambient: .ok is the entity; .err holds the failure
+
+[93ac2276de] rootquick comment | 2 language(s) rust zig, 2 class(es) | accepted: hand 2 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 13 runs)
+   masked:  List Ⓔ records: ⟦⟧ is a ⟦⟧ of entities, one per record; ⟦⟧ holds the failure
+   example: zig crud-bare: List planet records: .ok is a slice of entities, one per record; .err holds the failure
+
+[99a8153c15] rootquick comment | 1 language(s) ts (unexplained), 3 class(es) | accepted: rule record 3 | verdict: ok | template: not found
+   masked:  Load a Ⓔ: the entity, a ⒺEntity; throws on failure
+   example: ts B: Load an ambient: the entity, an AmbientEntity; throws on failure
+
+[a0b269a293] rootquick comment | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 9 runs)
+   masked:  List Ⓔ records: a ⒺEntity[], one entity per record; throws on failure
+   example: ts crud-bare: List planet records: a PlanetEntity[], one entity per record; throws on failure
+
+[90e58e8669] rootquick comment | 1 language(s) c (shared-condition), 2 class(es) | accepted: rule record 2 | verdict: ok | template: ts/src/helpers/example.ts (1 of 7 runs)
+   masked:  Load a Ⓔ: the entity; *err is set on failure
+   example: c B: Load an ambient: the entity; *err is set on failure
+
+[e71030dc82] rootquick comment | 1 language(s) c (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 13 runs)
+   masked:  List Ⓔ records: a NULL-terminated array of entities, one per record; *err is set on failure
+   example: c crud-bare: List planet records: a NULL-terminated array of entities, one per record; *err is set on failure
+
+[25f8905d37] tutorial sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (6 of 6 runs)
+   masked:  The example passes the API key from the `DEMO_APIKEY` environment variable as the `apikey` option.
+   example: ts B: The example passes the API key from the `DEMO_APIKEY` environment variable as the `apikey` option.
+
+[4966aea016] tutorial sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (7 of 8 runs)
+   masked:  The example passes the API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables as the `apikey` and `secret` options.
+   example: ts auth-basic: The example passes the API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables as the `apikey` and `secret` options.
+
+[9bcb2825f2] tutorial sentence | 9 language(s) c clojure elixir go py rb rust ts zig, 9 class(es) | accepted: hand 9 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (2 of 7 runs)
+   masked:  Satellite is nested under planet, so the match also gives `Ⓔ_id`.
+   example: ts doc-nested: Satellite is nested under planet, so the match also gives `planet_id`.
+
+[ebfc2354cd] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (4 of 8 runs)
+   masked:  This tutorial walks through creating a client and loading an ambient.
+   example: ts B: This tutorial walks through creating a client and loading an ambient.
+
+[9ca694d427] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (4 of 4 runs)
+   masked:  Every operation returns entities, not raw records.
+   example: ts B: Every operation returns entities, not raw records.
+
+[7a955e855f] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 15 class(es) | accepted: rule record 15 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (3 of 3 runs)
+   masked:  The server URL is templated, so `server` must give ⟦⟧; `region` defaults to `eu`.
+   example: ts B: The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`.
+
+[21fc35c768] tutorial heading | 8 language(s) c clojure elixir py rb rust ts zig, 8 class(es) | accepted: hand 8 | verdict: ok | template: not found
+   masked:  Ⓝ. Create, update, patch, and remove a planet
+   example: ts crud-bare: 4. Create, update, patch, and remove a planet
+
+[836725aec1] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (5 of 18 runs)
+   masked:  This tutorial walks through creating a client, listing planet records, loading a planet, and creating, updating, patching, and removing a planet.
+   example: ts crud-bare: This tutorial walks through creating a client, listing planet records, loading a planet, and creating, updating, patching, and removing a planet.
+
+[e3dc10a6b7] tutorial comment | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/helpers/example.ts (7 of 12 runs)
+   masked:  Patch — sends only the fields given; the id comes off the created entity's record
+   example: ts crud-bare: Patch — sends only the fields given; the id comes off the created entity's record
+
+[a102512ba9] tutorial comment | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/helpers/example.ts (4 of 7 runs)
+   masked:  Update — the id comes off the created entity's record
+   example: ts crud-bare: Update — the id comes off the created entity's record
+
+[728df7c1c3] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (5 of 16 runs)
+   masked:  This tutorial walks through creating a client, listing planet records, loading a planet, and creating and removing a planet.
+   example: ts crud-noupdate: This tutorial walks through creating a client, listing planet records, loading a planet, and creating and removing a planet.
+
+[81aabf087b] tutorial heading | 8 language(s) c clojure elixir py rb rust ts zig, 8 class(es) | accepted: hand 8 | verdict: ok | template: not found
+   masked:  Ⓝ. Create and remove a planet
+   example: ts crud-noupdate: 4. Create and remove a planet
+
+[1760a2d205] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (4 of 8 runs)
+   masked:  This tutorial walks through creating a client and listing console records.
+   example: ts doc-list: This tutorial walks through creating a client and listing console records.
+
+[219aa7c229] tutorial heading | 8 language(s) c clojure elixir py rb rust ts zig, 8 class(es) | accepted: hand 8 | verdict: ok | template: not found
+   masked:  Ⓝ. Create, update, and remove a planet
+   example: ts doc-nested: 4. Create, update, and remove a planet
+
+[3ab3fb2b2e] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (5 of 17 runs)
+   masked:  This tutorial walks through creating a client, listing planet records, loading a satellite, and creating, updating, and removing a planet.
+   example: ts doc-nested: This tutorial walks through creating a client, listing planet records, loading a satellite, and creating, updating, and removing a planet.
+
+[bcbefa9d5b] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (4 of 4 runs)
+   masked:  This tutorial walks through creating a client.
+   example: ts ent-none: This tutorial walks through creating a client.
+
+[0416b3a5e1] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (5 of 11 runs)
+   masked:  This tutorial walks through creating a client, listing planet records, and loading a planet.
+   example: ts ex-readonly: This tutorial walks through creating a client, listing planet records, and loading a planet.
+
+[787064e0dd] tutorial sentence | 8 language(s) c clojure elixir go py rust ts zig, 8 class(es) | accepted: rule record 8 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (4 of 8 runs)
+   masked:  This tutorial walks through creating a client and updating a gauge.
+   example: ts ref-issues: This tutorial walks through creating a client and updating a gauge.
+
+[b83e95bec6] tutorial heading | 8 language(s) c clojure elixir py rb rust ts zig, 8 class(es) | accepted: hand 8 | verdict: ok | template: not found
+   masked:  Ⓝ. Update a gauge
+   example: ts ref-issues: 2. Update a gauge
+
+[cb33d087c0] tutorial heading | 7 language(s) c clojure elixir py rust ts zig, 7 class(es) | accepted: rule record 7 | verdict: ok | template: not found
+   masked:  Ⓝ. Load a Ⓔ
+   example: ts B: 2. Load an ambient
+
+[663f4dd150] tutorial comment | 4 language(s) clojure elixir py rb, 4 class(es) | accepted: hand 3, rule record 1 | verdict: ok | template: not found
+   masked:  Create — returns the created entity; ⟦⟧ reads its record
+   example: py crud-bare: Create — returns the created entity; data_get() reads its record
+
+[f2515f53be] tutorial sentence | 3 language(s) clojure elixir py, 3 class(es) | accepted: hand 3 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (5 of 15 runs)
+   masked:  Each write returns the entity it wrote (a removed one is marked as deleted), and raises on failure.
+   example: py crud-bare: Each write returns the entity it wrote (a removed one is marked as deleted), and raises on failure.
+
+[d7a6195670] tutorial sentence | 3 language(s) clojure elixir py, 3 class(es) | accepted: hand 3 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 6 runs)
+   masked:  ⟦⟧ returns the entity it wrote, and raises on failure.
+   example: py ref-issues: `update()` returns the entity it wrote, and raises on failure.
+
+[263b1f2143] tutorial sentence | 2 language(s) rust zig, 2 class(es) | accepted: hand 2 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 3 runs)
+   masked:  `load` returns a result whose ⟦⟧ is the entity and whose ⟦⟧ reports failure; ⟦⟧ reads its record.
+   example: zig B: `load` returns a result whose `.ok` is the entity and whose `.err` reports failure; `asEntity().data(null)` reads its record.
+
+[e155e1e5ca] tutorial sentence | 2 language(s) rust zig, 2 class(es) | accepted: hand 2 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 9 runs)
+   masked:  `list` returns a result whose ⟦⟧ is a ⟦⟧ of entities, one per record, and whose ⟦⟧ reports failure; ⟦⟧ reads an entity's record.
+   example: zig crud-bare: `list` returns a result whose `.ok` is a slice of entities, one per record, and whose `.err` reports failure; `asEntity().data(null)` reads an entity's record.
+
+[827b348227] tutorial sentence | 2 language(s) rust zig, 2 class(es) | accepted: hand 2 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (6 of 14 runs)
+   masked:  Each write returns a result whose ⟦⟧ is the entity it wrote (a removed one is marked as deleted) and whose ⟦⟧ reports failure.
+   example: zig crud-bare: Each write returns a result whose `.ok` is the entity it wrote (a removed one is marked as deleted) and whose `.err` reports failure.
+
+[ad23683b78] tutorial comment | 2 language(s) rust zig, 2 class(es) | accepted: hand 1, rule record 1 | verdict: ok | template: not found
+   masked:  Create — ⟦⟧ carries the created entity; ⟦⟧ reads its record
+   example: zig crud-bare: Create — .ok carries the created entity; asEntity().data(null) reads its record
+
+[746f265c38] tutorial sentence | 2 language(s) rust zig, 2 class(es) | accepted: hand 2 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 5 runs)
+   masked:  `update` returns a result whose ⟦⟧ is the entity it wrote and whose ⟦⟧ reports failure.
+   example: zig ref-issues: `update` returns a result whose `.ok` is the entity it wrote and whose `.err` reports failure.
+
+[74ef39d5b3] tutorial sentence | 2 language(s) clojure elixir, 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  `load` returns the entity and raises on failure; ⟦⟧ reads its record.
+   example: clojure B: `load` returns the entity and raises on failure; `((:data-get ambient))` reads its record.
+
+[f4a3261b79] tutorial sentence | 2 language(s) clojure elixir, 2 class(es) | accepted: rule record 1, hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 10 runs)
+   masked:  `list` returns a ⟦⟧ of entities, one per record, and raises on failure; ⟦⟧ reads an entity's record.
+   example: clojure crud-bare: `list` returns a vector of entities, one per record, and raises on failure; `((:data-get planet))` reads an entity's record.
+
+[ed44d07e36] tutorial sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 5 runs)
+   masked:  `load()` resolves to the entity and throws on failure; `.data()` reads its record.
+   example: ts B: `load()` resolves to the entity and throws on failure; `.data()` reads its record.
+
+[5e178e9588] tutorial sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 11 runs)
+   masked:  `list()` resolves to an array of entities, one per record, and throws on failure; `.data()` reads an entity's record.
+   example: ts crud-bare: `list()` resolves to an array of entities, one per record, and throws on failure; `.data()` reads an entity's record.
+
+[6d459aa83b] tutorial sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (6 of 16 runs)
+   masked:  Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure.
+   example: ts crud-bare: Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure.
+
+[64560e9dff] tutorial comment | 1 language(s) ts (unexplained), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  Create — resolves to the created entity; .data() reads its record
+   example: ts crud-bare: Create — resolves to the created entity; .data() reads its record
+
+[78dac4093d] tutorial sentence | 1 language(s) ts (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 7 runs)
+   masked:  `update()` resolves to the entity it wrote, and throws on failure.
+   example: ts ref-issues: `update()` resolves to the entity it wrote, and throws on failure.
+
+[b4e03207de] tutorial sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (2 of 6 runs)
+   masked:  The program below runs these Ⓝ steps in order.
+   example: go B: The program below runs these 2 steps in order.
+
+[3cba044db7] tutorial sentence | 1 language(s) go (unexplained), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  **Create a client.**
+   example: go B: **Create a client.**
+
+[e9015df1ee] tutorial sentence | 1 language(s) go (unexplained), 2 class(es) | accepted: hand 2 | verdict: ok | template: not found
+   masked:  **Load a Ⓔ.**
+   example: go B: **Load an ambient.**
+
+[20caf7c646] tutorial sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (5 of 6 runs)
+   masked:  `Load` returns `(value, error)`: the value is the entity, and a non-nil `err` reports failure; `Data()` reads its record.
+   example: go B: `Load` returns `(value, error)`: the value is the entity, and a non-nil `err` reports failure; `Data()` reads its record.
+
+[a0f86c7f47] tutorial comment | 1 language(s) go (unexplained), 5 class(es) | accepted: rule record 5 | verdict: ok | template: not found
+   masked:  Load a Ⓔ: the entity; err is non-nil on failure
+   example: go B: Load an ambient: the entity; err is non-nil on failure
+
+[2a35f2bf45] tutorial comment | 1 language(s) go (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 9 runs)
+   masked:  Create — the value is the created entity; Data() reads its record
+   example: go crud-bare: Create — the value is the created entity; Data() reads its record
+
+[288c093dd4] tutorial sentence | 1 language(s) go (unexplained), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  **List Ⓔ Ⓔs.**
+   example: go crud-bare: **List planet records.**
+
+[19898188ee] tutorial sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (3 of 7 runs)
+   masked:  `List` returns `(value, error)`: the value is a `[]any` of entities, one per record, and a non-nil `err` reports failure.
+   example: go crud-bare: `List` returns `(value, error)`: the value is a `[]any` of entities, one per record, and a non-nil `err` reports failure.
+
+[a06a8df5bb] tutorial sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/example.ts (1 of 1 runs)
+   masked:  `Data()` reads an entity's record.
+   example: go crud-bare: `Data()` reads an entity's record.
+
+[a8c3a1d8ce] tutorial sentence | 1 language(s) go (unexplained), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  **Create, update, patch, and remove a Ⓔ.**
+   example: go crud-bare: **Create, update, patch, and remove a planet.**
+
+[2fe75fe657] tutorial sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (7 of 15 runs)
+   masked:  Each write returns `(value, error)` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure.
+   example: go crud-bare: Each write returns `(value, error)` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure.
+
+[3f27586bc2] tutorial comment | 1 language(s) go (shared-condition), 2 class(es) | accepted: rule record 2 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 12 runs)
+   masked:  List Ⓔ records: a []any of entities, one per record; err is non-nil on failure
+   example: go crud-bare: List planet records: a []any of entities, one per record; err is non-nil on failure
+
+[4235f37e3f] tutorial comment | 1 language(s) go (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Remove
+   example: go crud-bare: Remove
+
+[ea12b61c7f] tutorial sentence | 1 language(s) go (unexplained), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  **Create and remove a Ⓔ.**
+   example: go crud-noupdate: **Create and remove a planet.**
+
+[a2c72437b6] tutorial sentence | 1 language(s) go (unexplained), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  **Create, update, and remove a Ⓔ.**
+   example: go doc-nested: **Create, update, and remove a planet.**
+
+[4e460e7bba] tutorial sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/cmp/ReadmeQuick.ts (3 of 3 runs)
+   masked:  The program below runs this step.
+   example: go ent-none: The program below runs this step.
+
+[26d1a4e4aa] tutorial sentence | 1 language(s) go (unexplained), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  **Update a Ⓔ.**
+   example: go ref-issues: **Update a gauge.**
+
+[f832084416] tutorial sentence | 1 language(s) go (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (4 of 8 runs)
+   masked:  `Update` returns `(value, error)`: the value is the entity it wrote, and a non-nil `err` reports failure.
+   example: go ref-issues: `Update` returns `(value, error)`: the value is the entity it wrote, and a non-nil `err` reports failure.
+
+[fa74e53c4a] tutorial comment | 1 language(s) go (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Update
+   example: go ref-issues: Update
+
+[86db54d92d] tutorial sentence | 1 language(s) py (unexplained), 2 class(es) | accepted: rule record 2 | verdict: ok | template: not found
+   masked:  ⟦⟧ returns the entity and raises on failure; ⟦⟧ reads its record (a ⟦⟧).
+   example: py B: `load()` returns the entity and raises on failure; `data_get()` reads its record (a `dict`).
+
+[e0c2bbfe41] tutorial sentence | 1 language(s) py (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 8 runs)
+   masked:  ⟦⟧ returns a ⟦⟧ of entities, one per record, and raises on failure; ⟦⟧ reads an entity's record (a ⟦⟧).
+   example: py crud-bare: `list()` returns a `list` of entities, one per record, and raises on failure; `data_get()` reads an entity's record (a `dict`).
+
+[790326d5b9] tutorial sentence | 1 language(s) c (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 1 runs)
+   masked:  `load()` returns the entity, or `NULL` with `*err` set on failure; `vt->data` reads its record.
+   example: c B: `load()` returns the entity, or `NULL` with `*err` set on failure; `vt->data` reads its record.
+
+[639e10468d] tutorial sentence | 1 language(s) c (shared-condition), 1 class(es) | accepted: rule record 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 8 runs)
+   masked:  `list()` returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure, so check `err` after the call; `vt->data` reads an entity's record.
+   example: c crud-bare: `list()` returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure, so check `err` after the call; `vt->data` reads an entity's record.
+
+[165ac95a50] tutorial comment | 1 language(s) c (unexplained), 1 class(es) | accepted: rule record 1 | verdict: ok | template: not found
+   masked:  Create — returns the created entity, or NULL with *err set; vt->data reads its record
+   example: c crud-bare: Create — returns the created entity, or NULL with *err set; vt->data reads its record
+
+[90c00da33e] tutorial sentence | 1 language(s) c (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (5 of 14 runs)
+   masked:  Each write returns the entity it wrote (a removed one is marked as deleted), or `NULL` with `*err` set on failure, so check `err` after each call.
+   example: c crud-bare: Each write returns the entity it wrote (a removed one is marked as deleted), or `NULL` with `*err` set on failure, so check `err` after each call.
+
+[6d4b60876c] tutorial sentence | 1 language(s) c (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (1 of 5 runs)
+   masked:  `update()` returns the entity it wrote, or `NULL` with `*err` set on failure, so check `err` after each call.
+   example: c ref-issues: `update()` returns the entity it wrote, or `NULL` with `*err` set on failure, so check `err` after each call.
+
+[3426e9ddb3] tutorial sentence | 1 language(s) elixir (note), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `Voxgig.Struct.getelem/2` reads an item.
+   example: elixir crud-bare: `Voxgig.Struct.getelem/2` reads an item.
+
+[d938f29a61] tutorial comment | 1 language(s) rb (shared-condition), 1 class(es) | accepted: hand 1 | verdict: ok | template: ts/src/helpers/runtimeprose.ts (2 of 8 runs)
+   masked:  `list` returns an `Array` of entities, one per record, and raises on failure; `data_get` reads an entity's record (a `Hash`).
+   example: rb crud-bare: `list` returns an `Array` of entities, one per record, and raises on failure; `data_get` reads an entity's record (a `Hash`).
+
+[26ebb140ea] tutorial comment | 1 language(s) rb (unexplained), 1 class(es) | accepted: hand 1 | verdict: ok | template: not found
+   masked:  `load` returns the entity and raises on failure; `data_get` reads its record (a `Hash`).
+   example: rb crud-bare: `load` returns the entity and raises on failure; `data_get` reads its record (a `Hash`).

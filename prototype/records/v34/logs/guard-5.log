@@ -1,0 +1,172 @@
+▶ runtimefacts
+  ✔ every provider is checked (1.600238ms)
+  ✔ every compiled forms file has its source, and every provider a forms source (1.211433ms)
+  ✔ c: the language declares its runtime forms (0.746301ms)
+  ✖ c: the declared facts are what its runtime defines (54.146751ms)
+  ✖ c: every declared fact is accounted for (49.029543ms)
+  ✔ c: each check fails when its fact is changed (negative controls) (1171.248526ms)
+  ✔ clojure: the language declares its runtime forms (0.75282ms)
+  ✔ clojure: the declared facts are what its runtime defines (7.327211ms)
+  ✔ clojure: every declared fact is accounted for (14.78859ms)
+  ✔ clojure: each check fails when its fact is changed (negative controls) (324.930151ms)
+  ✔ cpp: the language declares its runtime forms (0.790282ms)
+  ✔ cpp: the declared facts are what its runtime defines (13.537461ms)
+  ✔ cpp: every declared fact is accounted for (17.89681ms)
+  ✔ cpp: each check fails when its fact is changed (negative controls) (596.294147ms)
+  ✔ csharp: the language declares its runtime forms (0.715618ms)
+  ✔ csharp: the declared facts are what its runtime defines (10.347871ms)
+  ✔ csharp: every declared fact is accounted for (12.844577ms)
+  ✔ csharp: each check fails when its fact is changed (negative controls) (412.897637ms)
+  ✔ elixir: the language declares its runtime forms (0.837144ms)
+  ✔ elixir: the declared facts are what its runtime defines (6.908378ms)
+  ✔ elixir: every declared fact is accounted for (11.008898ms)
+  ✔ elixir: each check fails when its fact is changed (negative controls) (301.167586ms)
+  ✔ go: the language declares its runtime forms (0.78617ms)
+  ✔ go: the declared facts are what its runtime defines (6.198986ms)
+  ✔ go: every declared fact is accounted for (8.713594ms)
+  ✔ go: each check fails when its fact is changed (negative controls) (272.398295ms)
+  ✔ java: the language declares its runtime forms (0.684601ms)
+  ✔ java: the declared facts are what its runtime defines (18.077668ms)
+  ✔ java: every declared fact is accounted for (12.429291ms)
+  ✔ java: each check fails when its fact is changed (negative controls) (514.606958ms)
+  ✔ js: the language declares its runtime forms (0.751006ms)
+  ✔ js: the declared facts are what its runtime defines (6.591017ms)
+  ✔ js: every declared fact is accounted for (7.319156ms)
+  ✔ js: each check fails when its fact is changed (negative controls) (216.961152ms)
+  ✔ kotlin: the language declares its runtime forms (0.673972ms)
+  ✔ kotlin: the declared facts are what its runtime defines (10.40056ms)
+  ✔ kotlin: every declared fact is accounted for (9.378859ms)
+  ✔ kotlin: each check fails when its fact is changed (negative controls) (281.487918ms)
+  ✔ lua: the language declares its runtime forms (0.802671ms)
+  ✔ lua: the declared facts are what its runtime defines (5.418156ms)
+  ✔ lua: every declared fact is accounted for (9.305798ms)
+  ✔ lua: each check fails when its fact is changed (negative controls) (311.641968ms)
+  ✔ ocaml: the language declares its runtime forms (0.77137ms)
+  ✔ ocaml: the declared facts are what its runtime defines (7.129011ms)
+  ✔ ocaml: every declared fact is accounted for (9.715397ms)
+  ✔ ocaml: each check fails when its fact is changed (negative controls) (296.162859ms)
+  ✔ perl: the language declares its runtime forms (0.64419ms)
+  ✔ perl: the declared facts are what its runtime defines (4.663215ms)
+  ✔ perl: every declared fact is accounted for (8.085589ms)
+  ✔ perl: each check fails when its fact is changed (negative controls) (251.932658ms)
+  ✔ php: the language declares its runtime forms (0.991699ms)
+  ✔ php: the declared facts are what its runtime defines (5.479851ms)
+  ✔ php: every declared fact is accounted for (13.131288ms)
+  ✔ php: each check fails when its fact is changed (negative controls) (326.176959ms)
+  ✔ py: the language declares its runtime forms (0.752874ms)
+  ✔ py: the declared facts are what its runtime defines (5.283494ms)
+  ✔ py: every declared fact is accounted for (8.708558ms)
+  ✔ py: each check fails when its fact is changed (negative controls) (287.314466ms)
+  ✔ rb: the language declares its runtime forms (0.774861ms)
+  ✔ rb: the declared facts are what its runtime defines (6.126708ms)
+  ✔ rb: every declared fact is accounted for (7.687717ms)
+  ✔ rb: each check fails when its fact is changed (negative controls) (251.440717ms)
+  ✔ rust: the language declares its runtime forms (0.601089ms)
+  ✔ rust: the declared facts are what its runtime defines (5.922741ms)
+  ✔ rust: every declared fact is accounted for (9.986991ms)
+  ✔ rust: each check fails when its fact is changed (negative controls) (316.605942ms)
+  ✔ scala: the language declares its runtime forms (0.729493ms)
+  ✔ scala: the declared facts are what its runtime defines (8.412178ms)
+  ✔ scala: every declared fact is accounted for (10.673802ms)
+  ✔ scala: each check fails when its fact is changed (negative controls) (326.183181ms)
+  ✔ swift: the language declares its runtime forms (3.169291ms)
+  ✔ swift: the declared facts are what its runtime defines (11.548577ms)
+  ✔ swift: every declared fact is accounted for (12.629673ms)
+  ✔ swift: each check fails when its fact is changed (negative controls) (297.702251ms)
+  ✔ ts: the language declares its runtime forms (0.691475ms)
+  ✔ ts: the declared facts are what its runtime defines (5.807397ms)
+  ✔ ts: every declared fact is accounted for (4.624287ms)
+  ✔ ts: each check fails when its fact is changed (negative controls) (154.710135ms)
+  ✔ zig: the language declares its runtime forms (0.62519ms)
+  ✔ zig: the declared facts are what its runtime defines (15.838173ms)
+  ✔ zig: every declared fact is accounted for (13.124287ms)
+  ✔ zig: each check fails when its fact is changed (negative controls) (466.401429ms)
+  ✔ the account, per language (SDKGEN_GUARD_REPORT=1 prints it) (294.399063ms)
+✖ runtimefacts (8164.19167ms)
+▶ runtimereader
+  ✔ forms files for every language (0.757142ms)
+  ✔ c: the forms read the runtime (20.743964ms)
+  ✔ clojure: the forms read the runtime (6.881948ms)
+  ✔ cpp: the forms read the runtime (32.055483ms)
+  ✔ csharp: the forms read the runtime (24.395957ms)
+  ✔ elixir: the forms read the runtime (11.254386ms)
+  ✔ go: the forms read the runtime (18.057439ms)
+  ✔ java: the forms read the runtime (15.61088ms)
+  ✔ js: the forms read the runtime (9.237574ms)
+  ✔ kotlin: the forms read the runtime (8.308668ms)
+  ✔ lua: the forms read the runtime (6.151615ms)
+  ✔ ocaml: the forms read the runtime (10.912698ms)
+  ✔ perl: the forms read the runtime (6.697528ms)
+  ✔ php: the forms read the runtime (12.931968ms)
+  ✔ py: the forms read the runtime (6.35857ms)
+  ✔ rb: the forms read the runtime (11.394765ms)
+  ✔ rust: the forms read the runtime (10.934676ms)
+  ✔ scala: the forms read the runtime (13.69416ms)
+  ✔ swift: the forms read the runtime (15.799843ms)
+  ✔ ts: the forms read the runtime (8.580436ms)
+  ✔ zig: the forms read the runtime (6.688137ms)
+  ✔ the table (SDKGEN_RUNTIME_TABLE=<path>) (0.124878ms)
+✔ runtimereader (259.612641ms)
+ℹ tests 105
+ℹ suites 2
+ℹ pass 103
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8653.200531
+
+✖ failing tests:
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ c: the declared facts are what its runtime defines (54.146751ms)
+  AssertionError [ERR_ASSERTION]: c: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'deleted',
+  +     what: 'ref.facts.deleted names entyvar, which the c runtime does not declare'
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'deleted', what: 'ref.facts.deleted names entyvar, which the c runtime does not declare' } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ c: every declared fact is accounted for (49.029543ms)
+  AssertionError [ERR_ASSERTION]: c: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   'ref.facts.deleted: the guard could not re-derive it from the runtime and the forms do not cite it'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'ref.facts.deleted: the guard could not re-derive it from the runtime and the forms do not cite it' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

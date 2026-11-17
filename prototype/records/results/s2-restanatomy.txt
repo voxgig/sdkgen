@@ -1,0 +1,287 @@
+summary: |
+  Analysis only. Nothing was built, and every after-figure is an estimate. I cut the 20 baseline READMEs (B) and the root README into the sections each family writes, using anchors the shared frames print (cut.py). I counted prose sharing per family and per block (share.py, kinds.py), counted how each family's sections react to the stored model variations (react.py), measured the source of each family (src.py), and mapped the catalogue entries onto families (cat.py). Scripts and outputs are in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/restanatomy/.
+  
+  Main findings:
+  (1) The documentation is not one kind of thing.
+  - Four families are mostly restatements of facts the shared description already needs: ReadmeModel and ReadmeEntity restate the REFERENCE, ReadmeTopQuick restates the quick start, and ReadmeIntro is one paragraph. The proposal fits them strongly.
+  - Two families are mostly documents about one language: ReadmeExplanation (0% of units shared by 15 or more languages, 50% found in one language only, 54% of words in one language only) and ReadmeInstall (0% shared, 81% of units and 86% of words in one language only). The proposal fits them weakly.
+  - ReadmeHowto is in between. Its prose is 69% shared, but its 1,116 code lines are mostly fixed snippets per language (direct, prepare, a custom fetch function), not printers of description values. It also holds whole runtime documents that exist in one language only: c's HTTP/TLS transport and lua's TLS.
+  - ReadmeOptions (1,206 lines) renders nothing in any of the 20 languages (D26). It is deletion, not sharing.
+  
+  (2) The headline share depends on how it is counted. Across the per-language README families, 72% of prose units are the same in at least 15 languages, but only 42% of words; for sentences alone, 56% of units and 23% of words. Short table cells and headings are shared; long sentences are not.
+  
+  (3) Two shared components with a language table already exist (ReadmeErrors, ReadmeExplanation). Both print the TypeScript row for 15 of the 20 languages (S05/X1). Their apparent 81-95% sharing is that defect.
+  
+  (4) The same facts are stated in many families. The error convention appears in 10 places, the data accessor in 10, the test client in 4, apikey in 5. A migration has to move them together, by fact, or each document contradicts itself as stage 1 found.
+  
+  Projection: 30,963 lines before (counted); about 9,300 to 13,500 after, 2.3x to 3.3x (estimated). A large part of that comes from deleting dead code (1,206 lines) and from removing duplicated content, not from writing each sentence once. Prose genuinely about one language is about 8% of units but about 19% of words (hand classification over counted bins), so it is over H1's 15% line by words. 24 of the 105 catalogue issues that name these families would still need a per-language edit; 10 of them are in the language pack. That is over H3's 10% line, as read from the issue titles and not run.
+families:
+  - [0]
+    family: ReadmeModel (README '## Reference' section)
+    lines_today: 3208
+    what_it_writes: Client heading (`### DemoSDK`, or make-sdk/SDK/Sdk_client in clojure/elixir/ocaml). Constructor code plus an option table (apikey, base, prefix, suffix, feature, extend, system). A test constructor (`### test` / `testSDK` / `test_sdk` / `TestSDK` / `NewDemoSDK`). A client methods table, an entity interface table, and a `### Result shape` (ts/js instead have Return values, DirectResult shape and FetchDef shape). Then `### Entities`, with per entity a fields table, an 'Operations:' line and an 'API path:' line. It is a summary of the REFERENCE page: the same signatures, rows and sentences.
+    prose_shared: Counted (share.py, kinds.py over B): 1,683 units; 71% are the same in at least 15 languages, 8% (135) in one language only. By words (7,429): 46% shared, 20% in one only. Sentences only (571): 73% shared, 10% in one only; their words are 36% shared and 31% in one only. Per block: the per-entity summary (965 units) is 96% shared; Entity interface 23% shared (16% in one only); Result shape 53% (25%); the client methods table 0% at the 15-language line (shared in groups of 4-14). Cut: from '## Reference' to '## Entities', subdivided at ###/#### headings.
+    differences: SYNTAX: signatures and method names (options_map/OptionsMap/options-map), type names (dict/map[string]any/Value), test constructor spelling. Five heading variants for the test client; four structural variants for the client heading (c, clojure, elixir, ocaml). LANGUAGE-API-FACT: the error and return convention written as free prose ('Raises on error', 'Dies on error', 'Throws on error', 'resolves to', `Ok`/`Err`, `.ok`/`.err`, NULL with *err set). In one language only: about 60 of the 135 units (perl 8 'Dies' rows, swift 4, cpp 6, ocaml 7). Also the collection noun (array, slice, NULL-terminated array, hashref), the accessor shape (one get/set method or a get/set pair), and functions rather than methods in c, clojure, elixir and ocaml. IDIOM-PROSE: clojure keyword-lookup accessors; elixir 'struct value node — build one from a native map'; rust 'import both traits'; c 'Always initialise err'. DRIFT: ts/js alone have the DirectResult/FetchDef shape blocks (62 output lines); 'Return values' against 'Result shape'; 'System overrides (e.g. custom fetch …)' in six phrasings; 'Resolves to' in ocaml. DEFECT (catalogue): S13, S23, S27, S29, S50, X6, X7, G01, G27, G29, U34, U35, U44, U75, M08, M12, M37, M38, D10, D23, D26, D55, D69, A05 (28 ids in all). Variations: auth-basic, server-none and server-static change the section in ts only; op-off-* changes it in no language.
+    genuinely_per_language: Small. The ts/js type-shape blocks (DirectResult, FetchDef, Return values: 62 output lines). The structural sentences of c (vtable, err discipline), clojure (keyword lookup), elixir (struct nodes) and ocaml (record fields): about 40 sentences and roughly 300 words. Everything else is the REFERENCE's facts in summary form.
+    needs_beyond_stage1: Everything the REFERENCE anatomy proposed: ctor.options[] from optspec (with server variables and Basic secret), testClient.available, entities[] with className, fields (canonical type, escaped description), active ops in canonical order, and apiPath (U35: which point is shown). Plus the per-language fixed-runtime table: errorStyle enum, collectionNoun, accessorShape, fixed method signatures, memberNoun. Provider: typeName, signature printers and optionKey from RefSyntax; nothing new if the REFERENCE provider exists.
+    lines_after_estimate: Estimated 300 if it is one shared summary built from the REFERENCE description and RefSyntax (or is dropped in favour of linking the REFERENCE). Up to about 1,050 if each language needs a summary provider of about 40 lines.
+    fit: strong
+    why: Every per-language difference is a fact the REFERENCE already has to declare (signatures, error style, collection noun, type names). The model-dependent conditions (options, test feature, ops, Basic, server variables) are exactly the ones the description centralises, and 28 catalogue issues name this family. The strength is conditional: it holds only if the REFERENCE provider and fact table exist first, and the word-level share (36% of sentence words) shows the conventions have to be tokens, not provider phrases.
+  - [1]
+    family: ReadmeEntity (README '## Entities' section)
+    lines_today: 3504
+    what_it_writes: Per active entity: '### <Ent>', 'Create an instance: `…`' (or a handle in elixir and zig), an '#### Operations' table (method plus one-line description), an '#### Fields' table (field, type, description), and '#### Example: Load/List/Create' code blocks (call, error check, print of the record).
+    prose_shared: Counted: 1,275 units; 88% shared by at least 15 languages, 4% (56) in one only. Words (3,936): 67% shared, 17% in one only. Sentences only (155): 86% shared and 14% in one only, but by words 61% shared and 39% in one only. Per block: Fields 100%, entity header 98%, Operations 72% shared and 9% in one only, Examples 100% (their prose is one line). Output is 842 code lines in B (552 of them in the list examples).
+    differences: SYNTAX: the accessor call, signature case (Load vs load), type names (canonToType in 15 files, local maps in 5), the example code. LANGUAGE-API-FACT: the return phrase on the op rows: rust/zig '§ is the entity' or a result union; ocaml/elixir 'Resolves to'; c 'a NULL-terminated array'; zig 'Each operation returns a result union'. These are the 56 units in one language only, in zig, rust, ocaml, elixir, c and cpp. DRIFT: 'List entities, optionally matching the given criteria.' (10 languages) against 'List entities matching the criteria.' (6); the handle wording. DEFECT: S24 (only go's section reacts to op-off-*: counted, 6 of 6 op-off variations change go alone), S46, X6, G27, G29, G31, U06/N04/M04 (target.name into canonToType), U36, N11/M35 (js fenced ts), M37, M38, D10, D69.
+    genuinely_per_language: Almost none in prose. The examples carry per-language result consumption (go type assertion, c NULL-terminated loop, zig switch, perl ->{id}). That is a printer for the quick start's representation, not a document.
+    needs_beyond_stage1: Per entity: className (U34), description (U36: entity_desc then short), fields[] {name, canonical type, description escaped for a table cell}, ops[] active in canonical order with match or data kind and example items (stage 1 has ops, id and dataId but not fields or per-op items). Provider: typeName(canonical), opSignature(op), and the quick start's call, each, print and attempt printers reused, plus RuntimeWords.one or an errorStyle enum for the return phrase.
+    lines_after_estimate: Estimated 450-800: a shared component of about 200-300 lines plus 10-25 lines per language beyond the quick-start provider.
+    fit: strong
+    why: The prose is already nearly uniform. The one systematic difference is the return and error convention, which is a declared fact. The examples are the quick start's statements per entity. Only go reacts to op-off, so a shared op list fixes S24 in 19 languages at once.
+  - [2]
+    family: ReadmeHowto (README '## How-to guides' section)
+    lines_today: 3388
+    what_it_writes: Blocks: Make a direct HTTP request (20), Prepare a request without sending it (20), Use test mode (20), Run live tests (19, not clojure), Use a custom fetch function (15: absent in ts, js, rust, cpp and zig). ts/js only: Retain entity state across calls, Add custom middleware. lua only: Verify the server over HTTPS. c only: Send requests over HTTP and HTTPS. rust/c/zig: Point at a different server. clojure only: Run the test suite. 1,376 non-blank output lines in B, 1,116 of them code.
+    prose_shared: Counted: 240 units; 69% shared by at least 15 languages, 18% (44) in one only. Words (1,852): 53% shared, 34% in one only. Sentences only (136): 52% shared and 30% in one only; their words 37% shared and 48% in one only. Per block: direct 86%, prepare 100%, test mode 84%, live tests 92%, custom fetch 45% (21% in one only); the c, lua and clojure blocks are 100% in one language only.
+    differences: SYNTAX: the direct, prepare and test-client calls and the env-var setting syntax. LANGUAGE-API-FACT: whether a custom fetch seam exists (rust, cpp and zig cannot have one: closed Value union); what the fetch function is (delegate, closure, coderef, fn); whether direct raises; c's and lua's transport and TLS behaviour; whether the target's tests read <ENV>_TEST_LIVE. IDIOM-PROSE: 'Replace the HTTP transport with your own delegate/closure/coderef'; elixir 'For endpoints not covered by entity operations'. DRIFT: php picks a seedable example entity and the other 19 take the first with an op (php/ReadmeHowto_php.ts:26-29). Measured: ent-off-ambient changes 19 languages but not php; ent-off-planet changes php only. ts/js lack a custom-fetch how-to although ts honours options.utility; 'Retain entity state' repeats Advanced > Entity state. DEFECT: S12 (feat-absent-test changes no how-to in any language), S41, S50 (auth-basic changes ts only), G03/V1/D47 (six languages document TEST_LIVE, which nothing reads), G07, G21, V2, U11, U21, U22, U49 (fabricated /api/resource/{id}), M01, M12, D33.
+    genuinely_per_language: c 'Send requests over HTTP and HTTPS' (16 sentences, 23 lines: ReadmeHowto_c.ts:164). lua 'Verify the server over HTTPS' (6 sentences, 10 lines: ReadmeHowto_lua.ts:105). ts/js 'Add custom middleware' (36 lines: ReadmeHowto_ts.ts:151) and 'Retain entity state' (20 lines). clojure 'Run the test suite' (9). rust/c/zig 'Point at a different server' (20). About 118 prose-and-heading lines in all. In addition, about 900 code lines are fixed runtime snippets per language (direct, prepare, a whole custom fetch function: 268 lines across 15 languages) that do not depend on the model.
+    needs_beyond_stage1: Description: testClient.available plus a seeded example record (seededList) and the example entity chosen once (php's seedable rule or the first-op rule: a decision). Env-var names for the live suite (envName, per-entity ENTID, server variables: G07). Whether the target's tests honour TEST_LIVE (a declared, guarded per-target fact: G03). Where .env.local goes relative to the output layout (U22, V2). auth.secret and server variables. A real example route for direct and prepare (U49). Whether the proxy feature is active (c reacts). Provider: direct and prepare call printers (a map-argument call is expressible), a test-client statement with a seed map, an env-assignment printer, and a FUNCTION-DEFINITION construct for the custom fetch, which the representation does not have. Capability flags: customFetch, middleware, transport facts.
+    lines_after_estimate: Estimated 1,100-1,600: shared about 300 plus 40-60 lines per language of fixed snippets and transport paragraphs.
+    fit: fair
+    why: The prose frame is shared, and the model facts (test feature, auth, env names, example entity, route) are exactly the description's. But most of the output is code that does not depend on the model, and several blocks are runtime documents that only one language has. A provider here is a library of fixed snippets and capability paragraphs, not a printer of values.
+  - [3]
+    family: ReadmeInstall (README '## Install' body)
+    lines_today: 974
+    what_it_writes: A publish-state sentence ('This package is not yet published to <registry>. Install it from the GitHub release tag (`<t>/vX.Y.Z`, see Tags) or from a source checkout') and an install command or manifest snippet: npm, `go get` plus a replace directive, pip, composer, gem, luarocks, mvn, Cargo.toml, mix.exs, deps.edn, Package.swift, cpp/zig build files. c adds a 12-line linking and prefix paragraph (ReadmeInstall_c.ts:10-12). 213 non-blank output lines in B, 121 of them code.
+    prose_shared: Counted: 57 units; 0% shared by at least 15 languages, 81% (46) in one only. Words (827): 0% shared, 86% in one only. One block per language.
+    differences: LANGUAGE-API-FACT: the registry name, the install command and manifest syntax, how a git or path dependency is declared, c's static library and link flags. DRIFT: the one publish-state sentence exists in at least 6 phrasings, so nothing reaches the 15-language line even though the fact is the same. DEFECT: S41, S47, G26, V3 (empty fence once the registry is active), V4 (js prints the slug), U04/D29 (tag literal), U21/D33 (`cd <lang>`), U42 (`<repo-url>` literal in 4), U60 ('dependency-free'), D27. Variations: registry-active-ts changes ts only. perl's section changes under feat-none, feat-min and feat-off-secrets (it lists feature deps), while no other language's does.
+    genuinely_per_language: Most of it. About 150 of 213 output lines are commands, manifests and toolchain notes that belong to the language (c linking 23, elixir 19, swift 15, cpp, zig and clojure 16 each). About 60 lines are the one shared publish/tag/checkout fact.
+    needs_beyond_stage1: Per target: publish state, registry and package name, version (registryState, installCommand, packageMeta: D27), repo URL and host (repoInfo, G26), tag prefix (publish.tag: D29, S47), the target directory relative to the reader (output.path, alias: U21/D33), and feature deps per target (perl). Provider: installSnippet(desc.install) and registryNoun: printers of LANGUAGE-API-FACT text.
+    lines_after_estimate: Estimated 500-760: shared about 60 plus 20-35 lines per language.
+    fit: weak
+    why: About four fifths of the section is a document about how each ecosystem installs a package. The proposal can lift the one publish/tag/checkout sentence and the model facts (package name, tag, paths). Its source shrinks less than 2x, and the providers hold prose and manifests, not syntax.
+  - [4]
+    family: ReadmeExplanation_<lang> (the per-language block inside '## Advanced')
+    lines_today: 899
+    what_it_writes: A module, project, crate or namespace tree for the package. A '### Data as <dicts|hashes|tables|maps|hashrefs|struct value nodes|Value>' paragraph: how the runtime represents records, how to coerce a value, how to build request maps. c adds 'Memory follows a retain-heavy, never-free discipline' and an Error handling block (ReadmeExplanation_c.ts:21, :25). 456 non-blank output lines in B (230 prose, 226 code).
+    prose_shared: Counted: 152 units; 0% shared by at least 15 languages, 50% (76) in one only. Words (1,904): 0% shared, 54% in one only. Headings: 18 different block headings among the 20 languages, none in more than 9.
+    differences: LANGUAGE-API-FACT: the data representation and its helpers (Voxgig.Struct, Value, hashrefs, dicts), the module layout, c memory and error rules. IDIOM-PROSE: elixir 'the immutable-Elixir way to honour the shared-mutable hook contract'; swift's loose object model. DRIFT: 'no code generation is needed' (12) against 'no regeneration is needed' (5), and Module/Project/Directory/Package structure headings. DEFECT: S15 ('Built-in features (Base, Test, Log)' in 13 trees; feat-none changes no explanation block in any language), V5 (py tree wrong), V6 (clojure namespace), U17, U40, U59. Variation: repo-custom changes go only.
+    genuinely_per_language: Nearly all of it: about 456 output lines (1,828 words) describe one runtime's data model and file layout. A frame such as 'Data as {noun}' plus 'uses {repr} rather than {alternative}' would make perhaps 4 sentences shareable by slots, but the content of the slots is the document.
+    needs_beyond_stage1: A per-target layout block (package or module dir, main file, namespace, crate ident, test dir: the stage-2 naming hook) and the feature list for the tree (S15). Provider: a declared data-representation record {container nouns, coerce helper, builders} and a tree printer. These are runtime facts that need a guard against the templates.
+    lines_after_estimate: Estimated 550-750 (shared frame about 40 plus 25-35 lines per language), and the shared ReadmeExplanation.ts LANGS table must also grow from 5 rows to 20 or move to providers.
+    fit: weak
+    why: It is the clearest case of a family that is one language's own document: 0% shared, about half of its units and words found in one language only, and its few model facts (names, feature list) are a small part of it. The proposal can fix S15 and the naming defects, but it cannot write these paragraphs once.
+  - [5]
+    family: ReadmeIntro (body inside the shared frame ts/src/cmp/ReadmeIntro.ts)
+    lines_today: 824
+    what_it_writes: Two or three sentences: 'The <Lang> SDK for the <Name> API — an entity-oriented client following idiomatic <Lang> conventions[ (language clause)].' plus 'The SDK exposes the API as capitalised, semantic Entities — for example `<accessor>` — each carrying a small, uniform set of operations (`list`, …) …' plus 'You work with named resources and verbs …'. 97 output lines.
+    prose_shared: Counted: 66 units; 0% shared by at least 15 languages, 18% (12) in one only. Words (1,276): 0% shared, 18% in one only. The rest is shared in groups: the same two sentences in 14 languages, a third in 8, and two other wordings in 2 and 2.
+    differences: DRIFT: the same three facts in 4-5 wordings (ts/js, go/lua, php/rb and the 14). IDIOM-PROSE or LANGUAGE-API-FACT: 6 language clauses (c 'explicit structs, function-pointer vtables, PNError** out-param'; cpp 'header-only, C++17, single dynamic Value'; clojure; ocaml; elixir 'functional'). SYNTAX: the accessor example. DEFECT: S30 and D10 (the op list is model-dependent: introOps, ReadmeIntro_ts.ts:18; it changes in all 20 under op-absent-readonly, ent-only-ambient and patch-on), U61 (capitalised beside a lower-case accessor), S38/S42 (alongside note, shared), V9/V14.
+    genuinely_per_language: The 6 one-clause idioms: about 10 output lines, 120 words.
+    needs_beyond_stage1: The union of active ops across entities (introOps, D10) and the example entity's accessor symbol from the naming hook (elixir's needs the whole collection). Provider: accessorExpr and an optional one-line style clause (declared).
+    lines_after_estimate: Estimated 70-120.
+    fit: strong
+    why: There is already a shared frame. The body is drift plus one clause, and the one model fact (the op list) changes in all 20 together, so it is already conditioned identically and only the wording is copied.
+  - [6]
+    family: ReadmeOptions
+    lines_today: 1206
+    what_it_writes: Nothing. Every component filters `each(target.options)` (ReadmeOptions_ts.ts:8), and target.options is not a schema slot. No '## Options' heading appears in any of the 20 B READMEs (counted with the cutter: the h2 sequence is identical in all 20, and Options is not in it).
+    prose_shared: Counted: 0 output units in every language. Nothing renders.
+    differences: DEFECT D26, plus X2 (the shared ReadmeFeatures says 'alongside the options shown above') and U09 (lean pack). The options facts are instead stated by ReadmeModel, REFERENCE, quick and howto.
+    genuinely_per_language: None.
+    needs_beyond_stage1: None for this family. Its intended content, an options table from optspec, belongs to the description (ctor.options[]) used by ReadmeModel and REFERENCE.
+    lines_after_estimate: 0, counted as deletion (plus the 159 pack lines).
+    fit: strong
+    why: It is dead code. Removing it is a reduction the proposal does not cause and should not be credited with; it is listed so the projection can show it separately.
+  - [7]
+    family: ReadmeTopQuick (root README '### <Lang>' quick starts)
+    lines_today: 2000
+    what_it_writes: Under '## Quickstart' (the lead target) and '## Quickstart in other languages': per language one code block that constructs the client (apikey env read, server map in 4) and loads or lists the example entity, with a print. Code only: 224 code lines in B, 1 prose unit.
+    prose_shared: Counted: no prose to share (1 unit in all 20; 224 code lines). The prose around it is ReadmeTop.ts, shared.
+    differences: SYNTAX: all of it. DEFECT: S49, S50, G01, M12, M13, M14, D23, D55 (shared with the README quick start), N19, M19 (lean), and c getenv without stdlib.h (stage 1: fails the c DOC lane with auth active). Variations: auth-basic and auth-query change ts only; server-none and server-static change ts, go, py and java only (counted).
+    genuinely_per_language: None beyond syntax.
+    needs_beyond_stage1: Nothing beyond stage 1's description (options, server, quick). It reuses the quick-start Syntax providers. It needs a section mode for a shortened form, or B (one complete program) where a root lane runs it.
+    lines_after_estimate: Estimated 60-200 if it reuses the quick-start providers.
+    fit: strong
+    why: It is a second copy of the quick start's model logic (same helpers: isAuthActive, envName, entityOps, opRequestShape, serverVariables in 4), carrying the same catalogued defects. Its value depends on the quick-start providers existing, and on the stage-2 B decision about whole programs.
+  - [8]
+    family: ReadmeTopHowto (root README '**<Lang>:**' direct() blocks)
+    lines_today: 491
+    what_it_writes: One fixed `direct({path:'/api/resource/{id}', method:'GET', params:{id:'example'}})` snippet per language under '### Make a direct API call'. 149 code lines in B, no prose. Source: 2 model-reading lines in all 20 files (src.py).
+    prose_shared: Counted: 0 prose units; code only.
+    differences: SYNTAX and LANGUAGE-API-FACT (the direct() signature and container). DRIFT: the label 'Go' here against 'Golang' in every other root heading; ts alone shows the `if (result.ok)` branch. DEFECT: U49 (fabricated path, 42 files). Variations: none react (no model input).
+    genuinely_per_language: The snippet is a fixed runtime fact per language. The same direct() call is printed again in ReadmeErrors (5 rows plus the ts default), ReadmeHowto 'Make a direct HTTP request' (20) and REFERENCE direct (20).
+    needs_beyond_stage1: A real example route (U49) if the snippet is to be honest. Provider: directCall(map), shared with how-to, errors and REFERENCE.
+    lines_after_estimate: Estimated 20-140.
+    fit: fair
+    why: Nothing in it depends on the model, so writing each sentence once does not apply. The reduction is deduplication of one fixed snippet stated in four families, which the provider would serve to all of them.
+  - [9]
+    family: ReadmeTopTest (root README '## Offline unit testing' per language)
+    lines_today: 1636
+    what_it_writes: Per language one block: construct the test client, load or list the example entity, print the record. 135 code lines in B, no prose.
+    prose_shared: Counted: 0 prose units; code only.
+    differences: SYNTAX: all. DRIFT and probable DEFECT, uncatalogued (read, not run): only ts, php, rb and perl seed the mock (counted: 4 of 20 contain a seed). The repository's own rule says 'the offline-test example must SEED the mock (SDK.test() seeds nothing)', so 16 languages load from an empty mock. DEFECT S11 (feat-absent-test changes no toptest block in any language) and U12 (lean).
+    genuinely_per_language: None.
+    needs_beyond_stage1: testClient.available and a seeded record (seededList) chosen once. Representation: a test-client statement with a seed map; stage 1 has none.
+    lines_after_estimate: Estimated 200-450.
+    fit: strong
+    why: It is model-driven code: example entity, id field, seed. Its drift (seeding in 4 of 20) and S11 are exactly the 'decide once' class. It needs one new statement kind and the shared seed decision.
+weakest:
+  - ReadmeExplanation_<lang> and ReadmeInstall_<lang> are documents about one language, not shared sentences. Counted: Explanation has 0% of units shared by 15 or more languages, 50% of units and 54% of words in one language only; Install has 0% shared, 81% of units and 86% of words in one only. Examples: c/ReadmeExplanation_c.ts:21 (never-free memory discipline) and :25 (its own Error handling block); elixir/ReadmeExplanation_elixir.ts:10 ('Data as struct value nodes'); c/ReadmeInstall_c.ts:10-12 (link prefix). The proposal's sentence 'a language supplies syntax, never facts' is false for about 1,870 lines of source; the providers would hold paragraphs.
+  - The 'three quarters shared' figure is a unit count, and it falls apart by words. Across the per-language README families: 72% of units but only 42% of words are shared by 15 or more languages. Sentences alone: 56% of units, 23% of words; 22% of sentence units and 42% of their words are in one language only (kinds.py). Shared units are short table cells and headings; long explanatory sentences are not. Prose genuinely about one language, by hand classification over counted bins, is about 8% of units and about 19% of words: under H1's 15% line by units, over it by words.
+  - A runtime fact written as prose recurs in nearly every family, so the declared fact table has to feed 10 places, and each place frames it differently. Counted occurrences of the error convention: errors 20, howto 20, model 20, REFERENCE 20, quick 18, AGENTS 18, topquick 16, toptest 5, entity 4, explanation 2. If providers return phrases (stage 1's RuntimeWords), this becomes the largest body of per-language prose; it must be an enum with sentences owned by the shared side.
+  - Shared components with a language table already exist, and they show the failure mode. ts/src/cmp/ReadmeErrors.ts:212 and ReadmeExplanation.ts:225 (`LANGS[target.name] || DEFAULT_LANG`), and ts/src/helpers/opExample.ts:16-21 (EXAMPLE_LANGS, helperLang falling back to 'ts'), print TypeScript in 15 of 20 READMEs (S05, X1, U05, N05, M05). Their apparent sharing of 81-95% is that defect. The proposal must forbid a default provider: a target without one has to write nothing or fail.
+  - Declared language tables already drift from the runtimes. ts/src/cmp/AgentGuideContent.ts:18-37 (LANG_CMD has install commands for 7 targets) and :81 (php file name special-cased) produce wrong feature file names for 11 targets (U55). ReadmeStation.ts:17-21 keeps CONNECT_TARGETS and SELF_REGISTER_TARGETS lists keyed by target.name, which an alias falls out of. The same holds for TEST_LIVE: six languages document it and none reads it (G03, D47). A fact table without a test that re-derives it from tm/<lang> moves the drift rather than removing it.
+  - Much of the code is fixed runtime text, not a printer of description values. Counted output: ReadmeHowto's custom-fetch blocks (268 lines in 15 languages), direct (353), prepare (242), and ReadmeTopHowto (149 code lines; its 20 source files read the model on 2 lines). The representation has no function-definition statement, and no sentence frame for c's transport and TLS paragraph (c/ReadmeHowto_c.ts:164) or lua's TLS paragraph (lua/ReadmeHowto_lua.ts:105).
+  - Most of the projected shrink is not write-once. ReadmeOptions (1,206 lines) never renders (ReadmeOptions_ts.ts:8 reads target.options, which nothing populates). ReadmeModel (3,208) restates the REFERENCE. ReadmeTopQuick (2,000) restates the quick start. ReadmeTopHowto (491) repeats the direct() snippet that is also printed by ReadmeErrors, ReadmeHowto and REFERENCE. Deleting and deduplicating those accounts for a large part of the 2.3-3.3x, and would be available without the provider interface.
+  - Which copy is right is itself a decision per fact, and sometimes the minority is right. php alone chooses a seedable example entity (php/ReadmeHowto_php.ts:26-29): ent-off-ambient changes the how-to in 19 languages, ent-off-planet in php alone. Only ts, php, rb and perl seed the root test example (counted 4 of 20), against the repository's own rule that the offline example must seed. go alone follows active ops in ReadmeEntity (go/ReadmeEntity_go.ts:45: op-off-* changes go alone). Unifying by majority would copy the defect.
+  - The catalogue issues in these families are not all fixed once. Of the 105 distinct ids that name these families, 24 (D47, G03, M14, M19, N21, U04, U09, U11, U12, U13, U16, U17, U20, U40, U42, U55, U59, U60, V1, V2, V4, V5, V6, V9) concern one language's runtime, layout, test templates or the language pack, and would still need a per-language edit (classified by reading the titles; 10 of them are in the pack). That is about 23%, over H3's 10%; 14 of 95 without the pack is about 15%. Separately, 25 of the 105 are in already-shared (neutral) components: sharing alone does not prevent defects.
+  - Scale of retirement (H5): the families beyond the quick start and REFERENCE are 10 more components per language, 200 files, plus 30 in the language pack (2,327 lines: counted, wc). lean has no entity layer, so ReadmeEntity, ReadmeModel and the shared entity-state text must be absent by data (U15 already prints 'Entity instances are stateful' for lean). Each family retired is another round of the doctor and record migration that stage 1 measured for one family.
+whole_documentation: |
+  COUNTED, source lines (wc; per-language components in ts/project/.sdk/src/cmp/<lang>/, 20 languages):
+  - ReadmeQuick 4,503; ReadmeRef 8,330; ReadmeModel 3,208; ReadmeEntity 3,504; ReadmeHowto 3,388; ReadmeInstall 974; ReadmeExplanation 899; ReadmeIntro 824; ReadmeOptions 1,206; ReadmeTopQuick 2,000; ReadmeTopHowto 491; ReadmeTopTest 1,636.
+  - Total 30,963. The README example-test generators (ReadmeExamplesTest_*) are excluded.
+  - Shared components with language switches, not in that total: ReadmeErrors.ts 241, ReadmeExplanation.ts 349, ReadmeTop.ts 745, opExample.ts 290, ReadmeStation.ts 131, AgentGuideContent.ts 310.
+  - Language pack, also not in the total: 3,739 lines of Readme* components for dart, haskell and lean.
+  
+  COUNTED, output sharing over B:
+  - Per-language README families (intro, install, quick, howto, model, entity, explanation): 3,572 prose units. 72% are the same in at least 15 languages, 11% in one language only. By words (18,038): 42% shared, 27% in one only.
+  - Sentences alone: 56% of units shared and 22% in one only; by words 23% shared and 42% in one only.
+  - Adding the REFERENCE's per-language part (stage 1: 1,026 of 1,521 shared): 70% of units shared, 10% in one only.
+  - The root README's per-language families are code only: 508 code lines, 1 prose unit.
+  - AGENTS.md per target is already 95% shared lines (1,029 of 1,078).
+  
+  ESTIMATED, residue that is about one language: about 8% of units and about 19% of words. This is a hand classification over counted bins. All of Explanation counts as about one language, 70-80% of Install, the c/lua/ts-js/clojure/rust-c-zig how-to blocks, the language clauses of Intro, and the structural sentences of c/clojure/elixir/ocaml in ReadmeModel. Bounds, counted by genuine.py: blocks in 6 or fewer languages plus the Explanation and Install lone units come to 14% of units and 26% of words; every unit found in one language only comes to 19% and 40%.
+  
+  ESTIMATED, lines after:
+  - Quick start: 2,729-3,494, from stage 1's projection; this includes the 489 lines of description and representation.
+  - REFERENCE: 3,000-3,500, from the REFERENCE anatomy.
+  - Model 300-1,050; Entity 450-800; Howto 1,100-1,600; Install 500-760; Explanation 550-750; Intro 70-120; Options 0; TopQuick 60-200; TopHowto 20-140; TopTest 200-450.
+  - Description and representation growth for these families (layout, install, test client and seed, fixed-runtime table, a function-definition statement): 300-600.
+  - Total about 9,300-13,500 against 30,963, so 2.3x-3.3x. Without the dead ReadmeOptions in the before-figure (29,757): 2.2x-3.2x.
+  - Of the reduction, roughly 1,200 lines are dead-code deletion and a further 4,000-5,500 are deduplication of sections restating another section (Model of REF, TopQuick of Quick, TopHowto of direct). Both are available without the provider interface.
+  - The low end needs ReadmeModel to reuse the REFERENCE provider, TopQuick to reuse the quick-start providers, and each provider to stay near 100-150 lines. With c-sized providers everywhere, the upper end applies.
+  - Nothing here was built, so none of these after-figures is measured.
+facts_stated_in_several_families:
+  - [0]
+    fact: Client constructor options: apikey and its env var, Basic secret, required against defaulted server variables, base for a spec without servers
+    families: quick (20), root topquick (20), model options table (20), REFERENCE constructor (20), howto live tests and custom fetch (19), toptest (test client). Counted: 'apikey' in quick, model, topquick and REFERENCE in 20 languages each, howto in 19; server variables in quick and topquick (4) and model (1, ts).
+    consequence: Must move first and in one step across all six. auth-basic changes only ts's quick, howto, model and topquick (counted), and stage 1 showed that porting one section makes ts say region is defaulted and required in the same README.
+  - [1]
+    fact: Which operations an entity has (active, callable, canonical order)
+    families: intro op list (19 contain the five-op list), model 'Operations:' line and entity interface (X7, S23), entity operations table (S24), REFERENCE ops (S25), quick and topquick, errors and expl.table (primary op), toptest, the root README entity table
+    consequence: op-off-* changes only go's ReadmeEntity and REFERENCE; op-absent-readonly changes intro, model and entity in all 20. The op list in the description has to replace every copy at once, or the intro and the entity table will disagree.
+  - [2]
+    fact: Error and return convention (raise, throw, die, err, Result, union, NULL with *err set)
+    families: errors (20), howto (20), model Result shape and rows (20), REFERENCE (20), quick (18), AGENTS.md (18), root topquick (16), toptest (5), entity rows (4: zig, rust, ocaml, elixir), explanation (c)
+    consequence: One declared enum per language, written into sentences by the shared side. It must exist before any of these families is ported, or the error-handling section (ts text in 15 languages today) and the Result shape will contradict the quick start.
+  - [3]
+    fact: How an entity's record is read (.data(), data_get, Data(), :data-get, e_data_get) and what a list returns (collection noun)
+    families: expl.table (20), quick (18), howto (18), model (18), root topquick (18), REFERENCE (18), errors (16), toptest (14), entity (7), explanation (2)
+    consequence: Stage 1's RuntimeWords.data and many have to be the single source for 10 families. If they are provider phrases, they are per-language prose in every one.
+  - [4]
+    fact: direct()/prepare() call shape, its never-throws envelope, and the example route
+    families: errors (20, ts text in 15), howto direct and prepare (20), root tophowto (20), REFERENCE direct and prepare (20), model methods table and Result shape (20), root 'Direct and prepare', expl.table 'Direct vs entity access'. The fabricated /api/resource/{id} is counted in errors, howto and tophowto in all 20 (U49).
+    consequence: One provider printer and one example route in the description. Fixing U49 in one family alone would leave four others showing the fake path.
+  - [5]
+    fact: Whether the test feature, and so the test client, is present
+    families: howto 'Use test mode' (20), model test constructor (18), REFERENCE test (18), root toptest (18), the shared pipeline sentence (S14), features
+    consequence: feat-absent-test changes none of the four per-language families in any language (S11, S12, S13). testClient.available must be read by all of them in the same release.
+  - [6]
+    fact: Entity class name, accessor and handle symbol
+    families: intro, model methods table, entity heading and 'Create an instance', REFERENCE, quick, topquick, toptest, errors, expl.table, howto
+    consequence: Needs the stage-2 naming hook (elixir's accessor depends on the whole collection) before any of these is ported; otherwise each copy re-derives it (U34).
+  - [7]
+    fact: Package and module name, import line, install command, release tag
+    families: install (20, the tag in all 20), quick and topquick (import), explanation (module tree and import), root Packages table, AGENTS.md (install commands for 7 targets), model (import in the constructor code)
+    consequence: One layout/install block in the description (packageMeta, D27, D29). AgentGuideContent.ts LANG_CMD is a second, partial table that would otherwise survive.
+  - [8]
+    fact: Target directory and relative paths (cd <lang>, ../README.md, .env.local location, ../.sdk)
+    families: howto (20), AGENTS.md (20), install (12), intro alongside note (shared), explanation trees
+    consequence: Output layout (output.path, root, alias) has to be a description fact read by all of them (D33, U21, U22, S38, S40, D60).
+  - [9]
+    fact: Which features exist
+    families: expl.shared features list, explanation module trees ('Base, Test, Log' in 13: S15), features, AGENTS.md, install (perl lists feature deps), howto (c reacts to proxy)
+    consequence: feat-none changes the shared list but not the per-language trees (counted). The feature set must be read from the description in every tree.
+  - [10]
+    fact: Entity fields and their types
+    families: model '### Entities' tables, entity Fields table, REFERENCE fields, root README entity table
+    consequence: Three per-language copies of the same table, with the same escaping (G27, M38, D69) and alias typing (N04) defects. Fix once by sharing the row source, and port the three families together.
+measurements:
+  - [0]
+    name: per-language component lines by family (wc)
+    value: Model 3,208; Entity 3,504; Howto 3,388; Install 974; Explanation 899; Intro 824; Options 1,206; TopQuick 2,000; TopHowto 491; TopTest 1,636; Quick 4,503; Ref 8,330; total 30,963
+    command: cd /home/user/sdkgen/ts/project/.sdk/src/cmp; for f in ...; do cat */${f}_*.ts | wc -l; done
+  - [1]
+    name: language pack component lines by family
+    value: Model 340, Entity 388, Howto 327, Install 149, Explanation 120, Intro 107, Options 159, TopQuick 228, TopHowto 71, TopTest 136, Quick 536, Ref 847 (3 files each)
+    command: cd /home/user/voxgig/sdkgen-langpack/.sdk/src/cmp; cat */${f}_*.ts | wc -l
+  - [2]
+    name: README sections identical in order in all 20
+    value: Install, Tutorial, Error handling, How-to guides, Reference, Entities, Features, Advanced, Full Reference in all 20; no '## Options' anywhere (D26 confirmed in output)
+    command: awk over B/md/<lang>/README.md, h2 outside fences
+  - [3]
+    name: prose sharing per family (units; words) over B
+    value: intro 66 units: 0% shared / 18% in one only (words 0% / 18%). install 57: 0% / 81% (words 0% / 86%). quick 99: 77% / 18%. errors 80: 81% / 12% (the ts default row). howto 240: 69% / 18% (words 53% / 34%). model 1,683: 71% / 8% (words 46% / 20%). entity 1,275: 88% / 4% (words 67% / 17%). explanation 152: 0% / 50% (words 0% / 54%). expl.table 215: 95% / 0% (the ts default row). root topquick, toptest, tophowto: 1/0/0 prose units, 224/135/149 code lines.
+    command: cd restanatomy && python3 share.py ../../spike/out/B/md --json share-B.json [--blocks] [--dump <family>]
+  - [4]
+    name: sharing by unit kind, per-language families
+    value: sentences 1,137: 56% shared and 22% in one only; their words 23% shared and 42% in one only. table cells 1,344: 70% shared (words 47%). headings 1,091: 90% shared.
+    command: python3 kinds.py ../../spike/out/B/md
+  - [5]
+    name: aggregate share across per-language README families
+    value: 3,572 units: 72% shared by 15+, 11% in one only; words 18,038: 42% shared, 27% in one only. With REFERENCE's per-language part from stage 1: 5,093 units, 70% shared, 10% in one only.
+    command: python3 (aggregate of share-B.json)
+  - [6]
+    name: bounds on prose that is about one language
+    value: LOWER (blocks in 6 or fewer languages plus Explanation and Install lone units): 499 units (14%), 4,664 words (26%). UPPER (plus every other lone unit): 690 units (19%), 7,172 words (40%). Hand classification inside these bins: about 8% of units, about 19% of words (estimate).
+    command: python3 genuine.py ../../spike/out/B/md
+  - [7]
+    name: family reaction to model switches (languages whose section changes, of 20)
+    value: auth-basic: quick, howto, model, topquick in ts only. server-none and server-static: quick and topquick in ts, go, py, java; model in ts. op-off-planet-{create,list,load,remove,update} and op-readonly: entity in go only. ent-off-ambient: howto in 19 (not php); ent-off-planet: howto in php only. feat-absent-test: no per-language family changes (S11, S12). feat-none: explanation trees unchanged (S15); install changes in perl only; howto in c only. registry-active-ts: install ts. repo-custom: quick and explanation go only. op-absent-readonly, ent-only-ambient, patch-on: intro, model, entity in all 20.
+    command: python3 react.py > react.txt (react.json)
+  - [8]
+    name: source shape per family
+    value: Model-reading lines: Intro 125, Install 161, Howto 285, Model 578, Options 119, Entity 538, Explanation 159, TopQuick 204, TopHowto 2, TopTest 110 (Quick 257, Ref 988). Text inside template literals against logic: Howto 1,506/997, Model 1,382/965, Entity 1,010/1,473, Explanation 476/152, TopQuick 459/963, TopTest 305/923. entityOps used by 1 of 20 ReadmeEntity (go); isHttpBasicAuth by 1 of 20 ReadmeHowto and ReadmeModel (ts).
+    command: python3 src.py
+  - [9]
+    name: catalogue issues naming each family
+    value: ReadmeModel 28, ReadmeEntity 18, ReadmeHowto 16, ReadmeInstall 14, ReadmeExplanation (incl. shared) 20, ReadmeIntro 7, ReadmeOptions 3, ReadmeTopQuick 10, ReadmeTopHowto 1, ReadmeTopTest 2, ReadmeErrors 10, AgentGuide 8, ReadmeStation 3. 105 distinct ids: 69 per-language-copy, 25 neutral-component, 6 helper, 5 other.
+    command: python3 cat.py (cat.json)
+  - [10]
+    name: catalogue issues needing a per-language edit even under the proposal (classified from the titles)
+    value: 24 of 105 (23%); 10 of them in the language pack; 14 of 95 (15%) without the pack
+    command: python3 over cat.json with the listed id set
+  - [11]
+    name: per-target AGENTS.md sharing
+    value: 1,078 normalised lines, 95% shared by 15+; only differences: install command (7 targets) and the ts/js feature directory list
+    command: python3 inline over B/md/<lang>/AGENTS.md
+  - [12]
+    name: root test example seeds the mock
+    value: 4 of 20 (ts, php, rb, perl); the other 16 call load on an unseeded mock
+    command: python3 inline over root:toptest sections; grep -l -i seed */ReadmeTopTest_*.ts
+  - [13]
+    name: facts across families (languages whose section states it)
+    value: direct path: errors 20, howto 20, tophowto 20. apikey: quick 20, model 20, topquick 20, REFERENCE 20, howto 19. test client: model 18, toptest 18, REFERENCE 18, howto 17. data accessor: in 10 families. error convention: in 11 places (incl. AGENTS.md). cd/relative paths: howto 20, AGENTS 20, install 12.
+    command: python3 inline regex count over cut sections, REFERENCE.md and AGENTS.md
+hypotheses:
+  - [0]
+    id: H1
+    verdict: partly
+    evidence: Projected to all families; nothing was built. By units, prose about one language is about 8% (under 15%). By words, it is about 19% (over 15%): bounds 26-40% of words before classification, 14-19% of units (genuine.py). Install (86% of words in one language only) and Explanation (54%) are about one language, not syntax. The fixed-runtime code (custom fetch, direct, prepare, install manifests) is snippets, not printers of description values. Model facts in providers: the per-family model-reading lines (src.py) can mostly move into the description, but the naming facts need stage 2's hook in at least 4 families (intro, entity, model, toptest). The provider interface would need additions for: a test-client statement with seed, a function-definition statement, a direct call, an install snippet, a tree printer, and capability paragraphs. Whether these exceed about 10 breaking changes was not tested.
+  - [1]
+    id: H2
+    verdict: partly
+    evidence: Estimated 30,963 -> about 9,300-13,500 lines (2.3x-3.3x); the before-figure is counted, the after-figure estimated. But about 1,200 of the reduction is deleting dead ReadmeOptions, and about 4,000-5,500 is deduplicating sections that restate another section (ReadmeModel of REFERENCE, TopQuick of Quick, TopHowto of direct). The families that are about one language (Install, Explanation) shrink less than 2x (estimated 1.3x-1.9x and 1.2x-1.6x). The 2x threshold is reached for the whole only through reuse across sections, which stage 1 said must be measured; it was not.
+  - [2]
+    id: H3
+    verdict: partly
+    evidence: Of the 105 distinct catalogue ids naming these families, about 81 are model-dependent conditions that a shared description would fix once (for example S12, S13, S15, S23, S24, S29, S30, S50, U34, U36, U49, D10, D23, D26, D55). 24 (23%; 15% excluding the pack) concern one language's runtime, layout, tests or the pack and still need a per-language edit (G03/V1/D47, V2, V4, V5, V6, U04, U17, U40, U42, U55, U59, U60 and others). That is over the 10% line. Classified from the titles; not verified per entry.
+  - [3]
+    id: H4
+    verdict: not-tested
+    evidence: No examples were generated or compiled. The risk is concentrated where families are code only and run by lanes: root topquick (c getenv, stage 1) and toptest (16 of 20 not seeding the mock, read not run).
+  - [4]
+    id: H5
+    verdict: not-tested
+    evidence: Not run. Scale only: 10 more per-language components per target (200 files in sdkgen, 30 in the pack, 2,327 pack lines for these 10 families) would each go through the retirement path migrate measured for one component. lean has no entity layer and needs absence by data for Entity, Model and the entity-state text (U15).

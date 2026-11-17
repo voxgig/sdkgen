@@ -1,0 +1,343 @@
+{
+ "ok": true,
+ "summary": "I copied P/h5fix into P/h5fixcheck (sdkgen at d36954fc, the old build, today, next, next2, nocheck, langpack, packs, the base fixtures and both bin directories). I repointed 64 symlinks and the paths in every script, and the build exited 0. Nothing was written outside P/h5fixcheck.\n\nTheir claims that I re-ran hold:\n- after.sh (section 1 new, rows 9, 10, 12, 13, 14, 16, the attack's 16 states, S17b, S2r, S2n, S19, S20): every outcome is identical to their after-1.log. Only timings differ.\n- Row 12 first failed for an environment reason: its links pointed into the deleted P/migrate. After I repointed them it matched: 74/76 against both builds, 2 REFERENCE files differ.\n- st2n (S4, S4b, S4g on next2) is identical to theirs.\n- rows11fix L, D and B are byte-identical to theirs. A cannot be regenerated, because P/ports/lua and P/ports/ocaml have been deleted. Compared with their stored A, the line counts are their table's exactly (92/63, 95/80, 95/72, 100/94).\n- Suite without the toolchain lanes: 2650 pass, 0 fail, 5 skipped of 2655.\n- The retired list is reproducible: `--check` exits 0 twice.\n\nWhat I found that is new:\n- **F6/F6b:** a project's copy edited to equal an OLDER release's text is called RETIRED and deleted by a plain merge-mode `package update`. There is no warning and no copy is kept. This happens even when the model declares the override with `main: kit: target: ts: override: ReadmeQuick: true`. A released fingerprint outweighs both the record ('changed') and the declaration.\n- **F11:** a release that forgets `npm run retired` (next2 retiring ReadmeTopHowto_ts, its list entry removed), on a project with no record. The stale component is kept and used, the root README gains 12 old lines, and doctor says 'matches the scaffold (1 additive)', exit 0. The undeclared rule does not help: SYNTAX_SECTIONS is a hard-coded list of three names, and their own next2 did not extend it.\n- **c5:** `import { SYNTAX_INTERFACE } from '@voxgig/sdkgen/dist/helpers/syntaxversion'` compiles and generates with no warning. The package has no exports map, so un-exporting the constant from the index does not close the m8 bypass. package check misreads this provider as 'declares none'.\n- **Tests:** five of their hunks can be reverted without any test failing. All five served-page behaviours of part 2 are unpinned.\n\nEverything I ran is under P/h5fixcheck: logs after-1.log, r12.log, rows11fix*.log, st2n.log, st4.log, r11mine.log, suite.log, mut-base.log; scripts bin/st4.sh and bin/r11mine.sh; PROGRESS.md.",
+ "verdict": "H5: confirmed with conditions. The refutation needs retiring to be impossible to make safe; it is not.\n\nEvery unsafe state I found (F6/F6b, F11, c5) comes from one specific rule, not from retirement as such, and each has a local fix that keeps the tool's rules. None of those fixes is built:\n- F6: a released fingerprint should not outweigh a record that says 'changed', or a declared override.\n- F11: SYNTAX_SECTIONS should be derived from what is retired rather than hand-listed, and the list should be checked for completeness where the tags exist.\n- c5: an exports map, or reading the declared interface from the loaded value only.\n\nThe structure as built on h5fix is therefore NOT yet safe in two states that need no damage:\n- F6b: a declared override is deleted in merge mode without --force.\n- F11: a stale component is used while doctor matches, which takes no record plus a release that skipped `npm run retired`.\n\nAgainst the words of the refutation:\n- doctor: holds for released copies. Fails for F11 and for unreleased-version copies outside the three sections.\n- remove: never deletes what it did not write. It still refuses an unrecorded whitespace-edited copy with the inaccurate 'did not write' wording (F15, S2b); --force works.\n- target add / package update: F6/F6b delete a project's edit without the mode that says so. That bends 'a project decision belongs in the model'.\n- packs: keep generating across a raise with one warning each. A pack's own same-name target is never touched (F9). Two interface versions coexist in one project (c4).",
+ "how_sure": "Sure of the outcomes I ran; every state was run on real .sdk projects with the logs named.\n\nModerately sure of the verdict. It turns on whether F6/F6b count as 'an edit lost': the deleted text is recoverable from the release it equals, but the project's declared choice is not honoured. It also turns on whether F11's two preconditions (no record, plus a release that skipped the list) are realistic.\n\nWeaker points:\n- The F4 stale-list simulation removed the 4.44.0 prints, but all 39 of those prints equal an earlier release's blob. A list exactly one release stale would still have held them, so F4 really simulates content first released after the list was made.\n- next2 and the pkg/* variants are edited copies of built packages, not source builds.\n- A cannot be regenerated, so the A-side numbers rest on their stored outputs.",
+ "worst": "F6b. In a project made by 4.44.0 and upgraded, the project's ReadmeQuick_ts.ts holds v4.34.1's text (a deliberate revert, so the record says 'changed'). The model declares `main: kit: target: ts: override: ReadmeQuick: true`.\n- doctor reports it as RETIRED.\n- A plain `package update @voxgig/sdkgen --no-fetch`, in merge mode without --force, deletes it. The only log line is the info-level 'target-template-prune-file removed src/cmp/ts/ReadmeQuick_ts.ts'. Nothing goes to log/base or log/conflict.\n- doctor then says the project matches, exit 0, and the page is the shared one.\n\nThe cause: `unchangedCopy` returns true whenever `releasedCopy` matches, even when `untouched` says false (copies.ts:477-484, target.ts:534-541). The declaration is read only by undeclaredOverride, never by the delete path.\n\nRunner-up, F11: in a project with no record, a release that skipped `npm run retired` leaves ReadmeTopHowto_ts.ts kept and used. The root README gains 12 old lines, and doctor says 'matches the scaffold (1 additive, 0 customized)', exit 0.",
+ "rows_differ": [
+  {
+   "row": "after.sh, all rows and states (section 1 new, rows 9, 10, 13, 14, 16; st.sh S1..S18; st2 S17b; st3 S2r S2n S19 S20)",
+   "theirs": "P/h5fix/after-1.log (run at beebf7f1)",
+   "mine": "P/h5fixcheck/after-1.log at d36954fc: identical after normalising timings, clock stamps and the directory name"
+  },
+  {
+   "row": "R12 langpack",
+   "theirs": "74/76 pass, 2 skipped, against both builds; dart and lean REFERENCE.md differ",
+   "mine": "First run: Cannot find module 'aontu', because the langpack's node_modules links point into the deleted P/migrate (environment, not code). After repointing (r12.log): the same as theirs."
+  },
+  {
+   "row": "R11F A (3.2 provider on 3.2 shared code)",
+   "theirs": "generated from P/ports/<l>/sdkgen/ts",
+   "mine": "Not reproducible: P/ports/lua and P/ports/ocaml no longer exist. L, D and B are byte-identical to theirs. Against their stored A the counts equal their table (REFERENCE A->L 92, 95, 95, 100; L->B 63, 80, 72, 94)."
+  },
+  {
+   "row": "st2n S4 S4b S4g (interface raise on next2)",
+   "theirs": "st2n.log",
+   "mine": "identical after normalisation"
+  },
+  {
+   "row": "Full suite without generatedcompile",
+   "theirs": "2650/0/5 of 2655",
+   "mine": "2650/0/5 of 2655 (suite.log)"
+  },
+  {
+   "row": "Retired list reproducibility",
+   "theirs": "not stated as a check",
+   "mine": "`node build/retired.js --check` exits 0 twice against the committed list. It exits 1 when an untracked stray file named like a retired one exists in the working tree (it uses existsSync, not HEAD)."
+  }
+ ],
+ "states": [
+  {
+   "state": "F1 list MISSING, no record",
+   "did": "base-norecord on pkg/nolist; doctor; package update --force; tsc; generate; doctor",
+   "happened": "Before: 15 additive, 15 override-labelled, 15 NOT DECLARED, 11 forked, exit 1. The update exits 0 and keeps all 15, silently at add time. Ported pages OLD. Doctor after: 15 NOT DECLARED, exit 1.",
+   "safe": "yes (loud), but --force does not remove unrecorded copies, and the stale pages stay until the project acts"
+  },
+  {
+   "state": "F2 list EMPTY '{}'",
+   "did": "base (with record) and base-norecord on pkg/empty",
+   "happened": "With record: 15 RETIRED, removed. Without record: as F1.",
+   "safe": "yes"
+  },
+  {
+   "state": "F3 list CORRUPTED (cut at 5000 bytes), no record",
+   "did": "pkg/bad; doctor; update --force",
+   "happened": "As F1. No finding names the unreadable list: readRetired swallows the parse error (copies.ts:462-472).",
+   "safe": "yes (loud through undeclared), but the damage itself is silent"
+  },
+  {
+   "state": "F4 list STALE (each file's 4.44.0 print removed), no record / with record",
+   "did": "pkg/stale",
+   "happened": "No record: as F1 (15 undeclared, OLD pages after --force). With record: 15 RETIRED, removed.",
+   "safe": "yes"
+  },
+  {
+   "state": "F5 whitespace only, no record: trailing space (ts Quick), no final newline (go Ref), CRLF (py Quick)",
+   "did": "edited, doctor, update --force",
+   "happened": "CRLF: RETIRED, removed. The trailing space and the missing final newline are each additive plus NOT DECLARED, kept and used after --force; doctor exit 1.",
+   "safe": "yes (loud)"
+  },
+  {
+   "state": "F6 edited to equal ANOTHER release (v4.34.1 text), record says changed, merge mode",
+   "did": "-y update, then a real update",
+   "happened": "Doctor calls it RETIRED. -y leaves the tree unchanged. The real update deletes it with an info-level line only; nothing is kept in log/. Doctor then matches, exit 0.",
+   "safe": "NOT OK: a project edit is deleted without --force or overwrite mode"
+  },
+  {
+   "state": "F6b the same, override DECLARED in the model",
+   "did": "as F6 with the key added",
+   "happened": "Deleted the same way. The declaration is ignored.",
+   "safe": "NOT OK: a model decision is overridden in merge mode"
+  },
+  {
+   "state": "F7 own content under a retired name (ReadmeTopQuick_ts), record intact; then declared; misspelt key; key on a nonexistent target",
+   "did": "doctor, update, declare, build, generate",
+   "happened": "- Undeclared: kept, exit 1.\n- Declared: doctor exit 0. Generate threw 'own.ReadmeTopQuick is not a function', because my file exports nothing: loud, and my own fault.\n- Misspelt key: still undeclared, exit 1.\n- Key on target zz: the aontu model fails to generate (loud).\n- Checked separately (f12c): a declared, valid edited component generates and is used.",
+   "safe": "yes"
+  },
+  {
+   "state": "F8 alias go~go2 made by 4.44.0, no record, one go2 copy with a trailing space",
+   "did": "doctor, update --force",
+   "happened": "go2 Quick and TopQuick are recognised as RETIRED through the alias reversal and removed. The space-edited go2 Ref is undeclared, kept, exit 1.",
+   "safe": "yes"
+  },
+  {
+   "state": "F9 pack target named lua installed AS lua (not aliased) by 4.44.0, upgraded; then the record deleted and --force",
+   "did": "doctor, package update, record removed, update --force",
+   "happened": "The pack's ReadmeQuick/Ref/TopQuick_lua are never touched (only ts's 3 retire), and doctor matches after the record is deleted. F9b was uninformative: the pack's lua copy already equals bundled 4.44.0 lua.",
+   "safe": "yes"
+  },
+  {
+   "state": "F10 a later release ships the retired file again, its list still naming it",
+   "did": "pkg/reship with a new ReadmeQuick_ts.ts; base and base-norecord",
+   "happened": "The shipped-list test logic would name it. With record: OUTDATED, refreshed to the new file, doctor exit 0. No record: FORKED (loud).",
+   "safe": "yes"
+  },
+  {
+   "state": "F11 a release forgets to regenerate the list (next2 retiring ReadmeTopHowto_ts, its entry removed), project with no record",
+   "did": "base updated to new, record deleted, on pkg/next2nl: doctor, update --force, tsc, generate, doctor; reference with the record kept",
+   "happened": "Before: 1 additive plus 5 forked. After --force: ReadmeTopHowto_ts.ts kept, compiled and used; the root README differs from the recorded project by 12 lines (an old TypeScript direct example). Doctor: 'matches the scaffold (1 additive, 0 customized)', exit 0. With the record it is removed.",
+   "safe": "NOT OK: a stale component writes a page while doctor matches. It needs a missing record AND a release that skipped `npm run retired`; SYNTAX_SECTIONS does not cover the name."
+  },
+  {
+   "state": "F12 overwrite mode with a DECLARED override (record says edited)",
+   "did": "doctor, -y target add ts, target add ts",
+   "happened": "Doctor labels it 'changed here, and copies are overwritten in this project, so the next add deletes it'. -y leaves the tree unchanged. The add deletes it.",
+   "safe": "yes by the overwrite mode, though the model's two declarations disagree and overwrite silently wins"
+  },
+  {
+   "state": "F12b merge mode, declared, --force",
+   "did": "target add ts --force",
+   "happened": "Deleted.",
+   "safe": "yes (--force)"
+  },
+  {
+   "state": "F12c merge mode, undeclared, no --force",
+   "did": "-y then real add",
+   "happened": "-y: tree unchanged. Real: kept with an override warning; doctor 1 NOT DECLARED, exit 1. Adding the key then gives generate ok with the edit used.",
+   "safe": "yes"
+  },
+  {
+   "state": "F13 dry runs with released copies and no record",
+   "did": "-y package update --force, -y target add ts --force, -y target remove ts, -y doctor prune; sha of .sdk before and after each",
+   "happened": "All four leave the tree unchanged.",
+   "safe": "yes"
+  },
+  {
+   "state": "F14 an UNCHANGED released copy whose override the model declares",
+   "did": "package update",
+   "happened": "Removed (RETIRED). No edit is lost, but the declaration is ignored.",
+   "safe": "yes (no edit lost)"
+  },
+  {
+   "state": "F15 remove ts with a whitespace-edited retired copy and no record",
+   "did": "target remove ts; then --force",
+   "happened": "Refuses with 'refusing to delete what `target add` did not write', which is inaccurate (an add wrote it). --force removes it.",
+   "safe": "yes, with the wrong wording (S2b's)"
+  },
+  {
+   "state": "Their S2b / S2r / S2n / S19 / S20 / R5b / S14b / S17b",
+   "did": "re-run through after.sh",
+   "happened": "Same as their after column.",
+   "safe": "as they report"
+  }
+ ],
+ "layer": [
+  {
+   "case": "lua and ocaml 3.2 packs as installed (L) and declaring '3.2' (D), with and without the test feature",
+   "build": "tsc exit 0",
+   "generate": "ok, one syntax-interface-previous warning per target",
+   "page": "L == D == their L byte for byte. The served clauses are as tabled: 'so branch on' omitted; the NOTEST test client says 'generated without the `test` feature.' without the mock claim; lua utility 'a copy'; streamSignal sentence absent."
+  },
+  {
+   "case": "c1 a 3.3-correct provider declaring '3.2'",
+   "build": "tsc 0",
+   "generate": "ok, 1 warning",
+   "page": "2 REFERENCE lines lose 'so branch on `result.ok`': a worse page for a correct provider, loud by warning"
+  },
+  {
+   "case": "c2 the 3.2 lua pack declaring '3.3', which it does not satisfy",
+   "build": "tsc 0 (testMock now optional in the type)",
+   "generate": "throws 'ReadmeRef: the test constructor needs ref.facts.testMock', with and without the test feature",
+   "page": "none written (loud, kind 2)"
+  },
+  {
+   "case": "c3 a version that never existed ('3.9', '3.1')",
+   "build": "tsc TS2322 (kind 1)",
+   "generate": "emitted anyway: refused, naming the change list",
+   "page": "none"
+  },
+  {
+   "case": "c3-number interface: 3.3 as any",
+   "build": "tsc 0",
+   "generate": "refused, but the message says 'it declares none', which is inaccurate",
+   "page": "none"
+  },
+  {
+   "case": "c4 two providers on two interfaces in one project (bundled lua 3.3, lua32 and ocaml32 at 3.2)",
+   "build": "tsc 0",
+   "generate": "ok; exactly 2 warnings (lua32, ocaml32)",
+   "page": "lua keeps 'so branch on'; lua32 REFERENCE is byte-identical to its single-provider project L"
+  },
+  {
+   "case": "c5 interface: SYNTAX_INTERFACE via a deep import from @voxgig/sdkgen/dist/helpers/syntaxversion",
+   "build": "tsc 0",
+   "generate": "ok, no warning",
+   "page": "unchanged today; silent at every future raise (the m8 bypass, reopened). package check says 'declares interface none ... served with fewer sentences', which is false."
+  },
+  {
+   "case": "c6 facts.served: '3.2' set by a provider that declares '3.3'",
+   "build": "tsc 0 (served is a public optional fact)",
+   "generate": "ok, no warning",
+   "page": "silently loses the 2 'so branch on' lines"
+  },
+  {
+   "case": "c7 no interface declared on a 3.3 provider",
+   "build": "tsc 0",
+   "generate": "ok, 1 warning",
+   "page": "2 lines lost, loud by warning"
+  },
+  {
+   "case": "m1 (their claim) testMock removed",
+   "build": "tsc 0",
+   "generate": "throws (kind 2), as c2 shows",
+   "page": "none"
+  },
+  {
+   "case": "x1 a fact of the wrong type: testMock: 'Always' as any (and streamSignal: 'no' as any)",
+   "build": "tsc 0 with the cast (a literal would be kind 1)",
+   "generate": "ok",
+   "page": "Silent. Without the test feature it prints the 'generated' sentence ('no mock transport and refuses every request') for a runtime declared 'always'. The truthy 'no' is read as true."
+  },
+  {
+   "case": "x2 a printer that returns nothing (read => undefined as any)",
+   "build": "tsc 0",
+   "generate": "ok",
+   "page": "silent wrong page: 'read as `undefined`', 'so branch on `undefined`' (4 lines)"
+  },
+  {
+   "case": "x3 a note in an unknown slot ('tutorial:remove')",
+   "build": "with the cast: tsc 0; as a literal: TS2353 (kind 1)",
+   "generate": "ok",
+   "page": "the note is printed nowhere, silently"
+  },
+  {
+   "case": "x4 a required fact set to an empty string (testMock: '' as any)",
+   "build": "tsc 0",
+   "generate": "ok, passes the null check",
+   "page": "silent: the 'generated' sentence"
+  },
+  {
+   "case": "x5 an extra printer argument",
+   "build": "tsc 0",
+   "generate": "ok",
+   "page": "unchanged (harmless)"
+  }
+ ],
+ "rules_bent": [
+  {
+   "rule": "Add is overwrite, and doctor/the copy record tells OUTDATED from EDITED; an edit is lost only in the mode that says so",
+   "line": "ts/src/action/copies.ts:477-484 (unchangedCopy: a release match outweighs untouched()===false); target.ts:534-541",
+   "how": "Ran (F6): a copy the record calls changed, equal to an older release, is deleted by a merge-mode update without --force, and nothing is kept."
+  },
+  {
+   "rule": "A project decision belongs in the MODEL, never in a forked component",
+   "line": "ts/src/helpers/optional.ts:52-56 (undeclaredOverride, read only by doctor and the add warning); target.ts:541 (the delete path never reads it); model/sdkgen.aontu:131",
+   "how": "Ran (F6b, F14, F12): `override: <Name>: true` is ignored by the delete path in merge mode when the copy matches a release, and by overwrite mode. The declaration only silences doctor."
+  },
+  {
+   "rule": "One rule, one place: which components a shared section replaces",
+   "line": "optional.ts:46 SYNTAX_SECTIONS hard-codes three names beside OPTIONAL_COMPONENTS, which already lists ReadmeTopHowto and ReadmeTopTest",
+   "how": "Ran (F11): their next2 retired ReadmeTopHowto_ts without extending SYNTAX_SECTIONS, so the undeclared rule does not cover the next retirement."
+  },
+  {
+   "rule": "One rule, one place: the component path",
+   "line": "cmp/ReadmeQuick.ts:25, cmp/ReadmeRef.ts:27, cmp/ReadmeTop.ts:105, cmp/Registered.ts:30 still build `./cmp/${t}/<Name>_${t}` by hand",
+   "how": "Read. componentModule exists, but the shared loaders that decide which file is used do not call it. The report says only prose messages remain; that is not so."
+  },
+  {
+   "rule": "One rule, one place: what interface a provider declares; and provenance (and declarations) are never read by pattern",
+   "line": "syntaxversion.ts:98 declaredInterface (a regex over source) vs optional.ts serveSyntax (the runtime value)",
+   "how": "Ran (c5, c5pack): a deep import of SYNTAX_INTERFACE compiles and is served as current, while package check reports 'none'. Un-exporting from the index does not help, because package.json has no exports map."
+  },
+  {
+   "rule": "Doctor is the check that keeps all of this true",
+   "line": "copies.ts:462-472 readRetired swallows a corrupt or missing list; doctor.ts:1015-1020",
+   "how": "Ran (F3, F11): a corrupt list is named nowhere. A component retired by a release whose list is stale, outside the three sections, reads as additive and never fails doctor."
+  },
+  {
+   "rule": "remove plans from doctor's findings and refuses only what add did not write",
+   "line": "remove.ts (refusal wording unchanged)",
+   "how": "Ran (F15): it still says 'did not write' for an unrecorded whitespace-edited copy that an add wrote."
+  },
+  {
+   "rule": "Dry run must be honoured everywhere",
+   "line": "target.ts:494-507 (pruneRetired passes dryrun), copies.ts guard",
+   "how": "Ran (F6, F12, F12c, F13): honoured; every -y left the .sdk sha unchanged. Not bent."
+  },
+  {
+   "rule": "A file the record does not name is never deleted (copymerge spares)",
+   "line": "copies.ts:404-405 (recorded() returns the current fingerprint for released copies)",
+   "how": "Read and ran: bent on purpose for released copies, as they state. F6 shows it also overrides a record that names the file as changed."
+  }
+ ],
+ "tests_that_do_not_fail": [
+  "M7: doctor's overwrite-mode override label (doctor.js `OVERWRITE === projectCopyMode(actx) ?` forced false). retire, syntaxversion, packagecheck, refinterface and doctor tests: 99/99 still pass.",
+  "M9: an unreadable legacy sdkgen-copies.json is no longer damage (`record.damaged.push(LEGACY)` removed): 99/99 pass.",
+  "M10: the served provider's 'so branch on' clause kept (`f.served ? ''` forced false): 99/99 pass.",
+  "M11: the served utility-getter sentence ([14]) reverted: 99/99 pass.",
+  "M12: the served wrapped-style unwrap ([13]) reverted: 99/99 pass. Part 2's page behaviour has no unit test; only the warning is pinned.",
+  "For contrast, these DO fail when reverted:\n- the newline guard (no-join test);\n- isEntry (wrong-shape test);\n- the guard's released set (add-removes test);\n- the unchangedCopy lookup (4 tests);\n- the ok count (2 tests);\n- the alias reversal (alias test);\n- the testMock generate check (refinterface 'follows testMock')."
+ ],
+ "h5_words": [
+  {
+   "words": "retiring per-language components cannot be made safe for doctor",
+   "evidence": "Every released copy is recognised without the record (R5b, S14b, S17b, S20, F2, F4b, F8), and doctor fails on each undeclared section copy (F1, F3, F4, F5). Doctor still matches with a stale component in use in F11 (no record plus a release that skipped the list, a name outside the three sections).",
+   "supports": "Not refuted: doctor is safe for released copies, and the F11 hole has a local fix (derive the sections, check the list's completeness). As built, doctor is not complete."
+  },
+  {
+   "words": "... for remove",
+   "evidence": "remove never deleted what it did not write in any run. It refuses an unrecorded edited copy with the wrong reason (F15), and --force works. F13: -y target remove leaves the tree unchanged.",
+   "supports": "Supports 'can be made safe'; wording only."
+  },
+  {
+   "words": "... for target add and package update",
+   "evidence": "F6 and F6b: a merge-mode update deletes an edited copy that equals an older release, and ignores the model's declared override. Every dry run writes nothing (F13).",
+   "supports": "Against the built structure: an edit is lost without the mode that says so. The fix is local (a release match should not outweigh a record that says changed, or a declaration), so this does not show it CANNOT be made safe."
+  },
+  {
+   "words": "without breaking their rules",
+   "evidence": "Bent rules with lines in rules_bent:\n- 'a project decision belongs in the model' (F6b, F12);\n- 'one rule, one place' (SYNTAX_SECTIONS; hand-built loader paths; two readings of the interface);\n- 'never delete an unrecorded file' (by design).",
+   "supports": "As built, rules are bent. None of the bends is forced by retirement itself."
+  },
+  {
+   "words": "or a pack's targets stop generating",
+   "evidence": "3.2 packs generate on 3.3 with one warning (L, D, c4). The raise to 3.4 (st2n) generates. The pack's own same-name target is untouched (F9). Langpack 74/76 against both builds. c2 (a pack declaring 3.3 wrongly) stops with a named fact, which is intended.",
+   "supports": "Supports H5: packs keep generating."
+  }
+ ],
+ "not_done": [
+  "Did not re-run their 'today' baseline section (rows1 today), checkbin/st2 S4/S4b against the original next, or r11own.",
+  "Did not build or run the loud experiment branch h5fix-loud (it lives in P/h5fix/dev); m3, m4 and m5 on it are their claim.",
+  "A (3.2 provider on 3.2 shared code) could not be regenerated: P/ports/lua and P/ports/ocaml are gone. I used their stored A outputs (read, not run).",
+  "Did not reproduce a project that has a dart, haskell or lean target from an sdkgen old enough to bundle them. The 81 non-section list entries were never exercised.",
+  "No timing A/B for the list's cost.",
+  "Did not exercise change [13] (wrapped style) with a real 3.2 swift provider; only the hunk-revert shows it is unpinned.",
+  "Edition retirement through pruneRetired was not exercised.",
+  "My F4 'stale list' removed prints that earlier releases also shipped, so a list exactly one release stale would not show F4. F4 stands for content first released after the list was made.",
+  "Did not test a shallow clone (tags absent) running `npm run retired`. Read: it would write an empty list, and the shipped test (non-empty, nothing shipped) would catch that only if nothing at all were listed.",
+  "No toolchain compile of generated examples."
+ ],
+ "ran": "Every command ran with PATH=/opt/node24/bin first, in P/h5fixcheck.\n\n- **Setup:** copied sdkgen, old, bin, checkbin, today, next, next2, nocheck, langpack, packs, and work/{base, base-alias, base-edited, base-norecord, base-owned, all20, fresh7} plus the out refs. Repointed 64 symlinks and the script paths; npm run build exit 0 (build-0.log).\n- **Re-runs:**\n  - bin/after.sh -> after-1.log, diffed against P/h5fix/after-1.log with timings normalised;\n  - bin/rows12.sh after repointing the langpack links -> r12.log;\n  - bin/rows11fix.sh, with and without NOTEST, and bin/st2n.sh S4 S4b S4g -> rows11fix*.log and st2n.log, diffed against theirs;\n  - the full suite without generatedcompile -> suite.log (2650/0/5, 737 s).\n- **List:** build/retired.js --check twice (exit 0); --check with a stray untracked file (exit 1, in the H/mut worktree); built pkg/{nolist, empty, bad, stale, reship, next2nl}.\n- **States:** bin/st4.sh F1-F15 -> st4.log. Each used doctor, package update (with --no-fetch, -y and --force), target add/remove (with -y and --force), doctor prune -y, project tsc, in-memory generation and sha1 snapshots. Plus the f12c declared-key generate check.\n- **Compat layer:** bin/r11mine.sh -> r11mine.log, 14 provider variants plus c2 and c4; NOTEST generates for x1 and x4; package check on packs/lua32, packs/ocaml32 and packs/c5pack.\n- **Test mutations:** in the detached worktree H/mut (d36954fc, dist-test and dist-test-scaffold copied), I reverted one compiled hunk at a time and ran retire, syntaxversion, packagecheck, refinterface and doctor tests: baseline 99/99, 12 mutations.",
+ "read": "- **Briefs and reports:** P/prompts/k-h5fixcheck.md, P/brief.md, P/prompts/k-h5.md, P/prompts/k-h5fix.md, P/results/s4-h5check.txt in full, P/h5fix/PROGRESS.md, and the engineer's report. In /home/user/sdkgen/AGENTS.md, the sections 'Content can come from OUTSIDE this package' and 'Sharp edges' (from the provided context).\n- **Code at d36954fc:** git diff 29175771..d36954fc for copies.ts, target.ts, doctor.ts, optional.ts, manifest.ts, kind.ts, check.ts, syntaxversion.ts, example.ts, ReadmeRef.ts, runtimeprose.ts, sdkgen.ts, types.ts, utility.ts, edition.ts, Makefile, model/sdkgen.aontu, package.json and build/retired.js; helpers/cmpfile.ts in full; test/retire.test.ts (new tests).\n- **Other spots:** the loadOptional call sites in cmp/*.ts; the files and exports fields of package.json; next2's dist optional.js and ReadmeTop.js.\n- **Their stored outputs:** P/h5fix/out/r11f*/a-* (the A pages)."
+}

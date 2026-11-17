@@ -1,0 +1,47 @@
+▶ generated SDK compiles
+  ✔ zig: a consumer builds against the fetched package (6331.069902ms)
+  ✔ zig: the secrets feature runs with the feature active (3739.193527ms)
+  ℹ zig: secrets suite ran 34 of 34 test(s) through `zig build test-secrets`
+✔ generated SDK compiles (10099.141448ms)
+▶ generated auth tests discover the credential name
+  ✔ zig: a credential named by the API, not `authorization` (6262.693208ms)
+  ✔ zig: an HTTP Basic API, whose config takes the Basic branch (6218.717594ms)
+  ✔ zig: a credential carried as a cookie (6709.735954ms)
+  ✔ zig: a credential carried in the query (6622.023513ms)
+  ✔ zig: a query credential whose name keeps its case (6706.304842ms)
+  ✔ zig: a header named cookie, which is not a cookie credential (6770.087219ms)
+  ✔ zig: a public API, which places no credential (4303.651956ms)
+✔ generated auth tests discover the credential name (43613.270669ms)
+▶ the canary sweep runs from a generated SDK
+  ✔ zig: no credential leaves the SDK (header auth, no server variable) (2402.240631ms)
+  ✔ zig: no credential leaves the SDK (query auth, server variable with an empty default) (3185.762079ms)
+  ✔ zig: no credential leaves the SDK (basic auth, server variable with no declaration) (3159.126622ms)
+✔ the canary sweep runs from a generated SDK (8779.553207ms)
+▶ the documented c, cpp, rust, zig and ocaml examples compile
+  ✔ zig: every documented example compiles, singleton first (711.649804ms)
+  ✔ zig: every documented example compiles, list first (958.848918ms)
+  ✔ zig: every documented example compiles, crud first (848.003329ms)
+  ✔ zig: every documented example compiles, nested first (830.370418ms)
+  ✔ zig: every documented example compiles, quoted-name first (945.740223ms)
+  ✔ zig: every documented example compiles, basic-server first (938.102477ms)
+✔ the documented c, cpp, rust, zig and ocaml examples compile (5257.91726ms)
+▶ probes driven through a generated SDK
+  ✔ zig: the media types a point declares reach the wire (2718.167207ms)
+  ﹣ zig: an operation whose request cannot be sent raises (10.140289ms) # zig: the probe has no live transport here
+  ✔ zig: an allow list names whole methods and operations, in any case (697.324508ms)
+  ✔ zig: a list reads the record each of its items wraps (720.149987ms)
+  ✔ zig: a list keeps each item that is not a record (784.046501ms)
+  ✔ zig: a test-mode list answers only the seeds its required parameters match (880.555985ms)
+  ✔ zig: a body that is not JSON names its status, type, agent and preview (2605.813401ms)
+  ﹣ zig: a request carries the agent the model declares (15.179414ms) # zig: no built-in transport here
+  ✔ zig: a failed load's error says whether it was a 404 (911.237116ms)
+  ✔ zig: a path parameter of . or .. is refused before the transport (69.512648ms)
+✔ probes driven through a generated SDK (9453.7841ms)
+ℹ tests 28
+ℹ suites 5
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 2
+ℹ todo 0
+ℹ duration_ms 78950.92289

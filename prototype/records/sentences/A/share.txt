@@ -1,0 +1,270 @@
+1 509df65eab tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 4, of: 8 } 
+   M: This tutorial walks through creating a client and loading an Ⓔ. 
+   E: ts B: Tutorial: your first API call | This tutorial walks through creating a client and loading an ambient.
+2 ee58ce03de tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 4, of: 4 } 
+   M: Every operation returns entities, not raw Ⓔs. 
+   E: ts B: Tutorial: your first API call | Every operation returns entities, not raw records.
+3 afbad155be tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 3, of: 3 } 
+   M: The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`. 
+   E: ts B: Tutorial: your first API call > 1. Create a client | The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`.
+4 3b42b780fa tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 5, of: 18 } 
+   M: This tutorial walks through creating a client, listing Ⓔ Ⓔs, loading a Ⓔ, and creating, updating, patching, and removing a Ⓔ. 
+   E: ts crud-bare: Tutorial: your first API call | This tutorial walks through creating a client, listing planet records, loading a planet, and creating, updating, patching, and removing a planet.
+5 ac63285763 tutorial comment c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/helpers/example.ts', n: 7, of: 12 } 
+   M: Patch — sends only the Ⓕ given; the Ⓕ comes off the created entity's Ⓔ 
+   E: ts crud-bare: Tutorial: your first API call > 4. Create, update, and remove | Patch — sends only the fields given; the id comes off the created entity's record
+6 3b2733cb55 tutorial comment c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/helpers/example.ts', n: 4, of: 7 } 
+   M: Update — the Ⓕ comes off the created entity's Ⓔ 
+   E: ts crud-bare: Tutorial: your first API call > 4. Create, update, and remove | Update — the id comes off the created entity's record
+7 8e422a85a8 tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 5, of: 16 } 
+   M: This tutorial walks through creating a client, listing Ⓔ Ⓔs, loading a Ⓔ, and creating and removing a Ⓔ. 
+   E: ts crud-noupdate: Tutorial: your first API call | This tutorial walks through creating a client, listing planet records, loading a planet, and creating and removing a planet.
+8 95064ad01e tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 4, of: 8 } 
+   M: This tutorial walks through creating a client and listing Ⓔ Ⓔs. 
+   E: ts doc-list: Tutorial: your first API call | This tutorial walks through creating a client and listing console records.
+9 59ac8a63ea tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 5, of: 17 } 
+   M: This tutorial walks through creating a client, listing Ⓔ Ⓔs, loading a Ⓔ, and creating, updating, and removing a Ⓔ. 
+   E: ts doc-nested: Tutorial: your first API call | This tutorial walks through creating a client, listing planet records, loading a satellite, and creating, updating, and removing a planet.
+10 bcbefa9d5b tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 4, of: 4 } 
+   M: This tutorial walks through creating a client. 
+   E: ts ent-none: Tutorial: your first API call | This tutorial walks through creating a client.
+11 5f48968a61 tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 5, of: 11 } 
+   M: This tutorial walks through creating a client, listing Ⓔ Ⓔs, and loading a Ⓔ. 
+   E: ts ex-readonly: Tutorial: your first API call | This tutorial walks through creating a client, listing planet records, and loading a planet.
+12 fc11508b53 tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 4, of: 8 } 
+   M: This tutorial walks through creating a client and updating a Ⓔ. 
+   E: ts ref-issues: Tutorial: your first API call | This tutorial walks through creating a client and updating a gauge.
+13 2873e86578 tutorial sentence c,clojure,elixir,go,py,rust,ts,zig 8 {"rule record":8} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 3, of: 3 } 
+   M: The server URL is templated, so `server` must give `account`; `region` defaults to `eu`. 
+   E: ts server-mixed: Tutorial: your first API call > 1. Create a client | The server URL is templated, so `server` must give `account`; `region` defaults to `eu`.
+14 ac969fd7fb tutorial heading c,clojure,elixir,py,rust,ts,zig 7 {"rule record":7} - 
+   M: 2. Load an Ⓔ 
+   E: ts B: Tutorial: your first API call | 2. Load an ambient
+15 a2bf96f937 tutorial sentence c,clojure,elixir,py,rust,ts,zig 7 {"rule record":7} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 5, of: 5 } 
+   M: The client reads its API key from the `DEMO_APIKEY` environment variable. 
+   E: ts B: Tutorial: your first API call > 1. Create a client | The client reads its API key from the `DEMO_APIKEY` environment variable.
+16 cfc01f1671 tutorial sentence c,clojure,elixir,py,rust,ts,zig 7 {"rule record":7} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 7, of: 7 } 
+   M: The client reads its API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables. 
+   E: ts auth-basic: Tutorial: your first API call > 1. Create a client | The client reads its API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables.
+17 c246e90164 tutorial heading c,clojure,elixir,py,rust,ts,zig 7 {"rule record":7} - 
+   M: 4. Create, update, patch, and remove 
+   E: ts crud-bare: Tutorial: your first API call | 4. Create, update, patch, and remove
+18 4633b64615 tutorial heading c,clojure,elixir,py,rust,ts,zig 7 {"rule record":7} - 
+   M: 4. Create and remove 
+   E: ts crud-noupdate: Tutorial: your first API call | 4. Create and remove
+19 f999547282 tutorial heading c,clojure,elixir,py,rust,ts,zig 7 {"rule record":7} - 
+   M: 2. Update 
+   E: ts ref-issues: Tutorial: your first API call | 2. Update
+20 366f8e2cd2 rootquick comment clojure,elixir,py,rb 4 {"rule record":3,"hand":1} - 
+   M: Load an Ⓔ: the entity; raises on failure 
+   E: py B: Python | Load an ambient: the entity; raises on failure
+21 0ea856bddf rootquick comment clojure,elixir,py,rb 4 {"rule record":3,"hand":1} - 
+   M: Load a Ⓔ: the entity; raises on failure 
+   E: py crud-bare: Python | Load a planet: the entity; raises on failure
+22 a12cc73410 tutorial comment elixir,py,rb 5 {"rule record":4,"hand":1} - 
+   M: Create — returns the created entity; ⟦record⟧ reads its Ⓔ 
+   E: py crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Create — returns the created entity; data_get() reads its record
+23 f2515f53be tutorial sentence clojure,elixir,py 3 {"hand":3} { file: 'ts/src/helpers/runtimeprose.ts', n: 5, of: 15 } 
+   M: Each write returns the entity it wrote (a removed one is marked as deleted), and raises on failure. 
+   E: py crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Each write returns the entity it wrote (a removed one is marked as deleted), and raises on failure.
+24 2e3c8aae76 tutorial sentence clojure,elixir,py 3 {"hand":3} { file: 'ts/src/helpers/runtimeprose.ts', n: 1, of: 6 } 
+   M: ⟦method.update⟧ returns the entity it wrote, and raises on failure. 
+   E: py ref-issues: Tutorial: your first API call > 2. Update | `update()` returns the entity it wrote, and raises on failure.
+25 cd455bcf95 tutorial sentence rust,zig 2 {"rule record":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 3, of: 3 } 
+   M: ⟦method.load⟧ returns a result whose ⟦ok⟧ is the entity and whose ⟦err⟧ reports failure; ⟦record⟧ reads its Ⓔ. 
+   E: zig B: Tutorial: your first API call > 3. Load an ambient | `load()` returns a result whose `.ok` is the entity and whose `.err` reports failure; `asEntity().data(null)` reads its record.
+26 e0fb6e7e3c tutorial sentence rust,zig 2 {"hand":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 6, of: 14 } 
+   M: Each write returns a result whose ⟦ok⟧ is the entity it wrote (a removed one is marked as deleted) and whose ⟦err⟧ reports failure. 
+   E: zig crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Each write returns a result whose `.ok` is the entity it wrote (a removed one is marked as deleted) and whose `.err` reports failure.
+27 4ffde2c5db tutorial sentence rust,zig 2 {"hand":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 5 } 
+   M: ⟦method.update⟧ returns a result whose ⟦ok⟧ is the entity it wrote and whose ⟦err⟧ reports failure. 
+   E: zig ref-issues: Tutorial: your first API call > 2. Update | `update()` returns a result whose `.ok` is the entity it wrote and whose `.err` reports failure.
+28 6732c42051 tutorial sentence clojure,elixir 2 {"rule record":2} - 
+   M: ⟦method.load⟧ returns the entity and raises on failure; ⟦record⟧ reads its Ⓔ. 
+   E: clojure B: Tutorial: your first API call > 3. Load an ambient | `load` returns the entity and raises on failure; `((:data-get ambient))` reads its record.
+29 3d0c1adcc3 tutorial sentence clojure,elixir 2 {"rule record":1,"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 10 } 
+   M: ⟦method.list⟧ returns a ⟦collection⟧ of entities, one per Ⓔ, and raises on failure; ⟦record⟧ reads an entity's Ⓔ. 
+   E: clojure crud-bare: Tutorial: your first API call > 2. List planet records | `list` returns a vector of entities, one per record, and raises on failure; `((:data-get planet))` reads an entity's record.
+30 a0f86c7f47 tutorial comment go 3 {"rule record":3} - 
+   M: Load a Ⓔ: the entity; err is non-nil on failure 
+   E: go crud-bare: Tutorial: your first API call | Load a planet: the entity; err is non-nil on failure
+31 c9472ea53d tutorial comment ts 2 {"rule record":2} - 
+   M: Create — resolves to the created entity; ⟦record⟧ reads its Ⓔ 
+   E: ts crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Create — resolves to the created entity; .data() reads its record
+32 57eaa23251 tutorial comment go 2 {"rule record":2} - 
+   M: Load an Ⓔ: the entity; err is non-nil on failure 
+   E: go B: Tutorial: your first API call | Load an ambient: the entity; err is non-nil on failure
+33 1dc13211d0 tutorial comment go 2 {"rule record":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 12 } 
+   M: List Ⓔ Ⓔs: a []any of entities, one per Ⓔ; err is non-nil on failure 
+   E: go crud-bare: Tutorial: your first API call | List planet records: a []any of entities, one per record; err is non-nil on failure
+34 1b25034e90 tutorial sentence py 2 {"rule record":2} - 
+   M: ⟦method.load⟧ returns the entity and raises on failure; ⟦record⟧ reads its Ⓔ (a ⟦recordType|ref.container|ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧). 
+   E: py B: Tutorial: your first API call > 2. Load an ambient | `load()` returns the entity and raises on failure; `data_get()` reads its record (a `dict`).
+35 dbb15d380e tutorial comment zig 2 {"rule record":2} - 
+   M: Create — ⟦ok⟧ carries the created entity; ⟦record⟧ reads its Ⓔ 
+   E: zig crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Create — .ok carries the created entity; asEntity().data(null) reads its record
+36 bfe2260d8d rootquick comment ts 2 {"rule record":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 1, of: 9 } 
+   M: List Ⓔ Ⓔs: a ⟦listOf⟧, one entity per Ⓔ; throws on failure 
+   E: ts crud-bare: TypeScript | List planet records: a PlanetEntity[], one entity per record; throws on failure
+37 d079618e6e tutorial sentence ts 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 1, of: 5 } 
+   M: ⟦method.load⟧ resolves to the entity and throws on failure; `⟦record⟧` reads its Ⓔ. 
+   E: ts B: Tutorial: your first API call > 3. Load an ambient | `load()` resolves to the entity and throws on failure; `.data()` reads its record.
+38 e5b6ebca15 tutorial sentence ts 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 3, of: 11 } 
+   M: ⟦method.list⟧ resolves to an ⟦collection⟧ of entities, one per Ⓔ, and throws on failure; `⟦record⟧` reads an entity's Ⓔ. 
+   E: ts crud-bare: Tutorial: your first API call > 2. List planet records | `list()` resolves to an array of entities, one per record, and throws on failure; `.data()` reads an entity's record.
+39 6d459aa83b tutorial sentence ts 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 6, of: 16 } 
+   M: Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure. 
+   E: ts crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Each write resolves to the entity it wrote (a removed one is marked as deleted), and throws on failure.
+40 6adfda349a tutorial sentence ts 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 7 } 
+   M: ⟦method.update⟧ resolves to the entity it wrote, and throws on failure. 
+   E: ts ref-issues: Tutorial: your first API call > 2. Update | `update()` resolves to the entity it wrote, and throws on failure.
+41 aec346dc78 tutorial sentence go 1 {"rule record":1} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 3, of: 7 } 
+   M: The program after these 2 steps runs them in order. 
+   E: go B: Tutorial: your first API call | The program after these 2 steps runs them in order.
+42 ea263c07cb tutorial sentence go 1 {"rule record":1} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 3, of: 7 } 
+   M: The program after these 4 steps runs them in order. 
+   E: go B: Tutorial: your first API call | The program after these 4 steps runs them in order.
+43 c88eca6d9f tutorial sentence go 1 {"rule record":1} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 3, of: 7 } 
+   M: The program after these 3 steps runs them in order. 
+   E: go B: Tutorial: your first API call | The program after these 3 steps runs them in order.
+44 095528ea62 tutorial sentence go 1 {"rule record":1} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 5, of: 8 } 
+   M: **Create a client.** The client reads its API key from the `DEMO_APIKEY` environment variable. 
+   E: go B: Tutorial: your first API call | **Create a client.** The client reads its API key from the `DEMO_APIKEY` environment variable.
+45 9736ad7042 tutorial sentence go 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 5, of: 6 } 
+   M: **Load an Ⓔ.** ⟦method.load⟧ returns `⟦pairForm⟧`: the value is the entity, and a non-nil ⟦errVar⟧ reports failure; ⟦record⟧ reads its Ⓔ. 
+   E: go B: Tutorial: your first API call | **Load an ambient.** `Load()` returns `(value, error)`: the value is the entity, and a non-nil `err` reports failure; `Data()` reads its record.
+46 a73956b3fb tutorial sentence go 1 {"rule record":1} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 7, of: 10 } 
+   M: **Create a client.** The client reads its API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables. 
+   E: go auth-basic: Tutorial: your first API call | **Create a client.** The client reads its API key and secret from the `DEMO_APIKEY` and `DEMO_SECRET` environment variables.
+47 118dab2307 tutorial sentence go 1 {"rule record":1} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 3, of: 6 } 
+   M: **Create a client.** The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`. 
+   E: go auth-off: Tutorial: your first API call | **Create a client.** The server URL is templated, so `server` must give `tenant`; `region` defaults to `eu`.
+48 a4274bffdd tutorial comment go 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 1, of: 9 } 
+   M: Create — the value is the created entity; ⟦record⟧ reads its Ⓔ 
+   E: go crud-bare: Tutorial: your first API call > Quickstart | Create — the value is the created entity; Data() reads its record
+49 3cba044db7 tutorial sentence go 1 {"rule record":1} - 
+   M: **Create a client.** 
+   E: go crud-bare: Tutorial: your first API call | **Create a client.**
+50 89e4ec3e7c tutorial sentence go 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 3, of: 7 } 
+   M: **List Ⓔ Ⓔs.** ⟦method.list⟧ returns `⟦pairForm⟧`: the value is a ⟦collection⟧ of entities, one per Ⓔ, and a non-nil ⟦errVar⟧ reports failure. 
+   E: go crud-bare: Tutorial: your first API call | **List planet records.** `List()` returns `(value, error)`: the value is a `[]any` of entities, one per record, and a non-nil `err` reports failure.
+51 71b4990dcd tutorial sentence go 1 {"rule record":1} { file: 'ts/src/helpers/example.ts', n: 1, of: 1 } 
+   M: There is no `{ok, data}` wrapper; ⟦record⟧ reads an entity's Ⓔ. 
+   E: go crud-bare: Tutorial: your first API call | There is no `{ok, data}` wrapper; `Data()` reads an entity's record.
+52 094f5ec892 tutorial sentence go 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 5, of: 6 } 
+   M: **Load a Ⓔ.** ⟦method.load⟧ returns `⟦pairForm⟧`: the value is the entity, and a non-nil ⟦errVar⟧ reports failure; ⟦record⟧ reads its Ⓔ. 
+   E: go crud-bare: Tutorial: your first API call | **Load a planet.** `Load()` returns `(value, error)`: the value is the entity, and a non-nil `err` reports failure; `Data()` reads its record.
+53 9bbd9f45ff tutorial sentence go 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 8, of: 20 } 
+   M: **Create, update, patch, and remove.** Each write returns `⟦pairForm⟧` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil ⟦errVar⟧ reports failure. 
+   E: go crud-bare: Tutorial: your first API call | **Create, update, patch, and remove.** Each write returns `(value, error)` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure.
+54 4235f37e3f tutorial comment go 1 {"rule record":1} - 
+   M: Remove 
+   E: go crud-bare: Tutorial: your first API call | Remove
+55 f3bd7e9a0a tutorial sentence go 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 8, of: 18 } 
+   M: **Create and remove.** Each write returns `⟦pairForm⟧` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil ⟦errVar⟧ reports failure. 
+   E: go crud-noupdate: Tutorial: your first API call | **Create and remove.** Each write returns `(value, error)` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure.
+56 64112421c3 tutorial sentence go 1 {"rule record":1} - 
+   M: **Load a Ⓔ.** Ⓔ is nested under Ⓔ, so provide the `Ⓔ_id`. 
+   E: go doc-nested: Tutorial: your first API call | **Load a satellite.** Satellite is nested under planet, so provide the `planet_id`.
+57 4967fbd62e tutorial sentence go 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 5, of: 6 } 
+   M: ⟦method.load⟧ returns `⟦pairForm⟧`: the value is the entity, and a non-nil ⟦errVar⟧ reports failure; ⟦record⟧ reads its Ⓔ. 
+   E: go doc-nested: Tutorial: your first API call | `Load()` returns `(value, error)`: the value is the entity, and a non-nil `err` reports failure; `Data()` reads its record.
+58 62e6942ba3 tutorial sentence go 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 8, of: 19 } 
+   M: **Create, update, and remove.** Each write returns `⟦pairForm⟧` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil ⟦errVar⟧ reports failure. 
+   E: go doc-nested: Tutorial: your first API call | **Create, update, and remove.** Each write returns `(value, error)` too: the value is the entity it wrote (a removed one is marked as deleted), and a non-nil `err` reports failure.
+59 e0ff605945 tutorial sentence go 1 {"rule record":1} { file: 'ts/src/cmp/ReadmeQuick.ts', n: 4, of: 4 } 
+   M: The program after this step runs it. 
+   E: go ent-none: Tutorial: your first API call | The program after this step runs it.
+60 e705d74e4b tutorial sentence go 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 4, of: 8 } 
+   M: **Update.** ⟦method.update⟧ returns `⟦pairForm⟧` too: the value is the entity it wrote, and a non-nil ⟦errVar⟧ reports failure. 
+   E: go ref-issues: Tutorial: your first API call | **Update.** `Update()` returns `(value, error)` too: the value is the entity it wrote, and a non-nil `err` reports failure.
+61 fa74e53c4a tutorial comment go 1 {"rule record":1} - 
+   M: Update 
+   E: go ref-issues: Tutorial: your first API call | Update
+62 563a2ccc24 tutorial sentence py 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 8 } 
+   M: ⟦method.list⟧ returns a ⟦collection⟧ of entities, one per Ⓔ, and raises on failure; ⟦record⟧ reads an entity's Ⓔ (a ⟦recordType|ref.container|ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧). 
+   E: py crud-bare: Tutorial: your first API call > 2. List planet records | `list()` returns a `list` of entities, one per record, and raises on failure; `data_get()` reads an entity's record (a `dict`).
+63 487605432b tutorial sentence c 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 1, of: 1 } 
+   M: ⟦method.load⟧ returns the entity, or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure; ⟦record⟧ reads its Ⓔ. 
+   E: c B: Tutorial: your first API call > 3. Load an ambient | `load()` returns the entity, or `NULL` with `*err` set on failure; `vt->data` reads its record.
+64 bbd7e22198 tutorial sentence c 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 8 } 
+   M: ⟦method.list⟧ returns a ⟦collection⟧ of entities, one per Ⓔ, or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure, so check ⟦errVar⟧ after the call; ⟦record⟧ reads an entity's Ⓔ. 
+   E: c crud-bare: Tutorial: your first API call > 2. List planet records | `list()` returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure, so check `err` after the call; `vt->data` reads an entity's record.
+65 933ecb9182 tutorial comment c 1 {"rule record":1} - 
+   M: Create — returns the created entity, or NULL with ⟦errSlot⟧ set; ⟦record⟧ reads its Ⓔ 
+   E: c crud-bare: Tutorial: your first API call > 4. Create, update, and remove | Create — returns the created entity, or NULL with *err set; vt->data reads its record
+66 5cc55217a8 tutorial sentence c 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 5, of: 14 } 
+   M: Each write returns the entity it wrote (a removed one is marked as deleted), or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure, so check ⟦errVar⟧ after each call. 
+   E: c crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Each write returns the entity it wrote (a removed one is marked as deleted), or `NULL` with `*err` set on failure, so check `err` after each call.
+67 d8ced013b2 tutorial sentence c 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 1, of: 5 } 
+   M: ⟦method.update⟧ returns the entity it wrote, or ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure, so check ⟦errVar⟧ after each call. 
+   E: c ref-issues: Tutorial: your first API call > 2. Update | `update()` returns the entity it wrote, or `NULL` with `*err` set on failure, so check `err` after each call.
+68 f11f771494 tutorial sentence zig 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 3, of: 9 } 
+   M: ⟦method.list⟧ returns a result whose ⟦ok⟧ is a ⟦collection⟧ of entities, one per Ⓔ, and whose ⟦err⟧ reports failure; ⟦record⟧ reads an entity's Ⓔ. 
+   E: zig crud-bare: Tutorial: your first API call > 2. List planet records | `list()` returns a result whose `.ok` is a slice of entities, one per record, and whose `.err` reports failure; `asEntity().data(null)` reads an entity's record.
+69 cd05688101 tutorial comment clojure 1 {"rule record":1} - 
+   M: Create — returns the created entity; ((:data-get created)) reads its Ⓔ 
+   E: clojure crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Create — returns the created entity; ((:data-get created)) reads its record
+70 c1b47f3295 tutorial sentence rust 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 3, of: 6 } 
+   M: ⟦method.list⟧ returns a result whose ⟦ok⟧ is a `Vec` of entities, one per Ⓔ, and whose ⟦err⟧ reports failure; ⟦record⟧ reads an entity's Ⓔ. 
+   E: rust crud-bare: Tutorial: your first API call > 2. List planet records | `list()` returns a result whose `Ok` is a `Vec` of entities, one per record, and whose `Err` reports failure; `data(None)` reads an entity's record.
+71 5097de7b71 tutorial comment rust 1 {"rule record":1} - 
+   M: Create — Ok carries the created entity; ⟦record⟧ reads its Ⓔ 
+   E: rust crud-bare: Tutorial: your first API call > 4. Create, update, patch, and remove | Create — Ok carries the created entity; data(None) reads its record
+72 3426e9ddb3 tutorial sentence elixir 1 {"hand":1} - 
+   M: `Voxgig.Struct.getelem/2` reads an item. 
+   E: elixir crud-bare: Tutorial: your first API call > 2. List planet records | `Voxgig.Struct.getelem/2` reads an item.
+73 d71fee0121 tutorial comment rb 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 8 } 
+   M: `list` returns an ⟦collection⟧ of entities, one per Ⓔ, and raises on failure; `⟦record⟧` reads an entity's Ⓔ (a `Hash`). 
+   E: rb crud-bare: Tutorial: your first API call > 2. List planet records | `list` returns an `Array` of entities, one per record, and raises on failure; `data_get` reads an entity's record (a `Hash`).
+74 6d96732675 tutorial comment rb 1 {"hand":1} - 
+   M: `load` returns the entity and raises on failure; `⟦record⟧` reads its Ⓔ (a `Hash`). 
+   E: rb crud-bare: Tutorial: your first API call > 3. Load a planet | `load` returns the entity and raises on failure; `data_get` reads its record (a `Hash`).
+75 cb4c5bf0da rootquick comment ts 1 {"rule record":1} - 
+   M: Load an Ⓔ: the entity, an ⒺEntity; throws on failure 
+   E: ts B: TypeScript | Load an ambient: the entity, an AmbientEntity; throws on failure
+76 a1239b7c70 rootquick comment ts 1 {"rule record":1} - 
+   M: Load a Ⓔ: the entity, a Ⓔ; throws on failure 
+   E: ts crud-bare: TypeScript | Load a planet: the entity, a PlanetEntity; throws on failure
+77 99a8153c15 rootquick comment ts 1 {"rule record":1} - 
+   M: Load a Ⓔ: the entity, a ⒺEntity; throws on failure 
+   E: ts doc-nested: TypeScript | Load a satellite: the entity, a SatelliteEntity; throws on failure
+78 6b7dda2d14 rootquick comment py 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 10 } 
+   M: List Ⓔ Ⓔs: a list of entities, one per Ⓔ; raises on failure 
+   E: py crud-bare: Python | List planet records: a list of entities, one per record; raises on failure
+79 0b439b0c35 rootquick comment c 1 {"rule record":1} { file: 'ts/src/helpers/example.ts', n: 1, of: 7 } 
+   M: Load an Ⓔ: the entity; ⟦errSlot⟧ is set on failure 
+   E: c B: C | Load an ambient: the entity; *err is set on failure
+80 d236d7548c rootquick comment c 1 {"rule record":1} { file: 'ts/src/helpers/example.ts', n: 1, of: 7 } 
+   M: Load a Ⓔ: the entity; ⟦errSlot⟧ is set on failure 
+   E: c crud-bare: C | Load a planet: the entity; *err is set on failure
+81 e7e0248d60 rootquick comment c 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 3, of: 13 } 
+   M: List Ⓔ Ⓔs: a NULL-terminated array of entities, one per Ⓔ; ⟦errSlot⟧ is set on failure 
+   E: c crud-bare: C | List planet records: a NULL-terminated array of entities, one per record; *err is set on failure
+82 805f851dc5 rootquick comment zig 1 {"rule record":1} - 
+   M: Load an Ⓔ: ⟦ok⟧ is the entity; ⟦err⟧ on failure 
+   E: zig B: Zig | Load an ambient: .ok is the entity; .err on failure
+83 5d43ee1d56 rootquick comment zig 1 {"rule record":1} - 
+   M: Load a Ⓔ: ⟦ok⟧ is the entity; ⟦err⟧ on failure 
+   E: zig crud-bare: Zig | Load a planet: .ok is the entity; .err on failure
+84 541249a1d2 rootquick comment zig 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 12 } 
+   M: List Ⓔ Ⓔs: ⟦ok⟧ is a slice of entities, one per Ⓔ; ⟦err⟧ on failure 
+   E: zig crud-bare: Zig | List planet records: .ok is a slice of entities, one per record; .err on failure
+85 7cbfe3fde1 rootquick comment clojure 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 10 } 
+   M: List Ⓔ Ⓔs: a vector of entities, one per Ⓔ; raises on failure 
+   E: clojure crud-bare: Clojure | List planet records: a vector of entities, one per record; raises on failure
+86 76d2d79f05 rootquick comment rust 1 {"rule record":1} - 
+   M: Load an Ⓔ: Ok is the entity; Err on failure 
+   E: rust B: Rust | Load an ambient: Ok is the entity; Err on failure
+87 4f5c517896 rootquick comment rust 1 {"rule record":1} - 
+   M: Load a Ⓔ: Ok is the entity; Err on failure 
+   E: rust crud-bare: Rust | Load a planet: Ok is the entity; Err on failure
+88 882eac65b5 rootquick comment rust 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 12 } 
+   M: List Ⓔ Ⓔs: Ok is a Vec of entities, one per Ⓔ; Err on failure 
+   E: rust crud-bare: Rust | List planet records: Ok is a Vec of entities, one per record; Err on failure
+89 9bb950f3bb rootquick comment elixir 1 {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 11 } 
+   M: List Ⓔ Ⓔs: a ⟦ref.container⟧ list of entities, one per Ⓔ; raises on failure 
+   E: elixir crud-bare: Elixir | List planet records: a Voxgig.Struct list of entities, one per record; raises on failure
+90 6de5ea1c00 rootquick comment rb 1 {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 10 } 
+   M: List Ⓔ Ⓔs: an Array of entities, one per Ⓔ; raises on failure 
+   E: rb crud-bare: Ruby | List planet records: an Array of entities, one per record; raises on failure

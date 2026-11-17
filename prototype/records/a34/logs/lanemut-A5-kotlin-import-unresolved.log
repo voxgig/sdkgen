@@ -1,0 +1,24 @@
+applied A5-kotlin-import-unresolved
+blocks crud-basic: tutorial 4 block(s) as one program, root 1, reference 15; 17 files; tutorial imports: import voxgig.demosdk.core.sdk.DemoSDK; import voxgig.demosdk.core.SdkEntity
+new crud-basic: compileKotlin exit 1 in 19s; errors: 34
+e: docex/Rx001.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx001.kt:9:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx002.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx002.kt:9:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx003.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx003.kt:9:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx004.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx004.kt:8:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx005.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx005.kt:8:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx006.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx006.kt:8:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx007.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx007.kt:8:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx008.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx008.kt:8:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx009.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx009.kt:8:18 Unresolved reference 'DemoSDK'.
+e: docex/Rx010.kt:4:28 Unresolved reference 'sdk'.
+e: docex/Rx010.kt:8:18 Unresolved reference 'DemoSDK'.
+lane exit 0

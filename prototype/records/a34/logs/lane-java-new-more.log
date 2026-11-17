@@ -1,0 +1,4 @@
+new default: mvn compile exit 0
+new default: compiled 24 of 24 blocks (tutorial 2, rootquick 1, reference 21); ran 24, exit 0: 20
+new basic-server: mvn compile exit 0
+new basic-server: compiled 19 of 19 blocks (tutorial 4, rootquick 1, reference 14); ran 19, exit 0: 14

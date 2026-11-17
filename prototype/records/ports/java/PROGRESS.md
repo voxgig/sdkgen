@@ -1,0 +1,15 @@
+# java port PROGRESS
+- 15:00 step 1 workspace made by newport.sh
+- 15:35 step 2 read briefs, guide 3.3, java table section, runtime (Main/EntityBase/Entity/ops fragments, SdkClient, Utility, Struct.clone, MakeResult, Fetcher, Media), old components and OLD pages. Decisions so far:
+  - signatures in Java declaration style (`Object load(Map<String, Object> reqmatch, ...)`), forms get sigReturns for that form
+  - record fact 'data()' (as OLD "an entity's `data()` reads its record"); arity 2; collection '`List`' cited MakeResult.java
+  - entityBy 'class' (Entity_java.ts writes <Name>Entity class) against OLD 'Name': hand record
+  - deleted printed with a cast '((EntityBase) {var}).deleted()' (SdkEntity lacks deleted(); EntityBase public)
+  - 'core' package spelled inline by Main_java Folder: extract JAVA_CORE into utility_java.ts, hook passes it as names.core
+- 15:55 step 3 provider, hook, forms (calls, sigName, sigReturns, cites, cancel absence), JAVA_CORE extracted in utility_java+Main_java, old three components deleted; build 0; guard java 4/4; guard+reader 81/81. Not committed yet.
+- 16:25 printers: options-first client block (as OLD tutorial), maps laid out only with types or a note (as swift; OLD tutorial one-line writes). build 0. javac compiled NEW blocks: default 24/24, crud 19/19, basic-server 19/19 (my/compileblocks.js). lane (structure) 3/3 models BUILD SUCCESS on the first build.
+- 16:35 commit 19ac9ff7 (per-language files). Next: hand records.
+- 16:55 printer: bind a result as SdkEntity only where the block reads it (OLD ref load 'Object result' restored). hand records via my/decide.js (201 classes, 27 absent, 2 facts), counts recorded; portcheck reviewed run PASS (portcheck5.log). Not committed: Syntax change + tools records. Next: read pages, scratch run, OLD lane/compile, golden, commits.
+- 17:05 commits 151dd223 (Syntax), golden committed. scratch run: ledger OPEN 25/4/114, blocks OPEN 21/22/15, unattested 2, absent 27 unexplained, exit 1
+- 17:30 DONE: final build 0, git status clean; REGEN reviewed run PASS (portcheck-final.log); tools commit 085bc9a; lanes NEW/OLD BUILD SUCCESS 3/3 models; javac NEW 24/24,19/19,19/19 vs OLD 23/23,18/18,18/18; root diff outside java block 0 (control 21). Report remains.
+- note: wall clock at the end 15:54 UTC; the hh:mm stamps above were estimates and run ahead of the clock (start 15:00).

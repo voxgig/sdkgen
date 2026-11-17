@@ -1,0 +1,39 @@
+  generated php (default): 145 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/work/default/php/php
+[php default] run 1: exit 0, .146542258s
+[php default] run 2: exit 0, .144308923s
+[php default] run 3: exit 0, .143557069s
+[php default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/work/default/php/php): php '/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/phpshim.php' test/ReadmeExamplesTest.php
+[php default] last lines:
+    ReadmeExamplesTest — php example coverage:
+      root README    total=4 executed=4 syntaxchecked=0 illustration=0
+      php README     total=20 executed=20 syntaxchecked=0 illustration=0
+      php REFERENCE  total=21 executed=21 syntaxchecked=0 illustration=0
+    ok test_php_examples_are_completely_classified
+    4 tests, 19 assertions, 0 failures
+[php default] minimum of 3: .143557069s
+  generated php (crud): 133 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/work/crud/php/php
+[php crud] run 1: exit 0, .118742493s
+[php crud] run 2: exit 0, .119335546s
+[php crud] run 3: exit 0, .116617015s
+[php crud] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/work/crud/php/php): php '/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/phpshim.php' test/ReadmeExamplesTest.php
+[php crud] last lines:
+    ReadmeExamplesTest — php example coverage:
+      root README    total=4 executed=4 syntaxchecked=0 illustration=0
+      php README     total=18 executed=18 syntaxchecked=0 illustration=0
+      php REFERENCE  total=14 executed=14 syntaxchecked=0 illustration=0
+    ok test_php_examples_are_completely_classified
+    4 tests, 19 assertions, 0 failures
+[php crud] minimum of 3: .116617015s
+  generated php (basic-server): 133 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/work/basic-server/php/php
+[php basic-server] run 1: exit 0, .136585875s
+[php basic-server] run 2: exit 0, .121216165s
+[php basic-server] run 3: exit 0, .118603075s
+[php basic-server] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/work/basic-server/php/php): php '/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/a34/tools/before/phpshim.php' test/ReadmeExamplesTest.php
+[php basic-server] last lines:
+    ReadmeExamplesTest — php example coverage:
+      root README    total=4 executed=4 syntaxchecked=0 illustration=0
+      php README     total=18 executed=18 syntaxchecked=0 illustration=0
+      php REFERENCE  total=14 executed=14 syntaxchecked=0 illustration=0
+    ok test_php_examples_are_completely_classified
+    4 tests, 19 assertions, 0 failures
+[php basic-server] minimum of 3: .118603075s

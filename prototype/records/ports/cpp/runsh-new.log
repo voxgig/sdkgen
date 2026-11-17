@@ -1,0 +1,27 @@
+  generated cpp (default): 155 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/cpp/tools/before/work/default/cpp/cpp
+[cpp default] run 1: exit 0, 5.028252069s
+[cpp default] run 2: exit 0, 5.226629644s
+[cpp default] run 3: exit 0, 4.781653317s
+[cpp default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/cpp/tools/before/work/default/cpp/cpp): rm -f test/readme_examples_test.out && make -s test/readme_examples_test.out && ./test/readme_examples_test.out
+[cpp default] last lines:
+    readme_examples: scanned 42 cpp block(s)
+    readme_examples_test: 1 tests, 87 checks, 0 failures
+[cpp default] minimum of 3: 4.781653317s
+  generated cpp (crud): 143 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/cpp/tools/before/work/crud/cpp/cpp
+[cpp crud] run 1: exit 0, 5.200880670s
+[cpp crud] run 2: exit 0, 5.249877267s
+[cpp crud] run 3: exit 0, 5.591203659s
+[cpp crud] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/cpp/tools/before/work/crud/cpp/cpp): rm -f test/readme_examples_test.out && make -s test/readme_examples_test.out && ./test/readme_examples_test.out
+[cpp crud] last lines:
+    readme_examples: scanned 33 cpp block(s)
+    readme_examples_test: 1 tests, 69 checks, 0 failures
+[cpp crud] minimum of 3: 5.200880670s
+  generated cpp (basic-server): 143 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/cpp/tools/before/work/basic-server/cpp/cpp
+[cpp basic-server] run 1: exit 0, 4.885674442s
+[cpp basic-server] run 2: exit 0, 5.270832328s
+[cpp basic-server] run 3: exit 0, 5.023837135s
+[cpp basic-server] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/cpp/tools/before/work/basic-server/cpp/cpp): rm -f test/readme_examples_test.out && make -s test/readme_examples_test.out && ./test/readme_examples_test.out
+[cpp basic-server] last lines:
+    readme_examples: scanned 33 cpp block(s)
+    readme_examples_test: 1 tests, 69 checks, 0 failures
+[cpp basic-server] minimum of 3: 4.885674442s

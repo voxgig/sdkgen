@@ -1,0 +1,10 @@
+- (step) workspace made (newport.sh), clone 0065f1e2. Step: reading/table.
+- (step) provider/hook/forms drafted, old components removed, build 0. Step: guard.
+- (step) guard ^php: 4/4 pass; facts+reader suite run. Step: regen + portcheck.
+- (step) utility returns added, guard 4/4. Step: run php lane NEW.
+- (step) hand records written (scripts in scratchpad/phpscripts/hand.js), purity-allow. Step: portcheck reviewed.
+- (step) portcheck reviewed PASS (pc3.txt). Step: golden, commits.
+- (step) commits 5a7c41e4 (port), f06c5a1a (golden); build clean. Step: suite.
+- (step) suite 2630 pass 0 fail of 2635. Step: SCRATCH run, final REGEN.
+- (step) SCRATCH run (pcS.txt) exit 1 by design; final REGEN reviewed run PASS exit 0 (pcF-screen.txt); tools commit f010878. Done; report.
+- note: the clock times in earlier lines were estimates and wrong; the job ran 15:00-15:44 UTC by date(1).

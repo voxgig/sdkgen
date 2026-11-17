@@ -1,0 +1,32 @@
+▶ runtimereader
+  ✔ forms files for every language (1.308129ms)
+  ✔ c: the forms read the runtime (29.602621ms)
+  ✔ clojure: the forms read the runtime (10.146987ms)
+  ✔ cpp: the forms read the runtime (40.047164ms)
+  ✔ csharp: the forms read the runtime (11.252813ms)
+  ✔ elixir: the forms read the runtime (7.532703ms)
+  ✔ go: the forms read the runtime (6.337068ms)
+  ✔ java: the forms read the runtime (9.460713ms)
+  ✔ js: the forms read the runtime (7.749098ms)
+  ✔ kotlin: the forms read the runtime (9.850637ms)
+  ✔ lua: the forms read the runtime (14.18625ms)
+  ✔ ocaml: the forms read the runtime (10.350363ms)
+  ✔ perl: the forms read the runtime (5.98613ms)
+  ✔ php: the forms read the runtime (7.091538ms)
+  ✔ py: the forms read the runtime (6.659698ms)
+  ✔ rb: the forms read the runtime (12.097281ms)
+  ✔ rust: the forms read the runtime (7.299379ms)
+  ✔ scala: the forms read the runtime (10.112646ms)
+  ✔ swift: the forms read the runtime (13.467088ms)
+  ✔ ts: the forms read the runtime (6.923295ms)
+  ✔ zig: the forms read the runtime (6.649692ms)
+  ✔ the table (SDKGEN_RUNTIME_TABLE=<path>) (0.850631ms)
+✔ runtimereader (238.112523ms)
+ℹ tests 22
+ℹ suites 1
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 776.532948

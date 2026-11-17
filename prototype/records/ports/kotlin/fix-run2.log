@@ -1,0 +1,48 @@
+[portcheck kotlin] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck kotlin] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck kotlin] classify (hand/kotlin.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck kotlin] ledger
+[portcheck kotlin] blocks
+[portcheck kotlin] fact sheet (and the language and convention facts against the OLD page)
+[portcheck kotlin] hand records: does every quotation in a reason still stand on a page or in the clone
+[portcheck kotlin] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck kotlin] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck kotlin] purity
+[portcheck kotlin] guard: node --test --test-name-pattern '^kotlin: ' ts/dist-test/runtimefacts.test.js
+== portcheck kotlin ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   59 |      46     22        0      19       5     0       0 | 0
+rootquick                  19 |       4      0        0       3       1     0       0 | 0
+reference               13937 |     162     70        0      49      38     0       2 | 3
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                  19        16       0        13 |      22    0      0 | NO; 29 changed blocks compiled by nothing
+rootquick                  0        11       0         8 |      21    0      0 | NO; 19 changed blocks compiled by nothing
+reference                274         0       0        40 |      11    0      0 | NO; 58 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 5, novel-token 12, vanished-token 4, novel-shape 1; rootquick: changed 6, novel-token 8, vanished-token 5, novel-shape 2; reference: changed 5, new-only 1, novel-token 4, vanished-token 1)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+contradictions (3; counted, not failed):
+  reference [9c6d819441] For a response whose body is read, 2xx or not, it holds the keys `ok`, | other: kotlin/README.md, the direct how-to (unported): "On error, ` | true: REFERENCE: a readable non-2xx response g
+  reference [9efa1d0afc] When the body cannot be read, `ok` is `false` and the key `err` holds  | other: kotlin/README.md, the direct how-to (unported): "On error, ` | true: REFERENCE: a readable non-2xx response g
+  reference [bff341cf32] This SDK is generated without the `test` feature, so the client has no | other: kotlin/README.md, Use test mode (the unported README test-mo | true: REFERENCE (no-test): without the test fe
+purity: 0 open, 1 accepted | notes declared 1 (member:streamLazy), note regions found 1 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1404 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 405 calls of 24 runtime members checked; ARITY/RECEIVER/MEMBER findings 6
+  ARITY B reference: load passes 3 argument(s); the runtime declares 2 (reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>?) | val result = client.planet(null).load(mutableMapOf<String, Any?>("id" to "planet
+  ARITY B reference: create passes 3 argument(s); the runtime declares 2 (reqdata: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>? | val result = client.planet(null).create(mutableMapOf<String, Any?>(
+  ARITY B reference: update passes 3 argument(s); the runtime declares 2 (reqdata: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>? | val result = client.planet(null).update(mutableMapOf<String, Any?>(
+  ARITY B reference: remove passes 3 argument(s); the runtime declares 2 (reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?> | val result = client.planet(null).remove(mutableMapOf<String, Any?>("id" to "plan
+  ARITY crud-bare tutorial: patch passes 3 argument(s); the runtime declares 2 (reqdata: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>?) | client.planet(null).patch(mutableMapOf<String, Any?>("id" to (created.data() as 
+  ARITY doc-nested reference: list passes 3 argument(s); the runtime declares 2 or 0 (reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, An | val results = client.satellite(null).list(mutableMapOf<String, Any?>("planet_id"
+guard: pass (pass 4 fail 0 )
+build: 1813 sources checked, current
+hand records: 205, 147 quote text (347 quotations); STALE 0
+facts (language and convention, against the OLD page): attested 6, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 15, pinned prose 12 (the reviewer audits each)
+shared sentences: matched 92, of which against a sentence nobody reviewed 2 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 29 (29 explained; an unexplained one FAILS)
+fact sheet: factsheet kotlin: 63 facts, 0 with no account, 0 unattested, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/kotlin/tools/review/kotlin/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/kotlin/tools/review/kotlin/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/kotlin.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK kotlin: FAIL
+
+real	0m45.705s
+user	0m50.870s
+sys	0m2.599s
+EXIT 1

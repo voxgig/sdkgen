@@ -1,0 +1,153 @@
+{
+ "lang": "perl",
+ "ok": false,
+ "summary": "I checked every one of the reviewer's 10 required fixes against the runtime and the shared code, and all 10 hold. Six are in perl's own files and are fixed. Three need shared files: I recorded them and did not make them. One is in a perl generator test component that a port may not touch: recorded, not made.\n\nAt my last commit:\n- `npm run build` exits 0 and leaves the tree clean.\n- The perl guard passes 4/4, and the guard and reader together pass 65/65.\n- The golden check passes 2/2. Only perl's own line changed: Syntax_perl.ts gets a new hash.\n- The suite without the toolchain lanes runs 2601 tests: 2596 pass, 0 fail, 5 skipped.\n- The perl README lane passes 7/7 and exits 0 in all three models.\n- The one command FAILS in every mode (SCRATCH=1, REGEN=1, and plain), and it fails on purpose. The ledger has 0 OPEN, the blocks have 0 OPEN, purity has 0 open, and there are 0 UNATTESTED facts. The only failures are 14 blocks classes I now record as `defect`:\n  - 13 rootquick classes: the lost `use lib 'perl/lib'`. I ran the NEW root quick start from the root of a generated SDK repository and `perl -c` failed with \"Can't locate DemoSDK.pm in @INC\". OLD's form gives \"syntax OK\".\n  - 1 reference class: the Record list example prints `$item->data_get->{fields}`, which outputs `HASH(0x...)`.\n\nBoth regressions come from shared code and stay failing until the shared changes land. That is why `ok` is false.\n\nThe six fixes in perl's files:\n1. The stream note was false under chunked streaming. It now reads 'An entity is yielded as the hashref its `data_get` returns.'\n2. `ref.facts.none` now cites EntityLoadOp.fragment.pm:7.\n3. `ctor[0]` also cites tm/perl/Makefile, where the suite runs with `-Ilib` from the SDK's directory.\n4. The `container` excuse is reworded truthfully.\n5. The log default is now recorded as S09, not S13.\n6. The lost root library path is now a `defect`, not `dropped`.\n\nI also did one thing the reviewer did not ask for, consistent with fix 6: the reference list class 24d40b660d is now a `defect` as well. The HASH output belongs to that class.",
+ "outcomes": [
+  {
+   "finding": "F1 Syntax_perl.ts:198 / runtimeforms/perl.ts:90: the stream note is false under the streaming feature's chunkSize",
+   "outcome": "fixed",
+   "how": "Checked first. tm/perl/feature/streaming_feature.pm:65-70 batches items into arrayrefs when chunkSize > 0, and Entity.fragment.pm:186 keeps the array while unwrapping inside it, so 'Each item is the hashref' was false. The note now reads 'An entity is yielded as the hashref its `data_get` returns.' (Syntax_perl.ts:176, pinned at runtimeforms/perl.ts). This holds both ways: every entity, inside a batch or not, goes through the `data_get` unwrap at :184-185. The note's two classes changed id: 846928d1e5 became ef4c488fdd (restored:note, n 94) and 934ea227fb became e53badc13a (same-meaning, n 85). I removed the stale records. Over all variations, out/new differs from the reviewer's copy only in this line, 94 times, all in perl/REFERENCE.md.",
+   "commit": "sdkgen 52f711fe; tools 70c12f4"
+  },
+  {
+   "finding": "F2 example.ts:431,467-470; ReadmeQuick.ts:183,240: imports printer gets no place, so the root quick start loses `use lib 'perl/lib'`",
+   "outcome": "needs a shared change (recorded in shared_changes_needed); the perl side is now recorded as a defect",
+   "how": "Checked first. Scope (example.ts:407) has no place. topQuickText (ReadmeQuick.ts:239-251) and quickText make a fresh Scope, and printStmts calls `p.imports(desc, uses(...))` with no place (example.ts:467-470). ShowPlace already exists (example.ts:93), and quickSteps already gets 'top' (ReadmeQuick.ts:241). Ran: in tools/before/work/default/perl, `perl -c` of the NEW B root quick start fails with \"Can't locate DemoSDK.pm in @INC\", and with `use lib 'perl/lib';` added it gives 'syntax OK'. In perl's files I made no workaround (the guide forbids one). The two vanished-token classes 336fea9d3b and dc2822fe83 and the 11 changed rootquick classes are now `defect`. Each reason keeps its earlier outcome in brackets, so the integrator can restore them once the shared change lands. The tutorial records 33526951e8 and 9b32484fa9 stay `dropped`, with the added reason that the Install section directly above prints `use lib 'lib'; use DemoSDK;` (out/new/B/perl/README.md:27-30). I did not add a tutorial note: the tokens in its backticks cannot all be quoted from the runtime, and the Install section already says it.",
+   "commit": "tools 70c12f4"
+  },
+  {
+   "finding": "F3 ReadmeQuick.ts:239-251; example.ts:458: the 'top' NoteSlot is declared but never printed",
+   "outcome": "needs a shared change (recorded)",
+   "how": "Checked: topQuickText has no note() call. The only note() calls in ReadmeQuick.ts are at :195 ('tutorial') and :223 (the step slots). I did not re-run the reviewer's attack a14.",
+   "commit": ""
+  },
+  {
+   "finding": "F4 sdkdesc.ts:502 showFields falls back to a non-scalar field, so perl prints HASH(0x...)",
+   "outcome": "needs a shared change (recorded); the affected class is now recorded as a defect",
+   "how": "Checked: `other.find(STRING) || other[0]` (sdkdesc.ts:502). out/new/B/perl/REFERENCE.md:536 prints `$item->data_get->{fields}`. Ran `perl -e 'my $h={fields=>{a=>1}}; print $h->{fields}'`, which printed HASH(0x564d329466e8). In the blocks worklist the line sits in class 24d40b660d (x81 in 17 variations; 10 of its diff hunks print `{fields}`). I recorded that class as `defect`, with a reason saying the rest of its blocks are the unification it was recorded as before. No perl-local fix: switching `prints` to 'record' or 'listFields' would change every print block and contradict OLD, which printed the id alone.",
+   "commit": "tools 70c12f4"
+  },
+  {
+   "finding": "F5 runtimeforms/perl.ts:79: ref.facts.none quotes the stream's end-of-items line",
+   "outcome": "fixed",
+   "how": "It now cites src/cmp/perl/fragment/EntityLoadOp.fragment.pm:7, '# (undef is treated as an empty match). ctrl: optional per-call control.' The reviewer gave :39; in this file the line is 7. The guard report shows the new quote, and the guard passes 4/4.",
+   "commit": "sdkgen 52f711fe"
+  },
+  {
+   "finding": "F6 runtimeforms/perl.ts:75: ctor[0] `use lib 'lib';` quote shows `<sdk>/lib`, not `lib`",
+   "outcome": "fixed",
+   "how": "Added `also: [{ file: 'tm/perl/Makefile', quote: ['# netsim tests) with prove (TAP). -Ilib puts the generated SDK module on', '\\tprove -r -Ilib t/'] }]`. The Makefile sits in the SDK directory and runs its suite with `-Ilib`, so from there the library path is `lib`. With Main_perl.ts:69 (`use lib '<sdk>/lib'`), the two quotes show the value read from the SDK's own directory. The guard still matches word tokens only, so the reviewer should still audit this one.",
+   "commit": "sdkgen 52f711fe"
+  },
+  {
+   "finding": "F7 runtimeforms/perl.ts:82: the container excuse ('the runtime never names the type') is false",
+   "outcome": "fixed",
+   "how": "Checked: hashref is named at EntityLoadOp.fragment.pm:5, EntityCreateOp.fragment.pm:5, Entity.fragment.pm:99 and Main.fragment.pm:194-195. No comment calls the constructor's options a hashref (Main.fragment.pm:31-33). I kept the quote, which is the line that makes the container `{}`. The excuse now reads: the options default to a `{}` literal, a hash reference; the runtime names hashref for a match, request data and a record (with the three file:line), never in a comment on the options themselves. The guard accepts it, because no hashref stands within 3 lines of Main.fragment.pm:33.",
+   "commit": "sdkgen 52f711fe"
+  },
+  {
+   "finding": "F8 hand/perl.json 2f38082332, ac1eac6be0: S13 cited for the log default",
+   "outcome": "fixed",
+   "how": "Both are now correction:S09. Checked: the catalogue has '### S09. README and REFERENCE say every feature is inactive until switched on; `log` defaults on' (model-dependent-text-issues.md:210), and S13 is the test-mock entry (:291). All nine reference languages' hand files in base32 record S09 for both ids. 46dc1a3462 (no-test test constructor) correctly stays S13.",
+   "commit": "tools 70c12f4"
+  },
+  {
+   "finding": "F9 hand/perl.json 33526951e8, 336fea9d3b, dc2822fe83, 9b32484fa9, 905b8fd076: root lib loss recorded as dropped",
+   "outcome": "fixed (partly, by my reading of which ids are root)",
+   "how": "Of the five ids, 336fea9d3b, dc2822fe83 and 905b8fd076 are rootquick blocks classes; they and the other 10 changed rootquick classes whose reasons carried the drop are now `defect` (13 in all). 33526951e8 and 9b32484fa9 are tutorial blocks classes. For them the drop is weaker but not broken: the Install section right above states the line. They stay `dropped`, with that reason added. The one command now fails on the root loss, as the reviewer asked.",
+   "commit": "tools 70c12f4"
+  },
+  {
+   "finding": "F10 ReadmeExamplesTest_perl.ts: the runner adds `use lib '$LIB'; use DemoSDK;` to every block, so a missing import can never fail the lane",
+   "outcome": "not fixed: outside the files a port may touch (PORTING section 4)",
+   "how": "Confirmed at ReadmeExamplesTest_perl.ts:238 (`return \"use lib '$LIB';\\nuse $SDK_CLASS;\\n\" . $body;`; the reviewer said :210), with -I\"$LIB\" at :266 and :285. It is a perl generator test component, but not one that calls a function this port extracted, so section 4 does not allow it. The change is perl-only and forces no other provider: run each block from the directory its page addresses (perl/ for README and REFERENCE, the repository root for the root README), and do not prepend an import to a block that has its own `use <SDK>;`.",
+   "commit": ""
+  }
+ ],
+ "shared_changes_needed": [
+  {
+   "file": "ts/src/helpers/example.ts:407 (Scope), :431 (imports signature), :467-470 (printStmts call); ts/src/cmp/ReadmeQuick.ts:182-195 (quickText), :239-251 (topQuickText); ts/src/helpers/sdkdesc.ts (DescLayout)",
+   "change": "1. Add an optional `place?: ShowPlace` to Scope (ShowPlace already exists, example.ts:93). 2. quickText sets 'tutorial' and topQuickText sets 'top'. 3. printStmts passes `sc.place` as a third, optional argument: `imports(desc, used, place)`. 4. Add an optional layout role for the target's directory, filled by the naming hook from target.name (or the out-of-tree output.path). perl's imports then prints `use lib 'lib';` for 'tutorial' and `use lib '<dir>/lib';` for 'top'.",
+   "why": "All 19 NEW root quick starts begin `use DemoSDK;`. Ran: `perl -c` from the generated repository root fails with \"Can't locate DemoSDK.pm in @INC\". OLD's `use lib 'perl/lib';` form gives 'syntax OK'. The same root README's other perl block still prints `use lib 'perl/lib'`. 13 perl rootquick classes are recorded as defect until this lands; their earlier outcome is kept in brackets in each reason.",
+   "breaking": false,
+   "providers_forced": "perl only. Every other provider ignores an optional argument. Worth checking, not checked: OLD root README also prints php `require_once 'demo_sdk.php'` (B README.md:334) and rb `require_relative \"Demo_sdk\"` (:370), which may depend on where they are read."
+  },
+  {
+   "file": "ts/src/cmp/ReadmeQuick.ts:239-251 (topQuickText); ts/src/helpers/example.ts:455-458 (NoteSlot)",
+   "change": "Print `note(p, 'top', desc)` with the root quick start, as quickText prints 'tutorial' at :195, or remove 'top' from NoteSlot.",
+   "why": "A provider that declares notes.top gets nothing on the page, and purity then reports a declared note with no region, which fails the one command. The interface offers a slot that cannot be used.",
+   "breaking": false,
+   "providers_forced": "none"
+  },
+  {
+   "file": "ts/src/helpers/sdkdesc.ts:502 (showFields)",
+   "change": "Fall back only to a scalar field (STRING, then INTEGER, NUMBER or BOOLEAN). With no scalar field besides the id, show the id alone.",
+   "why": "`other.find(STRING) || other[0]` picks Record's map field `fields`. perl then prints `$item->data_get->{fields}`, which outputs HASH(0x...) (ran: `perl -e` printed HASH(0x564d329466e8)), at out/new/B/perl/REFERENCE.md:536 and in 13 other variations. OLD perl printed ->{id} alone. perl's reference class 24d40b660d is recorded as defect until this lands.",
+   "breaking": false,
+   "providers_forced": "none to change. It changes the output of every language whose prints is 'fields' or 'listFields' where an entity has a map field, so rb, and php and lua once ported, need their blocks re-read."
+  }
+ ],
+ "not_caught_by_process": [
+  {
+   "attack": "Root quick start loses `use lib 'perl/lib'` in all 19 variations (the port as delivered)",
+   "consequence": "Nothing fails: portcheck PASS (the hand record says dropped), lane 7/7 (the runner adds use lib itself), suite green. A reader at the repository root gets \"Can't locate DemoSDK.pm\"."
+  },
+  {
+   "attack": "The stream note is false when streaming chunkSize > 0 (as delivered)",
+   "consequence": "Pinned prose. The guard checks only that the pin equals the declaration, so only a reviewer reading streaming_feature.pm finds it."
+  },
+  {
+   "attack": "Shared showFields picks a hashref field; perl prints HASH(0x...) (as delivered)",
+   "consequence": "Lane exit 0 (it checks only that the block runs), blocks hand-classified as correction:display-field, so the one command passes."
+  },
+  {
+   "attack": "a10: test signature written on an instance, '$client->test($testopts, $sdkopts)'",
+   "consequence": "Guard PASS 4/4. The `on` check reads only the call string, never the receiver in the signature. Caught only by ledger OPEN 3 because OLD's heading differs; a port whose OLD said the same would pass."
+  },
+  {
+   "attack": "a17: a depluralising naming rule hidden inside the scalar() helper (`name.replace(/s$/, '')`)",
+   "consequence": "Purity 0 open: the tool does not see rules inside a helper. Caught only by ledger OPEN 24 and blocks OPEN because these 21 variations happen to change. A rule that touches no fixture name would pass."
+  },
+  {
+   "attack": "a19 in SCRATCH mode: a shared sentence OLD never printed ('A failed request is reported in the result...') removed from every variation's REFERENCE",
+   "consequence": "OPEN 68 = baseline 68; 'printed less often' 1 = baseline; absent 0. No number moves, because no reference language has result style die, so perl's absent list is always empty. It is caught only in reviewed mode, through hand-record counts."
+  },
+  {
+   "attack": "a07: prints 'fields' -> 'record' (an enumerated fact)",
+   "consequence": "The fact sheet calls 'record' ATTESTED (8 attested, 0 not judged). Caught only by blocks OPEN 5/13/5."
+  },
+  {
+   "attack": "ref.facts.none citing an unrelated line (as delivered)",
+   "consequence": "Guard passes: the token `undef` is in the quote, whatever the line means."
+  },
+  {
+   "attack": "a14: notes.top declared",
+   "consequence": "The note is silently never printed. Purity reports regions 1 of 3, so it fails the porter rather than exposing the shared gap."
+  }
+ ],
+ "commits": [
+  "sdkgen 52f711fe perl: stream note true under chunked streaming; citations that show their values: ts/project/.sdk/src/cmp/perl/Syntax_perl.ts (+1 -1), ts/test/runtimeforms/perl.ts (+5 -4)",
+  "sdkgen 73234667 Golden: perl's syntax provider after the stream note rewording: ts/test/golden/add-output.txt (+1 -1, the perl Syntax_perl.ts line only)",
+  "sdkgen: no build commit. `npm run build` exits 0 and `git status --short` prints nothing afterwards (ts/dist unchanged).",
+  "tools 70c12f4 perl: review fixes in the hand records: hand/perl.json, classes/perl.json. Afterwards `git -C tools status --short` prints nothing.",
+  "Not committed (workspace scratch): my/hand.py (the generator of hand/perl.json, edited; the earlier version is kept as my/hand.py.before-fix), FIX-PROGRESS.md, fix-*.log, fix-tmp/.",
+  "Both sdkgen commits and the tools commit end with the session's attribution trailer (Co-Authored-By naming the model, and a session line), as this session's system instructions require. The brief's rule says commit messages name no tool or model, and the porter's commits carry no trailer. The integrator may want to strip them."
+ ],
+ "final_state": "Ran, all at sdkgen HEAD 73234667 and tools HEAD 70c12f4.\n\n**Build and tests**\n- `cd sdkgen/ts && npm run build`: exit 0. `git status --short` afterwards prints nothing.\n- Guard and reader: `node --test --test-name-pattern '^perl: ' dist-test/runtimefacts.test.js` 4/4; `node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js` 65/65.\n- Golden: `SDKGEN_GOLDEN_UPDATE=1` regenerated it, then `node --test dist-test/characterize.test.js` 2/2.\n- Suite: `node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)` gave 2601 tests, 2596 pass, 0 fail, 5 skipped, exit 0, in 6m42s.\n\n**Lane:** `tools/before/run.sh sdkgen perl` exits 0 (39s).\n- Every run exits 0 with 7/7, in all three models.\n- default: REFERENCE 21/21 executed, root 3/3. Minimum of 3 runs: 4.49s.\n- crud: REFERENCE 14/14, root 3/3. Minimum 3.63s.\n- basic-server: REFERENCE 14/14, root 3/3. Minimum 3.67s.\n- The runner adds `use lib` to every block itself (ReadmeExamplesTest_perl.ts:238), so this lane cannot see the import line.\n\n**The one command, `REGEN=1 tools/portcheck.sh sdkgen out perl`: exit 1, PORTCHECK perl: FAIL**\n\nLedger:\n\n| section | units same | classes | shared | rule records | by hand | missing | OPEN | defect | contradictions |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| tutorial | 61 | 42 | 20 | 0 | 18 | 4 | 0 | 0 | 0 |\n| rootquick | 19 | 3 | 0 | 0 | 3 | 0 | 0 | 0 | 0 |\n| reference | 14910 | 114 | 46 | 0 | 50 | 17 | 0 | 0 | 1 |\n\nBlocks:\n\n| section | identical | corrected | unified | otherwise | classes | OPEN | defect | changed blocks compiled by nothing |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| tutorial | 0 | 6 | 0 | 42 | 21 | 0 | 0 | 48 |\n| rootquick | 0 | 0 | 0 | 19 | 27 | 0 | **13** | 19 |\n| reference | 227 | 0 | 0 | 86 | 7 | 0 | **1** | 86 |\n\nThe rest of the screen:\n- Contradictions: 1 (91baf1b4b6, no-test: README:219 says the test client has a mock transport; true: the REFERENCE).\n- Purity: 0 open, 1 accepted (exampleVarName). Notes declared 1, note regions found 1.\n- Guard: pass 4.\n- Facts: attested 7, recorded by hand 1, UNATTESTED 0, not judged 1 (prints). Cited 16, pinned prose 7.\n- Shared sentences: matched 66, all 66 against unreviewed sentences. Printed less often 0. Absent 0.\n- Fact sheet: 67 facts, 0 with no account, 0 unattested.\n- The guard's account line: perl derived 44, cited 17, language 1, convention 9, excepted 0.\n\nPlain `tools/portcheck.sh sdkgen out perl` gives the same screen (diffed identical) and exit 1.\n\n**`SCRATCH=1 REGEN=1`: exit 1** (expected for a new language: hand records are ignored).\n- Ledger OPEN: tutorial 22, rootquick 3, reference 68. defect 0.\n- Blocks OPEN: tutorial 21, rootquick 27, reference 7.\n- UNATTESTED 1 (ref.valueType.OBJECT). Printed less often 1 (the make-sentence ledger split).\n- These are the porter's scratch numbers, unchanged.\n\n**Why it fails:** only the 14 defect classes \u2014 the root quick start's lost `use lib 'perl/lib'` and Record's HASH(0x...) print. Both need shared changes. Every other number passes.\n\n**Other languages unchanged:**\n- `diff -r -x perl -x README.md out/new P/base32/out/new`: 0 lines.\n- Root README outside perl blocks: 0 changed lines over all 21 variations.\n- Against the reviewer's out/new, the only difference is the stream note line, 94 times, in perl/REFERENCE.md.\n\n**Final line counts (`wc -l`):** provider Syntax_perl.ts 191, hook Naming_perl.ts 22, forms test/runtimeforms/perl.ts 95 (94 before this job). The 735 old lines became 213 for provider and hook (3.45x), or 308 with the whole forms file.\n\n**Notes:** 1, `member:streamFunction`: 'An entity is yielded as the hashref its `data_get` returns.' (10 words). It is cited to Entity.fragment.pm:141 and pinned.\n\n**Still unverified for want of a compiler:** perl is present (5.38.2), so nothing is unverified for that reason. But no tool compiles the 153 changed blocks of the 21 variations (48 tutorial, 19 rootquick, 86 reference); the lane compiles its own three models only. I compiled one block by hand: the B root quick start, which fails with `perl -c`.",
+ "unverified": "**Ran:**\n- build, guard, reader, golden, suite, the perl lane, and portcheck in all three modes;\n- `perl -c` of the B root quick start, with and without `use lib 'perl/lib'`, from the root of the lane's generated repository;\n- `perl -e` printing a nested hashref;\n- the diff against base32 and against the reviewer's output.\n\n**Read, not run:**\n- the streaming feature's chunk path (streaming_feature.pm:65-70, Entity.fragment.pm:179-188);\n- the shared imports, note and showFields call sites;\n- the catalogue headings S09 and S13;\n- the other nine languages' S09 records.\n\n**Not verified:**\n- No changed block of the 21 variations was compiled or run by me other than the one root block (153 changed blocks).\n- The ctor[0] citation passes the guard on word tokens. The Makefile quote supports `lib` read from the SDK directory, but only a reader judges that.\n- I did not re-run the reviewer's 23 attacks after the fixes.\n- I did not check whether rb's or php's root `require_relative` / `require_once` lines have the same place problem as perl's.",
+ "not_done": [
+  "Did not make the three shared changes (imports place with a directory role; print or remove the 'top' note slot; scalar-only showFields). They are recorded for the integrating engineer.",
+  "Did not change ReadmeExamplesTest_perl.ts: it is outside a port's files (PORTING section 4).",
+  "Did not add a tutorial note restating `use lib 'lib'`. The Install section directly above says it, and a note's backticked tokens could not all be quoted from the runtime.",
+  "Did not flip the 14 defect classes back. Once the shared imports and showFields changes land, the integrator re-reads them; each reason carries its earlier outcome in brackets.",
+  "Did not re-run the reviewer's attacks, and did not compile the 153 changed blocks of the review variations."
+ ],
+ "lanes": "perl README example lane, `tools/before/run.sh sdkgen perl` (perl 5.38.2 at /usr/bin/perl): exit 0. Every run in the default, crud and basic-server models gave 7/7.\n- default: REFERENCE 21/21, root 3/3. Minimum of 3 runs: 4.49s.\n- crud: REFERENCE 14/14, root 3/3. Minimum 3.63s.\n- basic-server: REFERENCE 14/14, root 3/3. Minimum 3.67s.\n\nNo other lane was run: this job changed no shared source. The lane cannot detect the root import defect, because its runner prepends `use lib` to every block.",
+ "lines": "From `wc -l`:\n- Syntax_perl.ts 191 (unchanged count: one line edited)\n- Naming_perl.ts 22\n- runtimeforms/perl.ts 95 (+1 net)\n\n`git diff --numstat 70f0be92..HEAD`: Syntax_perl.ts +1 -1, golden +1 -1, runtimeforms/perl.ts +5 -4.",
+ "notes": [
+  {
+   "slot": "member:streamFunction",
+   "text": "An entity is yielded as the hashref its `data_get` returns."
+  }
+ ]
+}

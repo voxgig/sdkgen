@@ -1,0 +1,35 @@
+[portcheck rb] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck rb] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck rb] classify (hand/rb.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck rb] ledger
+[portcheck rb] blocks
+[portcheck rb] fact sheet (and the language and convention facts against the OLD page)
+[portcheck rb] hand records: does every quotation in a reason still stand on a page or in the clone
+[portcheck rb] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck rb] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck rb] purity
+[portcheck rb] guard: node --test --test-name-pattern '^rb: ' ts/dist-test/runtimefacts.test.js
+== portcheck rb ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   59 |      50     17        0      28       5     0       0 | 0
+rootquick                  19 |       3      0        0       3       0     0       0 | 0
+reference               14587 |     194     41        0      64      22    66       0 | 1
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                   3        21      23         1 |      27    0      0 | yes (ruby); 45 changed blocks compiled by nothing
+rootquick                  0         2      15         2 |      18    0      0 | yes (ruby); 19 changed blocks compiled by nothing
+reference                303         0      10         0 |       1    0      0 | yes (ruby); 10 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 1, novel-token 11, vanished-token 15; rootquick: changed 2, novel-token 7, vanished-token 7, novel-shape 2; reference: old-only 1)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+contradictions (1; counted, not failed):
+  reference [bff341cf32] This SDK is generated without the `test` feature, so the client has no | other: the unported README's test-client line or its test-mode sect | true: REFERENCE: without the test feature the 
+purity: 0 open, 2 accepted | notes declared 0, note regions found 0 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1232 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 34 calls of 29 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+guard: pass (pass 4 fail 0 )
+build: 1815 sources checked, current
+hand records: 199, 27 quote text (52 quotations); STALE 0
+facts (language and convention, against the OLD page): attested 5, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 17, pinned prose 10 (the reviewer audits each)
+shared sentences: matched 58, of which against a sentence nobody reviewed 0 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 0 (0 explained; an unexplained one FAILS)
+fact sheet: factsheet rb: 69 facts, 0 with no account, 0 unattested, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h3fix/tools/review/rb/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h3fix/tools/review/rb/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/rb.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK rb: FAIL

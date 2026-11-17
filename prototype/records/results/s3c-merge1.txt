@@ -1,0 +1,230 @@
+ok: True
+tag: v33p at cd8196db in P/v33p/sdkgen (tools HEAD 1c97282, both trees clean after a build)
+summary: |
+  All four ports (perl, ocaml, lua, swift, with swift last) are on one clone with their records, so thirteen languages now stand together. The tag v33p is at cd8196db in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33p/sdkgen. The tools are at 1c97282 in .../v33p/tools. Both trees are clean after a build (exit 0).
+  
+  - **Commits:** 10 source commits were cherry-picked in order. No conflicts. Every file is inside section 4.
+  - **Trailers:** stripped from the 2 commits that had them (perl 52f711fe, swift 824c5d41).
+  - **Golden:** the six port golden commits were left out. The golden was regenerated once: only the four languages' lines changed, and each language's lines equal its port's own golden.
+  
+  Results (all ran):
+  - **One command, nine base languages:** all PASS. All 27 rows equal PORTING section 11.
+  - **One command, four ports:** each screen is byte-identical to its verifier's log. For swift, the verifier's in-progress log at verify/swift/pc-normal.log and the fixer's final-fix.log. perl exits 1, and only on its 14 deliberate defect classes (rootquick 13, reference 1); everything else is 0.
+  - **From scratch (`SCRATCH=1`):** all four exit 1, as designed. Screens are identical to the verifiers' scratch logs.
+  - **Guard and reader:** 77/77.
+  - **Suite:** 2613 tests, 2608 pass, 0 fail, 5 skipped.
+  - **Lanes:** ts 16/16, go 12/12, py 12/12, c 6/6, rust 6/6, rb 49/49, zig documentation 6/6. perl 7/7 in all three models.
+  - **Seven unported languages:** README and REFERENCE are 266/266 identical to base32/out/new. The 19 differing root READMEs differ only inside perl, swift, ocaml and lua code blocks. The nine ported languages' directories are identical.
+  - **Tools self-test:** 178 controls, 0 failed. v32 had 175; purity went from 28 to 31.
+ports:
+  - [0]
+    lang: perl
+    head_taken: sdkgen 73234667 / tools 70c12f4, both git status clean
+    commits: 2b8a241a -> 5ad207a1 (A Naming_perl.ts, Syntax_perl.ts; D ReadmeQuick_perl.ts, ReadmeRef_perl.ts, ReadmeTopQuick_perl.ts; M ts/test/runtimeforms/perl.ts); 52f711fe -> 3885cb32 (M Syntax_perl.ts, runtimeforms/perl.ts). Left out: golden 70f0be92, 73234667
+    trailers_removed: 52f711fe: 'Co-Authored-By: ...' and 'Claude-Session: ...' lines removed (73234667 also had them but is a golden commit, left out)
+    outside_section_4: none
+    records: tools 590d309: hand/perl.json, counts/perl.json, purity-allow/perl.json, classes/perl.json (no normalizers/perl.js in the port)
+  - [1]
+    lang: ocaml
+    head_taken: sdkgen 6c467124 / tools 812357d, both clean
+    commits: 146c2abc -> d2429bf4 (M MainEntity_ocaml.ts, Main_ocaml.ts, SdkError_ocaml.ts, utility_ocaml.ts, runtimeforms/ocaml.ts; A Naming_ocaml.ts, Syntax_ocaml.ts; D ReadmeQuick/ReadmeRef/ReadmeTopQuick_ocaml.ts); a21aeb2a -> 9b28c633 (Syntax_ocaml.ts, runtimeforms/ocaml.ts); 6c467124 -> fa8c648b (runtimeforms/ocaml.ts). Left out: golden 1e9cf150
+    trailers_removed: none present
+    outside_section_4: none (Main/MainEntity/SdkError_ocaml are generator components calling functions extracted into utility_ocaml, which section 4 allows)
+    records: tools ae7dabf: hand/ocaml.json, counts/ocaml.json, classes/ocaml.json (no purity-allow or normalizers in the port)
+  - [2]
+    lang: lua
+    head_taken: sdkgen 8478f2dc / tools 72881b6, both clean
+    commits: d1fe7418 -> 51dbfd0e (ts/test/lua-table-keys.test.ts, lua lines only); 664994ef -> 340e0beb (M Main_lua.ts, utility_lua.ts, runtimeforms/lua.ts; A Naming_lua.ts, Syntax_lua.ts; D ReadmeQuick/ReadmeRef/ReadmeTopQuick_lua.ts); 8478f2dc -> 1e0b6bda (runtimeforms/lua.ts). Left out: golden fa2ffcac
+    trailers_removed: none present
+    outside_section_4: none (lua-table-keys.test.ts is the shared test section 4 names for lua; the diff touches only lua's lines)
+    records: tools 25bc092: hand/lua.json, counts/lua.json, purity-allow/lua.json, classes/lua.json
+  - [3]
+    lang: swift
+    head_taken: sdkgen 55675fd5 / tools 0fa653a, exactly the HEADs named, both git status clean, fixer's FIX-PROGRESS.md says DONE
+    commits: e2909323 -> aa63cf44 (A Naming_swift.ts, Syntax_swift.ts; D ReadmeQuick/ReadmeRef/ReadmeTopQuick_swift.ts; M runtimeforms/swift.ts); 824c5d41 -> b5484fab (Syntax_swift.ts, runtimeforms/swift.ts). Left out: golden db94e106, 55675fd5
+    trailers_removed: 824c5d41: Co-Authored-By and Claude-Session lines removed (55675fd5 also had them; it is a golden commit, left out)
+    outside_section_4: none
+    records: tools 1c97282: hand/swift.json, counts/swift.json, purity-allow/swift.json, classes/swift.json
+table:
+  - [0]
+    lang: ts
+    last_line: PORTCHECK ts: PASS
+    numbers: same 61/21/15470; by hand 8/0/19; missing 5/1/34; contradictions 0/0/1; blocks 19/16/12/1, 0/13/5/1, 195/0/118/0; OPEN 0, defect 0; purity 0 open 1 accepted; guard 4/0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [1]
+    lang: go
+    last_line: PORTCHECK go: PASS
+    numbers: rows equal s11 (same 23/22/17481, blocks 0/12/1/8, 0/14/4/4, 337/21/18/0), OPEN 0, defect 0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [2]
+    lang: py
+    last_line: PORTCHECK py: PASS
+    numbers: rows equal s11 (same 61/19/14958), OPEN 0, defect 0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [3]
+    lang: c
+    last_line: PORTCHECK c: PASS
+    numbers: rows equal s11 (same 61/19/14872), OPEN 0, defect 0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [4]
+    lang: zig
+    last_line: PORTCHECK zig: PASS
+    numbers: rows equal s11 (same 61/19/15019), OPEN 0, defect 0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [5]
+    lang: clojure
+    last_line: PORTCHECK clojure: PASS
+    numbers: rows equal s11 (same 61/19/14983), OPEN 0, defect 0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [6]
+    lang: rust
+    last_line: PORTCHECK rust: PASS
+    numbers: rows equal s11 (same 61/19/15019), OPEN 0, defect 0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [7]
+    lang: elixir
+    last_line: PORTCHECK elixir: PASS
+    numbers: rows equal s11 (same 61/19/14802), OPEN 0, defect 0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [8]
+    lang: rb
+    last_line: PORTCHECK rb: PASS
+    numbers: rows equal s11 (same 61/19/15059), OPEN 0, defect 0
+    verifier_said: PORTING s11 row
+    equal: True
+  - [9]
+    lang: perl
+    last_line: PORTCHECK perl: FAIL (exit 1)
+    numbers: same 61/19/14910; shared 20/0/46; by hand 18/3/50; missing 4/0/17; ledger OPEN 0/0/0, defect 0/0/0; contradictions 0/0/1; blocks identical/corrected/unified/otherwise 0/6/0/42, 0/0/0/19, 227/0/0/86; block classes 21/27/7, OPEN 0/0/0, defect 0/13/1; purity 0 open 1 accepted; guard pass 4; facts attested 7, by hand 1, UNATTESTED 0, not judged 1; shared matched 66 (66 unreviewed); 67 facts, 0 without account
+    verifier_said: verify/perl/pc-plain.log and pc-regen.log (s3b-verify-perl: ledger OPEN 0 defect 0, blocks 0/6/0/42, 0/0/0/19, 227/0/0/86, defect 0/13/1, purity 0/1, guard 4, UNATTESTED 0, contradictions 1): screen byte-identical by diff
+    equal: True
+  - [10]
+    lang: swift
+    last_line: PORTCHECK swift: PASS
+    numbers: same 61/19/14013; shared 19/0/48; by hand 21/3/67; missing 5/0/27; OPEN 0, defect 0; contradictions 0/0/1; blocks 1/1/0/46, 0/0/0/19, 207/0/0/106; classes 35/28/13; purity 0 open 1 accepted; guard 4; attested 5, by hand 1, UNATTESTED 0; shared matched 67 (67 unreviewed); 61 facts
+    verifier_said: no s3b-verify-swift report exists; screen byte-identical to the swift verifier's in-progress log verify/swift/pc-normal.log and to the fixer's ports/swift/final-fix.log
+    equal: True
+  - [11]
+    lang: ocaml
+    last_line: PORTCHECK ocaml: PASS
+    numbers: same 56/19/13998; shared 22/0/57; by hand 20/3/71; missing 8/0/31; OPEN 0, defect 0; contradictions 0/0/2; blocks 19/0/0/29, 0/0/0/19, 151/0/0/163; classes 35/32/34; purity 0/0; guard 4; attested 9, by hand 2, UNATTESTED 0; shared matched 79; absent 1 (1 explained); 70 facts
+    verifier_said: verify/ocaml/v-normal.log (s3b-verify-ocaml: PASS, same 56/19/13998, by hand 20/3/71, missing 8/0/31, contradictions 0/0/2, blocks 19/0/151 identical, otherwise 29/19/163): screen byte-identical
+    equal: True
+  - [12]
+    lang: lua
+    last_line: PORTCHECK lua: PASS
+    numbers: same 61/19/15091; shared 21/0/58; by hand 17/3/51; missing 6/0/18; OPEN 0, defect 0; contradictions 0/0/2; blocks 3/15/0/30, 0/2/0/17, 151/0/0/162; classes 26/27/24; purity 0 open 3 accepted; guard 4; attested 4, by hand 1, not printed 1, not judged 1; shared matched 79; absent 35 (35 explained); 67 facts
+    verifier_said: verify/lua/pc-final.log byte-identical; pc-normal.log identical except its appended 'exit=0' line (s3b-verify-lua: PASS, by hand 17/3/51, missing 6/0/18, contradictions 0/0/2, blocks 3/15/0/30, 0/2/0/17, 151/0/0/162)
+    equal: True
+scratch:
+  - [0]
+    lang: perl
+    numbers: exit 1; ledger OPEN 22/3/68; block classes OPEN 21/27/7; UNATTESTED 1; printed less often 1; guard 4 pass; identical to verify/perl/pc-scratch.log
+  - [1]
+    lang: swift
+    numbers: exit 1; ledger OPEN 26/3/95; block classes OPEN 35/28/13; UNATTESTED 1; printed less often 1; identical to verify/swift/pc-scratch.log
+  - [2]
+    lang: ocaml
+    numbers: exit 1; ledger OPEN 28/3/104; block classes OPEN 35/32/34; UNATTESTED 2; absent 1 (0 explained); identical to verify/ocaml/v-scratch.log
+  - [3]
+    lang: lua
+    numbers: exit 1; ledger OPEN 23/3/71; block classes OPEN 26/27/24; UNATTESTED 1; absent 35 (0 explained); identical to verify/lua/pc-scratch.log apart from its appended exit=1 line
+checks:
+  - [0]
+    check: start: build, regenerate, nine pass with section-11 numbers
+    command: cd sdkgen/ts && npm run build; REGEN=1 tools/portcheck.sh sdkgen out ts; tools/portcheck.sh sdkgen out <lang> for go py c zig clojure rust elixir rb; mine/rows.py against PORTING.md lines 497-523
+    result: build exit 0, status clean; 21 variations regenerated, none skipped; all nine PASS; 27/27 rows equal
+  - [1]
+    check: build after each language and after the golden
+    command: cd sdkgen/ts && npm run build
+    result: exit 0 every time (perl, ocaml, lua, swift, golden, before tag); git status --short empty
+  - [2]
+    check: golden regenerated once
+    command: SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js; node --test dist-test/characterize.test.js
+    result: both exit 0, 2/2; only the src/cmp/{perl,swift,ocaml,lua}/ lines changed (14+/18-), each language's lines equal to its port's golden; committed cd8196db
+  - [3]
+    check: one command, thirteen, after a clean regeneration
+    command: rm -rf out/new; REGEN=1 tools/portcheck.sh sdkgen out ts; tools/portcheck.sh sdkgen out <lang>
+    result: 12 PASS, perl FAIL (14 defect classes only); nine rows unchanged from start; four screens identical to verifiers' logs
+  - [4]
+    check: four ports from scratch
+    command: SCRATCH=1 tools/portcheck.sh sdkgen out <lang>
+    result: all exit 1 as designed; numbers identical to the verifiers' scratch runs; tools status clean afterwards
+  - [5]
+    check: guard and reader, all twenty
+    command: node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js
+    result: 77 tests, 77 pass, 0 fail (61 at v32 + 4 per port)
+  - [6]
+    check: suite without toolchain lanes
+    command: node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)
+    result: exit 0, tests 2613, pass 2608, fail 0, skipped 5, 348 s
+  - [7]
+    check: lanes on NEW for the nine
+    command: mine/lanes.sh sdkgen/ts new ts go py c rust rb zigdoc (copy of P/v32/mine/lanes.sh with v33p paths)
+    result: ts README 16/16, go 12/12, py 12/12, c DOC 6/6, rust DOC 6/6, ^rb: 49/49, zig documentation 6/6
+  - [8]
+    check: perl lane
+    command: tools/before/run.sh sdkgen perl
+    result: exit 0; 7/7 x3 runs in default, crud, basic-server; REFERENCE 21/21 and 14/14 executed, root 3/3; minimums 4.76/3.65/3.61 s
+  - [9]
+    check: seven unported languages and root READMEs
+    command: python3 mine/unported.py (byte compare against P/base32/out/new; root READMEs with perl/swift/ocaml/lua fenced blocks collapsed)
+    result: README+REFERENCE 266/266 identical; 19 root READMEs differ, 0 outside the four ports' blocks; 2 identical; nine ported languages' dirs and all other entries identical
+  - [10]
+    check: tools self-test
+    command: node tools/selftest.js --clone sdkgen --old out/old --new out/new --stage2 P/probe-ref/harness/out --tmp v33p/selftmp
+    result: exit 0, 178 controls, 0 failed (ledger 24/24, recheck 19/19, accept 7/7, missing 3/3, scratch modes same, facts 5/5 x2, sentences 2/2, purity 31/31, blocks 28/28, recall 49 of 51 >= floor 49), 407 s
+  - [11]
+    check: no trailer in this clone's commits
+    command: git log --format=%B v32-frozen..v33p | grep -ciE 'co-authored|session|claude'; same over tools --all
+    result: 0 and 0; the fetched port-* branches were deleted and pruned
+  - [12]
+    check: tag
+    command: npm run build; git status --short; git tag v33p
+    result: build exit 0, sdkgen and tools status empty, v33p -> cd8196db
+fails_on_purpose:
+  - perl's one command exits 1 at the tag. Its only failing numbers are 14 block classes recorded as defect. 13 are in rootquick: the root quick start starts `use DemoSDK;` with no lib path. 1 is in reference (24d40b660d): the Record list example prints the hashref `->{fields}`. Both wait for shared changes (an imports place and directory; a scalar-only fallback in showFields). Every other perl number is clean.
+  - The four ports' SCRATCH=1 runs exit 1. This is by design: hand records are ignored.
+conflicts:
+surprises:
+  - The six golden commits were left out as instructed. One regenerated golden reproduces each port's own golden lines exactly.
+  - The fetched port branches still carried the trailered commits; I deleted them and pruned so no object of this clone's port history has one. The inherited history before v32-frozen (from the user's repository) holds 1091 Co-Authored-By lines; those are not this job's commits and were left as they are.
+  - No s3b-verify-swift report exists yet. A swift verifier is running in P/verify/swift; its pc-normal and pc-scratch logs, and the fixer's final-fix.log, are what swift was compared with.
+  - The self-test's control count grew from 175 (v32) to 178: purity 28 -> 31, matching the three ports that declare notes (perl, ocaml, lua).
+  - The lua commit 8478f2dc keeps its subject 'searched over every file an operation runs through', which its verifier showed overstated: Entity.fragment.lua is not searched (attack A1).
+not_done:
+  - No toolchain lane for swift, ocaml or lua: none is defined, and their compilers were already reported missing by the verifiers. I did not re-run command -v for them.
+  - STRICT_SENTENCES=1 not run.
+  - The verifiers' attacks were not re-run.
+  - No shared change made (none was in scope).
+ran: |
+  All runs were in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33p on node v24.22.1 with the brief's PATH. Logs are in v33p:
+  - build*.log
+  - pc0-*.log (start) and pc1-*.log (thirteen)
+  - sc-*.log (scratch)
+  - guard.log, suite.log, lanes.log with logs/lane-*-new.log, lane-perl.log
+  - selftest.log
+  - PROGRESS.md (one line per step)
+  
+  Scripts are in v33p/mine:
+  - pick.sh: cherry-pick, then amend the message to strip trailers.
+  - records.sh: take the records as git show HEAD:<file> from each port's tools.
+  - rows.py: section-11 rows.
+  - unported.py
+  - lanes.sh
+read: |
+  - The task brief k-merge1.md, brief.md and brief5.md.
+  - PORTING.md v3.2, all of it, with sections 4, 5, 6, 10 and 11 in particular.
+  - s3b-verify-{perl,ocaml,lua}.txt in full.
+  - ports/swift/FIX-PROGRESS.md and verify/swift/PROGRESS.md.
+  - Each port commit's message and file list.
+  - The header of tools/selftest.js and tools/before/run.sh.
+  - P/v32/mine/lanes.sh.

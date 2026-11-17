@@ -1,0 +1,50 @@
+[portcheck rb] regenerate NEW from /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-tools/ws/sdkgen (a progress line per variation)
+[1/21] new B: 41 READMEs in 1072ms
+[2/21] new auth-basic: 41 READMEs in 704ms
+[3/21] new auth-basic-query: 41 READMEs in 600ms
+[4/21] new auth-query: 41 READMEs in 599ms
+[5/21] new auth-off: 41 READMEs in 607ms
+[6/21] new server-mixed: 41 READMEs in 652ms
+[7/21] new server-static: 41 READMEs in 621ms
+[8/21] new server-none: 41 READMEs in 568ms
+[9/21] new ex-readonly: 41 READMEs in 543ms
+[10/21] new ent-only-ambient: 41 READMEs in 578ms
+[11/21] new ent-none: 41 READMEs in 543ms
+[12/21] new doc-list: 41 READMEs in 736ms
+[13/21] new doc-crud: 41 READMEs in 646ms
+[14/21] new doc-nested: 41 READMEs in 658ms
+[15/21] new crud-basic: 41 READMEs in 615ms
+[16/21] new crud-bare: 41 READMEs in 727ms
+[17/21] new crud-noupdate: 41 READMEs in 687ms
+[18/21] new ref-issues: 41 READMEs in 609ms
+[19/21] new no-test: 41 READMEs in 559ms
+[20/21] new lone-go: 3 READMEs in 260ms
+[21/21] new alias-go2: 5 READMEs in 279ms
+[portcheck rb] regenerated 21 variations; SKIPPED: none (a skipped variation keeps its earlier output in new/, or is absent from it)
+[portcheck rb] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck rb] classify (hand/rb.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck rb] ledger
+[portcheck rb] blocks
+[portcheck rb] fact sheet
+[portcheck rb] purity
+[portcheck rb] guard: node --test --test-name-pattern '^rb: ' ts/dist-test/runtimefacts.test.js
+== portcheck rb ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   61 |      47     23        0      19       5     0       0 | 0
+rootquick                  19 |       3      0        0       3       0     0       0 | 0
+reference               15059 |     118     50        0      48      19     0       0 | 1
+section    blocks: identical corrected unified otherwise | classes OPEN defect | unverified
+tutorial                   3        21      23         1 |      27    0      0 | 0 (ruby here)
+rootquick                  0         2      15         2 |      17    0      0 | 0 (ruby here)
+reference                303         0      10         0 |       1    0      0 | 0 (ruby here)
+contradictions (1; counted, not failed):
+  reference [91baf1b4b6] This SDK is generated without the `test` feature, so it has no mock tr | other: rb/README.md:211 (no-test): 'Creates a test-mode client with | true: REFERENCE: without the test feature its 
+purity: 0 open, 1 accepted | notes declared 0, note regions found 0
+guard: pass (pass 4 fail 0 )
+fact sheet: factsheet rb: 63 facts, 0 with no account, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-tools/ws/tools/review/rb/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/i-tools/ws/tools/review/rb/<section>.open.json (fill into hand/rb.json), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK rb: PASS
+
+real	0m27.484s
+user	0m33.315s
+sys	0m1.766s

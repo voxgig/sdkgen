@@ -1,0 +1,641 @@
+lang: ocaml
+verdict: accept-with-fixes
+summary: |
+  Verdict: accept with fixes.
+  
+  **What I reproduced (ran).** Every number the porter reported came out the same, in a copy at P/reviews/ocaml/ws:
+  - build: exit 0, tree clean;
+  - guard and reader: 5/5;
+  - clean `REGEN=1` run: exit 0, PASS, with the same ledger and blocks numbers;
+  - `SCRATCH=1` run: exit 1, with the same OPEN counts;
+  - suite without the toolchain lanes: 2601 tests, 2596 pass, 0 fail, 5 skipped;
+  - golden: 2/2;
+  - line counts: 723 removed against 261 for the provider and hook;
+  - sharewords: 7.3% of the words come from provider literals;
+  - the porter's own pairing: 151 identical / 79 / 83 / 1 / 19.
+  
+  I also checked one thing the porter had not. I generated a whole OCaml SDK from v32-frozen and from the port, for the default and crud models. The only files that differ are README.md and REFERENCE.md: every .ml file is identical, so the refactor of Main, MainEntity and SdkError changes no output.
+  
+  **What is clean.** No shared file was touched. No other language's page changed: the root READMEs differ only inside their OCaml subsections. Purity is 0. Every fact I audited against the runtime is true.
+  
+  **What is wrong (read):**
+  - The `cancel: false` absence check is blind by construction. Its search files leave out Entity_ocaml.ts, the one file where `e_stream` reads `callopts.signal` (lines 117 and 142–153).
+  - `e_match_get` clones its result (Entity_ocaml.ts:107), but the page says nothing about it. Shared memberText ignores `copy` for matchGet, and no check notices the missing sentence.
+  - The signatures `e_load (value) (value) : entity_obj` are neither OCaml syntax nor the runtime's notation, and they lose OLD's parameter names. I tried the runtime's own notation, `e_load : value -> value -> entity_obj`, with `parenless: true`: the guard passes 5/5. But in that form the guard also passes a callable written as a field, so the porter's choice keeps a check the idiomatic form loses.
+  - The page prints `direct()`, which is not OCaml call syntax.
+  - "Return the entity name." is printed for a field.
+  - "Instance functions" heads members that the runtime declares on the module.
+  - One hand reason is false, and the dropped half of another is recorded as restored.
+  
+  **Process attacks (ran).** 24 mutations plus 3 page edits, and a no-edit control that passes. Every one made the one command fail, but some through a single weak path:
+  - `okFalse: 'false'` (the guide's value) passes the guard. Only the ledger fails, and only because the hand records are keyed on the old text.
+  - Removing `copy` gives no ledger signal. The guard caught it only because an orphaned citation was left behind.
+  - `List.iter` → `List.map` (a type error in OCaml) and swapped arguments pass the guard. Only the blocks tool sees them, as a new diff class.
+  
+  **OCaml examples.** No OCaml toolchain is here. I read 23 distinct changed blocks in B, auth-basic, ref-issues and doc-crud: none fails when read on its own. A structural lint of all 67 distinct NEW OCaml blocks flagged 0.
+required_fixes:
+  - [0]
+    file: ts/test/runtimeforms/ocaml.ts (cite 'ref.facts.cancel')
+    change: Add src/cmp/ocaml/Entity_ocaml.ts to the absence's files, with a pattern that leaves out the stream's iteration signal and says why. Or, if it stays out, state the exclusion openly, and give the member:streamSync note that `callopts` may carry `signal`, which stops iteration only after the operation has run.
+    why: The search runs over sdk_runtime.ml, EntityOperation_ocaml.ts and RunOp.fragment.ml. The one file holding `signal` is left out: Entity_ocaml.ts:117 '(* ... and signal (a 0-arity fn -> Bool; iteration stops when it returns true). *)', and :142-143,153 `let signal = getp callopts "signal"` / `aborted ()`. The value false is true (operations read no ctrl.signal), but the check could never fail on the file that matters. The guard passes today with `signal` present in that file (ran).
+    shared: False
+  - [1]
+    file: tools/hand/ocaml.json (f64ae2f4fc)
+    change: Rewrite the why. Keep the outcome same-meaning.
+    why: The why says 'the README says nothing else about log's default'. The NEW ocaml README says 'except `log`, which runs unless disabled' (B README:551-553) and 'It is active by default' (:681), printed by shared ReadmeFeatures. The two agree; the stated reason is false.
+    shared: False
+  - [2]
+    file: tools/hand/ocaml.json (6624c1429f, 53f65fd5c6, 71d7c4cfa1)
+    change: Record the remove clause 'it keeps its data' as dropped, not restored:shared. The why already admits it is not restated.
+    why: OLD tutorial printed `Printf.printf "deleted: %b\n" removed.e_deleted` and 'it keeps its data'. NEW says only 'a removed one is marked as deleted' and never names `e_deleted`, so a reader cannot find the mark. That is weaker than OLD, and the record should say so.
+    shared: False
+  - [3]
+    file: ts/src/cmp/ReadmeRef.ts memberText (matchGet, matchArg) + ocaml Syntax_ocaml.ts entity[2]
+    change: Let matchGet and matchArg print COPY when Member.copy is set (an additive change). Then declare `copy: true` on e_match_get in Syntax_ocaml.ts, cited to Entity_ocaml.ts:107 `ent.e_match_get <- (fun () -> utility.u_feature_hook entctx "GetMatch"; clone ent.e_match);`.
+    why: The runtime clones the match as it clones the data; the page says so for data only. Attack m07 shows that a missing copy sentence produces no ledger signal, so this omission can never fail anything today.
+    shared: True
+  - [4]
+    file: ts/src/cmp/ReadmeRef.ts:95-97 memberName
+    change: Add an optional RefFacts field for how prose names a member: called `direct()`, or bare `direct` (additive). Then use the bare form for ocaml.
+    why: The ocaml REFERENCE prints 'Accepts the same parameters as `direct()`' and 'the request `direct()` would send' in every variation (B REFERENCE:108-114). In OCaml, `direct ()` would apply direct to unit.
+    shared: True
+  - [5]
+    file: ts/src/helpers/example.ts Member + ts/src/cmp/ReadmeRef.ts:149
+    change: Add an optional flag that marks a member as a field, so the name member prints 'The entity name.' rather than 'Return the entity name.' (additive). Then drop the member:name note.
+    why: The page prints 'Return the entity name.' and then the note '`e_name` is a field of the entity, read without a call.': two sentences that disagree. The guard already knows the member is a field.
+    shared: True
+  - [6]
+    file: ts/src/cmp/ReadmeRef.ts:284 ('### Instance ${noun}')
+    change: Head the client's members according to their declared `on`: on: module gives e.g. '{module} functions' (additive).
+    why: Every ocaml client member is declared on the module (runtime-table: on = module for ${fn}, direct, prepare). They are functions that take the client as an argument, not instance members, so 'Instance functions' is false. OLD said the same, which is why the convention check attested it.
+    shared: True
+  - [7]
+    file: ts/src/helpers/example.ts NoteSlot (or a RefFacts deleted-marker fact)
+    change: Add an op:<name> note slot, or a fact naming the deleted marker, which the remove sentence would print (additive).
+    why: OLD REFERENCE named `e_deleted` and said it keeps the data. NEW cannot say either, and the tutorial's demonstration of `removed.e_deleted` is gone too.
+    shared: True
+  - [8]
+    file: ts/test/runtimeforms/guard.ts (citation check for an ahead-cited value)
+    change: Compare a declared value with the citation's pinned `value:` when one is given, not only check that its code tokens are in the quote.
+    why: Attack m04 (ran): with okFalse declared as 'false' and the forms citing value 'Bool false', the guard passes 5/5, because 'false' is a token inside `jo [("ok", Bool false);`. PORTING.md section 2 says 'a different declaration fails'; it does not. The ledger caught it only through this port's hand-record text.
+    shared: True
+  - [9]
+    file: base32/PORTING.md section 9 (ocaml row) and section 2 table
+    change: State `okFalse: 'Bool false'` for ocaml. State that the scratch mode of the one command cannot pass a port that has hand-decided classes.
+    why: `ok` holds the value `Bool false` (sdk_features.ml:1775 and every other failure path of raw_request). A reader who writes `getp result "ok" = false` gets a type error. The porter's change is correct and the guide is wrong.
+    shared: True
+not_caught:
+  - [0]
+    attack: m04: ref.facts.direct.okFalse 'Bool false' -> 'false' (the guide's own value)
+    consequence: The guard passed 5/5. Only the ledger failed (reference OPEN 2), and only because hand records were keyed on the old sentence text. A fresh port declaring the weaker value would pass the guard, and its page would tell an OCaml reader to compare with `false`.
+  - [1]
+    attack: m07: remove `copy: true` from e_data_get
+    consequence: The sentence 'Returns a copy of the current data.' disappears from all 19 variations, and the ledger shows no OPEN class (161 -> 160 classes, OPEN 0). Only the orphaned citation in the forms made the guard fail. The real instance exists already: e_match_get clones (Entity_ocaml.ts:107) and nothing reports its missing sentence.
+  - [2]
+    attack: existing: the cancel absence never searches Entity_ocaml.ts
+    consequence: The stream's `callopts.signal` (Entity_ocaml.ts:117,142-153) sits outside the searched files, so the absence check passes with the word present in the runtime (ran: guard 5/5).
+  - [3]
+    attack: m11: ref.facts.keys 'bare' -> 'member' (an enumerated fact)
+    consequence: The fact sheet still said attested 9, UNATTESTED 0, not judged 0. It was caught only by the ledger (reference OPEN 4), not by the check meant for enumerated facts.
+  - [4]
+    attack: m20: each printer List.iter -> List.map (a type error in OCaml at `let () =`); m21: ctrl and match arguments swapped (compiles, wrong behaviour)
+    consequence: The guard passed 5/5 for both. They were caught only as new block diff classes (OPEN 3/7/8 and 8/10/18), which a porter can classify away by hand. No compiler or semantic check sees them.
+  - [5]
+    attack: E1 (my copy): arrow signatures with `parenless: true`, then `e_make : entity_obj` (a callable written as a field)
+    consequence: The guard passed 5/5. Once a port adopts the runtime's own notation, the field-or-call check is off (as in rb). The porter's paren notation keeps it, at the cost of a non-OCaml signature.
+attacks:
+  - [0]
+    by: m01 derived: facts.method.load e_load -> e_get
+    caught: True
+    change: guard: check 'method' (load -> e_get not in sdk_types.ml entity_obj); ledger tutorial OPEN 4; blocks OPEN 5/11/8
+  - [1]
+    by: m02 derived: op.list returns entity_obj list -> entity_obj
+    caught: True
+    change: guard 'returns': e_list returns entity_obj list in the runtime
+  - [2]
+    by: m03 cited token: ref.facts.none Noval -> Null
+    caught: True
+    change: guard: declared facts with no account (Null not in the quote)
+  - [3]
+    by: m04 cited token (ahead): direct.okFalse Bool false -> false
+    caught: True
+    change: guard PASSED 5/5; caught only by ledger reference OPEN 2 through hand-record text
+  - [4]
+    by: m05 pinned prose: body.values 'a `Str`' -> 'a `Bytes.t`'
+    caught: True
+    change: guard: no account (pinned value differs); not printed in any of the 21 variations, so no ledger signal
+  - [5]
+    by: m06 pinned note: member:streamSync 'its match' -> 'its data'
+    caught: True
+    change: guard no account; ledger reference OPEN 1
+  - [6]
+    by: m07 pinned bool: drop copy:true on e_data_get
+    caught: True
+    change: guard only (orphaned citation); ledger OPEN 0, the missing sentence was not flagged
+  - [7]
+    by: m08 language: ref.maps maps -> arrays
+    caught: True
+    change: fact sheet UNATTESTED ref.maps (hand record is for 'maps'); ledger OPEN 1; guard pass
+  - [8]
+    by: m09 convention: ref.noun functions -> methods
+    caught: True
+    change: UNATTESTED ref.noun; ledger OPEN 4
+  - [9]
+    by: m10 enumerated: facts.prints record -> fields
+    caught: True
+    change: not judged 1; ledger OPEN 1; blocks OPEN 6/13/10
+  - [10]
+    by: m11 enumerated: ref.keys bare -> member
+    caught: True
+    change: fact sheet silent; ledger reference OPEN 4 only
+  - [11]
+    by: m12 field shown as a call: e_name : string -> e_name () : string
+    caught: True
+    change: guard 'field': e_name is a field of the runtime, declared as called
+  - [12]
+    by: m13 call shown as a field: e_make () : entity_obj -> e_make : entity_obj
+    caught: True
+    change: guard 'field': e_make is called in the runtime, declared as a field
+  - [13]
+    by: m14 called on the wrong thing: direct moved from client members to entity members
+    caught: True
+    change: guard 'signature': direct is not defined by the runtime's entity; ledger OPEN 35
+  - [14]
+    by: m15 note names an entity and states a number
+    caught: True
+    change: purity 4 open ('note states a number', entity word); guard no account (pinned)
+  - [15]
+    by: m16 example line: record printer e_data_get -> e_match_get
+    caught: True
+    change: guard 'record' check; blocks OPEN 6/12/8
+  - [16]
+    by: m17 runtime gains 'signal' in a searched file (EntityOperation_ocaml.ts)
+    caught: True
+    change: guard: the absence's search matches
+  - [17]
+    by: m18 convention: entityNoun Fields -> Members
+    caught: True
+    change: UNATTESTED; ledger OPEN 13
+  - [18]
+    by: m19 convention: heading {module} -> Client
+    caught: True
+    change: UNATTESTED; ledger OPEN 8
+  - [19]
+    by: m20 example: List.iter -> List.map (type error in OCaml)
+    caught: True
+    change: guard pass; blocks only, OPEN 3/7/8
+  - [20]
+    by: m21 example: ctrl and match argument order swapped
+    caught: True
+    change: guard pass; ledger tutorial OPEN 2; blocks OPEN 8/10/18
+  - [21]
+    by: m23 absence fact value: cancel false -> true
+    caught: True
+    change: generation throws 'ReadmeRef: cancel needs direct.signal'; guard no account
+  - [22]
+    by: m24 derived: async false -> true
+    caught: True
+    change: guard 'async'
+  - [23]
+    by: p01 shared sentence 'A failed request is reported in the result, not as an error...' dropped from doc-crud only (page edit)
+    caught: True
+    change: ledger reference OPEN 1 (after a clean rebuild; the first run used a stale dist and was discarded)
+  - [24]
+    by: p02 the same sentence dropped from all 19 variations
+    caught: True
+    change: ledger reference OPEN 1
+  - [25]
+    by: p03 one REFERENCE block line changed in one variation ("id" -> "planet")
+    caught: True
+    change: blocks reference OPEN 2
+  - [26]
+    by: p00 control: no edit
+    caught: False
+    change: PORTCHECK PASS, guard 5/5 (the harness itself reports a clean tree)
+facts_audit:
+  - [0]
+    fact: facts.method.* = e_list e_load e_create e_update e_patch e_remove
+    account: derived
+    verdict: true
+    evidence: tm/ocaml/sdk_types.ml:214-219 `mutable e_load : value -> value -> entity_obj;` etc.
+  - [1]
+    fact: facts.collection `list`; ref.facts.op.list returns entity_obj list
+    account: derived
+    verdict: true
+    evidence: sdk_types.ml:215; EntityOperation_ocaml.ts:43-51 List.map over the result items
+  - [2]
+    fact: facts.record {var}.e_data_get ()
+    account: derived
+    verdict: true
+    evidence: sdk_types.ml:207 `mutable e_data_get : unit -> value;`
+  - [3]
+    fact: ref.facts.test[0..1] test () / test_with (testopts) (sdkopts)
+    account: derived
+    verdict: true
+    evidence: Main_ocaml.ts: `let test () : sdk_client = sdk_test ... Noval Noval`; `let test_with (testopts : value) (sdkopts : value) : sdk_client`
+  - [4]
+    fact: entity[5] streamSync runs: call
+    account: derived
+    verdict: true
+    evidence: Entity_ocaml.ts:141 `ignore (run_op ctx ...)` and :145-150 rt_stream fn () run before :151-154 seq_of builds the Seq over the finished list
+  - [5]
+    fact: facts.recordType value
+    account: cited
+    verdict: true
+    evidence: sdk_types.ml:207 quote shows unit -> value
+  - [6]
+    fact: ref.facts.none Noval
+    account: cited
+    verdict: true
+    evidence: Main_ocaml.ts `let make0 () : sdk_client = make Noval`; accessor and ops treat Noval as none (Entity_ocaml.ts:61 to_map; EntityOperation_ocaml.ts:63,67)
+  - [7]
+    fact: ref.facts.container value
+    account: cited
+    verdict: true
+    evidence: Main_ocaml.ts `let make (options : value) : sdk_client =`
+  - [8]
+    fact: ref.facts.ctor[0..2] open Voxgig_struct / Sdk_helpers / Sdk_types
+    account: cited, pinned prose
+    verdict: true but weak
+    evidence: The quotes show that the modules exist and are opened by generated code (Sdk_helpers by Entity_ocaml.ts, not by the client module). That the examples need them is true by reading: jo/getp come from sdk_helpers.ml:9,14; Str/Noval/empty_map/stringify from voxgig_struct.ml; the record fields from Sdk_types
+  - [9]
+    fact: ref.facts.ctorAlts[0] {module}.make0 () kind defaults
+    account: cited / pinned
+    verdict: true
+    evidence: make0 = make Noval; make_client_base turns Noval into empty_map options
+  - [10]
+    fact: ref.facts.entity[0].copy true
+    account: cited, pinned
+    verdict: true
+    evidence: Entity_ocaml.ts:101 `clone ent.e_data`
+  - [11]
+    fact: (missing) e_match_get copy
+    account: none
+    verdict: missing
+    evidence: Entity_ocaml.ts:107 `clone ent.e_match`; the page does not say so, and shared memberText has no copy branch for matchGet
+  - [12]
+    fact: ref.facts.direct.okFalse Bool false
+    account: cited ahead (porter changed it from false)
+    verdict: true; the guard cannot tell it from 'false'
+    evidence: sdk_features.ml:1775 and every failure path of raw_request/op_denied `("ok", Bool false)`; attack m04
+  - [13]
+    fact: ref.facts.prepare.fails style
+    account: cited, pinned
+    verdict: true
+    evidence: sdk_features.ml prepare: raise Sdk_error_exc on allow.method, prepare_auth and make_fetch_def errors
+  - [14]
+    fact: ref.facts.body.values 'a `Str` holding the bytes'
+    account: cited, pinned prose
+    verdict: true, weakly quoted
+    evidence: sdk_runtime.ml:1423-1428: a raw (non-JSON) point sends b as given (`| b -> setp fetchdef "body" b`). The quote line that holds the token `Str` is the JSON-encoding branch. Not printed in any of the 21 variations
+  - [15]
+    fact: ref.facts.cancel false (absence)
+    account: cited absence
+    verdict: value true, check blind
+    evidence: No operation reads ctrl.signal. The search leaves out Entity_ocaml.ts, where e_stream reads callopts.signal (117,142-153)
+  - [16]
+    fact: notes.operations
+    account: cited, pinned
+    verdict: true
+    evidence: EntityOperation_ocaml.ts:62 `fun ${arg} ctrl`, :63 is_nullish -> empty_map, :67 Noval|Null -> None
+  - [17]
+    fact: notes.member:name
+    account: cited, pinned
+    verdict: true
+    evidence: sdk_types.ml:198 `mutable e_name : string;` (a field)
+  - [18]
+    fact: notes.member:streamSync
+    account: cited, pinned
+    verdict: true
+    evidence: Entity_ocaml.ts:118 `fun action args callopts`, :126 args -> reqmatch
+  - [19]
+    fact: ref.maps maps (hand)
+    account: language, recorded
+    verdict: right
+    evidence: OLD B REFERENCE 'Request body (Maps are JSON-serialized).'
+  - [20]
+    fact: ref.valueType.ANY value (hand)
+    account: convention, recorded
+    verdict: right
+    evidence: OLD `| body | value |`; options and records are `value`
+  - [21]
+    fact: ref.noun functions / entityNoun Fields / heading {module}
+    account: convention, attested
+    verdict: attested, but 'Instance functions' is false
+    evidence: runtime-table: every client member is on: module
+  - [22]
+    fact: absent 2e09bb327d (options member)
+    account: hand absent
+    verdict: right
+    evidence: Main_ocaml.ts defines make, make0, test, test_with, direct, graphql, prepare, entity and the accessors; options live in the record field cl_options (sdk_types.ml:188)
+false_or_missing:
+  - [0]
+    what: 'Accepts the same parameters as `direct()`' and 'the request `direct()` would send': not OCaml call syntax
+    where: every variation, REFERENCE prepare (B REFERENCE:110-114)
+    file_line: ts/src/cmp/ReadmeRef.ts:95-97
+    runtime_shows: Main_ocaml.ts `let direct (client : sdk_client) (fetchargs : value) : value`; `direct ()` would apply it to unit
+  - [1]
+    what: 'Return the entity name.' for a record field, then a note correcting it
+    where: every entity, REFERENCE
+    file_line: ts/src/cmp/ReadmeRef.ts:149
+    runtime_shows: sdk_types.ml:198 `mutable e_name : string;`
+  - [2]
+    what: '### Instance functions' heads module functions
+    where: every variation, REFERENCE
+    file_line: ts/src/cmp/ReadmeRef.ts:284
+    runtime_shows: Main_ocaml.ts / MainEntity_ocaml.ts: let-bound module functions taking `client : sdk_client`
+  - [3]
+    what: e_match_get's copy not stated
+    where: REFERENCE Common Fields
+    file_line: ts/src/cmp/ReadmeRef.ts memberText 'matchGet'
+    runtime_shows: Entity_ocaml.ts:107 clone ent.e_match
+  - [4]
+    what: remove: `e_deleted` and 'keeps the data it held' gone; the tutorial no longer shows reading the mark
+    where: REFERENCE remove; tutorial write step
+    file_line: shared remove sentence; no per-op note slot
+    runtime_shows: sdk_types.ml:220-223 e_deleted; EntityOperation_ocaml.ts:55 e_mark_deleted
+  - [5]
+    what: signature notation `e_load (value) (value) : entity_obj`, `e_data_get () : value`: neither the runtime's notation nor OCaml syntax; OLD's names reqmatch/ctrl lost
+    where: every REFERENCE heading
+    file_line: Syntax_ocaml.ts:37-55
+    runtime_shows: sdk_types.ml declares `e_load : value -> value -> entity_obj`; E1 shows this form passes the guard with parenless (losing the field check)
+  - [6]
+    what: (out of the ported sections, same page) the root README test block in ent-none is `let () = let client = Sdk_client.test () in` with no body; the ocaml README Error handling section prints TypeScript
+    where: ent-none/README.md; every ocaml/README.md:61-89
+    file_line: ReadmeTopTest_ocaml (unported); shared Error handling section
+    runtime_shows: invalid OCaml; TypeScript in an OCaml README
+pages:
+  - [0]
+    variation: B
+    section: tutorial
+    kind: better
+    finding: Step numbering is fixed (OLD jumped from 1 to '3. Load'). The client passes the required `server.tenant`, and a sentence says why. 'returns the entity and raises on failure; `ambient.e_data_get ()` reads its record (a `value`)' is true (sdk_types.ml:207,214).
+  - [1]
+    variation: B
+    section: rootquick
+    kind: better
+    finding: Now top-level definitions (`let client = ...`, `let ambient = ...`, `let () = print_endline ...`): a valid file. OLD's `let () = let client = ... in` program was valid here but had an empty body in ent-none and ref-issues.
+  - [2]
+    variation: B
+    section: reference
+    kind: mixed
+    finding: Gains: the test and test_with signatures are true (OLD gave test two parameters); e_stream is documented; server variables; direct's Returns with `Bool false`; fetchargs `ctrl`. Losses: OLD's `let result_data = result.e_data_get ()` lines (79 blocks), now only a sentence; the parameter names; `e_deleted`. False or awkward: `direct()`, 'Return the entity name.' on a field, 'Instance functions', `(value) (value)` headings.
+  - [3]
+    variation: auth-basic
+    section: tutorial/rootquick
+    kind: better
+    finding: The client passes `secret` from DEMO_SECRET, which the runtime reads (PrepareAuth_ocaml.ts:132,269 option_secret = "secret"), plus `server.tenant`. OLD passed only apikey.
+  - [4]
+    variation: ref-issues
+    section: tutorial
+    kind: better
+    finding: The step is headed '2. Update' with a true sentence. OLD headed it '4. Create, update, and remove' over a block containing one update. The update is now `let _ = ...` (valid top-level).
+  - [5]
+    variation: ref-issues
+    section: rootquick
+    kind: same as other languages
+    finding: Only the client, with no operation, as ts and py print it (a shared decision). OLD ended in a dangling `in`, which was invalid.
+  - [6]
+    variation: ref-issues
+    section: reference
+    kind: corrections
+    finding: Planet's inactive remove is gone (S25). The gauge update shows no id sentence (U43). The piped field description is escaped (G27), but the link '[the guide](guide.md)' becomes plain text: a shared decision.
+  - [7]
+    variation: doc-crud (chosen: the write step is where OCaml's statement form differs most from every other language, top-level `let _ =` definitions instead of a sequence)
+    section: tutorial
+    kind: weaker in one place
+    finding: Write results are no longer printed (shared: ts, py and rb are the same). The removed entity's `e_deleted` is no longer shown. The list loop variable becomes `planet`. The list and load steps remain toplevel `(try ... )` expressions while the write step is definitions: as one file, `(try` after `let client = ...` parses as an application. This is the same as OLD, but the port mixes the two forms where `let () = try ... with ...` would make the whole tutorial one valid file.
+hand_records:
+  - [0]
+    id: f64ae2f4fc
+    verdict: outcome right, why false
+    why: It claims the README says nothing else about log's default. NEW README B:551-553 and :681 say log runs unless disabled.
+  - [1]
+    id: 6624c1429f / 53f65fd5c6 / 71d7c4cfa1
+    verdict: partly wrong
+    why: 'it keeps its data' and `e_deleted` are dropped, yet two of the three are recorded as restored:shared. The why admits it.
+  - [2]
+    id: 3538e6b4b8, 0ccd61dc70 (dropped Name/Type headers)
+    verdict: right
+    why: keys: bare tables are headed Key / Value type.
+  - [3]
+    id: 60c6b0b417, 91baf1b4b6 (contradiction S13)
+    verdict: right
+    why: The REFERENCE is the side that holds, as in ts, go, py, elixir and rb.
+  - [4]
+    id: 22 same-meaning
+    verdict: right in outcome
+    why: Echoes agree. Several cite README line numbers that are approximate (OLD numbering), but the quoted text is printed.
+  - [5]
+    id: unification:ref-op-block (20 classes, 163 pairs)
+    verdict: right, but a blanket class
+    why: The porter's pairing reproduces (151 identical, 79 read dropped, 83 lists, 1 OLD-only, 19 NEW-only). A new diff still opens a class (p03, m20 and m21 were caught).
+  - [6]
+    id: facts ref.maps, ref.valueType.ANY
+    verdict: right
+    why: Attested by OLD's body row.
+  - [7]
+    id: absent 2e09bb327d
+    verdict: right
+    why: No options function exists; cl_options is a live record field.
+gaps_judged:
+  - [0]
+    gap: 1 memberName appends () (ReadmeRef.ts:95-97)
+    needed: True
+    breaking: False
+    why: Prints non-OCaml `direct()` on every page. Additive RefFacts field.
+  - [1]
+    gap: 2 operation parameter names not citable; named signature fails the renamed-parameter control
+    needed: False
+    breaking: False
+    why: Not a hard gap. The runtime declares no names (sdk_types.ml arrows), and the runtime's own arrow notation passes the guard 5/5 with parenless:true (E1, ran). The real gap is in the guard: it detects a call only by `name(`, so the arrow form loses the field check (E1b, ran). An additive forms hook (`called` from `->`) would close it.
+  - [2]
+    gap: 3 no per-operation note slot
+    needed: True
+    breaking: False
+    why: Without it, the remove sentence cannot name `e_deleted` or say the entity keeps its data. Additive (NoteSlot op:<name> or a deleted-marker fact).
+  - [3]
+    gap: 4 blocks.js cannot pair parenless OCaml headings
+    needed: True
+    breaking: False
+    why: Tools only. All 163 reference pairs are document-order mispairs absorbed by one hand class.
+  - [4]
+    gap: 5 field member gets a callable sentence
+    needed: True
+    breaking: False
+    why: Additive Member flag; the guard already derives field.
+  - [5]
+    gap: (mine) matchGet/matchArg ignore Member.copy
+    needed: True
+    breaking: False
+    why: The ocaml runtime clones the match (Entity_ocaml.ts:107). Additive.
+  - [6]
+    gap: (mine) 'Instance {noun}' heading ignores `on`
+    needed: True
+    breaking: False
+    why: The ocaml client members are module functions. Additive.
+  - [7]
+    gap: (mine) guard does not compare an ahead citation's pinned value
+    needed: True
+    breaking: False
+    why: m04: 'false' passes against a pin of 'Bool false'.
+provider_code:
+  - [0]
+    file_line: Syntax_ocaml.ts (whole) + purity.json
+    finding: No model read, no reserved list, no case change. Operations are indexed through facts.method[s.op]. Purity: 0 open, 0 accepted.
+  - [1]
+    file_line: Naming_ocaml.ts:10-19
+    finding: Calls ocamlModule, ocamlQualified and ocamlVarName from utility_ocaml. The generator calls ocamlQualified (Main_ocaml, MainEntity_ocaml) and ocamlVarName (MainEntity, TestEntity, TestClean). ocamlModule(ERROR_FILE) is used by the hook alone, but it is the same capitalisation rule ocamlQualified applies. `client: 'sdk_client'` is a literal type name from sdk_types.ml, acceptable.
+  - [2]
+    file_line: Main_ocaml.ts, MainEntity_ocaml.ts, SdkError_ocaml.ts (refactor)
+    finding: Byte-neutral (ran): gensdk with v32-frozen and with the port, default and crud models; only README.md and REFERENCE.md differ, and every .ml is identical.
+  - [3]
+    file_line: Syntax_ocaml.ts:227-231 notes
+    finding: All three notes are true and are one runtime's facts. All three also make up for interface gaps: unnamed signature parameters (operations, streamSync) and the missing field sentence (name). With named or arrow signatures and a field sentence, OCaml's own prose would be close to 0.
+  - [4]
+    file_line: Syntax_ocaml.ts:209-213 attempt
+    finding: Prints a toplevel `(try ... with ...)` expression. Kept byte-identical to OLD, but invalid after a `let` in one file. `place()` already knows 'top', so `let () = try ... with ...` was available to the provider.
+  - [5]
+    file_line: ts/test/runtimeforms/ocaml.ts sigParts and cite
+    finding: The porter edited the reader part (allowed) and changed the ahead cite to 'Bool false'. 13 citations, 0 unquoted excuses, 0 exceptions.
+  - [6]
+    file_line: git diff --stat v32-frozen..HEAD
+    finding: Only ocaml files, ts/test/runtimeforms/ocaml.ts and the golden (ocaml lines only: 6+/7-). The tools commit fa9c146 touches hand, counts and classes ocaml.json only.
+examples: |
+  No OCaml toolchain here. `command -v` reports ocaml, ocamlc, ocamlopt, ocamlfind, dune, opam, utop and ocamlformat all MISSING.
+  
+  **Reading pass.** I acted as the compiler for 23 distinct changed blocks in B, auth-basic, ref-issues and doc-crud: 4 client blocks, 2 root programs, 13 REFERENCE operation and test blocks, 3 tutorial blocks and 1 doc-crud root program. I checked each against:
+  - sdk_types.ml: field types and arrows;
+  - Main_ocaml.ts: make, test_with;
+  - sdk_helpers.ml: jo, getp;
+  - voxgig_struct.ml: value constructors, empty_map, stringify with optional arguments.
+  
+  None would fail to compile or run on its own, given the opens and a bound `client`.
+  
+  **Structural pass.** I linted all 67 distinct NEW ocaml blocks in README and REFERENCE across 21 variations (dangling `in`, trailing `;`, paren balance): 0 flagged. Root ocaml blocks: 16 distinct NEW; the only dangling `in` left is the unported test block in ent-none. OLD had 2 there.
+  
+  **Doubtful lines, all carried over from OLD:**
+  - REFERENCE blocks use an unbound `client`.
+  - `Sys.getenv` raises Not_found when the variable is unset.
+  - Tutorial `(try ...)` expressions mis-parse as an application when pasted after `let client = ...`.
+  
+  **Mutations the guard misses.** `List.map` in `let () =` (m20) and swapped arguments (m21) are invisible to the guard and are caught only as new block diff classes.
+  
+  **Not verified.** All 229 changed block instances (tutorial 29, rootquick 19, reference 181) are compiled by nothing. The generated SDK's readme_examples_test is structural only, and was not run.
+numbers:
+  - [0]
+    what: build in copy
+    porter: exit 0, git status empty
+    mine: exit 0, git status empty (npm run build; again after the attacks)
+  - [1]
+    what: guard + reader ocaml
+    porter: 5/5
+    mine: 5/5 (node --test --test-name-pattern '^ocaml: ' runtimefacts + runtimereader)
+  - [2]
+    what: REGEN=1 portcheck normal
+    porter: exit 0 PASS; ledger same 56/19/13998, by-hand 20/3/71, missing 8/0/31, contradictions 0/0/2; blocks identical 19/0/151, otherwise 29/19/163
+    mine: identical; regenerated out/new byte-identical to the porter's (diff -rq)
+  - [3]
+    what: SCRATCH=1 portcheck
+    porter: exit 1; OPEN ledger 28/3/104, blocks 35/32/34; UNATTESTED 2
+    mine: identical
+  - [4]
+    what: suite without toolchain lanes
+    porter: only the generic suites, 474/474, plus characterize 2/2
+    mine: 2601 tests: 2596 pass, 0 fail, 5 skipped, 8m29s (--test-concurrency=2); characterize 2/2
+  - [5]
+    what: source lines
+    porter: 723 removed; provider+hook 261 (2.77x); 330 with forms and generator edits (2.2x)
+    mine: same from git diff --numstat; without blanks and // comments 529 -> 200 (2.65x)
+  - [6]
+    what: prose by source (sharewords)
+    porter: tutorial 0%, rootquick 0%, reference 7.5%, all 7.3%; tutorial 21.4% 'only this lang' unexplained
+    mine: same. The 21.4% is a masking artifact: recordType, container, direct.returns, prepare.returns and valueType.ANY all have the value `value`, so the union mask matches no other language's. The three units are the shared load and list sentences and one shared write comment (sharewords --json onlyEx).
+  - [7]
+    what: reference block pairing
+    porter: 151 identical, 79 read dropped, 83 lists, 1 OLD-only, 19 NEW-only
+    mine: same (ran the porter's refpairs.py on the snapshot)
+  - [8]
+    what: guard account
+    porter: derived 47, cited 16, language 1, convention 11
+    mine: same (SDKGEN_GUARD_REPORT=1)
+interface: |
+  **H1 (ocaml): the interface held.** The port made 0 shared changes and none breaking. It forces about 6 additive shared changes:
+  - member naming without `()`;
+  - a field member sentence;
+  - a per-operation note slot or deleted-marker fact;
+  - copy honoured on matchGet;
+  - the client heading following `on`;
+  - the guard comparing a pinned ahead value.
+  
+  There is also one guard-forms hook, which would let arrow signatures keep the field check, and one tools change (blocks pairing).
+  
+  Providers read the model 0 times (purity 0).
+  
+  **OCaml's own prose:** 7.3% of the sections' words by source. That is 0% in the tutorial and root quick start, and 7.5% in the reference: 3,854 words of notes repeated under every entity, against 41 words of notes at the source. It is under the 15% line. All three notes make up for interface gaps, so the irreducible share is lower.
+  
+  **H3:** the catalogued corrections in these sections reach OCaml through shared code, with no per-language edit beyond declaring facts: S49, S50, S09, S13, S25, G27, U43, U45 and the Actions table. The old OCaml-specific defects are fixed by facts and printers:
+  - test's wrong two-parameter signature;
+  - the empty root body in ent-none and ref-issues;
+  - the skipped step number.
+  
+  **H4:** untestable here, since there is no OCaml toolchain. By reading, 0 of 23 changed blocks fail. Nothing intrinsic to the approach is seen, but every changed block is unverified.
+could_not_check:
+  - Compiling or running any OCaml example: ocaml, ocamlc, ocamlopt, ocamlfind, dune and opam are all missing. That leaves 229 changed block instances (29 tutorial, 19 rootquick, 181 reference) and 23 distinct changed blocks in the four variations unverified, beyond reading.
+  - Whether warning 40 (an out-of-scope record label) turns into an error under the generated dune flags for REFERENCE blocks that carry no `open Sdk_types`. Unchanged from OLD.
+  - The generated SDK's readme_examples_test: it checks structure only and was not run.
+  - Runtime behaviour of the no-test test client (S13): taken as the shared decision. I did not trace Sdk_config.make_feature for an absent feature.
+ran: |
+  - Build in my copy (exit 0, clean). Guard and reader 5/5. Guard account report.
+  - `REGEN=1` portcheck (exit 0, numbers equal the porter's; out/new byte-identical to the porter's). `SCRATCH=1` portcheck (exit 1, numbers equal).
+  - Suite without the toolchain lanes: 2601 tests, 2596 pass, 0 fail, 5 skipped. characterize: 2/2.
+  - `git diff --numstat` line counts; sharewords, including `--json` for the tutorial's 'only' units; the porter's refpairs.py.
+  - diff of the root READMEs outside their OCaml subsections against base32/out/new: identical in all 21 variations.
+  - gensdk of an OCaml SDK (default and crud models) from copies of v32-frozen and of the port: only the README and REFERENCE differ.
+  - 24 source mutations and 3 page edits plus a no-edit control. Each was built, regenerated, run through the guard and the one command, and restored. Page attacks were rerun after a clean rebuild: the first run used a stale dist and was discarded.
+  - E1 (arrow signatures with parenless) and E1b (a callable written as a field under E1), in a separate copy.
+  - Structural lint of every distinct NEW OCaml block.
+  - `command -v` for the OCaml toolchain.
+read: |
+  - The briefs (1, 3, 4, 5) and PORTING.md v3.2.
+  - Syntax_ocaml.ts, Naming_ocaml.ts, the utility_ocaml/Main/MainEntity/SdkError diffs, and runtimeforms/ocaml.ts.
+  - The runtime: sdk_types.ml (entity_obj, sdk_client); Main_ocaml.ts; Entity_ocaml.ts (make, the getters, e_stream); EntityOperation_ocaml.ts; RunOp.fragment.ml; sdk_features.ml (prepare, raw_request, direct, sdk_test); sdk_runtime.ml (make_fetch_def_util, prepare_body); sdk_helpers.ml; voxgig_struct.ml (value, stringify); PrepareAuth_ocaml.ts (secret); Config_ocaml.ts.
+  - Shared ReadmeRef.ts (memberName, memberText, operation loop, heading), media.ts (bodyNoteText), example.ts (Member, NoteSlot) and guard.ts (field/called detection, negative controls).
+  - runtime-table.md, ocaml section.
+  - OLD and NEW side by side for B, auth-basic, ref-issues and doc-crud: tutorial, root quick start, REFERENCE.
+  - The ledger and blocks worklists, every hand record of kind dropped, contradiction or same-meaning, the restored and correction records, the hand facts and the absent list.
+touched: |
+  Only under P/reviews/ocaml/:
+  - ws: a copy of the port, restored after every attack; git status is clean in both sdkgen and tools.
+  - base-sdkgen and port-sdkgen: copies, the latter restored.
+  - sdk-base, sdk-port and mine/e1sdk: generated SDKs.
+  - porter-new-snapshot and normal-review: copies of the porter's output and review files.
+  - attacks/: one directory per attack, each with result.txt, guard.log, portcheck.log and diff.txt.
+  - mine/: attack.sh, rep.py, move.py, pagedrop.py, batch1-4.sh, blocks4.js and blocks4.txt, e1-arrows.diff, sw-tut.json.
+  - PROGRESS.md and the r-*.log files.
+  
+  Nothing under /home/user or P/ports/ocaml was modified.
+doubtful_lines:
+  - [0]
+    where: tutorial list and load (every variation)
+    line: |
+      (try
+         let planets = (Sdk_client.planet client Noval).e_list (Noval) Noval in ...
+       with Sdk_error.E err -> ...)
+    why: A toplevel expression. In one file after `let client = Sdk_client.make (...)` it parses as a second argument to make, which takes one: a type error. Unchanged from OLD; `let () = try ... with ...` would fix it in the attempt printer.
+    runtime_line: Main_ocaml.ts `let make (options : value) : sdk_client =` (one argument)
+  - [1]
+    where: every REFERENCE operation block
+    line: let result = (Sdk_client.planet client Noval).e_load (jo [("id", (Str "planet_id"))]) Noval
+    why: `client` is unbound in a standalone block, and there is no `open Sdk_types` for the e_load label. Same as OLD.
+    runtime_line: sdk_types.ml:214 `mutable e_load : value -> value -> entity_obj;`
+  - [2]
+    where: client blocks
+    line: Str (Sys.getenv "DEMO_APIKEY")
+    why: Raises Not_found when the variable is unset (Sys.getenv_opt is the safe form). Same as OLD.
+    runtime_line: Stdlib Sys.getenv
+  - [3]
+    where: REFERENCE prepare
+    line: the request `direct()` would send
+    why: Not OCaml call syntax.
+    runtime_line: Main_ocaml.ts `let direct (client : sdk_client) (fetchargs : value) : value`

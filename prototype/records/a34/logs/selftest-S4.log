@@ -1,0 +1,24 @@
+[selftest 0s] injections: 0 regressions, 0 false sentences, 0 of the re-check's, 10 dropped sentences; modes reviewed (19 runs)
+[selftest 0s] mode reviewed
+  ok   masking record-to-item-rb: 2 new class(es) left for a person; accepted automatically: none (1/19, 5%)
+  ok   masking record-to-planet-rb: 2 new class(es) left for a person; accepted automatically: none (2/19, 11%)
+  ok   masking record-to-utility-go: 1 new class(es) left for a person; accepted automatically: none (3/19, 16%)
+  ok   masking reads-its-utility-ts: 4 new class(es) left for a person; accepted automatically: none (4/19, 21%)
+  ok   masking headers-and-body-py: 4 new class(es) left for a person; accepted automatically: none (5/19, 26%)
+  ok   samefact swap-ok-err-zig: 2 new class(es) left for a person; accepted automatically: none (6/19, 32%)
+  ok   samefact record-read-is-list-py: 2 new class(es) left for a person; accepted automatically: none (7/19, 37%)
+  ok   samefact collection-is-hash-rb: 2 new class(es) left for a person; accepted automatically: none (8/19, 42%)
+  ok   samefact comment-collection-is-list-rb: 2 new class(es) left for a person; accepted automatically: none (9/19, 47%)
+  ok   missing missing-direct-one-variation: flagged: 1 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 1 (10/19, 53%)
+  ok   missing missing-direct-every-variation: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (11/19, 58%)
+  ok   missing missing-table-row: flagged: 2 new open class(es), 2 printed less often than its reference, 0 new absent sentence(s), unclassified 0 -> 2 (12/19, 63%)
+  ok   missing missing-direct-every-variation-lua: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 8 -> 8 (13/19, 68%)
+  ok   missing missing-direct-every-variation-perl: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (14/19, 74%)
+  ok   missing missing-direct-every-variation-swift: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (15/19, 79%)
+  ok   missing drop-branch-go-one: flagged: 1 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 1 (16/19, 84%)
+  ok   missing drop-branch-go-all: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (17/19, 89%)
+  ok   missing drop-branch-c-one: flagged: 1 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 1 (18/19, 95%)
+  ok   missing drop-branch-c-all: flagged: 0 new open class(es), 0 printed less often than its reference, 1 new absent sentence(s), unclassified 0 -> 0 (19/19, 100%)
+
+selftest: 19 controls, 0 failed, 0 moved (masking 5/5, samefact 4/4, missing 10/10) in 481s; scratch /tmp/selftest-GS9zTP
+exit 0

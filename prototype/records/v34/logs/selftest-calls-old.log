@@ -1,0 +1,24 @@
+[selftest 0s] printed calls (controls/calls.json)
+  ok   calls clean:swift: 0 finding(s) on the unchanged pages
+  ok   calls clean:lua: 0 finding(s) on the unchanged pages
+  ok   calls clean:ocaml: 0 finding(s) on the unchanged pages
+  ok   calls clean:perl: 0 finding(s) on the unchanged pages
+  FAIL calls clean:kotlin: 6 finding(s) on the unchanged pages
+  FAIL calls clean:scala: 3 finding(s) on the unchanged pages
+  ok   calls clean:php: 0 finding(s) on the unchanged pages
+  ok   calls swift-load-one-arg: 1 finding(s): ARITY - load passes 1 argument(s); the runtime declares 2 (_ reqmatch: VMap?, _ ctrl: VMap?), 2 required
+  ok   calls lua-accessor-dot: 2 finding(s): RECEIVER - the entity accessor Ambient is made on the client instance; '.' makes it on the module
+  ok   calls lua-ctor-create: 1 finding(s): RECEIVER - create is declared on the instance; '.' calls it on the module
+  ok   calls ocaml-test-one-arg: 1 finding(s): ARITY - test_with passes 1 argument(s); the runtime declares 2 (testopts : value, sdkopts : value), 2 requir
+  ok   calls swift-record-asentity: 1 finding(s): MEMBER - ambient.asEntity(...): the runtime declares no member asEntity
+  ok   calls lua-load-three-args: 1 finding(s): ARITY - load passes 3 argument(s); the runtime declares 2 (reqmatch, ctrl), 0 required
+  info calls swift-cast-entitybase: not caught, as stated (NOT CAUGHT by design: a cast names a type, not a call)
+  info calls ocaml-list-map: not caught, as stated (NOT CAUGHT by design: a standard-library call, a type error only a compiler sees)
+  info calls ocaml-args-swapped: not caught, as stated (NOT CAUGHT by design: two arguments of one type swapped keep the count)
+  info calls perl-flat-list: not caught, as stated (NOT CAUGHT by design: perl declares every parameter optional, so a hash flattened into two)
+  ok   calls kotlin-ctrl-dropped-typed-map: 6 finding(s): ARITY - create passes 3 argument(s); the runtime declares 2 (reqdata: MutableMap<String, Any?>?, ctrl: Mutab
+  ok   calls kotlin-list-one-arg: 6 finding(s): ARITY - load passes 3 argument(s); the runtime declares 2 (reqmatch: MutableMap<String, Any?>?, ctrl: Mutabl
+  FAIL calls scala-list-one-arg: 3 finding(s): MEMBER - results.forEach(...): the runtime declares no member forEach
+  FAIL calls php-accessor-on-type: 0 finding(s): NONE
+
+selftest: 17 controls, 4 failed, 0 moved (calls 13/17) in 9s; scratch /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v34/tmp/selftest-9M9GQz

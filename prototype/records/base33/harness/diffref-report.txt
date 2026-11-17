@@ -1,0 +1,39 @@
+  7788  op example through the representation: list/load consumed as the tutorial does, writes called alone (no result binding; ts update comment dropped)
+  5843  stream documented where the runtime defines it (ts, py, c; was go only); member sentences written once
+  4350  op description written once per result style (runtime facts); U43 id sentence only with an id; U44 list-match sentence from the description
+  2887  accessor: one shared sentence; the class name (U34); ts/js parameter table and Returns dropped
+  1557  direct(): rows from one list; ctrl documented where the runtime reads it (py, c); one returns sentence
+  1312  moved: operations in canonical order (go already was)
+  1279  Actions documented in every ported language (was ts only; uncatalogued)
+   816  S09 shared ReadmeRefFeatures: a feature on by default is said to be
+   615  prepare(): one sentence; the failure clause from the result style
+   510  S50/D23/D55/D26 constructor option rows come from the description (secret only when read; server variables, required or defaulted)
+   457  N04/U06/M04 field type from the provider's own language; G27/G29/M38/D69 cells escaped
+   411  test client: one shared sentence per declared test constructor (go Test(), ts table dropped)
+   382  D04 feature table from featureDocs; snippet is the constructor through the provider
+   272  shared ReadmeRefFeatures: the escaped-backtick leak fixed (uncatalogued)
+   264  heading scheme: c's client functions under "### Instance Functions" (was Entity Accessors), "Common Functions"
+   258  heading scheme: the test constructors under one "### Test client" (Static Methods / Test Constructor)
+   222  constructor: the container sentence and caption, from declared facts
+   159  instance example from the provider (go's GetName print dropped; variable from the naming hook)
+   114  options()/utility(): one sentence per member kind (ts Returns line dropped)
+    92  S25/D10 operation signature shown only for an active method
+    90  S13 the test constructor (and tester) shown only when the test feature ships
+    36  tester(): alias sentence
+    14  U36 entity description: the project's entity_desc, else the spec's (escaped)
+    10  U34 entity heading is the collision-free class (entityClassName)
+     6  field usage columns: the active methods, canonical
+
+per language (code blocks identical / changed; changed lines; unexplained):
+  c    131 / 181; 4886; 0
+  elixir 131 / 181; 4425; 0
+  go   82 / 292; 2675; 0
+  py   120 / 192; 3745; 0
+  rust 131 / 181; 4622; 0
+  ts   120 / 192; 4447; 0
+  zig  131 / 181; 4761; 0
+  go2  4 / 18; 183; 0
+
+variations: 21
+UNEXPLAINED in ported languages: 0
+unported REFERENCE lines differing from OLD, other than the shared ReadmeRefFeatures fixes: 0 (fix lines: 1976)

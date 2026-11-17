@@ -1,0 +1,400 @@
+1 4eea983832 cell 8L/8c {"rule record":8} { file: 'ts/src/helpers/sdkdesc.ts', n: 7, of: 7 } 
+   M: Values for the variables the server URL is templated on. 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Constructor | Values for the variables the server URL is templated on. 
+   langs: c,clojure,elixir,go,py,rust,ts,zig
+2 7247de945f cell 8L/8c {"rule record":8} - 
+   M: Required. 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Constructor | Required. 
+   langs: c,clojure,elixir,go,py,rust,ts,zig
+3 0676c37240 cell 8L/8c {"rule record":8} - 
+   M: Level \| percent see the guide or [site](https://example.com/x) 
+   E: ts | ref-issues: Demo TypeScript SDK Reference > GaugeEntity > Fields | Level \| percent see the guide or [site](https://example.com/x) 
+   langs: c,clojure,elixir,go,py,rust,ts,zig
+4 20aa105d6b sentence 8L/8c {"rule record":8} - 
+   M: Words the project chose | not the spec 
+   E: ts | ref-issues: Demo TypeScript SDK Reference > PlanetEntityClient | Words the project chose | not the spec 
+   langs: c,clojure,elixir,go,py,rust,ts,zig
+5 2d9199cb7a sentence 7L/8c {"hand":6,"rule record":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 1, of: 1 } 
+   M: ⟦record⟧ reads its Ⓔ. 
+   E: go | B: Demo Golang SDK Reference > AmbientEntity > Operations > `Load(reqmatch, ctrl map[string]any) (any, error)` | `Data()` reads its record. 
+   langs: c,clojure,elixir,go,py,rust,zig
+6 1ace127b3b sentence 7L/7c {"hand":7} { file: 'ts/src/cmp/ReadmeRef.ts', n: 16, of: 19 } 
+   M: The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be ⟦ref.none⟧. 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Test client > `DemoSDK.test(testopts?, sdkopts?)` | The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be `undefined`. 
+   langs: clojure,elixir,py,rb,rust,ts,zig
+7 5ddee20721 cell 7L/7c {"rule record":7} - 
+   M: HTTP method (default: `GET`). 
+   E: go | B: Demo Golang SDK Reference > DemoSDK > Instance Methods > `Direct(fetchargs map[string]any) (map[string]any, error)` | HTTP method (default: `GET`). 
+   langs: c,clojure,elixir,go,py,rust,zig
+8 4fb872e54f sentence 7L/7c {"rule record":7} { file: 'ts/src/cmp/ReadmeRefFeatures.ts', n: 14, of: 17 } 
+   M: The array form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest. 
+   E: go | B: Demo Golang SDK Reference > Features > Configuring features | The array form of `feature` is significant: several features wrap the transport, and the order you list them in is the order they nest. 
+   langs: c,clojure,elixir,go,py,rust,zig
+9 185f26bc68 heading 7L/7c {"rule record":7} - 
+   M: Actions 
+   E: go | B: Demo Golang SDK Reference > PlanetEntity | Actions 
+   langs: c,clojure,elixir,go,py,rust,zig
+10 2b8bc511e9 header 7L/7c {"rule record":7} - 
+   M: Action 
+   E: go | B: Demo Golang SDK Reference > PlanetEntity > Actions | Action 
+   langs: c,clojure,elixir,go,py,rust,zig
+11 120aec2437 header 7L/7c {"rule record":7} - 
+   M: Route 
+   E: go | B: Demo Golang SDK Reference > PlanetEntity > Actions | Route 
+   langs: c,clojure,elixir,go,py,rust,zig
+12 22bdd0ff18 header 7L/7c {"rule record":7} - 
+   M: Call 
+   E: go | B: Demo Golang SDK Reference > PlanetEntity > Actions | Call 
+   langs: c,clojure,elixir,go,py,rust,zig
+13 2a8d9aa773 cell 7L/7c {"rule record":7} - 
+   M: `terraform` 
+   E: go | B: Demo Golang SDK Reference > PlanetEntity > Actions | `terraform` 
+   langs: c,clojure,elixir,go,py,rust,zig
+14 7d64fb6cb3 cell 6L/6c {"rule record":6} { file: 'ts/src/cmp/ReadmeRef.ts', n: 1, of: 1 } 
+   M: Path parameter values for `{param}` substitution. 
+   E: py | B: Demo Python SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs=None) -> dict` | Path parameter values for `{param}` substitution. 
+   langs: c,clojure,elixir,py,rust,zig
+15 3cd4c3ecdc sentence 6L/6c {"rule record":6} { file: 'ts/src/cmp/ReadmeRef.ts', n: 5, of: 5 } 
+   M: Prepare a fetch definition without sending the request. 
+   E: py | B: Demo Python SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs=None) -> dict` | Prepare a fetch definition without sending the request. 
+   langs: c,clojure,elixir,py,rust,zig
+16 186e69881f cell 5L/5c {"rule record":5} - 
+   M: `ctrl` 
+   E: c | B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)` | `ctrl` 
+   langs: c,clojure,elixir,rust,zig
+17 56cbce4ad6 cell 5L/5c {"rule record":5} - 
+   M: `secret` 
+   E: c | auth-basic: Demo C SDK Reference > DemoSDK > Constructor | `secret` 
+   langs: c,clojure,elixir,rust,zig
+18 0808ae08e7 cell 5L/5c {"rule record":5} - 
+   M: `server.account` 
+   E: c | server-mixed: Demo C SDK Reference > DemoSDK > Constructor | `server.account` 
+   langs: c,clojure,elixir,rust,zig
+19 1eccc7250d sentence 4L/4c {"rule record":4} { file: 'ts/src/cmp/ReadmeModel.ts', n: 1, of: 1 } 
+   M: Create a new `Ⓔ` instance. 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `Ambient(data?: object)` | Create a new `PlanetEntity` instance. 
+   langs: c,clojure,go,ts
+20 58f6c63c63 sentence 4L/4c {"rule record":4} { file: 'ts/src/cmp/ReadmeRef.ts', n: 3, of: 4 } 
+   M: Create a new `ⒺClient` instance with the same client and options. 
+   E: ts | ref-issues: Demo TypeScript SDK Reference > PlanetEntity > Common Methods > `make()` | Create a new `PlanetEntityClient` instance with the same client and options. 
+   langs: go,py,rust,ts
+21 4b8eb8b6bf sentence 4L/4c {"rule record":3,"hand":1} - 
+   M: It raises on failure. 
+   E: py | B: Demo Python SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs=None) -> dict` | It raises on failure. 
+   langs: clojure,elixir,py,rb
+22 4af20ce756 heading 3L/3c {"hand":1,"rule record":2} - 
+   M: ⟦ref.accessor.sig⟧ 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods | `Ambient(entopts?: object)` 
+   langs: rust,ts,zig
+23 5003b705ca sentence 3L/3c {"hand":3} { file: 'ts/src/cmp/ReadmeRef.ts', n: 8, of: 8 } 
+   M: The operation runs when iteration starts, not when the call returns. 
+   E: ts | B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods > `stream(action: string, args?: object, callopts?: object)` | The operation runs when iteration starts, not when the call returns. 
+   langs: py,rb,ts
+24 7029749eeb sentence 3L/3c {"rule record":3} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 6 } 
+   M: Returns a ⟦collection⟧ of entities, one per Ⓔ, and raises on failure. 
+   E: py | B: Demo Python SDK Reference > ConsoleEntity > Operations > `list(reqmatch=None, ctrl=None) -> list[ConsoleEntity]` | Returns a `list` of entities, one per record, and raises on failure. 
+   langs: clojure,elixir,py
+25 04d3017bb0 sentence 3L/3c {"rule record":3} - 
+   M: Returns the created entity, and raises on failure. 
+   E: py | B: Demo Python SDK Reference > PlanetEntity > Operations > `create(reqdata, ctrl=None) -> PlanetEntity` | Returns the created entity, and raises on failure. 
+   langs: clojure,elixir,py
+26 1c3e043734 sentence 3L/3c {"rule record":3} - 
+   M: Returns the updated entity, and raises on failure. 
+   E: py | B: Demo Python SDK Reference > PlanetEntity > Operations > `update(reqdata, ctrl=None) -> PlanetEntity` | Returns the updated entity, and raises on failure. 
+   langs: clojure,elixir,py
+27 5338ac6916 sentence 3L/3c {"rule record":3} - 
+   M: Returns the patched entity, and raises on failure. 
+   E: py | crud-bare: Demo Python SDK Reference > PlanetEntity > Operations > `patch(reqdata, ctrl=None) -> PlanetEntity` | Returns the patched entity, and raises on failure. 
+   langs: clojure,elixir,py
+28 38db57bb5d cell 3L/3c {"rule record":3} { file: 'ts/src/helpers/sdkdesc.ts', n: 2, of: 2 } 
+   M: System overrides (e.g. custom fetch). 
+   E: c | B: Demo C SDK Reference > DemoSDK > Constructor | System overrides (e.g. custom fetch). 
+   langs: c,rust,zig
+29 4f5d0aa907 cell 3L/3c {"rule record":3} - 
+   M: ⟦ref.valueType.OBJECT⟧ 
+   E: c | B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_direct(DemoSDK* client, voxgig_value* fetchargs, PNError** err)` | `map` 
+   langs: c,rust,zig
+30 4388aa476d heading 2L/6c {"rule record":3,"hand":3} - 
+   M: ⟦ref.op.load⟧ 
+   E: py | B: Demo Python SDK Reference > AmbientEntity > Operations | `load(reqmatch=None, ctrl=None) -> AmbientEntity` 
+   langs: py,rb
+31 20d6fe3875 sentence 2L/3c {"rule record":3} - 
+   M: The result's ⟦ok⟧ is the created entity, and its ⟦err⟧ reports failure. 
+   E: zig | B: Demo Zig SDK Reference > PlanetEntity > Operations > `create(reqdata: Value, ctrl: Value) EntResult` | The result's `.ok` is the created entity, and its `.err` reports failure. 
+   langs: rust,zig
+32 6afe3f6b0d cell 2L/2c {"rule record":2} - 
+   M: `options["server"]` 
+   E: go | B: Demo Golang SDK Reference > DemoSDK > Constructor | `options["server"]` 
+   langs: go,py
+33 0f06358e5b sentence 2L/2c {"rule record":2} { file: 'ts/src/cmp/ReadmeRef.ts', n: 9, of: 12 } 
+   M: A failed request is reported in the result, not as an error, so branch on `result["ok"]`. 
+   E: go | B: Demo Golang SDK Reference > DemoSDK > Instance Methods > `Direct(fetchargs map[string]any) (map[string]any, error)` | A failed request is reported in the result, not as an error, so branch on `result["ok"]`. 
+   langs: go,py
+34 799b8582a8 cell 2L/2c {"rule record":2} - 
+   M: `options["server"]["account"]` 
+   E: go | server-mixed: Demo Golang SDK Reference > DemoSDK > Constructor | `options["server"]["account"]` 
+   langs: go,py
+35 21516a568c heading 2L/2c {"rule record":1,"hand":1} - 
+   M: ⟦ref.op.remove⟧ 
+   E: py | B: Demo Python SDK Reference > PlanetEntity > Operations | `remove(reqmatch=None, ctrl=None) -> PlanetEntity` 
+   langs: py,rb
+36 2afc165624 sentence 2L/2c {"rule record":2} { file: 'ts/src/cmp/ReadmeRef.ts', n: 3, of: 4 } 
+   M: Create a new `ⒺEntity` instance with the same client and options. 
+   E: py | B: Demo Python SDK Reference > AmbientEntity > Common Methods > `make() -> Entity` | Create a new `AmbientEntity` instance with the same client and options. 
+   langs: py,rust
+37 7034f074ec heading 2L/2c {"hand":1,"rule record":1} - 
+   M: ⟦ref.entity.3.sig⟧ 
+   E: py | B: Demo Python SDK Reference > AmbientEntity > Common Methods | `match_set(args=None)` 
+   langs: c,py
+38 293c007b60 sentence 2L/2c {"rule record":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 5 } 
+   M: The result's ⟦ok⟧ is the entity, marked as deleted, and its ⟦err⟧ reports failure. 
+   E: zig | B: Demo Zig SDK Reference > PlanetEntity > Operations > `remove(reqmatch: Value, ctrl: Value) EntResult` | The result's `.ok` is the entity, marked as deleted, and its `.err` reports failure. 
+   langs: rust,zig
+39 3ae117ead3 sentence 2L/2c {"rule record":2} - 
+   M: `options` is a ⟦ref.container⟧ map (⟦ref.none⟧ for none). 
+   E: clojure | B: Demo Clojure SDK Reference > Client > make-sdk | `options` is a `voxgig.struct` map (`nil` for none). 
+   langs: clojure,elixir
+40 65e89e0eda cell 2L/2c {"rule record":2} - 
+   M: ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧ 
+   E: clojure | B: Demo Clojure SDK Reference > sdk.api > Instance Functions > `(api/direct client fetchargs) -> map` | `map` 
+   langs: clojure,elixir
+41 761350e4f5 sentence 2L/2c {"hand":2} { file: 'ts/src/cmp/ReadmeRef.ts', n: 9, of: 12 } 
+   M: Run an operation through the pipeline and return a lazy sequence of its result items. 
+   E: clojure | B: Demo Clojure SDK Reference > Ambient > Common Members > `(stream ent action args callopts) -> seq` | Run an operation through the pipeline and return a lazy sequence of its result items. 
+   langs: clojure,elixir
+42 0bd42bc9da heading 1L/3c {"hand":3} - 
+   M: ⟦ref.op.update⟧ 
+   E: rb | B: Demo Ruby SDK Reference > PlanetEntity > Operations | `update(reqdata, ctrl = nil) -> PlanetEntity` 
+   langs: rb
+43 7bebc239a6 heading 1L/3c {"hand":3} - 
+   M: ⟦ref.entity.4.sig⟧ 
+   E: rb | B: Demo Ruby SDK Reference > AmbientEntity > Common Methods | `make -> AmbientEntity` 
+   langs: rb
+44 49431fb9be cell 1L/2c {"hand":2} - 
+   M: `await client.Ⓔ().create({ $action: 'terraform', Ⓕ: 'Ⓔ_id' })` 
+   E: ts | B: Demo TypeScript SDK Reference > PlanetEntity > Actions | `await client.Planet().create({ $action: 'terraform', id: 'planet_id' })` 
+   langs: ts
+45 2bd8ff9d43 sentence 1L/2c {"rule record":2} - 
+   M: It sends the items on the returned channel, which closes when the stream ends. 
+   E: go | B: Demo Golang SDK Reference > AmbientEntity > Common Methods > `Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem` | It sends the items on the returned channel, which closes when the stream ends. 
+   langs: go
+46 440d837326 heading 1L/2c {"hand":2} - 
+   M: ⟦ref.entity.1.sig⟧ 
+   E: py | B: Demo Python SDK Reference > AmbientEntity > Common Methods | `data_set(args=None)` 
+   langs: py
+47 4864f34793 sentence 1L/2c {"rule record":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 7 } 
+   M: The result's ⟦ok⟧ is a ⟦collection⟧ of entities, one per Ⓔ, and its ⟦err⟧ reports failure. 
+   E: zig | B: Demo Zig SDK Reference > ConsoleEntity > Operations > `list(reqmatch: Value, ctrl: Value) EntListResult` | The result's `.ok` is a slice of entities, one per record, and its `.err` reports failure. 
+   langs: zig
+48 75c4c96d8c sentence 1L/2c {"rule record":2} { file: 'ts/src/helpers/runtimeprose.ts', n: 2, of: 4 } 
+   M: The result's ⟦ok⟧ is a `Vec` of entities, one per Ⓔ, and its ⟦err⟧ reports failure. 
+   E: rust | B: Demo Rust SDK Reference > ConsoleEntity > Operations > `list(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, DemoError>` | The result's `Ok` is a `Vec` of entities, one per record, and its `Err` reports failure. 
+   langs: rust
+49 03f31979fa heading 1L/2c {"hand":2} - 
+   M: ⟦ref.op.create⟧ 
+   E: rb | B: Demo Ruby SDK Reference > PlanetEntity > Operations | `create(reqdata, ctrl = nil) -> PlanetEntity` 
+   langs: rb
+50 64e3f44a55 heading 1L/1c {"rule record":1} - 
+   M: `⟦ref.op.create⟧` 
+   E: ts | B: Demo TypeScript SDK Reference > PlanetEntity > Operations | `create(data?: object, ctrl?: object)` 
+   langs: ts
+51 50beb02467 heading 1L/1c {"rule record":1} - 
+   M: `⟦ref.op.update⟧` 
+   E: ts | B: Demo TypeScript SDK Reference > PlanetEntity > Operations | `update(data?: object, ctrl?: object)` 
+   langs: ts
+52 60a01b67bd sentence 1L/1c {"rule record":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 3, of: 10 } 
+   M: Resolves to an ⟦collection⟧ of entities, one per Ⓔ, and throws on failure. 
+   E: ts | B: Demo TypeScript SDK Reference > ConsoleEntity > Operations > `list(match: object, ctrl?: object)` | Resolves to an array of entities, one per record, and throws on failure. 
+   langs: ts
+53 5c71a59923 cell 1L/1c {"rule record":1} - 
+   M: `options.server.tenant` 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Constructor | `options.server.tenant` 
+   langs: ts
+54 6c3aa41f7c cell 1L/1c {"rule record":1} - 
+   M: `options.server.region` 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Constructor | `options.server.region` 
+   langs: ts
+55 75773f3022 sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 8, of: 8 } 
+   M: **Returns:** `⟦ref.direct.returns⟧`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is ⟦ref.direct.okFalse⟧ and `err` holds the error. 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs?: object)` | **Returns:** `Promise<{ ok, status, headers, data }>`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is `false` and `err` holds the error. 
+   langs: ts
+56 0a037bbbba sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 9, of: 12 } 
+   M: A failed request is reported in the result, not as an error, so branch on `result.ok`. 
+   E: ts | B: Demo TypeScript SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs?: object)` | A failed request is reported in the result, not as an error, so branch on `result.ok`. 
+   langs: ts
+57 092f1dc649 sentence 1L/1c {"hand":1} { file: 'ts/src/helpers/runtimeprose.ts', n: 1, of: 1 } 
+   M: `⟦record⟧` reads its Ⓔ. 
+   E: ts | B: Demo TypeScript SDK Reference > AmbientEntity > Operations > `load(match?: object, ctrl?: object)` | `.data()` reads its record. 
+   langs: ts
+58 224b480b40 heading 1L/1c {"rule record":1} - 
+   M: `⟦ref.entity.3.sig⟧` 
+   E: ts | B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods | `stream(action: string, args?: object, callopts?: object)` 
+   langs: ts
+59 4c93659f14 sentence 1L/1c {"hand":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 9, of: 12 } 
+   M: Run an operation through the pipeline and yield its result items as an async iterator. 
+   E: ts | B: Demo TypeScript SDK Reference > AmbientEntity > Common Methods > `stream(action: string, args?: object, callopts?: object)` | Run an operation through the pipeline and yield its result items as an async iterator. 
+   langs: ts
+60 75581f3469 heading 1L/1c {"rule record":1} - 
+   M: `⟦ref.op.patch⟧` 
+   E: ts | crud-bare: Demo TypeScript SDK Reference > PlanetEntity > Operations | `patch(data?: object, ctrl?: object)` 
+   langs: ts
+61 74c9db4d88 cell 1L/1c {"rule record":1} - 
+   M: `options.server.account` 
+   E: ts | server-mixed: Demo TypeScript SDK Reference > DemoSDK > Constructor | `options.server.account` 
+   langs: ts
+62 2cfdeb945d sentence 1L/1c {"hand":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 1, of: 3 } 
+   M: Its ⟦ref.accessor.param⟧ argument holds the entity options: pass ⟦noError|ref.none⟧ for none. 
+   E: go | B: Demo Golang SDK Reference > DemoSDK > Instance Methods > `Ambient(data map[string]any) DemoEntityBase` | Its `data` argument holds the entity options: pass `nil` for none. 
+   langs: go
+63 0daa28353f sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 2, of: 5 } 
+   M: Create a test client with mock features active. 
+   E: go | B: Demo Golang SDK Reference > DemoSDK > Test client > `TestSDK(testopts, sdkopts map[string]any) *DemoSDK` | Create a test client with mock features active. 
+   langs: go
+64 62d22019c2 sentence 1L/1c {"hand":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 16, of: 19 } 
+   M: The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be ⟦noError|ref.none⟧. 
+   E: go | B: Demo Golang SDK Reference > DemoSDK > Test client > `TestSDK(testopts, sdkopts map[string]any) *DemoSDK` | The first argument holds the test feature's options and the second further client options, merged over the test defaults; both may be `nil`. 
+   langs: go
+65 4ccf17b0e9 sentence 1L/1c {"rule record":1} - 
+   M: ⟦errVar⟧ is non-nil on failure. 
+   E: go | B: Demo Golang SDK Reference > DemoSDK > Instance Methods > `Prepare(fetchargs map[string]any) (map[string]any, error)` | `err` is non-nil on failure. 
+   langs: go
+66 107a756204 cell 1L/1c {"rule record":1} - 
+   M: `fetchargs["ctrl"]` 
+   E: py | B: Demo Python SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs=None) -> dict` | `fetchargs["ctrl"]` 
+   langs: py
+67 3a97bf6325 cell 1L/1c {"rule record":1} - 
+   M: Control options (e.g. `{"explain": True}`). 
+   E: py | B: Demo Python SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs=None) -> dict` | Control options (e.g. `{"explain": True}`). 
+   langs: py
+68 7df20388eb sentence 1L/1c {"hand":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 8, of: 11 } 
+   M: Run an operation through the pipeline and yield its result items as a generator. 
+   E: py | B: Demo Python SDK Reference > AmbientEntity > Common Methods > `stream(action, args=None, callopts=None)` | Run an operation through the pipeline and yield its result items as a generator. 
+   langs: py
+69 76fabc0077 cell 1L/1c {"hand":1} - 
+   M: `client.Ⓔ().create({"$action": "terraform", "Ⓕ": "Ⓔ_id"})` 
+   E: py | B: Demo Python SDK Reference > PlanetEntity > Actions | `client.Planet().create({"$action": "terraform", "id": "planet_id"})` 
+   langs: py
+70 475c89eecd heading 1L/1c {"hand":1} - 
+   M: ⟦ref.client.0.sig⟧ 
+   E: c | B: Demo C SDK Reference > DemoSDK > Instance Functions | `voxgig_value* sdk_options_map(DemoSDK* client)` 
+   langs: c
+71 2e09bb327d sentence 1L/1c {"hand":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 6, of: 6 } 
+   M: Return a deep copy of the current SDK options. 
+   E: c | B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_options_map(DemoSDK* client)` | Return a deep copy of the current SDK options. 
+   langs: c
+72 4172bd615b sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 1, of: 3 } 
+   M: **Returns:** ⟦ref.container|ref.direct.returns|ref.prepare.returns⟧, the fetch definition: the request `sdk_direct()` would send. 
+   E: c | B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_prepare(DemoSDK* client, voxgig_value* fetchargs, PNError** err)` | **Returns:** `voxgig_value*`, the fetch definition: the request `sdk_direct()` would send. 
+   langs: c
+73 59d890e493 sentence 1L/1c {"rule record":1} - 
+   M: It returns ⟦nullValue|ref.none⟧ with ⟦errSlot⟧ set on failure. 
+   E: c | B: Demo C SDK Reference > DemoSDK > Instance Functions > `voxgig_value* sdk_prepare(DemoSDK* client, voxgig_value* fetchargs, PNError** err)` | It returns `NULL` with `*err` set on failure. 
+   langs: c
+74 091c271ed5 heading 1L/1c {"rule record":1} - 
+   M: Common ⟦ref.noun⟧ 
+   E: c | B: Demo C SDK Reference > Ambient | Common Functions 
+   langs: c
+75 7ac0237c03 cell 1L/1c {"hand":1} - 
+   M: `Ⓔ->vt->create(Ⓔ, cmap(2, "$action", v_str("terraform"), "Ⓕ", v_str("Ⓔ_id")), NULL, &err);` 
+   E: c | B: Demo C SDK Reference > Planet > Actions | `planet->vt->create(planet, cmap(2, "$action", v_str("terraform"), "id", v_str("planet_id")), NULL, &err);` 
+   langs: c
+76 4e2d4cf241 sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 8, of: 8 } 
+   M: **Returns:** ⟦ref.container|ref.direct.returns⟧, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is ⟦ref.direct.okFalse⟧ and `err` holds the error. 
+   E: zig | B: Demo Zig SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs: Value) Value` | **Returns:** `Value`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is `false` and `err` holds the error. 
+   langs: zig
+77 083fc645cd sentence 1L/1c {"rule record":1} - 
+   M: On failure it returns the error of its error union, for `try` or `catch`. 
+   E: zig | B: Demo Zig SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs: Value) E!Value` | On failure it returns the error of its error union, for `try` or `catch`. 
+   langs: zig
+78 74db4cd68e sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 1, of: 3 } 
+   M: **Returns:** ⟦ref.prepare.returns⟧, the fetch definition: the request `direct()` would send. 
+   E: zig | B: Demo Zig SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs: Value) E!Value` | **Returns:** `E!Value`, the fetch definition: the request `direct()` would send. 
+   langs: zig
+79 4d9f342751 heading 1L/1c {"rule record":1} - 
+   M: ⟦ref.heading⟧ 
+   E: clojure | B: Demo Clojure SDK Reference | sdk.api 
+   langs: clojure
+80 4f794f9952 sentence 1L/1c {"hand":1} - 
+   M: The SDK Ⓔ object is reached through `sdk.client`, which ⟦layout.module|ref.heading⟧ does not re-export: 
+   E: clojure | B: Demo Clojure SDK Reference > sdk.api > Instance Functions | The SDK utility object is reached through `sdk.client`, which `sdk.api` does not re-export: 
+   langs: clojure
+81 34510704dd cell 1L/1c {"rule record":1} - 
+   M: Control options (e.g. `(vs/jm "explain" true)`). 
+   E: clojure | B: Demo Clojure SDK Reference > sdk.api > Instance Functions > `(api/direct client fetchargs) -> map` | Control options (e.g. `(vs/jm "explain" true)`). 
+   langs: clojure
+82 7c1f7fd78c sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 8, of: 8 } 
+   M: **Returns:** ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, a result map holding `ok`, `status`, `headers` and ⟦ref.accessor.param⟧, even for a non-2xx response; on a failure `ok` is ⟦ref.direct.okFalse⟧ and `err` holds the error. 
+   E: clojure | B: Demo Clojure SDK Reference > sdk.api > Instance Functions > `(api/direct client fetchargs) -> map` | **Returns:** `map`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is `false` and `err` holds the error. 
+   langs: clojure
+83 2ca2eaf2bf sentence 1L/1c {"rule record":1} - 
+   M: Accepts the same parameters as `direct`. 
+   E: clojure | B: Demo Clojure SDK Reference > sdk.api > Instance Functions > `(api/prepare client fetchargs) -> map` | Accepts the same parameters as `direct`. 
+   langs: clojure
+84 3c2a4b0d55 sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 1, of: 3 } 
+   M: **Returns:** ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, the fetch definition: the request `direct` would send. 
+   E: clojure | B: Demo Clojure SDK Reference > sdk.api > Instance Functions > `(api/prepare client fetchargs) -> map` | **Returns:** `map`, the fetch definition: the request `direct` would send. 
+   langs: clojure
+85 418def6d36 sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 9, of: 12 } 
+   M: A failed request is reported in the result, not as an error, so branch on `getp(&result, "ok")`. 
+   E: rust | B: Demo Rust SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs: Value) -> Result<Value, DemoError>` | A failed request is reported in the result, not as an error, so branch on `getp(&result, "ok")`. 
+   langs: rust
+86 4785e1e14e sentence 1L/1c {"hand":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 1, of: 18 } 
+   M: The result map always comes back inside ⟦ok⟧, for a non-2xx response and for a request that could not be made alike; its `ok` key reports the failure. 
+   E: rust | B: Demo Rust SDK Reference > DemoSDK > Instance Methods > `direct(fetchargs: Value) -> Result<Value, DemoError>` | The result map always comes back inside `Ok`, for a non-2xx response and for a request that could not be made alike; its `ok` key reports the failure. 
+   langs: rust
+87 0919798d12 sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 1, of: 3 } 
+   M: **Returns:** `Result<Value, ⓈError>`, the fetch definition: the request `direct()` would send. 
+   E: rust | B: Demo Rust SDK Reference > DemoSDK > Instance Methods > `prepare(fetchargs: Value) -> Result<Value, DemoError>` | **Returns:** `Result<Value, DemoError>`, the fetch definition: the request `direct()` would send. 
+   langs: rust
+88 4b1f2e32dd sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 3, of: 3 } 
+   M: Create a new SDK client instance. 
+   E: elixir | B: Demo Elixir SDK Reference > Demo > Constructor | Create a new SDK client instance. 
+   langs: elixir
+89 7170ae33a7 sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 3, of: 4 } 
+   M: Create a new `Ⓢ.Entity.Ⓔ` instance with the same client and options. 
+   E: elixir | B: Demo Elixir SDK Reference > Demo.Entity.Ambient > Common Functions > `make(entity) :: entity` | Create a new `Demo.Entity.Ambient` instance with the same client and options. 
+   langs: elixir
+90 0606a89435 sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeModel.ts', n: 1, of: 1 } 
+   M: Create a new `Ⓢ.Entity.Ⓔ` instance. 
+   E: elixir | B: Demo Elixir SDK Reference > Demo > Functions > `Demo.ambient(client, entopts \\ nil)` | Create a new `Demo.Entity.Ambient` instance. 
+   langs: elixir
+91 111e3864bc sentence 1L/1c {"rule record":1} - 
+   M: Pass ⟦ref.none⟧ for no initial options. 
+   E: elixir | B: Demo Elixir SDK Reference > Demo > Instance Functions > `Demo.ambient(client, entopts \\ nil)` | Pass `nil` for no initial options. 
+   langs: elixir
+92 4d16943177 heading 1L/1c {"rule record":1} - 
+   M: `⟦ref.client.2.sig⟧` 
+   E: elixir | B: Demo Elixir SDK Reference > Demo > Instance Functions | `direct(client, fetchargs \\ nil) :: map()` 
+   langs: elixir
+93 066331452e cell 1L/1c {"rule record":1} - 
+   M: Control options (e.g. `%{"explain" => true}`). 
+   E: elixir | B: Demo Elixir SDK Reference > Demo > Instance Functions > `direct(client, fetchargs \\ nil) :: map()` | Control options (e.g. `%{"explain" => true}`). 
+   langs: elixir
+94 5687a75708 sentence 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 8, of: 8 } 
+   M: **Returns:** ⟦ref.direct.returns|ref.prepare.returns|ref.valueType.OBJECT⟧, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is ⟦ref.direct.okFalse⟧ and `err` holds the error. 
+   E: elixir | B: Demo Elixir SDK Reference > Demo > Instance Functions > `direct(client, fetchargs \\ nil) :: map()` | **Returns:** `map()`, a result map holding `ok`, `status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is `false` and `err` holds the error. 
+   langs: elixir
+95 04c49674ea heading 1L/1c {"rule record":1} - 
+   M: `⟦ref.opMatched.list⟧` 
+   E: elixir | doc-nested: Demo Elixir SDK Reference > Demo.Entity.Utility > Operations | `list(entity, reqmatch, ctrl \\ nil) :: list()` 
+   langs: elixir
+96 22cfc13b27 heading 1L/1c {"rule record":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 1, of: 1 } 
+   M: Field Usage by Operation 
+   E: elixir | ref-issues: Demo Elixir SDK Reference > Demo.Entity.Gauge | Field Usage by Operation 
+   langs: elixir
+97 30308ece64 header 1L/1c {"rule record":1} - 
+   M: update 
+   E: elixir | ref-issues: Demo Elixir SDK Reference > Demo.Entity.Gauge > Field Usage by Operation | update 
+   langs: elixir
+98 3531b58c59 cell 1L/1c {"rule record":1} - 
+   M: `Ⓕ` 
+   E: elixir | ref-issues: Demo Elixir SDK Reference > Demo.Entity.Gauge > Field Usage by Operation | `level` 
+   langs: elixir
+99 114c546be5 header 1L/1c {"rule record":1} - 
+   M: Field 
+   E: elixir | ref-issues: Demo Elixir SDK Reference > Demo.Entity.Utility > Fields | Field 
+   langs: elixir
+100 7ba0882026 sentence 1L/1c {"hand":1} { file: 'ts/src/cmp/ReadmeRef.ts', n: 8, of: 11 } 
+   M: Run an operation through the pipeline and return an iterator over its result items. 
+   E: rb | B: Demo Ruby SDK Reference > AmbientEntity > Common Methods > `stream(action, args = nil, callopts = nil) -> Enumerator` | Run an operation through the pipeline and return an iterator over its result items. 
+   langs: rb

@@ -1,0 +1,26 @@
+▶ generated SDK compiles
+  ✔ typescript: the README example tests type-check and run the examples (2146.550184ms)
+  ✔ typescript: the README example tests type-check and run the examples, with a patch (2090.812818ms)
+  ✔ typescript: the README example tests type-check and run the examples, with a patch in the tutorial (2135.841125ms)
+  ✔ typescript: the README example tests type-check and run the examples, with Basic auth and a templated server (1865.151553ms)
+  ✔ typescript: the README example tests type-check and run a list example with its required parameters (2092.108048ms)
+  ✔ typescript: the README example tests type-check and run a list example with a nullable and a null-only parameter (1688.097848ms)
+  ✔ typescript: the README example tests type-check and run a list example whose parameters are a keyword and __proto__ (1767.522296ms)
+  ✔ typescript: the README example tests type-check and run a list example whose parameter its create types otherwise (1728.6438ms)
+  ✔ typescript: the README example tests type-check and run a create whose request is not its record (1951.862781ms)
+  ✔ typescript: the README example tests type-check and run a load example whose points each need a selector of their own (1813.139625ms)
+  ✔ typescript: the README example tests type-check and run load examples whose route parameters optional query parameters shadow (1923.805679ms)
+  ✔ typescript: the README example tests type-check and run a quick start whose entity lists only through actions (1611.670801ms)
+  ✔ typescript: the README example tests type-check and run create examples whose routes each need a parent of their own (1652.979595ms)
+  ✔ typescript: the README example tests type-check and run an update example whose request carries no id (1620.451924ms)
+  ✔ typescript: the README example tests type-check and run update and remove examples on a record keyed by _id (2055.23083ms)
+  ✔ typescript: the README example tests type-check and run examples whose load parameter and create field hold a quote and a backslash (1811.901834ms)
+✔ generated SDK compiles (30155.089607ms)
+ℹ tests 16
+ℹ suites 1
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 32076.400691

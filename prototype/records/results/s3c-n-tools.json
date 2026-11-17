@@ -1,0 +1,403 @@
+{
+ "ok": true,
+ "summary": "I closed T1 to T5 in the tools at P/n-tools/tools, branch ntools, HEAD d6eabfc. That is 9 commits on 7d5dab2, status clean, no trailers.\n\n- **Re-key:** the four ports' records went through rekey.js. Nothing was lost: hand records 148/200/236/174 in, 150/204/239/173 out; 0 conflicts, 0 unsourced, 0 hand entries not carried. A second run printed \"already keyed\".\n- **Self-test:** 231 controls, 0 failed, 1 moved. The moved one is the sentence round's own go-tut-step4-dropped [scratch]. There are 28 new controls.\n- **T6:** P/results/s3c-sfix-verify.txt does not exist, so T6 passes to the engineer who freezes.\n\nEach reviewer attack that belongs to the tools now fails in the one command:\n- the dropped shared sentence: lua, perl and swift, both modes;\n- the depluralising helper (purity);\n- perl `prints: record`;\n- ocaml `keys: member` and swift `entityBy: Name`, in the reviewed mode only, because the OLD page agrees with them;\n- a generation that throws, and a short regeneration.\n\nI added a printed-call check, callcheck.js, to the one command. It catches 6 of the reviewers' 10 changed examples and finds nothing on the real pages of all thirteen languages.\n\n**The thirteen languages at d6eabfc** (reviewed mode, against P/v33p/sdkgen and P/v33p/out):\n- **PASS:** py, c, zig, clojure, rust.\n- **FAIL on openings my changes create:** ts, go, elixir, rb (listed below).\n- **FAIL on the sentence round's false-verdict classes and on openings:** perl, swift, ocaml, lua. Perl also still fails on its 14 recorded defects, on purpose.\n\nEvery opening is listed per language for a person to decide. I changed no decision in any hand record.",
+ "items": [
+  {
+   "item": "re-key of the four ports",
+   "does": "Brought counts/ and purity-allow/ for perl, swift, ocaml and lua in from P/v33p/tools; no port has a normalizers file. Took hand/ and classes/ through rekey.js with --from P/v33p/tools --to tools, using the legacy/v32 identity code it found. Per language:\n- perl: hand 148 -> 150; classes 214 -> 216; 3 merges, 10 split parts; reference 121 -> 123 classes.\n- swift: hand 200 -> 204; 2 merges, 12 split parts; reference 156 -> 160.\n- ocaml: hand 236 -> 239; 0 merges, 6 split parts; absent reasons 1 -> 1.\n- lua: hand 174 -> 173; 5 merges, 6 split parts; reference 153 -> 151; 34 absent reasons mapped onto 30 ids, joined.\nAll four: 0 CONFLICT, 0 UNSOURCED, 0 hand entries not carried, 0 stale-before, counts unchanged. Checked by content with mine/rekeycheck2.js: LOST 0 in all four. One ocaml record, ed6b41e724, was renamed to 5e48ea2104 with its reason joined.\nWhat for_ports did not say:\n- --from can point straight at the merged tools (P/v33p/tools); no per-port workspace is needed.\n- --tmp has to be given, or rekey writes to /tmp.\n- The ports have no normalizers files.\n- ported.json stays at the nine reference languages, so the nine's ids do not move.\n- The new handstale.js had never been run on swift or ocaml, and flagged 8 and 48 records falsely. That was a parsing defect, fixed in handstale.js (next item).",
+   "where": "tools/hand|classes|counts|purity-allow/{perl,swift,ocaml,lua}.json (commit 53e1e83); logs P/n-tools/logs/rekey/*",
+   "control": "selftest identity rekey-idempotent and rekey-never-loses (existing) pass; the second rekey run on each port printed 'already keyed ... nothing changed'",
+   "prints": "rekey <l>: ... CONFLICTS 0, unsourced 0 ...; records: hand N -> carried M; hand entries not carried 0"
+  },
+  {
+   "item": "handstale fix (found while re-keying; not a T item)",
+   "does": "Four parsing artefacts are fixed:\n- A double-quoted passage keeps its code spans. Before, \"Pass a `Value` to set it.\" was searched as \"Pass a   to set it.\".\n- `<var>` is a placeholder.\n- A quotation elided down to nothing (`... in`) has nothing to look for.\n- Source text is compared with whitespace normalised, and backticks are ignored for code quotations too.\nSTALE went from swift 8 to 1 and ocaml 48 to 38; the other eleven languages stay at 0. What remains quotes schematic text that no page holds (e.g. `e_x reqmatch ctrl : t`, `make client entopts`, \"_ name: Type\").",
+   "where": "handstale.js quotes(), found(), found1(), corpus() (d5c12fe)",
+   "control": "selftest identity stale-hand-record still passes: a quotation of voxgig_branch_on_okay(result) is STALE",
+   "prints": "hand records: N, M quote text (K quotations); STALE n"
+  },
+  {
+   "item": "T1 an absent sentence with no reason fails",
+   "does": "classify.js now writes every absent entry with its reason and lists the unexplained ones (absentOpen). summary.js fails on any of them and prints them.",
+   "where": "classify.js run() absent block and sum.absentOpen; summary.js shared-sentences block (e053b78)",
+   "control": "controls/missing.json missing-direct-every-variation-lua: the lua reviewer's attack, the shared direct sentence dropped from all 19 lua REFERENCEs. It is now a new absent entry with no reason in both modes. Re-run on P/n-tools/tmp/a-drop-lua: reviewed absent 23 -> 24, exit 1 (before: PASS, 'absent 36 (35 explained)'); from scratch 24 unexplained, exit 1.",
+   "prints": "  ABSENT, NO REASON reference [8ef6d94916] in 19 variation(s): A failed request is reported in the result, not as an error, so branch on `\u2026`.\n  say why in hand/<l>.json absent: { \"<id>\": \"<why>\" } ..., or print it"
+  },
+  {
+   "item": "T2 a language alone in its result style has an absent list",
+   "does": "When no reference shares the language's style, its absent list is the style-independent sentences: those every reference prints in a variation, whatever its style. The absent file names its basis.\nHow a style-independent sentence is told from a style-bound one: a sentence a style branch prints (runtimeprose.ts returnClause, failsSentence, carries; the result-style step comments of ReadmeQuick.ts) is printed only by the references of that style. The nine references cover five styles (throw ts; pair go; raise py, clojure, elixir, rb; errslot c; union zig, rust), so a style-bound sentence is in no all-reference intersection. For a language whose style has references, the new list is a subset of the old one, so nothing changes for it.\nConsequence: ts, go and c are each alone in their style among the references, so they now get the list too (openings below).",
+   "where": "classify.js run(): sameStyle/alone/same, absent basis (e053b78)",
+   "control": "controls/missing.json missing-direct-every-variation-perl and -swift, in both modes. These are the perl reviewer's a19 and the swift reviewer's all-variation drop. Before: no number moved from scratch. Now there is a new absent entry with no reason; the one command exits 1 on both modes for both languages (logs/attacks/drop-{perl,swift}-s{0,1}.log).",
+   "prints": "absent here but printed by every reference whatever its style (this result style is no reference's) 1 (0 explained; an unexplained one FAILS) / ABSENT, NO REASON reference [8ef6d94916] in 19 variation(s): ..."
+  },
+  {
+   "item": "T3 purity reads helpers",
+   "does": "Two additions:\n- A new 'name surgery' check: an anchored replace holding a letter (`.replace(/s$/, '')`), a negative slice or substr on a name-like receiver, a suffix or prefix test on 1 to 6 letters. It applies to Syntax and Naming line by line, so to every helper either file defines.\n- What a Naming hook imports from its own language's directory is followed into its definition and the local functions that definition calls. The same naming rules apply there: pluralisation, name surgery, reserved list, inline reserved test. A rule inside a helper that a non-README component also calls is the code generator's own rule; it is reported as accepted with that reason, not open.\nOn the thirteen: 0 open. Helpers followed include goVarName (go, hook-only), cVarName and rustVarName (shared with the generator; their reserved lists accepted as the generator's).",
+   "where": "purity.js NAME_SURGERY, SYNTAX_CHECKS, namingFindings() helper walk, fnBody() (22f7f52)",
+   "control": "controls/purity.json:\n- perl-scalar-helper-depluralise: the perl reviewer's a17, `'$' + name.replace(/s$/, '')` in scalar().\n- go-hook-helper-depluralise: the same rule in goVarName in utility_go.ts.\n- perl-scalar-helper-slice: an endsWith plus slice(0, -1).\nThe new tools flag 3 of 3; the 7d5dab2 purity.js flags 0 of 3. In the self-test, purity 34/34.",
+   "prints": "Syntax: name surgery: 1 / Naming: name surgery in helper goVarName (go/utility_go.ts): 1"
+  },
+  {
+   "item": "T4 an enumerated fact is judged or said not to be",
+   "does": "Why the three passed (read in the old attestEnums):\n- The units a value 'selected' were every unit any same-value reference printed and no other-value reference printed. That is mostly text the fact has nothing to do with: 391 of 748 units for swift entityBy, 578 of 736 for ocaml keys.\n- One identical OLD pair among them attested the fact.\n\nNow the sheet uses a minimal pair. enumgen.js regenerates the language's pages with that one fact set in memory to each other value the clone's providers declare. The clone is not touched; pages are cached in review/enum/ and regenerated when the provider or the shared build changes, about 16 s per value. The units and blocks that differ are what the value selects. Each is set beside its paired OLD unit, comparing only what tells the two values apart: tokens with a letter for prose, exact lines for blocks.\n\nOutcomes:\n- ATTESTED when OLD reads as this value more often than as another.\n- UNATTESTED otherwise.\n- 'not judged' when nothing has an OLD counterpart or no other value exists. Not judged now FAILS until a hand record decides it.\n- A value the provider cannot print (perl entityBy module) is skipped and named.\n\nA declared value differing from a hand facts record fails in the reviewed mode. Records keyed with the guard's spelling (ref.facts.entityBy) are accepted.\n\nFinding: ocaml `keys: member` and swift `entityBy: Name` move the port BACK to its OLD page's convention. OLD ocaml reads as member 152 to 0, OLD swift as Name 282 to 0. No comparison with the OLD page can call them wrong; only the reviewed decision can, so they fail in the reviewed mode only. The brief's real case, swift's true 'class' being attested although OLD headed by Name, is now UNATTESTED unless recorded; swift's existing record decides it.",
+   "where": "factsheet.js attestEnums(), enumDomain(), enumPages(), side(), sideLines(), the decided-value loop; enumgen.js (new); summary.js prints NOT JUDGED (877004c)",
+   "control": "controls/factmut (pages regenerated from the clone):\n- perl-prints-record, both modes. New tools: not judged, sheet exit 1. 7d5dab2 tools: ATTESTED (607 of 701), exit 0 reviewed.\n- ocaml-keys-member, reviewed mode, with a control hand file recording bare: UNATTESTED, 'hand/ocaml.json decided \"bare\"'. 7d5dab2 tools: ATTESTED.\n- swift-entityby-name, reviewed mode: UNATTESTED, 'decided \"class\"'. 7d5dab2 tools: ATTESTED.\n- py-keys-bare regenerated: its v3.2 pages differed from today's py pages in shared wording too, which the minimal pair counted. Now UNATTESTED in both modes (OLD reads member 19:0).\nIn the self-test: facts 8/8 reviewed, 6/6 scratch.",
+   "prints": "NOT JUDGED prints = \"record\" (convention): minimal pair against fields, listFields: 0 prose units and 130 blocks differ; OLD reads as record in 0, as another value in 0, has nothing to compare in 130 ... / UNATTESTED ref.keys = \"member\": hand/ocaml.json decided \"bare\" ...; the provider now declares \"member\""
+  },
+  {
+   "item": "T5 smaller things",
+   "does": "- A throwing generation fails: portcheck REGEN uses set -o pipefail, so gen.js's exit code is kept. Before, the screen said 'regenerated 0 variations; SKIPPED: none' and measured the previous run's pages.\n- A short regeneration fails: fewer variations regenerated than old/ holds. A clone outside a workspace skips alias-go2.\n- blocks.js pairs a backticked heading with no parenthesis by its first identifier (AT key 4). ocaml's reference block classes went 34 -> 17, because 15 changed-diff classes were mispair artefacts. 5 true diffs are now open. The nine reference languages' block tables are unchanged (blocktable.js against controls/blocktables.txt).\n- The screen prints 'RECOUNT <section>: normalizer counts changed ...' when a count is what is open.\n- The screen prints the names of the declared notes and any that no region holds ('note regions found M (a region holds any number of notes)').\n- The screen and the README say *.open.json is REGENERATED ON EVERY RUN and hand/<l>.json is the only state.\n- Sections portcheck reads off the clone are passed to blocks.js as ported, so the blocks line no longer says '(unported)'.\n- luaKey and luaString are in PRINTING. lua's two purity-allow entries for them now match nothing; I left them for the freeze engineer.",
+   "where": "portcheck.sh, blocks.js AT and main --ported, summary.js, purity.js PRINTING and declaredKeys (c5a2b05)",
+   "control": "selftest part regen:\n- generation-throws: a clone with no generator makes gen.js throw; exit 1, 'REGENERATION FAILED'.\n- regeneration-short: the v33p clone outside a workspace; exit 1, 'REGENERATION SHORT: 20 variations regenerated, old/ holds 21 (skipped: alias-go2 )'.\nBoth fail before any number is printed. The pairing change is measured, not a self-test control: ocaml reference block classes 34 -> 17.",
+   "prints": "REGENERATION FAILED (exit 1): the generator threw; new/ holds the pages of an earlier run and nothing is measured / REGENERATION SHORT: ..."
+  },
+  {
+   "item": "T6 the sentence round's independent check",
+   "does": "Nothing was built for T6. P/results/s3c-sfix-verify.txt did not exist when I checked, at the start and again before the thirteen runs. Only s3c-sfix-tools.txt is there. Its required_fixes and failed attacks pass to the engineer who freezes.",
+   "where": "-",
+   "control": "none",
+   "prints": "-"
+  },
+  {
+   "item": "printed-call check (new, in the one command)",
+   "does": "callcheck.js reads the code blocks of every NEW page of the language. It checks each call of a runtime member against the declarations the guard's forms read: dist-test/runtimeforms formsOf, view, findDecls, plus overloads anywhere in the language's runtime tree outside feature/ and not private, plus the constructor from layout.ctor. Three findings:\n- ARITY: fewer arguments than required, or more than declared. OCaml arguments are juxtaposed atoms, across continuation lines.\n- RECEIVER: Lua's `:` against `.` versus the declaration's on; an entity accessor is made on the client instance.\n- MEMBER: a call on client, sdk, or a variable bound from the client in the block, naming no runtime member.\nOn the thirteen: 0 findings. Calls checked: ts 374, go 650, py 386, c 97, zig 761, clojure 0, rust 486, elixir 117, rb 34, perl 30, swift 374, ocaml 481, lua 429.",
+   "where": "callcheck.js; portcheck.sh step 'printed calls'; summary.js line 'printed calls (callcheck, no compiler)' (c1d6684)",
+   "control": "selftest part calls: clean on 4 languages plus 6 caught: swift-load-one-arg (ARITY), lua-accessor-dot (RECEIVER), lua-ctor-create (RECEIVER), ocaml-test-one-arg (ARITY), swift-record-asentity (MEMBER), lua-load-three-args (ARITY). Four more are run and reported as not caught by design: swift-cast-entitybase, ocaml-list-map, ocaml-args-swapped, perl-flat-list.",
+   "prints": "ARITY B tutorial: load passes 1 argument(s); the runtime declares 2 (_ reqmatch: VMap?, _ ctrl: VMap?), 2 required"
+  }
+ ],
+ "attacks": [
+  {
+   "attack": "perl: root quick start loses `use lib 'perl/lib'` (as delivered)",
+   "should_fail_in": "shared code and perl's lane (brief 7 item 1 and the lane change); the tools already fail on it through the 13 recorded defect classes",
+   "lang": "perl",
+   "now": "FAILS in the tools: blocks rootquick defect 13 (run: logs/pc13/perl.log)"
+  },
+  {
+   "attack": "perl: stream note false when chunkSize > 0",
+   "should_fail_in": "nowhere mechanical: pinned prose that only the independent reviewer audits; the guard checks only that the pin equals the declaration",
+   "lang": "perl",
+   "now": "not caught (not mine)"
+  },
+  {
+   "attack": "perl: showFields picks a hashref, prints HASH(0x...)",
+   "should_fail_in": "shared code (scalar display field) and a lane that checks output, not only the exit code; the tools fail on it through defect class 24d40b660d",
+   "lang": "perl",
+   "now": "FAILS in the tools: blocks reference defect 1 (logs/pc13/perl.log)"
+  },
+  {
+   "attack": "perl a10: test signature written on an instance",
+   "should_fail_in": "guard (G4: on read from the signature's receiver)",
+   "lang": "perl",
+   "now": "not re-run (guard engineer)"
+  },
+  {
+   "attack": "perl a17: depluralising rule inside the scalar() helper",
+   "should_fail_in": "tools (T3)",
+   "lang": "perl",
+   "now": "FAILS: purity open 'name surgery' (controls/purity.json perl-scalar-helper-depluralise; purity is the same in both modes). 7d5dab2 purity: 0 open"
+  },
+  {
+   "attack": "perl a19 / swift / lua: a shared sentence OLD never printed, dropped from every REFERENCE",
+   "should_fail_in": "tools (T1, T2)",
+   "lang": "perl, swift, lua",
+   "now": "FAILS in both modes: ABSENT, NO REASON [8ef6d94916]; exit 1 (logs/attacks/drop-{lua,perl,swift}-s{0,1}.log; controls/missing.json)"
+  },
+  {
+   "attack": "perl a07: prints 'fields' -> 'record'",
+   "should_fail_in": "tools (T4)",
+   "lang": "perl",
+   "now": "FAILS in both modes: NOT JUDGED prints = record (fact sheet exit 1; 7d5dab2 sheet said ATTESTED, exit 0) (logs/attacks/facts.txt; controls/factmut perl-prints-record)"
+  },
+  {
+   "attack": "perl: ref.facts.none citing an unrelated line",
+   "should_fail_in": "nowhere mechanical: a quote that contains the token is all a check can verify; whether the line means it is the reviewer's audit",
+   "lang": "perl",
+   "now": "not caught"
+  },
+  {
+   "attack": "perl a14: notes.top declared and printed nowhere",
+   "should_fail_in": "shared code (print the top slot); the tools already fail through purity",
+   "lang": "perl",
+   "now": "purity fails as before; the screen now names the declared notes and any no region holds. A declared note printed on no page is not checked (not done)"
+  },
+  {
+   "attack": "perl V2: argOf prints a flat list, load('id' => 'planet_id')",
+   "should_fail_in": "a perl run that checks the call's effect (the lane in live mode) or a perl-aware check; perl declares every parameter optional, so the count is legal",
+   "lang": "perl",
+   "now": "blocks open class only; callcheck does not catch it (control perl-flat-list, stated)"
+  },
+  {
+   "attack": "swift: dropped from doc-crud only, SCRATCH=1",
+   "should_fail_in": "tools; would need a per-variation absent check (not built)",
+   "lang": "swift",
+   "now": "NOT CAUGHT from scratch: OPEN 99 = baseline 99. Reviewed mode catches it: reference OPEN 3 -> 4 (logs/attacks/drop1-swift-s{0,1}.log)"
+  },
+  {
+   "attack": "swift: entityBy 'name' (invalid value), build fails TS2820",
+   "should_fail_in": "tools (buildfresh.js, from the sentence round)",
+   "lang": "swift",
+   "now": "FAILS as STALE BUILD (control identity/stale-build; not re-run on swift)"
+  },
+  {
+   "attack": "swift: cancel true, generation throws, portcheck measured stale pages",
+   "should_fail_in": "tools (T5)",
+   "lang": "swift",
+   "now": "FAILS: REGENERATION FAILED (selftest regen generation-throws)"
+  },
+  {
+   "attack": "swift: unwrap changed in the provider and in the forms pin together",
+   "should_fail_in": "guard (G8: the record's unwrap equals the cited unwrap) or the reviewer (pinned prose)",
+   "lang": "swift",
+   "now": "not mine"
+  },
+  {
+   "attack": "swift: print printer `as? EntityBase` (no such type)",
+   "should_fail_in": "compiler; guard G8 for the record expression",
+   "lang": "swift",
+   "now": "callcheck does not catch a cast (control swift-cast-entitybase, stated)"
+  },
+  {
+   "attack": "swift: facts.record {var}.asEntity().data()",
+   "should_fail_in": "guard (G8) and the tools",
+   "lang": "swift",
+   "now": "FAILS in the tools: callcheck MEMBER 'the runtime declares no member asEntity' (control swift-record-asentity)"
+  },
+  {
+   "attack": "swift: entityBy 'class' -> 'Name'",
+   "should_fail_in": "tools in the reviewed mode only (the OLD page reads as Name, 282:0); from scratch nothing mechanical can, because the mutated value agrees with OLD",
+   "lang": "swift",
+   "now": "FAILS reviewed: UNATTESTED, 'hand/swift.json decided \"class\"' (factmut swift-entityby-name). The true value 'class' is no longer attested against OLD: RECORDED by swift's hand record"
+  },
+  {
+   "attack": "swift V: record with the cast dropped, ({var}.asNative)?.data()",
+   "should_fail_in": "guard (G8) or a compiler; no call is made on a missing member, so callcheck cannot",
+   "lang": "swift",
+   "now": "not caught by the tools"
+  },
+  {
+   "attack": "swift V: call printer load(nil) against two parameters",
+   "should_fail_in": "guard (G3) and the tools",
+   "lang": "swift",
+   "now": "FAILS: callcheck ARITY (control swift-load-one-arg)"
+  },
+  {
+   "attack": "ocaml m04: okFalse 'Bool false' -> 'false'",
+   "should_fail_in": "guard (G1)",
+   "lang": "ocaml",
+   "now": "not mine"
+  },
+  {
+   "attack": "ocaml m07: copy removed from e_data_get; the sentence vanishes and no class opens",
+   "should_fail_in": "guard (an orphaned citation fails it; G1); not the absent list, because elixir (raise style) does not print the copy sentence",
+   "lang": "ocaml",
+   "now": "not re-run"
+  },
+  {
+   "attack": "ocaml: cancel absence never searches Entity_ocaml.ts",
+   "should_fail_in": "guard (G6)",
+   "lang": "ocaml",
+   "now": "not mine"
+  },
+  {
+   "attack": "ocaml m11: keys 'bare' -> 'member'",
+   "should_fail_in": "tools in the reviewed mode only (OLD reads as member, 152:0)",
+   "lang": "ocaml",
+   "now": "FAILS reviewed: UNATTESTED, 'decided \"bare\"' (factmut ocaml-keys-member, with a control hand record). The true value 'bare' is now UNATTESTED until a person records it (opening)"
+  },
+  {
+   "attack": "ocaml m20 List.iter -> List.map; m21 ctrl and match swapped",
+   "should_fail_in": "a compiler (m20); a runtime run (m21); nothing that reads text",
+   "lang": "ocaml",
+   "now": "not caught (controls ocaml-list-map and ocaml-args-swapped, stated); blocks open classes only"
+  },
+  {
+   "attack": "ocaml E1: arrow signatures with parenless switch the field check off",
+   "should_fail_in": "guard (G5)",
+   "lang": "ocaml",
+   "now": "not mine"
+  },
+  {
+   "attack": "ocaml V a1: test_with Noval (one argument)",
+   "should_fail_in": "guard (G3) and the tools",
+   "lang": "ocaml",
+   "now": "FAILS: callcheck ARITY (control ocaml-test-one-arg)"
+  },
+  {
+   "attack": "ocaml V a2: TYPES int -> float",
+   "should_fail_in": "guard (G7)",
+   "lang": "ocaml",
+   "now": "not mine (the ledger caught it already)"
+  },
+  {
+   "attack": "lua: okFalse 'false' -> 'nil'",
+   "should_fail_in": "guard (G1)",
+   "lang": "lua",
+   "now": "not mine"
+  },
+  {
+   "attack": "lua: layout.ctor 'sdk.new' -> 'sdk.create'",
+   "should_fail_in": "guard (G2) and the tools",
+   "lang": "lua",
+   "now": "FAILS: callcheck RECEIVER 'create is declared on the instance; . calls it on the module' (control lua-ctor-create)"
+  },
+  {
+   "attack": "lua: client:Planet() -> client.Planet()",
+   "should_fail_in": "guard (G2) and the tools",
+   "lang": "lua",
+   "now": "FAILS: callcheck RECEIVER (control lua-accessor-dot)"
+  },
+  {
+   "attack": "lua V A1: operation cancel added in _run_op; Entity.fragment.lua is not searched",
+   "should_fail_in": "guard (G6)",
+   "lang": "lua",
+   "now": "not mine"
+  }
+ ],
+ "thirteen": [
+  {
+   "lang": "ts",
+   "numbers": "FAIL (merging engineer, v3.2 tools: PASS). Ledger: tutorial same 61, 43 classes (rule 30, hand 8, missing 5); rootquick 21, 5; reference 15470, 113 (shared 1, rule 57, hand 20, missing 34). OPEN 0, defect 0, contradictions 1. Blocks unchanged: 19/16/12/1, 0/13/5/1, 195/0/118/0. Facts: 69, attested 6. Shared matched 1; 5 accepted classes with a false verdict (counted). Calls: 374, 0 findings. STALE 0. Purity 0 open.",
+   "openings": "T2: ts is alone in style 'throw' among the references, so it gets the style-independent list. It does not print 'Return the entity name.' (absent [57d77b63f4], 18 variations). A person gives the reason (ts's name member is presumably a property) or the page prints it."
+  },
+  {
+   "lang": "go",
+   "numbers": "FAIL (v3.2: PASS). Ledger: tutorial 23/59 (shared 1, rule 34, hand 15, missing 9); rootquick 22/4; reference 17481/89. OPEN 0, contradictions 2. Blocks 0/12/1/8, 0/14/4/4, 337/21/18/0. Facts 65: attested 5, recorded 1. Calls 650, 0. STALE 0.",
+   "openings": "- T4: named='call' NOT JUDGED (25 units selected, none with an OLD counterpart, because go's tutorial became one program). Record it in hand/go.json facts.\n- T2: go is alone in 'pair' among the references. Five absent step headings no go page prints, because its tutorial is one program: 9c0a7924b0 'N. Create a client' (19 variations), d02d3a4fb6 'N. List \u24ba records' (7), a491ead7c9 'N. Create, update, patch, and remove' (3), 16698bd386 (1), 0b8908c6ff (1). Each needs a reason."
+  },
+  {
+   "lang": "py",
+   "numbers": "PASS. Ledger 61/40, 19/3, 14958/116 (shared 1, rule 76, hand 19, missing 19). OPEN 0. Facts 67, attested 7. Calls 386, 0. 7 false-verdict classes counted.",
+   "openings": "none"
+  },
+  {
+   "lang": "c",
+   "numbers": "PASS. Ledger 61/38, 19/3, 14872/109. Blocks 0/41/0/7, 0/2/0/17, 151/143/19/0. Facts 64: attested 8, recorded 2. Calls 97, 0.",
+   "openings": "none (c is alone in 'errslot', and its style-independent list is empty)"
+  },
+  {
+   "lang": "zig",
+   "numbers": "PASS. Ledger 61/43, 19/3, 15019/113. Facts 62, attested 9. Absent 3, all explained. Calls 761, 0.",
+   "openings": "none"
+  },
+  {
+   "lang": "clojure",
+   "numbers": "PASS. Ledger 61/38, 19/3, 14983/126. Facts 66: attested 8, recorded 3. Calls: 0 read (prefix calls are not read).",
+   "openings": "none"
+  },
+  {
+   "lang": "rust",
+   "numbers": "PASS. Ledger 61/46, 19/3, 15019/126. Facts 64, attested 9. Absent 3, all explained. Calls 486, 0.",
+   "openings": "none"
+  },
+  {
+   "lang": "elixir",
+   "numbers": "FAIL (v3.2: PASS). Ledger 61/40, 19/3, 14802/132. OPEN 0. Facts 65: attested 4, recorded 1. Absent 1, explained. Calls 117, 0.",
+   "openings": "T4: named='bare' NOT JUDGED (24 units, no OLD counterpart). Record it in hand/elixir.json facts."
+  },
+  {
+   "lang": "rb",
+   "numbers": "FAIL (v3.2: PASS). Ledger 61/47 (shared 21, hand 21), 19/3, 15059/117 (shared 45, hand 52). OPEN 0. Facts 66, attested 6. Calls 34, 0.",
+   "openings": "T4: named='bare' NOT JUDGED (24 units, no OLD counterpart). Record it in hand/rb.json facts."
+  },
+  {
+   "lang": "perl",
+   "numbers": "FAIL, on purpose and on openings. Ledger: same 61/19/14910 (as merging); shared 18/0/42 (merging: 20/0/46); by hand 18/3/51 (18/3/50); missing 4/0/18 (4/0/17); OPEN 2/0/4 (0/0/0); defect 0; contradictions 0/0/1. Blocks identical/corrected/unified/otherwise 0/6/0/42, 0/0/0/19, 227/0/0/86; defect 0/13/1 (as merging). Facts 67: attested 6, recorded 1. Calls 30, 0. STALE 0. Purity 0 open, 1 accepted.",
+   "openings": "- From the sentence round's verdicts and re-key, not my change: 6 classes whose shared match now points at a sentence marked false. Tutorial: 3320e33aa5, b98c5c1370 (API-key sentences). Reference: 409c1fe457 (direct Returns), 7e13c0a95a, 3c49d29119, f878d6c74a. Record them as rb records them, or wait for the shared fix.\n- T4: prints='fields' NOT JUDGED (239 blocks selected; OLD perl printed ->{id}, which neither value's line equals).\n- T4: ref.entityBy='class' UNATTESTED (OLD headed by Name, 0:188). A person records it, as swift did.\n- The 14 defect classes are unchanged and deliberate."
+  },
+  {
+   "lang": "swift",
+   "numbers": "FAIL. Ledger: same 61/19/14013 (as merging); shared 17/0/45 (19/0/48); by hand 21/3/69 (21/3/67); missing 5/0/29 (5/0/27); OPEN 2/0/3; contradictions 0/0/1. Blocks 1/1/0/46, 0/0/0/19, 207/0/0/106 (as merging). Facts 61: attested 3, recorded 2 (named; entityBy now accepted under the key ref.facts.entityBy), not printed 1. Calls 374, 0. STALE 1.",
+   "openings": "- Sentence-round false verdicts: 3320e33aa5, b98c5c1370, 7e13c0a95a, 3c49d29119, f878d6c74a.\n- STALE da55616659: its reason quotes the schematic \"_ name: Type\". Reword the quotation; the decision does not change."
+  },
+  {
+   "lang": "ocaml",
+   "numbers": "FAIL. Ledger: same 56/19/13998 (as merging); shared 20/0/54 (22/0/57); by hand 20/3/74 (20/3/71); missing 8/0/31 (8/0/31); OPEN 2/0/3; contradictions 0/0/2. Blocks 19/0/0/29, 0/0/0/19, 151/0/0/163 (as merging); reference block classes 17 (was 34), OPEN 5. Facts 70: attested 8, recorded 2. Absent 2 (1 explained). Calls 481, 0. STALE 38.",
+   "openings": "- Sentence-round false verdicts: 5 classes.\n- T5 pairing: 5 block classes now paired by heading, needing a decision: 82a4a3fdfe x79 (the NEW load block no longer reads `let result_data = result.e_data_get ()`), e41de61ee0 x82, 9fd66fe014 new-only x18 (test_with), 1779acc003 x1, f958f95add x1. The old hand class unification:ref-op-block absorbed them as mispairs.\n- T4: ref.keys='bare' UNATTESTED (OLD reads member 19:0).\n- T1: absent [663f4dd150] 'Create \u2014 returns the created entity; `\u2026` reads its record', 5 variations, no reason. It existed before; it fails now.\n- STALE 38 (sentence round's check; my parse fixes took it from 48): reasons quoting schematic text (`e_x reqmatch ctrl : t`, `make client entopts`, `keys: bare`, `if is_nullish reqmatch then empty_map ()`). Reword the quotations, not the decisions."
+  },
+  {
+   "lang": "lua",
+   "numbers": "FAIL (v3.2: PASS). Ledger: tutorial 61/44, rootquick 19/3, reference 15091/127; shared 19/0/54; by hand 17/3/50 (merging: 17/3/51); missing 6/0/18; OPEN 2/0/3; contradictions 0/0/2. Blocks 3/15/0/30, 0/2/0/17, 151/0/0/162. Facts 67: attested 5, recorded 1. Absent 23 (19 explained). Calls 429, 0. STALE 0. Purity 0 open.",
+   "openings": "- Sentence-round false verdicts: 5.\n- T4: prints='fields' UNATTESTED (mixed: OLD reads fields 12, another value 20).\n- T1: absent with no reason: a678b32375 (pair-style list sentence, 7 variations), and go's three bold leads c2202236d4, b096c33607, fa703982ba. These are split into sentences of their own by the sentence round, and lua shares pair style with go.\n- purity-allow/lua.json: the luaKey and luaString entries now match nothing (T5). Remove them, or leave them; they decide nothing."
+  }
+ ],
+ "for_freeze": "Commands, with export PATH=/opt/node24/bin:$PATH:\n\n1. Take the tools:\n   git clone P/n-tools/tools <dir> && git -C <dir> checkout ntools\n   HEAD is d6eabfc. Do not copy review/: it is gitignored and regenerated, including the review/enum/ cache.\n2. Bring the four ports in. They are already re-keyed, and ported.json still lists the nine. To make them references, add them to ported.json. Then any language that shows RECOUNT or open classes needs:\n   node <dir>/rekey.js --clone <clone> --old <out>/old --new <out>/new --lang L --code <checkout of d6eabfc>\n3. The one command, per language:\n   for l in ts go py c zig clojure rust elixir rb perl swift ocaml lua; do <dir>/portcheck.sh <frozen clone> <out> $l; done\n   The first run generates the minimal-pair pages: about 16 s per alternative value, 4 to 6 per language.\n4. Regenerate every controls/factmut page set from the frozen clone, because control pages must come from the clone the sheet runs on:\n   P/n-tools/mine/factattack.sh <id> <lang> <path> <value>\n   It points at v33p; change its paths. Then copy the files that differ, as I did for perl-prints-record, ocaml-keys-member, swift-entityby-name and py-keys-bare. The older rb and clojure controls still pass on v33p but were built on base32.\n5. The self-test:\n   node <dir>/selftest.js --clone <clone> --old <out>/old --new <out>/new --stage2 P/probe-ref/harness/out --v32 P/base32/tools --tmp <tmpdir> --json <file>\n   About 20 minutes. Run nothing else heavy at the same time.\n\nOpenings a person must decide, from my changes:\n- go, elixir, rb: named NOT JUDGED.\n- perl: prints NOT JUDGED; entityBy UNATTESTED (OLD named by Name).\n- ocaml: keys UNATTESTED (OLD member); 5 block classes newly paired by heading, including the load block's missing e_data_get read (x79); absent 663f4dd150.\n- lua: prints UNATTESTED (mixed); 4 absent entries, 3 of them go's bold leads.\n- ts: absent 57d77b63f4 'Return the entity name.'.\n- go: 5 absent step headings.\n- swift: 1 STALE. ocaml: 38 STALE (reword schematic quotations).\n\nFrom the sentence round (not mine): every port's 5 false-verdict classes (perl 6). Record them as rb's are recorded, or apply the shared fix.\n\nAlso for the freeze engineer:\n- T6 entirely: the sentence round's independent check was not there.\n- Whether a style-independent drop from ONE variation should fail from scratch. It does not today (swift: OPEN 99 = 99).\n- Whether the minimal pair's majority rule should be stricter.",
+ "not_done": [
+  "T6: P/results/s3c-sfix-verify.txt did not exist; nothing was built for it.",
+  "A from-scratch net for a sentence dropped from ONE variation by a language alone in its style. The swift attack still moves nothing from scratch (99 = 99); the reviewed mode catches it.",
+  "No self-test control for the parenless block pairing (measured only: ocaml reference block classes 34 -> 17, the nine reference languages' tables unchanged). No controls for the screen-only T5 items: RECOUNT line, note names, the open.json notice, the '(unported)' label.",
+  "A declared note printed on no page is not checked (perl a14); the screen only names the notes.",
+  "The older factmut controls (rb maps, noun, none; clojure entityNoun, heading) still use base32-era pages. They pass, but should be regenerated from the frozen clone, as py-keys-bare was.",
+  "callcheck reads no clojure calls (prefix form) and no parenless rb or perl calls; its MEMBER check covers only the client, the module binding and variables bound from the client in the same block.",
+  "The minimal pair judges only the facts accounted language or convention, and only tutorial, rootquick and reference. Its threshold is a plain majority, with 'mixed' stated; a stricter rule is a decision for the freeze engineer.",
+  "I did not decide any opening, did not edit hand records, and did not remove lua's dead purity-allow entries.",
+  "The guard-side attacks (G1 to G8) were not re-run; they are the guard engineer's.",
+  "No compiler was used: lua, swift and ocaml have none here, and the brief forbids installing one."
+ ],
+ "commits": [
+  "53e1e83 perl, swift, ocaml, lua: records re-keyed from the v3.2 ids (0 conflicts, 0 unsourced, none lost)",
+  "d5c12fe Stale hand records: a quoted passage keeps its code spans; <var> placeholders; an elision with nothing left; whitespace and markup ignored in comparison",
+  "c5a2b05 One command: a generation that throws or regenerates fewer variations than old/ fails; blocks pair parenless signature headings; ...",
+  "e053b78 An absent sentence with no reason fails; a language alone in its result style is held to the sentences every reference prints whatever its style; controls ...",
+  "22f7f52 Purity reads helpers: name surgery ...; what a hook imports from its own language's directory is followed ...",
+  "c1d6684 The printed-call check ...",
+  "877004c Enumerated facts judged by a minimal pair ...",
+  "f731fae README: v3.3 (n-tools): what changed, and what now fails for a porter",
+  "d6eabfc Classes as generated at this commit (ocaml: block pairs by heading)"
+ ],
+ "rekey_ports": [
+  {
+   "lang": "perl",
+   "records_in": "hand 148 class records + 1 facts; classes 214; counts unchanged; purity-allow 1 (copied, keyed by text)",
+   "carried": "hand 150 (144 renamed or same id, 4 old records reached through merges or splits); classes 216",
+   "merged": "3 (Create a new entity instance x2, `make() -> ...`)",
+   "split": "10 parts",
+   "by_hand": "0 left for a person (0 CONFLICT, 0 UNSOURCED)",
+   "lost": "0",
+   "extra_steps": "--from P/v33p/tools directly; --tmp given; no normalizers file exists"
+  },
+  {
+   "lang": "swift",
+   "records_in": "hand 200 + 2 facts; classes 267",
+   "carried": "hand 204 (194 renamed or same, 6 through merges or splits); classes 271",
+   "merged": "2",
+   "split": "12",
+   "by_hand": "0",
+   "lost": "0",
+   "extra_steps": "the hand facts key 'ref.facts.entityBy' was never read; the sheet now accepts the guard's leaf spelling"
+  },
+  {
+   "lang": "ocaml",
+   "records_in": "hand 236 + 2 facts + 1 absent; classes 315",
+   "carried": "hand 239 (232 renamed or same, 3 through splits); classes 318; absent 1 -> 1",
+   "merged": "0",
+   "split": "6",
+   "by_hand": "0",
+   "lost": "0 (ed6b41e724 renamed to 5e48ea2104, reason joined)",
+   "extra_steps": "handstale then flagged 48 records falsely; parse fixes leave 38 schematic quotations"
+  },
+  {
+   "lang": "lua",
+   "records_in": "hand 174 + 1 facts + 34 absent; classes 253",
+   "carried": "hand 173 (170 renamed or same, 4 through merges); classes 251; absent 34 mapped onto 30 ids (reasons joined)",
+   "merged": "5",
+   "split": "6",
+   "by_hand": "0",
+   "lost": "0",
+   "extra_steps": "none beyond the above"
+  }
+ ],
+ "printed_call_check": "What it reads:\n- the code blocks of every NEW page of the language;\n- the guard's compiled forms in the clone (dist-test/runtimeforms: formsOf, view, findDecls, read): every operation, client member, entity member and constructor declaration, with its parameters, which are optional (forms.optional), and its `on`;\n- overloads anywhere in the language's runtime tree outside feature/ trees and not private;\n- the constructor member named by the naming hook's layout.ctor.\n\nWhat it caught. Of the reviewers' 10 changed examples, re-made as page substitutions (mine/subst.py, controls/calls.json), 6 are caught:\n- swift load(nil): ARITY;\n- lua client.Planet(): RECEIVER;\n- lua sdk.create: RECEIVER;\n- ocaml test_with Noval: ARITY;\n- swift asEntity().data(): MEMBER;\n- lua load(nil, nil, nil): ARITY.\nIt reports 0 findings on the real pages of all 13 languages, over 5,215 calls. Getting there took four false-finding fixes:\n- lua sdk.new is not in the forms' files;\n- swift's no-argument data() lives in an extension;\n- OCaml continuation lines and `fun x ->`;\n- snake-case accessors, and `console` being a fixture entity.\n\nWhat it cannot catch:\n- a cast or type annotation naming a type the runtime lacks (swift `as? EntityBase`);\n- a standard-library call (OCaml List.map for List.iter);\n- swapped arguments of the same type (OCaml match and ctrl);\n- a perl hash flattened into a list (every perl parameter is optional);\n- property reads;\n- what a call on an expression returns;\n- calls without parentheses (rb, perl);\n- every clojure call (prefix form, none read);\n- receiver checks outside Lua: elsewhere the separator does not say what a call is made on.",
+ "selftest": "Final run: node tools/selftest.js --clone P/v33p/sdkgen --old P/v33p/out/old --new P/v33p/out/new --stage2 P/probe-ref/harness/out --v32 P/base32/tools --tmp P/n-tools/tmp --json P/n-tools/logs/selftest.json, exit 0, 1222 s.\n\nResult: 231 controls, 0 failed, 1 moved.\n- Reviewed mode: ledger 24/24, recheck 19/19, accept 7/7, masking 5/5, missing 6/6.\n- From scratch: ledger 24/24, recheck 19/19, accept 7/7, masking 5/5, missing 6/6.\n- facts 8/8 and 6/6 scratch, sentences 2/2, regen 2/2, calls 10/10, identity 18/18, purity 34/34, blocks 28/28, recall 1/1.\n\nThe moved control is recheck go-tut-step4-dropped [scratch], unchanged from the sentence round.\n\n28 new controls, against 203 at 7d5dab2 (P/sfix/logs/selftest4):\n- missing: 3 \u00d7 2 modes (the drop from every lua, perl and swift REFERENCE);\n- regen: 2;\n- calls: 10 (6 caught, 4 clean-page checks; 4 more run as stated not-catchable);\n- purity: 3 mutations plus 3 more real-notes entries;\n- facts: perl-prints-record \u00d7 2, ocaml-keys-member, swift-entityby-name.\n\nOne control's data was regenerated: py-keys-bare's pages now come from the v33p clone. With the minimal pair its v3.2 pages failed it, because they differed in shared wording too. No control was moved by me.",
+ "readme": "P/n-tools/tools/README.md (f731fae):\n- The commands list gains callcheck.js and enumgen.js, and purity's name surgery and helper following.\n- The 'wrong enumerated fact' and 'dropped shared sentence' sections are rewritten for the minimal pair, not judged, the decided-value check, the style-independent list and the failing ABSENT.\n- review/ is stated to be regenerated on every run, with hand/<l>.json the only state.\n- A new section 'Changes at v3.3 (n-tools)' lists the re-key, T1 to T5, handstale, callcheck and the controls.\n- 'For a porter: what now fails that did not': an absent sentence without a reason; an enumerated fact OLD contradicts or cannot judge, until recorded; any change to a recorded value; a wrong printed call (arity, Lua separator, unknown member on the client); a suffix or depluralising rule anywhere in the provider, hook or their helpers; a throwing or short regeneration.",
+ "ran": "All runs used PATH=/opt/node24/bin first.\n- rekey.js: dry, real, and again, for the four ports. Logs: P/n-tools/logs/rekey/*.\n- mine/rekeycheck2.js: checked the re-key lost nothing.\n- portcheck baselines after the re-key: P/n-tools/logs/pc0/*.\n- handstale.js on all 13, before and after the parse fixes.\n- portcheck for ocaml and lua after T5 (logs/t5); blocktable.js for the nine, compared with controls/blocktables.txt.\n- The regeneration throw and short runs (P/n-tools/tmp/regen/*.log).\n- portcheck in both modes on drop-from-every-REFERENCE copies for lua, perl and swift (logs/attacks/drop-*), and on a doc-crud-only drop for swift (logs/attacks/drop1-swift-*), against a swift scratch baseline.\n- puritymut.js with the new and the 7d5dab2 purity.\n- enumgen.js, and factsheet.js for all 13 three times as the judgment was corrected (logs/t4).\n- mine/factattack.sh for perl-prints-record, ocaml-keys-member, swift-entityby-name and py-keys-bare, with new and 7d5dab2 tools in both modes (logs/attacks/facts.txt).\n- callcheck.js on all 13 and on 10 substituted copies (logs/attacks/callcheck.txt).\n- selftest parts missing, regen, calls and facts separately, then the full self-test (logs/selftest.log).\n- The thirteen one commands (logs/pc13/*.log and table.txt).\n- git status of P/v33p/sdkgen: 0 changes, checked after each batch.",
+ "read": "- k-ntools.md.\n- brief.md, brief3.md, brief4.md, brief5.md, brief6.md and brief7.md, in full.\n- results/s3b-wave1-consolidated.md, in full.\n- results/s3c-sfix-tools.txt, in full.\n- results/s3b-review-perl.txt: its attack list.\n- The tools: README.md, portcheck.sh, summary.js, classify.js, factsheet.js, purity.js, blocks.js (pairing and main), rekey.js, handstale.js, gen/gen.js, the head of gen/lib2.js, the head of facts.js, selftest.js (injection machinery, the factmut and purity parts), puritymut.js, controls/missing.json and controls/purity.json.\n- The sdkgen clone: runtimeforms/forms.ts (types and view), guard.ts (receiver, fitsOn, printCall, exports), runtimereader.test.ts (the table writer), runtimefacts.test.ts (the report).\n- The import lines of the 13 providers and hooks; perl Syntax scalar(); go goVarName; swift's load declarations.\n- P/v33p/PROGRESS.md and pc1-lua.log.\n- P/i-tools/scripts/mutbuild.sh.",
+ "surprises": [
+  "The minimal pair shows that two of the three T4 attacks (ocaml keys -> member, swift entityBy -> Name) move the port BACK to its OLD page's convention: OLD reads member 152:0 and Name 282:0. A comparison with the OLD page cannot call them wrong; only a reviewed decision can. The true values contradict OLD: ocaml keys 'bare' 0:19, perl entityBy 'class' 0:188. Those were attested before only because of the union-plus-one-pair rule.",
+  "handstale.js, new in the sentence round, flagged 8 swift and 48 ocaml records falsely on its first run against them, because of a quoted passage containing a code span. The lua test the sentence round ran had not exercised that.",
+  "Fact-mutation control pages built on an older clone no longer test the right thing once the judgment is a minimal pair against the current clone: py-keys-bare passed until its pages were regenerated.",
+  "ts, go and c are each alone in their result style among the nine references, so the style-independent list applies to them too. go's single-program tutorial lacks the numbered step headings every other reference prints.",
+  "OCaml's correct block pairing exposes a real difference that the mispair class had absorbed: the NEW load block no longer reads the record with e_data_get (class 82a4a3fdfe, x79).",
+  "The old fact sheet called perl prints 'not judged' but never failed on it; under the minimal pair it is still not judged (OLD perl printed ->{id}, a line neither value prints), and now it fails."
+ ]
+}

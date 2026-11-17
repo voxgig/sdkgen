@@ -1,0 +1,526 @@
+lang: scala
+ok: False
+summary: |
+  I ported scala by following the guide: a naming hook, a provider, the forms and the deletion of the three old components, all inside scala's own files. No shared file changed. At my last commit the build exits 0 and leaves the tree clean. The guard passes 4/4, the reader 22/22 and the golden passes. The suite without the toolchain lanes first gave 2627 pass and 3 fail. All three failures were in generate.test.ts and all three were mine: the provider wrote null members into Map.of maps and kept its own literal table. I fixed the provider, and generate.test.js then passed 205/205.
+  
+  In the final reviewed run (REGEN=1, fresh build), every number holds: ledger OPEN 0, blocks OPEN 0, no defect classes, 0 unattested facts, 30 of 30 absent sentences explained, STALE 0, purity 0 open, pagecheck 0 findings.
+  
+  ok is false for one reason. `callcheck` reports 3 MEMBER findings, all of the same kind: `results.forEach(item => println(item.data()))`. This is the iteration form OLD scala already printed, byte for byte. The tool counts any variable bound from a line that mentions `client` as an entity (tools/callcheck.js:131 builds the set, :139 reports). In scala that variable is a cast `java.util.List`, and `forEach` is a standard-library method, not a runtime member. No hand record can accept a callcheck finding. I kept the OLD form rather than change the printed code to slip past the check. Writing it with braces, `results.forEach { item => ... }`, would not match the check's pattern; I did not try it. Java and kotlin bind cast lists the same way and should meet the same finding.
+  
+  No scala compiler is here (scala, scala-cli, sbt, scalac all missing), so none of the 31 distinct changed blocks was compiled or run. I read each one as a compiler would; the doubtful lines are listed separately.
+interface_gaps:
+  - [0]
+    construct: callcheck treats every variable bound from a line holding `client` as an entity, so `results.forEach(...)` on a list cast to java.util.List[SdkEntity] is reported as a call of a runtime member the runtime lacks
+    file_line: tools/callcheck.js:131 (the `known` set) and :139 (the MEMBER report)
+    smallest_change: in callcheck, leave out a variable whose binding ends in a cast to a standard-library collection (asInstanceOf[java.util.List[...]], (List<...>), as List<...>), or treat a cast binding as unknown; alternatively, a per-language list of standard-library members
+    breaking: False
+    providers_forced: none; java and kotlin (each binds a list through a cast and iterates with forEach) would meet the same false finding
+    made: False
+    worked_around: no: OLD's form is kept and the port fails the one command on these 3 findings
+  - [1]
+    construct: the shared rule for what is not runtime (NOT_RUNTIME) does not name scala's test tree tm/scala/sdktest/, so the cancel absence search counts SdkTestSupport.scala as runtime
+    file_line: ts/test/runtimeforms/account.ts:244 (NOT_RUNTIME)
+    smallest_change: add sdktest/ to the test-tree alternation of NOT_RUNTIME
+    breaking: False
+    providers_forced: none (scala's forms would drop one except entry)
+    made: False
+    worked_around: yes, openly: an except region in runtimeforms/scala.ts quotes the one comment line, with the reason
+shared_files_touched:
+not_done:
+  - No scala toolchain here (scala, scala-cli, sbt, scalac MISSING), so no lane ran on OLD or NEW and no block was compiled; I did not fetch a compiler through mvn
+  - Root quick start not run from the repository root, OLD or NEW: no scala toolchain, and its import is package-addressed (it needs the scala project built)
+  - tools/before/run.sh has no scala entry, and the scala lane of generatedcompile.test.ts needs scala-cli: neither ran
+  - No attack of my own facts beyond the guard's own negative-controls test (passed)
+  - A model where a required parameter is NULL-typed is exercised only by generate.test.ts (passes), not by the 21 variations
+commits:
+  - sdkgen a477d4b3 scala: print the README tutorial, the root quick start and the REFERENCE page from shared code (Syntax_scala.ts and Naming_scala.ts new; utility_scala.ts gains scalaCorePackage; Config_scala.ts and Schema_scala.ts call it; runtimeforms/scala.ts completed; ReadmeQuick_scala.ts, ReadmeTopQuick_scala.ts and ReadmeRef_scala.ts deleted)
+  - sdkgen 479b7f02 scala: golden, the scala lines of the add output
+  - sdkgen 3992a951 scala: example literals from the generator's own table, and no null member in a Map.of map
+  - sdkgen c5b9ce45 scala: golden, the provider's new hash
+  - tools 642d9ad scala: hand records, classes, block counts and the accepted purity finding (hand/, classes/, counts/, purity-allow/scala.json)
+  - git status --short after npm run build: empty. Commit bodies checked with git log --format=%B v33-frozen..HEAD: no trailer
+portcheck: |
+  == portcheck scala ==
+  section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+  tutorial                   59 |      48     22        0      21       5     0       0 | 0
+  rootquick                  19 |       4      0        0       3       1     0       0 | 0
+  reference               14031 |     160     67        0      54      38     0       0 | 1
+  section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+  tutorial                  19         1       0        28 |      28    0      0 | NO; 29 changed blocks compiled by nothing
+  rootquick                  0         2       0        17 |      26    0      0 | NO; 19 changed blocks compiled by nothing
+  reference                234         0       0        80 |      14    0      0 | NO; 98 changed blocks compiled by nothing
+  contradictions (1; counted, not failed): reference [bff341cf32]
+  purity: 0 open, 2 accepted | notes declared 0, note regions found 0
+  pagecheck: 48 numbered headings, 1216 articles checked; findings 0
+  printed calls (callcheck, no compiler): 405 calls of 24 runtime members checked; ARITY/RECEIVER/MEMBER findings 3
+    MEMBER B reference: results.forEach(...): the runtime declares no member forEach
+    MEMBER crud-bare tutorial: planets.forEach(...): the runtime declares no member forEach
+    MEMBER doc-list tutorial: consoles.forEach(...): the runtime declares no member forEach
+  guard: pass (pass 4 fail 0 )
+  build: 1813 sources checked, current
+  hand records: 223, 22 quote text (33 quotations); STALE 0
+  facts: attested 5, recorded by hand 2, UNATTESTED or NOT JUDGED 0; cited 15, pinned prose 10
+  shared sentences: matched 89, of which against a sentence nobody reviewed 1; printed less often than its reference 0; absent 30 (30 explained)
+  fact sheet: 66 facts, 0 with no account, 0 unattested
+  PORTCHECK scala: FAIL   (exit 1; command: REGEN=1 tools/portcheck.sh sdkgen out scala, after npm run build exit 0)
+scratch: Command: SCRATCH=1 REGEN=1 tools/portcheck.sh sdkgen out scala, exit 1 (expected). Ledger OPEN: tutorial 26, rootquick 4, reference 93. Blocks OPEN: 28, 26, 14. Facts UNATTESTED or NOT JUDGED: 2 (named, ref.noun). ABSENT, NO REASON: 30. DROPPED: 0. Parts that read no hand record are the same in both runs: build current, 21 of 21 variations regenerated, guard 4/4, purity 0 open, pagecheck 0. callcheck shows the same 3 MEMBER findings in both runs.
+guard: I ran node --test --test-name-pattern '^scala: ' dist-test/runtimefacts.test.js: 4 pass, 0 fail, the negative controls included. runtimereader.test.js: 22/22. The account report (SDKGEN_GUARD_REPORT=1) gives scala derived 49, cited 16, language 1, convention 6, excepted 0. Type words come from the generator's `scala` column, constructor ProjectNameSDK through tm, nothing uncompared. One `unquoted` excuse, already in the base: `false` for the boxed java.lang.Boolean.FALSE in the okFalse citation. Pinned citations, which only the reviewer checks: ctorAlts[0].kind 'defaults', testMock 'generated', client[1].kind 'utility', prepare.fails 'style', body.values and body.once.
+facts:
+  - [0]
+    path: facts.method.*
+    value: list/load/create/update/patch/remove
+    account: derived
+    evidence: src/cmp/scala/fragment/Entity*Op.fragment.scala `override def <op>(`
+  - [1]
+    path: facts.named
+    value: call
+    account: convention, recorded by hand (NOT JUDGED)
+    evidence: out/old/B/scala/README.md:42: OLD names `load()`; with arity 2 named=call is what prints the no-match call `list(null, null)`
+  - [2]
+    path: facts.async
+    value: false
+    account: derived
+    evidence: EntityLoadOp.fragment.scala:12 returns Object
+  - [3]
+    path: facts.result
+    value: throw
+    account: derived
+    evidence: EntityBase.fragment.scala:136 `throw e`; utility/Make.scala:62 `throw sdkErr`
+  - [4]
+    path: facts.collection
+    value: `ArrayList`
+    account: cited
+    evidence: tm/scala/utility/Make.scala:647 `val entities = new ArrayList[Object]()`, :655 `result.resdata = entities`
+  - [5]
+    path: facts.record
+    value: {var}.data()
+    account: derived
+    evidence: EntityBase.fragment.scala:41
+  - [6]
+    path: facts.arity
+    value: 2
+    account: derived
+    evidence: EntityListOp.fragment.scala:11 list(reqmatch, ctrl), no defaults
+  - [7]
+    path: facts.prints
+    value: record
+    account: convention, ATTESTED by minimal pair (OLD reads as record in 114 blocks)
+    evidence: tools/review/scala/facts.txt
+  - [8]
+    path: ref.facts.entityBy
+    value: Name
+    account: convention, ATTESTED (OLD in 188 units)
+    evidence: OLD headings `## Planet`. I tried 'class' (PlanetEntity, also true): identical REFERENCE blocks fell from 234 to 143 because blocks pair by heading, so I reverted to Name
+  - [9]
+    path: ref.facts.noun
+    value: Methods
+    account: convention, recorded by hand (UNATTESTED)
+    evidence: OLD REFERENCE.md:41 `### Instance Methods`; the new heading is the shared `Client Methods`
+  - [10]
+    path: ref.facts.none
+    value: null
+    account: cited
+    evidence: Main.fragment.scala:20 `def testSDK(): ProjectNameSDK = testSDK(null, null)`
+  - [11]
+    path: ref.facts.keys
+    value: member
+    account: convention, ATTESTED
+    evidence: OLD `options["apikey"]`
+  - [12]
+    path: ref.facts.maps
+    value: maps
+    account: language, ATTESTED
+    evidence: OLD `Request body (maps are JSON-serialized).`
+  - [13]
+    path: ref.facts.container
+    value: java.util.Map[String, Object]
+    account: cited
+    evidence: MainEntity_scala.ts:31 `def ${accessor}(entopts: java.util.Map[String, Object]): SdkEntity =`, also Main.fragment.scala:3,8 (JMap alias)
+  - [14]
+    path: ref.facts.valueType
+    value: STRING String (derived), OBJECT Map (convention, ATTESTED), ANY Object (derived)
+    account: mixed
+    evidence: OLD option tables
+  - [15]
+    path: ref.facts.ctor[0]
+    value: val client = new {ctor}(options)
+    account: derived
+    evidence: Main.fragment.scala:8
+  - [16]
+    path: ref.facts.ctorAlts[0]
+    value: val client = new {ctor}() / defaults
+    account: call derived (forms decl now reads `def this`); kind cited, pinned
+    evidence: Main.fragment.scala:10 `def this() = this(null)`
+  - [17]
+    path: ref.facts.test[0], test[1]
+    value: {client}.testSDK(): {client}; {client}.testSDK(testopts: java.util.Map[String, Object], sdkopts: ...): {client}
+    account: derived, on the type (companion object)
+    evidence: Main.fragment.scala:20,22
+  - [18]
+    path: ref.facts.testMock
+    value: generated
+    account: cited ahead, pinned
+    evidence: Config_scala.ts `case _ => new ${scalapackage}.feature.BaseFeature()`
+  - [19]
+    path: ref.facts.accessor
+    value: {accessor}(entopts: java.util.Map[String, Object]): SdkEntity, arg entopts, param entopts
+    account: derived
+    evidence: MainEntity_scala.ts:31
+  - [20]
+    path: ref.facts.op.*
+    value: <op>(reqmatch|reqdata: java.util.Map[String, Object], ctrl: java.util.Map[String, Object]): Object
+    account: derived (typeNames maps JMap[String,Object] to java.util.Map[String,Object], with namesWhy)
+    evidence: Entity*Op.fragment.scala
+  - [21]
+    path: ref.facts.client[0]
+    value: options optionsMap(): java.util.Map[String, Object], copy true
+    account: sig derived; copy cited
+    evidence: SdkClient.scala:83 `Struct.clone(this.options)`
+  - [22]
+    path: ref.facts.client[1]
+    value: utility getUtility(): Utility, copy true
+    account: kind and copy cited
+    evidence: SdkClient.scala:88 `this.utility.copy()`; Utility.scala:54-55 `val u = new Utility(true)`
+  - [23]
+    path: ref.facts.client[2,3]
+    value: direct and prepare (fetchargs: java.util.Map[String, Object]): java.util.Map[String, Object]
+    account: derived (renames fetchargs0 to fetchargs)
+    evidence: SdkClient.scala:92,160
+  - [24]
+    path: ref.facts.entity
+    value: data(args: Object*): Object copy; matchArgs(args: Object*): Object copy; make(): Entity; streamSync stream(...): Iterator[Object] runs call; getName(): String
+    account: sigs and runs derived; copies cited
+    evidence: EntityBase.fragment.scala:39,41,49,52,59,162,192,218
+  - [25]
+    path: ref.facts.direct
+    value: returns java.util.Map[String, Object]; okFalse 'false'
+    account: returns derived; okFalse cited ahead with an unquoted excuse
+    evidence: SdkClient.scala:175 `out.put("ok", java.lang.Boolean.FALSE)`; kept 'false', because Scala's == compares the boxed Boolean with the literal false, and read(truth) is `result.get("ok") == true`
+  - [26]
+    path: ref.facts.prepare
+    value: returns java.util.Map[String, Object]; fails style
+    account: returns derived; fails cited
+    evidence: SdkClient.scala:113 `throw ctx.makeError("spec_method_allow",`
+  - [27]
+    path: ref.facts.body
+    value: values `Array[Byte]`, `java.io.InputStream` or `String`; once `java.io.InputStream`
+    account: cited, pinned
+    evidence: Media.scala:55,86,92; Fetcher.scala:69
+  - [28]
+    path: ref.facts.cancel
+    value: false
+    account: cited absence over the whole scala runtime (143 files)
+    evidence: excepted regions: EntityBase.fragment.scala:159-160,166,210,224 (the stream's signal); CostFeature.scala:158,176 (comments); sdktest/SdkTestSupport.scala:29 (a test-tree comment)
+  - [29]
+    path: ref.facts.streamSignal (optional)
+    value: true
+    account: cited ahead
+    evidence: EntityBase.fragment.scala:166 `val signal = opts.get("signal")`, :210-213, ended early at :224
+  - [30]
+    path: accessor.cached (optional)
+    value: not declared
+    account: runtime does not cache
+    evidence: MainEntity_scala.ts:31-32 builds a new entity on every call
+  - [31]
+    path: copy on match getter (optional)
+    value: true
+    account: cited
+    evidence: EntityBase.fragment.scala:59
+  - [32]
+    path: copy on utility getter (optional)
+    value: true
+    account: cited
+    evidence: SdkClient.scala:88; Utility.scala:54-55
+  - [33]
+    path: memberNamed (optional)
+    value: not declared (default call)
+    account: derived
+    evidence: scala calls take parentheses
+  - [34]
+    path: field on a member (optional)
+    value: none declared
+    account: derived
+    evidence: name is `protected var` (EntityBase.fragment.scala:13), read through getName() (:39); mode and features are var fields but undocumented
+  - [35]
+    path: deleted (optional)
+    value: not declared
+    account: by hand, absent reason recorded
+    evidence: deleted() is on EntityBase (:72) but not on SdkEntity (Contracts.scala:16-27), the type the examples bind
+  - [36]
+    path: facts.arity (optional)
+    value: 2
+    account: derived
+    evidence: EntityListOp.fragment.scala:11
+  - [37]
+    path: layout.dir / imports place (optional)
+    value: not used
+    account: package-addressed import
+    evidence: `import voxgig.demosdk.core.DemoSDK` in both places
+  - [38]
+    path: notes.top (optional)
+    value: none
+    account: -
+    evidence: no scala-only fact after the root quick start
+optional_facts_read:
+  - [0]
+    fact: ref.facts.accessor.cached
+    runtime_shows: no cache: a new entity on every call
+    file_line: src/cmp/scala/MainEntity_scala.ts:31-32
+    declared: no
+  - [1]
+    fact: ref.facts.streamSignal
+    runtime_shows: reads callopts.signal (a Function0) and ends when it reports true
+    file_line: src/cmp/scala/fragment/EntityBase.fragment.scala:166,210-213,224
+    declared: true
+  - [2]
+    fact: copy on match getter
+    runtime_shows: Struct.clone(this.matchState)
+    file_line: EntityBase.fragment.scala:59
+    declared: true
+  - [3]
+    fact: copy on utility getter
+    runtime_shows: this.utility.copy() allocates new Utility(true)
+    file_line: tm/scala/core/SdkClient.scala:88; tm/scala/core/Utility.scala:54-55
+    declared: true
+  - [4]
+    fact: ref.facts.memberNamed
+    runtime_shows: calls take parentheses
+    file_line: -
+    declared: default (call)
+  - [5]
+    fact: field: true
+    runtime_shows: name is a protected var behind getName(); no documented member is a field
+    file_line: EntityBase.fragment.scala:13,39
+    declared: no
+  - [6]
+    fact: ref.facts.deleted
+    runtime_shows: deleted() on EntityBase only; the bound type SdkEntity lacks it
+    file_line: EntityBase.fragment.scala:72; tm/scala/core/Contracts.scala:16-27
+    declared: no (absent reason recorded)
+  - [7]
+    fact: facts.arity
+    runtime_shows: 2 required parameters
+    file_line: EntityListOp.fragment.scala:11
+    declared: 2
+  - [8]
+    fact: layout.dir / imports place
+    runtime_shows: a package import; the place does not change it
+    file_line: core/DemoSDK.scala package voxgig.demosdk.core (generated, read)
+    declared: no
+  - [9]
+    fact: notes.top
+    runtime_shows: nothing scala-only
+    file_line: -
+    declared: no
+table_rows_wrong:
+  - [0]
+    row: client constructor: ProjectNameSDK (options: JMap[String, Object]) only
+    runtime_shows: also the auxiliary `def this() = this(null)`
+    file_line: src/cmp/scala/fragment/Main.fragment.scala:10
+    forms_change: forms.decl matches `class ProjectNameSDK|def this` for ProjectNameSDK; the regenerated table now reads `(options: JMap[String, Object]) or ()`; no other language's section changed
+  - [1]
+    row: Calls: not stated yet
+    runtime_shows: `.` on an instance and on the companion object
+    file_line: -
+    forms_change: calls: { on: { instance: ['.'], type: ['.'] } }
+  - [2]
+    row: (implicit in the runtime file set) tm/scala/sdktest/ counted as runtime
+    runtime_shows: sdktest/ is the generated SDK's test tree
+    file_line: tm/scala/sdktest/SdkTestSupport.scala:29; ts/test/runtimeforms/account.ts:244
+    forms_change: an except region in scala's cancel absence, with the reason; the shared rule itself is unchanged
+  - [3]
+    row: All other rows (operations, members, the stream runs before return, okFalse at SdkClient.scala:175, utility copy at :88, streamSignal at :166)
+    runtime_shows: correct as read
+    file_line: -
+    forms_change: none
+notes:
+defects_recorded:
+hand_decisions:
+  - [0]
+    id: facts
+    kind: facts
+    outcome: named=call, ref.noun=Methods
+    why: see the facts above
+  - [1]
+    id: absent (30)
+    kind: absent
+    outcome: explained
+    why: ts async wording (`resolves to`, 15 ids) where scala prints the sync form; the cancel paragraph and the fetchargs signal row (no abort signal in operations or direct); prepare `resolves to the error` (scala throws); tester(), client() and entopts() getters scala lacks; name as a field (scala: getName()); utility copy false (scala copies); stream async iterator and run at iteration (scala: streamSync, runs call); `Create a new X instance` and the make sentence (entityBy Name); `result.deleted()` (not on SdkEntity); 2 root comments naming a class (no listOf); the query-parameter sentence, printed only after the lead (ts) block of the root README
+  - [2]
+    id: bff341cf32
+    kind: contradiction
+    outcome: contradiction
+    why: the unported README test-client line promises a mock without the test feature; true side: the REFERENCE (Config_scala falls back to BaseFeature; Fetcher.scala:205-207 throws fetch_mode_block)
+  - [3]
+    id: ledger and block classes (191 recorded)
+    kind: class
+    outcome: restored:shared/fact, correction (S49, S50, S09, S13, S25, G27, U45, ref-6, sentence-review-env, sentence-review-update-id, scala-throws, scala-param-names, decision-6-stream-signal), unification (write-comment-style, step-comment-runtime-fact, example-names, client-heading, root-load-nested, scala-result-cast, client-env-sentence), same-meaning (echoes), 1 dropped
+    why: script: P/ports/scala/work/decide.js. The one `dropped` is 39a9cc2d2c: OLD's `(as Object)` in the tutorial list sentence; Object is the declared return in the REFERENCE signature, and the tutorial names the runtime value, ArrayList
+review_counts:
+  - [0]
+    section: tutorial
+    same: 59
+    shared_matched: 22
+    by_hand: 21 classes
+    missing: 5 (each restored or corrected)
+    contradictions: 0
+    blocks: identical 19, corrected 1, unified 0, otherwise 28 (classes 28, all by hand); 29 changed blocks compiled by nothing
+    matched_unreviewed: 0
+  - [1]
+    section: rootquick
+    same: 19
+    shared_matched: 0
+    by_hand: 3 classes
+    missing: 1
+    contradictions: 0
+    blocks: identical 0, corrected 2, otherwise 17 (classes 26); 19 changed blocks compiled by nothing
+    matched_unreviewed: 0
+  - [2]
+    section: reference
+    same: 14031
+    shared_matched: 67
+    by_hand: 54 classes
+    missing: 38 (restored or corrected; none dropped)
+    contradictions: 1 (bff341cf32)
+    blocks: identical 234, otherwise 80, new-only 18 (classes 14); 98 changed blocks compiled by nothing
+    matched_unreviewed: 1 (e8e8cc2723, direct's `For a response whose body is read ... ok is false unless the status is 2xx`, true for scala: SdkClient.scala:307)
+doubtful_lines:
+  - [0]
+    line: client.planet(null).update(java.util.Map.of("id", ..., "radius", 1.0, "title", "example_title"), null)
+    where: tutorial crud-bare/doc-crud/doc-nested; OLD has the same `1.0`
+    doubt: with V inferred as Object from update(reqdata: JMap[String, Object]), the Double literal must widen to Object; Scala may refuse an implicit Double-to-AnyRef conversion. OLD printed the same literal (utility_scala.ts scalaLit)
+  - [1]
+    line: planets.forEach(planet => println(planet.data()))
+    where: tutorial and root list blocks, REFERENCE list; byte-identical in form to OLD
+    doubt: needs the lambda's parameter inferred as SdkEntity from Consumer[? >: SdkEntity] by SAM conversion; I believe Scala 3 does this, unverified
+  - [2]
+    line: java.util.Map.of("level", "example_level") passed as reqdata (and every Map.of argument)
+    where: all write examples; OLD the same
+    doubt: Map.of is immutable; if the pipeline puts a key into reqdata (EntityBase.fragment.scala:187 does it for a stream body), a runtime UnsupportedOperationException follows. A run would show it, not a compile
+  - [3]
+    line: top-level statements (val client = ...; println(...))
+    where: every tutorial and root block; OLD the same
+    doubt: compile only as a scala-cli script (.sc) or inside a method, not as a .scala file at top level
+  - [4]
+    line: val result = client.planet(null).load(...).asInstanceOf[SdkEntity]
+    where: REFERENCE examples (new cast)
+    doubt: the snippet prints no import of SdkEntity, and REFERENCE blocks are standalone by design; OLD's list snippet used SdkEntity without an import too
+old_vs_new: |
+  Counted by the tools: tutorial 59 units same, 48 reworded, 23 missing, 80 added. Root quick start: 19 same, 4 classes. REFERENCE: 14031 same; missing classes 38, all restored or corrected.
+  
+  What OLD said that NEW does not:
+  - `raises` (Scala throws).
+  - OLD's parameter names `newdata` and `newmatch` (the runtime says `args`).
+  - The arrow form `-> Object` in signatures.
+  - `list(null, null)` ... `to list all records`: now the no-match call without `all records`.
+  - `Each feature is inactive until switched on`, which is false for log.
+  - `(as Object)` in the tutorial list sentence: the one dropped unit.
+  - OLD's stray step numbering: `### 3.` with no step 2.
+  
+  What NEW says that OLD did not:
+  - The auxiliary constructor `new DemoSDK()`.
+  - The no-argument `testSDK()`.
+  - The stream member, with when it runs and its signal.
+  - The `ArrayList` collection.
+  - Copies on the data, match, options and utility getters.
+  - direct's result per case.
+  - The required server option, and the Basic secret.
+  - The `Client Methods` heading.
+  - Casts on every bound result, so that the record read the sentence names compiles.
+  - The Actions table.
+  
+  Prose by source (node tools/sharewords.js --clone sdkgen --root out/new --lang scala):
+  - tutorial 1597 words, 77.2% shared sentences, 22.8% printed by scala alone.
+  - rootquick 238 words, 8.0% shared, 92.0% scala alone (these are shared step comments carrying scala's tokens).
+  - reference 54387 words, 96.9% shared, 3.1% scala alone.
+  - All sections: 56222 words, 4.0% printed by scala alone.
+  - Notes: 0 words. Provider literals: 132 words, 0.2% (ref.noun 113, ref.maps 19).
+lines: |
+  From git diff --numstat v33-frozen..HEAD:
+  - Deleted old components: 709 lines (ReadmeQuick_scala 226, ReadmeRef_scala 396, ReadmeTopQuick_scala 87).
+  - Added: Syntax_scala.ts 196, Naming_scala.ts 25, runtimeforms/scala.ts +42 -1 (now 113 lines by wc -l).
+  - utility_scala.ts +8, Config_scala.ts +2 -1, Schema_scala.ts +2 -1 (the extracted scalaCorePackage).
+  - Golden +5 -6, scala lines only.
+  
+  Provider, hook and forms delta together: 263 lines against 709 deleted (2.7x). With the 12 generator lines: 275.
+purity: |
+  node tools/purity.js --lang scala: 0 open, 2 accepted, notes 0.
+  
+  Accepted:
+  1. Automatically by the tool: the `.replace(/-sdk$/, '')` in scalaPackage, which the hook reaches through scalaCorePackage. It is the generator's own rule, and Config_scala and Schema_scala call it too.
+  2. Recorded in purity-allow/scala.json: Syntax imports scalaLit from ./utility_scala. It is the generator's literal table, and generate.test.ts:6321 requires that table to stand in utility_scala.ts alone.
+  
+  The hook calls scalaCorePackage (also called by Config_scala.ts and Schema_scala.ts) and scalaVarName (also called by MainEntity_scala.ts and TestEntity_scala.ts). It takes the names ProjectNameSDK and SdkEntity through tm.
+other_languages_unchanged: |
+  I ran diff -rq -x scala -x README.md P/base33/out/new P/ports/scala/out/new: rc 0, no difference. For the root README, P/ports/scala/work/rootdiff.js strips every `### Scala` section and compares the rest: 0 variations differ outside the Scala sections. Inside them, 143 changed lines across 19 variations.
+  
+  The runtime table regenerated with SDKGEN_RUNTIME_TABLE differs from base33 only in the scala section.
+guide_problems:
+  - [0]
+    section: 5 / 6 (callcheck)
+    problem: The guide says callcheck cannot see a standard-library call. In fact it reports one as MEMBER when the receiver variable was bound from a client call, and no hand record can accept that. Any typed language that casts a list and iterates it with a library method (scala, java, kotlin) fails on output that OLD printed byte for byte. The guide does not mention this.
+  - [1]
+    section: 6 (absence over the whole runtime)
+    problem: `tests apart` does not cover scala's test tree tm/scala/sdktest/ (account.ts NOT_RUNTIME names tests/, t/ and Tests/), so the absence search hits a test comment. The guide is silent on non-standard test-tree names.
+  - [2]
+    section: 4 (what a port may touch)
+    problem: The guide lists no generic shared test that constrains a scala provider's literals. generate.test.ts:6321 and :6338 require the scala literal table in utility_scala.ts alone, and null-only members left out of Map.of. A provider copying the table, as the guide's model providers (go, swift) do, fails three suite tests that the one command does not run. The way out (import scalaLit, record purity-allow) is not written down.
+  - [3]
+    section: 9 (scala row)
+    problem: Correct as far as I read it: the auxiliary constructor is missing from the table (confirmed and fixed in the forms), and the okFalse boxed-FALSE question is real. The row does not say that the examples' bound type is SdkEntity, so `deleted` must stay undeclared; it only says `as java`, and I had to read Contracts.scala to see why.
+  - [4]
+    section: 2.1 (entityBy)
+    problem: The guide does not warn that changing entityBy changes the REFERENCE headings, and that blocks pair by heading. Switching scala from Name to class (both true) cut identical REFERENCE blocks from 234 to 143 and raised open classes from 93 to 106: an artefact of pairing, not of content.
+  - [5]
+    section: 5 (classify)
+    problem: Hand reasons may not quote text that no page or file holds (STALE). The guide does not say that plain double quotes inside a `why` count as a quotation; I had to write reasons without quotation marks or prefix them with `OLD said`.
+hypotheses:
+  - [0]
+    id: H1
+    verdict: held for scala
+    evidence: Ran: purity 0 open, so the provider reads no model and has no model condition. Notes 0 words; language-supplied prose 132 of 56222 words (0.2%). Breaking interface changes needed: 0. One additive gap, in the tools (callcheck), not in the interface.
+  - [1]
+    id: H2
+    verdict: held for scala's three sections
+    evidence: Ran: git diff --numstat. 709 lines deleted against 263 added in provider, hook and forms (2.7x), 275 with the 12 generator lines (2.6x).
+  - [2]
+    id: H3
+    verdict: held for the catalogued issues met here
+    evidence: Corrections arrived through shared code with no scala-specific edit: S49 server option, S50 Basic secret, S09 log default, S13 no-test mock, S25 inactive remove, G27 table pipe, U45 step headings, sentence-review env and update-id, decision 6 stream signal. Scala-only corrections (raises to throws, parameter names) are facts, not prose.
+  - [3]
+    id: H4
+    verdict: not tested
+    evidence: No scala compiler here: 0 of 31 distinct changed blocks compiled or run. Read, not run: the doubtful lines are the same as OLD's (Double into a Map.of of Object, the forEach lambda, top-level statements). The new casts make the sentences' record reads type-correct where OLD's REFERENCE bound an Object. The suite caught one real regression (null members in Map.of); it is fixed.
+  - [4]
+    id: H5
+    verdict: not tested here
+    evidence: Retiring the components was safe for the suite (2635 tests: 3 failures, all scala and fixed, then generate.test.js 205/205) and the golden passes.
+surprises:
+  - callcheck's binding heuristic fails OLD scala's own list iteration; the port cannot pass the one command without changing that output
+  - The suite, not the one command, caught the null-in-Map.of regression; portcheck's 21 variations hold no NULL-typed member
+  - entityBy, a convention with two true values, moves 91 REFERENCE blocks between identical and changed, through heading pairing alone
+  - OLD scala's tutorial jumped from step 1 to step 3 whenever there was no list step; the shared page fixes it
+time: |
+  Started 15:56 UTC; last commit about 19:55 UTC.
+  - Reading the briefs, the guide and the runtime: about 35 minutes.
+  - Table and forms (decl, calls, citations, guard iterations): about 25 minutes.
+  - Provider and hook: about 25 minutes.
+  - Review (regenerations, hand records for 191 classes plus facts and 30 absent sentences, SCRATCH): about 70 minutes.
+  - Suite and fix (two suite runs of about 13 minutes each): about 40 minutes.
+  - Measures and report: about 25 minutes.
+unverified: |
+  Every changed example block: no scala, scala-cli or sbt here. Here is what I read and did not run.
+  - Whether `1.0` and `1L` widen to Object inside Map.of under Scala 3.7.3.
+  - Whether the forEach lambda's parameter type is inferred.
+  - Whether the pipeline mutates the immutable Map.of request maps at run time.
+  - The root quick start from the repository root, OLD and NEW.
+  
+  The generated SDK does declare the imports' targets (read): voxgig.demosdk.core.DemoSDK at core/DemoSDK.scala:8 and SdkEntity at core/Contracts.scala:16, from node tools/before/gensdk.js into P/ports/scala/work/gen.
+workspace: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/scala (sdkgen at c5b9ce45, tools at 642d9ad, out/new, PROGRESS.md, work/decide.js which builds the hand records, work/distinct.json, work/runtime-table.md)
+prose: |
+  sharewords (scala):
+  - tutorial 1597 words: shared 1233 (77.2%), scala alone 364 (22.8%), notes 0.
+  - rootquick 238 words: shared 19 (8.0%), scala alone 219 (92.0%), notes 0. These are the shared step-comment templates with scala's tokens.
+  - reference 54387 words: shared 52707 (96.9%), scala alone 1680 (3.1%).
+  - All sections: 56222 words, scala alone 2263 (4.0%).
+  - By source: provider literals 132 words (0.2%), all fact tokens (ref.noun 113, ref.maps 19). Notes 0.

@@ -1,0 +1,49 @@
+auth-basic               quick           1/20  ts
+auth-basic               howto           1/20  ts
+auth-basic               model           1/20  ts
+auth-basic               root:topquick   1/20  ts
+auth-header              root:topquick   1/20  ts
+auth-inactive            howto          19/20  all but clojure
+auth-off                 howto          19/20  all but clojure
+auth-query               root:topquick   1/20  ts
+ent-off-ambient          howto          19/20  all but php
+ent-off-planet           howto           1/20  php
+ent-only-ambient         howto           1/20  php
+feat-absent-proxy        howto           1/20  c
+feat-absent-secrets      install         1/20  perl
+feat-log-only            install         1/20  perl
+feat-log-only            howto           1/20  c
+feat-min                 install         1/20  perl
+feat-min                 howto           1/20  c
+feat-none                install         1/20  perl
+feat-none                howto           1/20  c
+feat-off-proxy           howto           1/20  c
+feat-off-secrets         install         1/20  perl
+feat-test-only           install         1/20  perl
+feat-test-only           howto           1/20  c
+op-off-planet-create     entity          1/20  go
+op-off-planet-list       howto           1/20  php
+op-off-planet-list       entity          1/20  go
+op-off-planet-load       entity          1/20  go
+op-off-planet-remove     entity          1/20  go
+op-off-planet-update     entity          1/20  go
+op-readonly              entity          1/20  go
+pair-go-cli              intro           1/20  go
+pair-go-cli              root:toptest   19/20  all but go
+pair-go-cli              root:tophowto  19/20  all but go
+pair-go-mcp              intro           1/20  go
+pair-go-mcp              root:toptest   19/20  all but go
+pair-go-mcp              root:tophowto  19/20  all but go
+pair-py-data             intro           1/20  py
+pair-py-data             root:toptest   19/20  all but py
+pair-py-data             root:tophowto  19/20  all but py
+registry-active-ts       install         1/20  ts
+repo-custom              quick           1/20  go
+repo-custom              explanation     1/20  go
+repo-custom              root:topquick   1/20  go
+server-none              quick           4/20  ts go py java
+server-none              model           1/20  ts
+server-none              root:topquick   4/20  ts go py java
+server-static            quick           4/20  ts go py java
+server-static            model           1/20  ts
+server-static            root:topquick   4/20  ts go py java

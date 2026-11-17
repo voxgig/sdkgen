@@ -1,0 +1,1 @@
+[{"id": "my-types-reason-dropped-zig", "lang": "zig", "edits": [{"file": "test/runtimeforms/zig.ts", "from": "reason: 'the code generator has no zig column in canonToType: every field is a Value, so the page\\'s type words are the provider\\'s own'", "to": "reason: ' '"}]}]

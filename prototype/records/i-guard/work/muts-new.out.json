@@ -1,0 +1,251 @@
+[
+ {
+  "id": "new-swift-throws-runtime",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ swift: the forms read the runtime"
+  ],
+  "whats": [
+   "load: the forms say an operation shows its failure as throws; load shows \"\""
+  ]
+ },
+ {
+  "id": "new-swift-throws-view",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ swift: the forms read the runtime"
+  ],
+  "whats": [
+   "prepare (src/cmp/swift/fragment/Main.fragment.swift) is declared `throws`; the forms read its failure as \"\"",
+   "create (src/cmp/swift/fragment/EntityBase.fragment.swift) is declared `throws`; the forms read its failure as \"\"",
+   "create (src/cmp/swift/fragment/EntityCreateOp.fragment.swift) is declared `throws`; the forms read its failure as \"\""
+  ]
+ },
+ {
+  "id": "new-ts-static-test-instance",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "on",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "ref.facts.test[0].call: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "a test constructor called on an instance (on): []",
+   "test constructor test is declared on the instance in the runtime; the call const client = {client}.test() makes it on qualified"
+  ]
+ },
+ {
+  "id": "new-py-classmethod-test-instance",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "on",
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ py: the declared facts are what its runtime defines",
+   "✖ py: every declared fact is accounted for",
+   "✖ py: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "ref.facts.test[0].call: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "a test constructor called on an instance (on): []",
+   "test constructor test is declared on the instance in the runtime; the call client = {client}.test() makes it on qualified"
+  ]
+ },
+ {
+  "id": "new-swift-static-testsdk-instance",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ swift: the forms read the runtime"
+  ],
+  "whats": [
+   "expect testSDK: on is \"instance\" in src/cmp/swift/fragment/Main.fragment.swift; the forms read \"type\""
+  ]
+ },
+ {
+  "id": "new-ocaml-field-to-function",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ ocaml: the forms read the runtime"
+  ],
+  "whats": [
+   "expect e_name: field is false in tm/ocaml/sdk_types.ml#and entity_obj = {#\\n",
+   "}; the forms read true"
+  ]
+ },
+ {
+  "id": "new-rb-none-null",
+  "lang": "rb",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account",
+   "controls"
+  ],
+  "fails": [
+   "✖ rb: every declared fact is accounted for",
+   "✖ rb: each check fails when its fact is changed (negative controls)"
+  ],
+  "whats": [
+   "cite ref.facts.none: the quote does not contain \"null\", which the fact states",
+   "an unquoted token that stands beside the quote (account): []"
+  ]
+ },
+ {
+  "id": "new-rb-lits-false-False",
+  "lang": "rb",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ rb: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.lits.false: the quote does not contain \"False\", which the fact states"
+  ]
+ },
+ {
+  "id": "new-py-lits-removed",
+  "lang": "py",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ py: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.lits.false: a fact not yet declared is cited with the value the runtime shows (value: ...)",
+   "cite ref.facts.lits.true: a fact not yet declared is cited with the value the runtime shows (value: ...)"
+  ]
+ },
+ {
+  "id": "new-go-absence-matches",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ go: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.cancel: the absence of /\\\\b(cancel\\\\w*|abort\\\\w*|signal)\\\\b|AbortController|WithContext|context\\\\.Context|cancel_request|sendAsync/i no longer holds: tm/go/utility/fetcher.go has \"abort\""
+  ]
+ },
+ {
+  "id": "new-ts-unquoted-occurs",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.body.values: the quote does not contain \"Uint8Array\", which the fact states"
+  ]
+ },
+ {
+  "id": "new-go-note-token-missing",
+  "lang": "go",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ go: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite notes.member:stream: the quote does not contain \"StreamZz\", which the fact states"
+  ]
+ },
+ {
+  "id": "new-swift-stream-incremental",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ swift: the forms read the runtime"
+  ],
+  "whats": []
+ },
+ {
+  "id": "new-clojure-stream-incremental",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ clojure: the forms read the runtime"
+  ],
+  "whats": []
+ },
+ {
+  "id": "new-ocaml-stream-incremental-code",
+  "lang": "ocaml",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "reader"
+  ],
+  "fails": [
+   "✖ ocaml: the forms read the runtime"
+  ],
+  "whats": [
+   "stream: src/cmp/ocaml/Entity_ocaml.ts holds the draw quote 2 times (\"| Some fn -> fn ()\")"
+  ]
+ },
+ {
+  "id": "new-swift-try-dropped-provider-na",
+  "lang": "swift",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ }
+]

@@ -1,0 +1,105 @@
+[
+ {
+  "id": "G8-swift-cast-dropped-adapted",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ swift: the declared facts are what its runtime defines",
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "the provider prints a record as \"(planet.asNative)?.data()\", which is not facts.record whole (planet.data())"
+  ]
+ },
+ {
+  "id": "G8-swift-asEntity-adapted",
+  "lang": "swift",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "record",
+   "account"
+  ],
+  "fails": [
+   "✖ swift: the declared facts are what its runtime defines",
+   "✖ swift: every declared fact is accounted for"
+  ],
+  "whats": [
+   "facts.record: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.record {var}.asEntity().data() names asEntity, which the swift runtime does not declare (cite it in recordParts where a declaration reads otherwise)"
+  ]
+ },
+ {
+  "id": "G5-ocaml-arrow-signatures-adapted",
+  "lang": "ocaml",
+  "caught": false,
+  "error": null,
+  "checks": [],
+  "fails": [],
+  "whats": []
+ },
+ {
+  "id": "clj-member-removed-adapted",
+  "lang": "clojure",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "members",
+   "kind",
+   "account"
+  ],
+  "fails": [
+   "✖ clojure: the declared facts are what its runtime defines",
+   "✖ clojure: every declared fact is accounted for"
+  ],
+  "whats": [
+   "ref.facts.entity[2].kind: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "cite ref.facts.entity[2].copy: the provider declares no such fact"
+  ]
+ },
+ {
+  "id": "ts-utility-kind-adapted",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "account"
+  ],
+  "fails": [
+   "✖ ts: every declared fact is accounted for"
+  ],
+  "whats": [
+   "cite ref.facts.client[1].kind: the fact is \"utilityBase\"; the citation pins \"utility\""
+  ]
+ },
+ {
+  "id": "forms-vacuous-ts-adapted",
+  "lang": "ts",
+  "caught": true,
+  "error": null,
+  "checks": [
+   "method",
+   "members",
+   "account",
+   "controls",
+   "reader"
+  ],
+  "fails": [
+   "✖ ts: the declared facts are what its runtime defines",
+   "✖ ts: every declared fact is accounted for",
+   "✖ ts: each check fails when its fact is changed (negative controls)",
+   "✖ ts: the forms read the runtime"
+  ],
+  "whats": [
+   "facts.method.list: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.load: the guard could not re-derive it from the runtime and the forms do not cite it",
+   "facts.method.create: the guard could not re-derive it from the runtime and the forms do not cite it"
+  ]
+ }
+]

@@ -1,0 +1,39 @@
+[portcheck js] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck js] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck js] FROM SCRATCH: no hand entries, no rule records, no hand-recorded facts; classes in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js/tools/review/js/scratch-classes
+[portcheck js] classify (hand/js.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck js] ledger
+[portcheck js] blocks
+[portcheck js] fact sheet (and the language and convention facts against the OLD page)
+[portcheck js] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck js] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck js] purity
+[portcheck js] guard: node --test --test-name-pattern '^js: ' ts/dist-test/runtimefacts.test.js
+== portcheck js ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   21 |      59     25        0       0       0    34       0 | 0
+rootquick                  19 |       5      0        0       0       0     5       0 | 0
+reference               15259 |     142     73        0       0       0    69       0 | 0
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                   3        15       0        30 |      54   54      0 | yes (node); 45 changed blocks compiled by nothing
+rootquick                  0         4       1        14 |      19   19      0 | yes (node); 19 changed blocks compiled by nothing
+reference                195         0      98        20 |       8    8      0 | yes (node); 118 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 10, old-only 4, novel-token 26, vanished-token 13, novel-shape 1; rootquick: changed 8, novel-token 8, vanished-token 3; reference: changed 2, old-only 1, novel-token 5)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+purity: 0 open, 1 accepted | notes declared 0, note regions found 0 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1461 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 374 calls of 25 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+guard: pass (pass 4 fail 0 )
+build: 1813 sources checked, current
+facts (language and convention, against the OLD page; from scratch, hand records ignored): attested 5, recorded by hand 0, UNATTESTED or NOT JUDGED 2, not printed 0, not judged 1; cited 22, pinned prose 12 (the reviewer audits each)
+  NOT JUDGED named = "call" (convention): minimal pair against bare: 106 prose units and 0 blocks differ; OLD reads as call in 0, as another value in 0,
+  UNATTESTED ref.noun = "Methods" (convention): 2 context(s): held 1, contradicted 0, new 1; 113 units
+  record each in hand/js.json facts: { "<path>": { "value", "why", "evidence" } }, or fix the provider
+shared sentences: matched 98, of which against a sentence nobody reviewed 4 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 3 (0 explained; an unexplained one FAILS)
+  ABSENT, NO REASON rootquick [99a8153c15] in 16 variation(s): Load a Ⓔ: the entity, a ⒺEntity; throws on failure
+  ABSENT, NO REASON rootquick [7ab5ba644d] in 2 variation(s): The client sends the API key as the ⟦⟧ query parameter.
+  ABSENT, NO REASON rootquick [a0b269a293] in 7 variation(s): List Ⓔ records: a ⟦⟧, one entity per record; throws on failure
+  say why in hand/js.json absent: { "<id>": "<why>" } (a shared sentence this language prints nowhere) or { "<id>": { "why": "...", "variations": [...] } } (dropped from exactly those variations), or print it
+fact sheet: factsheet js: 72 facts, 0 with no account, 2 unattested (named, ref.noun), guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js/tools/review/js/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js/tools/review/js/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/js.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK js: FAIL

@@ -1,0 +1,712 @@
+{
+ "key": "first-ports-perl-swift",
+ "what": "the first wave of ports made from the guide alone, for perl and swift: each ported, read by an independent reviewer, fixed, and verified",
+ "digest": {
+  "part": "Stage 3b, first wave of ports made from the guide (PORTING v3.2) alone: perl and swift, each ported, reviewed independently, fixed, and verified. Records read: s3b-port-perl, s3b-review-perl, s3b-fix-perl, s3b-verify-perl, s3b-port-swift, s3b-review-swift, s3b-fix-swift, s3b-verify-swift (all .txt, all present). Stage briefs read for purpose: prompts/j-port.md, j-review.md, j-fix.md, k-verify.md, plus brief.md.",
+  "rounds": [
+   {
+    "round": "perl port (s3b-port-perl)",
+    "purpose": "Port perl's README tutorial, root quick start and REFERENCE to the shared pages by following the guide alone: naming hook, syntax provider, porter's part of the forms file, deletion of the three old components; check the runtime table against the runtime; record interface gaps without bending the interface.",
+    "who": "one porter (builder); own runs of build, guard, suite, portcheck, perl README lane on OLD and NEW",
+    "produced": "Naming_perl.ts (22 lines), Syntax_perl.ts (191), forms +21; 735 old lines deleted; 148 hand decisions; 1 runtime note; 1 additive interface gap (imports cannot tell tutorial from root quick start); 6 wrong/missing runtime-table rows; portcheck PASS (REGEN and plain); ok: True",
+    "changed": "Porter chose to print only `use DemoSDK;` in both places and recorded the lost `use lib` lines as `dropped`; reworded a note the lint flagged; no shared file touched."
+   },
+   {
+    "round": "perl independent review (s3b-review-perl)",
+    "purpose": "Audit every fact against the runtime, read OLD and NEW pages side by side, read the provider as code, attack the process with mutations, reproduce the numbers.",
+    "who": "one independent reviewer; 23 attacks; perl -c over changed blocks; NEW pages run through the SDK's own runner",
+    "produced": "Verdict accept-with-fixes; 10 required fixes (6 in perl's files, 3 shared, 1 in a perl generator test component); all porter numbers reproduced; found the root quick start no longer compiles where read, a false runtime note, HASH(0x...) output from a shared change, two weak citations, one false excuse, wrong catalogue id",
+    "changed": "Reclassified the porter's root `dropped` as a defect; showed H4 'lane same as OLD' cannot see import lines because the runner prepends them."
+   },
+   {
+    "round": "perl fix (s3b-fix-perl)",
+    "purpose": "Make the port right from the review: fix perl-side items, record shared changes without making them.",
+    "who": "one fixer (builder of the fixes)",
+    "produced": "6 perl-side fixes (note reworded, two citations, excuse reworded, S13->S09, root loss recorded as defect); 3 shared changes recorded (imports place + directory role; print or remove the `top` note slot; scalar-only showFields); 1 not fixed (test runner outside port's files); 14 defect classes recorded (13 rootquick, 1 reference)",
+    "changed": "The one command now FAILS on purpose in every mode until the shared changes land; ok: False."
+   },
+   {
+    "round": "perl verify (s3b-verify-perl)",
+    "purpose": "Check each fix was made, that the port stands at its last commit, what it touched, and run two fresh attacks.",
+    "who": "one independent verifier",
+    "produced": "All 10 findings' outcomes judged right; every fixer number reproduced; 2 fresh attacks both caught by the one command (guard silent); ok: False",
+    "changed": "Confirmed the two shared defects as real; flagged commit trailers naming a model as a rule violation; noted the lane also passes wrong call arguments."
+   },
+   {
+    "round": "swift port (s3b-port-swift)",
+    "purpose": "Same as perl, for swift: the first port with result style 'wrapped', whose shared sentences no language had printed before; no swift toolchain on the machine.",
+    "who": "one porter (builder)",
+    "produced": "Naming_swift.ts (24), Syntax_swift.ts (171), forms +32/-5; 764 old lines deleted; 0 notes; 201 hand records; 1 breaking interface gap recorded (wrapped sentences omit the unwrap) worked around by putting the unwrap into facts.record; portcheck PASS; ok: True",
+    "changed": "No shared file touched; 172 changed blocks compiled by nothing."
+   },
+   {
+    "round": "swift independent review (s3b-review-swift)",
+    "purpose": "Adversarial audit as for perl.",
+    "who": "one independent reviewer; 15 provider mutations plus 2 page-edit drops in two modes; read 20 distinct changed blocks against the runtime",
+    "produced": "Verdict accept-with-fixes; 8 required fixes (4 swift-side, 4 shared: portcheck stale build/pipefail, guard whole-record check, dropped-sentence net, wrapped-sentence unwrap); found a missing matchv copy fact, a misleading body.values constructor, lost `list(nil, nil)`, hard-coded unwrap in printers; 13 of 15 attacks failed somewhere, 4 of those only through hand records",
+    "changed": "Showed the tools are blind for a result style with no reference language and that portcheck can measure a stale build."
+   },
+   {
+    "round": "swift fix (s3b-fix-swift)",
+    "purpose": "Fix swift-side findings; record shared changes.",
+    "who": "one fixer",
+    "produced": "4 swift-side fixes (matchv copy declared, `.nat` named, printers built from facts, forms read Types.swift and check the record expression); 6 shared changes recorded; generated output byte-identical before/after; ok: True",
+    "changed": "Provider 171->180 lines, forms 102->116; cited 12->13, unquoted excuses 1->0; recorded entityBy hand decision."
+   },
+   {
+    "round": "swift verify (s3b-verify-swift)",
+    "purpose": "Check fixes and port state; two fresh attacks.",
+    "who": "one independent verifier",
+    "produced": "Every number reproduced; the fixer's whole-record check defeated by a fresh attack; a call-arity mutation passes the guard; 7 shared changes listed (adds a call-arity guard); ok: False",
+    "changed": "R4/R6 judged only partly closed (fixable in swift's own forms); commit trailers naming a model flagged."
+   }
+  ],
+  "items": [
+   {
+    "topic": "H2",
+    "claim": "perl's three old components were replaced by a provider and hook 3.45x smaller.",
+    "numbers": "deleted ReadmeQuick_perl.ts 224 + ReadmeRef_perl.ts 420 + ReadmeTopQuick_perl.ts 91 = 735 lines; Syntax_perl.ts 191 + Naming_perl.ts 22 = 213 (3.45x); 234 with forms additions (3.14x); golden +2 -3",
+    "source": "s3b-port-perl.txt: lines",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "The reviewer reproduced perl's line counts and measured the non-blank, non-comment ratio.",
+    "numbers": "735 -> 213 (3.45x); non-blank, non-comment 532 -> 157 (3.39x); 234 with forms additions",
+    "source": "s3b-review-perl.txt: hypotheses H2; numbers[7]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "After the fix round perl's line counts were essentially unchanged.",
+    "numbers": "Syntax_perl.ts 191, Naming_perl.ts 22, runtimeforms/perl.ts 95 (94 before); 735 -> 213 (3.45x), or 308 with the whole forms file",
+    "source": "s3b-fix-perl.txt: final_state / lines; s3b-verify-perl.txt: state[10]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "swift's three old components were replaced by a provider and hook 3.9x smaller at port time.",
+    "numbers": "deleted 246 + 409 + 109 = 764; Syntax_swift.ts +171 (138 without blanks/comments), Naming_swift.ts +24 (15); 195 vs 764 = 3.9x; 222 with forms delta (+32/-5) = 3.4x",
+    "source": "s3b-port-swift.txt: lines; reproduced in s3b-review-swift.txt: numbers[7]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "After the swift fix round the ratio fell slightly but stayed above 3x.",
+    "numbers": "Syntax_swift.ts 180 (142 without blanks/comments); Naming 24 (15); forms 116 (102 before); 204 vs 764 = 3.7x; with forms delta since v32-frozen (+49/-8) 245 = 3.1x",
+    "source": "s3b-fix-swift.txt: final_state; s3b-verify-swift.txt: state[8]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "perl's provider and hook read the model 0 times and its own prose is small; the interface needed 0 breaking changes.",
+    "numbers": "purity 0 open, 1 accepted (exampleVarName); notes 846 of 54375 words (1.6%); provider literals 978 (1.8%; fact tokens 132: ref.noun 113, ref.maps 19); at source: notes 9 words, fact-table prose literals 21, other prose literals 0; breaking interface changes 0",
+    "source": "s3b-port-perl.txt: prose, purity, hypotheses H1; reproduced in s3b-review-perl.txt: hypotheses H1",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "Words printed by perl alone are high in the tutorial and root quick start, but the porter attributes them to shared sentences carrying perl tokens, not provider prose.",
+    "numbers": "tutorial 1553 words, shared 1166 (75.1%), perl alone 387 (24.9%); rootquick 238, shared 19 (8.0%), perl alone 219 (92.0%); reference 52584, shared 47517 (90.4%), perl alone 4221 (8.0%); ALL 54375, perl alone 4827 (8.9%)",
+    "source": "s3b-port-perl.txt: prose",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "perl found one real interface gap: one imports printer serves both the tutorial and the root quick start and cannot tell them apart, and the provider may not know the target's directory.",
+    "numbers": "0 breaking; additive 2 (imports place plus a directory role; print or remove the declared-but-unprinted `top` NoteSlot) plus 1 shared behaviour fix (showFields scalar fallback); providers forced: perl only",
+    "source": "s3b-port-perl.txt: interface_gaps[0]; s3b-review-perl.txt: interface, required_fixes[1],[2],[3]; s3b-fix-perl.txt: shared_changes_needed",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "The `top` NoteSlot is declared in the interface but no shared code prints it, so even a note could not carry perl's root library path.",
+    "numbers": "declared notes.top in a copy: text appeared nowhere; purity 'notes declared 3, note regions found 1', failing the one command",
+    "source": "s3b-review-perl.txt: required_fixes[2]; attacks[13]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "swift's provider reads no model, has 0 notes and 0 prose literals; swift-only words are high in tutorial and root, all from shared wrapped-style sentences.",
+    "numbers": "tutorial 1741 words, shared 64.4%, only swift 35.6%; rootquick 238, shared 8.0%, only swift 92.0%; reference 51093, shared 93.7%, only swift 6.3%; ALL 53072, only swift 7.6%, notes 0%, provider literals 0.6% (tutorial 15 unwrap; reference 320: setArg 188, noun 113, maps 19)",
+    "source": "s3b-port-swift.txt: prose; reproduced in s3b-review-swift.txt: numbers[8]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "The reviewer judged the swift-only share to be per-language prose relocated into shared code that nothing compares with another language.",
+    "numbers": "35.6% tutorial, 92.0% root quick start, 6.3% reference, 7.6% overall, all from wrapped branches of shared runtimeprose.ts",
+    "source": "s3b-review-swift.txt: hypotheses H1",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "swift's interface changes: the porter recorded one breaking gap; the fixer and verifier recorded further shared needs, two of them breaking as changed sentences.",
+    "numbers": "porter: 1 breaking (wrapped returnClause/carries omit the unwrap; forces no other provider), 2 non-needed; fixer: 6 shared changes (matchArg copy additive; list no-match call breaking, changes every ported provider's list sentence wording; portcheck additive; guard whole-record additive; dropped-sentence net additive; wrapped unwrap breaking); verifier: 7 (adds call-arity guard, additive)",
+    "source": "s3b-port-swift.txt: interface_gaps; s3b-fix-swift.txt: shared_changes_needed; s3b-verify-swift.txt: shared_changes",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "swift's port worked around the wrapped-style gap by putting the unwrap inside facts.record, which the generic guard checks only by its trailing name.",
+    "numbers": "facts.record '({var}.asNative as? Entity)?.data()'; reviewer attack record '{var}.asEntity().data()' passed the guard 4/4",
+    "source": "s3b-port-swift.txt: interface_gaps[0]; s3b-review-swift.txt: required_fixes[5], gaps_judged[0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H3",
+    "claim": "Every catalogued correction perl shows came from shared code with no perl-specific edit, though the porter reused ids without reading the catalogue and mis-cited one.",
+    "numbers": "S49, S50, S25, U34, U45, ref-6, md-cell, log default (S09); 148 hand decisions; porter cited S13 for log default, corrected to S09",
+    "source": "s3b-port-perl.txt: hypotheses H3; s3b-review-perl.txt: hypotheses H3, required_fixes[7]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "H3",
+    "claim": "perl's port surfaced two new uncatalogued regressions, both caused by shared code and both needing shared edits rather than per-language ones.",
+    "numbers": "2: root `use lib` loss (19 variations); HASH(0x...) print from showFields (14 variations per reviewer, 17 per fixer/verifier)",
+    "source": "s3b-review-perl.txt: hypotheses H3",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H3",
+    "claim": "swift's catalogued corrections came through shared code with 0 per-language edits.",
+    "numbers": "S49, S50, S09, S13, S25, U34, U43, U45, G27; 201 hand records",
+    "source": "s3b-port-swift.txt: hypotheses H3; s3b-review-swift.txt: hypotheses H3 ('held as far as read')",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "perl's README example lane gives the same result for OLD and NEW in all three models.",
+    "numbers": "7/7, exit 0 every run; default README 18 blocks (17 run, 1 illustration), REFERENCE 21/21, root 3/3; crud and basic-server README 16 (15), REFERENCE 14/14, root 3/3; min of 3 OLD vs NEW: default 4.50s vs 4.35s, crud 3.45s vs 3.53s, basic-server 3.62s vs 3.59s",
+    "source": "s3b-port-perl.txt: hypotheses H4; reproduced in s3b-review-perl.txt: examples and s3b-verify-perl.txt: state",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "Beyond the lane, every distinct changed perl block passes perl -c, and most were executed with the SDK's own runner.",
+    "numbers": "33 distinct changed blocks (of 153 changed blocks over 21 variations: 48 tutorial, 19 rootquick, 86 reference); perl -c 33/33; 27/33 executed with NEW pages of 14 variations, all exit 0; control misspelled op fails 'not ok 4'; 6 (ref-issues 2, doc-nested 4) read only",
+    "source": "s3b-review-perl.txt: examples, could_not_check",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "perl's NEW root quick start does not compile where its reader runs it, in all 19 variations, because the shared imports printer cannot carry `use lib 'perl/lib'`; the reviewer judged this intrinsic to one imports printer for two places.",
+    "numbers": "perl -c from repository root: \"Can't locate DemoSDK.pm in @INC\"; with `use lib 'perl/lib';` added: 'syntax OK'; 19 variations; recorded as 13 rootquick defect classes",
+    "source": "s3b-review-perl.txt: hypotheses H4, required_fixes[1]; s3b-fix-perl.txt: outcomes[1]; s3b-verify-perl.txt: still_wrong[0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H4",
+    "claim": "A shared display-field change makes a perl REFERENCE example print garbage, which the lane passes because it checks only the exit code.",
+    "numbers": "`$item->data_get->{fields}` printed 'r1 HASH(0x560fdb4af1d0)'; out/new/B/perl/REFERENCE.md:536; class 24d40b660d (x81 in 17 variations) recorded as 1 reference defect",
+    "source": "s3b-review-perl.txt: required_fixes[3]; s3b-fix-perl.txt: outcomes[3]; s3b-verify-perl.txt: still_wrong[1]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H4",
+    "claim": "perl's tutorial client block also fails perl -c on its own from perl/, mitigated only by the Install block above it; recorded as dropped, not defect.",
+    "numbers": "tutorial ids 33526951e8, 9b32484fa9; perl -c 'Can't locate'; Install block out/new/B/perl/README.md:27-30; tutorial client blocks byte-identical to OLD went from 3 to 0",
+    "source": "s3b-verify-perl.txt: still_wrong[2]; s3b-port-perl.txt: interface_gaps[0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H4",
+    "claim": "swift's examples cannot be tested here: no swift toolchain and no swift README lane.",
+    "numbers": "172 changed blocks compiled by nothing (47 tutorial, 19 root, 106 reference); reviewer read 20 distinct changed blocks of 55 distinct NEW blocks in 4 variations (35 identical to OLD), none judged failing, 3 doubtful constructs",
+    "source": "s3b-port-swift.txt: hypotheses H4; s3b-review-swift.txt: examples; s3b-verify-swift.txt: unverified",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "swift's list sentence now names `list()`, which Swift cannot call, where OLD gave the working `list(nil, nil)`; the REFERENCE code block still shows `list(nil, nil)`, so it is a weaker sentence, not a false example.",
+    "numbers": "`list()` in 7 swift tutorials; OLD B/swift/REFERENCE.md:173; EntityBase.fragment.swift:71 two parameters, no defaults",
+    "source": "s3b-review-swift.txt: false_or_missing[2]; s3b-verify-swift.txt: still_wrong[3]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "perl's one command passed at port time and was made to fail after the fixes, by design, on 14 defect classes awaiting shared changes; everything else passes.",
+    "numbers": "port: REGEN=1 exit 0 PASS; after fix: exit 1 in SCRATCH=1 REGEN=1, REGEN=1 and plain; ledger OPEN 0; blocks OPEN 0; defect rootquick 13, reference 1; purity 0 open; UNATTESTED 0; guard 4/4",
+    "source": "s3b-fix-perl.txt: final_state; s3b-verify-perl.txt: state[5],[6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "perl's portcheck ledger and block counts at the port, unchanged through fix and verify.",
+    "numbers": "ledger same/classes/shared/by-hand/missing: tutorial 61/42/20/18/4, rootquick 19/3/0/3/0, reference 14910/114/46/50/17, contradictions 1 (91baf1b4b6); blocks identical/corrected/unified/otherwise: tutorial 0/6/0/42 (classes 21), rootquick 0/0/0/19 (27), reference 227/0/0/86 (7); SCRATCH OPEN 22/3/68, blocks OPEN 21/27/7, UNATTESTED 1; facts 67, attested 7, by hand 1, cited 16, pinned prose 7; shared sentences matched 66, all unreviewed",
+    "source": "s3b-port-perl.txt: portcheck, scratch; s3b-verify-perl.txt: state[4],[5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "swift's portcheck ledger and block counts, reproduced by reviewer, fixer and verifier.",
+    "numbers": "ledger same/classes/shared/by-hand/missing: tutorial 61/45/19/21/5, rootquick 19/3/0/3/0, reference 14013/143/48/67/27, contradictions 1; blocks: tutorial 1/1/0/46 (35), rootquick 0/0/0/19 (28), reference 207/0/0/106 (13), OLD-only 1; SCRATCH OPEN 26/3/95, blocks OPEN 35/28/13, UNATTESTED 1 (named), less often 1; facts 61; shared matched 67, all unreviewed; REGEN=1 PASS exit 0",
+    "source": "s3b-port-swift.txt: portcheck, scratch; s3b-verify-swift.txt: state[4],[5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Build, guard, golden and suite were green and reproduced at every stage for both languages, and no other language's output changed.",
+    "numbers": "suite without toolchain lanes 2601 tests, 2596 pass, 0 fail, 5 skipped (times 8m01s, 9m02s, 6m42s, 402s perl; 7m59s, 343s, 367s, 395s swift); perl guard 4/4, guard+reader 65/65; swift guard+reader 5/5; golden 2/2; perl: diff -r against base32 0 lines, root README 0 lines changed outside perl blocks over 21 variations; swift: 19 root READMEs differ only inside Swift blocks",
+    "source": "all eight records: state / final_state / other_languages",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "perl reviewer's 23 attacks: most failed somewhere, several only through the comparison with OLD or hand records rather than any named check.",
+    "numbers": "21 of 23 attacks failed somewhere (summary); a19 (shared sentence dropped from every variation) moved no number under SCRATCH (OPEN 68 = baseline); a17 depluralising rule in a helper: purity 0 open (blind), caught by ledger OPEN 24; a10 wrong receiver: guard PASS, caught by ledger OPEN 3 only; a07 prints 'record': fact sheet ATTESTED, caught by blocks OPEN 5/13/5; 3 defects as delivered caught by nothing",
+    "source": "s3b-review-perl.txt: summary, attacks, not_caught",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "perl verifier's two fresh attacks were caught only by comparison with OLD; the guard was silent and the lane executed a wrong call.",
+    "numbers": "V1 type word integer->int: reference ledger OPEN 5; V2 flat list `load('id' => 'planet_id')`: blocks OPEN 7/4/4, reference ledger OPEN 3; perl lane still 7/7 with REFERENCE 21/21 executed",
+    "source": "s3b-verify-perl.txt: attacks",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "swift reviewer's attacks: 13 of 15 failed somewhere, 4 only through the porter's hand records with the guard passing; the dropped-sentence attacks moved no number under SCRATCH.",
+    "numbers": "15 provider mutations + 2 page drops; hand-records-only: unwrap pin changed with provider, `as? EntityBase` print, record '{var}.asEntity().data()', entityBy 'Name'; SCRATCH OPEN 95 = baseline for drop from one variation (x19->x18) and from all 19",
+    "source": "s3b-review-swift.txt: summary, attacks, not_caught",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "portcheck can report PASS on a stale build and measure stale pages after a generation throws, because the pipe drops gen.js's exit code.",
+    "numbers": "entityBy 'name' -> TS2820 build failure, portcheck PASS exit 0; cancel: true -> generation throws, portcheck 'regenerated 0 variations; SKIPPED: none'; portcheck.sh:26 unchanged at verify",
+    "source": "s3b-review-swift.txt: not_caught[2],[3]; s3b-verify-swift.txt: fixes_checked[5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "For a language with a result style no reference language shares (perl 'die', swift 'wrapped'), the absent and printed-less-often nets are empty by construction.",
+    "numbers": "perl absent list 0 'empty by construction'; swift absent 0, 'No reference language uses the wrapped style'",
+    "source": "s3b-review-perl.txt: hand_records[7], not_caught[5]; s3b-port-swift.txt: scratch",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The swift fixer's whole-record check in swift's own forms was defeated by a fresh attack, and a call-arity mutation passed the guard.",
+    "numbers": "facts.record `({var}.asNative)?.data()` (does not compile): guard 5/5 pass, caught only by hand records (ledger OPEN tutorial 5, reference 1; blocks tutorial 3); `load(nil)` against a two-parameter op: guard pass, normal blocks OPEN 10/10/10, SCRATCH only more classes (tutorial 35->38, reference 13->19, reference changed blocks 106->165)",
+    "source": "s3b-verify-swift.txt: attacks, still_wrong[0],[4]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "swift fixer's own guard mutations: five now fail the guard, including three reviewer attacks that previously only hand records caught.",
+    "numbers": "5 mutations fail guard: record '{var}.asEntity().data()', unwrap 'as!' in provider+pin, 'as? EntityBase' in both, matchv copy dropped, body.values back to `.native`; negative control (Types.swift removed) fails 'record accessor data takes 1 parameters, 0 declared'",
+    "source": "s3b-fix-swift.txt: summary, outcomes[3]",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Citations are checked on word tokens, so a quote that does not show its value passes; the tool's attestation by enumeration can mark a changed convention as attested.",
+    "numbers": "perl ref.facts.none quoted the stream end-of-items line; ctor[0] quoted `'<sdk>/lib'` for `'lib'`; swift entityBy ATTESTED by pairing 391 of 976 units though OLD headed by Name",
+    "source": "s3b-review-perl.txt: required_fixes[4],[5]; s3b-port-swift.txt: guide_problems[1]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Fixer commits in both languages carry a trailer naming a model, which the brief and guide section 10 forbid; left for the integrator.",
+    "numbers": "perl: sdkgen 52f711fe, 73234667, tools 70c12f4; swift: sdkgen 824c5d41, 55675fd5, tools 0fa653a",
+    "source": "s3b-verify-perl.txt: still_wrong[4]; s3b-verify-swift.txt: still_wrong[1]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "perl's one runtime note was false under the streaming feature's chunkSize; reworded and verified.",
+    "numbers": "OLD note 'Each item is the hashref `data_get` returns, not an entity.' (9 words); new 'An entity is yielded as the hashref its `data_get` returns.' (10 words), 94 occurrences; streaming_feature.pm:65-70, Entity.fragment.pm:186",
+    "source": "s3b-review-perl.txt: required_fixes[0]; s3b-fix-perl.txt: outcomes[0]; s3b-verify-perl.txt: fixes_checked[0]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "swift's matchv returns a copy but the shared matchArg sentence ignores copy, so a true runtime fact cannot reach the page without a shared change.",
+    "numbers": "EntityBase.fragment.swift:64 `return clone(.map(match))`; ReadmeRef.ts:141; B/swift/REFERENCE.md:158",
+    "source": "s3b-fix-swift.txt: outcomes[0]; s3b-verify-swift.txt: still_wrong[2]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "Runtime-table rows were wrong or missing in both languages.",
+    "numbers": "perl: 6 rows reported (TO_JSON on module, $reqdata optional, $action optional, streamed item missing, copy on options_map/match_get missing, section 9 okFalse confirmed correct); swift: 2 wrong (Types.swift no-argument data()/matchv() extension not seen; mode returns empty)",
+    "source": "s3b-port-perl.txt: table_rows_wrong; s3b-port-swift.txt: table_rows_wrong",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Guide gaps reported by the porters.",
+    "numbers": "perl 8 guide problems (imports place, import lines in ctor, record-counts screen, 'fields' print, undocumented rows, oldclone ambiguity, 'both modes', note lint flags 'record'); swift 5 (record prefix unchecked, entityBy attestation, section 9 row omits Types.swift and wrapped-style uniqueness, codeTokens treats unwrap as prose, classes file commit)",
+    "source": "s3b-port-perl.txt: guide_problems; s3b-port-swift.txt: guide_problems",
+    "by": "builder",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "perl's README example runner prepends `use lib`/`use DemoSDK` and replaces ->new with ->test, so the lane cannot detect a missing import, constructor options, or wrong call arguments.",
+    "numbers": "ReadmeExamplesTest_perl.ts:238 (reviewer said :210), :233, -I at :266 and :285; constructor options unverified in 19 tutorial and 19 root client blocks",
+    "source": "s3b-review-perl.txt: required_fixes[9], could_not_check; s3b-fix-perl.txt: outcomes[9]; s3b-verify-perl.txt: still_wrong[3]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "swift's generated README test checks only that delimiters balance, and there is no swift README lane.",
+    "numbers": "ReadmeExamplesTest_swift.ts:120-156",
+    "source": "s3b-review-swift.txt: examples",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "OLD perl pages carried false statements that the shared pages correct.",
+    "numbers": "OLD printed ->{id} for ambient, which has no id field; accessor 'Pass `undef` for no initial data' false (argument is $entopts, MainEntity_perl.ts:24, Entity.fragment.pm:18); log 'Inactive by default' false (S09)",
+    "source": "s3b-port-perl.txt: surprises, old_vs_new",
+    "by": "builder",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The unported shared README Error handling section prints TypeScript and 'reject ... try / catch' on the perl page, contradicting the tutorial's 'dies on failure'; pre-existing.",
+    "numbers": "all variations",
+    "source": "s3b-review-perl.txt: pages[4]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "OLD swift tutorial skipped step 2, had no server option under a templated URL, and lacked `import Foundation` for ProcessInfo (believed not to compile; unverified).",
+    "numbers": "S28, S49; import Foundation added in 17 variations",
+    "source": "s3b-port-swift.txt: surprises, doubtful_lines[0]",
+    "by": "builder",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The unported README in the no-test variation says the test client has a mock transport, contradicting the REFERENCE; counted as a contradiction in both languages.",
+    "numbers": "91baf1b4b6; perl/README.md:219; swift/README.md:229",
+    "source": "s3b-port-perl.txt: portcheck; s3b-port-swift.txt: hand_decisions[2]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "No tool compiled the perl changed blocks of the 21 review variations; only the lane's three models executed.",
+    "numbers": "153 changed blocks (48 tutorial, 19 rootquick, 86 reference); verifier compiled by hand only the B root README's three blocks",
+    "source": "s3b-verify-perl.txt: unverified",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "No swift toolchain: every changed swift block is unverified, including three doubtful constructs, and two fixes have no rendered form.",
+    "numbers": "172 changed blocks (47/19/106); doubts: `?? .null` in VMap tuple literal, top-level try, import Foundation; body.values printed in 0 of 21 variations; matchv copy not printed",
+    "source": "s3b-verify-swift.txt: unverified",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "cost",
+    "claim": "Time per port as recorded.",
+    "numbers": "perl: 02:01:03 to 02:31:46 UTC, per-step not measured; suite 8m01s, each lane run about 38s, each REGEN portcheck about 17s, incremental build 3 to 4s; swift: 02:01 to about 04:15, reading about 25 min, table check about 10, provider and hook about 15, forms and guard about 15, classification and review about 40, suite/golden/measures about 25 (suite 8 min)",
+    "source": "s3b-port-perl.txt: time; s3b-port-swift.txt: time",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   }
+  ],
+  "disagreements": [
+   {
+    "a": "H4 holds on the lane: same counts as OLD.",
+    "a_source": "s3b-port-perl.txt: hypotheses H4",
+    "b": "H4 is refuted for the root quick start as a reader runs it: perl -c fails 'Can't locate DemoSDK.pm' in 19 variations; the lane cannot see it because its runner prepends use lib.",
+    "b_source": "s3b-review-perl.txt: hypotheses H4",
+    "stands": "The reviewer's; confirmed by run in s3b-fix-perl and s3b-verify-perl."
+   },
+   {
+    "a": "perl ok: True; root `use lib` loss recorded as `dropped`.",
+    "a_source": "s3b-port-perl.txt: ok, hand_decisions[0]",
+    "b": "The loss is a defect, not a drop; the port cannot pass until shared changes land.",
+    "b_source": "s3b-review-perl.txt: required_fixes[8]; s3b-fix-perl.txt / s3b-verify-perl.txt: ok False",
+    "stands": "The reviewer's for the root (13 defect classes); tutorial ids stay dropped by the fixer's reading, which the verifier calls defensible."
+   },
+   {
+    "a": "perl note 'Each item is the hashref `data_get` returns, not an entity.' is true.",
+    "a_source": "s3b-port-perl.txt: notes[0]",
+    "b": "False under streaming chunkSize > 0 (items are arrayref batches).",
+    "b_source": "s3b-review-perl.txt: facts_audit[21]",
+    "stands": "The reviewer's; reworded in s3b-fix-perl, verified."
+   },
+   {
+    "a": "Log default correction cited as S13.",
+    "a_source": "s3b-port-perl.txt: hand_decisions[11]",
+    "b": "It is S09; S13 is the test-mock entry.",
+    "b_source": "s3b-review-perl.txt: required_fixes[7]",
+    "stands": "S09 (fixer checked catalogue lines 210 and 291)."
+   },
+   {
+    "a": "Container excuse: 'the runtime never names the type' hashref.",
+    "a_source": "s3b-port-perl.txt: facts[13]",
+    "b": "False: the runtime names hashref in EntityListOp:5, EntityCreateOp:71, Entity:99, Main:194.",
+    "b_source": "s3b-review-perl.txt: required_fixes[6]",
+    "stands": "The reviewer's; excuse reworded."
+   },
+   {
+    "a": "HASH(0x...) print in 14 variations.",
+    "a_source": "s3b-review-perl.txt: required_fixes[3]",
+    "b": "In 17 variations (class x81; grep finds 1 per REFERENCE in 17).",
+    "b_source": "s3b-fix-perl.txt: outcomes[3]; s3b-verify-perl.txt: still_wrong[1]",
+    "stands": "17 (later grep count)."
+   },
+   {
+    "a": "Runner prepends import at ReadmeExamplesTest_perl.ts:210; none citation at EntityLoadOp.fragment.pm:39.",
+    "a_source": "s3b-review-perl.txt: required_fixes[9],[4]",
+    "b": "Line 238 and line 7 respectively.",
+    "b_source": "s3b-fix-perl.txt: outcomes[9],[4]",
+    "stands": "The fixer's line numbers."
+   },
+   {
+    "a": "No sentence was found false for swift after the record fact carried the unwrap; H1 held.",
+    "a_source": "s3b-port-swift.txt: old_vs_new, hypotheses H1",
+    "b": "list() named where Swift cannot call it, matchv copy missing, body.values names `.native` not the `.nat` constructor; swift-only prose is relocated per-language prose.",
+    "b_source": "s3b-review-swift.txt: summary, false_or_missing, hypotheses H1",
+    "stands": "The reviewer's facts (fixer agreed on all four swift-side items); the H1 caveat stands as the reviewer's reading."
+   },
+   {
+    "a": "body.values changed from OLD's `.nat` to `.native` because the fetcher matches `.native`.",
+    "a_source": "s3b-port-swift.txt: facts[27]",
+    "b": "`.native` takes a NativeRef; the constructor a reader writes is `.nat(_:)` (Value.swift:87).",
+    "b_source": "s3b-review-swift.txt: required_fixes[1]",
+    "stands": "The reviewer's; fixed to `.nat`."
+   },
+   {
+    "a": "Swift forms now validate the whole record expression; R4/R6 closed for swift.",
+    "a_source": "s3b-fix-swift.txt: outcomes[3],[5]",
+    "b": "Only partly: `({var}.asNative)?.data()` passes the guard 5/5 because the check accepts any word-bounded substring of the quote.",
+    "b_source": "s3b-verify-swift.txt: fixes_checked[4], still_wrong[0]",
+    "stands": "The verifier's (ran)."
+   },
+   {
+    "a": "swift fix: ok True.",
+    "a_source": "s3b-fix-swift.txt: ok",
+    "b": "ok False: record check incomplete and commit trailers name a model.",
+    "b_source": "s3b-verify-swift.txt: ok",
+    "stands": "The verifier's."
+   },
+   {
+    "a": "'Both modes' read as with and without REGEN=1.",
+    "a_source": "s3b-port-perl.txt: summary, guide_problems[6]",
+    "b": "k-verify runs SCRATCH=1 REGEN=1 then without SCRATCH; SCRATCH cannot pass for a new language by design.",
+    "b_source": "prompts/k-verify.md; s3b-verify-perl.txt: state[4]",
+    "stands": "Unresolved in the records; both modes reported."
+   }
+  ],
+  "superseded": [
+   {
+    "number": "perl ok: True; portcheck PASS exit 0 (REGEN and plain)",
+    "replaced_by": "ok: False; portcheck exit 1 in every mode on 14 defect classes (13 rootquick, 1 reference)",
+    "source": "s3b-fix-perl.txt: final_state; s3b-verify-perl.txt"
+   },
+   {
+    "number": "perl rootquick and reference defect 0",
+    "replaced_by": "blocks defect rootquick 13, reference 1",
+    "source": "s3b-fix-perl.txt: final_state"
+   },
+   {
+    "number": "perl note 9 words ('Each item is the hashref ...')",
+    "replaced_by": "10 words ('An entity is yielded as the hashref its `data_get` returns.')",
+    "source": "s3b-fix-perl.txt: notes"
+   },
+   {
+    "number": "runtimeforms/perl.ts 94 lines",
+    "replaced_by": "95 lines",
+    "source": "s3b-fix-perl.txt: lines"
+   },
+   {
+    "number": "perl hand records 2f38082332, ac1eac6be0 correction:S13",
+    "replaced_by": "correction:S09",
+    "source": "s3b-fix-perl.txt: outcomes[7]"
+   },
+   {
+    "number": "perl note classes 846928d1e5, 934ea227fb",
+    "replaced_by": "ef4c488fdd (n 94), e53badc13a (n 85)",
+    "source": "s3b-fix-perl.txt: outcomes[0]"
+   },
+   {
+    "number": "Syntax_swift.ts 171 lines; 195 provider+hook, 3.9x; 222 with forms, 3.4x; forms 102 lines",
+    "replaced_by": "180 lines; 204, 3.7x; 245, 3.1x; forms 116 lines",
+    "source": "s3b-fix-swift.txt: final_state"
+   },
+   {
+    "number": "swift guard account cited 12, pinned prose 6, unquoted excuses 1",
+    "replaced_by": "cited 13, pinned prose 7, unquoted excuses 0",
+    "source": "s3b-fix-swift.txt: final_state; s3b-verify-swift.txt: state[2]"
+   },
+   {
+    "number": "swift body.values 'a `String`, or `Data` or `[UInt8]` as a `.native` value'",
+    "replaced_by": "'a `String`, or `Data` or `[UInt8]` wrapped with `.nat`'",
+    "source": "s3b-fix-swift.txt: outcomes[1]"
+   },
+   {
+    "number": "swift fix ok: True",
+    "replaced_by": "verify ok: False",
+    "source": "s3b-verify-swift.txt"
+   },
+   {
+    "number": "perl HASH print in 14 variations",
+    "replaced_by": "17 variations",
+    "source": "s3b-fix-perl.txt: outcomes[3]; s3b-verify-perl.txt: still_wrong[1]"
+   }
+  ],
+  "findings": [
+   {
+    "finding": "Both ports shrank the source more than 3x and touched no shared file. perl went from 735 lines to 213 (3.45x), swift from 764 to 204 after fixes (3.7x). Every other language's pages stayed byte-identical outside the ported blocks.",
+    "source": "s3b-port-perl.txt: lines; s3b-fix-swift.txt: final_state; s3b-verify-*: other_languages"
+   },
+   {
+    "finding": "Neither provider reads the model, and very little of each page is the language's own prose. perl: notes 1.6% and provider literals 1.8% of words. swift: 0 notes, provider literals 0.6%. But swift-only words reach 35.6% of the tutorial and 92% of the root quick start, all from shared wrapped-style sentences only swift prints, which the reviewer calls relocated per-language prose that nothing compares.",
+    "source": "s3b-port-perl.txt: prose; s3b-review-swift.txt: hypotheses H1"
+   },
+   {
+    "finding": "perl exposed a real interface limit. One imports printer serves both the tutorial and the root quick start and cannot tell them apart, so all 19 NEW root quick starts lost `use lib 'perl/lib'` and fail `perl -c` from the repository root. The fix is additive shared code (a place on Scope plus a directory role). No breaking change is needed.",
+    "source": "s3b-review-perl.txt: required_fixes[1], hypotheses H4; s3b-verify-perl.txt: still_wrong[0]"
+   },
+   {
+    "finding": "The example lanes did not catch the perl regressions. perl's runner prepends the import and replaces the constructor, so a missing import, wrong constructor options or wrong call arguments (verifier's `load('id' => 'planet_id')`) all pass 7/7. The lane also passed a shared showFields change that prints HASH(0x...) in 17 variations.",
+    "source": "s3b-review-perl.txt: required_fixes[3],[9]; s3b-verify-perl.txt: attacks"
+   },
+   {
+    "finding": "After the fixes the perl port fails its own one command on purpose: 14 defect classes wait for 3 shared changes. Every other check passes: ledger OPEN 0, blocks OPEN 0, purity 0, guard 4/4, suite 2596/0/5. The verifier confirmed both defects by running them.",
+    "source": "s3b-fix-perl.txt: final_state; s3b-verify-perl.txt: summary"
+   },
+   {
+    "finding": "swift could not be compiled anywhere. 172 changed blocks are verified by no compiler, there is no swift README lane, and the generated swift README test checks only that delimiters balance. H4 is untested for swift.",
+    "source": "s3b-port-swift.txt: hypotheses H4; s3b-review-swift.txt: examples"
+   },
+   {
+    "finding": "swift was the first language to print the wrapped result style, so its shared sentences had never been printed before. The reference-comparison nets are empty for it. Dropping a shared sentence from one or all variations moved no number in from-scratch mode. Several attacks were caught only by the porter's own hand records, which a new port does not have.",
+    "source": "s3b-review-swift.txt: not_caught, required_fixes[6]"
+   },
+   {
+    "finding": "The guard has blind spots that the independent rounds found. Citations match on word tokens, so a quote that does not show its value passes. The record expression is checked only by its trailing name: swift's attempted whole-record fix was defeated by `({var}.asNative)?.data()`. There is no check of call arity: `load(nil)` against two required parameters passed.",
+    "source": "s3b-review-perl.txt: required_fixes[4],[5]; s3b-verify-swift.txt: attacks"
+   },
+   {
+    "finding": "portcheck can report PASS on a stale build. A provider that failed to compile left the old build in place and portcheck still passed. A generation that threw printed 'regenerated 0 variations' and every number was measured on stale pages, because the pipe drops gen.js's exit code. The fix is in the shared tools and was recorded, not made.",
+    "source": "s3b-review-swift.txt: not_caught[2],[3]"
+   },
+   {
+    "finding": "Some true runtime facts could not be printed through the existing shared sentences. swift's matchv copy is declared and guarded but ReadmeRef's matchArg sentence ignores it. swift's list sentence lost OLD's working `list(nil, nil)` and now names `list()`, which Swift cannot call. The second fix is a breaking sentence change that alters every ported provider's list wording.",
+    "source": "s3b-fix-swift.txt: shared_changes_needed[0],[1]; s3b-verify-swift.txt: still_wrong[2],[3]"
+   },
+   {
+    "finding": "Catalogued corrections arrived from shared code with no per-language edit in both ports. perl: S49, S50, S25, U34, U45, ref-6, md-cell, S09. swift: S49, S50, S09, S13, S25, U34, U43, U45, G27. This was read, not audited against the catalogue. The perl porter mis-cited S13 for the log default (it is S09). Two new uncatalogued regressions came from shared code.",
+    "source": "s3b-review-perl.txt: hypotheses H3; s3b-review-swift.txt: hypotheses H3"
+   },
+   {
+    "finding": "The independent rounds corrected the builders' reports every time. Both porters reported ok true. The reviewers found false or weak facts in both: perl's stream note was false under chunked streaming, and swift's body.values named the wrong constructor. The swift fixer's claim that the record check was complete was overstated. Both verifiers returned ok false.",
+    "source": "s3b-review-perl.txt; s3b-review-swift.txt; s3b-verify-swift.txt: fixes_checked[4]"
+   },
+   {
+    "finding": "Interface change counts for this wave. perl: 0 breaking, 2 additive and 1 shared behaviour fix. swift: 2 breaking, both changed sentences (the wrapped unwrap, which forces no other provider, and the list no-match call, which changes every provider's wording), plus additive guard and tools changes. The verifier's final list has 7 shared changes. No shared change was made in this wave.",
+    "source": "s3b-fix-perl.txt: shared_changes_needed; s3b-verify-swift.txt: shared_changes"
+   }
+  ],
+  "missing": [
+   "No record in this part says which brief stage 3b's port/review/fix/verify were run from; the prompts j-port.md, j-review.md, j-fix.md and k-verify.md were taken as their purpose.",
+   "perl's 153 and swift's 172 changed blocks over the 21 variations were not compiled by any tool (perl: 33 distinct blocks checked with perl -c by the reviewer only; swift: no compiler).",
+   "Neither fixer nor verifier re-ran the reviewers' full attack sets after the fixes (perl 23, swift 15+2).",
+   "Whether rb's and php's root README require lines have the same place problem as perl's was not checked.",
+   "Per-step porter times for perl were not measured; all timings were on a shared machine (load about 5 to 7)."
+  ]
+ }
+}

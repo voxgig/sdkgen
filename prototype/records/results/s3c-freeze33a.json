@@ -1,0 +1,542 @@
+{
+ "ok": true,
+ "summary": "The first half of the v3.3 freeze is done in P/v33. The tag v33a is on the clone. P/v33/PROGRESS.md is written for the engineer who takes over.\n\n**Clone.** P/v33/sdkgen, branch freeze, tag v33a = 21397ef9. That is v33m (cda43a59) plus the guard engineer's 11 commits, cherry-picked in order (4c482f51..21397ef9). Three of them conflicted. Every conflict was a union: the citation the sentence round added beside the guard's line. Nothing else in the clone changed.\n\n**Tools.** P/v33/tools, branch freeze33a, HEAD 6e224b8: the shared engineer's 499e4df plus 5 commits, with clean status:\n- d6eabfc from the tools engineer;\n- the sentence round's 740dc90, with its trailer dropped;\n- the decisions;\n- the fact-mutation control pages, regenerated;\n- what the sentence round's independent check required of the tools.\n\n**Thirteen languages** (one command, reviewed mode, logs/pc/*.g4.log):\n- 11 PASS.\n- ts and perl FAIL on purpose, each waiting for a decision of brief 7:\n  - ts: the absent 'Return the entity name.' waits for decision 9 (ts's name is a field: EntityBase.fragment.ts:18 `name = ''`);\n  - perl: its 14 defect classes wait for decisions 1 and 3.\n\n**Checks at v33a:**\n- `npm run build` exits 0 and the tree stays clean.\n- Suite: 2622 tests, 2617 pass, 0 fail, 5 skipped.\n- Golden 2/2. Guard and reader 77/77 for all twenty.\n- runtime-table.md regenerated: P/v33/runtime-table.md, 1297 lines.\n- Attacks and mutations come out as the guard engineer reported. Attacks: 31 of 37 caught. Mutations: 97 of 108 caught, after one mutation was adapted to the newly required testMock fact.\n- Tools self-test: 235 controls, 0 failed, 2 moved.\n\n**The sentence round's independent check.** P/results/s3c-sfix-verify.txt appeared during this job, at 08:37. I did these tools fixes:\n- buildfresh now compares the staged model and src trees by content;\n- handstale accepts a quote found only on an old page only when the record marks it as old;\n- the go branch-sentence control is restored, its from-scratch hole recorded as moved;\n- three port controls and the short-regeneration control are adapted;\n- the README says the order a v3.2 port must follow.\n\nI did not do the identity changes it asks for (mask a position only for the same fact; keep numbers and articles literal). Each re-keys every language. They are listed for the next engineer with the items that are in shared code.",
+ "clone": "**sdkgen.** P/v33/sdkgen, cloned from P/n-shared/ws/sdkgen at the tag v33m (cda43a59), branch `freeze`.\n- node_modules copied from P/base32. `git diff v32-frozen v33m -- ts/package-lock.json` is empty.\n- The guard's commits v33p..68c1b1c8 were checked to touch only ts/test/runtimefacts.test.ts, runtimereader.test.ts and runtimeforms/**. They were cherry-picked as 4c482f51, 9e1c8dc8, d6f8d593, 5e233e9e, 38f49d36, d849972f, 59e8f1a0, 063fac84, 09960e5f, eabeef72, 21397ef9. I made no commit of my own in the clone.\n- Tag v33a = 21397ef9; `git status` is empty after `npm run build`.\n\n**tools.** P/v33/tools, cloned from P/n-shared/ws/tools, branch freeze33a from 499e4df. Five commits on it:\n- e34b46f = n-tools d6eabfc (classes/ocaml.json as paired by heading);\n- de866c5 = sfix 740dc90 (controls adapted to the v3.3 sentences, rekey.js 'already keyed' fix, stale explain pins dropped; its model-naming trailer removed);\n- 2579c9f: the thirteen languages' decisions;\n- 2323022: controls/factmut pages regenerated from this clone;\n- 6e224b8: what the sentence round's check required.\n\n**Which copy of each kind of record, and why** (checked file by file with git diff against d6eabfc and 740dc90):\n- hand/, classes/ and pinned/ of the nine are the sentence round's 740dc90 copy, because that round last decided them on the fixed sentences. They are identical to it before my decisions.\n- hand/, classes/, counts/ and purity-allow/ of perl, swift, ocaml and lua are the tools engineer's d6eabfc copy, the records re-keyed to v3.3 identity. classes/ocaml.json is from d6eabfc itself (heading pairing).\n- normalizers/ and reviewed/ are identical in both.\n- Tool code is the tools engineer's (blocks, callcheck, classify, enumgen, factsheet, handstale, portcheck, purity, summary), except rekey.js, which is the sentence round's 740dc90. selftest.js is both merged; git auto-merged it.\n- I changed buildfresh.js, handstale.js, selftest.js and README.md (6e224b8).\n\n**Workspace.** P/v33/out/old is a symlink to P/base32/out/old; P/v33/out/new is regenerated from the clone.",
+ "commits": [
+  "sdkgen 4c482f51 = guard ee029f09 Guard: a citation's pinned value is compared with the declared value always",
+  "sdkgen 9e1c8dc8 = guard e9df0f73 Guard: an absence is searched over the language's whole runtime (conflicts settled, see conflicts)",
+  "sdkgen d6f8d593 = guard bc53234e Guard: type words are checked against the generator's own column",
+  "sdkgen 5e233e9e = guard 41417b7b Guard: the record expression is checked whole",
+  "sdkgen 38f49d36 = guard 18a23ef2 Guard: printed calls are read in the runtime's notation",
+  "sdkgen d849972f = guard 4e6a6b0c Guard: an unwrap is quoted verbatim (conflict settled)",
+  "sdkgen 59e8f1a0 = guard 8784f758 Guard: the print printer's unwrap is matched as a whole word",
+  "sdkgen 063fac84 = guard fd3203e6 Guard: accounts for the optional facts of brief 7 (conflicts settled)",
+  "sdkgen 09960e5f = guard be57b9a5 Guard report: what the naming hook's constructor is spelled through",
+  "sdkgen eabeef72 = guard f4b2692d Runtime table rows",
+  "sdkgen 21397ef9 = guard 68c1b1c8 Guard: copy is cited ahead only on a match getter (tag v33a)",
+  "tools e34b46f = n-tools d6eabfc Classes as generated at this commit (ocaml: block pairs by heading)",
+  "tools de866c5 = sfix 740dc90 Controls on the v3.3 sentences; rekey knows its own records; stale explain-token pins dropped (trailer removed)",
+  "tools 2579c9f Thirteen languages reviewed at v33m with the guard brought in",
+  "tools 2323022 Fact mutation controls: pages regenerated from the clone the sheet now runs on",
+  "tools 6e224b8 What the sentence round's check required of the tools"
+ ],
+ "conflicts": [
+  {
+   "file": "ts/test/runtimeforms/account.ts",
+   "between": "guard e9df0f73 (DEFAULTS row and AHEAD for ref.facts.streamSignal) and v33m's sentence round (DEFAULTS row and AHEAD for ref.facts.testMock)",
+   "settled": "Union. Both DEFAULTS rows are kept, and AHEAD = /^ref\\.facts\\.(direct\\.okFalse|testMock|streamSignal)$/.",
+   "runtime_line": "testMock is declared by every one of the 13 providers at v33m (for example Syntax_ts.ts `testMock: 'generated'`). streamSignal is cited ahead, for example Entity.fragment.go `switch s := callopts[\"signal\"].(type) {`."
+  },
+  {
+   "file": "ts/test/runtimeforms/{c,clojure,elixir,go,py,rb,rust,zig}.ts",
+   "between": "guard e9df0f73 (the cancel absence rewritten as a whole-runtime search with quoted regions; streamSignal cited ahead) and v33m (a ref.facts.testMock citation added on the line after the old cancel line)",
+   "settled": "The guard's cancel block (and its streamSignal citation) is taken, and v33m's testMock citation is kept beside it. No same-key line of v33m was lost except the old `files:`-based cancel line, which the guard's commit replaces by design.",
+   "runtime_line": "testMock as v33m cites it: c Config_c.ts `return feature_base_new();`, clojure features.clj `\"test\" (test-feature)`, elixir Main_elixir.ts `_ -> ${Name}.Feature.new()`, go Config_go.ts `return NewBaseFeatureFunc()`, py Main_py.ts `return _FEATURES[\"base\"]()`, rb Main_rb.ts `${model.const.Name}BaseFeature.new`, rust Config_rust.ts `_ => Rc::new(RefCell::new(crate::feature::base::BaseFeature::new())),`, zig Config_zig.ts `'retry', 'streaming', 'telemetry', 'test', 'timeout',`. Each pin equals the provider's declaration; G1 compares them and passes."
+  },
+  {
+   "file": "ts/test/runtimeforms/account.ts (codeTokens)",
+   "between": "guard 4e6a6b0c (VERBATIM: an unwrap's quote must hold it whole) and v33m (testMock excluded from code tokens)",
+   "settled": "Both lines kept: `if ('string' !== typeof value || /\\.kind$|\\.fails$|\\.testMock$/.test(path)) return []`, then `if (VERBATIM.test(path)) return [spell(value).trim()]`.",
+   "runtime_line": "testMock's value is a word ('generated', 'always'), not a code token of the quoted line. The swift unwrap `asNative as? Entity` is quoted verbatim from EntityBase.fragment.swift."
+  },
+  {
+   "file": "ts/test/runtimeforms/account.ts (DEFAULTS, AHEAD)",
+   "between": "guard fd3203e6 (NEW_FACTS rows: accessorCached, memberNamed, memberField, deleted, direct, importPlace; AHEAD + accessor.cached and copy) and v33m (testMock row and AHEAD)",
+   "settled": "Union: every row of both, and AHEAD = /^ref\\.facts\\.(direct\\.okFalse|testMock|streamSignal|accessor\\.cached|(client|entity)\\[\\d+\\]\\.copy)$/. The guard's later 68c1b1c8 (aheadOk: copy only on a match getter) then applied cleanly.",
+   "runtime_line": "accessor.cached is cited ahead for lua at MainEntity_lua.ts:20-26. copy on match getters is cited ahead, for example Entity_ocaml.ts `clone ent.e_match`."
+  },
+  {
+   "file": "ts/test/runtimeforms/ocaml.ts (cite)",
+   "between": "guard fd3203e6 (ref.facts.entity[2].copy cited ahead) and v33m (ref.facts.testMock citation)",
+   "settled": "Both kept.",
+   "runtime_line": "testMock: Config_ocaml.ts `| _ -> base_feature ()` (ocaml declares 'generated'). copy: Entity_ocaml.ts `ent.e_match_get <- (fun () -> utility.u_feature_hook entctx \"GetMatch\"; clone ent.e_match);` (cited ahead, value true)."
+  },
+  {
+   "file": "perl, swift, lua forms; ocaml in e9df0f73 and 18a23ef2",
+   "between": "the brief expected conflicts here",
+   "settled": "None occurred: git merged them automatically. The guard and reader still pass 77/77, so each quote still stands in its file and each pin equals the declaration.",
+   "runtime_line": "-"
+  }
+ ],
+ "guard": "Ran in P/v33/sdkgen/ts with node 24 at the tag:\n- `node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js`: 77 tests, 77 pass, 0 fail. This is all twenty forms files; the guard engineer also had 77/77.\n- In the one command, each of the thirteen shows 'guard: pass (pass 4 fail 0)'.\n- `SDKGEN_RUNTIME_TABLE=P/v33/runtime-table.md node --test dist-test/runtimereader.test.js`: exit 0, 1297 lines. The guard engineer's table had 1277.\n\nThe 20 added lines are one `ref.facts.testMock` row per language, which the sentence round's citations bring. No other row differs (checked with diff, timings aside).\n\nThe table writes every citation whose path matches AHEAD as 'cited ahead of a provider', including testMock and okFalse for languages whose provider already declares them. It also prints cpp's streamSignal absence as '(undefined: `undefined`)'. That wording is the table writer's, not mine to fix here; it is under not_done.",
+ "attacks": "Ran on a copy of the merged clone (P/v33/mut, at 21397ef9). The harness is the guard engineer's P/n-guard/work/mutate.js with MUT_TS pointing at the copy: each mutation is applied, `npm run build`, guard and reader, then restored.\n\n**The 37 attacks** (mine/att-all.json to mine/att-all.out.json):\n- 31 caught, 6 not caught, 0 errors. Per id, identical to the guard engineer's att-all.out.json.\n- Not caught: G5-ocaml-arrow-signatures (meant to pass), ocaml-m11-keys-member, ocaml-m21-ctrl-match-swapped, swift-entityBy-Name, perl-a07-prints-record, perl-none-cites-a-comment.\n- The four enumerated-fact attacks fail in the tools, not the guard. In the regenerated controls/factmut, the self-test's facts part passes 8/8 reviewed and 6/6 from scratch, perl-prints-record, ocaml-keys-member and swift-entityby-name among them.\n\n**The 108 mutations** (mine/freeze-muts-v33.json to freeze-muts.out.json):\n- 96 caught, 5 not caught, 7 errors.\n- Not caught: clj-return-changed, ts-noun, ts-type-comment, ts-lit-int, new-ts-unquoted-near. These are the guard engineer's five.\n- Errors: the same four build errors and two stale `from` the guard engineer reported, plus one new error, my-new-provider-php-adapted (second copy). It no longer builds because the sentence round made ref.facts.testMock required: TS2741 \"Property 'testMock' is missing\".\n- I adapted that one by adding `testMock: 'generated'` (mine/php-adapt.json). It is then caught, so the total is 97 caught, as the guard engineer's.\n- One entry was re-adapted before the run: v31-rust-direct-note-wrong-adapted3. The sentence round shortened rust's direct note to 'The result map always comes back inside `Ok`.'; with that text, the entry is caught.\n\n**What differs from the guard engineer's numbers:** only the php provider mutation's need for testMock, and the rust note's text. No mutation is caught less.",
+ "checks": [
+  {
+   "check": "build, clean tree",
+   "command": "cd P/v33/sdkgen/ts && npm run build; git -C .. status --short",
+   "result": "exit 0; 0 lines (logs/build-final.log)"
+  },
+  {
+   "check": "suite without the toolchain lanes",
+   "command": "node --enable-source-maps --test --test-concurrency=2 $(find dist-test -name '*.test.js' ! -name 'generatedcompile.test.js' | sort)",
+   "result": "2622 tests, 2617 pass, 0 fail, 0 cancelled, 5 skipped; 5m12s (logs/suite-final.log)"
+  },
+  {
+   "check": "golden",
+   "command": "node --test dist-test/characterize.test.js",
+   "result": "2/2 pass: 'matches the golden manifest' and 'the manifest is machine-independent'"
+  },
+  {
+   "check": "guard and reader, all twenty",
+   "command": "node --test dist-test/runtimefacts.test.js dist-test/runtimereader.test.js",
+   "result": "77/77 pass"
+  },
+  {
+   "check": "runtime table",
+   "command": "SDKGEN_RUNTIME_TABLE=P/v33/runtime-table.md node --test dist-test/runtimereader.test.js",
+   "result": "exit 0, 1297 lines"
+  },
+  {
+   "check": "first run of the thirteen, before any decision (reproduce the shared engineer's v33m table)",
+   "command": "mine/run13.sh g1 ts go py c zig clojure rust elixir rb perl swift ocaml lua (first with REGEN=1)",
+   "result": "Identical to P/n-shared/logs/pc/*.v33m.log line for line, except 'build: 996 sources' (995 there: the guard's calls.ts) and the facts line's cited/pinned counts (the guard's report). PASS py c zig clojure rust; FAIL ts go elixir rb perl swift ocaml lua."
+  },
+  {
+   "check": "the thirteen one commands at the end",
+   "command": "NOREGEN=1 mine/run13.sh g4 <13 languages> with tools 6e224b8",
+   "result": "PASS go py c zig clojure rust elixir rb swift ocaml lua. FAIL ts (ABSENT, NO REASON 57d77b63f4 'Return the entity name.': waits for decision 9). FAIL perl (blocks defect rootquick 13, reference 1: decisions 1 and 3). build: 1814 sources checked, current, in all thirteen. Logs: logs/pc/*.g4.log; table: mine/table-g4.txt."
+  },
+  {
+   "check": "hand records stale",
+   "command": "node tools/handstale.js --clone sdkgen --old out/old --new out/new --lang <l> (13 languages, with the new old-side rule)",
+   "result": "STALE 0 in all thirteen"
+  },
+  {
+   "check": "tools self-test",
+   "command": "node tools/selftest.js --clone P/v33/sdkgen --old P/v33/out/old --new P/v33/out/new --stage2 P/probe-ref/harness/out --v32 P/base32/tools --tmp P/v33/tmp/selftest4 --json P/v33/logs/selftest-final.json",
+   "result": "Exit 0: 235 controls, 0 failed, 2 moved (go-tut-step4-dropped [scratch]; the new sentence-removed-go-branch [scratch]), 1429 s. Parts: ledger 25/25, recheck 19/19, accept 7/7, masking 5/5, missing 6/6 (each also from scratch), facts 8/8 + 6/6, sentences 2/2, regen 2/2, calls 10/10, identity 20/20, purity 34/34, blocks 28/28, recall 1/1. The first full run, before the control fixes, had 231 controls and 7 failed (logs/selftest.log): the three port drop controls in both modes still targeted the v33p sentence, and regeneration-short depended on the clone sitting outside a workspace. Both fixed in 6e224b8."
+  },
+  {
+   "check": "fact-mutation control pages from this clone",
+   "command": "node mine/factmut.js",
+   "result": "8 controls regenerated through enumgen.js; files differing 18, 19, 19, 19, 19, 51, 19, 18, the same counts as before"
+  },
+  {
+   "check": "attacks and mutations",
+   "command": "MUT_TS=P/v33/mut/ts node mine/mutate.js att-all.json / freeze-muts-v33.json / php-adapt.json",
+   "result": "Attacks: 31 of 37 caught, the same 6 not caught as the guard engineer. Mutations: 97 of 108 caught after one adaptation, the same 5 not caught."
+  }
+ ],
+ "table": [
+  {
+   "lang": "ts",
+   "section": "tutorial",
+   "same": "59",
+   "shared": "0",
+   "by_hand": "rule 23, hand 19",
+   "missing": "5",
+   "contradictions": "0",
+   "open": "0",
+   "defect": "0",
+   "blocks": "identical 19, corrected 16, unified 12, otherwise 1; classes 19, OPEN 0, defect 0"
+  },
+  {
+   "lang": "ts",
+   "section": "rootquick",
+   "same": "21",
+   "shared": "0",
+   "by_hand": "rule 4, hand 0",
+   "missing": "1",
+   "contradictions": "0",
+   "open": "0",
+   "defect": "0",
+   "blocks": "0/13/5/1; classes 15, OPEN 0, defect 0"
+  },
+  {
+   "lang": "ts",
+   "section": "reference",
+   "same": "15414",
+   "shared": "2",
+   "by_hand": "rule 48, hand 41",
+   "missing": "40",
+   "contradictions": "1",
+   "open": "0 (one absent 57d77b63f4 without a reason, on purpose)",
+   "defect": "0",
+   "blocks": "195/0/118/0; classes 12, OPEN 0, defect 0"
+  },
+  {
+   "lang": "go",
+   "section": "tutorial",
+   "same": "23",
+   "shared": "1",
+   "by_hand": "rule 28, hand 25",
+   "missing": "9",
+   "contradictions": "0",
+   "open": "0",
+   "defect": "0",
+   "blocks": "0/12/1/8; classes 29, OPEN 0"
+  },
+  {
+   "lang": "go",
+   "section": "rootquick",
+   "same": "22",
+   "shared": "0",
+   "by_hand": "rule 4, hand 0",
+   "missing": "0",
+   "contradictions": "0",
+   "open": "0",
+   "defect": "0",
+   "blocks": "0/14/4/4; classes 16, OPEN 0"
+  },
+  {
+   "lang": "go",
+   "section": "reference",
+   "same": "17439",
+   "shared": "1",
+   "by_hand": "rule 51, hand 32",
+   "missing": "15",
+   "contradictions": "1",
+   "open": "0",
+   "defect": "0",
+   "blocks": "337/21/18/0; classes 2, OPEN 0"
+  },
+  {
+   "lang": "py",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 14940",
+   "shared": "0 / 0 / 3",
+   "by_hand": "rule 24, hand 15 / rule 3 / rule 62, hand 36",
+   "missing": "4 / 0 / 24",
+   "contradictions": "0/0/1",
+   "open": "0",
+   "defect": "0",
+   "blocks": "26/22/0/0; 0/18/0/1; 230/0/83/0; OPEN 0"
+  },
+  {
+   "lang": "c",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 14872",
+   "shared": "0/0/0",
+   "by_hand": "rule 24, hand 14 / rule 3 / rule 52, hand 41",
+   "missing": "4/0/18",
+   "contradictions": "0/0/1",
+   "open": "0",
+   "defect": "0",
+   "blocks": "0/41/0/7; 0/2/0/17; 151/143/19/0; OPEN 0"
+  },
+  {
+   "lang": "zig",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 15001",
+   "shared": "0/0/3",
+   "by_hand": "rule 25, hand 15 / hand 3 / rule 60, hand 41",
+   "missing": "5/0/24",
+   "contradictions": "1/0/1",
+   "open": "0",
+   "defect": "0",
+   "blocks": "24/17/0/7; 0/2/15/2; 151/0/162/0; OPEN 0"
+  },
+  {
+   "lang": "clojure",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 14984",
+   "shared": "0/0/1",
+   "by_hand": "rule 24, hand 14 / rule 3 / rule 61, hand 38",
+   "missing": "4/0/23",
+   "contradictions": "0/0/0",
+   "open": "0",
+   "defect": "0",
+   "blocks": "26/21/0/1; 0/16/0/3; 230/0/83/0; OPEN 0"
+  },
+  {
+   "lang": "rust",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 15000",
+   "shared": "0/0/1",
+   "by_hand": "rule 27, hand 18 / hand 3 / rule 69, hand 45",
+   "missing": "5/1/23",
+   "contradictions": "0/0/1",
+   "open": "0",
+   "defect": "0",
+   "blocks": "26/22/0/0; 0/18/0/1; 230/0/83/0; OPEN 0"
+  },
+  {
+   "lang": "elixir",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 14803",
+   "shared": "0/0/0",
+   "by_hand": "rule 22, hand 17 / rule 3 / rule 71, hand 40",
+   "missing": "4/0/22",
+   "contradictions": "0/0/1",
+   "open": "0",
+   "defect": "0",
+   "blocks": "16/22/10/0; 0/18/0/1; 151/0/162/0; OPEN 0"
+  },
+  {
+   "lang": "rb",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 15021",
+   "shared": "17/0/43",
+   "by_hand": "hand 28 / hand 3 / hand 62",
+   "missing": "5/0/23",
+   "contradictions": "0/0/1",
+   "open": "0",
+   "defect": "0",
+   "blocks": "3/21/23/1; 0/2/15/2; 303/0/10/0; OPEN 0"
+  },
+  {
+   "lang": "perl",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 14891",
+   "shared": "21/0/48",
+   "by_hand": "hand 20 / hand 3 / hand 55",
+   "missing": "4/0/23",
+   "contradictions": "0/0/1",
+   "open": "0 (was 4/0/16)",
+   "defect": "ledger 0; blocks rootquick 13 and reference 1, on purpose",
+   "blocks": "0/6/0/42; 0/0/0/19; 227/0/0/86; OPEN 0"
+  },
+  {
+   "lang": "swift",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 13994",
+   "shared": "21/0/54",
+   "by_hand": "hand 22 / hand 3 / hand 66",
+   "missing": "5/0/32",
+   "contradictions": "0/0/1",
+   "open": "0 (was 4/0/11, STALE 4)",
+   "defect": "0",
+   "blocks": "1/1/0/46; 0/0/0/19; 207/0/0/106; OPEN 0"
+  },
+  {
+   "lang": "ocaml",
+   "section": "tutorial / rootquick / reference",
+   "same": "54 / 19 / 13979",
+   "shared": "24/0/64",
+   "by_hand": "hand 21 / hand 3 / hand 72",
+   "missing": "8/0/35",
+   "contradictions": "0/0/1",
+   "open": "0 (was 4/0/20, blocks OPEN 5, STALE 38)",
+   "defect": "0",
+   "blocks": "19/0/0/29; 0/0/0/19; 151/0/0/163; classes 17, OPEN 0"
+  },
+  {
+   "lang": "lua",
+   "section": "tutorial / rootquick / reference",
+   "same": "59 / 19 / 15053",
+   "shared": "23/0/63",
+   "by_hand": "hand 17 / hand 3 / hand 55",
+   "missing": "5/0/22",
+   "contradictions": "0/0/2",
+   "open": "0 (was 3/0/16, STALE 2, 7 absent without reason)",
+   "defect": "0",
+   "blocks": "3/15/0/30; 0/2/0/17; 151/0/0/162; OPEN 0"
+  }
+ ],
+ "openings_decided": [
+  {
+   "lang": "go",
+   "what": "T4: `named = 'call'` NOT JUDGED (25 units selected, none with an OLD counterpart)",
+   "decision": "Recorded in hand/go.json facts.named = call.",
+   "why": "go's operations are methods called with parentheses. The sentences this value selects describe a call's result (\"`Load()` returns `(value, error)`\"). Where OLD go described a result it also used the call form (tutorial comment 'Data() reads its record'; README result table '`Data()` reads its record'); it used bare names only in lists of names.",
+   "runtime_line": "EntityLoadOp.fragment.go:13 `func (e *EntyClass) Load(reqmatch map[string]any, ctrl map[string]any) (any, error) {`"
+  },
+  {
+   "lang": "go",
+   "what": "T2: 6 absent step headings with no reason: 9c0a7924b0, d02d3a4fb6, 21fc35c768, 81aabf087b, 219aa7c229, b83e95bec6",
+   "decision": "Each given its reason in hand/go.json absent.",
+   "why": "go's tutorial is one program, so shared code prints each step title as a numbered bold lead ('1. **Create a client.**'), not as a '### N.' heading. The titles are the same, in the same variations: Create a client 21 against 19 ts headings (the two go-only variations make the difference); List planet records 6/6; List console records 1/1; Create, update, patch, and remove a planet 3/3; and 1/1 for the remaining three (counted over out/new with grep).",
+   "runtime_line": "none (titles); the shared program printer"
+  },
+  {
+   "lang": "elixir",
+   "what": "T4: `named = 'bare'` NOT JUDGED",
+   "decision": "Recorded, value bare.",
+   "why": "OLD elixir's prose names operations bare: \"Entity operations return the entity, and `list` a list of entities, one per record\". The selected units are the tutorial's new step sentences ('`load` returns the entity and raises on failure').",
+   "runtime_line": "elixir functions are named with arity in Erlang terms, but prose names them bare, as OLD did"
+  },
+  {
+   "lang": "rb",
+   "what": "T4: `named = 'bare'` NOT JUDGED",
+   "decision": "Recorded, value bare.",
+   "why": "OLD rb names operations bare: \"Entity operations return the entity, and `list` an `Array` of entities\"; \"After a successful `load`, the entity\"; the tutorial comment '# load returns the ENTITY'. Ruby calls a method without parentheses.",
+   "runtime_line": "every Ruby runtime member is a method; rb forms calls.parenless"
+  },
+  {
+   "lang": "perl swift ocaml lua",
+   "what": "Classes the sentence fixes opened, including those that had matched a sentence the first review called false (perl 6 such classes, 5 in each of the others). Opened: perl 4/0/16, swift 4/0/11, ocaml 4/0/20, lua 3/0/16.",
+   "decision": "70 classes decided by the sentence round's own written rules (env, env-tok, direct, ctrl, test, action-cell, client-head, upd-id, secret, entity-word), the same rule text the nine were decided by. 19 re-paired classes keep the decision their units had at v33p (P/n-tools/tools/review as the old worklists). 4 of those matched another language's class as shared at v33p; they now carry that class's outcome by hand, said as such, rather than 'shared:<lang>:<id>'. 14 decided by hand (next entries).",
+   "why": "Brief 6: a sentence is reviewed once, and the same changed template gets the same decision in every language. The script is P/v33/mine/decide.py (= P/sfix/run/decide.py pointed at this workspace); each decided class was listed and read before writing.",
+   "runtime_line": "see the rules' reasons in mine/dec/common.py; for example the direct rule rests on perl Main.fragment.pm ('ok' => (!defined $body_err && $status >= 200 && $status < 300) ? 1 : 0, with no err for a readable non-2xx response)"
+  },
+  {
+   "lang": "perl",
+   "what": "e3b036b6bd: the missing OLD direct Returns sentence. Its v33p class 409c1fe457 was UNCLASSIFIED, a false-verdict class.",
+   "decision": "correction:sentence-review-direct",
+   "why": "OLD said `err` stands for data on failure, which is false for a readable non-2xx response. The fixed shared sentences replace it.",
+   "runtime_line": "Main.fragment.pm direct: 'ok' => 0 for a non-2xx status, 'err' only with $body_err or a fetch error"
+  },
+  {
+   "lang": "perl lua",
+   "what": "Echoes 0dd73c0fd6 (perl x94), 1f529072c4 (perl), 91647d57e6 (lua)",
+   "decision": "same-meaning",
+   "why": "The removed 'Pass `undef`/`nil` for no initial data.' is restated by the accessor sentence that replaced it ('pass `undef` for none'). The README's test call and test line use the same null value. The README direct table names the same keys.",
+   "runtime_line": "Entity constructors take entopts (Entity.fragment.pm, MainEntity_lua.ts)"
+  },
+  {
+   "lang": "lua ocaml",
+   "what": "Action Call cell tokens: lua b178332f86 `then`, 1873ad789f `end`; ocaml 247f8bf85e `let`, da55616659 `_`",
+   "decision": "correction:action-call-cell",
+   "why": "The sentence round made the cell the call's whole statements on one line.",
+   "runtime_line": "lua `local _, err = client:Planet():create({...}); if err then error(err) end`; ocaml `let _ = (Sdk_client.planet client Noval).e_create (...) Noval`"
+  },
+  {
+   "lang": "ocaml",
+   "what": "b1b776b276: missing heading 'Instance functions'",
+   "decision": "unification:client-heading",
+   "why": "'Client <noun>' was decided once for all twenty. ocaml's noun is functions.",
+   "runtime_line": "Main_ocaml.ts: client members are let-bound functions taking `client : sdk_client`"
+  },
+  {
+   "lang": "ocaml",
+   "what": "T5: 5 block classes paired by heading for the first time: 82a4a3fdfe x79, e41de61ee0 x82, 9fd66fe014 x18, 1779acc003 x1, f958f95add x1",
+   "decision": "82a4a3fdfe: unification:ref-op-block. e41de61ee0 and 1779acc003: unification:ref-op-block. 9fd66fe014: restored:shared. f958f95add: correction:S25.",
+   "why": "82a4a3fdfe: the NEW load, create, update and remove blocks lack OLD's `let result_data = result.e_data_get ()`. The shared raise-style example prints the call alone, as py, rb, elixir and clojure do (py's OLD page did too), and the sentence above each block still states '`result.e_data_get ()` reads its record'; only OLD ocaml's demonstration is lost. e41de61ee0 and 1779acc003: list blocks reshaped as every raise-style list (`(Noval)` for `(empty_map ())`, which the operation itself does: EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`; `item`; a top-level `let () =`). 9fd66fe014: the test_with block under its own heading, which OLD named only in prose. f958f95add: ref-issues' remove for an inactive operation, dropped, paired with that variation's test_with block.",
+   "runtime_line": "EntityOperation_ocaml.ts:63; NEW B/ocaml/REFERENCE.md e_load and e_list blocks"
+  },
+  {
+   "lang": "ocaml",
+   "what": "T1: absent 663f4dd150 'Create \u2014 returns the created entity; `\u2026` reads its record' in 5 variations",
+   "decision": "Reason recorded.",
+   "why": "It is printed, in the same 5 variations, as '(* Create \u2014 returns the created entity; created.e_data_get () reads its record *)'. It is another unit only because ocaml's record read applies e_data_get to unit with a space, and a comment's raw fact token is cut at the space. Its class 53ecb3c159 is decided.",
+   "runtime_line": "facts.record `{var}.e_data_get ()`; sdk_types.ml `mutable e_data_get : unit -> value;`"
+  },
+  {
+   "lang": "ocaml",
+   "what": "T4: `ref.keys = 'bare'` UNATTESTED (OLD reads member 19:0)",
+   "decision": "Recorded, value bare.",
+   "why": "The constructor takes ONE `value` map, and apikey, base and headers are keys of it. The bare form heads them as 'Parameters (`options` map keys)', Key / Value type.",
+   "runtime_line": "Main_ocaml.ts:168 `let make (options : value) : sdk_client =`"
+  },
+  {
+   "lang": "perl swift lua ocaml",
+   "what": "ref.noun UNATTESTED (a new context under 'Client <noun>')",
+   "decision": "Recorded: perl, swift and lua Methods (OLD '### Instance Methods' at REFERENCE.md:44, :41, :42); ocaml functions (OLD :48 '### Instance functions').",
+   "why": "Held on OLD; the new heading was decided once by the sentence round.",
+   "runtime_line": "perl `$client->direct`, swift instance methods, lua `client:direct`, ocaml module functions"
+  },
+  {
+   "lang": "perl",
+   "what": "T4: `prints = 'fields'` NOT JUDGED (OLD printed `->{id}`, which neither value prints)",
+   "decision": "Recorded, value fields.",
+   "why": "perl's record is a hashref and `print` of a hashref gives HASH(0x...), so 'record' and 'listFields' would print an address. 'fields' prints the id and a display field. That the display field must be a scalar is decision 3 (defect class 24d40b660d waits for it).",
+   "runtime_line": "Entity.fragment.pm:103 `return Voxgig::Struct::clone($self->{_data});`"
+  },
+  {
+   "lang": "lua",
+   "what": "T4: `prints = 'fields'` UNATTESTED (mixed: OLD fields 12, another value 20)",
+   "decision": "Recorded, value fields.",
+   "why": "lua's record is a table and `print` of a table gives table: 0x.... OLD iterated the record in the tutorial (`for k, val in pairs(ambient:data_get()) do print(k, val) end`) and printed fields elsewhere. Record's display field `rec[\"fields\"]` is itself a table, which decision 3 fixes in shared code.",
+   "runtime_line": "NEW B/lua/REFERENCE.md `print(rec[\"id\"], rec[\"fields\"])`"
+  },
+  {
+   "lang": "lua",
+   "what": "T1/T2: 8 absent sentences with no reason: b4e03207de, 4e460e7bba (go's 'The program below runs ...'), a8c3a1d8ce, ea12b61c7f, a2c72437b6 (go's bold leads), 1f08cc692d ('It takes no arguments.', go's Test()), a678b32375 (the pair-style list sentence)",
+   "decision": "Each given the reason the porter gave the old wording (d06586fd5a, 095528ea62, 91f89cb62e, 3f27586bc2), re-read and marked as such.",
+   "why": "lua's tutorial is a block per step, not one program. lua's sdk.test takes testopts and sdkopts. lua prints the list sentence with its own collection word: crud-bare/lua/README.md '`list` returns `value, err`: the value is an array of entities, one per record'.",
+   "runtime_line": "Main.fragment.lua:432 `function ProjectNameSDK.test(`"
+  },
+  {
+   "lang": "swift",
+   "what": "STALE 4: f20168b066, 9946af9a45, 0b29ec4944, da55616659",
+   "decision": "Quotations reworded to the sentences now printed: 'A failure is reported in the result, not as an error, so branch on' `result.entries[\"ok\"] == .bool(true)`; \"The match is optional.\"; \"... unless the entity already holds it.\"; `_ testopts: VMap?`. Each decision re-read: unchanged.",
+   "why": "Stale quotations, reworded.",
+   "runtime_line": "NEW B/swift/REFERENCE.md:113-114, :425-426, :35"
+  },
+  {
+   "lang": "ocaml",
+   "what": "STALE 38",
+   "decision": "15 records reworded: `e_load (value) (value) : entity_obj` for the schematic `e_x (value) (value) : t`; the real EntityOperation_ocaml.ts line for `if is_nullish reqmatch then empty_map ()`; `keys: 'bare'`. 21 records removed because their classes no longer exist (19 document-order mispairs retired by heading pairing; 2 accessor-sentence records whose units are now class ddf9bcc627). 2 live ref-op-block records rewritten above.",
+   "why": "A record of a class that is gone decides nothing. Listed in mine/dec/stale_ocaml.py output.",
+   "runtime_line": "EntityOperation_ocaml.ts:63; Syntax_ocaml.ts:25"
+  },
+  {
+   "lang": "lua",
+   "what": "STALE 2: 243f8c95d4, d5841a7441 quote `{ok, data}`",
+   "decision": "243f8c95d4 reworded (same-meaning stands: OLD's 'there is no wrapper' is the clause the sentence round dropped from the pair style once, for go and lua). d5841a7441 removed: its token class is gone with the clause.",
+   "why": "The sentence round's go-wrapper rule.",
+   "runtime_line": "NEW crud-bare/lua/README.md '`list` returns `value, err`: the value is an array of entities'"
+  },
+  {
+   "lang": "ts",
+   "what": "decision 9 asked: is ts's name member a field?",
+   "decision": "Yes, a field. Left open (see openings_left).",
+   "why": "ts declares `name = ''` as a class property and the generated entity assigns it; there is no method to call.",
+   "runtime_line": "EntityBase.fragment.ts:18 `name = ''`; Entity.fragment.ts:24 `this.name = 'entityname'`"
+  }
+ ],
+ "openings_left": [
+  {
+   "lang": "ts",
+   "what": "ABSENT, NO REASON reference 57d77b63f4 'Return the entity name.' in 18 variations. ts prints nothing for its entity name. The sentence would be false for it, because ts's `name` is a field (EntityBase.fragment.ts:18). The shared engineer's 862f0e42 prints 'The entity name.' for a member declared `field: true`, but their 4fde2041 declares that only for ocaml.",
+   "waits_for": "Decision 9 (Member.field). After cherry-picking it, ts declares `{ kind: 'name', sig: <its property>, field: true }`; the guard derives the field flag, and the absent entry goes."
+  },
+  {
+   "lang": "perl",
+   "what": "14 defect classes: 13 rootquick (the root quick start loses `use lib 'perl/lib'`) and 1 reference (24d40b660d, `$item->data_get->{fields}` prints HASH(0x...)).",
+   "waits_for": "Decision 1 (imports know their place, plus the perl lane run from the repository root) and decision 3 (a scalar display field). Each reason keeps its earlier outcome in brackets."
+  },
+  {
+   "lang": "lua",
+   "what": "Not an open class: Record's list example prints `rec[\"fields\"]`, a table (table: 0x...). It is recorded inside the prints fact's reason and is not a defect class, because OLD's classes absorbed it.",
+   "waits_for": "Decision 3 (scalar display field). The next engineer re-reads lua's Record print blocks after it."
+  }
+ ],
+ "old_page_wrong": [
+  {
+   "lang": "ocaml",
+   "fact": "ref.keys (option table form)",
+   "old_page_says": "member (152:0 by the minimal pair). OLD's constructor table 'Name | Type | Description' lists `options` (`value`) and then `apikey`, `base`, ... as rows of the same table, as if they were further parameters of make (OLD B/ocaml/REFERENCE.md:23-26).",
+   "runtime_shows": "make takes one argument, a `value` map (Main_ocaml.ts:168 `let make (options : value) : sdk_client =`). apikey and the rest are keys of that map, which is what 'bare' prints: 'Parameters (`options` map keys)', Key / Value type."
+  },
+  {
+   "lang": "swift",
+   "fact": "ref.entityBy",
+   "old_page_says": "Entity sections headed by the entity Name ('## Ambient', OLD B/swift/REFERENCE.md:112).",
+   "runtime_shows": "`Ambient` is the typed data struct (EntityTypes_swift.ts `public struct ${typeName} {`). The object the accessor returns is the class `AmbientEntity` (Entity_swift.ts:26 `const cls = entityClassName(entity, entityColl)`, the file named after it), so the class is what the reader holds. At v33a the minimal pair calls 'class' ATTESTED (94 OLD units read as class, 188 nothing to compare), and swift's hand record decides it."
+  },
+  {
+   "lang": "perl",
+   "fact": "ref.entityBy",
+   "old_page_says": "'## Ambient entity' (OLD B/perl/REFERENCE.md:106): the Name with a word after it, naming no package.",
+   "runtime_shows": "The entity's package is `AmbientEntity` (Entity_perl.ts:26 `const cls = entityClassName(entity, entityColl)`, replacing EntyClass in `package EntyClass;`, Entity.fragment.pm:15). NEW heads by class (## AmbientEntity), now ATTESTED by the sheet."
+  },
+  {
+   "lang": "lua",
+   "fact": "prints",
+   "old_page_says": "The tutorial printed the record by iterating it (`for k, val in pairs(ambient:data_get()) do print(k, val) end`), and printed fields elsewhere.",
+   "runtime_shows": "Nothing wrong in OLD's iteration. It is a third form neither enumerated value prints, so 'mixed' is a fact about the tools, not the page. Recorded as fields."
+  },
+  {
+   "lang": "ts",
+   "fact": "the entity name member",
+   "old_page_says": "OLD ts never documented it.",
+   "runtime_shows": "A field, `name = ''` (EntityBase.fragment.ts:18). The shared 'Return the entity name.' would be false for ts; decision 9 is needed."
+  }
+ ],
+ "sverify": "P/results/s3c-sfix-verify.txt did not exist at launch. It appeared at 08:37, during this job; I read it (ok: false, 'Not ready').\n\n**Its required fixes that concern the tools, and what I did** (tools 6e224b8):\n- Fix 4 (buildfresh). DONE: ts/project/.sdk/model/** and src/** are compared by content with the staged copies under dist-test-scaffold/.sdk/. Control `identity stale-staged-model`. log.aontu edited without re-staging now gives 'STALE BUILD ... differs from its staged copy'; checked on a copy of the clone too. The one command now checks 1814 sources, all current.\n- Fix 5 (handstale). DONE: a quotation found only on an OLD page stands only for an outcome correction/dropped/contradiction/defect, or with a marker in the 60 characters before it (OLD, old page, was, were, said, wrote, printed, had, restored from). Control `identity old-only-quotation`. On the thirteen it flagged 5 records (swift 3, ocaml 1, lua 1); widening the markers to 'restored from' and 'OLD ...' paths, and one reword in swift's `named` record, brought every language back to STALE 0.\n- Fix 3 (the go branch sentence). PARTLY DONE: control `sentence-removed-go-branch` restores v3.2's intent beside the retargeted copy. It is flagged in the reviewed mode; its from-scratch run is recorded in controls/moved.json with the reason. NOT done: an absent list compared across all references with code spans erased. Dropped from every variation, go's or c's branch sentence still leaves no trace in either mode.\n- Fix 6 (the port procedure). DONE in tools/README.md: a v3.2 port must be moved onto the current clone (testMock, truth read, rebuild, regenerate) before re-key and the one command. It is also what this job did for the four ports (the shared engineer's 904fd0d2 plus my decisions).\n- Fixes 1 and 2. NOT done:\n  - masking a position only for the SAME fact path the reference holds there. These are still accepted as shared: zig `.ok`/`.err` swapped, py `list()` as the record read, rb `Hash` as the collection, rb's 'a list';\n  - numbers and the a/an article kept literal in the match form.\n\n  Both change the sentence identity, so every language's records must be re-keyed and re-decided. Named for the engineer after me.\n\n**Its failed attacks.** All seven unsound ones are the matching holes of fixes 1 to 3 above (wrong article, wrong number, comment fact from another path, go bold lead from scratch, zig swap, py list(), rb Hash, go/c branch drop). The ones in fix 3's reviewed mode now fail; the rest are not closed.\n\n**For the engineer after me** (shared code, providers, history):\n- ReadmeRef.ts:214-219: 'For a response whose body is read, 2xx or not, ...', and 'A key is read as X' reworded, because ts/js drop `data` on an unreadable body.\n- The unported README test-mode sections promise a mock without the test feature; they should follow ref.facts.testMock.\n- Model-naming trailers on sdkgen b09502f1..e84d3525 (9 commits, all in v33a's history) and tools a006f3e, 499e4df. I removed the trailer only on the commit I brought over (740dc90 to de866c5); rewriting inherited history would move v33m.\n- The carried awkward verdicts 0071df96c2, f6b8425ed5 and e9015df1ee need re-reading.",
+ "for_next": "Do these in order:\n1. Read P/v33/PROGRESS.md and check it against git:\n   - `git -C P/v33/sdkgen log --oneline v33m..v33a`: 11 guard commits, tag v33a = 21397ef9;\n   - `git -C P/v33/tools log --oneline 499e4df..HEAD`: 5 commits, HEAD 6e224b8;\n   - both trees are clean.\n2. Fetch P/n-shared/ws/sdkgen and cherry-pick v33m..HEAD onto v33a, leaving out the Build and Golden commits. Seen so far: adbb0944 (perl example test), 862f0e42 (shared decisions), 4fde2041 (providers), ed05cf2a (match sentences wrapped); the shared engineer may add more.\n   - Expect forms conflicts where 4fde2041 declares what the guard cites ahead: copy on match and utility getters, streamSignal, accessor.cached, memberNamed, ocaml name `field: true`, deleted. The guard's NEW_FACTS names may differ from the shared engineer's: rename them once in account.ts NEW_FACTS and in AHEAD.\n   - Run the guard. Each ahead citation becomes an ordinary one, and G1 compares its pin with the declaration: every difference is a disagreement between two readers of the runtime. Settle it from the runtime line and list it.\n3. Rebuild (exit 0). Regenerate out/new with REGEN=1 on the first language. Run the thirteen: `NOREGEN=1 P/v33/mine/run13.sh <tag> <languages>`.\n   - Decide what opens. For classes a changed shared sentence opens, use written rules as mine/decide.py does: add a rule per changed template to mine/dec/common.py, and keep OLDREV pointing at the previous worklists.\n   - ts: declare the name member as a field (decision 9); absent 57d77b63f4 then goes.\n   - perl: re-decide the 14 defect classes after decisions 1 and 3. Check that the root quick start runs from the repository root and that no example prints HASH(0x...). lua's Record print `rec[\"fields\"]` changes with decision 3 too.\n   - Re-run handstale (it now refuses OLD-only quotations without an OLD marker).\n4. Read and give a verdict to each sentence the shared engineer added or changed (tools/reviewed/sentences.json).\n5. Regenerate controls/factmut from the new clone with `node P/v33/mine/factmut.js`, then run the full self-test (about 24 minutes).\n6. Decide what remains of the sentence round's check (sverify): the identity fixes (same-fact-path masking, literal numbers and articles), the absent list across all references, the shared wording in ReadmeRef.ts:214-219, the README test-mode sections, the trailers, and the three awkward verdicts.\n7. Freeze (part 4 of k-freeze33.md).",
+ "not_done": [
+  "The identity changes the sentence round's check requires (fixes 1 and 2: mask a position only for the same fact path; numbers and the a/an article literal). They re-key every language, and the attacks they answer (zig .ok/.err swapped, py list(), rb Hash, rb 'a list', a wrong step number, 'a ambient') are still accepted.",
+  "The absent list compared across all references with code spans erased (fix 3's second half). go's or c's branch sentence dropped from every variation still leaves no trace in either mode.",
+  "Shared wording (ReadmeRef.ts:214-219) and the unported README test-mode sections: not mine (shared code), listed for the next engineer.",
+  "Model-naming trailers inherited in v33a's history (sdkgen b09502f1..e84d3525) and in tools a006f3e, 499e4df: not rewritten, because that would move v33m-derived history.",
+  "The runtime table's wording: 'cited ahead of a provider' for any AHEAD-path citation, including ones the provider declares, and cpp's streamSignal absence printed as '(undefined: `undefined`)'. Not changed.",
+  "No toolchain lane was run: not asked in this half, and the clone changed only test files.",
+  "No compiler was used for lua, swift or ocaml (none on PATH). The ocaml block decisions rest on reading the pages and EntityOperation_ocaml.ts.",
+  "The 70 rule-decided classes were read as a list (class text plus rule); I did not re-argue each one against its runtime beyond the rules' own evidence, which the sentence round ran or read.",
+  "Timings are single runs on a shared machine: the suite took 5m12s, the self-test 1429 s, and each one command 1 to 4 minutes, longer when its fact-pair pages were being regenerated."
+ ],
+ "ran": "All with the brief's PATH (node 24 first).\n\n**Setup:**\n- `git clone` of n-shared/ws/sdkgen (checkout v33m) and of n-shared/ws/tools (checkout 499e4df); `cp -a` of base32 node_modules;\n- `git diff v32-frozen v33m -- ts/package-lock.json` (empty);\n- `git cherry-pick d6eabfc` and `-n 740dc90`;\n- per-file `git diff --quiet` against d6eabfc and 740dc90 for hand, classes, counts, purity-allow, normalizers, reviewed, pinned and the tool code.\n\n**Clone:**\n- the guard's 11 cherry-picks, with a union script (mine/union.py) and two hand edits of account.ts;\n- `npm run build` at v33m, after the picks and at the end (exit 0 each time);\n- guard and reader (77/77);\n- `SDKGEN_RUNTIME_TABLE=... runtimereader`;\n- the suite (2622/2617/0/5);\n- characterize (2/2);\n- `git tag v33a`.\n\n**Mutations:** on P/v33/mut with mine/mutate.js: att-all (37), freeze-muts-v33 (108), php-adapt (2). mine/dry.js checked every `from` first.\n\n**One commands:** mine/run13.sh g1 (all 13, REGEN), g2 (8 languages after the decisions), g3 and g4 (all 13; g4 with the final tools).\n\n**Decisions:** mine/decide.py (dry, then real) on perl, swift, ocaml and lua; then mine/dec/ports_hand.py, named.py, facts_ports.py, stale_swift.py, stale_ocaml.py and ocaml_absent.py.\n\n**Tools runs:**\n- handstale on all 13, three times as the rule changed;\n- mine/factmut.js;\n- buildfresh on the clone and on a copy with log.aontu edited;\n- the full self-test twice (231/7 failed; then 235/0 failed/2 moved);\n- self-test parts regen+missing+identity, identity alone (twice), and ledger.",
+ "read": "Read in full:\n- prompts/k-freeze33a.md;\n- brief.md and brief3.md to brief7.md;\n- prompts/k-nguard.md, k-ntools.md and k-freeze33.md;\n- results/s3c-n-guard.txt and s3c-n-tools.txt;\n- results/s3c-sfix-verify.json (summary, required_fixes, attacks, could_not_check);\n- n-shared/PROGRESS.md and sfix/SHARED-PROGRESS.md.\n\nRead in part:\n- results/s3b-wave1-consolidated.md: perl, ocaml and lua in full; the swift head;\n- results/s3c-sfix-tools.txt: the section list and for_ports;\n- results/s3c-sfix-shared.json: summary, commits, no_verdict, for_the_ports, tools_changes, not_done, runtime_defects;\n- base32/PORTING.md section 5.\n\nCode and pages read:\n- the tools' portcheck.sh head, rekey.js head, handstale.js, buildfresh.js, enumgen.js head, the selftest.js facts/regen/identity parts, controls/missing.json, injections.json, moved.json, factmut/index.json, README sections;\n- sfix/run/decide.py and dec/common.py;\n- n-tools/mine/factattack.sh;\n- the guard's mutate.js and sync-mut.sh;\n- providers: Syntax_ts.ts (entity members), named/keys/entityBy/noun lines of the 13, Syntax_ocaml keys;\n- runtimes: ts EntityBase.fragment.ts and Entity.fragment.ts, go EntityLoadOp.fragment.go, perl Main.fragment.pm direct and Entity.fragment.pm clones, Entity_perl.ts, Entity_swift.ts and EntityTypes_swift.ts, MainEntity_ocaml.ts, EntityOperation_ocaml.ts:63, Main_ocaml.ts make;\n- OLD and NEW pages of go, elixir, rb, perl, swift, ocaml and lua at the lines quoted in the decisions.",
+ "surprises": [
+  "The guard's commits merged onto v33m with conflicts in only 3 of 11 commits. The four ports' forms auto-merged everywhere except ocaml's cite block in fd3203e6.",
+  "The thirteen one commands on v33m with the guard merged are identical, line for line, to the shared engineer's v33m logs. The guard's new checks (calls, arity, whole-runtime absences, type columns, record whole) find nothing wrong in any provider at v33m.",
+  "Of the 6 enumerated-fact attacks in the guard set, the guard catches none, as the guard engineer said. With the minimal pair against ocaml's 'Name' provider, perl's and swift's entityBy 'class' is now ATTESTED (OLD reads as class 94:0), where the tools engineer saw UNATTESTED at v33p.",
+  "One mutation of the last freeze (a new php provider) no longer builds, because the sentence round made ref.facts.testMock required: a breaking interface change shows up as a mutation-harness error rather than a forms failure.",
+  "The tools engineer's three port drop controls named v33p's sentence text. After the sentence fixes they dropped nothing, so the self-test reported 'NOT FLAGGED' in both modes: a control whose `from` text vanishes is reported as a failed control, not as a broken control.",
+  "regeneration-short passed for the tools engineer only because their clone sat outside a workspace. In a workspace, the alias variation is staged and nothing is short.",
+  "ocaml's create comment counts as absent only because its record read has a space (`e_data_get ()`), and a comment's raw fact token is cut there.",
+  "21 of ocaml's 38 stale records belonged to classes that no longer exist since the heading pairing (the document-order mispairs). Handstale flags a record of a vanished class the same way as a live one."
+ ]
+}

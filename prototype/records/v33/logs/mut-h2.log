@@ -1,0 +1,197 @@
+== k-new start 11:51:14
+[1/14 7% 11s] K-go-arity-0: CAUGHT arity,account
+[2/14 14% 21s] K-swift-arity-0: CAUGHT arity,account
+[3/14 21% 31s] K-ts-arity-2: CAUGHT arity,account
+[4/14 29% 42s] K-ts-utility-copy-true: CAUGHT account
+[5/14 36% 52s] K-py-utility-copy-false: CAUGHT account
+[6/14 43% 61s] K-c-match-copy-dropped: CAUGHT account
+[7/14 50% 72s] K-go-deleted-wrong-member: CAUGHT deleted,account
+[8/14 57% 82s] K-swift-record-unwrap-dropped: CAUGHT record,account
+[9/14 64% 93s] K-ts-name-not-field: CAUGHT field,account
+[10/14 71% 103s] K-ocaml-name-not-field: CAUGHT field
+[11/14 79% 113s] K-perl-streamSignal-false: CAUGHT account
+[12/14 86% 124s] K-rust-streamSignal-true: CAUGHT account
+[13/14 93% 134s] K-lua-cached-false: CAUGHT account,controls
+[14/14 100% 145s] K-ocaml-named-call: CAUGHT named,account
+== k-new done 11:53:42
+== att-all start 11:53:42
+[1/37 3% 10s] G1-lua-okfalse-nil: CAUGHT account
+[2/37 5% 21s] G1-ocaml-okfalse-false: CAUGHT account
+[3/37 8% 30s] G6-lua-A1-run-op-cancel: CAUGHT account
+[4/37 11% 40s] G6-ocaml-run-op-cancel: CAUGHT account
+[5/37 14% 50s] G6-go-new-file: CAUGHT account
+[6/37 16% 60s] G6-swift-op-cancel: CAUGHT account
+[7/37 19% 71s] G6-lua-reason-empty: CAUGHT account
+[8/37 22% 82s] G7-perl-V1-integer-int: CAUGHT types
+[9/37 24% 92s] G7-ocaml-a2-int-float: CAUGHT types
+[10/37 27% 102s] zig-type-integer: CAUGHT types
+[11/37 30% 112s] clj-type-integer: CAUGHT types
+[12/37 32% 122s] c-type-string: CAUGHT types
+[13/37 35% 133s] G7-elixir-column-claimed: CAUGHT types,reader
+[14/37 38% 133s] G8-swift-cast-dropped: ERROR project/.sdk/src/cmp/swift/Syntax_swift.ts: 'from' occurs 0 times
+[15/37 41% 133s] G8-swift-asEntity: ERROR project/.sdk/src/cmp/swift/Syntax_swift.ts: 'from' occurs 0 times
+[16/37 43% 145s] G8-zig-member-typo: CAUGHT record,members,account
+[17/37 46% 155s] G8-c-member-typo: CAUGHT record,account
+[18/37 49% 165s] G2-lua-ctor-create: CAUGHT ctor,account
+[19/37 51% 175s] G2-lua-ctor-unbound: CAUGHT ctor
+[20/37 54% 185s] G2-lua-receiver-dot: CAUGHT on
+[21/37 57% 194s] G2-lua-test-on-instance: CAUGHT on,account
+[22/37 59% 204s] G3-ocaml-a1-test-with-one-arg: CAUGHT arity,account
+[23/37 62% 214s] G3-swift-load-nil: CAUGHT arity
+[24/37 65% 225s] G3-go-ctor-two-args: CAUGHT arity
+[25/37 68% 234s] G4-perl-a10-test-sig-instance: CAUGHT on,account
+[26/37 70% 235s] G5-ocaml-arrow-signatures: ERROR project/.sdk/src/cmp/ocaml/Syntax_ocaml.ts: 'from' occurs 0 times
+[27/37 73% 245s] G5-ocaml-E1-arrow-callable-as-field: CAUGHT field,account
+[28/37 76% 256s] swift-unwrap-and-pin-changed: CAUGHT account
+[29/37 78% 266s] swift-print-as-EntityBase: CAUGHT record,account
+[30/37 81% 275s] perl-V2-flat-map: CAUGHT arity
+[31/37 84% 286s] my-types-reason-blanked-zig-adapted2: CAUGHT types
+[32/37 86% 297s] ocaml-m07-data-copy-removed: CAUGHT account
+[33/37 89% 307s] ocaml-m11-keys-member: NOT CAUGHT
+[34/37 92% 316s] ocaml-m21-ctrl-match-swapped: NOT CAUGHT
+[35/37 95% 326s] swift-entityBy-Name: NOT CAUGHT
+[36/37 97% 336s] perl-a07-prints-record: NOT CAUGHT
+[37/37 100% 347s] perl-none-cites-a-comment: NOT CAUGHT
+== att-all done 11:59:33
+== freeze-muts-v33 start 11:59:33
+[1/108 1% 10s] ts-method-typo: CAUGHT method,signature,account
+[2/108 2% 20s] ts-method-swap: CAUGHT method,signature,account,controls
+[3/108 3% 29s] c-method-swap: CAUGHT method,signature,account
+[4/108 4% 38s] clj-method-typo: CAUGHT method,signature,account
+[5/108 5% 48s] ts-param-required: CAUGHT optional,account
+[6/108 6% 58s] ts-param-type: CAUGHT paramTypes,account
+[7/108 6% 68s] ts-param-renamed: CAUGHT paramNames,account
+[8/108 7% 77s] c-param-type: CAUGHT paramTypes,account
+[9/108 8% 86s] c-param-dropped: CAUGHT parameters,account
+[10/108 9% 95s] clj-param-added: CAUGHT parameters,account
+[11/108 10% 105s] clj-return-changed: NOT CAUGHT
+[12/108 11% 115s] py-return-changed: CAUGHT returns,account
+[13/108 12% 125s] ts-style-raise: CAUGHT style,account
+[14/108 13% 135s] c-style-pair: CAUGHT style,account
+[15/108 14% 144s] clj-style-throw: CAUGHT style,account
+[16/108 15% 154s] ts-collection: CAUGHT account
+[17/108 16% 164s] c-collection: CAUGHT account
+[18/108 17% 174s] clj-collection: CAUGHT account
+[19/108 18% 183s] ts-noun: NOT CAUGHT
+[20/108 19% 193s] ts-type-integer: CAUGHT types
+[21/108 19% 203s] zig-type-integer: CAUGHT types
+[22/108 20% 213s] clj-type-integer: CAUGHT types
+[23/108 21% 223s] c-type-string: CAUGHT types
+[24/108 22% 234s] ts-type-comment: NOT CAUGHT
+[25/108 23% 244s] ts-lit-none: CAUGHT account
+[26/108 24% 255s] ts-lit-int: NOT CAUGHT
+[27/108 25% 265s] c-nullvalue: CAUGHT account
+[28/108 26% 275s] ts-member-removed: CAUGHT members
+[29/108 27% 286s] c-member-removed: CAUGHT members
+[30/108 28% 286s] clj-member-removed: ERROR project/.sdk/src/cmp/clojure/Syntax_clojure.ts: 'from' occurs 0 times
+[31/108 29% 296s] py-member-removed-pair: CAUGHT kind,account
+[32/108 30% 306s] c-member-invented: CAUGHT signature,kind,account
+[33/108 31% 316s] clj-member-invented: CAUGHT account
+[34/108 31% 316s] ts-utility-kind: ERROR project/.sdk/src/cmp/ts/Syntax_ts.ts: 'from' occurs 0 times
+[35/108 32% 326s] ts-cancel: CAUGHT account
+[36/108 33% 336s] ts-async-false: CAUGHT async,account,controls
+[37/108 34% 346s] py-record: CAUGHT record,account
+[38/108 35% 356s] ts-record-expr: CAUGHT record,account
+[39/108 36% 365s] ts-ctor-sig: CAUGHT ctor,account
+[40/108 37% 374s] py-test-sig: CAUGHT parameters,account,controls
+[41/108 38% 384s] rt-ts-load-renamed: CAUGHT method,signature,account,controls
+[42/108 39% 395s] rt-ts-load-param-required: CAUGHT optional,arity,account
+[43/108 40% 405s] rt-ts-load-sync: CAUGHT async,account,controls
+[44/108 41% 414s] rt-clj-load-param: CAUGHT parameters,arity,account,controls
+[45/108 42% 424s] rt-clj-getname-renamed: CAUGHT signature,members,account,reader
+[46/108 43% 433s] rt-c-fnptr-renamed: CAUGHT signature,members,account,reader
+[47/108 44% 443s] no-forms-zig: CAUGHT stale-forms,forms-missing,account,controls
+[48/108 44% 443s] forms-vacuous-ts: ERROR test/runtimeforms/ts.ts: 'from' occurs 0 times
+[49/108 45% 453s] my-cite-quote-gone-ts: CAUGHT account
+[50/108 46% 463s] my-cite-quote-gone-go: CAUGHT account,reader
+[51/108 47% 472s] my-cite-token-ts: CAUGHT account
+[52/108 48% 483s] my-cite-token-rust: CAUGHT account
+[53/108 49% 493s] my-method-swap-go: CAUGHT method,signature,account,controls
+[54/108 50% 503s] my-method-swap-elixir: CAUGHT method,signature,account
+[55/108 51% 513s] my-method-swap-clojure: CAUGHT method,signature,account,controls
+[56/108 52% 523s] my-rt-op-file-swap-ts: CAUGHT method,signature,account
+[57/108 53% 533s] my-param-renamed-rust: CAUGHT paramNames,account
+[58/108 54% 543s] my-param-renamed-rb: CAUGHT paramNames,account
+[59/108 55% 552s] my-param-type-go: CAUGHT paramTypes,account
+[60/108 56% 561s] my-member-client-to-entity-go: CAUGHT signature,account
+[61/108 56% 571s] my-member-entity-to-client-rust: CAUGHT signature,account
+[62/108 57% 581s] my-reader-ocaml-op-renamed: CAUGHT method,signature,members,account,controls,reader
+[63/108 58% 592s] my-reader-perl-style: CAUGHT style,account,reader
+[64/108 59% 602s] my-undocumented-member-ts: CAUGHT members
+[65/108 60% 613s] v31-copy-cite-gone-rb: CAUGHT account
+[66/108 61% 624s] v31-py-dataset-keyword: CAUGHT paramNames,account
+[67/108 62% 634s] new-swift-throws-runtime: CAUGHT style,account,controls,reader
+[68/108 63% 646s] new-swift-throws-view: CAUGHT controls,reader
+[69/108 64% 656s] new-ts-static-test-instance: CAUGHT on,account
+[70/108 65% 665s] new-py-classmethod-test-instance: CAUGHT on,account
+[71/108 66% 677s] new-swift-static-testsdk-instance: CAUGHT on,account,reader
+[72/108 67% 687s] new-ocaml-field-to-function: CAUGHT field,account,reader
+[73/108 68% 697s] new-rb-none-null: CAUGHT account,controls
+[74/108 69% 698s] new-rb-lits-false-False: ERROR build failed:  run prune-dist-test && npm run check-scaffold && npm run check-fixture && npm run stage-scaffold
+
+
+> @voxgig/sdkgen@4.44.0 prune-dist-test
+> node
+[75/108 69% 698s] new-py-lits-removed: ERROR project/.sdk/src/cmp/py/Syntax_py.ts: 'from' occurs 0 times
+[76/108 70% 708s] new-go-absence-matches: CAUGHT account
+[77/108 71% 718s] new-ts-unquoted-occurs: CAUGHT account
+[78/108 72% 730s] new-swift-stream-incremental: CAUGHT reader
+[79/108 73% 740s] new-clojure-stream-incremental: CAUGHT reader
+[80/108 74% 751s] new-ocaml-stream-incremental-code: CAUGHT streamItems,account,controls,reader
+[81/108 75% 762s] new-swift-try-dropped-provider-na: CAUGHT reader
+[82/108 76% 773s] new-ts-unquoted-near: NOT CAUGHT
+[83/108 77% 784s] new-swift-try-dropped-provider-na: CAUGHT reader
+[84/108 78% 794s] new-rb-unquoted-near: CAUGHT account
+[85/108 79% 804s] v32-ts-okfalse-False: CAUGHT account
+[86/108 80% 814s] v32-ts-abortcode-wrong: CAUGHT account,controls
+[87/108 81% 824s] v32-c-runs-iterate: CAUGHT runs,account,controls
+[88/108 81% 833s] v32-go-accessor-param-entopts: CAUGHT accessor,account
+[89/108 82% 843s] v32-go-noerror-null: CAUGHT account
+[90/108 83% 852s] v32-rb-options-copy-false: CAUGHT account
+[91/108 84% 862s] v32-c-options-member-removed: CAUGHT members,account
+[92/108 85% 872s] v32-perl-okfalse-ahead-false: CAUGHT account,reader
+[93/108 86% 882s] v32-rb-okfalse-False: CAUGHT account
+[94/108 87% 892s] v32-rb-none-null: CAUGHT account,controls
+[95/108 88% 893s] v32-py-okfalse-removed: ERROR build failed: -scaffold
+
+
+> @voxgig/sdkgen@4.44.0 prune-dist-test
+> node build/prune-dist-test.js
+
+
+> @voxgig/sdkgen@4.44.0 check-scaffold
+> tsc -p tsconfig.sca
+[96/108 89% 903s] v32-ts-stream-runs-call: CAUGHT runs,account,controls
+[97/108 90% 912s] py-direct-return-adapted: CAUGHT account
+[98/108 91% 922s] py-lit-false-adapted: CAUGHT account
+[99/108 92% 933s] ts-member-invented-adapted: CAUGHT parameters,kind,account
+[100/108 93% 944s] ts-member-misplaced-adapted: CAUGHT signature,account
+[101/108 94% 955s] v31-accessor-arg-data-ts-adapted: CAUGHT paramNames,accessor,account,controls
+[102/108 94% 966s] v31-copy-false-go-adapted: CAUGHT account
+[103/108 95% 976s] v31-rust-direct-note-wrong-adapted3: CAUGHT account
+[104/108 96% 987s] new-go-note-token-missing-adapted: CAUGHT account
+[105/108 97% 987s] my-types-reason-blanked-zig: ERROR build failed:  error TS1005: ',' expected.
+test/runtimeforms/zig.ts(50,43): error TS1005: ',' expected.
+test/runtimeforms/zig.ts(50,49): error TS1005: ',' expec
+[106/108 98% 989s] my-new-provider-php-adapted: ERROR build failed: gig/sdkgen@4.44.0 prune-dist-test
+> node build/prune-dist-test.js
+
+
+> @voxgig/sdkgen@4.44.0 check-scaffold
+> tsc -p tsconfig.scaffold.json
+
+projec
+[107/108 99% 989s] my-types-reason-blanked-zig: ERROR test/runtimeforms/zig.ts: 'from' occurs 0 times
+[108/108 100% 991s] my-new-provider-php-adapted: ERROR build failed: 741: Property 'testMock' is missing in type '{ entityBy: "class"; noun: string; none: string; keys: "member"; maps: string; container: string; val
+== freeze-muts-v33 done 12:16:07
+== php-adapt start 12:16:07
+[1/2 50% 1s] my-new-provider-php-adapted-33a-1: ERROR build failed: gig/sdkgen@4.44.0 prune-dist-test
+> node build/prune-dist-test.js
+
+
+> @voxgig/sdkgen@4.44.0 check-scaffold
+> tsc -p tsconfig.scaffold.json
+
+projec
+[2/2 100% 11s] my-new-provider-php-adapted-33a-2: CAUGHT async,listOf,record,types,optional,signature,accessor,calls,members,kind,account,controls
+== php-adapt done 12:16:22

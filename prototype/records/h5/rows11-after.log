@@ -1,0 +1,70 @@
+
+##### [new] R11 lua: A = the 3.2 provider on the 3.2 shared code
+   [r11a-lua] add: EXIT 0 (868 ms)
+   [r11a-lua] TSC EXIT 0
+   [r11a-lua] GEN ok=true ms=166
+
+##### [new] R11 lua: X0 = the 3.2 provider as a pack on 3.3, as installed
+   [r11x-lua] add: EXIT 0 (936 ms)
+   [r11x-lua] src/cmp/lua32/Syntax_lua32.ts(20,7): error TS2741: Property 'testMock' is missing in type '{ entityBy: "class"; noun: string; none: string; keys: "member"; maps: string; container: string; valueType: 
+   [r11x-lua] src/cmp/lua32/Syntax_lua32.ts(106,7): error TS2741: Property 'interface' is missing in type '{ fence: string; facts: RuntimeFacts; imports: (desc: SdkDescription) => string[]; client: (s: { k: "client
+   [r11x-lua] TSC EXIT 1
+   [r11x-lua] doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [r11x-lua] EXIT 0 (722 ms)
+
+
+##### [new] R11 lua: X1 = the same, compiled with the type error ignored, as a pack shipping JS would run
+   [r11x-lua] TSC EXIT 2
+   [r11x-lua] GENERATE THREW: SdkGenError: lua32: the syntax provider .sdk/src/cmp/lua32/Syntax_lua32.ts is written for an interface before 3.3 (it declares none), and this sdkgen calls interface 3.3. Check each change, then declare interface: '3.3': |   - 3.3: ref.read(val
+   [r11x-lua] GEN ok=false ms=74
+
+##### [new] R11 lua: X = the author adds the one fact the type error names, testMock: generated
+   [r11x-lua] src/cmp/lua32/Syntax_lua32.ts(107,7): error TS2741: Property 'interface' is missing in type '{ fence: string; facts: RuntimeFacts; imports: (desc: SdkDescription) => string[]; client: (s: { k: "client
+   [r11x-lua] TSC EXIT 1
+   [r11x-lua] GENERATE THREW: SdkGenError: lua32: the syntax provider .sdk/src/cmp/lua32/Syntax_lua32.ts is written for an interface before 3.3 (it declares none), and this sdkgen calls interface 3.3. Check each change, then declare interface: '3.3': |   - 3.3: ref.read(val
+   [r11x-lua] GEN ok=false ms=84
+
+##### [new] R11 lua: B = the 3.3 provider, bundled, on 3.3
+   [r11b-lua] add: EXIT 0 (925 ms)
+   [r11b-lua] TSC EXIT 0
+   [r11b-lua] GEN ok=true ms=142
+
+##### [new] R11 lua: compare
+   lua32/README.md        A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B    0 lines
+   lua32/REFERENCE.md     A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B  153 lines
+   README.md              A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B    0 lines
+
+##### [new] R11 ocaml: A = the 3.2 provider on the 3.2 shared code
+   [r11a-ocaml] add: EXIT 0 (832 ms)
+   [r11a-ocaml] TSC EXIT 0
+   [r11a-ocaml] GEN ok=true ms=106
+
+##### [new] R11 ocaml: X0 = the 3.2 provider as a pack on 3.3, as installed
+   [r11x-ocaml] add: EXIT 0 (872 ms)
+   [r11x-ocaml] src/cmp/ocaml32/Syntax_ocaml32.ts(19,7): error TS2741: Property 'testMock' is missing in type '{ entityBy: "Name"; noun: string; entityNoun: string; heading: string; none: string; keys: "bare"; maps: 
+   [r11x-ocaml] src/cmp/ocaml32/Syntax_ocaml32.ts(162,7): error TS2741: Property 'interface' is missing in type '{ fence: string; facts: RuntimeFacts; imports: () => string[]; client: (s: { k: "client"; options: Entr
+   [r11x-ocaml] TSC EXIT 1
+   [r11x-ocaml] doctor-end           .sdk matches the scaffold (0 additive, 0 customized)
+   [r11x-ocaml] EXIT 0 (862 ms)
+
+
+##### [new] R11 ocaml: X1 = the same, compiled with the type error ignored, as a pack shipping JS would run
+   [r11x-ocaml] TSC EXIT 2
+   [r11x-ocaml] GENERATE THREW: SdkGenError: ocaml32: the syntax provider .sdk/src/cmp/ocaml32/Syntax_ocaml32.ts is written for an interface before 3.3 (it declares none), and this sdkgen calls interface 3.3. Check each change, then declare interface: '3.3': |   - 3.3: ref.re
+   [r11x-ocaml] GEN ok=false ms=69
+
+##### [new] R11 ocaml: X = the author adds the one fact the type error names, testMock: generated
+   [r11x-ocaml] src/cmp/ocaml32/Syntax_ocaml32.ts(163,7): error TS2741: Property 'interface' is missing in type '{ fence: string; facts: RuntimeFacts; imports: () => string[]; client: (s: { k: "client"; options: Entr
+   [r11x-ocaml] TSC EXIT 1
+   [r11x-ocaml] GENERATE THREW: SdkGenError: ocaml32: the syntax provider .sdk/src/cmp/ocaml32/Syntax_ocaml32.ts is written for an interface before 3.3 (it declares none), and this sdkgen calls interface 3.3. Check each change, then declare interface: '3.3': |   - 3.3: ref.re
+   [r11x-ocaml] GEN ok=false ms=90
+
+##### [new] R11 ocaml: B = the 3.3 provider, bundled, on 3.3
+   [r11b-ocaml] add: EXIT 0 (1011 ms)
+   [r11b-ocaml] TSC EXIT 0
+   [r11b-ocaml] GEN ok=true ms=103
+
+##### [new] R11 ocaml: compare
+   ocaml32/README.md      A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B    4 lines
+   ocaml32/REFERENCE.md   A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B  173 lines
+   README.md              A->X1    0 lines  A->X    0 lines  X->B    0 lines  A->B    0 lines

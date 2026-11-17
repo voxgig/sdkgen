@@ -1,0 +1,30 @@
+[1/26] new B: 41 READMEs in 1399ms
+[2/26] new auth-basic: 41 READMEs in 1043ms
+[3/26] new auth-basic-query: 41 READMEs in 920ms
+[4/26] new auth-query: 41 READMEs in 881ms
+[5/26] new auth-off: 41 READMEs in 1062ms
+[6/26] new server-mixed: 41 READMEs in 1071ms
+[7/26] new server-static: 41 READMEs in 1100ms
+[8/26] new server-none: 41 READMEs in 944ms
+[9/26] new ex-readonly: 41 READMEs in 752ms
+[10/26] new ent-only-ambient: 41 READMEs in 709ms
+[11/26] new ent-none: 41 READMEs in 678ms
+[12/26] new doc-list: 41 READMEs in 754ms
+[13/26] new doc-crud: 41 READMEs in 694ms
+[14/26] new doc-nested: 41 READMEs in 821ms
+[15/26] new crud-basic: 41 READMEs in 765ms
+[16/26] new crud-bare: 41 READMEs in 774ms
+[17/26] new crud-noupdate: 41 READMEs in 707ms
+[18/26] new ref-issues: 41 READMEs in 711ms
+[19/26] new no-cache: 41 READMEs in 708ms
+[20/26] new one-wrap: 41 READMEs in 352ms
+[21/26] new only-wrap: 41 READMEs in 498ms
+[22/26] new feat-text: 41 READMEs in 825ms
+[23/26] new ref-dollar: 41 READMEs in 723ms
+[24/26] new no-test: 41 READMEs in 647ms
+[25/26] new lone-go: 3 READMEs in 240ms
+[26/26] new alias-go2: 5 READMEs in 357ms
+
+real	0m20.777s
+user	0m19.948s
+sys	0m0.763s

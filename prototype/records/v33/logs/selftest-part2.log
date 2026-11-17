@@ -1,0 +1,49 @@
+[selftest 0s] identity: one template one sentence, the bold lead, comment facts, model text, re-key, stale build, stale hand record
+  ok   identity template-two-langs: one id expected: ts 010ab525bc "A failure is reported in the result, not as an err" | py 010ab525bc "A failure is reported in the result, not as an err" | rust 010ab525bc "A failure is reported in the result, not as an err"
+  ok   identity member-name: one id expected: ts 581898e092 "Accepts the same parameters as `direct()`." | go 581898e092 "Accepts the same parameters as `Direct()`." | c 581898e092 "Accepts the same parameters as `sdk_direct()`."
+  ok   identity label-none: one id expected: ts 746a31db3f "The first argument holds the test feature's option" | go 746a31db3f "The first argument holds the test feature's option" | c 746a31db3f "The first argument holds the test feature's option"
+  ok   identity article-and-class: one id expected: ts 0071df96c2 "Create a new `AmbientEntity` instance." | c 0071df96c2 "Create a new `Ambient` instance." | elixir 0071df96c2 "Create a new `Demo.Entity.Ambient` instance."
+  ok   identity number: one id expected: go b4e03207de "The program below runs these 2 steps in order." | go b4e03207de "The program below runs these 4 steps in order."
+  ok   identity comment-fact: one id expected: rust 23dc789f01 "Load an ambient: Ok is the entity; Err holds the f" | zig 23dc789f01 "Load an ambient: .ok is the entity; .err holds the"
+  ok   identity comment-collection: one id expected: py ae972576e9 "List planet records: a list of entities, one per r" | clojure ae972576e9 "List planet records: a vector of entities, one per"
+  ok   identity vec-own-backticks: one id expected: rust bea4cfb8e1 "The result's `Ok` is a `Vec` of entities, one per " | zig bea4cfb8e1 "The result's `.ok` is a slice of entities, one per"
+  ok   identity shared-word-stays: different ids expected: ts a32ec5077c "Resolves to an array of entities, one per record, " | ts 3006eded11 "Resolves to an array of entities, one per planet, "
+  ok   identity shared-literal-stays: different ids expected: ts 010ab525bc "A failure is reported in the result, not as an err" | ts 5ee363d15a "A failure is reported in the result, not as an err"
+  ok   identity bold-step-lead: split into 2: "**Create a client.**" | "The client reads its API key from the `D"
+  ok   identity returns-lead-kept: **Returns:** lead kept with its sentence (1 unit)
+  ok   identity model-text-left-out: the fixture model's descriptions are model text; a shared sentence is not
+  ok   identity build-current: the clone: 1814 sources, 0 stale
+  ok   identity stale-build: STALE BUILD: ts/src/helpers/x.ts is 794734302s newer than ts/dist/helpers/x.js
+  ok   identity stale-staged-model: STALE BUILD: ts/project/.sdk/model/feature/log.aontu differs from its staged copy ts/dist-test-scaffold/.sdk/model/feature/log.aontu, which generation reads
+  ok   identity stale-hand-record: 1 stale: bbbbbbbbbb voxgig_branch_on_okay(result)
+  ok   identity old-only-quotation: 1 stale: cccccccccc (a quotation only OLD holds, unmarked, is stale; marked OLD, it stands)
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 125 classes
+[rekey clojure 2s] keys known: this code 196, the v3.2 code 162, of 230
+[rekey clojure 2s] records are keyed by this code already: nothing to map
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 125 classes
+[rekey clojure 1s] keys known: this code 196, the v3.2 code 162, of 230
+[rekey clojure 1s] records are keyed by this code already: nothing to map
+  ok   identity rekey-idempotent: records keyed by this code: left alone, twice: left alone
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 125 classes
+[rekey clojure 1s] keys known: this code 143, the v3.2 code 167, of 200
+[rekey clojure 1s] old tutorial: 52 classes
+[rekey clojure 1s] tutorial: renamed 43, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 1s] old rootquick: 19 classes
+[rekey clojure 1s] rootquick: renamed 19, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 2s] old reference: 123 classes
+[rekey clojure 2s] reference: renamed 105, merged 0, split 0, conflicts 0, unsourced 0, gone occurrences 0
+[rekey clojure 0s] new tutorial: 52 classes
+[rekey clojure 0s] new rootquick: 19 classes
+[rekey clojure 1s] new reference: 125 classes
+[rekey clojure 1s] keys known: this code 167, the v3.2 code 143, of 200
+[rekey clojure 1s] records are keyed by this code already: nothing to map
+  ok   identity rekey-never-loses: clojure: 64 hand entries -> carried 55 (stale before 9, not carried 0, conflicts 0); re-keyed again: nothing to do
+
+selftest: 20 controls, 0 failed, 0 moved (identity 20/20) in 31s; scratch /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tmp/selftest2/selftest-qe20ik
+exit 0

@@ -1,0 +1,746 @@
+{
+ "key": "first-ports-ocaml-lua",
+ "what": "the first wave of ports made from the guide alone, for ocaml and lua (port, independent review, fix, verify), and the consolidated account of all four ports",
+ "digest": {
+  "part": "Wave 1 of the ports made from the guide alone (interface version 3.2, base32 tag v32-frozen): the ocaml and lua pipelines in full (port, independent review, fix, independent verify), plus the consolidated account of all four wave-1 ports (perl, swift, ocaml, lua) in s3b-wave1-consolidated.md. All records named in the instructions were present and read completely. Context read: brief.md (H1-H5), brief6.md (the round these ports ran in), the opening of brief7.md (which summarises this wave), and the opening of prompts j-port/j-review/j-fix.",
+  "rounds": [
+   {
+    "round": "s3b port ocaml",
+    "purpose": "Port ocaml's README tutorial, root quick start and REFERENCE to the shared code using only the porting guide v3.2: a naming hook, a syntax provider, the porter's part of the forms file, and deletion of the three old components. Then review the output with the one command (portcheck) until it passes.",
+    "who": "one porter",
+    "produced": "sdkgen commits 146c2abc, a21aeb2a, 1e9cf150; tools fa9c146. Syntax_ocaml.ts (237 lines) and Naming_ocaml.ts (24) replace 723 deleted lines. Normal-mode portcheck PASS; SCRATCH mode exit 1. 5 interface gaps recorded, none made. 4 runtime-table or guide rows found wrong. 236 classes decided by hand. Reported ok: False, only because scratch mode cannot pass.",
+    "changed": "No shared file touched. The porter changed okFalse from the guide's 'false' to 'Bool false'. Statements now print as top-level definitions, so the root quick start is a valid file. Operation signatures are unnamed `(value) (value)`, and a note carries the parameter names."
+   },
+   {
+    "round": "s3b review ocaml",
+    "purpose": "Independent adversarial read of the ocaml port: audit every fact against the runtime, compare OLD and NEW pages, re-run the porter's commands, and attack the process with mutations.",
+    "who": "one independent reviewer",
+    "produced": "Verdict: accept-with-fixes. Every porter number reproduced. Full suite run (2601 tests). A whole OCaml SDK generated from base and port: only README.md and REFERENCE.md differ. 24 source mutations, 3 page edits and 1 no-edit control. 10 required fixes: 3 in ocaml's own files, 7 needing a shared file. 6 process holes listed as not caught.",
+    "changed": "Found the cancel absence check blind: its search left out Entity_ocaml.ts. Found the e_match_get copy unstated, one hand reason false, and a dropped clause recorded as restored. Found 4 false or awkward sentences on the page (`direct()`, 'Return the entity name.' for a field, 'Instance functions', the `(value) (value)` headings). Explained the porter's unexplained 21.4% tutorial share as a masking artifact."
+   },
+   {
+    "round": "s3b fix ocaml",
+    "purpose": "Apply the reviewer's fixes that sit in ocaml's own files and record the rest as shared changes, without making them.",
+    "who": "one fixer (not the porter or the reviewer)",
+    "produced": "sdkgen 6c467124 and tools 812357d. 3 findings fixed (cancel absence, 1 hand reason, 2 hand records). 7 findings plus the guide recorded as needing shared changes (9 entries in shared_changes_needed). Page output byte-identical to the porter's. Reported ok: False, because scratch mode still exits 1.",
+    "changed": "The cancel absence now covers Entity_ocaml.ts, with the 4 stream `signal` lines excused verbatim: 8 of 8 probe controls are found. Records 6624c1429f and 53f65fd5c6 changed from restored:shared to dropped. The f64ae2f4fc reason was corrected. The fixer declined the optional `let () = try ... with` change, which would have turned 19 byte-identical blocks into unverifiable changed ones."
+   },
+   {
+    "round": "s3b verify ocaml",
+    "purpose": "Independent check that the ocaml port stands at its last commit: re-run everything and attack it again.",
+    "who": "one independent verifier",
+    "produced": "Reported ok: True. Every number matched the fixer's. 2 fresh attacks (a1 test_with arity, a2 integer type word): both failed the one command, but neither failed the guard. 10 still-wrong items and 10 shared changes handed over.",
+    "changed": "Confirmed all 3 fixes. Added two guard holes: test-call arity is unchecked, and the provider's type mapping is checked by nothing but the OLD-page ledger. Noted weak points in the new cancel pattern: the excuses are not tied to a file, and names such as `stop_signal`, `interrupt ()` and `timeout_abort` are not matched."
+   },
+   {
+    "round": "s3b port lua",
+    "purpose": "Port lua by the guide v3.2, the same way as ocaml.",
+    "who": "one porter",
+    "produced": "sdkgen d1fe7418, 664994ef, fa2ffcac; tools 59dfdba, bce2d23. Syntax_lua.ts (164 lines) and Naming_lua.ts (26) replace 749 deleted lines. Normal-mode portcheck PASS; SCRATCH exit 1. 2 interface gaps (accessor cache, purity PRINTING list). 5 runtime-table rows wrong. 174 classes decided by hand. Reported ok: True.",
+    "changed": "No shared source file touched. Only lua's own lines of the shared test lua-table-keys.test.ts and of the golden changed. The porter corrected the forms reader so the operations' second return value is named `err`, not 'second value'. The porter decided prints 'fields' by hand, so the root quick start drops OLD's json.encode."
+   },
+   {
+    "round": "s3b review lua",
+    "purpose": "Independent adversarial read of the lua port.",
+    "who": "one independent reviewer",
+    "produced": "Verdict: accept-with-fixes. Every porter number reproduced. 20 attacks (15 source mutations, 5 page mutations): 19 failed the one command, 1 passed. 9 required fixes: 4 in lua's files, 5 shared. 4 process holes listed as not caught.",
+    "changed": "Found 1 hand record that hid a contradiction (d2b1853b85), 2 citations that do not show their value (ctor[0], pairForm), and a cancel absence search scoped to fetcher.lua only. Found 2 shared sentences false for lua: the accessor sentence and direct's `err` clause. Corrected the porter's doubt: ProjectNameError does have __tostring."
+   },
+   {
+    "round": "s3b fix lua",
+    "purpose": "Apply the lua-side fixes and record the shared ones.",
+    "who": "one fixer",
+    "produced": "sdkgen 8478f2dc (forms only, +17/-5); tools f0c2d47 and 72881b6. 4 fixed in lua files, 5 recorded as shared, 1 new shared change found (the stream-signal sentence). In all, 7 shared changes recorded. No generated page changed. Reported ok: True.",
+    "changed": "d2b1853b85 is now a contradiction, so reference contradictions went from 1 to 2 and by-hand from 52 to 51. The ctor[0] and pairForm citations now quote code. The cancel fact was narrowed to operations: the search now covers Main.fragment.lua, the 6 op fragments, tm/lua/utility/ and tm/lua/core/, and leaves out Entity.fragment.lua."
+   },
+   {
+    "round": "s3b verify lua",
+    "purpose": "Independent check of the lua port at its last commit.",
+    "who": "one independent verifier",
+    "produced": "Reported ok: True. All numbers matched; guard and reader 65/65 across all languages. 2 fresh attacks: A1 not caught at all, A2 caught. 5 still-wrong items and 7 shared changes handed over.",
+    "changed": "Showed that the fixer's claim that the cancel search covers 'every file an operation runs through' is false. Entity.fragment.lua holds `_run_op` and `_run_steps`, and an operation-cancel check added there passed the guard 65/65."
+   },
+   {
+    "round": "s3b wave-1 consolidation",
+    "purpose": "Gather, per language, everything the sixteen wave-1 reports (four stages for each of perl, swift, ocaml and lua) say must change outside a port, as input to the merge round (brief 7).",
+    "who": "generated by a script from the sixteen structured results; it decides nothing",
+    "produced": "s3b-wave1-consolidated.md. Stage outcomes: perl port ok=True, review accept-with-fixes, fix ok=False, verify ok=False. swift port ok=True, review accept-with-fixes, fix ok=True, verify ok=False. ocaml port ok=False, review accept-with-fixes, fix ok=False, verify ok=True. lua port ok=True, review accept-with-fixes, fix ok=True, verify ok=True.",
+    "changed": "It became the list of shared changes the merge engineer applies once for version 3.3 (brief7)."
+   }
+  ],
+  "items": [
+   {
+    "topic": "H1",
+    "claim": "The ocaml port touched no shared file, and no breaking interface change was needed or made.",
+    "numbers": "shared files touched 0; breaking changes 0; interface gaps recorded 5, all additive, none made",
+    "source": "s3b-port-ocaml.txt interface_gaps, shared_files_touched; s3b-review-ocaml.txt provider_code[6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "The ocaml port forces about 6 additive shared changes, plus one guard-forms hook and one tools change.",
+    "numbers": "about 6 additive shared changes (member naming without `()`, a field member sentence, a per-operation note slot or deleted-marker fact, copy honoured on matchGet, the client heading following `on`, the guard comparing a pinned ahead value); +1 guard-forms hook; +1 tools change (blocks pairing); 0 breaking",
+    "source": "s3b-review-ocaml.txt interface",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "The ocaml provider reads no model, and the ocaml-only share of prose is well under the 15% line. All of it is notes that compensate for interface gaps.",
+    "numbers": "purity 0 open, 0 accepted; provider literals 7.3% of words (tutorial 0%, rootquick 0%, reference 7.5%); notes 41 words at the source, 3,854 printed words; 3 notes, all making up for interface gaps; fact-table prose literals 45 words at the source",
+    "source": "s3b-review-ocaml.txt interface, numbers[6]; s3b-fix-ocaml.txt lines",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "The lua port touched no shared source file, and its provider reads no model. Its only purity exceptions are three accepted helper imports.",
+    "numbers": "shared source files 0 (shared test lua-table-keys.test.ts: lua lines only, +1/-3; golden lua lines +4/-5); purity 0 open, 3 accepted (luaKey, luaString, exampleVarName); breaking changes 0",
+    "source": "s3b-port-lua.txt summary, purity, lines; s3b-review-lua.txt interface",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "The prose lua supplies at the source is a few percent of the sections' words.",
+    "numbers": "provider literals: tutorial 0.4%, rootquick 2.5%, reference 4.4%, all 4.3%; notes 4.0% of reference words (3.9% of all); at the source 40 words of notes, 39 of fact-table prose, 5 other prose literals",
+    "source": "s3b-port-lua.txt prose; s3b-review-lua.txt interface (reproduced)",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H1",
+    "claim": "The 'printed by this language alone' share is not a measure of per-language prose. For ocaml and lua it is mostly a masking or one-program artifact of the tools.",
+    "numbers": "ocaml tutorial 21.4% 'only this lang' (333 words); lua tutorial 26.6%, rootquick 37.0%, reference 6.7%; perl rootquick 92.0%; swift rootquick 92.0%, tutorial 35.6%",
+    "source": "s3b-review-ocaml.txt numbers[6]; s3b-port-lua.txt prose; s3b-wave1-consolidated.md perl and swift 'Lines, prose (porter)'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "Wave 1 made no shared change during the ports. The fixers then recorded additive shared changes per language, and swift recorded two changes as breaking because each rewords a shared sentence.",
+    "numbers": "recorded shared changes: ocaml fixer 9 entries (7 shared code/guide plus tools and guard hook), verifier 10; lua fixer 7, verifier 7; perl fixer 3; swift fixer 6. Breaking: swift 2 (wrapped returnClause/carries naming the unwrap; the list 'match is optional' sentence giving the no-match call), both 'breaking only as a changed sentence'; all others breaking: False",
+    "source": "s3b-fix-ocaml.txt shared_changes_needed; s3b-verify-ocaml.txt shared_changes; s3b-fix-lua.txt shared_changes_needed; s3b-wave1-consolidated.md perl/swift 'Fixer: shared changes needed'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H1",
+    "claim": "Shared sentences turned out false or incomplete for runtimes that had not been ported before. The shared code needs new optional facts to state them, and until then the pages are wrong.",
+    "numbers": "ocaml: 4 false or awkward sentences in every variation (`direct()`; 'Return the entity name.' for a field; 'Instance functions' over module functions; e_match_get copy unstated) plus e_deleted dropped. lua: 2 false sentences in every lua REFERENCE (accessor 'Create a new X instance ... pass `nil`' while nil returns a cached instance, also true of php; direct '`err` holds the error' while err is unset for a non-2xx response) plus the stream's signal support unprinted",
+    "source": "s3b-verify-ocaml.txt still_wrong; s3b-verify-lua.txt still_wrong",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "In two places the ocaml provider prints a form that is not the language's idiom, chosen so that a guard check keeps working.",
+    "numbers": "signatures `e_load (value) (value) : entity_obj` rather than the runtime's `e_load : value -> value -> entity_obj`. Reviewer E1: the arrow form with parenless passes the guard 5/5, but then a callable written as a field also passes (E1b)",
+    "source": "s3b-review-ocaml.txt summary, not_caught[5], gaps_judged[1]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H1",
+    "claim": "perl's root quick start cannot be expressed correctly through the interface, because the shared imports printer is not told which section it prints for.",
+    "numbers": "all 19 NEW root quick starts begin `use DemoSDK;` with no lib path; 13 perl rootquick classes recorded as defect until the shared change lands; tutorial client blocks byte-identical to OLD went from 3 to 0",
+    "source": "s3b-wave1-consolidated.md perl 'Interface gaps the porter recorded', 'Fixer: outcomes not \"fixed\"'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H2",
+    "claim": "ocaml's three documentation components shrank about 2.2x to 2.8x, depending on what is counted.",
+    "numbers": "723 lines deleted (ReadmeQuick_ocaml 213, ReadmeRef_ocaml 423, ReadmeTopQuick_ocaml 87); provider 237 + hook 24 = 261 (2.77x); with forms delta and generator edits 330 added (2.2x); without blanks and // comments 529 -> 200 (2.65x)",
+    "source": "s3b-port-ocaml.txt lines; s3b-review-ocaml.txt numbers[5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "lua's three documentation components shrank 3.4x to 3.9x.",
+    "numbers": "749 deleted (232 + 419 + 98); provider 164 + hook 26 = 190 (3.9x); without blanks and comments 529 -> 142 (3.7x); counting the 33 net forms lines, 3.4x",
+    "source": "s3b-port-lua.txt lines; s3b-review-lua.txt numbers[6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H2",
+    "claim": "perl and swift shrank by similar ratios.",
+    "numbers": "perl: 735 deleted (224 + 420 + 91) -> provider 191 + hook 22 = 213 (3.45x), 234 with forms (3.14x). swift: 764 deleted (246 + 409 + 109) -> 171 + 24 = 195 (3.9x), 222 with forms (3.4x)",
+    "source": "s3b-wave1-consolidated.md perl and swift 'Lines, prose (porter)'",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "H3",
+    "claim": "The catalogued corrections in these sections reached ocaml through shared code, with no per-language edit beyond declaring facts. Old ocaml-specific defects were fixed by facts and printers.",
+    "numbers": "S49, S50, S09, S13, S25, G27, U43, U45 and the Actions table. Old defects fixed: test's wrong two-parameter signature; empty root body in ent-none and ref-issues; skipped step number",
+    "source": "s3b-review-ocaml.txt interface (H3), pages",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "H3",
+    "claim": "The catalogued corrections reached lua's pages through shared code with no lua-specific edit. The reviewer saw six of them and did not trace two.",
+    "numbers": "porter: S49, S50, S09, S13, S25, U34, U45, G27. Reviewer: S49, S50, S09, S13, S25, U45 visible; U34 and G27 not traced individually",
+    "source": "s3b-port-lua.txt summary; s3b-review-lua.txt interface",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "H4",
+    "claim": "No ocaml example was compiled or run, because no OCaml toolchain was present.",
+    "numbers": "229 changed block instances compiled by nothing (tutorial 29, rootquick 19, reference 181); reviewer read 23 distinct changed blocks: 0 would fail by reading; structural lint of 67 distinct NEW ocaml blocks: 0 flagged; ocaml, ocamlc, ocamlopt, ocamlfind, dune, opam, utop missing",
+    "source": "s3b-review-ocaml.txt examples, could_not_check; s3b-verify-ocaml.txt unverified",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "No lua example was compiled or run, because no lua toolchain was present.",
+    "numbers": "226 changed blocks compiled by nothing (tutorial 45, rootquick 19, reference 162); reviewer read 24 distinct changed blocks and found no line believed to fail; lua, lua5.4, lua5.3, lua5.1, luajit, luac, busted, luarocks missing",
+    "source": "s3b-review-lua.txt could_not_check, examples; s3b-verify-lua.txt unverified",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "H4",
+    "claim": "In perl, which has a toolchain here, the new root quick start fails to compile from the repository root, where the root README is read, while the lane stays green. The cause is the shared imports printer's missing 'place', an interface gap with a proposed additive fix that was not built or tested.",
+    "numbers": "`perl -c` from the generated repository root: \"Can't locate DemoSDK.pm in @INC\"; with OLD's `use lib 'perl/lib';` added: 'syntax OK'; lane 7/7 (the runner prepends `use lib '$LIB'; use DemoSDK;` to every block); 19 variations affected",
+    "source": "s3b-wave1-consolidated.md perl 'Reviewer: required fixes', 'Verifier: still wrong'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H4",
+    "claim": "A shared helper makes the perl REFERENCE list example print a hash address: the example runs but prints nothing useful, and the lane passes it.",
+    "numbers": "`$item->data_get->{fields}` printed 'r1 HASH(0x560fdb4af1d0)'; in 17 variations (1 per REFERENCE); recorded as defect class 24d40b660d (x81 in 17 variations)",
+    "source": "s3b-wave1-consolidated.md perl 'Reviewer: required fixes', 'Fixer: outcomes', 'Verifier: still wrong'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "H4",
+    "claim": "No swift example was compiled.",
+    "numbers": "172 changed swift blocks compiled by nothing (47 tutorial, 19 root, 106 reference); swift, swiftc missing; 3 doubtful constructs (`?? .null` in the VMap tuple literal, top-level `try`, `import Foundation`)",
+    "source": "s3b-wave1-consolidated.md swift 'Verifier: unverified for want of a compiler'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Every number each ocaml and lua porter reported was reproduced exactly by the reviewer, the fixer and the verifier, and the regenerated pages were byte-identical.",
+    "numbers": "ocaml normal portcheck: units same 56/19/13998, classes 50/3/161, shared 22/0/57, by hand 20/3/71, missing 8/0/31, OPEN 0, contradictions 0/0/2; blocks identical 19/0/151, otherwise 29/19/163, block classes 35/32/34. lua: units same 61/19/15091, classes 44/3/129, shared 21/0/58, missing 6/0/18; blocks identical 3/0/151, corrected 15/2/0, otherwise 30/17/162, block classes 26/27/24",
+    "source": "s3b-review-ocaml.txt numbers[2]; s3b-verify-ocaml.txt state[4]; s3b-review-lua.txt numbers[0]; s3b-verify-lua.txt state[5]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The repository suite without the toolchain lanes stayed green in every ocaml and lua stage, and no other language's output changed.",
+    "numbers": "2601 tests, 2596 pass, 0 fail, 5 skipped (ocaml reviewer 8m29s, fixer 454 s, verifier 409 s; lua porter 469475 ms, reviewer 341 s, fixer 529 s, verifier 348 s); golden 2/2; guard and reader 5/5 per language, 65/65 all languages (lua verifier). Other languages: root READMEs differ only inside the ported language's subsection or blocks, in all 21 variations",
+    "source": "s3b-review-ocaml.txt numbers[4]; s3b-verify-ocaml.txt state, other_languages; s3b-verify-lua.txt state, other_languages",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "The ocaml refactor of generator components to share naming functions with the hook changed no generated code.",
+    "numbers": "OCaml SDK generated from v32-frozen and from the port, default and crud models: only README.md and REFERENCE.md differ; every .ml identical",
+    "source": "s3b-review-ocaml.txt summary, provider_code[2]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "for"
+   },
+   {
+    "topic": "method",
+    "claim": "Scratch mode of the one command (hand records ignored) cannot pass for any port that has hand-decided classes, so 'passes in both modes' in the guide is unattainable.",
+    "numbers": "ocaml SCRATCH exit 1: ledger OPEN 28/3/104, blocks OPEN 35/32/34, UNATTESTED 2 (ref.maps, ref.valueType.ANY). lua SCRATCH exit 1: ledger OPEN 23/3/71, blocks OPEN 26/27/24, errVar UNATTESTED, absent 35 with 0 explained",
+    "source": "s3b-port-ocaml.txt scratch; s3b-verify-ocaml.txt state[3]; s3b-port-lua.txt scratch; s3b-verify-lua.txt state[4]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Much of each page is classified by hand: hundreds of classes per language are decided by a person, not by a rule.",
+    "numbers": "ocaml 236 classes by hand (tutorial 20 + 8 missing, rootquick 3, reference 71 + 31 missing; blocks 35/32/34); lua 174 classes by hand, about 60 reusing another language's same-id decision; rule-recorded classes 0 in both",
+    "source": "s3b-port-ocaml.txt hand_decisions[3]; s3b-port-lua.txt hand_decisions[6], portcheck",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Every shared sentence matched on the ocaml and lua pages was one nobody had reviewed, so the sentence-level review did not cover these ports.",
+    "numbers": "shared sentences matched 79 of 79 against unreviewed sentences (ocaml and lua each); STRICT_SENTENCES=1 not run",
+    "source": "s3b-port-ocaml.txt portcheck; s3b-port-lua.txt portcheck, not_done",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "The ocaml reviewer's attacks all made the one command fail, but six of them got past the guard and were caught only by weak paths: hand-record text, an orphaned citation, or block diff classes a person can classify away.",
+    "numbers": "24 source mutations + 3 page edits + 1 no-edit control (passes): 27 of 27 caught by the one command. Weak paths: m04 okFalse 'false' passes guard 5/5, caught only by ledger OPEN 2 via hand-record text; m07 copy dropped: ledger 161->160 classes, OPEN 0, caught only by an orphaned citation; m11 keys bare->member: fact sheet silent, ledger OPEN 4; m20 List.iter->List.map and m21 swapped args: guard 5/5, blocks only OPEN 3/7/8 and 8/10/18; E1/E1b arrow signatures: guard 5/5",
+    "source": "s3b-review-ocaml.txt attacks, not_caught",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The lua reviewer's 20 attacks found one change that passed the one command outright, and three that passed the guard.",
+    "numbers": "20 attacks (15 source, 5 page): 19 caught, 1 not. Not caught: a shared sentence dropped from all 19 lua REFERENCEs gave PORTCHECK PASS (absent 35 -> 36, not failed). Guard passed for okFalse 'nil' (caught by ledger OPEN 4 only), ctor 'sdk.create' (blocks OPEN 8/14/3 only) and `client.Planet()` (blocks OPEN 8/10/10 only)",
+    "source": "s3b-review-lua.txt attacks, not_caught",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The verifiers' fresh attacks again found guard holes. One lua attack was not caught by anything.",
+    "numbers": "ocaml a1 (test_with with one argument missing): guard 5/5, ledger unchanged, caught only by blocks reference OPEN 5. ocaml a2 (INTEGER int->float): guard 5/5, caught only by ledger OPEN 3 (units same 13998 -> 13988). lua A1 (operation-cancel check in _run_op): guard 65/65, not caught. lua A2 (pairForm '(value, err)'): caught, guard failed 1, tutorial ledger OPEN 7",
+    "source": "s3b-verify-ocaml.txt attacks; s3b-verify-lua.txt attacks",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The guard's citation check does not compare a pinned value unless it is prose. A declaration different from its pin therefore passes whenever the declared token happens to occur in the quoted line, which contradicts the guide's promise that a different declaration fails.",
+    "numbers": "ocaml m04: 'false' passes against pin 'Bool false' (guard 5/5); lua: 'nil' passes against pin 'false' (guard passed); account.ts:273-277",
+    "source": "s3b-review-ocaml.txt required_fixes[8]; s3b-review-lua.txt required_fixes[6]; s3b-verify-lua.txt fixes_checked[6]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "Across all four languages, the absence checks for cancellation were scoped too narrowly at first. After the fixes, ocaml's check covers the stream file, while lua's still leaves out the file that holds the operation path.",
+    "numbers": "ocaml: original search 3 files without Entity_ocaml.ts, guard 5/5 with `signal` present; fixed to 4 files, 8 of 8 probe controls found. lua: original search fetcher.lua only; fixed to Main.fragment.lua + 6 op fragments + utility/ + core/; verifier A1 in Entity.fragment.lua _run_op passed 65/65",
+    "source": "s3b-review-ocaml.txt not_caught[2]; s3b-fix-ocaml.txt outcomes[0]; s3b-review-lua.txt required_fixes[3]; s3b-verify-lua.txt still_wrong[0]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "In swift's pipeline, the one command could report PASS on a stale build or on stale pages, because it does not check the build exit or the generation exit.",
+    "numbers": "provider failing to compile (TS2820) -> portcheck REGEN PASS exit 0 on the stale build; a thrown generation printed 'regenerated 0 variations; SKIPPED: none' and measured the stale out/new; dropping a shared sentence from 1 or all 19 swift variations left SCRATCH OPEN at 95 (baseline)",
+    "source": "s3b-wave1-consolidated.md swift 'Reviewer: required fixes', 'Reviewer: attacks nothing caught'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "swift's fixer reported its whole-record check closed, but the verifier found it only partly closed.",
+    "numbers": "facts.record `({var}.asNative)?.data()` (drops the cast, does not compile): guard PASS 5/5; caught only by hand records (ledger OPEN tutorial 5, reference 1; blocks OPEN tutorial 3). Call printer `load(nil)` against two required params: guard PASS 5/5",
+    "source": "s3b-wave1-consolidated.md swift 'Verifier: still wrong', 'Verifier: fresh attacks'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "perl's checks could not see the missing import, the hash-address print, or wrong call arguments. Only the comparison with the OLD page caught some of these.",
+    "numbers": "perl reviewer: root quick start without `use lib` -> portcheck PASS, lane 7/7, suite green. Verifier V2 `load('id' => 'planet_id')` executed in the lane 7/7, REFERENCE 21/21; caught only by blocks OPEN 7/4/4 and ledger OPEN 3. V1 type word 'integer'->'int': guard and fact sheet silent, ledger OPEN 5. a19 in SCRATCH: no number moves",
+    "source": "s3b-wave1-consolidated.md perl 'Reviewer: attacks nothing caught', 'Verifier: fresh attacks'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "against"
+   },
+   {
+    "topic": "method",
+    "claim": "The independent reviewers each found hand records whose recorded outcome or reason was wrong, and the fixers corrected them.",
+    "numbers": "ocaml: f64ae2f4fc reason false; 6624c1429f, 53f65fd5c6 recorded restored:shared but half-dropped (71d7c4cfa1 already dropped). lua: d2b1853b85 recorded same-meaning, really a contradiction (README.md:214 and :68 vs REFERENCE); reasons on 3f33c6f26f and ee54946dbe also corrected",
+    "source": "s3b-review-ocaml.txt hand_records; s3b-fix-ocaml.txt outcomes[1..2]; s3b-review-lua.txt hand_records[0]; s3b-fix-lua.txt outcomes[0]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "method",
+    "claim": "Two ocaml interface gaps and one lua gap are gaps in the checking tools, not in the documentation interface.",
+    "numbers": "ocaml blocks.js pairs parenless OLD headings by document order: 163 reference pairs are mispairs absorbed by one hand class. Porter's own pairing: 151 identical, 79 lose only the result_data read, 83 lists reshaped, 1 OLD-only, 19 NEW-only (test_with). lua purity PRINTING lacks luaKey/luaString",
+    "source": "s3b-port-ocaml.txt interface_gaps[3]; s3b-review-ocaml.txt numbers[7]; s3b-port-lua.txt interface_gaps[1]",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The guide's runtime table was wrong in several rows for ocaml and lua, and the porters corrected their forms files to match the runtime.",
+    "numbers": "ocaml rows wrong 3 (+1 porter's-part reader extension): okFalse is `Bool false`, not 'false' (sdk_features.ml:1775 and 5 more lines); options/utility are record fields; stream kind. lua rows wrong 5: op second value is the sdk_err table, not a string; direct returns/fails empty; prepare returns/fails empty; stream failure missing; accessor nil cache missing",
+    "source": "s3b-port-ocaml.txt table_rows_wrong; s3b-port-lua.txt table_rows_wrong; s3b-verify-ocaml.txt still_wrong[8]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The ocaml fact the guide and table gave (okFalse 'false') would have told OCaml readers to compare a `value` with a bool. The porter's 'Bool false' is correct, and the guide needs correcting.",
+    "numbers": "sdk_features.ml:1775, 1787, 1794, 1797, 1815, 1820 `(\"ok\", Bool false)`; PORTING.md:115 and :453",
+    "source": "s3b-review-ocaml.txt required_fixes[9]; s3b-verify-ocaml.txt still_wrong[8]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "The new pages lose some things OLD said, which the interface cannot yet carry.",
+    "numbers": "ocaml: the e_deleted marker and 'it keeps the data it held' (remove); the operation parameter names reqmatch/ctrl; 79 OLD REFERENCE blocks' `let result_data = result.e_data_get ()` lines. lua: the root quick start's json.encode of the whole record (prints 'fields' instead); OLD swift's working `list(nil, nil)` call (swift)",
+    "source": "s3b-port-ocaml.txt old_vs_new; s3b-port-lua.txt old_vs_new, facts[8]; s3b-wave1-consolidated.md swift 'Verifier: still wrong'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "against"
+   },
+   {
+    "topic": "finding",
+    "claim": "The new pages also gain true content that OLD lacked.",
+    "numbers": "ocaml: true test/test_with signatures, e_stream, server variables, the secret under Basic auth, Actions table, `Bool false`, fixed step numbering, valid root quick start. lua: server variables (S49), secret (S50), every write checked, stream member and its failure note, Actions table, direct result sentence, log on by default (S09)",
+    "source": "s3b-port-ocaml.txt old_vs_new; s3b-review-ocaml.txt pages; s3b-port-lua.txt old_vs_new; s3b-review-lua.txt pages",
+    "by": "independent",
+    "basis": "read",
+    "direction": "for"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The OLD ocaml pages on main had invalid or wrong code.",
+    "numbers": "OLD root quick start `let () = let client = ... in` with no body in ent-none and ref-issues (invalid OCaml), and ended in a dangling `in` in ref-issues; OLD test signature had two parameters; OLD tutorial jumped from step 1 to '3. Load'; the unported ocaml README prints a TypeScript line (`console.log(ambient.data())`, README.md:68), and its Error handling section prints TypeScript",
+    "source": "s3b-port-ocaml.txt surprises; s3b-review-ocaml.txt pages, false_or_missing[6]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "Several example lines on the ocaml pages are fragile in both OLD and NEW: copied as written into one file, they would fail.",
+    "numbers": "tutorial `(try ...)` after `let client = ...` parses as a second argument to make (a type error); REFERENCE blocks use an unbound `client` and lack `open Sdk_types`; `Sys.getenv` raises Not_found when unset",
+    "source": "s3b-review-ocaml.txt doubtful_lines",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "The OLD lua pages on main state things the lua runtime does not do. The lua README, still unported, contradicts the new REFERENCE.",
+    "numbers": "OLD 'Create a new ... instance ... pass `nil`' (false: cached instance); OLD direct `-> table, err` and 'follows the same `(value, err)` convention' (second value always nil: Main.fragment.lua:267, 300, 315, 323, 368, 374); OLD `(value, err)` wording, where Lua parentheses keep only the first value",
+    "source": "s3b-port-lua.txt old_vs_new, facts[6]; s3b-verify-lua.txt still_wrong[3]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "main-defect",
+    "claim": "perl's README example test on main cannot fail on a missing import, on constructor options or on wrong call arguments, because its runner rewrites every block.",
+    "numbers": "ReadmeExamplesTest_perl.ts:238 prepends `use lib '$LIB'; use $SDK_CLASS;`, and the runner replaces ->new(...) with ->test(fixtures); 19 tutorial and 19 root client blocks' options never executed",
+    "source": "s3b-wave1-consolidated.md perl 'Fixer: outcomes' F10, 'Verifier: still wrong', 'Reviewer: what could not be checked'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "runtime-defect",
+    "claim": "The lua runtime's own doc comment on operations misnames the error value.",
+    "numbers": "EntityLoadOp.fragment.lua:10-11 `---@return string? err`, while make_error.lua:57-86 returns the sdk_err table",
+    "source": "s3b-port-lua.txt table_rows_wrong[0]",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "For ocaml, lua and swift, H4 could not be tested at all: every changed example block is verified by reading only. ocaml's generated readme_examples_test is structural only and was not run.",
+    "numbers": "ocaml 229, lua 226, swift 172 changed block instances compiled by nothing",
+    "source": "s3b-verify-ocaml.txt unverified; s3b-verify-lua.txt unverified; s3b-wave1-consolidated.md swift 'Verifier: unverified for want of a compiler'",
+    "by": "independent",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "limit",
+    "claim": "Some ocaml, lua and perl checks were read and not re-run in the later stages.",
+    "numbers": "ocaml fixer and verifier did not rerun the reviewer's m04 or other mutations; lua fixer and verifier did not rerun the reviewer's 20 mutations; whether the checkCitation change breaks other languages' forms was not tested; perl verifier did not re-run the reviewer's 23 attacks; perl reviewer: 6 of 33 distinct changed NEW blocks not executed",
+    "source": "s3b-verify-ocaml.txt unverified; s3b-verify-lua.txt unverified; s3b-wave1-consolidated.md perl 'Reviewer: what could not be checked', 'Verifier: unverified'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   },
+   {
+    "topic": "cost",
+    "claim": "The ocaml port took a little over two hours end to end, by the porter's approximate log. Writing the provider and hook was about 25 minutes of it, and review and classification was the largest share.",
+    "numbers": "started 02:01, final runs about 04:15; reading about 35 min, runtime table about 10, forms about 15, provider and hook about 25 (incl. two guard rounds), review and classification about 50, golden/tests/measures about 15",
+    "source": "s3b-port-ocaml.txt time",
+    "by": "builder",
+    "basis": "unclear",
+    "direction": "neutral"
+   },
+   {
+    "topic": "cost",
+    "claim": "The lua port's logged wall-clock was about 30 minutes, but the porter doubts the clock, because the suite alone reported nearly 8 minutes inside that span.",
+    "numbers": "02:01-02:31 by `date -u`: reading 4 min, table and forms 3, provider/hook/build/guard 3, review and classification 7, golden and scratch 3, suite and checks 10; the suite reported duration_ms 469475 (7.8 min); 'date -u advanced only about 30 minutes over the whole port'",
+    "source": "s3b-port-lua.txt time, surprises",
+    "by": "builder",
+    "basis": "ran",
+    "direction": "neutral"
+   },
+   {
+    "topic": "finding",
+    "claim": "Commits made in the perl and swift pipelines carried attribution trailers naming a tool and model, against the brief and guide rule. They were left for the integrator to strip.",
+    "numbers": "perl commits 52f711fe, 73234667, tools 70c12f4; swift commits 824c5d41, 55675fd5, tools 0fa653a",
+    "source": "s3b-wave1-consolidated.md perl and swift 'Verifier: still wrong at the last commit'",
+    "by": "independent",
+    "basis": "read",
+    "direction": "neutral"
+   }
+  ],
+  "disagreements": [
+   {
+    "a": "Guide and runtime table: ocaml's direct okFalse is 'false' ('false for every runtime but perl'; 'a different declaration fails').",
+    "a_source": "base32 PORTING.md:115, :453, as quoted in s3b-port-ocaml.txt guide_problems[0] and s3b-fix-ocaml.txt outcomes[9]",
+    "b": "The ocaml runtime writes `Bool false`. The porter declared 'Bool false', and the reviewer, fixer and verifier confirmed it against sdk_features.ml.",
+    "b_source": "s3b-port-ocaml.txt table_rows_wrong[1]; s3b-review-ocaml.txt required_fixes[9]; s3b-verify-ocaml.txt still_wrong[8]",
+    "stands": "b: 'Bool false'. The guide is wrong; the correction is recorded, not made."
+   },
+   {
+    "a": "Porter: the cancel absence (cancel: false) is cited and checked by a search over sdk_runtime.ml, EntityOperation_ocaml.ts and RunOp.fragment.ml.",
+    "a_source": "s3b-port-ocaml.txt facts[34]",
+    "b": "The check is blind by construction: it leaves out Entity_ocaml.ts, where e_stream reads callopts.signal, and the guard passed 5/5 with the word present.",
+    "b_source": "s3b-review-ocaml.txt required_fixes[0], not_caught[2]",
+    "stands": "b. The fixer added Entity_ocaml.ts with 4 lines excused verbatim, and the verifier confirmed it, with weak points: the excuses are not tied to a file, and some names (stop_signal, interrupt, timeout_abort) are not matched."
+   },
+   {
+    "a": "Porter: the ocaml tutorial's 21.4% 'only this lang' words are not investigated.",
+    "a_source": "s3b-port-ocaml.txt prose",
+    "b": "It is a masking artifact. recordType, container, direct.returns, prepare.returns and valueType.ANY all have the value `value`, so the union mask matches no other language's; the units are shared sentences.",
+    "b_source": "s3b-review-ocaml.txt numbers[6]",
+    "stands": "b (explained by the reviewer, ran with sharewords --json)."
+   },
+   {
+    "a": "Porter: interface gap 2 (operation parameter names cannot be cited, and a named signature fails the renamed-parameter control) is a gap.",
+    "a_source": "s3b-port-ocaml.txt interface_gaps[1]",
+    "b": "Not a hard gap: the runtime's own arrow notation passes the guard with parenless:true. The real gap is in the guard, which detects a call only by `name(`, so the arrow form loses the field check.",
+    "b_source": "s3b-review-ocaml.txt gaps_judged[1]",
+    "stands": "b is the later judgement. The fixer and verifier carry it as an additive guard-forms hook (detect a call from `->`)."
+   },
+   {
+    "a": "ocaml hand records 6624c1429f and 53f65fd5c6: restored:shared.",
+    "a_source": "s3b-port-ocaml.txt review_counts (missing: restored:shared)",
+    "b": "`e_deleted` and 'it keeps its data' appear nowhere on the page, so both are dropped.",
+    "b_source": "s3b-review-ocaml.txt required_fixes[2]; s3b-fix-ocaml.txt outcomes[2]",
+    "stands": "b; fixed in tools 812357d and confirmed by the verifier."
+   },
+   {
+    "a": "ocaml hand record f64ae2f4fc: 'the README says nothing else about log's default'.",
+    "a_source": "s3b-port-ocaml.txt (hand/ocaml.json), as quoted in s3b-review-ocaml.txt required_fixes[1]",
+    "b": "The NEW ocaml README says log 'runs unless disabled' (:551-553) and 'It is active by default' (:681), printed by shared ReadmeFeatures.",
+    "b_source": "s3b-review-ocaml.txt required_fixes[1]; s3b-fix-ocaml.txt outcomes[1]",
+    "stands": "b for ocaml. Note: the lua reviewer judged lua's record with the same id right, because 'the README feature table says nothing of log's default' (s3b-review-lua.txt hand_records[3]). The ocaml finding says the sentence comes from shared code, and nothing in these records reconciles the two."
+   },
+   {
+    "a": "Porter: lua hand record d2b1853b85 (direct's return) is same-meaning; reference contradictions 1.",
+    "a_source": "s3b-port-lua.txt portcheck",
+    "b": "It is a contradiction: lua/README.md:214 says `(fetchargs) -> table, err` and :68 says direct follows the `(value, err)` convention, while the REFERENCE says the second value is always nil.",
+    "b_source": "s3b-review-lua.txt required_fixes[0]; s3b-fix-lua.txt outcomes[0]",
+    "stands": "b; reference contradictions are now 2 and by-hand 51."
+   },
+   {
+    "a": "Lua porter: ProjectNameError has no __tostring, so `error(err)` prints 'table: 0x..'.",
+    "a_source": "s3b-port-lua.txt doubtful_lines[1]",
+    "b": "It has one: tm/lua/core/error.lua:61 `function ProjectNameError:__tostring() return self.msg end`.",
+    "b_source": "s3b-review-lua.txt doubtful_lines[3]; s3b-fix-lua.txt outcomes[10]",
+    "stands": "b."
+   },
+   {
+    "a": "Lua porter: 'notes declared 2, note regions found 1', cause not found.",
+    "a_source": "s3b-port-lua.txt purity",
+    "b": "It is one notes table holding both notes, not a missed note.",
+    "b_source": "s3b-review-lua.txt interface",
+    "stands": "b."
+   },
+   {
+    "a": "Lua guard account: cited 18.",
+    "a_source": "s3b-review-lua.txt numbers[5]",
+    "b": "Porter and fact sheet: cited 17.",
+    "b_source": "s3b-port-lua.txt facts[27]",
+    "stands": "Both counts are right: the guard counts the ahead citation direct.okFalse and the fact sheet does not (fixer and verifier: not a defect)."
+   },
+   {
+    "a": "Lua reviewer, option 1: widen the cancel absence search to Entity.fragment.lua.",
+    "a_source": "s3b-review-lua.txt required_fixes[3]",
+    "b": "That cannot work, because the stream genuinely honours callopts.signal. The fact was narrowed to operations, and the search now covers 'every file an operation runs through'.",
+    "b_source": "s3b-fix-lua.txt outcomes[3]",
+    "stands": "Neither in full. The verifier showed Entity.fragment.lua also holds the operation path (_run_op, _run_steps): an operation-cancel check added there passed 65/65. The fixer's coverage claim is false, and the full fix needs the shared streamSignal change (s3b-verify-lua.txt still_wrong[0], fixes_checked[3])."
+   },
+   {
+    "a": "Swift fixer: the whole-record check is closed for swift (R4/R6) through its own forms.record (824c5d41).",
+    "a_source": "s3b-wave1-consolidated.md swift 'Fixer: outcomes not \"fixed\"' (R8)",
+    "b": "Only partly closed: `({var}.asNative)?.data()` (the cast dropped; does not compile) passed the guard 5/5.",
+    "b_source": "s3b-wave1-consolidated.md swift 'Verifier: still wrong at the last commit'",
+    "stands": "b."
+   },
+   {
+    "a": "Perl porter: OLD's `use lib 'lib'` and `use lib 'perl/lib'` recorded as dropped, and the port is ok.",
+    "a_source": "s3b-wave1-consolidated.md perl 'Interface gaps the porter recorded'",
+    "b": "The root quick start does not compile from the repository root (`perl -c`: Can't locate DemoSDK.pm). 13 rootquick classes were re-recorded as defect, and perl's fix and verify ended ok=False.",
+    "b_source": "s3b-wave1-consolidated.md perl 'Reviewer: required fixes', 'Fixer: outcomes', 'Verifier: still wrong'",
+    "stands": "b."
+   },
+   {
+    "a": "Brief 7 summary: 'Each port was written from the guide in about half an hour, touched no shared source file' and 'No port needed a breaking change to the interface.'",
+    "a_source": "brief7.md 'What the four ports showed' (outside the named records; read for context)",
+    "b": "The ocaml port ran from 02:01 to about 04:15 by its own approximate log, with provider and hook about 25 minutes of it. Lua's 30-minute log is doubted by its porter. swift recorded 2 shared changes as breaking: True (as changed sentences), though none was made.",
+    "b_source": "s3b-port-ocaml.txt time; s3b-port-lua.txt surprises; s3b-wave1-consolidated.md swift 'Fixer: shared changes needed'",
+    "stands": "The records stand. 'About half an hour' fits lua's logged time and ocaml's provider-writing time, not ocaml's end-to-end time. 'No breaking change needed' holds only if a reworded shared sentence is not counted as breaking."
+   }
+  ],
+  "superseded": [
+   {
+    "number": "ocaml forms file 137 lines (porter; +40/-2 since v32-frozen)",
+    "replaced_by": "141 lines (+44/-2 since v32-frozen; this fix +5/-1)",
+    "source": "s3b-fix-ocaml.txt lines"
+   },
+   {
+    "number": "ocaml cancel absence searched 3 files (sdk_runtime.ml, EntityOperation_ocaml.ts, RunOp.fragment.ml)",
+    "replaced_by": "4 files including Entity_ocaml.ts, with 4 signal lines excused verbatim (sdkgen 6c467124)",
+    "source": "s3b-fix-ocaml.txt outcomes[0]"
+   },
+   {
+    "number": "ocaml hand records 6624c1429f, 53f65fd5c6 = restored:shared",
+    "replaced_by": "dropped (ledger counts unchanged: tutorial missing 8, reference missing 31)",
+    "source": "s3b-fix-ocaml.txt outcomes[2], review_counts"
+   },
+   {
+    "number": "ocaml porter's suite figure: generic suites only, 474/474",
+    "replaced_by": "full suite without toolchain lanes 2601 tests, 2596 pass, 0 fail, 5 skipped (run by reviewer, fixer, verifier)",
+    "source": "s3b-review-ocaml.txt numbers[4]"
+   },
+   {
+    "number": "ocaml tools 'changed' REFERENCE block classes (document-order pairing: identical 151, otherwise 163, NEW-only 18)",
+    "replaced_by": "porter's own pairing: 151 identical, 79 lose only the result_data read, 83 lists reshaped, 1 OLD-only, 19 NEW-only (reproduced by reviewer)",
+    "source": "s3b-port-ocaml.txt review_counts[2]; s3b-review-ocaml.txt numbers[7]"
+   },
+   {
+    "number": "lua reference by-hand 52, contradictions 1 (porter, reviewer)",
+    "replaced_by": "by-hand 51, contradictions 2 (d2b1853b85 and 91baf1b4b6)",
+    "source": "s3b-fix-lua.txt final_state; s3b-verify-lua.txt state[5]"
+   },
+   {
+    "number": "lua forms file 115 lines (+41/-8 since v32-frozen)",
+    "replaced_by": "127 lines (+53/-8 since v32-frozen; this fix +17/-5)",
+    "source": "s3b-fix-lua.txt lines"
+   },
+   {
+    "number": "lua cancel absence searched tm/lua/utility/fetcher.lua only",
+    "replaced_by": "Main.fragment.lua, the 6 op fragments, tm/lua/utility/ and tm/lua/core/, outside comments; Entity.fragment.lua still left out (verifier A1 shows the hole)",
+    "source": "s3b-fix-lua.txt outcomes[3]; s3b-verify-lua.txt still_wrong[0]"
+   },
+   {
+    "number": "lua ctor[0] citation quoting `require(\"config_shared\")`; pairForm citation quoting the `---@return string? err` comment",
+    "replaced_by": "ctor[0]: Main_lua.ts File(...) + `return ProjectNameSDK` with local/require/sdk excused; pairForm: `return nil, sdk_err` and `return self, nil` (sdkgen 8478f2dc)",
+    "source": "s3b-fix-lua.txt outcomes[1..2]"
+   },
+   {
+    "number": "lua shared changes recorded: 2 interface gaps (porter)",
+    "replaced_by": "7 shared changes (fixer; verifier hands over the same 7)",
+    "source": "s3b-fix-lua.txt shared_changes_needed; s3b-verify-lua.txt shared_changes"
+   },
+   {
+    "number": "perl tutorial client blocks byte-identical to OLD: 3",
+    "replaced_by": "0, after the porter removed `use lib 'lib'` from both places",
+    "source": "s3b-wave1-consolidated.md perl 'Interface gaps the porter recorded'"
+   },
+   {
+    "number": "perl 13 rootquick classes with their earlier outcomes (dropped or unification)",
+    "replaced_by": "defect, with the earlier outcome kept in brackets for restoration once the shared imports change lands",
+    "source": "s3b-wave1-consolidated.md perl 'Fixer: outcomes not \"fixed\"'"
+   }
+  ],
+  "findings": [
+   {
+    "finding": "All four wave-1 ports were written from the guide alone, and none edited shared code. Each passed the one command with its own hand records, and the reviewers, fixers and verifiers reproduced every reported number. No other language's output changed.",
+    "source": "s3b-review-ocaml.txt summary; s3b-review-lua.txt summary; s3b-verify-ocaml.txt other_languages; s3b-verify-lua.txt other_languages"
+   },
+   {
+    "finding": "Source shrank in every case. ocaml went from 723 to 261 lines (2.77x; 2.2x counting forms and generator edits), lua from 749 to 190 (3.9x), perl from 735 to 213 (3.45x) and swift from 764 to 195 (3.9x). Counting forms, every language except ocaml is at or above 3.1x, and all are above H2's 2x threshold.",
+    "source": "s3b-port-ocaml.txt lines; s3b-port-lua.txt lines; s3b-wave1-consolidated.md perl and swift 'Lines, prose (porter)'"
+   },
+   {
+    "finding": "Per-language prose stayed far under H1's 15% line. Provider literals and notes are 7.3% of ocaml's words, 4.3% of lua's, 1.8% literals plus 1.6% notes for perl, and 0.6% for swift. All three ocaml notes exist only to make up for interface gaps.",
+    "source": "s3b-review-ocaml.txt interface; s3b-port-lua.txt prose; s3b-wave1-consolidated.md perl and swift prose"
+   },
+   {
+    "finding": "Passing every check did not mean the pages were right. The independent reviewers found false shared sentences for runtimes nobody had ported before: ocaml's `direct()`, 'Return the entity name.' for a field and 'Instance functions' over module functions; lua's 'Create a new instance' where nil returns a cached one, and '`err` holds the error' where a non-2xx response leaves err unset. Each needs a new optional fact or slot in shared code. Until those land, the sentences stay false on every page of that language.",
+    "source": "s3b-verify-ocaml.txt still_wrong; s3b-verify-lua.txt still_wrong"
+   },
+   {
+    "finding": "None of the shared changes the ports need was made during the wave. The fixers recorded them for one integrator: ocaml 9 entries, lua 7, perl 3, swift 6. All are additive except two swift ones, which count as breaking only because they reword a shared sentence. The interface held without breaking changes, but its first contact with four new runtimes produced about two dozen additive changes.",
+    "source": "s3b-fix-ocaml.txt shared_changes_needed; s3b-fix-lua.txt shared_changes_needed; s3b-wave1-consolidated.md perl and swift 'Fixer: shared changes needed'"
+   },
+   {
+    "finding": "H4 is essentially untested for ocaml, lua and swift. 229, 226 and 172 changed block instances respectively were compiled by nothing, because no toolchain was present; reviewers read 23 and 24 distinct ocaml and lua blocks by eye and found none failing. perl, the one wave-1 language with a toolchain, has a NEW root quick start that fails `perl -c` from the repository root (Can't locate DemoSDK.pm), while its lane stays at 7/7.",
+    "source": "s3b-verify-ocaml.txt unverified; s3b-verify-lua.txt unverified; s3b-wave1-consolidated.md perl and swift verifier sections"
+   },
+   {
+    "finding": "The perl compile failure comes from the interface: the shared imports printer is not told whether it prints for the tutorial or the root quick start. The proposed fix is additive (an optional `place` on Scope plus a target-directory layout role) and has not been built or tested. A shared display-field helper also makes perl print HASH(0x...) in 17 variations.",
+    "source": "s3b-wave1-consolidated.md perl 'Fixer: shared changes needed', 'Verifier: still wrong'"
+   },
+   {
+    "finding": "The guard, the check meant to tie every declared fact to the runtime, has repeatable holes. A pinned value is compared only when it is prose, so ocaml 'false' passes against 'Bool false' and lua 'nil' against 'false'. It does not check the constructor or receiver form (lua `sdk.create`, `client.Planet()`), call arity (ocaml `test_with Noval`, swift `load(nil)`), or the provider's type words (ocaml int to float). Most such mutations were caught only by comparison with the OLD page or by block classes a person can accept by hand, so a port of a language with no OLD page would lose that net.",
+    "source": "s3b-review-ocaml.txt not_caught; s3b-review-lua.txt not_caught; s3b-verify-ocaml.txt attacks; s3b-wave1-consolidated.md swift 'Verifier: fresh attacks'"
+   },
+   {
+    "finding": "Some attacks passed the whole process. A shared sentence dropped from all 19 lua REFERENCEs gave PORTCHECK PASS. An operation-cancel check added to lua's _run_op passed the guard 65/65. In swift, a provider that failed to compile, or a generation that threw, was measured on stale output and reported PASS.",
+    "source": "s3b-review-lua.txt attacks[16]; s3b-verify-lua.txt attacks[0]; s3b-wave1-consolidated.md swift 'Reviewer: attacks nothing caught'"
+   },
+   {
+    "finding": "Hand judgement carries a large part of the check. Hundreds of classes per language are decided by a person (ocaml 236, lua 174), and 0 by rule. Scratch mode, which ignores hand records, cannot pass any port (ocaml OPEN 28/3/104, lua 23/3/71). Every one of the 79 shared sentences matched per language was a sentence nobody had reviewed. Independent reviewers found wrong hand records in both ocaml and lua.",
+    "source": "s3b-port-ocaml.txt hand_decisions, portcheck; s3b-port-lua.txt hand_decisions; s3b-review-ocaml.txt hand_records; s3b-review-lua.txt hand_records"
+   },
+   {
+    "finding": "The guide itself was wrong in places, and the porters had to correct it. It gave ocaml's okFalse as 'false' where the runtime writes `Bool false`, and lua's failure marker as 'second value', which no signature can spell. It promised that the one command passes in scratch mode, which no port can do. Its runtime table had 3 wrong ocaml rows and 5 wrong lua rows.",
+    "source": "s3b-port-ocaml.txt table_rows_wrong, guide_problems; s3b-port-lua.txt table_rows_wrong, guide_problems"
+   },
+   {
+    "finding": "The new pages fixed real defects of the old ones. They print a valid ocaml root quick start (OLD was invalid in ent-none and ref-issues), true test signatures, corrected step numbering, server variables and secrets, and every lua write checked. The catalogued corrections (S49, S50, S09, S13, S25, U45 and more) reached both languages through shared code with no per-language edit. They also lost things the interface cannot yet carry: ocaml's e_deleted marker and parameter names, lua's whole-record print, and swift's `list(nil, nil)`.",
+    "source": "s3b-review-ocaml.txt pages, interface; s3b-port-lua.txt old_vs_new; s3b-review-lua.txt interface; s3b-wave1-consolidated.md swift 'Verifier: still wrong'"
+   },
+   {
+    "finding": "Two of four pipelines did not end clean. perl's fix and verify ended ok=False: 13 rootquick defect classes wait on a shared change. swift's verify ended ok=False: the record check is only partly closed. ocaml and lua verified ok=True, though their pages still print the false shared sentences listed above.",
+    "source": "s3b-wave1-consolidated.md stage lines per language"
+   }
+  ],
+  "missing": [
+   "All nine named records were present. The perl and swift per-stage records (s3b-*-perl.txt, s3b-*-swift.txt) were not in the list given and were not read; the perl and swift evidence above comes only from s3b-wave1-consolidated.md, which leaves out their summaries, full attack lists and stage numbers (for example, perl and swift portcheck screens, suite counts and full mutation tallies).",
+   "The consolidated file has empty 'Reviewer: gaps judged' sections for perl and lua, so the per-gap needed/breaking judgements for those two are not in my records.",
+   "Whether the shared changes recorded here were applied, and whether they work, is outside this part (the merge round of brief7).",
+   "The conflict between the ocaml and lua verdicts on hand record f64ae2f4fc (log's default) is not settled in these records."
+  ]
+ }
+}

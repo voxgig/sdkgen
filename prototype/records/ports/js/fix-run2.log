@@ -1,0 +1,36 @@
+[portcheck js] sections: tutorial,rootquick,reference; variations in old/ missing from new/: none
+[portcheck js] build: is every output newer than its source (ts/src, ts/test, the components and fragments)
+[portcheck js] classify (hand/js.json, then stage-3a rule records for this language, then exact shared sentences)
+[portcheck js] ledger
+[portcheck js] blocks
+[portcheck js] fact sheet (and the language and convention facts against the OLD page)
+[portcheck js] hand records: does every quotation in a reason still stand on a page or in the clone
+[portcheck js] page numbers and articles: a step count, a heading's number, a list's numbering and every a/an, against the page
+[portcheck js] printed calls: each call of a runtime member in a block, against the guard's forms (arity, receiver, member)
+[portcheck js] purity
+[portcheck js] guard: node --test --test-name-pattern '^js: ' ts/dist-test/runtimefacts.test.js
+== portcheck js ==
+section    ledger: units same | classes shared rule-rec by-hand missing  OPEN  defect | contradictions
+tutorial                   21 |      59     25        0      27       7     0       0 | 0
+rootquick                  19 |       5      0        0       4       1     0       0 | 0
+reference               15259 |     142     73        0      30      37     0       0 | 2
+section    blocks: identical corrected unified otherwise | classes OPEN defect | compiler on PATH
+tutorial                   0        18       0        30 |      57    0      0 | yes (node); 48 changed blocks compiled by nothing
+rootquick                  0         4       1        14 |      22    0      0 | yes (node); 19 changed blocks compiled by nothing
+reference                195         0      98        20 |       8    0      0 | yes (node); 118 changed blocks compiled by nothing
+  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (tutorial: changed 10, old-only 4, novel-token 28, vanished-token 14, novel-shape 1; rootquick: changed 8, novel-token 10, vanished-token 4; reference: changed 2, old-only 1, novel-token 5)
+  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models
+contradictions (2; counted, not failed):
+  reference [9c6d819441] For a response whose body is read, 2xx or not, it holds the keys `ok`, | other: js/README.md, Error handling (unported ReadmeExplanation_js) | true: the REFERENCE: a readable response, 2xx 
+  reference [bff341cf32] This SDK is generated without the `test` feature, so the client has no | other: no-test js/README.md, Use test mode (unported ReadmeHowto_js | true: the REFERENCE: without the test feature 
+purity: 0 open, 1 accepted | notes declared 0, note regions found 0 (a region holds any number of notes); every declared note is in a region the lint read
+page numbers and articles (pagecheck): 0 step counts, 48 numbered headings, 0 ordered lists, 1461 articles checked (0 not judged: a symbol, a digit or a word whose sound the rule cannot tell); findings 0
+printed calls (callcheck, no compiler): 374 calls of 25 runtime members checked; ARITY/RECEIVER/MEMBER findings 0
+guard: pass (pass 4 fail 0 )
+build: 1813 sources checked, current
+hand records: 200, 45 quote text (83 quotations); STALE 0
+facts (language and convention, against the OLD page): attested 5, recorded by hand 2, UNATTESTED or NOT JUDGED 0, not printed 0, not judged 0; cited 23, pinned prose 13 (the reviewer audits each)
+shared sentences: matched 98, of which against a sentence nobody reviewed 4 (fails only with STRICT_SENTENCES=1); printed less often than its reference 0 (open, above); absent here but printed by every reference of this result style 3 (3 explained; an unexplained one FAILS)
+fact sheet: factsheet js: 72 facts, 0 with no account, 0 unattested, guard report read: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js/tools/review/js/facts.txt (audit every fact a shared sentence carries)
+worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/ports/js/tools/review/js/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/js.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff
+PORTCHECK js: PASS

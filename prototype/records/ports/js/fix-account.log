@@ -1,0 +1,61 @@
+js: derived 50, cited 23, language 1, convention 6, excepted 0; types: column js (derived from the generator); constructor ProjectNameSDK (a template name, through tm); uncompared none
+  cited (prose: audit only) facts.collection = "array"
+    tm/js/src/utility/MakeResultUtility.js: "if ('list' == op.name) { ... result.resdata = [] ... result.resdata.push(ent)"
+  cited ref.facts.none = "undefined"
+    tm/js/src/utility/StructUtility.js | src/cmp/js/fragment/Main.fragment.js | src/cmp/js/fragment/EntityBase.fragment.js: "const NONE = undefined ... function getdef(val, alt) { ... if (NONE === val) { | const sdkopts = getdef(clone(sdkoptsarg), {}) | entopts = entopts || {}"
+  cited ref.facts.container = "object"
+    tm/js/src/utility/MakeOptionsUtility.js | tm/js/src/utility/StructUtility.js: "let opts = struct.clone(options || {}) ... opts = validate(opts, optspec) | const S_object = 'object' ... return null != val && S_object == typeof val && !Array.isArray(val)"
+  cited ref.facts.valueType.OBJECT = "object"
+    tm/js/src/utility/MakeOptionsUtility.js | tm/js/src/utility/StructUtility.js: ": null != opts.feature && 'object' === typeof opts.feature | } else if (!ismap(tval)) { ... inj.errs.push(_invalidTypeMsg(slice(inj.path, -1), S_object, typify(tval), tval), 'V0220') ... const S_object = 'object'"
+  cited ref.facts.client[0].returns = "object"
+    src/cmp/js/fragment/Main.fragment.js | tm/js/src/utility/MakeOptionsUtility.js | tm/js/src/utility/StructUtility.js: "return this._utility.struct.clone(this._options) ... this._options = this._utility.makeOptions(this._rootctx) | let opts = struct.clone(options || {}) ... opts = validate(opts, optspec) | const S_object = 'object' ... return null != val && S_object == typeof val && !Array.isArray(val)"
+  cited (prose: audit only) ref.facts.client[0].copy = true
+    src/cmp/js/fragment/Main.fragment.js: "return this._utility.struct.clone(this._options)"
+  cited (prose: audit only) ref.facts.client[1].kind = "utility"
+    src/cmp/js/fragment/Main.fragment.js: "return this._utility.struct.clone(this._utility)"
+  cited ref.facts.client[1].returns = "object"
+    src/cmp/js/fragment/Main.fragment.js: "return this._utility.struct.clone(this._utility)"
+    unquoted object: the Utility instance itself (clone hands a class instance back by reference) [the runtime has it in 28 file(s)]
+  cited (prose: audit only) ref.facts.client[1].copy = false
+    src/cmp/js/fragment/Main.fragment.js | tm/js/src/utility/StructUtility.js | tm/js/src/utility/Utility.js: "return this._utility.struct.clone(this._utility) | 'Object' !== v.constructor.name && ... return (refs.push(v), '`$REF:' + (refs.length - 1) + '`') | class Utility {"
+  cited (prose: audit only) ref.facts.entity[0].copy = true
+    src/cmp/js/fragment/EntityBase.fragment.js: "let out = struct.clone(this._data)"
+  cited (prose: audit only) ref.facts.entity[1].copy = true
+    src/cmp/js/fragment/EntityBase.fragment.js: "let out = struct.clone(this._match)"
+  cited (prose: audit only) ref.facts.entity[5].copy = true
+    src/cmp/js/fragment/EntityBase.fragment.js: "return this._utility.struct.merge([{}, this._entopts])"
+  cited ref.facts.direct.returns = "Promise<{ ok, status, headers, data }>"
+    src/cmp/js/fragment/Main.fragment.js: "async direct(fetchargs) { ... ok: null == err && status >= 200 && status < 300, ...         status,\n        headers: fetched.headers,\n        data: json,"
+    unquoted Promise: direct is an async method, so it returns a Promise; js spells no return type [the runtime has it in 19 file(s)]
+  cited ref.facts.direct.signal = "AbortSignal"
+    tm/js/src/utility/MakeRequestUtility.js | tm/js/src/utility/MakeFetchDefUtility.js | tm/js/src/feature/timeout/TimeoutFeature.js | tm/js/src/utility/FetcherUtility.js: "if (true === fetchdef.signal?.aborted) { ... throw fetchdef.signal.reason | fetchdef.signal = ctx.ctrl.signal | const caller = fetchdef.signal ... controller = new globalThis.AbortController() ... fetchdef = { ...fetchdef, signal: controller.signal } ... caller.addEventListener('abort', follow, { once: true }) | const response = await fetch(fullurl, fetchdef)"
+    unquoted AbortSignal: js spells no type: what the runtime reads (aborted, reason, the abort event) and puts in its place (an AbortController's signal) is the AbortSignal interface, which fetch takes as its signal [the runtime has it in 2 file(s)]
+  cited ref.facts.direct.abortCode = "request_aborted"
+    tm/js/src/utility/MakeRequestUtility.js: "const abort = ctx.error('request_aborted', 'request aborted')"
+  cited ref.facts.direct.okFalse = "false"
+    src/cmp/js/fragment/Main.fragment.js: "return { ok: false, err: utility.clean(this._rootctx, fetchdef) }"
+  cited ref.facts.prepare.returns = "Promise<{ url, method, headers, body } | Error>"
+    src/cmp/js/fragment/Main.fragment.js | tm/js/src/utility/MakeFetchDefUtility.js | tm/js/src/Context.js: "async prepare(fetchargs) { ... return ctx.error('spec_method_allow' ... return makeFetchDef(ctx) |     url,\n    method: spec.method,\n    headers: spec.headers, ... fetchdef.body = | return new ProjectNameError(code, msg, this)"
+    unquoted Error: ctx.error returns a ProjectNameError, which extends Error [the runtime has it in 26 file(s)]
+    unquoted Promise: prepare is an async method, so it returns a Promise; js spells no return type [the runtime has it in 19 file(s)]
+  cited (prose: audit only) ref.facts.prepare.fails = "value"
+    src/cmp/js/fragment/Main.fragment.js: "return ctx.error('spec_method_allow'"
+  cited (prose: audit only) ref.facts.body.values = "a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string"
+    tm/js/src/utility/MediaUtility.js | tm/js/src/utility/MakeFetchDefUtility.js: "return value instanceof ArrayBuffer || ArrayBuffer.isView(value) || ... ('undefined' !== typeof Blob && value instanceof Blob) || isStream(value) ... return new Uint8Array(chunk) | fetchdef.body = isRawValue(body) || ('object' !== typeof body && !isJsonRequest(ctx.point)) ?"
+    unquoted Buffer: a Node Buffer is a Uint8Array, which ArrayBuffer.isView accepts [the runtime has it in 4 file(s)]
+  cited (prose: audit only) ref.facts.body.once = "a stream"
+    tm/js/src/utility/MakeRequestUtility.js: "if (isStream(fetchdef.body)) { ... fetchdef.body = await readStream(fetchdef.body)"
+  cited (prose: audit only) ref.facts.cancel = true
+    tm/js/src/utility/MakeFetchDefUtility.js: "fetchdef.signal = ctx.ctrl.signal"
+  cited (prose: audit only) ref.facts.streamSignal = true
+    src/cmp/js/fragment/EntityBase.fragment.js: "ctrl.signal = callopts.signal ... if (signal && signal.aborted) { return }"
+  cited (prose: audit only) ref.facts.testMock = "generated"
+    src/cmp/js/fragment/Config.fragment.js: "const fc = FEATURE_CLASS[fn] || BaseFeature"
+js account facts.method.list: derived
+js account facts.method.load: derived
+js account facts.method.create: derived
+js account facts.method.update: derived
+js account facts.method.patch: derived
+js account facts.method.remove: derived
+js account facts.named: convention
+js account facts.async: derived

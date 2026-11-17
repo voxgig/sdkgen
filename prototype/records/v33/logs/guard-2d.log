@@ -1,0 +1,146 @@
+▶ runtimefacts
+  ✔ every provider is checked (1.322892ms)
+  ✔ every compiled forms file has its source, and every provider a forms source (1.183461ms)
+  ✔ c: the language declares its runtime forms (0.931158ms)
+  ✔ c: the declared facts are what its runtime defines (31.272454ms)
+  ✔ c: every declared fact is accounted for (34.28453ms)
+  ✔ c: each check fails when its fact is changed (negative controls) (707.375313ms)
+  ✔ clojure: the language declares its runtime forms (1.309448ms)
+  ✔ clojure: the declared facts are what its runtime defines (12.328458ms)
+  ✔ clojure: every declared fact is accounted for (17.929562ms)
+  ✔ clojure: each check fails when its fact is changed (negative controls) (338.31774ms)
+  ✔ elixir: the language declares its runtime forms (0.863323ms)
+  ✔ elixir: the declared facts are what its runtime defines (8.007232ms)
+  ✔ elixir: every declared fact is accounted for (11.336373ms)
+  ✔ elixir: each check fails when its fact is changed (negative controls) (470.294739ms)
+  ✔ go: the language declares its runtime forms (1.204881ms)
+  ✔ go: the declared facts are what its runtime defines (12.096541ms)
+  ✔ go: every declared fact is accounted for (15.23981ms)
+  ✔ go: each check fails when its fact is changed (negative controls) (383.494283ms)
+  ✔ lua: the language declares its runtime forms (0.918964ms)
+  ✔ lua: the declared facts are what its runtime defines (6.570414ms)
+  ✔ lua: every declared fact is accounted for (10.617898ms)
+  ✔ lua: each check fails when its fact is changed (negative controls) (355.622255ms)
+  ✔ ocaml: the language declares its runtime forms (0.945469ms)
+  ✔ ocaml: the declared facts are what its runtime defines (9.012382ms)
+  ✔ ocaml: every declared fact is accounted for (11.909916ms)
+  ✔ ocaml: each check fails when its fact is changed (negative controls) (359.80411ms)
+  ✔ perl: the language declares its runtime forms (0.955244ms)
+  ✔ perl: the declared facts are what its runtime defines (5.936011ms)
+  ✔ perl: every declared fact is accounted for (9.943843ms)
+  ✔ perl: each check fails when its fact is changed (negative controls) (297.37494ms)
+  ✔ py: the language declares its runtime forms (0.905704ms)
+  ✔ py: the declared facts are what its runtime defines (7.048955ms)
+  ✔ py: every declared fact is accounted for (11.203507ms)
+  ✔ py: each check fails when its fact is changed (negative controls) (362.34126ms)
+  ✔ rb: the language declares its runtime forms (0.925097ms)
+  ✔ rb: the declared facts are what its runtime defines (8.232192ms)
+  ✔ rb: every declared fact is accounted for (11.022293ms)
+  ✔ rb: each check fails when its fact is changed (negative controls) (319.453894ms)
+  ✔ rust: the language declares its runtime forms (0.867564ms)
+  ✔ rust: the declared facts are what its runtime defines (7.873553ms)
+  ✔ rust: every declared fact is accounted for (13.196396ms)
+  ✔ rust: each check fails when its fact is changed (negative controls) (393.844863ms)
+  ✔ swift: the language declares its runtime forms (0.890284ms)
+  ✔ swift: the declared facts are what its runtime defines (11.317986ms)
+  ✔ swift: every declared fact is accounted for (12.293422ms)
+  ✔ swift: each check fails when its fact is changed (negative controls) (382.452796ms)
+  ✔ ts: the language declares its runtime forms (0.948784ms)
+  ✖ ts: the declared facts are what its runtime defines (9.229876ms)
+  ✖ ts: every declared fact is accounted for (7.290134ms)
+  ✔ ts: each check fails when its fact is changed (negative controls) (261.586413ms)
+  ✔ zig: the language declares its runtime forms (1.472614ms)
+  ✔ zig: the declared facts are what its runtime defines (14.825224ms)
+  ✔ zig: every declared fact is accounted for (24.817708ms)
+  ✔ zig: each check fails when its fact is changed (negative controls) (712.186577ms)
+  ✔ the account, per language (SDKGEN_GUARD_REPORT=1 prints it) (283.596611ms)
+✖ runtimefacts (5983.159706ms)
+▶ runtimereader
+  ✔ forms files for every language (0.897439ms)
+  ✔ c: the forms read the runtime (35.740718ms)
+  ✔ clojure: the forms read the runtime (11.158202ms)
+  ✔ cpp: the forms read the runtime (44.808788ms)
+  ✔ csharp: the forms read the runtime (15.069283ms)
+  ✔ elixir: the forms read the runtime (9.460543ms)
+  ✔ go: the forms read the runtime (15.87759ms)
+  ✔ java: the forms read the runtime (9.620397ms)
+  ✔ js: the forms read the runtime (7.549413ms)
+  ✔ kotlin: the forms read the runtime (9.00496ms)
+  ✔ lua: the forms read the runtime (7.150841ms)
+  ✔ ocaml: the forms read the runtime (13.113307ms)
+  ✔ perl: the forms read the runtime (5.412268ms)
+  ✔ php: the forms read the runtime (6.83666ms)
+  ✔ py: the forms read the runtime (7.642407ms)
+  ✔ rb: the forms read the runtime (9.110967ms)
+  ✔ rust: the forms read the runtime (14.282267ms)
+  ✔ scala: the forms read the runtime (18.017538ms)
+  ✔ swift: the forms read the runtime (13.52167ms)
+  ✔ ts: the forms read the runtime (7.612508ms)
+  ✔ zig: the forms read the runtime (7.207604ms)
+  ✔ the table (SDKGEN_RUNTIME_TABLE=<path>) (0.18819ms)
+✔ runtimereader (272.087957ms)
+ℹ tests 77
+ℹ suites 2
+ℹ pass 75
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6558.375444
+
+✖ failing tests:
+
+test at dist-test/runtimefacts.test.js:63:30
+✖ ts: the declared facts are what its runtime defines (9.229876ms)
+  AssertionError [ERR_ASSERTION]: ts: declared facts the runtime contradicts
+  + actual - expected
+  
+  + [
+  +   {
+  +     check: 'signature',
+  +     what: "entity name: name is not defined by the runtime's entity (name: string)"
+  +   }
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/sdkgen/ts/dist-test/runtimefacts.test.js:67:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ { check: 'signature', what: "entity name: name is not defined by the runtime's entity (name: string)" } ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at dist-test/runtimefacts.test.js:69:30
+✖ ts: every declared fact is accounted for (7.290134ms)
+  AssertionError [ERR_ASSERTION]: ts: declared facts with no account
+  + actual - expected
+  
+  + [
+  +   'ref.facts.entity[6].kind: the guard could not re-derive it from the runtime and the forms do not cite it',
+  +   'ref.facts.entity[6].sig: the guard could not re-derive it from the runtime and the forms do not cite it',
+  +   'ref.facts.entity[6].field: the guard could not re-derive it from the runtime and the forms do not cite it'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/sdkgen/ts/dist-test/runtimefacts.test.js:74:47)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'ref.facts.entity[6].kind: the guard could not re-derive it from the runtime and the forms do not cite it', 'ref.facts.entity[6].sig: the guard could not re-derive it from the runtime and the forms do not cite it', 'ref.facts.entity[6].field: the guard could not re-derive it from the runtime and the forms do not cite it' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

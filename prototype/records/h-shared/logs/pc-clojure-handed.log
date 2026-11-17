@@ -1,0 +1,54 @@
+[portcheck clojure] sections: tutorial,rootquick,reference
+[portcheck clojure] ledger
+ledger clojure tutorial  vars 19 | units OLD 137 NEW 181: same 61 reworded 60 missing 16 added 60 | classes 35 (echo 2, reworded 14, added 8, missing 4, novel-token 7) | unclassified 0, defect 0 -> tools/review/clojure/tutorial.ledger.txt
+ledger clojure rootquick vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 | classes 3 (reworded 3) | unclassified 0, defect 0 -> tools/review/clojure/rootquick.ledger.txt
+ledger clojure reference vars 19 | units OLD 15936 NEW 16453: same 14983 reworded 446 missing 507 added 1024 | classes 117 (echo 13, reworded 14, missing 25, added 49, novel-token 15, vanished-token 1) | unclassified 0, defect 0 -> tools/review/clojure/reference.ledger.txt
+[portcheck clojure] blocks
+blocks clojure tutorial  vars 19 | OLD 48 NEW 48: identical 26, after corrections 0, changed 22 (UNVERIFIED: no clojure here), OLD-only 0, NEW-only 0 | classes 17 (changed 8, novel-token 8, vanished-token 1) | unclassified 0, defect 0 -> tools/review/clojure/tutorial.blocks.txt
+blocks clojure rootquick vars 19 | OLD 19 NEW 19: identical 0, after corrections 0, changed 19 (UNVERIFIED: no clojure here), OLD-only 0, NEW-only 0 | classes 25 (changed 12, novel-token 7, vanished-token 4, novel-shape 2) | unclassified 0, defect 0 -> tools/review/clojure/rootquick.blocks.txt
+blocks clojure reference vars 19 | OLD 314 NEW 313: identical 230, after corrections 0, changed 83 (UNVERIFIED: no clojure here), OLD-only 1, NEW-only 0 | classes 4 (changed 2, old-only 1, novel-token 1) | unclassified 0, defect 0 -> tools/review/clojure/reference.blocks.txt
+[portcheck clojure] sharing (NEW, then OLD), over the languages ported for the section
+new: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   clojure    181 units  48.1%  36.5%   8.8%   6.6% |   1443 words  51.3%  26.4%  11.1%  11.2% | language words at output 162 (2 distinct units) | at source: fact/notes tables facts,refFacts 131 words (36 in prose literals), other prose literals 24 words
+old: share tutorial over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   clojure    137 units  29.2%  42.3%  18.2%  10.2% |    940 words  40.5%  24.5%  23.1%  11.9% | language words at output 112 (2 distinct units) | at source: fact/notes tables facts,refFacts 131 words (36 in prose literals), other prose literals 24 words
+new: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   clojure     42 units  45.2%     0%  38.1%  16.7% |    238 words     8%     0%  53.8%  38.2% | language words at output 91 (1 distinct units) | at source: fact/notes tables facts,refFacts 131 words (36 in prose literals), other prose literals 24 words
+old: share rootquick over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   clojure     42 units  45.2%     0%  38.1%  16.7% |    270 words     7%     0%  59.3%  33.7% | language words at output 91 (1 distinct units) | at source: fact/notes tables facts,refFacts 131 words (36 in prose literals), other prose literals 24 words
+new: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/new
+new:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+new:   clojure  16453 units  91.7%   3.1%     4%   1.2% |  48779 words  84.5%   5.2%   7.8%   2.5% | language words at output 1203 (3 distinct units) | at source: fact/notes tables facts,refFacts 131 words (36 in prose literals), other prose literals 24 words
+old: share reference over 8 languages (ts go py c zig clojure rust elixir), root /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/outh/old
+old:   units (words) printed by: all 8 | at least 6 | 2..5 | only this language   -- code spans, title, SDK and model names masked
+old:   clojure  15936 units  88.9%   3.5%   4.4%   3.3% |  46685 words  78.8%     5%   8.6%   7.6% | language words at output 3534 (12 distinct units) | at source: fact/notes tables facts,refFacts 131 words (36 in prose literals), other prose literals 24 words
+[portcheck clojure] purity
+purity over clojure (vocabulary: 20 features, 10 option keys, 36 entity name forms, 6 operations)
+  clojure Syntax 227 lines, Naming present: 0 open, 1 accepted
+     naming calls cljAccessor (./utility_clojure); also called by: MainEntity_clojure.ts
+     naming calls cljEntityAlias (./utility_clojure); also called by: MainEntity_clojure.ts, Main_clojure.ts
+     naming calls cljEntityNs (./utility_clojure); also called by: Main_clojure.ts
+[portcheck clojure] guard: node --test --test-name-pattern clojure ts/dist-test/runtimefacts.test.js
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+ℹ skipped 0
+[portcheck clojure] summary
+  ledger clojure tutorial  vars 19 | units OLD 137 NEW 181: same 61 reworded 60 missing 16 added 60 
+        classes 35 (echo 2, reworded 14, added 8, missing 4, novel-token 7) | unclassified 0, defect 0
+  ledger clojure rootquick vars 19 | units OLD 42 NEW 42: same 19 reworded 23 missing 0 added 0 
+        classes 3 (reworded 3) | unclassified 0, defect 0
+  ledger clojure reference vars 19 | units OLD 15936 NEW 16453: same 14983 reworded 446 missing 507 added 1024 
+        classes 117 (echo 13, reworded 14, missing 25, added 49, novel-token 15, vanished-token 1) | unclassified 0, defect 0
+  blocks clojure tutorial  vars 19 | OLD 48 NEW 48: identical 26, after corrections 0, changed 22 (UNVERIFIED: no clojure here), OLD-only 0, NEW-only 0 
+        classes 17 (changed 8, novel-token 8, vanished-token 1) | unclassified 0, defect 0
+  blocks clojure rootquick vars 19 | OLD 19 NEW 19: identical 0, after corrections 0, changed 19 (UNVERIFIED: no clojure here), OLD-only 0, NEW-only 0 
+        classes 25 (changed 12, novel-token 7, vanished-token 4, novel-shape 2) | unclassified 0, defect 0
+  blocks clojure reference vars 19 | OLD 314 NEW 313: identical 230, after corrections 0, changed 83 (UNVERIFIED: no clojure here), OLD-only 1, NEW-only 0 
+        classes 4 (changed 2, old-only 1, novel-token 1) | unclassified 0, defect 0
+  worklists: /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/review/clojure/*.ledger.txt, *.blocks.txt, *.blocks.diff; templates *.template.json -> fill into /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/h-shared/tools/classes/clojure.json
+PORTCHECK clojure: PASS

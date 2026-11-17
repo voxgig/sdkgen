@@ -1,0 +1,39 @@
+  generated perl (default): 146 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/before/work/default/perl/perl
+[perl default] run 1: exit 0, 5.175947587s
+[perl default] run 2: exit 0, 6.072500606s
+[perl default] run 3: exit 0, 5.428524099s
+[perl default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/before/work/default/perl/perl): perl -Ilib t/readme_examples.t
+[perl default] last lines:
+    # perl REFERENCE   total=21 executed=21 syntaxchecked=0 illustration=0
+    # root README      total=3 executed=3 syntaxchecked=0 illustration=0
+    ok 5 - no runnable-looking perl block was left unexecuted
+    ok 6 - every perl block is executed, syntaxchecked-nonrunnable, or illustration
+    ok 7 - at least one executed perl example
+    1..7
+[perl default] minimum of 3: 5.175947587s
+  generated perl (crud): 134 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/before/work/crud/perl/perl
+[perl crud] run 1: exit 0, 4.391317156s
+[perl crud] run 2: exit 0, 4.400049751s
+[perl crud] run 3: exit 0, 4.408062103s
+[perl crud] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/before/work/crud/perl/perl): perl -Ilib t/readme_examples.t
+[perl crud] last lines:
+    # perl REFERENCE   total=14 executed=14 syntaxchecked=0 illustration=0
+    # root README      total=3 executed=3 syntaxchecked=0 illustration=0
+    ok 5 - no runnable-looking perl block was left unexecuted
+    ok 6 - every perl block is executed, syntaxchecked-nonrunnable, or illustration
+    ok 7 - at least one executed perl example
+    1..7
+[perl crud] minimum of 3: 4.391317156s
+  generated perl (basic-server): 134 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/before/work/basic-server/perl/perl
+[perl basic-server] run 1: exit 0, 4.469124617s
+[perl basic-server] run 2: exit 0, 4.474511915s
+[perl basic-server] run 3: exit 0, 4.148457603s
+[perl basic-server] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v33/tools/before/work/basic-server/perl/perl): perl -Ilib t/readme_examples.t
+[perl basic-server] last lines:
+    # perl REFERENCE   total=14 executed=14 syntaxchecked=0 illustration=0
+    # root README      total=3 executed=3 syntaxchecked=0 illustration=0
+    ok 5 - no runnable-looking perl block was left unexecuted
+    ok 6 - every perl block is executed, syntaxchecked-nonrunnable, or illustration
+    ok 7 - at least one executed perl example
+    1..7
+[perl basic-server] minimum of 3: 4.148457603s

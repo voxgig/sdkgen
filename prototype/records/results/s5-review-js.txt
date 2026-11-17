@@ -1,0 +1,702 @@
+lang: js
+verdict: accept-with-fixes
+summary: |
+  I recommend accepting the js port with fixes.
+  
+  **What holds.** Every fact the provider declares is true against the js runtime. I read the code and ran a probe on a generated SDK:
+  - `utility()` returns the live object; the data, match, entopts and options getters return copies.
+  - The accessor makes a new entity on every call. `name` is a string field.
+  - An abort gives `request_aborted`, with the signal's reason as `cause`.
+  - `stream()` without an action throws, and `explain: true` throws.
+  
+  **The porter's numbers reproduce exactly.** The one command passes with the port's records (exit 0, 21 of 21 variations regenerated), and its `SCRATCH=1` numbers match. So do the suite (2635 tests, 2630 pass, 0 fail, 5 skipped), the guard (4/4), guard and reader (81/81), the golden (2/2), the line counts (734 lines deleted against 167 provider and hook lines) and the prose measure (0.4% js-only).
+  - No shared file was touched, and no other language's page changed.
+  - The provider is ts's provider with `listOf`, the `!` assertion, the fence, the type column and the import line changed.
+  
+  **What is wrong in the port.**
+  - **The examples do not run as written.** The tutorial and root quick start mix `require` with top-level `await`. node v24.22.1 refuses them before the first statement. This is equally true of OLD, so it is not a regression. With `import`, which is what ts prints, the NEW tutorial runs to the live request.
+  - **Weak citations.** Five citations quote a line that does not show the value. Two of them let wrong values pass the guard (I ran `container: 'Array'` and `client[0].returns: 'Array'`).
+  - **Hand records.** Two absent reasons say the runtime names no type, but its JSDoc does. One `same-meaning` record labels a removed sentence.
+  - **One untouchable false row.** The README methods table, in an unported component the port may not edit, still calls `utility()` a "Deep copy". That contradicts the REFERENCE, and nothing recorded it.
+  
+  **What the process missed.** One source change carried five wrong facts. Three of them passed both the guard and the one command with no class opened at all, matched as shared with js's tokens masked: `stream(action?: ...)`, `name: number`, and direct's returns without `headers`. Many other attacks surfaced only as classes a porter decides by hand. These are shared gaps, not this porter's errors.
+required_fixes:
+  - [0]
+    file: ts/project/.sdk/src/cmp/js/Syntax_js.ts:100
+    change: The imports printer should print `import { ${desc.layout.client} } from '${desc.layout.module}'`, as Syntax_ts.ts does. Alternatively, wrap the program in an async function through the `program` printer.
+    why: The tutorial and root quick start put `const { DemoSDK } = require(...)` beside top-level `await`. On node v24.22.1 the root quick start, run as written from the repository root with the package linked, fails before the first statement: "Cannot determine intended module format because both 'require' and top-level await are present". The same holds for OLD. With `import`, the NEW B tutorial in a plain .js file runs through to the live request.
+    shared: False
+  - [1]
+    file: base33/PORTING.md section 2.5 and the js row of section 9
+    change: The guide says a package-addressed `require`/`import` should be kept. For js it should say the import must be an ES `import` (or the program wrapped), because the shared steps use top-level `await`.
+    why: The porter followed the guide. js has no lane, so nothing mechanical runs its examples as written.
+    shared: True
+  - [2]
+    file: ts/test/runtimeforms/js.ts:99-106
+    change: Cite `ref.facts.container` and `ref.facts.client[0].returns` to a line about the options container: MakeOptionsUtility.js:31 `let opts = struct.clone(options || {})` or Main.fragment.js:99, with an `unquoted` excuse for `object`. Drop the `valueType.OBJECT` citation, which the guard says it re-derives.
+    why: The quoted MakeOptionsUtility.js:43 `const layer = ...` is a helper for the `clean` option blocks, an unrelated line. I ran `container: 'Array'` and `client[0].returns: 'Array'`: both pass the guard on the line's `Array.isArray`, and in the one command `container: 'Array'` only opened a class decided by hand.
+    shared: False
+  - [3]
+    file: ts/test/runtimeforms/js.ts:103
+    change: Cite `ref.facts.none` to a line where the runtime takes `undefined` as no value: EntityBase.fragment.js:20 `entopts = entopts || {}`, or Main.fragment.js:341 `getdef(clone(sdkoptsarg), {})`, with an `unquoted` excuse.
+    why: The quote `return undefined` (EntityBase.fragment.js:268) is the `throw: false` return path of `_unexpected`, not the meaning the page uses ("both may be `undefined`", "Pass `undefined` for no initial options"). The value is true, but the citation does not show it, and `none: 'return'` passes the guard.
+    shared: False
+  - [4]
+    file: ts/test/runtimeforms/js.ts:134 and :111-115
+    change: `body.once`: quote the code at MakeRequestUtility.js:38-39 (`if (isStream(fetchdef.body)) {`, `fetchdef.body = await readStream(fetchdef.body)`) instead of the comment at :37. `direct.signal`: back the type word `AbortSignal` with code (FetcherUtility.js:67 `fetch(fullurl, fetchdef)`, with an `unquoted` reason that fetch's signal is an AbortSignal) instead of the stream's comment at EntityBase.fragment.js:105.
+    why: Both values are true, but the citations rest on comments. `direct.signal: 'signal'` passes the guard on `fetchdef.signal`.
+    shared: False
+  - [5]
+    file: tools/hand/js.json absent 99a8153c15 and a0b269a293
+    change: Reword both reasons: js declares no `listOf`, and the type appears only in JSDoc. Alternatively, declare `listOf: '{Class}[]'` cited to the JSDoc, which would print the two sentences ts prints.
+    why: Both reasons say "the runtime names no type", but EntityListOp.fragment.js:10 has `@returns {Promise<EntyClass[]>}` (generated: `Promise<PlanetEntity[]>`) and EntityLoadOp.fragment.js:10 has `Promise<EntyClass>`. The page is true either way; the reasons are not.
+    shared: False
+  - [6]
+    file: tools/hand/js.json 39aecae10e
+    change: Record it as `dropped` with the reason given for 9c1038b6ae, not as `same-meaning`.
+    why: The ledger lists it as "(removed) Use `client.direct()` to call any API endpoint directly:". NEW does not say the same thing there; the sentence is gone, which is a drop, and a correct one.
+    shared: False
+  - [7]
+    file: ts/test/runtimeforms/js.ts:37
+    change: The `undocumented.graphql` reason should say that graphql bypasses the feature pipeline.
+    why: It says "a GraphQL request through the pipeline", copied from ts, but Main.fragment.js:292 says "this bypasses the feature pipeline". It is not printed, so this is minor.
+    shared: False
+  - [8]
+    file: ts/project/.sdk/src/cmp/js/ReadmeModel_js.ts:79 (and ts/project/.sdk/src/cmp/ts/ReadmeModel_ts.ts:103)
+    change: The README methods-table row for `utility()` should stop saying "Deep copy of the SDK utility object." Record the disagreement at integration.
+    why: utility() returns the live Utility: StructUtility.js:681-690 references every non-plain instance, the root included, and the probe shows `utility() === _utility`. The REFERENCE now says so, so the two documents of one SDK disagree. This component is outside the files a port may touch, and no tool flagged it.
+    shared: True
+  - [9]
+    file: ts/test/runtimeforms guard (shared: guard.ts/account.ts) and tools sentence matching
+    change: Make three shared checks: compare direct's and prepare's return key sets with the quoted object; require a cited token to match a whole identifier at the cited value; and narrow an exception to a single parameter (`optional:entity streamIterator` switches off the optionality check for all of stream's parameters). In the tools, do not count a NEW-only signature heading matched with masked fact values as a check of those values.
+    why: I ran one source change through build, guard and one command. `stream(action?: string, ...)` (false: stream() without an action throws), `name: number` and `Promise<{ ok, status, data }>` passed the guard, opened no class, and left no fact UNATTESTED. The page would have been false with every check green.
+    shared: True
+not_caught:
+  - [0]
+    attack: stream's action shown optional: `stream(action?: string, args?: object, callopts?: object)` (source, through build, guard and one command)
+    consequence: Nothing failed and no class opened. The page would say stream can be called without an action, but `stream()` throws "Cannot read properties of undefined (reading 'name')" (probe). The exception 'optional:entity streamIterator' covers the whole member, and the tools matched the heading as shared.
+  - [1]
+    attack: `name: number` for the entity name field (source, one command)
+    consequence: Nothing failed and no class opened. js parameter and return types are uncompared, and the NEW-only heading was matched as shared with the fact masked.
+  - [2]
+    attack: direct.returns without headers: `Promise<{ ok, status, data }>` (source, one command); `{ ok, data }` (guard)
+    consequence: Nothing failed and no class opened. The guard checks only that each declared token stands in the quote, so any subset passes.
+  - [3]
+    attack: direct.returns with an `err` key added (earlier part of this review, e2)
+    consequence: The guard passed. The tools opened only classes decided by hand.
+  - [4]
+    attack: container 'Array' and client[0].returns 'Array'
+    consequence: The guard passed: the token stands in `Array.isArray` on the unrelated `layer` line. The one command opened only classes decided by hand.
+  - [5]
+    attack: direct.signal 'signal', abortCode 'request', none 'return' (guard only)
+    consequence: The guard passed: each token or substring stands in its quote.
+  - [6]
+    attack: `options() throws`, a failure marker on a throw-style signature
+    consequence: The guard passed. The tools opened a heading class and a token class, both decided by hand.
+  - [7]
+    attack: deleted as a non-call, `{var}.deleted`
+    consequence: The guard passed. The tools opened only classes decided by hand, and the call-versus-field check does not cover the deleted template.
+  - [8]
+    attack: deleted removed
+    consequence: The guard passed. The tools reported ABSENT NO REASON [808ab9f422], which a porter can explain by hand.
+  - [9]
+    attack: wrong language, convention and enumerated values: maps 'arrays', noun 'Functions', valueType.ANY 'unknown', keys 'bare', prints 'fields', named 'bare'
+    consequence: The guard passed. The tools reported UNATTESTED, settled by a hand record; this is by design, but it is a hand decision.
+  - [10]
+    attack: a shared sentence dropped from variation B only
+    consequence: No DROPPED: one OPEN class decided by hand. Dropping it from every variation was caught as ABSENT NO REASON.
+  - [11]
+    attack: receiver without the accessor's parentheses, `client.Ambient.load()` (page edit and printer edit)
+    consequence: The guard and callcheck both passed (0 findings). Only block classes decided by hand opened.
+  - [12]
+    attack: page edits: `.fetch(` (a member the runtime lacks), `planet.data` (a method read as a field), `DemoSDK(` without `new`, root `require('./js')`
+    consequence: callcheck reported 0 because it checked 372 of 374 calls: the two bad calls fell out of its view. pagecheck 0, guard pass. Only block classes decided by hand opened.
+  - [13]
+    attack: a shared sentence made false in one variation ("returns `undefined` on failure")
+    consequence: Only a ledger class decided by hand opened.
+  - [14]
+    attack: op create declared with a return type `: Promise<object>`
+    consequence: The guard passed: js returns are uncompared.
+  - [15]
+    attack: README methods table `utility()` "Deep copy" against the REFERENCE's live object
+    consequence: No tool flagged the disagreement, and no class exists to record it.
+  - [16]
+    attack: examples run as written (require plus top-level await)
+    consequence: js has no lane. Nothing mechanical runs its pages as written, and the porter's runner wraps each program in an async function.
+attacks:
+  - [0]
+    by: guard (in-memory, gmut.js re-run this session)
+    caught: True
+    change: derived: method.load 'fetch'; record '.record()'; arity 1; async false; accessor param 'data'; stream runs 'call'; test signature and test call on an instance; constructor `.create`
+  - [1]
+    by: guard
+    caught: True
+    change: cited token: okFalse 'null', abortCode 'request_cancelled', none 'null', direct.signal 'AbortController', container 'map', client[0].returns 'Map', prepare.returns with `payload`
+  - [2]
+    by: guard
+    caught: True
+    change: pinned: collection 'list', cancel false, streamSignal false, testMock 'always', body.values with `Array`, body.once 'a Blob', prepare.fails 'throw', utility copy true, options copy false, data copy false, entopts copy false
+  - [3]
+    by: guard
+    caught: True
+    change: optional: streamSignal removed, match copy removed, utility copy removed, name field flag removed, name shown as `name()`, name entry removed, accessor.cached true added, memberNamed 'bare', listOf added, deleted '{var}.isDeleted()'
+  - [4]
+    by: guard
+    caught: True
+    change: signature: load's match required; load's parameters swapped; direct written on the type; test with 3 parameters; stream kind streamGenerator; accessor written with a `data` parameter
+  - [5]
+    by: guard
+    caught: True
+    change: printed call: an operation call spread to 3 arguments; a test call with 3 arguments
+  - [6]
+    by: guard
+    caught: True
+    change: a note naming an entity, and a note stating a number, with no citation
+  - [7]
+    by: purity
+    caught: True
+    change: notes 'The planet entity has 3 fields.' and 'Every client keeps 2 caches.' in Syntax_js.ts: findings 'states a number' and 'names entity', exit 1
+  - [8]
+    by: guard
+    caught: False
+    change: a note cited to an unrelated quote (`name = ''`). Purity catches it.
+  - [9]
+    by: guard and tools (e4: build 0, guard pass, one command FAIL on reference OPEN 4 only)
+    caught: False
+    change: stream action optional; `name: number`; direct.returns without headers. No class opened for any of the three.
+  - [10]
+    by: tools (e4)
+    caught: True
+    change: `options() throws` and container 'Array' opened classes decided by hand only, so they are not a mechanical failure
+  - [11]
+    by: guard and tools (earlier part of this review: e1)
+    caught: True
+    change: maps 'arrays', noun 'Functions', ANY 'unknown', keys 'bare': guard pass; the tools report UNATTESTED (a hand record settles it)
+  - [12]
+    by: guard and tools (e2)
+    caught: True
+    change: prints 'fields' and named 'bare': UNATTESTED. Deleted `{var}.deleted` and direct.returns with `err`: OPEN classes decided by hand only.
+  - [13]
+    by: tools (e3)
+    caught: True
+    change: deleted removed: ABSENT NO REASON [808ab9f422]; the guard passed
+  - [14]
+    by: tools (p1)
+    caught: False
+    change: a sentence dropped from B only gave an OPEN class decided by hand, no DROPPED. The receiver `client.Ambient.load()` gave blocks OPEN 2 and callcheck 0.
+  - [15]
+    by: callcheck (p2)
+    caught: True
+    change: a page load with 3 arguments: ARITY finding. Dropping a sentence from every variation: ABSENT NO REASON [2d65ce1465].
+  - [16]
+    by: tools (p3, this session)
+    caught: False
+    change: `.fetch(`, `planet.data`, `DemoSDK(` without `new`, root `require('./js')`, 'returns `undefined` on failure': callcheck 0 (372 calls), only classes decided by hand
+  - [17]
+    by: guard (gmut2)
+    caught: False
+    change: container 'Array', client[0].returns 'Array', direct.signal 'signal', none 'return', abortCode 'request', direct.returns `{ ok, data }`, valueType.STRING 'number', create `: Promise<object>`, `name: number`
+  - [18]
+    by: guard (gmut2)
+    caught: True
+    change: client[1].returns 'clone' (the `unquoted` excuse no longer matched); prepare.returns without Error; body.values without string
+  - [19]
+    by: guard
+    caught: False
+    change: arity removed: harmless, because the page prints `list()` either way
+facts_audit:
+  - [0]
+    fact: facts.method.* (list load create update patch remove)
+    account: derived
+    verdict: true
+    evidence: EntityListOp.fragment.js:12 `async list(reqmatch, ctrl)` and the five other op fragments; probe: load resolves PlanetEntity, list gives an array of PlanetEntity
+  - [1]
+    fact: facts.async true / result 'throw'
+    account: derived
+    verdict: true
+    evidence: `async` op methods; MakeErrorUtility.js:75-80 throws unless ctrl.throw is false; probe: missing record throws request_status
+  - [2]
+    fact: facts.record '.data()'
+    account: derived
+    verdict: true
+    evidence: EntityBase.fragment.js:65-78
+  - [3]
+    fact: facts.arity 0
+    account: derived
+    verdict: true
+    evidence: no parameter is checked; probe: list(undefined, undefined) works
+  - [4]
+    fact: facts.collection 'array'
+    account: cited, pinned
+    verdict: true; the quote shows it
+    evidence: MakeResultUtility.js:31-43 builds an array of entities; list returns done(ctx), which is result.resdata
+  - [5]
+    fact: facts.named 'call'
+    account: convention, recorded by hand (not judged)
+    verdict: right
+    evidence: OLD said Use `client.direct()`; js writes calls with parentheses
+  - [6]
+    fact: facts.prints 'record'
+    account: convention, attested
+    verdict: right
+    evidence: OLD prints ambient.data() whole
+  - [7]
+    fact: ref.noun 'Methods'
+    account: convention, recorded by hand
+    verdict: right
+    evidence: OLD B/js/REFERENCE.md '### Instance Methods'
+  - [8]
+    fact: ref.none 'undefined'
+    account: cited
+    verdict: value true; citation does not show the meaning
+    evidence: quoted EntityBase.fragment.js:268 `return undefined` is the throw:false path of _unexpected; undefined is accepted at EntityBase.fragment.js:20 and Main.fragment.js:341; 'return' passes the guard
+  - [9]
+    fact: ref.container / client[0].returns / valueType.OBJECT 'object'
+    account: cited (valueType.OBJECT also derived)
+    verdict: value true; the cited line is unrelated
+    evidence: MakeOptionsUtility.js:43 `layer` is for clean blocks; 'Array' passes the guard (ran)
+  - [10]
+    fact: client[0].copy true (options)
+    account: cited, pinned
+    verdict: true (shared 'deep copy' overstates slightly: class instances in extend and functions are shared)
+    evidence: Main.fragment.js:99; probe options()!==_options and nested feature copied
+  - [11]
+    fact: client[1].copy false (utility)
+    account: cited, pinned, with also-quotes
+    verdict: true; the quotes show it
+    evidence: Main.fragment.js:104 plus StructUtility.js:681-690 (the replacer references every non-plain instance, the root included) and Utility.js `class Utility {`; probe utility()===_utility
+  - [12]
+    fact: entity[0] data, [1] match, [5] entopts copy true
+    account: cited, pinned
+    verdict: true
+    evidence: EntityBase.fragment.js:75, :91, :57; probe: mutating the returned objects leaves the entity unchanged
+  - [13]
+    fact: entity[3] stream streamIterator, runs 'iterate'
+    account: derived
+    verdict: true
+    evidence: EntityBase.fragment.js:107 `async *stream`; the pipeline runs at :138 inside the generator body
+  - [14]
+    fact: streamSignal true
+    account: cited, pinned, 2 quotes
+    verdict: true
+    evidence: EntityBase.fragment.js:117-118 read, :147/:156 early return, :175 an abort ends the stream quietly
+  - [15]
+    fact: entity[6] name field
+    account: derived
+    verdict: true
+    evidence: EntityBase.fragment.js:7 `name = ''`, set at Entity.fragment.js:12; probe: string 'planet'
+  - [16]
+    fact: deleted '{var}.deleted()'
+    account: derived
+    verdict: true
+    evidence: EntityBase.fragment.js:51; marked at EntityRemoveOp :100-102 only when the result is ok; probe deleted() true
+  - [17]
+    fact: direct.okFalse 'false'
+    account: cited, pinned
+    verdict: true
+    evidence: Main.fragment.js:208 and :186, :224, :227, :276
+  - [18]
+    fact: direct.returns 'Promise<{ ok, status, headers, data }>'
+    account: cited (Promise excused)
+    verdict: true
+    evidence: Main.fragment.js:267-273; err appears only when the body is unreadable, as the shared sentence says; a subset of keys still passes the guard
+  - [19]
+    fact: direct.signal 'AbortSignal'
+    account: cited
+    verdict: true; the type word rests on a comment
+    evidence: MakeFetchDefUtility.js:35-36 puts ctrl.signal on fetchdef; FetcherUtility.js:67 fetch(fullurl, fetchdef); the 'AbortSignal' token comes only from EntityBase.fragment.js:105 (a comment)
+  - [20]
+    fact: direct.abortCode / cancel true
+    account: cited
+    verdict: true
+    evidence: MakeRequestUtility.js:74-83 abortError; probe: aborted load rejects ['request_aborted','stop']; direct aborted gives ok false and err.code request_aborted
+  - [21]
+    fact: prepare.returns / prepare.fails 'value'
+    account: cited (Error, Promise excused) / pinned
+    verdict: true
+    evidence: Main.fragment.js:133, 173, 176; MakeFetchDefUtility.js:29-48; probe: a bad method gives an Error with code spec_method_allow; keys url, method, headers (body only when given)
+  - [22]
+    fact: body.values / body.once
+    account: pinned prose
+    verdict: true
+    evidence: printed only for a raw-body point (media.ts:83-86); MakeFetchDefUtility.js:42 sends a string as given off a JSON point; MakeRequestUtility.js:38-39 reads a stream first; body.once cites only the comment at :37
+  - [23]
+    fact: testMock 'generated'
+    account: cited, pinned
+    verdict: true
+    evidence: Config.fragment.js:32 falls back to BaseFeature; FetcherUtility.js:42-45 refuses any non-live mode with fetch_mode_block
+  - [24]
+    fact: ctor / test / accessor signatures
+    account: derived
+    verdict: true
+    evidence: Main.fragment.js:27, :334 static test, :353 tester; MainEntity_js.ts:23 `${entity.Name}(entopts)`
+optional_facts:
+  - [0]
+    fact: accessor.cached
+    file_line: MainEntity_js.ts:23-26 `return new ${cls}(self, entopts)`
+    runtime_shows: a new entity on every call, including with undefined and null (probe)
+    port_declared: not declared
+    right: yes
+  - [1]
+    fact: streamSignal
+    file_line: EntityBase.fragment.js:117-118, 147, 156, 175
+    runtime_shows: reads callopts.signal, returns early between items, and an abort during the request ends quietly
+    port_declared: true
+    right: yes
+  - [2]
+    fact: copy on the match getter
+    file_line: EntityBase.fragment.js:91
+    runtime_shows: a clone (probe)
+    port_declared: copy: true
+    right: yes
+  - [3]
+    fact: copy on the utility getter
+    file_line: Main.fragment.js:104; StructUtility.js:681-690
+    runtime_shows: the live Utility instance (probe utility()===_utility)
+    port_declared: copy: false
+    right: yes
+  - [4]
+    fact: copy on data, entopts, options
+    file_line: EntityBase.fragment.js:75, :57; Main.fragment.js:99
+    runtime_shows: new objects (probe)
+    port_declared: copy: true
+    right: yes
+  - [5]
+    fact: memberNamed
+    file_line: calls written with parentheses (forms calls.args paren)
+    runtime_shows: call
+    port_declared: default
+    right: yes
+  - [6]
+    fact: field flag on name
+    file_line: EntityBase.fragment.js:7; Entity.fragment.js:12
+    runtime_shows: a string field
+    port_declared: field: true, sig 'name: string'
+    right: yes (although a wrong type word there passes every check)
+  - [7]
+    fact: deleted
+    file_line: EntityBase.fragment.js:51; EntityRemoveOp.fragment.js:100-102
+    runtime_shows: result.deleted() on the bound entity
+    port_declared: '{var}.deleted()'
+    right: yes
+  - [8]
+    fact: arity
+    file_line: EntityListOp.fragment.js:12
+    runtime_shows: 0 required
+    port_declared: 0
+    right: yes
+  - [9]
+    fact: layout.dir / place-aware imports
+    file_line: Syntax_js.ts:100 ignores place
+    runtime_shows: a package-addressed require; as written beside top-level await it does not run on node 24, OLD or NEW
+    port_declared: not declared
+    right: layout.dir is not needed; the printer's form is the fault (it should print import)
+  - [10]
+    fact: notes.top
+    file_line: -
+    runtime_shows: no runtime-only fact
+    port_declared: none
+    right: yes
+  - [11]
+    fact: listOf (required list, left undeclared)
+    file_line: EntityListOp.fragment.js:10 `@returns {Promise<EntyClass[]>}`
+    runtime_shows: JSDoc names the class
+    port_declared: undeclared
+    right: acceptable (the page is true), but the absent reasons are inaccurate
+pages:
+  - [0]
+    section: tutorial
+    variation: B
+    kind: true, one gap
+    finding: NEW is true: the server/tenant sentence, a numbered step, try/catch. OLD's 'Direct API Access' is dropped, rightly: README lines 77-105 show direct() twice. Block 1 uses require and block 2 a top-level await, so the steps do not run as one file on node 24 (OLD the same).
+  - [1]
+    section: rootquick
+    variation: B / auth-basic / crud-basic
+    kind: does not run as written
+    finding: Run from the repository root with the package linked, node v24.22.1 refuses require plus top-level await, OLD and NEW alike. The NEW content (server tenant, Basic secret, a load after the list in crud-basic) is true for the runtime.
+  - [2]
+    section: reference
+    variation: B
+    kind: corrections; weaker in places
+    finding: Corrected: the accessor argument is entopts (OLD said data), utility is not a copy, the ctrl example no longer says explain: true, the log default, the stream member and its signal, Actions, `name: string`. Weaker: the Returns lines for test and tester are gone. Awkward: signature notation `new DemoSDK(options?: object)` under a ```js fence (OLD used ts). 'Return a deep copy of the current SDK options' overstates slightly (shared, as OLD).
+  - [3]
+    section: reference/tutorial
+    variation: auth-basic
+    kind: true
+    finding: Adds the `options.secret` row and the secret in the examples. PrepareAuth_js.ts:122-131 reads secret only for Basic in a header, and auth-basic-query rightly prints no secret.
+  - [4]
+    section: reference
+    variation: ref-issues
+    kind: correction
+    finding: PlanetEntityClient and PlanetEntityEntity come from entityClassName, the function Entity_js.ts:26 and MainEntity_js.ts:17 use; OLD wrongly said PlanetEntity. Inactive remove is not documented; gauge's id-less update is right. The field description drops the relative link [the guide](guide.md) (shared). The 5 distinct blocks outside my run set are valid for the runtime.
+  - [5]
+    section: tutorial
+    variation: crud-basic (where js differs most from the other languages: no listOf, so its step comments are its only js-only words; Basic secret plus templated server)
+    kind: weaker
+    finding: The write step no longer prints the create, update and patch results (shared one-block step, as ts). Everything else is true. OLD's live constructor throws without a tenant.
+  - [6]
+    section: README (unported)
+    variation: all
+    kind: false, unrecorded
+    finding: The methods table says utility() is a 'Deep copy of the SDK utility object' (ReadmeModel_js.ts:79): false, and it contradicts the REFERENCE. Not recorded.
+  - [7]
+    section: reference
+    variation: no-test
+    kind: true
+    finding: 'has no mock transport and refuses every request' is true: FetcherUtility.js:42-45. The README's mock promise is recorded as a contradiction.
+hand_records:
+  - [0]
+    id: 9b1549ef5e 9c1038b6ae 8f13c5f9a3 and 13 token ids (dropped)
+    verdict: right
+    why: The NEW README shows client.direct twice (lines 77-105) and ts's tutorial has no such step.
+  - [1]
+    id: 39aecae10e (same-meaning)
+    verdict: wrong label
+    why: It is the removed sentence's echo class. It should be dropped with the same reason.
+  - [2]
+    id: 9c6d819441 (contradiction)
+    verdict: right
+    why: Main.fragment.js:259-273: a readable non-2xx response carries no err.
+  - [3]
+    id: bff341cf32 (contradiction)
+    verdict: right
+    why: Config.fragment.js:32 plus FetcherUtility.js:42-45 fetch_mode_block.
+  - [4]
+    id: 38660bb110 (dropped)
+    verdict: right
+    why: A `data` parameter does not exist; MainEntity_js.ts:23 takes entopts.
+  - [5]
+    id: 5734aba53e 3538e6b4b8 6742b0a309 0ccd61dc70 a0ea2daad1 (dropped)
+    verdict: right
+    why: The parameter tables became sentences, and names and types stay in the signatures.
+  - [6]
+    id: same-meaning 360f66a3d2 325b1911ed b65a95a1e5
+    verdict: right, with a note
+    why: No disagreement, but the unported README options table has no server row while the REFERENCE says tenant is required.
+  - [7]
+    id: facts: named 'call', ref.noun 'Methods'
+    verdict: right
+    why: The OLD evidence quoted is on the OLD page and matches the runtime's call form.
+  - [8]
+    id: absent 99a8153c15, a0b269a293
+    verdict: outcome right, reason partly false
+    why: The runtime's JSDoc names EntyClass[] / EntyClass (EntityListOp.fragment.js:10).
+  - [9]
+    id: absent 7ab5ba644d
+    verdict: right
+    why: Printed only after ts's lead quick start; the js README intro states it (auth-query js/README.md:30).
+  - [10]
+    id: 2f38082332 ac1eac6be0 (correction:S09)
+    verdict: right
+    why: model/feature/log.aontu active: true; NEW REFERENCE:728.
+  - [11]
+    id: dac11a1691 d7495fe92f (correction:G27)
+    verdict: right in substance
+    why: The reason does not mention that the relative link was also dropped.
+numbers:
+  - [0]
+    what: one command, reviewed, REGEN
+    porter: exit 0, PASS, 265 s
+    mine: exit 0, PASS, 93 s, 21 of 21 regenerated (`REGEN=1 tools/portcheck.sh sdkgen out js`)
+  - [1]
+    what: ledger units same (tut/root/ref)
+    porter: 21/19/15259
+    mine: 21/19/15259
+  - [2]
+    what: shared / by hand / missing / contradictions
+    porter: 25,0,73 / 27,4,30 / 7,1,37 / 0,0,2
+    mine: identical
+  - [3]
+    what: blocks ident/corr/unif/other, classes
+    porter: 3/15/0/30 c54; 0/4/1/14 c19; 195/0/98/20 c8
+    mine: identical
+  - [4]
+    what: callcheck / pagecheck / hand records / STALE
+    porter: 374 calls 0 / 1461 articles 0 / 194 / 0
+    mine: identical
+  - [5]
+    what: shared sentences matched (unreviewed), absent
+    porter: 98 (4), 3 explained
+    mine: 98 (4), 3 explained
+  - [6]
+    what: SCRATCH=1
+    porter: exit 1; ledger OPEN 34/5/69; blocks OPEN 54/19/8; 2 unattested or not judged; 3 ABSENT; 0 DROPPED
+    mine: exit 1, 68 s; identical
+  - [7]
+    what: guard ^js: / guard+reader
+    porter: 4/4, 81/81
+    mine: 4/4, 81/81
+  - [8]
+    what: account line
+    porter: derived 50, cited 23, language 1, convention 6, excepted 0
+    mine: identical (SDKGEN_GUARD_REPORT=1)
+  - [9]
+    what: suite without lanes, --test-concurrency=2
+    porter: 2635 tests, 2630 pass, 0 fail, 5 skipped, 755 s
+    mine: 2635, 2630, 0 fail, 0 cancelled, 5 skipped, 533 s
+  - [10]
+    what: golden
+    porter: js lines only
+    mine: characterize.test.js 2/2; diff only js lines
+  - [11]
+    what: lines (git diff --numstat v33-frozen..HEAD)
+    porter: Syntax 145, Naming 22, forms +88 -11, deleted 734, golden +2 -3
+    mine: identical
+  - [12]
+    what: sharewords
+    porter: 58936 words, only js 219 (0.4%), provider literals 248
+    mine: identical
+  - [13]
+    what: examples on my variations (runblocks, async-wrapped)
+    porter: not run
+    mine: NEW B 24/24, auth-basic 24/24, crud-basic 17/17; OLD 22/24, 22/24, 15/17 (live constructor: tenant required)
+  - [14]
+    what: root quick start as written, repository root
+    porter: not reported as failing
+    mine: fails OLD and NEW: require plus top-level await, node v24.22.1
+hypotheses:
+  - [0]
+    id: H1
+    verdict: holds for js as an interface; the checking layer does not fully hold
+    evidence: 0 shared changes made; 0 breaking forced; 1 additive gap (sigFence), not needed for truth. The provider reads no model (purity 0 open) and has 0 notes. Provider-literal words are 248 of 58,936 (0.4%); 219 words are js-only, all in root step comments. The provider is ts's with a few lines changed. However, three wrong facts passed the guard and the one command with no class at all.
+  - [1]
+    id: H2
+    verdict: reproduced
+    evidence: 734 deleted against 167 provider and hook lines (4.4x), 255 with the forms' added lines (2.9x), by git diff --numstat.
+  - [2]
+    id: H3
+    verdict: holds in what I checked; not re-measured catalogue-wide
+    evidence: Seen on the pages with no js edit beyond facts: server tenant, Basic secret, accessor entopts, utility not a copy, the ctrl example, S09 log, S13 no-test, S25 remove off, U34 class name, G27 pipe, decision 6 (stream signal), decision 11 (deleted).
+  - [3]
+    id: H4
+    verdict: not refuted; the pages do not run as written
+    evidence: With async wrapping, every program ran on NEW (24/24, 24/24, 17/17). As written, the tutorial and root quick start fail on node 24 in OLD and NEW alike, from a one-line printer choice (ts prints import). That is not intrinsic to the approach. js has no lane.
+doubtful_lines:
+  - [0]
+    line: const { DemoSDK } = require('@voxgig-sdk/demo-sdk-js')  (followed by top-level `await client.X().load()`)
+    runtime_line: Syntax_js.ts:100; node v24.22.1: "Cannot determine intended module format because both 'require' and top-level await are present"
+    where: every variation: js/README.md tutorial block 1, and the root README '### JavaScript' quick start
+    why: It does not run as a file. Ran: run/new-default/qs_asis.js and run4/new-B/tut_asis.js. With import it runs (tut_import.js).
+  - [1]
+    line: new DemoSDK(options?: object)  under a ```js fence
+    runtime_line: Main.fragment.js:27 constructor(options)
+    where: REFERENCE Constructor, every variation
+    why: Signature notation, not JavaScript (OLD fenced it ts). Cosmetic.
+false_or_missing:
+  - [0]
+    what: utility() described as a deep copy
+    where: js/README.md:224 (methods table, unported)
+    file_line: ReadmeModel_js.ts:79
+    runtime_shows: the live Utility (Main.fragment.js:104; StructUtility.js:681-690; probe utility()===_utility)
+  - [1]
+    what: absent reasons say the runtime names no type
+    where: tools/hand/js.json absent 99a8153c15, a0b269a293
+    file_line: EntityListOp.fragment.js:10, EntityLoadOp.fragment.js:10
+    runtime_shows: `@returns {Promise<EntyClass[]>}` / `Promise<EntyClass>` (generated Promise<PlanetEntity[]>)
+  - [2]
+    what: graphql said to go through the pipeline
+    where: ts/test/runtimeforms/js.ts:37 (not printed)
+    file_line: Main.fragment.js:292
+    runtime_shows: bypasses the feature pipeline
+  - [3]
+    what: citations that do not show their value
+    where: ts/test/runtimeforms/js.ts:99-106, 103, 111-115, 134
+    file_line: MakeOptionsUtility.js:43; EntityBase.fragment.js:268; EntityBase.fragment.js:105; MakeRequestUtility.js:37
+    runtime_shows: the values are true, but the quoted lines are unrelated or comments
+gaps_judged:
+  - [0]
+    gap: sigFence (porter): one fence per provider
+    needed: False
+    breaking: False
+    why: Cosmetic: the examples are JavaScript and the signature is notation.
+  - [1]
+    gap: root sentence printed only after the lead quick start (porter)
+    needed: False
+    breaking: False
+    why: A tools-knowledge issue; js's README intro already states the fact.
+  - [2]
+    gap: type words on js signatures and fields are never compared (`name: number` passes)
+    needed: True
+    breaking: False
+    why: Additive: a forms-level type for a field initialiser, or a tools check that does not mask the value.
+  - [3]
+    gap: exceptions cover a whole member, not one parameter
+    needed: True
+    breaking: False
+    why: stream's action shown optional passes everything.
+  - [4]
+    gap: return key sets (direct, prepare) are compared only token by token
+    needed: True
+    breaking: False
+    why: A subset of keys passes the guard and the tools.
+  - [5]
+    gap: a cited token matches any substring anywhere in the quote
+    needed: True
+    breaking: False
+    why: 'Array', 'signal' and 'request' all pass.
+  - [6]
+    gap: callcheck silently skips calls of members the runtime lacks and constructor calls without `new`
+    needed: True
+    breaking: False
+    why: 372 of 374 calls were checked and 0 findings reported for `.fetch(` and `DemoSDK(`.
+provider_code:
+  - [0]
+    file_line: Syntax_js.ts:100
+    finding: The imports printer ignores `place` and prints `require`. This is the root of the as-written failure; ts's line prints `import`.
+  - [1]
+    file_line: Syntax_js.ts:109
+    finding: Indexes facts.method[s.op], as the guide allows. There is no operation literal outside the fact table.
+  - [2]
+    file_line: Syntax_js.ts:73, 121-127
+    finding: `'process.env.' + e.name` and `console.error('<op> failed:', err)` are printed code, not name surgery or prose; purity agrees, and ts has the same.
+  - [3]
+    file_line: Syntax_js.ts (whole)
+    finding: No model read, no case change, no notes, 4 fact-table prose literals. It is ts's provider minus listOf and the `!` assertion, with the fence, the type column and the import changed.
+  - [4]
+    file_line: Naming_js.ts:9-17
+    finding: Identical to Naming_ts.ts with 'js'. packageName is what Package_js.ts:68 publishes; nom(e,'Name') gives MainEntity_js.ts:23's `${entity.Name}`. exampleVarName is accepted with a true reason (ReadmeEntity_js.ts:48).
+  - [5]
+    file_line: ts/test/runtimeforms/js.ts:65
+    finding: The exception 'optional:entity streamIterator' is broader than its reason: it disables every optionality check on stream.
+could_not_check:
+  - ref-issues could not be generated as a whole js SDK, on OLD or NEW (TestEntity_js: no BasicGaugeFlow), so its 5 distinct blocks outside my run set were read, not run.
+  - The other 17 variations' changed blocks were not run. Only B, auth-basic, crud-basic and the porter's three lane models (default, crud, basic-server) were run; the tools say 182 changed blocks are compiled by nothing.
+  - No live request against a server; constructor options ran only through the runner's test-mode rewrite and its separate live-construction check.
+  - STRICT_SENTENCES=1 was not run (4 matches are against unreviewed sentences).
+  - H3 was not re-measured across the catalogue.
+  - The in-memory gmut2 cases were run through the guard only, not the tools (except the five carried in e4).
+  - The e1, e2, e3, p1 and p2 attacks were run in an earlier, interrupted part of this review in the same workspace; I read their logs and did not repeat them.
+examples: |
+  node v24.22.1 is on the PATH; js has no lane. Everything below was run by hand.
+  - **Porter's three lane models** (runner my/runblocks.js, async-wrapped, test mode): NEW 24/24, 17/17, 17/17; OLD 24/24, 17/17, 15/17.
+  - **My variations** (full SDKs I generated with genvar.js): NEW B 24/24, auth-basic 24/24, crud-basic 17/17. OLD 22/24, 22/24, 15/17, where the live constructor throws without a tenant.
+  - **As written:** the root quick start, run from the repository root with `node_modules/@voxgig-sdk/demo-sdk-js` linked, fails on OLD and NEW: require plus top-level await. The NEW B tutorial with `import` in a plain .js file runs to the live request.
+  - **Read, not run:** 5 distinct ref-issues blocks, all valid for the runtime.
+interface: It held for js. The port made no shared change and forced none breaking; its one additive gap (sigFence) is not needed for truth. The weaknesses are in the checks behind the interface: type words, a parameter-level exception, return key sets, token matching in citations, callcheck's view of unknown calls, and masked matching of NEW-only headings. Each is an additive, shared change.
+ran: |
+  All runs were in my copy P/reviews/js/ws, on node v24.22.1.
+  - Runtime probe on a generated NEW SDK (my/probe.js).
+  - Eight full-SDK generations (four variations, OLD and NEW; ref-issues fails on both) and runblocks on six of them.
+  - The root quick start and the tutorial run as written, and the tutorial with `import`.
+  - Guard mutations in memory: gmut.js, 59 cases, 44 caught; gmut2.js, 17 cases, 7 caught.
+  - Purity on injected notes: caught.
+  - e4: a source mutation through build, guard and the one command.
+  - p3: five page mutations through the one command.
+  - A clean rebuild (exit 0, 7 s), the suite (533 s), guard, reader, the account report and the golden.
+  - The one command with REGEN (PASS, 93 s) and with SCRATCH=1 (exit 1, 68 s), sharewords, and git diff --numstat and log bodies.
+  - A diff of the output against base33/out/new.
+read: |
+  - **Briefs and guide:** brief.md, brief3-7.md and base33/PORTING.md in full.
+  - **The port:** Syntax_js.ts, Naming_js.ts (beside Naming_ts.ts and Syntax_ts.ts), runtimeforms/js.ts, every hand record of kind dropped, contradiction and same-meaning, the hand facts and absent reasons, and the fact sheet.
+  - **The runtime:** EntityBase, Main, Config, Entity and the List/Remove op fragments, MainEntity_js.ts, and the MakeFetchDef, MakeRequest, MakeOptions, MakeResult, MakeError, Done, Media, Param and Fetcher utilities, StructUtility clone, PrepareAuth_js.ts, and media.ts bodyNoteText.
+  - **The pages:** OLD and NEW tutorial, root quick start and REFERENCE for B, auth-basic, ref-issues and crud-basic, plus no-test and auth-query spot checks.
+touched: |
+  Nothing outside P/reviews/js was written. The port's directories (P/ports/js) are untouched, with their git status empty, and the workspace copy is restored and clean.
+  
+  What the port itself touched (git diff --numstat v33-frozen..HEAD):
+  - Syntax_js.ts (+145) and Naming_js.ts (+22), both new.
+  - ReadmeQuick_js.ts, ReadmeRef_js.ts and ReadmeTopQuick_js.ts deleted (179, 445 and 110 lines).
+  - runtimeforms/js.ts (+88 -11) and the golden (+2 -3, js lines only).
+  - In the tools: hand, classes, counts and purity-allow js.json.
+  
+  No shared file was changed, and no commit message carries a trailer or names a tool.
