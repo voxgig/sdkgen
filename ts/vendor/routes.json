@@ -2056,6 +2056,18 @@
   },
   {
    "lib": "struct",
+   "port": "clojure",
+   "lang": "clojure",
+   "version": "0.1.1",
+   "dir": [
+    "tm/clojure/src/voxgig"
+   ],
+   "file": {
+    "clojure/src/voxgig/struct.clj": "tm/clojure/src/voxgig/struct.clj"
+   }
+  },
+  {
+   "lib": "struct",
    "port": "cpp",
    "lang": "cpp",
    "version": "0.1.4",

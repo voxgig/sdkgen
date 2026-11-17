@@ -5332,6 +5332,18 @@
     }
    }
   },
+  "struct/clojure": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.1.1",
+   "tag": "sdk-local-nof",
+   "file": {
+    "tm/clojure/src/voxgig/struct.clj": {
+     "sha256": "b53129bd15b337c8ee8a03a55a29d3856a54d5de78dba7ba0e76b9aa29e2ca3c",
+     "upstream": "clojure/src/voxgig/struct.clj"
+    }
+   }
+  },
   "struct/cpp": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",

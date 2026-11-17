@@ -233,7 +233,7 @@ tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj d87d54a57f03
 tm/clojure/src/sdk/core.clj efe22aeafbb9
 tm/clojure/src/sdk/features.clj d36ce8927f97
-tm/clojure/src/voxgig/struct.clj e11f03d1c544
+tm/clojure/src/voxgig/struct.clj b53129bd15b3
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
 tm/clojure/test/sdk/test/feature/secrets.clj ef0134a7fd63

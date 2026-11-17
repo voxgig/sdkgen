@@ -54,6 +54,7 @@ const VENDOR_DIRS = [
   'tm/rb/utility/struct',
   'tm/rust/utility/voxgigstruct',
   'tm/c/utility/struct',
+  'tm/clojure/src/voxgig',
   'tm/cpp/utility/voxgigstruct',
   'tm/elixir/lib/utility/struct',
   'tm/ocaml/utility',
