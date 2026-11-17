@@ -10,7 +10,6 @@ import {
   entityOpSpec,
   entitySpecs,
   oneUnionPaths,
-  oneUnionSpec,
   optionalSpec,
   sentinel,
   validateSeeds,
@@ -151,24 +150,6 @@ describe('canonSpec: the union struct reads', () => {
   test('any other count stays one alternative, not a union to flatten', () => {
     const exactlyOne = [S('NOF'), 1, S('STRING'), S('NUMBER')]
     deepStrictEqual(optionalSpec(exactlyOne), [S('NOF'), { min: 1 }, exactlyOne, S('NIL')])
-  })
-
-  test('lowered for a struct that predates `$NOF`, a spec takes the `$ONE` form', () => {
-    deepStrictEqual(oneUnionSpec({ a: optionalSpec(canonToSpec(S('STRING'))) }),
-      { a: [S('ONE'), S('STRING'), [S('EXACT'), ''], S('NIL')] })
-    deepStrictEqual(
-      oneUnionSpec([S('NOF'), { min: 1 }, { b: optionalSpec(S('NUMBER')) }, S('NIL')]),
-      [S('ONE'), { b: [S('ONE'), S('NUMBER'), S('NIL')] }, S('NIL')])
-  })
-
-  test('lowering leaves an `$EXACT` literal alone', () => {
-    const exact = [S('EXACT'), [S('NOF'), { min: 2 }]]
-    deepStrictEqual(oneUnionSpec({ a: exact }), { a: exact })
-  })
-
-  test('a count with no `$ONE` form is refused, not mistranslated', () => {
-    throws(() => oneUnionSpec({ a: [S('NOF'), 1, S('STRING'), S('NUMBER')] }),
-      /struct spec at a: .* has no/)
   })
 
   test('a leftover `$ONE` is found wherever it sits, and not in a literal', () => {

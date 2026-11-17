@@ -1,38 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ONE_UNION_TARGETS = void 0;
 exports.optionSpec = optionSpec;
 exports.featureOptionSpec = featureOptionSpec;
 exports.entitySpecMap = entitySpecMap;
-exports.targetSpec = targetSpec;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
-const resolve_1 = require("../action/resolve");
 const utility_1 = require("../utility");
 const applicability_1 = require("./applicability");
 const canonSpec_1 = require("./canonSpec");
-const kindCollection_1 = require("./kindCollection");
-const packageMeta_1 = require("./packageMeta");
 const S_CHILD = (0, canonSpec_1.sentinel)('CHILD');
 const S_OPEN = (0, canonSpec_1.sentinel)('OPEN');
 const S_NIL = (0, canonSpec_1.sentinel)('NIL');
-// Bundled targets whose struct copy no vendoring route produces, and which
-// therefore still reads a union as `$ONE`.
-const ONE_UNION_TARGETS = [];
-exports.ONE_UNION_TARGETS = ONE_UNION_TARGETS;
 function optional(spec) {
     return (0, canonSpec_1.anyOf)([spec, S_NIL]);
 }
-function readsOneUnion(model, targetname) {
-    const declared = (0, kindCollection_1.kindCollection)(model, 'target')[targetname];
-    return (null == declared || (0, resolve_1.resolvesBundled)(declared, targetname)) &&
-        ONE_UNION_TARGETS.includes((0, packageMeta_1.originName)(model, targetname));
-}
-// A spec in the form the target's own struct copy reads.
-function targetSpec(model, targetname, spec) {
-    if (null != targetname && readsOneUnion(model, targetname)) {
-        return (0, canonSpec_1.oneUnionSpec)(spec);
-    }
+// A spec naming `$ONE` fails here rather than in every client at construction.
+function checkedSpec(targetname, spec) {
     const at = (0, canonSpec_1.oneUnionPaths)(spec);
     if (0 < at.length) {
         throw new utility_1.SdkGenError((null == targetname ? '' : targetname + ': ') +
@@ -83,7 +66,7 @@ function optionSpec(model, targetname) {
         feature[f.name] = optional(featureOptionSpec(f));
     });
     spec.feature = feature;
-    return targetSpec(model, targetname, spec);
+    return checkedSpec(targetname, spec);
 }
 function entitySpecMap(model, targetname) {
     const feats = (0, applicability_1.targetFeatures)(model, null == targetname ? undefined : targetname);
@@ -99,6 +82,6 @@ function entitySpecMap(model, targetname) {
         }
         specs[ent.name] = (0, canonSpec_1.entitySpecs)(ent);
     });
-    return targetSpec(model, targetname, specs);
+    return checkedSpec(targetname, specs);
 }
 //# sourceMappingURL=optspec.js.map

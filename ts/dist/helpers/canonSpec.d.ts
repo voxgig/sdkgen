@@ -4,7 +4,6 @@ declare function isAnyOf(spec: any): boolean;
 declare const SPEC_STRING: any[];
 declare function alternatives(spec: any): any[];
 declare function optionalSpec(spec: any): any;
-declare function oneUnionSpec(spec: any, path?: string): any;
 declare function oneUnionPaths(spec: any, path?: string): string[];
 declare function canonToSpec(type: unknown, optional?: boolean): any;
 declare function entityDataSpec(ent: any): Record<string, any>;
@@ -19,5 +18,5 @@ type ValidateSeeds = {
 };
 declare function validateSeeds(ent: any): ValidateSeeds | null;
 declare function byExampleSpec(val: any): any;
-export { alternatives, anyOf, byExampleSpec, canonToSpec, isAnyOf, oneUnionPaths, oneUnionSpec, optionalSpec, entityDataSpec, entityOpSpec, entitySpecs, sentinel, validateSeeds, SPEC_STRING, };
+export { alternatives, anyOf, byExampleSpec, canonToSpec, isAnyOf, oneUnionPaths, optionalSpec, entityDataSpec, entityOpSpec, entitySpecs, sentinel, validateSeeds, SPEC_STRING, };
 export type { ValidateSeeds, };

@@ -7,8 +7,6 @@ import Os from 'node:os'
 import Path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
-import { targetSpec } from '../dist/helpers/optspec'
-
 import { rubyEnv, pythonEnv } from './generateharness'
 
 
@@ -402,7 +400,7 @@ describe('vendored struct optional-key absence', () => {
 
     test(port.target + ': an omitted optional entry stays omitted', (t) => {
       const spec = Path.join(tmp, 'spec-' + port.target + '.json')
-      Fs.writeFileSync(spec, JSON.stringify(targetSpec({}, port.target, SPEC)))
+      Fs.writeFileSync(spec, JSON.stringify(SPEC))
 
       const ran = port.exec(tmp, spec)
       if (null == ran) {

@@ -8,9 +8,9 @@ import Path from 'node:path'
 import { Aontu } from 'aontu'
 
 import {
-  optionSpec, featureOptionSpec, entitySpecMap, ONE_UNION_TARGETS,
+  optionSpec, featureOptionSpec, entitySpecMap,
 } from '../dist/helpers/optspec'
-import { oneUnionSpec, sentinel } from '../dist/helpers/canonSpec'
+import { sentinel } from '../dist/helpers/canonSpec'
 
 import { struct } from './featureharness'
 
@@ -277,8 +277,12 @@ describe('optionSpec: what the spec may contain', () => {
 
   test('strings and booleans only, so the JSON round-trip is lossless', () => {
     // A union's count is the one number allowed: `$NOF` takes nothing else.
-    // Lowered to `$ONE`, the spec has no count left to find.
-    const spec = oneUnionSpec(optionSpec(modelWith(shippedFeatures())))
+    const NOF = sentinel('NOF')
+    const uncounted = (node: any): any => Array.isArray(node) ?
+      (NOF === node[0] ? [NOF, ...node.slice(2).map(uncounted)] : node.map(uncounted)) :
+      (null != node && 'object' === typeof node ?
+        Object.fromEntries(Object.entries(node).map(([k, v]) => [k, uncounted(v)])) : node)
+    const spec = uncounted(optionSpec(modelWith(shippedFeatures())))
 
     const found: Array<{ path: string, value: any }> = []
     scalars(spec, '', found)
@@ -366,7 +370,7 @@ describe('optionSpec: the shipped feature set', () => {
 })
 
 
-describe('optionSpec: the union each target reads', () => {
+describe('optionSpec: the union every target reads', () => {
 
   const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
   const NOF = sentinel('NOF')
@@ -380,9 +384,11 @@ describe('optionSpec: the union each target reads', () => {
     return JSON.stringify(node).includes(JSON.stringify(name))
   }
 
-  test('every other target is handed `$NOF`', () => {
-    const spec = optionSpec(modelWith(feature), 'ts')
-    ok(has(spec, NOF) && !has(spec, ONE))
+  test('every target is handed `$NOF`', () => {
+    for (const target of ['ts', 'swift']) {
+      const spec = optionSpec(modelWith(feature), target)
+      ok(has(spec, NOF) && !has(spec, ONE), target)
+    }
   })
 
   test('entity specs are handed `$NOF` too', () => {
@@ -426,22 +432,18 @@ describe('optionSpec: the union each target reads', () => {
     return false
   }
 
-  test('ONE_UNION_TARGETS is exactly the targets whose struct implements `$ONE`', () => {
+  test('every target ships a struct that implements `$NOF`, and none `$ONE`', () => {
     const cmp = Path.join(SDK, 'src', 'cmp')
     const schema = readdirSync(cmp)
       .filter((t) => existsSync(Path.join(cmp, t, 'Schema_' + t + '.ts')))
       .sort()
     ok(10 < schema.length, 'found only ' + schema.length + ' targets with a Schema component')
 
-    const one = schema.filter((t) => treeHas(Path.join(SDK, 'tm', t), 'The $ONE validator'))
-    deepStrictEqual([...ONE_UNION_TARGETS].sort(), one,
-      'ONE_UNION_TARGETS in helpers/optspec.ts must list exactly the targets ' +
-      'whose struct copy still implements `$ONE`. A target resynced to a struct ' +
-      'with `$NOF` leaves the list.')
-
-    for (const t of schema.filter((t) => !one.includes(t))) {
-      ok(treeHas(Path.join(SDK, 'tm', t), '$NOF'),
-        t + ': its struct implements neither `$ONE` nor `$NOF`')
+    for (const t of schema) {
+      const tm = Path.join(SDK, 'tm', t)
+      ok(!treeHas(tm, 'The $ONE validator'),
+        t + ': its struct still implements `$ONE`, so it cannot read the `$NOF` it is handed')
+      ok(treeHas(tm, '$NOF'), t + ': its struct does not implement `$NOF`')
     }
   })
 })

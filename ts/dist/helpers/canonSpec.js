@@ -7,7 +7,6 @@ exports.byExampleSpec = byExampleSpec;
 exports.canonToSpec = canonToSpec;
 exports.isAnyOf = isAnyOf;
 exports.oneUnionPaths = oneUnionPaths;
-exports.oneUnionSpec = oneUnionSpec;
 exports.optionalSpec = optionalSpec;
 exports.entityDataSpec = entityDataSpec;
 exports.entityOpSpec = entityOpSpec;
@@ -71,34 +70,7 @@ function optionalSpec(spec) {
 function specPath(path, step) {
     return '' === path ? String(step) : path + '.' + step;
 }
-// The same spec for a struct copy that predates `$NOF`, where the union is
-// `$ONE`. Only a union has that form, so any other count is refused.
-function oneUnionSpec(spec, path = '') {
-    if (Array.isArray(spec)) {
-        if (S_EXACT === spec[0]) {
-            return spec;
-        }
-        if (S_NOF === spec[0]) {
-            if (!isAnyOf(spec)) {
-                throw new Error('struct spec at ' + (path || '(top)') + ': ' +
-                    JSON.stringify(spec.slice(0, 2)) + ' has no ' + S_ONE + ' form, so a ' +
-                    'target whose struct predates ' + S_NOF + ' cannot validate it.');
-            }
-            return [S_ONE, ...spec.slice(2).map((alt, i) => oneUnionSpec(alt, specPath(path, i + 2)))];
-        }
-        return spec.map((item, i) => oneUnionSpec(item, specPath(path, i)));
-    }
-    if (null != spec && 'object' === typeof spec) {
-        const out = {};
-        for (const [key, val] of Object.entries(spec)) {
-            out[key] = oneUnionSpec(val, specPath(path, key));
-        }
-        return out;
-    }
-    return spec;
-}
-// Where a spec names `$ONE`, which struct's `validate` does not define and so
-// refuses the whole spec over, at every client construction.
+// Where a spec names `$ONE`, which struct's `validate` refuses the spec over.
 function oneUnionPaths(spec, path = '') {
     if (S_ONE === spec) {
         return [path || '(top)'];

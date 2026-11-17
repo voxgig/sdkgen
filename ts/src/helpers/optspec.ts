@@ -2,14 +2,11 @@
 import { each } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
-import { resolvesBundled } from '../action/resolve'
 import { SdkGenError } from '../utility'
 import { targetFeatures } from './applicability'
 import {
-  anyOf, byExampleSpec, entitySpecs, oneUnionPaths, oneUnionSpec, optionalSpec, sentinel,
+  anyOf, byExampleSpec, entitySpecs, oneUnionPaths, optionalSpec, sentinel,
 } from './canonSpec'
-import { kindCollection } from './kindCollection'
-import { originName } from './packageMeta'
 
 
 const S_CHILD = sentinel('CHILD')
@@ -17,29 +14,13 @@ const S_OPEN = sentinel('OPEN')
 const S_NIL = sentinel('NIL')
 
 
-// Bundled targets whose struct copy no vendoring route produces, and which
-// therefore still reads a union as `$ONE`.
-const ONE_UNION_TARGETS: string[] = []
-
-
 function optional(spec: any): any[] {
   return anyOf([spec, S_NIL])
 }
 
 
-function readsOneUnion(model: any, targetname: string): boolean {
-  const declared = kindCollection(model, 'target')[targetname]
-  return (null == declared || resolvesBundled(declared, targetname)) &&
-    ONE_UNION_TARGETS.includes(originName(model, targetname))
-}
-
-
-// A spec in the form the target's own struct copy reads.
-function targetSpec<T>(model: any, targetname: string | undefined, spec: T): T {
-  if (null != targetname && readsOneUnion(model, targetname)) {
-    return oneUnionSpec(spec)
-  }
-
+// A spec naming `$ONE` fails here rather than in every client at construction.
+function checkedSpec<T>(targetname: string | undefined, spec: T): T {
   const at = oneUnionPaths(spec)
   if (0 < at.length) {
     throw new SdkGenError((null == targetname ? '' : targetname + ': ') +
@@ -106,7 +87,7 @@ function optionSpec(model: any, targetname?: string): Record<string, any> {
 
   spec.feature = feature
 
-  return targetSpec(model, targetname, spec)
+  return checkedSpec(targetname, spec)
 }
 
 
@@ -128,7 +109,7 @@ function entitySpecMap(model: any, targetname?: string): Record<string, any> | n
     specs[ent.name] = entitySpecs(ent)
   })
 
-  return targetSpec(model, targetname, specs)
+  return checkedSpec(targetname, specs)
 }
 
 
@@ -136,6 +117,4 @@ export {
   optionSpec,
   featureOptionSpec,
   entitySpecMap,
-  targetSpec,
-  ONE_UNION_TARGETS,
 }
