@@ -420,7 +420,7 @@ describe('optionSpec: the union each target reads', () => {
         },
       },
     }
-    ok(has(entitySpecMap(model, 'c'), ONE) && !has(entitySpecMap(model, 'c'), NOF))
+    ok(has(entitySpecMap(model, 'swift'), ONE) && !has(entitySpecMap(model, 'swift'), NOF))
     ok(has(entitySpecMap(model, 'py'), NOF))
   })
 
@@ -432,7 +432,7 @@ describe('optionSpec: the union each target reads', () => {
       },
     })
     throws(() => optionSpec(model, 'go'), /go: the struct spec names .* at feature\.old\.2\.mode/)
-    ok(has(optionSpec(model, 'c'), ONE), 'a struct that reads `$ONE` can take it')
+    ok(has(optionSpec(model, 'swift'), ONE), 'a struct that reads `$ONE` can take it')
   })
 
   function treeHas(dir: string, needle: string): boolean {

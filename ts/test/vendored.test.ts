@@ -53,6 +53,7 @@ const VENDOR_DIRS = [
   'tm/php/utility/struct',
   'tm/rb/utility/struct',
   'tm/rust/utility/voxgigstruct',
+  'tm/c/utility/struct',
   'tm/perl/t/vendor/omni/Voxgig/Omni',
   'tm/kotlin/test/vendor/omni',
   'tm/kotlin/utility/struct',
@@ -371,9 +372,11 @@ describe('vendored', () => {
 
 
   test('local deviations from vendored code stay marked', () => {
-    // Every vendored file is upstream's as it stands; a deviation is added
-    // here with its count.
-    const patched: Record<string, number> = {}
+    // Every vendored file is upstream's as it stands but these, whose
+    // deviation an `adapt` in routes.json applies at each resync.
+    const patched: Record<string, number> = {
+      'tm/c/utility/struct/utility.c': 1,
+    }
 
     for (const [rel, count] of Object.entries(patched)) {
       const src = readFileSync(Path.join(SDK, rel), 'utf8')

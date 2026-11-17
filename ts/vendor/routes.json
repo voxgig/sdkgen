@@ -2027,6 +2027,35 @@
   },
   {
    "lib": "struct",
+   "port": "c",
+   "lang": "c",
+   "version": "0.1.3",
+   "dir": [
+    "tm/c/utility/struct"
+   ],
+   "file": {
+    "c/src/inject.c": "tm/c/utility/struct/inject.c",
+    "c/src/re_util.c": "tm/c/utility/struct/re_util.c",
+    "c/src/regex.c": "tm/c/utility/struct/regex.c",
+    "c/src/regex.h": "tm/c/utility/struct/regex.h",
+    "c/src/transform.c": "tm/c/utility/struct/transform.c",
+    "c/src/utility.c": "tm/c/utility/struct/utility.c",
+    "c/src/value.c": "tm/c/utility/struct/value.c",
+    "c/src/value.h": "tm/c/utility/struct/value.h",
+    "c/src/value_io.c": "tm/c/utility/struct/value_io.c",
+    "c/src/value_io.h": "tm/c/utility/struct/value_io.h",
+    "c/src/voxgig_struct.h": "tm/c/utility/struct/voxgig_struct.h"
+   },
+   "adapt": [
+    {
+     "match": "utility/struct/utility\\.c$",
+     "from": "          voxgig_value* nv = voxgig_lookup(val, k);\n          voxgig_release(k);\n          voxgig_value* tv = nv ? voxgig_retain(nv) : voxgig_new_undef();\n",
+     "to": "          /* PATCH (each step reads as getprop does: a stored null is no value; pending upstream fix) */\n          voxgig_value* tv = voxgig_getprop(val, k, NULL);\n          voxgig_release(k);\n"
+    }
+   ]
+  },
+  {
+   "lib": "struct",
    "port": "csharp",
    "lang": "csharp",
    "version": "0.1.1",
