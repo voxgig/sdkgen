@@ -5332,6 +5332,32 @@
     }
    }
   },
+  "struct/cpp": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.1.4",
+   "tag": "sdk-local-nof",
+   "file": {
+    "tm/cpp/utility/voxgigstruct/value_io.hpp": {
+     "sha256": "1bd87ab17db40ffb45acfbe77fddb01c2c2c1920149bd1c9fdd5510c06c33fd2",
+     "upstream": "cpp/src/value_io.hpp"
+    },
+    "tm/cpp/utility/voxgigstruct/value.hpp": {
+     "sha256": "331ef0edc16bcff5abe700edc0d261da0ffefb2969a2e9298f17e92869a24350",
+     "upstream": "cpp/src/value.hpp"
+    },
+    "tm/cpp/utility/voxgigstruct/voxgig_struct.hpp": {
+     "sha256": "2a5e704863573f8435ef5c3b7a707811616b9a9f3c7cb57070ea21d768c13525",
+     "upstream": "cpp/src/voxgig_struct.hpp",
+     "adapt": [
+      {
+       "from": "  if (0 == ((T_list | T_map) & typify(val)) || val.is_list() != out.is_list() || !isnode(out))\n    return deepequal(val, out);\n",
+       "to": "  // PATCH (no two cpp functions compare equal, so one is kept while it stays one; pending upstream fix)\n  if (0 == ((T_list | T_map) & typify(val)) || val.is_list() != out.is_list() || !isnode(out))\n    return deepequal(val, out) || (val.is_func() && out.is_func() && val.is_injector() == out.is_injector());\n"
+      }
+     ]
+    }
+   }
+  },
   "struct/csharp": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",

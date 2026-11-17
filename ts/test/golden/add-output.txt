@@ -325,9 +325,9 @@ tm/cpp/test/vendor/omni/omni.hpp 5aca807ffd82
 tm/cpp/test/vendor/omni/util.hpp c2c22c27e855
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
 tm/cpp/utility/pipeline.hpp 817cda894dfe
-tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
-tm/cpp/utility/voxgigstruct/value_io.hpp 5fe5c8199dfc
-tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2fd1e8054158
+tm/cpp/utility/voxgigstruct/value.hpp 331ef0edc16b
+tm/cpp/utility/voxgigstruct/value_io.hpp 1bd87ab17db4
+tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2a5e70486357
 
 ## target csharp
 model/feature/feature-index.aontu 0351fe150e6a

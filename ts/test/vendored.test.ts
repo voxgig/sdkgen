@@ -54,6 +54,7 @@ const VENDOR_DIRS = [
   'tm/rb/utility/struct',
   'tm/rust/utility/voxgigstruct',
   'tm/c/utility/struct',
+  'tm/cpp/utility/voxgigstruct',
   'tm/perl/t/vendor/omni/Voxgig/Omni',
   'tm/kotlin/test/vendor/omni',
   'tm/kotlin/utility/struct',
@@ -376,6 +377,7 @@ describe('vendored', () => {
     // deviation an `adapt` in routes.json applies at each resync.
     const patched: Record<string, number> = {
       'tm/c/utility/struct/utility.c': 1,
+      'tm/cpp/utility/voxgigstruct/voxgig_struct.hpp': 1,
     }
 
     for (const [rel, count] of Object.entries(patched)) {

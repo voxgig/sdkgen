@@ -20,7 +20,7 @@ const S_NIL = sentinel('NIL')
 // Bundled targets whose struct copy no vendoring route produces, and which
 // therefore still reads a union as `$ONE`.
 const ONE_UNION_TARGETS = [
-  'clojure', 'cpp', 'elixir', 'ocaml', 'scala', 'swift',
+  'clojure', 'elixir', 'ocaml', 'scala', 'swift',
 ]
 
 

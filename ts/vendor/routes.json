@@ -2056,6 +2056,27 @@
   },
   {
    "lib": "struct",
+   "port": "cpp",
+   "lang": "cpp",
+   "version": "0.1.4",
+   "dir": [
+    "tm/cpp/utility/voxgigstruct"
+   ],
+   "file": {
+    "cpp/src/value.hpp": "tm/cpp/utility/voxgigstruct/value.hpp",
+    "cpp/src/value_io.hpp": "tm/cpp/utility/voxgigstruct/value_io.hpp",
+    "cpp/src/voxgig_struct.hpp": "tm/cpp/utility/voxgigstruct/voxgig_struct.hpp"
+   },
+   "adapt": [
+    {
+     "match": "utility/voxgigstruct/voxgig_struct\\.hpp$",
+     "from": "  if (0 == ((T_list | T_map) & typify(val)) || val.is_list() != out.is_list() || !isnode(out))\n    return deepequal(val, out);\n",
+     "to": "  // PATCH (no two cpp functions compare equal, so one is kept while it stays one; pending upstream fix)\n  if (0 == ((T_list | T_map) & typify(val)) || val.is_list() != out.is_list() || !isnode(out))\n    return deepequal(val, out) || (val.is_func() && out.is_func() && val.is_injector() == out.is_injector());\n"
+    }
+   ]
+  },
+  {
+   "lib": "struct",
    "port": "csharp",
    "lang": "csharp",
    "version": "0.1.1",
