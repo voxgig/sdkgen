@@ -670,10 +670,10 @@ class TestStructUtility(unittest.TestCase):
             return validate(vin.get("data"), vin.get("spec"))
         runset(spec["validate"]["child"], validate_wrapper)
 
-    def test_validate_one(self):
+    def test_validate_nof(self):
         def validate_wrapper(vin):
             return validate(vin.get("data"), vin.get("spec"))
-        runset(spec["validate"]["one"], validate_wrapper)
+        runsetflags(spec["validate"]["nof"], {"null": False}, validate_wrapper)
 
     def test_validate_exact(self):
         def validate_wrapper(vin):

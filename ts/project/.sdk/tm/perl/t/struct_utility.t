@@ -478,10 +478,13 @@ my $validate_spec = $struct_spec->{validate};
 grunflags('validate.basic', $validate_spec->{basic}, { null => 0 },
   sub { $S->{validate}->($_[0]{data}, $_[0]{spec}) });
 
-for my $sec (qw(child one exact)) {
+for my $sec (qw(child exact)) {
   grun("validate.$sec", $validate_spec->{$sec},
     sub { $S->{validate}->($_[0]{data}, $_[0]{spec}) });
 }
+
+grunflags('validate.nof', $validate_spec->{nof}, { null => 0 },
+  sub { $S->{validate}->($_[0]{data}, $_[0]{spec}) });
 
 grunflags('validate.invalid', $validate_spec->{invalid}, { null => 0 },
   sub { $S->{validate}->($_[0]{data}, $_[0]{spec}) });

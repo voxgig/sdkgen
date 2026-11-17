@@ -239,9 +239,11 @@
 
     (run-set "validate.basic" (gp validateS "basic") {"null" false}
              (fn [vin] (s/validate (vget vin "data") (vget vin "spec"))))
-    (doseq [g ["child" "one" "exact"]]
+    (doseq [g ["child" "exact"]]
       (run-set (str "validate." g) (gp validateS g)
                (fn [vin] (s/validate (vget vin "data") (vget vin "spec")))))
+    (run-set "validate.nof" (gp validateS "nof") {"null" false}
+             (fn [vin] (s/validate (vget vin "data") (vget vin "spec"))))
     (run-set "validate.invalid" (gp validateS "invalid") {"null" false}
              (fn [vin] (s/validate (vget vin "data") (vget vin "spec"))))
     (run-set "validate.special" (gp validateS "special")

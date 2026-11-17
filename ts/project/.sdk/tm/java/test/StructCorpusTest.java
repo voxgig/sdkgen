@@ -334,7 +334,7 @@ public class StructCorpusTest {
     // ===== validate =====
     add(tests, "validate", "basic", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "child", true, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
-    add(tests, "validate", "one", true, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "nof", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "exact", true, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "invalid", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "special", true, in -> {

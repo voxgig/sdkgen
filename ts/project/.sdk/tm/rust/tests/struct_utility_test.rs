@@ -594,7 +594,7 @@ fn struct_utility() {
     );
 
     // -------- validate -----------------------------------------------
-    for name in ["basic", "invalid"] {
+    for name in ["basic", "invalid", "nof"] {
         run.run_set_fallible(
             &set!("validate", name),
             false,
@@ -602,7 +602,7 @@ fn struct_utility() {
             |vin| validate(&vget(&vin, "data"), &vget(&vin, "spec"), None).map_err(|e| e.message),
         );
     }
-    for name in ["child", "one", "exact"] {
+    for name in ["child", "exact"] {
         run.run_set_fallible(
             &set!("validate", name),
             true,

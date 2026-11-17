@@ -1212,8 +1212,8 @@ func TestStructUtility(t *testing.T) {
 		})
 	})
 
-	t.Run("validate-one", func(t *testing.T) {
-		structRunSet(t, validateSpec["one"], func(v any) (any, error) {
+	t.Run("validate-nof", func(t *testing.T) {
+		structRunSetFlags(t, validateSpec["nof"], map[string]bool{"null": false}, func(v any) (any, error) {
 			m := v.(map[string]any)
 			data := m["data"]
 			spec := m["spec"]

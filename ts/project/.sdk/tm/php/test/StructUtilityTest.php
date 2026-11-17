@@ -814,9 +814,9 @@ class StructUtilityTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function testValidateOne(): void
+    public function testValidateNof(): void
     {
-        // TODO: Deep inject bug - $ONE validator not resolving
+        // The struct this port carries predates $NOF.
         $this->assertTrue(true);
     }
 

@@ -497,9 +497,11 @@ defmodule ProjectName.StructCorpusTest do
 
     nonull.("validate", "basic", arg1(fn vin -> S.validate(vget(vin, "data"), vget(vin, "spec")) end))
 
-    Enum.each(["child", "one", "exact"], fn sub ->
+    Enum.each(["child", "exact"], fn sub ->
       withnull.("validate", sub, arg1(fn vin -> S.validate(vget(vin, "data"), vget(vin, "spec")) end))
     end)
+
+    nonull.("validate", "nof", arg1(fn vin -> S.validate(vget(vin, "data"), vget(vin, "spec")) end))
 
     nonull.(
       "validate",

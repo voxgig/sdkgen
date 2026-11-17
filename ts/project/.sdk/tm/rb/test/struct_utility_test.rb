@@ -580,8 +580,8 @@ class StructUtilityTest < Minitest::Test
     })
   end
 
-  def test_validate_one
-    @runsetflags.call(@spec["validate"]["one"], {}, lambda { |vin|
+  def test_validate_nof
+    @runsetflags.call(@spec["validate"]["nof"], { "null" => false }, lambda { |vin|
       VoxgigStruct.validate(vin["data"], vin["spec"])
     })
   end

@@ -1007,9 +1007,9 @@ public class StructUtilityTest
     }
 
     [Fact]
-    public void ValidateOne()
+    public void ValidateNof()
     {
-        RunStruct("validate", "one", true, input =>
+        RunStruct("validate", "nof", false, input =>
             StructUtils.Validate(Getp(input, "data"), Getp(input, "spec")));
     }
 

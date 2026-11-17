@@ -950,7 +950,7 @@ int main(void) {
   run("validate", "basic", 0, subj_validate, NULL);
   run("validate", "invalid", 0, subj_validate, NULL);
   run("validate", "child", 1, subj_validate, NULL);
-  run("validate", "one", 1, subj_validate, NULL);
+  run("validate", "nof", 0, subj_validate, NULL);
   run("validate", "exact", 1, subj_validate, NULL);
 
   /* select */

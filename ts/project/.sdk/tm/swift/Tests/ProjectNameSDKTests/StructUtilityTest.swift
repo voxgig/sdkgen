@@ -345,7 +345,7 @@ final class StructUtilityTest: XCTestCase {
 
   func testValidate() {
     for (name, nullFlag) in [
-      ("basic", false), ("child", true), ("one", true),
+      ("basic", false), ("child", true), ("nof", false),
       ("exact", true), ("invalid", false), ("special", true),
     ] {
       runStruct("validate", name, nullFlag) {

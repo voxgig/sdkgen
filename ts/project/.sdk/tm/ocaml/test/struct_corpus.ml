@@ -229,7 +229,9 @@ let run_all (r : R.run) =
   List.iter (fun gn ->
       set ("validate." ^ gn) (O.jget validates gn)
         (fun vin -> validate (R.getp vin "data") (R.getp vin "spec")))
-    ["child"; "one"; "exact"];
+    ["child"; "exact"];
+  set ~nullflag:false "validate.nof" (O.jget validates "nof")
+    (fun vin -> validate (R.getp vin "data") (R.getp vin "spec"));
   set ~nullflag:false "validate.invalid" (O.jget validates "invalid")
     (fun vin -> validate (R.getp vin "data") (R.getp vin "spec"));
   set "validate.special" (O.jget validates "special")

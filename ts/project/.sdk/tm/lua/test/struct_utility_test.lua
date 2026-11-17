@@ -94,7 +94,12 @@ local function entryin(entry, path)
     if type(at) ~= "table" then
       return nil
     end
-    at = at[part]
+    local index = math.tointeger(tonumber(part))
+    if nil ~= index and nil ~= rawget(at, index + 1) then
+      at = at[index + 1]
+    else
+      at = at[part]
+    end
   end
   return at
 end
@@ -924,11 +929,25 @@ describe("struct", function()
     runsetflags(
       dropentries(validateSpec.basic, {
         -- `$NULL` against null data: validate returns the null, the port
-        -- returns nil, read as absent. (`$NULL` against non-null data at
-        -- a later index still runs - the error path needs no stored
-        -- null.)
-        { at = 13, why = "$NULL validating null data", is = function(entry)
+        -- returns nil, read as absent.
+        { at = 14, why = "$NULL validating null data", is = function(entry)
           return "`$NULL`" == entryin(entry, "spec") and isnull(entryin(entry, "data"))
+        end },
+        { at = 53, why = "$NULL validating null data, again", is = function(entry)
+          return "`$NULL`" == entryin(entry, "spec") and isnull(entryin(entry, "data"))
+        end },
+        -- Under `null = false` a null map member arrives absent: a Lua table
+        -- cannot hold a nil.
+        { at = 61, why = "a null value in a map under null = false", is = function(entry)
+          return "`$ANY`" == entryin(entry, "spec.a") and isnull(entryin(entry, "data.a"))
+        end },
+        -- A null list element arrives as the string "null", the only way a
+        -- Lua list keeps the slot.
+        { at = 70, why = "$NULL validating a null list element", is = function(entry)
+          return "`$NULL`" == entryin(entry, "spec.0") and isnull(entryin(entry, "data.0"))
+        end },
+        { at = 71, why = "$NULL validating a null between numbers", is = function(entry)
+          return "`$NULL`" == entryin(entry, "spec.1") and isnull(entryin(entry, "data.1"))
         end },
       }),
       { null = false },
@@ -946,10 +965,29 @@ describe("struct", function()
   end)
 
 
-  test("validate-one", function()
-    runset(validateSpec.one, function(vin)
-      return validate(vin.data, vin.spec)
-    end)
+  test("validate-nof", function()
+    runsetflags(
+      dropentries(validateSpec.nof, {
+        -- The member arrives absent, which no spec of $NULL admits, so the
+        -- count of none holds where canonical counts the null.
+        { at = 24, why = "a null map member counted by $NOF", is = function(entry)
+          return isnull(entryin(entry, "data.a")) and 0 == entryin(entry, "spec.a.1")
+        end },
+        { at = 25, why = "a null map member validated by $NOF", is = function(entry)
+          return isnull(entryin(entry, "data.a")) and "`$NULL`" == entryin(entry, "spec.a.3")
+        end },
+        { at = 26, why = "a null list element validated by $NOF", is = function(entry)
+          return isnull(entryin(entry, "data.0")) and "`$NOF`" == entryin(entry, "spec.1.0")
+        end },
+        { at = 31, why = "a null map member a default would replace", is = function(entry)
+          return isnull(entryin(entry, "data.r")) and "`$NOF`" == entryin(entry, "spec.0")
+        end },
+      }),
+      { null = false },
+      function(vin)
+        return validate(vin.data, vin.spec)
+      end
+    )
   end)
 
 

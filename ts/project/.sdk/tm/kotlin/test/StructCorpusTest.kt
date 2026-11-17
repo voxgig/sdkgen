@@ -274,7 +274,7 @@ class StructCorpusTest {
     // ===== validate =====
     add(tests, "validate", "basic", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "child", true) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
-    add(tests, "validate", "one", true) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "nof", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "exact", true) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "invalid", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "special", true) {

@@ -1054,10 +1054,10 @@ test "validate-child" {
     try r.runseterr(r.group("validate", "child"), .{ .name = "validate/child" }, wrap_validate);
 }
 
-test "validate-one" {
+test "validate-nof" {
     var r = try omnirun.makeRunner(testing.allocator, "struct");
     defer r.deinit();
-    try r.runseterr(r.group("validate", "one"), .{ .name = "validate/one" }, wrap_validate);
+    try r.runseterr(r.group("validate", "nof"), .{ .name = "validate/nof", .null_ = false }, wrap_validate);
 }
 
 test "validate-exact" {

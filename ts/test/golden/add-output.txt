@@ -73,7 +73,7 @@ tm/c/tests/pipeline_test.c 39f2d4164345
 tm/c/tests/primary_corpus_test.c 8b5b07a955dc
 tm/c/tests/primary_utility_test.c ca161399455a
 tm/c/tests/server_variable_test.c b49f64ffac4b
-tm/c/tests/struct_corpus_test.c d210851e0ef4
+tm/c/tests/struct_corpus_test.c 4e86b664b4ab
 tm/c/tests/transport_test.c 112cde65dacf
 tm/c/tests/vendor/omni/json.c 0d164a76a966
 tm/c/tests/vendor/omni/omni.h 0b97633a2655
@@ -242,7 +242,7 @@ tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
 tm/clojure/test/sdk/test/pipeline.clj cf79733860c5
 tm/clojure/test/sdk/test/primary.clj f306427e725e
-tm/clojure/test/sdk/test/struct_corpus.clj 7bc252602c61
+tm/clojure/test/sdk/test/struct_corpus.clj e5945ca352a5
 tm/clojure/test/sdk/test_runner.clj b74fa394f777
 tm/clojure/test/sdk/testutil.clj 389d40fa6cbc
 tm/clojure/test/vendor/omni/voxgig/omni/json.clj 8582e15f6f20
@@ -318,7 +318,7 @@ tm/cpp/test/primary_utility_test.cpp a53553a747f7
 tm/cpp/test/runner_support.hpp cf97960870c1
 tm/cpp/test/sdk-test-control.json acadc87764f6
 tm/cpp/test/server_variable_test.cpp a6a1670e96ac
-tm/cpp/test/struct_corpus_test.cpp 5e5b63bd4113
+tm/cpp/test/struct_corpus_test.cpp cae1e1174159
 tm/cpp/test/testlib.hpp f5f70c8c25b7
 tm/cpp/test/vendor/omni/json.hpp 21a1ed7edb77
 tm/cpp/test/vendor/omni/omni.hpp 5aca807ffd82
@@ -406,7 +406,7 @@ tm/csharp/test/OmniSmokeTest.cs adbc2519341d
 tm/csharp/test/PipelineTest.cs d5e845f81b70
 tm/csharp/test/PrimaryUtilityTest.cs e7a1833bba66
 tm/csharp/test/Runner.cs 3089a3c68b44
-tm/csharp/test/StructUtilityTest.cs bcc257581aee
+tm/csharp/test/StructUtilityTest.cs 97b2e56ac78c
 tm/csharp/test/sdk-test-control.json 1368770ffc61
 tm/csharp/test/vendor/omni/Runner.cs 88b8ffb2c8aa
 tm/csharp/test/vendor/omni/Util.cs 93d6b760c73f
@@ -510,7 +510,7 @@ tm/elixir/test/omni_smoke_test.exs d79d4e7faab8
 tm/elixir/test/pipeline_test.exs 11b7151723a4
 tm/elixir/test/primary_utility_test.exs 809ab087b792
 tm/elixir/test/stream_test.exs adcaa6598d60
-tm/elixir/test/struct_corpus_test.exs b7fd9221f7c8
+tm/elixir/test/struct_corpus_test.exs 7f52c6c4a405
 tm/elixir/test/support/feature_harness.ex 9b26420ea50d
 tm/elixir/test/support/omni.ex 030d256627ce
 tm/elixir/test/test_helper.exs b086ec47f0c6
@@ -593,7 +593,7 @@ tm/go/test/omnismoke_test.go fb76d8db5060
 tm/go/test/pipeline_test.go aa2adc359fec
 tm/go/test/primary_utility_test.go 49c8bb757c19
 tm/go/test/sdk-test-control.json acadc87764f6
-tm/go/test/struct_utility_test.go c3db5a84cdc1
+tm/go/test/struct_utility_test.go 5ff17cf792b3
 tm/go/test/testsupport_test.go a09d2eaaf842
 tm/go/utility/clean.go 91994438578b
 tm/go/utility/done.go 829dd26164b3
@@ -735,7 +735,7 @@ tm/java/test/OmniSmokeTest.java 722cc2d6bfe7
 tm/java/test/PipelineTest.java 2bde7fdedd64
 tm/java/test/PrimaryUtilityTest.java a8160f999f9d
 tm/java/test/RunnerSupport.java d8b0e6f8e5f7
-tm/java/test/StructCorpusTest.java 2cefdd8ed671
+tm/java/test/StructCorpusTest.java be7295be9082
 tm/java/test/sdk-test-control.json acadc87764f6
 tm/java/test/vendor/omni/Json.java 2aecfa0987b2
 tm/java/test/vendor/omni/Runner.java 882dcbc088eb
@@ -893,7 +893,7 @@ tm/js/test/sdk-test-control.json 91aad509f363
 tm/js/test/utility.js 222a46324f56
 tm/js/test/utility/Custom.test.js deeb256f75c3
 tm/js/test/utility/PrimaryUtility.test.js 92bb464a66e4
-tm/js/test/utility/StructUtility.test.js 7014600e8ff7
+tm/js/test/utility/StructUtility.test.js 44bc5384c942
 tm/js/test/utility/index.js 18fa1acfe694
 tm/js/test/vendor/omni/index.js 659130ae7bfc
 tm/js/test/vendor/omni/runner.js ad51305f46bc
@@ -978,7 +978,7 @@ tm/kotlin/test/PipelineTest.kt c654fb25bc20
 tm/kotlin/test/PrimaryUtilityTest.kt 6624899a6de8
 tm/kotlin/test/RunnerSupport.kt fb1f888569a4
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
-tm/kotlin/test/StructCorpusTest.kt fb99eabed538
+tm/kotlin/test/StructCorpusTest.kt e0ae9e6c4f70
 tm/kotlin/test/sdk-test-control.json bb1582608f2f
 tm/kotlin/test/vendor/omni/Json.kt 16895fb3ef39
 tm/kotlin/test/vendor/omni/Runner.kt 0b315637d75b
@@ -1067,7 +1067,7 @@ tm/lua/test/pipeline_test.lua 1db7549f13a9
 tm/lua/test/primary_utility_test.lua f973f92540a3
 tm/lua/test/runner.lua ed5ad73d4f51
 tm/lua/test/sdk-test-control.json da0a617f04f6
-tm/lua/test/struct_utility_test.lua 7b6093720d1b
+tm/lua/test/struct_utility_test.lua e059a5b3dcfa
 tm/lua/test/vendor/omni/json.lua 062b0b8a40e2
 tm/lua/test/vendor/omni/regex.lua fdaf72e06826
 tm/lua/test/vendor/omni/runner.lua 29f69d776115
@@ -1162,7 +1162,7 @@ tm/ocaml/test/harness.ml 366332912de1
 tm/ocaml/test/omni_resolver.ml d4b483a5a08d
 tm/ocaml/test/omni_smoke_test.ml 3045df404dfa
 tm/ocaml/test/primary_utility_test.ml 2501379d19ab
-tm/ocaml/test/struct_corpus.ml 6742a3fed883
+tm/ocaml/test/struct_corpus.ml ecfffd4f63fb
 tm/ocaml/test/t_feature.ml 010046646b46
 tm/ocaml/test/t_main.ml a468eae08da5
 tm/ocaml/test/t_pipeline.ml 135b82d775d0
@@ -1241,7 +1241,7 @@ tm/perl/t/runner.pm faf289b7cd5d
 tm/perl/t/sdk-test-control.json b75ea700c514
 tm/perl/t/server_variables.t 4404608c9256
 tm/perl/t/stream.t 0e1aa023c171
-tm/perl/t/struct_utility.t 9c229417ba35
+tm/perl/t/struct_utility.t 78c5d29155c8
 tm/perl/t/vendor/omni/Voxgig/Omni.pm 757c0d86a59a
 tm/perl/t/vendor/omni/Voxgig/Omni/Runner.pm 0e5c65c16325
 tm/perl/t/vendor/omni/Voxgig/Omni/Util.pm 850b03b005c5
@@ -1345,7 +1345,7 @@ tm/php/test/OmniSmokeTest.php cad939a73897
 tm/php/test/PipelineTest.php 544f3446b5f1
 tm/php/test/PrimaryUtilityTest.php 2cf1ca929598
 tm/php/test/Runner.php df683b0bb54e
-tm/php/test/StructUtilityTest.php 8cf4251dbd8f
+tm/php/test/StructUtilityTest.php 77ee27f0f2e5
 tm/php/test/sdk-test-control.json 0ef7278caec2
 tm/php/test/vendor/omni/Runner.php cb0ff5a5c312
 tm/php/test/vendor/omni/Util.php 1814a6ecd9d1
@@ -1491,7 +1491,7 @@ tm/py/test/test_netsim.py 1583f97d2c84
 tm/py/test/test_omni_smoke.py abeaa5fc717b
 tm/py/test/test_pipeline.py 28a40b13fc41
 tm/py/test/test_primary_utility.py 122e15a13eaa
-tm/py/test/test_struct_utility.py 551d75951347
+tm/py/test/test_struct_utility.py 174be65f4eff
 tm/py/test/voxgig_omni/__init__.py 8c6b5317f589
 tm/py/test/voxgig_omni/runner.py acfa45f20199
 tm/py/test/voxgig_omni/util.py 5acc11e5f52e
@@ -1587,7 +1587,7 @@ tm/rb/test/pipeline_test.rb bba6c6975b16
 tm/rb/test/primary_utility_test.rb c0436721ba19
 tm/rb/test/runner.rb 84b3aeebd794
 tm/rb/test/sdk-test-control.json 9b96054952f6
-tm/rb/test/struct_utility_test.rb 53ba3c8608b5
+tm/rb/test/struct_utility_test.rb 0508ee2f032c
 tm/rb/test/vendor/omni/runner.rb 117d02921b06
 tm/rb/test/vendor/omni/util.rb 170c9dbeafc5
 tm/rb/test/vendor/omni/voxgig_omni.rb 990fb56f1b7f
@@ -1698,7 +1698,7 @@ tm/rust/tests/omni_smoke_test.rs f412dbc766e8
 tm/rust/tests/pipeline_test.rs edc6a5fc87cc
 tm/rust/tests/primary_utility_test.rs a9eee194ee3c
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
-tm/rust/tests/struct_utility_test.rs e19a58dc8fad
+tm/rust/tests/struct_utility_test.rs 5e01357fdc6c
 tm/rust/tests/vendor/omni/json.rs 65ca11ff6974
 tm/rust/tests/vendor/omni/mod.rs 4083bbc700e7
 tm/rust/tests/vendor/omni/regex.rs ad7e90fcb818
@@ -1868,7 +1868,7 @@ tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
 tm/scala/sdktest/SdkTestMain.scala f78991ebccb1
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
-tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
+tm/scala/sdktest/StructCorpus.scala a7943751ff5f
 tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 46fcc5c8a13b
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/sdktest/vendor/omni/Json.scala ada9d03349d5
@@ -2007,7 +2007,7 @@ tm/swift/Tests/ProjectNameSDKTests/PipelineTest.swift 88b2121387e7
 tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 056de1a12efd
 tm/swift/Tests/ProjectNameSDKTests/Runner.swift 7cacfc13a4c6
 tm/swift/Tests/ProjectNameSDKTests/ServerVariableTest.swift e3469c9beea6
-tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift df46c84a8c75
+tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift f6da327943d5
 tm/swift/Tests/vendor/omni/Json.swift cf24b1af7b42
 tm/swift/Tests/vendor/omni/Runner.swift c9ca032a81c2
 tm/swift/Tests/vendor/omni/Util.swift a45863c9561b
@@ -2140,7 +2140,7 @@ tm/ts/test/utility.ts 1ea0442912d3
 tm/ts/test/utility/Corpus.test.ts e7efaa88df0f
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea
 tm/ts/test/utility/PrimaryUtility.test.ts 4917c6b52891
-tm/ts/test/utility/StructUtility.test.ts 52897a756525
+tm/ts/test/utility/StructUtility.test.ts 6fbada4fd2f4
 tm/ts/test/utility/index.ts 477889c43d3e
 tm/ts/test/vendor/omni/Runner.ts 33236cdd7746
 tm/ts/test/vendor/omni/Util.ts 483732760d0b
@@ -2290,7 +2290,7 @@ tm/zig/test/omniresolver.zig dbfba6dfcd18
 tm/zig/test/omnismoke_test.zig b70b834e00fd
 tm/zig/test/pipeline_test.zig 098b6ae7fa76
 tm/zig/test/primary_utility_test.zig 5b580f457cdf
-tm/zig/test/struct_corpus.zig c02971515919
+tm/zig/test/struct_corpus.zig 6b05cf9ae332
 tm/zig/test/vendor/omni/omni.zig ca68de8e6595
 tm/zig/test/vendor/omni/regex.zig 9d4b0fa81318
 tm/zig/utility/jsonparse.zig 3bf825b60025

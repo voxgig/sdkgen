@@ -498,7 +498,7 @@ int main() {
       [](const Value& in) { return validate(getp(in, "data"), getp(in, "spec")); });
   run("validate", "child", true,
       [](const Value& in) { return validate(getp(in, "data"), getp(in, "spec")); });
-  run("validate", "one", true,
+  run("validate", "nof", false,
       [](const Value& in) { return validate(getp(in, "data"), getp(in, "spec")); });
   run("validate", "exact", true,
       [](const Value& in) { return validate(getp(in, "data"), getp(in, "spec")); });

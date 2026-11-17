@@ -275,10 +275,12 @@ object Runner {
     // ----- validate -----
     run.runset("validate.basic", g("validate", "basic"), false)(vin =>
       validate(vget(vin, "data"), vget(vin, "spec")))
-    Seq("child", "one", "exact").foreach { gn =>
+    Seq("child", "exact").foreach { gn =>
       run.runset("validate." + gn, g("validate", gn))(vin =>
         validate(vget(vin, "data"), vget(vin, "spec")))
     }
+    run.runset("validate.nof", g("validate", "nof"), false)(vin =>
+      validate(vget(vin, "data"), vget(vin, "spec")))
     run.runset("validate.invalid", g("validate", "invalid"), false)(vin =>
       validate(vget(vin, "data"), vget(vin, "spec")))
     run.runset("validate.special", g("validate", "special"))(vin => {

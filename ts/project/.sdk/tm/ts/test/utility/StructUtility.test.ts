@@ -767,8 +767,9 @@ describe('struct', async () => {
   })
 
 
-  test('validate-one', async () => {
-    await runset(spec.validate.one, (vin: any) => struct.validate(vin.data, vin.spec))
+  test('validate-nof', async () => {
+    await runsetflags(spec.validate.nof, { null: false },
+      (vin: any) => struct.validate(vin.data, vin.spec))
   })
 
 
