@@ -1,5 +1,5 @@
 -- VENDORED: @voxgig/struct 0.1.1 (lua/src/struct.lua)
--- Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
+-- Source: https://github.com/voxgig/struct @ 1ba9203347f8a2ec7170014a6acfae03db862d66  [tag: sdk-local-nof]
 -- License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 -- Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 
@@ -226,6 +226,24 @@ end
 
 local MAXDEPTH = 32
 
+-- Condensed structures: the format version, and the kind leading each node.
+local CONDENSE_VERSION = 1
+local CONDENSE_MAP = 0
+local CONDENSE_LIST = 1
+local CONDENSE_STR = 2
+local CONDENSE_NUM = 3
+local CONDENSE_TRUE = 4
+local CONDENSE_FALSE = 5
+local CONDENSE_NULL = 6
+
+local S_condense = "$condense"
+local S_condsym = "sym"
+local S_condnode = "node"
+local S_condroot = "root"
+
+local S_CONDENSE_IMMUTABLE =
+  "struct: condensed structures are immutable - expand() first, then modify the copy"
+
 ----------------------------------------------------------
 -- Forward declarations to work around the lack of function hoisting
 ----------------------------------------------------------
@@ -234,6 +252,15 @@ local _injecthandler
 local _validatehandler
 local _invalidTypeMsg
 local _validation
+local _checknames
+local _refname
+local _unknownname
+local _slotval
+local _deepequal
+local _keeps
+local _admits
+local _nofcount
+local _openquery
 local stringify
 local ismap
 local islist
@@ -242,6 +269,10 @@ local setprop
 local delprop
 local checkPlacement
 local injectorArgs
+local iscondensed
+local expand
+local condenseResolve
+local condenseMaterialise
 
 -- Return type string for narrowest type.
 local function typename(t)
@@ -474,6 +505,35 @@ local function typify(value)
   return T_any
 end
 
+-- A number as JavaScript's String(n) prints it: 2.0 is "2" and -0.0 is "0".
+local function numstr(n)
+  return tostring(math.tointeger(n) or n)
+end
+
+-- A list key's index, or nil: an integral number, or a string as JavaScript's
+-- String(n) prints one, so "1" and "-1" but not "01", "+1", " 1", "1.0", "-0" or 1.5.
+local function listkey(key)
+  if type(key) == S_string then
+    if "0" ~= key and nil == key:match("^%-?[1-9][0-9]*$") then
+      return nil
+    end
+    key = tonumber(key)
+  elseif type(key) ~= S_number or key % 1 ~= 0 then
+    return nil
+  end
+  -- Beyond the integer range a key can only fall past an end of the list.
+  return math.tointeger(key) or (0 < key and math.maxinteger or math.mininteger)
+end
+
+-- The 0-based index a key reads in a list, or nil.
+local function listindex(key)
+  local i = listkey(key)
+  if nil ~= i and 0 <= i then
+    return i
+  end
+  return nil
+end
+
 -- Safely get a property of a node. Nil arguments return nil.
 -- If the key is not found, return the alternative value, if any.
 -- @param val (any) The parent object/table
@@ -490,26 +550,16 @@ local function getprop(val, key, alt)
 
   -- Handle tables (maps and arrays in Lua)
   if type(val) == "table" then
-    -- Convert key to string if it's a number
-    local lookup_key = key
-    if type(key) == "number" then
-      -- Lua arrays are 1-based
-      lookup_key = tostring(math.floor(key))
-    elseif type(key) ~= "string" then
-      -- Convert other types to string
-      lookup_key = tostring(key)
-    end
     if islist(val) then
-      -- Lua arrays are 1-based, so we need to adjust the index
-      for i = 1, #val do
-        local zero_based_index = i - 1
-        if lookup_key == tostring(zero_based_index) then
-          out = val[i]
-          break
-        end
+      local i = listindex(key)
+      if nil ~= i and i < #val then
+        -- Lua arrays are 1-based
+        out = val[i + 1]
       end
-    else
-      out = val[lookup_key]
+    elseif type(key) == S_number then
+      out = val[numstr(key)]
+    elseif type(key) == S_string then
+      out = val[key]
     end
   end
 
@@ -522,8 +572,7 @@ local function getprop(val, key, alt)
   return out
 end
 
--- Get a list element. The key should be an integer, or a string
--- that can parse to an integer only. Negative integers count from the end of the list.
+-- Get a list element; a negative integer key counts from the end.
 local function getelem(val, key, alt)
   local out = NONE
 
@@ -532,11 +581,11 @@ local function getelem(val, key, alt)
   end
 
   if islist(val) then
-    local nkey = tonumber(key)
-    if nkey ~= nil and nkey == math.floor(nkey) then
-      if nkey < 0 then
-        nkey = #val + nkey
-      end
+    local nkey = listkey(key)
+    if nil ~= nkey and nkey < 0 then
+      nkey = #val + nkey
+    end
+    if nil ~= nkey and 0 <= nkey and nkey < #val then
       -- Convert 0-based to 1-based
       out = val[nkey + 1]
     end
@@ -855,18 +904,17 @@ delprop = function(parent, key)
     return parent
   end
 
+  if iscondensed(parent) then
+    error(S_CONDENSE_IMMUTABLE)
+  end
+
   if ismap(parent) then
-    key = tostring(key)
-    parent[key] = nil
+    parent[strkey(key)] = nil
   elseif islist(parent) then
-    local keyI = tonumber(key)
-    if keyI ~= nil then
-      keyI = math.floor(keyI)
+    local keyI = listindex(key)
+    if nil ~= keyI and keyI < #parent then
       -- Convert 0-based to 1-based
-      local luaIndex = keyI + 1
-      if luaIndex >= 1 and luaIndex <= #parent then
-        table.remove(parent, luaIndex)
-      end
+      table.remove(parent, keyI + 1)
     end
   end
 
@@ -1292,6 +1340,11 @@ end
 
 -- Set a value deep inside a node at a key path.
 local function setpath(store, path, val, injdef)
+  -- Same contract as setprop/delprop: a condensed store is immutable.
+  if iscondensed(store) then
+    error(S_CONDENSE_IMMUTABLE)
+  end
+
   local pathType = typify(path)
 
   local parts
@@ -1425,29 +1478,23 @@ setprop = function(parent, key, val)
     return parent
   end
 
+  if iscondensed(parent) then
+    error(S_CONDENSE_IMMUTABLE)
+  end
+
   if ismap(parent) then
-    key = tostring(key)
-    parent[key] = val
+    parent[type(key) == S_number and numstr(key) or key] = val
   elseif islist(parent) then
-    -- Ensure key is an integer
-    local keyI = tonumber(key)
+    local keyI = listkey(key)
 
     if keyI == nil then
       return parent
     end
 
-    keyI = math.floor(keyI)
-
     -- Set or append value at position keyI
     if keyI >= 0 then
-      -- Convert from 0-based indexing to Lua 1-based indexing
-      local luaIndex = keyI + 1
-
-      -- Clamp: if index is beyond current length, append to end
-      if luaIndex > #parent + 1 then
-        luaIndex = #parent + 1
-      end
-      parent[luaIndex] = val
+      -- Clamp to the end (append), then convert to Lua 1-based indexing.
+      parent[math.min(keyI, #parent) + 1] = val
     -- Prepend value if keyI is negative
     else
       table.insert(parent, 1, val)
@@ -1635,7 +1682,7 @@ local function merge(val, maxdepth)
         end
 
         -- walk writes this back into the override, so it is the override's
-        -- own child. Read directly: getprop scans a list for each index.
+        -- own child.
         if islist(parent) then
           return parent[tonumber(key) + 1]
         end
@@ -1661,10 +1708,21 @@ end
 -- @param injdef (table) Optional injection definition
 -- @return (any) The value at the path
 getpath = function(store, path, injdef)
-  -- Operate on a string array.
+  -- Operate on a string array, a copy: a number part reads as its string
+  -- form, and any other non-string part misses.
   local parts
   if islist(path) then
-    parts = path
+    parts = setmetatable({}, { __jsontype = "array" })
+    for i = 1, #path do
+      local part = path[i]
+      if type(part) == S_number then
+        parts[i] = numstr(part)
+      elseif type(part) == S_string then
+        parts[i] = part
+      else
+        return NONE
+      end
+    end
   elseif type(path) == S_string then
     -- Split by '.' like JS split('.'): "a.b" -> ["a","b"], "." -> ["",""], "" -> [""]
     parts = {}
@@ -1692,9 +1750,20 @@ getpath = function(store, path, injdef)
       table.insert(parts, S_MT)
     end
   elseif type(path) == S_number then
-    parts = { strkey(path) }
+    parts = { numstr(path) }
   else
     return NONE
+  end
+
+  -- A condensed store answers a path as the node it was built from does,
+  -- touching only the nodes on the path. A base changes what the path
+  -- resolves against, so then it is expanded instead.
+  if iscondensed(store) then
+    if nil == injdef or nil == getprop(injdef, S_base) then
+      -- A stored null materialises as nil, so it reads as absent (Group A).
+      return condenseMaterialise(store, condenseResolve(store, store[S_condroot], parts))
+    end
+    store = expand(store)
   end
 
   local val = store
@@ -1869,7 +1938,7 @@ function Injection:descend()
     end
   else
     if parentkey ~= nil then
-      self.dparent = getprop(self.dparent, parentkey)
+      self.dparent = denoval(getprop(self.dparent, parentkey))
 
       local lastpart = getelem(self.dpath, -1)
       if lastpart == "$:" .. tostring(parentkey) then
@@ -2450,9 +2519,7 @@ end
 
 -- Transform: resolve a reference to another part of the spec.
 -- Format: ['`$REF`', 'ref-path']
-local function transform_REF(inj, val, _ref, store)
-  local nodes = inj.nodes
-
+local function transform_REF(inj, _val, _ref, store)
   if M_VAL ~= inj.mode then
     return NONE
   end
@@ -2481,39 +2548,26 @@ local function transform_REF(inj, val, _ref, store)
     end)
   end
 
-  local tref = clone(ref)
-
-  local cpath = slice(inj.path, -3)
-  local tpath = slice(inj.path, -1)
-  local tcur = getpath(store, cpath)
-  local tval = getpath(store, tpath)
-  local rval
-
+  -- A recursive reference stops where the data does.
+  local tval = getpath(store, slice(inj.path, -1))
+  local rval = NONE
   if not hasSubRef or NONE ~= tval then
-    local tinj = inj:child(0, { getelem(tpath, -1) })
-
-    tinj.path = tpath
-    tinj.nodes = slice(inj.nodes, -1)
-    tinj.parent = getelem(nodes, -2)
-    tinj.val = tref
-
-    tinj.dpath = flatten({ cpath })
-    tinj.dparent = tcur
-
-    inject(tref, store, tinj)
-
-    rval = tinj.val
-  else
-    rval = NONE
+    rval = clone(ref)
   end
 
+  -- The enclosing loop injects the referenced spec in this list's place, so
+  -- neither this pass nor this element leaves a value for modify to check.
   local grandparent = inj:setval(rval, 2)
 
-  if islist(grandparent) and inj.prior then
-    inj.prior.keyI = inj.prior.keyI - 1
+  local prior = inj.prior
+  if prior then
+    prior.modify = NONE
+    if islist(grandparent) or NONE ~= rval then
+      prior.keyI = prior.keyI - 1
+    end
   end
 
-  return val
+  return SKIP
 end
 
 -- Named formatters for transform_FORMAT.
@@ -2627,6 +2681,15 @@ local function transform_APPLY(inj, _val, _ref, store)
   return out
 end
 
+-- merge reads NOVAL as nil and writes that back into extra, so a $TOP that
+-- extra gives as NOVAL (canonical undefined, from a $NOF or $ALL trial) is
+-- read before the merge and put back after it.
+local function _keeptop(store, top)
+  if NOVAL == top then
+    store[S_DTOP] = NOVAL
+  end
+end
+
 -- Transform data using spec.
 -- @param data (any) Source data to transform
 -- @param spec (any) Transform specification
@@ -2663,6 +2726,7 @@ local function transform(data, spec, injdef)
   end
 
   -- Define a top level store that provides transform operations.
+  local top = getprop(extra, S_DTOP)
   local store = merge({
     {
       [S_DTOP] = dataClone,
@@ -2695,6 +2759,7 @@ local function transform(data, spec, injdef)
     extraTransforms,
     { ["$ERRS"] = errs },
   }, 1)
+  _keeptop(store, top)
 
   local out = inject(spec, store, injdef)
 
@@ -2739,14 +2804,15 @@ local function validate_TYPE(inj, _val, ref)
     end
   end
 
-  -- Lua has no undefined; $NIL is equivalent to $NULL.
+  -- $NIL is absent or null.
   if tname == S_nil then
     typev = typev | T_null
   end
 
   local out = getprop(inj.dparent, inj.key)
 
-  local t = typify(out)
+  -- A Lua node holds no null, so a nil slot below the root is a missing value.
+  local t = typify(nil == out and 1 < #inj.path and NOVAL or out)
   if 0 == (t & typev) then
     table.insert(inj.errs, _invalidTypeMsg(inj.path, tname, t, out, "V1001"))
     return NONE
@@ -2773,15 +2839,12 @@ local function validate_CHILD(inj)
 
     -- Get corresponding current object.
     local pkey = getelem(path, -2)
-    local tval = getprop(inj.dparent, pkey)
+    local tval = denoval(getprop(inj.dparent, pkey))
 
     if NONE == tval then
       tval = {}
     elseif not ismap(tval) then
-      table.insert(
-        inj.errs,
-        _invalidTypeMsg(slice(inj.path, 0, -1), S_object, typify(tval), tval, "V0220")
-      )
+      -- _validation reports the mismatch, once.
       return NONE
     end
 
@@ -2815,9 +2878,6 @@ local function validate_CHILD(inj)
     end
 
     if not islist(inj.dparent) then
-      local msg =
-        _invalidTypeMsg(slice(inj.path, 0, -1), S_list, typify(inj.dparent), inj.dparent, "V0230")
-      table.insert(inj.errs, msg)
       inj.keyI = size(parent)
       return inj.dparent
     end
@@ -2864,79 +2924,6 @@ local function describeAlternatives(tvals)
   return out
 end
 
--- Match at least one of the specified shapes.
--- Syntax: ['`$ONE`', alt0, alt1, ...]
-local function validate_ONE(inj, _val, _ref, store)
-  local mode, parent, keyI = inj.mode, inj.parent, inj.keyI
-
-  -- Only operate in val mode, since parent is a list.
-  if M_VAL == mode then
-    if not islist(parent) or 0 ~= keyI then
-      table.insert(
-        inj.errs,
-        "The $ONE validator at field "
-          .. pathify(inj.path, 1, 1)
-          .. " must be the first element of an array."
-      )
-      return
-    end
-
-    inj.keyI = size(inj.keys)
-
-    -- Clean up structure, replacing [$ONE, ...] with current
-    inj:setval(inj.dparent, 2)
-
-    inj.path = slice(inj.path, 0, -1)
-
-    local tvals = slice(parent, 1)
-    if 0 == size(tvals) then
-      table.insert(
-        inj.errs,
-        "The $ONE validator at field "
-          .. pathify(inj.path, 1, 1)
-          .. " must have at least one argument."
-      )
-      return
-    end
-
-    -- See if we can find a match.
-    for _, tval in ipairs(tvals) do
-      local terrs = {}
-      setmetatable(terrs, { __jsontype = "array" })
-
-      local vstore = merge({ {}, store }, 1)
-      vstore["$TOP"] = inj.dparent
-
-      local vcurrent = validate(inj.dparent, tval, {
-        extra = vstore,
-        errs = terrs,
-        meta = inj.meta,
-      })
-
-      inj:setval(vcurrent, -2)
-
-      -- Accept current value if there was a match
-      if 0 == size(terrs) then
-        return
-      end
-    end
-
-    -- There was no match.
-    local valdesc_str = describeAlternatives(tvals)
-
-    table.insert(
-      inj.errs,
-      _invalidTypeMsg(
-        inj.path,
-        (1 < size(tvals) and "one of " or "") .. valdesc_str,
-        typify(inj.dparent),
-        inj.dparent,
-        "V0210"
-      )
-    )
-  end
-end
-
 -- Match exactly one of the specified values.
 -- Syntax: ['`$EXACT`', val1, val2, ...]
 local function validate_EXACT(inj)
@@ -2954,13 +2941,14 @@ local function validate_EXACT(inj)
       return
     end
 
+    local cval = _slotval(inj)
+
     inj.keyI = size(inj.keys)
 
-    -- Clean up structure, replacing [$EXACT, ...] with current data parent
-    inj:setval(inj.dparent, 2)
+    -- Replace [$EXACT, ...] with the data value; SKIP keeps inject off the detached list.
+    inj:setval(cval, 2)
 
     inj.path = slice(inj.path, 0, -1)
-    inj.key = getelem(inj.path, -1)
 
     local tvals = slice(parent, 1)
     if 0 == size(tvals) then
@@ -2970,24 +2958,12 @@ local function validate_EXACT(inj)
           .. pathify(inj.path, 1, 1)
           .. " must have at least one argument."
       )
-      return
+      return SKIP
     end
 
-    -- See if we can find an exact value match.
-    local currentstr = nil
     for _, tval in ipairs(tvals) do
-      local exactmatch = tval == inj.dparent
-
-      if not exactmatch and isnode(tval) then
-        if currentstr == nil then
-          currentstr = stringify(inj.dparent)
-        end
-        local tvalstr = stringify(tval)
-        exactmatch = tvalstr == currentstr
-      end
-
-      if exactmatch then
-        return
+      if _deepequal(tval, cval) then
+        return SKIP
       end
     end
 
@@ -3001,14 +2977,328 @@ local function validate_EXACT(inj)
           .. "exactly equal to "
           .. (1 == size(tvals) and "" or "one of ")
           .. valdesc_str,
-        typify(inj.dparent),
-        inj.dparent,
+        typify(cval),
+        cval,
         "V0110"
       )
     )
+
+    return SKIP
   else
     delprop(parent, key)
   end
+end
+
+-- The counting list directives. Without a count, every spec has to admit.
+local function _validatecount(inj, store, name, counted)
+  local mode, parent, keyI = inj.mode, inj.parent, inj.keyI
+
+  if M_VAL ~= mode then
+    return NONE
+  end
+
+  if not islist(parent) or 0 ~= keyI then
+    table.insert(
+      inj.errs,
+      "The "
+        .. name
+        .. " validator at field "
+        .. pathify(inj.path, 1, 1)
+        .. " must be the first element of an array."
+    )
+    return NONE
+  end
+
+  local cval = _slotval(inj)
+
+  inj.keyI = size(inj.keys)
+
+  -- Replace the directive's list with the data value. Each return is SKIP, so
+  -- that inject leaves the detached list alone and validates nothing in it.
+  inj:setval(cval, 2)
+
+  inj.path = slice(inj.path, -1)
+
+  local count = NONE
+  if counted then
+    count = getprop(parent, 1)
+  end
+  local tvals = slice(parent, counted and 2 or 1)
+  local numtvals = size(tvals)
+  local field = "The " .. name .. " validator at field " .. pathify(inj.path, 1)
+
+  if 0 == numtvals then
+    table.insert(
+      inj.errs,
+      field .. (counted and " must have a count and" or " must have") .. " at least one argument."
+    )
+    return SKIP
+  end
+
+  local lo, hi, countdesc = numtvals, numtvals, "all"
+  if counted then
+    lo, hi, countdesc = _nofcount(count, numtvals)
+  end
+
+  if NONE == countdesc then
+    table.insert(inj.errs, field .. " has an invalid count: " .. stringify(count) .. ".")
+    return SKIP
+  end
+
+  local admitted = 0
+  for tI = 0, numtvals - 1 do
+    local left = numtvals - tI
+
+    -- Stop once the specs left cannot change the verdict.
+    if hi < admitted or admitted + left < lo or (lo <= admitted and admitted + left <= hi) then
+      break
+    end
+
+    if _admits(cval, tvals[tI + 1], inj, store) then
+      admitted = admitted + 1
+    end
+  end
+
+  if admitted < lo or hi < admitted then
+    table.insert(
+      inj.errs,
+      _invalidTypeMsg(
+        inj.path,
+        countdesc .. " of " .. describeAlternatives(tvals),
+        typify(cval),
+        cval,
+        "V0310"
+      )
+    )
+  end
+
+  return SKIP
+end
+
+-- Count the specs that admit the value: ['`$NOF`', count, spec, ...], where
+-- count is an integer, or a map holding min, max or both.
+local function validate_NOF(inj, _val, _ref, store)
+  return _validatecount(inj, store, "$NOF", true)
+end
+
+-- Every spec admits the value: ['`$ALL`', spec, ...].
+local function validate_ALL(inj, _val, _ref, store)
+  return _validatecount(inj, store, "$ALL", false)
+end
+
+-- The bounds of a $LEN bound, with -1 for no maximum, and the words for it,
+-- which are absent when the bound is invalid.
+local function _lenbound(bound)
+  local lo, hi, countdesc = _nofcount(bound, -1)
+
+  if NONE == countdesc then
+    return 0, 0, NONE
+  end
+
+  local desc
+  if lo == hi then
+    desc = stringify(lo)
+  elseif -1 == hi then
+    desc = "at least " .. stringify(lo)
+  elseif 0 == lo then
+    desc = "at most " .. stringify(hi)
+  else
+    desc = stringify(lo) .. " to " .. stringify(hi)
+  end
+
+  return lo, hi, "of length " .. desc
+end
+
+-- The words for a $RANGE bound, which are absent when the bound is invalid.
+local function _rangedesc(bound)
+  if not ismap(bound) then
+    return NONE
+  end
+
+  local min = getprop(bound, "min")
+  local max = getprop(bound, "max")
+  local gt = getprop(bound, "gt")
+  local lt = getprop(bound, "lt")
+
+  local lower, upper = min, max
+  if NONE == lower then
+    lower = gt
+  end
+  if NONE == upper then
+    upper = lt
+  end
+
+  local function isnum(n)
+    return NONE == n or 0 < (T_number & typify(n))
+  end
+
+  local numkeys = 0
+  for _, key in ipairs({ "min", "max", "gt", "lt" }) do
+    if NONE ~= getprop(bound, key) then
+      numkeys = numkeys + 1
+    end
+  end
+
+  local valid = 0 < size(bound)
+    and size(bound) == numkeys
+    and (NONE == min or NONE == gt)
+    and (NONE == max or NONE == lt)
+    and isnum(min)
+    and isnum(max)
+    and isnum(gt)
+    and isnum(lt)
+    and (NONE == lower or NONE == upper or lower <= upper)
+
+  if not valid then
+    return NONE
+  end
+
+  local parts = {}
+  if NONE ~= min then
+    table.insert(parts, "at least " .. stringify(min))
+  elseif NONE ~= gt then
+    table.insert(parts, "greater than " .. stringify(gt))
+  end
+  if NONE ~= max then
+    table.insert(parts, "at most " .. stringify(max))
+  elseif NONE ~= lt then
+    table.insert(parts, "less than " .. stringify(lt))
+  end
+
+  return table.concat(parts, " and ")
+end
+
+-- A number within a valid $RANGE bound.
+local function _inrange(bound, val)
+  local min = getprop(bound, "min")
+  local max = getprop(bound, "max")
+  local gt = getprop(bound, "gt")
+  local lt = getprop(bound, "lt")
+
+  return (NONE == min or min <= val)
+    and (NONE == max or val <= max)
+    and (NONE == gt or gt < val)
+    and (NONE == lt or val < lt)
+end
+
+-- A $LIKE pattern compiled by the in-tree engine in src/regex.lua, which raises
+-- on a bad pattern; absent unless it compiles.
+local function _likere(pattern)
+  if S_string ~= type(pattern) then
+    return NONE
+  end
+  local ok, re = pcall(re_compile, pattern)
+  return ok and re or NONE
+end
+
+-- The bounding list directives: a bound or pattern, then at most one spec that also admits.
+local function _validatebound(inj, store, name)
+  local mode, parent, keyI = inj.mode, inj.parent, inj.keyI
+
+  if M_VAL ~= mode then
+    return NONE
+  end
+
+  if not islist(parent) or 0 ~= keyI then
+    table.insert(
+      inj.errs,
+      "The "
+        .. name
+        .. " validator at field "
+        .. pathify(inj.path, 1, 1)
+        .. " must be the first element of an array."
+    )
+    return NONE
+  end
+
+  local cval = _slotval(inj)
+
+  inj.keyI = size(inj.keys)
+
+  -- As for the counting directives: SKIP keeps inject off the detached list.
+  inj:setval(cval, 2)
+
+  inj.path = slice(inj.path, -1)
+
+  local field = "The " .. name .. " validator at field " .. pathify(inj.path, 1)
+  local nargs = size(parent) - 1
+  local islen = "$LEN" == name
+  local islike = "$LIKE" == name
+  local argname = islike and "pattern" or "bound"
+
+  if nargs < 1 or 2 < nargs then
+    table.insert(inj.errs, field .. " must have a " .. argname .. " and at most one spec.")
+    return SKIP
+  end
+
+  local bound = getprop(parent, 1)
+  local like = islike and _likere(bound) or NONE
+  local lo, hi, desc = 0, 0, NONE
+  if islen then
+    lo, hi, desc = _lenbound(bound)
+  elseif islike then
+    if NONE ~= like then
+      desc = "like /" .. bound .. "/"
+    end
+  else
+    desc = _rangedesc(bound)
+  end
+
+  if NONE == desc then
+    table.insert(
+      inj.errs,
+      field .. " has an invalid " .. argname .. ": " .. stringify(bound) .. "."
+    )
+    return SKIP
+  end
+
+  local ctype = typify(cval)
+
+  if 2 == nargs and not _admits(cval, getprop(parent, 2), inj, store) then
+    local specdesc = stringify(getprop(parent, 2)):gsub("`%$([A-Z]+)`", string.lower)
+    table.insert(inj.errs, _invalidTypeMsg(inj.path, specdesc, ctype, cval, "V0410"))
+    return SKIP
+  end
+
+  if 0 == ((islen and (T_string | T_list | T_map) or islike and T_string or T_number) & ctype) then
+    local needtype = islen and "string, list or map" or islike and S_string or S_number
+    table.insert(inj.errs, _invalidTypeMsg(inj.path, needtype, ctype, cval, "V0420"))
+    return SKIP
+  end
+
+  local inbound
+  if islen then
+    -- utf8.len fails on invalid UTF-8, which then counts its bytes.
+    local len = S_string == type(cval) and utf8.len(cval) or size(cval)
+    inbound = lo <= len and (-1 == hi or len <= hi)
+  elseif islike then
+    inbound = re_test(like, cval)
+  else
+    inbound = _inrange(bound, cval)
+  end
+
+  if not inbound then
+    local needtype = (1 < size(inj.path) and "" or "value ") .. desc
+    table.insert(inj.errs, _invalidTypeMsg(inj.path, needtype, ctype, cval, "V0430"))
+  end
+
+  return SKIP
+end
+
+-- The value's length is within a bound: ['`$LEN`', bound, spec?], where the
+-- bound is as for a $NOF count. A string's length is in code points.
+local function validate_LEN(inj, _val, _ref, store)
+  return _validatebound(inj, store, "$LEN")
+end
+
+-- The value is a number within a bound: ['`$RANGE`', bound, spec?], where the
+-- bound holds min or gt, max or lt, or one of each.
+local function validate_RANGE(inj, _val, _ref, store)
+  return _validatebound(inj, store, "$RANGE")
+end
+
+local function validate_LIKE(inj, _val, _ref, store)
+  return _validatebound(inj, store, "$LIKE")
 end
 
 -- This is the "modify" argument to inject. Use this to perform
@@ -3026,7 +3316,7 @@ _validation = function(pval, key, parent, inj)
   local exact = getprop(inj.meta, S_BEXACT, false)
 
   -- Current val to verify.
-  local cval = getprop(inj.dparent, key)
+  local cval = denoval(getprop(inj.dparent, key))
 
   if NONE == inj or (not exact and NONE == cval) then
     return
@@ -3121,6 +3411,7 @@ validate = function(data, spec, injdef)
   local errs = (injdef and injdef.errs) or {}
   setmetatable(errs, { __jsontype = "array" })
 
+  local top = getprop(extra, S_DTOP)
   local store = merge({
     {
       -- Remove the transform commands.
@@ -3146,8 +3437,12 @@ validate = function(data, spec, injdef)
       ["$INSTANCE"] = validate_TYPE,
       ["$ANY"] = validate_ANY,
       ["$CHILD"] = validate_CHILD,
-      ["$ONE"] = validate_ONE,
       ["$EXACT"] = validate_EXACT,
+      ["$NOF"] = validate_NOF,
+      ["$ALL"] = validate_ALL,
+      ["$LEN"] = validate_LEN,
+      ["$RANGE"] = validate_RANGE,
+      ["$LIKE"] = validate_LIKE,
     },
 
     getdef(extra, {}),
@@ -3157,17 +3452,27 @@ validate = function(data, spec, injdef)
       ["$ERRS"] = errs,
     },
   }, 1)
+  _keeptop(store, top)
 
   local meta = (injdef and injdef.meta) or {}
   setprop(meta, S_BEXACT, getprop(meta, S_BEXACT, false))
 
-  local out = transform(data, spec, {
-    meta = meta,
-    extra = store,
-    modify = _validation,
-    handler = _validatehandler,
-    errs = errs,
-  })
+  -- A spec that names an unknown checker validates nothing.
+  local numerrs = size(errs)
+  _checknames(spec, store, setmetatable({}, { __jsontype = "array" }), errs)
+
+  local out
+  if numerrs < size(errs) then
+    out = clone(data)
+  else
+    out = transform(data, spec, {
+      meta = meta,
+      extra = store,
+      modify = _validation,
+      handler = _validatehandler,
+      errs = errs,
+    })
+  end
 
   local generr = (0 < size(errs) and not collect)
 
@@ -3280,7 +3585,12 @@ local function select_NOT(inj, _val, _ref, store)
   end
 end
 
-local function select_CMP(inj, _val, ref, store)
+local function select_CMP(inj, val, ref, store)
+  -- The list form of $LIKE is validate's checker; the key form is this operator.
+  if M_VAL == inj.mode and "$LIKE" == ref then
+    return validate_LIKE(inj, val, ref, store)
+  end
+
   if M_KEYPRE == inj.mode then
     local term = getprop(inj.parent, inj.key)
     local gkey = getelem(inj.path, -2)
@@ -3364,12 +3674,7 @@ local function select_fn(children, query)
 
   local q = clone(query)
 
-  walk(q, function(_k, v)
-    if ismap(v) then
-      setprop(v, "`$OPEN`", getprop(v, "`$OPEN`", true))
-    end
-    return v
-  end)
+  _openquery(q)
 
   for _, child in ipairs(children) do
     injdef.errs = {}
@@ -3384,11 +3689,33 @@ local function select_fn(children, query)
   return results
 end
 
+-- Open every map in a select query, so a child may hold keys the query does
+-- not name, but leave a directive's literals as written: what $EXACT
+-- compares, and the count or bound of $NOF, $LEN and $RANGE.
+_openquery = function(q)
+  if ismap(q) then
+    setprop(q, "`$OPEN`", getprop(q, "`$OPEN`", true))
+    for _, key in ipairs(keysof(q)) do
+      _openquery(q[key])
+    end
+  elseif islist(q) then
+    local head = q[1]
+    local exact = "`$EXACT`" == head
+    local bounded = "`$NOF`" == head or "`$LEN`" == head or "`$RANGE`" == head
+    for i = 1, size(q) do
+      if 1 == i or not (exact or (bounded and 2 == i)) then
+        _openquery(q[i])
+      end
+    end
+  end
+end
+
 -- Internal utilities
 -- ==================
 
 -- Build a type validation error message.
 _invalidTypeMsg = function(path, needtype, vt, v, _whence)
+  v = denoval(v)
   local vs = (v == nil or v == S_null) and "no value" or stringify(v)
   local vtname = type(vt) == S_number and typename(vt) or tostring(vt)
 
@@ -3401,6 +3728,195 @@ _invalidTypeMsg = function(path, needtype, vt, v, _whence)
 
   msg = msg .. "."
   return msg
+end
+
+-- Names a validate spec may use besides its checkers: transform's that it keeps, and $OPEN.
+local VALIDATE_NAMES = {
+  "$TOP",
+  "$SPEC",
+  "$BT",
+  "$DS",
+  "$WHEN",
+  "$ANNO",
+  "$REF",
+  "$FORMAT",
+  "$APPLY",
+  "$OPEN",
+}
+
+-- Report each checker the spec names that validate lacks; $EXACT's arguments are literals.
+_checknames = function(spec, store, path, errs)
+  local name = _refname(spec)
+  if NONE ~= name then
+    if _unknownname(name, store) then
+      table.insert(errs, "Unknown validator " .. name .. " at field " .. pathify(path) .. ".")
+    end
+    return
+  end
+
+  if islist(spec) and "$EXACT" == _refname(spec[1]) then
+    return
+  end
+
+  for _, key in ipairs(keysof(spec)) do
+    if ismap(spec) then
+      _checknames(key, store, path, errs)
+    end
+    _checknames(getprop(spec, key), store, flatten({ path, key }), errs)
+  end
+end
+
+-- The name a whole-string reference gives, when it is a checker name in any case.
+-- The reference is read as _injectstr reads a full injection.
+_refname = function(val)
+  local ref = type(val) == S_string and val:match("^`([^`]*)`$") or NONE
+  if NONE ~= ref then
+    ref = ref:match("^(%$[A-Z]+)%d+$") or ref
+    if ref:upper():match("^%$[A-Z]+$") then
+      return ref
+    end
+  end
+  return NONE
+end
+
+-- Unknown: undefined and upper case, or a defined name in another case. Null
+-- disables a name; this port's store spells that null `false`.
+_unknownname = function(name, store)
+  local function known(n)
+    for _, vname in ipairs(VALIDATE_NAMES) do
+      if vname == n then
+        return true
+      end
+    end
+    local found = getprop(store, n)
+    return NONE ~= found and false ~= found
+  end
+  local upper = name:upper()
+  return not known(name) and (upper == name or known(upper))
+end
+
+-- The data value at a list directive's slot. The directive's own dparent was
+-- read with getprop, which reports a stored null as absent.
+_slotval = function(inj)
+  local prior = inj.prior
+  if NONE == prior then
+    return inj.dparent
+  end
+  return getprop(prior.dparent, prior.key)
+end
+
+-- JSON equality: numbers by value, lists in order, maps by key in any order.
+_deepequal = function(a, b)
+  if a == b then
+    return true
+  end
+
+  local atype = typify(a)
+  if atype ~= typify(b) or 0 == ((T_list | T_map) & atype) then
+    return false
+  end
+
+  local akeys = keysof(a)
+  local bkeys = keysof(b)
+  if size(akeys) ~= size(bkeys) then
+    return false
+  end
+
+  for kI = 1, #akeys do
+    local k = akeys[kI]
+    if k ~= bkeys[kI] or not _deepequal(getprop(a, k), getprop(b, k)) then
+      return false
+    end
+  end
+
+  return true
+end
+
+-- Every member val has is in out, unchanged. A member only out has is a
+-- default the spec supplied, and is ignored.
+_keeps = function(val, out)
+  if NONE == val then
+    return true
+  end
+
+  if 0 == ((T_list | T_map) & typify(val)) or islist(val) ~= islist(out) or not isnode(out) then
+    return _deepequal(val, out)
+  end
+
+  for _, k in ipairs(keysof(val)) do
+    if not _keeps(getprop(val, k), getprop(out, k)) then
+      return false
+    end
+  end
+
+  return true
+end
+
+-- A spec admits a value when validating the value against it finds no error
+-- and gives back the value as it is.
+_admits = function(val, spec, inj, store)
+  -- A Lua node holds no null, so a nil slot below the root is a missing value,
+  -- which the nested validation must see as no value: NOVAL.
+  if nil == val and NONE ~= inj.prior and NONE ~= inj.prior.prior then
+    val = NOVAL
+  end
+
+  local terrs = setmetatable({}, { __jsontype = "array" })
+
+  local vstore = merge({ {}, store }, 1)
+  vstore["$TOP"] = val
+
+  local out = validate(val, spec, {
+    extra = vstore,
+    errs = terrs,
+    meta = inj.meta,
+  })
+
+  return 0 == size(terrs) and _keeps(denoval(val), out)
+end
+
+-- The bounds of a $NOF count, and the words for it, which are absent when
+-- the count is invalid. Without a max, the bound is the number of specs.
+_nofcount = function(count, numtvals)
+  local function isnat(n)
+    return 0 < (T_integer & typify(n)) and 0 <= n
+  end
+
+  if isnat(count) then
+    return count, count, 0 == count and "none" or ("exactly " .. stringify(count))
+  end
+
+  local min = getprop(count, "min")
+  local max = getprop(count, "max")
+
+  local valid = ismap(count)
+    and 0 < size(count)
+    and size(count) == (NONE == min and 0 or 1) + (NONE == max and 0 or 1)
+    and (NONE == min or isnat(min))
+    and (NONE == max or isnat(max))
+    and (NONE == min or NONE == max or min <= max)
+
+  if not valid then
+    return 0, 0, NONE
+  end
+
+  local lo = NONE == min and 0 or min
+  local hi = NONE == max and numtvals or max
+
+  local desc
+  if NONE == max then
+    desc = "at least " .. stringify(lo)
+  elseif 0 == hi then
+    desc = "none"
+  elseif NONE == min then
+    desc = "at most " .. stringify(hi)
+  elseif lo == hi then
+    desc = "exactly " .. stringify(lo)
+  else
+    desc = stringify(lo) .. " to " .. stringify(hi)
+  end
+
+  return lo, hi, desc
 end
 
 -- Default inject handler for transforms.
@@ -3518,10 +4034,399 @@ _injectstr = function(val, store, inj)
   return out
 end
 
+----------------------------------------------------------
+-- Condense: a JSON-shaped node as a symbol table and a list of shared nodes.
+----------------------------------------------------------
+
+iscondensed = function(val)
+  -- The version must MATCH, not merely be numeric: a future profile would
+  -- otherwise be decoded under this one's schema.
+  return type(val) == "table"
+    and CONDENSE_VERSION == val[S_condense]
+    and ismap(val)
+    and islist(val[S_condsym])
+    and islist(val[S_condnode])
+    and type(val[S_condroot]) == S_number
+end
+
+-- One key per number value, as joining a JS number gives: -0 is 0.
+local function condenseNumKey(n)
+  local f = n + 0.0
+  if 0 == f then
+    return "0"
+  end
+  return string.format("%.17g", f)
+end
+
+-- Condense any JSON-shaped node. Pure: the same input always produces a
+-- byte-identical result, on every port.
+local function condense(val)
+  val = denoval(val)
+
+  local symset = {}
+
+  local function collect(n)
+    if ismap(n) then
+      for k, v in pairs(n) do
+        symset[k] = true
+        collect(v)
+      end
+    elseif islist(n) then
+      for i = 1, #n do
+        collect(n[i])
+      end
+    elseif type(n) == S_string then
+      symset[n] = true
+    end
+  end
+  collect(val)
+
+  local sym = setmetatable({}, { __jsontype = "array" })
+  for s in pairs(symset) do
+    table.insert(sym, s)
+  end
+  table.sort(sym)
+  local symid = {}
+  for i, s in ipairs(sym) do
+    symid[s] = i - 1
+  end
+
+  local node = setmetatable({}, { __jsontype = "array" })
+  local seen = {}
+
+  local function intern(enc)
+    local enckey
+    if CONDENSE_NUM == enc[1] then
+      -- Numbers key by value, as a JS join spells them: 1 and 1.0 share a node.
+      enckey = CONDENSE_NUM .. "," .. condenseNumKey(enc[2])
+    else
+      enckey = table.concat(enc, ",")
+    end
+    local hit = seen[enckey]
+    if nil ~= hit then
+      return hit
+    end
+    local idx = #node
+    table.insert(node, enc)
+    seen[enckey] = idx
+    return idx
+  end
+
+  -- Post-order, so identical subtrees are interned before a parent refers to them.
+  local function build(n)
+    local enc
+    if ismap(n) then
+      enc = { CONDENSE_MAP }
+      -- keysof sorts bytewise, which is code-point order, so the key ids ascend for bisection.
+      for _, k in ipairs(keysof(n)) do
+        table.insert(enc, symid[k])
+        table.insert(enc, build(n[k]))
+      end
+    elseif islist(n) then
+      enc = { CONDENSE_LIST }
+      for i = 1, #n do
+        table.insert(enc, build(n[i]))
+      end
+    elseif type(n) == S_string then
+      enc = { CONDENSE_STR, symid[n] }
+    elseif type(n) == S_number then
+      enc = { CONDENSE_NUM, n }
+    elseif true == n then
+      enc = { CONDENSE_TRUE }
+    elseif false == n then
+      enc = { CONDENSE_FALSE }
+    else
+      enc = { CONDENSE_NULL }
+    end
+    return intern(setmetatable(enc, { __jsontype = "array" }))
+  end
+
+  local root = build(val)
+
+  local out = setmetatable({}, { __jsontype = "object" })
+  out[S_condense] = CONDENSE_VERSION
+  out[S_condsym] = sym
+  out[S_condnode] = node
+  out[S_condroot] = root
+  return out
+end
+
+-- A path part as JavaScript's String() spells it.
+local function condenseStr(val)
+  if type(val) == S_string then
+    return val
+  elseif type(val) == S_number then
+    return numstr(val)
+  elseif type(val) == S_boolean then
+    return tostring(val)
+  end
+  return stringify(val)
+end
+
+-- The encoding of node idx, or nil when there is none.
+local function condenseEnc(cond, idx)
+  local node = type(cond) == "table" and cond[S_condnode] or nil
+  if type(idx) ~= S_number or not islist(node) then
+    return nil
+  end
+  local enc = node[idx + 1]
+  if islist(enc) then
+    return enc
+  end
+  return nil
+end
+
+-- Bisect the sorted symbol table: -1 when the string occurs nowhere.
+local function condenseSymId(cond, key)
+  local sym = cond[S_condsym]
+  local lo, hi = 0, #sym - 1
+  while lo <= hi do
+    local mid = (lo + hi) // 2
+    local s = condenseStr(sym[mid + 1])
+    if s == key then
+      return mid
+    elseif s < key then
+      lo = mid + 1
+    else
+      hi = mid - 1
+    end
+  end
+  return -1
+end
+
+-- The node index of key inside node idx, or -1. Touches only this node.
+local function condenseChild(cond, idx, key)
+  local enc = condenseEnc(cond, idx)
+  if nil == enc or (type(key) ~= S_string and type(key) ~= S_number) then
+    return -1
+  end
+
+  local k = condenseStr(key)
+
+  if CONDENSE_MAP == enc[1] then
+    local symid = condenseSymId(cond, k)
+    if 0 > symid then
+      return -1
+    end
+    -- Pairs live at [2,3], [4,5], ... with keys ascending: bisect the pairs.
+    local lo, hi = 0, (#enc - 1) // 2 - 1
+    while lo <= hi do
+      local mid = (lo + hi) // 2
+      local pk = enc[2 + mid * 2] or -1
+      if pk == symid then
+        return enc[3 + mid * 2] or -1
+      elseif pk < symid then
+        lo = mid + 1
+      else
+        hi = mid - 1
+      end
+    end
+    return -1
+  end
+
+  if CONDENSE_LIST == enc[1] then
+    local i = listindex(k)
+    if nil == i or i >= #enc - 1 then
+      return -1
+    end
+    return enc[2 + i]
+  end
+
+  return -1
+end
+
+-- Walk a path from node idx, returning the node index or -1.
+condenseResolve = function(cond, idx, path)
+  local parts
+  if islist(path) then
+    parts = path
+  elseif type(path) == S_string then
+    -- As JavaScript's split('.'), except that "" is no parts.
+    parts = {}
+    if S_MT ~= path then
+      for part in (path .. S_DT):gmatch("(.-)%.") do
+        table.insert(parts, part)
+      end
+    end
+  elseif nil == denoval(path) then
+    parts = {}
+  else
+    parts = { condenseStr(path) }
+  end
+
+  local at = idx
+  for i = 1, #parts do
+    if 0 > at then
+      return -1
+    end
+    if S_MT ~= parts[i] then
+      at = condenseChild(cond, at, parts[i])
+    end
+  end
+  return at
+end
+
+-- Node idx as a fresh, independent tree; nil when there is no such node.
+condenseMaterialise = function(cond, idx)
+  if type(idx) ~= S_number or 0 > idx then
+    return nil
+  end
+
+  local sym = cond[S_condsym]
+
+  local function rebuild(i)
+    local enc = condenseEnc(cond, i)
+    if nil == enc then
+      return nil
+    end
+    local kind = enc[1]
+    if CONDENSE_MAP == kind then
+      local out = setmetatable({}, { __jsontype = "object" })
+      for j = 2, #enc, 2 do
+        local key = type(enc[j]) == S_number and sym[enc[j] + 1] or nil
+        if nil ~= key then
+          out[condenseStr(key)] = rebuild(enc[j + 1])
+        end
+      end
+      return out
+    end
+    if CONDENSE_LIST == kind then
+      local out = setmetatable({}, { __jsontype = "array" })
+      for j = 2, #enc do
+        local child = rebuild(enc[j])
+        -- A Lua list cannot hold nil, so a null element is NULLMARK.
+        if nil == child then
+          child = NULLMARK
+        end
+        table.insert(out, child)
+      end
+      return out
+    end
+    if CONDENSE_STR == kind then
+      return type(enc[2]) == S_number and sym[enc[2] + 1] or nil
+    end
+    if CONDENSE_NUM == kind then
+      return enc[2]
+    end
+    if CONDENSE_TRUE == kind then
+      return true
+    end
+    if CONDENSE_FALSE == kind then
+      return false
+    end
+    return nil
+  end
+
+  return rebuild(idx)
+end
+
+-- Fully materialise a condensed structure. A value that is not condensed comes
+-- back unchanged.
+expand = function(cond)
+  if not iscondensed(cond) then
+    return cond
+  end
+  return condenseMaterialise(cond, cond[S_condroot])
+end
+
+-- The keys of node idx, without materialising any of its values.
+local function condenseKeys(cond, idx)
+  local out = setmetatable({}, { __jsontype = "array" })
+  local enc = condenseEnc(cond, idx)
+  if nil == enc then
+    return out
+  end
+  if CONDENSE_MAP == enc[1] then
+    local sym = cond[S_condsym]
+    for j = 2, #enc, 2 do
+      local key = type(enc[j]) == S_number and sym[enc[j] + 1] or nil
+      if nil ~= key then
+        table.insert(out, condenseStr(key))
+      end
+    end
+  elseif CONDENSE_LIST == enc[1] then
+    for j = 2, #enc do
+      table.insert(out, tostring(j - 2))
+    end
+  end
+  return out
+end
+
+-- A cursor into a condensed structure. Reads resolve by node index and touch
+-- only the nodes on the path, so a lookup costs path depth, not total size.
+local function condenseview(cond, idx, memo)
+  local start = denoval(idx)
+  if nil == start then
+    start = iscondensed(cond) and cond[S_condroot] or -1
+  elseif type(start) ~= S_number or start ~= start then
+    start = -1
+  end
+
+  -- Shared through at(), so that every view into the structure shares one
+  -- memo: otherwise ref() would hand out a different node per view.
+  local refmemo = type(memo) == "table" and memo or {}
+
+  local view = {}
+
+  -- The value at path, materialised: a container comes back as a fresh copy.
+  view.get = function(path)
+    return condenseMaterialise(cond, condenseResolve(cond, start, path))
+  end
+
+  -- Key names at path, with no value decoding at all.
+  view.keys = function(path)
+    return condenseKeys(cond, condenseResolve(cond, start, path))
+  end
+
+  view.has = function(path)
+    return 0 <= condenseResolve(cond, start, path)
+  end
+
+  -- Chainable cursor. Cheap: no decoding happens here.
+  view.at = function(path)
+    return condenseview(cond, condenseResolve(cond, start, path), refmemo)
+  end
+
+  view.value = function()
+    return condenseMaterialise(cond, start)
+  end
+
+  view.size = function()
+    local enc = condenseEnc(cond, start)
+    if nil == enc then
+      return 0
+    elseif CONDENSE_MAP == enc[1] then
+      return (#enc - 1) // 2
+    elseif CONDENSE_LIST == enc[1] then
+      return #enc - 1
+    end
+    return 0
+  end
+
+  view.exists = function()
+    return 0 <= start
+  end
+
+  -- DANGER, and named to say so: the SAME node for the same index, every time.
+  -- Mutating it corrupts every other reader of that node, however reached.
+  view.ref = function()
+    if nil == refmemo[start] then
+      refmemo[start] = condenseMaterialise(cond, start)
+    end
+    return refmemo[start]
+  end
+
+  return view
+end
+
 -- Define the StructUtility "class"
 local StructUtility = {
   NOVAL = NOVAL,
   clone = clone,
+  condense = condense,
+  condenseview = condenseview,
+  expand = expand,
+  iscondensed = iscondensed,
   delprop = delprop,
   escre = escre,
   escurl = escurl,
@@ -3612,6 +4517,10 @@ return {
   StructUtility = StructUtility,
   NOVAL = NOVAL,
   clone = clone,
+  condense = condense,
+  condenseview = condenseview,
+  expand = expand,
+  iscondensed = iscondensed,
   delprop = delprop,
   escre = escre,
   escurl = escurl,

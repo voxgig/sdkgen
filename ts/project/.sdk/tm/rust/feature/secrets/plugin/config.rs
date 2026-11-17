@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/plugin 0.2.0 (rust/src/config.rs)
-// Source: https://github.com/voxgig/plugin @ caa404b2dfa206d77db6c2869e5b31c2a3202b2d  [tag: sdk-20261016-0845-0]
+// Source: https://github.com/voxgig/plugin @ caa404b2dfa206d77db6c2869e5b31c2a3202b2d  [tag: sdk-local-nof]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 
 use std::collections::BTreeMap;

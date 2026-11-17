@@ -1,5 +1,5 @@
-;; VENDORED: @voxgig/sekreto sdk-20261016-0845-0 (clojure/plugins/voxgig/sekreto/plugins/sigv4.clj)
-;; Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
+;; VENDORED: @voxgig/sekreto sdk-local-nof (clojure/plugins/voxgig/sekreto/plugins/sigv4.clj)
+;; Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-local-nof]
 ;; License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 ;; AWS Signature Version 4, hand-rolled - and OUTSIDE THE CORE, because it
 ;; is this library's one cryptographic edge. Only the two aws kinds sign

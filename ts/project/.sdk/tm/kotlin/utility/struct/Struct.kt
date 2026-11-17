@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (kotlin/src/main/kotlin/voxgig/struct/Struct.kt)
-// Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
+// Source: https://github.com/voxgig/struct @ 1ba9203347f8a2ec7170014a6acfae03db862d66  [tag: sdk-local-nof]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package KOTLINPACKAGE.utility.struct
 
@@ -10,6 +10,7 @@ import java.util.Locale
 import java.util.function.Supplier
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import java.util.regex.PatternSyntaxException
 import kotlin.math.floor
 
 @Suppress("MemberVisibilityCanBePrivate")
@@ -49,9 +50,11 @@ object Struct {
 
     private val R_META_PATH = Pattern.compile("^([^$]+)\\$([=~])(.+)$")
     private val R_INJECT_FULL = Pattern.compile("^`(\\$[A-Z]+|[^`]*)[0-9]*`$")
+    private val R_CHECKER_NAME = Pattern.compile("^\\$[A-Z]+$")
     private val R_INJECT_PART = Pattern.compile("`([^`]+)`")
     private val R_CMD_KEY = Pattern.compile("^`(\\$[A-Z]+)(\\d*)`$")
     private val R_TRANSFORM_NAME = Pattern.compile("`\\$([A-Z]+)`")
+    private val R_LIST_INDEX = Pattern.compile("^(0|-?[1-9][0-9]*)$")
     val SKIP: Any = Any()
 
     fun interface WalkApply {
@@ -349,10 +352,11 @@ object Struct {
         alt: Any?,
     ): Any? {
         if (value !is List<*> || key == null || key === UNDEF) return resolveAlt(alt)
-        val idx = parseIntKey(key) ?: return resolveAlt(alt)
-        val useIdx = if (idx < 0) value.size + idx else idx
-        if (useIdx < 0 || useIdx >= value.size) return resolveAlt(alt)
-        val out = value[useIdx]
+        var idx = listIndex(key)
+        // A negative key counts from the end.
+        if (idx < 0.0) idx += value.size
+        if (!(0.0 <= idx && idx < value.size)) return resolveAlt(alt)
+        val out = value[idx.toInt()]
         // Group A null-unification: a JSON null (or absent) slot counts as "no
         // value" — return the alt (canonical TS getelem `if (null == out)`).
         if (out == null || out === UNDEF) return resolveAlt(alt)
@@ -373,12 +377,12 @@ object Struct {
         var out: Any? = UNDEF
         when (value) {
             is Map<*, *> -> {
-                val sk = strkey(key)
-                if (value.containsKey(sk)) out = value[sk]
+                val sk = mapKey(key)
+                if (sk != null && value.containsKey(sk)) out = value[sk]
             }
             is List<*> -> {
-                val idx = parseIntKey(key)
-                if (idx != null && idx >= 0 && idx < value.size) out = value[idx]
+                val idx = listIndex(key)
+                if (0.0 <= idx && idx < value.size) out = value[idx.toInt()]
             }
             else -> {}
         }
@@ -402,17 +406,29 @@ object Struct {
         if (value == null || value === UNDEF || key == null || key === UNDEF) return UNDEF
         return when (value) {
             is Map<*, *> -> {
-                val sk = strkey(key)
-                if (value.containsKey(sk)) value[sk] else UNDEF
+                val sk = mapKey(key)
+                if (sk != null && value.containsKey(sk)) value[sk] else UNDEF
             }
             is List<*> -> {
-                val idx = parseIntKey(key) ?: return UNDEF
-                val i = if (idx < 0) value.size + idx else idx
-                if (i < 0 || i >= value.size) UNDEF else value[i]
+                val idx = listIndex(key)
+                if (0.0 <= idx && idx < value.size) value[idx.toInt()] else UNDEF
             }
             else -> UNDEF
         }
     }
+
+    // The key a map read takes, or null for one that is neither a string nor a
+    // number, which misses.
+    private fun mapKey(key: Any?): String? = if (key is String || key is Number) strkey(key) else null
+
+    // A list key's index, or NaN: an integral number, or the string String(n)
+    // prints for one, negative or not ("01", "+1", "1.0" and "-0" are not).
+    private fun listIndex(key: Any?): Double =
+        when (key) {
+            is Number -> key.toDouble().let { if (it.isFinite() && floor(it) == it) it else Double.NaN }
+            is String -> if (R_LIST_INDEX.matcher(key).matches()) key.toDouble() else Double.NaN
+            else -> Double.NaN
+        }
 
     fun haskey(
         value: Any?,
@@ -425,6 +441,7 @@ object Struct {
         value: Any?,
     ): Any? {
         if (!iskey(key)) return parent
+        if (iscondensed(parent)) throw IllegalArgumentException(CONDENSE_IMMUTABLE)
         return when (parent) {
             is MutableMap<*, *> -> {
                 (parent as MutableMap<String, Any?>)[strkey(key)] = value
@@ -432,10 +449,10 @@ object Struct {
             }
             is MutableList<*> -> {
                 val list = parent as MutableList<Any?>
-                val idx = parseIntKey(key) ?: return parent
-                if (idx >= 0) {
-                    val target = idx.coerceIn(0, list.size)
-                    if (target < list.size) list[target] = value else list.add(value)
+                val idx = listIndex(key)
+                if (idx.isNaN()) return parent
+                if (idx >= 0.0) {
+                    if (idx < list.size) list[idx.toInt()] = value else list.add(value)
                 } else {
                     list.add(0, value)
                 }
@@ -450,15 +467,16 @@ object Struct {
         key: Any?,
     ): Any? {
         if (!iskey(key)) return parent
+        if (iscondensed(parent)) throw IllegalArgumentException(CONDENSE_IMMUTABLE)
         return when (parent) {
             is MutableMap<*, *> -> {
                 (parent as MutableMap<String, Any?>).remove(strkey(key))
                 parent
             }
             is MutableList<*> -> {
-                val idx = parseIntKey(key)
+                val idx = listIndex(key)
                 val list = parent as MutableList<Any?>
-                if (idx != null && idx in list.indices) list.removeAt(idx)
+                if (0.0 <= idx && idx < list.size) list.removeAt(idx.toInt())
                 list
             }
             else -> parent
@@ -966,6 +984,7 @@ object Struct {
         path: Any?,
         value: Any?,
     ): Any? {
+        if (iscondensed(store)) throw IllegalArgumentException(CONDENSE_IMMUTABLE)
         val parts: MutableList<Any?> =
             when (path) {
                 is List<*> -> path.toMutableList()
@@ -1125,6 +1144,21 @@ object Struct {
         path: Any?,
         inj: Injection?,
     ): Any? {
+        val parts = pathParts(path) ?: return UNDEF
+        var target = store
+
+        // A condensed store answers as the node it was built from, touching only
+        // the nodes on the path. A base changes what the path resolves against,
+        // so that read needs the materialised store.
+        if (iscondensed(store)) {
+            if (inj?.base == null) {
+                val found = condenseMaterialise(store, condenseResolve(store, condenseRoot(store), parts))
+                // Group A: a stored null reads as absent, as it does through getprop.
+                return found ?: UNDEF
+            }
+            target = expand(store)
+        }
+
         val view: MutableMap<String, Any?>? =
             if (inj == null) {
                 null
@@ -1137,10 +1171,9 @@ object Struct {
                     it["key"] = inj.key
                 }
             }
-        val parts = pathParts(path)
-        var value = getpathInner(store, path, parts, view)
+        var value = getpathInner(target, path, parts, view)
         if (inj?.handler != null) {
-            value = inj.handler!!.apply(inj, value, pathifyForHandler(path), store)
+            value = inj.handler!!.apply(inj, value, pathifyForHandler(path), target)
         }
         return value
     }
@@ -1829,7 +1862,7 @@ object Struct {
 
     /** $REF: resolve a named reference within the original spec, enabling recursive transformations. */
     val transform_REF: Injector =
-        Injector { inj, value, _, store ->
+        Injector { inj, _, _, store ->
             if (inj.mode != M_VAL) return@Injector UNDEF
 
             val refpath = lookup(inj.parent, 1)
@@ -1866,39 +1899,22 @@ object Struct {
                 )
             }
 
-            val cpathRaw = slice(inj.path, -3, null)
+            // A recursive reference stops where the data does.
+            val tval = getpath(store, slice(inj.path, -1, null))
+            val rval = if (!hasSubRef[0] || tval !== UNDEF) tref else UNDEF
 
-            @Suppress("UNCHECKED_CAST")
-            val cpath: MutableList<String> = if (cpathRaw is List<*>) (cpathRaw as List<String>).toMutableList() else mutableListOf()
-            val tpathRaw = slice(inj.path, -1, null)
-
-            @Suppress("UNCHECKED_CAST")
-            val tpath: MutableList<String> = if (tpathRaw is List<*>) (tpathRaw as List<String>).toMutableList() else mutableListOf()
-            val tval = getpath(store, tpath)
-            var rval: Any? = UNDEF
-
-            if (!hasSubRef[0] || tval !== UNDEF) {
-                val lastKey = getelem(tpath, -1)
-                val singleKey = mutableListOf(strkey(lastKey))
-                val tinj = inj.child(0, singleKey)
-                tinj.path = tpath
-                val slicedNodes = slice(inj.nodes, -1, null)
-                @Suppress("UNCHECKED_CAST")
-                tinj.nodes = if (slicedNodes is List<*>) (slicedNodes as List<Any?>).toMutableList() else mutableListOf()
-                tinj.parent = getelem(inj.nodes, -2)
-                tinj.`val` = tref
-                tinj.dpath = cpath.toMutableList()
-                tinj.dparent = getpath(store, cpath)
-
-                inject(tref, store, tinj)
-                rval = tinj.`val`
-            }
-
+            // The enclosing loop injects the referenced spec in this list's place, so
+            // neither this pass nor this element leaves a value for modify to check.
             val grandparent = inj.setval(rval, 2)
-            if (islist(grandparent) && inj.prior != null) {
-                inj.prior!!.keyI--
+
+            val prior = inj.prior
+            if (prior != null) {
+                prior.modify = null
+                if (islist(grandparent) || rval !== UNDEF) {
+                    prior.keyI--
+                }
             }
-            value
+            SKIP
         }
 
     fun transform(
@@ -1993,15 +2009,18 @@ object Struct {
         }
     }
 
+    // A new list, so the caller's path is never rewritten; null when it is no
+    // path, or names a part that is neither a string nor a number.
     private fun pathParts(path: Any?): MutableList<String>? {
         return when (path) {
             is String -> if (path.isEmpty()) mutableListOf("") else path.split(".").toMutableList()
+            is Number -> mutableListOf(jsString(path))
             is List<*> ->
                 path.map {
                     when (it) {
                         is String -> it
-                        is Number -> strkey(it)
-                        else -> strkey(it)
+                        is Number -> jsString(it)
+                        else -> return null
                     }
                 }.toMutableList()
             else -> null
@@ -2011,10 +2030,9 @@ object Struct {
     private fun getpathInner(
         store: Any?,
         pathOrig: Any?,
-        parts: MutableList<String>?,
+        parts: MutableList<String>,
         inj: MutableMap<String, Any?>?,
     ): Any? {
-        if (parts == null) return null
         val base = inj?.get("base")
         val src = getprop(store, base, store)
         val dparent = inj?.get("dparent")
@@ -2080,14 +2098,6 @@ object Struct {
             }
         }
         return value
-    }
-
-    private fun parseIntKey(key: Any?): Int? {
-        return when (key) {
-            is Number -> floor(key.toDouble()).toInt()
-            is String -> key.toIntOrNull()
-            else -> null
-        }
     }
 
     private fun unescapeInjectRef(ref: String?): String? {
@@ -2170,7 +2180,8 @@ object Struct {
             if (idx < 0) {
                 UNDEF
             } else {
-                val typev = 1 shl (31 - idx)
+                // $NIL is absent or null.
+                val typev = (1 shl (31 - idx)) or (if ("nil" == tname) T_NULL else 0)
                 val out = lookup(inj.dparent, inj.key)
                 val t = typify(out)
                 if ((t and typev) == 0) {
@@ -2196,8 +2207,7 @@ object Struct {
                     if (tval === UNDEF || tval == null) {
                         tval = linkedMapOf<String, Any?>()
                     } else if (!ismap(tval)) {
-                        val sp = slice(inj.path, -1, null)
-                        inj.errs.add(_invalidTypeMsg(sp, "object", typify(tval), tval, "V0220"))
+                        // _validation reports the mismatch, once.
                         return@Injector UNDEF
                     }
                     val ckeys = keysof(tval)
@@ -2220,8 +2230,6 @@ object Struct {
                         return@Injector UNDEF
                     }
                     if (!islist(inj.dparent)) {
-                        val sp = slice(inj.path, -1, null)
-                        inj.errs.add(_invalidTypeMsg(sp, "list", typify(inj.dparent), inj.dparent, "V0230"))
                         inj.keyI = size(inj.parent)
                         return@Injector inj.dparent
                     }
@@ -2252,61 +2260,13 @@ object Struct {
             }
         }
 
-    /** $ONE: validate against any one of a list of alternative shapes. */
-    val validate_ONE: Injector =
-        Injector { inj, _, _, store ->
-            if (inj.mode != M_VAL) return@Injector UNDEF
-            if (!islist(inj.parent) || inj.keyI != 0) {
-                inj.errs.add("The \$ONE validator at field " + pathify(inj.path, 1, 1) + " must be the first element of an array.")
-                return@Injector UNDEF
-            }
-            inj.keyI = size(inj.keys)
-            inj.setval(inj.dparent, 2)
-            val sp = slice(inj.path, -1, null)
-            @Suppress("UNCHECKED_CAST")
-            inj.path = if (sp is List<*>) (sp as List<String>).toMutableList() else mutableListOf()
-
-            val tvalsRaw = slice(inj.parent, 1, null)
-
-            @Suppress("UNCHECKED_CAST")
-            val tvals: List<Any?> = if (tvalsRaw is List<*>) tvalsRaw as List<Any?> else listOf()
-            if (tvals.isEmpty()) {
-                inj.errs.add("The \$ONE validator at field " + pathify(inj.path, 1, 1) + " must have at least one argument.")
-                return@Injector UNDEF
-            }
-
-            for (tval in tvals) {
-                val terrs = mutableListOf<Any?>()
-                val vstore = linkedMapOf<String, Any?>()
-                if (store is Map<*, *>) for ((k, v) in store) vstore[k.toString()] = v
-                vstore[S_DTOP] = inj.dparent
-                val opts =
-                    linkedMapOf<String, Any?>(
-                        "extra" to vstore,
-                        "errs" to terrs,
-                        "meta" to inj.meta,
-                    )
-                val vcurrent: Any? =
-                    try {
-                        validate(inj.dparent, tval, opts)
-                    } catch (e: Exception) {
-                        terrs.add(e.message)
-                        inj.dparent
-                    }
-                inj.setval(vcurrent, -2)
-                if (terrs.isEmpty()) return@Injector UNDEF
-            }
-
-            val valdesc = describeAlternatives(tvals)
-            inj.errs.add(
-                _invalidTypeMsg(inj.path, (if (size(tvals) > 1) "one of " else "") + valdesc, typify(inj.dparent), inj.dparent, "V0210"),
-            )
-            UNDEF
-        }
-
-    // Lowers every `$NAME` marker in the joined description, nested ones included.
     private fun describeAlternatives(tvals: List<Any?>): String {
-        val mm = R_TRANSFORM_NAME.matcher(tvals.joinToString(", ") { stringify(it) })
+        return lowernames(join(tvals.map { stringify(it) }, ", ", false))
+    }
+
+    // Lowers every `$NAME` marker in the description, nested ones included.
+    private fun lowernames(desc: String): String {
+        val mm = R_TRANSFORM_NAME.matcher(desc)
         val out = StringBuilder()
         while (mm.find()) {
             mm.appendReplacement(out, Matcher.quoteReplacement(mm.group(1).lowercase(Locale.ROOT)))
@@ -2323,31 +2283,26 @@ object Struct {
                     inj.errs.add("The \$EXACT validator at field " + pathify(inj.path, 1, 1) + " must be the first element of an array.")
                     return@Injector UNDEF
                 }
+
+                val cval = _slotval(inj)
+
                 inj.keyI = size(inj.keys)
-                inj.setval(inj.dparent, 2)
-                val sp = slice(inj.path, 0, -1)
-                @Suppress("UNCHECKED_CAST")
-                inj.path = if (sp is List<*>) (sp as List<String>).toMutableList() else mutableListOf()
-                inj.key = strkey(getelem(inj.path, -1))
 
-                val tvalsRaw = slice(inj.parent, 1, null)
+                // Replace [$EXACT, ...] with the data value; SKIP keeps inject off the detached list.
+                inj.setval(cval, 2)
 
                 @Suppress("UNCHECKED_CAST")
-                val tvals: List<Any?> = if (tvalsRaw is List<*>) tvalsRaw as List<Any?> else listOf()
+                inj.path = slice(inj.path, 0, -1) as MutableList<String>
+
+                @Suppress("UNCHECKED_CAST")
+                val tvals = slice(inj.parent, 1, null) as List<Any?>
                 if (tvals.isEmpty()) {
                     inj.errs.add("The \$EXACT validator at field " + pathify(inj.path, 1, 1) + " must have at least one argument.")
-                    return@Injector UNDEF
+                    return@Injector SKIP
                 }
 
-                var currentstr: String? = null
                 for (tval in tvals) {
-                    var exactmatch = tval == inj.dparent
-                    if (!exactmatch && isnode(tval)) {
-                        if (currentstr == null) currentstr = stringify(inj.dparent)
-                        val tvalstr = stringify(tval)
-                        exactmatch = tvalstr == currentstr
-                    }
-                    if (exactmatch) return@Injector UNDEF
+                    if (_deepequal(tval, cval)) return@Injector SKIP
                 }
 
                 val valdesc = describeAlternatives(tvals)
@@ -2355,17 +2310,440 @@ object Struct {
                     _invalidTypeMsg(
                         inj.path,
                         (if (size(inj.path) > 1) "" else "value ") + "exactly equal to " + (if (size(tvals) == 1) "" else "one of ") + valdesc,
-                        typify(inj.dparent),
-                        inj.dparent,
+                        typify(cval),
+                        cval,
                         "V0110",
                     ),
                 )
-                UNDEF
+                SKIP
             } else {
                 delprop(inj.parent, inj.key)
                 UNDEF
             }
         }
+
+    /** $NOF: count the specs that admit the value, `[$NOF, count, spec, ...]`; count is an integer or a map of min and max. */
+    val validate_NOF: Injector = Injector { inj, _, _, store -> _validatecount(inj, store, "\$NOF", true) }
+
+    /** $ALL: every spec admits the value, `[$ALL, spec, ...]`. */
+    val validate_ALL: Injector = Injector { inj, _, _, store -> _validatecount(inj, store, "\$ALL", false) }
+
+    // The counting list directives. Without a count, every spec has to admit.
+    private fun _validatecount(
+        inj: Injection,
+        store: Any?,
+        name: String,
+        counted: Boolean,
+    ): Any? {
+        if (M_VAL != inj.mode) return UNDEF
+
+        val parent = inj.parent
+
+        if (!islist(parent) || 0 != inj.keyI) {
+            inj.errs.add("The " + name + " validator at field " + pathify(inj.path, 1, 1) + " must be the first element of an array.")
+            return UNDEF
+        }
+
+        val cval = _slotval(inj)
+
+        inj.keyI = size(inj.keys)
+
+        // Replace the directive's list with the data value. Each return is SKIP, so
+        // that inject leaves the detached list alone and validates nothing in it.
+        inj.setval(cval, 2)
+
+        @Suppress("UNCHECKED_CAST")
+        inj.path = slice(inj.path, -1, null) as MutableList<String>
+
+        val count = if (counted) lookup(parent, 1) else UNDEF
+
+        @Suppress("UNCHECKED_CAST")
+        val tvals = slice(parent, if (counted) 2 else 1, null) as List<Any?>
+        val numtvals = tvals.size
+        val field = "The " + name + " validator at field " + pathify(inj.path, 1)
+
+        if (0 == numtvals) {
+            inj.errs.add(field + (if (counted) " must have a count and" else " must have") + " at least one argument.")
+            return SKIP
+        }
+
+        val (lo, hi, countdesc) =
+            if (counted) _nofcount(count, numtvals) else Triple(numtvals.toLong(), numtvals.toLong(), "all")
+
+        if (null == countdesc) {
+            inj.errs.add(field + " has an invalid count: " + stringify(count) + ".")
+            return SKIP
+        }
+
+        var admitted = 0
+        for (tI in 0 until numtvals) {
+            val left = numtvals - tI
+
+            // Stop once the specs left cannot change the verdict.
+            if (hi < admitted || admitted + left < lo || (lo <= admitted && admitted + left <= hi)) break
+
+            if (_admits(cval, tvals[tI], inj, store)) admitted++
+        }
+
+        if (admitted < lo || hi < admitted) {
+            val valdesc = describeAlternatives(tvals)
+            inj.errs.add(_invalidTypeMsg(inj.path, countdesc + " of " + valdesc, typify(cval), cval, "V0310"))
+        }
+
+        return SKIP
+    }
+
+    /** $LEN: the value's length is within a bound, `[$LEN, bound, spec?]`; the bound is as for a $NOF count, and a string counts code points. */
+    val validate_LEN: Injector = Injector { inj, _, _, store -> _validatebound(inj, store, "\$LEN") }
+
+    /** $RANGE: the value is a number within a bound, `[$RANGE, bound, spec?]`; the bound holds min or gt, max or lt, or one of each. */
+    val validate_RANGE: Injector = Injector { inj, _, _, store -> _validatebound(inj, store, "\$RANGE") }
+
+    /** $LIKE: the value is a string the pattern finds, `[$LIKE, pattern, spec?]`; the pattern is a `Regex` that matches anywhere unless anchored. */
+    val validate_LIKE: Injector = Injector { inj, _, _, store -> _validatebound(inj, store, "\$LIKE") }
+
+    // The bounding list directives: a bound or pattern, then at most one spec that also admits.
+    private fun _validatebound(
+        inj: Injection,
+        store: Any?,
+        name: String,
+    ): Any? {
+        if (M_VAL != inj.mode) return UNDEF
+
+        val parent = inj.parent
+
+        if (!islist(parent) || 0 != inj.keyI) {
+            inj.errs.add("The " + name + " validator at field " + pathify(inj.path, 1, 1) + " must be the first element of an array.")
+            return UNDEF
+        }
+
+        val cval = _slotval(inj)
+
+        inj.keyI = size(inj.keys)
+
+        // As for the counting directives: SKIP keeps inject off the detached list.
+        inj.setval(cval, 2)
+
+        @Suppress("UNCHECKED_CAST")
+        inj.path = slice(inj.path, -1, null) as MutableList<String>
+
+        val field = "The " + name + " validator at field " + pathify(inj.path, 1)
+        val nargs = size(parent) - 1
+        val islen = "\$LEN" == name
+        val islike = "\$LIKE" == name
+        val argname = if (islike) "pattern" else "bound"
+
+        if (nargs < 1 || 2 < nargs) {
+            inj.errs.add(field + " must have a " + argname + " and at most one spec.")
+            return SKIP
+        }
+
+        val bound = lookup(parent, 1)
+        val like = if (islike) _likere(bound) else null
+        val (lo, hi, desc) =
+            when {
+                islen -> _lenbound(bound)
+                islike -> Triple(0L, 0L, if (null == like) null else "like /$like/")
+                else -> Triple(0L, 0L, _rangedesc(bound))
+            }
+
+        if (null == desc) {
+            inj.errs.add(field + " has an invalid " + argname + ": " + stringify(bound) + ".")
+            return SKIP
+        }
+
+        val ctype = typify(cval)
+
+        if (2 == nargs && !_admits(cval, lookup(parent, 2), inj, store)) {
+            val specdesc = lowernames(stringify(lookup(parent, 2)))
+            inj.errs.add(_invalidTypeMsg(inj.path, specdesc, ctype, cval, "V0410"))
+            return SKIP
+        }
+
+        val needbits =
+            when {
+                islen -> T_STRING or T_LIST or T_MAP
+                islike -> T_STRING
+                else -> T_NUMBER
+            }
+
+        if (0 == (needbits and ctype)) {
+            val needtype =
+                when {
+                    islen -> "string, list or map"
+                    islike -> "string"
+                    else -> "number"
+                }
+            inj.errs.add(_invalidTypeMsg(inj.path, needtype, ctype, cval, "V0420"))
+            return SKIP
+        }
+
+        val inbound =
+            if (islen) {
+                val len = if (cval is String) cval.codePointCount(0, cval.length) else size(cval)
+                lo <= len && (-1L == hi || len <= hi)
+            } else if (islike) {
+                reTest(like!!, cval as String)
+            } else {
+                _inrange(bound, (cval as Number).toDouble())
+            }
+
+        if (!inbound) {
+            val needtype = (if (1 < size(inj.path)) "" else "value ") + desc
+            inj.errs.add(_invalidTypeMsg(inj.path, needtype, ctype, cval, "V0430"))
+        }
+
+        return SKIP
+    }
+
+    // The bounds of a $LEN bound, with -1 for no maximum, and the words for it,
+    // which are null when the bound is invalid.
+    private fun _lenbound(bound: Any?): Triple<Long, Long, String?> {
+        val (lo, hi, countdesc) = _nofcount(bound, -1)
+
+        if (null == countdesc) return Triple(0L, 0L, null)
+
+        val desc =
+            when {
+                lo == hi -> "$lo"
+                -1L == hi -> "at least $lo"
+                0L == lo -> "at most $hi"
+                else -> "$lo to $hi"
+            }
+
+        return Triple(lo, hi, "of length $desc")
+    }
+
+    // A $LIKE pattern that the port's own regex engine compiles; null unless it does.
+    private fun _likere(pattern: Any?): String? {
+        if (pattern !is String) return null
+        return try {
+            reCompile(pattern)
+            pattern
+        } catch (_: PatternSyntaxException) {
+            null
+        }
+    }
+
+    // The words for a $RANGE bound, which are null when the bound is invalid.
+    private fun _rangedesc(bound: Any?): String? {
+        if (!ismap(bound)) return null
+
+        val min = lookup(bound, "min")
+        val max = lookup(bound, "max")
+        val gt = lookup(bound, "gt")
+        val lt = lookup(bound, "lt")
+        val lower = if (UNDEF === min) gt else min
+        val upper = if (UNDEF === max) lt else max
+        val isnum = { n: Any? -> UNDEF === n || 0 != (T_NUMBER and typify(n)) }
+
+        val valid =
+            0 < size(bound) &&
+                size(bound) == listOf(min, max, gt, lt).count { UNDEF !== it } &&
+                (UNDEF === min || UNDEF === gt) &&
+                (UNDEF === max || UNDEF === lt) &&
+                isnum(min) &&
+                isnum(max) &&
+                isnum(gt) &&
+                isnum(lt) &&
+                (UNDEF === lower || UNDEF === upper || (lower as Number).toDouble() <= (upper as Number).toDouble())
+
+        if (!valid) return null
+
+        val lowerdesc =
+            when {
+                UNDEF !== min -> "at least " + stringify(min)
+                UNDEF !== gt -> "greater than " + stringify(gt)
+                else -> null
+            }
+        val upperdesc =
+            when {
+                UNDEF !== max -> "at most " + stringify(max)
+                UNDEF !== lt -> "less than " + stringify(lt)
+                else -> null
+            }
+
+        return listOfNotNull(lowerdesc, upperdesc).joinToString(" and ")
+    }
+
+    // A number within a valid $RANGE bound.
+    private fun _inrange(
+        bound: Any?,
+        value: Double,
+    ): Boolean {
+        val min = lookup(bound, "min")
+        val max = lookup(bound, "max")
+        val gt = lookup(bound, "gt")
+        val lt = lookup(bound, "lt")
+
+        return (UNDEF === min || (min as Number).toDouble() <= value) &&
+            (UNDEF === max || value <= (max as Number).toDouble()) &&
+            (UNDEF === gt || (gt as Number).toDouble() < value) &&
+            (UNDEF === lt || value < (lt as Number).toDouble())
+    }
+
+    // Names a validate spec may use besides its checkers: transform's that it keeps, and $OPEN.
+    private val VALIDATE_NAMES =
+        listOf("\$TOP", "\$SPEC", "\$BT", "\$DS", "\$WHEN", "\$ANNO", "\$REF", "\$FORMAT", "\$APPLY", "\$OPEN")
+
+    // Report each checker the spec names that validate lacks; $EXACT's arguments are literals.
+    private fun _checknames(
+        spec: Any?,
+        store: Any?,
+        path: List<String>,
+        errs: MutableList<Any?>,
+    ) {
+        val name = _refname(spec)
+        if (null != name) {
+            if (_unknownname(name, store)) {
+                errs.add("Unknown validator " + name + " at field " + pathify(path) + ".")
+            }
+            return
+        }
+
+        if (islist(spec) && "\$EXACT" == _refname(lookup(spec, 0))) return
+
+        for (key in keysof(spec)) {
+            if (ismap(spec)) _checknames(key, store, path, errs)
+            _checknames(lookup(spec, key), store, path + key, errs)
+        }
+    }
+
+    // The name a whole-string reference gives, when it is a checker name in any case.
+    private fun _refname(value: Any?): String? {
+        val m = if (value is String) R_INJECT_FULL.matcher(value) else null
+        return if (null != m && m.matches() && R_CHECKER_NAME.matcher(m.group(1).uppercase(Locale.ROOT)).matches()) m.group(1) else null
+    }
+
+    // Unknown: undefined and upper case, or a defined name in another case. Null disables a name.
+    private fun _unknownname(
+        name: String,
+        store: Any?,
+    ): Boolean {
+        val known = { n: String -> VALIDATE_NAMES.contains(n) || lookup(store, n).let { null != it && UNDEF !== it } }
+        val upper = name.uppercase(Locale.ROOT)
+        return !known(name) && (upper == name || known(upper))
+    }
+
+    // The data value at a list directive's slot. The directive's own dparent was
+    // read with getprop, which reports a stored null as absent.
+    private fun _slotval(inj: Injection): Any? {
+        val prior = inj.prior
+        return if (null == prior) inj.dparent else lookup(prior.dparent, prior.key)
+    }
+
+    // JSON equality: numbers by value, lists in order, maps by key in any order.
+    private fun _deepequal(
+        a: Any?,
+        b: Any?,
+    ): Boolean {
+        // TS ===: identity, or value equality for numbers, strings and booleans.
+        if (a === b || (a is Number && b is Number && a.toDouble() == b.toDouble()) || ((a is String || a is Boolean) && a == b)) {
+            return true
+        }
+
+        val atype = typify(a)
+        if (atype != typify(b) || 0 == ((T_LIST or T_MAP) and atype)) return false
+
+        val akeys = keysof(a)
+        val bkeys = keysof(b)
+        if (akeys.size != bkeys.size) return false
+
+        for (kI in akeys.indices) {
+            val k = akeys[kI]
+            if (k != bkeys[kI] || !_deepequal(lookup(a, k), lookup(b, k))) return false
+        }
+
+        return true
+    }
+
+    // Every member `value` has is in `out`, unchanged. A member only `out` has
+    // is a default the spec supplied, and is ignored.
+    private fun _keeps(
+        value: Any?,
+        out: Any?,
+    ): Boolean {
+        if (UNDEF === value) return true
+
+        if (0 == ((T_LIST or T_MAP) and typify(value)) || islist(value) != islist(out) || !isnode(out)) {
+            return _deepequal(value, out)
+        }
+
+        for (k in keysof(value)) {
+            if (!_keeps(lookup(value, k), lookup(out, k))) return false
+        }
+
+        return true
+    }
+
+    // A spec admits a value when validating the value against it finds no error
+    // and gives back the value as it is.
+    private fun _admits(
+        value: Any?,
+        spec: Any?,
+        inj: Injection,
+        store: Any?,
+    ): Boolean {
+        val terrs = mutableListOf<Any?>()
+
+        @Suppress("UNCHECKED_CAST")
+        val vstore = merge(mutableListOf(linkedMapOf<String, Any?>(), store), 1) as MutableMap<String, Any?>
+        vstore[S_DTOP] = value
+
+        val out =
+            validate(
+                value,
+                spec,
+                linkedMapOf<String, Any?>(
+                    "extra" to vstore,
+                    "errs" to terrs,
+                    "meta" to inj.meta,
+                ),
+            )
+
+        return terrs.isEmpty() && _keeps(value, out)
+    }
+
+    // The bounds of a $NOF count, and the words for it, which are null when the
+    // count is invalid. Without a max, the bound is the number of specs.
+    private fun _nofcount(
+        count: Any?,
+        numtvals: Int,
+    ): Triple<Long, Long, String?> {
+        val isnat = { n: Any? -> 0 != (T_INTEGER and typify(n)) && 0.0 <= (n as Number).toDouble() }
+
+        if (isnat(count)) {
+            val n = (count as Number).toLong()
+            return Triple(n, n, if (0L == n) "none" else "exactly $n")
+        }
+
+        val min = lookup(count, "min")
+        val max = lookup(count, "max")
+
+        val valid =
+            ismap(count) &&
+                0 < size(count) &&
+                size(count) == (if (UNDEF === min) 0 else 1) + (if (UNDEF === max) 0 else 1) &&
+                (UNDEF === min || isnat(min)) &&
+                (UNDEF === max || isnat(max)) &&
+                (UNDEF === min || UNDEF === max || (min as Number).toDouble() <= (max as Number).toDouble())
+
+        if (!valid) return Triple(0L, 0L, null)
+
+        val lo = if (UNDEF === min) 0L else (min as Number).toLong()
+        val hi = if (UNDEF === max) numtvals.toLong() else (max as Number).toLong()
+
+        val desc =
+            when {
+                UNDEF === max -> "at least $lo"
+                0L == hi -> "none"
+                UNDEF === min -> "at most $hi"
+                lo == hi -> "exactly $lo"
+                else -> "$lo to $hi"
+            }
+
+        return Triple(lo, hi, desc)
+    }
 
     /** Modify hook used by validate(): runs after each inject step. */
     val _validation: Modify =
@@ -2486,8 +2864,12 @@ object Struct {
         baseStore["\$INSTANCE"] = validate_TYPE
         baseStore["\$ANY"] = validate_ANY
         baseStore["\$CHILD"] = validate_CHILD
-        baseStore["\$ONE"] = validate_ONE
         baseStore["\$EXACT"] = validate_EXACT
+        baseStore["\$NOF"] = validate_NOF
+        baseStore["\$ALL"] = validate_ALL
+        baseStore["\$LEN"] = validate_LEN
+        baseStore["\$RANGE"] = validate_RANGE
+        baseStore["\$LIKE"] = validate_LIKE
 
         val mergeList = mutableListOf<Any?>(baseStore)
         if (extraRaw is Map<*, *>) mergeList.add(extraRaw)
@@ -2507,7 +2889,12 @@ object Struct {
                 "handler" to _validatehandler,
                 "errs" to errs,
             )
-        val out = transform(data, spec, opts)
+
+        // A spec that names an unknown checker validates nothing.
+        val numerrs = errs.size
+        _checknames(spec, store, emptyList(), errs)
+
+        val out = if (numerrs < errs.size) clone(data) else transform(data, spec, opts)
         if (errs.isNotEmpty() && !collect) {
             throw IllegalArgumentException(errs.joinToString(" | ") { it?.toString() ?: "" })
         }
@@ -2609,7 +2996,9 @@ object Struct {
 
     /** $GT/$LT/$GTE/$LTE/$LIKE comparators dispatched by ref. */
     val select_CMP: Injector =
-        Injector { inj, _, ref, store ->
+        Injector { inj, value, ref, store ->
+            // The list form of $LIKE is validate's checker; the key form is this operator.
+            if (M_VAL == inj.mode && "\$LIKE" == ref) return@Injector validate_LIKE.apply(inj, value, ref, store)
             if (inj.mode != M_KEYPRE) return@Injector UNDEF
             val term = lookup(inj.parent, inj.key)
             val gkey = getelem(inj.path, -2)
@@ -2645,8 +3034,8 @@ object Struct {
         }
 
     /**
-     * Canonical TS-faithful select. Tag each child node with $KEY, walk the
-     * (cloned) query annotating every map with `$OPEN`, then run validate
+     * Canonical TS-faithful select. Tag each child node with $KEY, open the
+     * (cloned) query's maps with _openquery, then run validate
      * against each child with the select_* injectors as extras and
      * meta.`$EXACT` = true. Mirrors Java select (Struct.java:2981).
      */
@@ -2686,13 +3075,7 @@ object Struct {
             )
 
         val q = clone(query)
-        walk(
-            q,
-            WalkApply { _, v, _, _ ->
-                if (ismap(v)) setprop(v, "`\$OPEN`", getprop(v, "`\$OPEN`", true))
-                v
-            },
-        )
+        _openquery(q)
 
         val results = mutableListOf<Any?>()
         for (child in childList) {
@@ -2706,5 +3089,419 @@ object Struct {
             if (errs.isEmpty()) results.add(child)
         }
         return results
+    }
+
+    // Open every map in a select query, so a child may hold keys the query does
+    // not name, but leave a directive's literals as written: what $EXACT
+    // compares, and the count or bound of $NOF, $LEN and $RANGE.
+    private fun _openquery(q: Any?) {
+        if (q is Map<*, *>) {
+            setprop(q, "`\$OPEN`", getprop(q, "`\$OPEN`", true))
+            for (key in keysof(q)) {
+                _openquery(q[key])
+            }
+        } else if (q is List<*>) {
+            val head = q.firstOrNull()
+            val exact = "`\$EXACT`" == head
+            val bounded = "`\$NOF`" == head || "`\$LEN`" == head || "`\$RANGE`" == head
+            for (i in q.indices) {
+                if (0 == i || !(exact || (bounded && 1 == i))) {
+                    _openquery(q[i])
+                }
+            }
+        }
+    }
+
+    // ===========================================================================
+    // Condense
+    // ===========================================================================
+
+    private const val CONDENSE_VERSION = 1
+
+    private const val CONDENSE_MAP = 0
+    private const val CONDENSE_LIST = 1
+    private const val CONDENSE_STR = 2
+    private const val CONDENSE_NUM = 3
+    private const val CONDENSE_TRUE = 4
+    private const val CONDENSE_FALSE = 5
+    private const val CONDENSE_NULL = 6
+
+    private const val S_CONDENSE = "\$condense"
+    private const val S_CONDSYM = "sym"
+    private const val S_CONDNODE = "node"
+    private const val S_CONDROOT = "root"
+
+    private const val CONDENSE_IMMUTABLE =
+        "struct: condensed structures are immutable - expand() first, then modify the copy"
+
+    // Code point order: String.compareTo uses UTF-16 code unit order, which
+    // puts U+FFFF after a supplementary character.
+    private fun condenseCmp(
+        a: String,
+        b: String,
+    ): Int {
+        var i = 0
+        var j = 0
+        while (i < a.length && j < b.length) {
+            val ca = a.codePointAt(i)
+            val cb = b.codePointAt(j)
+            if (ca != cb) return if (ca < cb) -1 else 1
+            i += Character.charCount(ca)
+            j += Character.charCount(cb)
+        }
+        return a.length - i - (b.length - j)
+    }
+
+    fun iscondensed(value: Any?): Boolean {
+        // The version must MATCH, not merely be numeric: a future profile would
+        // otherwise be decoded under this one's schema.
+        if (value !is Map<*, *>) return false
+        val version = value[S_CONDENSE]
+        return version is Number &&
+            CONDENSE_VERSION.toDouble() == version.toDouble() &&
+            value[S_CONDSYM] is List<*> &&
+            value[S_CONDNODE] is List<*> &&
+            value[S_CONDROOT] is Number
+    }
+
+    /**
+     * Condense any JSON-shaped node. Pure: the same input always produces a
+     * byte-identical result, on every port.
+     */
+    fun condense(value: Any?): MutableMap<String, Any?> {
+        val symset = HashSet<String>()
+        condenseCollect(value, symset)
+
+        val sym = symset.sortedWith { a, b -> condenseCmp(a, b) }
+        val symid = HashMap<String, Int>()
+        sym.forEachIndexed { i, s -> symid[s] = i }
+
+        val node = mutableListOf<Any?>()
+        val root = condenseBuild(value, symid, node, HashMap())
+
+        return linkedMapOf(
+            S_CONDENSE to CONDENSE_VERSION,
+            S_CONDSYM to sym.toMutableList<Any?>(),
+            S_CONDNODE to node,
+            S_CONDROOT to root,
+        )
+    }
+
+    private fun condenseCollect(
+        n: Any?,
+        symset: MutableSet<String>,
+    ) {
+        when (n) {
+            is Map<*, *> ->
+                for (key in keysof(n)) {
+                    symset.add(key)
+                    condenseCollect(n[key], symset)
+                }
+            is List<*> -> for (item in n) condenseCollect(item, symset)
+            is String -> symset.add(n)
+        }
+    }
+
+    // Post-order, so identical subtrees are already interned when a parent
+    // refers to them.
+    private fun condenseBuild(
+        n: Any?,
+        symid: Map<String, Int>,
+        node: MutableList<Any?>,
+        seen: MutableMap<String, Int>,
+    ): Int {
+        val enc = mutableListOf<Any?>()
+        when {
+            n is Map<*, *> -> {
+                enc.add(CONDENSE_MAP)
+                // Code-point order, not keysof's code-unit order, so the key ids ascend.
+                for (key in keysof(n).sortedWith { a, b -> condenseCmp(a, b) }) {
+                    enc.add(symid[key])
+                    enc.add(condenseBuild(n[key], symid, node, seen))
+                }
+            }
+            n is List<*> -> {
+                enc.add(CONDENSE_LIST)
+                for (item in n) enc.add(condenseBuild(item, symid, node, seen))
+            }
+            n is String -> {
+                enc.add(CONDENSE_STR)
+                enc.add(symid[n])
+            }
+            n is Number -> {
+                enc.add(CONDENSE_NUM)
+                enc.add(n)
+            }
+            true == n -> enc.add(CONDENSE_TRUE)
+            false == n -> enc.add(CONDENSE_FALSE)
+            else -> enc.add(CONDENSE_NULL)
+        }
+        val enckey = enc.joinToString(",") { condenseNumKey(it as Number) }
+        return seen.getOrPut(enckey) {
+            node.add(enc)
+            node.size - 1
+        }
+    }
+
+    // By value, so an integer and a decimal that are equal share one node.
+    private fun condenseNumKey(n: Number): String {
+        if (n is Int || n is Long || n is Short || n is Byte) return n.toLong().toString()
+        val d = n.toDouble()
+        return if (floor(d) == d && Math.abs(d) < Long.MAX_VALUE) d.toLong().toString() else d.toString()
+    }
+
+    private fun condenseList(
+        cond: Any?,
+        name: String,
+    ): List<*> = (cond as? Map<*, *>)?.get(name) as? List<*> ?: emptyList<Any?>()
+
+    private fun condenseAt(
+        list: List<*>,
+        i: Int,
+    ): Any? = if (0 <= i && i < list.size) list[i] else UNDEF
+
+    // A stored index: -1 when negative, past every node when not an integer.
+    private fun condenseIndex(n: Any?): Int {
+        if (n !is Number) return -1
+        val d = n.toDouble()
+        if (d.isNaN() || d < 0) return -1
+        return if (floor(d) == d && d < Int.MAX_VALUE) d.toInt() else Int.MAX_VALUE
+    }
+
+    private fun condenseRoot(cond: Any?): Int = condenseIndex((cond as Map<*, *>)[S_CONDROOT])
+
+    private fun condenseEnc(
+        cond: Any?,
+        idx: Int,
+    ): Any? {
+        val enc = condenseAt(condenseList(cond, S_CONDNODE), idx)
+        return if (enc === UNDEF) null else enc
+    }
+
+    private fun condenseIs(
+        enc: Any?,
+        kind: Int,
+    ): Boolean {
+        val tag = (enc as? List<*>)?.firstOrNull()
+        return tag is Number && tag.toDouble() == kind.toDouble()
+    }
+
+    private fun condenseKey(key: Any?): String =
+        when {
+            key is String -> key
+            key === UNDEF -> "undefined"
+            else -> jsString(key)
+        }
+
+    // Bisects the sorted symbol table; -1 when the string occurs nowhere.
+    private fun condenseSymId(
+        cond: Any?,
+        key: String,
+    ): Int {
+        val sym = condenseList(cond, S_CONDSYM)
+        var lo = 0
+        var hi = sym.size - 1
+        while (lo <= hi) {
+            val mid = (lo + hi) ushr 1
+            val s = sym[mid]
+            if (key == s) return mid
+            if (0 > condenseCmp(condenseKey(s), key)) lo = mid + 1 else hi = mid - 1
+        }
+        return -1
+    }
+
+    // The node index of key inside node idx, or -1. Touches only this node.
+    private fun condenseChild(
+        cond: Any?,
+        idx: Int,
+        key: Any?,
+    ): Int {
+        val enc = condenseEnc(cond, idx) ?: return -1
+        if (key !is String && key !is Number) return -1
+
+        if (condenseIs(enc, CONDENSE_MAP)) {
+            val symid = condenseSymId(cond, condenseKey(key))
+            if (0 > symid) return -1
+            // Pairs live at [1,2], [3,4], ... with keys ascending: bisect the pairs.
+            val pairs = enc as List<*>
+            var lo = 0
+            var hi = (pairs.size - 1) / 2 - 1
+            while (lo <= hi) {
+                val mid = (lo + hi) ushr 1
+                val k = (pairs[1 + mid * 2] as? Number)?.toDouble() ?: Double.NaN
+                if (k == symid.toDouble()) return condenseIndex(pairs[2 + mid * 2])
+                if (k < symid) lo = mid + 1 else hi = mid - 1
+            }
+            return -1
+        }
+
+        if (condenseIs(enc, CONDENSE_LIST)) {
+            val items = enc as List<*>
+            val i = listIndex(key)
+            if (!(0.0 <= i && i < items.size - 1)) return -1
+            return condenseIndex(items[1 + i.toInt()])
+        }
+
+        return -1
+    }
+
+    private fun condenseResolve(
+        cond: Any?,
+        idx: Int,
+        path: Any?,
+    ): Int {
+        val parts: List<*> =
+            when {
+                path is List<*> -> path
+                path is String -> if (path.isEmpty()) emptyList<Any?>() else path.split(".")
+                null == path || UNDEF === path -> emptyList<Any?>()
+                else -> listOf(condenseKey(path))
+            }
+
+        var at = idx
+        for (part in parts) {
+            if (0 > at) return -1
+            if ("" == part) continue
+            at = condenseChild(cond, at, part)
+        }
+        return at
+    }
+
+    private fun condenseMaterialise(
+        cond: Any?,
+        idx: Int,
+    ): Any? = if (0 > idx) UNDEF else condenseRebuild(condenseList(cond, S_CONDSYM), condenseList(cond, S_CONDNODE), idx)
+
+    // Every call builds new containers, so materialisations never share one.
+    private fun condenseRebuild(
+        sym: List<*>,
+        node: List<*>,
+        i: Int,
+    ): Any? {
+        val enc = condenseAt(node, i)
+        if (null == enc || UNDEF === enc) return UNDEF
+        if (condenseIs(enc, CONDENSE_MAP)) {
+            val pairs = enc as List<*>
+            val out = linkedMapOf<String, Any?>()
+            for (j in 1 until pairs.size step 2) {
+                out[condenseKey(condenseAt(sym, condenseIndex(pairs[j])))] =
+                    condenseRebuild(sym, node, condenseIndex(condenseAt(pairs, j + 1)))
+            }
+            return out
+        }
+        if (condenseIs(enc, CONDENSE_LIST)) {
+            val items = enc as List<*>
+            val out = mutableListOf<Any?>()
+            for (j in 1 until items.size) out.add(condenseRebuild(sym, node, condenseIndex(items[j])))
+            return out
+        }
+        if (condenseIs(enc, CONDENSE_STR)) return condenseAt(sym, condenseIndex(condenseAt(enc as List<*>, 1)))
+        if (condenseIs(enc, CONDENSE_NUM)) return condenseAt(enc as List<*>, 1)
+        if (condenseIs(enc, CONDENSE_TRUE)) return true
+        if (condenseIs(enc, CONDENSE_FALSE)) return false
+        return null
+    }
+
+    /**
+     * Fully materialise a condensed structure; any other value comes back
+     * unchanged. Correct for any caller, but it gives up every benefit of
+     * condensing, so prefer a view or a path read.
+     */
+    fun expand(cond: Any?): Any? {
+        if (!iscondensed(cond)) return cond
+        return condenseMaterialise(cond, condenseRoot(cond))
+    }
+
+    // The keys of node idx, without materialising any of its values.
+    private fun condenseKeys(
+        cond: Any?,
+        idx: Int,
+    ): MutableList<String> {
+        val enc = condenseEnc(cond, idx)
+        val out = mutableListOf<String>()
+        if (condenseIs(enc, CONDENSE_MAP)) {
+            val sym = condenseList(cond, S_CONDSYM)
+            val pairs = enc as List<*>
+            for (j in 1 until pairs.size step 2) out.add(condenseKey(condenseAt(sym, condenseIndex(pairs[j]))))
+        } else if (condenseIs(enc, CONDENSE_LIST)) {
+            for (j in 1 until (enc as List<*>).size) out.add((j - 1).toString())
+        }
+        return out
+    }
+
+    /**
+     * A cursor into a condensed structure. Reads resolve by integer index and
+     * touch only the nodes on the path, so a lookup costs path depth and result
+     * size, never total structure size.
+     */
+    class CondenseView internal constructor(
+        private val cond: Any?,
+        private val start: Int,
+        private val refmemo: MutableMap<Int, Any?>,
+    ) {
+        /** The value at path, materialised: a container comes back as an independent copy. */
+        fun get(path: Any?): Any? = condenseMaterialise(cond, condenseResolve(cond, start, path))
+
+        fun get(): Any? = get(UNDEF)
+
+        /** Key names at path, with no value decoding at all. */
+        fun keys(path: Any?): MutableList<String> {
+            val at = condenseResolve(cond, start, path)
+            return if (0 > at) mutableListOf() else condenseKeys(cond, at)
+        }
+
+        fun keys(): MutableList<String> = keys(UNDEF)
+
+        fun has(path: Any?): Boolean = 0 <= condenseResolve(cond, start, path)
+
+        fun has(): Boolean = has(UNDEF)
+
+        /** A view at path, sharing this view's ref() memo. No decoding happens here. */
+        fun at(path: Any?): CondenseView = condenseview(cond, condenseResolve(cond, start, path), refmemo)
+
+        fun at(): CondenseView = at(UNDEF)
+
+        fun value(): Any? = condenseMaterialise(cond, start)
+
+        fun size(): Int {
+            val enc = condenseEnc(cond, start)
+            if (condenseIs(enc, CONDENSE_MAP)) return ((enc as List<*>).size - 1) / 2
+            if (condenseIs(enc, CONDENSE_LIST)) return (enc as List<*>).size - 1
+            return 0
+        }
+
+        fun exists(): Boolean = 0 <= start
+
+        /**
+         * A SHARED materialisation: the same object for the same node, every time.
+         * Mutating it corrupts every other reader of that node, including ones
+         * reached by a different path, because the structure is a DAG.
+         */
+        fun ref(): Any? {
+            var got = refmemo.getOrDefault(start, UNDEF)
+            if (UNDEF === got) {
+                got = condenseMaterialise(cond, start)
+                refmemo[start] = got
+            }
+            return got
+        }
+    }
+
+    fun condenseview(cond: Any?): CondenseView = condenseview(cond, null, null)
+
+    fun condenseview(
+        cond: Any?,
+        idx: Int?,
+    ): CondenseView = condenseview(cond, idx, null)
+
+    fun condenseview(
+        cond: Any?,
+        idx: Int?,
+        memo: MutableMap<Int, Any?>?,
+    ): CondenseView {
+        val start = idx ?: if (iscondensed(cond)) condenseRoot(cond) else -1
+        // The memo is threaded through at(), so every view into one structure
+        // hands out the same ref() node.
+        return CondenseView(cond, start, memo ?: HashMap())
     }
 }

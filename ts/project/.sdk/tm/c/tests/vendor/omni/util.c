@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/omni sdk-20261016-0845-0 (c/src/util.c)
-// Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-20261016-0845-0]
+// VENDORED: @voxgig/omni sdk-local-nof (c/src/util.c)
+// Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-local-nof]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Omni internal JSON utilities: clone, path lookup, deep equality, and
  * the regex bridge.
