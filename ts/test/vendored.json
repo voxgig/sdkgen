@@ -5464,6 +5464,22 @@
     }
    }
   },
+  "struct/ocaml": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.1.1",
+   "tag": "sdk-local-nof",
+   "file": {
+    "tm/ocaml/utility/voxgig_struct.ml": {
+     "sha256": "9d66aace530fe653757ba976c223ca714bb2c3b5ad94ddafb684a7ad447cd37c",
+     "upstream": "ocaml/src/voxgig_struct.ml"
+    },
+    "tm/ocaml/utility/vregex.ml": {
+     "sha256": "8ec47ad1e8b3d50777e900b6271a11fe6bbcd526ed2756704eca8ee2aefee165",
+     "upstream": "ocaml/src/vregex.ml"
+    }
+   }
+  },
   "struct/perl": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",

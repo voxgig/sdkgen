@@ -1151,7 +1151,7 @@ tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml c7d45c71124f
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml e3f0e8690ccb
+tm/ocaml/sdk_runtime.ml d3cdf66de939
 tm/ocaml/sdk_types.ml b409a91a7c5a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1168,8 +1168,8 @@ tm/ocaml/test/t_main.ml a468eae08da5
 tm/ocaml/test/t_pipeline.ml 135b82d775d0
 tm/ocaml/test/testutil.ml d06c690245b6
 tm/ocaml/test/vendor/omni/omni.ml 5e140b40194f
-tm/ocaml/utility/voxgig_struct.ml a0a616198901
-tm/ocaml/utility/vregex.ml 8720dd560814
+tm/ocaml/utility/voxgig_struct.ml 9d66aace530f
+tm/ocaml/utility/vregex.ml 8ec47ad1e8b3
 
 ## target perl
 model/feature/feature-index.aontu 0351fe150e6a

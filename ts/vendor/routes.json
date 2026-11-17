@@ -2177,6 +2177,19 @@
   },
   {
    "lib": "struct",
+   "port": "ocaml",
+   "lang": "ocaml",
+   "version": "0.1.1",
+   "dir": [
+    "tm/ocaml/utility"
+   ],
+   "file": {
+    "ocaml/src/voxgig_struct.ml": "tm/ocaml/utility/voxgig_struct.ml",
+    "ocaml/src/vregex.ml": "tm/ocaml/utility/vregex.ml"
+   }
+  },
+  {
+   "lib": "struct",
    "port": "perl",
    "lang": "perl",
    "version": "0.1.1",
