@@ -1,6 +1,8 @@
 # The issue catalogue by class: what the write-once proposal reaches
 
-Status: **classification, checked by samples** (2026-11-15). This page
+Status: **classification, checked by samples** (2026-11-15; the state of
+the T rows brought to the prototype's twenty-language result on
+2026-11-17, with no class or count changed). This page
 gives each of the 329 entries of `docs/design/model-dependent-text-issues.md`
 (sdkgen 9aebaf9e) one class, so that a maintainer can check any row. It
 is the evidence behind section 4 of
@@ -82,13 +84,21 @@ Entries per catalogue section:
    U59, U60, D27: 7 entries, 6 distinct) and S13 to K; the high end moves
    the O and S border to S (S05, U58, X1: 3 entries, 2 distinct) and U42
    to S. The prototype tested T: 38 entries (12%), 26 distinct (10%). At
-   its frozen state, after the independent check of the H3 measurement,
-   28 of the 38 are fixed by shared code alone; 1 needed lines of each
-   language (S13); 1 is fixed only in part (D26); 6 are not fixed (S22,
-   X3, U52, U53, V27, U102, in `ts/src/cmp/ReadmeRefFeatures.ts` and
-   `ts/src/cmp/FeatureDocs.ts`, shared before the prototype and edited by
-   it, but not for these entries); 2 show only in js, which is not ported
-   (N11, M35).
+   its frozen state at thirteen languages, after the independent check of
+   the H3 measurement, 28 of the 38 were fixed by shared code alone; 1
+   needed lines of each language (S13); 1 was fixed only in part (D26); 6
+   were not fixed (S22, X3, U52, U53, V27, U102, in
+   `ts/src/cmp/ReadmeRefFeatures.ts` and `ts/src/cmp/FeatureDocs.ts`,
+   shared before the prototype and edited by it, but not for these
+   entries); 2 showed only in js, which was not yet ported (N11, M35). At
+   the final state, twenty languages: the six were fixed by one shared
+   edit each, so 34 are fixed by shared code alone; S13 needs one declared
+   fact in each language's provider; D26 is fixed in part (its rows for
+   `extend` and `utility` need a declared fact per runtime); N11 and M35
+   are fixed for js through the fence its provider declares. The catalogue
+   checker finds none of them on the new pages of any of the twenty. The
+   shared edit for X3 printed a new sentence under `secrets` that is false
+   in 17 runtimes, which no check saw (prototype record, section 3.3).
 2. **One edit today (O): 81 entries (25%), 67 distinct (25%).** Range 78
    to 81 entries, 65 to 67 distinct; the low end moves S05, U58 and X1 to
    S. Of these, 46 entries (39 distinct), give or take 3 for the
@@ -128,7 +138,7 @@ issue of their own. The 7 entries that are not defects have no package.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | WP29 | 10 | 9 | 1 |  |  |  |  |  |  |  | (a) every issue is a quick-start, options-row or REFERENCE constructor in a per-language copy (T 9, S 1); porting those families is the package |
 | WP31 | 14 | 6 | 8 |  |  |  |  |  |  |  | (a) operation-dependent prose in ReadmeModel, ReadmeQuick, ReadmeIntro and ReadmeRef copies (T 6, S 8); porting the families is the package |
-| WP18 | 5 | 3 |  |  | 2 |  |  |  |  |  | (b) G29 goes with the ported cell sinks; V27, U102 and U103 stay shared escaper work, not fixed by the prototype |
+| WP18 | 5 | 3 |  |  | 2 |  |  |  |  |  | (b) G29 goes with the ported cell sinks; V27, U102 and U103 stay shared escaper work (the prototype fixed V27 and U102 by shared escaper edits, not by porting; U103 is not fixed) |
 | WP21 | 8 | 1 | 2 |  | 1 |  | 3 |  | 1 |  | (b) the README halves go with the ported families; the core pre-pass of the plan's decision DQ1, for generated code (G05, V11, M39), U74 and the pack (U20) stay |
 | WP28 | 14 | 3 |  |  |  |  | 11 |  |  |  | (b) the three type-printer entries go with the ported families; eleven code-generator entries (auth predicate, Config, regex) stay |
 | WP30 | 8 |  | 6 |  |  |  | 2 |  |  |  | (b) the live-test how-to sentences go with a shared how-to (given declared runtime facts); the kotlin and cpp live harnesses (U72, U73) stay |
@@ -145,7 +155,7 @@ issue of their own. The 7 entries that are not defects have no package.
 | WP05b | 2 |  |  |  |  |  |  | 2 |  |  | (c) no T or S issue (K only) |
 | WP06 | 2 |  |  |  |  |  |  | 2 |  |  | (c) no T or S issue (K only) |
 | WP07 | 8 |  |  |  | 8 |  |  |  |  |  | (c) no T or S issue (O only) |
-| WP08 | 15 | 4 |  |  | 7 |  |  | 4 |  |  | (c) its T entries (S22, X3, U52, U53) are in ReadmeRefFeatures, shared before the prototype and still wrong after it; the rest is shared or schema work |
+| WP08 | 15 | 4 |  |  | 7 |  |  | 4 |  |  | (c) its T entries (S22, X3, U52, U53) are in ReadmeRefFeatures, shared before the prototype; the prototype fixed them by one shared edit each, which needed no port, so the fate does not change; the rest is shared or schema work |
 | WP09 | 7 |  |  |  | 5 |  |  | 2 |  |  | (c) no T or S issue (O,K only) |
 | WP10 | 6 |  |  |  | 6 |  |  |  |  |  | (c) no T or S issue (O only) |
 | WP11 | 8 |  |  |  | 1 |  | 2 | 5 |  |  | (c) no T or S issue (O,G,K only) |
@@ -263,7 +273,11 @@ border or a first reading would give instead. Rows changed by a check say
 CORRECTED, and the rows the H3 check revised say so (D26, U44, U37).
 The reasons of S22, X3 and V27, and of WP18 in section 4, no longer say
 the prototype left their component untouched: the H3 check found that it
-had edited it, for other entries. No class changed. DQ1, named in a few
+had edited it, for other entries. No class changed. The rows of the six
+entries the prototype later fixed by shared edits (X3, S22, U52, U53, V27,
+U102), of D26, and of N04, U06, M04, N11 and M35 say where each stands at
+the prototype's final state, twenty languages; so do WP08 and WP18 in
+section 4. No class or count changed with them. DQ1, named in a few
 reasons, is the plan's first decision for the maintainer (what an
 operation-level `active: false` means; the recommended answer is a core
 pre-pass before generation).
@@ -291,7 +305,7 @@ pre-pass before generation).
 | S19 | K |  | neutral-component | ts/src/cmp/AgentGuideFeature.ts:50; fix is S11's error | S11 | O | CORRECTED from O: the Fix is "no change needed once the S11 error lands". |
 | S20 | K |  | per-language-copy | ReadmeModel_ts.ts:93; ReadmeModel_js.ts:71; fix is S11's error | S11 | S (model) | CORRECTED from S: the Fix is "no change once the S11 error lands". |
 | S21 | C |  | consumer-main | py-data/Main_py-data.ts:700-703; tm/py-data/pkg/fetch.py |  |  | Written by the py-data Main alone, with a code half. |
-| S22 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:50-53 |  |  | In the H3 scope, wholly; not fixed by the prototype, which edited ReadmeRefFeatures for other entries but not this one; the text still shows in all 20 languages. |
+| S22 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:50-53 |  |  | In the H3 scope, wholly. Not fixed at the prototype's frozen state at thirteen languages; then fixed by one shared edit, clean in all 20 languages. |
 | S23 | S | model | per-language-copy | ReadmeModel_<lang>.ts (20, Object.keys(ent.op)) |  | K | All 20 ReadmeModel copies compute their own op list; the catalogue's preferred fix is a core pre-pass (DQ1). |
 | S24 | S | model | per-language-copy | ReadmeEntity_<lang>.ts (19) | S23 |  | 19 entity tables read raw ops; a shared ReadmeEntity reading description ops fixes all at once. |
 | S25 | T | yes | per-language-copy | ReadmeRef_<lang>.ts (19) | S23 |  | In the H3 scope, wholly. |
@@ -322,7 +336,7 @@ pre-pass before generation).
 | S50 | T | part | per-language-copy | ReadmeQuick/TopQuick/Model/Ref/Howto_<lang>.ts (100) |  |  | In the H3 scope, in part. |
 | X1 | O | plain | neutral-component | ts/src/cmp/ReadmeExplanation.ts:40-70,225 |  | S (runtime fact) | Shared component with a LANGS table and a TypeScript default; the fix needs per-language example and prose (sibling of S05). |
 | X2 | O | plain | neutral-component | ts/src/cmp/ReadmeFeatures.ts:32-33; ReadmeOptions family (dead) |  |  | The sentence is in shared ReadmeFeatures; one rewording; the dead family is a deletion. |
-| X3 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:34-35,54,119-131 |  |  | In the H3 scope, wholly; not fixed by the prototype, which edited the component for other entries but not this one. |
+| X3 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:34-35,54,119-131 |  |  | In the H3 scope, wholly. Fixed by one shared edit, clean in all 20 languages; the edit also printed "Also attaches to pipeline hooks" under `secrets` from its model's hook declaration, false in 17 runtimes. |
 | X4 | O | plain | neutral-component | ts/src/cmp/ReadmeTop.ts:576-582; ReadmeExplanation.ts:269-286 |  |  | Two shared components disagree; one exported stage constant. |
 | X5 | O | needs a derivation | neutral-component | ts/src/cmp/AgentGuideContent.ts:137-145,173-180; ReadmeTop.ts:614-640 |  |  | Shared guide prose; the merge sentence needs modelCopyMode. |
 | X6 | T | part | per-language-copy | rust/zig ReadmeModel, zig ReadmeEntity, go/ReadmeQuick_go.ts:188 | S29 |  | In the H3 scope, in part. |
@@ -384,7 +398,7 @@ pre-pass before generation).
 | V24 | O | needs a derivation | neutral-component | ReadmeTop.ts, Changelog.ts, AgentGuideContent.ts |  | K | Shared components write OpenAPI spec; needs definitionKind. |
 | V25 | K |  | other | docgen ts/src/content.ts:157-158,186,197-198 |  |  | docgen classifies vendor and project text the wrong way round. |
 | V26 | K |  | other | docgen ts/src/qa.ts:33-47 |  |  | docgen's QA stripping. |
-| V27 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:95-96; FeatureDocs.ts |  |  | In the H3 scope, wholly; not fixed by the prototype, which edited the component for other entries but not this one. |
+| V27 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:95-96; FeatureDocs.ts |  |  | In the H3 scope, wholly. Fixed by one shared edit (the type cell through the table-cell escaper), clean in all 20 languages. |
 | V28 | K |  | neutral-component | ts/src/sdkgen.ts:390-409,793-802 |  | O | Skip log level and one target set in generate. |
 | V29 | K |  | neutral-component | ts/src/sdkgen.ts:723-737 |  |  | SDKGEN_EXTERNAL parser accepts unknown keys. |
 | V30 | K |  | neutral-component | ts/src/action/kind.ts:171-195; doctor.ts |  |  | Add and doctor handling of aliased model files. |
@@ -395,7 +409,7 @@ pre-pass before generation).
 | U03 | O | needs a derivation | neutral-component | ts/src/cmp/AgentGuideContent.ts:18-37 |  |  | LANG_CMD keyed by target name; needs originName and targetSurface. |
 | U04 | G | behaviour | template | tm/<lang>/Makefile TAG (15); go/ReadmeInstall_go.ts:19; Deploy.ts:218 |  | L | Most of the fix is 15 template Makefiles; the README half is one go literal. |
 | U05 | O | plain | neutral-component | ReadmeErrors.ts:212; ReadmeExplanation.ts:225 |  |  | Two shared tables keyed by target.name; key by originName. |
-| U06 | T | part | per-language-copy | ReadmeEntity/ReadmeRef_<lang>.ts canonToType(..., target.name) | N04 |  | In the H3 scope, in part; 13 type printers still pass a literal language. |
+| U06 | T | part | per-language-copy | ReadmeEntity/ReadmeRef_<lang>.ts canonToType(..., target.name) | N04 |  | In the H3 scope, in part; the type printers of all 20 ported languages still pass a literal language. Checked through the aliased go target at twenty and clean. |
 | U07 | K |  | other | docgen ts/src/content.ts:160-163 |  |  | docgen's surface table classes seneca-provider as an SDK. |
 | U08 | N |  | neutral-component | ts/src/cmp/ReadmeTop.ts:229,442-444 |  |  | Fate: not a defect. |
 | U09 | P |  | per-language-copy | langpack lean/ReadmeOptions_lean.ts:5-17 |  |  | Literal options table in the pack's lean component. |
@@ -441,8 +455,8 @@ pre-pass before generation).
 | U49 | S | model | per-language-copy | ReadmeHowto_<lang>.ts (20), ReadmeTopHowto_<lang>.ts (20), ReadmeErrors.ts:44 |  |  | Same fabricated route in 40 copies; one example route printed by a shared direct() call. |
 | U50 | O | plain | neutral-component | ts/src/cmp/ReadmeStation.ts |  |  | Gate on existing featureApplies and isAuthActive. |
 | U51 | O | plain | neutral-component | ts/src/cmp/ReadmeFeatures.ts:29 |  |  | A missing singular in one shared lead-in. |
-| U52 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:28-30,37-44 |  |  | In the H3 scope, wholly; not fixed by the prototype. |
-| U53 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:54-55 |  |  | In the H3 scope, wholly; not fixed by the prototype. |
+| U52 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:28-30,37-44 |  |  | In the H3 scope, wholly. Fixed by one shared edit, clean in all 20 languages. |
+| U53 | T | yes | neutral-component | ts/src/cmp/ReadmeRefFeatures.ts:54-55 |  |  | In the H3 scope, wholly. Fixed by one shared edit, clean in all 20 languages. |
 | U54 | O | plain | neutral-component | ReadmeExplanation.ts:312-313; FeatureDocs.ts:94-97 |  |  | Condition on honoursActivationOrder. |
 | U55 | O | needs a derivation | neutral-component | ts/src/cmp/AgentGuideContent.ts; AgentGuide.ts |  |  | One shared function guesses a feature path; needs the layout from featureSource discovery. |
 | U56 | O | needs a derivation | neutral-component | ts/src/cmp/AgentGuideTop.ts:66-68 |  |  | Unconditional sentence in the one root guide writer. |
@@ -491,7 +505,7 @@ pre-pass before generation).
 | U99 | O | plain | helper | ts/src/helpers/packageMeta.ts:14-29 | G13 |  | One shared label table. |
 | U100 | K |  | action | ts/src/helpers/manifest.ts, ts/src/action/check.ts |  |  | Missing package-check rule. |
 | U101 | K |  | helper | ts/src/helpers/applicability.ts:56-66; check.ts:307 |  |  | Pack tag compatibility rule. |
-| U102 | T | yes | neutral-component | ts/src/cmp/FeatureDocs.ts:47-57; ReadmeRefFeatures.ts:78,95 |  |  | In the H3 scope, wholly; not fixed by the prototype. |
+| U102 | T | yes | neutral-component | ts/src/cmp/FeatureDocs.ts:47-57; ReadmeRefFeatures.ts:78,95 |  |  | In the H3 scope, wholly. Fixed by one shared edit (a code-span cell escaper), clean in all 20 languages. |
 | U103 | O | plain | neutral-component | ts/src/cmp/ReadmeTop.ts:130-133 |  |  | One escaper beside mdCell. |
 | U104 | O | plain | per-language-copy | mdCell/mdInline; ReadmeExamplesTest_<lang>.ts |  | G | Unmeasured; if real, fixed in the shared escapers. |
 | U105 | K |  | other | create-sdkgen CreateRoot.ts:110 |  |  | Commented example in the scaffold. |
@@ -501,14 +515,14 @@ pre-pass before generation).
 | N01 | K |  | other | sdkgen.ts:327 guardModelNames; docgen bin; @voxgig/model |  |  | Pipeline order across tools. |
 | N02 | G | behaviour | helper | ts/src/utility.ts:388 configDefinition |  | O | Generated Config carries basic:true under query or cookie. |
 | N03 | G | behaviour | per-language-copy | PrepareAuth_<lang>.ts (12) | V17 | K | Twelve generators keep private copies; output identical today. |
-| N04 | T | part | per-language-copy | ReadmeEntity/ReadmeRef_<lang>.ts canonToType |  |  | In the H3 scope, in part. |
+| N04 | T | part | per-language-copy | ReadmeEntity/ReadmeRef_<lang>.ts canonToType |  |  | In the H3 scope, in part. Shown only through an alias; checked through the aliased go target at twenty and clean. |
 | N05 | O | plain | neutral-component | ReadmeErrors.ts:212,229; ReadmeExplanation.ts:225,240 |  |  | Shared tables keyed by target.name; key by origin. |
 | N06 | C |  | per-language-copy | go-cli and go-mcp Mains |  |  | Consumer Mains hard-code ../go. |
 | N07 | K |  | action | ts/src/action/remove.ts:293 |  |  | remove tests null != against ''. |
 | N08 | O | needs a derivation | neutral-component | ts/src/cmp/AgentGuideContent.ts:137,173 | X5 |  | Shared paragraphs; needs modelCopyMode. |
 | N09 | O | plain | neutral-component | AgentGuideContent.ts:189; model/feature/test.aontu:13 |  | K | Deletes a shared sentence. |
 | N10 | K |  | model-schema | ts/model/sdkgen.aontu:233-247 | V15 |  | Base schema hook list. |
-| N11 | T | part | per-language-copy | js/ReadmeRef_js.ts, js/ReadmeEntity_js.ts |  |  | In the H3 scope, in part; js not ported. |
+| N11 | T | part | per-language-copy | js/ReadmeRef_js.ts, js/ReadmeEntity_js.ts |  |  | In the H3 scope, in part. Fixed for js when js was ported, through the fence value its provider declares. |
 | N12 | G | behaviour | per-language-copy | ReadmeExamplesTest_<lang>.ts (rb, perl, php, ts) |  |  | Generated README tests use a non-nesting regex. |
 | N13 | K |  | action | ts/src/action/doctor.ts; create-sdkgen |  |  | Doctor outdated logic after a downgrade. |
 | N14 | K |  | other | langpack package.json, build.yml |  |  | Pack release floor. |
@@ -525,7 +539,7 @@ pre-pass before generation).
 | M01 | S | model | per-language-copy | ReadmeHowto_<lang>.ts (7 copies); tm/go/Makefile:26; consumer Mains |  | C; G | Seven how-to copies hard-code the origin key in cd; a shared how-to fixes them. |
 | M02 | O | needs a derivation | neutral-component | ReadmeTop.ts, alongside.ts, AgentGuideContent.ts, mcpTools.ts |  |  | Shared name comparisons; needs targetSurface. |
 | M03 | O | needs a derivation | model-schema | ts/model/sdkgen.aontu:8; ReadmeTop.ts:150-157 |  |  | Ordering done once in ReadmeTop; needs targetSurface. |
-| M04 | T | part | per-language-copy | ReadmeEntity/ReadmeRef_<lang>.ts canonToType | N04 |  | In the H3 scope, in part. |
+| M04 | T | part | per-language-copy | ReadmeEntity/ReadmeRef_<lang>.ts canonToType | N04 |  | In the H3 scope, in part. Checked through the aliased go target at twenty and clean. |
 | M05 | O | plain | neutral-component | ReadmeErrors.ts:212, ReadmeExplanation.ts:225 | N05 |  | Key by originName, delete the default row. |
 | M06 | C |  | per-language-copy | Main_go-cli.ts, Main_go-mcp.ts | N06 |  | Only the two Go consumer Mains write ../go. |
 | M07 | K |  | action | ts/src/action/remove.ts:293 | N07 |  | CLI message of target remove. |
@@ -556,7 +570,7 @@ pre-pass before generation).
 | M32 | O | needs a derivation | neutral-component | ts/src/cmp/AgentGuideContent.ts:137 | X5 |  | Root AGENTS.md; needs modelCopyMode. |
 | M33 | O | plain | neutral-component | AgentGuideContent.ts:189; test.aontu:13 | N09 |  | One shared sentence. |
 | M34 | K |  | model-schema | ts/model/sdkgen.aontu:234-247 | V15 |  | Base schema hook vocabulary. |
-| M35 | T | part | per-language-copy | js/ReadmeRef_js.ts, js/ReadmeEntity_js.ts | N11 |  | In the H3 scope, in part. |
+| M35 | T | part | per-language-copy | js/ReadmeRef_js.ts, js/ReadmeEntity_js.ts | N11 |  | In the H3 scope, in part. Fixed for js with N11. |
 | M36 | G | behaviour | per-language-copy | ReadmeExamplesTest_<lang>.ts | N12 |  | Generated README tests regex. |
 | M37 | T | part | per-language-copy | ReadmeEntity/ReadmeRef/ReadmeModel cell sinks; Config_<lang> | G28 |  | In the H3 scope, in part. |
 | M38 | T | part | per-language-copy | ReadmeEntity/ReadmeRef/ReadmeModel table sinks | G27 |  | In the H3 scope, in part. |
@@ -579,7 +593,7 @@ pre-pass before generation).
 | D22 | G | behaviour | per-language-copy | PrepareAuth_<lang>.ts (12); consumer Mains; docgen |  | C | Twelve code generators importing one predicate. |
 | D23 | T | part | per-language-copy | ReadmeTopQuick/ReadmeQuick/ReadmeModel_<lang> |  |  | In the H3 scope, in part. |
 | D25 | S | model | per-language-copy | ReadmeHowto_<lang> Run tests; Main_go-cli/go-mcp |  | C | Per-language how-tos must name the variables their tests read. |
-| D26 | T | part | per-language-copy | ReadmeModel/ReadmeRef/ReadmeOptions_<lang> |  |  | In the H3 scope, in part; the H3 check found it fixed only in part: the constructor table is a hand list of eight rows gated on the option spec, not derived from it. |
+| D26 | T | part | per-language-copy | ReadmeModel/ReadmeRef/ReadmeOptions_<lang> |  |  | In the H3 scope, in part; the H3 check found it fixed only in part: the constructor table was a hand list of eight rows gated on the option spec, not derived from it. A later shared edit takes the rows from the option spec, in all 20 languages, except `extend`, `utility`, `entity` and `test`; `extend` and `utility` need a declared fact per runtime, and there is no default column. |
 | D27 | S | runtime fact | per-language-copy | ReadmeInstall_<lang>.ts (20); Deploy.ts, PublishWorkflow.ts, packageMeta.ts |  | O; L | Publish state and package name derived separately in 20 install copies. |
 | D29 | S | model | per-language-copy | ReadmeInstall_<lang>.ts (20); tm/<lang>/Makefile (15) |  | G | The tag sentence is the same fact in 20 install sections. |
 | D33 | O | needs a derivation | neutral-component | ReadmeTop.ts, alongside.ts, AgentGuide.ts, PublishWorkflow.ts, Deploy.ts |  | S | Most sites are shared and need targetPlace and docLink. |
