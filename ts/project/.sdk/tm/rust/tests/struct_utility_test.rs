@@ -594,7 +594,7 @@ fn struct_utility() {
     );
 
     // -------- validate -----------------------------------------------
-    for name in ["basic", "invalid", "nof"] {
+    for name in ["basic", "invalid"] {
         run.run_set_fallible(
             &set!("validate", name),
             false,
@@ -606,6 +606,14 @@ fn struct_utility() {
         run.run_set_fallible(
             &set!("validate", name),
             true,
+            &format!("validate-{name}"),
+            |vin| validate(&vget(&vin, "data"), &vget(&vin, "spec"), None).map_err(|e| e.message),
+        );
+    }
+    for name in ["directive", "nof", "all", "len", "range", "like", "unknown"] {
+        run.run_set_fallible(
+            &set!("validate", name),
+            false,
             &format!("validate-{name}"),
             |vin| validate(&vget(&vin, "data"), &vget(&vin, "spec"), None).map_err(|e| e.message),
         );

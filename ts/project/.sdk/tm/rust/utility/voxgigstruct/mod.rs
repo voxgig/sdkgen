@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.7 (rust/src/lib.rs)
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 // VERSION: @voxgig/struct 0.1.0
 //
@@ -13,8 +16,8 @@ pub mod ordered_map;
 pub mod re;
 pub mod value;
 
-pub mod major;
-pub mod mini;
+mod major;
+mod mini;
 
 pub use value::{Sentinel, Value, DELETE, SKIP};
 
@@ -25,15 +28,16 @@ pub use consts::{
 
 pub use mini::{
     clone, del_prop, esc_re, esc_url, filter, filter_vals, flatten, get_def, get_elem,
-    get_elem_or_else, get_prop, has_key, is_empty, is_func, is_key, is_list, is_map, is_node,
-    items, items_vec, jm, join, join_vals, jsonify, jt, keys_of, keysof_vec, lookup, pad, pathify, re_compile,
-    re_escape, re_find, re_find_all, re_replace, re_test, set_prop, size, slice, str_key,
-    stringify, type_name, typify,
+    get_elem_or_else, get_prop, has_key, is_condensed, is_empty, is_func, is_key, is_list, is_map,
+    is_node, items, jm, join, join_vals, jsonify, jt, keys_of, keysof_vec, lookup, pad, pathify,
+    re_compile, re_escape, re_find, re_find_all, re_replace, re_test, set_prop, size, slice,
+    str_key, stringify, type_name, typify,
 };
 
 pub use major::{
-    check_placement, get_path, get_path_inj, inject, inject_child, injector_args, merge, select,
-    set_path, transform, validate, walk, Inj, InjectDef, Injection, Modify, NativeFn, WalkClosure,
+    check_placement, condense, condense_view, expand, get_path, get_path_inj, inject, inject_child,
+    injector_args, merge, select, set_path, transform, validate, walk, CondenseView, Inj,
+    InjectDef, Injection, Modify, NativeFn, WalkClosure,
 };
 
 pub use mini::JsonFlags;

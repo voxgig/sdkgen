@@ -109,6 +109,13 @@
     "ts/project/.sdk/tm/ts/src/feature/secrets/sekreto/provider/file.ts": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
     "ts/project/.sdk/tm/ts/src/feature/secrets/sekreto/provider/memory.ts": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
     "ts/project/.sdk/tm/ts/src/feature/secrets/sekreto/provider/support.ts": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
-    "ts/project/.sdk/tm/ts/src/utility/StructUtility.ts": "Pinned vendored source; maintained and gated in its upstream Voxgig repository."
+    "ts/project/.sdk/tm/ts/src/utility/StructUtility.ts": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
+    "ts/project/.sdk/tm/rust/utility/voxgigstruct/consts.rs": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
+    "ts/project/.sdk/tm/rust/utility/voxgigstruct/major.rs": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
+    "ts/project/.sdk/tm/rust/utility/voxgigstruct/mini.rs": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
+    "ts/project/.sdk/tm/rust/utility/voxgigstruct/mod.rs": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
+    "ts/project/.sdk/tm/rust/utility/voxgigstruct/ordered_map.rs": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
+    "ts/project/.sdk/tm/rust/utility/voxgigstruct/re.rs": "Pinned vendored source; maintained and gated in its upstream Voxgig repository.",
+    "ts/project/.sdk/tm/rust/utility/voxgigstruct/value.rs": "Pinned vendored source; maintained and gated in its upstream Voxgig repository."
   }
 }

@@ -5416,6 +5416,66 @@
     }
    }
   },
+  "struct/rust": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.1.7",
+   "tag": "sdk-local-nof",
+   "file": {
+    "tm/rust/utility/voxgigstruct/consts.rs": {
+     "sha256": "1adf03b0001be2bd5ad022a975db85824ef09bb6142334b027a64104ff390d5e",
+     "upstream": "rust/src/consts.rs",
+     "adapt": [
+      {
+       "from": "crate::",
+       "to": "super::"
+      }
+     ]
+    },
+    "tm/rust/utility/voxgigstruct/major.rs": {
+     "sha256": "f580cede4d37caeeb727d79b9b6c34e09b35cded3fe75ff3ad6fef09d24f249c",
+     "upstream": "rust/src/major.rs",
+     "adapt": [
+      {
+       "from": "crate::",
+       "to": "super::"
+      }
+     ]
+    },
+    "tm/rust/utility/voxgigstruct/mini.rs": {
+     "sha256": "0071bd022d14a96508384188c2c2ea8f8bea65efb78f3fd8a63d8f0eafb569a2",
+     "upstream": "rust/src/mini.rs",
+     "adapt": [
+      {
+       "from": "crate::",
+       "to": "super::"
+      }
+     ]
+    },
+    "tm/rust/utility/voxgigstruct/mod.rs": {
+     "sha256": "f6fd9a1dff4e165eb1e7dbc7085b764f1c317995186dbb88d567896468d2fa28",
+     "upstream": "rust/src/lib.rs"
+    },
+    "tm/rust/utility/voxgigstruct/ordered_map.rs": {
+     "sha256": "b0caa22e7a8bd42e213e3517aa473f5e22f4f6cf9b8986ddbfef2e4a4179c761",
+     "upstream": "rust/src/ordered_map.rs"
+    },
+    "tm/rust/utility/voxgigstruct/re.rs": {
+     "sha256": "12c86cda63939531a6512bfbca724e4ba5d481b92dec453cce36f24b33d873ff",
+     "upstream": "rust/src/re.rs"
+    },
+    "tm/rust/utility/voxgigstruct/value.rs": {
+     "sha256": "077f34f75b42a5893386fc6899f506fb69f558d16fe2670207aca856fd6485c8",
+     "upstream": "rust/src/value.rs",
+     "adapt": [
+      {
+       "from": "crate::",
+       "to": "super::"
+      }
+     ]
+    }
+   }
+  },
   "struct/typescript": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",

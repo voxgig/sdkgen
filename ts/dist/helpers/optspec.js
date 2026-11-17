@@ -19,7 +19,7 @@ const S_NIL = (0, canonSpec_1.sentinel)('NIL');
 // Bundled targets whose struct copy no vendoring route produces, and which
 // therefore still reads a union as `$ONE`.
 const ONE_UNION_TARGETS = [
-    'c', 'clojure', 'cpp', 'elixir', 'ocaml', 'rust', 'scala', 'swift',
+    'c', 'clojure', 'cpp', 'elixir', 'ocaml', 'scala', 'swift',
 ];
 exports.ONE_UNION_TARGETS = ONE_UNION_TARGETS;
 function optional(spec) {

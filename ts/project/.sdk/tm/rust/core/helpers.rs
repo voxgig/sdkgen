@@ -9,7 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::core::error::ProjectNameError;
 use crate::utility::voxgigstruct as vs;
-use crate::utility::voxgigstruct::major::Injection;
+use crate::utility::voxgigstruct::Injection;
 use vs::Value;
 
 // UnsupportedOp is returned by entity stub methods for operations the

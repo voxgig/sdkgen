@@ -865,7 +865,9 @@ fn auth_credential() -> Option<AuthCred> {
     utility.prepare_auth(&ctx).ok()?;
     for query in [false, true] {
         let bag = if query { spec.borrow().query.clone() } else { spec.borrow().headers.clone() };
-        if let Some((name, value)) = vs::items_vec(&bag).into_iter().next() {
+        let first = vs::keysof_vec(&bag).into_iter().next()
+            .map(|k| { let v = vs::lookup(&bag, &vs::Value::str(k.clone())); (k, v) });
+        if let Some((name, value)) = first {
             let text = value.as_str().unwrap_or("");
             let pair = if !query && "cookie" == name && text.ends_with("=PROBE") {
                 text[..text.len() - "PROBE".len()].to_string()

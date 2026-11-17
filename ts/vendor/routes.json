@@ -2141,6 +2141,31 @@
   },
   {
    "lib": "struct",
+   "port": "rust",
+   "lang": "rust",
+   "version": "0.1.7",
+   "dir": [
+    "tm/rust/utility/voxgigstruct"
+   ],
+   "file": {
+    "rust/src/lib.rs": "tm/rust/utility/voxgigstruct/mod.rs",
+    "rust/src/consts.rs": "tm/rust/utility/voxgigstruct/consts.rs",
+    "rust/src/major.rs": "tm/rust/utility/voxgigstruct/major.rs",
+    "rust/src/mini.rs": "tm/rust/utility/voxgigstruct/mini.rs",
+    "rust/src/ordered_map.rs": "tm/rust/utility/voxgigstruct/ordered_map.rs",
+    "rust/src/re.rs": "tm/rust/utility/voxgigstruct/re.rs",
+    "rust/src/value.rs": "tm/rust/utility/voxgigstruct/value.rs"
+   },
+   "adapt": [
+    {
+     "match": "utility/voxgigstruct/(consts|major|mini|value)\\.rs$",
+     "from": "crate::",
+     "to": "super::"
+    }
+   ]
+  },
+  {
+   "lib": "struct",
    "port": "python",
    "lang": "py",
    "version": "0.1.1",
