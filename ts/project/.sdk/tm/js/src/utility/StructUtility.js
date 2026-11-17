@@ -1,8 +1,8 @@
-// VENDORED: @voxgig/struct 0.1.7 (javascript/src/struct.js)
-// Source: https://github.com/voxgig/struct @ 1ba9203347f8a2ec7170014a6acfae03db862d66  [tag: sdk-local-nof]
+// VENDORED: @voxgig/struct 0.2.0 (javascript/src/struct.js)
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE. */
-// VERSION: @voxgig/struct-js 0.1.7
+// VERSION: @voxgig/struct-js 0.2.0
 /* Voxgig Struct
  * =============
  *

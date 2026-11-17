@@ -2034,7 +2034,7 @@
    "lib": "struct",
    "port": "go",
    "lang": "go",
-   "version": "0.1.6",
+   "version": "0.2.0",
    "file": {
     "go/voxgigstruct.go": "tm/go/utility/struct/voxgigstruct.go"
    }
@@ -2062,7 +2062,7 @@
    "lib": "struct",
    "port": "javascript",
    "lang": "js",
-   "version": "0.1.7",
+   "version": "0.2.0",
    "file": {
     "javascript/src/struct.js": "tm/js/src/utility/StructUtility.js"
    }
@@ -2128,7 +2128,7 @@
    "lib": "struct",
    "port": "typescript",
    "lang": "ts",
-   "version": "0.3.7",
+   "version": "0.4.0",
    "file": {
     "typescript/src/StructUtility.ts": "tm/ts/src/utility/StructUtility.ts"
    }

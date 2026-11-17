@@ -441,7 +441,7 @@ tm/csharp/utility/ResultBody.cs a42bdf77aeb6
 tm/csharp/utility/ResultHeaders.cs e593a27709b5
 tm/csharp/utility/TransformRequest.cs ef1aec6981ed
 tm/csharp/utility/TransformResponse.cs 01583a33873e
-tm/csharp/utility/struct/Struct.cs 70638bbc566a
+tm/csharp/utility/struct/Struct.cs 0e56c3d327fa
 
 ## target elixir
 model/feature/feature-index.aontu 0351fe150e6a
@@ -624,7 +624,7 @@ tm/go/utility/register.go b3a4e6404b1c
 tm/go/utility/result_basic.go 6621fff8681d
 tm/go/utility/result_body.go 4f2adb05c626
 tm/go/utility/result_headers.go 1bf8bf65b390
-tm/go/utility/struct/voxgigstruct.go 9b2f4f6e5716
+tm/go/utility/struct/voxgigstruct.go 6298029c617e
 tm/go/utility/transform_request.go 57bd64677f80
 tm/go/utility/transform_response.go 3c0e1101ed39
 
@@ -772,7 +772,7 @@ tm/java/utility/ResultBody.java 2bbd84dffff9
 tm/java/utility/ResultHeaders.java 9fab31e3503b
 tm/java/utility/TransformRequest.java eb4e1242448f
 tm/java/utility/TransformResponse.java 1cd65d69d927
-tm/java/utility/struct/Struct.java 6de71e5c6044
+tm/java/utility/struct/Struct.java a2ca8f84ecb3
 
 ## target js
 model/feature/feature-index.aontu 0351fe150e6a
@@ -871,7 +871,7 @@ tm/js/src/utility/README.md 443e45445e95
 tm/js/src/utility/ResultBasicUtility.js 5cbbeb7567d8
 tm/js/src/utility/ResultBodyUtility.js 7b57a34eba31
 tm/js/src/utility/ResultHeadersUtility.js 152bcfc7ac7b
-tm/js/src/utility/StructUtility.js fae8f5ac2142
+tm/js/src/utility/StructUtility.js 61ce65480252
 tm/js/src/utility/TransformRequestUtility.js 2f8242b5493f
 tm/js/src/utility/TransformResponseUtility.js 36fb184e55c9
 tm/js/src/utility/Utility.js e127745be793
@@ -996,7 +996,7 @@ tm/kotlin/utility/Media.kt ef8fb4b14bf3
 tm/kotlin/utility/Prepare.kt c56d164547ef
 tm/kotlin/utility/Register.kt b81ff2deff00
 tm/kotlin/utility/ResultTransform.kt f47721f930a8
-tm/kotlin/utility/struct/Struct.kt 3b986b3137c4
+tm/kotlin/utility/struct/Struct.kt f1857a8ba4f8
 
 ## target lua
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1102,8 +1102,8 @@ tm/lua/utility/register.lua 535ad5e4ca0f
 tm/lua/utility/result_basic.lua 891e11848ea9
 tm/lua/utility/result_body.lua e61618b29a84
 tm/lua/utility/result_headers.lua 33df8d29e12f
-tm/lua/utility/struct/regex.lua 4c4fbefe42cc
-tm/lua/utility/struct/struct.lua 8601eebbad06
+tm/lua/utility/struct/regex.lua ade279871766
+tm/lua/utility/struct/struct.lua d6cf5973b920
 tm/lua/utility/tls.lua 4ed1453010a5
 tm/lua/utility/transform_request.lua 83de7b64e4f1
 tm/lua/utility/transform_response.lua 37d0bb1f1d1f
@@ -1226,7 +1226,7 @@ tm/perl/core/spec.pm c0abea4855e4
 tm/perl/core/utility_type.pm ae99fdaaf3fb
 tm/perl/feature/base_feature.pm af88f71c0bd9
 tm/perl/feature/test_feature.pm 9ce89de1c07f
-tm/perl/lib/Voxgig/Struct.pm cfacac1e525b
+tm/perl/lib/Voxgig/Struct.pm cf99fe5d27f1
 tm/perl/src/feature/README.md 74fc01b8a34f
 tm/perl/src/feature/base/.gitkeep e3b0c44298fc
 tm/perl/src/feature/test/.gitkeep e3b0c44298fc
@@ -1474,7 +1474,7 @@ tm/py/pkg/utility/result_headers.py 682e8c1eb0b7
 tm/py/pkg/utility/transform_request.py e49b3d02e6cd
 tm/py/pkg/utility/transform_response.py b695fb4ac29d
 tm/py/pkg/utility/voxgig_struct/__init__.py 1608e9ae60d8
-tm/py/pkg/utility/voxgig_struct/voxgig_struct.py 38b366c890a3
+tm/py/pkg/utility/voxgig_struct/voxgig_struct.py 22854676e43a
 tm/py/src/feature/README.md 74fc01b8a34f
 tm/py/src/feature/base/.gitkeep e3b0c44298fc
 tm/py/src/feature/test/.gitkeep e3b0c44298fc
@@ -2116,7 +2116,7 @@ tm/ts/src/utility/README.md b5e4e3a70bcd
 tm/ts/src/utility/ResultBasicUtility.ts 76208bbfaf7d
 tm/ts/src/utility/ResultBodyUtility.ts 4423b02eed7b
 tm/ts/src/utility/ResultHeadersUtility.ts 974461285293
-tm/ts/src/utility/StructUtility.ts 90a0ac201436
+tm/ts/src/utility/StructUtility.ts b36a72c0f886
 tm/ts/src/utility/TransformRequestUtility.ts 121f2308888e
 tm/ts/src/utility/TransformResponseUtility.ts 41fb5e4d265a
 tm/ts/src/utility/Utility.ts 287130464808
@@ -2294,8 +2294,8 @@ tm/zig/test/struct_corpus.zig c02971515919
 tm/zig/test/vendor/omni/omni.zig ca68de8e6595
 tm/zig/test/vendor/omni/regex.zig 9d4b0fa81318
 tm/zig/utility/jsonparse.zig 3bf825b60025
-tm/zig/utility/voxgigstruct/regex.zig ae95d2b9ffde
-tm/zig/utility/voxgigstruct/struct.zig 52f140fca345
+tm/zig/utility/voxgigstruct/regex.zig 733c99bb15cd
+tm/zig/utility/voxgigstruct/struct.zig 4838a289f15e
 
 ## feature audit
 

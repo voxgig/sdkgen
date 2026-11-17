@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (java/src/Struct.java)
-// Source: https://github.com/voxgig/struct @ 1ba9203347f8a2ec7170014a6acfae03db862d66  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package JAVAPACKAGE.utility.struct;
 

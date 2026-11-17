@@ -5276,36 +5276,36 @@
   },
   "struct/csharp": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
    "version": "0.1.1",
    "tag": "sdk-local-nof",
    "file": {
     "tm/csharp/utility/struct/Struct.cs": {
-     "sha256": "70638bbc566a608a35184d9584961268c381dfeb00b0e16f3c42e8dc8dc3da28",
+     "sha256": "0e56c3d327faf9f070d6b91f2371e5e6909299e7cd58bd7d56acc582fa56a80a",
      "upstream": "csharp/Struct.cs"
     }
    }
   },
   "struct/go": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
-   "version": "0.1.6",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.2.0",
    "tag": "sdk-local-nof",
    "file": {
     "tm/go/utility/struct/voxgigstruct.go": {
-     "sha256": "9b2f4f6e571608b5b9a7556af5941dc909d199bcd5b34a4bcf5a4864e82c5c75",
+     "sha256": "6298029c617e52ad8076e18032fa88e9c54262617eeaf47042e70df6d4193a31",
      "upstream": "go/voxgigstruct.go"
     }
    }
   },
   "struct/java": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
    "version": "0.1.1",
    "tag": "sdk-local-nof",
    "file": {
     "tm/java/utility/struct/Struct.java": {
-     "sha256": "6de71e5c60443e16996410e6dc062bbf881e94011803ef6beb8fd43e2fb6e6e3",
+     "sha256": "a2ca8f84ecb330823618e7fc303f3fa698b13a8a875c0a51072be46cc450a23c",
      "upstream": "java/src/Struct.java",
      "adapt": [
       {
@@ -5318,24 +5318,24 @@
   },
   "struct/javascript": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
-   "version": "0.1.7",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.2.0",
    "tag": "sdk-local-nof",
    "file": {
     "tm/js/src/utility/StructUtility.js": {
-     "sha256": "fae8f5ac2142f786a0221918a7f10edf6a1771849a2cab7b72f71261e79827ad",
+     "sha256": "61ce654802524b47b149ad7a3c720a695e55c5ba2e21e22fcf8969f03c36235e",
      "upstream": "javascript/src/struct.js"
     }
    }
   },
   "struct/kotlin": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
    "version": "0.1.1",
    "tag": "sdk-local-nof",
    "file": {
     "tm/kotlin/utility/struct/Struct.kt": {
-     "sha256": "3b986b3137c410c93ba8a8631970fb50e074be79838fffcefb47a0614eb53b23",
+     "sha256": "f1857a8ba4f8140da7cc9c73e4d408777c41865170b5928a1cb1ccd823aecb89",
      "upstream": "kotlin/src/main/kotlin/voxgig/struct/Struct.kt",
      "adapt": [
       {
@@ -5348,16 +5348,16 @@
   },
   "struct/lua": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
    "version": "0.1.1",
    "tag": "sdk-local-nof",
    "file": {
     "tm/lua/utility/struct/regex.lua": {
-     "sha256": "4c4fbefe42cc4a1762d09e2e93428cab7d9dfed67314b886ee4824a37f5e4c5d",
+     "sha256": "ade2798717663a171e7243651f505d87789380f0f9885b066684ab232568a86e",
      "upstream": "lua/src/regex.lua"
     },
     "tm/lua/utility/struct/struct.lua": {
-     "sha256": "8601eebbad06318db2948351fd97a150cf99672aa3221a9280108a19fc46d55b",
+     "sha256": "d6cf5973b920d97d257c59923baf29bd638301f99a1d02f58142b72ba5fbd2e7",
      "upstream": "lua/src/struct.lua",
      "adapt": [
       {
@@ -5370,52 +5370,52 @@
   },
   "struct/perl": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
    "version": "0.1.1",
    "tag": "sdk-local-nof",
    "file": {
     "tm/perl/lib/Voxgig/Struct.pm": {
-     "sha256": "cfacac1e525b39f483e653867537d313955d9f57b3b6c1e633b39b2e4f887c5f",
+     "sha256": "cf99fe5d27f18e7c52181cb24d59ea902ac2f19545a6d9767fb192c8477c003e",
      "upstream": "perl/lib/Voxgig/Struct.pm"
     }
    }
   },
   "struct/python": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
    "version": "0.1.1",
    "tag": "sdk-local-nof",
    "file": {
     "tm/py/pkg/utility/voxgig_struct/voxgig_struct.py": {
-     "sha256": "38b366c890a3b6242a165f0dc32ece2b4ee7897dcf2da317ab4e4a6cff1a7412",
+     "sha256": "22854676e43ace7743b66fc5886d97001835a0839996930e7bf947aaba099e7c",
      "upstream": "python/voxgig_struct/voxgig_struct.py"
     }
    }
   },
   "struct/typescript": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
-   "version": "0.3.7",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.4.0",
    "tag": "sdk-local-nof",
    "file": {
     "tm/ts/src/utility/StructUtility.ts": {
-     "sha256": "90a0ac2014364a96f6a9788b3db6580405e81082c67e08419c6a472f574e3c7c",
+     "sha256": "b36a72c0f88651b5eaa6c5bd658ee79bb793897767b610c62c840eca5add49b2",
      "upstream": "typescript/src/StructUtility.ts"
     }
    }
   },
   "struct/zig": {
    "repo": "https://github.com/voxgig/struct",
-   "commit": "1ba9203347f8a2ec7170014a6acfae03db862d66",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
    "version": "0.0.3",
    "tag": "sdk-local-nof",
    "file": {
     "tm/zig/utility/voxgigstruct/regex.zig": {
-     "sha256": "ae95d2b9ffdeca9d846728a03e2912e525d7e2d5058626455a627c6e4637495a",
+     "sha256": "733c99bb15cd87c00d2571fbc87936635eba250bb77539276bc40c25dd7ac218",
      "upstream": "zig/src/regex.zig"
     },
     "tm/zig/utility/voxgigstruct/struct.zig": {
-     "sha256": "52f140fca34535ce5deda37eaa3fcf2fee5b88593cd92687708ef1b9370c797f",
+     "sha256": "4838a289f15ed1d08cd20a550dbb1d0fac2ae0f2da2575375de63410682cf396",
      "upstream": "zig/src/struct.zig"
     }
    }
