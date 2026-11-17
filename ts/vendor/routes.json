@@ -2248,6 +2248,26 @@
   },
   {
    "lib": "struct",
+   "port": "scala",
+   "lang": "scala",
+   "version": "0.1.1",
+   "dir": [
+    "tm/scala/utility/struct"
+   ],
+   "file": {
+    "scala/src/voxgig_struct.scala": "tm/scala/utility/struct/voxgig_struct.scala",
+    "java/src/Struct.java": "tm/scala/utility/struct/Struct.java"
+   },
+   "adapt": [
+    {
+     "match": "utility/struct/Struct\\.java$",
+     "from": "package voxgig.struct;",
+     "to": "package SCALAPACKAGE.utility.struct;"
+    }
+   ]
+  },
+  {
+   "lib": "struct",
    "port": "python",
    "lang": "py",
    "version": "0.1.1",

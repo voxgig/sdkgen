@@ -5588,6 +5588,28 @@
     }
    }
   },
+  "struct/scala": {
+   "repo": "https://github.com/voxgig/struct",
+   "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",
+   "version": "0.1.1",
+   "tag": "sdk-local-nof",
+   "file": {
+    "tm/scala/utility/struct/Struct.java": {
+     "sha256": "373557543311e4c78c0157271868d4e1b96c711eb15fb8e5f074003a3521bbd3",
+     "upstream": "java/src/Struct.java",
+     "adapt": [
+      {
+       "from": "package voxgig.struct;",
+       "to": "package SCALAPACKAGE.utility.struct;"
+      }
+     ]
+    },
+    "tm/scala/utility/struct/voxgig_struct.scala": {
+     "sha256": "a419c2fa265c2bbaa1bcd1c745053fbab8c9e5fb6c497db7efc1ab01e5dc354e",
+     "upstream": "scala/src/voxgig_struct.scala"
+    }
+   }
+  },
   "struct/typescript": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "03b9f2f54a7df24ea3f6baef647c5a5292fc072c",

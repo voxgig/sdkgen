@@ -57,6 +57,7 @@ const VENDOR_DIRS = [
   'tm/cpp/utility/voxgigstruct',
   'tm/elixir/lib/utility/struct',
   'tm/ocaml/utility',
+  'tm/scala/utility/struct',
   'tm/perl/t/vendor/omni/Voxgig/Omni',
   'tm/kotlin/test/vendor/omni',
   'tm/kotlin/utility/struct',
