@@ -3495,10 +3495,10 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
 
 
   // A live flow takes a route parameter from *_ENTID, else from a record a
-  // prior step found, else from its example, as the ts and js harness does:
-  // a bound parameter's example stands in when *_ENTID gives none, a load of
-  // a record no list finds reads the id the example names, and an operation
-  // with only an action route sends that route's examples.
+  // prior step found, else from its example, as the ts and js harness does,
+  // and a load of a record no list finds reads the id the example names. An
+  // operation whose only route is an action needs `$action`, which only the
+  // ts and js harness names, so no other target makes that call.
   test('every live flow target falls back to a route parameter\'s example', async () => {
     const targets = LIVE_SUITE_TARGETS.filter((target) => !['ts', 'js'].includes(target))
     const out = await generate(targets, undefined, liveFallbacks())
@@ -3516,8 +3516,15 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       has('profile', /profile01[^\n]{0,30}4489/, 'does not take the example id for profile01')
       has('profile', /live_?existing\(/i, 'does not load the record the id names')
       has('lobbyist', /chamber01[^\n]{0,30}["']sf["']/, 'does not list with the example chamber')
-      has('geo', /["']locale["'][^\n]{0,30}["']en["']/, 'does not send the action route\'s locale')
-      has('suggestion', /["']q["'][^\n]{0,30}["']mitte["']/, 'does not send the action route\'s q')
+      for (const [name, sent] of [
+        ['geo', /["']locale["'][^\n]{0,30}["']en["']/],
+        ['suggestion', /["']q["'][^\n]{0,30}["']mitte["']/],
+      ] as [string, RegExp][]) {
+        const file = files.find(([n]) => new RegExp(name + '_?entity', 'i').test(n))
+        if (null != file && sent.test(file[1])) {
+          gaps.push(`${target}:${file[0]} calls an action route without its action`)
+        }
+      }
       // A required query example is sent, an optional one is not.
       has('trending', /["']site_id["'][^\n]{0,30}\b1\b/, 'does not send the required site_id')
       has('trending', /["']lang["'][^\n]{0,30}["']uk["']/, 'does not send the required lang')
