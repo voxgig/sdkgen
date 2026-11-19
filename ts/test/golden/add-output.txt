@@ -1233,7 +1233,7 @@ tm/perl/src/feature/test/.gitkeep e3b0c44298fc
 tm/perl/t/feature.t c4e545e07ff2
 tm/perl/t/feature_corpus.t 9bd3fd0855f0
 tm/perl/t/netsim.t e5829249c5e9
-tm/perl/t/omni.pm 05901a362319
+tm/perl/t/omni.pm e4e64f2ea2e9
 tm/perl/t/omni_smoke.t 5b5284fad82f
 tm/perl/t/pipeline.t b9dfbf3bdc49
 tm/perl/t/primary_utility.t 9d905f070890
