@@ -1162,10 +1162,20 @@ make publish V=4.15.0
 
 That is the whole release. It guards (semver, `gh` present, on `main`, clean
 tree, not behind `origin/main`, `vX.Y.Z` not already taken locally OR on
-origin), bumps `ts/package.json`, runs `embed-version`, runs `make all`,
-commits, pushes `main`, waits for the remote to actually show the pushed SHA,
-and then dispatches `publish.yml` pinned to it. The workflow publishes to npm
-and writes the `v<V>` tag.
+origin), bumps `ts/package.json`, runs `embed-version`, commits, pushes
+`main`, waits for the remote to actually show the pushed SHA, and then
+dispatches `publish.yml` pinned to it. The workflow builds and tests, then
+publishes to npm and writes the `v<V>` tag.
+
+**The release runs no suite on the workstation.** Its gate is the publish
+workflow's own `npm run build` and `npm test`, on the toolchains the
+`ubuntu-latest` runner has; a lane whose toolchain is missing there skips
+visibly. The FULL run, every target's toolchain installed, is
+`.github/workflows/nightly.yml`: once a day, and on demand with
+`gh workflow run nightly.yml --ref main`. Dispatch it beside a release that
+touches targets the publish runner cannot build, and read it before the next
+one. The local `make all` takes over an hour where every toolchain is
+present, and a release does not wait for it.
 
 To drive the dispatch by hand — same mechanism, without the bump:
 
@@ -1209,7 +1219,6 @@ it:
 cd ts
 npm version minor --no-git-tag-version   # or patch; see below
 npm run embed-version                    # REQUIRED — nothing else runs this
-npm run build && npm test
 cd .. && git add -A && git commit -m "vX.Y.Z" && git push
 gh workflow run publish.yml --ref main -f expect_sha=$(git rev-parse HEAD)
 ```
