@@ -735,7 +735,7 @@ tm/java/test/OmniSmokeTest.java 722cc2d6bfe7
 tm/java/test/PipelineTest.java 2bde7fdedd64
 tm/java/test/PrimaryUtilityTest.java a8160f999f9d
 tm/java/test/RunnerSupport.java d8b0e6f8e5f7
-tm/java/test/StructCorpusTest.java be7295be9082
+tm/java/test/StructCorpusTest.java f4f01c81219d
 tm/java/test/sdk-test-control.json acadc87764f6
 tm/java/test/vendor/omni/Json.java 2aecfa0987b2
 tm/java/test/vendor/omni/Runner.java 882dcbc088eb
