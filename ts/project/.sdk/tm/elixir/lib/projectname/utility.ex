@@ -947,6 +947,18 @@ defmodule ProjectName.Utility do
     end
   end
 
+  # A lone point still needs the call's action to agree with its own; the
+  # selection below refuses a mismatch either way.
+  defp lone_point_agrees?(ctx, op, point) do
+    reqselector =
+      if S.getprop(op, "input") == "data",
+        do: S.getprop(ctx, "reqdata"),
+        else: S.getprop(ctx, "reqmatch")
+
+    S.getprop(reqselector, "$action") ==
+      S.getprop(H.to_map(S.getprop(point, "select")), "$action")
+  end
+
   def make_point_impl(ctx) do
     out = S.getprop(ctx, "out")
     pre = S.getprop(out, "point")
@@ -979,7 +991,7 @@ defmodule ProjectName.Utility do
            Context.make_error(ctx, "point_no_points",
              "Operation \"" <> opname <> "\" has no endpoint definitions.")}
 
-        npoints == 1 ->
+        npoints == 1 and lone_point_agrees?(ctx, op, S.getelem(points, 0)) ->
           S.setprop(ctx, "point", S.getelem(points, 0))
           {S.getprop(ctx, "point"), nil}
 

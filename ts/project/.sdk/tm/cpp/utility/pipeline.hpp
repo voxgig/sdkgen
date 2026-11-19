@@ -801,19 +801,23 @@ inline Value makePoint(CtxPtr ctx) {
         "Operation \"" + op->name + "\" has no endpoint definitions.");
   }
 
-  if (op->points.size() == 1) {
+  Value reqselector;
+  Value selector;
+  if (op->input == "data") {
+    reqselector = ctx->reqdata;
+    selector = ctx->data;
+  } else {
+    reqselector = ctx->reqmatch;
+    selector = ctx->match;
+  }
+
+  // A lone point still needs the call's action to agree with its own; the
+  // selection below refuses a mismatch either way.
+  if (op->points.size() == 1 &&
+      getp(reqselector, "$action", Value(nullptr)) ==
+        getp(Helpers::toMapAny(getp(op->points[0], "select")), "$action", Value(nullptr))) {
     ctx->point = op->points[0];
   } else {
-    Value reqselector;
-    Value selector;
-    if (op->input == "data") {
-      reqselector = ctx->reqdata;
-      selector = ctx->data;
-    } else {
-      reqselector = ctx->reqmatch;
-      selector = ctx->match;
-    }
-
     Value point;
     bool matched = false;
     for (size_t i = 0; i < op->points.size(); i++) {

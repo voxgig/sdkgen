@@ -254,11 +254,11 @@ The typed-model subsystem (full picture:
   **`pickExampleEntity(entityColl)`** — the entity a README example should
   use, preferring one whose example call reaches a route.
 - **`opReachable(op, given) → boolean`** — whether a call that gives these
-  parameter names reaches a route of the op, by the rule the runtime point
-  choice applies: a lone route is taken as it is, and otherwise only a route
-  without an action that the call fills. **`opNeedsAction(op) → boolean`**
-  — whether the op has more than one route and every one is an action, so a
-  call must name one with `$action`.
+  parameter names, and no `$action`, reaches a route of the op, by the rule
+  the runtime point choice applies: only a route without an action that the
+  call fills. **`opNeedsAction(op) → boolean`** — whether every route of the
+  op is an action, a lone one included, so a call must name one with
+  `$action`.
 
 ---
 

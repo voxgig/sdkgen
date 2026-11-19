@@ -93,20 +93,25 @@ fun makePoint(ctx: Context): Map<String, Any?> {
     )
   }
 
-  if (op.points.size == 1) {
+  val reqselector: MutableMap<String, Any?>?
+  val selector: MutableMap<String, Any?>?
+
+  if ("data" == op.input) {
+    reqselector = ctx.reqdata
+    selector = ctx.data
+  } else {
+    reqselector = ctx.reqmatch
+    selector = ctx.match
+  }
+
+  // A lone point still needs the call's action to agree with its own; the
+  // selection below refuses a mismatch either way.
+  if (op.points.size == 1 &&
+    Struct.getprop(reqselector, "\$action", null) ==
+    Struct.getprop(Helpers.toMapAny(Struct.getprop(op.points[0], "select")), "\$action", null)
+  ) {
     ctx.point = op.points[0]
   } else {
-    val reqselector: MutableMap<String, Any?>?
-    val selector: MutableMap<String, Any?>?
-
-    if ("data" == op.input) {
-      reqselector = ctx.reqdata
-      selector = ctx.data
-    } else {
-      reqselector = ctx.reqmatch
-      selector = ctx.match
-    }
-
     var point: MutableMap<String, Any?>? = null
     var matched = false
     for (i in op.points.indices) {

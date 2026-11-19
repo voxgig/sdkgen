@@ -1188,7 +1188,13 @@
           (zero? (vs/size (op-points op)))
           [nil (ctx-error ctx "point_no_points"
                           (str "Operation \"" (op-name op) "\" has no endpoint definitions."))]
-          (= 1 (vs/size (op-points op)))
+          ;; A lone point still needs the call's action to agree with its
+          ;; own; the selection below refuses a mismatch either way.
+          (and (= 1 (vs/size (op-points op)))
+               (= (vs/getprop (if (= (op-input op) "data") (oget ctx :reqdata) (oget ctx :reqmatch))
+                              "$action")
+                  (vs/getprop (to-map (vs/getprop (vs/getelem (op-points op) 0) "select"))
+                              "$action")))
           (do (oset! ctx :point (vs/getelem (op-points op) 0)) [(oget ctx :point) nil])
           :else
           (let [datainput (= (op-input op) "data")

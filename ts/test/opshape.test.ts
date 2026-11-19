@@ -603,10 +603,10 @@ function pt(path: string, action?: string): any {
 
 describe('opReachable — the route makePoint would take', () => {
 
-  test('a lone point is taken whatever its action, if the call fills it', () => {
+  test('a lone point is taken if the call fills it, and never if it is an action', () => {
     strictEqual(opReachable({ points: [pt('/planet/{id}')] }, ['id']), true)
     strictEqual(opReachable({ points: [pt('/planet/{id}')] }, []), false)
-    strictEqual(opReachable({ points: [pt('/signal/strong', 'strong')] }, []), true)
+    strictEqual(opReachable({ points: [pt('/signal/strong', 'strong')] }, []), false)
   })
 
   test('otherwise only a point without an action, and one the call fills', () => {
@@ -631,9 +631,10 @@ describe('opReachable — the route makePoint would take', () => {
 
 describe('opNeedsAction and entityOps', () => {
 
-  test('every route an action, and more than one of them', () => {
+  test('every route an action, a lone one included', () => {
     strictEqual(opNeedsAction({ points: [pt('/a', 'x'), pt('/b', 'y')] }), true)
-    strictEqual(opNeedsAction({ points: [pt('/a', 'x')] }), false)
+    strictEqual(opNeedsAction({ points: [pt('/a', 'x')] }), true)
+    strictEqual(opNeedsAction({ points: [pt('/a')] }), false)
     strictEqual(opNeedsAction({ points: [pt('/a', 'x'), pt('/b')] }), false)
     strictEqual(opNeedsAction({}), false)
   })
@@ -647,6 +648,8 @@ describe('opNeedsAction and entityOps', () => {
       },
     }
     deepStrictEqual(entityOps(ent), ['load'])
+    deepStrictEqual(entityOps({ ...ent, op: { ...ent.op, list: { points: [pt('/signal/strong', 'strong')] } } }),
+      ['load'])
   })
 })
 

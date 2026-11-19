@@ -109,26 +109,30 @@ public static partial class SdkUtility
                 "Operation \"" + op.Name + "\" has no endpoint definitions.");
         }
 
-        if (op.Points.Count == 1)
+        Dictionary<string, object?>? reqselector;
+        Dictionary<string, object?>? selector;
+
+        if (op.Input == "data")
+        {
+            reqselector = ctx.Reqdata;
+            selector = ctx.Data;
+        }
+        else
+        {
+            reqselector = ctx.Reqmatch;
+            selector = ctx.Match;
+        }
+
+        // A lone point still needs the call's action to agree with its own;
+        // the selection below refuses a mismatch either way.
+        if (op.Points.Count == 1 && Equals(
+            StructUtils.GetProp(reqselector, "$action"),
+            StructUtils.GetProp(Helpers.ToMapAny(StructUtils.GetProp(op.Points[0], "select")), "$action")))
         {
             ctx.Point = op.Points[0];
         }
         else
         {
-            Dictionary<string, object?>? reqselector;
-            Dictionary<string, object?>? selector;
-
-            if (op.Input == "data")
-            {
-                reqselector = ctx.Reqdata;
-                selector = ctx.Data;
-            }
-            else
-            {
-                reqselector = ctx.Reqmatch;
-                selector = ctx.Match;
-            }
-
             Dictionary<string, object?>? point = null;
             var matched = false;
             foreach (var candidate in op.Points)

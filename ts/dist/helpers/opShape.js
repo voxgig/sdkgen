@@ -125,20 +125,17 @@ function samePath(points) {
     const first = (0, pointPath_1.pointPathKey)(points[0]);
     return points.every((pt) => first === (0, pointPath_1.pointPathKey)(pt));
 }
-// The rule makePoint applies: a lone point is taken as it is, otherwise only
-// a point without an action, and one the call fills.
+// The rule makePoint applies to a call without an action: only a point
+// without one, and one the call fills.
 function opReachable(op, given) {
     const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
     const have = new Set(given);
     const fills = (pt) => (0, pointPath_1.pointPlaceholders)(pt).every((name) => have.has(name));
-    if (1 === points.length) {
-        return fills(points[0]);
-    }
     return points.some((pt) => null == (pt && pt.q && pt.q['$action']) && fills(pt));
 }
 function opNeedsAction(op) {
     const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
-    return 1 < points.length &&
+    return 0 < points.length &&
         points.every((pt) => null != (pt && pt.q && pt.q['$action']));
 }
 // The points a call can select: an action's only where every point is one.

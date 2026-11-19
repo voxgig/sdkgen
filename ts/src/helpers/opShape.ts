@@ -140,16 +140,12 @@ function samePath(points: any[]): boolean {
 }
 
 
-// The rule makePoint applies: a lone point is taken as it is, otherwise only
-// a point without an action, and one the call fills.
+// The rule makePoint applies to a call without an action: only a point
+// without one, and one the call fills.
 function opReachable(op: any, given: string[]): boolean {
   const points: any[] = op && op.points ? each(op.points) : []
   const have = new Set(given)
   const fills = (pt: any) => pointPlaceholders(pt).every((name) => have.has(name))
-
-  if (1 === points.length) {
-    return fills(points[0])
-  }
 
   return points.some((pt: any) => null == (pt && pt.q && pt.q['$action']) && fills(pt))
 }
@@ -157,7 +153,7 @@ function opReachable(op: any, given: string[]): boolean {
 
 function opNeedsAction(op: any): boolean {
   const points: any[] = op && op.points ? each(op.points) : []
-  return 1 < points.length &&
+  return 0 < points.length &&
     points.every((pt: any) => null != (pt && pt.q && pt.q['$action']))
 }
 

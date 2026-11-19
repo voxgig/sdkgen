@@ -92,7 +92,7 @@ tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c 024d4ebdb064
 tm/c/utility/make_fetch_def.c 119fd99fde45
 tm/c/utility/make_options.c e2a84ad1253c
-tm/c/utility/make_point.c 5b0ea7229eea
+tm/c/utility/make_point.c b87324928078
 tm/c/utility/make_request.c b5887e3fd94c
 tm/c/utility/make_response.c 5cb2535aec54
 tm/c/utility/make_result.c 1b5dc5d90c09
@@ -231,7 +231,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj d87d54a57f03
-tm/clojure/src/sdk/core.clj efe22aeafbb9
+tm/clojure/src/sdk/core.clj 11136412c751
 tm/clojure/src/sdk/features.clj 45a624028649
 tm/clojure/src/voxgig/struct.clj e11f03d1c544
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
@@ -324,7 +324,7 @@ tm/cpp/test/vendor/omni/json.hpp 657d69741eb5
 tm/cpp/test/vendor/omni/omni.hpp 14523e74aafe
 tm/cpp/test/vendor/omni/util.hpp 371f4622ad9e
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
-tm/cpp/utility/pipeline.hpp 817cda894dfe
+tm/cpp/utility/pipeline.hpp 4850a1362197
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp 5fe5c8199dfc
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2fd1e8054158
@@ -421,7 +421,7 @@ tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs 6900c189af67
 tm/csharp/utility/MakeFetchDef.cs 5b3c25f3ffd6
 tm/csharp/utility/MakeOptions.cs 2f5e0eb025d3
-tm/csharp/utility/MakePoint.cs ca5cb5c1c355
+tm/csharp/utility/MakePoint.cs faeed78dc1b4
 tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 86cf8db8ebd2
 tm/csharp/utility/MakeResult.cs 0b5b57e3d2c3
@@ -498,7 +498,7 @@ tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 3ed981b7a867
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex f180ae24a153
+tm/elixir/lib/projectname/utility.ex 4bf0957b62ef
 tm/elixir/lib/utility/struct/voxgig_struct.ex 6cf834c5da52
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -606,7 +606,7 @@ tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go 413cfa42a432
 tm/go/utility/make_fetch_def.go 9ab2b29a9b00
 tm/go/utility/make_options.go bed3408a4cea
-tm/go/utility/make_point.go 55a97ce61d34
+tm/go/utility/make_point.go 1ccf3c3a434d
 tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be
 tm/go/utility/make_result.go 14a9ef2f5b73
@@ -752,7 +752,7 @@ tm/java/utility/MakeContext.java c7789b287936
 tm/java/utility/MakeError.java ee3ecdd4e5d8
 tm/java/utility/MakeFetchDef.java 3a319b012f00
 tm/java/utility/MakeOptions.java 8e7c2110e23e
-tm/java/utility/MakePoint.java 569f9e68b1dd
+tm/java/utility/MakePoint.java 1dbe812fcae6
 tm/java/utility/MakeRequest.java b326d47c077d
 tm/java/utility/MakeResponse.java bce6807c2f70
 tm/java/utility/MakeResult.java 4dd36dacaeb1
@@ -853,7 +853,7 @@ tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
 tm/js/src/utility/MakeErrorUtility.js 71904fb5c231
 tm/js/src/utility/MakeFetchDefUtility.js 1a8ea2f2fd01
 tm/js/src/utility/MakeOptionsUtility.js 1f5402c420a3
-tm/js/src/utility/MakePointUtility.js 40a74a34fcb8
+tm/js/src/utility/MakePointUtility.js 10656f636b08
 tm/js/src/utility/MakeRequestUtility.js 5c68108de666
 tm/js/src/utility/MakeResponseUtility.js e6fe699ed109
 tm/js/src/utility/MakeResultUtility.js 854b07e67081
@@ -989,7 +989,7 @@ tm/kotlin/utility/Fetcher.kt 090e54bad41e
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt dffd4d4c5f9a
-tm/kotlin/utility/MakePoint.kt e6ac8bd6d87e
+tm/kotlin/utility/MakePoint.kt 8a3fa287769b
 tm/kotlin/utility/MakeReqRes.kt 0e87e2bd6665
 tm/kotlin/utility/MakeSpecUrl.kt e4099593830e
 tm/kotlin/utility/Media.kt ef8fb4b14bf3
@@ -1084,7 +1084,7 @@ tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua e47317140bb3
 tm/lua/utility/make_fetch_def.lua 5c1ffc7e67de
 tm/lua/utility/make_options.lua 6e4b5c99228b
-tm/lua/utility/make_point.lua 921bedf47a07
+tm/lua/utility/make_point.lua af3f0ee5613f
 tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a
 tm/lua/utility/make_result.lua e3c2e60c04ab
@@ -1151,7 +1151,7 @@ tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml be2b76a3332f
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml e3f0e8690ccb
+tm/ocaml/sdk_runtime.ml 55fa6b786956
 tm/ocaml/sdk_types.ml b409a91a7c5a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1256,7 +1256,7 @@ tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm 5fc187157147
 tm/perl/utility/make_fetch_def.pm b47d78ab2a73
 tm/perl/utility/make_options.pm 113f6b2b0a30
-tm/perl/utility/make_point.pm 179330bd1c92
+tm/perl/utility/make_point.pm b4788d9bc282
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
 tm/perl/utility/make_result.pm 8493557df5d2
@@ -1360,7 +1360,7 @@ tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 708cebcf9353
 tm/php/utility/MakeFetchDef.php 8f8141558539
 tm/php/utility/MakeOptions.php 23ef5c4f3250
-tm/php/utility/MakePoint.php 9a2ad864d1bb
+tm/php/utility/MakePoint.php 9a46e3e4cce4
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
 tm/php/utility/MakeResult.php cbc68c8b0bb6
@@ -1453,7 +1453,7 @@ tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py 522bdf05b187
 tm/py/pkg/utility/make_fetch_def.py 76c9da656a32
 tm/py/pkg/utility/make_options.py aa03d42eaca7
-tm/py/pkg/utility/make_point.py 13621a6ece9b
+tm/py/pkg/utility/make_point.py cec8ff350c8b
 tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py a0912bcd9cff
 tm/py/pkg/utility/make_result.py 2b6c8314a231
@@ -1602,7 +1602,7 @@ tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb 42e6da8f2237
 tm/rb/utility/make_fetch_def.rb 752e08f7a762
 tm/rb/utility/make_options.rb bff653d9c622
-tm/rb/utility/make_point.rb 2bbea92dd36b
+tm/rb/utility/make_point.rb 36cdf8e3f952
 tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23
 tm/rb/utility/make_result.rb 494808a14ceb
@@ -1716,7 +1716,7 @@ tm/rust/utility/make_context.rs 04f34b592c9c
 tm/rust/utility/make_error.rs dedff607fa15
 tm/rust/utility/make_fetch_def.rs 8d1180855fe9
 tm/rust/utility/make_options.rs dad99c71eb56
-tm/rust/utility/make_point.rs 7f187d301052
+tm/rust/utility/make_point.rs edfe7a4de76b
 tm/rust/utility/make_request.rs fa9eeee6d176
 tm/rust/utility/make_response.rs 87ae886eda3b
 tm/rust/utility/make_result.rs b11516a5edb6
@@ -1900,7 +1900,7 @@ tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala 74a3dc166bd3
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
-tm/scala/utility/Make.scala b4463bdf65bc
+tm/scala/utility/Make.scala 6fe31c555fd1
 tm/scala/utility/MakeSpec.scala e67ac2c1a6a4
 tm/scala/utility/Media.scala 8453000252c4
 tm/scala/utility/Misc.scala c701e8463ca8
@@ -1990,7 +1990,7 @@ tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 493a7167ea88
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
 tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift d137457dfbb5
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
-tm/swift/Sources/ProjectNameSDK/utility/Make.swift 6adadada94f7
+tm/swift/Sources/ProjectNameSDK/utility/Make.swift c5507b284879
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
 tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 08902bc8ddd9
 tm/swift/Sources/ProjectNameSDK/utility/Media.swift 7434119f2756
@@ -2098,7 +2098,7 @@ tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
 tm/ts/src/utility/MakeErrorUtility.ts 338c6abca4d2
 tm/ts/src/utility/MakeFetchDefUtility.ts 3db0a1c9a799
 tm/ts/src/utility/MakeOptionsUtility.ts 85abff0eae1e
-tm/ts/src/utility/MakePointUtility.ts 8127d32e38e1
+tm/ts/src/utility/MakePointUtility.ts 8a58549e7827
 tm/ts/src/utility/MakeRequestUtility.ts 1c327f62dffe
 tm/ts/src/utility/MakeResponseUtility.ts 0048e08c5db1
 tm/ts/src/utility/MakeResultUtility.ts a7d93a642ec2
@@ -2204,7 +2204,7 @@ tm/zig/core/response.zig bc91112131b7
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 3a8f6e7a08f9
-tm/zig/core/utility.zig 6b5a4e5b2738
+tm/zig/core/utility.zig 23beb284d118
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig ef3b23e5e239

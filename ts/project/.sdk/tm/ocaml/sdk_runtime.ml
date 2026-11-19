@@ -1190,14 +1190,18 @@ let make_point_util (ctx : ctx) : (value * sdk_error option) =
         ("Operation \"" ^ op.op_name ^ "\" not allowed by SDK option allow.op value: \"" ^ allow_op ^ "\"")))
     else begin
       let points = match op.op_points with List r -> !r | _ -> [] in
+      let reqselector, selector =
+        if op.op_input = "data" then ctx.c_reqdata, ctx.c_data
+        else ctx.c_reqmatch, ctx.c_match in
+      (* A lone point still needs the call's action to agree with its own; the
+         selection below refuses a mismatch either way. *)
+      let agrees single =
+        getp reqselector "$action" = getp (to_map (getp single "select")) "$action" in
       match points with
       | [] -> (Noval, Some (ctx_make_error ctx "point_no_points"
           ("Operation \"" ^ op.op_name ^ "\" has no endpoint definitions.")))
-      | [single] -> ctx.c_point <- single; (ctx.c_point, None)
+      | [single] when agrees single -> ctx.c_point <- single; (ctx.c_point, None)
       | _ ->
-        let reqselector, selector =
-          if op.op_input = "data" then ctx.c_reqdata, ctx.c_data
-          else ctx.c_reqmatch, ctx.c_match in
         let chosen = ref Noval in
         let matched = ref false in
         let n = List.length points in

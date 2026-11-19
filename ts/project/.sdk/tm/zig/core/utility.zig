@@ -983,12 +983,15 @@ pub fn make_point_util(ctx: *Context) E!Value {
         return ctx.fail("point_no_points", fmt("Operation \"{s}\" has no endpoint definitions.", .{op.name}));
     }
 
-    if (plen == 1) {
-        ctx.point = h.get_elem(points, h.vnum(0), h.vnull());
-    } else {
-        const reqselector: Value = if (std.mem.eql(u8, op.input, "data")) ctx.reqdata else ctx.reqmatch;
-        const selector: Value = if (std.mem.eql(u8, op.input, "data")) ctx.data else ctx.mtch;
+    const reqselector: Value = if (std.mem.eql(u8, op.input, "data")) ctx.reqdata else ctx.reqmatch;
+    const selector: Value = if (std.mem.eql(u8, op.input, "data")) ctx.data else ctx.mtch;
 
+    // A lone point still needs the call's action to agree with its own; the
+    // selection below refuses a mismatch either way.
+    const lone = h.get_elem(points, h.vnum(0), h.vnull());
+    if (plen == 1 and h.veq(h.getp(reqselector, "$action"), h.getp(h.to_map(h.getp(lone, "select")), "$action"))) {
+        ctx.point = lone;
+    } else {
         var point: Value = h.vnull();
         var matched = false;
         var i: i64 = 0;

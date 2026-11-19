@@ -80,16 +80,20 @@ def make_point_util(ctx):
         return None, ctx.make_error("point_no_points",
             'Operation "' + op.name + '" has no endpoint definitions.')
 
-    if len(op.points) == 1:
+    if op.input == "data":
+        reqselector = ctx.reqdata
+        selector = ctx.data
+    else:
+        reqselector = ctx.reqmatch
+        selector = ctx.match
+
+    # A lone point still needs the call's action to agree with its own; the
+    # selection below refuses a mismatch either way.
+    if len(op.points) == 1 and \
+            vs.getprop(reqselector, "$action") == \
+            vs.getprop(vs.getprop(op.points[0], "select"), "$action"):
         ctx.point = op.points[0]
     else:
-        if op.input == "data":
-            reqselector = ctx.reqdata
-            selector = ctx.data
-        else:
-            reqselector = ctx.reqmatch
-            selector = ctx.match
-
         point = None
         matched = False
         for i in range(len(op.points)):

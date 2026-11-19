@@ -56,19 +56,22 @@ func makePointUtil(_ ctx: Context) throws -> VMap? {
       "Operation \"\(op.name)\" has no endpoint definitions.")
   }
 
-  if op.points.count == 1 {
+  let reqselector: VMap
+  let selector: VMap
+  if op.input == "data" {
+    reqselector = ctx.reqdata
+    selector = ctx.data
+  } else {
+    reqselector = ctx.reqmatch
+    selector = ctx.match
+  }
+
+  // A lone point still needs the call's action to agree with its own; the
+  // selection below refuses a mismatch either way.
+  if op.points.count == 1 &&
+    gp(reqselector, "$action") == gp(gp(op.points[0], "select"), "$action") {
     ctx.point = op.points[0]
   } else {
-    let reqselector: VMap
-    let selector: VMap
-    if op.input == "data" {
-      reqselector = ctx.reqdata
-      selector = ctx.data
-    } else {
-      reqselector = ctx.reqmatch
-      selector = ctx.match
-    }
-
     var point: VMap? = nil
     var matched = false
     for candidate in op.points {

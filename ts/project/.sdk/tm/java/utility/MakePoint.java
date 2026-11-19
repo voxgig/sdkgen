@@ -105,22 +105,27 @@ final class MakePoint {
           "Operation \"" + op.name + "\" has no endpoint definitions.");
     }
 
-    if (op.points.size() == 1) {
+    Map<String, Object> reqselector;
+    Map<String, Object> selector;
+
+    if ("data".equals(op.input)) {
+      reqselector = ctx.reqdata;
+      selector = ctx.data;
+    }
+    else {
+      reqselector = ctx.reqmatch;
+      selector = ctx.match;
+    }
+
+    // A lone point still needs the call's action to agree with its own; the
+    // selection below refuses a mismatch either way.
+    if (op.points.size() == 1 && java.util.Objects.equals(
+        Struct.getprop(reqselector, "$action", null),
+        Struct.getprop(Helpers.toMapAny(Struct.getprop(op.points.get(0), "select")),
+            "$action", null))) {
       ctx.point = op.points.get(0);
     }
     else {
-      Map<String, Object> reqselector;
-      Map<String, Object> selector;
-
-      if ("data".equals(op.input)) {
-        reqselector = ctx.reqdata;
-        selector = ctx.data;
-      }
-      else {
-        reqselector = ctx.reqmatch;
-        selector = ctx.match;
-      }
-
       Map<String, Object> point = null;
       boolean matched = false;
       for (int i = 0; i < op.points.size(); i++) {

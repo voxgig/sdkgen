@@ -113,16 +113,20 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
         ));
     }
 
-    if plen == 1 {
-        let point = vs::get_elem(&points, &Value::Num(0.0), Value::Noval);
-        *ctx.point.borrow_mut() = point;
+    let (reqselector, selector) = if op.input == "data" {
+        (ctx.reqdata.borrow().clone(), ctx.data.borrow().clone())
     } else {
-        let (reqselector, selector) = if op.input == "data" {
-            (ctx.reqdata.borrow().clone(), ctx.data.borrow().clone())
-        } else {
-            (ctx.reqmatch.borrow().clone(), ctx.mtch.borrow().clone())
-        };
+        (ctx.reqmatch.borrow().clone(), ctx.mtch.borrow().clone())
+    };
 
+    // A lone point still needs the call's action to agree with its own; the
+    // selection below refuses a mismatch either way.
+    let lone = vs::get_elem(&points, &Value::Num(0.0), Value::Noval);
+    if plen == 1
+        && getp(&reqselector, "$action") == getp(&to_map(&getp(&lone, "select")), "$action")
+    {
+        *ctx.point.borrow_mut() = lone;
+    } else {
         let mut point = Value::Noval;
         let mut matched = false;
         for i in 0..plen {

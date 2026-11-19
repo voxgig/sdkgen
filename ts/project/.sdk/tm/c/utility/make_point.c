@@ -131,13 +131,17 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
     return NULL;
   }
 
-  if (plen == 1) {
+  bool is_data = strcmp(op->input, "data") == 0;
+  voxgig_value* reqselector = is_data ? ctx->reqdata : ctx->reqmatch;
+  voxgig_value* selector = is_data ? ctx->data : ctx->mtch;
+
+  // A lone point still needs the call's action to agree with its own; the
+  // selection below refuses a mismatch either way.
+  if (plen == 1 &&
+      v_eq(getp(reqselector, "$action"),
+           getp(to_map(getp(get_elem_i(points, 0), "select")), "$action"))) {
     ctx->point = get_elem_i(points, 0);
   } else {
-    bool is_data = strcmp(op->input, "data") == 0;
-    voxgig_value* reqselector = is_data ? ctx->reqdata : ctx->reqmatch;
-    voxgig_value* selector = is_data ? ctx->data : ctx->mtch;
-
     voxgig_value* point = voxgig_new_undef();
     bool matched = false;
     for (int64_t i = 0; i < plen; i++) {
