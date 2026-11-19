@@ -242,7 +242,7 @@ tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
 tm/clojure/test/sdk/test/pipeline.clj cf79733860c5
 tm/clojure/test/sdk/test/primary.clj f306427e725e
-tm/clojure/test/sdk/test/struct_corpus.clj e5945ca352a5
+tm/clojure/test/sdk/test/struct_corpus.clj 6a2e7b789db8
 tm/clojure/test/sdk/test_runner.clj b74fa394f777
 tm/clojure/test/sdk/testutil.clj 389d40fa6cbc
 tm/clojure/test/vendor/omni/voxgig/omni/json.clj 8582e15f6f20
