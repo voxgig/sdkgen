@@ -593,7 +593,7 @@ tm/go/test/omnismoke_test.go fb76d8db5060
 tm/go/test/pipeline_test.go aa2adc359fec
 tm/go/test/primary_utility_test.go 49c8bb757c19
 tm/go/test/sdk-test-control.json acadc87764f6
-tm/go/test/struct_utility_test.go 5ff17cf792b3
+tm/go/test/struct_utility_test.go 81be563cdc30
 tm/go/test/testsupport_test.go a09d2eaaf842
 tm/go/utility/clean.go 91994438578b
 tm/go/utility/done.go 829dd26164b3

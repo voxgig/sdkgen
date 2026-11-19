@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -1193,69 +1194,70 @@ func TestStructUtility(t *testing.T) {
 		}
 	})
 
-	t.Run("validate-basic", func(t *testing.T) {
-		structRunSetFlags(t, validateSpec["basic"], map[string]bool{"null": false}, func(v any) (any, error) {
-			m := v.(map[string]any)
-			data := m["data"]
-			spec := m["spec"]
-			return voxgigstruct.Validate(data, spec)
-		})
-	})
+	// Each validate group, and its null flag. validate-every-group fails on
+	// a group the corpus holds and this table leaves out.
+	validateGroups := []struct {
+		name string
+		null bool
+	}{
+		{"basic", false},
+		{"child", true},
+		{"nof", false},
+		{"exact", true},
+		{"invalid", false},
+		{"special", true},
+		{"directive", false},
+		{"all", false},
+		{"len", false},
+		{"range", false},
+		{"like", false},
+		{"unknown", false},
+	}
 
-	t.Run("validate-child", func(t *testing.T) {
-		structRunSet(t, validateSpec["child"], func(v any) (any, error) {
-			m := v.(map[string]any)
-			data := m["data"]
-			spec := m["spec"]
-			out, err := voxgigstruct.Validate(data, spec)
-			return out, err
-		})
-	})
+	for _, group := range validateGroups {
+		t.Run("validate-"+group.name, func(t *testing.T) {
+			structRunSetFlags(t, validateSpec[group.name], map[string]bool{"null": group.null}, func(v any) (any, error) {
+				m := v.(map[string]any)
+				data := m["data"]
+				spec := m["spec"]
 
-	t.Run("validate-nof", func(t *testing.T) {
-		structRunSetFlags(t, validateSpec["nof"], map[string]bool{"null": false}, func(v any) (any, error) {
-			m := v.(map[string]any)
-			data := m["data"]
-			spec := m["spec"]
-			return voxgigstruct.Validate(data, spec)
-		})
-	})
+				if inj, ok := m["inj"]; ok && inj != nil {
+					injMap := inj.(map[string]any)
+					extra := make(map[string]any)
 
-	t.Run("validate-exact", func(t *testing.T) {
-		structRunSet(t, validateSpec["exact"], func(v any) (any, error) {
-			m := v.(map[string]any)
-			data := m["data"]
-			spec := m["spec"]
-			return voxgigstruct.Validate(data, spec)
-		})
-	})
+					if meta, ok := injMap["meta"]; ok {
+						extra["meta"] = meta
+					}
 
-	t.Run("validate-invalid", func(t *testing.T) {
-		structRunSetFlags(t, validateSpec["invalid"], map[string]bool{"null": false}, func(v any) (any, error) {
-			m := v.(map[string]any)
-			return voxgigstruct.Validate(m["data"], m["spec"])
-		})
-	})
-
-	t.Run("validate-special", func(t *testing.T) {
-		structRunSet(t, validateSpec["special"], func(v any) (any, error) {
-			m := v.(map[string]any)
-			data := m["data"]
-			spec := m["spec"]
-
-			if inj, ok := m["inj"]; ok && inj != nil {
-				injMap := inj.(map[string]any)
-				extra := make(map[string]any)
-
-				if meta, ok := injMap["meta"]; ok {
-					extra["meta"] = meta
+					return voxgigstruct.Validate(data, spec, &voxgigstruct.Injection{Extra: extra})
 				}
 
-				return voxgigstruct.Validate(data, spec, &voxgigstruct.Injection{Extra: extra})
-			}
-
-			return voxgigstruct.Validate(data, spec)
+				return voxgigstruct.Validate(data, spec)
+			})
 		})
+	}
+
+	t.Run("validate-every-group", func(t *testing.T) {
+		run := make(map[string]bool)
+		for _, group := range validateGroups {
+			run[group.name] = true
+		}
+		var groups, unrun []string
+		for name, group := range validateSpec {
+			if _, ismap := group.(map[string]any); ismap {
+				groups = append(groups, name)
+				if !run[name] {
+					unrun = append(unrun, name)
+				}
+			}
+		}
+		if 0 == len(groups) {
+			t.Fatal("the corpus holds no validate group")
+		}
+		if 0 < len(unrun) {
+			sort.Strings(unrun)
+			t.Errorf("the corpus holds validate groups this runner does not run: %v", unrun)
+		}
 	})
 
 	t.Run("validate-custom", func(t *testing.T) {
