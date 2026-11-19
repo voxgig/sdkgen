@@ -343,11 +343,17 @@ final class StructUtilityTest: XCTestCase {
 
   // MARK: - Validate
 
+  // Each validate group, and its null flag. testValidateEveryGroup fails on
+  // a group the corpus holds and this table leaves out.
+  private static let validateGroups: [(String, Bool)] = [
+    ("basic", false), ("child", true), ("nof", false),
+    ("exact", true), ("invalid", false), ("special", true),
+    ("directive", false), ("all", false), ("len", false),
+    ("range", false), ("like", false), ("unknown", false),
+  ]
+
   func testValidate() {
-    for (name, nullFlag) in [
-      ("basic", false), ("child", true), ("nof", false),
-      ("exact", true), ("invalid", false), ("special", true),
-    ] {
+    for (name, nullFlag) in StructUtilityTest.validateGroups {
       runStruct("validate", name, nullFlag) {
         let (inj, errs) = self.errCollector()
         if case .map(let im) = gp($0, "inj"), let meta = im.entries["meta"]?.asMap {
@@ -358,6 +364,21 @@ final class StructUtilityTest: XCTestCase {
         return out
       }
     }
+  }
+
+  func testValidateEveryGroup() throws {
+    guard case .map(let category) = try StructUtilityTest.structRun().spec.get("validate").value
+    else {
+      return XCTFail("struct corpus category missing: validate")
+    }
+    let groups = category.entries.compactMap { entry -> String? in
+      if case .map = entry.value { return entry.key }
+      return nil
+    }
+    XCTAssertFalse(groups.isEmpty, "the corpus holds no validate group")
+    let run = Set(StructUtilityTest.validateGroups.map { $0.0 })
+    XCTAssertEqual([], groups.filter { !run.contains($0) }.sorted(),
+      "the corpus holds validate groups this runner does not run")
   }
 
   // MARK: - Select

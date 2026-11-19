@@ -2008,7 +2008,7 @@ tm/swift/Tests/ProjectNameSDKTests/PipelineTest.swift 88b2121387e7
 tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 056de1a12efd
 tm/swift/Tests/ProjectNameSDKTests/Runner.swift 7cacfc13a4c6
 tm/swift/Tests/ProjectNameSDKTests/ServerVariableTest.swift e3469c9beea6
-tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift 951bde408f57
+tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift 2635ed8216fa
 tm/swift/Tests/vendor/omni/Json.swift cf24b1af7b42
 tm/swift/Tests/vendor/omni/Runner.swift c9ca032a81c2
 tm/swift/Tests/vendor/omni/Util.swift a45863c9561b
