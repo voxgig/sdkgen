@@ -2141,7 +2141,7 @@ tm/ts/test/utility.ts 1ea0442912d3
 tm/ts/test/utility/Corpus.test.ts e7efaa88df0f
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea
 tm/ts/test/utility/PrimaryUtility.test.ts 4917c6b52891
-tm/ts/test/utility/StructUtility.test.ts 6fbada4fd2f4
+tm/ts/test/utility/StructUtility.test.ts 88b426b0e0e4
 tm/ts/test/utility/index.ts 477889c43d3e
 tm/ts/test/vendor/omni/Runner.ts 33236cdd7746
 tm/ts/test/vendor/omni/Util.ts 483732760d0b
