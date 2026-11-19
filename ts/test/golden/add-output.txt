@@ -1162,7 +1162,7 @@ tm/ocaml/test/harness.ml 366332912de1
 tm/ocaml/test/omni_resolver.ml d4b483a5a08d
 tm/ocaml/test/omni_smoke_test.ml 3045df404dfa
 tm/ocaml/test/primary_utility_test.ml 2501379d19ab
-tm/ocaml/test/struct_corpus.ml ecfffd4f63fb
+tm/ocaml/test/struct_corpus.ml 544567e22114
 tm/ocaml/test/t_feature.ml 010046646b46
 tm/ocaml/test/t_main.ml a468eae08da5
 tm/ocaml/test/t_pipeline.ml 135b82d775d0

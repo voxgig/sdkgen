@@ -223,22 +223,28 @@ let run_all (r : R.run) =
   set "transform.apply" (O.jget transforms "apply")
     (fun vin -> transform (R.getp vin "data") (R.getp vin "spec"));
 
-  (* validate *)
-  set ~nullflag:false "validate.basic" (O.jget validates "basic")
-    (fun vin -> validate (R.getp vin "data") (R.getp vin "spec"));
-  List.iter (fun gn ->
-      set ("validate." ^ gn) (O.jget validates gn)
-        (fun vin -> validate (R.getp vin "data") (R.getp vin "spec")))
-    ["child"; "exact"];
-  set ~nullflag:false "validate.nof" (O.jget validates "nof")
-    (fun vin -> validate (R.getp vin "data") (R.getp vin "spec"));
-  set ~nullflag:false "validate.invalid" (O.jget validates "invalid")
-    (fun vin -> validate (R.getp vin "data") (R.getp vin "spec"));
-  set "validate.special" (O.jget validates "special")
-    (fun vin ->
-       let injm = R.getp vin "inj" in
-       let d = { (R.default_injdef ()) with d_meta = getprop injm (Str "meta") } in
-       validate ~inj:(if is_nullish injm then INone else IDef d) (R.getp vin "data") (R.getp vin "spec"));
+  (* validate: each group, and its null flag. The check below fails on a
+   * group the corpus holds and this table leaves out. *)
+  let validate_groups =
+    [ ("basic", false); ("child", true); ("nof", false); ("exact", true);
+      ("invalid", false); ("special", true); ("directive", false); ("all", false);
+      ("len", false); ("range", false); ("like", false); ("unknown", false) ] in
+  List.iter (fun (gn, nullflag) ->
+      set ~nullflag ("validate." ^ gn) (O.jget validates gn)
+        (fun vin ->
+           let injm = R.getp vin "inj" in
+           let d = { (R.default_injdef ()) with d_meta = getprop injm (Str "meta") } in
+           validate ~inj:(if is_nullish injm then INone else IDef d) (R.getp vin "data") (R.getp vin "spec")))
+    validate_groups;
+  let groups = match validates with
+    | O.JMap entries -> List.filter_map (fun (gn, g) -> if O.ismap g then Some gn else None) entries
+    | _ -> [] in
+  let unrun = List.filter (fun gn -> not (List.mem_assoc gn validate_groups)) groups in
+  if [] = groups then
+    r.R.failures <- "validate: the corpus holds no validate group" :: r.R.failures
+  else if [] <> unrun then
+    r.R.failures <- ("validate: the corpus holds validate groups this runner does not run: "
+                     ^ String.concat ", " unrun) :: r.R.failures;
 
   (* select *)
   List.iter (fun gn ->
