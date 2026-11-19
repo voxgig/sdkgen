@@ -760,37 +760,40 @@ describe('struct', async () => {
   // validate tests
   // ===============
 
-  test('validate-basic', async () => {
-    await runsetflags(spec.validate.basic, { null: false },
-      (vin) => struct.validate(vin.data, vin.spec))
-  })
+  // Each validate group, and its null flag. `validate-every-group` fails on
+  // a group the corpus holds and this table leaves out.
+  const VALIDATE_GROUPS = [
+    ['basic', false],
+    ['child', true],
+    ['nof', false],
+    ['exact', true],
+    ['invalid', false],
+    ['special', true],
+    ['directive', false],
+    ['all', false],
+    ['len', false],
+    ['range', false],
+    ['like', false],
+    ['unknown', false],
+  ]
+
+  for (const [name, nullflag] of VALIDATE_GROUPS) {
+    test('validate-' + name, async () => {
+      await runsetflags(spec.validate[name], { null: nullflag },
+        (vin) => struct.validate(vin.data, vin.spec, vin.inj))
+    })
+  }
 
 
-  test('validate-child', async () => {
-    await runset(spec.validate.child, (vin) => struct.validate(vin.data, vin.spec))
-  })
-
-
-  test('validate-nof', async () => {
-    await runsetflags(spec.validate.nof, { null: false },
-      (vin) => struct.validate(vin.data, vin.spec))
-  })
-
-
-  test('validate-exact', async () => {
-    await runset(spec.validate.exact, (vin) => struct.validate(vin.data, vin.spec))
-  })
-
-
-  test('validate-invalid', async () => {
-    await runsetflags(spec.validate.invalid, { null: false },
-      (vin) => struct.validate(vin.data, vin.spec))
-  })
-
-
-  test('validate-special', async () => {
-    await runset(spec.validate.special, (vin) =>
-      struct.validate(vin.data, vin.spec, vin.inj))
+  test('validate-every-group', () => {
+    const groups = Object.keys(spec.validate).filter((name) => {
+      const group = spec.validate[name]
+      return null != group && 'object' === typeof group && !Array.isArray(group)
+    })
+    assert(0 < groups.length, 'the corpus holds no validate group')
+    const run = VALIDATE_GROUPS.map(([name]) => name)
+    deepEqual(groups.filter((name) => !run.includes(name)), [],
+      'the corpus holds validate groups this runner does not run')
   })
 
 

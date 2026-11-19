@@ -893,7 +893,7 @@ tm/js/test/sdk-test-control.json 91aad509f363
 tm/js/test/utility.js 222a46324f56
 tm/js/test/utility/Custom.test.js deeb256f75c3
 tm/js/test/utility/PrimaryUtility.test.js 92bb464a66e4
-tm/js/test/utility/StructUtility.test.js 44bc5384c942
+tm/js/test/utility/StructUtility.test.js b67e8384ba45
 tm/js/test/utility/index.js 18fa1acfe694
 tm/js/test/vendor/omni/index.js 659130ae7bfc
 tm/js/test/vendor/omni/runner.js ad51305f46bc
