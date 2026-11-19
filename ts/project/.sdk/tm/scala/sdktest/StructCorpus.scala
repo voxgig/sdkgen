@@ -273,21 +273,24 @@ object Runner {
       transform(vget(vin, "data"), vget(vin, "spec")))
 
     // ----- validate -----
-    run.runset("validate.basic", g("validate", "basic"), false)(vin =>
-      validate(vget(vin, "data"), vget(vin, "spec")))
-    Seq("child", "exact").foreach { gn =>
-      run.runset("validate." + gn, g("validate", gn))(vin =>
-        validate(vget(vin, "data"), vget(vin, "spec")))
+    // Each validate group, and its null flag. The check below fails on a
+    // group the corpus holds and this table leaves out.
+    val validateGroups = Seq(
+      "basic" -> false, "child" -> true, "nof" -> false, "exact" -> true,
+      "invalid" -> false, "special" -> true, "directive" -> false, "all" -> false,
+      "len" -> false, "range" -> false, "like" -> false, "unknown" -> false)
+    validateGroups.foreach { case (gn, nulls) =>
+      run.runset("validate." + gn, g("validate", gn), nulls)(vin => {
+        val injm = vget(vin, "inj")
+        val d = new InjDef; d.dMeta = getprop(injm, VStr("meta"))
+        validate(vget(vin, "data"), vget(vin, "spec"), if (isNullish(injm)) INone else IDef(d))
+      })
     }
-    run.runset("validate.nof", g("validate", "nof"), false)(vin =>
-      validate(vget(vin, "data"), vget(vin, "spec")))
-    run.runset("validate.invalid", g("validate", "invalid"), false)(vin =>
-      validate(vget(vin, "data"), vget(vin, "spec")))
-    run.runset("validate.special", g("validate", "special"))(vin => {
-      val injm = vget(vin, "inj")
-      val d = new InjDef; d.dMeta = getprop(injm, VStr("meta"))
-      validate(vget(vin, "data"), vget(vin, "spec"), if (isNullish(injm)) INone else IDef(d))
-    })
+    val validates = run.set("validate").asmap.toSeq.flatten.collect { case (gn, grp) if grp.ismap => gn }
+    val unrun = validates.filterNot(gn => validateGroups.exists(_._1 == gn))
+    if (validates.isEmpty) run.report.fail("validate", "the corpus holds no validate group")
+    else if (unrun.nonEmpty) run.report.fail("validate",
+      "the corpus holds validate groups this runner does not run: " + unrun.mkString(", "))
 
     // ----- select -----
     Seq("basic", "operators", "edge", "alts").foreach { gn =>
