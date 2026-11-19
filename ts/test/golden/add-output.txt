@@ -1587,7 +1587,7 @@ tm/rb/test/pipeline_test.rb bba6c6975b16
 tm/rb/test/primary_utility_test.rb c0436721ba19
 tm/rb/test/runner.rb 84b3aeebd794
 tm/rb/test/sdk-test-control.json 9b96054952f6
-tm/rb/test/struct_utility_test.rb 0508ee2f032c
+tm/rb/test/struct_utility_test.rb 8faa6e0daccd
 tm/rb/test/vendor/omni/runner.rb 117d02921b06
 tm/rb/test/vendor/omni/util.rb 170c9dbeafc5
 tm/rb/test/vendor/omni/voxgig_omni.rb 990fb56f1b7f

@@ -568,41 +568,36 @@ class StructUtilityTest < Minitest::Test
 
   # --- validate tests ---
 
-  def test_validate_basic
-    @runsetflags.call(@spec["validate"]["basic"], { "null" => false }, lambda { |vin|
-      VoxgigStruct.validate(vin["data"], vin["spec"])
-    })
+  # Each validate group, and its null flag. test_validate_every_group fails
+  # on a group the corpus holds and this table leaves out.
+  VALIDATE_GROUPS = {
+    "basic" => false,
+    "child" => true,
+    "nof" => false,
+    "exact" => true,
+    "invalid" => false,
+    "special" => true,
+    "directive" => false,
+    "all" => false,
+    "len" => false,
+    "range" => false,
+    "like" => false,
+    "unknown" => false,
+  }.freeze
+
+  VALIDATE_GROUPS.each do |name, null_flag|
+    define_method("test_validate_#{name}") do
+      @runsetflags.call(@spec["validate"][name], null_flag ? {} : { "null" => false }, lambda { |vin|
+        VoxgigStruct.validate(vin["data"], vin["spec"], vin["inj"])
+      })
+    end
   end
 
-  def test_validate_child
-    @runsetflags.call(@spec["validate"]["child"], {}, lambda { |vin|
-      VoxgigStruct.validate(vin["data"], vin["spec"])
-    })
-  end
-
-  def test_validate_nof
-    @runsetflags.call(@spec["validate"]["nof"], { "null" => false }, lambda { |vin|
-      VoxgigStruct.validate(vin["data"], vin["spec"])
-    })
-  end
-
-  def test_validate_exact
-    @runsetflags.call(@spec["validate"]["exact"], {}, lambda { |vin|
-      VoxgigStruct.validate(vin["data"], vin["spec"])
-    })
-  end
-
-  def test_validate_invalid
-    @runsetflags.call(@spec["validate"]["invalid"], { "null" => false }, lambda { |vin|
-      VoxgigStruct.validate(vin["data"], vin["spec"])
-    })
-  end
-
-  def test_validate_special
-    @runsetflags.call(@spec["validate"]["special"], {}, lambda { |vin|
-      injdef = vin.key?("inj") ? vin["inj"] : nil
-      VoxgigStruct.validate(vin["data"], vin["spec"], injdef)
-    })
+  def test_validate_every_group
+    groups = @spec["validate"].select { |_name, group| group.is_a?(Hash) }.keys
+    refute_empty groups, "the corpus holds no validate group"
+    assert_equal [], groups - VALIDATE_GROUPS.keys,
+      "the corpus holds validate groups this runner does not run"
   end
 
   def test_validate_edge
