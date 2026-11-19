@@ -475,22 +475,27 @@ grun('transform.modify', $transform_spec->{modify}, sub {
 
 my $validate_spec = $struct_spec->{validate};
 
-grunflags('validate.basic', $validate_spec->{basic}, { null => 0 },
-  sub { $S->{validate}->($_[0]{data}, $_[0]{spec}) });
+# Each validate group, and its null flag. The check below fails on a group
+# the corpus holds and this table leaves out.
+my @validate_groups = (
+  [basic => 0], [child => 1], [nof => 0], [exact => 1],
+  [invalid => 0], [special => 1], [directive => 0], [all => 0],
+  [len => 0], [range => 0], [like => 0], [unknown => 0],
+);
 
-for my $sec (qw(child exact)) {
-  grun("validate.$sec", $validate_spec->{$sec},
-    sub { $S->{validate}->($_[0]{data}, $_[0]{spec}) });
+for my $vg (@validate_groups) {
+  my ($sec, $null) = @$vg;
+  grunflags("validate.$sec", $validate_spec->{$sec}, $null ? {} : { null => 0 },
+    sub { $S->{validate}->($_[0]{data}, $_[0]{spec}, $_[0]{inj}) });
 }
 
-grunflags('validate.nof', $validate_spec->{nof}, { null => 0 },
-  sub { $S->{validate}->($_[0]{data}, $_[0]{spec}) });
-
-grunflags('validate.invalid', $validate_spec->{invalid}, { null => 0 },
-  sub { $S->{validate}->($_[0]{data}, $_[0]{spec}) });
-
-grun('validate.special', $validate_spec->{special},
-  sub { $S->{validate}->($_[0]{data}, $_[0]{spec}, $_[0]{inj}) });
+{
+  my %named = map { $_->[0] => 1 } @validate_groups;
+  my @groups = grep { ref($validate_spec->{$_}) eq 'HASH' } sort keys %$validate_spec;
+  ok(0 < @groups, 'the corpus holds a validate group');
+  is_deeply([grep { !$named{$_} } @groups], [],
+    'the corpus holds no validate group this runner does not run');
+}
 
 
 # ===========================================================================

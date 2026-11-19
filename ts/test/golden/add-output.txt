@@ -1241,7 +1241,7 @@ tm/perl/t/runner.pm faf289b7cd5d
 tm/perl/t/sdk-test-control.json b75ea700c514
 tm/perl/t/server_variables.t 4404608c9256
 tm/perl/t/stream.t 0e1aa023c171
-tm/perl/t/struct_utility.t 78c5d29155c8
+tm/perl/t/struct_utility.t 9cbe6779693c
 tm/perl/t/vendor/omni/Voxgig/Omni.pm 757c0d86a59a
 tm/perl/t/vendor/omni/Voxgig/Omni/Runner.pm 0e5c65c16325
 tm/perl/t/vendor/omni/Voxgig/Omni/Util.pm 850b03b005c5
