@@ -318,7 +318,7 @@ tm/cpp/test/primary_utility_test.cpp a53553a747f7
 tm/cpp/test/runner_support.hpp cf97960870c1
 tm/cpp/test/sdk-test-control.json acadc87764f6
 tm/cpp/test/server_variable_test.cpp a6a1670e96ac
-tm/cpp/test/struct_corpus_test.cpp cae1e1174159
+tm/cpp/test/struct_corpus_test.cpp 3c79197f5370
 tm/cpp/test/testlib.hpp f5f70c8c25b7
 tm/cpp/test/vendor/omni/json.hpp 21a1ed7edb77
 tm/cpp/test/vendor/omni/omni.hpp 5aca807ffd82

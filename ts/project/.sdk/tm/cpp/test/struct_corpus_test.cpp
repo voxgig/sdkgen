@@ -130,6 +130,30 @@ void run(const std::string& cat, const std::string& name, bool null_flag,
   runflags(cat, name, null_flag, onearg(subject));
 }
 
+// Fails on a group the corpus holds in `cat` that no run above names.
+void runs_every_group(const std::string& cat) {
+  sdktest::tests()++;
+  sdktest::checks()++;
+  Value category = structRun().set(cat);
+  if (!category.is_map()) {
+    sdktest::record_fail(cat, "struct corpus category missing: " + cat);
+    return;
+  }
+  int found = 0;
+  for (const auto& [name, group] : *category.as_map()) {
+    if (!group.is_map())
+      continue;
+    found++;
+    std::string full = cat + "." + name;
+    if (0 == SCOREBOARD.count(full)) {
+      sdktest::record_fail(full, "the corpus holds this group, and nothing here runs it");
+      SCOREBOARD[full] = GroupResult{0, false};
+    }
+  }
+  if (0 == found)
+    sdktest::record_fail(cat, "the corpus holds no group in this category");
+}
+
 // Extract a named field from a test-spec object. This mirrors the canonical
 // runner's raw JS property access (`vin.val`): a present-but-null field yields
 // JSON null, an absent field yields undefined. We therefore use the
@@ -509,6 +533,11 @@ int main() {
     return inj_v.is_map() ? validate(getp(in, "data"), getp(in, "spec"), inj_v)
                           : validate(getp(in, "data"), getp(in, "spec"));
   });
+  for (const char* name : {"directive", "all", "len", "range", "like", "unknown"}) {
+    run("validate", name, false,
+        [](const Value& in) { return validate(getp(in, "data"), getp(in, "spec")); });
+  }
+  runs_every_group("validate");
 
   // ===== select =====
   run("select", "basic", true, [](const Value& in) {
