@@ -73,7 +73,7 @@ tm/c/tests/pipeline_test.c 39f2d4164345
 tm/c/tests/primary_corpus_test.c 8b5b07a955dc
 tm/c/tests/primary_utility_test.c ca161399455a
 tm/c/tests/server_variable_test.c b49f64ffac4b
-tm/c/tests/struct_corpus_test.c 4e86b664b4ab
+tm/c/tests/struct_corpus_test.c a85c557a6a1b
 tm/c/tests/transport_test.c 112cde65dacf
 tm/c/tests/vendor/omni/json.c 0d164a76a966
 tm/c/tests/vendor/omni/omni.h 0b97633a2655
