@@ -925,90 +925,140 @@ describe("struct", function()
   -- Validate Tests
   ----------------------------------------------------------
 
-  test("validate-basic", function()
-    runsetflags(
-      dropentries(validateSpec.basic, {
-        -- `$NULL` against null data: validate returns the null, the port
-        -- returns nil, read as absent.
-        { at = 14, why = "$NULL validating null data", is = function(entry)
-          return "`$NULL`" == entryin(entry, "spec") and isnull(entryin(entry, "data"))
-        end },
-        { at = 53, why = "$NULL validating null data, again", is = function(entry)
-          return "`$NULL`" == entryin(entry, "spec") and isnull(entryin(entry, "data"))
-        end },
-        -- Under `null = false` a null map member arrives absent: a Lua table
-        -- cannot hold a nil.
-        { at = 61, why = "a null value in a map under null = false", is = function(entry)
-          return "`$ANY`" == entryin(entry, "spec.a") and isnull(entryin(entry, "data.a"))
-        end },
-        -- A null list element arrives as the string "null", the only way a
-        -- Lua list keeps the slot.
-        { at = 70, why = "$NULL validating a null list element", is = function(entry)
-          return "`$NULL`" == entryin(entry, "spec.0") and isnull(entryin(entry, "data.0"))
-        end },
-        { at = 71, why = "$NULL validating a null between numbers", is = function(entry)
-          return "`$NULL`" == entryin(entry, "spec.1") and isnull(entryin(entry, "data.1"))
-        end },
-      }),
-      { null = false },
-      function(vin)
-        return validate(vin.data, vin.spec)
+  -- The validate groups registered below. validate-every-group fails on a
+  -- group the corpus holds and nothing here runs.
+  local validated = {}
+  local function validategroup(name, flags, drops)
+    validated[name] = true
+    test("validate-" .. name, function()
+      local group = validateSpec[name]
+      if nil ~= drops then
+        group = dropentries(group, drops)
       end
-    )
-  end)
-
-
-  test("validate-child", function()
-    runset(validateSpec.child, function(vin)
-      return validate(vin.data, vin.spec)
+      runsetflags(group, flags, function(vin)
+        return validate(vin.data, vin.spec, vin.inj)
+      end)
     end)
-  end)
+  end
+
+  validategroup("basic", { null = false }, {
+    -- `$NULL` against null data: validate returns the null, the port
+    -- returns nil, read as absent.
+    { at = 14, why = "$NULL validating null data", is = function(entry)
+      return "`$NULL`" == entryin(entry, "spec") and isnull(entryin(entry, "data"))
+    end },
+    { at = 53, why = "$NULL validating null data, again", is = function(entry)
+      return "`$NULL`" == entryin(entry, "spec") and isnull(entryin(entry, "data"))
+    end },
+    -- Under `null = false` a null map member arrives absent: a Lua table
+    -- cannot hold a nil.
+    { at = 61, why = "a null value in a map under null = false", is = function(entry)
+      return "`$ANY`" == entryin(entry, "spec.a") and isnull(entryin(entry, "data.a"))
+    end },
+    -- A null list element arrives as the string "null", the only way a
+    -- Lua list keeps the slot.
+    { at = 70, why = "$NULL validating a null list element", is = function(entry)
+      return "`$NULL`" == entryin(entry, "spec.0") and isnull(entryin(entry, "data.0"))
+    end },
+    { at = 71, why = "$NULL validating a null between numbers", is = function(entry)
+      return "`$NULL`" == entryin(entry, "spec.1") and isnull(entryin(entry, "data.1"))
+    end },
+  })
+
+  validategroup("child", {})
+
+  validategroup("nof", { null = false }, {
+    -- The member arrives absent, which no spec of $NULL admits, so the
+    -- count of none holds where canonical counts the null.
+    { at = 24, why = "a null map member counted by $NOF", is = function(entry)
+      return isnull(entryin(entry, "data.a")) and 0 == entryin(entry, "spec.a.1")
+    end },
+    { at = 25, why = "a null map member validated by $NOF", is = function(entry)
+      return isnull(entryin(entry, "data.a")) and "`$NULL`" == entryin(entry, "spec.a.3")
+    end },
+    { at = 26, why = "a null list element validated by $NOF", is = function(entry)
+      return isnull(entryin(entry, "data.0")) and "`$NOF`" == entryin(entry, "spec.1.0")
+    end },
+    { at = 31, why = "a null map member a default would replace", is = function(entry)
+      return isnull(entryin(entry, "data.r")) and "`$NOF`" == entryin(entry, "spec.0")
+    end },
+  })
+
+  validategroup("exact", {})
+  validategroup("invalid", { null = false })
+  validategroup("special", {})
+  -- Under `null = false` a null map member arrives absent and cannot come
+  -- back, a null list element arrives as the string "null" and comes back
+  -- as one, and null data comes back as nil, read as absent. A null in a
+  -- spec changes the same way. The entries that turn on such a null are
+  -- dropped, as struct/lua's own runner drops them.
+  validategroup("directive", { null = false }, {
+    { at = 0, why = "a null map member validated by $NOF", is = function(entry)
+      return isnull(entryin(entry, "data.a")) and "`$NULL`" == entryin(entry, "spec.a.3")
+    end },
+    { at = 1, why = "null data validated by $NOF", is = function(entry)
+      return isnull(entryin(entry, "data")) and "`$NOF`" == entryin(entry, "spec.0")
+    end },
+    { at = 2, why = "a null list element validated by $NOF", is = function(entry)
+      return isnull(entryin(entry, "data.0")) and "`$NOF`" == entryin(entry, "spec.1.0")
+    end },
+    { at = 3, why = "a null map member under $CHILD", is = function(entry)
+      return isnull(entryin(entry, "data.a")) and "x" == entryin(entry, "data.b")
+    end },
+    { at = 5, why = "a null map member against $EXACT null", is = function(entry)
+      return isnull(entryin(entry, "data.a")) and isnull(entryin(entry, "spec.a.1"))
+    end },
+    { at = 6, why = "null data against $EXACT null", is = function(entry)
+      return isnull(entryin(entry, "data")) and isnull(entryin(entry, "spec.2"))
+    end },
+    { at = 7, why = "a null list element against $EXACT null", is = function(entry)
+      return isnull(entryin(entry, "data.0")) and "`$EXACT`" == entryin(entry, "spec.1.0")
+    end },
+    { at = 10, why = "a null map member validated by $NIL", is = function(entry)
+      return isnull(entryin(entry, "data.a")) and "`$NIL`" == entryin(entry, "spec.a")
+    end },
+    { at = 11, why = "null data validated by $NIL", is = function(entry)
+      return isnull(entryin(entry, "data")) and "`$NIL`" == entryin(entry, "spec")
+    end },
+    { at = 12, why = "a null map member validated by $NOF with $NIL", is = function(entry)
+      return isnull(entryin(entry, "data.a")) and "`$NIL`" == entryin(entry, "spec.a.3")
+    end },
+    { at = 24, why = "$EXACT of a map with a null member", is = function(entry)
+      return "null" == entryin(entry, "data.x") and isnull(entryin(entry, "spec.1.x"))
+    end },
+    { at = 27, why = "$EXACT of a map with a null member, again", is = function(entry)
+      return 1 == entryin(entry, "data.x") and isnull(entryin(entry, "spec.1.y"))
+    end },
+  })
+
+  validategroup("all", { null = false }, {
+    { at = 10, why = "a null map member validated by $ALL", is = function(entry)
+      return isnull(entryin(entry, "data.a")) and "`$ALL`" == entryin(entry, "spec.a.0")
+    end },
+    { at = 13, why = "a null map member a default would replace", is = function(entry)
+      return isnull(entryin(entry, "data.r")) and "`$ALL`" == entryin(entry, "spec.0")
+    end },
+  })
+
+  validategroup("len", { null = false })
+  validategroup("range", { null = false })
+  validategroup("like", { null = false })
+  validategroup("unknown", { null = false })
 
 
-  test("validate-nof", function()
-    runsetflags(
-      dropentries(validateSpec.nof, {
-        -- The member arrives absent, which no spec of $NULL admits, so the
-        -- count of none holds where canonical counts the null.
-        { at = 24, why = "a null map member counted by $NOF", is = function(entry)
-          return isnull(entryin(entry, "data.a")) and 0 == entryin(entry, "spec.a.1")
-        end },
-        { at = 25, why = "a null map member validated by $NOF", is = function(entry)
-          return isnull(entryin(entry, "data.a")) and "`$NULL`" == entryin(entry, "spec.a.3")
-        end },
-        { at = 26, why = "a null list element validated by $NOF", is = function(entry)
-          return isnull(entryin(entry, "data.0")) and "`$NOF`" == entryin(entry, "spec.1.0")
-        end },
-        { at = 31, why = "a null map member a default would replace", is = function(entry)
-          return isnull(entryin(entry, "data.r")) and "`$NOF`" == entryin(entry, "spec.0")
-        end },
-      }),
-      { null = false },
-      function(vin)
-        return validate(vin.data, vin.spec)
+  test("validate-every-group", function()
+    local groups, unrun = {}, {}
+    for name, group in pairs(validateSpec) do
+      if "table" == type(group) and nil ~= group.set then
+        table.insert(groups, name)
+        if not validated[name] then
+          table.insert(unrun, name)
+        end
       end
-    )
-  end)
-
-
-  test("validate-exact", function()
-    runset(validateSpec.exact, function(vin)
-      return validate(vin.data, vin.spec)
-    end)
-  end)
-
-
-  test("validate-invalid", function()
-    runsetflags(validateSpec.invalid, { null = false }, function(vin)
-      return validate(vin.data, vin.spec)
-    end)
-  end)
-
-
-  test("validate-special", function()
-    runset(validateSpec.special, function(vin)
-      return validate(vin.data, vin.spec, vin.inj)
-    end)
+    end
+    assert.is_true(0 < #groups, "the corpus holds no validate group")
+    table.sort(unrun)
+    assert.are.same({}, unrun, "the corpus holds validate groups this runner does not run")
   end)
 
 

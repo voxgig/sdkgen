@@ -1067,7 +1067,7 @@ tm/lua/test/pipeline_test.lua 1db7549f13a9
 tm/lua/test/primary_utility_test.lua f973f92540a3
 tm/lua/test/runner.lua ed5ad73d4f51
 tm/lua/test/sdk-test-control.json da0a617f04f6
-tm/lua/test/struct_utility_test.lua e059a5b3dcfa
+tm/lua/test/struct_utility_test.lua 6957db8042b7
 tm/lua/test/vendor/omni/json.lua 062b0b8a40e2
 tm/lua/test/vendor/omni/regex.lua fdaf72e06826
 tm/lua/test/vendor/omni/runner.lua 29f69d776115
