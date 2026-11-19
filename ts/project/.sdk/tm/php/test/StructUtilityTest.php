@@ -813,55 +813,40 @@ class StructUtilityTest extends TestCase
     }
 
     // ——— validate tests ———
-    public function testValidateBasic(): void
+    /**
+     * Each validate group the corpus holds. testValidateEveryGroup fails on
+     * a group the corpus holds and this list leaves out.
+     */
+    private const VALIDATE_GROUPS = [
+        'basic', 'child', 'nof', 'exact', 'invalid', 'special',
+        'directive', 'all', 'len', 'range', 'like', 'unknown',
+    ];
+
+    public static function validateGroups(): array
     {
-        $this->runsection($this->sect('validate', 'basic'), function ($input) {
-            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'));
+        $groups = [];
+        foreach (self::VALIDATE_GROUPS as $name) {
+            $groups[$name] = [$name];
+        }
+        return $groups;
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('validateGroups')]
+    public function testValidate(string $name): void
+    {
+        $this->runsection($this->sect('validate', $name), function ($input) {
+            return Struct::validate(
+                self::vin($input, 'data'), self::vin($input, 'spec'), self::vin($input, 'inj'));
         });
     }
 
-    public function testValidateChild(): void
+    public function testValidateEveryGroup(): void
     {
-        $this->runsection($this->sect('validate', 'child'), function ($input) {
-            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'));
-        });
-    }
-
-    public function testValidateNof(): void
-    {
-        $this->runsection($this->sect('validate', 'nof'), function ($input) {
-            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'));
-        });
-    }
-
-    public function testValidateExact(): void
-    {
-        $this->runsection($this->sect('validate', 'exact'), function ($input) {
-            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'));
-        });
-    }
-
-    public function testValidateInvalid(): void
-    {
-        $count = 0;
-        $this->runsection(
-            $this->sect('validate', 'invalid'),
-            function ($input) use (&$count) {
-                $count++;
-                return Struct::validate(
-                    property_exists($input, 'data') ? $input->data : (object) [],
-                    property_exists($input, 'spec') ? $input->spec : (object) []
-                );
-            }
-        );
-        $this->assertGreaterThan(0, $count, 'validate-invalid should have run at least one test entry');
-    }
-
-    public function testValidateSpecial(): void
-    {
-        $this->runsection($this->sect('validate', 'special'), function ($input) {
-            return Struct::validate(self::vin($input, 'data'), self::vin($input, 'spec'), self::vin($input, 'inj'));
-        });
+        $groups = array_keys(array_filter($this->sect('validate'),
+            fn($group) => is_array($group) && !array_is_list($group)));
+        $this->assertNotEmpty($groups, 'the corpus holds no validate group');
+        $this->assertSame([], array_values(array_diff($groups, self::VALIDATE_GROUPS)),
+            'the corpus holds validate groups this runner does not run');
     }
 
     public function testValidateCustom(): void

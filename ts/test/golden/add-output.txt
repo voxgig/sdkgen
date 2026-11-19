@@ -1345,7 +1345,7 @@ tm/php/test/OmniSmokeTest.php cad939a73897
 tm/php/test/PipelineTest.php 544f3446b5f1
 tm/php/test/PrimaryUtilityTest.php 2cf1ca929598
 tm/php/test/Runner.php df683b0bb54e
-tm/php/test/StructUtilityTest.php 21e5a62883ca
+tm/php/test/StructUtilityTest.php 04adad4b2b09
 tm/php/test/sdk-test-control.json 0ef7278caec2
 tm/php/test/vendor/omni/Runner.php cb0ff5a5c312
 tm/php/test/vendor/omni/Util.php 1814a6ecd9d1
