@@ -1042,40 +1042,59 @@ fn wrap_validate(allocator: Allocator, val: JsonValue, errout: *?[]const u8) Jso
     return result.out;
 }
 
-test "validate-basic" {
+// Each validate group, and its null flag. "validate-every-group" fails on a
+// group the corpus holds and this table leaves out.
+const ValidateGroup = struct { name: []const u8, null_: bool };
+const VALIDATE_GROUPS = [_]ValidateGroup{
+    .{ .name = "basic", .null_ = false },
+    .{ .name = "child", .null_ = true },
+    .{ .name = "nof", .null_ = false },
+    .{ .name = "exact", .null_ = true },
+    .{ .name = "invalid", .null_ = false },
+    .{ .name = "special", .null_ = true },
+    .{ .name = "directive", .null_ = false },
+    .{ .name = "all", .null_ = false },
+    .{ .name = "len", .null_ = false },
+    .{ .name = "range", .null_ = false },
+    .{ .name = "like", .null_ = false },
+    .{ .name = "unknown", .null_ = false },
+};
+
+// Every group runs, so one failure does not hide the next.
+test "validate" {
     var r = try omnirun.makeRunner(testing.allocator, "struct");
     defer r.deinit();
-    try r.runseterr(r.group("validate", "basic"), .{ .name = "validate/basic", .null_ = false }, wrap_validate);
+    var failed: ?anyerror = null;
+    inline for (VALIDATE_GROUPS) |g| {
+        r.runseterr(r.group("validate", g.name), .{ .name = "validate/" ++ g.name, .null_ = g.null_ }, wrap_validate) catch |err| switch (err) {
+            error.SkipZigTest => std.debug.print("\n  validate/{s}: absent from this corpus\n", .{g.name}),
+            else => failed = failed orelse err,
+        };
+    }
+    if (failed) |err| return err;
 }
 
-test "validate-child" {
+test "validate-every-group" {
     var r = try omnirun.makeRunner(testing.allocator, "struct");
     defer r.deinit();
-    try r.runseterr(r.group("validate", "child"), .{ .name = "validate/child" }, wrap_validate);
-}
-
-test "validate-nof" {
-    var r = try omnirun.makeRunner(testing.allocator, "struct");
-    defer r.deinit();
-    try r.runseterr(r.group("validate", "nof"), .{ .name = "validate/nof", .null_ = false }, wrap_validate);
-}
-
-test "validate-exact" {
-    var r = try omnirun.makeRunner(testing.allocator, "struct");
-    defer r.deinit();
-    try r.runseterr(r.group("validate", "exact"), .{ .name = "validate/exact" }, wrap_validate);
-}
-
-test "validate-invalid" {
-    var r = try omnirun.makeRunner(testing.allocator, "struct");
-    defer r.deinit();
-    try r.runseterr(r.group("validate", "invalid"), .{ .name = "validate/invalid", .null_ = false }, wrap_validate);
-}
-
-test "validate-special" {
-    var r = try omnirun.makeRunner(testing.allocator, "struct");
-    defer r.deinit();
-    try r.runseterr(r.group("validate", "special"), .{ .name = "validate/special" }, wrap_validate);
+    const category = r.set("validate") orelse return error.NoValidateSection;
+    if (.object != category) return error.NoValidateSection;
+    var groups: usize = 0;
+    var unrun: usize = 0;
+    var it = category.object.iterator();
+    while (it.next()) |entry| {
+        if (.object != entry.value_ptr.*) continue;
+        groups += 1;
+        const named = for (VALIDATE_GROUPS) |g| {
+            if (std.mem.eql(u8, g.name, entry.key_ptr.*)) break true;
+        } else false;
+        if (!named) {
+            unrun += 1;
+            std.debug.print("\n  the corpus holds validate group {s}, which this runner does not run\n", .{entry.key_ptr.*});
+        }
+    }
+    if (0 == groups) return error.NoValidateGroup;
+    if (0 < unrun) return error.ValidateGroupNotRun;
 }
 
 // ---- Select tests ----

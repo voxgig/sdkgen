@@ -2291,7 +2291,7 @@ tm/zig/test/omniresolver.zig dbfba6dfcd18
 tm/zig/test/omnismoke_test.zig b70b834e00fd
 tm/zig/test/pipeline_test.zig 098b6ae7fa76
 tm/zig/test/primary_utility_test.zig 5b580f457cdf
-tm/zig/test/struct_corpus.zig 6b05cf9ae332
+tm/zig/test/struct_corpus.zig 0398e77cf504
 tm/zig/test/vendor/omni/omni.zig ca68de8e6595
 tm/zig/test/vendor/omni/regex.zig 9d4b0fa81318
 tm/zig/utility/jsonparse.zig 3bf825b60025
