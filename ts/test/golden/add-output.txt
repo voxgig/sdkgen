@@ -510,7 +510,7 @@ tm/elixir/test/omni_smoke_test.exs d79d4e7faab8
 tm/elixir/test/pipeline_test.exs 11b7151723a4
 tm/elixir/test/primary_utility_test.exs 809ab087b792
 tm/elixir/test/stream_test.exs adcaa6598d60
-tm/elixir/test/struct_corpus_test.exs 1aa5d5979c4d
+tm/elixir/test/struct_corpus_test.exs 6562ce79044d
 tm/elixir/test/support/feature_harness.ex 9b26420ea50d
 tm/elixir/test/support/omni.ex fb422237542f
 tm/elixir/test/test_helper.exs b086ec47f0c6
