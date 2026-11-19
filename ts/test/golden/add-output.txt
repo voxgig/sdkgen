@@ -1491,7 +1491,7 @@ tm/py/test/test_netsim.py 1583f97d2c84
 tm/py/test/test_omni_smoke.py abeaa5fc717b
 tm/py/test/test_pipeline.py 28a40b13fc41
 tm/py/test/test_primary_utility.py 122e15a13eaa
-tm/py/test/test_struct_utility.py 174be65f4eff
+tm/py/test/test_struct_utility.py 9515c144b159
 tm/py/test/voxgig_omni/__init__.py 8c6b5317f589
 tm/py/test/voxgig_omni/runner.py acfa45f20199
 tm/py/test/voxgig_omni/util.py 5acc11e5f52e

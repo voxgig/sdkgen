@@ -86,6 +86,23 @@ transformSpec = spec["transform"]
 validateSpec  = spec["validate"]
 selectSpec    = spec["select"]
 
+# Each validate group, and its null flag. test_validate_every_group fails on
+# a group the corpus holds and this table leaves out.
+VALIDATE_GROUPS = {
+    "basic": False,
+    "child": True,
+    "nof": False,
+    "exact": True,
+    "invalid": False,
+    "special": True,
+    "directive": False,
+    "all": False,
+    "len": False,
+    "range": False,
+    "like": False,
+    "unknown": False,
+}
+
 
 class TestStructUtility(unittest.TestCase):
 
@@ -659,36 +676,17 @@ class TestStructUtility(unittest.TestCase):
 
 
 
-    def test_validate_basic(self):
-        def validate_wrapper(vin):
-            return validate(vin.get("data"), vin.get("spec"))
-        runsetflags(spec["validate"]["basic"], {"null": False}, validate_wrapper)
+    def test_validate_groups(self):
+        for name, nullflag in VALIDATE_GROUPS.items():
+            with self.subTest(group=name):
+                runsetflags(validateSpec[name], {"null": nullflag},
+                            lambda vin: validate(vin.get("data"), vin.get("spec"), vin.get("inj")))
 
-
-    def test_validate_child(self):
-        def validate_wrapper(vin):
-            return validate(vin.get("data"), vin.get("spec"))
-        runset(spec["validate"]["child"], validate_wrapper)
-
-    def test_validate_nof(self):
-        def validate_wrapper(vin):
-            return validate(vin.get("data"), vin.get("spec"))
-        runsetflags(spec["validate"]["nof"], {"null": False}, validate_wrapper)
-
-    def test_validate_exact(self):
-        def validate_wrapper(vin):
-            return validate(vin.get("data"), vin.get("spec"))
-        runset(spec["validate"]["exact"], validate_wrapper)
-
-
-    def test_validate_invalid(self):
-        runsetflags(spec["validate"]["invalid"], {"null": False},
-                  lambda vin: validate(vin.get("data"), vin.get("spec")))
-
-    def test_validate_special(self):
-        def validate_wrapper(vin):
-            return validate(vin.get("data"), vin.get("spec"), vin.get("inj"))
-        runset(spec["validate"]["special"], validate_wrapper)
+    def test_validate_every_group(self):
+        groups = [name for name, group in validateSpec.items() if isinstance(group, dict)]
+        self.assertTrue(groups, "the corpus holds no validate group")
+        self.assertEqual([], [name for name in groups if name not in VALIDATE_GROUPS],
+                         "the corpus holds validate groups this runner does not run")
 
 
     def test_validate_custom(self):
