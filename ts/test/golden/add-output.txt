@@ -406,7 +406,7 @@ tm/csharp/test/OmniSmokeTest.cs adbc2519341d
 tm/csharp/test/PipelineTest.cs d5e845f81b70
 tm/csharp/test/PrimaryUtilityTest.cs e7a1833bba66
 tm/csharp/test/Runner.cs 3089a3c68b44
-tm/csharp/test/StructUtilityTest.cs 97b2e56ac78c
+tm/csharp/test/StructUtilityTest.cs aa0109221415
 tm/csharp/test/sdk-test-control.json 1368770ffc61
 tm/csharp/test/vendor/omni/Runner.cs 88b8ffb2c8aa
 tm/csharp/test/vendor/omni/Util.cs 93d6b760c73f

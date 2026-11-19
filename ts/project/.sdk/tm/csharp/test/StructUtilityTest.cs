@@ -992,45 +992,29 @@ public class StructUtilityTest
         Assert.NotNull((object)(StructUtils.Validate));
     }
 
-    [Fact]
-    public void ValidateBasic()
+    // Each validate group, and its null flag. ValidateEveryGroup fails on a
+    // group the corpus holds and this table leaves out.
+    public static readonly TheoryData<string, bool> ValidateGroups = new()
     {
-        RunStruct("validate", "basic", false, input =>
-            StructUtils.Validate(Getp(input, "data"), Getp(input, "spec")));
-    }
+        { "basic", false },
+        { "child", true },
+        { "nof", false },
+        { "exact", true },
+        { "invalid", false },
+        { "special", true },
+        { "directive", false },
+        { "all", false },
+        { "len", false },
+        { "range", false },
+        { "like", false },
+        { "unknown", false },
+    };
 
-    [Fact]
-    public void ValidateChild()
+    [Theory]
+    [MemberData(nameof(ValidateGroups))]
+    public void ValidateGroup(string name, bool nullFlag)
     {
-        RunStruct("validate", "child", true, input =>
-            StructUtils.Validate(Getp(input, "data"), Getp(input, "spec")));
-    }
-
-    [Fact]
-    public void ValidateNof()
-    {
-        RunStruct("validate", "nof", false, input =>
-            StructUtils.Validate(Getp(input, "data"), Getp(input, "spec")));
-    }
-
-    [Fact]
-    public void ValidateExact()
-    {
-        RunStruct("validate", "exact", true, input =>
-            StructUtils.Validate(Getp(input, "data"), Getp(input, "spec")));
-    }
-
-    [Fact]
-    public void ValidateInvalid()
-    {
-        RunStruct("validate", "invalid", false, input =>
-            StructUtils.Validate(Getp(input, "data"), Getp(input, "spec")));
-    }
-
-    [Fact]
-    public void ValidateSpecial()
-    {
-        RunStruct("validate", "special", true, input =>
+        RunStruct("validate", name, nullFlag, input =>
         {
             var injdef = new InjectState();
             if (Getp(input, "inj") is Dictionary<string, object?> injEntry &&
@@ -1041,6 +1025,21 @@ public class StructUtilityTest
             }
             return StructUtils.Validate(Getp(input, "data"), Getp(input, "spec"), injdef);
         });
+    }
+
+    [Fact]
+    public void ValidateEveryGroup()
+    {
+        var category = StructRun().Spec.TryGetValue("validate", out var c)
+            ? c as Dictionary<string, object?> : null;
+        Assert.True(null != category, "struct corpus category missing: validate");
+        var groups = category!.Where(kv => kv.Value is Dictionary<string, object?>)
+            .Select(kv => kv.Key).ToList();
+        Assert.True(0 < groups.Count, "the corpus holds no validate group");
+        var run = ValidateGroups.Select(row => (string)row[0]).ToHashSet();
+        Assert.True(groups.All(run.Contains),
+            "the corpus holds validate groups this runner does not run: " +
+            string.Join(", ", groups.Where(name => !run.Contains(name))));
     }
 
 
