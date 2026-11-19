@@ -978,7 +978,7 @@ tm/kotlin/test/PipelineTest.kt c654fb25bc20
 tm/kotlin/test/PrimaryUtilityTest.kt 6624899a6de8
 tm/kotlin/test/RunnerSupport.kt fb1f888569a4
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
-tm/kotlin/test/StructCorpusTest.kt e0ae9e6c4f70
+tm/kotlin/test/StructCorpusTest.kt 39c9d3afd9e3
 tm/kotlin/test/sdk-test-control.json bb1582608f2f
 tm/kotlin/test/vendor/omni/Json.kt 16895fb3ef39
 tm/kotlin/test/vendor/omni/Runner.kt 0b315637d75b
