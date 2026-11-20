@@ -65,6 +65,7 @@ import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
+import { applyFacts, fact } from './helpers/facts'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
 import { cmp as labelledCmp } from './helpers/component'
 import type { DepEntry } from './helpers/collectDeps'
@@ -331,6 +332,8 @@ function SdkGen(opts: SdkGenOptions) {
     // A flow step whose call the runtime would refuse is switched off, so no
     // generated test makes it; see helpers/flowGuard.
     guardFlowSteps(model, log)
+
+    applyFacts(model)
 
     let Root = spec.root
 
@@ -1190,6 +1193,8 @@ export {
   entityCollection,
   guardModelNames,
   guardFlowSteps,
+  applyFacts,
+  fact,
   projectConst,
   isReservedName,
   safeVarName,

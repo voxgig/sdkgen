@@ -1,6 +1,7 @@
 
 import { each, Content, File, Folder } from 'jostraca'
 import { cmp } from '../helpers/component'
+import { fact } from '../helpers/facts'
 
 import { claudePointer } from './AgentGuideContent'
 
@@ -28,7 +29,7 @@ const AgentGuideFeature = cmp(function AgentGuideFeature(props: any) {
     .map((h: any) => h.name || h.key$)
     .filter(Boolean)
 
-  const defaultOn = true === feature?.config?.options?.active
+  const defaultOn = fact(feature, 'on')
 
   Folder({ name: 'src/feature/' + name }, () => {
 

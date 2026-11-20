@@ -1,0 +1,15 @@
+# Evaluated over the generated model, where every default is a value:
+# filter and match do not read a default inside a map. A missing input
+# leaves its fact absent, and reading an absent fact fails.
+
+main: kit: feature: &: {
+  fact: {
+    on: match(maybe(..config), { options: { active: true } }, true, false)
+  }
+}
+
+main: kit: target: &: {
+  fact: {
+    place: match(maybe(..output), { root: true }, "root", { path: "" }, "folder", "external")
+  }
+}

@@ -19,8 +19,13 @@ function scaffoldFolder(): string {
 }
 
 
+function factRulesFile(): string {
+  return Path.join(packageRoot(), 'model', 'fact.aontu')
+}
+
 export {
   packageRoot,
   schemaFile,
   scaffoldFolder,
+  factRulesFile,
 }
