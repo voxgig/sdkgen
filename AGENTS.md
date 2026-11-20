@@ -258,6 +258,33 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 
 ---
 
+## Facts are computed once, in the model; templates only read them
+
+A fact that generated text or code depends on (whether a feature is on by
+default, where a target is placed) is computed ONCE, by an aontu rule in
+`ts/model/fact.aontu`, and written into the model beside what it describes
+as `fact`: `feature.fact.on`, `target.fact.place`. `generate()` runs the rules
+(`applyFacts`, `ts/src/helpers/facts.ts`) after the name guards and before
+Root, so every component, every pack and docgen read the same answer.
+
+- **A component reads a fact with `fact(node, name)` and never computes
+  one.** It may loop over facts and branch on them. A helper function that
+  derives a fact for a template is the pattern this replaces: add a rule.
+- **A missing fact fails loudly.** `fact` throws when the model did not pass
+  through `applyFacts` or lacks what the rule reads; a rule wraps each input
+  in `maybe()`, so a partial test model still evaluates.
+- **The rules run over the GENERATED model, not inside the project's
+  evaluation.** aontu's `filter` and `match` do not read a default inside a
+  map (`*'sdk' | string` reads as unknown), and the base model declares
+  nearly every setting that way. Several features a rule would want are
+  missing in aontu 0.76.3; until they ship, the fact pass works around
+  them, and `docs/design/` records which.
+- **A test that builds a model by hand passes it through `applyFacts`**, as
+  `test/generateharness.ts` and `test/agentguide.test.ts` do. A real
+  `generate()` and the testkit apply it themselves.
+
+---
+
 ## Entity operations return ENTITIES — a fundamental design
 
 **Every entity operation resolves to the Entity INSTANCE**, never to plain
@@ -453,6 +480,7 @@ Rules:
 | Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.aontu` | propagate |
 | Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `cd ts && npm run build && npm test` |
 | Change the base model schema | `ts/model/sdkgen.aontu` (authoritative) | `make check-model build test` |
+| Add a **fact** generated text or code depends on | a rule in `ts/model/fact.aontu` | components read it with `fact(node, name)`; see [Facts are computed once](#facts-are-computed-once-in-the-model-templates-only-read-them) |
 | Add or retype an **SDK client option** | `main: kit: optspec` in `ts/model/sdkgen.aontu` | one place, not twenty: the generated `Schema` module carries it into every SDK target. No `make_options` template holds a spec of its own any more — if you find one, it is a regression |
 | Add or retype a **feature option** | that feature's `config.options` (with a default) or `config.optspec` (a type, for a callback or an option whose default understates it) | the option spec, the README table and the REFERENCE table all derive from these two — see `ts/src/helpers/optspec.ts` and `ts/src/cmp/FeatureDocs.ts` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
