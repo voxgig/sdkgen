@@ -5,7 +5,7 @@ import { ok } from 'node:assert'
 import { Jostraca, Project, Folder } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { AgentGuideTop, AgentGuide, AgentGuideFeature } from '../dist/sdkgen.js'
+import { AgentGuideTop, AgentGuide, AgentGuideFeature, applyFacts } from '../dist/sdkgen.js'
 
 
 const noop = () => {}
@@ -19,7 +19,7 @@ const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false }
 const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } } }
 
 function makeModel() {
-  return {
+  return applyFacts({
     name: 'demo', Name: 'Demo', const: { Name: 'Demo' },
     main: { kit: {
       target: {
@@ -43,7 +43,7 @@ function makeModel() {
         advice: { active: true, name: 'advice', Name: 'Advice' },
       },
     } },
-  }
+  })
 }
 
 

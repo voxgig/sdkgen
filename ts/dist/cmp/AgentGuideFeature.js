@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuideFeature = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
+const facts_1 = require("../helpers/facts");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 function cap(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -22,7 +23,7 @@ const AgentGuideFeature = (0, component_1.cmp)(function AgentGuideFeature(props)
         .filter((h) => h && h.active)
         .map((h) => h.name || h.key$)
         .filter(Boolean);
-    const defaultOn = true === feature?.config?.options?.active;
+    const defaultOn = (0, facts_1.fact)(feature, 'on');
     (0, jostraca_1.Folder)({ name: 'src/feature/' + name }, () => {
         (0, jostraca_1.File)({ name: 'AGENTS.md' }, () => {
             (0, jostraca_1.Content)(`# ${Name}Feature — Agent Guide

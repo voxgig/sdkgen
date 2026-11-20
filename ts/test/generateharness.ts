@@ -11,7 +11,7 @@ import {
   cmp,
   Main, Entity, Feature, Readme, Test as TestCmp, AgentGuide,
   ReadmeTop, AgentGuideTop, License, Security, Changelog, Deploy,
-  registerComponent,
+  registerComponent, applyFacts,
 } from '../dist/sdkgen.js'
 
 
@@ -2152,7 +2152,7 @@ function makeModel(
     'fixture model did not compile: ' +
     errs.map((e: any) => `[${e.why}] ${e.msg}`).join(' | '))
 
-  return model
+  return applyFacts(model)
 }
 
 

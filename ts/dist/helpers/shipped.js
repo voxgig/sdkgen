@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.packageRoot = packageRoot;
 exports.schemaFile = schemaFile;
 exports.scaffoldFolder = scaffoldFolder;
+exports.factRulesFile = factRulesFile;
 const node_path_1 = __importDefault(require("node:path"));
 function packageRoot() {
     return node_path_1.default.resolve(__dirname, '..', '..');
@@ -17,5 +18,8 @@ function schemaFile() {
 // sdkgen package.
 function scaffoldFolder() {
     return node_path_1.default.join(packageRoot(), 'project', '.sdk');
+}
+function factRulesFile() {
+    return node_path_1.default.join(packageRoot(), 'model', 'fact.aontu');
 }
 //# sourceMappingURL=shipped.js.map
