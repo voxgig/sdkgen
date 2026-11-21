@@ -86,6 +86,14 @@ function satisfiesOne(version: Parts, comparator: string): boolean | undefined {
 }
 
 
+// Undefined when either is not a plain version, so no order is claimed.
+function compareVersions(a: string, b: string): number | undefined {
+  const pa = parseVersion(a)
+  const pb = parseVersion(b)
+  return null == pa || null == pb ? undefined : compare(pa, pb)
+}
+
+
 // Does `version` satisfy `range`?
 //
 // `true` / `false` / `undefined` — see the note at the top: undefined means
@@ -149,4 +157,5 @@ function satisfies(version: string, range: string): boolean | undefined {
 export {
   satisfies,
   parseVersion,
+  compareVersions,
 }

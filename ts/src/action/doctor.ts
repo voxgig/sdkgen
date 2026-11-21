@@ -44,6 +44,8 @@ import type { CopyRecord } from './copies'
 
 import { MERGE } from '../helpers/copymerge'
 
+import { compareVersions } from '../helpers/semver'
+
 
 const IGNORED_RE = /(~|-jostraca-off)$/
 
@@ -108,6 +110,10 @@ type DoctorReport = {
   // add wrote it: the source moved on, so refreshing it discards nothing.
   outdated: string[]
 
+  // As outdated, but copied from a newer release of the package than the one
+  // installed: a refresh would put older copies back.
+  ahead: string[]
+
   // The forked and edited findings the copy record has no entry for, so
   // nothing shows whether the project changed them.
   unrecorded: string[]
@@ -139,6 +145,8 @@ type ItemDrift = {
   to?: string
 
   outdated: number
+
+  ahead: number
 
   // Forked, edited, missing and stale files.
   changed: number
@@ -297,7 +305,8 @@ async function doctor(
     forked: [], edited: [], stale: [], missing: [], additive: [],
     superseded: [], unwired: [], orphanModel: [],
     resyncPending: [], aliasedDiff: [],
-    outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
+    outdated: [], ahead: [], unrecorded: [], customized: [], unresolved: [],
+    byItem: {},
     ignoredLog: false, ok: true,
   }
 
@@ -389,7 +398,7 @@ async function doctor(
   // authoritative either way.
   report.ok = 0 === report.forked.length + report.edited.length -
     report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
-    report.orphanModel.length + report.outdated.length +
+    report.orphanModel.length + report.outdated.length + report.ahead.length +
     report.unresolved.length
 
   const customized = new Set(report.customized)
@@ -408,6 +417,7 @@ async function doctor(
     ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
     ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
     ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
+    ['ahead', 'AHEAD (unchanged since it was copied from a newer release than the one installed)'],
     ['unresolved', 'UNRESOLVED (declared, but its source is not installed; install it)'],
   ] as [keyof DoctorReport, string][]) {
     for (const file of (report[kind] as string[])) {
@@ -430,6 +440,13 @@ async function doctor(
           refreshCommand(item, drift.package) + '` refreshes them'
       })
     }
+    if (0 < drift.ahead) {
+      log.info({
+        point: 'doctor-ahead', item, ...drift,
+        note: aheadNote(item, drift) + ' - `voxgig-sdkgen ' +
+          forwardCommand(drift.package as string) + '` moves it up to them'
+      })
+    }
   }
 
   log.info({
@@ -446,6 +463,7 @@ async function doctor(
     resyncPending: report.resyncPending.length,
     aliasedDiff: report.aliasedDiff.length,
     outdated: report.outdated.length,
+    ahead: report.ahead.length,
     unresolved: report.unresolved.length,
     customized: report.customized.length,
     note: report.ok ?
@@ -454,7 +472,8 @@ async function doctor(
       ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
         report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
         report.missing.length + ' missing, ' + report.outdated.length +
-        ' outdated, ' + report.unresolved.length + ' unresolved')
+        ' outdated, ' + report.ahead.length + ' ahead, ' +
+        report.unresolved.length + ' unresolved')
   })
 
   return { report }
@@ -525,6 +544,7 @@ function noteUnresolved(
   report.byItem[item] = {
     ...pkgOf(declared.package),
     outdated: 0,
+    ahead: 0,
     changed: 0,
     customized: 0,
     unresolved: from,
@@ -909,16 +929,18 @@ function noteDrift(
   const item = itemKey(kind, source.name)
   const copied = copies.items[item]
   const merging = MERGE === projectCopyMode(actx)
+  const ahead = null != source.package && copied?.package === source.package &&
+    0 < (compareVersions(copied?.version ?? '', source.version ?? '') ?? 0)
 
   return (category: Category, label: string) => {
-    let into: Category | 'outdated' = category
+    let into: Category | 'outdated' | 'ahead' = category
     let custom = false
 
     if ('forked' === category || 'edited' === category) {
       const same = untouched(fs, actx.folder, copies, label)
 
       if (true === same) {
-        into = 'outdated'
+        into = ahead ? 'ahead' : 'outdated'
       }
       else if (undefined === same) {
         report.unrecorded.push(label)
@@ -936,12 +958,16 @@ function noteDrift(
       ...(null == copied?.version ? {} : { from: copied.version }),
       ...(null == source.version ? {} : { to: source.version }),
       outdated: 0,
+      ahead: 0,
       changed: 0,
       customized: 0,
     }
 
     if ('outdated' === into) {
       drift.outdated++
+    }
+    else if ('ahead' === into) {
+      drift.ahead++
     }
     else {
       drift.changed++
@@ -968,6 +994,19 @@ function refreshCommand(item: string, pkg?: string): string {
 
   const [kind, ...name] = item.split('/')
   return kind + ' add ' + name.join('/')
+}
+
+
+// Fetches the latest release, which a re-add from the installed one is not.
+function forwardCommand(pkg: string): string {
+  return 'package update ' + pkg
+}
+
+
+function aheadNote(item: string, drift: ItemDrift): string {
+  return item.replace('/', ' ') + ': ' + drift.ahead + ' file(s) are ' +
+    'unchanged copies from ' + drift.package + ' ' + drift.from +
+    ', newer than the installed ' + drift.to
 }
 
 
@@ -1174,6 +1213,10 @@ function copyWarnings(report: DoctorReport): string[] {
       add('outdated\n' + command, item, drift.outdated, drift)
     }
 
+    if (0 < drift.ahead) {
+      add('ahead\n' + forwardCommand(drift.package as string), item, drift.ahead, drift)
+    }
+
     if (0 < drift.changed - drift.customized) {
       add('changed\n' + command, item, drift.changed - drift.customized, drift)
     }
@@ -1201,6 +1244,14 @@ function copyWarnings(report: DoctorReport): string[] {
         ' file(s) in .sdk are unchanged copies' +
         sinceCopied(pkg, group.drift) + ', so this run generates from ' +
         'older templates. Run ' + refresh + ' to refresh them.')
+    }
+    else if ('ahead' === what) {
+      lines.push(group.items.join(', ') + ': ' + group.files +
+        ' file(s) in .sdk were copied from a newer ' + pkg + ' than the ' +
+        'installed ' + installed + ', so this run generates from templates ' +
+        'written for a generator this is not. Run ' + refresh + ' to move ' +
+        'the installed package up to them; refreshing from ' + installed +
+        ' would put older copies back.')
     }
     else {
       lines.push(group.items.join(', ') + ': ' + group.files +

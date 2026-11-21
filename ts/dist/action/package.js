@@ -440,6 +440,15 @@ async function preCheck(pkgname, installed, actx) {
                 'was changed'
         });
     }
+    if (0 < report.ahead.length && true === flags.nofetch) {
+        actx.log.warn({
+            point: 'package-update-older', package: pkgname,
+            files: report.ahead.length,
+            note: pkgname + ': ' + report.ahead.length + ' file(s) were copied ' +
+                'from a newer release than the one installed; --no-fetch puts its ' +
+                'older copies back'
+        });
+    }
     const changed = [...report.forked, ...report.edited];
     if (0 === changed.length) {
         return;

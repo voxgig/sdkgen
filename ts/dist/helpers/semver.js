@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.satisfies = satisfies;
 exports.parseVersion = parseVersion;
+exports.compareVersions = compareVersions;
 const COMPARATOR_RE = /^(>=|<=|>|<|=|\^|~)?v?(\d+)(?:\.(\d+))?(?:\.(\d+))?$/;
 const ANY_RE = /^(\*|x|X)$/;
 function parseVersion(v) {
@@ -65,6 +66,12 @@ function satisfiesOne(version, comparator) {
     if (2 === given)
         return version[0] === p[0] && version[1] === p[1];
     return version[0] === p[0];
+}
+// Undefined when either is not a plain version, so no order is claimed.
+function compareVersions(a, b) {
+    const pa = parseVersion(a);
+    const pb = parseVersion(b);
+    return null == pa || null == pb ? undefined : compare(pa, pb);
 }
 // Does `version` satisfy `range`?
 //

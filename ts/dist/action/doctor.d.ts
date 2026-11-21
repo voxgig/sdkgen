@@ -11,6 +11,7 @@ type DoctorReport = {
     resyncPending: string[];
     aliasedDiff: string[];
     outdated: string[];
+    ahead: string[];
     unrecorded: string[];
     customized: string[];
     unresolved: string[];
@@ -23,6 +24,7 @@ type ItemDrift = {
     from?: string;
     to?: string;
     outdated: number;
+    ahead: number;
     changed: number;
     customized: number;
     unresolved?: string;

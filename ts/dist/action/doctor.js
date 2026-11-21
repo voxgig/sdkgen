@@ -22,6 +22,7 @@ const featureSource_1 = require("../helpers/featureSource");
 const junk_1 = require("../helpers/junk");
 const copies_1 = require("./copies");
 const copymerge_1 = require("../helpers/copymerge");
+const semver_1 = require("../helpers/semver");
 const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
@@ -140,7 +141,8 @@ async function doctor(actx, scope, selected) {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         superseded: [], unwired: [], orphanModel: [],
         resyncPending: [], aliasedDiff: [],
-        outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
+        outdated: [], ahead: [], unrecorded: [], customized: [], unresolved: [],
+        byItem: {},
         ignoredLog: false, ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
@@ -209,7 +211,7 @@ async function doctor(actx, scope, selected) {
     // authoritative either way.
     report.ok = 0 === report.forked.length + report.edited.length -
         report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
-        report.orphanModel.length + report.outdated.length +
+        report.orphanModel.length + report.outdated.length + report.ahead.length +
         report.unresolved.length;
     const customized = new Set(report.customized);
     const unmergeable = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) ? new Set(report.unrecorded) : new Set();
@@ -226,6 +228,7 @@ async function doctor(actx, scope, selected) {
         ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
         ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
         ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
+        ['ahead', 'AHEAD (unchanged since it was copied from a newer release than the one installed)'],
         ['unresolved', 'UNRESOLVED (declared, but its source is not installed; install it)'],
     ]) {
         for (const file of report[kind]) {
@@ -247,6 +250,13 @@ async function doctor(actx, scope, selected) {
                     refreshCommand(item, drift.package) + '` refreshes them'
             });
         }
+        if (0 < drift.ahead) {
+            log.info({
+                point: 'doctor-ahead', item, ...drift,
+                note: aheadNote(item, drift) + ' - `voxgig-sdkgen ' +
+                    forwardCommand(drift.package) + '` moves it up to them'
+            });
+        }
     }
     log.info({
         point: 'doctor-end',
@@ -262,6 +272,7 @@ async function doctor(actx, scope, selected) {
         resyncPending: report.resyncPending.length,
         aliasedDiff: report.aliasedDiff.length,
         outdated: report.outdated.length,
+        ahead: report.ahead.length,
         unresolved: report.unresolved.length,
         customized: report.customized.length,
         note: report.ok ?
@@ -270,7 +281,8 @@ async function doctor(actx, scope, selected) {
             ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
                 report.missing.length + ' missing, ' + report.outdated.length +
-                ' outdated, ' + report.unresolved.length + ' unresolved')
+                ' outdated, ' + report.ahead.length + ' ahead, ' +
+                report.unresolved.length + ' unresolved')
     });
     return { report };
 }
@@ -323,6 +335,7 @@ function noteUnresolved(actx, report, kind, name) {
     report.byItem[item] = {
         ...pkgOf(declared.package),
         outdated: 0,
+        ahead: 0,
         changed: 0,
         customized: 0,
         unresolved: from,
@@ -582,13 +595,15 @@ function noteDrift(actx, report, copies, kind, source) {
     const item = (0, copies_1.itemKey)(kind, source.name);
     const copied = copies.items[item];
     const merging = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx);
+    const ahead = null != source.package && copied?.package === source.package &&
+        0 < ((0, semver_1.compareVersions)(copied?.version ?? '', source.version ?? '') ?? 0);
     return (category, label) => {
         let into = category;
         let custom = false;
         if ('forked' === category || 'edited' === category) {
             const same = (0, copies_1.untouched)(fs, actx.folder, copies, label);
             if (true === same) {
-                into = 'outdated';
+                into = ahead ? 'ahead' : 'outdated';
             }
             else if (undefined === same) {
                 report.unrecorded.push(label);
@@ -604,11 +619,15 @@ function noteDrift(actx, report, copies, kind, source) {
             ...(null == copied?.version ? {} : { from: copied.version }),
             ...(null == source.version ? {} : { to: source.version }),
             outdated: 0,
+            ahead: 0,
             changed: 0,
             customized: 0,
         };
         if ('outdated' === into) {
             drift.outdated++;
+        }
+        else if ('ahead' === into) {
+            drift.ahead++;
         }
         else {
             drift.changed++;
@@ -629,6 +648,15 @@ function refreshCommand(item, pkg) {
     }
     const [kind, ...name] = item.split('/');
     return kind + ' add ' + name.join('/');
+}
+// Fetches the latest release, which a re-add from the installed one is not.
+function forwardCommand(pkg) {
+    return 'package update ' + pkg;
+}
+function aheadNote(item, drift) {
+    return item.replace('/', ' ') + ': ' + drift.ahead + ' file(s) are ' +
+        'unchanged copies from ' + drift.package + ' ' + drift.from +
+        ', newer than the installed ' + drift.to;
 }
 function outdatedNote(item, drift) {
     return item.replace('/', ' ') + ': ' + drift.outdated +
@@ -769,6 +797,9 @@ function copyWarnings(report) {
         if (0 < drift.outdated) {
             add('outdated\n' + command, item, drift.outdated, drift);
         }
+        if (0 < drift.ahead) {
+            add('ahead\n' + forwardCommand(drift.package), item, drift.ahead, drift);
+        }
         if (0 < drift.changed - drift.customized) {
             add('changed\n' + command, item, drift.changed - drift.customized, drift);
         }
@@ -792,6 +823,14 @@ function copyWarnings(report) {
                 ' file(s) in .sdk are unchanged copies' +
                 sinceCopied(pkg, group.drift) + ', so this run generates from ' +
                 'older templates. Run ' + refresh + ' to refresh them.');
+        }
+        else if ('ahead' === what) {
+            lines.push(group.items.join(', ') + ': ' + group.files +
+                ' file(s) in .sdk were copied from a newer ' + pkg + ' than the ' +
+                'installed ' + installed + ', so this run generates from templates ' +
+                'written for a generator this is not. Run ' + refresh + ' to move ' +
+                'the installed package up to them; refreshing from ' + installed +
+                ' would put older copies back.');
         }
         else {
             lines.push(group.items.join(', ') + ': ' + group.files +
