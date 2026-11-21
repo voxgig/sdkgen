@@ -2,12 +2,9 @@
 import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import {
-  KIT,
-  getModelPath
-} from '../types'
-
-import { envName, packageName } from '../helpers/packageMeta'
+import { envName, originName, packageName } from '../helpers/packageMeta'
+import { targetFeatures } from '../helpers/applicability'
+import { isAuthActive } from '../utility'
 
 
 
@@ -25,9 +22,7 @@ const ReadmeStation = cmp(function ReadmeStation(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const features = getModelPath(model, `main.${KIT}.feature`,
-    { only_active: false, required: false }) || {}
-  const station = Object.values(features)
+  const station = Object.values(targetFeatures(model, target))
     .find((f: any) => 'station' === f?.name)
   if (null == station) { return }
 
@@ -38,8 +33,9 @@ const ReadmeStation = cmp(function ReadmeStation(props: any) {
   const env = envName(model)
   const secretbase = env.toLowerCase()
   const secretname = secretbase + '.apikey'
-  const connect = CONNECT_TARGETS.includes(target.name)
-  const selfreg = SELF_REGISTER_TARGETS.includes(target.name)
+  const origin = originName(model, target.name)
+  const connect = CONNECT_TARGETS.includes(origin)
+  const selfreg = SELF_REGISTER_TARGETS.includes(origin)
 
   Content(`
 ## Use with Station
@@ -86,7 +82,7 @@ SDK features are configured in the same file too: fleet-wide, per api,
 or per instance. \`station.check()\` resolves and constructs every
 active instance without sending a request — run it in CI.
 
-### The secret name derives from the instance
+${isAuthActive(model) ? `### The secret name derives from the instance
 
 The credential comes from [sekreto](https://github.com/voxgig/sekreto)
 under a name derived from the **instance** name — the instance token
@@ -102,7 +98,7 @@ vault later and application code does not change; sekreto's own
 documentation covers the stores. The key stays out of \`options()\` and
 \`prepare()\` output; \`station.tap(...)\` shows live traffic.
 
-### Imperative: ${connect ? '`connect()`' : 'inverted binding'} — the retrofit path
+` : ''}### Imperative: ${connect ? '`connect()`' : 'inverted binding'} — the retrofit path
 
 ${connect
   ? `Bind by passing the SDK class to the station:

@@ -6,6 +6,7 @@ import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
 
 import { ReadmeExplanation, ReadmeErrors } from '../dist/sdkgen.js'
+import { ReadmeStation } from '../dist/cmp/ReadmeStation.js'
 
 
 // A logger stub keeps the optional-component warning out of the test
@@ -185,5 +186,55 @@ describe('ReadmeErrors', () => {
     // js and an unmodelled language fall back to the ts default.
     strictEqual(await renderErrors('js'), await renderErrors('ts'))
     ok((await renderErrors('cobol')).includes('if (!result.ok) {'))
+  })
+})
+
+
+describe('ReadmeStation', () => {
+
+  const stationModel = (station: any, auth: boolean, target: any) => ({
+    name: 'demo', const: { Name: 'Demo', name: 'demo' },
+    main: { kit: {
+      entity: {},
+      config: { auth: { active: auth } },
+      target,
+      feature: { station: { name: 'station', ...station } },
+    } },
+  })
+
+  async function renderStation(model: any, target: any): Promise<string> {
+    const { fs, vol } = memfs({})
+    await Jostraca().generate({ fs: () => fs, folder: '/x', model, log }, () => {
+      Project({ folder: 'p' }, () => Folder({ name: 'd' }, () => File({ name: 'out.md' }, () => {
+        ReadmeStation({ target })
+      })))
+    })
+    const json: any = vol.toJSON()
+    return json[Object.keys(json).find((k) => k.endsWith('out.md'))!] ?? ''
+  }
+
+  const ts = { ts: { name: 'ts' } }
+
+  test('an inactive station feature writes no section', async () => {
+    const out = await renderStation(stationModel({ active: false }, true, ts), ts.ts)
+    ok(!/Use with Station/.test(out), out)
+  })
+
+  test('an active station feature writes the section', async () => {
+    const out = await renderStation(stationModel({ active: true }, true, ts), ts.ts)
+    match(out, /## Use with Station/)
+    match(out, /### The secret name derives from the instance/)
+  })
+
+  test('an API with no credential gets no secret-name paragraph', async () => {
+    const out = await renderStation(stationModel({ active: true }, false, ts), ts.ts)
+    match(out, /## Use with Station/)
+    ok(!/secret name|APIKEY/.test(out), out)
+  })
+
+  test('an alias binds the way its origin does', async () => {
+    const target = { ts2: { name: 'ts2', origname: 'ts' } }
+    const out = await renderStation(stationModel({ active: true }, true, target), target.ts2)
+    match(out, /### Imperative: `connect\(\)`/)
   })
 })

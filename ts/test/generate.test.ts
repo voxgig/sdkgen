@@ -932,7 +932,8 @@ main: kit: target: js: phase: feature: active: false
 
 
   test('ts/js readme and agent guide lead with the declarative station flow', async () => {
-    const out = await generate(['ts', 'js'], undefined, STATION_FEATURE)
+    const out = await generate(['ts', 'js'], undefined,
+      "main: kit: config: auth: { active: true, prefix: 'Bearer' }\n" + STATION_FEATURE)
 
     const agents = out['AGENTS.md']
     ok(null != agents, 'no root AGENTS.md generated')
@@ -964,6 +965,11 @@ main: kit: target: js: phase: feature: active: false
       ok(src.includes('docs/reference/station-errors.md'),
         target + ': README does not link the station error catalog')
     }
+
+    // The fixture's API has no auth, so there is no key to name.
+    const keyless = String((await generate(['ts', 'js'], undefined, STATION_FEATURE))['ts/README.md'])
+    ok(keyless.includes("station.sdk('demo')") && !keyless.includes('`DEMO_APIKEY`'),
+      'README names an API key secret for an API with no auth')
 
     const bare = await generate(['ts'])
     ok(!String(bare['ts/README.md']).includes('Use with Station'),
