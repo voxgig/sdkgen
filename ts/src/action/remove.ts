@@ -290,7 +290,8 @@ function planOutput(
   const fs = actx.fs()
   const root = actx.folder
 
-  if (null != declared?.output?.path) {
+  // The base schema defaults the path to '', which declares no output.
+  if ('' !== (declared?.output?.path ?? '')) {
     plan.notes.push(plan.name + ': generates out of tree (' +
       declared.output.path + '); that output is not touched')
     return

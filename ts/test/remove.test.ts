@@ -288,6 +288,38 @@ describe('target remove', () => {
   })
 
 
+  // A compiled model carries the schema's default path '', which is no
+  // declaration: the output beside `.sdk` is still this target's.
+  test('the schema default output path is in tree', async () => {
+    const project = await addedProject({ log: recordLog() })
+    project.actx.model.main[KIT].target.go.output = { path: '' }
+    write(project, '../go/go.mod', 'module demo\n')
+
+    const kept: any = await kind_remove('target', ['go'], project.actx)
+    ok(kept.report.notes.some((n: string) => /generated output kept/.test(n)), kept.report.notes.join('\n'))
+    ok(!kept.report.notes.some((n: string) => /out of tree/.test(n)), kept.report.notes.join('\n'))
+
+    const again = await addedProject()
+    again.actx.model.main[KIT].target.go.output = { path: '' }
+    write(again, '../go/go.mod', 'module demo\n')
+    again.actx.flags = { deleteOutput: true }
+    await kind_remove('target', ['go'], again.actx)
+    strictEqual(has(again, '../go'), false)
+  })
+
+
+  test('a declared output path is out of tree and left alone', async () => {
+    const project = await addedProject({ log: recordLog() })
+    project.actx.model.main[KIT].target.go.output = { path: '../other/go' }
+    write(project, '../go/go.mod', 'module demo\n')
+    project.actx.flags = { deleteOutput: true }
+
+    const res: any = await kind_remove('target', ['go'], project.actx)
+    ok(res.report.notes.some((n: string) => /out of tree/.test(n)), res.report.notes.join('\n'))
+    ok(has(project, '../go/go.mod'), 'an out-of-tree target\'s neighbour folder was deleted')
+  })
+
+
   test('a target that is not installed is an error', async () => {
     const project = makeProject()
 
