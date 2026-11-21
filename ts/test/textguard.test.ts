@@ -5,8 +5,8 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import Path from 'node:path'
 
 import {
-  FEATURES, variations, generateDocs, link, off, marker, reaction, parity, startsOff, negativeControl,
-  key,
+  FEATURES, variations, generateDocs, link, off, marker, codeFences, reaction, parity, startsOff,
+  negativeControl, key,
 } from './textguard'
 import type { Finding, Pin, Run, Variation } from './textguard'
 import { makeRoot } from './generateharness'
@@ -17,7 +17,7 @@ const PINS_FILE = Path.resolve(__dirname, '..', 'test', 'textguard-pins.json')
 const PINNED: { suspended: { family: string, reason: string }[], pins: Pin[] } =
   JSON.parse(readFileSync(PINS_FILE, 'utf8'))
 
-// The full matrix is one CI lane; `npm test` runs `link` on these alone.
+// The full matrix is one CI lane; `npm test` runs `link` and `fence` on these alone.
 const FULL = '1' === process.env.SDKGEN_TEXTGUARD_FULL
 const UPDATE = '1' === process.env.SDKGEN_TEXTGUARD_UPDATE
 const SUBSET = ['baseline', 'phase-top-off', 'phase-readme-off-ts', 'phase-agentguide-off-ts',
@@ -25,7 +25,7 @@ const SUBSET = ['baseline', 'phase-top-off', 'phase-readme-off-ts', 'phase-agent
 
 
 function findings(base: Run, run: Run, v: Variation, full: boolean): Finding[] {
-  const out = link(run)
+  const out = [...link(run), ...codeFences(run)]
   if (!full) return out
   out.push(...marker(run))
   out.push(...startsOff(run))
@@ -87,7 +87,7 @@ describe('textguard', () => {
       report(unpinned))
 
     const stale = PINNED.pins.filter((p: Pin) =>
-      (FULL || ('link' === p.relation && p.variations.some((id: string) => ran.has(id)))) &&
+      (FULL || (['link', 'fence'].includes(p.relation) && p.variations.some((id: string) => ran.has(id)))) &&
       !byKey.has(key(p)))
     deepStrictEqual(stale.map(key), [], 'pins that match nothing; remove them')
 

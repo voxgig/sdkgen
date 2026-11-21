@@ -9060,7 +9060,10 @@ function docBlocks(sdkroot: string, fence: string, join = '\n'): DocBlock[] {
     lines.forEach((line, i) => {
       const mark = /^\s*```\s*(\S*)\s*$/.exec(line)
       if (null == mark) {
-        if (open < 0 && /^## /.test(line)) section = i
+        if (open < 0 && /^## /.test(line)) {
+          section = i
+          step = false
+        }
         if (open < 0 && /^### /.test(line)) step = /^### \d+\./.test(line)
         return
       }

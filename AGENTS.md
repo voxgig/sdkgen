@@ -641,11 +641,14 @@ cannot mistake `console` or `record` for prose. It reports:
   A sentence covers the features it names; with "other" or "rest", every
   feature but those its paragraph names as on; else those its heading names;
   else every feature the document's target carries.
+- `fence`: a code block in a target's documents tagged with another
+  language; data and shell blocks are neutral, and a consumer writes the
+  language of the target it wraps.
 
 Each finding is keyed on (relation, the chain of labelled components that
 wrote the line, cause) and must match a pin in `test/textguard-pins.json`,
 which carries a reason. A pin that matches nothing fails, so fixing a writer
-means deleting its pin. `npm test` runs `link` on a fixed subset; `npm run
+means deleting its pin. `npm test` runs `link` and `fence` on a fixed subset; `npm run
 textguard` runs the full matrix, which is a CI lane. `npm run
 textguard-update` rewrites the pins from what it finds, keeping each reason;
 a new pin reads `TODO` and fails until it has one. The operation-level

@@ -15,10 +15,10 @@ import {
 
 
 // The text guard: the documentation under single-switch variations of the
-// model, read for links that do not resolve (`link`), lines naming what the
-// run removed (`off`), siblings reading different facts (`parity`), a fix
-// that reached one sibling only (`reaction`), unfired markers (`marker`), and
-// features said to start off that start on (`starts-off`).
+// model, read for unresolved links (`link`), lines naming what the run removed
+// (`off`), siblings reading different facts (`parity`), a fix that reached one
+// sibling only (`reaction`), unfired markers (`marker`), features said to start
+// off that start on (`starts-off`) and foreign code (`fence`).
 
 
 type Line = { text: string, chain: string }
@@ -557,6 +557,38 @@ function marker(run: Run): Finding[] {
 }
 
 
+// A code block in a target's documents is in that target's language, or is
+// data or a shell session; a consumer writes the language of what it wraps.
+const OWN_FENCE: Record<string, string> = {
+  c: 'c', clojure: 'clojure', cpp: 'cpp', csharp: 'csharp', elixir: 'elixir', go: 'go',
+  java: 'java', js: 'js', kotlin: 'kotlin', lua: 'lua', ocaml: 'ocaml', perl: 'perl',
+  php: 'php', py: 'python', rb: 'ruby', rust: 'rust', scala: 'scala', swift: 'swift',
+  ts: 'ts', zig: 'zig',
+}
+
+const NEUTRAL_FENCE = new Set(['', 'bash', 'sh', 'shell', 'console', 'text', 'json', 'jsonc',
+  'toml', 'yaml', 'xml', 'ini', 'diff'])
+
+function codeFences(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    const dir = doc.slice(0, Math.max(0, doc.indexOf('/')))
+    const own = OWN_FENCE[dir] ?? OWN_FENCE[TARGETS.find((t: string) => dir.startsWith(t + '-')) ?? '']
+    if (null == own) continue
+    let open = false
+    for (const { text, chain } of lines) {
+      const m = /^\s*```\s*(\S*)\s*$/.exec(text)
+      if (null == m) continue
+      if (!open && own !== m[1] && !NEUTRAL_FENCE.has(m[1])) {
+        out.push({ relation: 'fence', chain, cause: m[1], doc, line: text, variation: run.id })
+      }
+      open = !open
+    }
+  }
+  return out
+}
+
+
 // Siblings are the same document under different SDK target directories.
 function siblings(run: Run): Record<string, string[]> {
   const groups: Record<string, string[]> = {}
@@ -749,6 +781,7 @@ export {
   link,
   off,
   marker,
+  codeFences,
   reaction,
   parity,
   startsOff,

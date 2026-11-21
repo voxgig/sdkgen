@@ -1,6 +1,6 @@
 
 import { test, describe } from 'node:test'
-import { strictEqual, ok, match } from 'node:assert'
+import { strictEqual, deepStrictEqual, ok, match } from 'node:assert'
 
 import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
@@ -21,6 +21,7 @@ const log: any = {
 function makeModel() {
   return {
     name: 'demo',
+    const: { name: 'demo', Name: 'Demo' },
     main: { kit: {
       entity: {
         moon: {
@@ -61,6 +62,18 @@ async function render(comp: any, langName: string): Promise<string> {
 
 const renderExplanation = (langName: string) => render(ReadmeExplanation, langName)
 const renderErrors = (langName: string) => render(ReadmeErrors, langName)
+
+// The bundled languages outside EXAMPLE_LANGS, with their fence tags.
+const FENCE: Record<string, string> = {
+  c: 'c', clojure: 'clojure', cpp: 'cpp', csharp: 'csharp', elixir: 'elixir', java: 'java',
+  kotlin: 'kotlin', ocaml: 'ocaml', perl: 'perl', rust: 'rust', scala: 'scala', swift: 'swift',
+  zig: 'zig',
+}
+
+function fences(text: string): string[] {
+  const tags = [...text.matchAll(/^```(\S*)$/gm)].map((m) => m[1]).filter((t) => '' !== t)
+  return [...new Set(tags)]
+}
 
 
 describe('ReadmeExplanation', () => {
@@ -129,18 +142,34 @@ describe('ReadmeExplanation', () => {
     ok(out.includes('`Direct()` gives full control'))
   })
 
-  test('default variant (ts) and js/unknown fall back to it', async () => {
+  test('ts and js share one row in their own fences; an unknown origin writes no code', async () => {
     const ts = await renderExplanation('ts')
     ok(ts.includes('```ts'))
     ok(ts.includes('moon.data()'))
     ok(ts.includes('A feature is an object with a'))
     ok(ts.includes('The `direct` method gives full control'))
 
-    // js and an unmodelled language use the same default prose as ts.
-    strictEqual(await renderExplanation('js'), ts)
+    strictEqual(await renderExplanation('js'), ts.replace(/```ts\n/g, '```js\n'))
     const cobol = await renderExplanation('cobol')
-    ok(cobol.includes('A feature is an object with a'))
-    ok(cobol.includes('```ts'))
+    deepStrictEqual(fences(cobol), [], 'an unknown origin borrows no code')
+    ok(!cobol.includes('### Entity state'), 'an unknown origin has no entity objects to describe')
+    ok(cobol.includes('The `direct` method gives full control'))
+  })
+
+  // lean has no entity object: its ops are free functions over the client.
+  test('a lean origin says nothing of entity state', async () => {
+    const lean = await renderExplanation('lean')
+    ok(!lean.includes('Entity instances are stateful'))
+    deepStrictEqual(fences(lean), [])
+  })
+
+  test('every bundled language writes its own row, in its own fence', async () => {
+    for (const [lang, own] of Object.entries(FENCE)) {
+      const out = await renderExplanation(lang)
+      deepStrictEqual(fences(out), [own], lang + ': fences')
+      ok(out.includes('Entity instances are stateful'), lang + ': entity state')
+      ok(!out.includes('A feature is an object with a'), lang + ': the ts feature prose')
+    }
   })
 })
 
@@ -183,9 +212,26 @@ describe('ReadmeErrors', () => {
     ok(!(await renderErrors('ts')).includes('instanceof Error'))
     ok((await renderErrors('py')).includes('if not result["ok"]'))
     ok((await renderErrors('py')).includes('result.get("err")'))
-    // js and an unmodelled language fall back to the ts default.
-    strictEqual(await renderErrors('js'), await renderErrors('ts'))
-    ok((await renderErrors('cobol')).includes('if (!result.ok) {'))
+    strictEqual(await renderErrors('js'), (await renderErrors('ts')).replace(/```ts\n/g, '```js\n'))
+    const cobol = await renderErrors('cobol')
+    ok(cobol.includes('## Error handling'))
+    deepStrictEqual(fences(cobol), [], 'an unknown origin borrows no code')
+  })
+
+  test('the c Error handling section shows c, never ts', async () => {
+    const c = await renderErrors('c')
+    ok(!c.includes('```ts'))
+    ok(c.includes('```c\n'))
+    ok(c.includes('moon->vt->load(moon, cmap(1, "id", v_num(1)), NULL, &err);'))
+  })
+
+  test('every bundled language writes its own row, in its own fence', async () => {
+    for (const [lang, own] of Object.entries(FENCE)) {
+      const out = await renderErrors(lang)
+      deepStrictEqual(fences(out), [own], lang + ': fences')
+      ok(/[Mm]oon/.test(out), lang + ': references the example entity')
+      ok(out.includes('example_id'), lang + ': the direct() example')
+    }
   })
 })
 
