@@ -14,6 +14,8 @@ type FeatureDoc = {
   transport: string
   wraps: boolean
   on: boolean
+  // Active hooks, which a wrapping feature such as cost may also declare.
+  hooks: string[]
   options: Array<{ name: string, value: string }>
 
   extras: Array<{ name: string, type: string }>
@@ -84,6 +86,7 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
         transport: f.transport || 'none',
         wraps: isWrapping(f),
         on: true === fact(f, 'on'),
+        hooks: Object.keys(f.hook || {}).filter((h: string) => true === f.hook[h]?.active).sort(),
         options,
         extras,
       }

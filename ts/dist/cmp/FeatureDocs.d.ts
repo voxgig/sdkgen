@@ -5,6 +5,7 @@ type FeatureDoc = {
     transport: string;
     wraps: boolean;
     on: boolean;
+    hooks: string[];
     options: Array<{
         name: string;
         value: string;

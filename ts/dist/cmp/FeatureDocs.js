@@ -69,6 +69,7 @@ function featureDocs(model, target) {
             transport: f.transport || 'none',
             wraps: isWrapping(f),
             on: true === (0, facts_1.fact)(f, 'on'),
+            hooks: Object.keys(f.hook || {}).filter((h) => true === f.hook[h]?.active).sort(),
             options,
             extras,
         };
