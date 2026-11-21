@@ -10,7 +10,8 @@ const Security = cmp(function Security(props: any) {
   const { ctx$ } = props
   const { model } = ctx$
 
-  const { issuesUrl } = repoInfo(model)
+  const { issuesUrl, host, hostName } = repoInfo(model)
+  const publicIssues = hostName === host ? `public issues on ${host}` : `public ${hostName} issues`
   const publisher = publisherInfo(model)
 
   // Voxgig's own response commitment, which another publisher has not made.
@@ -24,7 +25,7 @@ const Security = cmp(function Security(props: any) {
 
 Please report security issues ${securityContact(model)}.
 
-Do not open public GitHub issues for suspected vulnerabilities.${promise}
+Do not open ${publicIssues} for suspected vulnerabilities.${promise}
 
 For non-security bugs, use the issue tracker: ${issuesUrl}
 

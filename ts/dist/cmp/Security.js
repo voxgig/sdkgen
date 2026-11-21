@@ -7,7 +7,8 @@ const packageMeta_1 = require("../helpers/packageMeta");
 const Security = (0, component_1.cmp)(function Security(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
-    const { issuesUrl } = (0, packageMeta_1.repoInfo)(model);
+    const { issuesUrl, host, hostName } = (0, packageMeta_1.repoInfo)(model);
+    const publicIssues = hostName === host ? `public issues on ${host}` : `public ${hostName} issues`;
     const publisher = (0, packageMeta_1.publisherInfo)(model);
     // Voxgig's own response commitment, which another publisher has not made.
     const promise = (0, packageMeta_1.isDefaultPublisher)(model) ?
@@ -19,7 +20,7 @@ const Security = (0, component_1.cmp)(function Security(props) {
 
 Please report security issues ${(0, packageMeta_1.securityContact)(model)}.
 
-Do not open public GitHub issues for suspected vulnerabilities.${promise}
+Do not open ${publicIssues} for suspected vulnerabilities.${promise}
 
 For non-security bugs, use the issue tracker: ${issuesUrl}
 

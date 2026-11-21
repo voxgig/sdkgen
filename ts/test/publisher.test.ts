@@ -1,5 +1,10 @@
 import { test, describe } from 'node:test'
-import { deepStrictEqual, strictEqual } from 'node:assert'
+import { deepStrictEqual, match, strictEqual } from 'node:assert'
+
+import { Jostraca, Project } from 'jostraca'
+import { memfs } from 'memfs'
+
+import { Security } from '../dist/sdkgen.js'
 
 import {
   publisherInfo,
@@ -9,6 +14,17 @@ import {
   nonAffiliation,
 } from '../dist/helpers/packageMeta.js'
 import { ensureStdrep } from '../dist/helpers/stdrep.js'
+
+
+async function security(repo?: any): Promise<string> {
+  const { fs, vol } = memfs({})
+  const log: any = { info() {}, debug() {}, warn() {}, error() {}, trace() {}, fatal() {}, child() { return log } }
+  await Jostraca().generate(
+    { fs: () => fs, folder: '/x', model: model(undefined, repo ? { repo } : {}), log },
+    () => Project({ folder: 'p' }, () => Security({})),
+  )
+  return String(vol.toJSON()['/x/p/SECURITY.md'])
+}
 
 
 function model(publisher?: any, rest?: any): any {
@@ -61,5 +77,14 @@ describe('publisher', () => {
   test('the template placeholder is the publisher name', () => {
     strictEqual(ensureStdrep({ model: model({ name: 'Acme' }) }).PROJECTPUBLISHER, 'Acme')
     strictEqual(ensureStdrep({ model: model() }).PROJECTPUBLISHER, 'Voxgig')
+  })
+
+  test('SECURITY.md names the host the issues live on', async () => {
+    match(await security(), /Do not open public GitHub issues for suspected/)
+    const gitlab = await security({ host: 'gitlab.com', path: 'acme/demo-sdk' })
+    match(gitlab, /Do not open public GitLab issues for suspected/)
+    match(gitlab, /gitlab\.com\/acme\/demo-sdk\/-\/issues/)
+    match(await security({ host: 'git.example.com', path: 'acme/demo-sdk' }),
+      /Do not open public issues on git\.example\.com for suspected/)
   })
 })
