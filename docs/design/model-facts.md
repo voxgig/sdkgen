@@ -1,8 +1,9 @@
 # Design: facts computed once, in the model
 
-Status: **in progress** (2026-11-20). The first two facts are built; the
-rest follow the plan in `docs/design/model-dependent-text-plan.md`, which is
-being revised to this approach.
+Status: **in progress** (2026-11-21). The fact pass and the first two facts
+are released in 4.45.0; the rest follow the plan in
+`docs/design/model-dependent-text-plan.md`, whose section 0 maps each
+function it once proposed to the fact that replaces it.
 
 ## The ruling
 
@@ -91,11 +92,13 @@ with its readers moved to `fact`:
 - `targetSurface` (WP13) becomes declared `surface` and `consumes` slots,
   with the consumers of each target as a collection fact.
 - `requiredOptions`, the environment-variable names and the escaped vendor
-  text (WP18, WP19) become facts; which server variables a URL uses comes
-  from apidef, which reads the servers.
+  text (WP18, WP19) become facts. A rule finds which server variables a URL
+  uses with `re()` built from each variable's own key (`key(2)` where the
+  rule sits), which aontu 0.76.3 evaluates, so apidef needs no change for it.
 - Packs and docgen read facts from the model they receive, so the plan's
-  rule about importing newer exports with a fallback goes.
+  rule about importing newer exports with a fallback goes. docgen's
+  standalone run imports only `guardModel` and `applyFacts`.
 - The copy wave (R3) reads facts, so the copies call no derivation of
   sdkgen's.
-
-The plan document is revised to this in its own change.
+- The fact pass took 4.45.0, so the plan's R1, R2 and R3 move to 4.46.0,
+  4.47.0 and 4.48.0.
