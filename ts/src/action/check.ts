@@ -32,6 +32,7 @@ import {
   ANCHOR_RE,
   compileModel,
   publishOverrideProbe,
+  schemaHooks,
   slashComments,
 } from '../helpers/modelcheck'
 
@@ -317,6 +318,7 @@ function checkDefinition(
 
   if ('feature' === kind) {
     found.push(...checkFeatureModel(strict.model, name, at))
+    found.push(...checkFeatureHooks(strict.model, name, at))
   }
 
   return found
@@ -386,6 +388,25 @@ function checkFeatureModel(model: any, name: string, at: At): Finding[] {
   }
 
   return found
+}
+
+
+function checkFeatureHooks(model: any, name: string, at: At): Finding[] {
+  const hook = model?.main?.[KIT]?.feature?.[name]?.hook
+  if (null == hook || 'object' !== typeof hook) {
+    return []
+  }
+
+  const known = schemaHooks()
+  const unknown = Object.keys(hook).filter((h: string) => !known.includes(h)).sort()
+  if (0 === unknown.length) {
+    return []
+  }
+
+  return [at('error', 'feature-hook-unknown',
+    'declares hook(s) the base schema does not list: ' + unknown.join(', ') +
+    ' — no pipeline fires them, so the feature never runs there. The hooks are: ' +
+    known.join(', '))]
 }
 
 

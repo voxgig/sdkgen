@@ -12,6 +12,7 @@ import { loadFeature, loadBase } from './featureharness'
 
 import { featureApplies } from '../dist/helpers/applicability'
 import { PIPELINE_STAGES } from '../dist/cmp/FeatureHook'
+import { schemaHooks } from '../dist/helpers/modelcheck'
 
 
 const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
@@ -401,5 +402,35 @@ describe('pipeline-stages', () => {
   test('the stages the READMEs describe are the ones the ts pipeline fires', () => {
     const stages = firedHooks().filter((h) => h.startsWith('Pre') && 'PreUnexpected' !== h)
     deepStrictEqual(PIPELINE_STAGES.map((s) => s.hook).sort(), stages)
+  })
+})
+
+
+describe('schema-hooks', () => {
+
+  // The secrets plugin host's hook list, vendored and not editable here.
+  const host = (): string[] => {
+    const src = readFileSync(Path.join(FEATURE_TM, 'secrets', 'plugin', 'FeatureHost.ts'), 'utf8')
+    const list = /export const SDK_HOOKS = \[([^\]]*)\]/.exec(src)
+    ok(null != list, 'no SDK_HOOKS in the plugin host')
+    return [...(list as RegExpExecArray)[1].matchAll(/'([A-Za-z]+)'/g)].map((m) => m[1])
+  }
+
+  test('the ts runtime fires only hooks the schema lists', () => {
+    const schema = schemaHooks()
+    deepStrictEqual(firedHooks().filter((h) => !schema.includes(h)), [])
+  })
+
+  test('the schema lists only hooks a runtime fires or the plugin host names', () => {
+    const known = new Set([...firedHooks(), ...host()])
+    deepStrictEqual(schemaHooks().filter((h) => !known.has(h)), [])
+  })
+
+  test('every bundled feature declares only listed hooks', () => {
+    const { model } = compileFeatureModel()
+    const schema = schemaHooks()
+    for (const [name, feat] of Object.entries<any>(model.main.kit.feature)) {
+      deepStrictEqual(Object.keys(feat.hook || {}).filter((h) => !schema.includes(h)), [], name)
+    }
   })
 })

@@ -8,11 +8,13 @@ exports.aontuKey = aontuKey;
 exports.compileModel = compileModel;
 exports.includeLine = includeLine;
 exports.publishOverrideProbe = publishOverrideProbe;
+exports.schemaHooks = schemaHooks;
 exports.slashComments = slashComments;
 exports.strictAontu = strictAontu;
 exports.unquoted = unquoted;
 const aontu_1 = require("aontu");
 const node_module_1 = require("node:module");
+const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const shipped_1 = require("./shipped");
 // The provenance anchor. The literal line a shipped definition carries so the
@@ -111,5 +113,16 @@ function publishOverrideProbe(src, path, tname) {
         errors: [...first.errors, ...second.errors],
         why: [...first.why, ...second.why],
     };
+}
+// A feature hook the schema does not list still unifies, through `hook: &:`,
+// so a misspelled one is caught only by comparing against this list.
+let schemaHookNames = null;
+function schemaHooks() {
+    if (null == schemaHookNames) {
+        const probe = compileModel(node_fs_1.default.readFileSync((0, shipped_1.schemaFile)(), 'utf8') +
+            "\nmain: kit: feature: 'hook$': title: ''\n", (0, shipped_1.schemaFile)(), { strict: false });
+        schemaHookNames = Object.keys(probe.model?.main?.kit?.feature?.['hook$']?.hook ?? {}).sort();
+    }
+    return schemaHookNames;
 }
 //# sourceMappingURL=modelcheck.js.map

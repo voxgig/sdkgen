@@ -199,6 +199,7 @@ function checkDefinition(fs, kind, name, file) {
     }
     if ('feature' === kind) {
         found.push(...checkFeatureModel(strict.model, name, at));
+        found.push(...checkFeatureHooks(strict.model, name, at));
     }
     return found;
 }
@@ -245,6 +246,20 @@ function checkFeatureModel(model, name, at) {
             tname + ': { ' + named[0] + ': {…} }`'));
     }
     return found;
+}
+function checkFeatureHooks(model, name, at) {
+    const hook = model?.main?.[types_1.KIT]?.feature?.[name]?.hook;
+    if (null == hook || 'object' !== typeof hook) {
+        return [];
+    }
+    const known = (0, modelcheck_1.schemaHooks)();
+    const unknown = Object.keys(hook).filter((h) => !known.includes(h)).sort();
+    if (0 === unknown.length) {
+        return [];
+    }
+    return [at('error', 'feature-hook-unknown', 'declares hook(s) the base schema does not list: ' + unknown.join(', ') +
+            ' — no pipeline fires them, so the feature never runs there. The hooks are: ' +
+            known.join(', '))];
 }
 // The template trees: does a feature's declared coverage exist, and is
 // anything in a target's tree feature-shaped but invisible to the trim?

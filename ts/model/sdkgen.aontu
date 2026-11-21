@@ -210,8 +210,8 @@ main: kit: feature: &: {
     title: *'' | string
 
     # What this plugin needs of the RUNTIME - 'fs', 'fetch', 'crypto'.
-    # Declared so a target that cannot provide it is refused at
-    # generation rather than at the consumer's first lookup.
+    # Nothing refuses a target that cannot provide it; the ocaml target
+    # reads fetch to group the plugins that need TLS.
     needs: &: boolean
 
     path: *[] | [&: string]
@@ -236,13 +236,17 @@ main: kit: feature: &: {
     PostConstructEntity: {}
     SetData: {}
     GetData: {}
+    SetMatch: {}
     GetMatch: {}
 
     PreTarget: {}
+    PrePoint: {}
     PreSpec: {}
     PreRequest: {}
     PreResponse: {}
     PreResult: {}
+    PreDone: {}
+    PreUnexpected: {}
     PostOperation: {}
   }
 
