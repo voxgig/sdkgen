@@ -27,6 +27,7 @@ declare function volumeKey(p: string): string;
 type GenerateOptions = {
     model: any;
     root?: any;
+    top?: boolean;
     allowPlaceholder?: (path: string, token: string) => boolean;
     outside?: string[];
 };

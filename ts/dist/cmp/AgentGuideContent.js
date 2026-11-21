@@ -18,6 +18,7 @@ exports.customiseSection = customiseSection;
 exports.aontuSection = aontuSection;
 exports.claudePointer = claudePointer;
 const applicability_1 = require("../helpers/applicability");
+const facts_1 = require("../helpers/facts");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const LANG_CMD = {
@@ -64,7 +65,7 @@ function langCommandsBlock(name) {
     return '```bash\n# in this target directory (' + name + '/):\n' + lines.join('\n') + '\n```\n';
 }
 function featuresEnabled(target) {
-    return target?.phase?.feature?.active !== false;
+    return (0, facts_1.fact)(target, 'phase').feature;
 }
 // ts/js lay each feature out as a directory `src/feature/<name>/`; the other
 // SDK targets (`srcfeature: false`) use flat files in a shared `feature/`

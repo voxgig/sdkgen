@@ -11,7 +11,7 @@ import {
   cmp,
   Main, Entity, Feature, Readme, Test as TestCmp, AgentGuide,
   ReadmeTop, AgentGuideTop, License, Security, Changelog, Deploy,
-  registerComponent, applyFacts,
+  registerComponent, applyFacts, fact,
 } from '../dist/sdkgen.js'
 import { provenanceReplace } from '../dist/helpers/stdrep.js'
 import { BUNDLED } from '../dist/action/resolve.js'
@@ -2220,37 +2220,38 @@ function makeRoot(): any {
     ctx$.stdrep = {}
     names(ctx$.stdrep, model.Name, 'ProjectName')
 
-    const target = model.main[KIT].target || {}
-    const feature = model.main[KIT].feature || {}
-    const entity = model.main[KIT].entity || {}
+    const kit = model.main[KIT]
+    const target = kit.target || {}
+    const feature = kit.feature || {}
+    const entity = kit.entity || {}
 
     Project({}, () => {
 
       // The repo-root phase, which the real Root reaches through Top(). It is
       // not optional coverage: ReadmeTop is the ONLY route to the
       // ReadmeTopQuick_<lang> components, where the elixir defect lived.
-      ReadmeTop({})
-      AgentGuideTop({})
-      License({})
-      Security({})
-      Changelog({})
-      Deploy({})
+      if (fact(kit, 'top')) {
+        ReadmeTop({})
+        AgentGuideTop({})
+        License({})
+        Security({})
+        Changelog({})
+        Deploy({})
+      }
 
-      each(target, (target: any) => {
+      each(target).filter((target: any) => false !== target.active).map((target: any) => {
         names(target, target.name)
 
-        Folder({ name: target.name }, () => {
-          const phase = target.phase || {}
-          const on = (name: string) => false !== (phase[name] && phase[name].active)
-
-          if (on('entity')) {
+        const phase = fact(target, 'phase')
+        const phases = () => {
+          if (phase.entity) {
             each(entity).filter((entity: any) => entity.active).map((entity: any) => {
               names(entity, entity.name)
               Entity({ target, entity })
             })
           }
 
-          if (on('feature')) {
+          if (phase.feature) {
             each(feature)
               .filter((f: any) => f.active)
               .map((f: any) => {
@@ -2264,10 +2265,17 @@ function makeRoot(): any {
           RegisteredQuick({ target })
           RegisteredAbsent({ target })
 
-          if (on('readme')) Readme({ target })
-          if (on('agentguide')) AgentGuide({ target })
-          if (on('test')) TestCmp({ target })
-        })
+          if (phase.readme) Readme({ target })
+          if (phase.agentguide) AgentGuide({ target })
+          if (phase.test) TestCmp({ target })
+        }
+
+        if ('root' === fact(target, 'place')) {
+          phases()
+        }
+        else {
+          Folder({ name: target.name }, phases)
+        }
       })
     })
   })
