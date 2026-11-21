@@ -10,6 +10,8 @@ Feature ordering determines transport composition: the mock transport is install
 
 Vendored dependency sources are pinned snapshots. Their comment policy is enforced in their upstream repositories; update the snapshots through the vendoring workflow rather than editing them independently.
 
+The text a neutral document prints from the model is escaped once, by the `escape` rule in the fact rules, and each component reads the form its context needs: a table cell, inline text, a code span, a link target. The pass supplies each raw text as the document prints it and writes the forms beside what the text describes. `rep` stands in for a Markdown escape aontu does not have yet. Text from the spec loses its relative links, which resolve against the spec's site rather than the generated repository, and its fences, which every README example test would extract and compile; the project's own text keeps both. `$$` is rewritten everywhere because the template pass would read it.
+
 Sources: [agent guide](AGENTS.md), [SDK template](ts/project/.sdk/src/cmp/ts/fragment/Main.fragment.ts), [generated compilation tests](ts/test/generatedcompile.test.ts).
 
 Target model files describe supported capabilities and retired output paths. Project-specific publication values belong in the project overlay, which survives target replacement. Concrete model values do not override conflicting concrete values; leave project-owned keys unset in target fragments and use schema defaults.

@@ -6,6 +6,7 @@ exports.refuseRootPlan = refuseRootPlan;
 const node_fs_1 = require("node:fs");
 const aontu_1 = require("aontu");
 const apidef_1 = require("@voxgig/apidef");
+const doctext_1 = require("./doctext");
 const shipped_1 = require("./shipped");
 const utility_1 = require("../utility");
 // No fact rule reads these, and they are most of a large model.
@@ -38,8 +39,10 @@ function applyFacts(model) {
             input[key] = val;
         }
     }
+    const texts = (0, doctext_1.docTexts)(model);
+    const escape = Object.fromEntries(texts.map((t, i) => ['t' + i, { raw: t.raw, vendor: t.vendor }]));
     const path = (0, shipped_1.factRulesFile)();
-    const src = JSON.stringify({ main: { [apidef_1.KIT]: input } }).slice(1, -1) +
+    const src = JSON.stringify({ main: { [apidef_1.KIT]: input }, escape }).slice(1, -1) +
         '\n' + (0, node_fs_1.readFileSync)(path, 'utf8');
     const errs = [];
     const out = new aontu_1.Aontu().generate(src, { path, errs });
@@ -48,7 +51,15 @@ function applyFacts(model) {
             errs.map((e) => `[${e.why}] ${e.msg}`).join(' | '));
     }
     copyFacts(out.main[apidef_1.KIT], kit);
+    texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]));
     return model;
+}
+function place(at, path, forms) {
+    let node = at.fact = isMap(at.fact) ? at.fact : {};
+    for (const key of path.slice(0, -1)) {
+        node = node[key] = isMap(node[key]) ? node[key] : {};
+    }
+    node[path[path.length - 1]] = forms;
 }
 function fact(node, name) {
     const facts = node?.fact;

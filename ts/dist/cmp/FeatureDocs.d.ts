@@ -1,3 +1,4 @@
+import { renderValue, sentinelName } from '../helpers/doctext';
 type FeatureDoc = {
     name: string;
     Name: string;
@@ -15,8 +16,6 @@ type FeatureDoc = {
         type: string;
     }>;
 };
-declare function sentinelName(v: any): string;
-declare function renderValue(v: any): string;
 declare function featureDocs(model: any, target?: any): FeatureDoc[];
 declare function codeList(names: string[]): string;
 declare function honoursActivationOrder(target: any): boolean;

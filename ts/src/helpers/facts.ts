@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { Aontu } from 'aontu'
 import { KIT } from '@voxgig/apidef'
 
+import { docTexts } from './doctext'
 import { factRulesFile } from './shipped'
 import { SdkGenError } from '../utility'
 
@@ -45,8 +46,11 @@ function applyFacts(model: any): any {
     }
   }
 
+  const texts = docTexts(model)
+  const escape = Object.fromEntries(texts.map((t, i) => ['t' + i, { raw: t.raw, vendor: t.vendor }]))
+
   const path = factRulesFile()
-  const src = JSON.stringify({ main: { [KIT]: input } }).slice(1, -1) +
+  const src = JSON.stringify({ main: { [KIT]: input }, escape }).slice(1, -1) +
     '\n' + readFileSync(path, 'utf8')
 
   const errs: any[] = []
@@ -57,7 +61,17 @@ function applyFacts(model: any): any {
   }
 
   copyFacts(out.main[KIT], kit)
+  texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]))
   return model
+}
+
+
+function place(at: any, path: string[], forms: any): void {
+  let node = at.fact = isMap(at.fact) ? at.fact : {}
+  for (const key of path.slice(0, -1)) {
+    node = node[key] = isMap(node[key]) ? node[key] : {}
+  }
+  node[path[path.length - 1]] = forms
 }
 
 

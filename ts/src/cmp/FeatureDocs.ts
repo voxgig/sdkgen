@@ -1,5 +1,6 @@
 import { featureApplies } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
+import { renderValue, sentinelName } from '../helpers/doctext'
 
 import { each } from 'jostraca'
 
@@ -24,40 +25,6 @@ type FeatureDoc = {
 
 function isWrapping(feat: any): boolean {
   return 'wrap' === feat.transport
-}
-
-
-// A struct.validate sentinel as a reader's word for it: '`$FUNCTION`' ->
-// 'function'. A union renders its members, so netsim's latency reads
-// 'number | map'. Anything unrecognised renders verbatim rather than being
-// dropped — a doc table that silently omits an option is the failure this
-// whole path exists to fix.
-function sentinelName(v: any): string {
-  if (Array.isArray(v)) {
-    const members = v.slice(1).map((m: any) => sentinelName(m))
-      .filter((m: string) => 'one' !== m)
-    return 0 === members.length ? 'any' : members.join(' | ')
-  }
-
-  if ('string' !== typeof v) {
-    return 'any'
-  }
-
-  const bare = v.replace(/[`$]/g, '').trim().toLowerCase()
-  return '' === bare ? 'any' : bare
-}
-
-
-function renderValue(v: any): string {
-  if (null == v) { return '' }
-  if (Array.isArray(v)) { return '[' + v.map((x) => renderValue(x)).join(', ') + ']' }
-  if ('object' === typeof v) {
-    const keys = Object.keys(v)
-    return 0 === keys.length ? '{}' :
-      '{' + keys.map((k) => k + ': ' + renderValue(v[k])).join(', ') + '}'
-  }
-  if ('string' === typeof v) { return `'${v}'` }
-  return String(v)
 }
 
 

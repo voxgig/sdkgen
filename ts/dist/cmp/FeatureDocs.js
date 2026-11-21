@@ -1,50 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.sentinelName = exports.renderValue = void 0;
 exports.featureDocs = featureDocs;
 exports.codeList = codeList;
-exports.renderValue = renderValue;
-exports.sentinelName = sentinelName;
 exports.honoursActivationOrder = honoursActivationOrder;
 const applicability_1 = require("../helpers/applicability");
 const facts_1 = require("../helpers/facts");
+const doctext_1 = require("../helpers/doctext");
+Object.defineProperty(exports, "renderValue", { enumerable: true, get: function () { return doctext_1.renderValue; } });
+Object.defineProperty(exports, "sentinelName", { enumerable: true, get: function () { return doctext_1.sentinelName; } });
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 function isWrapping(feat) {
     return 'wrap' === feat.transport;
-}
-// A struct.validate sentinel as a reader's word for it: '`$FUNCTION`' ->
-// 'function'. A union renders its members, so netsim's latency reads
-// 'number | map'. Anything unrecognised renders verbatim rather than being
-// dropped — a doc table that silently omits an option is the failure this
-// whole path exists to fix.
-function sentinelName(v) {
-    if (Array.isArray(v)) {
-        const members = v.slice(1).map((m) => sentinelName(m))
-            .filter((m) => 'one' !== m);
-        return 0 === members.length ? 'any' : members.join(' | ');
-    }
-    if ('string' !== typeof v) {
-        return 'any';
-    }
-    const bare = v.replace(/[`$]/g, '').trim().toLowerCase();
-    return '' === bare ? 'any' : bare;
-}
-function renderValue(v) {
-    if (null == v) {
-        return '';
-    }
-    if (Array.isArray(v)) {
-        return '[' + v.map((x) => renderValue(x)).join(', ') + ']';
-    }
-    if ('object' === typeof v) {
-        const keys = Object.keys(v);
-        return 0 === keys.length ? '{}' :
-            '{' + keys.map((k) => k + ': ' + renderValue(v[k])).join(', ') + '}';
-    }
-    if ('string' === typeof v) {
-        return `'${v}'`;
-    }
-    return String(v);
 }
 function featureDocs(model, target) {
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
@@ -55,13 +23,13 @@ function featureDocs(model, target) {
         const opts = (f.config && f.config.options) || {};
         const options = Object.keys(opts).sort().map((k) => ({
             name: k,
-            value: renderValue(opts[k]),
+            value: (0, doctext_1.renderValue)(opts[k]),
         }));
         const extra = (f.config && f.config.optspec) || {};
         const extras = Object.keys(extra)
             .filter((k) => null == opts[k])
             .sort()
-            .map((k) => ({ name: k, type: sentinelName(extra[k]) }));
+            .map((k) => ({ name: k, type: (0, doctext_1.sentinelName)(extra[k]) }));
         return {
             name: f.name,
             Name: f.Name || f.name,
