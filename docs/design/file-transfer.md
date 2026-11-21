@@ -1,8 +1,10 @@
 # Design: files in the entity model — upload, download, partial and resumable transfer
 
-Status: **discussion draft** (2026-11-21). Nothing here is implemented.
-Section 12 lists the rulings that gate the plan; the first eight decide its
-shape and the rest have a default that stands unless overruled.
+Status: **plan, with its shaping rulings made** (2026-11-21). Nothing here
+is implemented. Rulings R1 to R8 were given on 2026-11-21 and are recorded
+in section 12, where R9 to R19 each have a default that stands unless
+overruled. Sections 4.2 and 4.3 keep the options that were not chosen, so
+the reasoning stays readable.
 
 Method: a survey of both codebases at sdkgen `28b4664` (4.45.0) and apidef
 `00778c4` (8.33.1), one trial run of that apidef over a draft definition of
@@ -107,10 +109,10 @@ appendix A). Three entities came out: `show`, `episode` beneath it, and
 | `POST .../show/{id}/episode` | `episode.create`, no action | `rb: multipart` with `audio` (binary, `audio/wav`), `number`, `title` |
 | `POST .../episode/{id}/publish` | `episode.create`, `$action: publish` | JSON |
 | `POST /api/upload` | `upload.create`, **`$action: upload`**, with a warning | JSON |
-| `PATCH /api/upload/{id}` | `upload.update`; selector `["id", "upload_offset"]` | `rb: raw, application/offset+octet-stream, binary`; no `rs` |
+| `PATCH /api/upload/{id}` | `upload.update`; selector `["id", "tus_resumable", "upload_offset"]` | `rb: raw, application/offset+octet-stream, binary`; no `rs` |
 | `HEAD /api/upload/{id}` | in the guide, absent from the model | none |
 
-Five things follow.
+Six things follow.
 
 - **O1. The model already says where the files are.** Each file route is an
   action point on the record's own `load` or `update`, carrying the media
@@ -132,6 +134,9 @@ Five things follow.
 - **O5. `HEAD` is gone.** The cheapest way to read a file's size and
   validator, and the way both resumable-upload protocols read an offset,
   does not reach the model.
+- **O6. Protocol bookkeeping becomes the caller's.** A required header
+  joins a point's selector, so the append is reached only by a call that
+  supplies `tus_resumable` and `upload_offset` itself.
 
 ### 2.3 What a generated SDK does with those points
 
@@ -239,7 +244,7 @@ bytes *are* is four:
 One mechanism should serve the first three. The fourth is an entity
 already, and section 4.6 keeps it one.
 
-### 4.2 The noun: what a file is (ruling R1)
+### 4.2 The noun: what a file is (R1)
 
 Seven existing rules constrain the answer:
 
@@ -266,7 +271,9 @@ N1 is OData's stream property, and its media entity when the slot has no
 name: an entity whose plain `load` point answers bytes owns a default slot,
 `entity.file()`.
 
-### 4.3 The verb: how a transfer is an operation (ruling R2)
+**Ruled (R1): N1.**
+
+### 4.3 The verb: how a transfer is an operation (R2)
 
 | Option | Shape | Cost |
 | --- | --- | --- |
@@ -282,6 +289,8 @@ is. So V1 is recommended *with* action-aware keys in `rbac`, `allow`,
 `<entity>.<op>:<action>`, then `<entity>.<op>`, then `<op>`, then `*`. The
 action is in the request before the point is resolved, so `rbac` can still
 refuse at `PrePoint`.
+
+**Ruled (R2): V1, with action-aware keys.**
 
 ### 4.4 The proposed shape
 
@@ -405,8 +414,13 @@ await client.Upload().resume(token).send(client.file.path('./big.wav'))
 `send` is a loop over the entity's own operations: read the offset, append
 from it, and on a failure read the offset again. The wire dialect of the
 append (which headers, which media type, how completion is signalled) is a
-plugin chosen by the model's `session` fact. Which dialect comes first is
-ruling R7.
+plugin chosen by the model's `session` fact. R7 rules the tus 1.0.0
+dialect first, the IETF draft tracked as the second, and part-based
+uploads after both.
+
+The dialect's own headers are the plugin's to send. A caller of `send`
+never supplies `Upload-Offset` or `Tus-Resumable`, which is why O6 has to
+be undone in the model (section 8, A4).
 
 Binding a session to the slot it fills, so that
 `episode.file('audio').put(source, { resumable: true })` opens one itself,
@@ -447,7 +461,7 @@ relaxing is legitimate, and a test that fails when it regresses.
 | S5 | **A credential goes to the API's origin and nowhere else.** A hop or URL on another origin carries no `authorization`, `cookie`, `proxy-authorization`, no header or query parameter `prepareAuth` placed, and none a secrets provider supplied (fixes H11) | Always | Second origin records what arrives; the test asserts no canary |
 | S6 | **A capability URL is a secret.** Presigned URLs, session URLs and resume tokens are registered with `clean` when the SDK first sees them (ADR-003, rule 1) | Always | The clean sweep, with a presigned canary |
 | S7 | **An upload never follows a redirect to another origin.** A 307 or 308 would re-send the body there | Refused unless the host is allow-listed | `redirect` fault on a `PUT` |
-| S8 | **Other origins are policy.** Scheme may not downgrade from https; hops are capped; a `hosts` allow-list narrows or widens | Ruling R6 | `redirect` fault matrix |
+| S8 | **Other origins are policy.** A download may follow an https redirect to another origin, bare of credentials as S5 requires. No hop may downgrade from https; hops are capped; a `hosts` allow-list narrows or widens | As stated (R6) | `redirect` fault matrix |
 | S9 | **File bytes never reach a diagnostic.** In the spec, explain record, error, log, audit and telemetry a body is a placeholder: kind, size, media type. Never the bytes, never a source (fixes H2) | No relaxation | The clean sweep gains a content canary: a marker in the file bytes, searched for in every string that leaves |
 | S10 | **A transfer is complete or it failed.** Bytes received must equal the declared length; a 206 must carry the `Content-Range` asked for | Always | `cut`, `shortlength` faults |
 | S11 | **Integrity is verified when offered, and fails closed.** A `Repr-Digest` or `Content-Digest` in SHA-256 or SHA-512 is checked. MD5 and an ETag are not treated as digests | Verify when present; requiring one is opt-in | `corrupt` fault |
@@ -488,21 +502,23 @@ sweep, and a source scan for a file open outside the fs plugin.
 
 ### 6.1 Sources and sinks
 
-| Source | Replayable | Size known | Needs |
+| Source | Replayable | Size known | Comes with |
 | --- | --- | --- | --- |
-| `file.bytes(buf, { name, type })` | yes | yes | nothing |
-| `file.text(str, { name, type })` | yes | yes | nothing |
-| `file.path(p, { name, type })` | yes | yes | fs plugin |
-| a platform `Blob` or `File` | yes | yes | nothing |
-| `file.stream(s, { size, name, type })` | no | if given | nothing |
+| `file.bytes(buf, { name, type })` | yes | yes | core |
+| `file.text(str, { name, type })` | yes | yes | core |
+| a platform `Blob` or `File` | yes | yes | core |
+| `file.stream(s, { size, name, type })` | no | if given | `stream` plugin |
+| `file.path(p, { name, type })` | yes | yes | `fs` plugin |
 
 Replayable is what decides whether a failed upload may be retried (S20).
 A known size is what decides whether the request carries a length or is
 chunked; some servers refuse chunked uploads, so the error for an unsized
 stream on such a route says so.
 
-A sink is a path (fs plugin), a platform writable stream, or a callback.
-The callback is the form every target can offer.
+A sink is a path (`fs` plugin), or a platform writable stream or a
+callback (`stream` plugin). The callback is the form every target can
+offer. With neither plugin an SDK moves only what fits in `maxBuffer`
+(R5, section 7.2).
 
 ### 6.2 Partial reads
 
@@ -583,19 +599,36 @@ codecs are core runtime, in each target's `utility/`:
 They would be emitted only when the model has a point of that kind (I5),
 by the exclusion mechanism that trims feature source now.
 
+The handle is core too, in its thinnest form: an accessor the entity
+component emits when the model has slots, which answers `bytes()`,
+`text()` and a `put` of in-memory content through these codecs, within
+`maxBuffer`.
+
 ### 7.2 The `file` feature and its plugins
 
-Everything past bounded, in-memory transfer is one feature, trimmed like
-any other, with ADR-002 plugins for the parts that cost something:
+Everything past bounded, in-memory transfer is one feature (R8), trimmed
+like any other, with ADR-002 plugins for its parts:
 
-| Plugin | Holds | Needs |
+| Part | Holds | Needs |
 | --- | --- | --- |
-| core of the feature | handles, sources, sinks, the transfer loop, ranges, conditional requests, progress | `fetch` |
-| `fs` | path sources, `save`, atomic writes | `fs` |
+| core of the feature | the transfer loop, ranges, conditional requests, progress, cancellation, over content that fits in memory | `fetch` |
+| `stream` | stream sources, stream and callback sinks, `stream()`: transfer at constant memory | nothing more |
+| `fs` | path sources, `save`, `saveInto`, atomic writes | `fs` |
 | `digest` | SHA-256 and SHA-512 verification and sending | `crypto` |
 | `resume` | resumable download, tokens | nothing more |
 | `session-tus`, `session-rufh` | the append dialects: tus 1.0.0, and the IETF draft | nothing more |
 | `indirect` | presigned and other-origin transfers | nothing more |
+
+R5 was ruled as "both as feature plugins". It is read here as: moving a
+file to and from the local filesystem, and moving it as bytes and streams,
+are *each* a plugin of the feature, `fs` and `stream`. A project ships
+either or both. An SDK with neither still moves what fits in `maxBuffer`,
+through the core codecs, and refuses anything larger. The rules of section
+5.2 do not move with the packaging: with `fs` on, a string is still never
+a path (S1), the server still never names a file (S2), and a write is
+still atomic and never an overwrite by default (S13). If the ruling meant
+something else, this paragraph and the table in section 6.1 are what
+change.
 
 `needs` is the vocabulary plugins already declare, so a target that cannot
 provide `crypto` is refused at generation and not at a consumer's first
@@ -605,7 +638,7 @@ ruling R14.
 
 With the feature off, a slot still answers `bytes()`, `text()` and a `put`
 of in-memory content through the core codecs, and everything else fails
-with `file_feature_inactive`. Packaging is ruling R8.
+with `file_feature_inactive`. That split is what R8 rules.
 
 ### 7.3 The transport contract
 
@@ -657,8 +690,8 @@ Inside the pipeline, so that one operation is still one `PreDone`:
 
 ### 7.6 Targets
 
-Parity is the product, and the transports are not alike (appendix B). The
-proposal, ruling R4, is tiers declared as data and enforced the way
+Parity is the product, and the transports are not alike (appendix B). R4
+rules tiers, declared as data and enforced the way
 `ts/test/parity.test.ts` enforces corpus tiers:
 
 | Tier | Promise | Floor |
@@ -690,7 +723,7 @@ Small, and none of it blocks Phases 1 or 2.
 | A1 | A collection path whose literal names its own keyed entity is that entity's collection, not an action (H9). The tell is an action equal to the entity's name | a row beside the verb-word rulings; both ports |
 | A2 | Basic flows skip a point whose `rb` or `rs` is not JSON, until file steps exist (H10) | `test/flow-step` cases |
 | A3 | `fl` on a file point: `field`, `head`, `max` (section 4.5), with the guide's `action: <name>: file:` to set or refuse each | a new `test/file-point.tsv`, run by both suites |
-| A4 | `session` on an entity whose append point speaks a known dialect, recognised by media type and header arguments together: `PATCH` with `application/offset+octet-stream` and `Upload-Offset`; or `application/partial-upload` and `Upload-Complete` | `test/session.tsv` |
+| A4 | `session` on an entity whose append point speaks a known dialect, recognised by media type and header arguments together: `PATCH` with `application/offset+octet-stream` and `Upload-Offset` (tus 1.0.0, first, by R7); or `application/partial-upload` and `Upload-Complete` (the IETF draft). On such a point the dialect's own headers leave the selector and the caller's arguments (O6): the plugin sends them | `test/session.tsv` |
 | A5 | File steps in the basic flow: upload generated bytes, download, compare | later, with Phase 2 |
 
 Each is TypeScript first, then Go, with a shared fixture, as the port rule
@@ -701,8 +734,8 @@ from an older model simply has no `fl` and no sessions.
 
 ## 9. The example API: `podcastdemo`
 
-Domain is ruling R3. The recommendation is a podcast studio, because its
-files are the product and each is a different case:
+R3 rules a podcast studio. Its files are the product, and each is a
+different case:
 
 | Slot | Kind | What it exercises |
 | --- | --- | --- |
@@ -711,7 +744,7 @@ files are the product and each is a different case:
 | `show.artwork` | small, binary | bounded in-memory transfer |
 | `show.feed` | text, derived, read-only | a representation of records, not content |
 | `episode` create | multipart | a record and a file in one request |
-| `upload` | session entity | resumable upload |
+| `upload` | session entity | resumable upload: JSON `create`, `load` and `remove`, with the offset read and the append in tus 1.0.0 core |
 
 `show` and `episode` stand where `planet` and `moon` stand in solardemo,
 with `publish` as the plain JSON action that `terraform` is there. The
@@ -784,7 +817,8 @@ Sizes are relative. Each phase ends at something that can be released.
 - `cache` skips non-JSON bodies (H5). `stream()`'s upload claim is removed
   or made true (H4).
 - apidef A1 and A2.
-- Rulings recorded; ADR-004 written if R1 goes as recommended.
+- ADR-004 (section 5.3) entered in `ADR.md` once its wording is approved.
+  R1 decides its substance; the register is the maintainer's to write to.
 
 **Phase 1: body codecs, every target.** Large only by multiplication.
 
@@ -813,7 +847,7 @@ Streamed target.
 
 **Phase 3: transfer that survives.** Medium.
 
-- Resumable download; sessions and the first dialect; tokens.
+- Resumable download; sessions and the tus 1.0.0 dialect; tokens.
 - `netsim` mid-body faults; the app's fault arming and second origin.
 - apidef A4.
 
@@ -829,19 +863,27 @@ Exit: the fault matrix passes live in every Resumable target.
 
 ## 12. Rulings
 
-R1 to R8 shape the plan. R9 to R18 have a default that stands unless
-overruled.
+### Ruled on 2026-11-21
 
-| # | Question | Recommended | Gates |
+| # | Question | Ruling | Gates |
 | --- | --- | --- | --- |
-| **R1** | What a file is in the entity model | N1: a slot beside the record | Phase 2, ADR-004 |
+| **R1** | What a file is in the entity model | N1: a named slot beside the record. Bytes never enter `data()` | Phase 2, ADR-004 |
 | **R2** | How a transfer is an operation | V1: the six operations, with action-aware policy keys | Phase 2 |
 | **R3** | The example API's domain | A podcast studio | Phase 1 |
 | **R4** | Rollout across targets | Declared tiers, enforced; every target at Encoded first | All |
-| **R5** | Whether the SDK touches the local filesystem | Yes, as an opt-in fs plugin with strict defaults | Phase 2 |
-| **R6** | Default policy for other origins | Downloads follow https redirects without credentials; uploads never do | Phases 2, 4 |
-| **R7** | Resumable upload protocol | Offset sessions as entities; the tus 1.0.0 dialect first, the IETF draft tracked as a second | Phase 3 |
+| **R5** | Whether the SDK touches the local filesystem, or moves only bytes and streams | "Both as feature plugins". Read as two plugins of the `file` feature, `fs` and `stream`; see section 7.2 | Phase 2 |
+| **R6** | Default policy for other origins | Balanced: a download follows an https redirect without credentials; an upload never follows one to another origin | Phases 2, 4 |
+| **R7** | Resumable upload protocol | Sessions as entities; the tus 1.0.0 dialect first, the IETF draft tracked as a second | Phase 3 |
 | **R8** | Packaging | Codecs in core; everything else in a `file` feature with plugins | Phases 1, 2 |
+
+R1 to R4 and R6 to R8 took the recommended option. R5 was answered in the
+maintainer's own words, and the reading taken is stated in section 7.2 so
+that it can be corrected.
+
+### Open, each with a default that stands unless overruled
+
+| # | Question | Default | Gates |
+| --- | --- | --- | --- |
 | R9 | The noun's name | `file`: `entity.file(name)`, `fl` in the model. `blob`, `content` and `media` each collide more or say less | Phase 2 |
 | R10 | Where a source travels | In the request data, lifted out by the model's binary field names; a typed argument in the five closed-union targets | Phase 1 |
 | R11 | What handle methods resolve to | `save` and `put` to the entity; `bytes`, `text`, `stream` to what they name | Phase 2 |
@@ -852,6 +894,7 @@ overruled.
 | R16 | Example logistics | Fixture here, `app/` in a new reference SDK repository; ports 8903 and 8904; a bearer credential | Phase 1 |
 | R17 | Model vocabulary | `fl` on a point; `session` on an entity; `file` under the guide's action entry | apidef A3, A4 |
 | R18 | A download of an undeclared media type | Refused | Phase 2 |
+| R19 | Which plugins a scaffolded project turns on, following R5 | `stream` on; `fs` on where the target has a filesystem; both written in the project's own model, where its owner sees and can remove them | Phase 2 |
 
 ---
 
@@ -986,11 +1029,12 @@ ENTITY upload
           expires:$STRING(ro), id:$STRING(ro), offset:$INTEGER(ro),
           show_id:$STRING!, size:$INTEGER!, slot:$STRING, type:$STRING
   create POST   /api/upload                     $action=upload   rs=json
+           bf=[digest, episode_id, show_id, size, slot, type]
   load   GET    /api/upload/{upload_id}         rs=json
   remove DELETE /api/upload/{upload_id}
-  update PATCH  /api/upload/{upload_id}         exist=[id, upload_offset]
+  update PATCH  /api/upload/{upload_id}         exist=[id, tus_resumable, upload_offset]
            rb=raw application/offset+octet-stream binary
-           header args=[upload_offset!]
+           header args=[tus_resumable!, upload_offset!]
 
 FLOWS
   BasicEpisodeFlow: create -> list -> update -> load -> remove -> list

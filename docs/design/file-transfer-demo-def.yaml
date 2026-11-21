@@ -1,9 +1,13 @@
 # DRAFT. The definition of the example API proposed in file-transfer.md,
-# section 9: a podcast studio, built on the pattern of the solardemo
-# definition (ts/test/solardemo/app/def). Nothing serves it yet. Its domain
-# is ruling R3 and its upload protocol ruling R7, so both may change. When
-# the app is built this file moves to ts/test/podcastdemo/app/def/ and
+# section 9: a podcast studio (ruling R3), built on the pattern of the
+# solardemo definition (ts/test/solardemo/app/def). Nothing serves it yet.
+# When the app is built this file moves to ts/test/podcastdemo/app/def/ and
 # leaves this folder.
+#
+# An upload session is an entity whose create, load and remove are JSON
+# operations, and whose offset read (HEAD) and append (PATCH) speak the
+# tus 1.0.0 core protocol (ruling R7). tus core takes the session's URL as
+# given, so opening one with a JSON create stays within it.
 #
 # It deliberately declares no vendor extension: apidef reads none, and the
 # example must generate the way a definition nobody here wrote would.
@@ -409,18 +413,24 @@ paths:
       summary: Read the offset an interrupted upload resumes from
       parameters:
         - $ref: '#/components/parameters/UploadId'
+        - $ref: '#/components/parameters/TusResumable'
       responses:
-        '204':
-          description: No Content
+        '200':
+          description: The offset and length in headers, and no body
           headers:
+            Tus-Resumable:
+              $ref: '#/components/headers/TusResumable'
             Upload-Offset:
               $ref: '#/components/headers/UploadOffset'
             Upload-Length:
               $ref: '#/components/headers/UploadLength'
+        '412':
+          description: Precondition Failed, the protocol version is not supported
     patch:
       summary: Append bytes to the upload at its current offset
       parameters:
         - $ref: '#/components/parameters/UploadId'
+        - $ref: '#/components/parameters/TusResumable'
         - name: Upload-Offset
           in: header
           required: true
@@ -438,12 +448,18 @@ paths:
         '204':
           description: No Content
           headers:
+            Tus-Resumable:
+              $ref: '#/components/headers/TusResumable'
             Upload-Offset:
               $ref: '#/components/headers/UploadOffset'
         '409':
           description: Conflict, the offset does not match
+        '412':
+          description: Precondition Failed, the protocol version is not supported
         '413':
           description: Content Too Large
+        '415':
+          description: Unsupported Media Type
     delete:
       summary: Abandon the upload
       parameters:
@@ -507,6 +523,14 @@ components:
       required: false
       schema:
         type: string
+    TusResumable:
+      name: Tus-Resumable
+      in: header
+      required: true
+      schema:
+        type: string
+        enum:
+          - 1.0.0
 
   headers:
     ETag:
@@ -522,6 +546,9 @@ components:
       schema:
         type: string
     ReprDigest:
+      schema:
+        type: string
+    TusResumable:
       schema:
         type: string
     UploadOffset:
