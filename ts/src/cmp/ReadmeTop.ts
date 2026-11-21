@@ -22,6 +22,7 @@ import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
 import { modelText } from '../helpers/text'
 import { isConsumer } from '../helpers/alongside'
+import { copyMode, MERGE } from '../helpers/copymerge'
 
 import {
   installCommand as pkgInstall,
@@ -608,7 +609,7 @@ const ReadmeTopCustomizing = cmp(function ReadmeTopCustomizing(props: any) {
   // regenerates `.sdk` in full says so, since its copies do not merge.
   const mapTarget = sdkTargets[0] || docTargets[0]
   const targetDir = mapTarget ? `\`<target>/\`, such as \`${mapTarget.name}/\`` : `\`<target>/\``
-  const merging = 'overwrite' !== model.main?.kit?.copies
+  const merging = MERGE === copyMode(model.main?.[KIT]?.copies)
   const mergeNote = merging ?
     `An add merges toolchain updates into the
   edited copies, and \`voxgig-sdkgen doctor\` reports any drift from what a

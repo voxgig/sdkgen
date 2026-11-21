@@ -14,6 +14,7 @@ const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
 const text_1 = require("../helpers/text");
 const alongside_1 = require("../helpers/alongside");
+const copymerge_1 = require("../helpers/copymerge");
 const packageMeta_1 = require("../helpers/packageMeta");
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen';
 const VOXGIG_SDK = 'https://voxgig.com/sdk/';
@@ -528,7 +529,7 @@ const ReadmeTopCustomizing = (0, component_1.cmp)(function ReadmeTopCustomizing(
     // regenerates `.sdk` in full says so, since its copies do not merge.
     const mapTarget = sdkTargets[0] || docTargets[0];
     const targetDir = mapTarget ? `\`<target>/\`, such as \`${mapTarget.name}/\`` : `\`<target>/\``;
-    const merging = 'overwrite' !== model.main?.kit?.copies;
+    const merging = copymerge_1.MERGE === (0, copymerge_1.copyMode)(model.main?.[types_1.KIT]?.copies);
     const mergeNote = merging ?
         `An add merges toolchain updates into the
   edited copies, and \`voxgig-sdkgen doctor\` reports any drift from what a
