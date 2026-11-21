@@ -2154,14 +2154,14 @@ main: kit: entity: mfa_type: {
 
 function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
-  targetDir = 'target',
+  targetDir = 'target', api = API_MODEL,
 ): any {
   const src = [
     '@"@voxgig/apidef/model/apidef.aontu"',
     '@"../../../model/sdkgen.aontu"',
     ...targetNames.map((t) => `@"${targetDir}/${t}.aontu"`),
     ...(features || ['test', 'log']).map((f) => `@"feature/${f}.aontu"`),
-    null == name ? API_MODEL : API_MODEL.replace(/^name: '[^']*'/m, `name: '${name}'`),
+    null == name ? api : api.replace(/^name: '[^']*'/m, `name: '${name}'`),
     extra || '',
   ].join('\n')
 
