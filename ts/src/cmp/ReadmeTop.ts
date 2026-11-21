@@ -339,8 +339,9 @@ const ReadmeTopPackages = cmp(function ReadmeTopPackages(props: any) {
       let cell: string
       if ('active' === state) {
         const cmd = installCommand(tgt, model)
-        if (!cmd) return
-        cell = '`' + cmd + '`'
+        cell = cmd
+          ? '`' + cmd + '`'
+          : `see [${tgt.name}/README.md](${tgt.name}/README.md#install)`
       } else if ('tag' === state) {
         const cmd = vendorCommand(model, tgt.name)
         cell = cmd

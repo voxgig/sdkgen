@@ -762,6 +762,22 @@ describe('generate', () => {
   })
 
 
+  test('the root readme keeps a Packages row for every target, whatever its registry', async () => {
+    const rows = (readme: string): string[] => (topSections(readme)['Packages'] || '').split('\n')
+      .filter((line: string) => /^\| (?!Language |---)/.test(line))
+
+    const out = await generate(['java', 'c', 'rust'], undefined,
+      "main: kit: target: java: publish: registry: state: 'active'\n" +
+      "main: kit: target: rust: publish: registry: state: 'active'")
+    const table = rows(out['README.md'])
+    deepStrictEqual(table.map((line) => line.split(' | ')[0]).sort(), ['| C', '| Java', '| Rust'])
+    ok(table.some((line) => line.startsWith('| Java |') && line.includes('(java/README.md#install)')), table.join('\n'))
+    ok(table.some((line) => line.startsWith('| Rust |') && line.includes('`cargo add ')), table.join('\n'))
+    ok(table.some((line) => line.startsWith('| C |') && line.includes('build from source')), table.join('\n'))
+    ok(!table.some((line) => /none|publish pending/.test(line)), table.join('\n'))
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 

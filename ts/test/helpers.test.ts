@@ -1,6 +1,8 @@
 
 import { test, describe } from 'node:test'
 import { deepStrictEqual, strictEqual } from 'node:assert'
+import Fs from 'node:fs'
+import Path from 'node:path'
 
 import {
   pluginExcludes,
@@ -759,6 +761,40 @@ describe('helpers', () => {
 
       strictEqual(installCommand(model, 'ts2'), 'npm install @acme/second',
         'an aliased ts returned an empty install line')
+    })
+
+
+    // An install copy prints installCommand inside a code fence once its
+    // registry is active, so an empty answer is an empty fence. The origins
+    // are those whose copy calls it, read from the copies themselves.
+    test('installCommand answers every origin whose install copy prints it', () => {
+      const cmpDir = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
+      const printers = Fs.readdirSync(cmpDir).filter((t: string) => {
+        const file = Path.join(cmpDir, t, 'ReadmeInstall_' + t + '.ts')
+        return Fs.existsSync(file) && /installCommand\(/.test(Fs.readFileSync(file, 'utf8'))
+      }).sort()
+      for (const origin of ['c', 'csharp', 'ocaml', 'perl', 'rust', 'zig']) {
+        strictEqual(printers.includes(origin), true, origin + ' no longer prints installCommand')
+      }
+      for (const t of printers) {
+        const model: any = {
+          name: 'demo', origin: 'acme',
+          main: { kit: { target: { [t]: { name: t, publish: { registry: { name: 'reg', state: 'active' } } } } } },
+        }
+        strictEqual(isPublished(model, t), true, t)
+        strictEqual(0 < installCommand(model, t).length, true, t + ' prints an empty install command')
+      }
+    })
+
+
+    test('a registry named none is no registry', () => {
+      const model: any = {
+        name: 'demo', origin: 'acme',
+        main: { kit: { target: { c: { name: 'c', publish: { registry: { name: 'none', state: 'active' } } } } } },
+      }
+      strictEqual(registryState(model, 'c'), 'tag')
+      strictEqual(isPublished(model, 'c'), false)
+      strictEqual(vendorCommand(model, 'c'), '')
     })
 
   })

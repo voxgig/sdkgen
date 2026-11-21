@@ -167,12 +167,13 @@ function goPackageIdent(model, target) {
     }
     return org + slug + 'sdk';
 }
+// A registry named `none` is no registry: c, cpp and zig declare it.
 function registryState(model, target) {
     const eco = originName(model, target);
     if ('go' === eco || 'go-cli' === eco || 'go-mcp' === eco)
         return 'tag';
     const reg = model?.main?.[apidef_1.KIT]?.target?.[target]?.publish?.registry;
-    if (null == reg || '' === (reg.name || ''))
+    if (null == reg || '' === registryName(model, target))
         return 'tag';
     if (true === reg.active)
         return 'active';
@@ -191,13 +192,13 @@ function isPublished(model, target) {
 // for tag-only ports. Used in the "not yet on <registry>" pending message.
 function registryName(model, target) {
     const reg = model?.main?.[apidef_1.KIT]?.target?.[target]?.publish?.registry;
-    return (reg && reg.name) ? String(reg.name) : '';
+    const name = (reg && reg.name) ? String(reg.name) : '';
+    return 'none' === name ? '' : name;
 }
-// The vendor / git-tag install pointer for a NOT-yet-published target. For
-// go this is the canonical install (`go get <module>@latest`, which the Go
-// proxy resolves from the `go/vX.Y.Z` tag); go-cli and go-mcp get ''. For registry
-// ports it is a short "not yet on <registry> — install from the git tag"
-// pointer carrying the tags URL.
+// The install route for a target not on a registry: `go get <module>@latest`
+// for go, resolved by the proxy from the `go/vX.Y.Z` tag. go-cli, go-mcp and a
+// port with no registry get '', and their README's build steps are the route.
+// A declared registry gets a "not yet on <registry>" pointer to the git tag.
 function vendorCommand(model, target) {
     const { tagsUrl } = repoInfo(model);
     switch (originName(model, target)) {
@@ -215,7 +216,7 @@ function vendorCommand(model, target) {
             return '';
         default: {
             const reg = registryName(model, target);
-            return `not yet on ${reg || 'the registry'} — install from the git tag: ${tagsUrl}`;
+            return '' === reg ? '' : `not yet on ${reg} — install from the git tag: ${tagsUrl}`;
         }
     }
 }
@@ -306,6 +307,18 @@ function installCommand(model, target) {
             return `luarocks install ${packageName(model, target)}`;
         case 'go':
             return `go get ${packageName(model, target)}`;
+        case 'rust':
+            return `cargo add ${packageName(model, target)}`;
+        case 'csharp':
+            return `dotnet add package ${packageName(model, target)}`;
+        case 'perl':
+            return `cpanm ${packageName(model, target)}`;
+        case 'ocaml':
+            return `opam install ${packageName(model, target)}`;
+        // No package manager installs these: the release tag is the route.
+        case 'c':
+        case 'zig':
+            return `install from the git tag: ${repoInfo(model).tagsUrl}`;
         default:
             return '';
     }

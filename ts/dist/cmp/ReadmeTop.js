@@ -288,9 +288,9 @@ const ReadmeTopPackages = (0, component_1.cmp)(function ReadmeTopPackages(props)
             let cell;
             if ('active' === state) {
                 const cmd = installCommand(tgt, model);
-                if (!cmd)
-                    return;
-                cell = '`' + cmd + '`';
+                cell = cmd
+                    ? '`' + cmd + '`'
+                    : `see [${tgt.name}/README.md](${tgt.name}/README.md#install)`;
             }
             else if ('tag' === state) {
                 const cmd = (0, packageMeta_1.vendorCommand)(model, tgt.name);
