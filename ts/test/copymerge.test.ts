@@ -178,10 +178,28 @@ describe('copy merge', () => {
 
     await rejects(withCopyMerge(f.spec(),
       async (fs: any) => atomicWrite(fs, 'tm/a.ts', INCOMING)),
-      /no record of what the toolchain wrote here/)
+      (err: any) => /no record of what the toolchain wrote here/.test(err.message) &&
+        /Commit, then re-run with --force/.test(err.message) &&
+        !/re-run with --keep/.test(err.message))
 
     strictEqual(f.read('tm/a.ts'), 'local\n')
     strictEqual(f.read('log/conflict/tm/a.ts'), INCOMING)
+  })
+
+
+  test('--keep on a file the record does not hold records no base for it', async () => {
+    const f = fixture({ 'tm/a.ts': 'local\n' })
+    const forgotten: string[][] = []
+
+    await withCopyMerge(f.spec({ keep: true, forget: (rels: string[]) => forgotten.push(rels) }),
+      async (fs: any) => atomicWrite(fs, 'tm/a.ts', INCOMING))
+
+    strictEqual(f.read('tm/a.ts'), 'local\n')
+    strictEqual(f.read('log/base/tm/a.ts'), undefined)
+    deepStrictEqual(forgotten, [['tm/a.ts']])
+
+    const kept = f.log.lines.find((l: any) => 'copy-merge-kept' === l.point)
+    deepStrictEqual(kept.unrecorded, ['tm/a.ts'])
   })
 
 
@@ -315,6 +333,32 @@ describe('target add in merge mode', () => {
     await package_update(['@voxgig/sdkgen'], project.actx)
 
     strictEqual(String(project.fs.readFileSync(path, 'utf8')), edited)
+  })
+
+
+  // A project from before the copy record: nothing tells its older copies
+  // from local changes, so --keep must not pass them off as customizations.
+  test('--keep on a copy with no record leaves doctor reporting it', async () => {
+    const project = makeProject()
+    await target_add([targetRef('ts')], project.actx)
+
+    const rel = firstTemplate(project)
+    const path = ROOT + '/' + rel
+    project.fs.writeFileSync(path,
+      '// an older generator\n' + String(project.fs.readFileSync(path, 'utf8')))
+    project.fs.unlinkSync(ROOT + '/log/copies.jsonl')
+
+    await rejects(target_add([targetRef('ts')], project.actx),
+      (err: any) => /Commit, then re-run with --force/.test(err.message))
+
+    project.actx.flags = { keep: true }
+    await target_add([targetRef('ts')], project.actx)
+
+    const report: any = (await doctor(project.actx)).report
+    strictEqual(report.ok, false, 'a kept copy with no record is not a customization')
+    deepStrictEqual(report.unrecorded, [rel])
+    deepStrictEqual(report.customized, [])
+    ok(!project.fs.existsSync(ROOT + '/log/base/' + rel))
   })
 
 

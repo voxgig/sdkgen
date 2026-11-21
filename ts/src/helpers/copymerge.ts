@@ -39,6 +39,10 @@ type GuardSpec = {
   // Earlier versions of a file, newest first, for a base the store lacks.
   versions?: (abs: string) => Iterable<Buffer>
 
+  // Drops the record of files kept with no base, which the run recorded as
+  // written.
+  forget?: (rels: string[]) => void
+
   error?: (msg: string) => Error
 }
 
@@ -53,6 +57,10 @@ type Conflict = {
 type MergeOutcome = {
   merged: string[]
   kept: string[]
+
+  // Kept with no base, so nothing records them: an add stops on them again.
+  unrecorded: string[]
+
   retained: string[]
   spared: string[]
 }
@@ -385,7 +393,9 @@ class CopyGuard {
 
 
   finish(): MergeOutcome {
-    const outcome: MergeOutcome = { merged: [], kept: [], retained: [], spared: this.spared }
+    const outcome: MergeOutcome = {
+      merged: [], kept: [], unrecorded: [], retained: [], spared: this.spared,
+    }
     const conflicts: Conflict[] = []
     const writes: [string, Buffer][] = []
     const bases = new Map<string, Buffer>()
@@ -422,7 +432,15 @@ class CopyGuard {
 
       if (null != conflict && true === this.spec.keep) {
         outcome.kept.push(rel)
-        bases.set(rel, incoming)
+
+        // Recording the incoming copy as a base would pass a stale copy off as
+        // a customization.
+        if ('nobase' === conflict.why) {
+          outcome.unrecorded.push(rel)
+        }
+        else {
+          bases.set(rel, incoming)
+        }
       }
       else if (null != conflict) {
         conflicts.push(conflict)
@@ -447,6 +465,9 @@ class CopyGuard {
     }
 
     this.keepBases(bases)
+    if (0 < outcome.unrecorded.length) {
+      this.spec.forget?.(outcome.unrecorded)
+    }
     clearConflicts(this.spec)
     this.report(outcome)
 
@@ -534,17 +555,26 @@ class CopyGuard {
     }
 
     const shown = this.spec.conflictdir
+    const nobase = conflicts.filter((c: Conflict) => 'nobase' === c.why).length
 
     const msg = this.spec.what + ': ' + conflicts.length +
       ' locally changed file(s) cannot take the incoming copy, so nothing was changed:\n  ' +
       conflicts.map((c: Conflict) => c.rel + ' (' + why[c.why] + ')').join('\n  ') +
       '\n\n  The incoming copies are in ' + shown + '/, with conflict markers where ' +
-      'both sides changed the same lines. Then either:' +
-      '\n    - fold the incoming change into the local file by hand and re-run with ' +
-      '--keep, which keeps the local files and records the incoming copies as ' +
-      'their base;' +
-      '\n    - or re-run with --force, which takes the incoming copies and discards ' +
-      'the local changes.'
+      'both sides changed the same lines. ' +
+      (0 < nobase ?
+        'Nothing records what an add wrote to ' +
+        (nobase === conflicts.length ? 'them' : nobase + ' of them') +
+        ', so nothing shows whether they hold a local change or an older ' +
+        'copy this update would replace, and --keep would leave them as they ' +
+        'are, unrecorded. Commit, then re-run with --force, which takes the ' +
+        'incoming copies; `git diff` then shows any local change to restore.' :
+        'Then either:' +
+        '\n    - fold the incoming change into the local file by hand and re-run with ' +
+        '--keep, which keeps the local files and records the incoming copies as ' +
+        'their base;' +
+        '\n    - or re-run with --force, which takes the incoming copies and discards ' +
+        'the local changes.')
 
     return null == this.spec.error ? new Error(msg) : this.spec.error(msg)
   }
@@ -563,9 +593,12 @@ class CopyGuard {
 
     if (0 < outcome.kept.length) {
       log.warn({
-        point: 'copy-merge-kept', files: outcome.kept,
+        point: 'copy-merge-kept', files: outcome.kept, unrecorded: outcome.unrecorded,
         note: this.spec.what + ': --keep, kept ' + outcome.kept.length +
-          ' local file(s) as they are: ' + outcome.kept.join(', ')
+          ' local file(s) as they are: ' + outcome.kept.join(', ') +
+          (0 === outcome.unrecorded.length ? '' :
+            '; nothing records what an add wrote to ' + outcome.unrecorded.join(', ') +
+            ', so they stay unrecorded until an add with --force replaces them')
       })
     }
 

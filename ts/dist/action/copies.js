@@ -270,6 +270,7 @@ async function guardCopies(actx, what, run) {
         basedir: BASE_DIR,
         conflictdir: CONFLICT_DIR,
         versions: copymerge_1.gitVersions,
+        forget: (rels) => appendEntry(actx, 'keep', { files: Object.fromEntries(rels.map((rel) => [rel, null])) }),
         error: (msg) => new utility_1.SdkGenError(msg),
     }, (gfs) => run({ ...actx, fs: () => gfs, copyGuarded: true }));
 }
