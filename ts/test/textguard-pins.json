@@ -471,16 +471,6 @@
     {
       "relation": "off",
       "chain": "Readme > ReadmeExplanation",
-      "cause": "feature",
-      "reason": "Known stale, S14: \"as TestFeature does with mocks\" with no TestFeature present; WP22.",
-      "line": "  to replace the transport (as TestFeature does with mocks).",
-      "variations": [
-        "feature-test"
-      ]
-    },
-    {
-      "relation": "off",
-      "chain": "Readme > ReadmeExplanation",
       "cause": "target",
       "reason": "Generic word: \"Java-backed\" describes the JVM runtime of kotlin, scala and clojure, not the java target.",
       "line": "value model (ordered, Java-backed maps and lists) rather than typed",

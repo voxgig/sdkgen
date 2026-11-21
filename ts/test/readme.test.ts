@@ -7,6 +7,8 @@ import { memfs } from 'memfs'
 
 import { ReadmeExplanation, ReadmeErrors } from '../dist/sdkgen.js'
 import { ReadmeStation } from '../dist/cmp/ReadmeStation.js'
+import { PIPELINE_STAGES, pipelineLength } from '../dist/cmp/FeatureHook'
+import { generateDocs } from './textguard'
 
 
 // A logger stub keeps the optional-component warning out of the test
@@ -282,5 +284,23 @@ describe('ReadmeStation', () => {
     const target = { ts2: { name: 'ts2', origname: 'ts' } }
     const out = await renderStation(stationModel({ active: true }, true, target), target.ts2)
     match(out, /### Imperative: `connect\(\)`/)
+  })
+})
+
+
+describe('the pipeline in both READMEs', () => {
+
+  test('the root and target READMEs count the same stages, from one constant', async () => {
+    const run = await generateDocs({
+      id: 'stages', family: 'stages', targets: ['ts', 'go'], features: ['test', 'log'], extra: '',
+    })
+    for (const doc of ['README.md', 'ts/README.md', 'go/README.md']) {
+      const counts = [...run.files[doc].matchAll(/(\w+)-stage pipeline/g)].map((m) => m[1])
+      deepStrictEqual([...new Set(counts)], [pipelineLength()], doc)
+    }
+    for (const s of PIPELINE_STAGES) {
+      ok(run.files['README.md'].includes('**' + s.name + '** — ' + s.purpose), 'root: ' + s.name)
+      ok(run.files['ts/README.md'].includes('- **' + s.hook + '**: ' + s.purpose), 'ts: ' + s.hook)
+    }
   })
 })

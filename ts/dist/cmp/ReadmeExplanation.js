@@ -6,6 +6,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const optional_1 = require("../helpers/optional");
+const FeatureHook_1 = require("./FeatureHook");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
 const naming_1 = require("../helpers/naming");
@@ -465,23 +466,14 @@ const ReadmeExplanation = (0, component_1.cmp)(function ReadmeExplanation(props)
 
 ### The operation pipeline
 
-Every entity operation follows a six-stage pipeline. Each stage fires a
+Every entity operation follows a ${(0, FeatureHook_1.pipelineLength)()}-stage pipeline. Each stage fires a
 feature hook before executing:
 
 \`\`\`
-PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone
+${FeatureHook_1.PIPELINE_STAGES.map((s) => s.hook).join(' → ')}
 \`\`\`
 
-- **PrePoint**: Resolves which API endpoint to call based on the
-  operation name and entity configuration.
-- **PreSpec**: Builds the HTTP spec — URL, method, headers, body —
-  from the resolved point and the caller's parameters.
-- **PreRequest**: Sends the HTTP request. Features can intercept here
-  to replace the transport (as TestFeature does with mocks).
-- **PreResponse**: Parses the raw HTTP response.
-- **PreResult**: Extracts the business data from the parsed response.
-- **PreDone**: Final stage before returning to the caller. Entity
-  state (match, data) is updated here.
+${FeatureHook_1.PIPELINE_STAGES.map((s) => '- **' + s.hook + '**: ' + s.purpose).join('\n')}
 
 If any stage errors, the pipeline short-circuits and the error surfaces
 to the caller — see [Error handling](#error-handling) for how that looks

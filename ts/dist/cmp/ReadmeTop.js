@@ -7,6 +7,7 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
+const FeatureHook_1 = require("./FeatureHook");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
 const mcpTools_1 = require("../helpers/mcpTools");
@@ -490,16 +491,12 @@ const ReadmeTopAdvanced = (0, component_1.cmp)(function ReadmeTopAdvanced(props)
 > Everyday use only needs the sections above. This explains the internals
 > behind every call — relevant when writing custom features.
 
-Every SDK call runs the same five-stage pipeline:
+Every entity operation runs the same ${(0, FeatureHook_1.pipelineLength)()}-stage pipeline:
 
-1. **Point** — resolve the API endpoint from the operation definition.
-2. **Spec** — build the HTTP specification (URL, method, headers, body).
-3. **Request** — send the HTTP request.
-4. **Response** — receive and parse the response.
-5. **Result** — extract the result data for the caller.
+${FeatureHook_1.PIPELINE_STAGES.map((s, i) => (i + 1) + '. **' + s.name + '** — ' + s.purpose).join('\n')}
 
-A feature hook fires at each stage (e.g. \`PrePoint\`, \`PreSpec\`,
-\`PreRequest\`), so features can inspect or modify the pipeline without
+A feature hook fires before each stage (e.g. \`${FeatureHook_1.PIPELINE_STAGES[0].hook}\`, \`${FeatureHook_1.PIPELINE_STAGES[1].hook}\`,
+\`${FeatureHook_1.PIPELINE_STAGES[2].hook}\`), so features can inspect or modify the pipeline without
 forking the SDK.
 
 ### Features

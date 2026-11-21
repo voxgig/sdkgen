@@ -11,6 +11,7 @@ import { Aontu } from 'aontu'
 import { loadFeature, loadBase } from './featureharness'
 
 import { featureApplies } from '../dist/helpers/applicability'
+import { PIPELINE_STAGES } from '../dist/cmp/FeatureHook'
 
 
 const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
@@ -369,5 +370,36 @@ describe('feature-language-parity', () => {
       const p = Path.join(TARGET_MODEL, t + '.aontu')
       ok(existsSync(p), `missing target definition: model/target/${t}.aontu`)
     }
+  })
+})
+
+
+// The hooks the ts runtime fires, read from its templates and fragments, tests aside.
+function firedHooks(): string[] {
+  const fired = new Set<string>()
+  const walk = (dir: string) => {
+    for (const ent of readdirSync(dir, { withFileTypes: true })) {
+      const p = Path.join(dir, ent.name)
+      if (ent.isDirectory()) {
+        if ('test' !== ent.name) walk(p)
+      }
+      else if (ent.name.endsWith('.ts')) {
+        for (const m of readFileSync(p, 'utf8').matchAll(/featureHook\([^,()]+, *'([A-Za-z]+)'/g)) {
+          fired.add(m[1])
+        }
+      }
+    }
+  }
+  walk(Path.join(SDK, 'tm', 'ts', 'src'))
+  walk(Path.join(SDK, 'src', 'cmp', 'ts', 'fragment'))
+  return [...fired].sort()
+}
+
+
+describe('pipeline-stages', () => {
+
+  test('the stages the READMEs describe are the ones the ts pipeline fires', () => {
+    const stages = firedHooks().filter((h) => h.startsWith('Pre') && 'PreUnexpected' !== h)
+    deepStrictEqual(PIPELINE_STAGES.map((s) => s.hook).sort(), stages)
   })
 })

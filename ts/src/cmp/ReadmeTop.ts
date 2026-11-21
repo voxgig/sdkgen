@@ -10,6 +10,7 @@ import {
 import { credentialPlacement } from '../utility'
 import { optionalComponent } from '../helpers/optional'
 import { featureDocs, codeList } from './FeatureDocs'
+import { PIPELINE_STAGES, pipelineLength } from './FeatureHook'
 import type { FeatureDoc } from './FeatureDocs'
 
 import {
@@ -566,16 +567,12 @@ const ReadmeTopAdvanced = cmp(function ReadmeTopAdvanced(props: any) {
 > Everyday use only needs the sections above. This explains the internals
 > behind every call — relevant when writing custom features.
 
-Every SDK call runs the same five-stage pipeline:
+Every entity operation runs the same ${pipelineLength()}-stage pipeline:
 
-1. **Point** — resolve the API endpoint from the operation definition.
-2. **Spec** — build the HTTP specification (URL, method, headers, body).
-3. **Request** — send the HTTP request.
-4. **Response** — receive and parse the response.
-5. **Result** — extract the result data for the caller.
+${PIPELINE_STAGES.map((s, i) => (i + 1) + '. **' + s.name + '** — ' + s.purpose).join('\n')}
 
-A feature hook fires at each stage (e.g. \`PrePoint\`, \`PreSpec\`,
-\`PreRequest\`), so features can inspect or modify the pipeline without
+A feature hook fires before each stage (e.g. \`${PIPELINE_STAGES[0].hook}\`, \`${PIPELINE_STAGES[1].hook}\`,
+\`${PIPELINE_STAGES[2].hook}\`), so features can inspect or modify the pipeline without
 forking the SDK.
 
 ### Features

@@ -10,6 +10,7 @@ import {
 } from '../types'
 
 import { optionalComponent } from '../helpers/optional'
+import { PIPELINE_STAGES, pipelineLength } from './FeatureHook'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { helperLang, idLiteral, matchArg, listMatchArg, dataArg } from '../helpers/opExample'
@@ -527,23 +528,14 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
 
 ### The operation pipeline
 
-Every entity operation follows a six-stage pipeline. Each stage fires a
+Every entity operation follows a ${pipelineLength()}-stage pipeline. Each stage fires a
 feature hook before executing:
 
 \`\`\`
-PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone
+${PIPELINE_STAGES.map((s) => s.hook).join(' → ')}
 \`\`\`
 
-- **PrePoint**: Resolves which API endpoint to call based on the
-  operation name and entity configuration.
-- **PreSpec**: Builds the HTTP spec — URL, method, headers, body —
-  from the resolved point and the caller's parameters.
-- **PreRequest**: Sends the HTTP request. Features can intercept here
-  to replace the transport (as TestFeature does with mocks).
-- **PreResponse**: Parses the raw HTTP response.
-- **PreResult**: Extracts the business data from the parsed response.
-- **PreDone**: Final stage before returning to the caller. Entity
-  state (match, data) is updated here.
+${PIPELINE_STAGES.map((s) => '- **' + s.hook + '**: ' + s.purpose).join('\n')}
 
 If any stage errors, the pipeline short-circuits and the error surfaces
 to the caller — see [Error handling](#error-handling) for how that looks
