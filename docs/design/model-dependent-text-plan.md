@@ -1,7 +1,8 @@
 # Plan: correcting the generated text, and the defects found beside it
 
-Status: **plan** (2026-11-12). Nothing here is implemented. It carries out the
-design in `docs/design/model-dependent-text.md`, which is itself a proposal.
+Status: **plan** (2026-11-12), **revised 2026-11-21** (section 0). It
+carries out the design in `docs/design/model-dependent-text.md`. The fact pass
+of section 0 is released in 4.45.0; nothing else here is implemented.
 Every issue it names has its own entry in
 `docs/design/model-dependent-text-issues.md`: what is wrong, where, what was
 seen at head, the fix, and the check that holds it.
@@ -29,6 +30,43 @@ rated high are issues here; A01 to A05 were added in review of this plan. WP
 names a work package, R a release, and DQ a decision for the maintainer (DQ1
 to DQ6 are the design note's D1 to D6).
 
+## 0. Revision: facts in the model
+
+The maintainer's review of the design note replaced its first half. A fact
+that generated text or code depends on is computed once, by an aontu rule in
+`ts/model/fact.aontu`, and written into the model beside what it describes.
+Components, packs and docgen read it with `fact(node, name)` and compute
+nothing. The fact pass that does this shipped in sdkgen 4.45.0 with the first
+two facts, so R1, R2 and R3 move to 4.46.0, 4.47.0 and 4.48.0.
+`docs/design/model-facts.md` describes the mechanism and the aontu gaps it
+works around.
+
+The packages that defined a function now define a fact: WP02, WP13 to WP19,
+WP20, WP26a, WP26b and WP44b are rewritten so. Where any other package names
+one of these functions, read the fact that replaces it:
+
+| Was | Now | Computed by |
+| --- | --- | --- |
+| `featureOnByDefault` | `feature.fact.on` | rule (built) |
+| `targetPlace` | `target.fact.place` | rule (built) |
+| `targetSurface`, `SURFACES`, `LEGACY_SURFACE` | `target.fact.surface` and the consumers of each target; `SURFACES` is the closed word list `package check` applies; `LEGACY_SURFACE` is an aontu table in the rules | rule |
+| `docLink`, `activeTargets` | `target.fact.link`, `main.kit.fact.active` | rule |
+| `readerdir`, `sdkRel`, `releaseTag` | the target's reader-directory, `sdkrel` and release-tag facts | rule |
+| `requiredOptions` | `main.kit.fact.auth`, `main.kit.fact.server` | rule |
+| `envVar`, `envName`, `liveTestEnv` | `main.kit.fact.env` | rule |
+| `mdCell`, `mdInline`, `mdCodeSpan`, `mdLinkTarget` | the escaped forms beside each vendor text | rule, with `rep` until `esc` has a Markdown variant |
+| `targetTitle`, `apiDisplayName`, `definitionKind` | `target.fact.title`, `main.kit.fact.apiName`, `main.kit.fact.definitionKind` | rule; the per-target title fallback in the pass's code until aontu has a fallback |
+| `entityDescription`, the no-fallback `introOps` | the entity's description and operation facts | rule, or the pass's code where a rule cannot express it |
+| `jvmPackage`, `pyPackageName` | the target's package facts | rule |
+| `rootPlan`, `phaseActive` | the root plan and phase facts | rule |
+| `modelCopyMode` | `main.kit.copies`, read directly | a model value already |
+| `guardModel` | unchanged: the name, flow-step and inactive-operation guard stays code, runs before the facts wherever a model is prepared, and is exported for docgen | code |
+
+Shared helpers that already have one home (`configDefinition`,
+`targetFeatures`, `entityOps`, `introOps`, `serverVariables`, `packageName`,
+`installCommand`, `registryState`) become facts as the packages that touch them
+land; until then a package reads them as today.
+
 ## 1. Summary
 
 The plan covers 324 catalogued issues and 5 added in review, 329 in all. 257
@@ -38,13 +76,14 @@ create-sdkgen, docgen, sdkgen, sdkgen-infrapack, sdkgen-langpack) and ship in
 13 releases: three of sdkgen and ten elsewhere.
 
 The order follows the design note's stages. Independent fixes in the other
-repositories start at once. sdkgen R1 (4.45.0) adds the test baselines, one
-exported root plan and the text guard, then the neutral corrections that stand
-on what exists today or bring the one small derivation they use (WP16 to
-WP18), and the upgrade-path fixes that must be in place before any copy
-changes. R2 (4.46.0) adds every derivation the copies will read, the neutral
-corrections that need them, and the decision-gated neutral behaviour changes.
-R3 (4.47.0) is the one copy wave: every per-language component, template and
+repositories start at once. sdkgen's fact pass shipped first, in 4.45.0. R1
+(4.46.0) adds the test baselines, the root plan as facts and the text guard,
+then the neutral corrections that stand on what exists today or read the one
+small fact they need (WP16 to WP18), and the upgrade-path fixes that must be in
+place before any copy changes. R2 (4.47.0) adds every fact the copies will
+read, the neutral corrections that need them, and the decision-gated neutral
+behaviour changes.
+R3 (4.48.0) is the one copy wave: every per-language component, template and
 bundled model file changes in it, so doctor reports copies outdated once.
 docgen, the infrastructure pack and create-sdkgen adopt R2; the language pack
 follows R3.
@@ -54,14 +93,28 @@ a dispatch and publishes the language pack's floor fix; R-IP1 and R-DG1 can
 follow the same day. The first sdkgen release with visible fixes is R1: it
 reaches an existing project through `voxgig-sdkgen package update
 @voxgig/sdkgen`, and a new project once create-sdkgen moves its pin. What is
-needed from the maintainer: answers to DQ1 to DQ24 (DQ1, DQ2, DQ3, DQ6, DQ8,
-DQ9, DQ11 and DQ18 gate the most work), approval of the design note as the
-basis, branch and pull-request permissions in each repository, each merge and
+needed from the maintainer: answers to DQ1 and DQ3 to DQ24 (DQ2 is answered;
+DQ1, DQ3, DQ6, DQ8, DQ9, DQ11 and DQ18 gate the most work), branch and
+pull-request permissions in each repository, each merge and
 each release dispatch, the npm deprecation of DQ23, and coordination with the
 work that owns create-sdkgen's releases (section 6).
 
 ## 2. Rules every package follows
 
+- **Facts, not functions.** A fact that generated text or code depends on is a
+  rule in `ts/model/fact.aontu`. Components, packs and docgen read it with
+  `fact(node, name)` and compute nothing (section 0). Where aontu 0.76.3
+  cannot express a rule, the fact pass computes it in code and writes it into
+  the model; `docs/design/model-facts.md` lists each such workaround.
+- **A fact is read only from a prepared model.** Preparing a model means the
+  guards, then `applyFacts`. `generate()` prepares its model before anything
+  reads it, `warnUngeneratedOps` included. A reader outside `generate()`
+  prepares the model it holds the same way, first: the actions through
+  `resolveModel`, `admin/status.ts` and docgen's standalone run over
+  `sdk.json`, and `package check` over the model it compiles for each item.
+  The first package to read a fact in one of these places adds the
+  preparation there: WP14 for `generate()`'s order and the actions, WP20 for
+  status and `package check`, WP26a for docgen.
 - **Verification.** Each package builds and runs its own suite (`make build
   test` in sdkgen, `make all` in apidef). A claim that a language was built or
   run comes from the `command -v` loop in `AGENTS.md` in the environment where
@@ -69,7 +122,7 @@ work that owns create-sdkgen's releases (section 6).
   request, never implied by a structural check. Before R1, R2 and R3 are
   dispatched, `voxgig-solardemo-sdk` and `voxgig-elementdemo-sdk` are
   regenerated against the candidate and their suites run.
-- **A byte-identical step before a visible one.** A new derivation lands first
+- **A byte-identical step before a visible one.** A new fact lands first
   in a commit that changes no generated byte for an all-on model, measured
   with `npm run golden` and the generate suite; the correction that uses it
   follows as its own commit. Copy changes are characterised before they are
@@ -78,9 +131,10 @@ work that owns create-sdkgen's releases (section 6).
   with its own visible diff, and carries the exact text-guard check that holds
   it. A pin the guard needs gets a reason; a pin that matches nothing fails.
 - **One copy wave.** Nothing under `ts/project/.sdk/` changes before R3, and
-  everything that must change there lands in R3. A helper the wave reads is an
-  export in R2 or earlier and arrives as a new file, never as an addition to a
-  copied file in the wave that first uses it. A copy defect found after R3
+  everything that must change there lands in R3. A fact the wave reads is
+  computed in R2 or earlier, and a copy reads it with `fact()`. A helper a copy
+  still needs arrives as a new file, never as an addition to a copied file in
+  the wave that first uses it. A copy defect found after R3
   waits for the next wave.
 - **Parity across twenty languages.** A per-language change is done when every
   language with the component has it; the language pack's three languages
@@ -96,17 +150,22 @@ work that owns create-sdkgen's releases (section 6).
   `make publish V=x.y.z` (sdkgen, create-sdkgen, docgen) or the same dispatch
   of `publish.yml` in the other repositories, after the maintainer asks;
   `embed-version` runs before it. A pack release moves the version in both of
-  its manifests together. The packs and docgen read every new sdkgen export
-  through a namespace import with a fallback, because a named import of a
-  newer export fails at their floors.
+  its manifests together. The packs and docgen read facts from the model they
+  are given rather than importing a derivation for each, and each declares its
+  sdkgen floor at the release that computes the facts it reads: below it the
+  facts are absent, so `package add` refuses a pack by its `engines.sdkgen`
+  rather than letting generate fail. docgen's standalone run imports
+  `guardModel` and `applyFacts` through a namespace import with a fallback,
+  because a named import of a newer export fails at its floor.
 
 ## 3. Tracks and order
 
 | Track | Purpose | Packages | Entry condition | Release |
 | --- | --- | --- | --- | --- |
+| 0 | The fact pass and its first two facts | none of its own | none | 4.45.0, released |
 | A | Neutral corrections from what exists today | WP07, WP08, WP09, WP10, WP11 | WP01 merged for WP11; WP03 merged for WP07 to WP10, so each correction lands with its check | R1 |
 | B | Test baselines, the root plan and the text guard (design stage 0) | WP01, WP02, WP03 | none | R1 |
-| C | Derivations and the neutral corrections that need them (stages 1 and 2) | WP13 to WP19 | WP03 merged | WP16 to WP18 in R1; the rest in R2 |
+| C | Facts and the neutral corrections that read them (stages 1 and 2) | WP13 to WP19 | WP03 merged | WP16 to WP18 in R1; the rest in R2 |
 | D | The copy wave (stage 3) | WP28 to WP38 | R2 published; WP01's lane models green; the decisions each package names answered, or its commits held out | R3 |
 | E | Other repositories (stage 4) | WP04, WP05a, WP05b, WP06, WP26a, WP26b, WP27, WP41, WP42, WP44a, WP44b, WP45 | per package: at once, after R2, or after R3 | their own releases |
 | F | Decision-gated behaviour changes | WP21, WP22, WP23, WP25, WP39, WP40 | the named decision answered | R2 or R3 |
@@ -269,33 +328,34 @@ are unused: review folded those packages into WP28 and WP26a.
   id until WP28, never weakened.
 - **Output change.** None.
 - **Depends on.** Nothing.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 4 test files.
 
-### WP02. One exported root plan
+### WP02. The root plan as facts
 
 - **Goal.** Make one statement of which root documents, targets and placements
-  a run writes, so the suite, testkit and the guard follow the real scaffold
-  plan.
+  a run writes, as facts in the model, so the suite, testkit and the guard
+  follow the real scaffold plan.
 - **Resolves.** N23, D35, M26.
-- **Changes.** `ts/src/helpers/rootplan.ts` (new, importing nothing heavy)
-  takes `rootPlan` from create-sdkgen
-  `project/standard/.sdk/src/RootPlan.ts:20-54` (phase.top, phase.build,
-  target.active, output.root and the one-at-root refusal) plus `PHASES` and
-  `phaseActive(target, name)`; exported from `ts/src/sdkgen.ts`.
-  `ts/src/testkit.ts:565-637` (`defaultRoot`), `ts/test/generateharness.ts`
-  (`makeRoot`) and `ts/test/generated.test.ts:424-442` build from it, with top
-  documents opt-in in testkit so pack suites do not change silently.
-  `ts/src/cmp/ExternalTarget.ts:48-50` and
-  `ts/src/cmp/AgentGuideContent.ts:65` call `phaseActive`. create-sdkgen's
-  `test/rootplan.test.ts` cases move to `ts/test/rootplan.test.ts`.
-- **Tests.** `ts/test/rootplan.test.ts` (new); `ts/test/testkit.test.ts`:
-  `defaultRoot` with phase.top off writes no root README, and the default call
-  is unchanged.
+- **Changes.** Rules in `ts/model/fact.aontu` compute the plan from
+  `main.kit.phase.top`, `main.kit.phase.build`, each target's `active` and
+  `output.root`: the root documents the run writes, the active targets, and
+  the phases each target runs. More than one target at the root, or one at the
+  root with `phase.top` on, is refused. The rules carry the cases of
+  create-sdkgen's `project/standard/.sdk/src/RootPlan.ts:20-54`, whose tests
+  move to `ts/test/rootplan.test.ts`. `ts/src/testkit.ts:565-637`
+  (`defaultRoot`), `ts/test/generateharness.ts` (`makeRoot`) and
+  `ts/test/generated.test.ts:424-442` read the plan facts, with top documents
+  opt-in in testkit so pack suites do not change silently.
+  `ts/src/cmp/ExternalTarget.ts:48-50` and `ts/src/cmp/AgentGuideContent.ts:65`
+  read the phase facts.
+- **Tests.** `ts/test/rootplan.test.ts` (new): each case of the scaffold's
+  plan, as facts; `ts/test/testkit.test.ts`: `defaultRoot` with phase.top off
+  writes no root README, and the default call is unchanged.
 - **Output change.** None for projects; fixtures that relied on root documents
   under phase.top off change, and are reviewed as expected.
-- **Depends on.** WP01.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Depends on.** WP01; the fact pass.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 8 files plus `ts/dist`.
 
 ### WP03. The text guard, and labelled sub-components of ReadmeTop and AgentGuideTop
@@ -320,7 +380,7 @@ are unused: review folded those packages into WP28 and WP26a.
   `ts/test/generate.test.ts` pass unchanged after commit 1.
 - **Output change.** None.
 - **Depends on.** WP02; decision DQ4 (recommended: internal only).
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 6 test files and 4 source files plus `ts/dist`.
 
 ### WP11. Small core fixes
@@ -351,7 +411,7 @@ are unused: review folded those packages into WP28 and WP26a.
   loses `basic: true` in every target; docs: the Station section; new warnings
   and one new error.
 - **Depends on.** WP01.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 8 source files plus `ts/dist`, 6 test files.
 
 ### WP12. Upgrade path: downgrade skew, copy floor, `--keep` traps
@@ -374,7 +434,7 @@ are unused: review folded those packages into WP28 and WP26a.
   releases up to 4.41.0 failing "One is not a function" on a fresh install
   (M22). A 23-target staging of `target add` is profiled; it is fixed only if
   a cause is found, else the profile goes in the pull request (M49).
-- **Tests.** `ts/test/doctor.test.ts` (record from 4.45.0 under installed
+- **Tests.** `ts/test/doctor.test.ts` (record from 4.46.0 under installed
   4.44.0; record from 4.22.0); `ts/test/copymerge.test.ts` (a no-base conflict
   re-run with `--keep` leaves doctor not ok); a historical-tree strict-compile
   lane at the pack floor tag and the scaffold's pinned minor; `make
@@ -382,7 +442,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** None in generated files; doctor and merge messages
   change.
 - **Depends on.** WP01.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 5 source files plus `ts/dist`, 3 documentation pages, 3 test
   files.
 
@@ -410,7 +470,7 @@ are unused: review folded those packages into WP28 and WP26a.
   non-JS READMEs, the js READMEs and aliased targets; old copies stay safe
   (design note section 9).
 - **Depends on.** WP03.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 3 source files plus `ts/dist`, 3 test files.
 
 ### WP08. Feature and pipeline vocabulary in the REFERENCE and explanations
@@ -447,7 +507,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs: the root README stage count, the REFERENCE ordering
   note, empty-section states; a package check error for an unknown hook name.
 - **Depends on.** WP03.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 9 source files plus `ts/dist`, 1 model, 1 documentation
   page, 4 test files.
 
@@ -473,7 +533,7 @@ are unused: review folded those packages into WP28 and WP26a.
   clause treated as fixed text. `make scan-prose`.
 - **Output change.** Docs: root and target `AGENTS.md`.
 - **Depends on.** WP03.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 5 source files plus `ts/dist`, 2 documentation files, 2 test
   files.
 
@@ -504,188 +564,199 @@ are unused: review folded those packages into WP28 and WP26a.
   (removed; a project that wants one sets the state to pending),
   `SECURITY.md`, new CHANGELOGs only.
 - **Depends on.** WP03.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 6 source files plus `ts/dist`, 5 test files.
 
-### WP16. `featureOnByDefault`, and the "starts off" sentences
+### WP16. Feature defaults as facts, and the "starts off" sentences
 
 - **Goal.** Make every sentence about features starting off agree with each
   feature's default.
 - **Resolves.** S08, S09, S10, U51.
-- **Changes.** Commit 1, byte-identical: `featureOnByDefault(model, name)` in
-  `ts/src/helpers/applicability.ts`, exported;
-  `ts/src/cmp/AgentGuideFeature.ts:31` calls it. Commit 2:
+- **Changes.** Commit 1, byte-identical, released in 4.45.0: the rule
+  `feature.fact.on`, and `ts/src/cmp/AgentGuideFeature.ts` reads it. Commit 2:
   `ts/src/cmp/ReadmeFeatures.ts:29-31` writes one sentence naming the features
   on by default, without the "no retries, no cache, no logging" literal, with
-  a singular count noun (S08, S09, U51);
-  `ts/src/cmp/ReadmeRefFeatures.ts:24,133` (S09);
-  `ts/src/cmp/ReadmeTop.ts:245-246` (S10); `ts/src/cmp/ReadmeStation.ts:50`
-  and `ts/src/cmp/AgentGuideTop.ts:88` the same. The text guard gains the
-  exact check "a sentence says features start off only when every feature it
-  covers does".
-- **Tests.** A derivation test: `featureOnByDefault` equals
-  `configDefinition(m, t).def.feature[f].options.active` for every target and
-  feature over five fixtures. `ts/test/readme.test.ts`: a `log`-on README
+  a singular count noun (S08, S09, U51); `ts/src/cmp/ReadmeRefFeatures.ts:24,133`
+  (S09); `ts/src/cmp/ReadmeTop.ts:245-246` (S10); `ts/src/cmp/ReadmeStation.ts:50`
+  and `ts/src/cmp/AgentGuideTop.ts:88` the same, each reading the fact. The text
+  guard gains the exact check "a sentence says features start off only when
+  every feature it covers does".
+- **Tests.** `ts/test/facts.test.ts` holds `feature.fact.on` to each bundled
+  feature's default (released). `ts/test/readme.test.ts`: a `log`-on README
   names `log` as on by default; a test-only README names neither retries nor
   cache.
 - **Output change.** Docs: the features paragraph of the root README and 40
   target pages.
-- **Depends on.** WP03.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
-- **Size.** About 7 source files plus `ts/dist`, 3 test files.
+- **Depends on.** WP03; the fact pass.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
+- **Size.** About 6 source files plus `ts/dist`, 2 test files.
 
-### WP17. One regeneration statement, and `modelCopyMode`
+### WP17. One regeneration statement, and the copy mode read from the model
 
 - **Goal.** State once that generate overwrites and prunes, and read the add
-  rule through `modelCopyMode`.
+  rule from the model.
 - **Resolves.** X5, M27.
-- **Changes.** Commit 1, byte-identical: `modelCopyMode(model)` in
-  `ts/src/helpers/copymerge.ts`, read through `KIT`;
-  `ts/src/cmp/ReadmeTop.ts:614` uses it. Commit 2: one neutral regeneration
-  statement used by `ts/src/cmp/AgentGuideContent.ts:137-145,173-180`,
+- **Changes.** Commit 1, byte-identical: `ts/src/cmp/ReadmeTop.ts:614` reads
+  `main.kit.copies` through `KIT`. It is a model value already, defaulted to
+  `merge` by the base model, so it needs no fact. Commit 2: one neutral
+  regeneration statement used by `ts/src/cmp/AgentGuideContent.ts:137-145,173-180`,
   `ts/src/cmp/AgentGuide.ts:51-55,69-71` and
   `ts/src/cmp/AgentGuideFeature.ts:84-86`; the merge and placeholder paragraph
-  goes; the add-time sentence comes from `modelCopyMode` (X5).
-  `AGENTS.md:479-486` ("Merge gotcha") is rewritten in the same commit (M27).
+  goes; the add-time sentence reads `main.kit.copies` (X5). `AGENTS.md`
+  ("Merge gotcha") is rewritten in the same commit (M27).
 - **Tests.** `ts/test/agentguide.test.ts`: the root guide contains neither
   "merges** into" nor "never DELETES" and agrees with the README under copies
   merge and overwrite.
 - **Output change.** Docs: root and target `AGENTS.md`.
 - **Depends on.** WP03.
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
 - **Size.** About 6 source files plus `ts/dist`, `AGENTS.md`, 2 test files.
 
-### WP18. Escapers, and the generate-time link and table check
+### WP18. Escaped vendor text as facts, and the generate-time link and table check
 
 - **Goal.** Stop vendor text from breaking tables, code spans and links in
   neutral documents, and warn on every generate when a written table or link
   is broken.
 - **Resolves.** V27, U102, U103, U104, G29.
-- **Changes.** Commit 1: `ts/src/helpers/markdown.ts` (new) with `mdCell`
-  (pipe to `\|`, line break to `<br>`, `$$` to `$&#36;` by a function
-  replacer), `mdInline`, `mdCodeSpan` (a longer backtick fence) and
-  `mdLinkTarget`; relative links in vendor text unwrapped to their label (G29,
-  per DQ19); fence lines neutralised if U104 is confirmed; exported. Commit 2:
-  `ts/src/cmp/ReadmeTop.ts:130-133,504-507`,
-  `ts/src/cmp/ReadmeFeatures.ts:78-79`,
-  `ts/src/cmp/ReadmeRefFeatures.ts:78,95-96` and
-  `ts/src/cmp/FeatureDocs.ts:30-57` call them (V27, U102, U103). Commit 3:
-  `ts/src/sdkgen.ts` checks the kept `File` nodes after each pass
-  (`doc-link-dangling`, `doc-table-broken`), as warnings in a project and
+- **Changes.** Commit 1: rules compute, beside each vendor text the neutral
+  documents print, its escaped forms: a table cell (pipe to `\|`, line break to
+  `<br>`, `$$` to `$&#36;`), inline text, a code span with a longer backtick
+  fence, and a link target; relative links in vendor text unwrapped to their
+  label (G29, per DQ19); fence lines neutralised if U104 is confirmed. The
+  rules use `rep` until aontu's `esc` has a Markdown variant
+  (aontu-lang/aontu#848). Commit 2: `ts/src/cmp/ReadmeTop.ts:130-133,504-507`,
+  `ts/src/cmp/ReadmeFeatures.ts:78-79`, `ts/src/cmp/ReadmeRefFeatures.ts:78,95-96`
+  and `ts/src/cmp/FeatureDocs.ts:30-57` read the escaped forms (V27, U102,
+  U103). Commit 3: `ts/src/sdkgen.ts` checks the kept `File` nodes after each
+  pass (`doc-link-dangling`, `doc-table-broken`), as warnings in a project and
   failures in sdkgen's suite. U104 is settled by generating a fenced block in
   an entity description and running each target's example test; the result
   goes in the pull request.
-- **Tests.** `ts/test/helpers.test.ts` (each escaper, including `$&`); a union
-  optspec and a `|` default render well-formed rows;
+- **Tests.** `ts/test/facts.test.ts` (each escaped form, including `$&`); a
+  union optspec and a `|` default render well-formed rows;
   `ts/test/generate.test.ts` (a broken table warns; a URL with `)` gives a
   valid link). How GitHub renders `$&#36;` in a cell is checked on a real
   rendered README before merge.
 - **Output change.** Docs: only where vendor or feature text holds these
   characters; new warnings in projects.
-- **Depends on.** WP03; decision DQ19 (if unanswered, the unwrapping commit is
-  left out and G29 waits for R2).
-- **Release.** R1 (sdkgen minor 4.45.0), in sdkgen.
-- **Size.** About 7 source files plus `ts/dist`, 3 test files.
+- **Depends on.** WP03; the fact pass; decision DQ19 (if unanswered, the
+  unwrapping commit is left out and G29 waits for R2).
+- **Release.** R1 (sdkgen minor 4.46.0), in sdkgen.
+- **Size.** About 6 source files plus the rules and `ts/dist`, 3 test files.
 
-### WP13. `targetSurface`: what a target is, and which target it wraps
+### WP13. What a target is, and which target it wraps, as declared slots and facts
 
-- **Goal.** Make one derivation say what a target is and which target it
-  builds on, and port every neutral reader that recognised consumers by key or
-  by phase flags.
+- **Goal.** Let each target say what it is and which target it builds on in
+  its own model file, and port every neutral reader that recognised consumers
+  by key or by phase flags to the resulting facts.
 - **Resolves.** D02, U01, U02, U03, M02, M03, V13, V30, M09.
 - **Changes.** Commit 1, byte-identical for an all-on model: `surface: *'' |
   string` and `consumes: *'' | string` join the target block of
-  `ts/model/sdkgen.aontu` with no comment line; `targetSurface(model, name)`
-  and `SURFACES` (`sdk`, `cli`, `mcp`, `data`, plus `provider` if DQ20) in
-  `ts/src/helpers/packageMeta.ts` with the design note's absence rule;
-  exported; `docs/reference/model.md` documents both slots; `ADR.md` gains the
-  rule "generated text states only what the model declares; an unknown answer
-  writes no sentence" (DQ5). Commit 2: `ts/src/helpers/alongside.ts:4-31`
-  reads it and `isConsumer` is deleted (U01, V13);
-  `ts/src/cmp/ReadmeTop.ts:146-172,433-453` and `ts/src/helpers/mcpTools.ts`
-  take the surface and the installed key, and docs order goes by `originName`
-  (U02, M02, M03); `ts/src/cmp/AgentGuideContent.ts:18-37` keys `LANG_CMD` by
-  origin (U03); `registryState` loses its `go`/`go-cli`/`go-mcp` literals.
-  Commit 3: `targetOrigins` (`ts/src/action/resolve.ts:357-389`) answers
-  bundled, external or owned, and `ts/src/helpers/opShape.ts:479-505` names
-  owned targets as not judged (M09). Commit 4: doctor files an aliased file
-  lacking a slot its origin declares as "aliased-behind", outside `report.ok`;
+  `ts/model/sdkgen.aontu` with no comment line. A rule computes
+  `target.fact.surface` by the design note's absence rule: the declared slot;
+  else `LEGACY_SURFACE`, an aontu table in the rules keyed by `origname`; else
+  `sdk` for a target that generates entities; else unknown. Another gives each
+  target its consumers, over a `copy()` of the targets. `SURFACES` (`sdk`,
+  `cli`, `mcp`, `data`, plus `provider` if DQ20) is the closed word list
+  `package check` holds the slot to. `docs/reference/model.md` documents both
+  slots; `ADR.md` gains the rule "generated text states only what the model
+  declares; an unknown answer writes no sentence" (DQ5). Commit 2:
+  `ts/src/helpers/alongside.ts:4-31` reads the fact and `isConsumer` is deleted
+  (U01, V13); `ts/src/cmp/ReadmeTop.ts:146-172,433-453` and
+  `ts/src/helpers/mcpTools.ts` read the surface fact and the installed key, and
+  docs order goes by `originName` (U02, M02, M03);
+  `ts/src/cmp/AgentGuideContent.ts:18-37` keys `LANG_CMD` by origin (U03);
+  `registryState` loses its `go`/`go-cli`/`go-mcp` literals. Commit 3:
+  `targetOrigins` (`ts/src/action/resolve.ts:357-389`) answers bundled,
+  external or owned, and `ts/src/helpers/opShape.ts:479-505` names owned
+  targets as not judged (M09); this stays code, because owned is decided from
+  the project's files. Commit 4: doctor files an aliased file lacking a slot
+  its origin declares as "aliased-behind", outside `report.ok`;
   `featureApplies` falls back to the origin's `provides` (V30).
-- **Tests.** `ts/test/surface.test.ts` (new): `LEGACY_SURFACE` equals the
-  three bundled consumer files; a four-flag copy and an alias of go-cli
-  classed by origin; an unknown word reads as unknown.
-  `ts/test/generate.test.ts:1838` alongside cases; `ts/test/alias.test.ts`
-  (`go-cli~go-clj`, `go-mcp~go-mcq` match the baseline after mapping back);
-  `ts/test/owned.test.ts`; `ts/test/doctor.test.ts`; the exports list.
+- **Tests.** `ts/test/facts.test.ts`: `LEGACY_SURFACE` equals the three bundled
+  consumer files; a four-flag copy and an alias of go-cli classed by origin; an
+  unknown word reads as unknown. `ts/test/generate.test.ts:1838` alongside
+  cases; `ts/test/alias.test.ts` (`go-cli~go-clj`, `go-mcp~go-mcq` match the
+  baseline after mapping back); `ts/test/owned.test.ts`;
+  `ts/test/doctor.test.ts`.
 - **Output change.** None for an all-on model; visible only for aliased or
   packaged consumers.
-- **Depends on.** WP03; decisions DQ2, DQ5, DQ20.
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
-- **Size.** About 12 source files plus `ts/dist`, 1 model, `ADR.md`, 1
-  documentation page, 6 test files.
+- **Depends on.** WP03; the fact pass; decisions DQ5, DQ20 (DQ2 is answered).
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
+- **Size.** About 12 source files plus the rules and `ts/dist`, 1 model,
+  `ADR.md`, 1 documentation page, 6 test files.
 
-### WP14. `targetPlace` and `docLink`: links, `cd` lines and the active-target view from one place
+### WP14. Placement and links as facts: links, `cd` lines and the active-target view from one place
 
 - **Goal.** Make every relative link and directory in a neutral document come
-  from the declared placement, and drop a sentence whose target file is not
+  from the placement facts, and drop a sentence whose target file is not
   written.
 - **Resolves.** D01, D33, D34, S04, S07, S38, S39, S40, S43, S45.
-- **Changes.** Commit 1, byte-identical: `ts/src/helpers/place.ts` (new) with
-  `activeTargets`, `targetPlace` (`folder`, `root` or `external`; an
-  `output.path` of `''` is undeclared) and `docLink`, which answers from the
-  pass and `phaseActive`; exported. Commit 2:
-  `ts/src/helpers/alongside.ts:20-37` links through `docLink` and writes no
-  note when it is undefined, keeping the public signature with an optional
-  third argument (S38); `ts/src/cmp/AgentGuide.ts:43-54,120` and
-  `ts/src/cmp/AgentGuideFeature.ts:84-90` (S39, S40);
+- **Changes.** Commit 1, byte-identical: `target.fact.place` exists (4.45.0;
+  an `output.path` of `''` is undeclared). Rules add `main.kit.fact.active`, the
+  active targets, and `target.fact.link`, each root document's relative link
+  from the target's directory, absent when the document is not written: an
+  out-of-tree target, or `main.kit.phase.top` off. The same commit prepares
+  the two models commit 3 reads facts from: `generate()` calls
+  `warnUngeneratedOps` after `applyFacts`, the guards still first, because
+  `targetOrigins` will read the active fact; and `resolveModel`
+  (`ts/src/sdkgen.ts:516`), the model every action reads, runs the guards and
+  then `applyFacts`, without the guards' notices, which belong to a generate
+  run. Commit 2: `ts/src/helpers/alongside.ts:20-37` links through the link
+  fact and writes no note when it is absent, keeping the public signature
+  with an optional third argument (S38); `ts/src/cmp/AgentGuide.ts:43-54,120`
+  and `ts/src/cmp/AgentGuideFeature.ts:84-90` (S39, S40);
   `ts/src/cmp/AgentGuideContent.ts:59,126` (S07, S40);
   `ts/src/cmp/AgentGuideTop.ts:53-56` prints "—" for an unwritten guide (S43);
   `ts/src/cmp/ReadmeTop.ts:392,396,418,689` (S45);
-  `ts/src/cmp/PublishWorkflow.ts:106,194-254,417` and
-  `ts/src/cmp/Deploy.ts:143` take `cd` and working directory from
-  `targetPlace` (S04). Commit 3: `alongside.ts`, `ReadmeTop.ts:144`,
-  `AgentGuideContent.ts:98`, `Deploy.ts:19`, `PublishWorkflow.ts:28`,
-  `ts/src/action/resolve.ts:376` and `ts/src/action/remove.ts:293` call
-  `activeTargets`/`targetPlace`; `ts/src/admin/status.ts` keeps its disk view
-  (D01, D33, D34).
+  `ts/src/cmp/PublishWorkflow.ts:106,194-254,417` and `ts/src/cmp/Deploy.ts:143`
+  take `cd` and working directory from the place fact (S04). Commit 3:
+  `alongside.ts`, `ReadmeTop.ts:144`, `AgentGuideContent.ts:98`, `Deploy.ts:19`,
+  `PublishWorkflow.ts:28`, `ts/src/action/resolve.ts:376` and
+  `ts/src/action/remove.ts:293` read the active and place facts;
+  `ts/src/admin/status.ts` keeps its disk view (D01, D33, D34).
 - **Tests.** `ts/test/textguard.test.ts`: `link` reports nothing on
   phase-top-off, phase-readme-off-ts, phase-agentguide-off-ts, root-ts and
   output-external-ts. `ts/test/publishworkflow.test.ts` (only js as npm target
   gives `cd js`); `ts/test/external.test.ts` (no `../README.md` in the
-  destination); `ts/test/helpers.test.ts` (`targetPlace` over every guard
-  variation equals the plan the guard's Root follows).
+  destination); `ts/test/facts.test.ts` (the place fact over every guard
+  variation equals the plan the guard's Root follows; an action's model
+  carries the facts generate's carries; `warnUngeneratedOps` names the same
+  operations after the move).
 - **Output change.** Docs: the go-cli and go-mcp `AGENTS.md` links in every
   default project become "—"; links dropped under phase-off and out-of-tree
   passes; publish workflows of root-placed npm targets.
 - **Depends on.** WP13; decision DQ3 (until WP23, the guard's override
   variation stays pinned with that reason).
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
-- **Size.** About 14 source files plus `ts/dist`, 6 test files.
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
+- **Size.** About 13 source files plus the rules and `ts/dist`, 6 test files.
 
-### WP15. Project-level lists and names from the model
+### WP15. Project-level lists and names from the model's facts
 
 - **Goal.** Replace fixed language, registry and naming lists in project-level
-  files with derivations.
+  files with facts.
 - **Resolves.** S01, S02, S03, S06, G13, V14, V24, U39.
-- **Changes.** Commit 1, byte-identical: in `ts/src/helpers/packageMeta.ts`,
-  `targetTitle(model, name)` (target title, else the origin's label, else the
-  key) and `apiDisplayName(model)` (text title, then `info.title`);
-  `definitionKind(model)` beside `pointIsGraphql`; `langLabel` reads the
-  origin's title and `LANG_LABEL` is held equal to the titles by a test;
-  exported. Commit 2: `ts/src/cmp/Changelog.ts:22-23` names SDK titles and the
-  "plus" clause from `targetSurface` (S01, S02; reaches only projects without
-  a CHANGELOG); `ts/src/cmp/Security.ts:34` builds the registry list from
-  active SDK targets (S03); `ts/src/cmp/AgentGuideTop.ts:33` says
-  "multi-language" only for more than one SDK target (S06);
-  `ts/src/cmp/ReadmeIntro.ts:26` and `ts/src/cmp/ReadmeTop.ts:178,226,360,398`
-  use `targetTitle`, and `modelcheck` warns on a target without a title (V14).
-  Commit 3: `pkgDescription` (`packageMeta.ts:311-315`) uses `targetTitle` and
-  the surface noun (SDK, data package, CLI, MCP server) (G13; the copy half is
-  in WP35). Commit 4: "API definition" or the named kind at
-  `ReadmeTop.ts:112,233,660,701,704,737`, `Changelog.ts:24` and
-  `AgentGuideContent.ts:249` (V24); `apiDisplayName` in ReadmeTop, the guides
-  and the intros (U39). The go title ("Golang" against "Go") is settled in
-  WP37.
+- **Changes.** Commit 1, byte-identical: facts `target.fact.title` (the
+  target's title, else its origin's label, else its key; the pass computes
+  this per-target fallback in code until aontu has one, aontu-lang/aontu#849),
+  `main.kit.fact.apiName` (the text title, then `info.title`: a base-model
+  default with an absolute reference) and `main.kit.fact.definitionKind`
+  (beside `pointIsGraphql`'s condition); `langLabel` reads the origin's title
+  fact and `LANG_LABEL` is held equal to the titles by a test. Commit 2:
+  `ts/src/cmp/Changelog.ts:22-23` names SDK titles and the "plus" clause from
+  the surface fact (S01, S02; reaches only projects without a CHANGELOG);
+  `ts/src/cmp/Security.ts:34` builds the registry list from the active SDK
+  targets (S03); `ts/src/cmp/AgentGuideTop.ts:33` says "multi-language" only for
+  more than one SDK target (S06); `ts/src/cmp/ReadmeIntro.ts:26` and
+  `ts/src/cmp/ReadmeTop.ts:178,226,360,398` read the title fact, and
+  `modelcheck` warns on a target without a title (V14). Commit 3:
+  `pkgDescription` (`packageMeta.ts:311-315`) reads the title fact and the
+  surface noun (SDK, data package, CLI, MCP server) (G13; the copy half is in
+  WP35). Commit 4: "API definition" or the named kind, from the
+  definition-kind fact, at `ReadmeTop.ts:112,233,660,701,704,737`,
+  `Changelog.ts:24` and `AgentGuideContent.ts:249` (V24); the apiName fact in
+  ReadmeTop, the guides and the intros (U39). The go title ("Golang" against
+  "Go") is settled in WP37.
 - **Tests.** `ts/test/generate.test.ts` (a lone-ts CHANGELOG names neither CLI
   nor MCP; lone-zig names Zig; lone-js `SECURITY.md` lists only npm);
   `ts/test/agentguide.test.ts`; `ts/test/publisher.test.ts` (every SDK
@@ -695,9 +766,9 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs and manifests: new CHANGELOGs, `SECURITY.md`,
   `AGENTS.md`, manifest descriptions built from `pkgDescription`, "OpenAPI"
   wording for GraphQL models.
-- **Depends on.** WP13; decision DQ2.
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
-- **Size.** About 10 source files plus `ts/dist`, 6 test files.
+- **Depends on.** WP13.
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
+- **Size.** About 10 source files plus the rules and `ts/dist`, 6 test files.
 
 ### WP22. Generate and doctor refuse a target without `test`, or with `phase.entity` off
 
@@ -719,8 +790,9 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** None for valid projects; a hand-edited project without
   `test` now fails generate instead of producing an SDK that fails at run
   time.
-- **Depends on.** WP13; decision DQ7.
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
+- **Depends on.** WP13; WP14 and WP20, which prepare the models doctor and
+  `package check` read; decision DQ7.
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
 - **Size.** About 4 source files plus `ts/dist`, `ADR.md`, 3 test files.
 
 ### WP20. Status, remove, testkit and package check on placement and surface
@@ -728,58 +800,69 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Goal.** Make the tools around generate use the same placement and surface
   answers as generate.
 - **Resolves.** U90, U91, U94, U100, U101.
-- **Changes.** `ts/src/admin/status.ts:56-60` resolves the folder through
-  `targetPlace` and the override and reports an in-tree folder of an external
-  target as stale (U90). `ts/src/action/remove.ts:285-300` reads the override
-  as generate does (U91). `ts/src/testkit.ts:425-455` passes
+- **Changes.** `ts/src/admin/status.ts` prepares the `sdk.json` it reads
+  (`:29`; the guards, then `applyFacts`), resolves the folder through the place
+  fact and the override (`:56-60`), and reports an in-tree folder of an
+  external target as stale (U90). `ts/src/action/remove.ts:285-300` reads
+  the override as generate does (U91). `ts/src/testkit.ts:425-455` passes
   `GenerateOptions.external` to SdkGen (U94). `ts/src/action/check.ts` and
   `ts/src/helpers/manifest.ts` require parity `CONSUMER` exactly when
-  `targetSurface` is not `sdk` (U100), and report an unknown surface word
-  naming the release that knows it, never failing generate (U101).
+  the surface fact is not `sdk`, `package check` applying the facts to the
+  model it compiles for each target (U100), and report an unknown surface
+  word naming the release that knows it, never failing generate (U101).
 - **Tests.** `ts/test/admin-status.test.ts` and `ts/test/remove.test.ts` with
-  `SDKGEN_EXTERNAL`; `ts/test/testkit.test.ts`;
-  `ts/test/packagecheck.test.ts`.
+  `SDKGEN_EXTERNAL`, and status over an `sdk.json` without facts;
+  `ts/test/testkit.test.ts`; `ts/test/packagecheck.test.ts`.
 - **Output change.** None in generated files.
 - **Depends on.** WP13, WP14; decision DQ4.
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
 - **Size.** About 6 source files plus `ts/dist`, 4 test files.
 
-### WP19. Every derivation the copy wave reads, one release before it
+### WP19. Every fact the copy wave reads, one release before it
 
-- **Goal.** Ship, as exports and new files, every function the per-language
-  copies of R3 call, with byte-identical neutral readers.
+- **Goal.** Compute, as facts in the model, everything the per-language copies
+  of R3 read, with byte-identical neutral readers.
 - **Resolves.** no issue of its own; it carries what later packages need.
-- **Changes.** In `ts/src/utility.ts` beside `isHttpBasicAuth`:
-  `requiredOptions(model)` (`apikey` when auth is active; `secret` for Basic,
-  header placement and not suppressed; required server variables computed
-  without changing `serverVariables`' shape). `configDefinition` returns
-  credential `in` and `name` as a separate field outside `def`, so no Config
-  byte changes. In `ts/src/sdkgen.ts`: `guardModel(model, log)`
-  (`guardModelNames` plus `guardFlowSteps`, plus WP21's pre-pass), idempotent.
-  New files: `ts/src/helpers/envnames.ts` (`envVar(model, suffix)`, the
-  entity-id name beside `serverVarEnv`, `liveTestEnv(model, target)`);
-  `ts/src/helpers/readerdir.ts` (the directory a reader enters, from
-  `targetPlace`); a per-language string escaper for vendor text in generated
-  source (DQ18); a no-fallback `introOps` variant. Beside their kin:
-  `entityDescription` in `ts/src/helpers/text.ts`; `sdkRel(ctx$, target)` in
-  `place.ts` and an `SDKREL` token in `ts/src/helpers/stdrep.ts` (`..` in
-  tree; DQ22); `releaseTag(model, target)` moved out of `PublishWorkflow.ts`
-  into `packageMeta.ts` (today's behaviour if DQ8 is open);
-  `jvmPackage(model)` and `pyPackageName(model)` for docgen and the copies; an
-  option-row helper over `main.kit.optspec` if DQ9 keeps option tables.
-  `ts/src/helpers/serverVars.ts:19` reads through `KIT`. Exports list updated.
-- **Tests.** `ts/test/helpers.test.ts` (`requiredOptions` over eight auth
-  states and templated URLs; `serverVariables` exact-shape tests at `:566-599`
-  unchanged); a generated-output test that PrepareAuth reads `secret` exactly
-  when `requiredOptions` says so, in all 20 targets;
-  `ts/test/entityname.test.ts` (`guardModel` twice equals once and equals
-  generate); `ts/test/publishworkflow.test.ts` and `ts/test/deploy.test.ts`
-  unchanged.
+- **Changes.** Rules compute:
+  - `main.kit.fact.auth`: `apikey` when auth is active; `secret` for Basic,
+    header placement and not suppressed; the credential's `in` and `name`, so
+    `Config_<lang>` reads the credential from a fact and no Config byte
+    changes;
+  - `main.kit.fact.server`: each server variable, its default, and whether it
+    is required (the URL uses it, found with `re()` over the variable's key,
+    and the spec gives no default; test mode and a literal `base` excepted);
+  - `main.kit.fact.env`: every environment-variable name (the API key's, the
+    entity-id name beside `serverVarEnv`, the live-test names), with
+    `nom(name, 'upper')`, held to `envToken` by a test;
+  - per target: the directory a reader enters, `sdkrel` (`..` in tree, and an
+    `SDKREL` token in `ts/src/helpers/stdrep.ts`; DQ22), the release tag
+    (today's behaviour if DQ8 is open), and the JVM and py package names for
+    docgen and the copies;
+  - per entity: its description (the project's text, else the spec's), its
+    escaped forms, and the no-fallback list of its canonical operations. The
+    fact pass's input gains the entity map, so its time on a 500-entity model
+    is measured first. A rule aontu cannot express is computed by the pass in
+    code and written into the model;
+  - an option-row fact over `main.kit.optspec`, if DQ9 keeps option tables.
+
+  `guardModel` (`guardModelNames`, `guardFlowSteps` and WP21's pre-pass) stays
+  code, idempotent and exported, so docgen can apply it before `applyFacts`.
+  The per-language escaper for vendor text in generated source (DQ18) is a
+  formatting step at each copy's sink: it depends on the language a copy
+  writes, not on a fact of the model. `ts/src/helpers/serverVars.ts:19` reads
+  through `KIT`.
+- **Tests.** `ts/test/facts.test.ts`: the auth facts over eight auth states and
+  templated URLs; the environment names equal `envToken`'s; `serverVariables`
+  exact-shape tests at `ts/test/helpers.test.ts:566-599` unchanged; a
+  generated-output test that PrepareAuth reads `secret` exactly when the fact
+  says so, in all 20 targets; `ts/test/entityname.test.ts` (`guardModel` twice
+  equals once and equals generate); `ts/test/publishworkflow.test.ts` and
+  `ts/test/deploy.test.ts` unchanged; the pass's time on a 500-entity model.
 - **Output change.** None.
-- **Depends on.** WP14; decisions DQ8, DQ9, DQ18, DQ22 shape the helpers but
-  an open one never blocks the release.
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
-- **Size.** About 10 source files plus `ts/dist`, 4 test files.
+- **Depends on.** WP14; decisions DQ8, DQ9, DQ18, DQ22 shape the facts but an
+  open one never blocks the release.
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
+- **Size.** About 6 source files plus the rules and `ts/dist`, 4 test files.
 
 ### WP21. An inactive operation is an absent one
 
@@ -808,7 +891,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Code and docs: only for models that use the switch (about
   138 files in such a project); none otherwise.
 - **Depends on.** WP19; decision DQ1.
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
 - **Size.** About 5 source files plus `ts/dist`, 1 model, 4 test files.
 
 ### WP23. Committed documents follow the declared layout under a run override
@@ -840,7 +923,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs and release files: unchanged by an override run
   (today about 31 root README lines change).
 - **Depends on.** WP14; decision DQ3.
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
 - **Size.** About 8 source files plus `ts/dist`, 1 documentation page, 1 test
   file.
 
@@ -870,7 +953,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Release files and docs where a project sets these slots;
   none otherwise.
 - **Depends on.** WP19; decisions DQ8, DQ13, DQ14, DQ15.
-- **Release.** R2 (sdkgen minor 4.46.0), in sdkgen.
+- **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
 - **Size.** About 8 source files plus `ts/dist`, 1 model, 1 documentation
   page, 5 test files.
 
@@ -893,35 +976,37 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Release.** R-DG2 (docgen minor), in docgen.
 - **Size.** About 3 files.
 
-### WP26a. docgen adopts sdkgen's derivations
+### WP26a. docgen reads sdkgen's facts
 
 - **Goal.** Make docgen name entities, classify targets, install, configure
-  and count with sdkgen's exported answers, with no decision outstanding.
+  and count with the facts sdkgen writes into the model, with no decision
+  outstanding.
 - **Resolves.** N01, M46, M48, U07, U63, U64, U76, V8, U67, U65, A01.
-- **Changes.** In docgen: `ts/bin/voxgig-docgen` and
-  `ts/src/docgen.ts:427,488` apply `guardModel` (feature-detected, the
-  fallback logged) to `sdk.json` (N01). `ts/src/content.ts:160-166` reads
-  `kind`, then `targetSurface`, then its own table; an unknown surface is a
-  companion tool named by title (U07, M48). Installation through
-  `installCommand`; `ts/src/sdk-reference.ts:9-11` uses `pyPackageName` and
-  `envVar` rather than its own slug and env rules; `toolContracts` uses
-  `mcpTools`; the route count filters `p.a !== false` (V8). The Authentication
-  paragraph and setup snippets (`ts/src/sdk-reference.ts:6-12,37-43`,
+- **Changes.** In docgen: in a build, docgen receives the model after
+  `guardModel` and `applyFacts`. Standalone, `ts/bin/voxgig-docgen` and
+  `ts/src/docgen.ts:427,488` apply both to `sdk.json` through a namespace
+  import with a fallback, the fallback logged (N01); these are the only
+  sdkgen exports it imports. `ts/src/content.ts:160-166` reads `kind`, then the
+  surface fact, then its own table; an unknown surface is a companion tool
+  named by title (U07, M48). Installation through the target's install fact;
+  `ts/src/sdk-reference.ts:9-11` reads the py package and environment facts
+  rather than its own slug and env rules; `toolContracts` uses `mcpTools`; the
+  route count filters `p.a !== false` (V8). The Authentication paragraph and
+  setup snippets (`ts/src/sdk-reference.ts:6-12,37-43`,
   `ts/src/content.ts:573,658-660`, and
   `ts/project/.sdk/tm/edition/{github-pages,presentation}/sdk-setup.json`)
-  come from `requiredOptions` with placement (U64, U76), and the JVM import
-  root from `jvmPackage` (U65), so the edition templates change once.
+  come from the auth facts with placement (U64, U76), and the JVM import root
+  from the JVM package fact (U65), so the edition templates change once.
   Sentences at `ts/src/content.ts:187,551,553,594,664,676,697` are conditioned
-  on the SDK and tool counts, `targetFeatures` and `featureOnByDefault` (U63),
-  and the tutorial's credential sentence (`:684`) and "Turn on a feature" step
+  on the SDK and tool counts, `targetFeatures` and `feature.fact.on` (U63), and
+  the tutorial's credential sentence (`:684`) and "Turn on a feature" step
   (`:677`) on a required credential and on features (A01). A description
   apidef marked as its own (`info.synth.description`, WP06) is rendered
   through `prose()` rather than `quote()` (`ts/src/content.ts:186`), which is
   the docgen half of V23. Sentences naming a reference require the website
   edition (U67). `ts/package.json:65` peers sdkgen at R2, a floor lane joins
   `.github/workflows/build.yml`, and the bin names `package update
-  @voxgig/sdkgen` when the peer is too old (M46). Every new export is read
-  through a namespace import with a fallback.
+  @voxgig/sdkgen` when the peer is too old (M46).
 - **Tests.** `ts/test/docgen.test.ts`: standalone and in-build `SUMMARY.md`
   identical for a model the guard renames; seneca-provider is not counted as
   an SDK; a hyphenated slug's py import equals the generated package;
@@ -958,11 +1043,11 @@ are unused: review folded those packages into WP28 and WP26a.
   declared layout and what applies, once DQ3 and DQ21 are answered.
 - **Resolves.** G24, V22.
 - **Changes.** In docgen: `ts/src/content.ts:189` gets singular and plural;
-  `:254` takes the directory from `targetPlace`, links an external target's
+  `:254` takes the directory from the place fact, links an external target's
   repository, and omits a `create: false` target the run did not generate
   (G24). `ts/src/content.ts:271,592-595` lists a feature only when it applies
   (`targetFeatures`), lists streaming and paging only when a list operation
-  exists, and replaces "features are off by default" with `featureOnByDefault`
+  exists, and replaces "features are off by default" with `feature.fact.on`
   per feature (V22); the 20 feature model descriptions are not reworded.
 - **Tests.** `ts/test/docgen.test.ts`: one target is singular; an
   `output.path` target has no `ts/` directory; a model with no list operation
@@ -973,23 +1058,22 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Release.** R-DG3 (docgen patch), in docgen.
 - **Size.** About 3 files.
 
-### WP44b. create-sdkgen: the scaffold Root imports `rootPlan`; pins move with each release
+### WP44b. create-sdkgen: the scaffold Root reads the root plan facts; pins move with each release
 
 - **Goal.** Retire the scaffold's own root plan and keep the scaffold's
   toolchain pins in step with the releases this plan makes.
 - **Resolves.** no issue of its own; it carries what later packages need.
-- **Changes.** In create-sdkgen: `project/standard/.sdk/src/Root.ts` imports
-  `rootPlan` from `@voxgig/sdkgen`, and
+- **Changes.** In create-sdkgen: `project/standard/.sdk/src/Root.ts` reads the
+  root plan facts from the model it is given, and
   `project/standard/.sdk/src/RootPlan.ts` and `test/rootplan.test.ts` are
   deleted (their cases moved to sdkgen in WP02). The scaffold's
   `.sdk/package.json` pins `@voxgig/sdkgen` at `~R1` or later, and moves
   `@voxgig/apidef` and `@voxgig/docgen` with it (R-AD1, R-DG2), in each
   release that follows an sdkgen release; at R3 the copies a new project
   receives are the wave's.
-- **Tests.** A test that the scaffold `Root.ts` imports `rootPlan` from
-  `@voxgig/sdkgen` and that the pin is at or above R1;
-  `test/create-sdkgen.test.ts` scaffolds and generates against the pinned
-  toolchain.
+- **Tests.** A test that the scaffold `Root.ts` reads the plan facts and that
+  the pin is at or above R1; `test/create-sdkgen.test.ts` scaffolds and
+  generates against the pinned toolchain.
 - **Output change.** Scaffold files in new and re-scaffolded projects.
 - **Depends on.** WP02 and R1 published; each pin move after its release.
 - **Release.** R-CS2 (create-sdkgen releases following each sdkgen release),
@@ -1033,7 +1117,7 @@ are unused: review folded those packages into WP28 and WP26a.
   the eight targets whose `PrepareAuth` copy already imports the predicate,
   until it re-adds; doctor reports the other copies outdated.
 - **Depends on.** WP19; decision DQ11.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 67 copy files, 1 source file plus `ts/dist`, the golden.
 
 ### WP33. Vendor text in the copies: cells, entity descriptions, `$$` in generated source
@@ -1057,7 +1141,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs and generated source, only where vendor text holds
   these characters or a project overrides an entity description.
 - **Depends on.** WP18, WP19, WP28; decision DQ18.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 85 copy files, the golden.
 
 ### WP29. Constructor needs in every quick start, options row and reference
@@ -1092,7 +1176,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs: constructor examples and option tables in every
   README and REFERENCE.
 - **Depends on.** WP01, WP19, WP28, WP33; decision DQ9.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 110 copy files, 2 source files plus `ts/dist`, the golden.
 
 ### WP31. Operation-dependent prose in every language
@@ -1135,7 +1219,7 @@ are unused: review folded those packages into WP28 and WP26a.
   REFERENCEs; a project that updates the package without re-adding copies
   would print "()" from an old intro, so the release note says to re-add.
 - **Depends on.** WP19, WP21 if DQ1 is yes, WP29; decision DQ1.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 150 copy files, 3 source files plus `ts/dist`, the golden.
 
 ### WP34. Feature text in the copies
@@ -1160,7 +1244,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs: module trees and REFERENCE feature lists; two
   feature model files.
 - **Depends on.** WP16, WP19; decision DQ16.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 42 copy files, 2 model files, the golden.
 
 ### WP37. Remaining per-language corrections
@@ -1189,7 +1273,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs and generated source comments; one target model
   file.
 - **Depends on.** WP07, WP19.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 50 copy files, 1 model, 1 source file plus `ts/dist`, the
   golden.
 
@@ -1215,7 +1299,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs and generated tests: how-to sections; the kotlin and
   cpp live harness code.
 - **Depends on.** WP19, WP29; decision DQ10.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 45 copy files, the golden.
 
 ### WP32. Placement in the copies: `cd` lines, clone paths, `.env.local`, the path back to `.sdk`
@@ -1245,7 +1329,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Depends on.** WP14, WP19, WP23 if DQ3 is yes; decisions DQ3, DQ22. With
   DQ3 open, paths follow the declared layout and the out-of-tree lane stays
   pinned.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 100 copy and template files, the golden.
 
 ### WP35. Install, manifest and release copies
@@ -1282,7 +1366,7 @@ are unused: review folded those packages into WP28 and WP26a.
   `pruneStaleTemplates` removes the retired `VERSION` and `LICENSE` templates
   on re-add.
 - **Depends on.** WP10, WP15, WP19, WP25; decision DQ8.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 70 copy and template files, the golden.
 
 ### WP36. Consumer Mains follow the model and the target they wrap
@@ -1326,7 +1410,7 @@ are unused: review folded those packages into WP28 and WP26a.
   never worked.
 - **Depends on.** WP13, WP14, WP19, WP23 if DQ3 is yes; decisions DQ2, DQ3,
   DQ6, DQ24.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 10 copy files (3 Mains, 4 fragments, 3 model files), the
   golden.
 
@@ -1354,7 +1438,7 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Generated source comments only.
 - **Depends on.** WP28; decision DQ6 (if comments are excluded, this package
   is dropped and its issues become not fixed).
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 90 copy and template files, the golden.
 
 ### WP39. The generated `patch` method in flow tests
@@ -1371,7 +1455,7 @@ are unused: review folded those packages into WP28 and WP26a.
   `patch` operation.
 - **Output change.** Generated tests, if tested.
 - **Depends on.** WP28; decision DQ12.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** About 22 copy files, the golden, if tested.
 
 ### WP40. A missing server variable in go, rust, zig and c
@@ -1390,7 +1474,7 @@ are unused: review folded those packages into WP28 and WP26a.
   rust and zig.
 - **Output change.** Docs, or code if changed.
 - **Depends on.** WP29; decision DQ17.
-- **Release.** R3 (sdkgen minor 4.47.0), in sdkgen.
+- **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
 - **Size.** 4 components or 4 templates, the golden.
 
 ### WP41. Language pack: documents to parity with the wave
@@ -1412,14 +1496,16 @@ are unused: review folded those packages into WP28 and WP26a.
   `requiredOptions`, numbered steps, result-shape sentences, entity-state
   rows, language-keyed field types, `entityDescription`, the ReadmeOptions
   fate, the dart module tree naming no feature (S15's pack half), and the docs
-  Root built from `rootPlan`. Every new export is read through a namespace
-  import with a fallback; the floor stays `>=4.43.0`; version moves with both
-  manifests.
+  Root built from the root plan facts. The pack reads those facts with
+  `fact()` from the model it is given, so its sdkgen floor rises to R3
+  (4.48.0), the release its parity ports follow, by which every fact it reads
+  is computed. The floor and the version move in both manifests, and a
+  project updates sdkgen before the pack.
 - **Tests.** `test/langpack.test.js`: auth-off and query-placement option
   tables; a list-only lean intro; the root README package cell equals the
   pubspec name; Basic in the query sets no authorization header; rows keep
   their cell count with a pipe and a newline. `test/parity.test.js` against
-  the bundled siblings; floor and head lanes.
+  the bundled siblings; the floor lane, moved to R3, and the head lane.
 - **Output change.** Docs, and dart's auth behaviour under Basic in the query.
 - **Depends on.** WP28, WP29, WP31, WP33 (R3 published), WP45; decision DQ9.
 - **Release.** R-LP2 (sdkgen-langpack patch or minor), in sdkgen-langpack.
@@ -1458,14 +1544,15 @@ are unused: review folded those packages into WP28 and WP26a.
 | R-DG1 | docgen | patch | WP05a | nothing | Reaches new projects through the scaffold's tilde pin with no pin move. |
 | R-AD1 | apidef | minor (npm) and go/v minor, one dispatch | WP06 | nothing | Followed by a goldens refresh in apidef-validate. |
 | R-CS1 | create-sdkgen | its next release | WP44a | nothing | Owned by other work: needs that release to accept WP44a. The pin moves are R-CS2. |
-| R1 | sdkgen | minor 4.45.0 | WP01, WP02, WP03, WP07, WP08, WP09, WP10, WP11, WP12, WP16, WP17, WP18 | nothing | Neutral only; exports rootPlan, phaseActive, featureOnByDefault, modelCopyMode and the escapers. |
-| R2 | sdkgen | minor 4.46.0 | WP13, WP14, WP15, WP19, WP20, WP21, WP22, WP23, WP25 | R1 | Derivations and neutral corrections; no copy changes. A package whose decision is open at the cut is left out and rides a later neutral minor. |
+| F | sdkgen | minor 4.45.0 | the fact pass | nothing | Released 2026-11-20: the rules, `applyFacts`, `fact`, and the first two facts. |
+| R1 | sdkgen | minor 4.46.0 | WP01, WP02, WP03, WP07, WP08, WP09, WP10, WP11, WP12, WP16, WP17, WP18 | nothing | Neutral only; adds the root plan, phase and escaped-text facts. |
+| R2 | sdkgen | minor 4.47.0 | WP13, WP14, WP15, WP19, WP20, WP21, WP22, WP23, WP25 | R1 | Facts and neutral corrections; no copy changes. A package whose decision is open at the cut is left out and rides a later neutral minor. |
 | R-DG2 | docgen | minor | WP05b, WP26a | R2, R-DG1, R-AD1 | Raises docgen's sdkgen floor to R2; a project updates sdkgen before docgen. |
 | R-IP2 | sdkgen-infrapack | patch | WP27 | R2, R-IP1 | Needs DQ20 answered and the word in SURFACES. |
 | R-DG3 | docgen | patch | WP26b | R2, R-DG2 | Needs DQ3 and DQ21. |
-| R-CS2 | create-sdkgen | releases following each sdkgen release | WP44b | R1 | Moves the sdkgen, apidef and docgen pins together; the rootPlan import needs R1. |
-| R3 | sdkgen | minor 4.47.0 | WP28, WP33, WP29, WP31, WP34, WP37, WP30, WP32, WP35, WP36, WP38, WP39, WP40 | R2 | The one copy wave; doctor reports copies outdated once in every project. |
-| R-LP2 | sdkgen-langpack | patch or minor | WP41, WP42 | R3, R-LP1 | Floor stays >=4.43.0; new exports read by namespace import. |
+| R-CS2 | create-sdkgen | releases following each sdkgen release | WP44b | R1 | Moves the sdkgen, apidef and docgen pins together; the Root reads the plan facts, which need R1. |
+| R3 | sdkgen | minor 4.48.0 | WP28, WP33, WP29, WP31, WP34, WP37, WP30, WP32, WP35, WP36, WP38, WP39, WP40 | R2 | The one copy wave; doctor reports copies outdated once in every project. |
+| R-LP2 | sdkgen-langpack | patch or minor | WP41, WP42 | R3, R-LP1 | Raises the pack's sdkgen floor to R3 in both manifests: the facts it reads are absent below it. |
 
 The sdkgen version numbers assume nothing else is released in between; each
 release takes the next free minor.
@@ -1502,7 +1589,9 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   follow the raw list; S23 becomes a documentation correction in the copies.
   Affects WP21, WP31.
 - **DQ2. Where does `surface` live for the three bundled consumers? (D2)**
-  Recommendation: In their own model files, declared in the wave (WP36), with
+  Answered (2026-11-20) by the ruling that facts live in the model: in their
+  own model files, with `LEGACY_SURFACE` as an aontu table in the fact rules.
+  The original recommendation, for the record: In their own model files, declared in the wave (WP36), with
   `LEGACY_SURFACE` answering only for older copies and aliases. If answered
   the other way: `LEGACY_SURFACE` stays the home; WP36 drops the three
   model-file edits, and doctor reports three fewer outdated files at R3.
@@ -1690,9 +1779,13 @@ Risks:
 - Projects with no copy record that resolve conflicts with `--keep` end with
   trees doctor passes and `tsc` refuses; WP12 ships in R1 so the advice is
   right before R3.
-- A pack or docgen reading a new export by named import compiles at head and
-  fails at its floor; review enforces namespace imports with fallbacks, and
-  the floor lanes exercise the fallback.
+- A fact a pack or docgen reads is absent below the sdkgen release that
+  computes it, so each declares its floor at that release (R-LP2 at R3, R-DG2
+  at R2) and runs its floor lane there; on a model without the fact, `fact()`
+  names it rather than printing nothing. docgen's standalone import of
+  `guardModel` and `applyFacts` compiles at head and fails at its floor by
+  named import; review enforces a namespace import with a fallback for those
+  two.
 - Open decisions can fragment the releases; R2 and R3 are cut with what is
   decided, and the packages left out are recorded in the release notes.
 - The guard's pins (about 101) can hide a real finding; each needs a reason,
@@ -2047,28 +2140,31 @@ full entry for each id is in `docs/design/model-dependent-text-issues.md`.
 
 ## Appendix B. Duplicated rules and their single homes
 
+Homes as revised in section 0: a fact in the model where the plan first named
+a function.
+
 | Rule | Fact | Single home | Package |
 | --- | --- | --- | --- |
-| D01 | Which targets are active and generated | `activeTargets`, `targetPlace`, `docLink` in `ts/src/helpers/place.ts` | WP14 |
-| D02 | What a target is (SDK, CLI, MCP, data) | `targetSurface` in `ts/src/helpers/packageMeta.ts` | WP13 |
+| D01 | Which targets are active and generated | `main.kit.fact.active`, `target.fact.place`, `target.fact.link` | WP14 |
+| D02 | What a target is (SDK, CLI, MCP, data) | the `surface` slot and `target.fact.surface` | WP13 |
 | D04 | Which features a target has | `targetFeatures`, with `featureDocs` as the documentation view | WP34 |
-| D05 | Whether a feature starts on | `featureOnByDefault` in `ts/src/helpers/applicability.ts` | WP16 (via S09) |
+| D05 | Whether a feature starts on | `feature.fact.on` | WP16 (via S09) |
 | D10 | Which operations exist | the DQ1 pre-pass in `guardModel`, then `entityOps` and `introOps` | WP31 |
 | D22 | Whether auth is on | `isAuthActive` for documents and Config; `isAuthSuppressed` (equal to its negation under DQ11) for credential code | WP28 |
-| D23 | What the constructor needs | `requiredOptions` in `ts/src/utility.ts` | WP29 |
-| D25 | Environment-variable names | `envName` and `envVar`, `liveTestEnv` in `ts/src/helpers/envnames.ts` | WP30 |
+| D23 | What the constructor needs | `main.kit.fact.auth` and `main.kit.fact.server` | WP29 |
+| D25 | Environment-variable names | `main.kit.fact.env` | WP30 |
 | D26 | Client options | `main.kit.optspec`, through one neutral row helper | WP29 |
 | D27 | Package name, install command, publish state | `packageName`, `installCommand`, `registryState` in `ts/src/helpers/packageMeta.ts` | WP35 |
-| D29 | Release tag | `releaseTag` in `ts/src/helpers/packageMeta.ts` | WP35 |
-| D33 | Target directories and relative paths | `targetPlace`, `docLink`, `readerdir` | WP14 |
-| D34 | Whether a phase runs | `phaseActive` and `PHASES` in `ts/src/helpers/rootplan.ts` | WP14 |
-| D35 | The root plan | `rootPlan` in `ts/src/helpers/rootplan.ts` | WP02 |
-| D44 | The MCP surface and its tools | `mcpTools`, keyed by the installed key from `targetSurface` | WP36 |
+| D29 | Release tag | the target's release-tag fact | WP35 |
+| D33 | Target directories and relative paths | `target.fact.place`, `target.fact.link` and the reader-directory fact | WP14 |
+| D34 | Whether a phase runs | the phase facts | WP14 |
+| D35 | The root plan | the root plan facts | WP02 |
+| D44 | The MCP surface and its tools | `mcpTools`, keyed by the installed key from `target.fact.surface` | WP36 |
 | D47 | Whether a target has a live harness | the per-language copy (DQ10) | WP30 (via G03) |
-| D48 | What regeneration does | one neutral statement; `modelCopyMode` in `ts/src/helpers/copymerge.ts` | WP17 (via X5) |
-| D55 | Which server variables are required | `requiredOptions(model).server` | WP29 (via G01) |
+| D48 | What regeneration does | one neutral statement; `main.kit.copies`, read directly | WP17 (via X5) |
+| D55 | Which server variables are required | `main.kit.fact.server` | WP29 (via G01) |
 | D56 | The go-cli words | one value from `Main_go-cli`, passed to the fragments as a token | WP36 (via G08) |
-| D60 | The path from a target back to `.sdk` | `sdkRel` and the `SDKREL` token | WP32 (via V32) |
-| D61 | Which target a consumer wraps | `targetSurface(...).consumed` | WP36 |
-| D69 | Escaping vendor text in table cells | `mdCell` in `ts/src/helpers/markdown.ts` | WP33 (via G27) |
-| D70 | Protecting `$$` in vendor text | `mdCell`/`mdInline` in documents; the per-language escaper (DQ18) in code | WP33 (via G28) |
+| D60 | The path from a target back to `.sdk` | the target's `sdkrel` fact and the `SDKREL` token | WP32 (via V32) |
+| D61 | Which target a consumer wraps | the consumers fact | WP36 |
+| D69 | Escaping vendor text in table cells | the escaped cell form, a fact beside the text | WP33 (via G27) |
+| D70 | Protecting `$$` in vendor text | the escaped forms in documents; the per-language escaper (DQ18) in code | WP33 (via G28) |

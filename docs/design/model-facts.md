@@ -1,8 +1,9 @@
 # Design: facts computed once, in the model
 
-Status: **in progress** (2026-11-20). The first two facts are built; the
-rest follow the plan in `docs/design/model-dependent-text-plan.md`, which is
-being revised to this approach.
+Status: **in progress** (2026-11-21). The fact pass and the first two facts
+are released in 4.45.0; the rest follow the plan in
+`docs/design/model-dependent-text-plan.md`, whose section 0 maps each
+function it once proposed to the fact that replaces it.
 
 ## The ruling
 
@@ -80,6 +81,16 @@ may lack the base model's slots; the fact is then absent rather than an
 error, and only a component that reads it fails. A model from the base model
 always has the inputs.
 
+## Where a fact can be read
+
+Only from a prepared model: the guards, then `applyFacts`. Today `generate()`
+is the one place that prepares a model, and nothing reads a fact before it
+does. A reader elsewhere prepares the model it holds the same way, first: the
+actions through `resolveModel`, `admin/status.ts` and docgen's standalone run
+over `sdk.json`, and `package check` over the model it compiles. The plan adds
+each preparation with the first fact read there, and once `targetOrigins`
+reads the active fact, `generate()` runs `warnUngeneratedOps` after the facts.
+
 ## How the plan changes
 
 Each derivation the plan adds as an exported function becomes a rule here,
@@ -91,11 +102,16 @@ with its readers moved to `fact`:
 - `targetSurface` (WP13) becomes declared `surface` and `consumes` slots,
   with the consumers of each target as a collection fact.
 - `requiredOptions`, the environment-variable names and the escaped vendor
-  text (WP18, WP19) become facts; which server variables a URL uses comes
-  from apidef, which reads the servers.
+  text (WP18, WP19) become facts. A rule finds which server variables a URL
+  uses with `re()` built from each variable's own key (`key(2)` where the
+  rule sits), which aontu 0.76.3 evaluates, so apidef needs no change for it.
 - Packs and docgen read facts from the model they receive, so the plan's
-  rule about importing newer exports with a fallback goes.
+  rule about importing each newer export with a fallback goes. A pack that
+  reads a fact declares its sdkgen floor at the release that computes it, and
+  `package add` refuses it below that floor; the language pack's floor moves
+  to R3 with its parity wave. docgen's standalone run imports only
+  `guardModel` and `applyFacts`.
 - The copy wave (R3) reads facts, so the copies call no derivation of
   sdkgen's.
-
-The plan document is revised to this in its own change.
+- The fact pass took 4.45.0, so the plan's R1, R2 and R3 move to 4.46.0,
+  4.47.0 and 4.48.0.
