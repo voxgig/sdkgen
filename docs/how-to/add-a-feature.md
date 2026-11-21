@@ -243,12 +243,13 @@ the trim:
   cross-feature suite took the whole test package down with it.
 
 A target whose templates are not ready for any of that says
-`feature: { trim: false }` and keeps the complete feature set. Currently:
-`clojure`, `haskell`, `lean` and `ocaml` (every feature lives in one
+`feature: { trim: false }` and keeps the complete feature set. Among the
+bundled targets that is currently `clojure` (every feature lives in one
 module, so there is no per-feature file to leave out), `scala` (the
 cross-feature tests share the single test entry point) and `zig`
 (`root.zig` imports every feature module, and `build.zig` names the
-feature test explicitly).
+feature test explicitly). In the language pack, `haskell` and `lean` say
+the same, because each keeps every feature in one module.
 
 ## See also
 

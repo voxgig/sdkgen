@@ -3,9 +3,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuideTop = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
+const facts_1 = require("../helpers/facts");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideTopIntro = (0, component_1.cmp)(function AgentGuideTopIntro(props) {
-    const { Name } = props.s;
+    const { Name, model, targets } = props.s;
+    const featureGuides = targets.some((t) => (0, facts_1.fact)(t, 'phase').agentguide && (0, AgentGuideContent_1.writesFeatureGuides)(model, t));
     (0, jostraca_1.Content)(`# ${Name} SDK — Agent Guide
 
 This is a **generated** multi-language SDK project. The client libraries in
@@ -15,8 +17,8 @@ from an API model; the generator, model, templates, and components all live in
 a template, or a component and regenerate.
 
 There are companion guides deeper in the tree: one per language
-(\`<lang>/AGENTS.md\`) and one per feature
-(\`<lang>/src/feature/<name>/AGENTS.md\`).
+(\`<lang>/AGENTS.md\`)${featureGuides ? `, and one per feature in a target that keeps each
+feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 
 ## Project map
 
@@ -45,9 +47,8 @@ const AgentGuideTopFeatures = (0, component_1.cmp)(function AgentGuideTopFeature
         (0, jostraca_1.Content)(`**Features** (${features.length}): `);
         (0, jostraca_1.Content)(features.map((f) => `\`${f.name}\``).join(', ') + `.
 
-Each feature is generated into every SDK target — as a directory
-\`<lang>/src/feature/<name>/\` (ts/js) or a flat file in the \`<lang>/feature/\`
-package (other languages). Each target's guide documents its features.
+Each feature is generated into each SDK target that supports it, and each
+target's guide documents where that target keeps its features.
 
 `);
     }
@@ -130,7 +131,7 @@ const AgentGuideTop = (0, component_1.cmp)(function AgentGuideTop(props) {
     const targets = (0, AgentGuideContent_1.activeTargets)(model);
     const features = (0, AgentGuideContent_1.activeFeatures)(model);
     const entities = (0, AgentGuideContent_1.activeEntities)(model);
-    const s = { Name, targets, features, entities };
+    const s = { Name, model, targets, features, entities };
     (0, jostraca_1.File)({ name: 'AGENTS.md' }, () => {
         AgentGuideTopIntro({ s });
         AgentGuideTopTargets({ s });

@@ -109,11 +109,14 @@ function quickStarts(readme: string): Record<string, string> {
 }
 
 
+// The agent guides name each feature's template by its path in `.sdk/tm/`, whose
+// folder keeps the placeholder name (`Sources/ProjectNameSDK`, `lib/projectname`).
 const PLACEHOLDER_PINNED = [
   /^swift\/Package\.swift$/,
   /^swift\/README\.md$/,
   /^swift\/Tests\/ProjectNameSDKTests\//,
   /^[^/]+\/src\/feature\/[^/]+\/AGENTS\.md$/,
+  /^(elixir|swift)\/AGENTS\.md$/,
 ]
 
 

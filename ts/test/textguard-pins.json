@@ -280,17 +280,6 @@
     },
     {
       "relation": "off",
-      "chain": "AgentGuideTop > AgentGuideTopFeatureGuide",
-      "cause": "feature",
-      "reason": "Known stale, S16: names `log` and `test` as built in whatever the model declares; WP09.",
-      "line": "features). Built-in features are `log` and `test`.",
-      "variations": [
-        "feature-log",
-        "feature-test"
-      ]
-    },
-    {
-      "relation": "off",
       "chain": "AgentGuideTop > AgentGuideTopLayout",
       "cause": "target",
       "reason": "Generic word: TypeScript is the language of the generator's components, not the ts target.",

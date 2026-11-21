@@ -1,11 +1,15 @@
 
 import { test, describe } from 'node:test'
-import { ok } from 'node:assert'
+import { ok, deepStrictEqual } from 'node:assert'
+
+import Fs from 'node:fs'
+import Path from 'node:path'
 
 import { Jostraca, Project, Folder } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { AgentGuideTop, AgentGuide, AgentGuideFeature, applyFacts } from '../dist/sdkgen.js'
+import { AgentGuideTop, AgentGuide, AgentGuideFeature, applyFacts, SdkGen } from '../dist/sdkgen.js'
+import { STAGE, SCAFFOLD, makeModel as compileModel, makeRoot, layeredFs, makeLog } from './generateharness'
 
 
 const noop = () => {}
@@ -18,12 +22,12 @@ const T_TS = { name: 'ts', title: 'TypeScript', ext: 'ts' }
 const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false }
 const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } } }
 
-function makeModel() {
+function makeModel(over: { ts?: boolean } = {}) {
   return applyFacts({
     name: 'demo', Name: 'Demo', const: { Name: 'Demo' },
     main: { kit: {
       target: {
-        ts: { active: true, ...T_TS },
+        ts: { active: false !== over.ts, ...T_TS },
         go: { active: true, ...T_GO },
         old: { active: false, name: 'old', title: 'Old' },
         'go-cli': { active: false, ...T_GOCLI },
@@ -41,7 +45,10 @@ function makeModel() {
         },
       },
       entity: {
-        advice: { active: true, name: 'advice', Name: 'Advice' },
+        advice: {
+          active: true, name: 'advice', Name: 'Advice',
+          op: { load: { active: true }, list: { active: true } },
+        },
       },
     } },
   })
@@ -50,11 +57,19 @@ function makeModel() {
 
 // Render a component (optionally inside an ambient target folder) and return
 // the memfs file map (path -> content). A target is named, and read from the
-// model, which is where its facts are.
-async function render(comp: any, props: any, folder?: string): Promise<Record<string, string>> {
+// model, which is where its facts are. `seed` puts files in the tree, such as
+// a target's templates, relative to the working directory.
+async function render(
+  comp: any, props: any, folder?: string,
+  opts: { seed?: string[], model?: any } = {},
+): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
+  for (const file of opts.seed || []) {
+    fs.mkdirSync(Path.dirname(Path.resolve(file)), { recursive: true })
+    fs.writeFileSync(Path.resolve(file), '')
+  }
   const jostraca = Jostraca()
-  const model = makeModel()
+  const model = opts.model || makeModel()
   if ('string' === typeof props.target) {
     props = { ...props, target: model.main.kit.target[props.target] }
   }
@@ -105,6 +120,17 @@ describe('AgentGuideTop', () => {
     ok(agents!.includes('`Advice`'), 'lists entities')
     ok(agents!.includes('ts/AGENTS.md'), 'links per-language guide')
     ok(agents!.includes('ProjectName') && agents!.includes('regenerate'), 'merge gotcha')
+    ok(!agents!.includes('Built-in features'), 'no fixed list of built-in features')
+    ok(agents!.includes('each SDK target that supports it'), 'features reach the targets that take them')
+    ok(!agents!.includes('every SDK target'), 'no claim that every target takes every feature')
+    ok(agents!.includes('<lang>/src/feature/<name>/AGENTS.md'), 'names the per-feature guides ts writes')
+  })
+
+  test('names no per-feature guide when no target writes one', async () => {
+    const files = await render(AgentGuideTop, {}, undefined, { model: makeModel({ ts: false }) })
+    const agents = find(files, '/p/AGENTS.md')
+    ok(agents!.includes('`<lang>/AGENTS.md`'), 'still names the per-language guides')
+    ok(!agents!.includes('src/feature/<name>/AGENTS.md'), 'no per-feature guide for a flat-layout project')
   })
 
   test('emits a thin CLAUDE.md pointing at AGENTS.md', async () => {
@@ -144,7 +170,10 @@ describe('AgentGuide — dir layout (ts/js)', () => {
 
 describe('AgentGuide — flat layout (go/py/php/rb/lua)', () => {
   test('documents features inline, emits no per-feature files', async () => {
-    const files = await render(AgentGuide, { target: 'go' }, 'go')
+    const files = await render(AgentGuide, { target: 'go' }, 'go', {
+      seed: ['tm/go/feature/log_feature.go', 'tm/go/feature/test_feature.go',
+        'tm/go/src/feature/log/.gitkeep'],
+    })
 
     const agents = find(files, 'go/AGENTS.md')
     ok(agents, 'go/AGENTS.md exists')
@@ -153,10 +182,62 @@ describe('AgentGuide — flat layout (go/py/php/rb/lua)', () => {
     ok(!find(files, 'go/feature/log/AGENTS.md'), 'no feature/<name> per-feature file')
     // Features documented inline with the real flat runtime file + hooks.
     ok(agents!.includes('## Features in this target'), 'feature section present')
-    ok(agents!.includes('`feature/log_feature.go`'), 'real flat runtime path')
+    ok(agents!.includes('`.sdk/tm/go/feature/log_feature.go`'), 'the template discovery finds')
+    ok(!agents!.includes('src/feature/log'), 'not the empty per-feature directory')
     ok(agents!.includes('`PreRequest`') && agents!.includes('`PreResponse`'), 'active hooks inline')
-    ok(agents!.includes('.sdk/tm/go/feature/'), 'flat template path')
     ok(agents!.includes('cd ../.sdk') && agents!.includes('make test'), 'commands fixed here too')
+  })
+
+  test('says so when the target keeps no template per feature', async () => {
+    const files = await render(AgentGuide, { target: 'go' }, 'go')
+    const agents = find(files, 'go/AGENTS.md')
+    ok(agents!.replace(/\s+/g, ' ').includes('no template per feature'), 'no per-feature template to name')
+    ok(!agents!.includes('| Template |'), 'no template column')
+  })
+})
+
+
+// Every bundled target, generated for real: each template a guide lists
+// exists in the scaffold, and the run writes a runtime file of that name.
+describe('AgentGuide — feature templates in a generated tree', () => {
+  test('every listed template exists and is generated', async () => {
+    const targets = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'target'))
+      .filter((f: string) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
+      .map((f: string) => f.replace(/\.aontu$/, '')).sort()
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog([]) })
+    const cwd = process.cwd()
+    process.chdir(SCAFFOLD)
+    try {
+      const res = await sdkgen.generate({
+        model: compileModel(targets, undefined, '', ['test', 'log', 'retry']), root: makeRoot(),
+      })
+      ok(true === res.ok, 'generated')
+    }
+    finally {
+      process.chdir(cwd)
+    }
+
+    const written = Object.keys(vol.toJSON())
+      .map((p: string) => Path.relative(STAGE, p).split(Path.sep).join('/'))
+    const listed: string[] = []
+    const shared: string[] = []
+    for (const t of targets) {
+      const guide = (vol.toJSON() as any)[Path.join(STAGE, t, 'AGENTS.md')]
+      if (null == guide || !guide.includes('## Features in this target')) continue
+      if (guide.replace(/\s+/g, ' ').includes('no template per feature')) shared.push(t)
+      for (const m of guide.matchAll(/\| \*\*([a-z]+)\*\*[^|]*\| `\.sdk\/tm\/([^`]+)` \|/g)) {
+        const rel = m[2]
+        listed.push(t + ':' + m[1])
+        ok(Fs.existsSync(Path.join(SCAFFOLD, 'tm', rel)), t + ': listed template exists: ' + rel)
+        const base = Path.posix.basename(rel)
+        ok(written.some((w: string) => w.startsWith(t + '/') && w.endsWith('/' + base)),
+          t + ': the run writes ' + base)
+      }
+    }
+    ok(listed.includes('c:retry') && listed.includes('py:retry') && listed.includes('swift:retry'),
+      'flat targets list their templates')
+    deepStrictEqual(shared, ['clojure', 'ocaml'], 'targets with one shared feature runtime')
   })
 })
 
@@ -194,6 +275,17 @@ describe('AgentGuideFeature (dir layout)', () => {
     ok(agents!.includes('cd ../../../../.sdk'), 'regenerate path relative to feature dir depth')
     ok(agents!.includes('Active by default: **yes**'), 'log is active by default')
     ok(find(files, 'ts/src/feature/log/CLAUDE.md'), 'feature CLAUDE.md')
+    ok(agents!.includes('every entity operation (list, load) and'), 'the operations the entities have')
+    ok(!agents!.includes('patch'), 'no operation the model lacks')
+  })
+
+  test('names no operation when no entity has one', async () => {
+    const model = makeModel()
+    model.main.kit.entity.advice.op = {}
+    const files = await render(AgentGuideFeature,
+      { target: T_TS, feature: model.main.kit.feature.log }, 'ts', { model })
+    const agents = find(files, 'ts/src/feature/log/AGENTS.md')
+    ok(agents!.includes('stages of every entity operation and of'), 'no empty parenthesis')
   })
 
   test('feature inactive-by-default renders as no', async () => {

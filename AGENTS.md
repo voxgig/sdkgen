@@ -995,8 +995,8 @@ emitted broken source reached the fleet unchallenged.
   (`"paging"` in a context type, `"proxy"` in a fetcher), so widening the
   `featuresource.test.ts` guard to quoted names produces ~25 hits of which
   one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
-  `feature: { trim: false }` (currently `clojure`, `lean`, `ocaml`,
-  `scala`, `zig` bundled, plus `lean` in the language pack — see their
+  `feature: { trim: false }` (currently `clojure`, `scala` and `zig`
+  bundled, plus `haskell` and `lean` in the language pack — see their
   model files for what has to change first). Aggregate indexes must be GENERATED, not templated: that is why
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in

@@ -1,6 +1,7 @@
 
 import { featureApplies } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
+import { findFeatureSources } from '../helpers/featureSource'
 
 import { each } from 'jostraca'
 
@@ -66,23 +67,29 @@ function featuresEnabled(target: any): boolean {
   return fact(target, 'phase').feature
 }
 
-// ts/js lay each feature out as a directory `src/feature/<name>/`; the other
-// SDK targets (`srcfeature: false`) use flat files in a shared `feature/`
-// package. Drives where feature guides live / are referenced.
+// ts/js lay each feature out as a directory `src/feature/<name>/`, which also
+// holds its guide; the other SDK targets (`srcfeature: false`) do not.
 function isDirLayout(target: any): boolean {
   return target?.srcfeature !== false
 }
 
-function featureBase(target: any): string {
-  return isDirLayout(target) ? 'src/feature' : 'feature'
+// Each feature's runtime template as discovery finds it in the target's tree,
+// skipping the empty `src/feature/<name>/` a flat-layout target also keeps.
+function featureTemplates(fs: any, target: any, features: any[]): Record<string, string> {
+  const dirLayout = isDirLayout(target)
+  const out: Record<string, string> = {}
+  const found = findFeatureSources(fs, 'tm/' + target.name,
+    features.map((f: any) => String(f.name).toLowerCase()))
+  for (const s of found) {
+    if (!dirLayout && s.path.startsWith('src/feature/')) continue
+    if (null == out[s.name]) out[s.name] = s.path + (s.folder ? '/' : '')
+  }
+  return out
 }
 
-function featureRuntimeFile(target: any, feature: any): string {
-  const ext = target?.ext || target?.name || ''
-  if ('php' === target?.name) {
-    return (feature.Name || feature.name) + 'Feature.php'
-  }
-  return feature.name + '_feature.' + ext
+function writesFeatureGuides(model: any, target: any): boolean {
+  return featuresEnabled(target) && isDirLayout(target) &&
+    0 < activeFeatures(model, target).length
 }
 
 function featureHooks(feature: any): string[] {
@@ -187,7 +194,7 @@ function featureSection(): string {
 
 A **feature** is a pipeline extension: an object of hooks that fire at named
 stages of every entity operation (each target's guide documents its
-features). Built-in features are \`log\` and \`test\`.
+features).
 
 \`\`\`bash
 cd .sdk
@@ -296,8 +303,8 @@ export {
   langCommandsBlock,
   featuresEnabled,
   isDirLayout,
-  featureBase,
-  featureRuntimeFile,
+  featureTemplates,
+  writesFeatureGuides,
   featureHooks,
   activeTargets,
   activeFeatures,

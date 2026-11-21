@@ -5,8 +5,8 @@ exports.langCmd = langCmd;
 exports.langCommandsBlock = langCommandsBlock;
 exports.featuresEnabled = featuresEnabled;
 exports.isDirLayout = isDirLayout;
-exports.featureBase = featureBase;
-exports.featureRuntimeFile = featureRuntimeFile;
+exports.featureTemplates = featureTemplates;
+exports.writesFeatureGuides = writesFeatureGuides;
 exports.featureHooks = featureHooks;
 exports.activeTargets = activeTargets;
 exports.activeFeatures = activeFeatures;
@@ -19,6 +19,7 @@ exports.aontuSection = aontuSection;
 exports.claudePointer = claudePointer;
 const applicability_1 = require("../helpers/applicability");
 const facts_1 = require("../helpers/facts");
+const featureSource_1 = require("../helpers/featureSource");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const LANG_CMD = {
@@ -67,21 +68,28 @@ function langCommandsBlock(name) {
 function featuresEnabled(target) {
     return (0, facts_1.fact)(target, 'phase').feature;
 }
-// ts/js lay each feature out as a directory `src/feature/<name>/`; the other
-// SDK targets (`srcfeature: false`) use flat files in a shared `feature/`
-// package. Drives where feature guides live / are referenced.
+// ts/js lay each feature out as a directory `src/feature/<name>/`, which also
+// holds its guide; the other SDK targets (`srcfeature: false`) do not.
 function isDirLayout(target) {
     return target?.srcfeature !== false;
 }
-function featureBase(target) {
-    return isDirLayout(target) ? 'src/feature' : 'feature';
-}
-function featureRuntimeFile(target, feature) {
-    const ext = target?.ext || target?.name || '';
-    if ('php' === target?.name) {
-        return (feature.Name || feature.name) + 'Feature.php';
+// Each feature's runtime template as discovery finds it in the target's tree,
+// skipping the empty `src/feature/<name>/` a flat-layout target also keeps.
+function featureTemplates(fs, target, features) {
+    const dirLayout = isDirLayout(target);
+    const out = {};
+    const found = (0, featureSource_1.findFeatureSources)(fs, 'tm/' + target.name, features.map((f) => String(f.name).toLowerCase()));
+    for (const s of found) {
+        if (!dirLayout && s.path.startsWith('src/feature/'))
+            continue;
+        if (null == out[s.name])
+            out[s.name] = s.path + (s.folder ? '/' : '');
     }
-    return feature.name + '_feature.' + ext;
+    return out;
+}
+function writesFeatureGuides(model, target) {
+    return featuresEnabled(target) && isDirLayout(target) &&
+        0 < activeFeatures(model, target).length;
 }
 function featureHooks(feature) {
     return (0, jostraca_1.each)(feature.hook || {})
@@ -174,7 +182,7 @@ function featureSection() {
 
 A **feature** is a pipeline extension: an object of hooks that fire at named
 stages of every entity operation (each target's guide documents its
-features). Built-in features are \`log\` and \`test\`.
+features).
 
 \`\`\`bash
 cd .sdk
