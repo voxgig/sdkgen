@@ -259,7 +259,8 @@ function configDefinition(model, targetname) {
     const headers = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.headers`) || {};
     const authActive = isAuthActive(model);
     const authPrefix = resolveAuthPrefix(model);
-    const authBasic = isHttpBasicAuth(model);
+    // PrepareAuth composes Basic only in the header; elsewhere nothing reads the flag.
+    const authBasic = isHttpBasicAuth(model) && 'header' === resolveAuthIn(model);
     let baseUrl = '';
     try {
         baseUrl = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.info.servers.0.url`);
