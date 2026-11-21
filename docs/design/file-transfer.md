@@ -859,6 +859,77 @@ Exit: the fault matrix passes live in every Resumable target.
 - `go-cli`, `go-mcp` with its sandbox (S21), `py-data`.
 - The packaged targets in their own repositories; documentation editions.
 
+### Work items
+
+Each line is one change that can be delivered and reviewed on its own. The
+identifier stays the same for as long as the plan is carried out, and a
+pull request names the items it covers. "From" is the finding, rule or
+ruling of this document that the item answers.
+
+**Phase 0**
+
+| Item | Work | Where | From |
+| --- | --- | --- | --- |
+| `p0-error-bytes` | A failed upload's bytes stay out of its error, its explain record and every log, in every target | sdkgen | H2, S9 |
+| `p0-binary-response` | One error, the same in every target, for a response that is not JSON | sdkgen | H3 |
+| `p0-redirect-credentials` | No credential the SDK placed follows a redirect to another origin, under whatever name the model gives it | sdkgen | H11, S5 |
+| `p0-feature-claims` | `cache` passes a body that is not JSON by; `stream()` stops documenting an upload nothing sends | sdkgen | H4, H5 |
+| `p0-apidef-verb-noun` | A collection named for a verb keeps its plain create, in both ports | apidef | H9, A1 |
+| `p0-apidef-flow-files` | Basic flows leave file routes out until file steps exist, in both ports | apidef | H10, A2 |
+| `p0-adr` | ADR-004 entered in the decision register, once its wording is approved | sdkgen | section 5.3 |
+
+**Phase 1**
+
+| Item | Work | Where | From |
+| --- | --- | --- | --- |
+| `p1-codecs-ts-js` | Multipart, form and bounded raw codecs in `ts` and `js`, emitted only when the model has such a point | sdkgen | H1, H6, R8 |
+| `p1-codecs-ports` | The codecs in the thirteen other targets whose data can hold a source: `go`, `py`, `php`, `rb`, `lua`, `csharp`, `java`, `kotlin`, `scala`, `swift`, `perl`, `clojure`, `elixir` | sdkgen | H1, R4 |
+| `p1-codecs-closed-union` | The codecs in `rust`, `c`, `cpp`, `zig` and `ocaml`, where a source is a typed argument beside the data | sdkgen | H1, R10 |
+| `p1-corpus-primary` | Primary corpus cases for encoding, raw responses and body placeholders | create-sdkgen | section 10 |
+| `p1-tier-test` | The tier table as a test, with every target at Encoded | sdkgen | R4 |
+| `p1-demo-app` | The `podcastdemo` app, first cut: records, the multipart create, raw file routes | sdkgen | R3, section 9 |
+| `p1-demo-sdk` | The reference SDK generated from it, which round-trips a record with a file in every target | a new reference SDK repository | R16 |
+
+**Phase 2**
+
+| Item | Work | Where | From |
+| --- | --- | --- | --- |
+| `p2-file-feature` | The `file` feature in `ts` and `js`: slot handles with generated names, the transfer inside the pipeline, ranges, conditional requests, progress, cancellation | sdkgen | R1, R2, R8 |
+| `p2-plugins-stream-fs` | The `stream` and `fs` plugins in `ts` and `js` | sdkgen | R5, S1, S2, S13 |
+| `p2-digest` | Digest verification, with a hash in every target that claims the tier | sdkgen | S11, R14 |
+| `p2-action-keys` | Action-aware keys in `rbac`, `allow`, `metrics`, `audit` and `cost`, in every target | sdkgen | H12, S19 |
+| `p2-origins` | Other origins: the balanced redirect policy, the `hosts` allow-list, capability URLs registered as secrets | sdkgen | R6, S6, S7, S8 |
+| `p2-timeouts` | Connect and idle timeouts on file points, in place of a deadline on the whole exchange | sdkgen | H7, S18 |
+| `p2-test-mock` | The `test` feature's byte store, honouring ranges and validators | sdkgen | section 7.5 |
+| `p2-corpus-feature` | The file feature corpus, and the content and capability canaries in every SDK's clean sweep | create-sdkgen, sdkgen | S9, section 10 |
+| `p2-ports-streamed` | The Streamed tier in the fourteen targets whose client streams, each built and run on its own toolchain | sdkgen | R4 |
+| `p2-ports-contract` | Streaming in `c`, and the extended transport contract in `cpp`, `zig` and `ocaml` | sdkgen | section 7.3 |
+| `p2-rust-bytes` | `rust` carries a byte body as bytes | the struct library, then sdkgen | H8 |
+| `p2-apidef-file-facts` | `fl` on a file point and the guide's `file` entry, in both ports | apidef | A3, R17 |
+| `p2-flow-file-steps` | File steps in the basic flows and in every target's generated tests | apidef, sdkgen | A5 |
+| `p2-docs` | Reference, how-to and explanation pages for files, and an entity's files in each generated README | sdkgen | section 7.6 |
+
+**Phase 3**
+
+| Item | Work | Where | From |
+| --- | --- | --- | --- |
+| `p3-resume-download` | Resumable download and its token, in `ts` and `js` | sdkgen | S12, R13 |
+| `p3-sessions-tus` | Upload sessions and the tus 1.0.0 dialect, in `ts` and `js` | sdkgen | R7 |
+| `p3-apidef-sessions` | `session` on an entity, with the dialect's headers out of the caller's arguments, in both ports | apidef | A4, O6 |
+| `p3-netsim-faults` | Mid-body faults in `netsim` and the `test` feature | sdkgen | section 7.5 |
+| `p3-demo-faults` | Fault arming and the second origin in the `podcastdemo` app | sdkgen | section 9 |
+| `p3-ports-resumable` | The Resumable tier across the Streamed targets, proven by the fault matrix against the live app | sdkgen | R4 |
+| `p3-session-rufh` | The IETF draft as a second session dialect, pinned to a named revision | sdkgen | R7 |
+
+**Phase 4**
+
+| Item | Work | Where | From |
+| --- | --- | --- | --- |
+| `p4-indirect` | Presigned and other-origin transfers | sdkgen | section 7.2 |
+| `p4-parts` | Part-based uploads | sdkgen, apidef | R7 |
+| `p4-consumer-targets` | Files in `go-cli`, `go-mcp` with its sandbox, and `py-data` | sdkgen | S21, R15 |
+| `p4-packs` | Files in the packaged targets, in their own repositories | the pack repositories | R15 |
+
 ---
 
 ## 12. Rulings
