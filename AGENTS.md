@@ -614,6 +614,38 @@ cd ../<lang> && <lang-test-command>             # target builds + tests
 # re-run ts/js target tests too (reference parity)
 ```
 
+### `test/textguard.test.ts` — the documents under every single switch
+
+The text guard regenerates the documentation, with a docs-only Root that
+follows the plan facts, under every single-switch variation of the model:
+each target, feature, entity and operation removed, the empty and lone state
+of each kind, each auth and server shape, each document phase off, a target
+at the root. The variations come from the compiled fixture; none is listed by
+hand, and the fixture's entity names are opaque tokens so a mention scan
+cannot mistake `console` or `record` for prose. It reports:
+
+- `link`: a relative link, anchor or `cd` that does not resolve in what that
+  run wrote (`.sdk/` and the templates a target's Main copies count).
+- `off`: a line, in the run without X, that names X.
+- `parity`: an SDK target's section that does not read a fact (auth, servers)
+  its siblings read, from the model reads attributed to each component.
+- `reaction`: a prose line that left one target's document under a variation
+  and survives verbatim in a sibling's.
+- `marker`: a `$$path$$` that never fired, outside a code span.
+
+Each finding is keyed on (relation, the chain of labelled components that
+wrote the line, cause) and must match a pin in `test/textguard-pins.json`,
+which carries a reason. A pin that matches nothing fails, so fixing a writer
+means deleting its pin. `npm test` runs `link` on a fixed subset; `npm run
+textguard` runs the full matrix, which is a CI lane. `npm run
+textguard-update` rewrites the pins from what it finds, keeping each reason;
+a new pin reads `TODO` and fails until it has one. The operation-level
+`active: false` family is suspended as one entry until decision DQ1.
+
+A finding keys on the writing component, so split a component that writes
+many sections into labelled ones (`ReadmeTop`, `AgentGuideTop`) rather than
+pinning its whole output.
+
 ### `test/generate.test.ts` — the component layer, generated for real
 
 `make test` now generates a small SDK for EVERY target into memfs and asserts

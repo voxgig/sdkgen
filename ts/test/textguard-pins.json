@@ -1,0 +1,718 @@
+{
+  "suspended": [
+    {
+      "family": "op",
+      "reason": "DQ1: what an operation-level active: false means is undecided; until it is, the family is one entry rather than a pin per line"
+    }
+  ],
+  "pins": [
+    {
+      "relation": "link",
+      "chain": "AgentGuide > AgentGuideFeature",
+      "cause": "../AGENTS.md",
+      "reason": "Known stale, S39: a feature guide links a root guide one level above a target at the project root; WP14 links through the link fact.",
+      "line": "[project guide](../../../../AGENTS.md) and the",
+      "variations": [
+        "root-ts"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "AgentGuide > AgentGuideFeature",
+      "cause": "AGENTS.md",
+      "reason": "Known stale, S39: a feature guide links the root guide with the top phase off; WP14.",
+      "line": "[project guide](../../../../AGENTS.md) and the",
+      "variations": [
+        "phase-top-off"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "AgentGuideTop > AgentGuideTopTargets",
+      "cause": "go-cli/AGENTS.md",
+      "reason": "Known stale, S43: the root guide links a consumer's guide, which is never written; WP14.",
+      "line": "| `go-cli` | `go-cli/` — A CLI surface, not an SDK client library. | [`go-cli/AGENTS.md`](./go-cli/AGENTS.md) |",
+      "variations": [
+        "auth-basic",
+        "auth-basic-query",
+        "auth-off",
+        "baseline",
+        "entities-empty",
+        "entities-lone",
+        "entity-zqa",
+        "entity-zqb",
+        "entity-zqc",
+        "entity-zqd",
+        "entity-zqe",
+        "entity-zqf",
+        "entity-zqg",
+        "feature-audit",
+        "feature-cache",
+        "feature-clienttrack",
+        "feature-cost",
+        "feature-debug",
+        "feature-idempotency",
+        "feature-log",
+        "feature-metrics",
+        "feature-netsim",
+        "feature-paging",
+        "feature-proxy",
+        "feature-ratelimit",
+        "feature-rbac",
+        "feature-retry",
+        "feature-secrets",
+        "feature-streaming",
+        "feature-telemetry",
+        "feature-test",
+        "feature-timeout",
+        "feature-validate",
+        "features-empty",
+        "features-lone",
+        "phase-agentguide-off-ts",
+        "phase-build-off",
+        "phase-readme-off-ts",
+        "server-defaulted",
+        "server-plain",
+        "server-required",
+        "target-c",
+        "target-clojure",
+        "target-cpp",
+        "target-csharp",
+        "target-elixir",
+        "target-go-mcp",
+        "target-java",
+        "target-js",
+        "target-kotlin",
+        "target-lua",
+        "target-ocaml",
+        "target-perl",
+        "target-php",
+        "target-py",
+        "target-py-data",
+        "target-rb",
+        "target-rust",
+        "target-scala",
+        "target-swift",
+        "target-ts",
+        "target-zig"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "AgentGuideTop > AgentGuideTopTargets",
+      "cause": "go-mcp/AGENTS.md",
+      "reason": "Known stale, S43: the root guide links a consumer's guide, which is never written; WP14.",
+      "line": "| `go-mcp` | `go-mcp/` — An MCP server surface for AI agents, not an SDK client library. | [`go-mcp/AGENTS.md`](./go-mcp/AGENTS.md) |",
+      "variations": [
+        "auth-basic",
+        "auth-basic-query",
+        "auth-off",
+        "baseline",
+        "entities-empty",
+        "entities-lone",
+        "entity-zqa",
+        "entity-zqb",
+        "entity-zqc",
+        "entity-zqd",
+        "entity-zqe",
+        "entity-zqf",
+        "entity-zqg",
+        "feature-audit",
+        "feature-cache",
+        "feature-clienttrack",
+        "feature-cost",
+        "feature-debug",
+        "feature-idempotency",
+        "feature-log",
+        "feature-metrics",
+        "feature-netsim",
+        "feature-paging",
+        "feature-proxy",
+        "feature-ratelimit",
+        "feature-rbac",
+        "feature-retry",
+        "feature-secrets",
+        "feature-streaming",
+        "feature-telemetry",
+        "feature-test",
+        "feature-timeout",
+        "feature-validate",
+        "features-empty",
+        "features-lone",
+        "phase-agentguide-off-ts",
+        "phase-build-off",
+        "phase-readme-off-ts",
+        "server-defaulted",
+        "server-plain",
+        "server-required",
+        "target-c",
+        "target-clojure",
+        "target-cpp",
+        "target-csharp",
+        "target-elixir",
+        "target-go-cli",
+        "target-java",
+        "target-js",
+        "target-kotlin",
+        "target-lua",
+        "target-ocaml",
+        "target-perl",
+        "target-php",
+        "target-py",
+        "target-py-data",
+        "target-rb",
+        "target-rust",
+        "target-scala",
+        "target-swift",
+        "target-ts",
+        "target-zig"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "AgentGuideTop > AgentGuideTopTargets",
+      "cause": "ts/AGENTS.md",
+      "reason": "Known stale, D34: the root guide links a target guide whose agentguide phase is off; WP14.",
+      "line": "| `ts` | `ts/` | [`ts/AGENTS.md`](./ts/AGENTS.md) |",
+      "variations": [
+        "phase-agentguide-off-ts"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "AgentGuide",
+      "cause": "../AGENTS.md",
+      "reason": "Known stale, S39: a target guide links a root guide one level above a target at the project root; WP14.",
+      "line": "The TypeScript client for the Demo API. This directory is **generated** — do not edit it by hand; change the model/template/component in `.sdk/` and regenerate. See the [project guide](../AGENTS.md) for the full workflow and the aontu model language.",
+      "variations": [
+        "root-ts"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "AgentGuide",
+      "cause": "AGENTS.md",
+      "reason": "Known stale, S39: a target guide links the root guide with the top phase off; WP14.",
+      "line": "The C client for the Demo API. This directory is **generated** — do not edit it by hand; change the model/template/component in `.sdk/` and regenerate. See the [project guide](../AGENTS.md) for the full workflow and the aontu model language.",
+      "variations": [
+        "phase-top-off"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "AgentGuide",
+      "cause": "cd ../.sdk",
+      "reason": "Known stale, S40: `cd ../.sdk` from a target at the project root; WP14.",
+      "line": "cd ../.sdk",
+      "variations": [
+        "root-ts"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "Readme > ReadmeHowto",
+      "cause": "cd ts",
+      "reason": "Known stale, S41: `cd ts` assumes the target has its own directory; WP32.",
+      "line": "cd ts && npm test",
+      "variations": [
+        "root-ts"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "Readme > ReadmeIntro",
+      "cause": "README.md",
+      "reason": "Known stale, S38: the alongside note links a root README the top phase does not write; WP14.",
+      "line": "> the [top-level README](../README.md).",
+      "variations": [
+        "phase-top-off"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "ReadmeTop > ReadmeTopPackages",
+      "cause": "ts/README.md",
+      "reason": "Known stale, S45: the root README links a target README whose readme phase is off; WP14.",
+      "line": "| TypeScript | `@voxgig-sdk/demo-sdk` | publish pending — [install from source](ts/README.md#install) |",
+      "variations": [
+        "phase-readme-off-ts"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "ReadmeTop > ReadmeTopPerLanguage",
+      "cause": "ts/README.md",
+      "reason": "Known stale, S45: the root README links a target README whose readme phase is off; WP14.",
+      "line": "- [TypeScript](ts/README.md)",
+      "variations": [
+        "phase-readme-off-ts"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "ReadmeTop > ReadmeTopQuickstart",
+      "cause": "ts/README.md",
+      "reason": "Known stale, S45: the root README links a target README whose readme phase is off; WP14.",
+      "line": "See the [TypeScript README](ts/README.md) for the full guide.",
+      "variations": [
+        "phase-readme-off-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuide > AgentGuideFeature",
+      "cause": "feature",
+      "reason": "Undecided: `test` is the example of a feature switched on, in a sentence about every feature; whether an example must be in the model is open.",
+      "line": "in the model). It only runs when explicitly enabled (e.g. the `test` feature is switched on for test mode).",
+      "variations": [
+        "feature-test"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuideTop > AgentGuideTopCustomise",
+      "cause": "target",
+      "reason": "Generic word: TypeScript is the language of the generator's components, not the ts target.",
+      "line": "| **Components** | `.sdk/src/cmp/<lang>/` | TypeScript that **generates** source by walking the model. Edit when the file's shape **depends on the API** (entity classes, the constructor, README, tests). |",
+      "variations": [
+        "target-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuideTop > AgentGuideTopFeatureGuide",
+      "cause": "feature",
+      "reason": "Known stale, S16: names `log` and `test` as built in whatever the model declares; WP09.",
+      "line": "features). Built-in features are `log` and `test`.",
+      "variations": [
+        "feature-log",
+        "feature-test"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuideTop > AgentGuideTopLayout",
+      "cause": "target",
+      "reason": "Generic word: TypeScript is the language of the generator's components, not the ts target.",
+      "line": "  src/cmp/<lang>/  components — TypeScript that generates API-specific source",
+      "variations": [
+        "target-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuideTop > AgentGuideTopWorkflow",
+      "cause": "target",
+      "reason": "Known stale, S07: names `ts/` and `go/` as build-output directories whether or not they exist; WP14.",
+      "line": "directories (`ts/`, `go/`, …) are **build output** — never edit them by",
+      "variations": [
+        "target-go",
+        "target-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuide",
+      "cause": "target",
+      "reason": "Generic word: TypeScript is the language of the generator's components, not the ts target.",
+      "line": "| Components | `.sdk/src/cmp/c/` | the file's shape **depends on the API** (entities, constructor, README, tests) — TypeScript that walks the model |",
+      "variations": [
+        "target-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "Changelog",
+      "cause": "target",
+      "reason": "Known stale, S02: the first CHANGELOG entry lists six fixed languages; WP15.",
+      "line": "  Ruby, and Lua, plus CLI and MCP surfaces), generated from the upstream",
+      "variations": [
+        "target-lua",
+        "target-php",
+        "target-py",
+        "target-rb",
+        "target-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "Readme > ReadmeExplanation",
+      "cause": "feature",
+      "reason": "Known stale, S14: \"as TestFeature does with mocks\" with no TestFeature present; WP22.",
+      "line": "  to replace the transport (as TestFeature does with mocks).",
+      "variations": [
+        "feature-test"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "Readme > ReadmeExplanation",
+      "cause": "target",
+      "reason": "Generic word: \"Java-backed\" describes the JVM runtime of kotlin, scala and clojure, not the java target.",
+      "line": "value model (ordered, Java-backed maps and lists) rather than typed",
+      "variations": [
+        "target-java"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@clojure",
+      "cause": "auth",
+      "reason": "Found by the guard: clojure's how-to builds the client with no credential, where every other how-to reads the API key; to be catalogued.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@clojure",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@cpp",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@csharp",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@c",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@elixir",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@go",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@java",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@js",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@kotlin",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@lua",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@ocaml",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@perl",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@php",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@py",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@rb",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@rust",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@scala",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@swift",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@zig",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@clojure",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@cpp",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@csharp",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@c",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@elixir",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@js",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@kotlin",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@lua",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@ocaml",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@perl",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@php",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@rb",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@rust",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@scala",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@swift",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@zig",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    }
+  ]
+}

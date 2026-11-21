@@ -46,6 +46,8 @@
     "test": "node ../tools/comment-gate.cjs && node ../tools/dep-gate.cjs && node --test ../tools/dep-gate.test.cjs && node --enable-source-maps --test dist-test/**/*.test.js",
     "test-some": "node --enable-source-maps --test-name-pattern=\"$npm_config_pattern\" --test dist-test/**/*.test.js",
     "golden": "npm run build && SDKGEN_GOLDEN_UPDATE=1 node --test dist-test/characterize.test.js",
+    "textguard": "SDKGEN_TEXTGUARD_FULL=1 node --test dist-test/textguard.test.js",
+    "textguard-update": "SDKGEN_TEXTGUARD_UPDATE=1 node --test dist-test/textguard.test.js",
     "watch": "tsc --build src test -w",
     "build": "tsc --build src test && npm run prune-dist-test && npm run check-scaffold && npm run check-fixture && npm run stage-scaffold",
     "clean": "rm -rf dist dist-test node_modules yarn.lock package-lock.json",

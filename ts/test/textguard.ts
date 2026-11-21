@@ -1,0 +1,672 @@
+import Fs from 'node:fs'
+import Path from 'node:path'
+
+import { memfs } from 'memfs'
+import { each, names, Project, Folder, File, Content } from 'jostraca'
+
+import {
+  SdkGen, cmp, fact, Main, Readme, AgentGuide, ReadmeTop, AgentGuideTop, Security, Changelog,
+} from '../dist/sdkgen.js'
+
+import {
+  API_MODEL, KIT, STAGE, SCAFFOLD, makeModel, layeredFs, makeLog,
+} from './generateharness'
+
+
+// The text guard: the documentation regenerated under single-switch
+// variations of the model, read for links that do not resolve (`link`),
+// lines naming what the run removed (`off`), siblings that read different
+// facts (`parity`), a fix that reached one language and not its siblings
+// (`reaction`), and template markers that never fired (`marker`).
+
+
+type Line = { text: string, chain: string }
+
+type Run = {
+  id: string
+  files: Record<string, string>
+  lines: Record<string, Line[]>
+  present: Set<string>
+  reads?: Record<string, Set<string>>
+}
+
+type Subject = { kind: 'target' | 'feature' | 'entity' | 'op', key: string, words: RegExp[] }
+
+type Variation = {
+  id: string
+  family: string
+  targets: string[]
+  features: string[]
+  extra: string
+  subject?: Subject
+}
+
+type Finding = {
+  relation: string
+  chain: string
+  cause: string
+  doc: string
+  line: string
+  variation: string
+}
+
+type Pin = {
+  relation: string
+  chain: string
+  cause: string
+  reason: string
+  line: string
+  variations: string[]
+}
+
+
+const MODEL_DIR = Path.join(SCAFFOLD, 'model')
+
+const listed = (dir: string): string[] =>
+  Fs.readdirSync(Path.join(MODEL_DIR, dir))
+    .filter((f: string) => f.endsWith('.aontu') && !f.endsWith('-index.aontu'))
+    .map((f: string) => f.replace(/\.aontu$/, '')).sort()
+
+const TARGETS = listed('target')
+const FEATURES = listed('feature')
+
+const AUTH = {
+  off: '',
+  bearer: "main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }",
+  basic: "main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }",
+  'basic-query': "main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'query', name: 'api_key' }",
+}
+
+const SERVER = {
+  mixed: "main: kit: info: servers: [{ url: 'https://{tenant}.example.test/{region}', variables: { tenant: { default: '' }, region: { default: 'eu' } } }]",
+  plain: "main: kit: info: servers: [{ url: 'https://api.example.test' }]",
+  defaulted: "main: kit: info: servers: [{ url: 'https://{tenant}.example.test/{region}', variables: { tenant: { default: 'acme' }, region: { default: 'eu' } } }]",
+  required: "main: kit: info: servers: [{ url: 'https://{tenant}.example.test/{region}', variables: { tenant: { default: '' }, region: { default: '' } } }]",
+}
+
+
+// The fixture names entities `console`, `record` and `utility` to collide
+// with generated code; they collide with a mention scan too, so every entity
+// name, with its routes and flows, becomes an opaque token.
+const ENTITIES: string[] = Object.keys(makeModel([], undefined, '', []).main[KIT].entity).sort()
+
+const TOKEN: Record<string, string> = Object.fromEntries(ENTITIES.map((e: string, i: number) =>
+  [e, 'zq' + String.fromCharCode(97 + i)]))
+
+const pascal = (s: string): string =>
+  s.split('_').map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join('')
+
+function overlay(src: string): string {
+  let out = src
+  for (const e of ENTITIES) {
+    out = out.replace(new RegExp('(?<![A-Z0-9])' + pascal(e) + '(?![a-z0-9])', 'g'), pascal(TOKEN[e]))
+    out = out.replace(new RegExp('(?<![A-Za-z0-9])' + e + '(?![a-z0-9])', 'g'), TOKEN[e])
+  }
+  return out
+}
+
+const API = overlay(API_MODEL)
+
+// The SDK targets, which share one document layout; a consumer switches
+// every phase off and is a different product.
+const SDK_TARGETS: string[] = (() => {
+  const model = makeModel(TARGETS, undefined, '', [], 'target', API)
+  return TARGETS.filter((t: string) =>
+    !Object.values(fact(model.main[KIT].target[t], 'phase')).every((on: any) => false === on))
+})()
+
+const ENTITY_OPS: Record<string, string[]> = Object.fromEntries(
+  Object.entries(makeModel([], undefined, '', [], 'target', API).main[KIT].entity)
+    .map(([k, v]: [string, any]) => [k, Object.keys(v.op || {}).sort()]))
+
+
+// A title is a word only where no letter, `+` or `#` continues it: `C` is
+// not a mention inside `C++` or `C#`.
+const word = (w: string): RegExp =>
+  new RegExp('(?<![A-Za-z0-9_+#-])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z0-9_+#])')
+
+
+function targetWords(name: string, model: any): RegExp[] {
+  const t = model.main[KIT].target[name] || {}
+  const out = [word('`' + name + '`'), word(name + '/')]
+  if ('string' === typeof t.title && '' !== t.title) out.push(word(t.title))
+  return out
+}
+
+function featureWords(name: string, model: any): RegExp[] {
+  const f = model.main[KIT].feature[name] || {}
+  const out = [word('`' + name + '`'), word(pascal(name) + 'Feature')]
+  if ('string' === typeof f.title && '' !== f.title) out.push(word(f.title))
+  return out
+}
+
+function entityWords(key: string): RegExp[] {
+  return [new RegExp('(?<![A-Za-z0-9])(' + key + '|' + pascal(key) + ')(?![a-z0-9])')]
+}
+
+
+function baseline(): Variation {
+  return {
+    id: 'baseline', family: 'baseline', targets: TARGETS, features: FEATURES,
+    extra: AUTH.bearer + '\n' + SERVER.mixed,
+  }
+}
+
+
+// Consumers switch every phase off and wrap the target their name begins with.
+function consumers(model: any): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const name of Object.keys(model.main[KIT].target).sort()) {
+    const phase = fact(model.main[KIT].target[name], 'phase')
+    if (Object.values(phase).every((on: any) => false === on)) {
+      const wrapped = TARGETS.find((t: string) => name.startsWith(t + '-'))
+      if (null != wrapped) out[name] = wrapped
+    }
+  }
+  return out
+}
+
+
+// Every variation is derived from the compiled baseline; none is listed by
+// hand. Unification cannot remove, so a removal edits the model source.
+function variations(): Variation[] {
+  const base = baseline()
+  const model = makeModel(base.targets, undefined, base.extra, base.features, 'target', API)
+  const wraps = consumers(model)
+  const sdk = TARGETS.filter((t: string) => null == wraps[t])
+  const lead = sdk.includes('ts') ? 'ts' : sdk[0]
+  const out: Variation[] = [base]
+  const with_ = (id: string, family: string, over: Partial<Variation>) =>
+    out.push({ ...base, id, family, ...over })
+
+  for (const t of TARGETS) {
+    const gone = [t, ...Object.keys(wraps).filter((c: string) => wraps[c] === t)]
+    with_('target-' + t, 'target', {
+      targets: TARGETS.filter((x: string) => !gone.includes(x)),
+      subject: { kind: 'target', key: t, words: targetWords(t, model) },
+    })
+  }
+  for (const f of FEATURES) {
+    with_('feature-' + f, 'feature', {
+      features: FEATURES.filter((x: string) => x !== f),
+      subject: { kind: 'feature', key: f, words: featureWords(f, model) },
+    })
+  }
+  for (const e of ENTITIES) {
+    const tok = TOKEN[e]
+    with_('entity-' + tok, 'entity', {
+      extra: base.extra + `\nmain: kit: entity: ${tok}: active: false`,
+      subject: { kind: 'entity', key: tok, words: entityWords(tok) },
+    })
+    for (const op of ENTITY_OPS[tok] || []) {
+      with_('op-' + tok + '-' + op, 'op', {
+        extra: base.extra + `\nmain: kit: entity: ${tok}: op: ${op}: active: false`,
+        subject: { kind: 'op', key: tok + '.' + op, words: [] },
+      })
+    }
+  }
+
+  with_('targets-empty', 'empty', { targets: [] })
+  with_('targets-lone', 'lone', { targets: [lead] })
+  with_('features-empty', 'empty', { features: [] })
+  with_('features-lone', 'lone', { features: [FEATURES[0]] })
+  with_('entities-empty', 'empty', {
+    extra: base.extra + ENTITIES.map((e: string) => `\nmain: kit: entity: ${TOKEN[e]}: active: false`).join(''),
+  })
+  with_('entities-lone', 'lone', {
+    extra: base.extra + ENTITIES.slice(1).map((e: string) => `\nmain: kit: entity: ${TOKEN[e]}: active: false`).join(''),
+  })
+
+  for (const [id, auth] of Object.entries(AUTH)) {
+    if ('bearer' !== id) with_('auth-' + id, 'auth', { extra: auth + '\n' + SERVER.mixed })
+  }
+  for (const [id, server] of Object.entries(SERVER)) {
+    if ('mixed' !== id) with_('server-' + id, 'server', { extra: AUTH.bearer + '\n' + server })
+  }
+
+  with_('phase-top-off', 'phase', { extra: base.extra + '\nmain: kit: phase: top: active: false' })
+  with_('phase-build-off', 'phase', { extra: base.extra + '\nmain: kit: phase: build: active: false' })
+  for (const phase of ['readme', 'agentguide']) {
+    with_('phase-' + phase + '-off-' + lead, 'phase', {
+      extra: base.extra + `\nmain: kit: target: ${lead}: phase: ${phase}: active: false`,
+    })
+  }
+  with_('root-' + lead, 'placement', {
+    targets: [lead],
+    extra: base.extra + `\nmain: kit: phase: top: active: false\nmain: kit: target: ${lead}: output: root: true`,
+  })
+
+  return out
+}
+
+
+// A Root that writes only documents, reading the root-plan facts: root
+// documents when the top phase is on, inactive targets skipped, consumers
+// through their Main, which is where their documents come from.
+function docsRoot(holder: { node?: any }, control?: () => void): any {
+  return cmp(function Root(props: any) {
+    const { model, ctx$ } = props
+    holder.node = ctx$.node
+
+    model.const = { name: model.name }
+    names(model.const, model.name)
+    model.const.year = 2026
+    names(model, model.name)
+    ctx$.model = model
+    ctx$.stdrep = {}
+    names(ctx$.stdrep, model.Name, 'ProjectName')
+
+    // The entity and feature phases derive these names before Readme runs, so
+    // the documents match the full Root's whichever phases are on.
+    const kit = model.main[KIT]
+    each(kit.entity).filter((e: any) => false !== e.active).map((e: any) => names(e, e.name))
+    each(kit.feature).filter((f: any) => f.active).map((f: any) => names(f, f.name))
+
+    Project({}, () => {
+      if (fact(kit, 'top')) {
+        ReadmeTop({})
+        AgentGuideTop({})
+        Security({})
+        Changelog({})
+      }
+      each(kit.target).filter((t: any) => false !== t.active).map((target: any) => {
+        names(target, target.name)
+        const phase = fact(target, 'phase')
+        const docs = () => {
+          if (!phase.readme && !phase.agentguide) {
+            Main({ target })
+            return
+          }
+          if (phase.readme) Readme({ target })
+          if (phase.agentguide) AgentGuide({ target })
+        }
+        if ('root' === fact(target, 'place')) docs()
+        else Folder({ name: target.name }, docs)
+      })
+      if (control) control()
+    })
+  })
+}
+
+
+// Each document's lines, with the chain of labelled components that wrote
+// them; a document no content node wrote is attributed to its file.
+function attribute(root: any, files: Record<string, string>): Record<string, Line[]> {
+  const segs: Record<string, { text: string, chain: string }[]> = {}
+  const walk = (node: any, chain: string[], file: string | null) => {
+    const label = node?.meta?.cmp
+    const c = null != label && label !== chain[chain.length - 1] ? chain.concat(label) : chain
+    let f = file
+    if ('file' === node.kind) {
+      const path: string = node.path.join('/')
+      segs[path] = []
+      f = path
+    }
+    else if ('content' === node.kind && null != f) {
+      segs[f].push({ text: null == node.content ? '' : String(node.content), chain: c.slice(1).join(' > ') })
+    }
+    for (const child of node.children || []) walk(child, c, f)
+  }
+  walk(root, [], null)
+
+  const out: Record<string, Line[]> = {}
+  for (const [path, text] of Object.entries(files)) {
+    const parts = segs[path]
+    const rebuilt = null == parts ? null : parts.map((s) => s.text).join('')
+    if (null == parts || rebuilt !== text) {
+      out[path] = text.split('\n').map((t: string) => ({ text: t, chain: 'file:' + path }))
+      continue
+    }
+    const lines: Line[] = []
+    let current = ''
+    let chain = parts.length ? parts[0].chain : ''
+    let started = false
+    for (const part of parts) {
+      for (const ch of part.text) {
+        if (!started && '\n' !== ch) {
+          chain = part.chain
+          started = true
+        }
+        if ('\n' === ch) {
+          lines.push({ text: current, chain: started ? chain : part.chain })
+          current = ''
+          started = false
+        }
+        else {
+          current += ch
+        }
+      }
+    }
+    if ('' !== current) lines.push({ text: current, chain })
+    out[path] = lines
+  }
+  return out
+}
+
+
+// Model reads, attributed to the labelled component being built and the
+// target directory it writes under.
+function recording(model: any, reads: Record<string, Set<string>>): any {
+  const cache = new WeakMap<object, any>()
+  const wrap = (obj: any, path: string): any => {
+    if (null == obj || 'object' !== typeof obj) return obj
+    const hit = cache.get(obj)
+    if (hit) return hit.proxy
+    const proxy = new Proxy(obj, {
+      get(target: any, prop: any, recv: any) {
+        const val = Reflect.get(target, prop, recv)
+        if ('symbol' === typeof prop || 'function' === typeof val) return val
+        const p = '' === path ? String(prop) : path + '.' + String(prop)
+        const node = (global as any).jostraca?.getStore?.()?.node
+        const label = node?.meta?.cmp
+        if (null != label && Array.isArray(node.path) && 0 < node.path.length) {
+          const key = label + '@' + node.path[0]
+          ;(reads[key] = reads[key] || new Set()).add(p)
+        }
+        return wrap(val, p)
+      },
+    })
+    cache.set(obj, { proxy })
+    return proxy
+  }
+  return wrap(model, '')
+}
+
+
+// A path the docs-only run does not write but the full run does: a target's
+// template tree, copied by its Main.
+function templatePaths(model: any): Set<string> {
+  const out = new Set<string>()
+  for (const [name, t] of Object.entries(model.main[KIT].target) as [string, any][]) {
+    if (false === t.active) continue
+    const origin = '' !== (t.origname || '') ? t.origname : name
+    const tm = Path.join(SCAFFOLD, 'tm', origin)
+    if (!Fs.existsSync(tm)) continue
+    const prefix = 'root' === fact(t, 'place') ? '' : name + '/'
+    const walk = (dir: string, rel: string) => {
+      for (const entry of Fs.readdirSync(dir, { withFileTypes: true })) {
+        const r = '' === rel ? entry.name : rel + '/' + entry.name
+        if (entry.isDirectory()) walk(Path.join(dir, entry.name), r)
+        else out.add(prefix + r)
+      }
+    }
+    walk(tm, '')
+  }
+  return out
+}
+
+
+async function generateDocs(
+  v: Variation, opts: { control?: () => void, reads?: boolean, root?: any } = {},
+): Promise<Run> {
+  const { fs, vol } = memfs({})
+  const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+  const holder: { node?: any } = {}
+  const reads: Record<string, Set<string>> = {}
+  const compiled = makeModel(v.targets, undefined, v.extra, v.features, 'target', API)
+  const model = opts.reads ? recording(compiled, reads) : compiled
+
+  const cwd = process.cwd()
+  process.chdir(SCAFFOLD)
+  try {
+    const res = await sdkgen.generate({ model, root: opts.root ?? docsRoot(holder, opts.control) })
+    if (true !== res.ok) throw new Error(v.id + ': generation did not report ok')
+  }
+  finally {
+    process.chdir(cwd)
+  }
+
+  const files: Record<string, string> = {}
+  for (const [p, c] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    const rel = Path.relative(STAGE, p).split(Path.sep).join('/')
+    if (null == c || rel.includes('.jostraca/') || rel.startsWith('.sdk/') || rel.startsWith('../')) continue
+    files[rel] = c
+  }
+
+  const present = new Set<string>([...Object.keys(files), ...templatePaths(compiled)])
+  return {
+    id: v.id, files, present,
+    lines: null == holder.node ? {} : attribute(holder.node, Object.fromEntries(
+      Object.entries(files).filter(([p]: [string, string]) => p.endsWith('.md')))),
+    reads: opts.reads ? reads : undefined,
+  }
+}
+
+
+function isDir(present: Set<string>, dir: string): boolean {
+  const d = dir.replace(/\/+$/, '')
+  if ('' === d || '.' === d || '.sdk' === d || d.startsWith('.sdk/')) return true
+  for (const p of present) if (p.startsWith(d + '/')) return true
+  return false
+}
+
+
+// GitHub's heading anchors, which is what a reader's browser follows.
+function slug(heading: string): string {
+  return heading.trim().toLowerCase()
+    .replace(/`/g, '')
+    .replace(/[^\p{L}\p{N}\s_-]/gu, '')
+    .replace(/\s/g, '-')
+}
+
+function anchors(text: string): Set<string> {
+  const out = new Set<string>()
+  const seen: Record<string, number> = {}
+  let fence = false
+  for (const line of text.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) fence = !fence
+    if (fence) continue
+    const m = /^#{1,6}\s+(.*)$/.exec(line)
+    if (!m) continue
+    const s = slug(m[1])
+    const n = seen[s] || 0
+    out.add(0 === n ? s : s + '-' + n)
+    seen[s] = n + 1
+  }
+  return out
+}
+
+
+function link(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    const dir = Path.posix.dirname(doc)
+    let fence = ''
+    for (const { text, chain } of lines) {
+      const open = /^\s*(```|~~~)\s*(\S*)/.exec(text)
+      if (open) {
+        fence = '' === fence ? (open[2] || 'text') : ''
+        continue
+      }
+      if ('' !== fence) {
+        if (/^(bash|sh|shell|console)$/.test(fence)) {
+          const cd = /^\s*(?:\$\s*)?cd\s+([^\s;&|)]+)/.exec(text)
+          if (cd && !/^[~$\/]/.test(cd[1])) {
+            const fromDoc = Path.posix.normalize(Path.posix.join(dir, cd[1]))
+            const fromRoot = Path.posix.normalize(cd[1])
+            if (!isDir(run.present, fromDoc) && !isDir(run.present, fromRoot)) {
+              out.push({ relation: 'link', chain, cause: 'cd ' + cd[1], doc, line: text, variation: run.id })
+            }
+          }
+        }
+        continue
+      }
+      const bare = text.replace(/`[^`]*`/g, '')
+      for (const m of bare.matchAll(/\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
+        const href = m[1]
+        if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('/')) continue
+        const [rel, frag] = href.split('#')
+        const target = '' === rel ? doc : Path.posix.normalize(Path.posix.join(dir, rel))
+        if ('' !== rel && !run.present.has(target) && !isDir(run.present, target)) {
+          out.push({ relation: 'link', chain, cause: target, doc, line: text, variation: run.id })
+          continue
+        }
+        if (null != frag && '' !== frag && target.endsWith('.md') && null != run.files[target] &&
+          !anchors(run.files[target]).has(frag)) {
+          out.push({ relation: 'link', chain, cause: target + '#' + frag, doc, line: text, variation: run.id })
+        }
+      }
+    }
+  }
+  return out
+}
+
+
+function off(run: Run, subject: Subject): Finding[] {
+  const out: Finding[] = []
+  if (0 === subject.words.length) return out
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    for (const { text, chain } of lines) {
+      if (subject.words.some((w: RegExp) => w.test(text))) {
+        out.push({ relation: 'off', chain, cause: subject.kind, doc, line: text, variation: run.id })
+      }
+    }
+  }
+  return out
+}
+
+
+const MARKER = /\$\$[A-Za-z_][\w.$]*\$\$/
+
+function marker(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    for (const { text, chain } of lines) {
+      if (MARKER.test(text.replace(/`[^`]*`/g, ''))) {
+        out.push({ relation: 'marker', chain, cause: 'unfired', doc, line: text, variation: run.id })
+      }
+    }
+  }
+  return out
+}
+
+
+// Siblings are the same document under different SDK target directories.
+function siblings(run: Run): Record<string, string[]> {
+  const groups: Record<string, string[]> = {}
+  for (const doc of Object.keys(run.lines)) {
+    const i = doc.indexOf('/')
+    if (i < 0 || !SDK_TARGETS.includes(doc.slice(0, i))) continue
+    const rest = doc.slice(i + 1)
+    ;(groups[rest] = groups[rest] || []).push(doc)
+  }
+  return groups
+}
+
+
+// Prose a reader acts on: outside code, not a heading, and a sentence rather
+// than a fragment.
+function prose(lines: Line[]): Line[] {
+  const out: Line[] = []
+  let fence = false
+  for (const l of lines) {
+    if (/^\s*(```|~~~)/.test(l.text)) {
+      fence = !fence
+      continue
+    }
+    if (fence || /^\s*#/.test(l.text) || l.chain.startsWith('file:')) continue
+    if ((l.text.match(/[A-Za-z]{2,}/g) || []).length < 4) continue
+    out.push(l)
+  }
+  return out
+}
+
+
+function reaction(base: Run, run: Run, family: string): Finding[] {
+  const out: Finding[] = []
+  const lineSet = (r: Run, doc: string) => new Set(prose(r.lines[doc] || []).map((l: Line) => l.text))
+  for (const docs of Object.values(siblings(run))) {
+    if (docs.length < 2) continue
+    const gone = new Set<string>()
+    for (const doc of docs) {
+      const now = lineSet(run, doc)
+      for (const l of prose(base.lines[doc] || [])) {
+        if (!now.has(l.text)) gone.add(l.text)
+      }
+    }
+    if (0 === gone.size) continue
+    for (const doc of docs) {
+      for (const { text, chain } of prose(run.lines[doc] || [])) {
+        if (gone.has(text)) {
+          out.push({ relation: 'reaction', chain, cause: family, doc, line: text, variation: run.id })
+        }
+      }
+    }
+  }
+  return out
+}
+
+
+// The facts a section reads that one sibling reads and another does not.
+const FACT_ROOTS: [string, RegExp][] = [
+  ['auth', /^main\.kit\.config\.auth(\.|$)/],
+  ['servers', /^main\.kit\.info\.servers(\.|$)/],
+]
+
+function parity(run: Run): Finding[] {
+  const out: Finding[] = []
+  if (null == run.reads) return out
+  const bySection: Record<string, Record<string, Set<string>>> = {}
+  for (const [key, paths] of Object.entries(run.reads)) {
+    const [label, dir] = key.split('@')
+    if (!SDK_TARGETS.includes(dir)) continue
+    const roots = new Set<string>()
+    for (const p of paths) for (const [name, re] of FACT_ROOTS) if (re.test(p)) roots.add(name)
+    ;(bySection[label] = bySection[label] || {})[dir] = roots
+  }
+  for (const [label, dirs] of Object.entries(bySection)) {
+    const members = Object.keys(dirs).sort()
+    if (members.length < 2) continue
+    for (const [name] of FACT_ROOTS) {
+      const readers = members.filter((d: string) => dirs[d].has(name))
+      if (0 === readers.length || readers.length === members.length) continue
+      for (const d of members.filter((m: string) => !dirs[m].has(name))) {
+        out.push({ relation: 'parity', chain: label + '@' + d, cause: name, doc: d, line: '', variation: run.id })
+      }
+    }
+  }
+  return out
+}
+
+
+// A test-only component: a stale sentence, a dangling link and an unfired
+// marker, each of which the guard must report.
+function negativeControl(feature: string): () => void {
+  return cmp(function GuardControl() {
+    File({ name: 'GUARD.md' }, () => {
+      Content({ raw: true, arg: 'The `' + feature + '` feature is on.\n' +
+        'See [the missing page](missing.md).\n' +
+        'An unfired $$model.nothing$$ marker.\n' })
+    })
+  }) as any
+}
+
+
+function key(f: { relation: string, chain: string, cause: string }): string {
+  return f.relation + '|' + f.chain + '|' + f.cause
+}
+
+
+export type {
+  Finding,
+  Pin,
+  Run,
+  Subject,
+  Variation,
+}
+
+export {
+  TARGETS,
+  FEATURES,
+  TOKEN,
+  baseline,
+  variations,
+  generateDocs,
+  link,
+  off,
+  marker,
+  reaction,
+  parity,
+  negativeControl,
+  key,
+}
