@@ -135,8 +135,12 @@ const ReadmeTopFeatureLine = (0, component_1.cmp)(function ReadmeTopFeatureLine(
     // Named here, in one line, with the detail left to each target's README.
     const features = (0, FeatureDocs_1.featureDocs)(model);
     if (0 < features.length) {
-        (0, jostraca_1.Content)(`> **Features:** ${features.map((f) => '`' + f.name + '`').join(', ')} — opt-in,
-> inactive until switched on, and configured per client. See the Features
+        const on = features.filter((f) => f.on).map((f) => f.name);
+        const state = 0 === on.length ? `opt-in,
+> inactive until switched on, and configured per client.` : `configured per client.
+> ${(0, FeatureDocs_1.codeList)(on)} ${1 === on.length ? 'runs' : 'run'} by default${on.length < features.length ?
+            '; the rest are opt-in, inactive until switched on' : ''}.`;
+        (0, jostraca_1.Content)(`> **Features:** ${features.map((f) => '`' + f.name + '`').join(', ')} — ${state} See the Features
 > section of any SDK README below for what each one does.
 
 `);

@@ -9,7 +9,7 @@ import {
 
 import { credentialPlacement } from '../utility'
 import { optionalComponent } from '../helpers/optional'
-import { featureDocs } from './FeatureDocs'
+import { featureDocs, codeList } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 import {
@@ -172,8 +172,12 @@ const ReadmeTopFeatureLine = cmp(function ReadmeTopFeatureLine(props: any) {
   // Named here, in one line, with the detail left to each target's README.
   const features = featureDocs(model)
   if (0 < features.length) {
-    Content(`> **Features:** ${features.map((f: FeatureDoc) => '`' + f.name + '`').join(', ')} — opt-in,
-> inactive until switched on, and configured per client. See the Features
+    const on = features.filter((f: FeatureDoc) => f.on).map((f: FeatureDoc) => f.name)
+    const state = 0 === on.length ? `opt-in,
+> inactive until switched on, and configured per client.` : `configured per client.
+> ${codeList(on)} ${1 === on.length ? 'runs' : 'run'} by default${on.length < features.length ?
+      '; the rest are opt-in, inactive until switched on' : ''}.`
+    Content(`> **Features:** ${features.map((f: FeatureDoc) => '`' + f.name + '`').join(', ')} — ${state} See the Features
 > section of any SDK README below for what each one does.
 
 `)

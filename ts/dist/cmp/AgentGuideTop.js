@@ -69,10 +69,11 @@ const AgentGuideTopStation = (0, component_1.cmp)(function AgentGuideTopStation(
     // on this repo should know the runtime story without leaving
     // AGENTS.md — and, first, that the application's integrations are
     // DECLARED in station.json, so that file is where to look.
-    if (features.some((f) => 'station' === f.name)) {
+    const station = features.find((f) => 'station' === f.name);
+    if (null != station) {
         (0, jostraca_1.Content)(`**Station**: this SDK is a
 [voxgig/station](https://github.com/voxgig/station) plugin (the
-\`station\` feature, off by default). An application's outbound
+\`station\` feature, ${(0, facts_1.fact)(station, 'on') ? 'on' : 'off'} by default). An application's outbound
 integrations are **declared in \`station.json\`** at its repo root —
 to learn what the application talks to, read that file: every SDK
 instance (\`sdk\`), per-api default (\`api\`), feature setting, and

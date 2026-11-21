@@ -11,15 +11,16 @@ const ReadmeRefFeatures = (0, component_1.cmp)(function ReadmeRefFeatures(props)
     if (0 === features.length) {
         return;
     }
+    const on = features.filter((f) => f.on).map((f) => f.name);
     // Emitted INSIDE the per-language `## Features` section, after its summary
     // table and activation snippet, so these are subsections of it rather than
     // a competing heading.
     (0, jostraca_1.Content)(`
 ### Configuring features
 
-Each feature is inactive until switched on, and an SDK with no feature
-configured does no feature work at all. Every option below keeps its default
-unless you name it.
+${0 === on.length ? `Each feature is inactive until switched on, and an SDK with no feature
+configured does no feature work at all.` : `${(0, FeatureDocs_1.codeList)(on)} ${1 === on.length ? 'is' : 'are'} active by default${on.length < features.length ? '; every other feature is inactive until switched on' : ''}.`}
+Every option below keeps its default unless you name it.
 
 ${(0, FeatureDocs_1.honoursActivationOrder)(target) ?
         'The array form of \\`feature\\` is significant: several features wrap the\ntransport, and the order you list them in is the order they nest.' :
@@ -113,7 +114,8 @@ its default unless you name it.
   activated before them.
 `);
         }
-        (0, jostraca_1.Content)(`- Inactive by default: leaving it out costs nothing at runtime.
+        (0, jostraca_1.Content)(`- ${f.on ? `Active by default: set \`feature.${f.name}.active\` to false to switch it off.` :
+            'Inactive by default: leaving it out costs nothing at runtime.'}
 
 `);
     }

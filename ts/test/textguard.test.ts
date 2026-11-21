@@ -5,7 +5,8 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import Path from 'node:path'
 
 import {
-  FEATURES, variations, generateDocs, link, off, marker, reaction, parity, negativeControl, key,
+  FEATURES, variations, generateDocs, link, off, marker, reaction, parity, startsOff, negativeControl,
+  key,
 } from './textguard'
 import type { Finding, Pin, Run, Variation } from './textguard'
 import { makeRoot } from './generateharness'
@@ -27,6 +28,7 @@ function findings(base: Run, run: Run, v: Variation, full: boolean): Finding[] {
   const out = link(run)
   if (!full) return out
   out.push(...marker(run))
+  out.push(...startsOff(run))
   if (null != v.subject) out.push(...off(run, v.subject))
   if ('baseline' === v.id) out.push(...parity(run))
   else out.push(...reaction(base, run, v.family))
@@ -113,6 +115,27 @@ describe('textguard', () => {
         null != docs.files[p] ? docs.files[p] !== full.files[p] : !docs.present.has(p))
       deepStrictEqual(differ, [], id + ': documents the docs-only Root writes otherwise, or misses')
     }
+  })
+
+  test('a sentence says features start off only when every feature it covers does', () => {
+    const causes = (texts: string[]): string[] => startsOff({
+      id: 'control', files: {}, present: new Set(),
+      lines: { 'ts/README.md': texts.map((text: string) => ({ text, chain: 'Control' })) },
+      on: { cache: false, log: true, retry: false },
+      applies: { ts: ['cache', 'log', 'retry'] },
+    }).map((f: Finding) => f.cause)
+
+    deepStrictEqual(causes(['## Features', '', 'This SDK ships 3 optional features. Each is **inactive until you',
+      'switch it on**, so `feature.log.active` is false.']), ['log'])
+    deepStrictEqual(causes(['## Features', '', 'The others are **inactive until you switch them on**.']), ['log'])
+    deepStrictEqual(causes(['## Features', '', '`log` is **on by default**. The others are',
+      '**inactive until you switch them on**.']), [])
+    deepStrictEqual(causes(['#### `log`', '', '- Inactive by default: leaving it out costs nothing.']), ['log'])
+    deepStrictEqual(causes(['#### `retry`', '', '- Inactive by default: leaving it out costs nothing.']), [])
+    deepStrictEqual(causes(['> **Features:** `cache`, `log`, `retry` — opt-in,', '> inactive until switched on.']),
+      ['log'])
+    deepStrictEqual(causes(['## Features', '', '```', 'inactive until switched on', '```']), [])
+    deepStrictEqual(causes(['# Tools', '', 'The write tools are off by default.']), [])
   })
 
   // The control's stale sentence, dangling link and unfired marker, and

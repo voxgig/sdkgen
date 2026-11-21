@@ -5,7 +5,8 @@ import { memfs } from 'memfs'
 import { each, names, Project, Folder, File, Content } from 'jostraca'
 
 import {
-  SdkGen, cmp, fact, Main, Readme, AgentGuide, ReadmeTop, AgentGuideTop, Security, Changelog,
+  SdkGen, cmp, fact, featureApplies, Main, Readme, AgentGuide, ReadmeTop, AgentGuideTop, Security,
+  Changelog,
 } from '../dist/sdkgen.js'
 
 import {
@@ -13,11 +14,11 @@ import {
 } from './generateharness'
 
 
-// The text guard: the documentation regenerated under single-switch
-// variations of the model, read for links that do not resolve (`link`),
-// lines naming what the run removed (`off`), siblings that read different
-// facts (`parity`), a fix that reached one language and not its siblings
-// (`reaction`), and template markers that never fired (`marker`).
+// The text guard: the documentation under single-switch variations of the
+// model, read for links that do not resolve (`link`), lines naming what the
+// run removed (`off`), siblings reading different facts (`parity`), a fix
+// that reached one sibling only (`reaction`), unfired markers (`marker`), and
+// features said to start off that start on (`starts-off`).
 
 
 type Line = { text: string, chain: string }
@@ -28,6 +29,8 @@ type Run = {
   lines: Record<string, Line[]>
   present: Set<string>
   reads?: Record<string, Set<string>>
+  on: Record<string, boolean>
+  applies: Record<string, string[]>
 }
 
 type Subject = { kind: 'target' | 'feature' | 'entity' | 'op', key: string, words: RegExp[] }
@@ -425,10 +428,23 @@ async function generateDocs(
   const present = new Set<string>(Object.keys(files))
   if (null == opts.root) for (const p of await writtenPaths(v)) present.add(p)
   return {
-    id: v.id, files, present,
+    id: v.id, files, present, ...featureState(compiled),
     lines: null == holder.node ? {} : attribute(holder.node, Object.fromEntries(
       Object.entries(files).filter(([p]: [string, string]) => p.endsWith('.md')))),
     reads: opts.reads ? reads : undefined,
+  }
+}
+
+
+// Each active feature's default, and which of them each target carries.
+function featureState(model: any): { on: Record<string, boolean>, applies: Record<string, string[]> } {
+  const kit = model.main[KIT]
+  const active = Object.values(kit.feature || {})
+    .filter((f: any) => false !== f.active && 'base' !== f.name) as any[]
+  return {
+    on: Object.fromEntries(active.map((f: any) => [f.name, true === fact(f, 'on')])),
+    applies: Object.fromEntries(Object.entries(kit.target || {}).map(([name, t]: [string, any]) =>
+      [name, active.filter((f: any) => featureApplies(f, t)).map((f: any) => f.name)])),
   }
 }
 
@@ -629,6 +645,74 @@ function parity(run: Run): Finding[] {
 }
 
 
+// A sentence saying features start off covers those it names; with `other`
+// or `rest`, every feature but those the paragraph names as on; else those its
+// heading names; else every feature the document's target carries. It counts
+// only where it, or its heading, is about features.
+const STARTS_OFF = /inactive until|inactive by default|off by default|opt-in/i
+const OTHERS = /\b(other|others|rest)\b/i
+const FEATURE_WORD = /\bfeatures?\b/i
+
+function startsOff(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    const all = run.applies[doc.split('/')[0]] ?? Object.keys(run.on)
+    const named = (text: string): string[] => all.filter((f: string) => text.includes('`' + f + '`'))
+    let heading = { names: [] as string[], about: false }
+    let para: Line[] = []
+
+    const flush = () => {
+      const parts = para.map((l: Line) => l.text.replace(/^\s*>\s?/, ''))
+      const text = parts.join(' ')
+      const ends: number[] = []
+      for (const part of parts) ends.push((ends[ends.length - 1] ?? -1) + part.length + 1)
+      let from = 0
+      for (const s of text.split(/(?<=[.!?])\s+/)) {
+        const start = text.indexOf(s, from)
+        from = start + s.length
+        if (!STARTS_OFF.test(s) || !(FEATURE_WORD.test(s) || 0 < named(s).length || heading.about)) {
+          continue
+        }
+        const covered = OTHERS.test(s) ?
+          all.filter((f: string) => !(run.on[f] && named(text).includes(f))) :
+          0 < named(s).length ? named(s) :
+            0 < heading.names.length ? heading.names : all
+        const bad = covered.filter((f: string) => run.on[f]).sort()
+        if (0 === bad.length) continue
+        const at = start + s.search(STARTS_OFF)
+        const line = para[ends.findIndex((e: number) => at < e)] ?? para[0]
+        out.push({ relation: 'starts-off', chain: line.chain, cause: bad.join(','), doc,
+          line: line.text, variation: run.id })
+      }
+      para = []
+    }
+
+    let fence = false
+    for (const l of lines) {
+      const bare = l.text.replace(/^\s*>\s?/, '').trim()
+      if (/^(```|~~~)/.test(bare)) {
+        flush()
+        fence = !fence
+        continue
+      }
+      if (fence) continue
+      const h = /^#{1,6}\s+(.*)$/.exec(l.text)
+      if (h || '' === bare || bare.startsWith('|')) flush()
+      if (h) {
+        const names = all.filter((f: string) => new RegExp('(?<![\\w-])' + f + '(?![\\w-])', 'i').test(h[1]))
+        heading = { names, about: 0 < names.length || FEATURE_WORD.test(h[1]) }
+      }
+      else if ('' !== bare) {
+        para.push(l)
+        if (bare.startsWith('|')) flush()
+      }
+    }
+    flush()
+  }
+  return out
+}
+
+
 // A test-only component: a stale sentence, a dangling link and an unfired
 // marker, each of which the guard must report.
 function negativeControl(feature: string): () => void {
@@ -667,6 +751,7 @@ export {
   marker,
   reaction,
   parity,
+  startsOff,
   negativeControl,
   key,
 }

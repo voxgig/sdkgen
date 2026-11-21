@@ -30,9 +30,11 @@ Each one's options, defaults, recorded state and gotchas are in
 **[the feature catalogue](../reference/features.md)** — read that to pick
 the ones you want.
 
-All features are **inactive by default**; enable one per SDK with
+Every bundled feature except `log` is **inactive by default**, as
+`config.options.active` in its model says. Enable one per SDK with
 `feature: { <name>: { active: true } }` in the constructor options (plus
-its tuning options). Several at once:
+its tuning options), and switch `log` off with `active: false`. Several
+at once:
 
 ```bash
 voxgig-sdkgen feature add retry,timeout,cache

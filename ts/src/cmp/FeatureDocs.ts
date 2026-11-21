@@ -1,4 +1,5 @@
 import { featureApplies } from '../helpers/applicability'
+import { fact } from '../helpers/facts'
 
 import { each } from 'jostraca'
 
@@ -12,6 +13,7 @@ type FeatureDoc = {
   title: string
   transport: string
   wraps: boolean
+  on: boolean
   options: Array<{ name: string, value: string }>
 
   extras: Array<{ name: string, type: string }>
@@ -81,6 +83,7 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
         title: f.title || '',
         transport: f.transport || 'none',
         wraps: isWrapping(f),
+        on: true === fact(f, 'on'),
         options,
         extras,
       }
@@ -89,6 +92,14 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
 }
 
 
+
+
+// `a`, `a` and `b`, `a`, `b` and `c`.
+function codeList(names: string[]): string {
+  const code = names.map((n: string) => '`' + n + '`')
+  return code.length < 2 ? code.join('') :
+    code.slice(0, -1).join(', ') + ' and ' + code[code.length - 1]
+}
 
 
 const FIXED_ORDER_TARGETS = ['lean']
@@ -100,6 +111,7 @@ function honoursActivationOrder(target: any): boolean {
 
 export {
   featureDocs,
+  codeList,
   renderValue,
   sentinelName,
   honoursActivationOrder,

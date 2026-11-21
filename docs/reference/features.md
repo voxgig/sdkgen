@@ -1125,7 +1125,7 @@ and takes any pino-compatible logger instead.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `active` | `false` | Enable the feature. |
+| `active` | `true` | The one feature on by default; `false` switches it off. |
 | `level` | `'info'` | Log level. |
 | `logger` | pino + pino-pretty | Supply your own logger instead. |
 

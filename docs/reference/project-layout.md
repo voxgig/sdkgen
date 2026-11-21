@@ -74,7 +74,8 @@ From packs: `dart`, `haskell` and `lean` in
 (wraps `ts`) in `@voxgig/sdkgen-infrapack`. Built-in features: `log`, `test`, plus the enterprise
 features `retry`, `timeout`, `ratelimit`, `cache`, `idempotency`,
 `paging`, `streaming`, `proxy`, `telemetry`, `metrics`, `debug`, `audit`,
-`clienttrack`, `rbac`, and `netsim` (all inactive by default).
+`clienttrack`, `rbac`, and `netsim` (all inactive by default except
+`log`).
 
 ## An sdkgen package
 

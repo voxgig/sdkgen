@@ -1,10 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.featureDocs = featureDocs;
+exports.codeList = codeList;
 exports.renderValue = renderValue;
 exports.sentinelName = sentinelName;
 exports.honoursActivationOrder = honoursActivationOrder;
 const applicability_1 = require("../helpers/applicability");
+const facts_1 = require("../helpers/facts");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 function isWrapping(feat) {
@@ -66,11 +68,18 @@ function featureDocs(model, target) {
             title: f.title || '',
             transport: f.transport || 'none',
             wraps: isWrapping(f),
+            on: true === (0, facts_1.fact)(f, 'on'),
             options,
             extras,
         };
     })
         .sort((a, b) => a.name.localeCompare(b.name));
+}
+// `a`, `a` and `b`, `a`, `b` and `c`.
+function codeList(names) {
+    const code = names.map((n) => '`' + n + '`');
+    return code.length < 2 ? code.join('') :
+        code.slice(0, -1).join(', ') + ' and ' + code[code.length - 1];
 }
 const FIXED_ORDER_TARGETS = ['lean'];
 function honoursActivationOrder(target) {

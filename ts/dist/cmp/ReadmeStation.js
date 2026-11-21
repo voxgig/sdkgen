@@ -5,6 +5,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
 const applicability_1 = require("../helpers/applicability");
+const facts_1 = require("../helpers/facts");
 const utility_1 = require("../utility");
 // Targets where station.connect(SDK) is the idiomatic binding; everything
 // else uses inverted binding through the SDK's own constructor.
@@ -35,7 +36,8 @@ const ReadmeStation = (0, component_1.cmp)(function ReadmeStation(props) {
 This SDK ships as a [voxgig/station](https://github.com/voxgig/station)
 plugin: bind it to a local \`Station\` and outbound configuration,
 credentials, and observability move to one place. The feature is
-present but **off by default** — nothing changes until you bind.
+present ${(0, facts_1.fact)(station, 'on') ? 'and **on by default**.' :
+        'but **off by default** — nothing changes until you bind.'}
 
 ### Declarative: \`station.json\` + \`station.sdk()\`
 

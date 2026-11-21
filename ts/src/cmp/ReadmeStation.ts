@@ -4,6 +4,7 @@ import { cmp } from '../helpers/component'
 
 import { envName, originName, packageName } from '../helpers/packageMeta'
 import { targetFeatures } from '../helpers/applicability'
+import { fact } from '../helpers/facts'
 import { isAuthActive } from '../utility'
 
 
@@ -43,7 +44,8 @@ const ReadmeStation = cmp(function ReadmeStation(props: any) {
 This SDK ships as a [voxgig/station](https://github.com/voxgig/station)
 plugin: bind it to a local \`Station\` and outbound configuration,
 credentials, and observability move to one place. The feature is
-present but **off by default** — nothing changes until you bind.
+present ${fact(station, 'on') ? 'and **on by default**.' :
+    'but **off by default** — nothing changes until you bind.'}
 
 ### Declarative: \`station.json\` + \`station.sdk()\`
 

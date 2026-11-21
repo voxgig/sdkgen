@@ -1,7 +1,7 @@
 import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { featureDocs, honoursActivationOrder } from './FeatureDocs'
+import { featureDocs, codeList, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 
@@ -15,15 +15,18 @@ const ReadmeRefFeatures = cmp(function ReadmeRefFeatures(props: any) {
     return
   }
 
+  const on = features.filter((f: FeatureDoc) => f.on).map((f: FeatureDoc) => f.name)
+
   // Emitted INSIDE the per-language `## Features` section, after its summary
   // table and activation snippet, so these are subsections of it rather than
   // a competing heading.
   Content(`
 ### Configuring features
 
-Each feature is inactive until switched on, and an SDK with no feature
-configured does no feature work at all. Every option below keeps its default
-unless you name it.
+${0 === on.length ? `Each feature is inactive until switched on, and an SDK with no feature
+configured does no feature work at all.` : `${codeList(on)} ${1 === on.length ? 'is' : 'are'} active by default${
+  on.length < features.length ? '; every other feature is inactive until switched on' : ''}.`}
+Every option below keeps its default unless you name it.
 
 ${honoursActivationOrder(target) ?
   'The array form of \\`feature\\` is significant: several features wrap the\ntransport, and the order you list them in is the order they nest.' :
@@ -130,7 +133,8 @@ its default unless you name it.
 `)
     }
 
-    Content(`- Inactive by default: leaving it out costs nothing at runtime.
+    Content(`- ${f.on ? `Active by default: set \`feature.${f.name}.active\` to false to switch it off.` :
+      'Inactive by default: leaving it out costs nothing at runtime.'}
 
 `)
   }

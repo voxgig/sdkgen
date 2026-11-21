@@ -632,6 +632,11 @@ cannot mistake `console` or `record` for prose. It reports:
 - `reaction`: a prose line that left one target's document under a variation
   and survives verbatim in a sibling's.
 - `marker`: a `$$path$$` that never fired, outside a code span.
+- `starts-off`: a sentence saying features start off ("inactive until",
+  "off by default", "opt-in") that covers a feature whose `fact.on` is true.
+  A sentence covers the features it names; with "other" or "rest", every
+  feature but those its paragraph names as on; else those its heading names;
+  else every feature the document's target carries.
 
 Each finding is keyed on (relation, the chain of labelled components that
 wrote the line, cause) and must match a pin in `test/textguard-pins.json`,
@@ -1098,7 +1103,8 @@ updating both, plus the lists in this file, `README.md`,
 `docs/reference/cli.md`, `docs/reference/project-layout.md`,
 `docs/how-to/add-a-target.md` and `docs/explanation/architecture.md`.
 
-Features (all inactive by default — opt in per SDK via
+Features (all inactive by default except `log`, as each model's
+`config.options.active` says — switch one per SDK with
 `options.feature.<name>.active`):
 
 - **Core:** `log` (structured logging), `test` (in-memory mock transport;
