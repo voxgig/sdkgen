@@ -119,6 +119,30 @@ before merging existed. The add records fingerprints, and later adds merge
 normally. `--keep` keeps the files but records nothing for them, so they
 stay findings until an add with `--force` replaces them.
 
+## The oldest copies this generator reads
+
+The merge brings a newer source into copies the project already has, so it
+needs copies recent enough to build. Components copied from a release
+before 4.23.0 do not compile against the current generator, and model files
+copied before 1.3.18 use `//` comments, which the model compiler does not
+read. Neither can be merged into: the safe path is to commit, then run
+`npx voxgig-sdkgen target add <name> --force`, and use `git diff` to restore
+any local change by hand.
+
+`doctor` and `generate` name that path wherever they can tell. A copy
+record that dates an item's copies from below the floor is a finding, and
+so is a copied model file that does not compile: the model compile can drop
+such a file without an error, which removes its target from the SDK. A
+project with no copy record has no version to compare, so `doctor` names
+the floor beside the copies that differ.
+
+The opposite skew is reported too. A copy recorded from a newer release
+than the one installed is **ahead**: the package was moved back, perhaps by
+a re-scaffold that lowered its version. `doctor` reports it, and the remedy it
+names is `voxgig-sdkgen package update @voxgig/sdkgen`, which fetches the
+latest release and moves the package up to the copies. A re-add from the installed release would
+put older copies back.
+
 ## The scaffold's own files
 
 `create-sdkgen` applies the same rules to the files it writes, such as

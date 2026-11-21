@@ -3,12 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MODEL_FLOOR = exports.COPY_FLOOR = void 0;
 exports.action_doctor = action_doctor;
 exports.doctor = doctor;
 exports.copyCheck = copyCheck;
 exports.copyWarnings = copyWarnings;
 exports.refreshCommand = refreshCommand;
 const kindCollection_1 = require("../helpers/kindCollection");
+const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
@@ -18,6 +20,8 @@ const target_1 = require("./target");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const definition_1 = require("../helpers/definition");
+const modelcheck_1 = require("../helpers/modelcheck");
+const shipped_1 = require("../helpers/shipped");
 const featureSource_1 = require("../helpers/featureSource");
 const junk_1 = require("../helpers/junk");
 const copies_1 = require("./copies");
@@ -39,6 +43,13 @@ const ROOT_COMPONENTS = [
     ['Changelog', 'the root CHANGELOG.md'],
     ['Deploy', 'the release/publish recipes'],
 ];
+// The oldest release of this generator whose component copies build with it.
+const COPY_FLOOR = '4.23.0';
+exports.COPY_FLOOR = COPY_FLOOR;
+// The oldest release whose copied model files this generator reads.
+const MODEL_FLOOR = '1.3.18';
+exports.MODEL_FLOOR = MODEL_FLOOR;
+const SHIPPED_PACKAGE = JSON.parse(node_fs_1.default.readFileSync(node_path_1.default.join((0, shipped_1.packageRoot)(), 'package.json'), 'utf8')).name;
 const CMD_MAP = {
     check: cmd_doctor_check,
     prune: cmd_doctor_prune,
@@ -143,7 +154,7 @@ async function doctor(actx, scope, selected) {
         superseded: [], unwired: [], orphanModel: [],
         resyncPending: [], aliasedDiff: [],
         outdated: [], ahead: [], unrecorded: [], customized: [], unfolded: [],
-        unresolved: [], byItem: {},
+        belowFloor: [], unreadable: [], unresolved: [], byItem: {},
         ignoredLog: false, ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
@@ -153,6 +164,7 @@ async function doctor(actx, scope, selected) {
     }
     report.superseded = supersededFiles(actx);
     report.orphanModel = orphanModelFiles(actx);
+    report.unreadable = unreadableModels(actx, report.orphanModel);
     const kinds = Object.keys(kind_1.KINDS).sort();
     const counts = {};
     for (const kind of kinds) {
@@ -213,7 +225,8 @@ async function doctor(actx, scope, selected) {
     report.ok = 0 === report.forked.length + report.edited.length -
         report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
         report.orphanModel.length + report.outdated.length + report.ahead.length +
-        report.unfolded.length + report.unresolved.length;
+        report.unfolded.length + report.belowFloor.length +
+        report.unreadable.length + report.unresolved.length;
     const customized = new Set(report.customized);
     const unmergeable = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) ? new Set(report.unrecorded) : new Set();
     for (const [kind, note] of [
@@ -242,6 +255,13 @@ async function doctor(actx, scope, selected) {
             log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file });
         }
     }
+    for (const { file, item, error, oldSyntax } of report.unreadable) {
+        log.info({
+            point: 'doctor-finding', kind: 'unreadable', file, error,
+            note: 'UNREADABLE: ' + file + ' does not compile (' + error + '), so the ' +
+                'model leaves ' + item.replace('/', ' ') + ' out. ' + unreadableRemedy(item, oldSyntax)
+        });
+    }
     for (const { file, names } of report.unfolded) {
         log.info({
             point: 'doctor-finding', kind: 'unfolded', file, names,
@@ -251,6 +271,20 @@ async function doctor(actx, scope, selected) {
     }
     for (const item of Object.keys(report.byItem).sort()) {
         const drift = report.byItem[item];
+        if (true === drift.belowFloor) {
+            log.info({ point: 'doctor-below-floor', item, ...drift, note: belowFloorNote(item, drift) });
+            continue;
+        }
+        if (null == copies.items[item] && null == drift.unresolved && 0 < drift.changed) {
+            log.info({
+                point: 'doctor-unrecorded-item', item, ...drift,
+                note: item.replace('/', ' ') + ': nothing records which release wrote ' +
+                    'its copies, and ' + drift.changed + ' differ from the installed ' +
+                    'source. Copies from before ' + COPY_FLOOR + ' do not build with this ' +
+                    'generator: if the .sdk build fails in them, commit, then run ' +
+                    '`voxgig-sdkgen ' + refreshCommand(item) + ' --force`.'
+            });
+        }
         if (0 < drift.outdated) {
             log.info({
                 point: 'doctor-outdated', item, ...drift,
@@ -282,6 +316,8 @@ async function doctor(actx, scope, selected) {
         outdated: report.outdated.length,
         ahead: report.ahead.length,
         unfolded: report.unfolded.length,
+        belowFloor: report.belowFloor.length,
+        unreadable: report.unreadable.length,
         unresolved: report.unresolved.length,
         customized: report.customized.length,
         note: report.ok ?
@@ -291,8 +327,9 @@ async function doctor(actx, scope, selected) {
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
                 report.missing.length + ' missing, ' + report.outdated.length +
                 ' outdated, ' + report.ahead.length + ' ahead, ' +
-                report.unfolded.length + ' unfolded, ' + report.unresolved.length +
-                ' unresolved')
+                report.unfolded.length + ' unfolded, ' + report.belowFloor.length +
+                ' below the floor, ' + report.unreadable.length + ' unreadable, ' +
+                report.unresolved.length + ' unresolved')
     });
     return { report };
 }
@@ -632,6 +669,9 @@ function noteDrift(actx, report, copies, kind, source) {
             }
         }
         report[into].push(label);
+        if (null == report.byItem[item] && belowFloor(copied)) {
+            report.belowFloor.push(item);
+        }
         const drift = report.byItem[item] = report.byItem[item] ?? {
             ...pkgOf(source.package ?? copied?.package),
             ...(null == copied?.version ? {} : { from: copied.version }),
@@ -640,6 +680,7 @@ function noteDrift(actx, report, copies, kind, source) {
             ahead: 0,
             changed: 0,
             customized: 0,
+            ...(belowFloor(copied) ? { belowFloor: true } : {}),
         };
         if ('outdated' === into) {
             drift.outdated++;
@@ -654,6 +695,50 @@ function noteDrift(actx, report, copies, kind, source) {
             drift.customized++;
         }
     };
+}
+// The floor holds for this generator's own copies; another package keeps its own.
+function belowFloor(copied) {
+    return SHIPPED_PACKAGE === copied?.package &&
+        0 > ((0, semver_1.compareVersions)(copied?.version ?? '', COPY_FLOOR) ?? 0);
+}
+function belowFloorNote(item, drift) {
+    return item.replace('/', ' ') + ': ' + (drift.outdated + drift.changed) +
+        ' file(s) were copied from ' + drift.package + ' ' + drift.from +
+        ', older than ' + COPY_FLOOR + ', the oldest release whose copies this ' +
+        'generator builds. Commit, then run `voxgig-sdkgen ' + refreshCommand(item) +
+        ' --force` to replace them.';
+}
+function unreadableRemedy(item, oldSyntax) {
+    return (oldSyntax ? 'It uses `//` comments, as model files copied before ' +
+        MODEL_FLOOR + ' do, and this generator does not read them. ' : '') +
+        'Commit, then run `voxgig-sdkgen ' + refreshCommand(item) + ' --force` to ' +
+        'replace it.';
+}
+// An included item model file that fails to compile leaves no error behind:
+// the model simply lacks the item. Compiled alone, the failure shows.
+function unreadableModels(actx, orphans) {
+    const fs = actx.fs();
+    const root = actx.folder;
+    const found = [];
+    for (const kind of Object.keys(kind_1.KINDS).sort()) {
+        const declared = (0, kindCollection_1.kindCollection)(actx.model, kind) ?? {};
+        for (const name of (0, definition_1.definitionNames)(fs, root, kind)) {
+            const path = (0, definition_1.definitionPath)(root, kind, name);
+            const file = node_path_1.default.relative(root, path).split(node_path_1.default.sep).join('/');
+            if (null != declared[name] || !fs.existsSync(path) || orphans.includes(file)) {
+                continue;
+            }
+            const text = String(fs.readFileSync(path, 'utf8'));
+            const compiled = (0, modelcheck_1.compileModel)((0, definition_1.migrateIncludes)(text), path, { strict: false });
+            if (0 < compiled.errors.length) {
+                found.push({
+                    file, item: (0, copies_1.itemKey)(kind, name), error: compiled.errors[0],
+                    oldSyntax: 0 < (0, modelcheck_1.slashComments)(text).length,
+                });
+            }
+        }
+    }
+    return found;
 }
 function pkgOf(name) {
     return null == name ? {} : { package: name };
@@ -809,9 +894,19 @@ function copyWarnings(report) {
         group.drift.push(drift);
         groups.set(key, group);
     };
+    const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];
+    for (const { file, item, oldSyntax } of report.unreadable) {
+        lines.push(file + ' does not compile, so this run leaves ' +
+            item.replace('/', ' ') + ' out. ' + unreadableRemedy(item, oldSyntax)
+            .replace('`voxgig-sdkgen', '`npx voxgig-sdkgen'));
+    }
     for (const item of Object.keys(report.byItem).sort()) {
         const drift = report.byItem[item];
         const command = refreshCommand(item, drift.package);
+        if (true === drift.belowFloor) {
+            lines.push(belowFloorNote(item, drift).replace('`voxgig-sdkgen', '`npx voxgig-sdkgen'));
+            continue;
+        }
         if (0 < drift.outdated) {
             add('outdated\n' + command, item, drift.outdated, drift);
         }
@@ -822,7 +917,6 @@ function copyWarnings(report) {
             add('changed\n' + command, item, drift.changed - drift.customized, drift);
         }
     }
-    const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];
     for (const { file, item, names } of report.unfolded) {
         lines.push(file + ': lacks ' + names.join(', ') + ', which the installed ' +
             'copy exports, so a copy that imports ' + (1 === names.length ? 'it' : 'them') +

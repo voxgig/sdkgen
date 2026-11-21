@@ -41,7 +41,7 @@ file never includes.
 | `--only <items>` | — | string | everything | `package add` only: install a subset, as `<kind>:<name>` entries. |
 | `--alias <map>` | — | string | — | `package add` only: install under different names, as `<name>=<alias>` entries. |
 | `--force` | — | flag | off | An add or `package update`: take the incoming copies over locally-changed files instead of merging, listing what it discarded. `<kind> remove`: delete forked, edited, stale and project-owned files too. |
-| `--keep` | — | flag | off | An add or `package update`: keep each locally-changed file whose merge stops, and record the incoming copy as its base. See [The copies in `.sdk` merge](../explanation/copies-merge.md). |
+| `--keep` | — | flag | off | An add or `package update`: keep each locally-changed file whose merge stops, and record the incoming copy as its base. A file the copy record does not hold gets no base and stays a finding. See [The copies in `.sdk` merge](../explanation/copies-merge.md). |
 | `--no-fetch` | — | flag | off | `package update` only: skip the fetch and use the source already installed, which is how to refresh the copies after updating a package with `npm`. |
 | `--delete-output` | — | flag | off | `target remove` only: also delete the generated output directory beside `.sdk/`. |
 
@@ -138,7 +138,7 @@ voxgig-sdkgen doctor
 It compares the three things `target add` copies:
 `.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
 
-Nine categories:
+Thirteen categories:
 
 | Category | Meaning |
 | --- | --- |
@@ -148,12 +148,16 @@ Nine categories:
 | **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
 | **missing** | `target add` would write it and the project does not have it. |
 | **outdated** | Differs from its source, although the copy record shows the project has not touched it since an add wrote it: the generator or the package moved on and the copy was not refreshed. `package update <pkg> --no-fetch` refreshes it without `--force`. |
+| **ahead** | As **outdated**, but the copy record dates it from a newer release of the package than the one installed, so the package was moved back. `package update <pkg>` fetches the latest release and moves the package up to it; a re-add from the installed release would put older copies back. |
+| **unfolded** | A **customized** TypeScript copy that lacks a name its source exports, typically a file kept with `--keep` before the incoming change was folded in. A copy that imports the name does not compile. |
+| **below the floor** | The copy record dates an item's copies from before 4.23.0, the oldest release whose copies the generator builds. Commit, then run `target add <t> --force`. |
+| **unreadable** | A copied model file that does not compile, so the model leaves its item out without an error. Model files copied before 1.3.18 use `//` comments, which the compiler does not read. Commit, then run `target add <t> --force`. |
 | **unresolved** | A declared target, feature or edition whose source is not installed, so its copies cannot be compared. Install the package it names. Until then its files are not reported as stale, and `target add` keeps an active feature's files rather than pruning them. |
 | **additive** | A project-owned component the scaffold never shipped. Reported, never a failure — this is the supported way to extend a target (see `registerComponent`). |
 | **unwired** | A root-level component this sdkgen provides that the project's `src/*.ts` wiring never calls. Informational: opting out is legitimate. |
 
 **forked** to **unresolved** fail the check, except the copies reported as
-**customized**. A plain `diff -r` against the scaffold cannot
+**customized** that are not also **unfolded**. A plain `diff -r` against the scaffold cannot
 do this job: `target add` writes template masters with substitution partly
 applied and inconsistently, so most of what a naive diff reports is not an
 edit at all.
