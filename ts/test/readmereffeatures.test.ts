@@ -6,6 +6,7 @@ import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
 
 import { ReadmeRefFeatures } from '../dist/cmp/ReadmeRefFeatures'
+import { applyFacts } from '../dist/helpers/facts'
 
 
 // The slice of each feature model the REFERENCE notes read: transport and hooks.
@@ -21,9 +22,12 @@ const FEATURES: Record<string, any> = {
 async function render(names: string[]): Promise<string> {
   const feature: any = {}
   for (const n of names) {
-    feature[n] = { name: n, title: n + ' feature', active: true, ...FEATURES[n] }
+    feature[n] = {
+      name: n, title: n + ' feature', active: true, config: { options: { active: false } },
+      ...FEATURES[n],
+    }
   }
-  const model = { name: 'demo', main: { kit: { feature, target: { ts: { name: 'ts' } } } } }
+  const model = applyFacts({ name: 'demo', main: { kit: { feature, target: { ts: { name: 'ts' } } } } })
   const quiet: any = { info() {}, debug() {}, warn() {}, error() {}, trace() {}, fatal() {} }
   quiet.child = () => quiet
   const { fs, vol } = memfs({})
