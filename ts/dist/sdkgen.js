@@ -164,6 +164,7 @@ Object.defineProperty(exports, "guardFlowSteps", { enumerable: true, get: functi
 const facts_1 = require("./helpers/facts");
 Object.defineProperty(exports, "applyFacts", { enumerable: true, get: function () { return facts_1.applyFacts; } });
 Object.defineProperty(exports, "fact", { enumerable: true, get: function () { return facts_1.fact; } });
+const doccheck_1 = require("./helpers/doccheck");
 const generated_1 = require("./helpers/generated");
 const component_1 = require("./helpers/component");
 const canonType_1 = require("./helpers/canonType");
@@ -496,6 +497,7 @@ function SdkGen(opts) {
         const tree = {};
         const jres = await jostraca.generate(jopts, keepingTree(() => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
+        checkDocs(tree.root, folder);
         (0, generated_1.pruneGenerated)({
             fs, log, project: root, out: root, jres, claims: (0, generated_1.claimedFiles)(tree.root, folder),
             dryrun: !!opts.dryrun,
@@ -533,6 +535,7 @@ function SdkGen(opts) {
                 sdkrelpath,
             }), etree));
             (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
+            checkDocs(etree.root, ext.folder);
             (0, generated_1.pruneGenerated)({
                 fs, log, project: root, out: ext.folder, jres: eres,
                 claims: (0, generated_1.claimedFiles)(etree.root, ext.folder),
@@ -541,6 +544,13 @@ function SdkGen(opts) {
         }
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };
+    }
+    // A warning, never a failure: the text that breaks a link or a table may be
+    // the spec's, which the project cannot edit.
+    function checkDocs(tree, out) {
+        for (const f of (0, doccheck_1.docFindings)(tree, out, (path) => fs.existsSync(path), !!opts.dryrun)) {
+            log.warn({ point: f.point, file: f.file, line: f.line, note: f.note });
+        }
     }
     // A warning, never a failure: a difference may be a deliberate edit, and a
     // check that cannot run must not stop a build.

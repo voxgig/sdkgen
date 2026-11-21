@@ -169,9 +169,46 @@ function foldedPaths(paths: string[]): string[] {
 }
 
 
+// What the generate-time check finds that another work package fixes. Each
+// pin goes when that fix lands.
+const DOC_PINS: { point: string, file: RegExp, note: RegExp, reason: string }[] = [
+  {
+    point: 'doc-link-dangling', file: /^(README|AGENTS)\.md$/, note: /^[\w-]+\/(README|AGENTS)\.md$/,
+    reason: 'S43, S44, S45 (WP14): a root document links the README or guide of a target that writes none',
+  },
+  {
+    point: 'doc-table-broken', file: /\/(README|REFERENCE)\.md$/, note: /`[^`]*\| null`/,
+    reason: 'New: a nullable field type prints as `T | null` in a field table, its pipe unescaped inside ' +
+      'the code span; the copy wave escapes these cells (WP33)',
+  },
+  {
+    point: 'doc-link-dangling', file: /^README\.md$/, note: /^\.sdk\//,
+    reason: 'The test stage has no `.sdk/def/`, which every project has',
+  },
+]
+
+function docBreaks(warnings: any[]): any[] {
+  return warnings.filter((w: any) => /^doc-/.test(w.point) &&
+    !DOC_PINS.some((pin) => pin.point === w.point && pin.file.test(w.file) && pin.note.test(w.note)))
+}
+
+
+// A project's generate only warns of a broken table or link; every generate
+// in this suite fails on one.
 async function generate(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
   buildctx?: any,
+): Promise<Record<string, string>> {
+  const warnings: any[] = []
+  const out = await generateWarning(targetNames, name, extra, sink, features, buildctx, warnings)
+  deepStrictEqual(docBreaks(warnings), [], 'a generated document breaks a table or a link')
+  return out
+}
+
+
+async function generateWarning(
+  targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
+  buildctx?: any, warnings?: any[],
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -179,7 +216,7 @@ async function generate(
     fs: layeredFs(fs),
     folder: STAGE,
     root: '',
-    pino: makeLog(sink),
+    pino: makeLog(sink, warnings),
   })
 
   // generate() either completes or throws — it has no failure return. Let the
@@ -823,12 +860,17 @@ describe('generate', () => {
 
   test('spec text in the root README keeps its table, its links and its fences in place', async () => {
     const desc = 'Planets | moons.\n\n```python\nraise SystemExit(3)\n```\nSee [guide](guide.md) and $$name$$.'
-    const out = await generate(['ts'], undefined, [
+    const warnings: any[] = []
+    const out = await generateWarning(['ts'], undefined, [
       'main: kit: entity: planet: short: ' + JSON.stringify(desc),
       'main: kit: text: entity_desc: record: ' + JSON.stringify('Own [notes](notes.md) | here'),
       "main: kit: info: summary: 'Summary with [a page](page.md) and [the site](https://example.com/a_(b))'",
       "main: kit: info: website: 'https://example.com/a_(b) c/'",
-    ].join('\n'))
+    ].join('\n'), undefined, undefined, undefined, warnings)
+    // The language docs print the spec's entity text as written until the copy
+    // wave; the project's own link stays, and dangles.
+    deepStrictEqual(docBreaks(warnings).filter((w: any) => !w.file.startsWith('ts/'))
+      .map((w: any) => w.point + ' ' + w.file + ' ' + w.note), ['doc-link-dangling README.md notes.md'])
     const readme = out['README.md']
     deepStrictEqual(wellFormed(readme), [])
     const row = readme.split('\n').find((line: string) => line.startsWith('| **Planet** |')) || ''
@@ -838,6 +880,29 @@ describe('generate', () => {
     ok(readme.includes('Summary with a page and [the site](https://example.com/a_(b))'), 'the spec summary')
     ok(readme.includes('at [example.com/a_(b) c](https://example.com/a_%28b%29%20c/).'), 'the website link')
     ok(!/^```python$/m.test(readme), 'a fence from the spec opened in the root README')
+  })
+
+
+  test('a line break or a pipe in a field description warns of the table it breaks', async () => {
+    const warnings: any[] = []
+    await generateWarning(['ts'], undefined,
+      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('Mean | radius\nin km'),
+      undefined, undefined, undefined, warnings)
+    const broken = warnings.filter((w: any) => 'doc-table-broken' === w.point)
+    ok(broken.some((w: any) => 'ts/README.md' === w.file), JSON.stringify(warnings.map((w: any) => w.point)))
+    ok(broken.every((w: any) => 'number' === typeof w.line && '' !== w.note))
+  })
+
+
+  test('a link to nothing the run wrote warns, and an encoded URL does not', async () => {
+    const warnings: any[] = []
+    await generateWarning(['ts'], undefined, [
+      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('See [radius](radius.md).'),
+      "main: kit: info: website: 'https://example.com/a_(b)'",
+    ].join('\n'), undefined, undefined, undefined, warnings)
+    const dangling = warnings.filter((w: any) => 'doc-link-dangling' === w.point)
+    ok(dangling.some((w: any) => 'ts/radius.md' === w.note), JSON.stringify(dangling))
+    ok(!dangling.some((w: any) => /example\.com/.test(w.note)), JSON.stringify(dangling))
   })
 
 

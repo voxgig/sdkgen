@@ -8,6 +8,7 @@ import {
   SdkGen, cmp, fact, featureApplies, Main, Readme, AgentGuide, ReadmeTop, AgentGuideTop, Security,
   Changelog,
 } from '../dist/sdkgen.js'
+import { anchors } from '../dist/helpers/doccheck.js'
 
 import {
   API_MODEL, KIT, STAGE, SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog,
@@ -454,32 +455,6 @@ function isDir(present: Set<string>, dir: string): boolean {
   if ('' === d || '.' === d || '.sdk' === d || d.startsWith('.sdk/')) return true
   for (const p of present) if (p.startsWith(d + '/')) return true
   return false
-}
-
-
-// GitHub's heading anchors, which is what a reader's browser follows.
-function slug(heading: string): string {
-  return heading.trim().toLowerCase()
-    .replace(/`/g, '')
-    .replace(/[^\p{L}\p{N}\s_-]/gu, '')
-    .replace(/\s/g, '-')
-}
-
-function anchors(text: string): Set<string> {
-  const out = new Set<string>()
-  const seen = new Map<string, number>()
-  let fence = false
-  for (const line of text.split('\n')) {
-    if (/^\s*(```|~~~)/.test(line)) fence = !fence
-    if (fence) continue
-    const m = /^#{1,6}\s+(.*)$/.exec(line)
-    if (!m) continue
-    const s = slug(m[1])
-    const n = seen.get(s) ?? 0
-    out.add(0 === n ? s : s + '-' + n)
-    seen.set(s, n + 1)
-  }
-  return out
 }
 
 

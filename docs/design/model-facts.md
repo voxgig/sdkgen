@@ -33,6 +33,15 @@ read it; none of them computes it.
     `readme`, `agentguide`, `test`), each on unless the target's model turns
     it off. The base model declares no target phases, so the rules declare
     their defaults, for the fact pass only (WP02).
+  - The escaped forms of every text a neutral document prints (WP18): the
+    `escape` rule computes, for one raw text, `text`, `inline`, `cell`,
+    `code`, `codecell`, `link` and `label`. Spec text (`vendor: true`) loses
+    its relative links (DQ19) and its fences; `$$` becomes `$&#36;`
+    everywhere. The pass supplies each raw text, from `helpers/doctext`, and
+    writes the forms beside what it describes: `main.kit.fact.text.<slot>`,
+    an entity's `desc`, a feature's `title` and `option.<name>.value` or
+    `.type`. They cost about 170 ms of the pass with 20 targets and 20
+    features, and about 0.75 s for 600 texts.
 - **The pass** is `applyFacts` (`ts/src/helpers/facts.ts`). `generate()` runs
   it after `guardModelNames` and `guardFlowSteps`, before Root. It evaluates
   the rules over the generated model, minus the entity and flow maps that no
@@ -56,6 +65,27 @@ and checks that `generate()` applies the facts before Root runs.
 
 With all 20 SDK targets and all 20 bundled features, the pass reads 73 KB of
 model and takes 120 to 190 ms.
+
+## The generate-time document check (WP18)
+
+After each pass, `generate()` reads the Markdown `File` nodes of the tree it
+kept and warns, as `doc-link-dangling` or `doc-table-broken`, of a relative
+link that resolves to nothing the pass wrote or the project holds, and of a
+table row that does not end as its header ends or holds a different number
+of cells. A dry run writes no copies, so there a path under a copy's
+destination counts as written. sdkgen's generate suite fails on either,
+except what `DOC_PINS` in `ts/test/generate.test.ts` names: the dangling
+target links of S43 to S45 (WP14), and a new finding, the nullable field
+type `T | null` printed unescaped in a code span in the per-language field
+tables, which the copy wave's cell escaping fixes (WP33).
+
+U104 is settled: a fenced block in an entity description, spliced raw, is
+extracted and compiled by the README example tests. Before WP18 the rb, go,
+py and perl README lanes all failed on one in the root README's entity table
+(`main.kit.text.entity_desc`) and on one in an entity's `short`, which the
+per-language READMEs print. After WP18 the root README case passes in all
+four; the per-language case still fails, because those sites are the copy
+wave's (WP33). A lone run of three backticks inline failed no lane.
 
 ## Why the rules run over the generated model
 

@@ -66,6 +66,7 @@ import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
 import { applyFacts, fact, refuseRootPlan } from './helpers/facts'
+import { docFindings } from './helpers/doccheck'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
 import { cmp as labelledCmp } from './helpers/component'
 import type { DepEntry } from './helpers/collectDeps'
@@ -388,6 +389,7 @@ function SdkGen(opts: SdkGenOptions) {
       () => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree))
 
     showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
+    checkDocs(tree.root, folder)
     pruneGenerated({
       fs, log, project: root, out: root, jres, claims: claimedFiles(tree.root, folder),
       dryrun: !!opts.dryrun,
@@ -435,6 +437,7 @@ function SdkGen(opts: SdkGenOptions) {
         }), etree))
 
       showChanges(jopts.log, 'generate-result', eres, Path.dirname(process.cwd()))
+      checkDocs(etree.root, ext.folder)
       pruneGenerated({
         fs, log, project: root, out: ext.folder, jres: eres,
         claims: claimedFiles(etree.root, ext.folder),
@@ -445,6 +448,15 @@ function SdkGen(opts: SdkGenOptions) {
     log.info({ point: 'generate-end' })
 
     return { ok: true, name: 'sdkgen' }
+  }
+
+
+  // A warning, never a failure: the text that breaks a link or a table may be
+  // the spec's, which the project cannot edit.
+  function checkDocs(tree: any, out: string) {
+    for (const f of docFindings(tree, out, (path: string) => fs.existsSync(path), !!opts.dryrun)) {
+      log.warn({ point: f.point, file: f.file, line: f.line, note: f.note })
+    }
   }
 
 
