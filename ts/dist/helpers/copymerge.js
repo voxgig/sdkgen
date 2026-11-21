@@ -12,6 +12,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const node_fs_1 = require("node:fs");
 const node_child_process_1 = require("node:child_process");
 const jostraca_1 = require("jostraca");
+const exportnames_1 = require("./exportnames");
 const MERGE = 'merge';
 exports.MERGE = MERGE;
 const OVERWRITE = 'overwrite';
@@ -260,7 +261,7 @@ class CopyGuard {
     }
     finish() {
         const outcome = {
-            merged: [], kept: [], unrecorded: [], retained: [], spared: this.spared,
+            merged: [], kept: [], unrecorded: [], lacking: {}, retained: [], spared: this.spared,
         };
         const conflicts = [];
         const writes = [];
@@ -299,6 +300,11 @@ class CopyGuard {
                 }
                 else {
                     bases.set(rel, incoming);
+                }
+                const names = (0, exportnames_1.isTypeScript)(rel) ?
+                    (0, exportnames_1.missingExports)(incoming.toString('utf8'), local.toString('utf8')) : [];
+                if (0 < names.length) {
+                    outcome.lacking[rel] = names;
                 }
             }
             else if (null != conflict) {
@@ -428,11 +434,14 @@ class CopyGuard {
         if (0 < outcome.kept.length) {
             log.warn({
                 point: 'copy-merge-kept', files: outcome.kept, unrecorded: outcome.unrecorded,
+                lacking: outcome.lacking,
                 note: this.spec.what + ': --keep, kept ' + outcome.kept.length +
                     ' local file(s) as they are: ' + outcome.kept.join(', ') +
                     (0 === outcome.unrecorded.length ? '' :
                         '; nothing records what an add wrote to ' + outcome.unrecorded.join(', ') +
-                            ', so they stay unrecorded until an add with --force replaces them')
+                            ', so they stay unrecorded until an add with --force replaces them') +
+                    Object.entries(outcome.lacking).map(([rel, names]) => '; ' + rel + ' lacks ' + names.join(', ') + ', which the incoming copy ' +
+                        'exports').join('')
             });
         }
         if (0 < outcome.retained.length) {

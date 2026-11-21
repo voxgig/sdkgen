@@ -14,6 +14,7 @@ type DoctorReport = {
     ahead: string[];
     unrecorded: string[];
     customized: string[];
+    unfolded: Unfolded[];
     unresolved: string[];
     byItem: Record<string, ItemDrift>;
     ignoredLog: boolean;
@@ -29,11 +30,16 @@ type ItemDrift = {
     customized: number;
     unresolved?: string;
 };
+type Unfolded = {
+    file: string;
+    item: string;
+    names: string[];
+};
 declare function action_doctor(args: string[], actx: ActionContext): Promise<ActionResult>;
 type DoctorScope = (kind: string, name: string) => boolean;
 declare function doctor(actx: ActionContext, scope?: DoctorScope, selected?: string[]): Promise<ActionResult>;
 declare function refreshCommand(item: string, pkg?: string): string;
 declare function copyCheck(actx: ActionContext): Promise<string[]>;
 declare function copyWarnings(report: DoctorReport): string[];
-export type { DoctorReport, DoctorScope, ItemDrift, };
+export type { DoctorReport, DoctorScope, ItemDrift, Unfolded, };
 export { action_doctor, doctor, copyCheck, copyWarnings, refreshCommand, };

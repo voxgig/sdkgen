@@ -46,6 +46,8 @@ import { MERGE } from '../helpers/copymerge'
 
 import { compareVersions } from '../helpers/semver'
 
+import { isTypeScript, missingExports } from '../helpers/exportnames'
+
 
 const IGNORED_RE = /(~|-jostraca-off)$/
 
@@ -123,6 +125,10 @@ type DoctorReport = {
   // the project's own, not drift.
   customized: string[]
 
+  // Customized TypeScript copies that lack a name their source exports, so a
+  // copy importing it does not compile.
+  unfolded: Unfolded[]
+
   // Declared items whose source is not installed; their copies are kept.
   unresolved: string[]
 
@@ -157,9 +163,15 @@ type ItemDrift = {
 }
 
 
+type Unfolded = {
+  file: string
+  item: string
+  names: string[]
+}
+
 type Category = 'forked' | 'edited' | 'missing' | 'stale'
 
-type Found = (category: Category, label: string) => void
+type Found = (category: Category, label: string, lacking?: () => string[]) => void
 
 
 const CMD_MAP: any = {
@@ -305,8 +317,8 @@ async function doctor(
     forked: [], edited: [], stale: [], missing: [], additive: [],
     superseded: [], unwired: [], orphanModel: [],
     resyncPending: [], aliasedDiff: [],
-    outdated: [], ahead: [], unrecorded: [], customized: [], unresolved: [],
-    byItem: {},
+    outdated: [], ahead: [], unrecorded: [], customized: [], unfolded: [],
+    unresolved: [], byItem: {},
     ignoredLog: false, ok: true,
   }
 
@@ -399,7 +411,7 @@ async function doctor(
   report.ok = 0 === report.forked.length + report.edited.length -
     report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
     report.orphanModel.length + report.outdated.length + report.ahead.length +
-    report.unresolved.length
+    report.unfolded.length + report.unresolved.length
 
   const customized = new Set(report.customized)
   const unmergeable = MERGE === projectCopyMode(actx) ? new Set(report.unrecorded) : new Set()
@@ -429,6 +441,14 @@ async function doctor(
         note
       log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file })
     }
+  }
+
+  for (const { file, names } of report.unfolded) {
+    log.info({
+      point: 'doctor-finding', kind: 'unfolded', file, names,
+      note: 'UNFOLDED (customized, but lacks ' + names.join(', ') +
+        ', which its source exports): ' + file
+    })
   }
 
   for (const item of Object.keys(report.byItem).sort()) {
@@ -464,6 +484,7 @@ async function doctor(
     aliasedDiff: report.aliasedDiff.length,
     outdated: report.outdated.length,
     ahead: report.ahead.length,
+    unfolded: report.unfolded.length,
     unresolved: report.unresolved.length,
     customized: report.customized.length,
     note: report.ok ?
@@ -473,7 +494,8 @@ async function doctor(
         report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
         report.missing.length + ' missing, ' + report.outdated.length +
         ' outdated, ' + report.ahead.length + ' ahead, ' +
-        report.unresolved.length + ' unresolved')
+        report.unfolded.length + ' unfolded, ' + report.unresolved.length +
+        ' unresolved')
   })
 
   return { report }
@@ -701,9 +723,13 @@ function compareTrees(
 
       const from = landed.get(rel) as string
 
-      if (differs(fs, from, Path.join(tree.project, rel),
-        model, tree.replace, undefined, tree.rewrite)) {
-        found(tree.kind, label + rel)
+      const at = Path.join(tree.project, rel)
+
+      if (differs(fs, from, at, model, tree.replace, undefined, tree.rewrite)) {
+        found(tree.kind, label + rel, isTypeScript(rel) ? () => {
+          const { expected, actual } = renderPair(fs, from, at, model, tree.replace, tree.rewrite)
+          return missingExports(expected, actual)
+        } : undefined)
       }
     }
 
@@ -932,7 +958,7 @@ function noteDrift(
   const ahead = null != source.package && copied?.package === source.package &&
     0 < (compareVersions(copied?.version ?? '', source.version ?? '') ?? 0)
 
-  return (category: Category, label: string) => {
+  return (category: Category, label: string, lacking?: () => string[]) => {
     let into: Category | 'outdated' | 'ahead' = category
     let custom = false
 
@@ -948,6 +974,11 @@ function noteDrift(
       else if (merging) {
         custom = true
         report.customized.push(label)
+
+        const names = lacking?.() ?? []
+        if (0 < names.length) {
+          report.unfolded.push({ file: label, item, names })
+        }
       }
     }
 
@@ -1224,6 +1255,13 @@ function copyWarnings(report: DoctorReport): string[] {
 
   const lines: string[] = report.ignoredLog ? [IGNORED_LOG] : []
 
+  for (const { file, item, names } of report.unfolded) {
+    lines.push(file + ': lacks ' + names.join(', ') + ', which the installed ' +
+      'copy exports, so a copy that imports ' + (1 === names.length ? 'it' : 'them') +
+      ' does not compile. Fold the incoming change into it, or commit, then run ' +
+      '`npx voxgig-sdkgen ' + refreshCommand(item) + ' --force` to take the incoming copy.')
+  }
+
   for (const item of report.unresolved) {
     lines.push(item.replace('/', ' ') + ': declared from ' +
       report.byItem[item]?.unresolved + ', which is not installed, so this ' +
@@ -1272,6 +1310,7 @@ export type {
   DoctorReport,
   DoctorScope,
   ItemDrift,
+  Unfolded,
 }
 
 export {

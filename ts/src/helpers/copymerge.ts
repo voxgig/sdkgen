@@ -4,6 +4,8 @@ import { execFileSync } from 'node:child_process'
 
 import { DiffUtil } from 'jostraca'
 
+import { isTypeScript, missingExports } from './exportnames'
+
 
 // How a toolchain write treats a project file the project changed after the
 // toolchain last wrote it.
@@ -60,6 +62,9 @@ type MergeOutcome = {
 
   // Kept with no base, so nothing records them: an add stops on them again.
   unrecorded: string[]
+
+  // Kept TypeScript files, by the names the incoming copy exports and they lack.
+  lacking: Record<string, string[]>
 
   retained: string[]
   spared: string[]
@@ -394,7 +399,7 @@ class CopyGuard {
 
   finish(): MergeOutcome {
     const outcome: MergeOutcome = {
-      merged: [], kept: [], unrecorded: [], retained: [], spared: this.spared,
+      merged: [], kept: [], unrecorded: [], lacking: {}, retained: [], spared: this.spared,
     }
     const conflicts: Conflict[] = []
     const writes: [string, Buffer][] = []
@@ -440,6 +445,12 @@ class CopyGuard {
         }
         else {
           bases.set(rel, incoming)
+        }
+
+        const names = isTypeScript(rel) ?
+          missingExports(incoming.toString('utf8'), local.toString('utf8')) : []
+        if (0 < names.length) {
+          outcome.lacking[rel] = names
         }
       }
       else if (null != conflict) {
@@ -594,11 +605,15 @@ class CopyGuard {
     if (0 < outcome.kept.length) {
       log.warn({
         point: 'copy-merge-kept', files: outcome.kept, unrecorded: outcome.unrecorded,
+        lacking: outcome.lacking,
         note: this.spec.what + ': --keep, kept ' + outcome.kept.length +
           ' local file(s) as they are: ' + outcome.kept.join(', ') +
           (0 === outcome.unrecorded.length ? '' :
             '; nothing records what an add wrote to ' + outcome.unrecorded.join(', ') +
-            ', so they stay unrecorded until an add with --force replaces them')
+            ', so they stay unrecorded until an add with --force replaces them') +
+          Object.entries(outcome.lacking).map(([rel, names]: [string, string[]]) =>
+            '; ' + rel + ' lacks ' + names.join(', ') + ', which the incoming copy ' +
+            'exports').join('')
       })
     }
 

@@ -23,6 +23,7 @@ type MergeOutcome = {
     merged: string[];
     kept: string[];
     unrecorded: string[];
+    lacking: Record<string, string[]>;
     retained: string[];
     spared: string[];
 };

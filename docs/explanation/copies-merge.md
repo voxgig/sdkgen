@@ -104,6 +104,12 @@ In merge mode, a copy the record shows the project changed is reported as
 A copy with no fingerprint in the record is still reported as forked or
 edited, because no record separates a change from an old copy.
 
+A customized TypeScript copy that lacks a name its source exports is
+reported as **unfolded**, and fails `doctor`. That is a file kept with
+`--keep` before the incoming change was folded in: another copy that
+imports the name does not compile. The add that keeps such a file says so,
+and `generate` warns about it.
+
 ## Projects from before the copy record
 
 A copy the record has no fingerprint for cannot be told from a local

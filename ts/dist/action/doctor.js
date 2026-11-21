@@ -23,6 +23,7 @@ const junk_1 = require("../helpers/junk");
 const copies_1 = require("./copies");
 const copymerge_1 = require("../helpers/copymerge");
 const semver_1 = require("../helpers/semver");
+const exportnames_1 = require("../helpers/exportnames");
 const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
@@ -141,8 +142,8 @@ async function doctor(actx, scope, selected) {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         superseded: [], unwired: [], orphanModel: [],
         resyncPending: [], aliasedDiff: [],
-        outdated: [], ahead: [], unrecorded: [], customized: [], unresolved: [],
-        byItem: {},
+        outdated: [], ahead: [], unrecorded: [], customized: [], unfolded: [],
+        unresolved: [], byItem: {},
         ignoredLog: false, ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
@@ -212,7 +213,7 @@ async function doctor(actx, scope, selected) {
     report.ok = 0 === report.forked.length + report.edited.length -
         report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
         report.orphanModel.length + report.outdated.length + report.ahead.length +
-        report.unresolved.length;
+        report.unfolded.length + report.unresolved.length;
     const customized = new Set(report.customized);
     const unmergeable = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) ? new Set(report.unrecorded) : new Set();
     for (const [kind, note] of [
@@ -240,6 +241,13 @@ async function doctor(actx, scope, selected) {
                 note;
             log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file });
         }
+    }
+    for (const { file, names } of report.unfolded) {
+        log.info({
+            point: 'doctor-finding', kind: 'unfolded', file, names,
+            note: 'UNFOLDED (customized, but lacks ' + names.join(', ') +
+                ', which its source exports): ' + file
+        });
     }
     for (const item of Object.keys(report.byItem).sort()) {
         const drift = report.byItem[item];
@@ -273,6 +281,7 @@ async function doctor(actx, scope, selected) {
         aliasedDiff: report.aliasedDiff.length,
         outdated: report.outdated.length,
         ahead: report.ahead.length,
+        unfolded: report.unfolded.length,
         unresolved: report.unresolved.length,
         customized: report.customized.length,
         note: report.ok ?
@@ -282,7 +291,8 @@ async function doctor(actx, scope, selected) {
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
                 report.missing.length + ' missing, ' + report.outdated.length +
                 ' outdated, ' + report.ahead.length + ' ahead, ' +
-                report.unresolved.length + ' unresolved')
+                report.unfolded.length + ' unfolded, ' + report.unresolved.length +
+                ' unresolved')
     });
     return { report };
 }
@@ -446,8 +456,12 @@ function compareTrees(actx, report, found, trees, opts) {
                 continue;
             }
             const from = landed.get(rel);
-            if (differs(fs, from, node_path_1.default.join(tree.project, rel), model, tree.replace, undefined, tree.rewrite)) {
-                found(tree.kind, label + rel);
+            const at = node_path_1.default.join(tree.project, rel);
+            if (differs(fs, from, at, model, tree.replace, undefined, tree.rewrite)) {
+                found(tree.kind, label + rel, (0, exportnames_1.isTypeScript)(rel) ? () => {
+                    const { expected, actual } = renderPair(fs, from, at, model, tree.replace, tree.rewrite);
+                    return (0, exportnames_1.missingExports)(expected, actual);
+                } : undefined);
             }
         }
         for (const rel of actual) {
@@ -597,7 +611,7 @@ function noteDrift(actx, report, copies, kind, source) {
     const merging = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx);
     const ahead = null != source.package && copied?.package === source.package &&
         0 < ((0, semver_1.compareVersions)(copied?.version ?? '', source.version ?? '') ?? 0);
-    return (category, label) => {
+    return (category, label, lacking) => {
         let into = category;
         let custom = false;
         if ('forked' === category || 'edited' === category) {
@@ -611,6 +625,10 @@ function noteDrift(actx, report, copies, kind, source) {
             else if (merging) {
                 custom = true;
                 report.customized.push(label);
+                const names = lacking?.() ?? [];
+                if (0 < names.length) {
+                    report.unfolded.push({ file: label, item, names });
+                }
             }
         }
         report[into].push(label);
@@ -805,6 +823,12 @@ function copyWarnings(report) {
         }
     }
     const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];
+    for (const { file, item, names } of report.unfolded) {
+        lines.push(file + ': lacks ' + names.join(', ') + ', which the installed ' +
+            'copy exports, so a copy that imports ' + (1 === names.length ? 'it' : 'them') +
+            ' does not compile. Fold the incoming change into it, or commit, then run ' +
+            '`npx voxgig-sdkgen ' + refreshCommand(item) + ' --force` to take the incoming copy.');
+    }
     for (const item of report.unresolved) {
         lines.push(item.replace('/', ' ') + ': declared from ' +
             report.byItem[item]?.unresolved + ', which is not installed, so this ' +

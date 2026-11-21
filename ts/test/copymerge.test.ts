@@ -7,7 +7,7 @@ import { withCopyMerge } from '../dist/helpers/copymerge.js'
 import { fingerprint } from '../dist/action/copies.js'
 
 import { ROOT, makeProject, recordLog, targetRef, target_add } from './actionharness'
-import { doctor } from '../dist/action/doctor.js'
+import { doctor, copyCheck } from '../dist/action/doctor.js'
 import { package_update } from '../dist/action/package.js'
 import { readCopies } from '../dist/action/copies.js'
 
@@ -359,6 +359,45 @@ describe('target add in merge mode', () => {
     deepStrictEqual(report.unrecorded, [rel])
     deepStrictEqual(report.customized, [])
     ok(!project.fs.existsSync(ROOT + '/log/base/' + rel))
+  })
+
+
+  // A kept copy that never took the incoming change breaks every copy that
+  // imports what the change added.
+  test('a kept copy lacking a name the incoming copy exports is a finding', async () => {
+    const log = recordLog()
+    const project = makeProject({ log })
+    await target_add([targetRef('ts')], project.actx)
+
+    const rel = 'src/cmp/ts/utility_ts.ts'
+    const path = ROOT + '/' + rel
+    const current = String(project.fs.readFileSync(path, 'utf8'))
+    ok(current.includes('  projectPath,\n  exampleValue,\n}'), 'the export list moved')
+
+    const older = current.replace('  exampleValue,\n', '')
+    project.fs.mkdirSync(ROOT + '/log/base/src/cmp/ts', { recursive: true })
+    project.fs.writeFileSync(ROOT + '/log/base/' + rel, older)
+    project.fs.appendFileSync(ROOT + '/log/copies.jsonl',
+      JSON.stringify({ op: 'add', files: { [rel]: fingerprint(older) } }) + '\n')
+    project.fs.writeFileSync(path, older.replace('  projectPath,\n}', '  projectPath,\n  localHelper,\n}'))
+
+    await rejects(target_add([targetRef('ts')], project.actx),
+      (err: any) => err.message.includes(rel) && /re-run with\s+--keep/.test(err.message))
+
+    project.actx.flags = { keep: true }
+    await target_add([targetRef('ts')], project.actx)
+
+    const kept = log.lines.find((l: any) => 'copy-merge-kept' === l.point)
+    deepStrictEqual(kept.lacking, { [rel]: ['exampleValue'] })
+
+    const report: any = (await doctor(project.actx)).report
+    deepStrictEqual(report.unfolded, [{ file: rel, item: 'target/ts', names: ['exampleValue'] }])
+    ok(report.customized.includes(rel), JSON.stringify(report.customized))
+    strictEqual(report.ok, false)
+
+    const lines = await copyCheck(project.actx)
+    ok(lines.some((line: string) => line.startsWith(rel + ': lacks exampleValue') &&
+      line.includes('`npx voxgig-sdkgen target add ts --force`')), lines.join('\n'))
   })
 
 
