@@ -8,7 +8,7 @@ import {
   getModelPath
 } from '../types'
 
-import { hasPackageName, packageName, packageVersion, repoInfo } from '../helpers/packageMeta'
+import { hasPackageName, packageName, packageVersion, registryState, repoInfo } from '../helpers/packageMeta'
 
 import { npmTrustScript } from '../admin/npm-trust'
 
@@ -28,7 +28,8 @@ const PublishWorkflow = cmp(function PublishWorkflow(props: any) {
     if (false === t.active) {
       return
     }
-    if ('npm' === (t.publish?.registry?.name || '') && hasPackageName(model, t.name)) {
+    if ('npm' === (t.publish?.registry?.name || '') && hasPackageName(model, t.name) &&
+      'inactive' !== registryState(model, t.name)) {
       npmTargets.push(t)
     }
   })
@@ -118,9 +119,11 @@ function publishWorkflow(
 # THE FILENAME IS PART OF THAT CONFIGURATION. Renaming this file breaks
 # publishing until the npm side is updated to match.
 #
-# BY DISPATCH, deliberately. The deploy Makefile publishes with a
+${'active' === registryState(model, name) ? `# BY DISPATCH, deliberately. The deploy Makefile publishes with a
 # vault-injected token; a tag-triggered workflow racing it would publish one
-# version by two mechanisms. Releasing is an act someone performs and
+# version by two mechanisms.` : `# BY DISPATCH, deliberately. While the registry is pending, the deploy
+# Makefile only cuts the git tag, and a tag-triggered workflow would turn
+# every tag it cuts into a publish.`} Releasing is an act someone performs and
 # watches.
 #
 # THREE JOBS, BECAUSE THEY NEED DIFFERENT PRIVILEGES. A dependency lifecycle
@@ -369,9 +372,7 @@ publish credential, and attaches SLSA provenance as it goes.
 \`expect_sha\` is optional and worth using: it refuses if \`main\` moved between
 the commit you checked and the run resolving.
 
-It is a DISPATCH rather than a tag push because the root \`Makefile\` also
-publishes, with a vault-injected token. A tag-triggered workflow racing it
-would publish one version by two mechanisms.
+${dispatchReason(model, targets)}
 
 ## The release is tagged for you
 
@@ -435,6 +436,31 @@ publisher to ONE workflow filename, so anything that must accompany a publish
 has to live inside this file. Nor can it be left to a tag-triggered
 publisher — a ref pushed with \`GITHUB_TOKEN\` starts no further workflow run.
 `
+}
+
+
+// The root Makefile publishes an active registry and only tags a pending one,
+// so the reason a tag trigger is wrong differs between them.
+function dispatchReason(model: any, targets: any[]): string {
+  const states = targets.map((t: any) => registryState(model, t.name))
+  const active = states.includes('active')
+  const pending = states.some((s: string) => 'active' !== s)
+  if (active && !pending) {
+    return 'It is a DISPATCH rather than a tag push because the root `Makefile` also\n' +
+      'publishes, with a vault-injected token. A tag-triggered workflow racing it\n' +
+      'would publish one version by two mechanisms.'
+  }
+  if (!active) {
+    return 'It is a DISPATCH rather than a tag push. While the registry is pending, the\n' +
+      'root `Makefile` only cuts the git tag, and a tag-triggered workflow would\n' +
+      'turn every tag it cuts into a publish.'
+  }
+  return 'It is a DISPATCH rather than a tag push. Where a registry is active, the\n' +
+    'root `Makefile` also publishes, with a vault-injected token, and a\n' +
+    'tag-triggered workflow racing it would publish one version by two\n' +
+    'mechanisms. Where one is pending, the root `Makefile` only cuts the git\n' +
+    'tag, and a tag-triggered workflow would turn every tag it cuts into a\n' +
+    'publish.'
 }
 
 

@@ -211,7 +211,7 @@ creates or updates the Pages configuration. It does not commit, push, merge,
 or deploy.
 
 Sdkgen generates `.sdk/admin/setup-npm-trust.sh` when a target publishes to
-npm. For a repository on `github.com`, it registers each
+npm and its registry state is not `inactive`. For a repository on `github.com`, it registers each
 `publish-<target>.yml` workflow as the trusted publisher of its package, using
 the package name and repository that the workflow was generated from, so the
 two cannot disagree. npm cannot trust GitHub Actions for a repository hosted
