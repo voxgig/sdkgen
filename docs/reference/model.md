@@ -415,6 +415,9 @@ else's repo.
 - `path` and `sdkrel` replace the model's values for that run only. The
   model object is never written back to, so `target add` cannot commit the
   override by accident.
+- A name in `SDKGEN_EXTERNAL` that is not a target of the model stops the
+  run with an error that lists the targets, so a misspelled name cannot pass
+  as an override that changes nothing.
 - An override may also send an item out of tree that the model generates in
   tree. Every destination check listed earlier still runs on it.
 - `enclosing: true` permits a destination that **contains** the SDK project

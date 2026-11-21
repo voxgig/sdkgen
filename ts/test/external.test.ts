@@ -772,6 +772,21 @@ describe('external target', () => {
       })
 
 
+      test('a name that is not a target is refused, naming it', async () => {
+        process.env.SDKGEN_EXTERNAL = JSON.stringify({ 'go-clii': { path: OUT2 } })
+
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT })
+
+        let err: any = null
+        try { await gen.run() } catch (e: any) { err = e }
+
+        ok(null != err, 'an override naming no target was accepted')
+        ok(/SDKGEN_EXTERNAL names go-clii, which is not a target of this model/.test(String(err.message)),
+          err.message)
+        ok(/go-cli/.test(String(err.message).split('\n')[1]), 'the error does not list the targets: ' + err.message)
+      })
+
+
       test('a JSON array is refused', async () => {
         process.env.SDKGEN_EXTERNAL = '[{"path":"/elsewhere/x"}]'
 

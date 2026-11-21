@@ -484,7 +484,7 @@ function SdkGen(opts) {
         // Generation renders from the copies in `.sdk`, not from the installed
         // generator, so an outdated copy would otherwise be used without a word.
         await warnCopies(root, model);
-        const externalOverride = resolveExternalOverride(opts, log);
+        const externalOverride = resolveExternalOverride(opts, log, Object.keys(model?.main?.[apidef_1.KIT]?.target || {}));
         // Snapshot the decision before preflight. In particular, do not check a
         // missing optional destination once for safety and AGAIN before writing:
         // if it appeared between those checks, the pass could write into content
@@ -710,7 +710,7 @@ SdkGen.makeBuild = async function (opts) {
         return await sdkgen.generate({ model, build, config, buildctx: ctx });
     };
 };
-function resolveExternalOverride(opts, log) {
+function resolveExternalOverride(opts, log, targets) {
     const declared = opts.external || {};
     const raw = process.env.SDKGEN_EXTERNAL;
     if (null == raw || '' === raw.trim()) {
@@ -730,6 +730,14 @@ function resolveExternalOverride(opts, log) {
         throw new utility_1.SdkGenError('SDKGEN_EXTERNAL must be a JSON OBJECT keyed by item name, for example:' +
             '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
             '\n  Got: ' + raw.slice(0, 200));
+    }
+    // A misspelled name would otherwise change nothing and still be logged as
+    // an override.
+    const unknown = Object.keys(parsed).filter((name) => !targets.includes(name)).sort();
+    if (0 < unknown.length) {
+        throw new utility_1.SdkGenError('SDKGEN_EXTERNAL names ' + unknown.join(', ') + ', which ' +
+            (1 === unknown.length ? 'is not a target' : 'are not targets') + ' of this model' +
+            '\n  Its targets are: ' + [...targets].sort().join(', '));
     }
     const merged = { ...declared };
     for (const name of Object.keys(parsed)) {
