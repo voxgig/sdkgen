@@ -15,6 +15,8 @@ import {
   featureTemplates,
   writesFeatureGuides,
   featureHooks,
+  regenerationStatement,
+  copiesStatement,
 } from './AgentGuideContent'
 
 import { AgentGuideFeature } from './AgentGuideFeature'
@@ -55,6 +57,8 @@ npm run build        # only if you changed a component
 npm run generate     # refreshes this ${lang}/ directory
 \`\`\`
 
+${regenerationStatement()}
+
 Then build and test the generated output:
 
 ${langCommandsBlock(lang)}
@@ -70,6 +74,7 @@ ${langCommandsBlock(lang)}
 Decision rule: *same for every API → template; depends on the API →
 component.* After editing a component run \`npm run build\` before
 \`npm run generate\`; template-only edits just need \`npm run generate\`.
+${copiesStatement(model)}
 
 `)
 

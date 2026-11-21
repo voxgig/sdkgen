@@ -13,6 +13,8 @@ exports.activeFeatures = activeFeatures;
 exports.activeEntities = activeEntities;
 exports.projectName = projectName;
 exports.workflowSection = workflowSection;
+exports.regenerationStatement = regenerationStatement;
+exports.copiesStatement = copiesStatement;
 exports.featureSection = featureSection;
 exports.customiseSection = customiseSection;
 exports.aontuSection = aontuSection;
@@ -20,6 +22,7 @@ exports.claudePointer = claudePointer;
 const applicability_1 = require("../helpers/applicability");
 const facts_1 = require("../helpers/facts");
 const featureSource_1 = require("../helpers/featureSource");
+const copymerge_1 = require("../helpers/copymerge");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const LANG_CMD = {
@@ -117,7 +120,23 @@ function activeEntities(model) {
 function projectName(model) {
     return model.Name || model.const?.Name || model.name || 'SDK';
 }
-function workflowSection() {
+// What a run does to the files it generates, stated once for every guide.
+function regenerationStatement() {
+    return `Each \`npm run generate\` rewrites every file it generates, so an edit
+made to generated output is lost, and deletes the files it generated before
+and no longer emits. A target or a phase switched off is left as it was.`;
+}
+function copiesStatement(model) {
+    return copymerge_1.MERGE === (0, copymerge_1.copyMode)(model?.main?.[types_1.KIT]?.copies) ?
+        `\`target add\` and \`feature add\` copy templates and components into
+\`.sdk/\`, and merge toolchain updates into the copies this project has
+edited.` :
+        `\`target add\` and \`feature add\` overwrite the templates and components
+in \`.sdk/\` (\`main: kit: copies: 'overwrite'\`): set \`copies\` to
+\`'merge'\` before customising them, so that an add merges toolchain updates
+into the edited copies.`;
+}
+function workflowSection(model) {
     return `## Generating and updating the SDK
 
 All generation is driven from the \`.sdk/\` directory. The generated language
@@ -132,15 +151,8 @@ npm run build                 # compile .sdk/src/cmp -> .sdk/dist
 npm run generate              # emit/refresh the SDK into ../<lang>
 \`\`\`
 
-\`generate\` **merges** into existing files and does **not** re-apply
-placeholder substitution to merged content. If you ever see a literal
-\`ProjectName\` or \`GOMODULE\` in generated output, delete that one file and
-regenerate it fresh:
-
-\`\`\`bash
-rm <lang>/<the-file-with-the-placeholder>
-npm run generate
-\`\`\`
+${regenerationStatement()}
+${copiesStatement(model)}
 
 Note: the \`voxgig-sdkgen\` CLI only *scaffolds* (\`target add\` /
 \`feature add\`). Generation itself runs via \`npm run generate\` (backed by
@@ -168,13 +180,11 @@ so nothing downstream complains. To inspect the model layer **without side
 effects**, use \`npm run dry-generate\` (\`-y\`, writes nothing). Never
 \`--no-config\` in anything whose output might be committed.
 
-**Regeneration never DELETES.** A file the generator has stopped emitting
-stays in the tree, and \`git status\` is silent because it is committed and
-unchanged. Narrowing a feature's plugin selection, or dropping a target, can
-leave whole modules behind that nothing references and no test covers.
-
-To find either, the target trees must be deleted and regenerated — a
-regeneration in place cannot see stale output at all.
+**Dropping a target deletes nothing.** A run deletes only what it no longer
+emits from the targets and phases that ran, so a target dropped from the
+model, or a phase switched off, leaves its files in the tree, and \`git
+status\` is silent because they are committed and unchanged. Delete them by
+hand.
 `;
 }
 function featureSection() {

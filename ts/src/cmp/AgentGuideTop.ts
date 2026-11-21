@@ -121,8 +121,8 @@ target's feature container) for the generated adapter.
 })
 
 
-const AgentGuideTopWorkflow = cmp(function AgentGuideTopWorkflow() {
-  Content(workflowSection())
+const AgentGuideTopWorkflow = cmp(function AgentGuideTopWorkflow(props: any) {
+  Content(workflowSection(props.s.model))
 })
 
 

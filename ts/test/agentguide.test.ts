@@ -22,10 +22,11 @@ const T_TS = { name: 'ts', title: 'TypeScript', ext: 'ts' }
 const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false }
 const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } } }
 
-function makeModel(over: { ts?: boolean } = {}) {
+function makeModel(over: { ts?: boolean, copies?: string } = {}) {
   return applyFacts({
     name: 'demo', Name: 'Demo', const: { Name: 'Demo' },
     main: { kit: {
+      ...(null == over.copies ? {} : { copies: over.copies }),
       target: {
         ts: { active: false !== over.ts, ...T_TS },
         go: { active: true, ...T_GO },
@@ -119,11 +120,22 @@ describe('AgentGuideTop', () => {
     ok(agents!.includes('`log`') && agents!.includes('`test`'), 'lists features')
     ok(agents!.includes('`Advice`'), 'lists entities')
     ok(agents!.includes('ts/AGENTS.md'), 'links per-language guide')
-    ok(agents!.includes('ProjectName') && agents!.includes('regenerate'), 'merge gotcha')
+    const flat = agents!.replace(/\s+/g, ' ')
+    ok(!agents!.includes('merges** into') && !agents!.includes('never DELETES'), 'no merge or keep claim')
+    ok(flat.includes('deletes the files it generated before and no longer emits'), 'generate prunes')
+    ok(flat.includes('merge toolchain updates into the copies this project has edited'), 'an add merges')
     ok(!agents!.includes('Built-in features'), 'no fixed list of built-in features')
     ok(agents!.includes('each SDK target that supports it'), 'features reach the targets that take them')
     ok(!agents!.includes('every SDK target'), 'no claim that every target takes every feature')
     ok(agents!.includes('<lang>/src/feature/<name>/AGENTS.md'), 'names the per-feature guides ts writes')
+  })
+
+  test('says the add overwrites when the project regenerates .sdk in full', async () => {
+    const files = await render(AgentGuideTop, {}, undefined, { model: makeModel({ copies: 'overwrite' }) })
+    const agents = find(files, '/p/AGENTS.md')!.replace(/\s+/g, ' ')
+    ok(agents.includes("overwrite the templates and components in `.sdk/` (`main: kit: copies: 'overwrite'`)"),
+      'the overwrite rule')
+    ok(!agents.includes('merge toolchain updates into the copies this project has edited'), 'not the merge rule')
   })
 
   test('names no per-feature guide when no target writes one', async () => {
@@ -161,6 +173,10 @@ describe('AgentGuide — dir layout (ts/js)', () => {
     ok(find(files, 'ts/CLAUDE.md'), 'ts/CLAUDE.md exists')
 
     // Per-feature guides co-located (dir layout only).
+    const flat = agents!.replace(/\s+/g, ' ')
+    ok(flat.includes('Each `npm run generate` rewrites every file it generates'), 'regeneration')
+    ok(flat.includes('merge toolchain updates into the copies'), 'the add rule')
+
     ok(find(files, 'ts/src/feature/log/AGENTS.md'), 'log feature guide co-located')
     ok(find(files, 'ts/src/feature/test/AGENTS.md'), 'test feature guide co-located')
     ok(agents!.includes('./src/feature/log/AGENTS.md'), 'links the feature guide')
@@ -194,6 +210,34 @@ describe('AgentGuide — flat layout (go/py/php/rb/lua)', () => {
     ok(agents!.replace(/\s+/g, ' ').includes('no template per feature'), 'no per-feature template to name')
     ok(!agents!.includes('| Template |'), 'no template column')
   })
+})
+
+
+// The root guide and the README read the same copy mode.
+describe('AgentGuideTop — the copy mode agrees with the README', () => {
+  for (const copies of ['merge', 'overwrite']) {
+    test(copies, async () => {
+      const { fs, vol } = memfs({})
+      const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog([]) })
+      const cwd = process.cwd()
+      process.chdir(SCAFFOLD)
+      try {
+        const res = await sdkgen.generate({
+          model: compileModel(['ts'], undefined, `main: kit: copies: '${copies}'`), root: makeRoot(),
+        })
+        ok(true === res.ok, 'generated')
+      }
+      finally {
+        process.chdir(cwd)
+      }
+      const files = vol.toJSON() as Record<string, string>
+      const agents = files[Path.join(STAGE, 'AGENTS.md')].replace(/\s+/g, ' ')
+      const readme = files[Path.join(STAGE, 'README.md')].replace(/\s+/g, ' ')
+      const declared = "`main: kit: copies: 'overwrite'`"
+      deepStrictEqual([agents.includes(declared), readme.includes(declared)],
+        'overwrite' === copies ? [true, true] : [false, false])
+    })
+  }
 })
 
 
@@ -276,6 +320,8 @@ describe('AgentGuideFeature (dir layout)', () => {
     ok(agents!.includes('Active by default: **yes**'), 'log is active by default')
     ok(find(files, 'ts/src/feature/log/CLAUDE.md'), 'feature CLAUDE.md')
     ok(agents!.includes('every entity operation (list, load) and'), 'the operations the entities have')
+    ok(agents!.replace(/\s+/g, ' ').includes('deletes the files it generated before'), 'regeneration')
+    ok(!agents!.includes('ProjectName'), 'no placeholder leak advice')
     ok(!agents!.includes('patch'), 'no operation the model lacks')
   })
 

@@ -91,8 +91,8 @@ target's feature container) for the generated adapter.
 `);
     }
 });
-const AgentGuideTopWorkflow = (0, component_1.cmp)(function AgentGuideTopWorkflow() {
-    (0, jostraca_1.Content)((0, AgentGuideContent_1.workflowSection)());
+const AgentGuideTopWorkflow = (0, component_1.cmp)(function AgentGuideTopWorkflow(props) {
+    (0, jostraca_1.Content)((0, AgentGuideContent_1.workflowSection)(props.s.model));
 });
 const AgentGuideTopFeatureGuide = (0, component_1.cmp)(function AgentGuideTopFeatureGuide() {
     (0, jostraca_1.Content)((0, AgentGuideContent_1.featureSection)());

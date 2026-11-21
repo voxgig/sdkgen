@@ -506,13 +506,17 @@ markers on toolchain bumps): [regeneration-overwrite](./docs/explanation/regener
 ```
 edit sdkgen template/component
   └─▶ (consumer .sdk/) npm run add-target <lang>   # copy updated files in
-       └─▶ npm run generate                         # substitute + merge into target dir
+       └─▶ npm run generate                         # substitute + overwrite target dir
 ```
 
-**Merge gotcha:** `generate` merges into existing files, and placeholder
-replacement (`ProjectName`, `GOMODULE`, …) is **not** re-applied to
-merged content. If you see a literal `ProjectName` in output, delete that
-generated file and re-run `generate` to recreate it fresh.
+**Generate overwrites; an add merges.** `generate` rewrites every file it
+generates, substituting the placeholders (`ProjectName`, `GOMODULE`, …) on
+every run, and deletes the files it generated before and no longer emits
+from the targets and phases that ran (`pruneGenerated`). `target add` and
+`feature add` merge toolchain updates into the project's edited copies under
+`.sdk/`, or overwrite them when the project sets `main: kit: copies:
+'overwrite'` (`copyMode`). The generated guides say both, from
+`regenerationStatement` and `copiesStatement` in `AgentGuideContent`.
 
 A PROJECT customises in its own `.sdk`, in this order: edit the template or
 component copy; else define a feature of its own (`.sdk/model/feature/`,

@@ -38,6 +38,8 @@ npm run build        # only if you changed a component
 npm run generate     # refreshes this ${lang}/ directory
 \`\`\`
 
+${(0, AgentGuideContent_1.regenerationStatement)()}
+
 Then build and test the generated output:
 
 ${(0, AgentGuideContent_1.langCommandsBlock)(lang)}
@@ -53,6 +55,7 @@ ${(0, AgentGuideContent_1.langCommandsBlock)(lang)}
 Decision rule: *same for every API → template; depends on the API →
 component.* After editing a component run \`npm run build\` before
 \`npm run generate\`; template-only edits just need \`npm run generate\`.
+${(0, AgentGuideContent_1.copiesStatement)(model)}
 
 `);
         if (featuresOn && 0 < features.length) {

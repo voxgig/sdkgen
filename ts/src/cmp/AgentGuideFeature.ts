@@ -4,7 +4,7 @@ import { cmp } from '../helpers/component'
 import { fact } from '../helpers/facts'
 import { generatedOps } from '../helpers/opShape'
 
-import { claudePointer } from './AgentGuideContent'
+import { claudePointer, regenerationStatement } from './AgentGuideContent'
 
 
 function cap(s: string): string {
@@ -85,8 +85,8 @@ later feature can override an earlier one.
   \`.sdk/tm/${lang}/src/feature/${name}/\`, then regenerate.
 
 After any change: \`cd ../../../../.sdk && npm run generate\` (add
-\`npm run build\` first if you changed a component). If a regenerated file
-shows a literal \`FEATURE_Name\`/\`ProjectName\`, delete it and regenerate.
+\`npm run build\` first if you changed a component).
+${regenerationStatement()}
 
 To author a **new** feature, copy this one's model + template shape — see the
 [project guide](../../../../AGENTS.md) and the

@@ -115,7 +115,6 @@ const PLACEHOLDER_PINNED = [
   /^swift\/Package\.swift$/,
   /^swift\/README\.md$/,
   /^swift\/Tests\/ProjectNameSDKTests\//,
-  /^[^/]+\/src\/feature\/[^/]+\/AGENTS\.md$/,
   /^(elixir|swift)\/AGENTS\.md$/,
 ]
 
