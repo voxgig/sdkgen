@@ -778,6 +778,20 @@ describe('generate', () => {
   })
 
 
+  test('the first changelog entry is the version the targets start at', async () => {
+    const one = await generate(['ts', 'py'], undefined,
+      "main: kit: target: ts: publish: version: '1.2.0'\n" +
+      "main: kit: target: py: publish: version: '1.2.0'")
+    ok(/^## \[1\.2\.0\]$/m.test(one['CHANGELOG.md']), one['CHANGELOG.md'])
+    ok(!one['CHANGELOG.md'].includes('[0.0.1]'), one['CHANGELOG.md'])
+
+    const two = await generate(['ts', 'py'], undefined, "main: kit: target: ts: publish: version: '2.0.0'")
+    ok(/^## Initial release$/m.test(two['CHANGELOG.md']), two['CHANGELOG.md'])
+
+    ok(/^## \[0\.0\.1\]$/m.test((await generate(['ts']))['CHANGELOG.md']))
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 
