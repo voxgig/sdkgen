@@ -9,7 +9,7 @@ import {
 } from '../dist/sdkgen.js'
 
 import {
-  API_MODEL, KIT, STAGE, SCAFFOLD, makeModel, layeredFs, makeLog,
+  API_MODEL, KIT, STAGE, SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog,
 } from './generateharness'
 
 
@@ -373,43 +373,18 @@ function recording(model: any, reads: Record<string, Set<string>>): any {
 }
 
 
-// A path the docs-only run does not write but the full run does: a target's
-// template tree, copied by its Main.
-function templatePaths(model: any): Set<string> {
-  const out = new Set<string>()
-  for (const [name, t] of Object.entries(model.main[KIT].target) as [string, any][]) {
-    if (false === t.active) continue
-    const origin = '' !== (t.origname || '') ? t.origname : name
-    const tm = Path.join(SCAFFOLD, 'tm', origin)
-    if (!Fs.existsSync(tm)) continue
-    const prefix = 'root' === fact(t, 'place') ? '' : name + '/'
-    const walk = (dir: string, rel: string) => {
-      for (const entry of Fs.readdirSync(dir, { withFileTypes: true })) {
-        const r = '' === rel ? entry.name : rel + '/' + entry.name
-        if (entry.isDirectory()) walk(Path.join(dir, entry.name), r)
-        else out.add(prefix + r)
-      }
-    }
-    walk(tm, '')
-  }
-  return out
+function compile(v: Variation): any {
+  return makeModel(v.targets, undefined, v.extra, v.features, 'target', API)
 }
 
 
-async function generateDocs(
-  v: Variation, opts: { control?: () => void, reads?: boolean, root?: any } = {},
-): Promise<Run> {
+async function run(v: Variation, root: any, model: any): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
   const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
-  const holder: { node?: any } = {}
-  const reads: Record<string, Set<string>> = {}
-  const compiled = makeModel(v.targets, undefined, v.extra, v.features, 'target', API)
-  const model = opts.reads ? recording(compiled, reads) : compiled
-
   const cwd = process.cwd()
   process.chdir(SCAFFOLD)
   try {
-    const res = await sdkgen.generate({ model, root: opts.root ?? docsRoot(holder, opts.control) })
+    const res = await sdkgen.generate({ model, root })
     if (true !== res.ok) throw new Error(v.id + ': generation did not report ok')
   }
   finally {
@@ -422,8 +397,33 @@ async function generateDocs(
     if (null == c || rel.includes('.jostraca/') || rel.startsWith('.sdk/') || rel.startsWith('../')) continue
     files[rel] = c
   }
+  return files
+}
 
-  const present = new Set<string>([...Object.keys(files), ...templatePaths(compiled)])
+
+// A link resolves against everything the full Root writes for the variation,
+// where each Main placed its templates, not where the scaffold keeps them.
+const written = new Map<string, Set<string>>()
+
+async function writtenPaths(v: Variation): Promise<Set<string>> {
+  if (!written.has(v.id)) {
+    written.set(v.id, new Set(Object.keys(await run(v, makeRoot(), compile(v)))))
+  }
+  return written.get(v.id) as Set<string>
+}
+
+
+async function generateDocs(
+  v: Variation, opts: { control?: () => void, reads?: boolean, root?: any } = {},
+): Promise<Run> {
+  const holder: { node?: any } = {}
+  const reads: Record<string, Set<string>> = {}
+  const compiled = compile(v)
+  const model = opts.reads ? recording(compiled, reads) : compiled
+  const files = await run(v, opts.root ?? docsRoot(holder, opts.control), model)
+
+  const present = new Set<string>(Object.keys(files))
+  if (null == opts.root) for (const p of await writtenPaths(v)) present.add(p)
   return {
     id: v.id, files, present,
     lines: null == holder.node ? {} : attribute(holder.node, Object.fromEntries(
@@ -451,7 +451,7 @@ function slug(heading: string): string {
 
 function anchors(text: string): Set<string> {
   const out = new Set<string>()
-  const seen: Record<string, number> = {}
+  const seen = new Map<string, number>()
   let fence = false
   for (const line of text.split('\n')) {
     if (/^\s*(```|~~~)/.test(line)) fence = !fence
@@ -459,9 +459,9 @@ function anchors(text: string): Set<string> {
     const m = /^#{1,6}\s+(.*)$/.exec(line)
     if (!m) continue
     const s = slug(m[1])
-    const n = seen[s] || 0
+    const n = seen.get(s) ?? 0
     out.add(0 === n ? s : s + '-' + n)
-    seen[s] = n + 1
+    seen.set(s, n + 1)
   }
   return out
 }

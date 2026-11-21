@@ -624,8 +624,8 @@ at the root. The variations come from the compiled fixture; none is listed by
 hand, and the fixture's entity names are opaque tokens so a mention scan
 cannot mistake `console` or `record` for prose. It reports:
 
-- `link`: a relative link, anchor or `cd` that does not resolve in what that
-  run wrote (`.sdk/` and the templates a target's Main copies count).
+- `link`: a relative link, anchor or `cd` that does not resolve in what the
+  full Root writes for that variation (`.sdk/` counts too).
 - `off`: a line, in the run without X, that names X.
 - `parity`: an SDK target's section that does not read a fact (auth, servers)
   its siblings read, from the model reads attributed to each component.
