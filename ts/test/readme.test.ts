@@ -5,7 +5,7 @@ import { strictEqual, deepStrictEqual, ok, match } from 'node:assert'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeExplanation, ReadmeErrors } from '../dist/sdkgen.js'
+import { ReadmeExplanation, ReadmeErrors, applyFacts } from '../dist/sdkgen.js'
 import { ReadmeStation } from '../dist/cmp/ReadmeStation.js'
 import { PIPELINE_STAGES, pipelineLength } from '../dist/cmp/FeatureHook'
 import { generateDocs } from './textguard'
@@ -240,13 +240,15 @@ describe('ReadmeErrors', () => {
 
 describe('ReadmeStation', () => {
 
-  const stationModel = (station: any, auth: boolean, target: any) => ({
+  const stationModel = (station: any, auth: boolean, target: any) => applyFacts({
     name: 'demo', const: { Name: 'Demo', name: 'demo' },
     main: { kit: {
       entity: {},
       config: { auth: { active: auth } },
       target,
-      feature: { station: { name: 'station', ...station } },
+      feature: {
+        station: { name: 'station', config: { options: { active: false } }, ...station },
+      },
     } },
   })
 
@@ -272,6 +274,13 @@ describe('ReadmeStation', () => {
     const out = await renderStation(stationModel({ active: true }, true, ts), ts.ts)
     match(out, /## Use with Station/)
     match(out, /### The secret name derives from the instance/)
+  })
+
+  test('a station on by default says so', async () => {
+    const on = { active: true, config: { options: { active: true } } }
+    const out = await renderStation(stationModel(on, true, ts), ts.ts)
+    match(out, /present and \*\*on by default\*\*\./)
+    ok(!/off by default/.test(out), out)
   })
 
   test('an API with no credential gets no secret-name paragraph', async () => {
