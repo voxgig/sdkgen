@@ -43,7 +43,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
     : `${ident}_sdk_new(NULL)`
 
   Content(`\`\`\`c
-#include "core/api.h"
+${authActive ? '#include <stdlib.h>\n' : ''}#include "core/api.h"
 
 ${model.const.Name}SDK* client = ${ctor};
 PNError* err = NULL;

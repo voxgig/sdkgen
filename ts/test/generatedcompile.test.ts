@@ -9198,22 +9198,26 @@ function rustExample(block: DocBlock, imports: string[]): string {
 function zigExamples(blocks: DocBlock[]): string {
   const parts: string[] = []
   const calls: string[] = []
+  let usesInit = false
   blocks.forEach((block, i) => {
     const body = block.code.split('\n').filter((l) => !/^const (std|sdk|h) = /.test(l))
     const code = body.map((l) => l.replace(/\/\/.*$/, '')).join('\n')
     const declared = [...code.matchAll(/^(?:const|var) (\w+)\b/gm)].map((m) => m[1])
     const given = ['client', 'options', 'testopts', 'sdkopts']
       .filter((n) => !declared.includes(n) && new RegExp('\\b' + n + '\\b').test(code))
+    // A zig program reaches its environment only through what main receives.
+    const init = !declared.includes('init') && /\binit\./.test(code)
+    usesInit = usesInit || init
     parts.push(
       '// ' + block.doc + ':' + block.line,
-      'fn example' + i + '() !void {',
+      'fn example' + i + '(' + (init ? 'init: std.process.Init' : '') + ') !void {',
       ...given.map((n) => '    const ' + n + ' = ' +
         ('client' === n ? 'sdk.test_sdk(h.vnull(), h.vnull())' : 'h.vnull()') + ';'),
       ...body,
       ...declared.map((n) => '    _ = &' + n + ';'),
       '}',
       '')
-    calls.push('    try example' + i + '();')
+    calls.push('    try example' + i + '(' + (init ? 'init' : '') + ');')
   })
   return [
     'const std = @import("std");',
@@ -9221,7 +9225,7 @@ function zigExamples(blocks: DocBlock[]): string {
     'const h = sdk.h;',
     '',
     ...parts,
-    'pub fn main() !void {',
+    'pub fn main(' + (usesInit ? 'init: std.process.Init' : '') + ') !void {',
     ...calls,
     '}',
     '',
