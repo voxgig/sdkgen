@@ -9,7 +9,7 @@ import { memfs } from 'memfs'
 
 import { GENERATED_LOG, readGenerated, pruneGenerated } from '../dist/helpers/generated.js'
 import {
-  SdkGen, cmp, each, names, Project, Folder, File, Content, Main, PublishWorkflow,
+  SdkGen, cmp, each, names, Project, Folder, File, Content, Main, PublishWorkflow, fact,
 } from '../dist/sdkgen.js'
 
 import {
@@ -430,10 +430,10 @@ describe('generation prunes what the model no longer produces', () => {
       ctx$.stdrep = {}
       names(ctx$.stdrep, model.Name, 'ProjectName')
 
-      const phase = model.main[KIT].phase || {}
+      const kit = model.main[KIT]
       Project({}, () => {
-        if (false !== phase.top?.active) Top({})
-        if (false !== phase.build?.active) BuildSDK({})
+        if (fact(kit, 'top')) Top({})
+        if (fact(kit, 'build')) BuildSDK({})
         each(false === opts.main ? {} : model.main[KIT].target, (target: any) => {
           names(target, target.name)
           Folder({ name: target.name }, () => Main({ target }))

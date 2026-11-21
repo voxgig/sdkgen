@@ -65,7 +65,7 @@ import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
-import { applyFacts, fact } from './helpers/facts'
+import { applyFacts, fact, refuseRootPlan } from './helpers/facts'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
 import { cmp as labelledCmp } from './helpers/component'
 import type { DepEntry } from './helpers/collectDeps'
@@ -380,6 +380,7 @@ function SdkGen(opts: SdkGenOptions) {
         .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }))
 
     checkExternalFolders(external, root, fs)
+    refuseRootPlan(model, external.map((ext) => ext.name))
 
     const tree: { root?: any } = {}
     const jres = await jostraca.generate(jopts, keepingTree(

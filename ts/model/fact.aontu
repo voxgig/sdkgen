@@ -8,8 +8,32 @@ main: kit: feature: &: {
   }
 }
 
+# The root plan: whether a run writes the root documents and the per-entity
+# test data. `top` is quoted: unquoted in a reference, it is a keyword to aontu
+# at the version pinned here.
+main: kit: fact: {
+  top: maybe($.main.kit.phase."top".active)
+  build: maybe($.main.kit.phase.build.active)
+}
+
+# A target's phases run unless its model turns them off. The base model does
+# not declare them, so their defaults are declared here, for this pass only.
 main: kit: target: &: {
+  phase: {
+    entity: active: *true | boolean
+    feature: active: *true | boolean
+    readme: active: *true | boolean
+    agentguide: active: *true | boolean
+    test: active: *true | boolean
+  }
   fact: {
     place: match(maybe(..output), { root: true }, "root", { path: "" }, "folder", "external")
+    phase: {
+      entity: ...phase.entity.active
+      feature: ...phase.feature.active
+      readme: ...phase.readme.active
+      agentguide: ...phase.agentguide.active
+      test: ...phase.test.active
+    }
   }
 }

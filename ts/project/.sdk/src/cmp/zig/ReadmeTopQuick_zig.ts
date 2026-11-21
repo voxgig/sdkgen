@@ -33,7 +33,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const authActive = isAuthActive(model)
   const ctor = authActive
-    ? `sdk.${model.const.Name}SDK.new(h.jo(&.{\n    .{ "apikey", h.vstr(std.posix.getenv("${envName(model)}_APIKEY") orelse "") },\n}))`
+    ? `sdk.${model.const.Name}SDK.new(h.jo(&.{\n    .{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },\n}))`
     : `sdk.${model.const.Name}SDK.new(h.vnull())`
 
   Content(`\`\`\`zig
@@ -41,7 +41,7 @@ const std = @import("std");
 const sdk = @import("sdk");
 const h = sdk.h;
 
-const client = ${ctor};
+${authActive ? '// init is the std.process.Init that main receives.\n' : ''}const client = ${ctor};
 
 `)
 

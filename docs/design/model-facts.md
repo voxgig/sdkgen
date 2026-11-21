@@ -27,6 +27,12 @@ read it; none of them computes it.
     `AgentGuideFeature` read it before.
   - `target.fact.place`: `root` when `output.root` is true; `folder` when
     `output.path` is empty; `external` otherwise.
+  - `main.kit.fact.top` and `main.kit.fact.build`: whether a run writes the
+    root documents and the per-entity test data (WP02).
+  - `target.fact.phase`: the five phases a target runs (`entity`, `feature`,
+    `readme`, `agentguide`, `test`), each on unless the target's model turns
+    it off. The base model declares no target phases, so the rules declare
+    their defaults, for the fact pass only (WP02).
 - **The pass** is `applyFacts` (`ts/src/helpers/facts.ts`). `generate()` runs
   it after `guardModelNames` and `guardFlowSteps`, before Root. It evaluates
   the rules over the generated model, minus the entity and flow maps that no
@@ -34,8 +40,14 @@ read it; none of them computes it.
 - **The accessor** is `fact(node, name)`. It throws when the node has no
   such fact, which names both causes: the model did not pass through
   `applyFacts`, or it lacks what the rule reads.
-- **The first reader** is `AgentGuideFeature`, which reads `fact(feature,
-  'on')` in place of its own expression.
+- **The readers.** `AgentGuideFeature` reads `fact(feature, 'on')` in place
+  of its own expression. The root plan's readers are testkit's default Root,
+  the suite's `makeRoot`, `ExternalTarget` and `AgentGuideContent` (WP02).
+- **The refusal.** `refuseRootPlan` runs in `generate()` once the run's
+  out-of-tree targets are known: two targets at the project root, or one
+  there while the top phase is on, are refused with the messages
+  create-sdkgen's scaffold Root gives. A target that declares no `output`
+  claims no place.
 
 Generated output is byte-identical: the characterization golden
 (`ts/test/characterize.test.ts`) passes unchanged. `ts/test/facts.test.ts`
@@ -70,6 +82,7 @@ value. Reported as aontu-lang/aontu#847.
 | A `match` whose result is a relative reference overflows the stack in TypeScript | aontu-lang/aontu#850 | A rule's results are literals or absolute references |
 | `key()` read through a reference from a shallower site gives a stale key | aontu-lang/aontu#463 | No rule refers to a node holding `key()` from a shallower site |
 | A node cannot filter the map it sits in | by design | A fact about a collection (the targets that consume `go`) sits outside that collection, over a `copy()` of it |
+| A reference cannot name a key called `top`, which 0.76.3 reads as a keyword | fixed on aontu main | The rule quotes the key: `$.main.kit.phase."top".active` |
 
 When aontu releases a fix, the matching workaround goes, and the rule says
 what it means directly.

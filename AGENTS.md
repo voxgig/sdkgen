@@ -263,7 +263,8 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 A fact that generated text or code depends on (whether a feature is on by
 default, where a target is placed) is computed ONCE, by an aontu rule in
 `ts/model/fact.aontu`, and written into the model beside what it describes
-as `fact`: `feature.fact.on`, `target.fact.place`. `generate()` runs the rules
+as `fact`: `feature.fact.on`, `target.fact.place`, `target.fact.phase`,
+`main.kit.fact.top`. `generate()` runs the rules
 (`applyFacts`, `ts/src/helpers/facts.ts`) after the name guards and before
 Root, so every component, every pack and docgen read the same answer.
 

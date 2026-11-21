@@ -2,10 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.applyFacts = applyFacts;
 exports.fact = fact;
+exports.refuseRootPlan = refuseRootPlan;
 const node_fs_1 = require("node:fs");
 const aontu_1 = require("aontu");
 const apidef_1 = require("@voxgig/apidef");
 const shipped_1 = require("./shipped");
+const utility_1 = require("../utility");
 // No fact rule reads these, and they are most of a large model.
 const UNREAD = ['entity', 'flow'];
 function isMap(v) {
@@ -14,7 +16,9 @@ function isMap(v) {
 function copyFacts(from, to) {
     for (const [key, val] of Object.entries(from)) {
         if ('fact' === key) {
-            to.fact = val;
+            if (isMap(val) && 0 < Object.keys(val).length) {
+                to.fact = val;
+            }
         }
         else if (isMap(val) && isMap(to[key])) {
             copyFacts(val, to[key]);
@@ -53,5 +57,25 @@ function fact(node, name) {
             'the model did not pass through applyFacts, or lacks what the fact reads');
     }
     return facts[name];
+}
+// A plan no Root can write: several targets claiming the project root, or a
+// target there beside the root documents, which would overwrite its own.
+// `external` names the targets this run writes elsewhere; a target with no
+// `output` claims no place at all.
+function refuseRootPlan(model, external = []) {
+    const kit = model.main[apidef_1.KIT];
+    const target = kit.target || {};
+    const atRoot = Object.keys(target).sort().filter((name) => !external.includes(name) && false !== target[name].active &&
+        null != target[name].output && 'root' === fact(target[name], 'place'));
+    if (1 < atRoot.length) {
+        throw new utility_1.SdkGenError('Only one target can be generated at the project root, and ' +
+            atRoot.length + ' declare `output: root: true`: ' + atRoot.join(', ') + '.');
+    }
+    if (1 === atRoot.length && fact(kit, 'top')) {
+        throw new utility_1.SdkGenError('Target "' + atRoot[0] + '" is generated at the project root, where the ' +
+            'SDK repository files (README, LICENSE, Makefile, workflows) would ' +
+            'overwrite its own. Declare `main: kit: phase: top: active: false` in ' +
+            'model/project.aontu.');
+    }
 }
 //# sourceMappingURL=facts.js.map

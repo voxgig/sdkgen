@@ -160,12 +160,14 @@ describe('testkit over the fixture package', () => {
   })
 
 
-  // The placement the standard Root gives the same declaration.
+  // The placement the standard Root gives the same declaration, which it
+  // takes only with the root documents switched off.
   test('a target declaring `output: root` is generated at the project root',
     async () => {
       const out = await generateInto(consumer, {
         model: consumerModel(consumer.sdk,
-          'main: kit: target: wtest: output: root: true'),
+          'main: kit: target: wtest: output: root: true\n' +
+          'main: kit: phase: top: active: false'),
       })
 
       ok(null != out.files['src/client.wt'],
@@ -173,6 +175,22 @@ describe('testkit over the fixture package', () => {
       deepStrictEqual(
         Object.keys(out.files).filter((p) => p.startsWith('wtest/')), [],
         'still generated under wtest/')
+    })
+
+
+  test('the root documents are written only on request, and follow the top phase',
+    async () => {
+      ok(null == files['README.md'], 'the default call wrote a root README')
+
+      const asked = await generateInto(consumer, {
+        model: consumerModel(consumer.sdk), top: true })
+      ok(null != asked.files['README.md'], 'no root README with `top: true`')
+
+      const off = await generateInto(consumer, {
+        model: consumerModel(consumer.sdk, 'main: kit: phase: top: active: false'),
+        top: true,
+      })
+      ok(null == off.files['README.md'], 'a root README with the top phase off')
     })
 
 
