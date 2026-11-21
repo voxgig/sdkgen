@@ -6,7 +6,26 @@ import { equal, match, doesNotMatch } from 'node:assert'
 
 // Built module, matching the other suites: the compiled test runs from
 // dist-test/, where a ../src path does not resolve.
-import { MIN_REPORTED_BRANCHES } from '../dist/cmp/ReadmeUnions.js'
+import { MIN_REPORTED_BRANCHES, ReadmeUnions } from '../dist/cmp/ReadmeUnions.js'
+import { Jostraca, Project, Folder, File } from 'jostraca'
+import { memfs } from 'memfs'
+
+
+async function renderFor(target: string): Promise<string> {
+  const model = { main: { kit: { entity: { pet: {
+    name: 'pet', fields: { tag: { n: 'tag', union: { branches: 3, depth: 1 } } },
+  } } } } }
+  const quiet: any = { info() {}, debug() {}, warn() {}, error() {}, trace() {}, fatal() {} }
+  quiet.child = () => quiet
+  const { fs, vol } = memfs({})
+  await Jostraca().generate({ fs: () => fs, folder: '/x', model, log: quiet }, () => {
+    Project({ folder: 'p' }, () => Folder({ name: 'd' }, () => File({ name: 'out.md' }, () => {
+      ReadmeUnions({ target: { name: target } })
+    })))
+  })
+  const json: any = vol.toJSON()
+  return json[Object.keys(json).find((k) => k.endsWith('out.md'))!]
+}
 
 
 // Render the section the way the component does, from the same row-selection
@@ -89,6 +108,13 @@ describe('readme-unions', () => {
     doesNotMatch(src, /\bhonest\b/i)
   })
 
+
+  test('every other field is typed only where the language joins a union', async () => {
+    match(await renderFor('ts'), /Every other field is typed normally\./)
+    const go = await renderFor('go')
+    doesNotMatch(go, /^Every other field is typed normally\./m)
+    match(go, /A field with two variants is an open value here too/)
+  })
 
   test('nesting depth is singular at one level', () => {
     const src = require('node:fs')
