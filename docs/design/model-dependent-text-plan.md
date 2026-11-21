@@ -60,7 +60,7 @@ one of these functions, read the fact that replaces it:
 | `jvmPackage`, `pyPackageName` | the target's package facts | rule |
 | `rootPlan`, `phaseActive` | the root plan and phase facts | rule |
 | `modelCopyMode` | `main.kit.copies`, read directly | a model value already |
-| `guardModel` | unchanged: the name, flow-step and inactive-operation guard stays code, runs before the facts, and is exported for docgen | code |
+| `guardModel` | unchanged: the name, flow-step and inactive-operation guard stays code, runs before the facts wherever a model is prepared, and is exported for docgen | code |
 
 Shared helpers that already have one home (`configDefinition`,
 `targetFeatures`, `entityOps`, `introOps`, `serverVariables`, `packageName`,
@@ -106,6 +106,15 @@ work that owns create-sdkgen's releases (section 6).
   `fact(node, name)` and compute nothing (section 0). Where aontu 0.76.3
   cannot express a rule, the fact pass computes it in code and writes it into
   the model; `docs/design/model-facts.md` lists each such workaround.
+- **A fact is read only from a prepared model.** Preparing a model means the
+  guards, then `applyFacts`. `generate()` prepares its model before anything
+  reads it, `warnUngeneratedOps` included. A reader outside `generate()`
+  prepares the model it holds the same way, first: the actions through
+  `resolveModel`, `admin/status.ts` and docgen's standalone run over
+  `sdk.json`, and `package check` over the model it compiles for each item.
+  The first package to read a fact in one of these places adds the
+  preparation there: WP14 for `generate()`'s order and the actions, WP20 for
+  status and `package check`, WP26a for docgen.
 - **Verification.** Each package builds and runs its own suite (`make build
   test` in sdkgen, `make all` in apidef). A claim that a language was built or
   run comes from the `command -v` loop in `AGENTS.md` in the environment where
@@ -142,7 +151,10 @@ work that owns create-sdkgen's releases (section 6).
   of `publish.yml` in the other repositories, after the maintainer asks;
   `embed-version` runs before it. A pack release moves the version in both of
   its manifests together. The packs and docgen read facts from the model they
-  are given rather than importing new exports. docgen's standalone run imports
+  are given rather than importing a derivation for each, and each declares its
+  sdkgen floor at the release that computes the facts it reads: below it the
+  facts are absent, so `package add` refuses a pack by its `engines.sdkgen`
+  rather than letting generate fail. docgen's standalone run imports
   `guardModel` and `applyFacts` through a namespace import with a fallback,
   because a named import of a newer export fails at its floor.
 
@@ -684,11 +696,16 @@ are unused: review folded those packages into WP28 and WP26a.
   an `output.path` of `''` is undeclared). Rules add `main.kit.fact.active`, the
   active targets, and `target.fact.link`, each root document's relative link
   from the target's directory, absent when the document is not written: an
-  out-of-tree target, or `main.kit.phase.top` off. Commit 2:
-  `ts/src/helpers/alongside.ts:20-37` links through the link fact and writes no
-  note when it is absent, keeping the public signature with an optional third
-  argument (S38); `ts/src/cmp/AgentGuide.ts:43-54,120` and
-  `ts/src/cmp/AgentGuideFeature.ts:84-90` (S39, S40);
+  out-of-tree target, or `main.kit.phase.top` off. The same commit prepares
+  the two models commit 3 reads facts from: `generate()` calls
+  `warnUngeneratedOps` after `applyFacts`, the guards still first, because
+  `targetOrigins` will read the active fact; and `resolveModel`
+  (`ts/src/sdkgen.ts:516`), the model every action reads, runs the guards and
+  then `applyFacts`, without the guards' notices, which belong to a generate
+  run. Commit 2: `ts/src/helpers/alongside.ts:20-37` links through the link
+  fact and writes no note when it is absent, keeping the public signature
+  with an optional third argument (S38); `ts/src/cmp/AgentGuide.ts:43-54,120`
+  and `ts/src/cmp/AgentGuideFeature.ts:84-90` (S39, S40);
   `ts/src/cmp/AgentGuideContent.ts:59,126` (S07, S40);
   `ts/src/cmp/AgentGuideTop.ts:53-56` prints "—" for an unwritten guide (S43);
   `ts/src/cmp/ReadmeTop.ts:392,396,418,689` (S45);
@@ -703,7 +720,9 @@ are unused: review folded those packages into WP28 and WP26a.
   output-external-ts. `ts/test/publishworkflow.test.ts` (only js as npm target
   gives `cd js`); `ts/test/external.test.ts` (no `../README.md` in the
   destination); `ts/test/facts.test.ts` (the place fact over every guard
-  variation equals the plan the guard's Root follows).
+  variation equals the plan the guard's Root follows; an action's model
+  carries the facts generate's carries; `warnUngeneratedOps` names the same
+  operations after the move).
 - **Output change.** Docs: the go-cli and go-mcp `AGENTS.md` links in every
   default project become "—"; links dropped under phase-off and out-of-tree
   passes; publish workflows of root-placed npm targets.
@@ -771,7 +790,8 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** None for valid projects; a hand-edited project without
   `test` now fails generate instead of producing an SDK that fails at run
   time.
-- **Depends on.** WP13; decision DQ7.
+- **Depends on.** WP13; WP14 and WP20, which prepare the models doctor and
+  `package check` read; decision DQ7.
 - **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
 - **Size.** About 4 source files plus `ts/dist`, `ADR.md`, 3 test files.
 
@@ -780,17 +800,19 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Goal.** Make the tools around generate use the same placement and surface
   answers as generate.
 - **Resolves.** U90, U91, U94, U100, U101.
-- **Changes.** `ts/src/admin/status.ts:56-60` resolves the folder through
-  the place fact and the override and reports an in-tree folder of an external
-  target as stale (U90). `ts/src/action/remove.ts:285-300` reads the override
-  as generate does (U91). `ts/src/testkit.ts:425-455` passes
+- **Changes.** `ts/src/admin/status.ts` prepares the `sdk.json` it reads
+  (`:29`; the guards, then `applyFacts`), resolves the folder through the place
+  fact and the override (`:56-60`), and reports an in-tree folder of an
+  external target as stale (U90). `ts/src/action/remove.ts:285-300` reads
+  the override as generate does (U91). `ts/src/testkit.ts:425-455` passes
   `GenerateOptions.external` to SdkGen (U94). `ts/src/action/check.ts` and
   `ts/src/helpers/manifest.ts` require parity `CONSUMER` exactly when
-  the surface fact is not `sdk` (U100), and report an unknown surface word
-  naming the release that knows it, never failing generate (U101).
+  the surface fact is not `sdk`, `package check` applying the facts to the
+  model it compiles for each target (U100), and report an unknown surface
+  word naming the release that knows it, never failing generate (U101).
 - **Tests.** `ts/test/admin-status.test.ts` and `ts/test/remove.test.ts` with
-  `SDKGEN_EXTERNAL`; `ts/test/testkit.test.ts`;
-  `ts/test/packagecheck.test.ts`.
+  `SDKGEN_EXTERNAL`, and status over an `sdk.json` without facts;
+  `ts/test/testkit.test.ts`; `ts/test/packagecheck.test.ts`.
 - **Output change.** None in generated files.
 - **Depends on.** WP13, WP14; decision DQ4.
 - **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
@@ -1474,14 +1496,16 @@ are unused: review folded those packages into WP28 and WP26a.
   `requiredOptions`, numbered steps, result-shape sentences, entity-state
   rows, language-keyed field types, `entityDescription`, the ReadmeOptions
   fate, the dart module tree naming no feature (S15's pack half), and the docs
-  Root built from the root plan facts. The pack reads facts from the model it
-  is given and imports nothing new; the floor stays `>=4.43.0`; version moves
-  with both manifests.
+  Root built from the root plan facts. The pack reads those facts with
+  `fact()` from the model it is given, so its sdkgen floor rises to R3
+  (4.48.0), the release its parity ports follow, by which every fact it reads
+  is computed. The floor and the version move in both manifests, and a
+  project updates sdkgen before the pack.
 - **Tests.** `test/langpack.test.js`: auth-off and query-placement option
   tables; a list-only lean intro; the root README package cell equals the
   pubspec name; Basic in the query sets no authorization header; rows keep
   their cell count with a pipe and a newline. `test/parity.test.js` against
-  the bundled siblings; floor and head lanes.
+  the bundled siblings; the floor lane, moved to R3, and the head lane.
 - **Output change.** Docs, and dart's auth behaviour under Basic in the query.
 - **Depends on.** WP28, WP29, WP31, WP33 (R3 published), WP45; decision DQ9.
 - **Release.** R-LP2 (sdkgen-langpack patch or minor), in sdkgen-langpack.
@@ -1528,7 +1552,7 @@ are unused: review folded those packages into WP28 and WP26a.
 | R-DG3 | docgen | patch | WP26b | R2, R-DG2 | Needs DQ3 and DQ21. |
 | R-CS2 | create-sdkgen | releases following each sdkgen release | WP44b | R1 | Moves the sdkgen, apidef and docgen pins together; the Root reads the plan facts, which need R1. |
 | R3 | sdkgen | minor 4.48.0 | WP28, WP33, WP29, WP31, WP34, WP37, WP30, WP32, WP35, WP36, WP38, WP39, WP40 | R2 | The one copy wave; doctor reports copies outdated once in every project. |
-| R-LP2 | sdkgen-langpack | patch or minor | WP41, WP42 | R3, R-LP1 | Floor stays >=4.43.0; the pack reads facts from the model. |
+| R-LP2 | sdkgen-langpack | patch or minor | WP41, WP42 | R3, R-LP1 | Raises the pack's sdkgen floor to R3 in both manifests: the facts it reads are absent below it. |
 
 The sdkgen version numbers assume nothing else is released in between; each
 release takes the next free minor.
@@ -1756,10 +1780,12 @@ Risks:
   trees doctor passes and `tsc` refuses; WP12 ships in R1 so the advice is
   right before R3.
 - A fact a pack or docgen reads is absent below the sdkgen release that
-  computes it; `fact()` names it rather than printing nothing, and the floor
-  lanes exercise the absence. docgen's standalone import of `guardModel` and
-  `applyFacts` compiles at head and fails at its floor by named import; review
-  enforces a namespace import with a fallback for those two.
+  computes it, so each declares its floor at that release (R-LP2 at R3, R-DG2
+  at R2) and runs its floor lane there; on a model without the fact, `fact()`
+  names it rather than printing nothing. docgen's standalone import of
+  `guardModel` and `applyFacts` compiles at head and fails at its floor by
+  named import; review enforces a namespace import with a fallback for those
+  two.
 - Open decisions can fragment the releases; R2 and R3 are cut with what is
   decided, and the packages left out are recorded in the release notes.
 - The guard's pins (about 101) can hide a real finding; each needs a reason,

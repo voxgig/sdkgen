@@ -258,7 +258,11 @@ Each fact is computed once, by a rule in `ts/model/fact.aontu`, and written
 into the model as a `fact` map beside the node it describes. `generate()` runs
 the rules (`applyFacts`) after the name guards and before Root. Components,
 code generators, packs and docgen read a fact with `fact(node, name)`, which
-fails when the fact is absent, and none of them computes one. The rules run
+fails when the fact is absent, and none of them computes one. A fact is read
+only from a prepared model, the guards and then the facts: `generate()`
+prepares its model before anything reads it, and a reader outside it (the
+actions through `resolveModel`, `admin/status.ts`, `package check`, docgen
+standalone) prepares the model it holds the same way, first. The rules run
 over the generated model, where every default is a value, because aontu's
 `filter` and `match` do not read a default inside a map.
 `docs/design/model-facts.md` gives the mechanism, the aontu gaps it works
@@ -493,8 +497,10 @@ up to 4.42.0 and the generated note from 4.43.0, while exporting one function
 under both names wrote the title twice at head and the suite passed it.
 
 Two things hold for any pack. A pack reads facts from the model it is given,
-so it imports nothing new: a fact the sdkgen at its floor does not compute is
-absent, and `fact()` names it. A pack declares
+so it needs a generator that computes them: a pack that reads a fact declares
+its sdkgen floor at the release that computes it, in both manifests, and
+`package add` refuses it below that floor by its `engines.sdkgen`. On a model
+without the fact, `fact()` names it. A pack declares
 `surface` and `consumes` in its target files, and a schema older than the
 slots ignores them (measured at 4.34.2). The infrastructure pack's
 `seneca-provider` (floor 4.33.0) is the first packaged consumer and declares
@@ -640,10 +646,10 @@ model-specific claims from them, without a gate.
   `secret`; lean has neither `secret` nor `server`). Each quick start prints
   what its own runtime takes.
 - **Vendor text never fails a build.**
-- **Nothing here raises a pack's floor.** A pack reads facts from the model
-  it is given, and a fact its floor does not compute is absent; when it
-  raises its floor is its own decision, as the language pack's move to 4.43.0
-  was.
+- **Nothing here forces a pack's floor up.** A pack keeps its present text
+  until it reads facts, and reading one raises its floor to the release that
+  computes it. When it does so is its own decision, as the language pack's
+  move to 4.43.0 was; the plan moves it to R3 with its parity wave.
 - **docgen keeps `kind` first** for its editions.
 
 ## 14. Found while designing
