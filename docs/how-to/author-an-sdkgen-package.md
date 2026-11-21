@@ -207,7 +207,7 @@ Everything it calls is the real thing: `addPackage` is `package add`,
 `generateInto` is a real generation run. That is the point — a kit that
 reimplemented any of it would pass while the shipped path was broken.
 
-Three details worth knowing:
+Four details worth knowing:
 
 - **A target that generates out of tree must declare where.** `generateInto`
   treats a generated path outside the consumer root as a bug, because that
@@ -226,6 +226,12 @@ Three details worth knowing:
   with a CWD-relative path, because that is where a consumer runs
   `generate`. The kit sets and restores the working directory for you; if
   you call `generate()` yourself, use `consumer.inSdk(...)`.
+- **The root documents are written only on request.** `generateInto`
+  writes no root README, agent guide or license unless you pass
+  `top: true`, and then only while the model's top phase is on, as the
+  standard Root writes them. A target generated at the project root
+  (`output: root: true`) needs `main: kit: phase: top: active: false`, or
+  generation refuses the model, as it does for a project.
 
 A worked example ships with sdkgen: `ts/test/fixture/acme-widgets/` is a
 complete package — a target, a feature with an overlay, and a docs item —

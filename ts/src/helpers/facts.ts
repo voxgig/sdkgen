@@ -4,6 +4,7 @@ import { Aontu } from 'aontu'
 import { KIT } from '@voxgig/apidef'
 
 import { factRulesFile } from './shipped'
+import { SdkGenError } from '../utility'
 
 
 // No fact rule reads these, and they are most of a large model.
@@ -18,7 +19,9 @@ function isMap(v: any): boolean {
 function copyFacts(from: any, to: any): void {
   for (const [key, val] of Object.entries(from)) {
     if ('fact' === key) {
-      to.fact = val
+      if (isMap(val) && 0 < Object.keys(val as object).length) {
+        to.fact = val
+      }
     }
     else if (isMap(val) && isMap(to[key])) {
       copyFacts(val, to[key])
@@ -68,7 +71,35 @@ function fact(node: any, name: string): any {
 }
 
 
+// A plan no Root can write: several targets claiming the project root, or a
+// target there beside the root documents, which would overwrite its own.
+// `external` names the targets this run writes elsewhere; a target with no
+// `output` claims no place at all.
+function refuseRootPlan(model: any, external: string[] = []): void {
+  const kit = model.main[KIT]
+  const target = kit.target || {}
+  const atRoot = Object.keys(target).sort().filter((name: string) =>
+    !external.includes(name) && false !== target[name].active &&
+    null != target[name].output && 'root' === fact(target[name], 'place'))
+
+  if (1 < atRoot.length) {
+    throw new SdkGenError(
+      'Only one target can be generated at the project root, and ' +
+      atRoot.length + ' declare `output: root: true`: ' + atRoot.join(', ') + '.')
+  }
+
+  if (1 === atRoot.length && fact(kit, 'top')) {
+    throw new SdkGenError(
+      'Target "' + atRoot[0] + '" is generated at the project root, where the ' +
+      'SDK repository files (README, LICENSE, Makefile, workflows) would ' +
+      'overwrite its own. Declare `main: kit: phase: top: active: false` in ' +
+      'model/project.aontu.')
+  }
+}
+
+
 export {
   applyFacts,
   fact,
+  refuseRootPlan,
 }

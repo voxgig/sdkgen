@@ -26,6 +26,7 @@ function makeModel() {
         ts: { active: true, ...T_TS },
         go: { active: true, ...T_GO },
         old: { active: false, name: 'old', title: 'Old' },
+        'go-cli': { active: false, ...T_GOCLI },
       },
       feature: {
         log: {
@@ -48,12 +49,17 @@ function makeModel() {
 
 
 // Render a component (optionally inside an ambient target folder) and return
-// the memfs file map (path -> content).
+// the memfs file map (path -> content). A target is named, and read from the
+// model, which is where its facts are.
 async function render(comp: any, props: any, folder?: string): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
   const jostraca = Jostraca()
+  const model = makeModel()
+  if ('string' === typeof props.target) {
+    props = { ...props, target: model.main.kit.target[props.target] }
+  }
   await jostraca.generate(
-    { fs: () => fs, folder: '/x', model: makeModel(), log },
+    { fs: () => fs, folder: '/x', model, log },
     () => {
       Project({ folder: 'p' }, () => {
         if (folder) {
@@ -112,7 +118,7 @@ describe('AgentGuideTop', () => {
 
 describe('AgentGuide — dir layout (ts/js)', () => {
   test('emits guide-relative commands and per-feature guides', async () => {
-    const files = await render(AgentGuide, { target: T_TS }, 'ts')
+    const files = await render(AgentGuide, { target: 'ts' }, 'ts')
 
     const agents = find(files, 'ts/AGENTS.md')
     ok(agents, 'ts/AGENTS.md exists')
@@ -138,7 +144,7 @@ describe('AgentGuide — dir layout (ts/js)', () => {
 
 describe('AgentGuide — flat layout (go/py/php/rb/lua)', () => {
   test('documents features inline, emits no per-feature files', async () => {
-    const files = await render(AgentGuide, { target: T_GO }, 'go')
+    const files = await render(AgentGuide, { target: 'go' }, 'go')
 
     const agents = find(files, 'go/AGENTS.md')
     ok(agents, 'go/AGENTS.md exists')
@@ -157,7 +163,7 @@ describe('AgentGuide — flat layout (go/py/php/rb/lua)', () => {
 
 describe('AgentGuide — feature phase disabled (go-cli/go-mcp)', () => {
   test('emits no feature section and no per-feature files', async () => {
-    const files = await render(AgentGuide, { target: T_GOCLI }, 'go-cli')
+    const files = await render(AgentGuide, { target: 'go-cli' }, 'go-cli')
 
     const agents = find(files, 'go-cli/AGENTS.md')
     ok(agents, 'go-cli/AGENTS.md exists')

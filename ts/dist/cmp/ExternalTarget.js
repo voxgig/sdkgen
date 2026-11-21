@@ -5,6 +5,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const jostraca_2 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const facts_1 = require("../helpers/facts");
 const Main_1 = require("./Main");
 const Entity_1 = require("./Entity");
 const Feature_1 = require("./Feature");
@@ -32,11 +33,10 @@ const ExternalTarget = (0, component_1.cmp)(function ExternalTarget(props) {
     (0, jostraca_1.names)(ctx$.stdrep, model.Name, 'Project' + 'Name');
     const entity = model.main[apidef_1.KIT].entity || {};
     const feature = model.main[apidef_1.KIT].feature || {};
-    // Defaults are inclusive: a phase runs unless the target's model turns it
-    // off. Consumer targets (go-cli, go-mcp, py-data, seneca-provider) switch
-    // every phase off and emit everything from Main.
-    const phase = target.phase || {};
-    const phaseActive = (name) => false !== (phase[name] && phase[name].active);
+    // Consumer targets (go-cli, go-mcp, py-data, seneca-provider) switch every
+    // phase off and emit everything from Main.
+    const phase = (0, facts_1.fact)(target, 'phase');
+    const phaseActive = (name) => true === phase[name];
     (0, jostraca_2.Project)({}, () => {
         (0, jostraca_1.names)(target, target.name);
         if (phaseActive('entity')) {

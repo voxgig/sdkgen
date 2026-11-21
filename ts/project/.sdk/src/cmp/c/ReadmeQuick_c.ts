@@ -52,7 +52,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   Content(`### 1. Create a client
 
 \`\`\`c
-#include "core/api.h"
+${authActive ? '#include <stdlib.h>\n' : ''}#include "core/api.h"
 
 ${model.const.Name}SDK* client = ${ctor};
 PNError* err = NULL;

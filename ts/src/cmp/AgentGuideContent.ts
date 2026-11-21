@@ -1,5 +1,6 @@
 
 import { featureApplies } from '../helpers/applicability'
+import { fact } from '../helpers/facts'
 
 import { each } from 'jostraca'
 
@@ -62,7 +63,7 @@ function langCommandsBlock(name: string): string {
 
 
 function featuresEnabled(target: any): boolean {
-  return target?.phase?.feature?.active !== false
+  return fact(target, 'phase').feature
 }
 
 // ts/js lay each feature out as a directory `src/feature/<name>/`; the other

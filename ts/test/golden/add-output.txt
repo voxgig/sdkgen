@@ -25,10 +25,10 @@ src/cmp/c/ReadmeInstall_c.ts d91184e38d27
 src/cmp/c/ReadmeIntro_c.ts 17d6da0d3ab6
 src/cmp/c/ReadmeModel_c.ts a28efdaa99f9
 src/cmp/c/ReadmeOptions_c.ts f305d6f87635
-src/cmp/c/ReadmeQuick_c.ts f015aeb18009
+src/cmp/c/ReadmeQuick_c.ts 3d3e190c6bd5
 src/cmp/c/ReadmeRef_c.ts eb71278aeba2
 src/cmp/c/ReadmeTopHowto_c.ts 53480bd63967
-src/cmp/c/ReadmeTopQuick_c.ts 2bfd2610215f
+src/cmp/c/ReadmeTopQuick_c.ts 6ed6afa2cd68
 src/cmp/c/ReadmeTopTest_c.ts 9ae625173e92
 src/cmp/c/Schema_c.ts c4ed362679d7
 src/cmp/c/TestClean_c.ts 0dbcc7b0dc4c
@@ -2167,11 +2167,11 @@ src/cmp/zig/ReadmeHowto_zig.ts 1b37df0e4998
 src/cmp/zig/ReadmeInstall_zig.ts 52b119944d2c
 src/cmp/zig/ReadmeIntro_zig.ts 04e7058e1817
 src/cmp/zig/ReadmeModel_zig.ts 957ed3c603bf
-src/cmp/zig/ReadmeOptions_zig.ts 737426363d4e
-src/cmp/zig/ReadmeQuick_zig.ts 4606229f2cf6
+src/cmp/zig/ReadmeOptions_zig.ts 536a27a337d8
+src/cmp/zig/ReadmeQuick_zig.ts cf27c34a2c9e
 src/cmp/zig/ReadmeRef_zig.ts d0289ca5c6e4
 src/cmp/zig/ReadmeTopHowto_zig.ts 77361baf4079
-src/cmp/zig/ReadmeTopQuick_zig.ts fc9d512f8e2b
+src/cmp/zig/ReadmeTopQuick_zig.ts c6bd644ea4b6
 src/cmp/zig/ReadmeTopTest_zig.ts feee7ba97c0f
 src/cmp/zig/Schema_zig.ts c55b2e5555f7
 src/cmp/zig/TestClean_zig.ts c7d8ea55ba40

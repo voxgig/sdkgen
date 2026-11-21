@@ -29,7 +29,7 @@ import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, underscoreKeyed, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY, REQUEST_SHAPED_ENTITY, multiRouteLoad, keylessLoad,
-  namedEntity, liveIdentities,
+  namedEntity, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -1107,6 +1107,9 @@ pub fn main() void {
     ['update and remove examples on a record keyed by _id', 'ts-readme-underscore-id', underscoreKeyed()],
     ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
       namedFieldEntity('a"b\\c')],
+    ['examples with HTTP Basic in the header and a templated server URL', 'ts-readme-basic-templated',
+      BASIC_TEMPLATED],
+    ['examples with HTTP Basic in the query', 'ts-readme-basic-query', BASIC_QUERY],
   ] as [string, string, string | undefined][]) {
     test('typescript: the README example tests type-check and run ' + what, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
@@ -1117,6 +1120,11 @@ pub fn main() void {
       if (FOLD_ENTITY === extra || CRUD_MODEL === extra) {
         ok(Fs.readFileSync(Path.join(sdkroot, 'REFERENCE.md'), 'utf8').includes('.patch({'),
           'the reference has no patch example')
+      }
+      if (BASIC_TEMPLATED === extra) {
+        const readme = Fs.readFileSync(Path.join(sdkroot, 'README.md'), 'utf8')
+        ok(/apikey:/.test(readme) && /secret:/.test(readme) && /tenant:/.test(readme),
+          'the README constructor shows no apikey, secret and server variable')
       }
 
       const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
@@ -8854,7 +8862,34 @@ const README_LANES: {
     entry: /^(?!test\/)[^/]+\/__init__\.py$/,
     unloaded: /SyntaxError/,
   },
+  {
+    target: 'perl',
+    runner: 't/readme_examples.t',
+    needs: 'perl',
+    ran: /^1\.\.[1-9]\d*$/m,
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', 't/readme_examples.t'] }
+    },
+    entry: /^lib\/[^/]+SDK\.pm$/,
+    unloaded: /syntax error/,
+  },
+  {
+    target: 'php',
+    runner: 'test/ReadmeExamplesTest.php',
+    needs: 'php with phpunit, or composer to install it',
+    ran: /OK \([1-9]\d* tests?, \d+ assertions?\)/,
+    command: () => phpunitViaComposer(['test/ReadmeExamplesTest.php']),
+    entry: /^[^/]+_sdk\.php$/,
+    unloaded: /Unmatched '\)'|syntax error|ParseError/,
+  },
 ]
+
+
+// Lane rows that fail on a known defect, keyed `<target> <model>`, each with
+// the catalogue id of its fix. A row is pending until that fix lands.
+const README_PENDING: Record<string, string> = {
+}
 
 
 describe('the README examples run for a slug carrying the word client', () => {
@@ -8959,6 +8994,18 @@ describe('the README examples run for a slug carrying the word client', () => {
       async (t) => {
         await readmeLane(t, lane, lane.target + '-quoted', namedFieldEntity('a"b\\c'), /a\\"b|a"b\\\\c/,
           'load or create example with the quoted name')
+      })
+
+    test(lane.target + ': the README examples run with HTTP Basic in the header and a templated server URL',
+      { todo: README_PENDING[lane.target + ' basic-templated'] }, async (t) => {
+        await readmeLane(t, lane, lane.target + '-basic-templated', BASIC_TEMPLATED, /APIKEY/,
+          'constructor with its credential')
+      })
+
+    test(lane.target + ': the README examples run with HTTP Basic in the query',
+      { todo: README_PENDING[lane.target + ' basic-query'] }, async (t) => {
+        await readmeLane(t, lane, lane.target + '-basic-query', BASIC_QUERY, /APIKEY/,
+          'constructor with its credential')
       })
 
     // `)(` parses in no target.
@@ -9151,22 +9198,26 @@ function rustExample(block: DocBlock, imports: string[]): string {
 function zigExamples(blocks: DocBlock[]): string {
   const parts: string[] = []
   const calls: string[] = []
+  let usesInit = false
   blocks.forEach((block, i) => {
     const body = block.code.split('\n').filter((l) => !/^const (std|sdk|h) = /.test(l))
     const code = body.map((l) => l.replace(/\/\/.*$/, '')).join('\n')
     const declared = [...code.matchAll(/^(?:const|var) (\w+)\b/gm)].map((m) => m[1])
     const given = ['client', 'options', 'testopts', 'sdkopts']
       .filter((n) => !declared.includes(n) && new RegExp('\\b' + n + '\\b').test(code))
+    // A zig program reaches its environment only through what main receives.
+    const init = !declared.includes('init') && /\binit\./.test(code)
+    usesInit = usesInit || init
     parts.push(
       '// ' + block.doc + ':' + block.line,
-      'fn example' + i + '() !void {',
+      'fn example' + i + '(' + (init ? 'init: std.process.Init' : '') + ') !void {',
       ...given.map((n) => '    const ' + n + ' = ' +
         ('client' === n ? 'sdk.test_sdk(h.vnull(), h.vnull())' : 'h.vnull()') + ';'),
       ...body,
       ...declared.map((n) => '    _ = &' + n + ';'),
       '}',
       '')
-    calls.push('    try example' + i + '();')
+    calls.push('    try example' + i + '(' + (init ? 'init' : '') + ');')
   })
   return [
     'const std = @import("std");',
@@ -9174,7 +9225,7 @@ function zigExamples(blocks: DocBlock[]): string {
     'const h = sdk.h;',
     '',
     ...parts,
-    'pub fn main() !void {',
+    'pub fn main(' + (usesInit ? 'init: std.process.Init' : '') + ') !void {',
     ...calls,
     '}',
     '',

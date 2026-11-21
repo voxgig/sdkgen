@@ -492,6 +492,7 @@ function SdkGen(opts) {
         const external = externalItems(model, root, ['target'], externalOverride)
             .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }));
         checkExternalFolders(external, root, fs);
+        (0, facts_1.refuseRootPlan)(model, external.map((ext) => ext.name));
         const tree = {};
         const jres = await jostraca.generate(jopts, keepingTree(() => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));

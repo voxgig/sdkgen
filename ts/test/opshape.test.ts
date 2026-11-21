@@ -13,6 +13,8 @@ import {
 } from '../dist/sdkgen.js'
 import { targetOrigins, resolvesBundled, resolveSource, BUNDLED } from '../dist/action/resolve.js'
 
+import { makeStampedModel } from './generateharness'
+
 
 // A model entity with a mix of required/optional fields, a per-op exclusion,
 // and one op that declares explicit params. `each(...)` iterates object keys in
@@ -1025,6 +1027,22 @@ describe('targetOrigins — which targets the ungenerated-op warning speaks for'
       Fs.rmSync(tmp, { recursive: true, force: true })
     }
   })
+
+  test('classes the generation fixture by the provenance target add records', () => {
+    const model = makeStampedModel(['go', 'ts'])
+    const go = model.main.kit.target.go
+    deepStrictEqual([go.base, go.package], [BUNDLED, '@voxgig/sdkgen'])
+    strictEqual(model.main.kit.target.bash.base, '')
+
+    const { bundled } = targetOrigins(model)
+    ok(bundled.includes('go') && bundled.includes('ts'), JSON.stringify(bundled))
+  })
+
+  test('names a project-owned target apart from the bundled ones',
+    { todo: 'M09: targetOrigins has no answer for an owned target until WP13' }, () => {
+      const origins = targetOrigins(makeStampedModel(['go']))
+      ok(!origins.bundled.includes('bash'), JSON.stringify(origins))
+    })
 })
 
 
