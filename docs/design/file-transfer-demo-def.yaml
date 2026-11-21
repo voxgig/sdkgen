@@ -1,0 +1,633 @@
+# DRAFT. The definition of the example API proposed in file-transfer.md,
+# section 9: a podcast studio, built on the pattern of the solardemo
+# definition (ts/test/solardemo/app/def). Nothing serves it yet. Its domain
+# is ruling R3 and its upload protocol ruling R7, so both may change. When
+# the app is built this file moves to ts/test/podcastdemo/app/def/ and
+# leaves this folder.
+#
+# It deliberately declares no vendor extension: apidef reads none, and the
+# example must generate the way a definition nobody here wrote would.
+
+openapi: 3.0.0
+info:
+  title: Podcast Studio API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8903
+
+security:
+  - apiKey: []
+
+paths:
+  /api/show:
+    get:
+      summary: List shows
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Show'
+    post:
+      summary: Create show
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Show'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Show'
+
+  /api/show/{show_id}:
+    get:
+      summary: Get show
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Show'
+    put:
+      summary: Update show
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Show'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Show'
+    delete:
+      summary: Delete show
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      responses:
+        '204':
+          description: No Content
+
+  /api/show/{show_id}/artwork:
+    get:
+      summary: Download the show artwork
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The artwork image
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Repr-Digest:
+              $ref: '#/components/headers/ReprDigest'
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: Not Modified
+    put:
+      summary: Replace the show artwork
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: The show, with its artwork metadata updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Show'
+        '412':
+          description: Precondition Failed
+        '413':
+          description: Content Too Large
+
+  /api/show/{show_id}/feed:
+    get:
+      summary: The show's RSS feed, generated from its published episodes
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      responses:
+        '200':
+          description: The feed document
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+
+  /api/show/{show_id}/episode:
+    get:
+      summary: List episodes of show
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Episode'
+    post:
+      summary: Create episode, with its audio, in one request
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - audio
+              properties:
+                title:
+                  type: string
+                number:
+                  type: integer
+                audio:
+                  type: string
+                  format: binary
+            encoding:
+              audio:
+                contentType: audio/wav
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '413':
+          description: Content Too Large
+
+  /api/show/{show_id}/episode/{episode_id}:
+    get:
+      summary: Get episode
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+    put:
+      summary: Update episode
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Episode'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+    delete:
+      summary: Delete episode
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      responses:
+        '204':
+          description: No Content
+
+  /api/show/{show_id}/episode/{episode_id}/audio:
+    get:
+      summary: Download the episode audio, whole or in part
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+        - $ref: '#/components/parameters/Range'
+        - $ref: '#/components/parameters/IfRange'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The whole audio
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
+            Repr-Digest:
+              $ref: '#/components/headers/ReprDigest'
+            Content-Disposition:
+              $ref: '#/components/headers/ContentDisposition'
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: The requested byte range
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Content-Range:
+              $ref: '#/components/headers/ContentRange'
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: Not Modified
+        '416':
+          description: Range Not Satisfiable
+    head:
+      summary: Read the audio's size and validators without its bytes
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      responses:
+        '200':
+          description: The headers a GET would answer with, and no body
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
+            Repr-Digest:
+              $ref: '#/components/headers/ReprDigest'
+    put:
+      summary: Replace the episode audio
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/ReprDigestIn'
+      requestBody:
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: The episode, with its audio metadata updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '412':
+          description: Precondition Failed
+        '413':
+          description: Content Too Large
+
+  /api/show/{show_id}/episode/{episode_id}/transcript:
+    get:
+      summary: Download the episode transcript
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      responses:
+        '200':
+          description: The transcript
+          content:
+            text/vtt:
+              schema:
+                type: string
+    put:
+      summary: Replace the episode transcript
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      requestBody:
+        required: true
+        content:
+          text/vtt:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: The episode, with its transcript metadata updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+
+  /api/show/{show_id}/episode/{episode_id}/publish:
+    post:
+      summary: Publish or withdraw an episode
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                publish:
+                  type: boolean
+                why:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  state:
+                    type: string
+
+  /api/upload:
+    post:
+      summary: Open a resumable upload of one file of one record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Upload'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+
+  /api/upload/{upload_id}:
+    get:
+      summary: Get upload
+      parameters:
+        - $ref: '#/components/parameters/UploadId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+    head:
+      summary: Read the offset an interrupted upload resumes from
+      parameters:
+        - $ref: '#/components/parameters/UploadId'
+      responses:
+        '204':
+          description: No Content
+          headers:
+            Upload-Offset:
+              $ref: '#/components/headers/UploadOffset'
+            Upload-Length:
+              $ref: '#/components/headers/UploadLength'
+    patch:
+      summary: Append bytes to the upload at its current offset
+      parameters:
+        - $ref: '#/components/parameters/UploadId'
+        - name: Upload-Offset
+          in: header
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/offset+octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '204':
+          description: No Content
+          headers:
+            Upload-Offset:
+              $ref: '#/components/headers/UploadOffset'
+        '409':
+          description: Conflict, the offset does not match
+        '413':
+          description: Content Too Large
+    delete:
+      summary: Abandon the upload
+      parameters:
+        - $ref: '#/components/parameters/UploadId'
+      responses:
+        '204':
+          description: No Content
+
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+
+  parameters:
+    ShowId:
+      name: show_id
+      in: path
+      required: true
+      schema:
+        type: string
+    EpisodeId:
+      name: episode_id
+      in: path
+      required: true
+      schema:
+        type: string
+    UploadId:
+      name: upload_id
+      in: path
+      required: true
+      schema:
+        type: string
+    Range:
+      name: Range
+      in: header
+      required: false
+      schema:
+        type: string
+    IfRange:
+      name: If-Range
+      in: header
+      required: false
+      schema:
+        type: string
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      schema:
+        type: string
+    IfNoneMatch:
+      name: If-None-Match
+      in: header
+      required: false
+      schema:
+        type: string
+    ReprDigestIn:
+      name: Repr-Digest
+      in: header
+      required: false
+      schema:
+        type: string
+
+  headers:
+    ETag:
+      schema:
+        type: string
+    AcceptRanges:
+      schema:
+        type: string
+    ContentRange:
+      schema:
+        type: string
+    ContentDisposition:
+      schema:
+        type: string
+    ReprDigest:
+      schema:
+        type: string
+    UploadOffset:
+      schema:
+        type: integer
+        format: int64
+    UploadLength:
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    Show:
+      type: object
+      required:
+        - id
+        - name
+        - author
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        author:
+          type: string
+        language:
+          type: string
+        artwork:
+          allOf:
+            - $ref: '#/components/schemas/FileInfo'
+          readOnly: true
+    Episode:
+      type: object
+      required:
+        - id
+        - show_id
+        - title
+      properties:
+        id:
+          type: string
+        show_id:
+          type: string
+        title:
+          type: string
+        number:
+          type: integer
+        state:
+          type: string
+          readOnly: true
+        audio:
+          allOf:
+            - $ref: '#/components/schemas/FileInfo'
+          readOnly: true
+        transcript:
+          allOf:
+            - $ref: '#/components/schemas/FileInfo'
+          readOnly: true
+    Upload:
+      type: object
+      required:
+        - show_id
+        - episode_id
+        - size
+      properties:
+        id:
+          type: string
+          readOnly: true
+        show_id:
+          type: string
+        episode_id:
+          type: string
+        slot:
+          type: string
+          enum:
+            - audio
+            - transcript
+        size:
+          type: integer
+          format: int64
+        type:
+          type: string
+        digest:
+          type: string
+        offset:
+          type: integer
+          format: int64
+          readOnly: true
+        complete:
+          type: boolean
+          readOnly: true
+        expires:
+          type: string
+          format: date-time
+          readOnly: true
+    FileInfo:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        type:
+          type: string
+        etag:
+          type: string
+        digest:
+          type: string
+        modified:
+          type: string
+          format: date-time
