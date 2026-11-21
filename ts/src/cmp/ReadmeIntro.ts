@@ -3,7 +3,8 @@ import { Content } from 'jostraca'
 
 import { cmp } from '../helpers/component'
 import { optionalComponent } from '../helpers/optional'
-import { modelText } from '../helpers/text'
+import { fact } from '../helpers/facts'
+import { KIT } from '../types'
 import { alongsideNote } from '../helpers/alongside'
 
 
@@ -25,7 +26,7 @@ const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
 
   Content(`# ${model.Name} ${target.title} SDK
 
-${modelText(model).tagline || ''}
+${fact(model.main[KIT], 'text').tagline.inline}
 
 `)
   intro.ReadmeIntroBody({ target })

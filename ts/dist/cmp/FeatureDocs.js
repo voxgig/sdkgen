@@ -1,14 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sentinelName = exports.renderValue = void 0;
 exports.featureDocs = featureDocs;
 exports.codeList = codeList;
 exports.honoursActivationOrder = honoursActivationOrder;
 const applicability_1 = require("../helpers/applicability");
 const facts_1 = require("../helpers/facts");
-const doctext_1 = require("../helpers/doctext");
-Object.defineProperty(exports, "renderValue", { enumerable: true, get: function () { return doctext_1.renderValue; } });
-Object.defineProperty(exports, "sentinelName", { enumerable: true, get: function () { return doctext_1.sentinelName; } });
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 function isWrapping(feat) {
@@ -23,17 +19,18 @@ function featureDocs(model, target) {
         const opts = (f.config && f.config.options) || {};
         const options = Object.keys(opts).sort().map((k) => ({
             name: k,
-            value: (0, doctext_1.renderValue)(opts[k]),
+            code: (0, facts_1.fact)(f, 'option')[k].value.codecell,
         }));
         const extra = (f.config && f.config.optspec) || {};
         const extras = Object.keys(extra)
             .filter((k) => null == opts[k])
             .sort()
-            .map((k) => ({ name: k, type: (0, doctext_1.sentinelName)(extra[k]) }));
+            .map((k) => ({ name: k, type: (0, facts_1.fact)(f, 'option')[k].type.cell }));
         return {
             name: f.name,
             Name: f.Name || f.name,
-            title: f.title || '',
+            title: (0, facts_1.fact)(f, 'title').inline,
+            titleCell: (0, facts_1.fact)(f, 'title').cell,
             transport: f.transport || 'none',
             wraps: isWrapping(f),
             on: true === (0, facts_1.fact)(f, 'on'),

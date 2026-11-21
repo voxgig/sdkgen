@@ -39,7 +39,7 @@ Activate a feature by name in the \`feature\` client option:
 |---|---|
 `);
     for (const f of features) {
-        (0, jostraca_1.Content)(`| [\`${f.name}\`](#${f.name}) | ${f.title} |
+        (0, jostraca_1.Content)(`| [\`${f.name}\`](#${f.name}) | ${f.titleCell} |
 `);
     }
     (0, jostraca_1.Content)(`
@@ -73,7 +73,7 @@ ${f.title}.
 |---|---|
 `);
             for (const o of f.options) {
-                (0, jostraca_1.Content)(`| \`${o.name}\` | \`${o.value}\` |
+                (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.code} |
 `);
             }
             (0, jostraca_1.Content)(`

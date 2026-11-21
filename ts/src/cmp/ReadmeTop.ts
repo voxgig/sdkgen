@@ -22,6 +22,7 @@ import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
 import { modelText } from '../helpers/text'
+import { fact } from '../helpers/facts'
 import { isConsumer } from '../helpers/alongside'
 import { copyMode, MERGE } from '../helpers/copymerge'
 
@@ -188,16 +189,16 @@ const ReadmeTopFeatureLine = cmp(function ReadmeTopFeatureLine(props: any) {
 
 
 const ReadmeTopAbout = cmp(function ReadmeTopAbout(props: any) {
-  const { def, productName, aboutMd } = props.s
+  const { text, productName, aboutMd } = props.s
 
   if (aboutMd) {
     Content(`## About ${productName}
 
-${aboutMd.trim()}
+${aboutMd}
 
 `)
-  } else if (def.desc) {
-    Content(`${def.desc}
+  } else if (text.desc.text) {
+    Content(`${text.desc.text}
 
 `)
   }
@@ -465,7 +466,7 @@ Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
 
 
 const ReadmeTopEntities = cmp(function ReadmeTopEntities(props: any) {
-  const { entityDesc, activeEntities } = props.s
+  const { activeEntities } = props.s
 
   if (activeEntities.length > 0) {
     Content(`## Entities
@@ -479,7 +480,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
     activeEntities.map((ent: any) => {
       const ops = ent.op || {}
       const opNames = Object.keys(ops).filter((o: string) => (ops as any)[o]?.active !== false)
-      const entdesc = entityDesc[ent.name] || ent.short || ent.desc ||
+      const entdesc = fact(ent, 'desc').cell ||
         `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`
       const path = entityPath(ent)
       Content(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
@@ -586,7 +587,7 @@ forking the SDK.
 | --- | --- |
 `)
     for (const feat of active) {
-      const purpose = feat.title || feat.Name || feat.name
+      const purpose = fact(feat, 'title').cell || feat.Name || feat.name
       Content(`| **${feat.Name || feat.name}Feature** | ${purpose} |
 `)
     }
@@ -700,11 +701,9 @@ const ReadmeTopPerLanguage = cmp(function ReadmeTopPerLanguage(props: any) {
 
 
 const ReadmeTopUpstream = cmp(function ReadmeTopUpstream(props: any) {
-  const { info, homepage, docsUrl } = props.s
-
-  const upstreamUrl = (info.contact && info.contact.url)
-    || (info.servers && info.servers[0] && info.servers[0].url)
-    || homepage
+  const { text } = props.s
+  const upstream = text.upstream
+  const docs = text.docs_url
   Content(`## Upstream API
 
 This SDK is generated from the upstream OpenAPI specification. It is an
@@ -714,21 +713,21 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
 [\`.sdk/def/\`](.sdk/def/) folder.
 
 `)
-  if (upstreamUrl) {
+  if (upstream.raw) {
     // A per-tenant server URL carries an OpenAPI server variable —
     // `https://{instance}.dreamapply.com/api` — and is the right thing to
     // SHOW, because it tells the reader the host is theirs to fill in. It is
     // not a thing to LINK: the braces are not a resolvable address, so a
     // markdown link renders as clickable and dead. Show it as code instead.
-    const templated = /[{}]/.test(upstreamUrl)
+    const templated = /[{}]/.test(upstream.raw)
     Content(templated
-      ? `- Upstream API: \`${upstreamUrl}\`
+      ? `- Upstream API: ${upstream.code}
 `
-      : `- Upstream API: [${upstreamUrl}](${upstreamUrl})
+      : `- Upstream API: [${upstream.inline}](${upstream.link})
 `)
   }
-  if (docsUrl && docsUrl !== upstreamUrl) {
-    Content(`- Documentation: [${docsUrl}](${docsUrl})
+  if (docs.raw && docs.raw !== upstream.raw) {
+    Content(`- Documentation: [${docs.inline}](${docs.link})
 `)
   }
   Content(`
@@ -767,32 +766,26 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const info = modelText(model)
   const def = (model.main && model.main.def) || {}
 
-  const productName = info.title || `${model.Name} API`
+  const text = fact(model.main[KIT], 'text')
 
-  const tagline = info.tagline
-    || def.tagline
+  const productName = text.title.inline || `${model.Name} API`
+
+  const tagline = text.tagline.inline
     || `${productName} client, generated from the OpenAPI spec.`
 
-  const aboutMd = info.about_md || ''
-  const homepage = info.homepage || ''
-  const docsUrl = info.docs_url || ''
-  const entityDesc = info.entity_desc || {}
+  const aboutMd = text.about_md.text
 
-  const apiSummary = (info.summary || '').trim()
-  const apiWebsite = (info.website || '').trim()
-  const websiteLine = apiWebsite
-    ? `Learn more about ${productName} at ` +
-    `[${apiWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${apiWebsite}).`
+  const apiSummary = text.summary.inline
+  const websiteLine = text.website.raw
+    ? `Learn more about ${productName} at [${text.website.label}](${text.website.link}).`
     : ''
 
   // Attribution for API metadata sourced from a third-party catalogue (e.g.
   // freepublicapis.com). Rendered only when the model carries an
   // `info.meta_source` URL, so first-party SDKs never show it. The link points
   // back to the catalogue that kindly supplied the metadata.
-  const metaSource = (info.meta_source || '').trim()
-  const metaSourceLine = metaSource
-    ? `Metadata kindly supplied by ` +
-    `[${metaSource.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${metaSource}).`
+  const metaSourceLine = text.meta_source.raw
+    ? `Metadata kindly supplied by [${text.meta_source.label}](${text.meta_source.link}).`
     : ''
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -845,12 +838,10 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     ctx$,
     info,
     def,
+    text,
     productName,
     tagline,
     aboutMd,
-    homepage,
-    docsUrl,
-    entityDesc,
     apiSummary,
     websiteLine,
     metaSourceLine,

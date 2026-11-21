@@ -1,6 +1,5 @@
 import { featureApplies } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
-import { renderValue, sentinelName } from '../helpers/doctext'
 
 import { each } from 'jostraca'
 
@@ -12,12 +11,13 @@ type FeatureDoc = {
   name: string
   Name: string
   title: string
+  titleCell: string
   transport: string
   wraps: boolean
   on: boolean
   // Active hooks, which a wrapping feature such as cost may also declare.
   hooks: string[]
-  options: Array<{ name: string, value: string }>
+  options: Array<{ name: string, code: string }>
 
   extras: Array<{ name: string, type: string }>
 }
@@ -38,18 +38,19 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
       const opts = (f.config && f.config.options) || {}
       const options = Object.keys(opts).sort().map((k) => ({
         name: k,
-        value: renderValue(opts[k]),
+        code: fact(f, 'option')[k].value.codecell,
       }))
 
       const extra = (f.config && f.config.optspec) || {}
       const extras = Object.keys(extra)
         .filter((k) => null == opts[k])
         .sort()
-        .map((k) => ({ name: k, type: sentinelName(extra[k]) }))
+        .map((k) => ({ name: k, type: fact(f, 'option')[k].type.cell }))
       return {
         name: f.name,
         Name: f.Name || f.name,
-        title: f.title || '',
+        title: fact(f, 'title').inline,
+        titleCell: fact(f, 'title').cell,
         transport: f.transport || 'none',
         wraps: isWrapping(f),
         on: true === fact(f, 'on'),
@@ -82,8 +83,6 @@ function honoursActivationOrder(target: any): boolean {
 export {
   featureDocs,
   codeList,
-  renderValue,
-  sentinelName,
   honoursActivationOrder,
 }
 

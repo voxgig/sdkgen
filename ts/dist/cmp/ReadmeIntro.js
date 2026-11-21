@@ -4,7 +4,8 @@ exports.ReadmeIntro = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const optional_1 = require("../helpers/optional");
-const text_1 = require("../helpers/text");
+const facts_1 = require("../helpers/facts");
+const types_1 = require("../types");
 const alongside_1 = require("../helpers/alongside");
 // Every language README opens the same way: the title and tagline, the
 // target's own ReadmeIntroBody, then the note naming the rest of the project.
@@ -22,7 +23,7 @@ const ReadmeIntro = (0, component_1.cmp)(function ReadmeIntro(props) {
     }
     (0, jostraca_1.Content)(`# ${model.Name} ${target.title} SDK
 
-${(0, text_1.modelText)(model).tagline || ''}
+${(0, facts_1.fact)(model.main[types_1.KIT], 'text').tagline.inline}
 
 `);
     intro.ReadmeIntroBody({ target });

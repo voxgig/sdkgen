@@ -48,7 +48,7 @@ Activate a feature by name in the \`feature\` client option:
 `)
 
   for (const f of features) {
-    Content(`| [\`${f.name}\`](#${f.name}) | ${f.title} |
+    Content(`| [\`${f.name}\`](#${f.name}) | ${f.titleCell} |
 `)
   }
 
@@ -86,7 +86,7 @@ ${f.title}.
 |---|---|
 `)
       for (const o of f.options) {
-        Content(`| \`${o.name}\` | \`${o.value}\` |
+        Content(`| \`${o.name}\` | ${o.code} |
 `)
       }
       Content(`

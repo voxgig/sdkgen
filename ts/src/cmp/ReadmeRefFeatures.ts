@@ -80,7 +80,7 @@ ${f.title}.
 |---|---|
 `)
       for (const o of f.options) {
-        Content(`| \`${o.name}\` | \`${o.value}\` |
+        Content(`| \`${o.name}\` | ${o.code} |
 `)
       }
       Content(`

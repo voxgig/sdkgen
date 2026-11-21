@@ -792,6 +792,55 @@ describe('generate', () => {
   })
 
 
+  // A table row that ends as its header ends, with as many cells.
+  const wellFormed = (doc: string): string[] => {
+    const bad: string[] = []
+    let header = ''
+    for (const line of doc.split('\n')) {
+      if (!line.startsWith('|')) { header = ''; continue }
+      if ('' === header) { header = line; continue }
+      const cells = (row: string) => (row.match(/(?<!\\)\|/g) || []).length
+      if (!line.endsWith('|') || cells(line) !== cells(header)) bad.push(line)
+    }
+    return bad
+  }
+
+
+  test('feature defaults and types holding a pipe or a backtick keep their rows whole', async () => {
+    const out = await generate(['ts'], undefined, [
+      "main: kit: feature: netsim: config: options: sep: 'a|b'",
+      "main: kit: feature: netsim: config: options: tick: 'x`y'",
+      "main: kit: feature: netsim: config: optspec: shape: ['`$ONE`', '`$NUMBER`', '`$MAP`']",
+    ].join('\n'), undefined, ['test', 'netsim'])
+    for (const doc of ['ts/README.md', 'ts/REFERENCE.md']) {
+      deepStrictEqual(wellFormed(out[doc]), [], doc)
+    }
+    ok(out['ts/README.md'].includes("| `sep` | `'a\\|b'` |"), 'the pipe default is not one code span')
+    ok(out['ts/README.md'].includes("| `tick` | `` 'x`y' `` |"), 'the backtick default is not fenced past it')
+    ok(out['ts/REFERENCE.md'].includes('| `shape` | number \\| map |'), 'the union type splits its row')
+  })
+
+
+  test('spec text in the root README keeps its table, its links and its fences in place', async () => {
+    const desc = 'Planets | moons.\n\n```python\nraise SystemExit(3)\n```\nSee [guide](guide.md) and $$name$$.'
+    const out = await generate(['ts'], undefined, [
+      'main: kit: entity: planet: short: ' + JSON.stringify(desc),
+      'main: kit: text: entity_desc: record: ' + JSON.stringify('Own [notes](notes.md) | here'),
+      "main: kit: info: summary: 'Summary with [a page](page.md) and [the site](https://example.com/a_(b))'",
+      "main: kit: info: website: 'https://example.com/a_(b) c/'",
+    ].join('\n'))
+    const readme = out['README.md']
+    deepStrictEqual(wellFormed(readme), [])
+    const row = readme.split('\n').find((line: string) => line.startsWith('| **Planet** |')) || ''
+    strictEqual(row, '| **Planet** | Planets \\| moons.<br><br>&#96;&#96;&#96;python<br>raise SystemExit(3)<br>' +
+      '&#96;&#96;&#96;<br>See guide and $&#36;name$&#36;. | `/planet` |')
+    ok(readme.includes('| **Record** | Own [notes](notes.md) \\| here |'), 'the project\'s own link was unwrapped')
+    ok(readme.includes('Summary with a page and [the site](https://example.com/a_(b))'), 'the spec summary')
+    ok(readme.includes('at [example.com/a_(b) c](https://example.com/a_%28b%29%20c/).'), 'the website link')
+    ok(!/^```python$/m.test(readme), 'a fence from the spec opened in the root README')
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 
