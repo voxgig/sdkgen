@@ -40,12 +40,12 @@ function makeModel() {
   }
 }
 
-async function render(comp: any, langName: string): Promise<string> {
+async function render(comp: any, langName: string, model: any = makeModel()): Promise<string> {
   const { fs, vol } = memfs({})
   const jostraca = Jostraca()
 
   await jostraca.generate(
-    { fs: () => fs, folder: '/x', model: makeModel(), log },
+    { fs: () => fs, folder: '/x', model, log },
     () => {
       Project({ folder: 'p' }, () => {
         Folder({ name: 'd' }, () => {
@@ -302,5 +302,39 @@ describe('the pipeline in both READMEs', () => {
       ok(run.files['README.md'].includes('**' + s.name + '** — ' + s.purpose), 'root: ' + s.name)
       ok(run.files['ts/README.md'].includes('- **' + s.hook + '**: ' + s.purpose), 'ts: ' + s.hook)
     }
+  })
+})
+
+
+describe('feature lead-ins', () => {
+
+  const noFeatures = () => {
+    const model: any = makeModel()
+    for (const f of Object.values<any>(model.main.kit.feature)) f.active = false
+    return model
+  }
+
+  test('no feature list, and no lead-in or order claim, without an active feature', async () => {
+    const out = await render(ReadmeExplanation, 'ts', noFeatures())
+    ok(out.includes('### Features and hooks'))
+    ok(!out.includes('The SDK ships with built-in features:'))
+    ok(!out.includes('Features are initialized'))
+  })
+
+  test('a fixed-order origin makes no claim about activation order', async () => {
+    const lean = await render(ReadmeExplanation, 'lean')
+    ok(!lean.includes('later features can override earlier ones'))
+    ok(lean.includes('fixed catalog order'))
+    ok((await renderExplanation('ts')).includes('later features can override earlier ones'))
+  })
+
+  test('the root README writes no features table without a feature', async () => {
+    const run = await generateDocs({ id: 'nofeat', family: 'nofeat', targets: ['ts'], features: [], extra: '' })
+    ok(!run.files['README.md'].includes('| Feature | Purpose |'))
+    ok(run.files['README.md'].includes('Pass custom features via the `extend` option'))
+  })
+
+  test('entity access names no operation set', async () => {
+    ok(!(await renderExplanation('ts')).includes('CRUD'))
   })
 })

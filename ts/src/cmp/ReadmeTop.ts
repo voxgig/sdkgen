@@ -575,22 +575,25 @@ A feature hook fires before each stage (e.g. \`${PIPELINE_STAGES[0].hook}\`, \`$
 \`${PIPELINE_STAGES[2].hook}\`), so features can inspect or modify the pipeline without
 forking the SDK.
 
-### Features
-
 `)
 
-  Content(`| Feature | Purpose |
+  const active = each(feature).filter((feat: any) => feat.active)
+  if (0 < active.length) {
+    Content(`### Features
+
+| Feature | Purpose |
 | --- | --- |
 `)
-  each(feature, (feat: any) => {
-    if (!feat.active) return
-    const purpose = feat.title || feat.Name || feat.name
-    Content(`| **${feat.Name || feat.name}Feature** | ${purpose} |
+    for (const feat of active) {
+      const purpose = feat.title || feat.Name || feat.name
+      Content(`| **${feat.Name || feat.name}Feature** | ${purpose} |
 `)
-  })
+    }
+    Content(`
+`)
+  }
 
-  Content(`
-Pass custom features via the \`extend\` option at construction time.
+  Content(`Pass custom features via the \`extend\` option at construction time.
 
 `)
 })

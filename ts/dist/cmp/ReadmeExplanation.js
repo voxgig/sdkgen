@@ -6,6 +6,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const optional_1 = require("../helpers/optional");
+const FeatureDocs_1 = require("./FeatureDocs");
 const FeatureHook_1 = require("./FeatureHook");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
@@ -484,23 +485,28 @@ in this language.
 
 `);
     (0, jostraca_1.Content)(lang.featureKind);
-    (0, jostraca_1.Content)(`The SDK ships with built-in features:
+    const active = (0, jostraca_1.each)(feature).filter((feat) => feat.active);
+    if (0 < active.length) {
+        (0, jostraca_1.Content)(`The SDK ships with built-in features:
 
 `);
-    (0, jostraca_1.each)(feature, (feat) => {
-        if (!feat.active)
-            return;
-        if (!feat.Name)
-            (0, jostraca_1.names)(feat, feat.name);
-        const purpose = feat.title || feat.Name || feat.name;
-        (0, jostraca_1.Content)(`- **${feat.Name}Feature**: ${purpose}
+        for (const feat of active) {
+            if (!feat.Name)
+                (0, jostraca_1.names)(feat, feat.name);
+            const purpose = feat.title || feat.Name || feat.name;
+            (0, jostraca_1.Content)(`- **${feat.Name}Feature**: ${purpose}
 `);
-    });
-    (0, jostraca_1.Content)(`
+        }
+        (0, jostraca_1.Content)((0, FeatureDocs_1.honoursActivationOrder)({ name: origin }) ? `
 Features are initialized in order. Hooks fire in the order features
 were added, so later features can override earlier ones.
 
+` : `
+Features are initialized in a fixed catalog order, whatever order they
+were added in.
+
 `);
+    }
     const ReadmeExplanation_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeExplanation');
     if (ReadmeExplanation_sdk) {
         ReadmeExplanation_sdk['ReadmeExplanation']({ target });
@@ -518,7 +524,8 @@ were added, so later features can override earlier ones.
     (0, jostraca_1.Content)(`### Direct vs entity access
 
 The entity interface handles URL construction, parameter placement,
-and response parsing automatically. Use it for standard CRUD operations.
+and response parsing automatically. Use it for the operations each
+entity declares.
 
 `);
     (0, jostraca_1.Content)(lang.direct);

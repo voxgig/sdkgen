@@ -41,8 +41,7 @@ configured behaves exactly as if ${one ? 'it did not exist' : 'none of them exis
 This SDK ships ${features.length} optional feature${one ? '' : 's'}.
 ${state}
 
-Activate a feature by name in the client options, alongside the options shown
-above:
+Activate a feature by name in the \`feature\` client option:
 
 | Feature | What it does |
 |---|---|

@@ -499,21 +499,23 @@ A feature hook fires before each stage (e.g. \`${FeatureHook_1.PIPELINE_STAGES[0
 \`${FeatureHook_1.PIPELINE_STAGES[2].hook}\`), so features can inspect or modify the pipeline without
 forking the SDK.
 
-### Features
-
 `);
-    (0, jostraca_1.Content)(`| Feature | Purpose |
+    const active = (0, jostraca_1.each)(feature).filter((feat) => feat.active);
+    if (0 < active.length) {
+        (0, jostraca_1.Content)(`### Features
+
+| Feature | Purpose |
 | --- | --- |
 `);
-    (0, jostraca_1.each)(feature, (feat) => {
-        if (!feat.active)
-            return;
-        const purpose = feat.title || feat.Name || feat.name;
-        (0, jostraca_1.Content)(`| **${feat.Name || feat.name}Feature** | ${purpose} |
+        for (const feat of active) {
+            const purpose = feat.title || feat.Name || feat.name;
+            (0, jostraca_1.Content)(`| **${feat.Name || feat.name}Feature** | ${purpose} |
 `);
-    });
-    (0, jostraca_1.Content)(`
-Pass custom features via the \`extend\` option at construction time.
+        }
+        (0, jostraca_1.Content)(`
+`);
+    }
+    (0, jostraca_1.Content)(`Pass custom features via the \`extend\` option at construction time.
 
 `);
 });

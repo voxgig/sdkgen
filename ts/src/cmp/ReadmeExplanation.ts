@@ -10,6 +10,7 @@ import {
 } from '../types'
 
 import { optionalComponent } from '../helpers/optional'
+import { honoursActivationOrder } from './FeatureDocs'
 import { PIPELINE_STAGES, pipelineLength } from './FeatureHook'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
@@ -550,22 +551,28 @@ in this language.
 
   Content(lang.featureKind)
 
-  Content(`The SDK ships with built-in features:
+  const active = each(feature).filter((feat: any) => feat.active)
+  if (0 < active.length) {
+    Content(`The SDK ships with built-in features:
 
 `)
-  each(feature, (feat: any) => {
-    if (!feat.active) return
-    if (!feat.Name) names(feat, feat.name)
-    const purpose = feat.title || feat.Name || feat.name
-    Content(`- **${feat.Name}Feature**: ${purpose}
+    for (const feat of active) {
+      if (!feat.Name) names(feat, feat.name)
+      const purpose = feat.title || feat.Name || feat.name
+      Content(`- **${feat.Name}Feature**: ${purpose}
 `)
-  })
+    }
 
-  Content(`
+    Content(honoursActivationOrder({ name: origin }) ? `
 Features are initialized in order. Hooks fire in the order features
 were added, so later features can override earlier ones.
 
+` : `
+Features are initialized in a fixed catalog order, whatever order they
+were added in.
+
 `)
+  }
 
 
   const ReadmeExplanation_sdk =
@@ -591,7 +598,8 @@ were added, so later features can override earlier ones.
   Content(`### Direct vs entity access
 
 The entity interface handles URL construction, parameter placement,
-and response parsing automatically. Use it for standard CRUD operations.
+and response parsing automatically. Use it for the operations each
+entity declares.
 
 `)
 
