@@ -96,6 +96,17 @@ function find(files: Record<string, string>, suffix: string): string | undefined
 }
 
 
+// Keys become STAGE-relative with forward slashes: on Windows a memfs key does
+// not match the absolute path Path.join builds for it.
+function staged(vol: any): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    out[Path.relative(STAGE, path).split(Path.sep).join('/')] = content
+  }
+  return out
+}
+
+
 describe('AgentGuideTop', () => {
   test('emits a top-level AGENTS.md with the four topics and real lists', async () => {
     const files = await render(AgentGuideTop, {})
@@ -230,9 +241,9 @@ describe('AgentGuideTop — the copy mode agrees with the README', () => {
       finally {
         process.chdir(cwd)
       }
-      const files = vol.toJSON() as Record<string, string>
-      const agents = files[Path.join(STAGE, 'AGENTS.md')].replace(/\s+/g, ' ')
-      const readme = files[Path.join(STAGE, 'README.md')].replace(/\s+/g, ' ')
+      const files = staged(vol)
+      const agents = files['AGENTS.md'].replace(/\s+/g, ' ')
+      const readme = files['README.md'].replace(/\s+/g, ' ')
       const declared = "`main: kit: copies: 'overwrite'`"
       deepStrictEqual([agents.includes(declared), readme.includes(declared)],
         'overwrite' === copies ? [true, true] : [false, false])
@@ -262,12 +273,12 @@ describe('AgentGuide — feature templates in a generated tree', () => {
       process.chdir(cwd)
     }
 
-    const written = Object.keys(vol.toJSON())
-      .map((p: string) => Path.relative(STAGE, p).split(Path.sep).join('/'))
+    const files = staged(vol)
+    const written = Object.keys(files)
     const listed: string[] = []
     const shared: string[] = []
     for (const t of targets) {
-      const guide = (vol.toJSON() as any)[Path.join(STAGE, t, 'AGENTS.md')]
+      const guide = files[t + '/AGENTS.md']
       if (null == guide || !guide.includes('## Features in this target')) continue
       if (guide.replace(/\s+/g, ' ').includes('no template per feature')) shared.push(t)
       for (const m of guide.matchAll(/\| \*\*([a-z]+)\*\*[^|]*\| `\.sdk\/tm\/([^`]+)` \|/g)) {
