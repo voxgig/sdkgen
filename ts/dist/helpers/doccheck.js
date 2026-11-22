@@ -80,6 +80,15 @@ function tables(file, text) {
     }
     return out;
 }
+// A malformed escape such as `100%.md` is a path as written, as a browser reads it.
+function decoded(rel) {
+    try {
+        return decodeURI(rel);
+    }
+    catch (_err) {
+        return rel;
+    }
+}
 function links(file, text, docs, exists) {
     const out = [];
     const dir = node_path_1.default.posix.dirname(file);
@@ -90,7 +99,7 @@ function links(file, text, docs, exists) {
             if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('/'))
                 continue;
             const [rel, frag] = href.split('#');
-            const target = '' === rel ? file : node_path_1.default.posix.normalize(node_path_1.default.posix.join(dir, decodeURI(rel)));
+            const target = '' === rel ? file : node_path_1.default.posix.normalize(node_path_1.default.posix.join(dir, decoded(rel)));
             if ('' !== rel && !exists(target)) {
                 out.push({ point: 'doc-link-dangling', file, line: num, note: target });
             }

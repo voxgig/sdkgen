@@ -91,6 +91,17 @@ function tables(file: string, text: string): DocFinding[] {
 }
 
 
+// A malformed escape such as `100%.md` is a path as written, as a browser reads it.
+function decoded(rel: string): string {
+  try {
+    return decodeURI(rel)
+  }
+  catch (_err) {
+    return rel
+  }
+}
+
+
 function links(file: string, text: string, docs: Map<string, string>,
   exists: (rel: string) => boolean): DocFinding[] {
   const out: DocFinding[] = []
@@ -101,7 +112,7 @@ function links(file: string, text: string, docs: Map<string, string>,
       const href = m[1]
       if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('/')) continue
       const [rel, frag] = href.split('#')
-      const target = '' === rel ? file : Path.posix.normalize(Path.posix.join(dir, decodeURI(rel)))
+      const target = '' === rel ? file : Path.posix.normalize(Path.posix.join(dir, decoded(rel)))
       if ('' !== rel && !exists(target)) {
         out.push({ point: 'doc-link-dangling', file, line: num, note: target })
       }

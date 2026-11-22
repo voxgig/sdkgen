@@ -906,6 +906,16 @@ describe('generate', () => {
   })
 
 
+  test('a link with a malformed escape warns, and the run completes', async () => {
+    const warnings: any[] = []
+    await generateWarning(['ts'], undefined,
+      'main: kit: text: entity_desc: record: ' + JSON.stringify('See [the guide](100%.md).'),
+      undefined, undefined, undefined, warnings)
+    const dangling = warnings.filter((w: any) => 'doc-link-dangling' === w.point)
+    ok(dangling.some((w: any) => 'README.md' === w.file && '100%.md' === w.note), JSON.stringify(dangling))
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 
