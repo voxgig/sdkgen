@@ -394,7 +394,8 @@ final class Clean {
     return n;
   }
 
-  private static BinaryBody binaryBody(Context ctx) {
+  // A string shorter than the registry accepts is not told from ordinary text.
+  private static BinaryBody binaryBody(Context ctx, Map<String, Object> cfg) {
     if (ctx == null) {
       return null;
     }
@@ -404,12 +405,13 @@ final class Clean {
       return null;
     }
     List<Object> live = new ArrayList<>();
-    if (ctx.spec != null && ctx.spec.body != null) {
-      live.add(ctx.spec.body);
-    }
-    Object given = ctx.reqdata == null ? null : ctx.reqdata.get(Media.RAW_BODY);
-    if (given != null) {
-      live.add(given);
+    for (Object given : new Object[] {
+        ctx.spec == null ? null : ctx.spec.body,
+        ctx.reqdata == null ? null : ctx.reqdata.get(Media.RAW_BODY)}) {
+      if (given != null
+          && (!(given instanceof String) || min(cfg) <= ((String) given).length())) {
+        live.add(given);
+      }
     }
     if (live.isEmpty()) {
       return null;
@@ -605,7 +607,7 @@ final class Clean {
       return cleanString(cfg, (String) val);
     }
 
-    BinaryBody bin = binaryBody(ctx);
+    BinaryBody bin = binaryBody(ctx, cfg);
 
     if (val instanceof SdkError) {
       SdkError err = (SdkError) val;

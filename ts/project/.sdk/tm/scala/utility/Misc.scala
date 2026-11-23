@@ -203,17 +203,23 @@ object Clean {
     n
   }
 
-  private def binaryBody(ctx: Context): BinaryBody = {
+  // A string shorter than the registry accepts is not told from ordinary text.
+  private def binaryBody(ctx: Context, cfg: CleanConfig): BinaryBody = {
     if (ctx == null) return null
     val body = Struct.getprop(ctx.point, "body")
     if ("raw" != Struct.getprop(body, "kind") ||
         java.lang.Boolean.TRUE != Struct.getprop(body, "binary")) {
       return null
     }
+    def isBody(v: Object): Boolean = v match {
+      case null => false
+      case s: String => cfg.min <= s.length
+      case _ => true
+    }
     var live: List[Object] = Nil
-    if (ctx.spec != null && ctx.spec.body != null) live = live :+ ctx.spec.body
+    if (ctx.spec != null && isBody(ctx.spec.body)) live = live :+ ctx.spec.body
     val raw = if (ctx.reqdata == null) null else ctx.reqdata.get(Media.RawBody)
-    if (raw != null) live = live :+ raw
+    if (isBody(raw)) live = live :+ raw
     if (live.isEmpty) return null
     new BinaryBody(live, Struct.getprop(body, "media") match { case s: String => s; case _ => null })
   }
@@ -391,7 +397,7 @@ object Clean {
       case s: String => return cleanString(cfg, s)
       case err: SdkError =>
         // Cleaned in place, since it is about to be thrown.
-        val bin = binaryBody(ctx)
+        val bin = binaryBody(ctx, cfg)
         err.msg = cleanString(cfg, err.msg)
         err.code = cleanString(cfg, err.code)
         err.result = snapshot(cfg, bin, err.result, "result", 1, new IdentityHashMap[Object, Object]())
@@ -404,7 +410,7 @@ object Clean {
       case _ =>
     }
 
-    val out = snapshot(cfg, binaryBody(ctx), value, null, 0, new IdentityHashMap[Object, Object]())
+    val out = snapshot(cfg, binaryBody(ctx, cfg), value, null, 0, new IdentityHashMap[Object, Object]())
     if (out eq DROP) null else out
   }
 

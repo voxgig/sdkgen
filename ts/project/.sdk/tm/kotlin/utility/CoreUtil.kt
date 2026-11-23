@@ -295,12 +295,14 @@ private fun utf8Length(text: String): Int {
   return n
 }
 
-private fun binaryBody(ctx: Context?): BinaryBody? {
+// A string shorter than the registry accepts is not told from ordinary text.
+private fun binaryBody(ctx: Context?, cfg: CleanConfig): BinaryBody? {
   val body = Struct.getprop(ctx?.point, "body", null)
   if ("raw" != Struct.getprop(body, "kind", null) || true != Struct.getprop(body, "binary", null)) {
     return null
   }
   val live = listOfNotNull(ctx?.spec?.body, ctx?.reqdata?.get(Media.RAW_BODY))
+    .filter { it !is String || cfg.min <= it.length }
   if (live.isEmpty()) {
     return null
   }
@@ -508,7 +510,7 @@ internal fun cleanWith(cfg: CleanConfig, value: Any?, ctx: Context? = null): Any
     return cleanString(cfg, value)
   }
 
-  val bin = binaryBody(ctx)
+  val bin = binaryBody(ctx, cfg)
 
   // An SdkError is cleaned in place, since it is about to be thrown.
   if (value is SdkError) {
