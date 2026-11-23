@@ -26,6 +26,11 @@ public class Utility {
   }
 
   @FunctionalInterface
+  public interface CleanSecretFn {
+    boolean apply(Context ctx, Object key, Object value);
+  }
+
+  @FunctionalInterface
   public interface MakeErrorFn {
     Object apply(Context ctx, RuntimeException err);
   }
@@ -57,6 +62,7 @@ public class Utility {
 
   public CleanFn clean;
   public CleanAddFn cleanAdd;
+  public CleanSecretFn cleanSecret;
   public CtxFn<Object> done;
   public MakeErrorFn makeError;
   public FeatureFn featureAdd;
@@ -101,6 +107,7 @@ public class Utility {
 
     u.clean = this.clean;
     u.cleanAdd = this.cleanAdd;
+    u.cleanSecret = this.cleanSecret;
     u.done = this.done;
     u.makeError = this.makeError;
     u.featureAdd = this.featureAdd;

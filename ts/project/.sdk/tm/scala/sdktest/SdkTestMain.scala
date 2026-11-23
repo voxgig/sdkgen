@@ -751,6 +751,199 @@ object SdkTestMain {
     finally server.stop(0)
   }
 
+  private val REDIRECT_SECRET = "REDIRECT-SECRET-q7w3e9r1"
+  private val REDIRECT_CREDENTIALS =
+    Seq("authorization", "cookie", "x-api-key", "private-token", "x-acme-auth")
+
+  // The API's origin, which redirects, and another origin, which records
+  // what reaches it: another port on the same host is another origin.
+  final class RedirectOrigins {
+    val arrived = java.util.Collections.synchronizedList(new ArrayList[JMap[String, Object]]())
+    val api = listen("api")
+    val other = listen("other")
+    val apibase = "http://127.0.0.1:" + api.getAddress.getPort
+    val otherbase = "http://127.0.0.1:" + other.getAddress.getPort
+
+    private def listen(where: String): com.sun.net.httpserver.HttpServer = {
+      val server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0)
+      server.createContext("/", (exchange: com.sun.net.httpserver.HttpExchange) => {
+        val path = exchange.getRequestURI.getRawPath
+        val headers = new LinkedHashMap[String, Object]()
+        val hit = exchange.getRequestHeaders.entrySet().iterator()
+        while (hit.hasNext) {
+          val h = hit.next()
+          headers.put(h.getKey.toLowerCase(java.util.Locale.ROOT), String.join(", ", h.getValue))
+        }
+        val body = new String(exchange.getRequestBody.readAllBytes(), "UTF-8")
+        arrived.add(om("where" -> where, "method" -> exchange.getRequestMethod,
+          "path" -> path, "headers" -> headers, "body" -> body))
+        val hop: Option[(Int, String)] = path match {
+          case "/out" => Some((302, otherbase + "/landed"))
+          case "/out307" => Some((307, otherbase + "/landed"))
+          case "/in" => Some((302, "/landed"))
+          case "/in307" => Some((307, "/landed"))
+          case "/in303" => Some((303, "/landed"))
+          case "/round" => Some((302, "/round"))
+          case _ => None
+        }
+        val out = if (hop.isEmpty) "{\"id\":\"r1\"}".getBytes("UTF-8") else Array[Byte]()
+        hop.foreach(h => exchange.getResponseHeaders.set("Location", h._2))
+        exchange.getResponseHeaders.set("Content-Type", "application/json")
+        exchange.sendResponseHeaders(hop.map(_._1).getOrElse(200),
+          if (out.nonEmpty) out.length.toLong else -1L)
+        exchange.getResponseBody.write(out)
+        exchange.close()
+      })
+      server.start()
+      server
+    }
+
+    // Sent by a live client that holds the secret as its apikey, which is
+    // how a caller's reaches the registry.
+    def send(cleanactive: Boolean, method: String, path: String, body: String): JMap[String, Object] = {
+      val client = new ProjectNameSDK(om("base" -> apibase, "apikey" -> REDIRECT_SECRET,
+        "clean" -> om("active" -> B(cleanactive))))
+      val utility = client.getUtility()
+      val ctx = utility.makeContext(om("opname" -> "load"), client.getRootCtx())
+      val headers = om(
+        "authorization" -> ("Bearer " + REDIRECT_SECRET),
+        "cookie" -> ("sid=" + REDIRECT_SECRET),
+        "x-api-key" -> REDIRECT_SECRET,
+        "private-token" -> "pt-12345",
+        // Not a sensitive name: a credential by the value it holds.
+        "x-acme-auth" -> ("v1 " + REDIRECT_SECRET),
+        "x-tenant" -> "acme")
+      val fetchdef = om("method" -> method, "headers" -> headers)
+      if (body != null) {
+        headers.put("content-type", "audio/wav")
+        fetchdef.put("body", body)
+      }
+      arrived.clear()
+      utility.fetcher(ctx, apibase + path, fetchdef).asInstanceOf[JMap[String, Object]]
+    }
+
+    def seen(): String = {
+      val out = new ArrayList[String]()
+      val it = new ArrayList[JMap[String, Object]](arrived).iterator()
+      while (it.hasNext) {
+        val a = it.next()
+        out.add(String.valueOf(a.get("where")) + " " + a.get("method") + " " + a.get("path") +
+          (if ("" == a.get("body")) "" else " " + a.get("body")))
+      }
+      out.toString
+    }
+
+    // The names of the given headers the nth request carried.
+    def carried(nth: Int, names: Seq[String]): String = {
+      val headers = arrived.get(nth).get("headers").asInstanceOf[JMap[String, Object]]
+      names.filter(name => headers.get(name) != null).mkString(",")
+    }
+
+    def close(): Unit = {
+      api.stop(0)
+      other.stop(0)
+    }
+  }
+
+  private def testRedirectToAnotherOrigin(): Unit = {
+    for (cleanactive <- Seq(true, false)) {
+      val origins = new RedirectOrigins()
+      try {
+        val name = "redirect.cross." + cleanactive
+        val res = origins.send(cleanactive, "GET", "/out", null)
+        eq(name + ".status", I(200), res.get("status"))
+        eq(name + ".seen", "[api GET /out, other GET /landed]", origins.seen())
+        eq(name + ".api", REDIRECT_CREDENTIALS.mkString(","), origins.carried(0, REDIRECT_CREDENTIALS))
+        eq(name + ".other", "", origins.carried(1, REDIRECT_CREDENTIALS))
+        eq(name + ".tenant", "x-tenant", origins.carried(1, Seq("x-tenant")))
+        check(name + ".secret",
+          !String.valueOf(origins.arrived.get(1).get("headers")).contains(REDIRECT_SECRET),
+          "another origin was sent the secret")
+      }
+      finally origins.close()
+    }
+  }
+
+  private def testRedirectOnTheSameOrigin(): Unit = {
+    val origins = new RedirectOrigins()
+    try {
+      val res = origins.send(true, "GET", "/in", null)
+      eq("redirect.same.status", I(200), res.get("status"))
+      eq("redirect.same.seen", "[api GET /in, api GET /landed]", origins.seen())
+      val all = REDIRECT_CREDENTIALS :+ "x-tenant"
+      eq("redirect.same.kept", all.mkString(","), origins.carried(1, all))
+    }
+    finally origins.close()
+  }
+
+  private def testRedirectBody(): Unit = {
+    val origins = new RedirectOrigins()
+    try {
+      val res = origins.send(true, "PUT", "/out307", "BODY-" + REDIRECT_SECRET)
+      eq("redirect.body.status", I(307), res.get("status"))
+      eq("redirect.body.seen", "[api PUT /out307 BODY-" + REDIRECT_SECRET + "]", origins.seen())
+    }
+    finally origins.close()
+  }
+
+  private def testRedirectMethods(): Unit = {
+    val origins = new RedirectOrigins()
+    try {
+      for (path <- Seq("/in307", "/in")) {
+        val name = "redirect.methods.kept" + path
+        val kept = origins.send(true, "PUT", path, "BODY-1")
+        eq(name, I(200), kept.get("status"))
+        eq(name + ".seen", "[api PUT " + path + " BODY-1, api PUT /landed BODY-1]", origins.seen())
+        eq(name + ".type", "content-type", origins.carried(1, Seq("content-type")))
+      }
+
+      for ((method, path) <- Seq(("PUT", "/in303"), ("POST", "/in"))) {
+        val name = "redirect.methods." + method
+        val res = origins.send(true, method, path, "{\"a\":1}")
+        eq(name, I(200), res.get("status"))
+        eq(name + ".seen", "[api " + method + " " + path + " {\"a\":1}, api GET /landed]", origins.seen())
+        eq(name + ".headers", "x-api-key", origins.carried(1, Seq("content-type", "x-api-key")))
+      }
+
+      origins.send(true, "HEAD", "/in303", null)
+      eq("redirect.methods.HEAD.seen", "[api HEAD /in303, api GET /landed]", origins.seen())
+    }
+    finally origins.close()
+  }
+
+  // The first request, then each hop the limit allows.
+  private def testRedirectLimit(): Unit = {
+    val origins = new RedirectOrigins()
+    try {
+      val round = origins.send(true, "GET", "/round", null)
+      eq("redirect.limit.status", I(302), round.get("status"))
+      eqI("redirect.limit.requests", 6, origins.arrived.size())
+    }
+    finally origins.close()
+  }
+
+  // The entry the secrets exchange calls has no context to ask.
+  private def testRedirectWithoutAContext(): Unit = {
+    val origins = new RedirectOrigins()
+    try {
+      def post(path: String): JMap[String, Object] = {
+        origins.arrived.clear()
+        SCALAPACKAGE.utility.Fetcher.defaultHttpFetch(origins.apibase + path, om(
+          "method" -> "POST", "body" -> "{\"refresh\":\"r1\"}",
+          "headers" -> om("content-type" -> "application/json", "x-api-key" -> "k1", "x-tenant" -> "acme")))
+      }
+
+      eq("redirect.bare.body.status", I(307), post("/out307").get("status"))
+      eq("redirect.bare.body.seen", "[api POST /out307 {\"refresh\":\"r1\"}]", origins.seen())
+
+      eq("redirect.bare.cross.status", I(200), post("/out").get("status"))
+      eq("redirect.bare.cross.seen", "[api POST /out {\"refresh\":\"r1\"}, other GET /landed]", origins.seen())
+      eq("redirect.bare.cross.headers", "x-tenant",
+        origins.carried(1, Seq("x-api-key", "content-type", "x-tenant")))
+    }
+    finally origins.close()
+  }
+
   // Nothing listens on port 9: a request the guard let through fails there.
   // A JVM cannot set its own environment, so the probe runs in a child JVM.
   private def testGetOnlyGuard(): Unit = {
@@ -782,7 +975,11 @@ object SdkTestMain {
       "composition" -> testComposition, "featureAdd" -> testFeatureAdd,
       "featureOrder" -> testFeatureOrder, "entityCrud" -> testEntityCrud,
       "entityStream" -> testEntityStream, "getOnlyGuard" -> testGetOnlyGuard,
-      "redirect" -> testRedirect)
+      "redirect" -> testRedirect, "redirectToAnotherOrigin" -> testRedirectToAnotherOrigin,
+      "redirectOnTheSameOrigin" -> testRedirectOnTheSameOrigin,
+      "redirectBody" -> testRedirectBody, "redirectMethods" -> testRedirectMethods,
+      "redirectLimit" -> testRedirectLimit,
+      "redirectWithoutAContext" -> testRedirectWithoutAContext)
 
     suites.foreach { case (name, fn) =>
       try fn()

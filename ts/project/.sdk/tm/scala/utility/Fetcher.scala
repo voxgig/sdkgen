@@ -13,25 +13,18 @@ import SCALAPACKAGE.utility.struct.Struct
 
 object Fetcher {
 
-  // Clients keyed by redirect policy and proxy. Each HttpClient owns a
-  // connection pool and a selector thread, so one per request reused
-  // nothing; one per key pools across calls.
+  // Clients keyed by proxy. Each HttpClient owns a connection pool and a
+  // selector thread, so one per request reused nothing; one per key pools
+  // across calls. None follows a redirect: followRedirects does.
   private val clients = new ConcurrentHashMap[String, HttpClient]()
 
   private def clientFor(fetchdef: JMap[String, Object]): HttpClient = {
-    // "manual" (set by the station feature's middleware under a hosts
-    // policy) returns a 3xx like any other response: an automatic follow
-    // would carry injected credentials to a host no policy approved.
-    val redirectPolicy =
-      if ("manual" == fetchdef.get("redirect")) HttpClient.Redirect.NEVER
-      else HttpClient.Redirect.NORMAL
-
     val proxy = fetchdef.get("proxy") match { case p: String => p; case _ => "" }
 
-    clients.computeIfAbsent(redirectPolicy.toString + "|" + proxy,
+    clients.computeIfAbsent(proxy,
       new JFunction[String, HttpClient] {
         def apply(key: String): HttpClient = {
-          val clientb = HttpClient.newBuilder().followRedirects(redirectPolicy)
+          val clientb = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER)
           if (proxy != "") {
             try {
               val proxyUri = URI.create(proxy)
@@ -58,7 +51,101 @@ object Fetcher {
       "[GET-ONLY GUARD] blocked " + upper + " " + (if (path.isEmpty) "/" else path), null)
   }
 
-  def defaultHttpFetch(fullurl: String, fetchdef: JMap[String, Object]): JMap[String, Object] = {
+  private val REDIRECT_STATUS = Set(301, 302, 303, 307, 308)
+  private val REDIRECT_MAX = 5
+  private val CREDENTIAL_HEADERS = Set("authorization", "cookie", "proxy-authorization")
+
+  // Scheme, host and port, the scheme's own port made explicit.
+  private def originOf(uri: URI): String = {
+    val scheme = String.valueOf(uri.getScheme).toLowerCase(java.util.Locale.ROOT)
+    val port = if (uri.getPort < 0) (if ("https" == scheme) 443 else 80) else uri.getPort
+    val host = if (uri.getHost == null) String.valueOf(uri.getRawAuthority) else uri.getHost
+    scheme + "://" + host.toLowerCase(java.util.Locale.ROOT) + ":" + port
+  }
+
+  // What another origin is not sent: the names every client drops, and
+  // whatever the SDK holds as a secret, by its name or by its value. Where
+  // no registry is at hand to ask, the clean module answers.
+  private def isCredential(ctx: Context, name: String, value: Object): Boolean = {
+    if (CREDENTIAL_HEADERS.contains(name.toLowerCase(java.util.Locale.ROOT))) return true
+    if (ctx != null && ctx.utility != null && ctx.utility.cleanSecret != null)
+      ctx.utility.cleanSecret(ctx, name, value)
+    else Clean.cleanSecret(ctx, name, value)
+  }
+
+  // Left to follow, the JDK client sends another origin every header it does
+  // not know for a credential, and a 307's body with them. Followed here
+  // instead: each hop passes the GET-only guard; past REDIRECT_MAX hops, or
+  // where a body would go to another origin, the 3xx is the answer.
+  @scala.annotation.tailrec
+  private[utility] def followRedirects(ctx: Context, fullurl: String, fetchdef: JMap[String, Object],
+      hops: Int = 0): JMap[String, Object] = {
+    val res = fetchOnce(fullurl, fetchdef)
+    val location = res.get("headers") match {
+      case h: JMap[_, _] => h.asInstanceOf[JMap[String, Object]].get("location")
+      case _ => null
+    }
+    val status = res.get("status") match { case n: java.lang.Integer => n.intValue; case _ => 0 }
+
+    // "manual" (set by the station feature's middleware under a hosts
+    // policy) is answered by the 3xx, like any other response.
+    if ("manual" == fetchdef.get("redirect") || !location.isInstanceOf[String] ||
+        !REDIRECT_STATUS.contains(status) || REDIRECT_MAX <= hops) return res
+
+    var from: URI = null
+    var next: URI = null
+    try {
+      from = URI.create(fullurl)
+      next = from.resolve(URI.create(location.asInstanceOf[String].trim))
+    }
+    catch { case _: RuntimeException => return res }
+
+    // As the JDK client follows: to the same scheme, or up to https.
+    val scheme = next.getScheme
+    if (scheme == null ||
+        !(scheme.equalsIgnoreCase(from.getScheme) || "https".equalsIgnoreCase(scheme))) return res
+
+    // As the JDK client rewrites it: a 303, and a 301 or 302 answering a
+    // POST, become a GET without the body.
+    val method = fetchdef.get("method") match {
+      case s: String if s != "" => s.toUpperCase(java.util.Locale.ROOT)
+      case _ => "GET"
+    }
+    val toget = 303 == status || ("POST" == method && 307 != status && 308 != status)
+    val cross = originOf(next) != originOf(from)
+    val body = if (toget) null else fetchdef.get("body")
+
+    // A stream is read once, so it cannot be sent again either.
+    if (body != null && (cross || body.isInstanceOf[java.io.InputStream])) return res
+
+    val headers = new LinkedHashMap[String, Object]()
+    fetchdef.get("headers") match {
+      case hm: JMap[_, _] =>
+        val it = hm.asInstanceOf[JMap[String, Object]].entrySet().iterator()
+        while (it.hasNext) {
+          val h = it.next()
+          val dropped =
+            (toget && h.getKey.toLowerCase(java.util.Locale.ROOT).startsWith("content-")) ||
+              (cross && isCredential(ctx, h.getKey, h.getValue))
+          if (!dropped) headers.put(h.getKey, h.getValue)
+        }
+      case _ =>
+    }
+
+    val nextdef = new LinkedHashMap[String, Object](fetchdef)
+    nextdef.put("method", if (toget) "GET" else method)
+    nextdef.put("headers", headers)
+    if (body == null) nextdef.remove("body")
+
+    followRedirects(ctx, next.toString, nextdef, hops + 1)
+  }
+
+  // For a caller with no operation context, as the secrets exchange is: a
+  // redirect follows the same rules, a credential told by the clean defaults.
+  def defaultHttpFetch(fullurl: String, fetchdef: JMap[String, Object]): JMap[String, Object] =
+    followRedirects(null, fullurl, fetchdef)
+
+  private def fetchOnce(fullurl: String, fetchdef: JMap[String, Object]): JMap[String, Object] = {
     var method = fetchdef.get("method") match { case s: String => s; case _ => "" }
     if ("" == method) method = "GET"
     val refused = getOnlyRefusal(fullurl, method)
@@ -216,7 +303,7 @@ object Fetcher {
     var sysFetch = Struct.getpath(options, java.util.List.of("system", "fetch"))
     if (sysFetch eq Struct.UNDEF) sysFetch = null
 
-    if (sysFetch == null) return defaultHttpFetch(fullurl, fetchdef)
+    if (sysFetch == null) return followRedirects(ctx, fullurl, fetchdef)
 
     sysFetch match {
       case bf: BiFunction[_, _, _] =>

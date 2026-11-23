@@ -667,4 +667,21 @@ final class Clean {
       explain.putAll(cleaned);
     }
   }
+
+  // Whether a named value is a secret: by its name, or by a registered value
+  // it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+  static boolean cleanSecret(Context ctx, Object key, Object value) {
+    Map<String, Object> cfg = cleanConfig(ctx);
+    if (sensitive(cfg, key)) {
+      return true;
+    }
+    if (value instanceof String) {
+      for (String registered : values(cfg)) {
+        if (((String) value).contains(registered)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }

@@ -48,11 +48,11 @@ const TRANSPORTS: Record<string, Transport | { none: string, fetcher: string }> 
   perl: { fetcher: 'perl/utility/fetcher.pm', test: 'perl/t/primary_utility.t',
     follows: 'sdk', marks: [/max_redirect => 0/] },
   java: { fetcher: 'java/utility/Fetcher.java', test: 'java/test/PrimaryUtilityTest.java',
-    follows: 'client', marks: [/Redirect\.NORMAL/, /Redirect\.NEVER/] },
+    follows: 'sdk', marks: [/Redirect\.NEVER/, /followRedirects\(ctx, fullurl, fetchdef\)/] },
   kotlin: { fetcher: 'kotlin/utility/Fetcher.kt', test: 'kotlin/test/PrimaryUtilityTest.kt',
-    follows: 'client', marks: [/Redirect\.NORMAL/, /Redirect\.NEVER/] },
+    follows: 'sdk', marks: [/Redirect\.NEVER/, /followRedirects\(ctx, fullurl, fetchdef\)/] },
   scala: { fetcher: 'scala/utility/Fetcher.scala', test: 'scala/sdktest/SdkTestMain.scala',
-    follows: 'client', marks: [/Redirect\.NORMAL/, /Redirect\.NEVER/] },
+    follows: 'sdk', marks: [/Redirect\.NEVER/, /followRedirects\(ctx, fullurl, fetchdef\)/] },
   csharp: { fetcher: 'csharp/utility/Fetcher.cs', test: 'csharp/test/PrimaryUtilityTest.cs',
     follows: 'sdk', marks: [/AllowAutoRedirect = false/, /DefaultHttpFetch\(fullurl, fetchdef, ctx\)/,
       /RedirectMax <= hops/] },
@@ -71,10 +71,6 @@ const TRANSPORTS: Record<string, Transport | { none: string, fetcher: string }> 
   zig: { none: 'live transport unavailable', fetcher: 'zig/core/utility.zig' },
   ocaml: { none: 'fetch_no_transport', fetcher: 'ocaml/sdk_runtime.ml' },
 }
-
-
-// Targets whose client decides alone what another origin is sent.
-const CLIENT_STRIPS = ['java', 'kotlin', 'scala']
 
 
 function sdkTargets(): string[] {
@@ -149,19 +145,17 @@ describe('redirects', () => {
         assert.ok(/getonly[_-]?refusal/i.test(src.slice(src.search(/redirect[_-]?(status|max)/i))),
           target + ': a hop does not pass the GET-only guard')
       }
-      if (!CLIENT_STRIPS.includes(target)) {
-        assert.ok(/authorization/i.test(src) && /cookie/i.test(src),
-          target + ': another origin is sent the credentials')
-        assert.ok(/clean[_-]?secret/i.test(src),
-          target + ': another origin is sent a credential under another name')
-      }
+      assert.ok(/authorization/i.test(src) && /cookie/i.test(src),
+        target + ': another origin is sent the credentials')
+      assert.ok(/clean[_-]?secret/i.test(src),
+        target + ': another origin is sent a credential under another name')
 
       const tsrc = read(spec.test)
       for (const mark of ['/redirect/r1', 'done', '308', 'manual']) {
         assert.ok(tsrc.includes(mark), target + ': ' + spec.test + ' lacks ' + mark)
       }
       // The ts and js transports are driven across origins below.
-      if (!['ts', 'js'].includes(target) && !CLIENT_STRIPS.includes(target)) {
+      if (!['ts', 'js'].includes(target)) {
         for (const mark of ['x-api-key', 'x-acme-auth', 'x-tenant']) {
           assert.ok(tsrc.includes(mark), target + ': ' + spec.test + ' sends no ' + mark +
             ' to another origin')

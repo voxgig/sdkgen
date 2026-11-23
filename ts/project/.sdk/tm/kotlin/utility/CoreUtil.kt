@@ -553,6 +553,20 @@ private fun cleanExplain(ctx: Context) {
   }
 }
 
+// Whether a named value is a secret: by its name, or by a registered value
+// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+fun cleanSecret(ctx: Context?, key: Any?, value: Any?): Boolean {
+  val cfg = cleanConfig(ctx)
+  if (sensitiveKey(cfg, key)) {
+    return true
+  }
+  if (value !is String) {
+    return false
+  }
+  val values = synchronized(cfg) { cfg.values.toList() }
+  return values.any { value.contains(it) }
+}
+
 fun done(ctx: Context): Any? {
   if (ctx.ctrl.explain != null) {
     cleanExplain(ctx)

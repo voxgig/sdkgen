@@ -457,6 +457,21 @@ object Clean {
       explain.putAll(cleaned)
     }
   }
+
+  // Whether a named value is a secret: by its name, or by a registered value
+  // it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+  def cleanSecret(ctx: Context, key: Object, value: Object): Boolean = {
+    val cfg = cleanConfig(ctx)
+    if (sensitiveKey(cfg, key)) return true
+    value match {
+      case text: String =>
+        val values = cfg.synchronized { new ArrayList[String](cfg.values) }
+        val it = values.iterator()
+        while (it.hasNext) if (text.contains(it.next())) return true
+        false
+      case _ => false
+    }
+  }
 }
 
 object Done {

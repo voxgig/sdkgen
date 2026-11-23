@@ -31,6 +31,7 @@ import KOTLINPACKAGE.core.Spec
 import KOTLINPACKAGE.core.Utility
 import KOTLINPACKAGE.feature.BaseFeature
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhMap
+import KOTLINPACKAGE.utility.defaultHttpFetch
 
 @Suppress("UNCHECKED_CAST")
 class PrimaryUtilityTest {
@@ -445,6 +446,182 @@ class PrimaryUtilityTest {
       assertEquals(301, manual["status"])
     } finally {
       server.stop(0)
+    }
+  }
+
+  // The API's origin, which redirects, and another origin, which records
+  // what reaches it: another port on the same host is another origin.
+  class RedirectOrigins : AutoCloseable {
+    companion object {
+      const val SECRET = "REDIRECT-SECRET-q7w3e9r1"
+      val CREDENTIALS = listOf("authorization", "cookie", "x-api-key", "private-token", "x-acme-auth")
+    }
+
+    val arrived: MutableList<Map<String, Any?>> =
+      java.util.Collections.synchronizedList(mutableListOf<Map<String, Any?>>())
+    val api = listen("api")
+    val other = listen("other")
+    val apibase = "http://127.0.0.1:" + api.address.port
+    val otherbase = "http://127.0.0.1:" + other.address.port
+
+    private fun listen(where: String): com.sun.net.httpserver.HttpServer {
+      val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+      server.createContext("/") { exchange ->
+        val path = exchange.requestURI.rawPath
+        val headers = linkedMapOf<String, Any?>()
+        for ((name, vals) in exchange.requestHeaders) {
+          headers[name.lowercase()] = vals.joinToString(", ")
+        }
+        val body = exchange.requestBody.readAllBytes().toString(Charsets.UTF_8)
+        arrived.add(fhMap("where", where, "method", exchange.requestMethod, "path", path,
+          "headers", headers, "body", body))
+        val hop = when (path) {
+          "/out" -> 302 to otherbase + "/landed"
+          "/out307" -> 307 to otherbase + "/landed"
+          "/in" -> 302 to "/landed"
+          "/in307" -> 307 to "/landed"
+          "/in303" -> 303 to "/landed"
+          "/round" -> 302 to "/round"
+          else -> null
+        }
+        val out = if (hop == null) "{\"id\":\"r1\"}".toByteArray() else ByteArray(0)
+        if (hop != null) exchange.responseHeaders.set("Location", hop.second)
+        exchange.responseHeaders.set("Content-Type", "application/json")
+        exchange.sendResponseHeaders(hop?.first ?: 200, if (out.isNotEmpty()) out.size.toLong() else -1L)
+        exchange.responseBody.write(out)
+        exchange.close()
+      }
+      server.start()
+      return server
+    }
+
+    // Sent by a live client that holds the secret as its apikey, which is
+    // how a caller's reaches the registry.
+    fun send(cleanactive: Boolean, method: String, path: String, body: String?): Map<*, *> {
+      val liveClient = ProjectNameSDK(fhMap(
+        "base", apibase, "apikey", SECRET, "clean", fhMap("active", cleanactive)))
+      val liveUtility = liveClient.getUtility()
+      val ctx = liveUtility.makeContext(fhMap("opname", "load"), liveClient.getRootCtx())
+      val headers = fhMap(
+        "authorization", "Bearer " + SECRET,
+        "cookie", "sid=" + SECRET,
+        "x-api-key", SECRET,
+        "private-token", "pt-12345",
+        // Not a sensitive name: a credential by the value it holds.
+        "x-acme-auth", "v1 " + SECRET,
+        "x-tenant", "acme")
+      val fetchdef = fhMap("method", method, "headers", headers)
+      if (body != null) {
+        headers["content-type"] = "audio/wav"
+        fetchdef["body"] = body
+      }
+      arrived.clear()
+      return liveUtility.fetcher(ctx, apibase + path, fetchdef) as Map<*, *>
+    }
+
+    fun seen(): List<String> = arrived.toList().map {
+      "" + it["where"] + " " + it["method"] + " " + it["path"] +
+        (if ("" == it["body"]) "" else " " + it["body"])
+    }
+
+    // The names of the given headers the nth request carried.
+    fun carried(nth: Int, names: List<String>): List<String> {
+      val headers = arrived[nth]["headers"] as Map<*, *>
+      return names.filter { headers[it] != null }
+    }
+
+    override fun close() {
+      api.stop(0)
+      other.stop(0)
+    }
+  }
+
+  @Test
+  fun fetcherRedirectToAnotherOriginCarriesNoCredential() {
+    for (cleanactive in listOf(true, false)) {
+      RedirectOrigins().use { origins ->
+        val res = origins.send(cleanactive, "GET", "/out", null)
+        assertEquals(200, res["status"])
+        assertEquals(listOf("api GET /out", "other GET /landed"), origins.seen())
+        assertEquals(RedirectOrigins.CREDENTIALS, origins.carried(0, RedirectOrigins.CREDENTIALS),
+          "the API itself was not sent every credential")
+        assertEquals(listOf<String>(), origins.carried(1, RedirectOrigins.CREDENTIALS),
+          "another origin was sent a credential, clean.active " + cleanactive)
+        assertEquals(listOf("x-tenant"), origins.carried(1, listOf("x-tenant")))
+        assertFalse(origins.arrived[1]["headers"].toString().contains(RedirectOrigins.SECRET),
+          "another origin was sent the secret")
+      }
+    }
+  }
+
+  @Test
+  fun fetcherRedirectOnTheSameOriginKeepsEveryHeader() {
+    RedirectOrigins().use { origins ->
+      val res = origins.send(true, "GET", "/in", null)
+      assertEquals(200, res["status"])
+      assertEquals(listOf("api GET /in", "api GET /landed"), origins.seen())
+      val all = RedirectOrigins.CREDENTIALS + "x-tenant"
+      assertEquals(all, origins.carried(1, all), "the same origin lost a header")
+    }
+  }
+
+  @Test
+  fun fetcherRedirectNeverSendsABodyToAnotherOrigin() {
+    RedirectOrigins().use { origins ->
+      val res = origins.send(true, "PUT", "/out307", "BODY-" + RedirectOrigins.SECRET)
+      assertEquals(307, res["status"])
+      assertEquals(listOf("api PUT /out307 BODY-" + RedirectOrigins.SECRET), origins.seen())
+    }
+  }
+
+  @Test
+  fun fetcherRedirectRewritesTheMethodByStatus() {
+    RedirectOrigins().use { origins ->
+      for (path in listOf("/in307", "/in")) {
+        val kept = origins.send(true, "PUT", path, "BODY-1")
+        assertEquals(200, kept["status"])
+        assertEquals(listOf("api PUT $path BODY-1", "api PUT /landed BODY-1"), origins.seen())
+        assertEquals(listOf("content-type"), origins.carried(1, listOf("content-type")))
+      }
+
+      for ((method, path) in listOf("PUT" to "/in303", "POST" to "/in")) {
+        val res = origins.send(true, method, path, "{\"a\":1}")
+        assertEquals(200, res["status"])
+        assertEquals(listOf("api $method $path {\"a\":1}", "api GET /landed"), origins.seen())
+        assertEquals(listOf("x-api-key"), origins.carried(1, listOf("content-type", "x-api-key")))
+      }
+
+      origins.send(true, "HEAD", "/in303", null)
+      assertEquals(listOf("api HEAD /in303", "api GET /landed"), origins.seen())
+    }
+  }
+
+  @Test
+  fun fetcherRedirectStopsAtTheHopLimit() {
+    RedirectOrigins().use { origins ->
+      val round = origins.send(true, "GET", "/round", null)
+      assertEquals(302, round["status"])
+      assertEquals(6, origins.arrived.size, "the first request, then each hop the limit allows")
+    }
+  }
+
+  // The entry the secrets exchange calls has no context to ask.
+  @Test
+  fun fetcherRedirectWithoutAContextFollowsTheSameRules() {
+    RedirectOrigins().use { origins ->
+      fun post(path: String): Map<String, Any?> {
+        origins.arrived.clear()
+        return defaultHttpFetch(origins.apibase + path, fhMap(
+          "method", "POST", "body", "{\"refresh\":\"r1\"}",
+          "headers", fhMap("content-type", "application/json", "x-api-key", "k1", "x-tenant", "acme")))
+      }
+
+      assertEquals(307, post("/out307")["status"])
+      assertEquals(listOf("api POST /out307 {\"refresh\":\"r1\"}"), origins.seen())
+
+      assertEquals(200, post("/out")["status"])
+      assertEquals(listOf("api POST /out {\"refresh\":\"r1\"}", "other GET /landed"), origins.seen())
+      assertEquals(listOf("x-tenant"), origins.carried(1, listOf("x-api-key", "content-type", "x-tenant")))
     }
   }
 
