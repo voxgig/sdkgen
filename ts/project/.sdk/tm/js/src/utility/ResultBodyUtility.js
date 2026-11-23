@@ -1,4 +1,7 @@
 
+const { isTextMedia } = require('./MediaUtility')
+
+
 const PREVIEW_LENGTH = 160
 
 
@@ -51,9 +54,11 @@ function bodyReadError(ctx, result, err) {
 // malformed JSON.
 function unreadableBody(ctx, res) {
   const type = headerValue(res.headers, 'content-type')
+  // Only text is quoted: bytes are a file's, by the model or by their type.
+  const quoted = null != res.text && isTextMedia(type) && true !== ctx.point?.response?.binary
   const detail = 'HTTP ' + res.status + ', content-type ' + (type || 'none') +
     ', user-agent ' + (ctx.utility.clean(ctx, headerValue(res.sent, 'user-agent')) || 'transport default') +
-    (null == res.text ? '' : ', body: ' + preview(ctx, res.text))
+    (quoted ? ', body: ' + preview(ctx, res.text) : '')
 
   if (null != res.failed) {
     res.failed.message += ' (' + detail + ')'

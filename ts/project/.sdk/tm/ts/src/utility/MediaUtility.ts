@@ -13,6 +13,15 @@ function isJsonMedia(type: any): boolean {
 }
 
 
+// A type whose body is text: none declared, text/*, or a structured text
+// format. A body of any other type is bytes, which no message quotes.
+function isTextMedia(type: any): boolean {
+  const media = String(null == type ? '' : type).split(';')[0].trim().toLowerCase()
+  return '' === media || media.startsWith('text/') ||
+    /json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/.test(media)
+}
+
+
 // The declared JSON type alone, else every declared type in model order; nothing without a body.
 function acceptOf(point: any): string | undefined {
   const res = point?.response
@@ -137,6 +146,7 @@ export {
   isRawRequest,
   isRawValue,
   isStream,
+  isTextMedia,
   mediaHeaders,
   rawBody,
   readStream,

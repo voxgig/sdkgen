@@ -44,7 +44,7 @@ import { SCALAR_EXPECT, SCALAR_PROBES, scalarsListed } from './scalarprobes'
 import { REQD_EXPECT, REQD_PROBES, reqdListed } from './reqdprobes'
 import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 import {
-  NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
+  NONJSON_PROBES, NONJSON_SERVER, nonjsonCases, nonjsonFailures, nonjsonTsv,
 } from './nonjsonprobes'
 import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
 import { LOAD_LIVE, LOAD_PROBES, loadOutcomes } from './loadprobes'
@@ -10088,11 +10088,11 @@ describe('probes driven through a generated SDK', () => {
         ok(null != NONJSON_PROBES[key], lane.target + ': no non-JSON probe')
 
         const sdkroot = await sdkFor(lane.target, ['test', 'log', 'cache'])
-        const cases = Path.join(sdkroot, 'nonjson-cases.json')
-        Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
-        const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
-        Fs.writeFileSync(tsv, nonjsonTsv())
         const seam = null != lane.seam && lane.seam()
+        const cases = Path.join(sdkroot, 'nonjson-cases.json')
+        Fs.writeFileSync(cases, JSON.stringify(nonjsonCases(seam)))
+        const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
+        Fs.writeFileSync(tsv, nonjsonTsv(seam))
         const server = seam ? null : await nonjsonServer(sdkroot, cases)
         let ran: ReturnType<typeof run>
         try {
@@ -10126,9 +10126,9 @@ describe('probes driven through a generated SDK', () => {
 
       const sdkroot = await sdkFor(lane.target, ['test', 'log', 'cache'], "\nmain: kit: http: useragent: 'plain'\n")
       const cases = Path.join(sdkroot, 'nonjson-cases.json')
-      Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
+      Fs.writeFileSync(cases, JSON.stringify(nonjsonCases(false)))
       const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
-      Fs.writeFileSync(tsv, nonjsonTsv())
+      Fs.writeFileSync(tsv, nonjsonTsv(false))
       const server = await nonjsonServer(sdkroot, cases)
       let ran: ReturnType<typeof run>
       try {
