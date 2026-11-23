@@ -1,10 +1,16 @@
 # Design: files in the entity model — upload, download, partial and resumable transfer
 
-Status: **plan, with its shaping rulings made** (2026-11-21). Nothing here
-is implemented. Rulings R1 to R8 were given on 2026-11-21 and are recorded
-in section 12, where R9 to R19 each have a default that stands unless
-overruled. Sections 4.2 and 4.3 keep the options that were not chosen, so
-the reasoning stays readable.
+Status: **plan, with every ruling made** (2026-11-23). Nothing here is
+implemented. The maintainer ruled R1 to R8 on 2026-11-21 and the rest on
+2026-11-23, and section 12 records them all. Sections 4.2 and 4.3 keep the
+options that were not chosen, so the reasoning stays readable.
+
+Two of the later rulings changed words used throughout. The noun is
+`binary`: an entity's bytes are reached as `entity.binary('audio')`, and
+the feature, its sources, its errors and the model key take the same word.
+The prose still says "file" for what a person uploads or downloads. And a
+text body is plain data: it comes back through the ordinary operation as a
+string in the record, so only bytes are slots.
 
 Method: a survey of both codebases at sdkgen `28b4664` (4.45.0) and apidef
 `00778c4` (8.33.1), one trial run of that apidef over a draft definition of
@@ -244,6 +250,13 @@ bytes *are* is four:
 One mechanism should serve the first three. The fourth is an entity
 already, and section 4.6 keeps it one.
 
+**Ruled: bytes are slots, and text is data.** Whatever its role, a body the
+model marks binary is a slot (section 4.2). A body that is raw but not
+binary, such as a transcript or a feed, is plain data. It comes back
+through the ordinary operation as a string under `$body` in the record,
+within `maxBuffer`, and is sent the same way, as the `$body` a raw request
+already takes.
+
 ### 4.2 The noun: what a file is (R1)
 
 Seven existing rules constrain the answer:
@@ -262,16 +275,16 @@ Seven existing rules constrain the answer:
 
 | Option | What it is | Verdict |
 | --- | --- | --- |
-| **N1. A slot beside the record** | An entity has data, match, and zero or more named file slots. Bytes never enter `data()`. The record may hold a slot's *metadata* (O2). Reached as `entity.file('audio')` | **Recommended.** Breaks none of I1 to I7 |
+| **N1. A slot beside the record** | An entity has data, match, and zero or more named binary slots. Bytes never enter `data()`. The record may hold a slot's *metadata* (O2). Reached as `entity.binary('audio')` | **Recommended.** Breaks none of I1 to I7 |
 | N2. A value inside the record | `episode.data().audio` is a lazy file object with `save()` and `stream()` | Breaks I2 in every target and cannot exist in the five closed-union targets. `clean` would walk it |
 | N3. A child entity per file | Each slot is its own entity, `client.EpisodeAudio()`; `load` downloads, `update` uploads | Breaks I3. Multiplies classes in 23 targets, each needing a collision-free name. Reverses the `load` + action ruling |
 | N4. An action result and nothing else | No new noun: `load({ $action: 'audio' }, { sink })` | Smallest change and the weakest result: no typed slot names, no place for resume state, and I2 pressure returns the moment someone wants the bytes back |
 
 N1 is OData's stream property, and its media entity when the slot has no
 name: an entity whose plain `load` point answers bytes owns a default slot,
-`entity.file()`.
+`entity.binary()`.
 
-**Ruled (R1): N1.**
+**Ruled (R1): N1.** R9 names the slot's accessor `binary`.
 
 ### 4.3 The verb: how a transfer is an operation (R2)
 
@@ -302,40 +315,43 @@ const episode = await client.Episode().load({ show_id, id })
 
 // The record holds the slot's metadata; the slot holds the bytes.
 episode.data().audio                    // { size, type, etag, digest, modified }
-const audio = episode.file('audio')     // typed: 'audio' | 'transcript'
+const audio = episode.binary('audio')   // typed: only names the model has
 
 await audio.save('./pilot.wav')         // to disk: atomic, resumable, verified
 const head = await audio.bytes({ range: { start: 0, length: 44 } })
 for await (const chunk of audio.stream()) { /* one chunk in memory */ }
 
-await audio.put(client.file.path('./pilot-v2.wav'),
+await audio.put(client.binary.path('./pilot-v2.wav'),
   { ifMatch: episode.data().audio.etag })
 
 // A record and its file in one request: a multipart create.
 const next = await client.Episode().create({
-  show_id, title: 'Two', audio: client.file.path('./two.wav'),
+  show_id, title: 'Two', audio: client.binary.path('./two.wav'),
 })
 
-// Text is a slot too.
-const feed = await client.Show().load({ id: show_id })
-const rss = await feed.file('feed').text()
+// Text is plain data: the ordinary operation, and a string in the record.
+const feed = await client.Show().load({ id: show_id, $action: 'feed' })
+const rss = feed.data().$body
+await client.Episode().update({ show_id, id, $action: 'transcript', $body: vtt })
 ```
 
 Rules of the shape:
 
 1. **Each handle call is one run of the existing pipeline**, on the action
-   point the slot names: `save`, `bytes`, `text` and `stream` run `load`;
+   point the slot names: `save`, `bytes` and `stream` run `load`;
    `put` runs `update`, or `create` where that is the only writer. Every
    hook fires, every feature applies, and the context carries a `transfer`
    record (slot, direction, counts) for features that care.
 2. **`save` and `put` resolve to the entity**, as the operations beneath
-   them do (I1). `bytes`, `text` and `stream` resolve to what they name.
-3. **A file route called as a plain operation is refused**, with an error
-   naming the handle. A byte body never lands in `data()` (I2).
+   them do (I1). `bytes` and `stream` resolve to what they name (R11).
+3. **A binary route called as a plain operation is refused**, with an error
+   naming the handle. A byte body never lands in `data()` (I2). A text
+   body does, under `$body`, within `maxBuffer`.
 4. **A source is an explicit object**, built by a constructor in the
-   caller's code: `file.bytes`, `file.text`, `file.stream`, `file.path`.
-   A string in a binary field is content. It is never a path (S1).
-5. **Only a field the model declares binary may hold a source.**
+   caller's code: `binary.bytes`, `binary.stream`, `binary.path`. A string
+   in a binary field is content. It is never a path (S1).
+5. **A source travels in the data, and only a field the model declares
+   binary may hold one** (R10).
    `prepareBody` lifts the sources out by the names in
    `point.body.fields[].binary` before any transform, validation or
    cleaning sees the data; a source anywhere else is refused.
@@ -350,11 +366,11 @@ How the same thing reads in other targets:
 
 | Target | Download to disk | Upload |
 | --- | --- | --- |
-| `go` | `episode.File("audio").Save(ctx, path, opts)` | `.Put(ctx, sdk.FilePath(p), opts)`; `.Open(ctx)` gives an `io.ReadCloser` |
-| `py` | `episode.file("audio").save(path)` | `.put(sdk.file.path(p))`; `.open()` is a context manager |
-| `java` | `episode.file("audio").save(Path.of(p))` | `.put(FileSource.path(p))`; `.open()` gives an `InputStream` |
-| `rust` | `episode.file("audio").save(&path, opts)?` | `.put(FileSource::path(&p), opts)?`; `.reader()?` gives `impl Read` |
-| `c` | `entity_file_get(ent, "audio", sink_fn, user, opts)` | `entity_file_put(ent, "audio", source_fn, user, size, opts)` |
+| `go` | `episode.Binary("audio").Save(ctx, path, opts)` | `.Put(ctx, sdk.BinaryPath(p), opts)`; `.Open(ctx)` gives an `io.ReadCloser` |
+| `py` | `episode.binary("audio").save(path)` | `.put(sdk.binary.path(p))`; `.open()` is a context manager |
+| `java` | `episode.binary("audio").save(Path.of(p))` | `.put(BinarySource.path(p))`; `.open()` gives an `InputStream` |
+| `rust` | `episode.binary("audio").save(&path, opts)?` | `.put(BinarySource::path(&p), opts)?`; `.reader()?` gives `impl Read` |
+| `c` | `entity_binary_get(ent, "audio", sink_fn, user, opts)` | `entity_binary_put(ent, "audio", source_fn, user, size, opts)` |
 
 ### 4.5 What the model must say, and what the runtime discovers
 
@@ -362,9 +378,10 @@ The smallest model wins, because every model fact costs a round trip
 through apidef and its Go port.
 
 **sdkgen derives the slots from what is already there.** An action whose
-points carry a non-JSON `rs` or `rb` is a slot: its name is the action's,
-its direction comes from which of `rs` and `rb` is not JSON, and `binary`
-tells bytes from text. A helper beside `entityActions` in
+points carry a binary `rs` or `rb` is a slot: its name is the action's, and
+its direction comes from which of the two is binary. A raw body that is
+not binary is text, and stays with the ordinary operation. A helper beside
+`entityActions` in
 `helpers/opShape.ts` computes it once, or a fact rule does where aontu can
 express the aggregation. No definition is read (I6). **Phases 1 and 2 need
 no change to the model.**
@@ -380,18 +397,18 @@ optional metadata an older SDK ignores:
 
 | Fact | Why it cannot be discovered | Proposed home |
 | --- | --- | --- |
-| The record field holding a slot's metadata (O2) | Same name is a guess; an author must be able to say | on the point, `fl.field` |
-| A `HEAD` is declared on the route (O5) | Probing costs a request and a 405 | on the `GET` point, `fl.head` |
-| A declared size bound | Needed before sending | on the point, `fl.max` |
+| The record field holding a slot's metadata (O2) | Same name is a guess; an author must be able to say | on the point, `bn.field` |
+| A `HEAD` is declared on the route (O5) | Probing costs a request and a 405 | on the `GET` point, `bn.head` |
+| A declared size bound | Needed before sending | on the point, `bn.max` |
 | The entity is a transfer session, and which protocol | Must be known before the first byte | on the entity, `session` |
 | Which slot a session fills | Not in any definition | guide only |
 
-`fl` follows the model's convention of two characters for optional point
+`bn` follows the model's convention of two characters for optional point
 metadata. In the guide the natural home is the action entry, which is an
-empty map today: `action: "audio": file: { ... }`. Whatever a heuristic
+empty map today: `action: "audio": binary: { ... }`. Whatever a heuristic
 sets there is written as an aontu default, so an author's value overrides
 it, and a slot the heuristic rejects is written `active: *false`, not
-omitted (I7). Key names are ruling R17.
+omitted (I7). R9 gives `bn` and `binary`; `session` is R17.
 
 ### 4.6 Sessions: an entity whose job is moving bytes
 
@@ -405,10 +422,10 @@ session gains one driver on its instance:
 
 ```ts
 const up = await client.Upload().create({ show_id, episode_id, slot: 'audio', size })
-await up.send(client.file.path('./big.wav'), { onProgress })
+await up.send(client.binary.path('./big.wav'), { onProgress })
 
 const token = up.token()                  // plain data; sensitive (S6)
-await client.Upload().resume(token).send(client.file.path('./big.wav'))
+await client.Upload().resume(token).send(client.binary.path('./big.wav'))
 ```
 
 `send` is a loop over the entity's own operations: read the offset, append
@@ -423,7 +440,7 @@ never supplies `Upload-Offset` or `Tus-Resumable`, which is why O6 has to
 be undone in the model (section 8, A4).
 
 Binding a session to the slot it fills, so that
-`episode.file('audio').put(source, { resumable: true })` opens one itself,
+`episode.binary('audio').put(source, { resumable: true })` opens one itself,
 needs a guide entry no definition can supply. It is sugar over the driver
 and comes after it.
 
@@ -454,10 +471,10 @@ relaxing is legitimate, and a test that fails when it regresses.
 
 | # | Rule | Default | Proven by |
 | --- | --- | --- | --- |
-| S1 | **A string is content, never a path.** A local file is opened only through `file.path(...)` in the caller's code. Nothing in request data, options, the model, the environment or a response can cause an open | No relaxation | Corpus case sends a path-shaped string as a binary field and receives it back as bytes; a source scan finds no file open outside the fs plugin |
+| S1 | **A string is content, never a path.** A local file is opened only through `binary.path(...)` in the caller's code. Nothing in request data, options, the model, the environment or a response can cause an open | No relaxation | Corpus case sends a path-shaped string as a binary field and receives it back as bytes; a source scan finds no file open outside the fs plugin |
 | S2 | **The server never chooses a local path.** A `Content-Disposition` name is exposed as `info.name`, sanitised, and used only when the caller asks for `saveInto(dir)`, which checks containment after resolving | `save(path)` takes the caller's path | Example server's `badname` fault: traversal, absolute, reserved and control-character names |
-| S3 | **Memory is bounded.** `bytes()` and `text()` refuse past `maxBuffer`, checked against the declared length first and the count while reading. Streaming holds one chunk | 16 MiB | Generated large slot; mid-body count without a declared length |
-| S4 | **Disk and time are bounded.** A declared length must be met exactly. An undeclared one is capped by `maxBytes` | Cap when undeclared: ruling R12 | `shortlength` and unbounded-chunked faults |
+| S3 | **Memory is bounded.** `bytes()`, and a text body returned in the record, refuse past `maxBuffer`, checked against the declared length first and the count while reading. Streaming holds one chunk | 16 MiB | Generated large slot; mid-body count without a declared length |
+| S4 | **Disk and time are bounded.** A declared length must be met exactly. An undeclared one is capped by `maxBytes` | 1 GiB when undeclared (R12) | `shortlength` and unbounded-chunked faults |
 | S5 | **A credential goes to the API's origin and nowhere else.** A hop or URL on another origin carries no `authorization`, `cookie`, `proxy-authorization`, no header or query parameter `prepareAuth` placed, and none a secrets provider supplied (fixes H11) | Always | Second origin records what arrives; the test asserts no canary |
 | S6 | **A capability URL is a secret.** Presigned URLs, session URLs and resume tokens are registered with `clean` when the SDK first sees them (ADR-003, rule 1) | Always | The clean sweep, with a presigned canary |
 | S7 | **An upload never follows a redirect to another origin.** A 307 or 308 would re-send the body there | Refused unless the host is allow-listed | `redirect` fault on a `PUT` |
@@ -468,11 +485,11 @@ relaxing is legitimate, and a test that fails when it regresses.
 | S12 | **A resume never joins two versions.** It sends `If-Range` with a strong validator; a 200 in answer restarts from zero; a weak or absent validator means no resume | Always | `retag` fault changes the content between attempts |
 | S13 | **Writes are atomic and conservative.** A temporary file in the destination directory, created exclusively with owner-only permissions, renamed on success. No overwrite. The final path component is not followed if it is a link. A failed partial is removed unless kept for resume | Overwrite is opt-in per call | Existing file, existing link, kill mid-write |
 | S14 | **The SDK does not interpret what it moves.** No unpacking, no sniffing, no extension chosen from a response, no execute bit | No relaxation | Stated; nothing to regress into |
-| S15 | **A download is the type the model declares.** A 200 whose media type is neither the declared one nor an alternative is refused, so an HTML error page is not saved as audio | Strict; ruling R18 | `wrongtype` fault |
+| S15 | **A download is the type the model declares.** A 200 whose media type is neither the declared one nor an alternative is refused, so an HTML error page is not saved as audio | Refused (R18) | `wrongtype` fault |
 | S16 | **Encoding cannot be injected.** The multipart boundary is 128 random bits. Field and file names are escaped. A name is the base name only and may be withheld. A media type with a line break is refused | Always | Primary corpus cases with quotes and line breaks in names |
 | S17 | **File transfers are not decompressed.** They ask for `identity`: a range is defined over the encoded bytes, and decoding is unbounded | Wherever the platform lets a client set it; a browser decides for itself | `gzip` fault |
 | S18 | **Timeouts fit transfers.** On a file point a connect timeout and an idle timeout replace a deadline on the whole exchange, and supply one where a target has none (H7) | 10 s connect, 30 s idle | `stall` fault |
-| S19 | **Least privilege reaches the bytes.** Policy keys include the action (section 4.3), and the `file` feature has `read` and `write` switches | Both on; rules are the project's | Corpus: record allowed, bytes denied |
+| S19 | **Least privilege reaches the bytes.** Policy keys include the action (section 4.3), and the `binary` feature has `read` and `write` switches | Both on; rules are the project's | Corpus: record allowed, bytes denied |
 | S20 | **A retry never amplifies.** Only a replayable source is re-sent, only on an idempotent method or inside a session, a bounded number of times. A spent stream fails once, clearly, and is never silently buffered to make it replayable | 5 attempts | netsim mid-body faults |
 | S21 | **An agent gets a sandbox.** In `go-mcp` file access is off unless a root directory is configured, and every path is confined to it | Off | Phase 4 |
 | S22 | **Local detail stays local.** No full local path as a file name, no modification time, unless the caller sets them | Base name only | Primary corpus case |
@@ -483,10 +500,12 @@ compress a file point, so the decoding `#475` added has nothing to do
 there; S18 replaces the fixed deadlines of `php`, `c` and `csharp` on file
 points.
 
-### 5.3 A proposed ADR
+### 5.3 ADR-004
 
 Two of these rules are of the kind `ADR.md` exists for: reversing either
-would change what every SDK is.
+would change what every SDK is. The maintainer ruled that the entry go into
+the register now, as **Proposed**, and become Accepted when the tests that
+enforce it exist.
 
 > **ADR-004 — File bytes are neither data nor diagnostics, and a string is
 > never a path.** A file's bytes never enter an entity's record, and never
@@ -504,11 +523,10 @@ sweep, and a source scan for a file open outside the fs plugin.
 
 | Source | Replayable | Size known | Comes with |
 | --- | --- | --- | --- |
-| `file.bytes(buf, { name, type })` | yes | yes | core |
-| `file.text(str, { name, type })` | yes | yes | core |
+| `binary.bytes(buf, { name, type })` | yes | yes | core |
 | a platform `Blob` or `File` | yes | yes | core |
-| `file.stream(s, { size, name, type })` | no | if given | `stream` plugin |
-| `file.path(p, { name, type })` | yes | yes | `fs` plugin |
+| `binary.stream(s, { size, name, type })` | no | if given | `stream` plugin |
+| `binary.path(p, { name, type })` | yes | yes | `fs` plugin |
 
 Replayable is what decides whether a failed upload may be retried (S20).
 A known size is what decides whether the request carries a length or is
@@ -518,7 +536,7 @@ stream on such a route says so.
 A sink is a path (`fs` plugin), or a platform writable stream or a
 callback (`stream` plugin). The callback is the form every target can
 offer. With neither plugin an SDK moves only what fits in `maxBuffer`
-(R5, section 7.2).
+(R5, section 7.2). Text needs no source: it is a string in the data.
 
 ### 6.2 Partial reads
 
@@ -546,8 +564,8 @@ record, when the server ignores the range or the validator changed (S12).
 A session's `send` (section 4.6). The token is plain data: the entity, its
 match, the offset, the size, and the session URL where there is one. It is
 a credential in effect and is registered as one (S6). The SDK holds it in
-memory and hands it over on request; whether the SDK may also keep it on
-disk is ruling R13.
+memory and hands it over on request, and writes no state file of its own
+(R13).
 
 ### 6.5 Progress, cancellation, timeouts
 
@@ -564,11 +582,13 @@ disk is ruling R13.
 ### 6.6 Errors
 
 One code per cause, so a caller branches on a code and never on a message:
-`file_sink_required`, `file_source_refused`, `file_source_spent`,
-`file_too_large`, `file_exists`, `file_path_refused`, `file_type_unexpected`,
-`file_truncated`, `file_digest_mismatch`, `file_range_ignored`,
-`file_changed`, `file_redirect_refused`, `file_resume_invalid`,
-`file_feature_inactive`. The existing `status` and `notFound` on the error
+`binary_sink_required`, `binary_source_refused`, `binary_source_spent`,
+`binary_too_large`, `binary_exists`, `binary_path_refused`,
+`binary_type_unexpected`, `binary_truncated`, `binary_digest_mismatch`,
+`binary_range_ignored`, `binary_changed`, `binary_redirect_refused`,
+`binary_resume_invalid`, `binary_feature_inactive`. A text body past
+`maxBuffer` fails in core, as `response_too_large`. The existing `status`
+and `notFound` on the error
 apply unchanged. An error response's own body is read to a small bound and
 cleaned, as any error preview is.
 
@@ -578,7 +598,7 @@ In a browser or an edge runtime the fs plugin is not shipped. A download
 gives a stream or a `Blob`; an upload takes a `File` or a `Blob`, which the
 platform streams from disk itself. A browser cannot report upload progress
 through `fetch`, and can stream a request body only in some engines, so
-there a `file.stream` source is refused in favour of a `Blob`.
+there a `binary.stream` source is refused in favour of a `Blob`.
 
 ---
 
@@ -593,18 +613,18 @@ codecs are core runtime, in each target's `utility/`:
 - **request:** `json` as now; `form`; `multipart`; `raw` as now. The
   model's `fields`, with `list` and `join`, already say how each value is
   laid out.
-- **response:** `json` as now; `raw` read to `maxBuffer` as bytes or text.
-  One error for an unexpected type, the same in every target (H3).
+- **response:** `json` as now; `raw` read to `maxBuffer`, text into the
+  record under `$body` and bytes for the handle. One error for an
+  unexpected type, the same in every target (H3).
 
 They would be emitted only when the model has a point of that kind (I5),
 by the exclusion mechanism that trims feature source now.
 
 The handle is core too, in its thinnest form: an accessor the entity
-component emits when the model has slots, which answers `bytes()`,
-`text()` and a `put` of in-memory content through these codecs, within
-`maxBuffer`.
+component emits when the model has slots, which answers `bytes()` and a
+`put` of in-memory content through these codecs, within `maxBuffer`.
 
-### 7.2 The `file` feature and its plugins
+### 7.2 The `binary` feature and its plugins
 
 Everything past bounded, in-memory transfer is one feature (R8), trimmed
 like any other, with ADR-002 plugins for its parts:
@@ -619,26 +639,25 @@ like any other, with ADR-002 plugins for its parts:
 | `session-tus`, `session-rufh` | the append dialects: tus 1.0.0, and the IETF draft | nothing more |
 | `indirect` | presigned and other-origin transfers | nothing more |
 
-R5 was ruled as "both as feature plugins". It is read here as: moving a
-file to and from the local filesystem, and moving it as bytes and streams,
-are *each* a plugin of the feature, `fs` and `stream`. A project ships
-either or both. An SDK with neither still moves what fits in `maxBuffer`,
-through the core codecs, and refuses anything larger. The rules of section
-5.2 do not move with the packaging: with `fs` on, a string is still never
-a path (S1), the server still never names a file (S2), and a write is
-still atomic and never an overwrite by default (S13). If the ruling meant
-something else, this paragraph and the table in section 6.1 are what
-change.
+R5 was ruled as "both as feature plugins", and the maintainer confirmed
+the reading on 2026-11-23: moving a file to and from the local filesystem,
+and moving it as bytes and streams, are *each* a plugin of the feature,
+`fs` and `stream`. A project ships either or both, and a newly scaffolded
+one turns on `stream`, and `fs` where its target has a filesystem (R19).
+An SDK with neither still moves what fits in `maxBuffer`, through the core
+codecs, and refuses anything larger. The rules of section 5.2 do not move
+with the packaging: with `fs` on, a string is still never a path (S1), the
+server still never names a file (S2), and a write is still atomic and
+never an overwrite by default (S13).
 
 `needs` is the vocabulary plugins already declare, so a target that cannot
 provide `crypto` is refused at generation and not at a consumer's first
 download. Where a target has no hash in its standard library, `digest`
-needs a vendored one or is declared absent for that target; that is part of
-ruling R14.
+gets a vendored one (R14).
 
-With the feature off, a slot still answers `bytes()`, `text()` and a `put`
-of in-memory content through the core codecs, and everything else fails
-with `file_feature_inactive`. That split is what R8 rules.
+With the feature off, a slot still answers `bytes()` and a `put` of
+in-memory content through the core codecs, and everything else fails with
+`binary_feature_inactive`. That split is what R8 rules.
 
 ### 7.3 The transport contract
 
@@ -722,13 +741,13 @@ Small, and none of it blocks Phases 1 or 2.
 | --- | --- | --- |
 | A1 | A collection path whose literal names its own keyed entity is that entity's collection, not an action (H9). The tell is an action equal to the entity's name | a row beside the verb-word rulings; both ports |
 | A2 | Basic flows skip a point whose `rb` or `rs` is not JSON, until file steps exist (H10) | `test/flow-step` cases |
-| A3 | `fl` on a file point: `field`, `head`, `max` (section 4.5), with the guide's `action: <name>: file:` to set or refuse each | a new `test/file-point.tsv`, run by both suites |
+| A3 | `bn` on a binary point: `field`, `head`, `max` (section 4.5), with the guide's `action: <name>: binary:` to set or refuse each | a new `test/file-point.tsv`, run by both suites |
 | A4 | `session` on an entity whose append point speaks a known dialect, recognised by media type and header arguments together: `PATCH` with `application/offset+octet-stream` and `Upload-Offset` (tus 1.0.0, first, by R7); or `application/partial-upload` and `Upload-Complete` (the IETF draft). On such a point the dialect's own headers leave the selector and the caller's arguments (O6): the plugin sends them | `test/session.tsv` |
 | A5 | File steps in the basic flow: upload generated bytes, download, compare | later, with Phase 2 |
 
 Each is TypeScript first, then Go, with a shared fixture, as the port rule
 requires. A3 and A4 raise the peer floor sdkgen declares; an SDK generated
-from an older model simply has no `fl` and no sessions.
+from an older model simply has no `bn` and no sessions.
 
 ---
 
@@ -740,9 +759,9 @@ different case:
 | Slot | Kind | What it exercises |
 | --- | --- | --- |
 | `episode.audio` | large, binary | streaming, ranges (a player seeks), resume, digests, conditional replace |
-| `episode.transcript` | text | a raw slot that is not bytes |
+| `episode.transcript` | text | plain data: a string in the record, read and written by the ordinary operation |
 | `show.artwork` | small, binary | bounded in-memory transfer |
-| `show.feed` | text, derived, read-only | a representation of records, not content |
+| `show.feed` | text, derived, read-only | a representation of records, returned as plain data |
 | `episode` create | multipart | a record and a file in one request |
 | `upload` | session entity | resumable upload: JSON `create`, `load` and `remove`, with the offset read and the append in tus 1.0.0 core |
 
@@ -778,8 +797,8 @@ What it adds, because files need it:
   name ever used as a path, bound to localhost.
 
 It lives as a fixture here, as solardemo does, and as `app/` in a
-reference SDK repository beside `voxgig-solardemo-sdk`. Logistics are
-ruling R16.
+reference SDK repository beside `voxgig-solardemo-sdk`, which the
+maintainer creates (R16).
 
 ---
 
@@ -817,8 +836,8 @@ Sizes are relative. Each phase ends at something that can be released.
 - `cache` skips non-JSON bodies (H5). `stream()`'s upload claim is removed
   or made true (H4).
 - apidef A1 and A2.
-- ADR-004 (section 5.3) entered in `ADR.md` once its wording is approved.
-  R1 decides its substance; the register is the maintainer's to write to.
+- ADR-004 is in `ADR.md` as Proposed (section 5.3). It becomes Accepted
+  with the first test that enforces it.
 
 **Phase 1: body codecs, every target.** Large only by multiplication.
 
@@ -834,7 +853,7 @@ Exit: every target round-trips a record with a file against the live app.
 
 **Phase 2: files in the entity model.** The large one.
 
-- The `file` feature in `ts` and `js`: handles, sources, sinks, the
+- The `binary` feature in `ts` and `js`: handles, sources, sinks, the
   transport contract, the fs and digest plugins, ranges, conditional
   requests, progress, cancellation, action-aware policy keys.
 - `test` byte store; feature corpus; clean sweep canaries.
@@ -876,7 +895,7 @@ ruling of this document that the item answers.
 | `p0-feature-claims` | `cache` passes a body that is not JSON by; `stream()` stops documenting an upload nothing sends | sdkgen | H4, H5 |
 | `p0-apidef-verb-noun` | A collection named for a verb keeps its plain create, in both ports | apidef | H9, A1 |
 | `p0-apidef-flow-files` | Basic flows leave file routes out until file steps exist, in both ports | apidef | H10, A2 |
-| `p0-adr` | ADR-004 entered in the decision register, once its wording is approved | sdkgen | section 5.3 |
+| `p0-adr` | ADR-004 in the decision register: entered as Proposed, Accepted with its first enforcing test | sdkgen | section 5.3 |
 
 **Phase 1**
 
@@ -894,7 +913,7 @@ ruling of this document that the item answers.
 
 | Item | Work | Where | From |
 | --- | --- | --- | --- |
-| `p2-file-feature` | The `file` feature in `ts` and `js`: slot handles with generated names, the transfer inside the pipeline, ranges, conditional requests, progress, cancellation | sdkgen | R1, R2, R8 |
+| `p2-file-feature` | The `binary` feature in `ts` and `js`: slot handles with generated names, the transfer inside the pipeline, ranges, conditional requests, progress, cancellation | sdkgen | R1, R2, R8 |
 | `p2-plugins-stream-fs` | The `stream` and `fs` plugins in `ts` and `js` | sdkgen | R5, S1, S2, S13 |
 | `p2-digest` | Digest verification, with a hash in every target that claims the tier | sdkgen | S11, R14 |
 | `p2-action-keys` | Action-aware keys in `rbac`, `allow`, `metrics`, `audit` and `cost`, in every target | sdkgen | H12, S19 |
@@ -905,7 +924,7 @@ ruling of this document that the item answers.
 | `p2-ports-streamed` | The Streamed tier in the fourteen targets whose client streams, each built and run on its own toolchain | sdkgen | R4 |
 | `p2-ports-contract` | Streaming in `c`, and the extended transport contract in `cpp`, `zig` and `ocaml` | sdkgen | section 7.3 |
 | `p2-rust-bytes` | `rust` carries a byte body as bytes | the struct library, then sdkgen | H8 |
-| `p2-apidef-file-facts` | `fl` on a file point and the guide's `file` entry, in both ports | apidef | A3, R17 |
+| `p2-apidef-file-facts` | `bn` on a binary point and the guide's `binary` entry, in both ports | apidef | A3, R9 |
 | `p2-flow-file-steps` | File steps in the basic flows and in every target's generated tests | apidef, sdkgen | A5 |
 | `p2-docs` | Reference, how-to and explanation pages for files, and an entity's files in each generated README | sdkgen | section 7.6 |
 
@@ -934,7 +953,8 @@ ruling of this document that the item answers.
 
 ## 12. Rulings
 
-### Ruled on 2026-11-21
+Every question the plan raised is ruled. R1 to R8 were given on
+2026-11-21, and the rest on 2026-11-23.
 
 | # | Question | Ruling | Gates |
 | --- | --- | --- | --- |
@@ -942,30 +962,34 @@ ruling of this document that the item answers.
 | **R2** | How a transfer is an operation | V1: the six operations, with action-aware policy keys | Phase 2 |
 | **R3** | The example API's domain | A podcast studio | Phase 1 |
 | **R4** | Rollout across targets | Declared tiers, enforced; every target at Encoded first | All |
-| **R5** | Whether the SDK touches the local filesystem, or moves only bytes and streams | "Both as feature plugins". Read as two plugins of the `file` feature, `fs` and `stream`; see section 7.2 | Phase 2 |
+| **R5** | Whether the SDK touches the local filesystem, or moves only bytes and streams | "Both as feature plugins": two plugins of the feature, `fs` and `stream`, the reading confirmed | Phase 2 |
 | **R6** | Default policy for other origins | Balanced: a download follows an https redirect without credentials; an upload never follows one to another origin | Phases 2, 4 |
 | **R7** | Resumable upload protocol | Sessions as entities; the tus 1.0.0 dialect first, the IETF draft tracked as a second | Phase 3 |
-| **R8** | Packaging | Codecs in core; everything else in a `file` feature with plugins | Phases 1, 2 |
+| **R8** | Packaging | Codecs in core; everything else in a feature with plugins | Phases 1, 2 |
+| **R9** | The noun's name | `binary`, everywhere: `entity.binary(name)`, the `binary` feature, `binary.path(...)` and the other sources, `binary_*` errors, `bn` on a point, `binary` under the guide's action entry | Phase 2 |
+| **R10** | Where a source travels | In the request data, lifted out by the model's binary field names; a typed argument in the five closed-union targets | Phase 1 |
+| **R11** | What handle methods resolve to | `save` and `put` to the entity; `bytes` and `stream` to what they name | Phase 2 |
+| **R12** | Default limits | `maxBuffer` 16 MiB, which also bounds a text body in the record; 1 GiB when a download's length is undeclared; 5 attempts; 10 s connect, 30 s idle | Phase 2 |
+| **R13** | Resume state | In memory and in a token the caller keeps. The SDK writes no state file of its own | Phase 3 |
+| **R14** | Integrity | Verify SHA-256 and SHA-512 when offered, and fail on a mismatch; requiring a digest is opt-in; a target without a hash in its standard library vendors one | Phase 2 |
+| **R15** | Consumer and packaged targets | Phase 4 | Phase 4 |
+| **R16** | Example logistics | A fixture here and `app/` in a new reference SDK repository, which the maintainer creates; ports 8903 and 8904; a bearer credential | Phase 1 |
+| **R17** | Model vocabulary | `bn` on a point and `binary` in the guide, by R9; `session` on an entity, the default, which was not put to the maintainer | apidef A3, A4 |
+| **R18** | A download of an undeclared media type | Refused | Phase 2 |
+| **R19** | Which plugins a scaffolded project turns on | `stream`; and `fs` where the target has a filesystem; both written in the project's own model | Phase 2 |
 
-R1 to R4 and R6 to R8 took the recommended option. R5 was answered in the
-maintainer's own words, and the reading taken is stated in section 7.2 so
-that it can be corrected.
+Three more rulings came with them:
 
-### Open, each with a default that stands unless overruled
+- **Text is plain data.** A body that is raw but not binary comes back
+  through the ordinary operation as a string under `$body` in the record.
+  Only bytes are slots (section 4.1).
+- **ADR-004 enters the register now, as Proposed** (section 5.3).
+- **The security findings come first**: `p0-error-bytes`,
+  `p0-redirect-credentials` and `p0-binary-response`, each from a failing
+  test.
 
-| # | Question | Default | Gates |
-| --- | --- | --- | --- |
-| R9 | The noun's name | `file`: `entity.file(name)`, `fl` in the model. `blob`, `content` and `media` each collide more or say less | Phase 2 |
-| R10 | Where a source travels | In the request data, lifted out by the model's binary field names; a typed argument in the five closed-union targets | Phase 1 |
-| R11 | What handle methods resolve to | `save` and `put` to the entity; `bytes`, `text`, `stream` to what they name | Phase 2 |
-| R12 | Default limits | `maxBuffer` 16 MiB; undeclared-length cap 1 GiB; 5 attempts; 10 s connect, 30 s idle | Phase 2 |
-| R13 | Resume state | In memory and in a token the caller keeps. The SDK writes no state file of its own | Phase 3 |
-| R14 | Integrity | Verify SHA-256 and SHA-512 when offered; requiring a digest is opt-in; targets without a hash vendor one | Phase 2 |
-| R15 | Consumer and packaged targets | Phase 4 | Phase 4 |
-| R16 | Example logistics | Fixture here, `app/` in a new reference SDK repository; ports 8903 and 8904; a bearer credential | Phase 1 |
-| R17 | Model vocabulary | `fl` on a point; `session` on an entity; `file` under the guide's action entry | apidef A3, A4 |
-| R18 | A download of an undeclared media type | Refused | Phase 2 |
-| R19 | Which plugins a scaffolded project turns on, following R5 | `stream` on; `fs` on where the target has a filesystem; both written in the project's own model, where its owner sees and can remove them | Phase 2 |
+R5 and R9 were answered in the maintainer's own words. R5's reading was
+then confirmed; R9's reach, everywhere, was put as a second question.
 
 ---
 
