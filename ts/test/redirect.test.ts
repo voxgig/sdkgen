@@ -64,9 +64,9 @@ const TRANSPORTS: Record<string, Transport | { none: string, fetcher: string }> 
     test: 'swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift',
     follows: 'sdk', marks: [/completionHandler\(nil\)/] },
   clojure: { fetcher: 'clojure/src/sdk/core.clj', test: 'clojure/test/sdk/test/pipeline.clj',
-    follows: 'client', marks: [/Redirect\/NORMAL/, /Redirect\/NEVER/] },
+    follows: 'sdk', marks: [/Redirect\/NEVER/, /\(follow-redirects ctx fullurl fetchdef\)/] },
   elixir: { fetcher: 'elixir/lib/projectname/utility.ex', test: 'elixir/test/pipeline_test.exs',
-    follows: 'client', marks: [/autoredirect: false/] },
+    follows: 'sdk', marks: [/\[autoredirect: false\]/, /follow_redirects\(ctx, fullurl, fetchdef, 0\)/] },
   cpp: { none: 'fetch_no_transport', fetcher: 'cpp/utility/pipeline.hpp' },
   zig: { none: 'live transport unavailable', fetcher: 'zig/core/utility.zig' },
   ocaml: { none: 'fetch_no_transport', fetcher: 'ocaml/sdk_runtime.ml' },
@@ -74,7 +74,7 @@ const TRANSPORTS: Record<string, Transport | { none: string, fetcher: string }> 
 
 
 // Targets whose client decides alone what another origin is sent.
-const CLIENT_STRIPS = ['java', 'kotlin', 'scala', 'rust', 'clojure', 'elixir']
+const CLIENT_STRIPS = ['java', 'kotlin', 'scala', 'rust']
 
 
 function sdkTargets(): string[] {
@@ -145,14 +145,14 @@ describe('redirects', () => {
         for (const code of ['301', '302', '303', '307', '308']) {
           assert.ok(src.includes(code), target + ': ' + spec.fetcher + ' never follows ' + code)
         }
-        assert.ok(/redirect_?max/i.test(src), target + ': no hop limit')
-        assert.ok(/getonly_?refusal|getOnlyRefusal/i.test(src.slice(src.search(/REDIRECT|[rR]edirectStatus/))),
+        assert.ok(/redirect[_-]?max/i.test(src), target + ': no hop limit')
+        assert.ok(/getonly[_-]?refusal/i.test(src.slice(src.search(/redirect[_-]?(status|max)/i))),
           target + ': a hop does not pass the GET-only guard')
       }
       if (!CLIENT_STRIPS.includes(target)) {
         assert.ok(/authorization/i.test(src) && /cookie/i.test(src),
           target + ': another origin is sent the credentials')
-        assert.ok(/clean_?secret/i.test(src),
+        assert.ok(/clean[_-]?secret/i.test(src),
           target + ': another origin is sent a credential under another name')
       }
 

@@ -751,6 +751,14 @@
         (.putAll ^java.util.Map ex ^java.util.Map cleaned))
       (let [er (mget ex "result")] (when (vs/ismap er) (vs/delprop er "err"))))))
 
+;; Whether a named value is a secret: by its name, or by a registered value
+;; it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+(defn u-clean-secret [ctx key value]
+  (let [cfg (clean-config ctx)]
+    (boolean (or (sensitive-key? cfg key)
+                 (and (string? value)
+                      (some (fn [v] (and (string? v) (str/includes? value v))) (registered cfg)))))))
+
 ;; The API definition is authoritative: a POST-only or PATCH-based API
 ;; exposes `update` as POST or PATCH, not the PUT the op name implies.
 ;; Only fall back to the op-name convention when the point has no method.
@@ -1886,13 +1894,16 @@
           (.readAllBytes ^java.io.InputStream in)))
       :else body)))
 
-(defn- body-publisher [body]
-  (cond
-    (string? body) (HttpRequest$BodyPublishers/ofString body)
-    (bytes? body) (HttpRequest$BodyPublishers/ofByteArray body)
-    (instance? java.io.InputStream body)
-    (HttpRequest$BodyPublishers/ofByteArray (.readAllBytes ^java.io.InputStream body))
-    :else (HttpRequest$BodyPublishers/noBody)))
+;; A stream is read once: the definition keeps its bytes, for a redirect that
+;; sends them again.
+(defn- body-publisher [fetchdef]
+  (let [given (vs/getprop fetchdef "body")
+        body (if (instance? java.io.InputStream given) (.readAllBytes ^java.io.InputStream given) given)]
+    (when-not (identical? body given) (vs/setprop fetchdef "body" body))
+    (cond
+      (string? body) (HttpRequest$BodyPublishers/ofString body)
+      (bytes? body) (HttpRequest$BodyPublishers/ofByteArray body)
+      :else (HttpRequest$BodyPublishers/noBody))))
 
 ;; A GET-only live run refuses any other method before it is sent. The error
 ;; names the path alone: the query can carry a credential.
@@ -1913,7 +1924,7 @@
     (try
       (let [builder (HttpRequest/newBuilder (URI/create fullurl))
             has-ua (atom false)]
-        (.method builder (str/upper-case method-str) (body-publisher (vs/getprop fetchdef "body")))
+        (.method builder (str/upper-case method-str) (body-publisher fetchdef))
         (doseq [item (or (vs/items headers) [])]
           (let [k (vs/getprop item 0) v (vs/getprop item 1)]
             (when (string? v)
@@ -1943,6 +1954,74 @@
         [nil (make-error-obj "fetch_transport"
                              (str (.getName (class e)) (when-let [m (.getMessage e)] (str ": " m))))]))))
 
+(def ^:private REDIRECT-STATUS #{301 302 303 307 308})
+(def ^:private REDIRECT-MAX 5)
+(def ^:private CREDENTIAL-HEADERS #{"authorization" "cookie" "proxy-authorization"})
+
+(defn- origin-of [^URI uri]
+  (let [scheme (.toLowerCase (str (.getScheme uri)) java.util.Locale/ROOT)
+        port (.getPort uri)]
+    [scheme
+     (.toLowerCase (str (or (.getHost uri) (.getAuthority uri))) java.util.Locale/ROOT)
+     (if (neg? port) (get {"http" 80 "https" 443} scheme -1) (long port))]))
+
+;; What another origin is not sent: the names every client drops, and whatever
+;; the SDK holds as a secret, by its name or by its value.
+(defn- credential? [ctx name value]
+  (let [u (oget ctx :utility)
+        secret (when (instance? clojure.lang.IDeref u) (:clean-secret (deref u)))]
+    (boolean (or (contains? CREDENTIAL-HEADERS (.toLowerCase (str name) java.util.Locale/ROOT))
+                 ((if (fn? secret) secret u-clean-secret) ctx name value)))))
+
+;; The request a followed redirect sends next, or nil where the response is the
+;; answer. As the client rewrote it: a 303, and a 301 or 302 answering a POST,
+;; become a GET without the body. A body is not sent on to another origin.
+(defn- next-hop [ctx url fetchdef res]
+  (let [status (to-int (vs/getprop res "status"))
+        location (mget (vs/getprop res "headers") "location")
+        from (URI/create url)
+        ^URI to (when (and (contains? REDIRECT-STATUS status) (string? location))
+                  (try (.resolve from (URI/create location)) (catch Exception _ nil)))
+        scheme (when to (.getScheme to))]
+    ;; As the client's NORMAL policy: never from https to http.
+    (when (and scheme (or (.equalsIgnoreCase ^String scheme (.getScheme from))
+                          (.equalsIgnoreCase ^String scheme "https")))
+      (let [method (.toUpperCase (str (or (vs/getprop fetchdef "method") "GET")) java.util.Locale/ROOT)
+            toget (or (= 303 status) (and (= "POST" method) (contains? #{301 302} status)))
+            cross (not= (origin-of to) (origin-of from))
+            body (when-not toget (vs/getprop fetchdef "body"))]
+        (when-not (and cross (some? body))
+          (let [headers (vs/jm)
+                hop (java.util.LinkedHashMap. ^java.util.Map fetchdef)]
+            (doseq [item (or (vs/items (vs/getprop fetchdef "headers")) [])]
+              (let [k (vs/getprop item 0) v (vs/getprop item 1)]
+                (when-not (or (and toget (str/starts-with? (.toLowerCase (str k) java.util.Locale/ROOT)
+                                                           "content-"))
+                              (and cross (credential? ctx k v)))
+                  (.put ^java.util.Map headers k v))))
+            (.put hop "method" (if toget "GET" method))
+            (.put hop "headers" headers)
+            (when (nil? body) (.remove hop "body"))
+            [(str to) hop]))))))
+
+;; java.net.http has no hook on a redirect, so the hops its NORMAL policy took
+;; are taken here. Each passes the GET-only guard; at the limit, which counts
+;; requests as the client's did, the 3xx is the answer.
+(defn- follow-redirects [ctx fullurl fetchdef]
+  (let [manual (= "manual" (vs/getprop fetchdef "redirect"))
+        ^java.util.Map given (if (vs/ismap fetchdef) fetchdef {})]
+    (loop [url fullurl
+           fdef (doto (java.util.LinkedHashMap. given) (.put "redirect" "manual"))
+           sent 1]
+      (let [[res err :as answer] (default-http-fetch url fdef)
+            [next-url next-def :as hop] (when (and (nil? err) (not manual) (< sent REDIRECT-MAX))
+                                          (next-hop ctx url fdef res))
+            refused (when hop (getonly-refusal ctx next-url (vs/getprop next-def "method")))]
+        (cond
+          (nil? hop) answer
+          refused [nil refused]
+          :else (recur next-url next-def (inc sent)))))))
+
 (defn u-fetcher [ctx fullurl fetchdef]
   (let [client (oget ctx :client)]
     (if (not= (client-mode client) "live")
@@ -1956,7 +2035,7 @@
             (cond
               (nil? sys-fetch) (if-let [refused (getonly-refusal ctx fullurl (vs/getprop fetchdef "method"))]
                                  [nil refused]
-                                 (default-http-fetch fullurl fetchdef))
+                                 (follow-redirects ctx fullurl fetchdef))
               (vs/isfunc sys-fetch) (sys-fetch fullurl fetchdef)
               :else [nil (ctx-error ctx "fetch_invalid" "system.fetch is not a valid function")])))))))
 
@@ -1965,7 +2044,7 @@
 ;; ---------------------------------------------------------------------------
 
 (defn base-utility-map []
-  {:clean u-clean :clean-add u-clean-add :done u-done :make-error u-make-error
+  {:clean u-clean :clean-add u-clean-add :clean-secret u-clean-secret :done u-done :make-error u-make-error
    :feature-add feature-add :feature-hook feature-hook :feature-init feature-init
    :fetcher u-fetcher :make-fetch-def u-make-fetch-def :make-context (fn [cm bc] (make-context cm bc))
    :make-options u-make-options :make-request u-make-request :make-response u-make-response

@@ -32,6 +32,7 @@ defmodule ProjectName.Utility do
     reg = [
       {"clean", &clean_impl/2},
       {"clean_add", &clean_add_impl/2},
+      {"clean_secret", &clean_secret_impl/3},
       {"done", &done_impl/1},
       {"make_error", &make_error_impl/2},
       {"feature_add", &feature_add_impl/2},
@@ -89,6 +90,13 @@ defmodule ProjectName.Utility do
   def param(ctx, pd), do: u(ctx, "param").(ctx, pd)
   def clean(ctx, v), do: u(ctx, "clean").(ctx, v)
   def clean_add(ctx, v), do: u(ctx, "clean_add").(ctx, v)
+
+  # The shipped predicate where a caller-built utility carries none.
+  def clean_secret(ctx, k, v) do
+    f = u(ctx, "clean_secret")
+    if S.isfunc(f), do: f.(ctx, k, v), else: clean_secret_impl(ctx, k, v)
+  end
+
   def prepare_auth(ctx), do: u(ctx, "prepare_auth").(ctx)
   def prepare_body(ctx), do: u(ctx, "prepare_body").(ctx)
   def prepare_headers(ctx), do: u(ctx, "prepare_headers").(ctx)
@@ -526,6 +534,16 @@ defmodule ProjectName.Utility do
     end
 
     nil
+  end
+
+  # Whether a named value is a secret: by its name, or by a registered value
+  # it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+  def clean_secret_impl(ctx, key, value) do
+    cfg = clean_config(ctx)
+
+    sensitive_key?(cfg, key) or
+      (is_binary(value) and
+         Enum.any?(list_values(S.getprop(cfg, "values")), &(is_binary(&1) and String.contains?(value, &1))))
   end
 
   # ---- features ------------------------------------------------------------
@@ -2522,7 +2540,7 @@ defmodule ProjectName.Utility do
         sys_fetch = S.getpath(options, "system.fetch")
 
         cond do
-          sys_fetch == nil -> getonly_refusal(ctx, fullurl, fetchdef) || default_http_fetch(fullurl, fetchdef)
+          sys_fetch == nil -> getonly_refusal(ctx, fullurl, fetchdef) || follow_redirects(ctx, fullurl, fetchdef, 0)
           S.isfunc(sys_fetch) -> sys_fetch.(fullurl, fetchdef)
           true -> {nil, Context.make_error(ctx, "fetch_invalid", "system.fetch is not a valid function")}
         end
@@ -2546,6 +2564,88 @@ defmodule ProjectName.Utility do
       path = if path == "", do: "/", else: path
       {nil, Context.make_error(ctx, "fetch_getonly_block", "[GET-ONLY GUARD] blocked #{method} #{path}")}
     end
+  end
+
+  @redirect_status [300, 301, 302, 303, 307, 308]
+  @redirect_max 5
+  @credential_headers ~w(authorization cookie proxy-authorization)
+
+  # :httpc follows a redirect with every header but authorization and cookie,
+  # and sends a POST's body on to wherever a 307 points. Followed here
+  # instead, where :httpc followed: each hop passes the GET-only guard; past
+  # @redirect_max hops, or where a body would go to another origin, the 3xx
+  # is the answer.
+  defp follow_redirects(ctx, url, fetchdef, hops) do
+    {res, err} = default_http_fetch(url, fetchdef)
+
+    case next_hop(ctx, url, fetchdef, res, err, hops) do
+      nil -> {res, err}
+      {next, nextdef} -> getonly_refusal(ctx, next, nextdef) || follow_redirects(ctx, next, nextdef, hops + 1)
+    end
+  end
+
+  # The request a redirect leads to, or nil where the response is the answer.
+  defp next_hop(ctx, url, fetchdef, res, err, hops) do
+    status = if err == nil and S.ismap(res), do: S.getprop(res, "status")
+    location = if status != nil, do: S.getprop(S.getprop(res, "headers"), "location")
+    method = H.or_(S.getprop(fetchdef, "method"), "GET") |> to_string() |> String.upcase()
+
+    # As :httpc: a 300 for any method, the others for these alone.
+    followed =
+      S.getprop(fetchdef, "redirect") != "manual" and status in @redirect_status and
+        is_binary(location) and location != "" and hops < @redirect_max and
+        (status == 300 or method in ["GET", "HEAD", "OPTIONS", "TRACE", "POST"])
+
+    next = if followed, do: resolve_location(url, location)
+
+    if next != nil do
+      # A POST answered by a 301, 302 or 303 becomes a GET without its body.
+      toget = method == "POST" and status in [301, 302, 303]
+      cross = origin_of(next) != origin_of(url)
+      body = if toget, do: nil, else: S.getprop(fetchdef, "body")
+
+      if cross and is_binary(body) and method in ["POST", "PUT", "PATCH", "DELETE"] do
+        nil
+      else
+        headers = S.jm([])
+
+        Enum.each(H.entries(H.or_(S.getprop(fetchdef, "headers"), S.jm([]))), fn {name, value} ->
+          dropped =
+            (toget and String.starts_with?(String.downcase(to_string(name)), "content-")) or
+              (cross and credential?(ctx, name, value))
+
+          if not dropped, do: S.setprop(headers, name, value)
+        end)
+
+        nextdef = S.jm([])
+
+        Enum.each(H.entries(fetchdef), fn {key, value} ->
+          if key not in ["method", "headers", "body"], do: S.setprop(nextdef, key, value)
+        end)
+
+        S.setprop(nextdef, "method", if(toget, do: "GET", else: method))
+        S.setprop(nextdef, "headers", headers)
+        if body != nil, do: S.setprop(nextdef, "body", body)
+        {next, nextdef}
+      end
+    end
+  end
+
+  defp resolve_location(url, location) do
+    URI.to_string(URI.merge(url, location))
+  rescue
+    _ -> nil
+  end
+
+  defp origin_of(url) do
+    uri = URI.parse(url)
+    {String.downcase(to_string(uri.scheme)), String.downcase(to_string(uri.host)), uri.port}
+  end
+
+  # What another origin is not sent: the names every client drops, and
+  # whatever the SDK holds as a secret, by its name or by its value.
+  defp credential?(ctx, name, value) do
+    String.downcase(to_string(name)) in @credential_headers or clean_secret(ctx, name, value) == true
   end
 
   defp default_http_fetch(fullurl, fetchdef) do
@@ -2596,16 +2696,10 @@ defmodule ProjectName.Utility do
         {url, hlist}
       end
 
-    # A `redirect: "manual"` annotation (set by the station feature when a
-    # hosts egress policy is active - the same in-band channel go and rust
-    # use) disables :httpc's automatic redirect following, so a 3xx rides
-    # back as a normal response: a Location pointing off an egress
-    # allowlist must never pull an automatic credentialed follow-up
-    # request.
-    http_opts =
-      if S.getprop(fetchdef, "redirect") == "manual", do: [autoredirect: false], else: []
-
-    case :httpc.request(method, request, http_opts, body_format: :binary) do
+    # A 3xx rides back as a normal response: follow_redirects decides the
+    # next request, and a `redirect: "manual"` annotation (set by the station
+    # feature when a hosts egress policy is active) makes the 3xx the answer.
+    case :httpc.request(method, request, [autoredirect: false], body_format: :binary) do
       {:ok, {{_v, status, _reason}, resp_headers, resp_body}} ->
         rh =
           Enum.reduce(resp_headers, S.jm([]), fn {k, v}, acc ->
