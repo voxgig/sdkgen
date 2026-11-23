@@ -155,12 +155,14 @@ function utf8Length(text: string): number {
 }
 
 
-function binaryBody(ctx: any): BinaryBody | undefined {
+// A string shorter than the registry accepts is not told from ordinary text.
+function binaryBody(ctx: any, cfg: CleanConfig): BinaryBody | undefined {
   const body = ctx?.point?.body
   if ('raw' !== body?.kind || true !== body.binary) {
     return undefined
   }
-  const live = [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]].filter((v: any) => null != v)
+  const live = [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]]
+    .filter((v: any) => null != v && ('string' !== typeof v || cfg.min <= v.length))
   return 0 === live.length ? undefined :
     { live, type: 'string' === typeof body.media ? body.media : undefined }
 }
@@ -312,7 +314,7 @@ function clean(ctx: Context, val: any) {
     return cleanString(cfg, val)
   }
 
-  const bin = binaryBody(ctx)
+  const bin = binaryBody(ctx, cfg)
 
   if (val instanceof Error) {
     setMessage(val, cleanString(cfg, String(val.message)))

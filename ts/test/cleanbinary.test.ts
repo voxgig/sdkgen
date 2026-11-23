@@ -233,6 +233,24 @@ for (const lang of ['ts', 'js']) {
     })
 
 
+    test('a string too short to register is not taken for the body', () => {
+      const mod = loadClean(lang)
+      for (const body of ['', 'PUT']) {
+        const spec = { method: 'PUT', prefix: '', suffix: '', headers: {}, body }
+        const ctx = { ...ctxWith(mod), point: BINARY_POINT, spec, reqdata: { $body: body } }
+        deepStrictEqual(mod.clean(ctx, spec), spec)
+      }
+      // At the registry's own minimum it is the body again.
+      const spec = { method: 'PUT', headers: {}, body: 'RIFF' }
+      const ctx = { ...ctxWith(mod), point: BINARY_POINT, spec, reqdata: { $body: 'RIFF' } }
+      deepStrictEqual(mod.clean(ctx, spec).body, { binary$: 'bytes', size: 4, type: 'audio/wav' })
+      // Typed bytes are bytes at any length.
+      const empty = { body: new Uint8Array(0) }
+      deepStrictEqual(mod.clean({ ...ctxWith(mod), point: BINARY_POINT, spec: empty }, empty).body,
+        { binary$: 'bytes', size: 0, type: 'audio/wav' })
+    })
+
+
     test('a raw body the model does not mark binary is text, and stays', () => {
       const mod = loadClean(lang)
       const body = 'WEBVTT\n\n00:00.000 --> 00:01.000\nhello'

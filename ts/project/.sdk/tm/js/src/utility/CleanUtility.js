@@ -148,12 +148,14 @@ function utf8Length(text) {
 
 
 // The live request body of a point the model marks binary, and its type.
-function binaryBody(ctx) {
+// A string shorter than the registry accepts is not told from ordinary text.
+function binaryBody(ctx, cfg) {
   const body = ctx?.point?.body
   if ('raw' !== body?.kind || true !== body.binary) {
     return undefined
   }
-  const live = [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]].filter((v) => null != v)
+  const live = [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]]
+    .filter((v) => null != v && ('string' !== typeof v || cfg.min <= v.length))
   return 0 === live.length ? undefined :
     { live, type: 'string' === typeof body.media ? body.media : undefined }
 }
@@ -305,7 +307,7 @@ function clean(ctx, val) {
     return cleanString(cfg, val)
   }
 
-  const bin = binaryBody(ctx)
+  const bin = binaryBody(ctx, cfg)
 
   if (val instanceof Error) {
     setMessage(val, cleanString(cfg, String(val.message)))
