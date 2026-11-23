@@ -543,3 +543,10 @@ fn add_sensitive(
         _ => {}
     }
 }
+
+/// Whether a named value is a secret: by its name, or by a registered value
+/// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+pub fn clean_secret(ctx: &Rc<Context>, key: &str, value: &str) -> bool {
+    let cfg = read_config(&config_block(ctx));
+    sensitive_key(&cfg, Some(key)) || cfg.values.iter().any(|v| value.contains(v.as_str()))
+}

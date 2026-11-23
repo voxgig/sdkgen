@@ -57,7 +57,7 @@ const TRANSPORTS: Record<string, Transport | { none: string, fetcher: string }> 
     follows: 'sdk', marks: [/AllowAutoRedirect = false/, /DefaultHttpFetch\(fullurl, fetchdef, ctx\)/,
       /RedirectMax <= hops/] },
   rust: { fetcher: 'rust/utility/fetcher.rs', test: 'rust/tests/primary_utility_test.rs',
-    follows: 'client', marks: [/redirects\(0\)/] },
+    follows: 'sdk', marks: [/redirects\(0\)/, /REDIRECT_MAX: usize = 5/] },
   c: { fetcher: 'c/utility/fetcher.c', test: 'c/tests/transport_test.c',
     follows: 'sdk', marks: [/http_fetch\(ctx, url, fetchdef, err\)/] },
   swift: { fetcher: 'swift/Sources/ProjectNameSDK/utility/Fetcher.swift',
@@ -74,7 +74,7 @@ const TRANSPORTS: Record<string, Transport | { none: string, fetcher: string }> 
 
 
 // Targets whose client decides alone what another origin is sent.
-const CLIENT_STRIPS = ['java', 'kotlin', 'scala', 'rust']
+const CLIENT_STRIPS = ['java', 'kotlin', 'scala']
 
 
 function sdkTargets(): string[] {

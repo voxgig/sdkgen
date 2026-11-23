@@ -441,9 +441,265 @@ fn primary_fetcher_redirect() {
     assert!(matches!(getp(&manual, "status"), Value::Num(n) if 301.0 == n), "{:?}", getp(&manual, "status"));
 }
 
+const REDIRECT_SECRET: &str = "REDIRECT-SECRET-q7w3e9r1";
+const REDIRECT_CREDENTIALS: [&str; 5] =
+    ["authorization", "cookie", "x-api-key", "private-token", "x-acme-auth"];
+
+// The GET-only guard is read from the environment, which every test thread
+// shares: held by the test that sets it and by one sending another method.
+static GETONLY_ENV: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+struct Arrived {
+    origin: &'static str,
+    method: String,
+    path: String,
+    headers: BTreeMap<String, String>,
+    body: String,
+}
+
+type Arrivals = std::sync::Arc<std::sync::Mutex<Vec<Arrived>>>;
+
+// One origin: it records each request, and answers the paths named here with
+// a redirect, to the other origin (/out...) or to itself.
+fn redirect_origin(
+    origin: &'static str,
+    listener: std::net::TcpListener,
+    other: String,
+    log: Arrivals,
+) {
+    use std::io::{BufRead, BufReader, Read, Write};
+    std::thread::spawn(move || {
+        for stream in listener.incoming() {
+            let mut stream = match stream {
+                Ok(stream) => stream,
+                Err(_) => continue,
+            };
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap_or(0);
+            let mut words = line.split(' ');
+            let method = words.next().unwrap_or("").trim().to_string();
+            let path = words.next().unwrap_or("").to_string();
+            if method.is_empty() {
+                continue;
+            }
+            let mut headers = BTreeMap::new();
+            loop {
+                let mut header = String::new();
+                if 0 == reader.read_line(&mut header).unwrap_or(0) || header.trim().is_empty() {
+                    break;
+                }
+                if let Some((name, value)) = header.split_once(':') {
+                    headers.insert(name.trim().to_lowercase(), value.trim().to_string());
+                }
+            }
+            let size = headers
+                .get("content-length")
+                .and_then(|n| n.parse::<usize>().ok())
+                .unwrap_or(0);
+            let mut body = vec![0u8; size];
+            let _ = reader.read_exact(&mut body);
+            let (status, location) = match path.as_str() {
+                "/out" => (302, format!("Location: {}/landed\r\n", other)),
+                "/out307" => (307, format!("Location: {}/landed\r\n", other)),
+                "/in" => (302, "Location: /landed\r\n".to_string()),
+                "/in303" => (303, "Location: /landed\r\n".to_string()),
+                "/in307" => (307, "Location: /landed\r\n".to_string()),
+                "/round" => (302, "Location: /round\r\n".to_string()),
+                _ => (200, String::new()),
+            };
+            let answer = if 200 == status { "{\"id\":\"r1\"}" } else { "" };
+            log.lock().unwrap().push(Arrived {
+                origin,
+                method,
+                path,
+                headers,
+                body: String::from_utf8_lossy(&body).to_string(),
+            });
+            let _ = write!(stream, "HTTP/1.1 {} X\r\n{}Content-Type: application/json\r\n\
+                Content-Length: {}\r\nConnection: close\r\n\r\n{}", status, location, answer.len(), answer);
+        }
+    });
+}
+
+// The API's origin and another: a second port on its host is another origin.
+fn redirect_origins() -> (String, Arrivals) {
+    let api = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let other = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let apibase = format!("http://{}", api.local_addr().unwrap());
+    let otherbase = format!("http://{}", other.local_addr().unwrap());
+    let log = Arrivals::default();
+    redirect_origin("api", api, otherbase, log.clone());
+    redirect_origin("other", other, apibase.clone(), log.clone());
+    (apibase, log)
+}
+
+// A live client holding the secret as its apikey, as a caller's would, sends
+// it under each name a credential travels by.
+fn redirect_fetch(
+    base: &str,
+    clean: bool,
+    method: &str,
+    path: &str,
+    body: Option<&str>,
+) -> Result<Value, ProjectNameError> {
+    let client = ProjectNameSDK::new(jo(vec![
+        ("base", Value::str(base)),
+        ("apikey", Value::str(REDIRECT_SECRET)),
+        ("clean", jo(vec![("active", Value::Bool(clean))])),
+    ]));
+    let utility = client.get_utility();
+    let ctx = utility.make_context(
+        CtxSpec {
+            opname: Some("load".to_string()),
+            client: Some(client.clone()),
+            utility: Some(utility.clone()),
+            ..Default::default()
+        },
+        Some(&client.get_root_ctx()),
+    );
+    let headers = jo(vec![
+        ("authorization", Value::str(format!("Bearer {}", REDIRECT_SECRET))),
+        ("cookie", Value::str(format!("sid={}", REDIRECT_SECRET))),
+        ("x-api-key", Value::str(REDIRECT_SECRET)),
+        ("private-token", Value::str("pt-12345")),
+        // Not a sensitive name: a credential by the value it holds.
+        ("x-acme-auth", Value::str(format!("v1 {}", REDIRECT_SECRET))),
+        ("x-tenant", Value::str("acme")),
+    ]);
+    let mut fetchdef = vec![("method", Value::str(method))];
+    if let Some(body) = body {
+        setp(&headers, "content-type", Value::str("application/json"));
+        fetchdef.push(("body", Value::str(body)));
+    }
+    fetchdef.push(("headers", headers));
+    utility.fetch(&ctx, &format!("{}{}", base, path), &jo(fetchdef))
+}
+
+fn redirect_status(res: &Result<Value, ProjectNameError>) -> i64 {
+    match res {
+        Ok(res) => match getp(res, "status") {
+            Value::Num(n) => n as i64,
+            _ => -1,
+        },
+        Err(err) => panic!("expected a response, got {}: {}", err.code, err.msg),
+    }
+}
+
+fn redirect_trail(arrived: &[Arrived]) -> Vec<String> {
+    arrived
+        .iter()
+        .map(|a| format!("{} {} {}", a.origin, a.method, a.path))
+        .collect()
+}
+
+// Another origin is sent no credential, under any name, with clean active or
+// not; the API's own origin was sent each one.
+#[test]
+fn primary_fetcher_redirect_other_origin() {
+    for clean in [true, false] {
+        let (base, log) = redirect_origins();
+        let res = redirect_fetch(&base, clean, "GET", "/out", None);
+        assert_eq!(redirect_status(&res), 200);
+        let arrived = log.lock().unwrap();
+        assert_eq!(redirect_trail(&arrived), vec!["api GET /out", "other GET /landed"]);
+        let unsent: Vec<&str> = REDIRECT_CREDENTIALS
+            .into_iter()
+            .filter(|name| !arrived[0].headers.contains_key(*name))
+            .collect();
+        assert!(unsent.is_empty(), "the API itself was not sent {:?}", unsent);
+        let leaked: Vec<&str> = REDIRECT_CREDENTIALS
+            .into_iter()
+            .filter(|name| arrived[1].headers.contains_key(*name))
+            .collect();
+        assert!(leaked.is_empty(), "another origin was sent {:?} (clean active: {})", leaked, clean);
+        assert_eq!(arrived[1].headers.get("x-tenant").map(String::as_str), Some("acme"));
+        assert!(!arrived[1].headers.values().any(|v| v.contains(REDIRECT_SECRET)));
+    }
+}
+
+#[test]
+fn primary_fetcher_redirect_same_origin() {
+    let (base, log) = redirect_origins();
+    let res = redirect_fetch(&base, true, "GET", "/in", None);
+    assert_eq!(redirect_status(&res), 200);
+    let arrived = log.lock().unwrap();
+    assert_eq!(redirect_trail(&arrived), vec!["api GET /in", "api GET /landed"]);
+    let lost: Vec<&str> = REDIRECT_CREDENTIALS
+        .into_iter()
+        .chain(["x-tenant"])
+        .filter(|name| !arrived[1].headers.contains_key(*name))
+        .collect();
+    assert!(lost.is_empty(), "the same origin lost {:?}", lost);
+}
+
+// A body is never sent on. A 307 answering a PUT is the answer, on either
+// origin; what becomes a GET carries neither the body nor its type.
+#[test]
+fn primary_fetcher_redirect_body() {
+    let _env = GETONLY_ENV.lock().unwrap_or_else(|held| held.into_inner());
+    for path in ["/out307", "/in307"] {
+        let (base, log) = redirect_origins();
+        let body = format!("BODY-{}", REDIRECT_SECRET);
+        let res = redirect_fetch(&base, true, "PUT", path, Some(&body));
+        assert_eq!(redirect_status(&res), 307);
+        assert_eq!(redirect_trail(&log.lock().unwrap()), vec![format!("api PUT {}", path)]);
+    }
+    for (method, path) in [("PUT", "/in303"), ("POST", "/in")] {
+        let (base, log) = redirect_origins();
+        let res = redirect_fetch(&base, true, method, path, Some("{\"a\":1}"));
+        assert_eq!(redirect_status(&res), 200);
+        let arrived = log.lock().unwrap();
+        assert_eq!(
+            redirect_trail(&arrived),
+            vec![format!("api {} {}", method, path), "api GET /landed".to_string()]
+        );
+        assert_eq!(arrived[0].body, "{\"a\":1}");
+        assert_eq!(arrived[1].body, "");
+        assert_eq!(arrived[1].headers.get("content-type"), None, "{} {}", method, path);
+        assert!(arrived[1].headers.contains_key("x-api-key"), "{} {}", method, path);
+    }
+    let (base, log) = redirect_origins();
+    let res = redirect_fetch(&base, true, "POST", "/out", Some("{\"a\":1}"));
+    assert_eq!(redirect_status(&res), 200);
+    let arrived = log.lock().unwrap();
+    assert_eq!(redirect_trail(&arrived), vec!["api POST /out", "other GET /landed"]);
+    assert_eq!(arrived[1].body, "");
+    assert_eq!(arrived[1].headers.get("content-type"), None);
+    assert!(!arrived[1].headers.values().any(|v| v.contains(REDIRECT_SECRET)));
+}
+
+#[test]
+fn primary_fetcher_redirect_limit() {
+    let (base, log) = redirect_origins();
+    let res = redirect_fetch(&base, true, "GET", "/round", None);
+    assert_eq!(redirect_status(&res), 302);
+    assert_eq!(log.lock().unwrap().len(), 6);
+}
+
+// What a redirect asks of the registry: a secret by its name, or by a
+// registered value held in a form the registry stores, clean active or not.
+#[test]
+fn primary_clean_secret() {
+    let encoded = RUSTCRATE::utility::clean::base64_encode(REDIRECT_SECRET.as_bytes());
+    for clean in [true, false] {
+        let client = ProjectNameSDK::new(jo(vec![
+            ("apikey", Value::str(REDIRECT_SECRET)),
+            ("clean", jo(vec![("active", Value::Bool(clean))])),
+        ]));
+        let utility = client.get_utility();
+        let ctx = client.get_root_ctx();
+        assert!(utility.clean_secret(&ctx, "X-Api-Key", "anything"));
+        assert!(utility.clean_secret(&ctx, "x-acme-auth", &format!("v1 {}", REDIRECT_SECRET)));
+        assert!(utility.clean_secret(&ctx, "x-acme-auth", &format!("Basic {}", encoded)));
+        assert!(!utility.clean_secret(&ctx, "x-tenant", "acme"));
+    }
+}
+
 // Nothing listens on port 9: a request the guard let through fails there.
 #[test]
 fn primary_fetcher_getonly_guard() {
+    let _env = GETONLY_ENV.lock().unwrap_or_else(|held| held.into_inner());
     let live_client = ProjectNameSDK::new(jo(vec![("base", Value::str("http://127.0.0.1:9"))]));
     let live_utility = live_client.get_utility();
     let ctx = live_utility.make_context(
