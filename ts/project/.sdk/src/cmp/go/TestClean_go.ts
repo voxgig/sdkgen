@@ -12,8 +12,8 @@ import {
 // The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
-// the SDK is searched for the canaries and their encoded forms. It also
-// proves its own sensitivity: with clean switched off the canary MUST show.
+// is searched for the canaries and their encoded forms; a second sweep does
+// the same for a body of bytes. With clean off the canary MUST show.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target, gomodule } = props
@@ -38,14 +38,18 @@ function render(gomodule: string, Name: string, auth: {
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/url"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
+	"unicode"
 
 	sdk "${gomodule}"
 	"${gomodule}/core"
@@ -80,6 +84,60 @@ var cleanForms = func() []string {
 		[]byte(cleanCanary["apikey"]+":"+cleanCanary["secret"])))
 }()
 
+// The marker a body of bytes carries.
+const cleanContent = "CANARY-CONTENT-b7n3v9x1c5"
+
+// A reader whose state is exported: what a walk into it would copy.
+type cleanOpenReader struct {
+	Data []byte
+	At   int
+}
+
+func (r *cleanOpenReader) Read(p []byte) (int, error) {
+	if len(r.Data) <= r.At {
+		return 0, io.EOF
+	}
+	n := copy(p, r.Data[r.At:])
+	r.At += n
+	return n, nil
+}
+
+// A caller's own record: encoding/json would write its bytes as base64.
+type cleanHolder struct {
+	Label  string    \`json:"label"\`
+	Image  []byte    \`json:"image,omitempty"\`
+	Source io.Reader \`json:"source"\`
+}
+
+// Every value this SDK accepts as a raw body.
+var cleanCarriers = []struct {
+	name   string
+	reader bool
+	make   func() any
+}{
+	{"[]byte", false, func() any { return []byte(cleanContent) }},
+	{"string", false, func() any { return cleanContent }},
+	{"io.Reader", true, func() any { return strings.NewReader(cleanContent) }},
+	{"io.Reader:open", true, func() any { return &cleanOpenReader{Data: []byte(cleanContent)} }},
+}
+
+// The forms bytes travel in once copied: the text, a list of byte values as
+// encoding/json and the fmt verbs print one, hex, base64.
+var cleanContentForms = func() [][2]string {
+	decimal, hexed := []string{}, []string{}
+	for _, b := range []byte(cleanContent) {
+		decimal = append(decimal, strconv.Itoa(int(b)))
+		hexed = append(hexed, fmt.Sprintf("%#x", b))
+	}
+	return [][2]string{
+		{"text", cleanContent},
+		{"byte values", strings.Join(decimal, ",")},
+		{"byte values in hex", strings.Join(hexed, ",")},
+		{"hex", hex.EncodeToString([]byte(cleanContent))},
+		{"base64", base64.StdEncoding.EncodeToString([]byte(cleanContent))},
+	}
+}()
+
 type cleanSink struct {
 	name string
 	text string
@@ -101,6 +159,20 @@ func cleanLeaks(text string) []string {
 	for _, f := range cleanForms {
 		if strings.Contains(text, f) {
 			found = append(found, f)
+		}
+	}
+	return found
+}
+
+// A printed list separates its values with a comma, a space or both.
+func cleanContentLeaks(text string) []string {
+	flat := strings.Join(strings.FieldsFunc(text, func(r rune) bool {
+		return ',' == r || unicode.IsSpace(r)
+	}), ",")
+	found := []string{}
+	for _, form := range cleanContentForms {
+		if strings.Contains(flat, form[1]) {
+			found = append(found, form[0])
 		}
 	}
 	return found
@@ -155,6 +227,32 @@ func (f *cleanCapture) PreUnexpected(ctx *sdk.Context) {
 		*f.sinks = append(*f.sinks, cleanSurfaces("ctrl.err@PreUnexpected", sdkerr)...)
 	}
 }
+
+// Captures the request data as a hook would log it, cleaned: where a reader
+// stays once the spec holds the bytes read from it.
+type cleanDataCapture struct {
+	sdk.BaseFeature
+	sinks *[]cleanSink
+	seen  map[string]any
+}
+
+func newCleanDataCapture(sinks *[]cleanSink) *cleanDataCapture {
+	return &cleanDataCapture{
+		BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "datacapture", Active: true},
+		sinks:       sinks,
+		seen:        map[string]any{},
+	}
+}
+
+func (f *cleanDataCapture) take(name string, ctx *sdk.Context) {
+	cleaned := ctx.Utility.Clean(ctx, ctx.Reqdata)
+	f.seen[name] = cleaned
+	*f.sinks = append(*f.sinks, cleanSurfaces("reqdata@"+name, cleaned)...)
+}
+
+func (f *cleanDataCapture) PreSpec(ctx *sdk.Context)     { f.take("PreSpec", ctx) }
+func (f *cleanDataCapture) PreRequest(ctx *sdk.Context)  { f.take("PreRequest", ctx) }
+func (f *cleanDataCapture) PreResponse(ctx *sdk.Context) { f.take("PreResponse", ctx) }
 
 // A slog handler that keeps every record, attributes included.
 type cleanLogHandler struct {
@@ -377,25 +475,10 @@ func cleanFilled(client *sdk.${Name}SDK, entity string, method string) map[strin
 	return filled
 }
 
-// The first operation that completes against a plain 200: with no
-// arguments, else with every path parameter its points declare filled in.
 // An entity accessor is a client method taking one options map and
 // returning something that answers GetName().
-func cleanUsableOp() (cleanOp, bool) {
-	plain := func() *sdk.${Name}SDK {
-		return cleanNew(map[string]any{
-			"apikey": cleanCanary["apikey"],
-			"utility": map[string]any{
-				"fetcher": sdk.FetcherFunc(func(*sdk.Context, string, map[string]any) (any, error) {
-					return cleanResponse(200, map[string]any{"id": "i1"}, nil), nil
-				}),
-			},
-		})
-	}
-
-	probe := plain()
-	cv := reflect.ValueOf(probe)
-	ct := cv.Type()
+func cleanAccessors(probe *sdk.${Name}SDK) []string {
+	ct := reflect.TypeOf(probe)
 	mapType := reflect.TypeOf(map[string]any{})
 
 	accessors := []string{}
@@ -416,8 +499,26 @@ func cleanUsableOp() (cleanOp, bool) {
 		accessors = append(accessors, m.Name)
 	}
 	sort.Strings(accessors)
+	return accessors
+}
 
-	for _, accessor := range accessors {
+// The first operation that completes against a plain 200: with no
+// arguments, else with every path parameter its points declare filled in.
+func cleanUsableOp() (cleanOp, bool) {
+	plain := func() *sdk.${Name}SDK {
+		return cleanNew(map[string]any{
+			"apikey": cleanCanary["apikey"],
+			"utility": map[string]any{
+				"fetcher": sdk.FetcherFunc(func(*sdk.Context, string, map[string]any) (any, error) {
+					return cleanResponse(200, map[string]any{"id": "i1"}, nil), nil
+				}),
+			},
+		})
+	}
+
+	probe := plain()
+
+	for _, accessor := range cleanAccessors(probe) {
 		for _, method := range []string{"List", "Load", "Create", "Update", "Patch", "Remove"} {
 			om := cleanEntity(probe, accessor).MethodByName(method)
 			if !om.IsValid() || om.Type().NumIn() != 2 || om.Type().NumOut() != 2 {
@@ -434,6 +535,64 @@ func cleanUsableOp() (cleanOp, bool) {
 		}
 	}
 	return cleanOp{}, false
+}
+
+// The first operation with a point that sends a raw body the model marks
+// binary, with that point's path parameters filled in and its action named;
+// and the media type the point declares.
+func cleanBinaryOp() (cleanOp, string, bool) {
+	probe := cleanNew(map[string]any{"apikey": cleanCanary["apikey"]})
+	entities := core.ToMapAny(probe.GetRootCtx().Config["entity"])
+
+	for _, accessor := range cleanAccessors(probe) {
+		entity := cleanEntity(probe, accessor)
+		name := entity.MethodByName("GetName").Call(nil)[0].String()
+		opdefs := core.ToMapAny(core.ToMapAny(entities[name])["op"])
+		opnames := []string{}
+		for opname := range opdefs {
+			opnames = append(opnames, opname)
+		}
+		sort.Strings(opnames)
+
+		for _, opname := range opnames {
+			if "" == opname {
+				continue
+			}
+			method := strings.ToUpper(opname[:1]) + opname[1:]
+			if !entity.MethodByName(method).IsValid() {
+				continue
+			}
+			points, _ := core.ToMapAny(opdefs[opname])["points"].([]any)
+			for _, p := range points {
+				point := core.ToMapAny(p)
+				body := core.ToMapAny(point["body"])
+				if "raw" != body["kind"] || true != body["binary"] {
+					continue
+				}
+				match := map[string]any{}
+				params, _ := core.ToMapAny(point["args"])["params"].([]any)
+				for _, param := range params {
+					if pname, ok := core.ToMapAny(param)["name"].(string); ok {
+						match[pname] = "p1"
+					}
+				}
+				if action := core.ToMapAny(point["select"])["$action"]; action != nil {
+					match["$action"] = action
+				}
+				media, _ := body["media"].(string)
+				return cleanOp{accessor: accessor, method: method, match: match}, media, true
+			}
+		}
+	}
+	return cleanOp{}, "", false
+}
+
+func cleanWithBody(op cleanOp, body any) cleanOp {
+	match := map[string]any{"$body": body}
+	for k, v := range op.match {
+		match[k] = v
+	}
+	return cleanOp{accessor: op.accessor, method: op.method, match: match}
 }
 
 func cleanDrive(client *sdk.${Name}SDK, op cleanOp, ctrl map[string]any, sinks *[]cleanSink) error {
@@ -542,6 +701,19 @@ func cleanCatch(name string, sinks *[]cleanSink, fn func() error) (err error) {
 
 const cleanNoOp = "no operation of this SDK completes against a plain 200; nothing to sweep"
 
+const cleanNoBinary = "no operation of this SDK sends a binary body; nothing to sweep"
+
+var cleanVariants = []struct {
+	name string
+	ctrl func() map[string]any
+}{
+	{"throw", func() map[string]any { return map[string]any{} }},
+	{"explain", func() map[string]any { return map[string]any{"explain": map[string]any{}} }},
+	{"nothrow", func() map[string]any {
+		return map[string]any{"throw": false, "explain": map[string]any{}}
+	}},
+}
+
 func TestCleanSweep(t *testing.T) {
 	defer cleanHarness(t)
 	op, found := cleanUsableOp()
@@ -553,19 +725,8 @@ func TestCleanSweep(t *testing.T) {
 	errs := map[string]error{}
 	explains := map[string]map[string]any{}
 
-	variants := []struct {
-		name string
-		ctrl func() map[string]any
-	}{
-		{"throw", func() map[string]any { return map[string]any{} }},
-		{"explain", func() map[string]any { return map[string]any{"explain": map[string]any{}} }},
-		{"nothrow", func() map[string]any {
-			return map[string]any{"throw": false, "explain": map[string]any{}}
-		}},
-	}
-
 	for _, scenario := range cleanScenarios {
-		for _, variant := range variants {
+		for _, variant := range cleanVariants {
 			client := cleanMakeSdk(scenario, &sinks, nil)
 			ctrl := variant.ctrl()
 			err := cleanDrive(client, op, ctrl, &sinks)
@@ -855,6 +1016,180 @@ func TestCleanSensitivity(t *testing.T) {
 			[]byte(cleanCanary["apikey"] + ":" + cleanCanary["secret"]))
 		if !strings.Contains(text, cleanCanary["apikey"]) && !strings.Contains(text, composite) {
 			t.Errorf("the raw spec should carry the credential when clean is off, got %s", text)
+		}
+	}
+}
+
+func TestCleanContentSweep(t *testing.T) {
+	defer cleanHarness(t)
+	op, media, found := cleanBinaryOp()
+	if !found {
+		t.Skip(cleanNoBinary)
+	}
+
+	sinks := []cleanSink{}
+	sent := map[string]any{}
+	errs := map[string]error{}
+	explains := map[string]map[string]any{}
+	reqdata := map[string]any{}
+
+	for _, carrier := range cleanCarriers {
+		for _, scenario := range cleanScenarios[:4] {
+			for _, variant := range cleanVariants {
+				key := carrier.name + "/" + scenario.name + "/" + variant.name
+				respond := scenario.respond
+				// The transport is where the bytes are meant to arrive, whole.
+				seen := cleanScenario{scenario.name, func(url string, fetchdef map[string]any) (any, error) {
+					sent[key] = fetchdef["body"]
+					return respond(url, fetchdef)
+				}}
+				capture := newCleanDataCapture(&sinks)
+				client := cleanMakeSdk(seen, &sinks, nil, capture)
+				ctrl := variant.ctrl()
+				err := cleanDrive(client, cleanWithBody(op, carrier.make()), ctrl, &sinks)
+				if err != nil {
+					errs[key] = err
+				}
+				if explain, ok := ctrl["explain"].(map[string]any); ok {
+					explains[key] = explain
+				}
+				reqdata[key] = capture.seen["PreRequest"]
+				sinks = append(sinks, cleanSurfaces("sdk", client)...)
+			}
+		}
+	}
+
+	// Beside the operation: a sensitive name still masks, a caller's own
+	// record is not left to encoding/json, and a reader stays unread.
+	probe := cleanNew(map[string]any{"apikey": cleanCanary["apikey"]})
+	sending := func(body map[string]any) *core.Context {
+		return &core.Context{
+			Options: probe.GetRootCtx().Options,
+			Point:   map[string]any{"body": body},
+			Reqdata: map[string]any{"$body": cleanContent},
+		}
+	}
+	binary := map[string]any{"kind": "raw", "binary": true, "media": media}
+	unread := strings.NewReader(cleanContent)
+	ruled := probe.GetUtility().Clean(sending(binary), map[string]any{
+		"note":     cleanContent,
+		"apitoken": []byte(cleanContent),
+		"held":     &cleanHolder{Label: "l1", Image: []byte(cleanContent), Source: unread},
+	})
+	sinks = append(sinks, cleanSurfaces("rules", ruled)...)
+
+	leaked := []string{}
+	for _, s := range sinks {
+		if found := cleanContentLeaks(s.text); 0 < len(found) {
+			leaked = append(leaked, s.name+" ["+strings.Join(found, ", ")+"]")
+		}
+	}
+
+	fmt.Printf("clean: content swept %d surface(s), %d leak(s)\\n", len(sinks), len(leaked))
+
+	if 0 < len(leaked) {
+		t.Fatalf("a body of bytes leaked through: %s", strings.Join(leaked, "; "))
+	}
+
+	// The request itself is untouched: what the transport was handed is the body.
+	for _, carrier := range cleanCarriers {
+		var text string
+		switch body := sent[carrier.name+"/notfound/throw"].(type) {
+		case string:
+			text = body
+		case []byte:
+			text = string(body)
+		case io.Reader:
+			raw, _ := io.ReadAll(body)
+			text = string(raw)
+		}
+		if text != cleanContent {
+			t.Errorf("%s: the transport was handed %q", carrier.name, text)
+		}
+	}
+
+	// The positive half: where the body was, what describes it now is. A
+	// reader is read before the first attempt, so the spec holds its bytes
+	// and the request data the reader.
+	bytesDesc := map[string]any{"binary$": "bytes", "size": len(cleanContent)}
+	streamDesc := map[string]any{"binary$": "stream"}
+	if "" != media {
+		bytesDesc["type"] = media
+		streamDesc["type"] = media
+	}
+	for _, carrier := range cleanCarriers {
+		failed, _ := errs[carrier.name+"/notfound/throw"].(*sdk.${Name}Error)
+		if failed == nil {
+			t.Fatalf("%s: the 404 scenario must return the SDK error, got %v",
+				carrier.name, errs[carrier.name+"/notfound/throw"])
+		}
+		spec, _ := failed.Spec.(map[string]any)
+		if !reflect.DeepEqual(spec["body"], bytesDesc) {
+			t.Errorf("%s: the returned spec: expected %v, got %v", carrier.name, bytesDesc, spec["body"])
+		}
+		explained, _ := explains[carrier.name+"/ok/explain"]["spec"].(map[string]any)
+		if !reflect.DeepEqual(explained["body"], bytesDesc) {
+			t.Errorf("%s: the explain record: expected %v, got %v", carrier.name, bytesDesc, explained["body"])
+		}
+		want := bytesDesc
+		if carrier.reader {
+			want = streamDesc
+		}
+		logged := core.ToMapAny(reqdata[carrier.name+"/notfound/throw"])["$body"]
+		if !reflect.DeepEqual(logged, want) {
+			t.Errorf("%s: the request data: expected %v, got %v", carrier.name, want, logged)
+		}
+	}
+
+	if want := map[string]any{
+		"note":     bytesDesc,
+		"apitoken": cleanMask,
+		"held": map[string]any{
+			"label":  "l1",
+			"image":  map[string]any{"binary$": "bytes", "size": len(cleanContent)},
+			"source": map[string]any{"binary$": "stream"},
+		},
+	}; !reflect.DeepEqual(ruled, want) {
+		t.Errorf("beside the operation: expected %v, got %v", want, ruled)
+	}
+	if len(cleanContent) != unread.Len() {
+		t.Errorf("a reader was read to be described: %d byte(s) left in it", unread.Len())
+	}
+
+	// A raw body the model does not mark binary is text, and stays data; so
+	// does a string cleaned on its own.
+	texted := probe.GetUtility().Clean(
+		sending(map[string]any{"kind": "raw", "media": "text/plain"}),
+		map[string]any{"note": cleanContent})
+	if want := map[string]any{"note": cleanContent}; !reflect.DeepEqual(texted, want) {
+		t.Errorf("a text body: expected %v, got %v", want, texted)
+	}
+	if alone := probe.GetUtility().Clean(sending(binary), cleanContent); alone != cleanContent {
+		t.Errorf("a string cleaned on its own: expected it back, got %v", alone)
+	}
+}
+
+func TestCleanContentSensitivity(t *testing.T) {
+	defer cleanHarness(t)
+	op, _, found := cleanBinaryOp()
+	if !found {
+		t.Skip(cleanNoBinary)
+	}
+
+	for _, carrier := range cleanCarriers {
+		sinks := []cleanSink{}
+		client := cleanMakeSdk(cleanScenarios[1], &sinks, map[string]any{"active": false})
+		if nil == cleanDrive(client, cleanWithBody(op, carrier.make()), map[string]any{}, &sinks) {
+			t.Fatalf("%s: the 404 scenario must fail", carrier.name)
+		}
+		leaked := 0
+		for _, s := range sinks {
+			if 0 < len(cleanContentLeaks(s.text)) {
+				leaked++
+			}
+		}
+		if leaked == 0 {
+			t.Errorf("%s: with clean off, nothing showed the bytes: the sweep is blind", carrier.name)
 		}
 	}
 }

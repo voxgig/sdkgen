@@ -7,6 +7,7 @@ import threading
 from urllib.parse import quote
 
 from projectname_sdk.schema import OPTSPEC
+from projectname_sdk.utility.media import RAW_BODY
 
 
 # Everything that leaves the pipeline passes through clean: the error, the
@@ -21,6 +22,9 @@ _CIRCULAR = "[circular]"
 
 # A dropped value (a function) - distinct from None, which is data.
 _DROP = object()
+
+# The key of what stands in for a body of bytes; its value is the kind.
+_BINARY = "binary$"
 
 
 def _normkey(key):
@@ -58,10 +62,14 @@ def _count(val, dflt):
     return n if n >= 0 else dflt
 
 
+def _prop(obj, name):
+    if isinstance(obj, dict):
+        return obj.get(name)
+    return getattr(obj, name, None)
+
+
 def _options_of(ctx):
-    if isinstance(ctx, dict):
-        return ctx.get("options")
-    return getattr(ctx, "options", None)
+    return _prop(ctx, "options")
 
 
 # The derived block make_options builds; a context without options
@@ -187,16 +195,69 @@ def _is_function(val):
     return callable(val) and not isinstance(val, type)
 
 
+# A file object, as media reads one. It reads once, so it is never read here.
+def _is_stream(val):
+    return not isinstance(val, type) and callable(getattr(val, "read", None))
+
+
+# The live request body of a point the model marks binary, and its type.
+def _binary_body(ctx):
+    body = _prop(_prop(ctx, "point"), "body")
+    if _prop(body, "kind") != "raw" or _prop(body, "binary") is not True:
+        return None
+    live = [v for v in (_prop(_prop(ctx, "spec"), "body"),
+                        _prop(_prop(ctx, "reqdata"), RAW_BODY)) if v is not None]
+    if 0 == len(live):
+        return None
+    media = _prop(body, "media")
+    return {"live": live, "type": media if isinstance(media, str) else None}
+
+
+# The live body is the same object, or for a string an equal one.
+def _is_live(binary, val):
+    if binary is None:
+        return False
+    for live in binary["live"]:
+        if val is live or (isinstance(val, str) and isinstance(live, str) and val == live):
+            return True
+    return False
+
+
+# Bytes are described, never copied (ADR-004): the kind, and the size and
+# media type where they are known. A string is bytes only as the body of a
+# point the model marks binary, and is sent as UTF-8.
+def _describe_binary(val, binary):
+    declared = _is_live(binary, val)
+    desc = None
+
+    if isinstance(val, str):
+        if declared:
+            desc = {_BINARY: "bytes", "size": len(val.encode("utf-8", "surrogatepass"))}
+    elif isinstance(val, (bytes, bytearray)):
+        desc = {_BINARY: "bytes", "size": len(val)}
+    elif isinstance(val, memoryview):
+        desc = {_BINARY: "bytes", "size": val.nbytes}
+    elif _is_stream(val):
+        desc = {_BINARY: "stream"}
+
+    if desc is not None and declared and binary["type"] is not None:
+        desc["type"] = binary["type"]
+    return desc
+
+
 # A plain-data copy of what is about to leave: a `to_json` hook is honoured
 # (a context serialises as its record), functions are dropped, cycles are
 # cut, and no live object is shared with the copy - masking the copy must
 # never mask the pipeline's own spec.
-def _snapshot(cfg, val, key, depth, seen):
+def _snapshot(cfg, binary, val, key, depth, seen):
     if val is None:
         return None
 
     if isinstance(val, str):
-        return _mask_value(cfg, val) if _sensitive_key(cfg, key) else _clean_string(cfg, val)
+        if _sensitive_key(cfg, key):
+            return _mask_value(cfg, val)
+        desc = _describe_binary(val, binary)
+        return _clean_string(cfg, val) if desc is None else desc
 
     if isinstance(val, (bool, int, float)):
         return cfg["mask"] if _sensitive_key(cfg, key) else val
@@ -210,22 +271,26 @@ def _snapshot(cfg, val, key, depth, seen):
     if _sensitive_key(cfg, key):
         return cfg["mask"]
 
+    desc = _describe_binary(val, binary)
+    if desc is not None:
+        return desc
+
     seen.append(id(val))
     try:
         if isinstance(val, dict):
-            return _plain(cfg, val.items(), depth, seen)
+            return _plain(cfg, binary, val.items(), depth, seen)
 
         if isinstance(val, (list, tuple, set, frozenset)):
             out = []
             for i, item in enumerate(val):
-                c = _snapshot(cfg, item, i, depth + 1, seen)
+                c = _snapshot(cfg, binary, item, i, depth + 1, seen)
                 out.append(None if c is _DROP else c)
             return out
 
         if isinstance(val, BaseException):
             out = {"message": _clean_string(cfg, str(val))}
             for k, v in _public(val):
-                c = _snapshot(cfg, v, k, depth + 1, seen)
+                c = _snapshot(cfg, binary, v, k, depth + 1, seen)
                 if c is not _DROP:
                     out[k] = c
             return out
@@ -234,10 +299,10 @@ def _snapshot(cfg, val, key, depth, seen):
         if callable(to_json):
             rec = to_json()
             if rec is not val:
-                return _snapshot(cfg, rec, key, depth + 1, seen)
+                return _snapshot(cfg, binary, rec, key, depth + 1, seen)
 
         if hasattr(val, "__dict__"):
-            return _plain(cfg, _public(val), depth, seen)
+            return _plain(cfg, binary, _public(val), depth, seen)
 
         return _clean_string(cfg, str(val))
     finally:
@@ -251,10 +316,10 @@ def _public(obj):
             if not str(k).startswith("_")]
 
 
-def _plain(cfg, items, depth, seen):
+def _plain(cfg, binary, items, depth, seen):
     out = {}
     for k, v in items:
-        c = _snapshot(cfg, v, k, depth + 1, seen)
+        c = _snapshot(cfg, binary, v, k, depth + 1, seen)
         if c is not _DROP:
             out[_clean_name(cfg, out, str(k))] = c
     return out
@@ -274,7 +339,7 @@ def _clean_name(cfg, out, key):
 
 # An exception is cleaned IN PLACE: it is about to be raised, and its
 # identity matters to the caller. The message lives in `args`.
-def _clean_exception(cfg, err):
+def _clean_exception(cfg, binary, err):
     args = tuple(_clean_string(cfg, a) if isinstance(a, str) else a for a in err.args)
     if args != err.args:
         err.args = args
@@ -283,7 +348,7 @@ def _clean_exception(cfg, err):
         if isinstance(v, str):
             v = _mask_value(cfg, v) if _sensitive_key(cfg, k) else _clean_string(cfg, v)
         elif v is not None and not isinstance(v, (bool, int, float)) and not _is_function(v):
-            v = _snapshot(cfg, v, k, 1, [])
+            v = _snapshot(cfg, binary, v, k, 1, [])
         name = _clean_string(cfg, k)
         if name != k:
             delattr(err, k)
@@ -306,11 +371,13 @@ def clean_util(ctx, val):
     if isinstance(val, str):
         return _clean_string(cfg, val)
 
+    binary = _binary_body(ctx)
+
     if isinstance(val, BaseException):
-        _clean_exception(cfg, val)
+        _clean_exception(cfg, binary, val)
         return val
 
-    out = _snapshot(cfg, val, None, 0, [])
+    out = _snapshot(cfg, binary, val, None, 0, [])
     return None if out is _DROP else out
 
 
