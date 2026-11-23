@@ -23,6 +23,26 @@ function isTextMedia(type: any): boolean {
 
 
 // The declared JSON type alone, else every declared type in model order; nothing without a body.
+// A response whose body is bytes: by the model, or by the type it declares.
+function isBinaryResponse(point: any, type: any): boolean {
+  return true === point?.response?.binary || !isTextMedia(type)
+}
+
+
+// A header's value, from a map in any spelling or from a Headers object.
+function headerValue(headers: any, name: string): string {
+  if ('function' === typeof headers?.get) {
+    return String(headers.get(name) ?? '')
+  }
+  for (const key of Object.keys(headers || {})) {
+    if (name === key.toLowerCase()) {
+      return String(headers[key])
+    }
+  }
+  return ''
+}
+
+
 function acceptOf(point: any): string | undefined {
   const res = point?.response
   if (null == res || 'string' !== typeof res.media || '' === res.media) {
@@ -141,6 +161,8 @@ function isRawValue(value: any): boolean {
 export {
   RAW_BODY,
   acceptOf,
+  headerValue,
+  isBinaryResponse,
   isJsonMedia,
   isJsonRequest,
   isRawRequest,

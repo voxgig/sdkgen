@@ -64,6 +64,10 @@ FORMS.push(Buffer.from(CANARY.apikey + ':' + CANARY.secret).toString('base64'))
 const CONTENT = 'CANARY-CONTENT-b7n3v9x1c5'
 const CONTENT_BYTES = [...Buffer.from(CONTENT)]
 
+// The marker a response of bytes carries, as a transport that read the
+// body into text hands it on.
+const RESPONSE = 'CANARY-RESPONSE-k2m8q4w6z0'
+
 // Every value this SDK accepts as a raw body.
 const CARRIERS = {
   Uint8Array: () => new Uint8Array(CONTENT_BYTES),
@@ -91,14 +95,14 @@ function leaks(text) {
 
 // The forms bytes travel in once copied: text, a list of byte values (also
 // keyed by index, as a typed array copies), hex, base64.
-function contentLeaks(text) {
+function contentLeaks(text, marker = CONTENT) {
   const flat = text.replace(/\\s+/g, '')
   const values = flat.replace(/["']\\d+["']:/g, '')
   const found = []
-  if (text.includes(CONTENT)) found.push('text')
-  if (values.includes(CONTENT_BYTES.join(','))) found.push('byte values')
-  if (flat.includes(Buffer.from(CONTENT).toString('hex'))) found.push('hex')
-  if (flat.includes(Buffer.from(CONTENT).toString('base64'))) found.push('base64')
+  if (text.includes(marker)) found.push('text')
+  if (values.includes([...Buffer.from(marker)].join(','))) found.push('byte values')
+  if (flat.includes(Buffer.from(marker).toString('hex'))) found.push('hex')
+  if (flat.includes(Buffer.from(marker).toString('base64'))) found.push('base64')
   return found
 }
 
@@ -146,6 +150,21 @@ function response(status, data, headers) {
     statusText: status < 400 ? 'OK' : 'ERR',
     json: async () => data,
     text: async () => JSON.stringify(data),
+    headers: {
+      get(key) { return h[String(key).toLowerCase()] },
+      forEach(cb) { Object.keys(h).forEach((k) => cb(h[k], k, this)) },
+    },
+  }
+}
+
+// A response of bytes under the type it declares, read into text.
+function bytesResponse(status, type) {
+  const h = { 'content-type': type }
+  return {
+    status,
+    statusText: status < 400 ? 'OK' : 'ERR',
+    body: RESPONSE,
+    text: async () => RESPONSE,
     headers: {
       get(key) { return h[String(key).toLowerCase()] },
       forEach(cb) { Object.keys(h).forEach((k) => cb(h[k], k, this)) },
@@ -631,6 +650,61 @@ describe('clean', () => {
       const leaked = sinks.filter((s) => 0 < contentLeaks(s.text).length)
       ok(0 < leaked.length, carrier + ': with clean off, nothing showed the bytes: the sweep is blind')
     }
+  })
+
+
+  test('no response of bytes leaves the SDK in any form', async (t) => {
+    const target = await usableOp()
+    if (null == target) {
+      return t.skip('no operation of this SDK completes against a plain 200; nothing to sweep')
+    }
+
+    const sinks = []
+    const errors = {}
+
+    for (const status of [200, 404, 500]) {
+      for (const variant of [
+        { name: 'throw', ctrl: () => ({}) },
+        { name: 'explain', ctrl: () => ({ explain: {} }) },
+        { name: 'nothrow', ctrl: () => ({ throw: false, explain: {} }) },
+      ]) {
+        const scenario = { name: 'bytes', respond: () => bytesResponse(status, 'audio/wav') }
+        const sdk = makeSdk(scenario, sinks)
+        const err = await drive(sdk, target, variant.ctrl(), sinks)
+        if (null != err) errors[status + '/' + variant.name] = err
+        sinks.push(...forms('sdk', sdk))
+      }
+    }
+
+    const leaked = sinks
+      .map((s) => ({ name: s.name, found: contentLeaks(s.text, RESPONSE) }))
+      .filter((s) => 0 < s.found.length)
+
+    console.log('clean: response swept ' + sinks.length + ' surface(s), ' + leaked.length + ' leak(s)')
+
+    equal(leaked.length, 0, 'a response of bytes leaked through: ' +
+      leaked.map((l) => l.name + ' [' + l.found.join(', ') + ']').join('; '))
+
+    // The failure still names what it could not read.
+    const failed = errors['200/throw']
+    ok(null != failed, 'a response of bytes must fail the operation')
+    equal(failed.code, 'response_content_type')
+    ok(String(failed.message).includes('audio/wav'), 'the error does not name the type: ' + failed.message)
+  })
+
+
+  test('the sweep can see a response: clean switched off shows the bytes', async (t) => {
+    const target = await usableOp()
+    if (null == target) {
+      return t.skip('no operation of this SDK completes against a plain 200; nothing to sweep')
+    }
+
+    const sinks = []
+    const scenario = { name: 'bytes', respond: () => bytesResponse(200, 'audio/wav') }
+    const err = await drive(makeSdk(scenario, sinks, { active: false }), target, {}, sinks)
+    ok(null != err, 'a response of bytes must fail the operation')
+    const leaked = sinks.filter((s) => 0 < contentLeaks(s.text, RESPONSE).length)
+    ok(0 < leaked.length, 'with clean off, nothing showed the response: the sweep is blind')
   })
 })
 `

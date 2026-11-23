@@ -2,7 +2,7 @@
 import { Context } from '../types'
 import { OPTSPEC } from '../Schema'
 
-import { RAW_BODY, isStream } from './MediaUtility'
+import { RAW_BODY, headerValue, isBinaryResponse, isStream } from './MediaUtility'
 
 
 // Everything that leaves the pipeline passes through clean; inside it data
@@ -26,10 +26,12 @@ type CleanConfig = {
 }
 
 
-// The live request body of a point the model marks binary, and its type.
+// A live body of this call that is bytes, and its type. A response read as
+// text does not say how many bytes it was, so it is not sized.
 type BinaryBody = {
   live: any[]
   type?: string
+  sized: boolean
 }
 
 
@@ -155,29 +157,41 @@ function utf8Length(text: string): number {
 }
 
 
-// A string shorter than the registry accepts is not told from ordinary text.
-function binaryBody(ctx: any, cfg: CleanConfig): BinaryBody | undefined {
+// The request body of a point the model marks binary, and a response body
+// that is bytes. A string shorter than the registry accepts is not told
+// from ordinary text.
+function binaryBodies(ctx: any, cfg: CleanConfig): BinaryBody[] {
+  const known = (v: any) => null != v && ('string' !== typeof v || cfg.min <= v.length)
+  const bodies: BinaryBody[] = []
+
   const body = ctx?.point?.body
-  if ('raw' !== body?.kind || true !== body.binary) {
-    return undefined
+  if ('raw' === body?.kind && true === body.binary) {
+    bodies.push({
+      live: [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]].filter(known),
+      type: 'string' === typeof body.media ? body.media : undefined,
+      sized: true,
+    })
   }
-  const live = [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]]
-    .filter((v: any) => null != v && ('string' !== typeof v || cfg.min <= v.length))
-  return 0 === live.length ? undefined :
-    { live, type: 'string' === typeof body.media ? body.media : undefined }
+
+  const response = ctx?.response
+  const type = headerValue(response?.headers, 'content-type')
+  if (null != response && isBinaryResponse(ctx.point, type)) {
+    bodies.push({ live: [response.body].filter(known), type: '' === type ? undefined : type, sized: false })
+  }
+
+  return bodies.filter((bin: BinaryBody) => 0 < bin.live.length)
 }
 
 
 // Bytes are described, never copied (ADR-004): the kind, and the size and
-// media type where they are known. A string is bytes only as the body of a
-// point the model marks binary.
-function describeBinary(val: any, bin?: BinaryBody): any {
-  const declared = null != bin && bin.live.includes(val)
+// media type where they are known. A string is bytes only as a live body.
+function describeBinary(val: any, bins: BinaryBody[]): any {
+  const bin = bins.find((b: BinaryBody) => b.live.includes(val))
   let desc: any = undefined
 
   if ('string' === typeof val) {
-    if (declared) {
-      desc = { [BINARY]: 'bytes', size: utf8Length(val) }
+    if (null != bin) {
+      desc = bin.sized ? { [BINARY]: 'bytes', size: utf8Length(val) } : { [BINARY]: 'bytes' }
     }
   }
   else if (val instanceof ArrayBuffer || ArrayBuffer.isView(val) ||
@@ -194,7 +208,7 @@ function describeBinary(val: any, bin?: BinaryBody): any {
     desc = { [BINARY]: 'stream' }
   }
 
-  if (null != desc && declared && null == desc.type && null != bin?.type) {
+  if (null != desc && null == desc.type && null != bin?.type) {
     desc.type = bin.type
   }
 
@@ -205,7 +219,7 @@ function describeBinary(val: any, bin?: BinaryBody): any {
 // A masked plain-data copy: toJSON honoured, functions dropped, cycles cut,
 // and nothing shared with the live value, whose spec must stay raw.
 function snapshot(
-  cfg: CleanConfig, bin: BinaryBody | undefined, val: any, key: any, depth: number, seen: any[]
+  cfg: CleanConfig, bin: BinaryBody[], val: any, key: any, depth: number, seen: any[]
 ): any {
   if (null == val) {
     return val
@@ -278,7 +292,7 @@ function snapshot(
 
 
 function plain(
-  cfg: CleanConfig, bin: BinaryBody | undefined, val: any, depth: number, seen: any[]
+  cfg: CleanConfig, bin: BinaryBody[], val: any, depth: number, seen: any[]
 ): any {
   const out: any = {}
   for (const k of Object.keys(val)) {
@@ -314,7 +328,7 @@ function clean(ctx: Context, val: any) {
     return cleanString(cfg, val)
   }
 
-  const bin = binaryBody(ctx, cfg)
+  const bin = binaryBodies(ctx, cfg)
 
   if (val instanceof Error) {
     setMessage(val, cleanString(cfg, String(val.message)))

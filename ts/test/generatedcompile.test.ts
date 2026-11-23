@@ -6024,6 +6024,12 @@ const CLEAN_LINE = /clean: swept (\d+) surface\(s\), (\d+) leak\(s\)/
 // The second line a sweep prints: the same search, for a body of bytes.
 const CLEAN_CONTENT_LINE = /clean: content swept (\d+) surface\(s\), (\d+) leak\(s\)/
 
+// The third: the same search, for a response of bytes.
+const CLEAN_RESPONSE_LINE = /clean: response swept (\d+) surface\(s\), (\d+) leak\(s\)/
+
+// The targets whose sweep answers an operation with bytes.
+const CLEAN_RESPONSE_TARGETS = ['ts', 'js']
+
 // An operation that sends a raw body the model marks binary, which no
 // fixture entity has and the content sweep needs: an action point, as
 // apidef models a file route beneath an item.
@@ -6535,6 +6541,17 @@ describe('the canary sweep runs from a generated SDK', () => {
           ok(0 < Number(content![1]), 'the ' + lane.target + ' sweep sent no body of bytes')
           strictEqual(Number(content![2]), 0,
             'the ' + lane.target + ' sweep found a body of bytes that left the SDK')
+
+          const answered = ran.out.match(CLEAN_RESPONSE_LINE)
+          if (CLEAN_RESPONSE_TARGETS.includes(lane.target)) {
+            ok(null != answered, 'the ' + lane.target + ' sweep did not report a search ' +
+              'for a response of bytes:\n' + tail(ran.out))
+          }
+          if (null != answered) {
+            ok(0 < Number(answered[1]), 'the ' + lane.target + ' sweep answered with no bytes')
+            strictEqual(Number(answered[2]), 0,
+              'the ' + lane.target + ' sweep found a response of bytes that left the SDK')
+          }
 
           const noise = null == lane.quiet ? null : ran.out.match(lane.quiet)
           strictEqual(noise?.[0], undefined, 'the ' + lane.target + ' sweep run printed noise')

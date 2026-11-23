@@ -266,6 +266,116 @@ for (const lang of ['ts', 'js']) {
   })
 
 
+  describe('clean: a response of bytes is described, never copied (' + lang + ')', () => {
+
+    // A response as a transport that read its body as text hands it on.
+    const responseOf = (type: string | undefined, body: any, viaGet = false) => {
+      const map: Record<string, string> = undefined === type ? {} : { 'Content-Type': type }
+      const headers = !viaGet ? map : { get: (name: string) =>
+        'content-type' === String(name).toLowerCase() ? type ?? null : null }
+      return { status: 200, statusText: 'OK', headers, body }
+    }
+
+    const leaving = (response: any) => ({
+      response, result: { ok: false, status: 200, body: response.body }, note: 'kept',
+    })
+
+
+    test('the detector sees a leak: with clean off the marker shows', () => {
+      const mod = loadClean(lang)
+      const response = responseOf('audio/wav', CONTENT)
+      const ctx = { ...ctxWith(mod, { active: false }), point: {}, response }
+      ok(0 < carried(mod.clean(ctx, leaving(response))).length)
+    })
+
+
+    test('a response whose declared type is not text is described whatever carries it', () => {
+      const mod = loadClean(lang)
+      for (const type of ['audio/wav', 'application/octet-stream', 'image/png; q=1', 'Audio/WAV']) {
+        for (const viaGet of [false, true]) {
+          const response = responseOf(type, CONTENT, viaGet)
+          const ctx = { ...ctxWith(mod), point: {}, response }
+          const out = mod.clean(ctx, leaving(response))
+          const desc = { binary$: 'bytes', type }
+          deepStrictEqual(carried(out), [], type)
+          deepStrictEqual(out.response.body, desc)
+          deepStrictEqual(out.result.body, desc)
+          strictEqual(out.response.status, 200)
+          strictEqual(out.note, 'kept')
+          strictEqual(response.body, CONTENT)
+        }
+      }
+    })
+
+
+    test('a response the model marks binary is described whatever type it declares', () => {
+      const mod = loadClean(lang)
+      const point = { response: { kind: 'raw', media: 'audio/wav', binary: true } }
+      for (const type of [undefined, 'text/plain', 'application/json']) {
+        const response = responseOf(type, CONTENT)
+        const out = mod.clean({ ...ctxWith(mod), point, response }, leaving(response))
+        deepStrictEqual(carried(out), [], String(type))
+        deepStrictEqual(out.response.body,
+          undefined === type ? { binary$: 'bytes' } : { binary$: 'bytes', type })
+      }
+    })
+
+
+    test('a response that is text stays', () => {
+      const mod = loadClean(lang)
+      for (const type of [undefined, '', 'application/json', 'text/html; charset=utf-8',
+        'application/problem+json', 'application/xml', 'text/csv']) {
+        const response = responseOf(type, CONTENT)
+        const out = mod.clean({ ...ctxWith(mod), point: {}, response }, leaving(response))
+        strictEqual(out.response.body, CONTENT, String(type))
+        strictEqual(out.result.body, CONTENT, String(type))
+      }
+      // Without a response there is nothing to describe.
+      const out = mod.clean({ ...ctxWith(mod), point: {} }, { note: CONTENT })
+      strictEqual(out.note, CONTENT)
+    })
+
+
+    test('a string too short to register is not taken for the response', () => {
+      const mod = loadClean(lang)
+      for (const body of ['', 'OK']) {
+        const response = responseOf('audio/wav', body)
+        const val = { response, statusText: 'OK', prefix: '' }
+        deepStrictEqual(mod.clean({ ...ctxWith(mod), point: {}, response }, val),
+          { response: { status: 200, statusText: 'OK', headers: { 'Content-Type': 'audio/wav' }, body },
+            statusText: 'OK', prefix: '' })
+      }
+    })
+
+
+    test('response bytes of a byte type keep their size and take the declared type', () => {
+      const mod = loadClean(lang)
+      const response = responseOf('audio/wav', bytes())
+      const out = mod.clean({ ...ctxWith(mod), point: {}, response }, leaving(response))
+      deepStrictEqual(carried(out), [])
+      deepStrictEqual(out.response.body, { binary$: 'bytes', size: SIZE, type: 'audio/wav' })
+      // A stream is a stream, with the type the response declared.
+      const streamed = responseOf('audio/wav', new Blob([bytes()]).stream())
+      deepStrictEqual(mod.clean({ ...ctxWith(mod), point: {}, response: streamed }, streamed).body,
+        { binary$: 'stream', type: 'audio/wav' })
+    })
+
+
+    test('a request and a response of bytes in one call are each described by their own type', () => {
+      const mod = loadClean(lang)
+      const sent = 'UPLOAD-' + CONTENT
+      const spec = { method: 'PUT', body: sent }
+      const response = responseOf('application/zip', CONTENT)
+      const ctx = { ...ctxWith(mod), point: BINARY_POINT, spec, reqdata: { $body: sent }, response }
+      const out = mod.clean(ctx, { spec, response })
+      deepStrictEqual(carried(out), [])
+      deepStrictEqual(out.spec.body,
+        { binary$: 'bytes', size: Buffer.byteLength(sent, 'utf8'), type: 'audio/wav' })
+      deepStrictEqual(out.response.body, { binary$: 'bytes', type: 'application/zip' })
+    })
+  })
+
+
   describe('clean: a failed upload keeps its bytes out of what it throws (' + lang + ')', () => {
 
     for (const [name, carrier] of Object.entries(CARRIERS)) {

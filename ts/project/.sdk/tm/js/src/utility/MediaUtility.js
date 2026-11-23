@@ -23,6 +23,26 @@ function isTextMedia(type) {
 }
 
 
+// A response whose body is bytes: by the model, or by the type it declares.
+function isBinaryResponse(point, type) {
+  return true === point?.response?.binary || !isTextMedia(type)
+}
+
+
+// A header's value, from a map in any spelling or from a Headers object.
+function headerValue(headers, name) {
+  if ('function' === typeof headers?.get) {
+    return String(headers.get(name) ?? '')
+  }
+  for (const key of Object.keys(headers || {})) {
+    if (name === key.toLowerCase()) {
+      return String(headers[key])
+    }
+  }
+  return ''
+}
+
+
 // The declared JSON type alone, else every declared type in the model's
 // order; nothing when no success response declares a body.
 function acceptOf(point) {
@@ -143,6 +163,8 @@ function isRawValue(value) {
 module.exports = {
   RAW_BODY,
   acceptOf,
+  headerValue,
+  isBinaryResponse,
   isJsonMedia,
   isJsonRequest,
   isRawRequest,

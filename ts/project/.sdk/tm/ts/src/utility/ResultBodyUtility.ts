@@ -1,7 +1,7 @@
 
 import { Context } from '../types'
 
-import { isTextMedia } from './MediaUtility'
+import { headerValue, isBinaryResponse } from './MediaUtility'
 
 
 const PREVIEW_LENGTH = 160
@@ -66,7 +66,7 @@ function bodyReadError(ctx: Context, result: any, err: any): any {
 function unreadableBody(ctx: Context, res: Unreadable): any {
   const type = headerValue(res.headers, 'content-type')
   // Only text is quoted: bytes are a file's, by the model or by their type.
-  const quoted = null != res.text && isTextMedia(type) && true !== ctx.point?.response?.binary
+  const quoted = null != res.text && !isBinaryResponse(ctx.point, type)
   const detail = 'HTTP ' + res.status + ', content-type ' + (type || 'none') +
     ', user-agent ' + (ctx.utility.clean(ctx, headerValue(res.sent, 'user-agent')) || 'transport default') +
     (quoted ? ', body: ' + preview(ctx, res.text) : '')
@@ -80,19 +80,6 @@ function unreadableBody(ctx: Context, res: Unreadable): any {
     ? ctx.error('response_json_invalid', 'response: body is not valid JSON (' + detail + ')')
     : ctx.error('response_content_type', 'response: expected JSON, got ' + type +
       ' (' + detail + ')')
-}
-
-
-function headerValue(headers: any, name: string): string {
-  if ('function' === typeof headers?.get) {
-    return String(headers.get(name) ?? '')
-  }
-  for (const key of Object.keys(headers || {})) {
-    if (name === key.toLowerCase()) {
-      return String(headers[key])
-    }
-  }
-  return ''
 }
 
 
