@@ -1,7 +1,10 @@
 package KOTLINPACKAGE.utility
 
+import java.io.InputStream
 import java.io.PrintWriter
+import java.io.Reader
 import java.io.StringWriter
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
@@ -26,6 +29,15 @@ fun makeContext(ctxmap: MutableMap<String, Any?>?, basectx: Context?): Context {
 
 private const val MAXDEPTH = 32
 private const val CIRCULAR = "[circular]"
+
+// The key of what stands in for a body of bytes; its value is the kind.
+private const val BINARY = "binary\$"
+
+// The live request body of a point the model marks binary, and its type.
+private class BinaryBody(val live: List<Any>, val type: String?) {
+  // The same object, or for a string an equal one.
+  fun holds(v: Any): Boolean = live.any { it === v || (v is String && v == it) }
+}
 
 // The derived clean block: built by makeOptions from the raw input, grown by
 // cleanAdd for as long as the client lives (features register later).
@@ -259,6 +271,76 @@ private fun stackOf(err: Throwable): String {
   return sw.toString()
 }
 
+// The UTF-8 length a string is sent with, counted rather than encoded.
+private fun utf8Length(text: String): Int {
+  var n = 0
+  var i = 0
+  while (i < text.length) {
+    val c = text[i]
+    if (c.code < 0x80) {
+      n += 1
+    } else if (c.code < 0x800) {
+      n += 2
+    } else if (!c.isSurrogate()) {
+      n += 3
+    } else if (c.isHighSurrogate() && i + 1 < text.length && text[i + 1].isLowSurrogate()) {
+      n += 4
+      i++
+    } else {
+      // An unpaired half is sent as one replacement byte.
+      n += 1
+    }
+    i++
+  }
+  return n
+}
+
+private fun binaryBody(ctx: Context?): BinaryBody? {
+  val body = Struct.getprop(ctx?.point, "body", null)
+  if ("raw" != Struct.getprop(body, "kind", null) || true != Struct.getprop(body, "binary", null)) {
+    return null
+  }
+  val live = listOfNotNull(ctx?.spec?.body, ctx?.reqdata?.get(Media.RAW_BODY))
+  if (live.isEmpty()) {
+    return null
+  }
+  return BinaryBody(live, Struct.getprop(body, "media", null) as? String)
+}
+
+// Bytes are described, never copied (ADR-004): the kind, and the size and
+// media type where they are known. A string is bytes only as the body of a
+// point the model marks binary. Null for a value that is not bytes.
+private fun describeBinary(v: Any, bin: BinaryBody?): MutableMap<String, Any?>? {
+  val declared = bin != null && bin.holds(v)
+  val desc = linkedMapOf<String, Any?>()
+
+  when (v) {
+    is String -> {
+      if (!declared) {
+        return null
+      }
+      desc[BINARY] = "bytes"
+      desc["size"] = utf8Length(v)
+    }
+    is ByteArray -> {
+      desc[BINARY] = "bytes"
+      desc["size"] = v.size
+    }
+    is ByteBuffer -> {
+      desc[BINARY] = "bytes"
+      desc["size"] = v.remaining()
+    }
+    is InputStream, is Reader -> desc[BINARY] = "stream"
+    else -> return null
+  }
+
+  val type = if (declared) bin?.type else null
+  if (type != null) {
+    desc["type"] = type
+  }
+  return desc
+}
+
 // The SDK's own objects have no serialisation hook, so this is the record
 // each one leaves as. The context stays raw on the error and is not here.
 private fun record(v: Any): MutableMap<String, Any?> {
@@ -331,13 +413,18 @@ private fun record(v: Any): MutableMap<String, Any?> {
 // A masked plain-data copy: functions dropped, cycles cut, and nothing
 // shared with the live value, whose spec must stay raw.
 @Suppress("UNCHECKED_CAST")
-private fun snapshot(cfg: CleanConfig, v: Any?, key: Any?, depth: Int, seen: MutableList<Any>): Any? {
+private fun snapshot(
+  cfg: CleanConfig, bin: BinaryBody?, v: Any?, key: Any?, depth: Int, seen: MutableList<Any>,
+): Any? {
   if (v == null || v === Struct.UNDEF) {
     return v
   }
 
   if (v is String) {
-    return if (sensitiveKey(cfg, key)) maskValue(cfg, v) else cleanString(cfg, v)
+    if (sensitiveKey(cfg, key)) {
+      return maskValue(cfg, v)
+    }
+    return describeBinary(v, bin) ?: cleanString(cfg, v)
   }
 
   if (isfunc(v)) {
@@ -356,22 +443,27 @@ private fun snapshot(cfg: CleanConfig, v: Any?, key: Any?, depth: Int, seen: Mut
     return cfg.mask
   }
 
+  val desc = describeBinary(v, bin)
+  if (desc != null) {
+    return desc
+  }
+
   seen.add(v)
   try {
     return when (v) {
       is List<*> -> {
         val out = mutableListOf<Any?>()
         v.forEachIndexed { i, item ->
-          val s = snapshot(cfg, item, i, depth + 1, seen)
+          val s = snapshot(cfg, bin, item, i, depth + 1, seen)
           if (s !== DROP) {
             out.add(s)
           }
         }
         out
       }
-      is Map<*, *> -> plain(cfg, v, depth, seen)
+      is Map<*, *> -> plain(cfg, bin, v, depth, seen)
       is Throwable, is Spec, is Result, is Response, is Operation, is Context, is Entity ->
-        plain(cfg, record(v), depth, seen)
+        plain(cfg, bin, record(v), depth, seen)
       else -> cleanString(cfg, v.toString())
     }
   } finally {
@@ -379,10 +471,12 @@ private fun snapshot(cfg: CleanConfig, v: Any?, key: Any?, depth: Int, seen: Mut
   }
 }
 
-private fun plain(cfg: CleanConfig, v: Map<*, *>, depth: Int, seen: MutableList<Any>): MutableMap<String, Any?> {
+private fun plain(
+  cfg: CleanConfig, bin: BinaryBody?, v: Map<*, *>, depth: Int, seen: MutableList<Any>,
+): MutableMap<String, Any?> {
   val out = linkedMapOf<String, Any?>()
   for ((k, item) in v) {
-    val s = snapshot(cfg, item, k, depth + 1, seen)
+    val s = snapshot(cfg, bin, item, k, depth + 1, seen)
     if (s !== DROP) {
       out[cleanName(cfg, out, k.toString())] = s
     }
@@ -404,7 +498,8 @@ private fun cleanName(cfg: CleanConfig, out: Map<String, Any?>, key: String): St
   return name + "#" + i
 }
 
-internal fun cleanWith(cfg: CleanConfig, value: Any?): Any? {
+// With no context there is no operation's body to name: bytes go by type alone.
+internal fun cleanWith(cfg: CleanConfig, value: Any?, ctx: Context? = null): Any? {
   if (!cfg.active) {
     return value
   }
@@ -413,12 +508,14 @@ internal fun cleanWith(cfg: CleanConfig, value: Any?): Any? {
     return cleanString(cfg, value)
   }
 
+  val bin = binaryBody(ctx)
+
   // An SdkError is cleaned in place, since it is about to be thrown.
   if (value is SdkError) {
     value.msg = cleanString(cfg, value.msg)
     value.code = cleanString(cfg, value.code)
-    value.result = snapshot(cfg, value.result, "result", 1, mutableListOf())
-    value.spec = snapshot(cfg, value.spec, "spec", 1, mutableListOf())
+    value.result = snapshot(cfg, bin, value.result, "result", 1, mutableListOf())
+    value.spec = snapshot(cfg, bin, value.spec, "spec", 1, mutableListOf())
     return value
   }
 
@@ -431,12 +528,12 @@ internal fun cleanWith(cfg: CleanConfig, value: Any?): Any? {
     return out
   }
 
-  val out = snapshot(cfg, value, null, 0, mutableListOf())
+  val out = snapshot(cfg, bin, value, null, 0, mutableListOf())
   return if (out === DROP) null else out
 }
 
 fun clean(ctx: Context, value: Any?): Any? {
-  return cleanWith(cleanConfig(ctx), value)
+  return cleanWith(cleanConfig(ctx), value, ctx)
 }
 
 fun cleanKey(ctx: Context, key: Any?): Boolean {
