@@ -194,7 +194,7 @@ Independent of any design here. H1 is documented; the others are not.
 | H8 | `rust` carries bytes as a list of numbers, one `f64` each | **read** `media.rs:97-116` | Phase 2 |
 | H9 | apidef reads `POST /api/upload` as an action (O3) | **ran** | Phase 0 |
 | H10 | Basic flows exercise file routes as record routes (O4) | **ran** (the flows); the failure they cause not run | Phase 0 |
-| H11 | The SDK's own redirect loops drop three fixed header names on a hop to another origin (`authorization`, `cookie`, `proxy-authorization`). A credential the model places under another header name is not among them | **read** `rb/utility/fetcher.rb:99`, `php/utility/Fetcher.php:76`; not exercised | Phase 0 |
+| H11 | The SDK's own redirect loops drop three fixed header names on a hop to another origin (`authorization`, `cookie`, `proxy-authorization`). A credential the model places under another header name is not among them | **reproduced, then fixed** (`p0-redirect-credentials`): on Node's `fetch`, `x-api-key` and `private-token` reached another origin and a 307 sent a `PUT` body on, and each target's own redirect test found the same against a second listener. Fifteen targets now follow in their own loop and `go` and `py` in their client's hook, in every target that ships a transport | Phase 0 |
 | H12 | `rbac` cannot grant a record read without granting every action on `load` | **read** `RbacFeature.ts`, `_required` | Phase 2 |
 
 ---
