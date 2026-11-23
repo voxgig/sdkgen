@@ -1758,6 +1758,21 @@ defmodule ProjectName.Utility do
     m == "application/json" or m == "text/json" or String.ends_with?(m, "+json")
   end
 
+  @text_media ~w(json xml html javascript ecmascript yaml urlencoded graphql)
+
+  # A type whose body is text: none declared, text/*, or a structured text
+  # format. A body of any other type is bytes, which no message quotes.
+  def text_media?(media) do
+    m =
+      if(is_binary(media), do: media, else: "")
+      |> String.split(";", parts: 2)
+      |> hd()
+      |> String.trim()
+      |> String.downcase()
+
+    m == "" or String.starts_with?(m, "text/") or String.contains?(m, @text_media)
+  end
+
   # The declared JSON type alone, else every declared type in the model's
   # order; nil when no success response declares a body.
   def accept_of(point) do
@@ -2313,10 +2328,15 @@ defmodule ProjectName.Utility do
     type = body_header(headers, "content-type")
     agent = to_string(clean(ctx, body_header(sent, "user-agent")))
 
+    # Only text is quoted: bytes are a file's, by the model or by their type.
+    quoted =
+      text != nil and text_media?(type) and
+        S.getprop(S.getprop(S.getprop(ctx, "point"), "response"), "binary") != true
+
     detail =
       "HTTP " <> to_string(status) <> ", content-type " <> if(type == "", do: "none", else: type) <>
         ", user-agent " <> if(agent == "", do: "transport default", else: agent) <>
-        if(text == nil, do: "", else: ", body: " <> body_preview(ctx, text))
+        if(quoted, do: ", body: " <> body_preview(ctx, text), else: "")
 
     cond do
       match?(%ProjectName.Error{}, failed) ->
@@ -2613,7 +2633,7 @@ defmodule ProjectName.Utility do
                "statusText", status_text,
                "headers", rh,
                "json", fn -> json_body end,
-               "body", body_str,
+               "body", lossy_text(body_str),
                "unreadable", unreadable
              ]), nil}
 
@@ -2654,6 +2674,17 @@ defmodule ProjectName.Utility do
       e -> {:error, "response body is not valid " <> enc <> " data: " <> Exception.message(e)}
     end
   end
+
+  # A body that is not valid UTF-8 is kept as text, with a replacement
+  # character for each byte that does not decode: whatever reads the response
+  # afterwards serialises it, and a serialiser raises on such a binary.
+  defp lossy_text(body) do
+    if String.valid?(body), do: body, else: scrub(body, "")
+  end
+
+  defp scrub(<<char::utf8, rest::binary>>, text), do: scrub(rest, <<text::binary, char::utf8>>)
+  defp scrub(<<_, rest::binary>>, text), do: scrub(rest, <<text::binary, 0xFFFD::utf8>>)
+  defp scrub(<<>>, text), do: text
 
   # Parse a JSON string into struct nodes using the vendored struct's own
   # constructors (no third-party dep). Returns {:ok, node} | :error.

@@ -686,6 +686,17 @@ let is_json_media (media : string) : bool =
   m = "application/json" || m = "text/json"
   || (n >= 5 && String.sub m (n - 5) 5 = "+json")
 
+(* A type whose body is text: none declared, text/*, or a structured text
+ * format. A body of any other type is bytes, which no message quotes. *)
+let is_text_media (media : string) : bool =
+  let base = match String.index_opt media ';' with
+    | Some i -> String.sub media 0 i
+    | None -> media in
+  let m = String.lowercase_ascii (String.trim base) in
+  m = "" || (String.length m >= 5 && String.sub m 0 5 = "text/")
+  || List.exists (substr_contains m)
+    ["json"; "xml"; "html"; "javascript"; "ecmascript"; "yaml"; "urlencoded"; "graphql"]
+
 (* The declared JSON type alone, else every declared type in the model's
  * order; nothing when no success response declares a body. *)
 let accept_of (point : value) : string option =
@@ -1146,10 +1157,13 @@ let unreadable_body (ctx : ctx) (status : int) (headers : value) (text : value) 
     (failed : sdk_error option) : sdk_error =
   let ctype = vstring (header_ci headers "content-type") in
   let agent = vstring (clean_util ctx (Str (vstring (header_ci sent "user-agent")))) in
+  (* Only text is quoted: bytes are a file's, by the model or by their type. *)
+  let quoted = (match text with Noval | Null -> false | _ -> true) && is_text_media ctype
+               && getp (getp ctx.c_point "response") "binary" <> Bool true in
   let detail = "HTTP " ^ string_of_int status ^ ", content-type " ^
                (if ctype = "" then "none" else ctype) ^ ", user-agent " ^
                (if agent = "" then "transport default" else agent) ^
-               (match text with Noval | Null -> "" | _ -> ", body: " ^ body_preview ctx text) in
+               (if quoted then ", body: " ^ body_preview ctx text else "") in
   match failed with
   | Some e -> e.err_msg <- e.err_msg ^ " (" ^ detail ^ ")"; e
   | None ->

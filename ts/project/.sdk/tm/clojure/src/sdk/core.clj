@@ -800,6 +800,14 @@
   (let [m (-> (if (string? media) media "") (str/split #";" 2) first (or "") str/trim str/lower-case)]
     (or (= "application/json" m) (= "text/json" m) (str/ends-with? m "+json"))))
 
+(def ^:private TEXT-MEDIA ["json" "xml" "html" "javascript" "ecmascript" "yaml" "urlencoded" "graphql"])
+
+;; A type whose body is text: none declared, text/*, or a structured text
+;; format. A body of any other type is bytes, which no message quotes.
+(defn text-media? [media]
+  (let [m (-> (if (string? media) media "") (str/split #";" 2) first (or "") str/trim str/lower-case)]
+    (boolean (or (= "" m) (str/starts-with? m "text/") (some #(str/includes? m %) TEXT-MEDIA)))))
+
 ;; The declared JSON type alone, else every declared type in the model's
 ;; order; nil when no success response declares a body.
 (defn accept-of [point]
@@ -1526,9 +1534,12 @@
 (defn unreadable-body [ctx status headers text sent failed]
   (let [ctype (header-value headers "content-type")
         ua (str (ucall ctx :clean (header-value sent "user-agent")))
+        ;; Only text is quoted: bytes are a file's, by the model or by their type.
+        quoted (and (some? text) (text-media? ctype)
+                    (not (true? (mget (mget (oget ctx :point) "response") "binary"))))
         detail (str "HTTP " status ", content-type " (if (= "" ctype) "none" ctype)
                     ", user-agent " (if (= "" ua) "transport default" ua)
-                    (if (nil? text) "" (str ", body: " (body-preview ctx text))))]
+                    (if quoted (str ", body: " (body-preview ctx text)) ""))]
     (cond
       (sdk-error? failed) (assoc failed :msg (str (:msg failed) " (" detail ")"))
       (some? failed) (ctx-error ctx (or (err-code failed) "") (str (err-msg failed) " (" detail ")"))

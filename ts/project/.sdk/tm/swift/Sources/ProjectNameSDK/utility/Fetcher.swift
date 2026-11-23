@@ -188,7 +188,8 @@ private func sendOnce(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   let respData = box.data
   let http = box.resp as? HTTPURLResponse
   let status = http?.statusCode ?? 0
-  let bodyText = respData.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+  // Bytes that are not text still reach the unreadable-body error.
+  let bodyText = respData.map { String(decoding: $0, as: UTF8.self) } ?? ""
 
   let resheaders = VMap()
   if let http = http {
