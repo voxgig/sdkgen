@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 // ProjectName SDK utility: clean
 
+require_once __DIR__ . '/Media.php';
+
 // Everything that leaves the pipeline passes through clean: the error, the
 // explain record, the printed context, and whatever a feature emits. Two
 // layers: every registered secret VALUE (and its encoded forms) is replaced
@@ -14,6 +16,9 @@ class ProjectNameClean
 {
     private const MAXDEPTH = 32;
     private const CIRCULAR = '[circular]';
+
+    // The key of what stands in for a body of bytes; its value is the kind.
+    private const BINARY = 'binary$';
 
     // Clean a value on its way out. A string is redacted; a Throwable is
     // redacted IN PLACE (it is about to be thrown, and its identity matters
@@ -30,13 +35,15 @@ class ProjectNameClean
             return self::clean_string($cfg, $val);
         }
 
+        $bin = self::binary_body($ctx);
+
         if ($val instanceof \Throwable) {
-            self::clean_throwable($cfg, $val);
+            self::clean_throwable($cfg, $bin, $val);
             return $val;
         }
 
         $seen = [];
-        return self::snapshot($cfg, $val, null, 0, $seen);
+        return self::snapshot($cfg, $bin, $val, null, 0, $seen);
     }
 
     // Register a secret value (clean_add). Idempotent; shorter than `min` is
@@ -265,19 +272,62 @@ class ProjectNameClean
         return false;
     }
 
+    // The live request body of a point the model marks binary, and its type.
+    private static function binary_body(?ProjectNameContext $ctx): ?array
+    {
+        $body = $ctx?->point['body'] ?? null;
+        if (!is_array($body) || 'raw' !== ($body['kind'] ?? null) || true !== ($body['binary'] ?? null)) {
+            return null;
+        }
+        $live = array_values(array_filter(
+            [$ctx->spec?->body, $ctx->reqdata[ProjectNameMedia::RAW_BODY] ?? null],
+            fn (mixed $v): bool => null !== $v));
+        $media = $body['media'] ?? null;
+        return 0 === count($live) ? null : ['live' => $live, 'type' => is_string($media) ? $media : null];
+    }
+
+    // A closed stream is a stream still, which is_resource denies.
+    private static function is_stream(mixed $val): bool
+    {
+        return is_resource($val) || 'resource (closed)' === gettype($val);
+    }
+
+    // Bytes are described, never copied (ADR-004): the kind, and the size and
+    // media type where they are known. A string is bytes only as the body of
+    // a point the model marks binary; a resource is read once, so a stream.
+    private static function describe_binary(mixed $val, ?array $bin): ?array
+    {
+        $declared = null !== $bin && in_array($val, $bin['live'], true);
+        $desc = null;
+        if (is_string($val)) {
+            if ($declared) {
+                $desc = [self::BINARY => 'bytes', 'size' => strlen($val)];
+            }
+        } elseif (self::is_stream($val)) {
+            $desc = [self::BINARY => 'stream'];
+        }
+        if (null !== $desc && $declared && null !== $bin['type']) {
+            $desc['type'] = $bin['type'];
+        }
+        return $desc;
+    }
+
     // A plain-data copy of what is about to leave: jsonSerialize is honoured
     // (a context serialises as its record), closures are dropped, cycles are
     // cut, and no live object is shared with the copy - masking the copy
     // must never mask the pipeline's own spec.
-    private static function snapshot(\stdClass $cfg, mixed $val, mixed $key, int $depth, array &$seen): mixed
-    {
+    private static function snapshot(
+        \stdClass $cfg, ?array $bin, mixed $val, mixed $key, int $depth, array &$seen
+    ): mixed {
         if (null === $val) {
             return null;
         }
 
         if (is_string($val)) {
-            return self::sensitive_key($cfg, $key)
-                ? self::mask_value($cfg, $val) : self::clean_string($cfg, $val);
+            if (self::sensitive_key($cfg, $key)) {
+                return self::mask_value($cfg, $val);
+            }
+            return self::describe_binary($val, $bin) ?? self::clean_string($cfg, $val);
         }
 
         if ($val instanceof \Closure) {
@@ -285,7 +335,10 @@ class ProjectNameClean
         }
 
         if (!is_array($val) && !is_object($val)) {
-            return self::sensitive_key($cfg, $key) ? $cfg->mask : $val;
+            if (self::sensitive_key($cfg, $key)) {
+                return $cfg->mask;
+            }
+            return self::describe_binary($val, $bin) ?? $val;
         }
 
         if (self::MAXDEPTH <= $depth) {
@@ -297,7 +350,7 @@ class ProjectNameClean
         }
 
         if (is_array($val)) {
-            return self::plain($cfg, $val, $depth, $seen);
+            return self::plain($cfg, $bin, $val, $depth, $seen);
         }
 
         $id = spl_object_id($val);
@@ -314,7 +367,8 @@ class ProjectNameClean
                 ];
                 foreach (get_object_vars($val) as $k => $v) {
                     if (!($v instanceof \Closure)) {
-                        $out[self::clean_name($cfg, $out, $k)] = self::snapshot($cfg, $v, $k, $depth + 1, $seen);
+                        $out[self::clean_name($cfg, $out, $k)] =
+                            self::snapshot($cfg, $bin, $v, $k, $depth + 1, $seen);
                     }
                 }
                 return $out;
@@ -323,22 +377,22 @@ class ProjectNameClean
             if ($val instanceof \JsonSerializable) {
                 $json = $val->jsonSerialize();
                 return $json === $val
-                    ? self::plain($cfg, get_object_vars($val), $depth, $seen)
-                    : self::snapshot($cfg, $json, $key, $depth + 1, $seen);
+                    ? self::plain($cfg, $bin, get_object_vars($val), $depth, $seen)
+                    : self::snapshot($cfg, $bin, $json, $key, $depth + 1, $seen);
             }
 
-            return self::plain($cfg, get_object_vars($val), $depth, $seen);
+            return self::plain($cfg, $bin, get_object_vars($val), $depth, $seen);
         } finally {
             array_pop($seen);
         }
     }
 
-    private static function plain(\stdClass $cfg, array $val, int $depth, array &$seen): array
+    private static function plain(\stdClass $cfg, ?array $bin, array $val, int $depth, array &$seen): array
     {
         $out = [];
         foreach ($val as $k => $v) {
             if (!($v instanceof \Closure)) {
-                $out[self::clean_name($cfg, $out, $k)] = self::snapshot($cfg, $v, $k, $depth + 1, $seen);
+                $out[self::clean_name($cfg, $out, $k)] = self::snapshot($cfg, $bin, $v, $k, $depth + 1, $seen);
             }
         }
         return $out;
@@ -366,17 +420,17 @@ class ProjectNameClean
     // In place: the message, the public fields, and the trace arguments,
     // which hold every context the failing frames were handed. The previous
     // chain too, since var_export walks it.
-    private static function clean_throwable(\stdClass $cfg, \Throwable $top): void
+    private static function clean_throwable(\stdClass $cfg, ?array $bin, \Throwable $top): void
     {
         $seen = [];
         for ($err = $top; null !== $err && !in_array(spl_object_id($err), $seen, true);
              $err = $err->getPrevious()) {
             $seen[] = spl_object_id($err);
-            self::clean_one($cfg, $err);
+            self::clean_one($cfg, $bin, $err);
         }
     }
 
-    private static function clean_one(\stdClass $cfg, \Throwable $err): void
+    private static function clean_one(\stdClass $cfg, ?array $bin, \Throwable $err): void
     {
         $msg = self::clean_string($cfg, $err->getMessage());
         if ($msg !== $err->getMessage()) {
@@ -413,9 +467,9 @@ class ProjectNameClean
             if (is_string($v)) {
                 $v = self::sensitive_key($cfg, $k)
                     ? self::mask_value($cfg, $v) : self::clean_string($cfg, $v);
-            } elseif ((is_array($v) || is_object($v)) && !($v instanceof \Closure)) {
+            } elseif ((is_array($v) || is_object($v) || self::is_stream($v)) && !($v instanceof \Closure)) {
                 $seen = [];
-                $v = self::snapshot($cfg, $v, $k, 1, $seen);
+                $v = self::snapshot($cfg, $bin, $v, $k, 1, $seen);
             }
             $name = is_string($k) ? self::clean_string($cfg, $k) : $k;
             if ($name === $k) {
