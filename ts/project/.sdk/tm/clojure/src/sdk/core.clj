@@ -605,34 +605,66 @@
         (let [c (str n "#" i)]
           (if (has? c) (recur (inc i)) c))))))
 
+(declare RAW-BODY)
+
+;; The live request body of a point the model marks binary, and its type.
+(defn- binary-body [ctx]
+  (when (instance? clojure.lang.IDeref ctx)
+    (let [body (mget (oget ctx :point) "body")]
+      (when (and (= "raw" (mget body "kind")) (true? (mget body "binary")))
+        (let [spec (oget ctx :spec)
+              live (filterv some? [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))
+                                   (mget (oget ctx :reqdata) RAW-BODY)])
+              media (mget body "media")]
+          (when (seq live)
+            {:live live :type (when (string? media) media)}))))))
+
+;; Bytes are described, never copied (ADR-004): the kind, and the size and
+;; media type where they are known. A string is bytes only as the body of a
+;; point the model marks binary.
+(defn- describe-binary [val bin]
+  (let [declared (boolean (some #(or (identical? % val) (and (string? val) (= % val))) (:live bin)))
+        desc (cond
+               (string? val)
+               (when declared
+                 (vs/jm "binary$" "bytes" "size" (long (alength (.getBytes ^String val "UTF-8")))))
+               (bytes? val) (vs/jm "binary$" "bytes" "size" (long (alength ^bytes val)))
+               (instance? java.io.InputStream val) (vs/jm "binary$" "stream"))]
+    (when (and desc declared (:type bin))
+      (.put ^java.util.Map desc "type" (:type bin)))
+    desc))
+
 ;; A masked plain-data COPY (string-keyed struct nodes): an entity serialises
 ;; as its record, an atom-object as its map, functions are dropped, cycles
 ;; cut, and nothing is shared with the live value, whose spec must stay raw.
-(defn- clean-snapshot [cfg val key depth seen]
+(defn- clean-snapshot [cfg bin val key depth seen]
   (cond
     (nil? val) nil
-    (string? val) (if (sensitive-key? cfg key) (mask-value cfg val) (clean-string cfg val))
+    (string? val) (if (sensitive-key? cfg key)
+                    (mask-value cfg val)
+                    (or (describe-binary val bin) (clean-string cfg val)))
     (fn? val) DROP
     (or (number? val) (boolean? val) (keyword? val) (symbol? val) (char? val))
     (if (sensitive-key? cfg key) (mget cfg "mask") val)
     (or (<= CLEAN-MAXDEPTH depth) (some #(identical? % val) seen)) CLEAN-CIRCULAR
     (sensitive-key? cfg key) (mget cfg "mask")
+    (or (bytes? val) (instance? java.io.InputStream val)) (describe-binary val bin)
     :else
     (let [seen (conj seen val)]
       (cond
-        (entity-instance? val) (clean-snapshot cfg (deref (:_data val)) key (inc depth) seen)
-        (instance? clojure.lang.IAtom val) (clean-snapshot cfg (deref val) key (inc depth) seen)
+        (entity-instance? val) (clean-snapshot cfg bin (deref (:_data val)) key (inc depth) seen)
+        (instance? clojure.lang.IAtom val) (clean-snapshot cfg bin (deref val) key (inc depth) seen)
         (instance? Throwable val)
         (let [out (vs/jm "message" (clean-string cfg (str (.getMessage ^Throwable val))))]
           (when (instance? clojure.lang.IExceptionInfo val)
-            (let [d (clean-snapshot cfg (ex-data val) "data" (inc depth) seen)]
+            (let [d (clean-snapshot cfg bin (ex-data val) "data" (inc depth) seen)]
               (when-not (identical? DROP d) (.put ^java.util.Map out "data" d))))
           out)
         (instance? java.util.Map val)
         (let [out (vs/jm)]
           (doseq [^java.util.Map$Entry e (.entrySet ^java.util.Map val)]
             (let [k (.getKey e)
-                  v (clean-snapshot cfg (.getValue e) k (inc depth) seen)]
+                  v (clean-snapshot cfg bin (.getValue e) k (inc depth) seen)]
               (when-not (identical? DROP v)
                 (.put ^java.util.Map out
                       (clean-name cfg #(.containsKey ^java.util.Map out %) k) v))))
@@ -640,17 +672,18 @@
         (or (instance? java.util.Collection val) (sequential? val))
         (let [out (vs/jt)]
           (doseq [[i v] (map-indexed vector (seq val))]
-            (let [c (clean-snapshot cfg v i (inc depth) seen)]
+            (let [c (clean-snapshot cfg bin v i (inc depth) seen)]
               (.add ^java.util.List out (if (identical? DROP c) nil c))))
           out)
         :else (clean-string cfg (str val))))))
 
 ;; An error map is immutable, so "in place" is a cleaned copy carrying the
-;; same metadata (the context stays reachable through err-ctx).
-(defn- clean-error [cfg err]
+;; same metadata (the context stays reachable through err-ctx). Its own
+;; strings stay strings: the message is what ex-info is given.
+(defn- clean-error [cfg bin err]
   (with-meta
     (reduce (fn [out [k v]]
-              (let [c (clean-snapshot cfg v k 1 [])
+              (let [c (clean-snapshot cfg (when-not (string? v) bin) v k 1 [])
                     n (clean-name cfg #(contains? out %) k)]
                 (assoc out (if (= n (keyname k)) k n) (if (identical? DROP c) nil c))))
             {} err)
@@ -661,8 +694,9 @@
     (cond
       (= false (mget cfg "active")) val
       (string? val) (clean-string cfg val)
-      (sdk-error? val) (clean-error cfg val)
-      :else (let [out (clean-snapshot cfg val nil 0 [])] (if (identical? DROP out) nil out)))))
+      (sdk-error? val) (clean-error cfg (binary-body ctx) val)
+      :else (let [out (clean-snapshot cfg (binary-body ctx) val nil 0 [])]
+              (if (identical? DROP out) nil out)))))
 
 ;; A Throwable is immutable, so one that never passed through make-error (a
 ;; hook's, a fetcher's) leaves as a cleaned copy with the original's trace.
@@ -672,11 +706,12 @@
     (if (= false (mget cfg "active"))
       t
       (let [sdkerr (ex->sdk t)
+            bin (binary-body ctx)
             out (if (sdk-error? sdkerr)
-                  (let [e (clean-error cfg sdkerr)]
+                  (let [e (clean-error cfg bin sdkerr)]
                     (ex-info (err-msg e) {::sdk-error e}))
                   (let [data (when (instance? clojure.lang.IExceptionInfo t)
-                               (clean-snapshot cfg (ex-data t) nil 0 []))]
+                               (clean-snapshot cfg bin (ex-data t) nil 0 []))]
                     (ex-info (clean-string cfg (str (.getMessage t)))
                              (if (instance? java.util.Map data) (into {} data) {}))))]
         (.setStackTrace ^Throwable out (.getStackTrace t))

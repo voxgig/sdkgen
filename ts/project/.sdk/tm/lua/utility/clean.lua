@@ -5,9 +5,13 @@
 -- port of tm/ts/src/utility/CleanUtility.ts.
 
 local json = require("dkjson")
+local media = require("utility.media")
 
 local MAXDEPTH = 32
 local CIRCULAR = "[circular]"
+
+-- The key of what stands in for a body of bytes; its value is the kind.
+local BINARY = "binary$"
 
 -- The schema's own default, for a context that reaches clean before any
 -- options exist (the raw template tree has no generated schema to read).
@@ -287,10 +291,42 @@ local function clean_name(cfg, out, key)
 end
 
 
+-- The live request body of a point the model marks binary, and its type.
+local function binary_body(ctx)
+  local point = type(ctx) == "table" and ctx.point or nil
+  local body = type(point) == "table" and point.body or nil
+  if type(body) ~= "table" or body.kind ~= "raw" or body.binary ~= true then
+    return nil
+  end
+  local live = {}
+  if type(ctx.spec) == "table" and ctx.spec.body ~= nil then
+    live[#live + 1] = ctx.spec.body
+  end
+  if type(ctx.reqdata) == "table" and ctx.reqdata[media.RAW_BODY] ~= nil then
+    live[#live + 1] = ctx.reqdata[media.RAW_BODY]
+  end
+  if #live == 0 then
+    return nil
+  end
+  return { live = live, type = type(body.media) == "string" and body.media or nil }
+end
+
+
+-- Bytes are described, never copied (ADR-004): the kind, the size, and the
+-- media type the point declares. A string is the only carrier here, and it
+-- is bytes only as the body of a point the model marks binary.
+local function describe_binary(val, bin)
+  if bin == nil or not contains(bin.live, val) then
+    return nil
+  end
+  return { [BINARY] = "bytes", size = #val, type = bin.type }
+end
+
+
 -- A masked plain-data copy: an object's own record (to_record) honoured,
 -- functions dropped, cycles cut, and nothing shared with the live value,
 -- whose spec must stay raw.
-local function snapshot(cfg, val, key, depth, seen)
+local function snapshot(cfg, bin, val, key, depth, seen)
   local t = type(val)
 
   if val == nil then
@@ -301,7 +337,7 @@ local function snapshot(cfg, val, key, depth, seen)
     if sensitive_key(cfg, key) then
       return mask_value(cfg, val)
     end
-    return clean_string(cfg, val)
+    return describe_binary(val, bin) or clean_string(cfg, val)
   end
 
   if t == "function" or t == "thread" or t == "userdata" then
@@ -329,7 +365,7 @@ local function snapshot(cfg, val, key, depth, seen)
   if mt ~= nil and type(mt.to_record) == "function" then
     local record = mt.to_record(val)
     if type(record) == "table" and record ~= val then
-      local out = snapshot(cfg, record, key, depth + 1, seen)
+      local out = snapshot(cfg, bin, record, key, depth + 1, seen)
       seen[val] = nil
       return out
     end
@@ -337,7 +373,7 @@ local function snapshot(cfg, val, key, depth, seen)
 
   local out = {}
   for _, k in ipairs(sorted_keys(val)) do
-    local cv = snapshot(cfg, val[k], k, depth + 1, seen)
+    local cv = snapshot(cfg, bin, val[k], k, depth + 1, seen)
     if cv ~= nil then
       out[clean_name(cfg, out, k)] = cv
     end
@@ -360,6 +396,8 @@ local function clean_util(ctx, val)
     return clean_string(cfg, val)
   end
 
+  local bin = binary_body(ctx)
+
   if type(val) == "table" and val.is_sdk_error == true then
     for _, k in ipairs(sorted_keys(val)) do
       local v = val[k]
@@ -370,7 +408,7 @@ local function clean_util(ctx, val)
           v = clean_string(cfg, v)
         end
       elseif type(v) == "table" then
-        v = snapshot(cfg, v, k, 1, {})
+        v = snapshot(cfg, bin, v, k, 1, {})
       end
       local name = clean_name(cfg, {}, k)
       if name ~= k then
@@ -382,7 +420,7 @@ local function clean_util(ctx, val)
     return val
   end
 
-  return snapshot(cfg, val, nil, 0, {})
+  return snapshot(cfg, bin, val, nil, 0, {})
 end
 
 

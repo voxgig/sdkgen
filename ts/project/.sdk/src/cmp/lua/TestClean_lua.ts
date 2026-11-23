@@ -44,8 +44,8 @@ function render(model: any, auth: {
 -- The canary sweep: every credential slot holds a distinctive value, every
 -- diagnostic feature this SDK ships is switched on with a capturing sink, a
 -- real operation runs through every outcome, and every string that leaves
--- the SDK is searched for the canaries and their encoded forms. It also
--- proves its own sensitivity: with clean switched off the canary MUST show.
+-- is searched for the canaries and their encoded forms; a second sweep does
+-- the same for a body of bytes. With clean off the canary MUST show.
 
 local json = require("dkjson")
 local sdk = require("${model.name}_sdk")
@@ -118,6 +118,20 @@ end
 FORMS[#FORMS + 1] = base64(CANARY.apikey .. ":" .. CANARY.secret)
 
 
+-- The marker a body of bytes carries.
+local CONTENT = "CANARY-CONTENT-b7n3v9x1c5"
+
+local CONTENT_BYTES = {}
+for i = 1, #CONTENT do
+  CONTENT_BYTES[i] = tostring(string.byte(CONTENT, i))
+end
+
+-- Every value this SDK accepts as a raw body: a string, of bytes or text.
+local CARRIERS = {
+  { name = "string", make = function() return CONTENT end },
+}
+
+
 -- Header tables keep the caller's spelling; the assertion should not care.
 local function header(map, name)
   for k, v in pairs(map or {}) do
@@ -135,6 +149,31 @@ local function leaks(text)
     if string.find(text, f, 1, true) ~= nil then
       found[#found + 1] = f
     end
+  end
+  return found
+end
+
+
+-- The forms bytes travel in once copied: text, a list of byte values (also
+-- keyed by index, as a table dump prints one), hex, base64.
+local function content_leaks(text)
+  local flat = string.gsub(text, "%s+", "")
+  local values = string.gsub(string.gsub(flat, '"%d+":', ""), "%d+=", "")
+  local hex = string.gsub(CONTENT, ".", function(c)
+    return string.format("%02x", string.byte(c))
+  end)
+  local found = {}
+  if string.find(text, CONTENT, 1, true) ~= nil then
+    found[#found + 1] = "text"
+  end
+  if string.find(values, table.concat(CONTENT_BYTES, ","), 1, true) ~= nil then
+    found[#found + 1] = "byte values"
+  end
+  if string.find(string.lower(flat), hex, 1, true) ~= nil then
+    found[#found + 1] = "hex"
+  end
+  if string.find(flat, base64(CONTENT), 1, true) ~= nil then
+    found[#found + 1] = "base64"
   end
   return found
 end
@@ -540,11 +579,69 @@ local function usable_op()
 end
 
 
-local function drive(client, target, ctrl, sinks)
+-- The first operation with a point that sends a raw body the model marks
+-- binary, with every path parameter of that point filled in.
+local function binary_op()
+  local plain = construct({ apikey = CANARY.apikey })
+  local config = require("config_shared")()
+  local entities = type(config.entity) == "table" and config.entity or {}
+
+  local accessors = {}
+  for k, v in pairs(getmetatable(plain)) do
+    if type(k) == "string" and string.match(k, "^%u") and type(v) == "function" then
+      accessors[#accessors + 1] = k
+    end
+  end
+  table.sort(accessors)
+
+  for _, accessor in ipairs(accessors) do
+    local ok, inst = pcall(plain[accessor], plain)
+    if ok and type(inst) == "table" and type(inst.get_name) == "function"
+      and type(entities[inst:get_name()]) == "table"
+    then
+      local opdefs = entities[inst:get_name()].op or {}
+      local ops = {}
+      for op in pairs(opdefs) do
+        ops[#ops + 1] = op
+      end
+      table.sort(ops)
+      for _, op in ipairs(ops) do
+        local points = type(opdefs[op]) == "table" and opdefs[op].points or nil
+        for _, point in ipairs(type(points) == "table" and points or {}) do
+          local body = type(point) == "table" and point.body or nil
+          if type(body) == "table" and body.kind == "raw" and body.binary == true
+            and type(inst[op]) == "function"
+          then
+            local match = {}
+            local params = type(point.args) == "table" and point.args.params or nil
+            for _, p in ipairs(type(params) == "table" and params or {}) do
+              if type(p) == "table" and type(p.name) == "string" then
+                match[p.name] = "p1"
+              end
+            end
+            local action = type(point.select) == "table" and point.select["$action"] or nil
+            if action ~= nil then
+              match["$action"] = action
+            end
+            return { accessor = accessor, op = op, match = match, media = body.media }
+          end
+        end
+      end
+    end
+  end
+  return nil
+end
+
+
+local function drive(client, target, ctrl, sinks, data)
   -- A caller may keep the record it passed rather than read ctrl.explain.
   local held = ctrl.explain
   local ent = client[target.accessor](client)
-  local ok, out, err = pcall(ent[target.op], ent, copy(target.match), ctrl)
+  local args = copy(target.match)
+  for k, v in pairs(data or {}) do
+    args[k] = v
+  end
+  local ok, out, err = pcall(ent[target.op], ent, args, ctrl)
   if not ok then
     err = out
     out = nil
@@ -792,6 +889,101 @@ describe("clean", function()
       utility.clean(ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"))
     assert.are.same({ my_zzsens = MASK, other = "y" }, utility.clean(ctx, { my_zzsens = "x", other = "y" }))
     assert.are.same({ keys = "zzsens", values = "CONFIG-SEEDED-1" }, config.options.clean)
+  end)
+
+
+  it("no body of bytes leaves the SDK in any form", function()
+    local target = binary_op()
+    if target == nil then
+      pending("no operation of this SDK sends a binary body; nothing to sweep")
+      return
+    end
+
+    local sinks = {}
+    local sent = {}
+    local errors = {}
+    local explains = {}
+
+    for _, carrier in ipairs(CARRIERS) do
+      for index = 1, 4 do
+        local scenario = SCENARIOS[index]
+        for _, variant in ipairs({
+          { name = "throw", ctrl = function() return {} end },
+          { name = "explain", ctrl = function() return { explain = {} } end },
+          { name = "nothrow", ctrl = function() return { throw = false, explain = {} } end },
+        }) do
+          local key = carrier.name .. "/" .. scenario.name .. "/" .. variant.name
+          -- The transport is where the bytes are meant to arrive, whole.
+          local seen = { name = scenario.name, respond = function(url, fetchdef)
+            sent[key] = fetchdef.body
+            return scenario.respond(url, fetchdef)
+          end }
+          local client = make_sdk(seen, sinks)
+          local ctrl = variant.ctrl()
+          local err = drive(client, target, ctrl, sinks, { ["$body"] = carrier.make() })
+          if err ~= nil then
+            errors[key] = err
+          end
+          if ctrl.explain ~= nil then
+            explains[key] = ctrl.explain
+          end
+          append(sinks, surfaces("sdk", client))
+        end
+      end
+    end
+
+    local leaked = {}
+    for _, s in ipairs(sinks) do
+      local found = content_leaks(s.text)
+      if 0 < #found then
+        leaked[#leaked + 1] = s.name .. " [" .. table.concat(found, ", ") .. "]"
+      end
+    end
+
+    print("clean: content swept " .. #sinks .. " surface(s), " .. #leaked .. " leak(s)")
+
+    assert.are.equal(0, #leaked, "a body of bytes leaked through: " .. table.concat(leaked, "; "))
+
+    -- The request itself is untouched: what the transport was handed is the body.
+    for _, carrier in ipairs(CARRIERS) do
+      assert.are.equal(CONTENT, sent[carrier.name .. "/notfound/throw"],
+        carrier.name .. ": the transport was handed something else")
+    end
+
+    -- The positive half: where the body was, what describes it now is.
+    local desc = { ["binary$"] = "bytes", size = #CONTENT, type = target.media }
+    for _, carrier in ipairs(CARRIERS) do
+      local failed = errors[carrier.name .. "/notfound/throw"]
+      assert.is_not_nil(failed, carrier.name .. ": the 404 scenario must fail")
+      assert.are.same(desc, (failed.spec or {}).body, carrier.name .. ": the failed spec")
+      local explained = explains[carrier.name .. "/ok/explain"] or {}
+      assert.are.same(desc, (explained.spec or {}).body, carrier.name .. ": the explain record")
+    end
+  end)
+
+
+  it("the sweep can see a body: clean switched off shows the bytes", function()
+    local target = binary_op()
+    if target == nil then
+      pending("no operation of this SDK sends a binary body; nothing to sweep")
+      return
+    end
+
+    for _, carrier in ipairs(CARRIERS) do
+      local sinks = {}
+      local client = make_sdk(SCENARIOS[2], sinks, { active = false })
+      local err = drive(client, target, {}, sinks, { ["$body"] = carrier.make() })
+      assert.is_not_nil(err, carrier.name .. ": the 404 scenario must fail")
+
+      local seen = 0
+      for _, s in ipairs(sinks) do
+        if 0 < #content_leaks(s.text) then
+          seen = seen + 1
+        end
+      end
+      assert.is_true(0 < seen,
+        carrier.name .. ": with clean off, nothing showed the bytes: the sweep is blind")
+    end
   end)
 end)
 `

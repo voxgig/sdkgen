@@ -261,6 +261,10 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
 (* utilities                                                           *)
 (* ------------------------------------------------------------------ *)
 
+(* The data key holding a raw request body. Like `$action`, it can never be a
+ * declared argument name. Defined here because clean reads it before media. *)
+let raw_body_key = "$body"
+
 (* ----- clean -----
  * Everything that leaves the pipeline passes through clean; inside it data
  * stays raw, so a hook can still read the header it must add to. See
@@ -404,12 +408,41 @@ let clean_name (cfg : value) (out : value) (key : string) : string =
       if List.mem n taken then next (i + 1) else n in
     next 1
 
+(* The live request body of a point the model marks binary, and its type. *)
+type binary_body = { bin_live : string list; bin_type : string option }
+
+let binary_body (ctx : ctx) : binary_body option =
+  let body = getp ctx.c_point "body" in
+  match getp body "kind", getp body "binary" with
+  | Str "raw", Bool true ->
+    let spec_body = match ctx.c_spec with Some sp -> sp.sp_body | None -> Noval in
+    let live = List.filter_map (function Str s -> Some s | _ -> None)
+        [spec_body; getp ctx.c_reqdata raw_body_key] in
+    if live = [] then None
+    else Some { bin_live = live;
+                bin_type = (match getp body "media" with Str m -> Some m | _ -> None) }
+  | _ -> None
+
+(* Bytes are described, never copied (ADR-004): the kind, the size, and the
+ * media type the point declares. A Str is the only carrier here, and it is
+ * bytes only as the body of a point the model marks binary. *)
+let describe_binary (bin : binary_body option) (s : string) : value option =
+  match bin with
+  | Some b when List.mem s b.bin_live ->
+    let desc = jo [("binary$", Str "bytes"); ("size", vint_of (String.length s))] in
+    (match b.bin_type with Some m -> setp desc "type" (Str m) | None -> ());
+    Some desc
+  | _ -> None
+
 (* A masked plain-data COPY: functions dropped, cycles cut, and nothing
  * shared with the live value, whose spec must stay raw. *)
-let rec clean_snapshot (cfg : value) (v : value) (key : string option) (depth : int) (seen : value list) : value =
+let rec clean_snapshot (cfg : value) (bin : binary_body option) (v : value) (key : string option)
+    (depth : int) (seen : value list) : value =
   match v with
   | Noval | Null -> v
-  | Str s -> Str (if sensitive_key cfg key then mask_value cfg s else clean_string cfg s)
+  | Str s ->
+    if sensitive_key cfg key then Str (mask_value cfg s)
+    else (match describe_binary bin s with Some desc -> desc | None -> Str (clean_string cfg s))
   | Func _ | Sentinel _ -> clean_drop
   | Bool _ | Num _ -> if sensitive_key cfg key then getp cfg "mask" else v
   | Map _ | List _ ->
@@ -421,13 +454,13 @@ let rec clean_snapshot (cfg : value) (v : value) (key : string option) (depth : 
       | Map m ->
         let out = empty_map () in
         List.iter (fun (k, x) ->
-            match clean_snapshot cfg x (Some k) (depth + 1) seen with
+            match clean_snapshot cfg bin x (Some k) (depth + 1) seen with
             | Sentinel "clean_drop" -> ()
             | c -> setp out (clean_name cfg out k) c) m.entries;
         out
       | List r ->
         lst (List.map (fun x ->
-            match clean_snapshot cfg x None (depth + 1) seen with
+            match clean_snapshot cfg bin x None (depth + 1) seen with
             | Sentinel "clean_drop" -> Null
             | c -> c) !r)
       | _ -> v
@@ -438,7 +471,10 @@ let clean_util (ctx : ctx) (v : value) : value =
   if getp cfg "active" = Bool false then v
   else match v with
     | Str s -> Str (clean_string cfg s)
-    | _ -> (match clean_snapshot cfg v None 0 [] with Sentinel "clean_drop" -> Noval | c -> c)
+    | _ ->
+      (match clean_snapshot cfg (binary_body ctx) v None 0 [] with
+       | Sentinel "clean_drop" -> Noval
+       | c -> c)
 
 (* An exception is immutable and of any shape, so one that never passed
  * through make_error (a hook's, a fetcher's) leaves as a cleaned copy: a
@@ -638,10 +674,6 @@ let call_args (ctx : ctx) (kind : string) : (string * string * value) list =
 (* ---- media ----
  * The media types a point declares: `response` (the model's `rs`) for the
  * Accept header, and `body` (the model's `rb`) for the request body. *)
-
-(* The data key holding a raw request body. Like `$action`, it can never be a
- * declared argument name. *)
-let raw_body_key = "$body"
 
 let is_json_media (media : string) : bool =
   let base = match String.index_opt media ';' with

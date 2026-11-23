@@ -334,16 +334,44 @@ defmodule ProjectName.Utility do
     end
   end
 
+  # The live request body of a point the model marks binary, and its type.
+  defp binary_body(ctx) do
+    point = if S.ismap(ctx), do: S.getprop(ctx, "point"), else: nil
+    body = S.getprop(point, "body")
+
+    if S.getprop(body, "kind") == "raw" and S.getprop(body, "binary") == true do
+      live =
+        [S.getprop(S.getprop(ctx, "spec"), "body"), raw_body(S.getprop(ctx, "reqdata"))]
+        |> Enum.reject(&is_nil/1)
+
+      media = S.getprop(body, "media")
+      if live != [], do: %{live: live, type: if(is_binary(media), do: media, else: nil)}
+    end
+  end
+
+  # Bytes are described, never copied (ADR-004): the kind, the size, and the
+  # media type the point declares. A binary is the only carrier here, and it
+  # is bytes only as the body of a point the model marks binary.
+  defp describe_binary(val, bin) do
+    if bin != nil and val in bin.live do
+      desc = S.jm(["binary$", "bytes", "size", byte_size(val)])
+      if bin.type != nil, do: S.setprop(desc, "type", bin.type)
+      desc
+    end
+  end
+
   # A masked plain-data COPY: functions dropped, cycles cut, an SDK error as
   # its code and message, and nothing shared with the live value, whose spec
   # must stay raw.
-  defp clean_snapshot(cfg, val, key, depth, seen) do
+  defp clean_snapshot(cfg, bin, val, key, depth, seen) do
     cond do
       val == nil ->
         nil
 
       is_binary(val) ->
-        if sensitive_key?(cfg, key), do: mask_value(cfg, val), else: clean_string(cfg, val)
+        if sensitive_key?(cfg, key),
+          do: mask_value(cfg, val),
+          else: describe_binary(val, bin) || clean_string(cfg, val)
 
       is_function(val) ->
         :__drop__
@@ -361,7 +389,7 @@ defmodule ProjectName.Utility do
         out = S.jm([])
 
         Enum.each(H.entries(val), fn {k, v} ->
-          c = clean_snapshot(cfg, v, k, depth + 1, [val | seen])
+          c = clean_snapshot(cfg, bin, v, k, depth + 1, [val | seen])
           if c != :__drop__, do: S.setprop(out, clean_name(cfg, out, k), c)
         end)
 
@@ -371,7 +399,7 @@ defmodule ProjectName.Utility do
         out = S.jt([])
 
         Enum.each(H.entries(val), fn {i, v} ->
-          c = clean_snapshot(cfg, v, i, depth + 1, [val | seen])
+          c = clean_snapshot(cfg, bin, v, i, depth + 1, [val | seen])
           S.setprop(out, S.size(out), if(c == :__drop__, do: nil, else: c))
         end)
 
@@ -384,14 +412,14 @@ defmodule ProjectName.Utility do
         S.jm(["message", clean_string(cfg, Exception.message(val))])
 
       is_struct(val) ->
-        clean_snapshot(cfg, Map.from_struct(val), key, depth, seen)
+        clean_snapshot(cfg, bin, Map.from_struct(val), key, depth, seen)
 
       is_map(val) ->
         out = S.jm([])
 
         # Sorted, so colliding masked names number the same way every run.
         Enum.each(Enum.sort_by(val, fn {k, _} -> strof(k) end), fn {k, v} ->
-          c = clean_snapshot(cfg, v, k, depth + 1, [val | seen])
+          c = clean_snapshot(cfg, bin, v, k, depth + 1, [val | seen])
           if c != :__drop__, do: S.setprop(out, clean_name(cfg, out, k), c)
         end)
 
@@ -402,7 +430,7 @@ defmodule ProjectName.Utility do
         out = S.jt([])
 
         Enum.each(items, fn v ->
-          c = clean_snapshot(cfg, v, nil, depth + 1, [val | seen])
+          c = clean_snapshot(cfg, bin, v, nil, depth + 1, [val | seen])
           S.setprop(out, S.size(out), if(c == :__drop__, do: nil, else: c))
         end)
 
@@ -413,8 +441,8 @@ defmodule ProjectName.Utility do
     end
   end
 
-  defp clean_field(cfg, v, key) do
-    case clean_snapshot(cfg, v, key, 1, []) do
+  defp clean_field(cfg, bin, v, key) do
+    case clean_snapshot(cfg, bin, v, key, 1, []) do
       :__drop__ -> nil
       c -> c
     end
@@ -423,13 +451,13 @@ defmodule ProjectName.Utility do
   defp clean_code(cfg, code), do: if(is_binary(code), do: clean_string(cfg, code), else: code)
 
   # The error is a struct, so "in place" is a copy carrying the same ctx.
-  defp clean_error(cfg, err) do
+  defp clean_error(cfg, bin, err) do
     %{
       err
       | code: clean_code(cfg, err.code),
         msg: clean_string(cfg, strof(err.msg)),
-        result: clean_field(cfg, err.result, "result"),
-        spec: clean_field(cfg, err.spec, "spec")
+        result: clean_field(cfg, bin, err.result, "result"),
+        spec: clean_field(cfg, bin, err.spec, "spec")
     }
   end
 
@@ -439,8 +467,8 @@ defmodule ProjectName.Utility do
     cond do
       S.getprop(cfg, "active") == false -> val
       is_binary(val) -> clean_string(cfg, val)
-      match?(%ProjectName.Error{}, val) -> clean_error(cfg, val)
-      true -> clean_field(cfg, val, nil)
+      match?(%ProjectName.Error{}, val) -> clean_error(cfg, binary_body(ctx), val)
+      true -> clean_field(cfg, binary_body(ctx), val, nil)
     end
   end
 
@@ -453,7 +481,7 @@ defmodule ProjectName.Utility do
 
     cond do
       S.getprop(cfg, "active") == false -> e
-      match?(%ProjectName.Error{}, e) -> clean_error(cfg, e)
+      match?(%ProjectName.Error{}, e) -> clean_error(cfg, binary_body(ctx), e)
       true -> clean_foreign_exception(cfg, e)
     end
   end
