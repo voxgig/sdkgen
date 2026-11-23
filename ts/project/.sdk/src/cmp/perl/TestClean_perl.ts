@@ -337,6 +337,70 @@ sub response {
   }
 }
 
+# A hook that cleans the live spec itself, as one that logs the request
+# would, and keeps what came back.
+{
+  package ${Name}CleanSpecFeature;
+  our @ISA = ('${Name}BaseFeature');
+
+  sub new {
+    my ($class) = @_;
+    my $self = ${Name}BaseFeature::new($class);
+    $self->{name} = 'specclean';
+    $self->{version} = '0.0.1';
+    $self->{active} = 1;
+    return $self;
+  }
+
+  sub PreRequest {
+    my ($s, $ctx) = @_;
+    $s->{live} = Scalar::Util::refaddr($ctx->{spec});
+    $s->{cleaned} = $ctx->{utility}{clean}->($ctx, $ctx->{spec});
+    return;
+  }
+}
+
+# An exception class this SDK does not define, as a caller's own code has.
+{
+  package ${Name}CleanOwnError;
+  use overload '""' => sub { $_[0]->{message} }, fallback => 1;
+
+  sub new {
+    my ($class, $message) = @_;
+    return bless { 'message' => $message }, $class;
+  }
+}
+
+# A feature that dies with what it was given, in a hook or in its stream.
+{
+  package ${Name}CleanDieFeature;
+  our @ISA = ('${Name}BaseFeature');
+
+  sub new {
+    my ($class, $err, $instream) = @_;
+    my $self = ${Name}BaseFeature::new($class);
+    $self->{name} = 'diehook';
+    $self->{version} = '0.0.1';
+    $self->{active} = 1;
+    $self->{err} = $err;
+    $self->{instream} = $instream ? 1 : 0;
+    return $self;
+  }
+
+  sub PreResponse {
+    my ($s) = @_;
+    die $s->{err} unless $s->{instream};
+    return;
+  }
+
+  sub PreDone {
+    my ($s, $ctx) = @_;
+    my $err = $s->{err};
+    $ctx->{result}{stream} = sub { die $err } if $s->{instream};
+    return;
+  }
+}
+
 # Each scenario answers the transport's (response, err) pair.
 my @SCENARIOS = (
   ['ok', sub {
@@ -615,6 +679,35 @@ SKIP: {
     'a registered value used as a property name is masked, collisions kept');
   push @sinks, forms('named', $named);
 
+  # An exception object of another class is the caller's own: it leaves an
+  # operation, a stream and direct() as the object it is.
+  my $own = ${Name}CleanOwnError->new('refused');
+  my $same = sub { return (ref $_[0] && Scalar::Util::refaddr($_[0]) == Scalar::Util::refaddr($own)) ? 1 : 0 };
+  my $operr = drive(make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanDieFeature->new($own) ]),
+    $target, {}, \\@sinks);
+  ok($same->($operr), "a hook's own exception object leaves the operation as it is");
+  my $pullerr;
+  eval {
+    my ($acc, $op) = ($target->{accessor}, $target->{op});
+    my $next = make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanDieFeature->new($own, 1) ])
+      ->$acc()->stream($op, { 'reqmatch' => { %{ $target->{match} } } }, {});
+    1 while defined $next->();
+    1;
+  } or $pullerr = $@;
+  ok($same->($pullerr), "a stream's own exception object leaves the stream as it is");
+  my $raw = make_sdk([ 'own', sub { return (undef, $own) } ], \\@sinks)->direct({ 'path' => 'raw' });
+  ok(!$raw->{ok} && $same->($raw->{err}), "a fetcher's own error object comes back from direct() as it is");
+
+  # The live spec, cleaned on its own as it is when it sits in a record:
+  # what comes back is dumped whole, as a hook's logger would print it.
+  my $speclean = ${Name}CleanSpecFeature->new;
+  drive(make_sdk($SCENARIOS[0], \\@sinks, undef, [ $speclean ]), $target, {}, \\@sinks);
+  my $speccopy = $speclean->{cleaned};
+  push @sinks, { 'name' => 'spec:top', 'text' => do {
+    local $Data::Dumper::Sortkeys = 1;
+    Data::Dumper::Dumper($speccopy);
+  } };
+
   # The generated config's own clean block is read beside the caller's, and
   # is not changed by it.
   my $util = $hooked->get_utility();
@@ -705,6 +798,12 @@ SKIP: {
   my $coded = $errors{'coded/throw'};
   ok(Scalar::Util::blessed($coded) && $coded->isa('${Name}Error')
     && $coded->{code} eq "denied_$MASK", 'the coded error keeps its code, masked');
+
+  ok(ref $speccopy && !Scalar::Util::blessed($speccopy)
+    && Scalar::Util::refaddr($speccopy) != $speclean->{live},
+    'a spec cleaned on its own is a plain copy, not the live spec');
+  is(header($speccopy->{headers}, 'x-custom-token'), $MASK,
+    'x-custom-token is masked in a spec cleaned on its own');
 
   is($fplain, 'kind PLAINSETTING-q8w2e4r6', "a feature's name does not register its settings");
   is($ftoken, "token $MASK", 'a sensitive setting inside a feature registers');

@@ -328,9 +328,7 @@ sub clean_name {
 
 # Clean a value on its way out. A string is redacted; an SDK error is
 # redacted IN PLACE (it is about to be thrown, and its identity matters to
-# the caller); another blessed object, unless it is a filehandle, is not
-# this SDK's to rewrite and comes back as it is; anything else comes back
-# as a masked plain-data copy.
+# the caller); anything else comes back as a masked plain-data copy.
 sub clean {
   my ($ctx, $val) = @_;
   my $cfg = config($ctx);
@@ -341,8 +339,7 @@ sub clean {
 
   my $bin = binary_body($ctx);
 
-  if (Scalar::Util::blessed($val) && !is_stream($val)) {
-    return $val unless $val->isa('ProjectNameError');
+  if (Scalar::Util::blessed($val) && $val->isa('ProjectNameError')) {
     $val->{msg} = clean_string($cfg, "$val->{msg}") if defined $val->{msg};
     for my $k (sort keys %$val) {
       next if 'msg' eq $k;
