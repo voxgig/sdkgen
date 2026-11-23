@@ -459,11 +459,30 @@ local function clean_add_sensitive_util(ctx, val, under, depth, seen)
 end
 
 
+-- Whether a named value is a secret: by its name, or by a registered value
+-- it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+local function clean_secret_util(ctx, key, value)
+  local cfg = clean_config(ctx)
+  if sensitive_key(cfg, key) then
+    return true
+  end
+  if type(value) == "string" then
+    for _, v in ipairs(cfg.values) do
+      if string.find(value, v, 1, true) ~= nil then
+        return true
+      end
+    end
+  end
+  return false
+end
+
+
 return {
   clean = clean_util,
   clean_add = clean_add_util,
   clean_add_sensitive = clean_add_sensitive_util,
   clean_key = clean_key_util,
+  clean_secret = clean_secret_util,
   make_clean_config = make_clean_config,
   splitvalues = splitvalues,
 }

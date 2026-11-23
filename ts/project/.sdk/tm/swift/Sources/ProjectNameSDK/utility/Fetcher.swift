@@ -55,6 +55,7 @@ func getOnlyRefusal(_ fullurl: String, _ method: String) -> ProjectNameError? {
 
 let redirectStatus: Set<Int64> = [301, 302, 303, 307, 308]
 let redirectMax = 5
+private let credentialHeaders: Set<String> = ["authorization", "cookie", "proxy-authorization"]
 
 // The Location resolved against the URL that answered with it.
 func resolveLocation(_ base: String, _ location: String) -> String? {
@@ -69,11 +70,22 @@ private func redirectOrigin(_ url: String) -> String {
   return "\(scheme)://\(parts.host?.lowercased() ?? ""):\(parts.port ?? (scheme == "https" ? 443 : 80))"
 }
 
-private func withoutCredentials(_ fetchdef: VMap) -> VMap {
+// What another origin is not sent: the names every client drops, and
+// whatever the SDK holds as a secret, by its name or by its value. A call
+// with no context is answered from the schema's sensitive names.
+private func isCredential(_ ctx: Context?, _ name: String, _ value: Value) -> Bool {
+  if credentialHeaders.contains(name.lowercased()) {
+    return true
+  }
+  let secret = ctx?.utility?.cleanSecret ?? cleanSecretUtil
+  return secret(ctx ?? Context(nil, nil), name, value)
+}
+
+private func withoutCredentials(_ ctx: Context?, _ fetchdef: VMap) -> VMap {
   let copy = VMap(fetchdef.entries)
   if let headers = gp(fetchdef, "headers").asMap {
     var kept = headers.entries
-    for key in kept.keys where ["authorization", "cookie", "proxy-authorization"].contains(key.lowercased()) {
+    for key in kept.keys where isCredential(ctx, key, kept[key] ?? .noval) {
       _ = kept.removeValue(forKey: key)
     }
     copy.entries["headers"] = .map(VMap(kept))
@@ -84,9 +96,9 @@ private func withoutCredentials(_ fetchdef: VMap) -> VMap {
 // URLSession on Linux drops the trailing slash of a Location it follows, so
 // redirects are followed here. A GET or HEAD follows one, unless the fetch
 // definition says "manual", each hop passing the GET-only guard first; past
-// redirectMax hops the last 3xx is the answer. Another origin is not sent the
-// request's credentials.
-func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
+// redirectMax hops, or where a body would go to another origin, the 3xx is
+// the answer. Another origin is not sent the request's credentials.
+func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap, _ ctx: Context? = nil) throws -> Value {
   let raw = gp(fetchdef, "method").asString ?? "GET"
   let method = raw.isEmpty ? "GET" : raw.uppercased()
   let follow = (method == "GET" || method == "HEAD") && gp(fetchdef, "redirect").asString != "manual"
@@ -105,7 +117,10 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
       return res
     }
     if redirectOrigin(next) != redirectOrigin(url) {
-      def = withoutCredentials(def)
+      if !isNil(gp(def, "body")) {
+        return res
+      }
+      def = withoutCredentials(ctx, def)
     }
     url = next
     hops += 1
@@ -215,7 +230,7 @@ func fetcherUtil(_ ctx: Context, _ fullurl: String, _ fetchdef: VMap) throws -> 
 
   let sysFetch = gpath(options, "system", "fetch")
   if isNil(sysFetch) {
-    return try defaultHttpFetch(fullurl, fetchdef)
+    return try defaultHttpFetch(fullurl, fetchdef, ctx)
   }
 
   if let fn = sysFetch.asNative as? SystemFetch {

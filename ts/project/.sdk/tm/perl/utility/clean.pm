@@ -423,6 +423,19 @@ sub key {
   return sensitive_key(config($ctx), $key);
 }
 
+# Whether a named value is a secret: by its name, or by a registered value
+# it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+sub secret {
+  my ($ctx, $key, $value) = @_;
+  my $cfg = config($ctx);
+  return 1 if sensitive_key($cfg, $key);
+  return 0 unless defined $value && !ref $value;
+  for my $v (@{ $cfg->{values} }) {
+    return 1 if index("$value", $v) >= 0;
+  }
+  return 0;
+}
+
 package ProjectNameUtilities;
 
 our %REGISTRY;
@@ -435,6 +448,11 @@ $REGISTRY{clean} = sub {
 $REGISTRY{clean_add} = sub {
   my ($ctx, $value) = @_;
   return ProjectNameCleanSupport::add($ctx, $value);
+};
+
+$REGISTRY{clean_secret} = sub {
+  my ($ctx, $key, $value) = @_;
+  return ProjectNameCleanSupport::secret($ctx, $key, $value);
 };
 
 1;

@@ -540,3 +540,18 @@ void clean_add_sensitive_util(Context* ctx, voxgig_value* val) {
   if (!ctx) return;
   clean_add_sensitive_opts(ctx->options, val);
 }
+
+// Whether a named value is a secret: by its name, or by a registered value
+// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+bool clean_secret_util(Context* ctx, const char* key, const char* value) {
+  CleanCfg cfg;
+  read_cfg(config_block(ctx), &cfg);
+  if (sensitive_key(&cfg, key)) return true;
+  if (!value) return false;
+  voxgig_list* vl = voxgig_as_list(cfg.values);
+  for (size_t i = 0; i < vl->len; i++) {
+    const char* form = voxgig_as_string(vl->items[i]);
+    if (form[0] != '\0' && strstr(value, form)) return true;
+  }
+  return false;
+}

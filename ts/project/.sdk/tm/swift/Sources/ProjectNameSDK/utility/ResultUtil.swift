@@ -622,3 +622,14 @@ func doneUtil(_ ctx: Context) throws -> Value {
 
   return try makeErrorUtil(ctx, nil)
 }
+
+// Whether a named value is a secret: by its name, or by a registered value
+// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+func cleanSecretUtil(_ ctx: Context, _ key: String, _ value: Value) -> Bool {
+  let cfg = cleanConfigOf(ctx)
+  if cleanSensitiveKey(cfg, key) {
+    return true
+  }
+  guard let text = value.asString else { return false }
+  return cfg.values.contains { text.contains($0) }
+}

@@ -485,6 +485,138 @@ SKIP: {
   is($seen, "/redirect/r1\n/redirect/r1/\n/redirect/r1/done\n/redirect/r1\n", 'fetcher redirect: each hop is sent');
 }
 
+my $REDIRECT_SECRET = 'REDIRECT-SECRET-q7w3e9r1';
+my @REDIRECT_CREDENTIALS = qw(authorization cookie x-api-key private-token x-acme-auth);
+
+# x-acme-auth is not a sensitive name: a credential by the value it holds.
+sub redirect_headers {
+  return {
+    'authorization' => "Bearer $REDIRECT_SECRET",
+    'cookie' => "sid=$REDIRECT_SECRET",
+    'x-api-key' => $REDIRECT_SECRET,
+    'private-token' => 'pt-12345',
+    'x-acme-auth' => "v1 $REDIRECT_SECRET",
+    'x-tenant' => 'acme',
+  };
+}
+
+# The API's origin redirects; the other origin, another port, records what
+# reaches it. One child serves both, printing each request before it answers,
+# until it is told to stop. The secret is registered as a caller's is: as the
+# apikey. Answers the response, the error and what arrived.
+sub redirect_fetch {
+  my ($options, $path, $fetchdef) = @_;
+  require IO::Socket::INET;
+  require IO::Select;
+  require POSIX;
+  my @listen = (LocalAddr => '127.0.0.1', LocalPort => 0, Listen => 5, ReuseAddr => 1);
+  my $api = IO::Socket::INET->new(@listen);
+  my $other = IO::Socket::INET->new(@listen);
+  my ($apiport, $otherbase) = ($api->sockport, 'http://127.0.0.1:' . $other->sockport);
+  pipe(my $seen_r, my $seen_w) or return;
+  my $pid = fork();
+  return unless defined $pid;
+  if (0 == $pid) {
+    close $seen_r;
+    $seen_w->autoflush(1);
+    my %routes = ('/out' => [302, "$otherbase/landed"], '/out307' => [307, "$otherbase/landed"],
+      '/in' => [302, '/landed']);
+    my $select = IO::Select->new($api, $other);
+    SERVE: while (my @ready = $select->can_read(20)) {
+      for my $srv (@ready) {
+        my $sock = $srv->accept or next;
+        my ($method, $rpath) = split / /, (<$sock> // '');
+        last SERVE if '/stop' eq ($rpath // '');
+        my ($length, $sent, @headers) = (0, '');
+        while (defined(my $line = <$sock>)) {
+          my ($name, $value) = $line =~ /\A([^:]+):\s*(.*?)\r?\n\z/ or last;
+          push @headers, lc($name) . "=$value";
+          $length = $value if 'content-length' eq lc $name;
+        }
+        read($sock, $sent, $length) if $length;
+        print {$seen_w} join("\t", $srv == $api ? 'api' : 'other', $method, $rpath, $sent, @headers), "\n";
+        my $hop = $srv == $api ? $routes{$rpath} : undef;
+        my $body = $hop ? '' : '{"id":"r1"}';
+        print {$sock} 'HTTP/1.1 ' . ($hop ? $hop->[0] : 200) . " X\r\n"
+          . ($hop ? "Location: $hop->[1]\r\n" : '') . "Content-Type: application/json\r\n"
+          . 'Content-Length: ' . length($body) . "\r\nConnection: close\r\n\r\n" . $body;
+        close $sock;
+      }
+    }
+    # Windows forks a thread, where _exit ends the whole test process.
+    $^O eq 'MSWin32' ? exit(0) : POSIX::_exit(0);
+  }
+  close $_ for $seen_w, $api, $other;
+
+  my $base = "http://127.0.0.1:$apiport";
+  my $live_client = ProjectNameSDK->new({ 'base' => $base, 'apikey' => $REDIRECT_SECRET, %$options });
+  my $live_utility = $live_client->get_utility;
+  my $ctx = $live_utility->{make_context}->({ 'opname' => 'load' }, $live_client->get_root_ctx);
+  my ($res, $err) = $live_utility->{fetcher}->($ctx, "$base$path", $fetchdef);
+
+  my $stop = IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $apiport);
+  print {$stop} "GET /stop HTTP/1.0\r\n\r\n" if $stop;
+  my @arrived;
+  while (defined(my $line = <$seen_r>)) {
+    chomp $line;
+    my ($where, $method, $rpath, $sent, @headers) = split /\t/, $line, -1;
+    push @arrived, { 'where' => $where, 'method' => $method, 'path' => $rpath, 'body' => $sent,
+      'headers' => { map { split /=/, $_, 2 } @headers } };
+  }
+  waitpid($pid, 0);
+  return ($res, $err, \@arrived);
+}
+
+sub redirect_arrivals {
+  my ($arrived) = @_;
+  return [ map { "$_->{where} $_->{path}" } @$arrived ];
+}
+
+for my $case (['', {}], [', with clean switched off', { 'clean' => { 'active' => 0 } }]) {
+  SKIP: {
+    my ($label, $options) = @$case;
+    my ($res, $err, $arrived) = redirect_fetch($options, '/out',
+      { 'method' => 'GET', 'headers' => redirect_headers() });
+    skip('no fork', 15) unless $arrived;
+    ok(!defined $err, "fetcher redirect to another origin$label: no error");
+    is($res && $res->{status}, 200, "fetcher redirect to another origin$label: the last hop answers");
+    is_deeply(redirect_arrivals($arrived), ['api /out', 'other /landed'],
+      "fetcher redirect to another origin$label: each hop is sent");
+    for my $name (@REDIRECT_CREDENTIALS) {
+      ok(defined $arrived->[0]{headers}{$name}, "fetcher redirect$label: the API itself is sent $name");
+      ok(!defined $arrived->[1]{headers}{$name}, "fetcher redirect$label: another origin is not sent $name");
+    }
+    is($arrived->[1]{headers}{'x-tenant'}, 'acme', "fetcher redirect$label: another origin is sent x-tenant");
+    unlike(join("\n", %{ $arrived->[1]{headers} || {} }), qr/\Q$REDIRECT_SECRET\E/,
+      "fetcher redirect$label: another origin is sent no secret");
+  }
+}
+
+SKIP: {
+  my ($res, $err, $arrived) = redirect_fetch({}, '/in', { 'method' => 'GET', 'headers' => redirect_headers() });
+  skip('no fork', 9) unless $arrived;
+  ok(!defined $err, 'fetcher redirect on the same origin: no error');
+  is($res && $res->{status}, 200, 'fetcher redirect on the same origin: the last hop answers');
+  is_deeply(redirect_arrivals($arrived), ['api /in', 'api /landed'],
+    'fetcher redirect on the same origin: each hop is sent');
+  ok(defined $arrived->[1]{headers}{$_}, "fetcher redirect on the same origin: keeps $_")
+    for @REDIRECT_CREDENTIALS, 'x-tenant';
+}
+
+# A PUT follows nothing. A GET follows, and HTTP::Tiny sends the body it is given.
+for my $method ('PUT', 'GET') {
+  SKIP: {
+    my ($res, $err, $arrived) = redirect_fetch({}, '/out307',
+      { 'method' => $method, 'headers' => redirect_headers(), 'body' => "BODY-$REDIRECT_SECRET" });
+    skip('no fork', 4) unless $arrived;
+    my $label = "fetcher redirect, a $method with a body";
+    ok(!defined $err, "$label: no error");
+    is($res && $res->{status}, 307, "$label: answered by the 307");
+    is_deeply(redirect_arrivals($arrived), ['api /out307'], "$label: another origin is sent nothing");
+    is($arrived->[0]{body}, "BODY-$REDIRECT_SECRET", "$label: the API itself is sent it");
+  }
+}
+
 # Nothing listens on port 9: a request the guard let through fails there.
 {
   my $live_client = ProjectNameSDK->new({ 'base' => 'http://127.0.0.1:9' });

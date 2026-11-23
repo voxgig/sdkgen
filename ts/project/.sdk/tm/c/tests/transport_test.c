@@ -81,6 +81,57 @@ static const char* header_of(const char* head, const char* name) {
   return NULL;
 }
 
+#define REDIRECT_SECRET "REDIRECT-SECRET-q7w3e9r1"
+
+// All but the last are credentials: x-acme-auth by the value it holds.
+static const char* SENT[] = {
+  "authorization", "cookie", "x-api-key", "private-token", "x-acme-auth", "x-tenant",
+};
+#define SENT_COUNT (sizeof(SENT) / sizeof(SENT[0]))
+#define SENT_CREDENTIALS (SENT_COUNT - 1)
+
+// The other origin: another port on the loopback interface.
+static int other_port = 0;
+
+// The origins' routes: the API's redirects, to the other origin or to
+// itself. Each keeps what it is sent, and "/seen" answers with that and
+// forgets it. 0 when the target is none of them.
+static int answer_origin(int c, const char* head, const char* target, const char* body) {
+  static voxgig_value* arrived = NULL;
+  if (NULL == arrived) arrived = v_list();
+  if (0 == strcmp(target, "/seen")) {
+    reply(c, "200 OK", "application/json", voxgig_jsonify(arrived, NULL));
+    arrived = v_list();
+    return 1;
+  }
+  int away = 0 == strcmp(target, "/out") || 0 == strcmp(target, "/out307");
+  int landed = 0 == strcmp(target, "/landed");
+  if (!away && !landed && 0 != strcmp(target, "/in")) return 0;
+
+  voxgig_value* headers = v_map();
+  for (size_t i = 0; i < SENT_COUNT; i++) {
+    const char* value = header_of(head, SENT[i]);
+    if (NULL != value) setp(headers, SENT[i], v_str(value));
+  }
+  voxgig_list_push(voxgig_as_list(arrived),
+    cmap(3, "target", v_str(target), "body", v_str(body), "headers", headers));
+
+  if (landed) {
+    reply(c, "200 OK", "application/json", "{\"id\":\"r1\"}");
+    return 1;
+  }
+  char moved[256];
+  if (away) {
+    snprintf(moved, sizeof(moved), "HTTP/1.1 %s\r\nLocation: http://127.0.0.1:%d/landed\r\n"
+      "Content-Length: 0\r\n\r\n", 0 == strcmp(target, "/out") ? "302 Found" : "307 Temporary Redirect",
+      other_port);
+  } else {
+    snprintf(moved, sizeof(moved), "HTTP/1.1 302 Found\r\nLocation: /landed\r\nContent-Length: 0\r\n\r\n");
+  }
+  say(c, moved);
+  return 1;
+}
+
 // One request, answered as its path says; the routes are the cases below.
 static void answer(int c) {
   char buf[65536];
@@ -121,6 +172,8 @@ static void answer(int c) {
     reply(c, "200 OK", "application/json", voxgig_jsonify(seen, NULL));
     return;
   }
+
+  if (answer_origin(c, buf, target, body)) return;
 
   // A Django route answers its slashless form with a relative Location.
   if (0 == strcmp(target, "/redirect/r1")) {
@@ -229,19 +282,62 @@ static int mentions(PNError* err, const char* code, const char* text) {
   return NULL != err && 0 == strcmp(err->code, code) && NULL != strstr(err->msg, text);
 }
 
+// Through the fetcher, on a context of the client's own: its options hold
+// what the client registered as a secret.
+static voxgig_value* fetch_on(ProjectNameSDK* sdk, const char* url, voxgig_value* fetchdef,
+                              PNError** err) {
+  CtxSpec cs;
+  memset(&cs, 0, sizeof(cs));
+  cs.opname = "load";
+  *err = NULL;
+  return utility_fetch(sdk_get_utility(sdk), make_context_util(cs, sdk_get_root_ctx(sdk)), url,
+    fetchdef, err);
+}
+
+static voxgig_value* credential_headers(void) {
+  return cmap(6, "authorization", v_str("Bearer " REDIRECT_SECRET),
+    "cookie", v_str("sid=" REDIRECT_SECRET), "x-api-key", v_str(REDIRECT_SECRET),
+    "private-token", v_str("pt-12345"), "x-acme-auth", v_str("v1 " REDIRECT_SECRET),
+    "x-tenant", v_str("acme"));
+}
+
+// What the origin on `port` was sent since it was last asked.
+static voxgig_value* seen_by(ProjectNameSDK* sdk, int port) {
+  char url[64];
+  PNError* err = NULL;
+  snprintf(url, sizeof(url), "http://127.0.0.1:%d/seen", port);
+  voxgig_value* seen = json_of(get(sdk, url, &err));
+  return voxgig_is_list(seen) ? seen : v_list();
+}
+
+static size_t count_of(voxgig_value* seen) { return voxgig_as_list(seen)->len; }
+
+static voxgig_value* headers_of(voxgig_value* seen, size_t at) {
+  return at < count_of(seen) ? getp(voxgig_as_list(seen)->items[at], "headers") : NULL;
+}
+
 int main(void) {
   int port = 0;
   int fd = listen_loopback(&port);
-  CHECK(0 <= fd, "a loopback listener");
-  if (fd < 0) TEST_SUMMARY("transport");
+  int otherfd = listen_loopback(&other_port);
+  CHECK(0 <= fd && 0 <= otherfd, "a loopback listener");
+  if (fd < 0 || otherfd < 0) TEST_SUMMARY("transport");
 
   fflush(NULL);
   pid_t server = fork();
   if (0 == server) {
+    close(otherfd);
     serve(fd);
     _exit(0);
   }
+  pid_t other = fork();
+  if (0 == other) {
+    close(fd);
+    serve(otherfd);
+    _exit(0);
+  }
   close(fd);
+  close(otherfd);
 
   char base[64];
   char url[256];
@@ -423,8 +519,67 @@ int main(void) {
     "redirect", v_str("manual")), &err);
   CHECK(NULL == err && 301 == to_int(getp(res, "status")), "a manual fetch is answered by the 301");
 
+  // The API's origin redirects, and the other origin keeps what reaches it.
+  // The secret is registered as a caller's is: as the apikey.
+  char msg[128];
+  for (int cleanon = 1; 0 <= cleanon; cleanon--) {
+    const char* with = cleanon ? "" : ", with clean switched off";
+    ProjectNameSDK* keyed = projectname_sdk_new(cmap(3, "base", v_str(base),
+      "apikey", v_str(REDIRECT_SECRET), "clean", cmap(1, "active", v_bool(1 == cleanon))));
+    snprintf(url, sizeof(url), "%s/out", base);
+    res = fetch_on(keyed, url, cmap(2, "method", v_str("GET"), "headers", credential_headers()),
+      &err);
+    snprintf(msg, sizeof(msg), "a hop to another origin is followed%s", with);
+    CHECK(NULL == err && 200 == to_int(getp(res, "status")), msg);
+    voxgig_value* api = seen_by(sdk, port);
+    voxgig_value* away = seen_by(sdk, other_port);
+    snprintf(msg, sizeof(msg), "each origin is sent one request%s", with);
+    CHECK(1 == count_of(api) && 1 == count_of(away), msg);
+    for (size_t i = 0; i < SENT_CREDENTIALS; i++) {
+      snprintf(msg, sizeof(msg), "the API itself is sent %s%s", SENT[i], with);
+      CHECK(NULL != get_str(headers_of(api, 0), SENT[i]), msg);
+      snprintf(msg, sizeof(msg), "another origin is not sent %s%s", SENT[i], with);
+      CHECK(NULL == get_str(headers_of(away, 0), SENT[i]), msg);
+    }
+    snprintf(msg, sizeof(msg), "another origin is sent what is no credential%s", with);
+    CHECK_STR_EQ(get_str(headers_of(away, 0), "x-tenant"), "acme", msg);
+    snprintf(msg, sizeof(msg), "another origin is sent no secret%s", with);
+    CHECK(NULL == strstr(voxgig_jsonify(away, NULL), REDIRECT_SECRET), msg);
+  }
+
+  ProjectNameSDK* keyed = projectname_sdk_new(cmap(2, "base", v_str(base),
+    "apikey", v_str(REDIRECT_SECRET)));
+  snprintf(url, sizeof(url), "%s/in", base);
+  res = fetch_on(keyed, url, cmap(2, "method", v_str("GET"), "headers", credential_headers()), &err);
+  CHECK(NULL == err && 200 == to_int(getp(res, "status")), "a hop on the same origin is followed");
+  voxgig_value* api = seen_by(sdk, port);
+  CHECK(2 == count_of(api) && 0 == count_of(seen_by(sdk, other_port)), "and stays on it");
+  for (size_t i = 0; i < SENT_COUNT; i++) {
+    snprintf(msg, sizeof(msg), "the same origin keeps %s", SENT[i]);
+    CHECK(NULL != get_str(headers_of(api, 1), SENT[i]), msg);
+  }
+
+  // A PUT follows nothing. A GET follows, and the transport sends the body
+  // it is given.
+  const char* bodied[] = { "PUT", "GET" };
+  snprintf(url, sizeof(url), "%s/out307", base);
+  for (size_t i = 0; i < sizeof(bodied) / sizeof(bodied[0]); i++) {
+    res = fetch_on(keyed, url, cmap(3, "method", v_str(bodied[i]), "headers", credential_headers(),
+      "body", v_str("BODY-" REDIRECT_SECRET)), &err);
+    snprintf(msg, sizeof(msg), "a %s's body is not sent on: the 307 is the answer", bodied[i]);
+    CHECK(NULL == err && 307 == to_int(getp(res, "status")), msg);
+    api = seen_by(sdk, port);
+    snprintf(msg, sizeof(msg), "another origin is sent nothing of a %s", bodied[i]);
+    CHECK(1 == count_of(api) && 0 == count_of(seen_by(sdk, other_port)), msg);
+    snprintf(msg, sizeof(msg), "the API itself is sent the %s's body", bodied[i]);
+    CHECK_STR_EQ(1 == count_of(api) ? get_str(voxgig_as_list(api)->items[0], "body") : NULL,
+      "BODY-" REDIRECT_SECRET, msg);
+  }
+
   kill(server, SIGKILL);
+  kill(other, SIGKILL);
   waitpid(server, NULL, 0);
+  waitpid(other, NULL, 0);
   TEST_SUMMARY("transport");
 }
 

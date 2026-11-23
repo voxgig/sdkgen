@@ -565,6 +565,158 @@ describe("PrimaryUtility", function()
   end)
 
 
+  local REDIRECT_SECRET = "REDIRECT-SECRET-q7w3e9r1"
+  local REDIRECT_CREDENTIALS = { "authorization", "cookie", "x-api-key", "private-token", "x-acme-auth" }
+
+  -- x-acme-auth is not a sensitive name: a credential by the value it holds.
+  local function redirect_headers()
+    return {
+      ["authorization"] = "Bearer " .. REDIRECT_SECRET,
+      ["cookie"] = "sid=" .. REDIRECT_SECRET,
+      ["x-api-key"] = REDIRECT_SECRET,
+      ["private-token"] = "pt-12345",
+      ["x-acme-auth"] = "v1 " .. REDIRECT_SECRET,
+      ["x-tenant"] = "acme",
+    }
+  end
+
+  -- The API's origin redirects; the other origin, another port, records what
+  -- reaches it. One interpreter serves both, printing each request before it
+  -- answers, until it is told to stop.
+  local origins_server = [[
+    local socket = require("socket")
+    local api = assert(socket.bind("127.0.0.1", 0))
+    local other = assert(socket.bind("127.0.0.1", 0))
+    local otherbase = "http://127.0.0.1:" .. select(2, other:getsockname())
+    io.stdout:write(select(2, api:getsockname()), "\n")
+    io.stdout:flush()
+    local routes = { ["/out"] = { 302, otherbase .. "/landed" }, ["/out307"] = { 307, otherbase .. "/landed" },
+      ["/in"] = { 302, "/landed" } }
+    while true do
+      local srv = socket.select({ api, other }, nil, 20)[1]
+      if not srv then break end
+      local sock = srv:accept()
+      sock:settimeout(20)
+      local method, path = string.match(sock:receive("*l") or "", "^(%S+) (%S+)")
+      if path == "/stop" then break end
+      local fields = { srv == api and "api" or "other", method or "", path or "", "" }
+      local length = 0
+      while true do
+        local name, value = string.match(sock:receive("*l") or "", "^([^:]+):%s*(.*)$")
+        if not name then break end
+        fields[#fields + 1] = string.lower(name) .. "=" .. value
+        if string.lower(name) == "content-length" then length = tonumber(value) or 0 end
+      end
+      if length > 0 then fields[4] = sock:receive(length) or "" end
+      io.stdout:write(table.concat(fields, "\t"), "\n")
+      io.stdout:flush()
+      local hop = srv == api and routes[path] or nil
+      local body = hop and "" or '{"id":"r1"}'
+      sock:send("HTTP/1.1 " .. (hop and hop[1] or 200) .. " X\r\n" ..
+        (hop and ("Location: " .. hop[2] .. "\r\n") or "") .. "Content-Type: application/json\r\n" ..
+        "Content-Length: " .. #body .. "\r\nConnection: close\r\n\r\n" .. body)
+      sock:close()
+    end
+  ]]
+
+  -- The secret is registered as a caller's is: as the apikey. Answers the
+  -- response, the error and what arrived.
+  local function redirect_fetch(options, path, fetchdef)
+    local first = 0
+    while arg and arg[first - 1] ~= nil do first = first - 1 end
+    local lua = arg and first < 0 and arg[first] or "lua"
+    local script = os.tmpname()
+    local f = assert(io.open(script, "w"))
+    f:write(string.format("package.path = %q\npackage.cpath = %q\n", package.path, package.cpath), origins_server)
+    f:close()
+    local child = assert(io.popen(string.format("%q %q", lua, script)))
+    local port = assert(child:read("*l"))
+    local base = "http://127.0.0.1:" .. port
+
+    local live_options = { base = base, apikey = REDIRECT_SECRET }
+    for k, v in pairs(options) do
+      live_options[k] = v
+    end
+    local live_client = sdk.new(live_options)
+    local live_utility = live_client:get_utility()
+    local ctx = live_utility.make_context({ opname = "load" }, live_client:get_root_ctx())
+    local res, err = live_utility.fetcher(ctx, base .. path, fetchdef)
+
+    local stop = require("socket").connect("127.0.0.1", tonumber(port))
+    if stop then
+      stop:send("GET /stop HTTP/1.0\r\n\r\n")
+      stop:close()
+    end
+    local arrived = {}
+    for line in child:lines() do
+      local fields = {}
+      for field in string.gmatch(line .. "\t", "(.-)\t") do
+        fields[#fields + 1] = field
+      end
+      local headers = {}
+      for i = 5, #fields do
+        local name, value = string.match(fields[i], "^([^=]+)=(.*)$")
+        headers[name] = value
+      end
+      arrived[#arrived + 1] = { where = fields[1], method = fields[2], path = fields[3],
+        body = fields[4], headers = headers }
+    end
+    child:close()
+    os.remove(script)
+    return res, err, arrived
+  end
+
+  local function redirect_arrivals(arrived)
+    local out = {}
+    for _, a in ipairs(arrived) do
+      out[#out + 1] = a.where .. " " .. a.path
+    end
+    return out
+  end
+
+  for _, case in ipairs({ { "", {} }, { "-clean-off", { clean = { active = false } } } }) do
+    ;(has_socket and it or pending)("fetcher-redirect-other-origin" .. case[1], function()
+      local res, err, arrived = redirect_fetch(case[2], "/out",
+        { method = "GET", headers = redirect_headers() })
+      assert.is_nil(err)
+      assert.are.equal(200, res.status)
+      assert.are.same({ "api /out", "other /landed" }, redirect_arrivals(arrived))
+      for _, name in ipairs(REDIRECT_CREDENTIALS) do
+        assert.is_not_nil(arrived[1].headers[name], "the API itself was not sent " .. name)
+        assert.is_nil(arrived[2].headers[name], "another origin was sent " .. name)
+      end
+      assert.are.equal("acme", arrived[2].headers["x-tenant"])
+      for name, value in pairs(arrived[2].headers) do
+        assert.is_nil(string.find(value, REDIRECT_SECRET, 1, true), "another origin was sent the secret in " .. name)
+      end
+    end)
+  end
+
+  ;(has_socket and it or pending)("fetcher-redirect-same-origin", function()
+    local res, err, arrived = redirect_fetch({}, "/in", { method = "GET", headers = redirect_headers() })
+    assert.is_nil(err)
+    assert.are.equal(200, res.status)
+    assert.are.same({ "api /in", "api /landed" }, redirect_arrivals(arrived))
+    for _, name in ipairs(REDIRECT_CREDENTIALS) do
+      assert.is_not_nil(arrived[2].headers[name], "the same origin lost " .. name)
+    end
+    assert.are.equal("acme", arrived[2].headers["x-tenant"])
+  end)
+
+  -- A PUT follows nothing. A GET follows, and luasocket sends the body it is given.
+  for _, method in ipairs({ "PUT", "GET" }) do
+    ;(has_socket and it or pending)("fetcher-redirect-body-" .. string.lower(method), function()
+      local body = "BODY-" .. REDIRECT_SECRET
+      local res, err, arrived = redirect_fetch({}, "/out307",
+        { method = method, headers = redirect_headers(), body = body })
+      assert.is_nil(err)
+      assert.are.equal(307, res.status)
+      assert.are.same({ "api /out307" }, redirect_arrivals(arrived))
+      assert.are.equal(body, arrived[1].body)
+    end)
+  end
+
+
   -- Nothing listens on port 9: a request the guard let through fails there.
   -- Lua cannot set its own environment, so the test answers for os.getenv.
   it("fetcher-getonly-guard", function()

@@ -507,4 +507,23 @@ class ProjectNameClean
         $rp = new \ReflectionProperty($owner, $prop);
         $rp->setValue($err, $value);
     }
+
+    // Whether a named value is a secret (clean_secret): by its name, or by a
+    // registered value it holds. Answered with clean off too: a redirect
+    // asks, not a diagnostic.
+    public static function secret(?ProjectNameContext $ctx, mixed $key, mixed $value): bool
+    {
+        $cfg = self::config_of($ctx);
+        if (self::sensitive_key($cfg, $key)) {
+            return true;
+        }
+        if (is_string($value)) {
+            foreach ($cfg->values as $v) {
+                if (is_string($v) && '' !== $v && str_contains($value, $v)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

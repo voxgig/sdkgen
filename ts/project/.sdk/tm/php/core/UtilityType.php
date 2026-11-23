@@ -7,6 +7,7 @@ class ProjectNameUtility
 {
     public mixed $clean = null;
     public mixed $clean_add = null;
+    public mixed $clean_secret = null;
     public mixed $clean_explain = null;
     public mixed $done = null;
     public mixed $make_error = null;
@@ -60,6 +61,7 @@ class ProjectNameUtility
         $u = new ProjectNameUtility();
         $u->clean = $src->clean;
         $u->clean_add = $src->clean_add;
+        $u->clean_secret = $src->clean_secret;
         $u->clean_explain = $src->clean_explain;
         $u->done = $src->done;
         $u->make_error = $src->make_error;

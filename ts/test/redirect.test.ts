@@ -141,6 +141,8 @@ describe('redirects', () => {
         assert.ok(/REDIRECT_MAX|redirectMax|REDIRECT_MAX = 5/.test(src), target + ': no hop limit')
         assert.ok(/authorization/i.test(src) && /cookie/i.test(src),
           target + ': another origin is sent the credentials')
+        assert.ok(/clean_?secret/i.test(src),
+          target + ': another origin is sent a credential under another name')
         assert.ok(/getonly_?refusal|getOnlyRefusal/i.test(src.slice(src.search(/REDIRECT|redirectStatus/))),
           target + ': a hop does not pass the GET-only guard')
       }
@@ -148,6 +150,13 @@ describe('redirects', () => {
       const tsrc = read(spec.test)
       for (const mark of ['/redirect/r1', 'done', '308', 'manual']) {
         assert.ok(tsrc.includes(mark), target + ': ' + spec.test + ' lacks ' + mark)
+      }
+      // The ts and js transports are driven across origins below.
+      if ('sdk' === spec.follows && !['ts', 'js'].includes(target)) {
+        for (const mark of ['x-api-key', 'x-acme-auth', 'x-tenant']) {
+          assert.ok(tsrc.includes(mark), target + ': ' + spec.test + ' sends no ' + mark +
+            ' to another origin')
+        }
       }
     })
   }

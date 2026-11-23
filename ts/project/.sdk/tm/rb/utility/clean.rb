@@ -365,9 +365,19 @@ module ProjectNameUtilities
     def self.key?(ctx, key)
       sensitive_key?(config(ctx), key)
     end
+
+    # Whether a named value is a secret: by its name, or by a registered value
+    # it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+    def self.secret?(ctx, key, value)
+      cfg = config(ctx)
+      sensitive_key?(cfg, key) ||
+        (value.is_a?(String) && cfg["values"].any? { |v| value.include?(v) })
+    end
   end
 
   Clean = ->(ctx, val) { CleanSupport.clean(ctx, val) }
 
   CleanAdd = ->(ctx, value) { CleanSupport.add(ctx, value) }
+
+  CleanSecret = ->(ctx, key, value) { CleanSupport.secret?(ctx, key, value) }
 end
