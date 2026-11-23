@@ -5,7 +5,9 @@ import json
 import os
 import re
 import threading
+from contextvars import ContextVar
 from http.cookiejar import DefaultCookiePolicy
+from urllib.parse import urljoin, urlsplit
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core.error import ProjectNameError
 
@@ -21,15 +23,69 @@ _DEFAULT_USER_AGENT = "PROJECTUSERAGENT"
 _SESSION = None
 _SESSION_LOCK = threading.Lock()
 
+_CREDENTIAL_HEADERS = ("authorization", "cookie", "proxy-authorization")
+
+# The context of the request being sent, for the hops requests follows
+# inside that one call.
+_SENDING = ContextVar("sending", default=None)
+
+
+# What another origin is not sent: the names every client drops, and
+# whatever the SDK holds as a secret, by its name or by its value.
+def _is_credential(ctx, name, value):
+    if str(name).lower() in _CREDENTIAL_HEADERS:
+        return True
+    if isinstance(value, bytes):
+        value = value.decode("latin-1")
+    secret = getattr(getattr(ctx, "utility", None), "clean_secret", None)
+    return callable(secret) and secret(ctx, name, value) is True
+
+
+# Scheme, host and port; a URL that names no port is on its scheme's own.
+def _origin_of(url):
+    try:
+        parts = urlsplit(url)
+        return (parts.scheme, parts.hostname,
+                parts.port or {"http": 80, "https": 443}.get(parts.scheme))
+    except ValueError:
+        return url
+
 
 def _session():
     # Pool connections without retaining response cookies between calls.
     global _SESSION
     if _SESSION is None:
         import requests
+
+        # requests rebuilds each hop from the one before it, without its
+        # Cookie and, on a change of host or port, without its Authorization.
+        class Session(requests.Session):
+            # Another origin is sent no credential, under any name; the same
+            # origin keeps the Cookie it was sent.
+            def rebuild_auth(self, prepared_request, response):
+                sent = response.request
+                headers = prepared_request.headers
+                if _origin_of(prepared_request.url) != _origin_of(sent.url):
+                    ctx = _SENDING.get()
+                    for name in list(headers):
+                        if _is_credential(ctx, name, headers[name]):
+                            del headers[name]
+                elif "Cookie" in sent.headers:
+                    headers.setdefault("Cookie", sent.headers["Cookie"])
+                super().rebuild_auth(prepared_request, response)
+
+            # A body is not sent on to another origin: the 3xx is the answer.
+            def get_redirect_target(self, resp):
+                target = super().get_redirect_target(resp)
+                crosses = target is not None and \
+                    _origin_of(urljoin(resp.url, target)) != _origin_of(resp.url)
+                if crosses and resp.request.body is not None and resp.status_code in (307, 308):
+                    return None
+                return target
+
         with _SESSION_LOCK:
             if _SESSION is None:
-                session = requests.Session()
+                session = Session()
                 session.max_redirects = 5
                 session.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
                 _SESSION = session
@@ -64,7 +120,7 @@ def _getonly_refusal(fullurl, method):
         "fetch_getonly_block", "[GET-ONLY GUARD] blocked " + method + " " + path)
 
 
-def _default_http_fetch(fullurl, fetchdef):
+def _default_http_fetch(fullurl, fetchdef, ctx=None):
     method = fetchdef.get("method", "GET")
     refused = _getonly_refusal(fullurl, method)
     if refused is not None:
@@ -98,12 +154,15 @@ def _default_http_fetch(fullurl, fetchdef):
     if isinstance(timeout, (int, float)) and timeout > 0:
         kwargs["timeout"] = timeout
 
+    sending = _SENDING.set(ctx)
     try:
         resp = _session().request(method, fullurl, data=data, headers=req_headers, **kwargs)
         # Bytes that are not text still reach the unreadable-body error.
         body = resp.content.decode("utf-8", errors="replace")
     except Exception as e:
         return None, str(e)
+    finally:
+        _SENDING.reset(sending)
 
     resp_headers = {}
     for k, v in resp.headers.items():
@@ -145,7 +204,7 @@ def fetcher_util(ctx, fullurl, fetchdef):
     sys_fetch = vs.getpath(options, "system.fetch")
 
     if sys_fetch is None:
-        return _default_http_fetch(fullurl, fetchdef)
+        return _default_http_fetch(fullurl, fetchdef, ctx)
 
     if callable(sys_fetch):
         return sys_fetch(fullurl, fetchdef)

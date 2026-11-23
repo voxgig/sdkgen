@@ -386,3 +386,12 @@ def clean_util(ctx, val):
 # Is this key name sensitive under the context's clean configuration?
 def clean_key(ctx, key):
     return _sensitive_key(_clean_config(ctx), key)
+
+
+# Whether a named value is a secret: by its name, or by a registered value
+# it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+def clean_secret_util(ctx, key, value):
+    cfg = _clean_config(ctx)
+    if _sensitive_key(cfg, key):
+        return True
+    return isinstance(value, str) and any(v in value for v in cfg["values"])

@@ -763,3 +763,24 @@ func cleanUtil(ctx *core.Context, val any) any {
 
 	return c.item(val, -1)
 }
+
+// Whether a named value is a secret: by its name, or by a registered value
+// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+func cleanSecretUtil(ctx *core.Context, key string, val any) bool {
+	cfg := cleanConfigOf(ctx)
+	if cfg.sensitive(key) {
+		return true
+	}
+	text, ok := val.(string)
+	if !ok {
+		return false
+	}
+	cfg.mu.RLock()
+	defer cfg.mu.RUnlock()
+	for _, value := range cfg.values {
+		if strings.Contains(text, value) {
+			return true
+		}
+	}
+	return false
+}
