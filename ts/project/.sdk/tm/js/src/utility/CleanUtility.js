@@ -1,6 +1,8 @@
 
 const { OPTSPEC } = require('../Schema')
 
+const { RAW_BODY, isStream } = require('./MediaUtility')
+
 
 // Everything that leaves the pipeline passes through clean: the error, the
 // explain record, the serialised context, and whatever a feature emits.
@@ -11,6 +13,9 @@ const { OPTSPEC } = require('../Schema')
 
 const MAXDEPTH = 32
 const CIRCULAR = '[circular]'
+
+// The key of what stands in for a body of bytes; its value is the kind.
+const BINARY = 'binary$'
 
 
 function normkey(key) {
@@ -135,11 +140,64 @@ function sensitiveKey(cfg, key) {
 }
 
 
+// A string sent as a body goes as UTF-8.
+function utf8Length(text) {
+  return 'undefined' !== typeof Buffer ? Buffer.byteLength(text, 'utf8') :
+    new TextEncoder().encode(text).length
+}
+
+
+// The live request body of a point the model marks binary, and its type.
+function binaryBody(ctx) {
+  const body = ctx?.point?.body
+  if ('raw' !== body?.kind || true !== body.binary) {
+    return undefined
+  }
+  const live = [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]].filter((v) => null != v)
+  return 0 === live.length ? undefined :
+    { live, type: 'string' === typeof body.media ? body.media : undefined }
+}
+
+
+// Bytes are described, never copied (ADR-004): the kind, and the size and
+// media type where they are known. A string is bytes only as the body of a
+// point the model marks binary.
+function describeBinary(val, bin) {
+  const declared = null != bin && bin.live.includes(val)
+  let desc = undefined
+
+  if ('string' === typeof val) {
+    if (declared) {
+      desc = { [BINARY]: 'bytes', size: utf8Length(val) }
+    }
+  }
+  else if (val instanceof ArrayBuffer || ArrayBuffer.isView(val) ||
+    ('undefined' !== typeof SharedArrayBuffer && val instanceof SharedArrayBuffer)) {
+    desc = { [BINARY]: 'bytes', size: val.byteLength }
+  }
+  else if ('undefined' !== typeof Blob && val instanceof Blob) {
+    desc = { [BINARY]: 'bytes', size: val.size }
+    if ('' !== val.type) {
+      desc.type = val.type
+    }
+  }
+  else if (isStream(val)) {
+    desc = { [BINARY]: 'stream' }
+  }
+
+  if (null != desc && declared && null == desc.type && null != bin.type) {
+    desc.type = bin.type
+  }
+
+  return desc
+}
+
+
 // A plain-data copy of what is about to leave: toJSON is honoured (an entity
 // serialises as its data, a context as its record), functions are dropped,
 // cycles are cut, and no live object is shared with the copy - masking the
 // copy must never mask the pipeline's own spec.
-function snapshot(cfg, val, key, depth, seen) {
+function snapshot(cfg, bin, val, key, depth, seen) {
   if (null == val) {
     return val
   }
@@ -147,7 +205,10 @@ function snapshot(cfg, val, key, depth, seen) {
   const t = typeof val
 
   if ('string' === t) {
-    return sensitiveKey(cfg, key) ? maskValue(cfg, val) : cleanString(cfg, val)
+    if (sensitiveKey(cfg, key)) {
+      return maskValue(cfg, val)
+    }
+    return describeBinary(val, bin) ?? cleanString(cfg, val)
   }
 
   if ('function' === t) {
@@ -166,12 +227,17 @@ function snapshot(cfg, val, key, depth, seen) {
     return cfg.mask
   }
 
+  const desc = describeBinary(val, bin)
+  if (undefined !== desc) {
+    return desc
+  }
+
   seen.push(val)
   try {
     if (Array.isArray(val)) {
       const out = []
       for (let i = 0; i < val.length; i++) {
-        out.push(snapshot(cfg, val[i], i, depth + 1, seen))
+        out.push(snapshot(cfg, bin, val[i], i, depth + 1, seen))
       }
       return out
     }
@@ -182,7 +248,7 @@ function snapshot(cfg, val, key, depth, seen) {
         stack: cleanString(cfg, String(val.stack || '')),
       }
       for (const k of Object.keys(val)) {
-        const v = snapshot(cfg, val[k], k, depth + 1, seen)
+        const v = snapshot(cfg, bin, val[k], k, depth + 1, seen)
         if (undefined !== v) out[k] = v
       }
       return out
@@ -190,10 +256,11 @@ function snapshot(cfg, val, key, depth, seen) {
 
     if ('function' === typeof val.toJSON) {
       const json = val.toJSON()
-      return json === val ? plain(cfg, val, depth, seen) : snapshot(cfg, json, key, depth + 1, seen)
+      return json === val ? plain(cfg, bin, val, depth, seen) :
+        snapshot(cfg, bin, json, key, depth + 1, seen)
     }
 
-    return plain(cfg, val, depth, seen)
+    return plain(cfg, bin, val, depth, seen)
   }
   finally {
     seen.pop()
@@ -201,10 +268,10 @@ function snapshot(cfg, val, key, depth, seen) {
 }
 
 
-function plain(cfg, val, depth, seen) {
+function plain(cfg, bin, val, depth, seen) {
   const out = {}
   for (const k of Object.keys(val)) {
-    const v = snapshot(cfg, val[k], k, depth + 1, seen)
+    const v = snapshot(cfg, bin, val[k], k, depth + 1, seen)
     if (undefined !== v) out[cleanName(cfg, out, k)] = v
   }
   return out
@@ -238,6 +305,8 @@ function clean(ctx, val) {
     return cleanString(cfg, val)
   }
 
+  const bin = binaryBody(ctx)
+
   if (val instanceof Error) {
     setMessage(val, cleanString(cfg, String(val.message)))
     if ('string' === typeof val.stack) {
@@ -249,7 +318,7 @@ function clean(ctx, val) {
         v = sensitiveKey(cfg, k) ? maskValue(cfg, v) : cleanString(cfg, v)
       }
       else if (null != v && 'object' === typeof v) {
-        v = snapshot(cfg, v, k, 1, [])
+        v = snapshot(cfg, bin, v, k, 1, [])
       }
       const name = cleanString(cfg, k)
       if (name !== k) {
@@ -260,7 +329,7 @@ function clean(ctx, val) {
     return val
   }
 
-  return snapshot(cfg, val, undefined, 0, [])
+  return snapshot(cfg, bin, val, undefined, 0, [])
 }
 
 

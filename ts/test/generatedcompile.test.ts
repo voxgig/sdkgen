@@ -6021,6 +6021,68 @@ const CLEAN_FEATURES = [
 
 const CLEAN_LINE = /clean: swept (\d+) surface\(s\), (\d+) leak\(s\)/
 
+// The second line a sweep prints: the same search, for a body of bytes.
+const CLEAN_CONTENT_LINE = /clean: content swept (\d+) surface\(s\), (\d+) leak\(s\)/
+
+// An operation that sends a raw body the model marks binary, which no
+// fixture entity has and the content sweep needs: an action point, as
+// apidef models a file route beneath an item.
+const CLEAN_BINARY = `
+main: kit: entity: scan: {
+  alias: field: {}
+  name: "scan"
+  id: { field: "id", name: "id" }
+  field: {
+    id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
+    label: { name: "label", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    load: {
+      name: "load"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+        ] }
+        m: "GET", o: "/scan/{id}", s: [{ lit: "scan" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    update: {
+      name: "update"
+      points: [
+        {
+          g: { params: [
+            { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+          ] }
+          m: "PUT", o: "/scan/{id}", s: [{ lit: "scan" }, { var: "id" }]
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+        }
+        {
+          g: { params: [
+            { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+          ] }
+          m: "PUT", o: "/scan/{id}/image", s: [{ lit: "scan" }, { var: "id" }, { lit: "image" }]
+          q: { "$action": "image", exist: ["id"] }
+          rb: { kind: 'raw', media: 'image/png', binary: true }
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+        }
+      ]
+    }
+  }
+}
+
+main: kit: flow: BasicScanFlow: {
+  entity: "scan", kind: "basic", name: "BasicScanFlow"
+  step: [
+    { o: "load", i: { ref: "scan_ref01", srcdatavar: "scan_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
 // Two of the three also template the server URL on a variable the spec
 // gives no usable default, which the sweep's client must still be built with.
 const CLEAN_MODELS: { name: string, server: string, extra: string }[] = [
@@ -6053,6 +6115,9 @@ type CleanLane = {
   target: string,
   runner: string,
   needs: string,
+  // The sweep also searches for a body of bytes. Set as each target is
+  // ported, and gone once every lane has it.
+  content?: boolean,
   prepare?: (sdkroot: string) => string | null,
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // Output that is noise in a consumer's run, from the sweep or the SDK.
@@ -6125,6 +6190,7 @@ function phpTraceArgs(cmd: { bin: string, args: string[] } | null) {
 const CLEAN_LANES: CleanLane[] = [
   {
     target: 'ts',
+    content: true,
     runner: 'test/clean.test.ts',
     needs: 'the local typescript (run `npm install`)',
     prepare: (sdkroot) => {
@@ -6147,6 +6213,7 @@ const CLEAN_LANES: CleanLane[] = [
   },
   {
     target: 'js',
+    content: true,
     runner: 'test/clean.test.js',
     needs: 'node',
     prepare: (sdkroot) => {
@@ -6430,7 +6497,8 @@ describe('the canary sweep runs from a generated SDK', () => {
         auth.server + ')',
         async (t) => {
           const sdkroot = Path.join(tmp, lane.target + '-' + auth.name)
-          const files = await generateTo(lane.target, sdkroot, auth.extra, CLEAN_FEATURES)
+          const files = await generateTo(lane.target, sdkroot, auth.extra + CLEAN_BINARY,
+            CLEAN_FEATURES)
 
           ok(null != files[lane.runner],
             'the sweep was not generated into the SDK: expected ' + lane.runner +
@@ -6465,6 +6533,15 @@ describe('the canary sweep runs from a generated SDK', () => {
             tail(ran.out))
           ok(0 < Number(swept![1]), 'the ' + lane.target + ' sweep swept nothing')
           strictEqual(Number(swept![2]), 0, 'the ' + lane.target + ' sweep found leaks')
+
+          if (true === lane.content) {
+            const content = ran.out.match(CLEAN_CONTENT_LINE)
+            ok(null != content, 'the ' + lane.target + ' sweep did not report a search ' +
+              'for a body of bytes:\n' + tail(ran.out))
+            ok(0 < Number(content![1]), 'the ' + lane.target + ' sweep sent no body of bytes')
+            strictEqual(Number(content![2]), 0,
+              'the ' + lane.target + ' sweep found a body of bytes that left the SDK')
+          }
 
           const noise = null == lane.quiet ? null : ran.out.match(lane.quiet)
           strictEqual(noise?.[0], undefined, 'the ' + lane.target + ' sweep run printed noise')

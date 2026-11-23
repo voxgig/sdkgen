@@ -2,6 +2,8 @@
 import { Context } from '../types'
 import { OPTSPEC } from '../Schema'
 
+import { RAW_BODY, isStream } from './MediaUtility'
+
 
 // Everything that leaves the pipeline passes through clean; inside it data
 // stays raw, so a hook can still read the header it must add to. See
@@ -9,6 +11,9 @@ import { OPTSPEC } from '../Schema'
 
 const MAXDEPTH = 32
 const CIRCULAR = '[circular]'
+
+// The key of what stands in for a body of bytes; its value is the kind.
+const BINARY = 'binary$'
 
 
 type CleanConfig = {
@@ -18,6 +23,13 @@ type CleanConfig = {
   mask: string
   hint: number
   min: number
+}
+
+
+// The live request body of a point the model marks binary, and its type.
+type BinaryBody = {
+  live: any[]
+  type?: string
 }
 
 
@@ -136,9 +148,63 @@ function sensitiveKey(cfg: CleanConfig, key: any): boolean {
 }
 
 
+// A string sent as a body goes as UTF-8.
+function utf8Length(text: string): number {
+  return 'undefined' !== typeof Buffer ? Buffer.byteLength(text, 'utf8') :
+    new TextEncoder().encode(text).length
+}
+
+
+function binaryBody(ctx: any): BinaryBody | undefined {
+  const body = ctx?.point?.body
+  if ('raw' !== body?.kind || true !== body.binary) {
+    return undefined
+  }
+  const live = [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]].filter((v: any) => null != v)
+  return 0 === live.length ? undefined :
+    { live, type: 'string' === typeof body.media ? body.media : undefined }
+}
+
+
+// Bytes are described, never copied (ADR-004): the kind, and the size and
+// media type where they are known. A string is bytes only as the body of a
+// point the model marks binary.
+function describeBinary(val: any, bin?: BinaryBody): any {
+  const declared = null != bin && bin.live.includes(val)
+  let desc: any = undefined
+
+  if ('string' === typeof val) {
+    if (declared) {
+      desc = { [BINARY]: 'bytes', size: utf8Length(val) }
+    }
+  }
+  else if (val instanceof ArrayBuffer || ArrayBuffer.isView(val) ||
+    ('undefined' !== typeof SharedArrayBuffer && val instanceof SharedArrayBuffer)) {
+    desc = { [BINARY]: 'bytes', size: val.byteLength }
+  }
+  else if ('undefined' !== typeof Blob && val instanceof Blob) {
+    desc = { [BINARY]: 'bytes', size: val.size }
+    if ('' !== val.type) {
+      desc.type = val.type
+    }
+  }
+  else if (isStream(val)) {
+    desc = { [BINARY]: 'stream' }
+  }
+
+  if (null != desc && declared && null == desc.type && null != bin?.type) {
+    desc.type = bin.type
+  }
+
+  return desc
+}
+
+
 // A masked plain-data copy: toJSON honoured, functions dropped, cycles cut,
 // and nothing shared with the live value, whose spec must stay raw.
-function snapshot(cfg: CleanConfig, val: any, key: any, depth: number, seen: any[]): any {
+function snapshot(
+  cfg: CleanConfig, bin: BinaryBody | undefined, val: any, key: any, depth: number, seen: any[]
+): any {
   if (null == val) {
     return val
   }
@@ -146,7 +212,10 @@ function snapshot(cfg: CleanConfig, val: any, key: any, depth: number, seen: any
   const t = typeof val
 
   if ('string' === t) {
-    return sensitiveKey(cfg, key) ? maskValue(cfg, val) : cleanString(cfg, val)
+    if (sensitiveKey(cfg, key)) {
+      return maskValue(cfg, val)
+    }
+    return describeBinary(val, bin) ?? cleanString(cfg, val)
   }
 
   if ('function' === t) {
@@ -165,12 +234,17 @@ function snapshot(cfg: CleanConfig, val: any, key: any, depth: number, seen: any
     return cfg.mask
   }
 
+  const desc = describeBinary(val, bin)
+  if (undefined !== desc) {
+    return desc
+  }
+
   seen.push(val)
   try {
     if (Array.isArray(val)) {
       const out: any[] = []
       for (let i = 0; i < val.length; i++) {
-        out.push(snapshot(cfg, val[i], i, depth + 1, seen))
+        out.push(snapshot(cfg, bin, val[i], i, depth + 1, seen))
       }
       return out
     }
@@ -181,7 +255,7 @@ function snapshot(cfg: CleanConfig, val: any, key: any, depth: number, seen: any
         stack: cleanString(cfg, String(val.stack || '')),
       }
       for (const k of Object.keys(val)) {
-        const v = snapshot(cfg, (val as any)[k], k, depth + 1, seen)
+        const v = snapshot(cfg, bin, (val as any)[k], k, depth + 1, seen)
         if (undefined !== v) out[k] = v
       }
       return out
@@ -189,10 +263,11 @@ function snapshot(cfg: CleanConfig, val: any, key: any, depth: number, seen: any
 
     if ('function' === typeof (val as any).toJSON) {
       const json = (val as any).toJSON()
-      return json === val ? plain(cfg, val, depth, seen) : snapshot(cfg, json, key, depth + 1, seen)
+      return json === val ? plain(cfg, bin, val, depth, seen) :
+        snapshot(cfg, bin, json, key, depth + 1, seen)
     }
 
-    return plain(cfg, val, depth, seen)
+    return plain(cfg, bin, val, depth, seen)
   }
   finally {
     seen.pop()
@@ -200,10 +275,12 @@ function snapshot(cfg: CleanConfig, val: any, key: any, depth: number, seen: any
 }
 
 
-function plain(cfg: CleanConfig, val: any, depth: number, seen: any[]): any {
+function plain(
+  cfg: CleanConfig, bin: BinaryBody | undefined, val: any, depth: number, seen: any[]
+): any {
   const out: any = {}
   for (const k of Object.keys(val)) {
-    const v = snapshot(cfg, val[k], k, depth + 1, seen)
+    const v = snapshot(cfg, bin, val[k], k, depth + 1, seen)
     if (undefined !== v) out[cleanName(cfg, out, k)] = v
   }
   return out
@@ -235,6 +312,8 @@ function clean(ctx: Context, val: any) {
     return cleanString(cfg, val)
   }
 
+  const bin = binaryBody(ctx)
+
   if (val instanceof Error) {
     setMessage(val, cleanString(cfg, String(val.message)))
     if ('string' === typeof val.stack) {
@@ -246,7 +325,7 @@ function clean(ctx: Context, val: any) {
         v = sensitiveKey(cfg, k) ? maskValue(cfg, v) : cleanString(cfg, v)
       }
       else if (null != v && 'object' === typeof v) {
-        v = snapshot(cfg, v, k, 1, [])
+        v = snapshot(cfg, bin, v, k, 1, [])
       }
       const name = cleanString(cfg, k)
       if (name !== k) {
@@ -257,7 +336,7 @@ function clean(ctx: Context, val: any) {
     return val
   }
 
-  return snapshot(cfg, val, undefined, 0, [])
+  return snapshot(cfg, bin, val, undefined, 0, [])
 }
 
 
