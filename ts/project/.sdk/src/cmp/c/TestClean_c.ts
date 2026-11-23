@@ -30,6 +30,7 @@ const DIAGNOSTIC = ['log', 'debug', 'audit', 'telemetry', 'cost', 'metrics', 'cl
 // operation candidates the ts sweep finds by reflection are enumerated here
 // at generation time, each with the path parameters its config points
 // declare; the sweep still DRIVES them to find the first that completes.
+// A second sweep does the same for a body of bytes.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props
@@ -132,8 +133,9 @@ function render(spec: {
   const table = candidates.map((c) => `  { "${c.name}", ${c.fn}, ${c.fn}_stream, { ${
     c.params.map((p) => '"' + cstr(p) + '", ').join('')}NULL } },`).join('\n')
 
-  return `// Generated canary sweep (see TestClean_c): no credential leaves the SDK
-// in any form, and the sweep can see one when clean is switched off.
+  return `// Generated canary sweep (see TestClean_c): no credential and no body of
+// bytes leaves the SDK in any form, and the sweep can see either when clean
+// is switched off.
 
 #include "ctest.h"
 
@@ -158,6 +160,9 @@ static const char* CANARY_HEADER = "CANARY-HEADER-z1x4c7v0b3";
 static const char* CANARY_VALUE = "CANARY-VALUE-n5m8b2v9c4";
 
 static const char* MASK = "[redacted]";
+
+// The marker a body of bytes carries.
+static const char* CONTENT = "CANARY-CONTENT-b7n3v9x1c5";
 
 // The sweep's own encoders: a leak of an encoded form must not hide behind
 // the SDK's encoder.
@@ -210,6 +215,24 @@ static void build_forms(void) {
   char pair[256];
   snprintf(pair, sizeof(pair), "%s:%s", CANARY_APIKEY, CANARY_SECRET);
   FORMS[NFORMS++] = b64(pair);
+}
+
+// The marker as bytes are copied: a list of byte values, hex, base64.
+static char CONTENT_VALUES[128];
+static char CONTENT_HEX[64];
+static char CONTENT_HEX_UPPER[64];
+static char* CONTENT_B64 = NULL;
+
+static void build_content_forms(void) {
+  size_t n = strlen(CONTENT);
+  size_t v = 0;
+  for (size_t i = 0; i < n; i++) {
+    unsigned int c = (unsigned char)CONTENT[i];
+    v += (size_t)sprintf(CONTENT_VALUES + v, i ? ",%u" : "%u", c);
+    sprintf(CONTENT_HEX + 2 * i, "%02x", c);
+    sprintf(CONTENT_HEX_UPPER + 2 * i, "%02X", c);
+  }
+  CONTENT_B64 = b64(CONTENT);
 }
 
 typedef struct {
@@ -377,6 +400,10 @@ static voxgig_value* respond(int sc, const char* url) {
   }
 }
 
+// The body the transport was last handed: where the bytes are meant to
+// arrive, whole.
+static voxgig_value* SENT = NULL;
+
 // The transport seam: system.fetch is called with [url, fetchdef].
 static voxgig_value* transport_fn(void* ud, voxgig_value* args) {
   int sc = (int)(intptr_t)ud;
@@ -384,6 +411,9 @@ static voxgig_value* transport_fn(void* ud, voxgig_value* args) {
   if (voxgig_is_list(args) && 0 < voxgig_as_list(args)->len) {
     voxgig_value* u = voxgig_as_list(args)->items[0];
     if (voxgig_is_string(u)) url = voxgig_as_string(u);
+  }
+  if (voxgig_is_list(args) && 1 < voxgig_as_list(args)->len) {
+    SENT = getp(voxgig_as_list(args)->items[1], "body");
   }
   return respond(sc, url);
 }
@@ -487,12 +517,53 @@ static bool usable_op(Target* target) {
   return false;
 }
 
-static PNError* drive(${Name}SDK* sdk, Target* target, voxgig_value* ctrl) {
+// The first operation with a point that sends a raw body the model marks
+// binary, with every path parameter of that point filled in, and the media
+// type the point declares.
+static bool binary_op(Target* target, const char** media) {
+  ${Name}SDK* plain = ${ident}_sdk_new(offline(cmap(1, "apikey", v_str(CANARY_APIKEY))));
+  voxgig_value* entities = getp(sdk_get_root_ctx(plain)->config, "entity");
+  for (size_t i = 0; CANDIDATES[i].name; i++) {
+    const char* dot = strchr(CANDIDATES[i].name, '.');
+    if (!dot) continue;
+    char entity[256];
+    snprintf(entity, sizeof(entity), "%.*s", (int)(dot - CANDIDATES[i].name), CANDIDATES[i].name);
+    voxgig_value* points = getp(getp(getp(getp(entities, entity), "op"), dot + 1), "points");
+    if (!v_is_list(points)) continue;
+    voxgig_list* pl = voxgig_as_list(points);
+    for (size_t p = 0; p < pl->len; p++) {
+      voxgig_value* body = getp(pl->items[p], "body");
+      bool binary = false;
+      if (!v_str_eq(getp(body, "kind"), "raw") || !get_bool(body, "binary", &binary) || !binary) {
+        continue;
+      }
+      voxgig_value* mtch = v_map();
+      voxgig_value* params = getp(getp(pl->items[p], "args"), "params");
+      for (size_t a = 0; v_is_list(params) && a < voxgig_as_list(params)->len; a++) {
+        const char* pname = get_str(voxgig_as_list(params)->items[a], "name");
+        if (pname) setp(mtch, pname, v_str("p1"));
+      }
+      voxgig_value* action = getp(getp(pl->items[p], "select"), "$action");
+      if (!v_is_noval(action) && !v_is_null(action)) setp(mtch, "$action", action);
+      target->fn = CANDIDATES[i].fn;
+      target->stream = CANDIDATES[i].stream;
+      target->mtch = mtch;
+      *media = get_str(body, "media");
+      return true;
+    }
+  }
+  return false;
+}
+
+// With a raw body beside the match, when one is given.
+static PNError* drive_with(${Name}SDK* sdk, Target* target, voxgig_value* ctrl, voxgig_value* body) {
   // A caller may keep the record it passed rather than read ctrl.explain.
   voxgig_value* held = ctrl ? getp(ctrl, "explain") : NULL;
   voxgig_value* out = NULL;
   voxgig_value* match = NULL;
-  PNError* err = target->fn(sdk, voxgig_clone(target->mtch), ctrl, &out, &match);
+  voxgig_value* args = voxgig_clone(target->mtch);
+  if (body) setp(args, "$body", body);
+  PNError* err = target->fn(sdk, args, ctrl, &out, &match);
   if (err) {
     push_error("error", err);
   } else {
@@ -504,6 +575,10 @@ static PNError* drive(${Name}SDK* sdk, Target* target, voxgig_value* ctrl) {
   if (v_is_map(explain)) push_value("explain", explain);
   if (v_is_map(held) && held != explain) push_value("explain:held", held);
   return err;
+}
+
+static PNError* drive(${Name}SDK* sdk, Target* target, voxgig_value* ctrl) {
+  return drive_with(sdk, target, ctrl, NULL);
 }
 
 // Header maps keep the caller's spelling; the assertion should not care.
@@ -538,13 +613,119 @@ static bool ends_with(const char* s, const char* suffix) {
   return sl >= xl && 0 == strcmp(s + sl - xl, suffix);
 }
 
+// The forms bytes travel in once copied: the text, and with the whitespace
+// of a pretty print dropped, a list of byte values, hex, base64.
+static size_t content_leaks(const char* text, char* found, size_t cap) {
+  char* flat = (char*)malloc(strlen(text) + 1);
+  size_t o = 0;
+  for (const char* p = text; *p; p++) {
+    if (!isspace((unsigned char)*p)) flat[o++] = *p;
+  }
+  flat[o] = '\\0';
+  const char* names[4] = { "text", "byte values", "hex", "base64" };
+  bool hit[4] = {
+    NULL != strstr(text, CONTENT),
+    NULL != strstr(flat, CONTENT_VALUES),
+    NULL != strstr(flat, CONTENT_HEX) || NULL != strstr(flat, CONTENT_HEX_UPPER),
+    NULL != strstr(flat, CONTENT_B64),
+  };
+  free(flat);
+  size_t n = 0;
+  found[0] = '\\0';
+  for (int i = 0; i < 4; i++) {
+    if (!hit[i]) continue;
+    if (n) strncat(found, ", ", cap - strlen(found) - 1);
+    strncat(found, names[i], cap - strlen(found) - 1);
+    n++;
+  }
+  return n;
+}
+
+// The second sweep: a body of bytes through the outcomes that reach the
+// transport, every surface searched for the marker, then the control.
+static void content_sweep(Target* op, const char* media) {
+  size_t first = NSINKS;
+  size_t size = strlen(CONTENT);
+  voxgig_value* sent = NULL;
+  PNError* failed = NULL;
+  voxgig_value* explained = NULL;
+
+  for (int sc = 0; sc <= SC_TRANSPORT; sc++) {
+    for (int variant = 0; variant < 3; variant++) {
+      ${Name}SDK* sdk = make_sdk(sc, NULL, NULL);
+      voxgig_value* explain = v_map();
+      voxgig_value* ctrl = NULL;
+      if (1 == variant) ctrl = cmap(1, "explain", explain);
+      if (2 == variant) ctrl = cmap(2, "throw", v_bool(false), "explain", explain);
+      SENT = NULL;
+      PNError* err = drive_with(sdk, op, ctrl, voxgig_new_string_n(CONTENT, size));
+      if (SC_NOTFOUND == sc && 0 == variant) {
+        failed = err;
+        sent = SENT;
+      }
+      if (SC_OK == sc && 1 == variant) explained = explain;
+    }
+  }
+
+  size_t nleaks = 0;
+  char found[64];
+  for (size_t i = first; i < NSINKS; i++) {
+    if (content_leaks(SINKS[i].text, found, sizeof(found))) {
+      fprintf(stderr, "a body of bytes leaked through: %s [%s]\\n", SINKS[i].name, found);
+      nleaks++;
+    }
+  }
+
+  printf("clean: content swept %zu surface(s), %zu leak(s)\\n", NSINKS - first, nleaks);
+  CHECK(0 == nleaks, "a body of bytes leaked (see above)");
+
+  // The request itself is untouched: what the transport was handed is the body.
+  CHECK(voxgig_is_string(sent) && voxgig_string_len(sent) == size &&
+        0 == memcmp(voxgig_as_string(sent), CONTENT, size),
+        "the transport was handed something other than the body");
+
+  // The positive half: where the body was, what describes it now is.
+  voxgig_value* desc = cmap(2, "binary$", v_str("bytes"), "size", v_int((int64_t)size));
+  if (media) setp(desc, "type", v_str(media));
+  CHECK(failed != NULL, "the 404 scenario must throw");
+  CHECK(failed != NULL && v_eq(getp(failed->spec, "body"), desc),
+        "the thrown spec describes the body");
+  CHECK(explained != NULL && v_eq(getp(getp(explained, "spec"), "body"), desc),
+        "the explain record describes the body");
+
+  // The negative control: with clean switched off the bytes MUST show, or
+  // the sweep is blind.
+  size_t before = NSINKS;
+  PNError* rawerr = drive_with(make_sdk(SC_NOTFOUND, cmap(1, "active", v_bool(false)), NULL),
+                               op, NULL, voxgig_new_string_n(CONTENT, size));
+  CHECK(rawerr != NULL, "the 404 scenario must throw with clean off");
+  size_t shown = 0;
+  for (size_t i = before; i < NSINKS; i++) {
+    if (content_leaks(SINKS[i].text, found, sizeof(found))) shown++;
+  }
+  CHECK(0 < shown, "with clean off, nothing showed the bytes: the sweep is blind");
+}
+
+// Run whether or not the credential sweep found an operation to drive.
+static void sweep_content(void) {
+  Target binary;
+  const char* media = NULL;
+  if (binary_op(&binary, &media)) {
+    content_sweep(&binary, media);
+  } else {
+    printf("SKIP: no operation of this SDK sends a binary body; nothing to sweep\\n");
+  }
+}
+
 int main(void) {
   build_forms();
+  build_content_forms();
 
   Target target;
   if (!usable_op(&target)) {
     printf("SKIP: no operation of this SDK completes against a plain 200; nothing to sweep\\n");
-    return 0;
+    sweep_content();
+    TEST_SUMMARY("clean");
   }
   Target* op = &target;
 
@@ -791,6 +972,9 @@ int main(void) {
     CHECK_STR_EQ(clean_str(fctx, "rule PLAINRULE-k7j5h3g1"), "rule PLAINRULE-k7j5h3g1",
                  "an rbac rule keyed by entity and operation is not registered");
   }
+
+  // No body of bytes leaves the SDK in any form.
+  sweep_content();
 
   TEST_SUMMARY("clean");
 }
