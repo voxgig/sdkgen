@@ -79,7 +79,7 @@ tm/c/tests/vendor/omni/json.c a88defe084fb
 tm/c/tests/vendor/omni/omni.h 807f25062e1d
 tm/c/tests/vendor/omni/runner.c d6c0c7602a58
 tm/c/tests/vendor/omni/util.c 182662b4984d
-tm/c/utility/clean.c 102cb0a17125
+tm/c/utility/clean.c b96f378b3fcc
 tm/c/utility/done.c c34b62a8b13a
 tm/c/utility/feature_add.c d77b2f280d84
 tm/c/utility/feature_hook.c 2519ac12e079
@@ -231,7 +231,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj d87d54a57f03
-tm/clojure/src/sdk/core.clj d8331db334d6
+tm/clojure/src/sdk/core.clj de6fd35d171f
 tm/clojure/src/sdk/features.clj 45a624028649
 tm/clojure/src/voxgig/struct.clj e11f03d1c544
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
@@ -240,7 +240,7 @@ tm/clojure/test/sdk/test/feature/secrets.clj ef0134a7fd63
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
-tm/clojure/test/sdk/test/pipeline.clj cf79733860c5
+tm/clojure/test/sdk/test/pipeline.clj 07fa4b49fde0
 tm/clojure/test/sdk/test/primary.clj f306427e725e
 tm/clojure/test/sdk/test/struct_corpus.clj 7bc252602c61
 tm/clojure/test/sdk/test_runner.clj b74fa394f777
@@ -324,7 +324,7 @@ tm/cpp/test/vendor/omni/json.hpp 657d69741eb5
 tm/cpp/test/vendor/omni/omni.hpp 14523e74aafe
 tm/cpp/test/vendor/omni/util.hpp 371f4622ad9e
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
-tm/cpp/utility/pipeline.hpp 4d63c562468f
+tm/cpp/utility/pipeline.hpp fb5024de481b
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp 5fe5c8199dfc
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2fd1e8054158
@@ -498,7 +498,7 @@ tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 3ed981b7a867
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 4dca20d091d4
+tm/elixir/lib/projectname/utility.ex c51ad6a4f206
 tm/elixir/lib/utility/struct/voxgig_struct.ex 6cf834c5da52
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -507,7 +507,7 @@ tm/elixir/test/concurrency_test.exs bbac080182cb
 tm/elixir/test/feature_test.exs b7c442542d7e
 tm/elixir/test/netsim_test.exs d9459f10a6c7
 tm/elixir/test/omni_smoke_test.exs d79d4e7faab8
-tm/elixir/test/pipeline_test.exs 11b7151723a4
+tm/elixir/test/pipeline_test.exs fb9c23dc3562
 tm/elixir/test/primary_utility_test.exs 809ab087b792
 tm/elixir/test/stream_test.exs adcaa6598d60
 tm/elixir/test/struct_corpus_test.exs b7fd9221f7c8
@@ -717,7 +717,7 @@ tm/java/core/Result.java f2ecf0700e92
 tm/java/core/SdkClient.java 43ac9837a3eb
 tm/java/core/SdkEntity.java d4b4e352fdc4
 tm/java/core/Spec.java 047caf212074
-tm/java/core/Utility.java d9c31b28e3de
+tm/java/core/Utility.java 9d80ce94e299
 tm/java/feature/BaseFeature.java de43ff62c7d8
 tm/java/feature/FeatureOptions.java 157f46620462
 tm/java/feature/TestFeature.java ca2e2a5f55d7
@@ -733,19 +733,19 @@ tm/java/test/NetsimTest.java 9969f77c3cb3
 tm/java/test/OmniResolver.java 54333ccce204
 tm/java/test/OmniSmokeTest.java 722cc2d6bfe7
 tm/java/test/PipelineTest.java 2bde7fdedd64
-tm/java/test/PrimaryUtilityTest.java a8160f999f9d
+tm/java/test/PrimaryUtilityTest.java 51231ee1825a
 tm/java/test/RunnerSupport.java d8b0e6f8e5f7
 tm/java/test/StructCorpusTest.java 2cefdd8ed671
 tm/java/test/sdk-test-control.json acadc87764f6
 tm/java/test/vendor/omni/Json.java 995735a01cfb
 tm/java/test/vendor/omni/Runner.java 91cb5ae5b037
 tm/java/test/vendor/omni/Util.java 71d7b3267999
-tm/java/utility/Clean.java 28bd5c430942
+tm/java/utility/Clean.java e88b9a0df67a
 tm/java/utility/Done.java 539e95bb155a
 tm/java/utility/FeatureAdd.java 77fd1ce39d5a
 tm/java/utility/FeatureHookUtil.java c0a61e00148f
 tm/java/utility/FeatureInit.java b7ee152fc808
-tm/java/utility/Fetcher.java 4a3e52671e86
+tm/java/utility/Fetcher.java 81e1da823816
 tm/java/utility/Graphql.java 375386544b43
 tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
@@ -766,7 +766,7 @@ tm/java/utility/PrepareMethod.java 916632d0a043
 tm/java/utility/PrepareParams.java d69032e840df
 tm/java/utility/PreparePath.java 023b8a22f18e
 tm/java/utility/PrepareQuery.java ae786fdac74b
-tm/java/utility/Register.java fadcdd834f27
+tm/java/utility/Register.java 1b22826ffd75
 tm/java/utility/ResultBasic.java ef96b4823075
 tm/java/utility/ResultBody.java 2bbd84dffff9
 tm/java/utility/ResultHeaders.java 9fab31e3503b
@@ -804,7 +804,7 @@ src/cmp/js/ReadmeTopQuick_js.ts ac185f82a7ff
 src/cmp/js/ReadmeTopTest_js.ts 58f6a02f2a39
 src/cmp/js/Schema_js.ts 557790433a08
 src/cmp/js/SdkError_js.ts c3c526f2b624
-src/cmp/js/TestClean_js.ts e83eceace323
+src/cmp/js/TestClean_js.ts fd70d2850eb4
 src/cmp/js/TestDefinition_js.ts 9bd45df6b9d9
 src/cmp/js/TestDirect_js.ts 46fc3fefb5d4
 src/cmp/js/TestEntity_js.ts 890bacb16f6a
@@ -842,7 +842,7 @@ tm/js/src/feature/README.md 630422c5567f
 tm/js/src/feature/base/BaseFeature.js 264e0b98075b
 tm/js/src/feature/test/TestFeature.js b36e7eb4b414
 tm/js/src/types.js f49c15c403b4
-tm/js/src/utility/CleanUtility.js 55923ecc7f3b
+tm/js/src/utility/CleanUtility.js 787c2a292521
 tm/js/src/utility/DoneUtility.js 7da13c3a73d2
 tm/js/src/utility/FeatureAddUtility.js 7053d7f60b27
 tm/js/src/utility/FeatureHookUtility.js 55ecc0949c72
@@ -859,7 +859,7 @@ tm/js/src/utility/MakeResponseUtility.js e6fe699ed109
 tm/js/src/utility/MakeResultUtility.js 854b07e67081
 tm/js/src/utility/MakeSpecUtility.js a5bbd2d59926
 tm/js/src/utility/MakeUrlUtility.js 8b4bcb2e6f32
-tm/js/src/utility/MediaUtility.js 076489c84973
+tm/js/src/utility/MediaUtility.js 4ca496d0cc3a
 tm/js/src/utility/ParamUtility.js a537a0dae300
 tm/js/src/utility/PrepareBodyUtility.js 62941f7df27b
 tm/js/src/utility/PrepareHeadersUtility.js 9e983acc1d4b
@@ -869,7 +869,7 @@ tm/js/src/utility/PreparePathUtility.js 3f15ca0aaa03
 tm/js/src/utility/PrepareQueryUtility.js 35e0246ab789
 tm/js/src/utility/README.md 443e45445e95
 tm/js/src/utility/ResultBasicUtility.js 5cbbeb7567d8
-tm/js/src/utility/ResultBodyUtility.js 9ceaf5ec3c40
+tm/js/src/utility/ResultBodyUtility.js b34a7a988642
 tm/js/src/utility/ResultHeadersUtility.js 152bcfc7ac7b
 tm/js/src/utility/StructUtility.js 66dc55b063e5
 tm/js/src/utility/TransformRequestUtility.js 2f8242b5493f
@@ -959,7 +959,7 @@ tm/kotlin/core/Response.kt 1318a8530044
 tm/kotlin/core/Result.kt 88d2f8f40eed
 tm/kotlin/core/SdkClient.kt 42d27280f9f5
 tm/kotlin/core/Spec.kt ccff6a998f67
-tm/kotlin/core/Utility.kt e58c52ea77eb
+tm/kotlin/core/Utility.kt bde9402d3f17
 tm/kotlin/feature/BaseFeature.kt 7c6e6ca6dbb1
 tm/kotlin/feature/FeatureOptions.kt 3e80a9bbd671
 tm/kotlin/feature/TestFeature.kt db5c3028b777
@@ -975,7 +975,7 @@ tm/kotlin/test/NetsimTest.kt 870005516436
 tm/kotlin/test/OmniResolver.kt 177193e3e49a
 tm/kotlin/test/OmniSmokeTest.kt ec9e888beb69
 tm/kotlin/test/PipelineTest.kt c654fb25bc20
-tm/kotlin/test/PrimaryUtilityTest.kt 6624899a6de8
+tm/kotlin/test/PrimaryUtilityTest.kt 143e698d7af8
 tm/kotlin/test/RunnerSupport.kt fb1f888569a4
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
 tm/kotlin/test/StructCorpusTest.kt fb99eabed538
@@ -983,9 +983,9 @@ tm/kotlin/test/sdk-test-control.json bb1582608f2f
 tm/kotlin/test/vendor/omni/Json.kt ecdc51069403
 tm/kotlin/test/vendor/omni/Runner.kt 7379423c7a44
 tm/kotlin/test/vendor/omni/Util.kt debc29b64d40
-tm/kotlin/utility/CoreUtil.kt 29507ebe874f
+tm/kotlin/utility/CoreUtil.kt c058e1475228
 tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
-tm/kotlin/utility/Fetcher.kt 090e54bad41e
+tm/kotlin/utility/Fetcher.kt 613b565a8859
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt dffd4d4c5f9a
@@ -994,7 +994,7 @@ tm/kotlin/utility/MakeReqRes.kt 0e87e2bd6665
 tm/kotlin/utility/MakeSpecUrl.kt e4099593830e
 tm/kotlin/utility/Media.kt ef8fb4b14bf3
 tm/kotlin/utility/Prepare.kt c56d164547ef
-tm/kotlin/utility/Register.kt b81ff2deff00
+tm/kotlin/utility/Register.kt 2e2bfb7a34a1
 tm/kotlin/utility/ResultTransform.kt f47721f930a8
 tm/kotlin/utility/struct/Struct.kt ab9b13b130af
 
@@ -1072,7 +1072,7 @@ tm/lua/test/vendor/omni/json.lua ba02816c5157
 tm/lua/test/vendor/omni/regex.lua c606b6934338
 tm/lua/test/vendor/omni/runner.lua 962dac69a6bc
 tm/lua/test/vendor/omni/util.lua 805b8a157061
-tm/lua/utility/clean.lua 17264c1b283e
+tm/lua/utility/clean.lua eb3a293f38bd
 tm/lua/utility/clean_explain.lua 7714e924592e
 tm/lua/utility/done.lua c1c77faea694
 tm/lua/utility/feature_add.lua f6a951686474
@@ -1151,7 +1151,7 @@ tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml be2b76a3332f
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml 3218e26f2e41
+tm/ocaml/sdk_runtime.ml 4e7225902250
 tm/ocaml/sdk_types.ml b409a91a7c5a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1683,7 +1683,7 @@ tm/rust/core/response.rs 8ce129e52ca5
 tm/rust/core/result.rs 6b675ba029a7
 tm/rust/core/spec.rs e8ecb6a484a6
 tm/rust/core/types.rs 09174c6cc827
-tm/rust/core/utility_type.rs 78e54c3c4229
+tm/rust/core/utility_type.rs bf8b85c3146d
 tm/rust/feature/base.rs 8f5e41de2dc6
 tm/rust/feature/support.rs 7a1c1d32aa08
 tm/rust/feature/test.rs f31ebcee0db3
@@ -1696,7 +1696,7 @@ tm/rust/tests/netsim_test.rs bc23c72e88b2
 tm/rust/tests/omni_resolver/mod.rs b458d10a892a
 tm/rust/tests/omni_smoke_test.rs f412dbc766e8
 tm/rust/tests/pipeline_test.rs edc6a5fc87cc
-tm/rust/tests/primary_utility_test.rs a9eee194ee3c
+tm/rust/tests/primary_utility_test.rs 5a40ccc232d0
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
 tm/rust/tests/struct_utility_test.rs e19a58dc8fad
 tm/rust/tests/vendor/omni/json.rs e71720f05457
@@ -1704,12 +1704,12 @@ tm/rust/tests/vendor/omni/mod.rs f124f1a4d36b
 tm/rust/tests/vendor/omni/regex.rs 2c91d88d1993
 tm/rust/tests/vendor/omni/runner.rs a84ad191d51b
 tm/rust/tests/vendor/omni/util.rs 7ad10a39d7f4
-tm/rust/utility/clean.rs d2c07a445bb5
+tm/rust/utility/clean.rs fd0c2382cf5e
 tm/rust/utility/done.rs b15d29a24839
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
 tm/rust/utility/feature_hook.rs 6d794f025b57
 tm/rust/utility/feature_init.rs 66f96bd2cf0d
-tm/rust/utility/fetcher.rs 1f209b285eb1
+tm/rust/utility/fetcher.rs acb1a8b7389b
 tm/rust/utility/graphql.rs 5115a012964e
 tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
@@ -1803,8 +1803,8 @@ tm/scala/core/Result.scala 7d45eefe7847
 tm/scala/core/SdkClient.scala e0c80af17582
 tm/scala/core/SdkError.scala 428cfdf49186
 tm/scala/core/Spec.scala 82b6987995f5
-tm/scala/core/Types.scala 931d5c55babc
-tm/scala/core/Utility.scala 577bd7a77a2e
+tm/scala/core/Types.scala 0210b2e93427
+tm/scala/core/Utility.scala c81acfe25798
 tm/scala/feature/AuditFeature.scala 25d0799b1b72
 tm/scala/feature/BaseFeature.scala 0c6439fca620
 tm/scala/feature/CacheFeature.scala 7e813980df24
@@ -1865,7 +1865,7 @@ tm/scala/sdktest/ConcurrencyTest.scala f27840bb67d8
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
-tm/scala/sdktest/SdkTestMain.scala f78991ebccb1
+tm/scala/sdktest/SdkTestMain.scala 7c2fd5d309c0
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
@@ -1897,15 +1897,15 @@ tm/scala/src/feature/test/.gitkeep e3b0c44298fc
 tm/scala/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/scala/src/feature/validate/.gitkeep e3b0c44298fc
 tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
-tm/scala/utility/Fetcher.scala 74a3dc166bd3
+tm/scala/utility/Fetcher.scala 9dc262cbbfa7
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala 6fe31c555fd1
 tm/scala/utility/MakeSpec.scala e67ac2c1a6a4
 tm/scala/utility/Media.scala 8453000252c4
-tm/scala/utility/Misc.scala efac905d4928
+tm/scala/utility/Misc.scala 755117702196
 tm/scala/utility/Prepare.scala 918d6262bddd
-tm/scala/utility/Register.scala 12658a8e9bd5
+tm/scala/utility/Register.scala 8168a7d87226
 tm/scala/utility/Results.scala 474c78263b3a
 tm/scala/utility/StructUtility.scala 2dc27377f838
 tm/scala/utility/Transform.scala 9a1ca6db6e2d
@@ -1988,7 +1988,7 @@ tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 954574861e32
 tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 493a7167ea88
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
-tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 6d5582383766
+tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift c17c5a08148c
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift c5507b284879
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
@@ -2048,7 +2048,7 @@ src/cmp/ts/ReadmeTopQuick_ts.ts c1b85d04f7e7
 src/cmp/ts/ReadmeTopTest_ts.ts 8c614df68cb0
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/TestClean_ts.ts 3f43c92dc76e
+src/cmp/ts/TestClean_ts.ts 928ed127ff31
 src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
 src/cmp/ts/TestDirect_ts.ts cf90eb2a6b45
 src/cmp/ts/TestEntity_ts.ts 2bdc706ac45e
@@ -2087,7 +2087,7 @@ tm/ts/src/feature/base/BaseFeature.ts f42ad986da12
 tm/ts/src/feature/test/TestFeature.ts c6930bbbd35a
 tm/ts/src/tsconfig.json 8276b533f6e4
 tm/ts/src/types.ts 5e1f5518bba6
-tm/ts/src/utility/CleanUtility.ts 3ee17d2c9db7
+tm/ts/src/utility/CleanUtility.ts 3c5e9d656a78
 tm/ts/src/utility/DoneUtility.ts 228a75d46df4
 tm/ts/src/utility/FeatureAddUtility.ts c391267d72a9
 tm/ts/src/utility/FeatureHookUtility.ts 95985140459e
@@ -2104,7 +2104,7 @@ tm/ts/src/utility/MakeResponseUtility.ts 0048e08c5db1
 tm/ts/src/utility/MakeResultUtility.ts a7d93a642ec2
 tm/ts/src/utility/MakeSpecUtility.ts ed6ada3c37d8
 tm/ts/src/utility/MakeUrlUtility.ts 33991aca13d9
-tm/ts/src/utility/MediaUtility.ts da8be01eadc8
+tm/ts/src/utility/MediaUtility.ts d9cbac0601a1
 tm/ts/src/utility/ParamUtility.ts e4e7866b92af
 tm/ts/src/utility/PrepareBodyUtility.ts 2b3e78a0b1ae
 tm/ts/src/utility/PrepareHeadersUtility.ts 100bf122e42d
@@ -2114,7 +2114,7 @@ tm/ts/src/utility/PreparePathUtility.ts 536ac7f6c6aa
 tm/ts/src/utility/PrepareQueryUtility.ts c5f0c76c910b
 tm/ts/src/utility/README.md b5e4e3a70bcd
 tm/ts/src/utility/ResultBasicUtility.ts 76208bbfaf7d
-tm/ts/src/utility/ResultBodyUtility.ts 901a250e336f
+tm/ts/src/utility/ResultBodyUtility.ts b820c1b64e4e
 tm/ts/src/utility/ResultHeadersUtility.ts 974461285293
 tm/ts/src/utility/StructUtility.ts 7890671b5967
 tm/ts/src/utility/TransformRequestUtility.ts 121f2308888e
@@ -2204,7 +2204,7 @@ tm/zig/core/response.zig bc91112131b7
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 3a8f6e7a08f9
-tm/zig/core/utility.zig 3071babb597a
+tm/zig/core/utility.zig 43670d9b7dd8
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig ef3b23e5e239
