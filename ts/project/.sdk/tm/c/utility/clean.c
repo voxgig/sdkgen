@@ -371,6 +371,7 @@ static char* clean_name(const CleanCfg* cfg, voxgig_value* out, const char* key)
   return alt;
 }
 
+// A string shorter than the registry accepts is not told from ordinary text.
 static bool binary_body(Context* ctx, BinaryBody* bin) {
   bin->n = 0;
   bin->media = NULL;
@@ -380,9 +381,13 @@ static bool binary_body(Context* ctx, BinaryBody* bin) {
   if (!media_is_raw_request(ctx->point) || !get_bool(body, "binary", &binary) || !binary) {
     return false;
   }
+  int64_t min = count(getp(config_block(ctx), "min"), 4);
+  if (min < 1) min = 1;
   voxgig_value* live[2] = { ctx->spec ? ctx->spec->body : NULL, media_raw_body(ctx->reqdata) };
   for (size_t i = 0; i < 2; i++) {
-    if (!v_is_noval(live[i]) && !v_is_null(live[i])) bin->live[bin->n++] = live[i];
+    if (voxgig_is_string(live[i]) && min <= (int64_t)voxgig_string_len(live[i])) {
+      bin->live[bin->n++] = live[i];
+    }
   }
   bin->media = get_str(body, "media");
   return 0 < bin->n;

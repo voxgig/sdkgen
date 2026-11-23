@@ -286,13 +286,20 @@ struct CleanBinary {
   Value media = Value::undef();
 };
 
+// A string shorter than the registry accepts is not told from ordinary text.
 inline CleanBinary cleanBinaryBody(CtxPtr ctx) {
   CleanBinary bin;
   if (!ctx) return bin;
   Value body = getp(ctx->point, "body");
   if (!isRawRequest(ctx->point) || !is_true(getp(body, "binary"))) return bin;
-  bin.spec = ctx->spec;
-  bin.reqdata = ctx->reqdata;
+  size_t min = static_cast<size_t>(cleanCount(getp(cleanConfig(ctx), "min"), 4));
+  auto longEnough = [min](const Value* live) {
+    return nullptr != live && live->is_string() && min <= live->as_string().size();
+  };
+  if (ctx->spec && longEnough(&ctx->spec->body)) bin.spec = ctx->spec;
+  if (ctx->reqdata.is_map() && longEnough(ctx->reqdata.as_map()->find(rawBodyKey()))) {
+    bin.reqdata = ctx->reqdata;
+  }
   bin.media = getp(body, "media");
   return bin;
 }

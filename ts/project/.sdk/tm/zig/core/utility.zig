@@ -391,10 +391,15 @@ fn clean_name(c: CleanCfg, out: Value, key: []const u8) []const u8 {
     return fmt("{s}#{d}", .{ name, i });
 }
 
+// A string shorter than the registry accepts is not told from ordinary text.
 fn clean_binary_body(ctx: *Context) ?CleanBinary {
     const body = h.getp(ctx.point, "body");
     if (!is_raw_request(ctx.point) or !is_true(h.getp(body, "binary"))) return null;
-    const live = [2]Value{ if (ctx.spec) |s| s.body else h.vnull(), raw_body(ctx.reqdata) };
+    const min = clean_view(clean_config(ctx)).min;
+    var live = [2]Value{ if (ctx.spec) |s| s.body else h.vnull(), raw_body(ctx.reqdata) };
+    for (&live) |*at| {
+        if (at.* != .string or @as(i64, @intCast(at.string.len)) < min) at.* = h.vnull();
+    }
     if (live[0] == .null and live[1] == .null) return null;
     return .{ .live = live, .media = h.get_str(body, "media") };
 }

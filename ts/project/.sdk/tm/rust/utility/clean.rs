@@ -275,21 +275,35 @@ fn node_ptr(val: &Value) -> Option<usize> {
     }
 }
 
+// A string or a list shorter than the registry accepts is not told from
+// ordinary data.
 fn binary_body(ctx: &Context) -> Option<BinaryBody> {
     let point = ctx.point.borrow();
     let body = getp(&point, "body");
     if !is_raw_request(&point) || getp(&body, "binary") != Value::Bool(true) {
         return None;
     }
+    let min = count(&getp(&config_block(ctx), "min"), 4).max(1);
+    let long = |live: &Value| match live {
+        Value::Str(s) => min <= s.chars().take(min).count(),
+        Value::List(l) => min <= l.borrow().len(),
+        _ => false,
+    };
+    let spec = ctx.spec.borrow().clone().filter(|spec| long(&spec.borrow().body));
+    let reqdata = match &*ctx.reqdata.borrow() {
+        Value::Map(data) if data.borrow().get(RAW_BODY).map_or(false, &long) => {
+            Value::Map(data.clone())
+        }
+        _ => Value::Noval,
+    };
+    if spec.is_none() && reqdata.is_noval() {
+        return None;
+    }
     let media = match getp(&body, "media") {
         Value::Str(s) => Some(s),
         _ => None,
     };
-    Some(BinaryBody {
-        spec: ctx.spec.borrow().clone(),
-        reqdata: ctx.reqdata.borrow().clone(),
-        media,
-    })
+    Some(BinaryBody { spec, reqdata, media })
 }
 
 fn is_live_body(bin: &BinaryBody, val: &Value) -> bool {
