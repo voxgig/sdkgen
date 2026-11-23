@@ -336,15 +336,19 @@ private func cleanSensitiveKey(_ cfg: Utility.CleanConfig, _ key: String?) -> Bo
   return cfg.keys.contains { nk.contains($0) }
 }
 
-private func cleanBinaryBodyOf(_ ctx: Context) -> Utility.CleanBinaryBody? {
+// A string shorter than the registry accepts is not told from ordinary text.
+private func cleanBinaryBodyOf(
+  _ ctx: Context, _ cfg: Utility.CleanConfig
+) -> Utility.CleanBinaryBody? {
   let body = gp(ctx.point, "body")
   guard gp(body, "kind").asString == "raw", gp(body, "binary").asBool == true else {
     return nil
   }
   var live: [Value] = []
-  if let spec = ctx.spec, !isNil(spec.body) { live.append(spec.body) }
-  let given = rawBodyOf(ctx.reqdata)
-  if !isNil(given) { live.append(given) }
+  for held in [ctx.spec?.body ?? Value.noval, rawBodyOf(ctx.reqdata)] {
+    if let text = held.asString, text.count < cfg.min { continue }
+    if !isNil(held) { live.append(held) }
+  }
   return live.isEmpty
     ? nil : Utility.CleanBinaryBody(live: live, media: gp(body, "media").asString)
 }
@@ -576,7 +580,7 @@ func cleanUtil(_ ctx: Context, _ val: Value) -> Value {
     return .string(cleanString(cfg, s))
   }
 
-  let bin = cleanBinaryBodyOf(ctx)
+  let bin = cleanBinaryBodyOf(ctx, cfg)
 
   if let err = val.asNative as? ProjectNameError {
     var seen: [ObjectIdentifier] = []

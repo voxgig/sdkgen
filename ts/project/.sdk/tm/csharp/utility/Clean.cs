@@ -246,7 +246,8 @@ public static partial class SdkUtility
         return name + "#" + i;
     }
 
-    private static CleanBinaryBody? CleanBinaryBodyOf(Context? ctx)
+    // A string shorter than the registry accepts is not told from ordinary text.
+    private static CleanBinaryBody? CleanBinaryBodyOf(Context? ctx, CleanConfig cfg)
     {
         var body = StructUtils.GetProp(ctx?.Point, "body");
         if (!"raw".Equals(StructUtils.GetProp(body, "kind")) ||
@@ -255,14 +256,13 @@ public static partial class SdkUtility
             return null;
         }
         var live = new List<object>();
-        if (ctx!.Spec?.Body is { } sent)
+        // The same value twice, unless it was a Stream: the spec holds what was read.
+        foreach (var held in new[] { ctx!.Spec?.Body, ctx.Reqdata?.GetValueOrDefault(RawBody) })
         {
-            live.Add(sent);
-        }
-        // The same value, unless it was a Stream: the spec holds what was read.
-        if (ctx.Reqdata != null && ctx.Reqdata.TryGetValue(RawBody, out var given) && given != null)
-        {
-            live.Add(given);
+            if (held != null && (held is not string text || cfg.Min <= text.Length))
+            {
+                live.Add(held);
+            }
         }
         return 0 == live.Count
             ? null
@@ -478,7 +478,7 @@ public static partial class SdkUtility
             return CleanString(cfg, s);
         }
 
-        var bin = CleanBinaryBodyOf(ctx);
+        var bin = CleanBinaryBodyOf(ctx, cfg);
 
         if (val is ProjectNameError err)
         {
