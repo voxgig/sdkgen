@@ -195,7 +195,9 @@ sub binary_body {
   my $kind = ProjectNameHelpers::gp($body, 'kind');
   return undef unless defined $kind && 'raw' eq $kind
     && ProjectNameHelpers::is_true(ProjectNameHelpers::gp($body, 'binary'));
-  my @live = grep { defined $_ } (
+  # A string shorter than the registry accepts is not told from ordinary text.
+  my $min = config($ctx)->{min};
+  my @live = grep { defined $_ && (ref $_ || length($_) >= $min) } (
     ProjectNameHelpers::gp($ctx->{spec}, 'body'),
     ProjectNameHelpers::gp($ctx->{reqdata}, $ProjectNameUtilities::RAW_BODY),
   );

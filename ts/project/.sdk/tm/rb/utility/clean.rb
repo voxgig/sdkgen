@@ -134,8 +134,11 @@ module ProjectNameUtilities
         VoxgigStruct.getprop(body, "binary") == true
       spec = ctx.respond_to?(:spec) ? ctx.spec : nil
       reqdata = ctx.respond_to?(:reqdata) ? ctx.reqdata : nil
+      # A String shorter than the registry accepts is not told from ordinary text.
+      min = config(ctx)["min"]
       live = [spec.respond_to?(:body) ? spec.body : nil,
-        reqdata.is_a?(Hash) ? reqdata[RAW_BODY] : nil].compact
+        reqdata.is_a?(Hash) ? reqdata[RAW_BODY] : nil]
+        .reject { |v| v.nil? || (v.is_a?(String) && v.length < min) }
       media = VoxgigStruct.getprop(body, "media")
       live.empty? ? nil : { "live" => live, "type" => media.is_a?(String) ? media : nil }
     end

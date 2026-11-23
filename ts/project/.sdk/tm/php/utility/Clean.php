@@ -279,9 +279,12 @@ class ProjectNameClean
         if (!is_array($body) || 'raw' !== ($body['kind'] ?? null) || true !== ($body['binary'] ?? null)) {
             return null;
         }
+        // A string shorter than the registry accepts is not told from
+        // ordinary text.
+        $min = self::config_of($ctx)->min;
         $live = array_values(array_filter(
             [$ctx->spec?->body, $ctx->reqdata[ProjectNameMedia::RAW_BODY] ?? null],
-            fn (mixed $v): bool => null !== $v));
+            fn (mixed $v): bool => null !== $v && (!is_string($v) || $min <= strlen($v))));
         $media = $body['media'] ?? null;
         return 0 === count($live) ? null : ['live' => $live, 'type' => is_string($media) ? $media : null];
     }
