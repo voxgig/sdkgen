@@ -52,7 +52,8 @@ const TRANSPORTS: Record<string, Transport | { none: string, fetcher: string }> 
   scala: { fetcher: 'scala/utility/Fetcher.scala', test: 'scala/sdktest/SdkTestMain.scala',
     follows: 'client', marks: [/Redirect\.NORMAL/, /Redirect\.NEVER/] },
   csharp: { fetcher: 'csharp/utility/Fetcher.cs', test: 'csharp/test/PrimaryUtilityTest.cs',
-    follows: 'client', marks: [/AllowAutoRedirect = allowRedirect/, /MaxAutomaticRedirections = 5/] },
+    follows: 'sdk', marks: [/AllowAutoRedirect = false/, /DefaultHttpFetch\(fullurl, fetchdef, ctx\)/,
+      /RedirectMax <= hops/] },
   rust: { fetcher: 'rust/utility/fetcher.rs', test: 'rust/tests/primary_utility_test.rs',
     follows: 'client', marks: [/redirects\(0\)/] },
   c: { fetcher: 'c/utility/fetcher.c', test: 'c/tests/transport_test.c',
@@ -138,12 +139,12 @@ describe('redirects', () => {
         for (const code of ['301', '302', '303', '307', '308']) {
           assert.ok(src.includes(code), target + ': ' + spec.fetcher + ' never follows ' + code)
         }
-        assert.ok(/REDIRECT_MAX|redirectMax|REDIRECT_MAX = 5/.test(src), target + ': no hop limit')
+        assert.ok(/redirect_?max/i.test(src), target + ': no hop limit')
         assert.ok(/authorization/i.test(src) && /cookie/i.test(src),
           target + ': another origin is sent the credentials')
         assert.ok(/clean_?secret/i.test(src),
           target + ': another origin is sent a credential under another name')
-        assert.ok(/getonly_?refusal|getOnlyRefusal/i.test(src.slice(src.search(/REDIRECT|redirectStatus/))),
+        assert.ok(/getonly_?refusal|getOnlyRefusal/i.test(src.slice(src.search(/REDIRECT|[rR]edirectStatus/))),
           target + ': a hop does not pass the GET-only guard')
       }
 

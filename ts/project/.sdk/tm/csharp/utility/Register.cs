@@ -10,6 +10,7 @@ public static partial class SdkUtility
     {
         u.Clean = CleanUtil;
         u.CleanAdd = CleanAddUtil;
+        u.CleanSecret = CleanSecretUtil;
         u.Done = DoneUtil;
         u.MakeError = MakeErrorUtil;
         u.FeatureAdd = FeatureAddUtil;

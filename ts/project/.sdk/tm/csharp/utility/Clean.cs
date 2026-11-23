@@ -558,4 +558,13 @@ public static partial class SdkUtility
             }
         }
     }
+
+    // Whether a named value is a secret: by its name, or by a registered value
+    // it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+    internal static bool CleanSecretUtil(Context? ctx, object? key, object? value)
+    {
+        var cfg = CleanConfigOf(ctx);
+        return CleanSensitiveKey(cfg, key) ||
+            (value is string text && Volatile.Read(ref cfg.Values).Any(held => text.Contains(held)));
+    }
 }
