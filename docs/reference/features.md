@@ -243,11 +243,20 @@ a `GET` or `HEAD`, resolving a relative `Location` against the URL that
 answered. A route its server answers with a redirect, such as one asked for
 without the trailing slash the server expects, still reaches its record.
 Where the HTTP client follows no redirect, or not that way, the SDK follows
-it in its own loop: `php`, `rb`, `lua`, `perl`, `c` and `swift`. There each
-hop passes the GET-only guard first, a hop to another origin goes without
-the `authorization`, `cookie` and `proxy-authorization` headers, and after
-five hops the last redirect response is the answer. The other targets leave
-it to their client, which keeps its own hop limit.
+it in its own loop: `ts`, `js`, `php`, `rb`, `lua`, `perl`, `c` and `swift`.
+There each hop passes the GET-only guard first, and after five hops the last
+redirect response is the answer. The other targets leave it to their client,
+which keeps its own hop limit.
+
+A credential stays on its origin. A hop to another origin goes without the
+`authorization`, `cookie` and `proxy-authorization` headers, and without any
+header the SDK holds as a secret: one whose name `clean.keys` covers, such
+as `x-api-key`, or one whose value holds a registered secret. This does not
+depend on `clean.active`. A request body is not sent on to another origin
+either: a `307` or `308` that points a `PUT` elsewhere is the answer, and
+the body goes nowhere. In `ts` and `js` this holds outside a browser, where
+the SDK follows a redirect itself. A browser does not show a script where a
+redirect points, so there the browser follows it by its own rules.
 
 A fetch definition whose `redirect` is `manual`, which a transport feature
 sets under a hosts policy, is answered by the redirect response itself in

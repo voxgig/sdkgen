@@ -1,6 +1,6 @@
 
 
-import { clean, cleanAdd } from './CleanUtility'
+import { clean, cleanAdd, cleanSecret } from './CleanUtility'
 import { cleanExplain, done } from './DoneUtility'
 import { makeError } from './MakeErrorUtility'
 import { featureAdd } from './FeatureAddUtility'
@@ -38,6 +38,7 @@ class Utility {
 
   clean = clean
   cleanAdd = cleanAdd
+  cleanSecret = cleanSecret
   cleanExplain = cleanExplain
   done = done
   makeError = makeError

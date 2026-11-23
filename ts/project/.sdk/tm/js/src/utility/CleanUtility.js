@@ -364,6 +364,15 @@ function cleanKey(ctx, key) {
 }
 
 
+// Whether a named value is a secret: by its name, or by a registered value
+// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+function cleanSecret(ctx, key, value) {
+  const cfg = cleanConfig(ctx)
+  return sensitiveKey(cfg, key) ||
+    ('string' === typeof value && cfg.values.some((v) => value.includes(v)))
+}
+
+
 // Every scalar under a sensitive name, at any depth and of any shape: a
 // credential mistyped as an object or a number is still a credential, and
 // the validation error that rejects it quotes it.
@@ -393,6 +402,7 @@ module.exports = {
   cleanAdd,
   cleanAddSensitive,
   cleanKey,
+  cleanSecret,
   makeCleanConfig,
   setMessage,
   splitvalues,
