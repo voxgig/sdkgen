@@ -2145,7 +2145,10 @@ pub fn unreadable_body(
         status,
         if (ctype.len == 0) "none" else ctype,
         if (agent.len == 0) "transport default" else agent,
-        if (h.is_noval(text) or text == .null) "" else fmt(", body: {s}", .{body_preview(ctx, text)}),
+        if (h.is_noval(text) or text == .null or !body_quotable(ctx, ctype))
+            ""
+        else
+            fmt(", body: {s}", .{body_preview(ctx, text)}),
     });
 
     if (failed) |f| {
@@ -2171,6 +2174,23 @@ fn body_header(headers: Value, name: []const u8) []const u8 {
         }
     }
     return "";
+}
+
+const TEXT_MEDIA = [_][]const u8{
+    "json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql",
+};
+
+// Only text is quoted: bytes are a file's, by the model or by their type.
+// Text is no declared type, text/*, or a structured text format.
+fn body_quotable(ctx: *Context, ctype: []const u8) bool {
+    if (is_true(h.getp(h.getp(ctx.point, "response"), "binary"))) return false;
+    const end = std.mem.indexOfScalar(u8, ctype, ';') orelse ctype.len;
+    const media = std.mem.trim(u8, ctype[0..end], &std.ascii.whitespace);
+    if (media.len == 0 or std.ascii.startsWithIgnoreCase(media, "text/")) return true;
+    for (TEXT_MEDIA) |part| {
+        if (std.ascii.indexOfIgnoreCase(media, part) != null) return true;
+    }
+    return false;
 }
 
 // Cleaned whole: a secret the bound would split could leave its prefix.
