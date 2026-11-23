@@ -608,13 +608,16 @@
 (declare RAW-BODY)
 
 ;; The live request body of a point the model marks binary, and its type.
-(defn- binary-body [ctx]
+;; A string shorter than the registry accepts is not told from ordinary text.
+(defn- binary-body [ctx cfg]
   (when (instance? clojure.lang.IDeref ctx)
     (let [body (mget (oget ctx :point) "body")]
       (when (and (= "raw" (mget body "kind")) (true? (mget body "binary")))
         (let [spec (oget ctx :spec)
-              live (filterv some? [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))
-                                   (mget (oget ctx :reqdata) RAW-BODY)])
+              minlen (long (or (mget cfg "min") 4))
+              live (filterv #(and (some? %) (or (not (string? %)) (<= minlen (count %))))
+                            [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))
+                             (mget (oget ctx :reqdata) RAW-BODY)])
               media (mget body "media")]
           (when (seq live)
             {:live live :type (when (string? media) media)}))))))
@@ -694,8 +697,8 @@
     (cond
       (= false (mget cfg "active")) val
       (string? val) (clean-string cfg val)
-      (sdk-error? val) (clean-error cfg (binary-body ctx) val)
-      :else (let [out (clean-snapshot cfg (binary-body ctx) val nil 0 [])]
+      (sdk-error? val) (clean-error cfg (binary-body ctx cfg) val)
+      :else (let [out (clean-snapshot cfg (binary-body ctx cfg) val nil 0 [])]
               (if (identical? DROP out) nil out)))))
 
 ;; A Throwable is immutable, so one that never passed through make-error (a
@@ -706,7 +709,7 @@
     (if (= false (mget cfg "active"))
       t
       (let [sdkerr (ex->sdk t)
-            bin (binary-body ctx)
+            bin (binary-body ctx cfg)
             out (if (sdk-error? sdkerr)
                   (let [e (clean-error cfg bin sdkerr)]
                     (ex-info (err-msg e) {::sdk-error e}))

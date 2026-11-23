@@ -335,14 +335,18 @@ defmodule ProjectName.Utility do
   end
 
   # The live request body of a point the model marks binary, and its type.
-  defp binary_body(ctx) do
+  # Text shorter than the registry accepts is not told from ordinary text; it
+  # is measured in bytes, which does not walk an upload.
+  defp binary_body(ctx, cfg) do
     point = if S.ismap(ctx), do: S.getprop(ctx, "point"), else: nil
     body = S.getprop(point, "body")
 
     if S.getprop(body, "kind") == "raw" and S.getprop(body, "binary") == true do
+      minlen = numof(S.getprop(cfg, "min"), 4)
+
       live =
         [S.getprop(S.getprop(ctx, "spec"), "body"), raw_body(S.getprop(ctx, "reqdata"))]
-        |> Enum.reject(&is_nil/1)
+        |> Enum.reject(&(is_nil(&1) or (is_binary(&1) and byte_size(&1) < minlen and String.valid?(&1))))
 
       media = S.getprop(body, "media")
       if live != [], do: %{live: live, type: if(is_binary(media), do: media, else: nil)}
@@ -467,8 +471,8 @@ defmodule ProjectName.Utility do
     cond do
       S.getprop(cfg, "active") == false -> val
       is_binary(val) -> clean_string(cfg, val)
-      match?(%ProjectName.Error{}, val) -> clean_error(cfg, binary_body(ctx), val)
-      true -> clean_field(cfg, binary_body(ctx), val, nil)
+      match?(%ProjectName.Error{}, val) -> clean_error(cfg, binary_body(ctx, cfg), val)
+      true -> clean_field(cfg, binary_body(ctx, cfg), val, nil)
     end
   end
 
@@ -481,7 +485,7 @@ defmodule ProjectName.Utility do
 
     cond do
       S.getprop(cfg, "active") == false -> e
-      match?(%ProjectName.Error{}, e) -> clean_error(cfg, binary_body(ctx), e)
+      match?(%ProjectName.Error{}, e) -> clean_error(cfg, binary_body(ctx, cfg), e)
       true -> clean_foreign_exception(cfg, e)
     end
   end

@@ -408,15 +408,17 @@ let clean_name (cfg : value) (out : value) (key : string) : string =
       if List.mem n taken then next (i + 1) else n in
     next 1
 
-(* The live request body of a point the model marks binary, and its type. *)
+(* The live request body of a point the model marks binary, and its type.
+ * A Str shorter than the registry accepts is not told from ordinary text. *)
 type binary_body = { bin_live : string list; bin_type : string option }
 
-let binary_body (ctx : ctx) : binary_body option =
+let binary_body (ctx : ctx) (cfg : value) : binary_body option =
   let body = getp ctx.c_point "body" in
   match getp body "kind", getp body "binary" with
   | Str "raw", Bool true ->
+    let minlen = match getp cfg "min" with Num n -> int_of_float n | _ -> 4 in
     let spec_body = match ctx.c_spec with Some sp -> sp.sp_body | None -> Noval in
-    let live = List.filter_map (function Str s -> Some s | _ -> None)
+    let live = List.filter_map (function Str s when minlen <= String.length s -> Some s | _ -> None)
         [spec_body; getp ctx.c_reqdata raw_body_key] in
     if live = [] then None
     else Some { bin_live = live;
@@ -472,7 +474,7 @@ let clean_util (ctx : ctx) (v : value) : value =
   else match v with
     | Str s -> Str (clean_string cfg s)
     | _ ->
-      (match clean_snapshot cfg (binary_body ctx) v None 0 [] with
+      (match clean_snapshot cfg (binary_body ctx cfg) v None 0 [] with
        | Sentinel "clean_drop" -> Noval
        | c -> c)
 

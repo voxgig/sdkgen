@@ -292,18 +292,24 @@ end
 
 
 -- The live request body of a point the model marks binary, and its type.
-local function binary_body(ctx)
+-- A string shorter than the registry accepts is not told from ordinary text.
+local function binary_body(ctx, cfg)
   local point = type(ctx) == "table" and ctx.point or nil
   local body = type(point) == "table" and point.body or nil
   if type(body) ~= "table" or body.kind ~= "raw" or body.binary ~= true then
     return nil
   end
   local live = {}
-  if type(ctx.spec) == "table" and ctx.spec.body ~= nil then
-    live[#live + 1] = ctx.spec.body
+  local function take(v)
+    if v ~= nil and (type(v) ~= "string" or cfg.min <= #v) then
+      live[#live + 1] = v
+    end
   end
-  if type(ctx.reqdata) == "table" and ctx.reqdata[media.RAW_BODY] ~= nil then
-    live[#live + 1] = ctx.reqdata[media.RAW_BODY]
+  if type(ctx.spec) == "table" then
+    take(ctx.spec.body)
+  end
+  if type(ctx.reqdata) == "table" then
+    take(ctx.reqdata[media.RAW_BODY])
   end
   if #live == 0 then
     return nil
@@ -396,7 +402,7 @@ local function clean_util(ctx, val)
     return clean_string(cfg, val)
   end
 
-  local bin = binary_body(ctx)
+  local bin = binary_body(ctx, cfg)
 
   if type(val) == "table" and val.is_sdk_error == true then
     for _, k in ipairs(sorted_keys(val)) do
