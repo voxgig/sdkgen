@@ -322,17 +322,22 @@ type cleanBinary struct {
 	media string
 }
 
-func cleanBinaryOf(ctx *core.Context) *cleanBinary {
+// A string shorter than the registry accepts is not told from ordinary text.
+func cleanBinaryOf(ctx *core.Context, cfg *cleanConfig) *cleanBinary {
 	if ctx == nil || !isRawRequest(ctx.Point) ||
 		true != vs.GetPath(ctx.Point, []any{"body", "binary"}) {
 		return nil
 	}
-	bin := &cleanBinary{}
-	if ctx.Spec != nil && ctx.Spec.Body != nil {
-		bin.live = append(bin.live, ctx.Spec.Body)
+	bodies := []any{nil, ctx.Reqdata[rawBodyKey]}
+	if ctx.Spec != nil {
+		bodies[0] = ctx.Spec.Body
 	}
-	if body := ctx.Reqdata[rawBodyKey]; body != nil {
-		bin.live = append(bin.live, body)
+	bin := &cleanBinary{}
+	for _, body := range bodies {
+		text, isText := body.(string)
+		if body != nil && (!isText || cfg.min <= len(text)) {
+			bin.live = append(bin.live, body)
+		}
 	}
 	if 0 == len(bin.live) {
 		return nil
@@ -740,7 +745,7 @@ func cleanUtil(ctx *core.Context, val any) any {
 		return c.cleanString(text)
 	}
 
-	c.bin = cleanBinaryOf(ctx)
+	c.bin = cleanBinaryOf(ctx, cfg)
 
 	switch v := val.(type) {
 	case *core.ProjectNameError:

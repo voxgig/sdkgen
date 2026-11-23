@@ -200,13 +200,15 @@ def _is_stream(val):
     return not isinstance(val, type) and callable(getattr(val, "read", None))
 
 
-# The live request body of a point the model marks binary, and its type.
-def _binary_body(ctx):
+# The live request body of a point the model marks binary, and its type. A
+# string shorter than the registry accepts is not told from ordinary text.
+def _binary_body(ctx, cfg):
     body = _prop(_prop(ctx, "point"), "body")
     if _prop(body, "kind") != "raw" or _prop(body, "binary") is not True:
         return None
     live = [v for v in (_prop(_prop(ctx, "spec"), "body"),
-                        _prop(_prop(ctx, "reqdata"), RAW_BODY)) if v is not None]
+                        _prop(_prop(ctx, "reqdata"), RAW_BODY))
+            if v is not None and (not isinstance(v, str) or cfg["min"] <= len(v))]
     if 0 == len(live):
         return None
     media = _prop(body, "media")
@@ -371,7 +373,7 @@ def clean_util(ctx, val):
     if isinstance(val, str):
         return _clean_string(cfg, val)
 
-    binary = _binary_body(ctx)
+    binary = _binary_body(ctx, cfg)
 
     if isinstance(val, BaseException):
         _clean_exception(cfg, binary, val)
