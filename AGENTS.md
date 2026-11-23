@@ -895,6 +895,21 @@ emitted broken source reached the fleet unchallenged.
   `main.kit.optspec`, once; `active: false` is the only opt-out. The sweep
   every SDK ships proves its own sensitivity by switching clean off and
   finding the canary — keep that negative control when porting.
+- **A body of bytes is DESCRIBED in a cleaned copy, never copied (ADR-004).**
+  `clean` used to copy one like any other value, so a failed upload carried
+  its file into the error, the explain record, the context a hook serialises
+  and the log. The copy now holds `{binary$, size, type}`, by two rules: a
+  value of a byte or stream type, wherever it sits; and the request body of
+  a point the model marks binary (`point.body` is `kind: raw` with
+  `binary: true`), WHATEVER carries it. The second is the only rule that can
+  see a string holding the bytes, which is the one carrier in lua, c, cpp,
+  zig, ocaml and elixir, so a port with the first rule alone protects
+  nothing there. A raw body the model does not mark binary is text and stays
+  data. `clean.active: false` switches this off with the rest; there is no
+  switch of its own. The sweep's content canary needs an operation that
+  sends a binary body: an SDK without one skips it, and the clean lanes add
+  one (`CLEAN_BINARY`) and require the
+  `clean: content swept N surface(s), 0 leak(s)` line.
 - **The HTTP status is on the error, not just in `err.result`.** `err.status`
   (-1 when there was no response) plus a `notFound` predicate, so a consumer
   never couples itself to the internal shape of `result`.

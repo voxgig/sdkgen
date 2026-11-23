@@ -2,8 +2,9 @@
 
 Every generated SDK masks its credentials in everything it emits: thrown
 errors, explain records, log lines, debug traces, audit records, telemetry
-spans and the serialised form of its own objects. This page explains how
-that works and where its edges are.
+spans and the serialised form of its own objects. The same mechanism keeps
+a body of bytes out of all of them. This page explains how that works and
+where its edges are.
 
 ## Two layers
 
@@ -50,6 +51,40 @@ copies rather than the live objects, so masking them can never mask the
 pipeline's own request. The context stays reachable on the error for a
 debugger and is excluded from everything that prints it.
 
+## Bodies of bytes
+
+The payload of an upload is not a diagnostic. `clean` replaces a body of bytes
+with a description of it, so a failed upload does not carry the file into
+the error it throws, and a logged request does not hold it:
+
+```json
+{ "binary$": "bytes", "size": 1048576, "type": "audio/wav" }
+```
+
+| Key | Value |
+| --- | --- |
+| `binary$` | `bytes` when the size is known. `stream` for a source that is read once, such as a stream, a reader or a file handle. |
+| `size` | The number of bytes the request sends. Absent for a stream. |
+| `type` | The media type, where it is known. |
+
+Two rules decide what is described:
+
+- **By type.** A value of a byte or stream type is described wherever it
+  sits in what leaves. Which types those are depends on the language: they
+  are the ones the target accepts as a raw request body.
+- **By the model.** In an operation whose endpoint sends a raw body that
+  the API definition marks as binary, the request body is described
+  whatever carries it, and the description states the declared media
+  type. This rule covers a string that holds the bytes, which is the only
+  carrier in several targets.
+
+A raw body that the definition does not mark as binary is text. Text is
+data: it stays in the copy, masked like any other string.
+
+A value under a sensitive key name is still masked, since the mask says
+less than a description does. The request itself is untouched: the
+transport is handed the body the caller passed.
+
 ## Configuration
 
 The `clean` block of the client options, declared once in the model and
@@ -57,7 +92,7 @@ carried into every target by the generated `Schema` module:
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `active` | `true` | The one opt-out. Off means raw diagnostics, for local debugging only. |
+| `active` | `true` | The one opt-out, for secrets and for bodies of bytes alike. Off means raw diagnostics, for local debugging only. |
 | `keys` | `key,secret,token,password,passwd,authorization,cookie,credential,signature` | Field names whose values are masked, by normalised containment. |
 | `values` | `''` | Extra literal values to register, comma-separated. |
 | `mask` | `[redacted]` | The replacement text. |
@@ -121,6 +156,15 @@ sweep passes the test option the SDK's other offline suites pass, which
 fills the variable with a placeholder, so it can still build its clients.
 The suite prints one line, `clean: swept N surface(s), 0 leak(s)`, and the
 generator's own compile lanes require it.
+
+A second sweep does the same for a body of bytes. It finds an operation
+that sends a binary body, sends one holding a marker in every value type
+the SDK accepts, through the same outcomes, and searches every surface for
+the marker as text, as a list of byte values, as hex, and as base64. It
+checks that the transport received the body whole and that the description
+stands where the body was. With `clean` off the marker must show. It prints
+`clean: content swept N surface(s), 0 leak(s)`, which the compile lanes
+require as well. An SDK whose API has no such operation skips this sweep.
 
 ## See also
 
