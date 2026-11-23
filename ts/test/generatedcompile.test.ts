@@ -6115,9 +6115,6 @@ type CleanLane = {
   target: string,
   runner: string,
   needs: string,
-  // The sweep must also search for a body of bytes. One that prints the
-  // content line is held to it either way; gone once every lane is set.
-  content?: boolean,
   prepare?: (sdkroot: string) => string | null,
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // Output that is noise in a consumer's run, from the sweep or the SDK.
@@ -6190,7 +6187,6 @@ function phpTraceArgs(cmd: { bin: string, args: string[] } | null) {
 const CLEAN_LANES: CleanLane[] = [
   {
     target: 'ts',
-    content: true,
     runner: 'test/clean.test.ts',
     needs: 'the local typescript (run `npm install`)',
     prepare: (sdkroot) => {
@@ -6213,7 +6209,6 @@ const CLEAN_LANES: CleanLane[] = [
   },
   {
     target: 'js',
-    content: true,
     runner: 'test/clean.test.js',
     needs: 'node',
     prepare: (sdkroot) => {
@@ -6534,14 +6529,12 @@ describe('the canary sweep runs from a generated SDK', () => {
           ok(0 < Number(swept![1]), 'the ' + lane.target + ' sweep swept nothing')
           strictEqual(Number(swept![2]), 0, 'the ' + lane.target + ' sweep found leaks')
 
-          if (true === lane.content || files[lane.runner].includes('clean: content swept')) {
-            const content = ran.out.match(CLEAN_CONTENT_LINE)
-            ok(null != content, 'the ' + lane.target + ' sweep did not report a search ' +
-              'for a body of bytes:\n' + tail(ran.out))
-            ok(0 < Number(content![1]), 'the ' + lane.target + ' sweep sent no body of bytes')
-            strictEqual(Number(content![2]), 0,
-              'the ' + lane.target + ' sweep found a body of bytes that left the SDK')
-          }
+          const content = ran.out.match(CLEAN_CONTENT_LINE)
+          ok(null != content, 'the ' + lane.target + ' sweep did not report a search ' +
+            'for a body of bytes:\n' + tail(ran.out))
+          ok(0 < Number(content![1]), 'the ' + lane.target + ' sweep sent no body of bytes')
+          strictEqual(Number(content![2]), 0,
+            'the ' + lane.target + ' sweep found a body of bytes that left the SDK')
 
           const noise = null == lane.quiet ? null : ran.out.match(lane.quiet)
           strictEqual(noise?.[0], undefined, 'the ' + lane.target + ' sweep run printed noise')
