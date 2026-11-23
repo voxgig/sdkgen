@@ -1171,7 +1171,23 @@ inline SdkErrorPtr unreadableBody(CtxPtr ctx, int status, const Value& headers, 
     (type.empty() ? std::string("none") : type) + ", user-agent " +
     (agent.empty() ? std::string("transport default") : agent);
 
-  if (!is_nullish(text)) {
+  // Only text is quoted: bytes are a file's, by the model or by their type.
+  // Text is no declared type, text/*, or a structured text format.
+  auto quotable = [&ctx, &lower](const std::string& declared) -> bool {
+    Value binary = getp(getp(ctx->point, "response"), "binary");
+    if (binary.is_bool() && binary.as_bool()) return false;
+    std::string media = lower(declared.substr(0, declared.find(';')));
+    media.erase(0, media.find_first_not_of(" \t"));
+    media.erase(media.find_last_not_of(" \t") + 1);
+    if (media.empty() || 0 == media.compare(0, 5, "text/")) return true;
+    for (const char* part : {"json", "xml", "html", "javascript", "ecmascript", "yaml",
+                             "urlencoded", "graphql"}) {
+      if (std::string::npos != media.find(part)) return true;
+    }
+    return false;
+  };
+
+  if (!is_nullish(text) && quotable(type)) {
     // Cleaned whole: a secret the bound would split could leave its prefix.
     std::string raw = text.is_string() ? text.as_string() : Struct::stringify(text);
     std::string flat;

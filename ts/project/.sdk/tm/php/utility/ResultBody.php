@@ -35,7 +35,7 @@ class ProjectNameResultBody
         }
         $detail = "HTTP {$status}, content-type " . ('' === $type ? 'none' : $type) .
             ", user-agent {$agent}";
-        if (null !== $text) {
+        if (null !== $text && self::quotable($ctx, $type)) {
             $detail .= ', body: ' . self::preview($ctx, $text);
         }
 
@@ -71,6 +71,18 @@ class ProjectNameResultBody
             }
         }
         return '';
+    }
+
+    // Only text is quoted: bytes are a file's, by the model or by their type.
+    // Text is no declared type, text/*, or a structured text format.
+    private static function quotable(ProjectNameContext $ctx, string $type): bool
+    {
+        if (true === ($ctx->point['response']['binary'] ?? null)) {
+            return false;
+        }
+        $media = strtolower(trim(explode(';', $type, 2)[0]));
+        return '' === $media || str_starts_with($media, 'text/') ||
+            1 === preg_match('/json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/', $media);
     }
 
     // Cleaned whole: a secret the bound would split could leave its prefix.

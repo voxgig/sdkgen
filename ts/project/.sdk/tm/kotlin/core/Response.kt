@@ -65,7 +65,8 @@ class Response(resmap: Map<String, Any?>?) {
       val type = headerValue(headers, "content-type")
       val agent = clean(ctx, headerValue(sent, "user-agent")).ifEmpty { "transport default" }
       val detail = "HTTP " + status + ", content-type " + type.ifEmpty { "none" } +
-        ", user-agent " + agent + (if (text == null) "" else ", body: " + preview(ctx, text))
+        ", user-agent " + agent +
+        (if (text != null && quotable(ctx, type)) ", body: " + preview(ctx, text) else "")
 
       if (failed != null) {
         if (failed is SdkError) {
@@ -95,6 +96,19 @@ class Response(resmap: Map<String, Any?>?) {
 
     private fun clean(ctx: Context, s: String): String =
       ctx.utility?.clean?.invoke(ctx, s)?.toString() ?: s
+
+    private val TEXT_MEDIA = Regex("json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql")
+
+    // Only text is quoted: bytes are a file's, by the model or by their type.
+    // Text is no declared type, text/*, or a structured text format.
+    private fun quotable(ctx: Context, type: String): Boolean {
+      val response = ctx.point?.get("response")
+      if (response is Map<*, *> && true == response["binary"]) {
+        return false
+      }
+      val media = type.substringBefore(';').trim().lowercase()
+      return media.isEmpty() || media.startsWith("text/") || TEXT_MEDIA.containsMatchIn(media)
+    }
 
     // Cleaned whole: a secret the bound would split could leave its prefix.
     private fun preview(ctx: Context, text: Any): String {

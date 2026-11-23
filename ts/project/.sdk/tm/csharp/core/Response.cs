@@ -62,7 +62,7 @@ public class Response
         var agent = Clean(ctx, HeaderValue(sent, "user-agent"));
         var detail = "HTTP " + status + ", content-type " + (type == "" ? "none" : type) +
             ", user-agent " + (agent == "" ? "transport default" : agent) +
-            (text == null ? "" : ", body: " + Preview(ctx, text));
+            (text != null && Quotable(ctx, type) ? ", body: " + Preview(ctx, text) : "");
 
         if (failed is ProjectNameError sdkErr)
         {
@@ -98,6 +98,24 @@ public class Response
     private static string Clean(Context ctx, string s)
     {
         return ctx.Utility?.Clean(ctx, s)?.ToString() ?? s;
+    }
+
+    private static readonly Regex TextMedia =
+        new("json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql");
+
+    // Only text is quoted: bytes are a file's, by the model or by their type.
+    // Text is no declared type, text/*, or a structured text format.
+    private static bool Quotable(Context ctx, string type)
+    {
+        if (ctx.Point != null && ctx.Point.TryGetValue("response", out var response) &&
+            response is IDictionary<string, object?> rs &&
+            rs.TryGetValue("binary", out var binary) && binary is true)
+        {
+            return false;
+        }
+        var media = type.Split(';', 2)[0].Trim().ToLowerInvariant();
+        return media == "" || media.StartsWith("text/", StringComparison.Ordinal) ||
+            TextMedia.IsMatch(media);
     }
 
     // Cleaned whole: a secret the bound would split could leave its prefix.

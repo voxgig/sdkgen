@@ -52,7 +52,7 @@ object Response {
     val agent = clean(ctx, headerValue(sent, "user-agent"))
     val detail = "HTTP " + status + ", content-type " + (if (ctype.isEmpty) "none" else ctype) +
       ", user-agent " + (if (agent.isEmpty) "transport default" else agent) +
-      (if (text == null) "" else ", body: " + preview(ctx, text))
+      (if (text != null && quotable(ctx, ctype)) ", body: " + preview(ctx, text) else "")
 
     failed match {
       case null if ctype.isEmpty || ctype.toLowerCase.contains("json") =>
@@ -82,6 +82,22 @@ object Response {
   private def clean(ctx: Context, s: String): String =
     if (ctx.utility == null || ctx.utility.clean == null) s
     else String.valueOf(ctx.utility.clean(ctx, s))
+
+  private val TextMedia = "json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql".r
+
+  // Only text is quoted: bytes are a file's, by the model or by their type.
+  // Text is no declared type, text/*, or a structured text format.
+  private def quotable(ctx: Context, ctype: String): Boolean = {
+    val binary = if (ctx.point == null) null else ctx.point.get("response") match {
+      case response: JMap[_, _] => response.get("binary")
+      case _ => null
+    }
+    if (java.lang.Boolean.TRUE == binary) false
+    else {
+      val media = ctype.split(";", 2)(0).trim.toLowerCase(java.util.Locale.ROOT)
+      media.isEmpty || media.startsWith("text/") || TextMedia.findFirstIn(media).isDefined
+    }
+  }
 
   // Cleaned whole: a secret the bound would split could leave its prefix.
   private def preview(ctx: Context, text: Object): String = {

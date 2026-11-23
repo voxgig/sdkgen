@@ -100,7 +100,8 @@ def _default_http_fetch(fullurl, fetchdef):
 
     try:
         resp = _session().request(method, fullurl, data=data, headers=req_headers, **kwargs)
-        body = resp.content.decode("utf-8")
+        # Bytes that are not text still reach the unreadable-body error.
+        body = resp.content.decode("utf-8", errors="replace")
     except Exception as e:
         return None, str(e)
 
