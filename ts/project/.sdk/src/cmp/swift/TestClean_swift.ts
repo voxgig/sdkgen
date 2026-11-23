@@ -88,8 +88,8 @@ function render(
   return `// The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
-// the SDK is searched for the canaries and their encoded forms. It also
-// proves its own sensitivity: with clean switched off the canary MUST show.
+// the SDK is searched for the canaries and their encoded forms; a second
+// sweep does the same for a body of bytes. With clean off the canary MUST show.
 
 import Foundation
 import XCTest
@@ -133,6 +133,26 @@ private let forms: [String] = {
 
 private func leaks(_ text: String) -> [String] {
   forms.filter { text.contains($0) }
+}
+
+// The marker a body of bytes carries.
+private let canaryContent = "CANARY-CONTENT-b7n3v9x1c5"
+private let canaryContentBytes: [UInt8] = Array(canaryContent.utf8)
+
+// The forms bytes travel in once copied: text, a list of byte values
+// however it is separated, hex, base64.
+private func contentLeaks(_ text: String) -> [String] {
+  let flat = text.filter { !$0.isWhitespace }
+  let runs = text.components(separatedBy: CharacterSet.decimalDigits.inverted).filter { !$0.isEmpty }
+  let numbers = "," + runs.joined(separator: ",") + ","
+  let values = canaryContentBytes.map { String($0) }.joined(separator: ",")
+  let hex = canaryContentBytes.map { String(format: "%02x", $0) }.joined()
+  var found: [String] = []
+  if text.contains(canaryContent) { found.append("text") }
+  if numbers.contains("," + values + ",") { found.append("byte values") }
+  if flat.lowercased().contains(hex) { found.append("hex") }
+  if flat.contains(Data(canaryContentBytes).base64EncodedString()) { found.append("base64") }
+  return found
 }
 
 // Header maps keep the caller's spelling; the assertion should not care.
@@ -210,6 +230,30 @@ final class ${Name}CleanTest: XCTestCase {
     let op: String
     let params: [String]
   }
+
+  struct BinaryTarget {
+    let target: Target
+    let action: Value
+    let media: String?
+  }
+
+  // What the transport was handed, by run.
+  final class SentBox {
+    var bodies: [String: Value] = [:]
+  }
+
+  // Every value this SDK accepts as a raw body.
+  static let carriers: [(String, () -> Value)] = [
+    ("Data", { Value.nat(Data(canaryContentBytes)) }),
+    ("bytes", { Value.nat(canaryContentBytes) }),
+    ("string", { Value.string(canaryContent) }),
+  ]
+
+  static let variants: [(String, () -> VMap)] = [
+    ("throw", { VMap() }),
+    ("explain", { vm(("explain", .map(VMap()))) }),
+    ("nothrow", { vm(("throw", .bool(false)), ("explain", .map(VMap()))) }),
+  ]
 
   struct TransportError: Error, CustomStringConvertible {
     let message: String
@@ -409,10 +453,14 @@ ${candidateLines}
   ]
 
   static func invoke(
-    _ ent: ${Name}EntityBase, _ op: String, _ params: [String], _ ctrl: VMap?
+    _ ent: ${Name}EntityBase, _ op: String, _ params: [String], _ ctrl: VMap?,
+    _ extra: VMap? = nil
   ) throws -> Value {
     let args = VMap()
     for p in params { args.entries[p] = .string("p1") }
+    if let extra = extra {
+      for (k, v) in extra.entries { args.entries[k] = v }
+    }
     switch op {
     case "list": return try ent.list(args, ctrl)
     case "load": return try ent.load(args, ctrl)
@@ -445,14 +493,66 @@ ${candidateLines}
     return nil
   }
 
-  static func drive(_ sdk: ${Name}SDK, _ target: Target, _ ctrl: VMap, _ box: SinkBox) -> Error? {
+  // The first operation with a point that sends a raw body the model marks
+  // binary, with every path parameter of that point filled in.
+  static func binaryOp() -> BinaryTarget? {
+    let config = SdkConfig.makeConfig()
+    for candidate in candidates {
+      for op in candidate.ops.sorted() {
+        let points = gpath(config, "entity", candidate.name, "op", op, "points").asList?.items ?? []
+        for point in points {
+          let body = gp(point, "body")
+          guard gp(body, "kind").asString == "raw", gp(body, "binary").asBool == true else {
+            continue
+          }
+          var params: [String] = []
+          for arg in gpath(point, "args", "params").asList?.items ?? [] {
+            if let name = gp(arg, "name").asString { params.append(name) }
+          }
+          return BinaryTarget(
+            target: Target(candidate: candidate, op: op, params: params),
+            action: gp(gp(point, "select"), "$action"),
+            media: gp(body, "media").asString)
+        }
+      }
+    }
+    return nil
+  }
+
+  // The request data beside the path parameters: the action and the body.
+  static func uploadData(_ upload: BinaryTarget, _ body: Value) -> VMap {
+    let data = VMap()
+    if !isNil(upload.action) { data.entries["$action"] = upload.action }
+    data.entries["$body"] = body
+    return data
+  }
+
+  static func textOf(_ body: Value) -> String {
+    if let text = body.asString { return text }
+    if let data = body.asNative as? Data { return String(decoding: data, as: UTF8.self) }
+    if let bytes = body.asNative as? [UInt8] { return String(decoding: bytes, as: UTF8.self) }
+    return ""
+  }
+
+  // What stands where a body was: the kind, and the size and type when known.
+  static func described(_ size: Int, _ media: String?) -> Value {
+    let desc = VMap()
+    desc.entries["binary$"] = .string("bytes")
+    desc.entries["size"] = .int(Int64(size))
+    if let media = media { desc.entries["type"] = .string(media) }
+    return .map(desc)
+  }
+
+  static func drive(
+    _ sdk: ${Name}SDK, _ target: Target, _ ctrl: VMap, _ box: SinkBox, _ extra: VMap? = nil
+  ) -> Error? {
     // A caller may keep the record it passed rather than read ctrl["explain"].
     let held = ctrl.entries["explain"]?.asMap
     let entity = target.candidate.accessor(sdk)
     var out: Value = .noval
     var err: Error? = nil
     do {
-      out = try invoke(entity, target.op, target.params, ctrl)
+      out = try invoke(entity, target.op, target.params, ctrl, extra)
     } catch {
       err = error
     }
@@ -474,14 +574,8 @@ ${candidateLines}
     var errors: [String: Error] = [:]
     var explains: [String: VMap] = [:]
 
-    let variants: [(String, () -> VMap)] = [
-      ("throw", { VMap() }),
-      ("explain", { vm(("explain", .map(VMap()))) }),
-      ("nothrow", { vm(("throw", .bool(false)), ("explain", .map(VMap()))) }),
-    ]
-
     for scenario in ${Name}CleanTest.scenarios {
-      for (vname, makeCtrl) in variants {
+      for (vname, makeCtrl) in ${Name}CleanTest.variants {
         let sdk = ${Name}CleanTest.makeSdk(scenario, box)
         let ctrl = makeCtrl()
         let err = ${Name}CleanTest.drive(sdk, target, ctrl, box)
@@ -697,6 +791,158 @@ ${candidateLines}
     XCTAssertTrue(cfg.values.contains("LISTED-SECRET-2"))
     XCTAssertTrue(cfg.values.contains("123456789"))
     XCTAssertFalse(cfg.values.contains("not-a-secret"))
+  }
+
+  func testNoBodyOfBytesLeavesTheSdkInAnyForm() throws {
+    guard let upload = ${Name}CleanTest.binaryOp() else {
+      throw XCTSkip("no operation of this SDK sends a binary body; nothing to sweep")
+    }
+
+    let box = SinkBox()
+    let sent = SentBox()
+    var errors: [String: Error] = [:]
+    var explains: [String: VMap] = [:]
+
+    for (carrier, make) in ${Name}CleanTest.carriers {
+      for scenario in ${Name}CleanTest.scenarios.prefix(4) {
+        for (vname, makeCtrl) in ${Name}CleanTest.variants {
+          let key = carrier + "/" + scenario.name + "/" + vname
+          // The transport is where the bytes are meant to arrive, whole.
+          let seen = Scenario(name: scenario.name, respond: { url, fetchdef in
+            sent.bodies[key] = gp(fetchdef, "body")
+            return try scenario.respond(url, fetchdef)
+          })
+          let sdk = ${Name}CleanTest.makeSdk(seen, box)
+          let ctrl = makeCtrl()
+          let err = ${Name}CleanTest.drive(
+            sdk, upload.target, ctrl, box, ${Name}CleanTest.uploadData(upload, make()))
+          if let e = err { errors[key] = e }
+          if let ex = ctrl.entries["explain"]?.asMap { explains[key] = ex }
+          box.sinks += ${Name}CleanTest.formsOf("sdk", sdk)
+        }
+      }
+    }
+
+    let leaked = box.sinks
+      .map { (name: $0.name, found: contentLeaks($0.text)) }
+      .filter { !$0.found.isEmpty }
+
+    print("clean: content swept \\(box.sinks.count) surface(s), \\(leaked.count) leak(s)")
+
+    XCTAssertEqual(leaked.count, 0, "a body of bytes leaked through: " +
+      leaked.map { $0.name + " [" + $0.found.joined(separator: ", ") + "]" }.joined(separator: "; "))
+
+    // The request itself is untouched: what the transport was handed is the body.
+    for (carrier, _) in ${Name}CleanTest.carriers {
+      let handed = sent.bodies[carrier + "/notfound/throw"] ?? Value.noval
+      XCTAssertEqual(${Name}CleanTest.textOf(handed), canaryContent,
+        carrier + ": the transport was handed something else")
+    }
+
+    // The positive half: where the body was, what describes it now is.
+    let desc = ${Name}CleanTest.described(canaryContentBytes.count, upload.media)
+    for (carrier, _) in ${Name}CleanTest.carriers {
+      guard let failed = errors[carrier + "/notfound/throw"] as? ${Name}Error else {
+        XCTFail(carrier + ": the 404 scenario must throw")
+        continue
+      }
+      XCTAssertEqual(gp(failed.specVal, "body"), desc, carrier + ": the thrown spec")
+      let explained = explains[carrier + "/ok/explain"] ?? VMap()
+      XCTAssertEqual(gpath(explained, "spec", "body"), desc, carrier + ": the explain record")
+      XCTAssertEqual(gpath(explained, "fetchdef", "body"), desc,
+        carrier + ": the explained fetch definition")
+    }
+  }
+
+  // JSON prints a native as "<function>", whatever it holds, so only a
+  // string body is sure to show.
+  func testTheSweepCanSeeABodyCleanSwitchedOffShowsTheBytes() throws {
+    guard let upload = ${Name}CleanTest.binaryOp() else {
+      throw XCTSkip("no operation of this SDK sends a binary body; nothing to sweep")
+    }
+
+    let box = SinkBox()
+    let sdk = ${Name}CleanTest.makeSdk(${Name}CleanTest.scenarios[1], box, vm(("active", .bool(false))))
+    let err = ${Name}CleanTest.drive(
+      sdk, upload.target, vm(("explain", .map(VMap()))), box,
+      ${Name}CleanTest.uploadData(upload, .string(canaryContent)))
+    XCTAssertNotNil(err, "the 404 scenario must throw")
+
+    let leaked = box.sinks.filter { !contentLeaks($0.text).isEmpty }
+    XCTAssertTrue(!leaked.isEmpty, "with clean off, nothing showed the bytes: the sweep is blind")
+
+    if let e = err as? ${Name}Error {
+      XCTAssertTrue(render(e.specVal).contains(canaryContent),
+        "the raw spec should carry the body when clean is off")
+    }
+  }
+
+  func testBytesAreDescribedWhereverTheySit() {
+    let cfg = makeCleanConfig(gp(SdkSchema.optspec, "clean"))
+    let options = vm(("__derived__", .map(vm(("clean", .nat(cfg))))))
+    let ctx = Context(["options": options], nil)
+    let bytes = ${Name}CleanTest.described(canaryContentBytes.count, nil)
+
+    let live = Value.nat(Data(canaryContentBytes))
+    let held = VMap()
+    held.entries["deep"] = live
+    let src = VMap()
+    src.entries["held"] = .list(VList([.map(held)]))
+    src.entries["array"] = .nat(canaryContentBytes)
+    src.entries["x-upload-token"] = .nat(Data(canaryContentBytes))
+    src.entries["note"] = .string(canaryContent)
+    let cleaned = cleanUtil(ctx, .map(src))
+    XCTAssertEqual(gpath(cleaned, "held", "0", "deep"), bytes)
+    XCTAssertEqual(gp(cleaned, "array"), bytes)
+    XCTAssertEqual(gp(cleaned, "x-upload-token"), .string(mask))
+    XCTAssertEqual(gp(cleaned, "note"), .string(canaryContent))
+    XCTAssertEqual(held.entries["deep"], live)
+    XCTAssertEqual(cleanUtil(ctx, .nat(canaryContentBytes)), bytes)
+    XCTAssertEqual(cleanUtil(ctx, .string(canaryContent)), .string(canaryContent))
+
+    let offcfg = makeCleanConfig(.map(vm(("active", .bool(false)))))
+    let offctx = Context(["options": vm(("__derived__", .map(vm(("clean", .nat(offcfg))))))], nil)
+    XCTAssertEqual(cleanUtil(offctx, live), live)
+
+    // By the model: only at a point marked binary is a string body bytes.
+    func cleanedAt(_ declared: VMap, _ body: Value) -> Value {
+      let pctx = Context([
+        "options": options,
+        "point": vm(("body", .map(declared))),
+        "spec": Spec(vm(("body", body))),
+        "reqdata": vm(("$body", body)),
+      ], nil)
+      let seen = VMap()
+      seen.entries["spec"] = pctx.spec == nil ? .noval : .nat(pctx.spec!)
+      seen.entries["reqdata"] = .map(pctx.reqdata)
+      seen.entries["copy"] = .string(canaryContent)
+      seen.entries["x-copy-token"] = .string(canaryContent)
+      seen.entries["other"] = .string("unrelated")
+      return cleanUtil(pctx, .map(seen))
+    }
+
+    let binary = vm(("kind", .string("raw")), ("media", .string("audio/wav")), ("binary", .bool(true)))
+    let typed = ${Name}CleanTest.described(canaryContentBytes.count, "audio/wav")
+
+    let text = cleanedAt(binary, .string(canaryContent))
+    XCTAssertEqual(gpath(text, "spec", "body"), typed)
+    XCTAssertEqual(gpath(text, "reqdata", "$body"), typed)
+    XCTAssertEqual(gp(text, "copy"), typed)
+    XCTAssertEqual(gp(text, "x-copy-token"), .string(mask))
+    XCTAssertEqual(gp(text, "other"), .string("unrelated"))
+
+    let native = cleanedAt(binary, live)
+    XCTAssertEqual(gpath(native, "spec", "body"), typed)
+    XCTAssertEqual(gpath(native, "reqdata", "$body"), typed)
+    XCTAssertEqual(gp(native, "copy"), .string(canaryContent))
+
+    let plain = cleanedAt(vm(("kind", .string("raw")), ("media", .string("text/vtt"))), .string(canaryContent))
+    XCTAssertEqual(gpath(plain, "spec", "body"), .string(canaryContent))
+    XCTAssertEqual(gpath(plain, "reqdata", "$body"), .string(canaryContent))
+
+    let record = Value.map(vm(("name", .string("n1"))))
+    let json = cleanedAt(vm(("kind", .string("json")), ("media", .string("application/json"))), record)
+    XCTAssertEqual(gpath(json, "spec", "body", "name"), .string("n1"))
   }
 }
 `

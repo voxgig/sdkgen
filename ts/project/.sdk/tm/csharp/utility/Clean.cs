@@ -35,8 +35,18 @@ public static partial class SdkUtility
     private const int CleanMaxDepth = 32;
     private const string CleanCircular = "[circular]";
 
+    // The key of what stands in for a body of bytes; its value is the kind.
+    private const string CleanBinary = "binary$";
+
     // A dropped slot (a delegate): omitted from a map, null in a list.
     private static readonly object CleanDrop = new();
+
+    // The live request body of a point the model marks binary, and its type.
+    private sealed class CleanBinaryBody
+    {
+        public List<object> Live = new();
+        public string? Type;
+    }
 
     private static readonly JsonSerializerOptions CleanJsonOpts = new()
     {
@@ -236,13 +246,101 @@ public static partial class SdkUtility
         return name + "#" + i;
     }
 
+    private static CleanBinaryBody? CleanBinaryBodyOf(Context? ctx)
+    {
+        var body = StructUtils.GetProp(ctx?.Point, "body");
+        if (!"raw".Equals(StructUtils.GetProp(body, "kind")) ||
+            StructUtils.GetProp(body, "binary") is not true)
+        {
+            return null;
+        }
+        var live = new List<object>();
+        if (ctx!.Spec?.Body is { } sent)
+        {
+            live.Add(sent);
+        }
+        // The same value, unless it was a Stream: the spec holds what was read.
+        if (ctx.Reqdata != null && ctx.Reqdata.TryGetValue(RawBody, out var given) && given != null)
+        {
+            live.Add(given);
+        }
+        return 0 == live.Count
+            ? null
+            : new CleanBinaryBody { Live = live, Type = StructUtils.GetProp(body, "media") as string };
+    }
+
+    // The same object, or an equal string or value type.
+    private static bool CleanIsLive(CleanBinaryBody? bin, object val)
+    {
+        if (bin == null)
+        {
+            return false;
+        }
+        foreach (var live in bin.Live)
+        {
+            if (ReferenceEquals(live, val) || (val is string or ValueType) && val.Equals(live))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Bytes are described, never copied (ADR-004): the kind, and the size and
+    // media type where they are known. A string is bytes only as the body of a
+    // point the model marks binary, and goes as UTF-8. A Stream is not asked
+    // for its length, which it may refuse to give.
+    private static Dictionary<string, object?>? CleanDescribeBinary(object val, CleanBinaryBody? bin)
+    {
+        var text = val as string;
+        long size = -1;
+
+        if (val is byte[] bytes)
+        {
+            size = bytes.LongLength;
+        }
+        else if (val is ReadOnlyMemory<byte> shared)
+        {
+            size = shared.Length;
+        }
+        else if (val is Memory<byte> owned)
+        {
+            size = owned.Length;
+        }
+        else if (text == null && val is not Stream)
+        {
+            return null;
+        }
+
+        var declared = CleanIsLive(bin, val);
+        if (text != null)
+        {
+            if (!declared)
+            {
+                return null;
+            }
+            size = Encoding.UTF8.GetByteCount(text);
+        }
+
+        var desc = new Dictionary<string, object?> { [CleanBinary] = size < 0 ? "stream" : "bytes" };
+        if (0 <= size)
+        {
+            desc["size"] = size;
+        }
+        if (declared && bin!.Type != null)
+        {
+            desc["type"] = bin.Type;
+        }
+        return desc;
+    }
+
     // A masked plain-data copy: functions dropped, cycles cut, and nothing
     // shared with the live value, whose spec must stay raw. A typed pipeline
     // product (Spec, Result, a feature record) reads through its public
     // fields, the way a structured logger would; the context reads through
     // its own record so its client, options and config never enter.
-    private static object? CleanSnapshot(CleanConfig cfg, object? val, object? key,
-        int depth, List<object> seen)
+    private static object? CleanSnapshot(CleanConfig cfg, CleanBinaryBody? bin, object? val,
+        object? key, int depth, List<object> seen)
     {
         if (val == null || ReferenceEquals(val, StructUtils.NONE))
         {
@@ -251,7 +349,11 @@ public static partial class SdkUtility
 
         if (val is string s)
         {
-            return CleanSensitiveKey(cfg, key) ? CleanMaskValue(cfg, s) : CleanString(cfg, s);
+            if (CleanSensitiveKey(cfg, key))
+            {
+                return CleanMaskValue(cfg, s);
+            }
+            return (object?)CleanDescribeBinary(s, bin) ?? CleanString(cfg, s);
         }
 
         if (val is Delegate)
@@ -275,6 +377,12 @@ public static partial class SdkUtility
             return cfg.Mask;
         }
 
+        var desc = CleanDescribeBinary(val, bin);
+        if (desc != null)
+        {
+            return desc;
+        }
+
         seen.Add(val);
         try
         {
@@ -284,7 +392,7 @@ public static partial class SdkUtility
                 foreach (DictionaryEntry kv in dict)
                 {
                     var k = Convert.ToString(kv.Key) ?? "";
-                    var v = CleanSnapshot(cfg, kv.Value, k, depth + 1, seen);
+                    var v = CleanSnapshot(cfg, bin, kv.Value, k, depth + 1, seen);
                     if (!ReferenceEquals(v, CleanDrop))
                     {
                         out_[CleanName(cfg, out_, k)] = v;
@@ -298,7 +406,7 @@ public static partial class SdkUtility
                 var out_ = new List<object?>();
                 foreach (var item in list)
                 {
-                    var v = CleanSnapshot(cfg, item, null, depth + 1, seen);
+                    var v = CleanSnapshot(cfg, bin, item, null, depth + 1, seen);
                     out_.Add(ReferenceEquals(v, CleanDrop) ? null : v);
                 }
                 return out_;
@@ -316,15 +424,15 @@ public static partial class SdkUtility
                     out_["sdk"] = se.Sdk;
                     out_["code"] = CleanString(cfg, se.Code);
                     out_["status"] = se.Status;
-                    out_["result"] = CleanSnapshot(cfg, se.ResultVal, "result", depth + 1, seen);
-                    out_["spec"] = CleanSnapshot(cfg, se.SpecVal, "spec", depth + 1, seen);
+                    out_["result"] = CleanSnapshot(cfg, bin, se.ResultVal, "result", depth + 1, seen);
+                    out_["spec"] = CleanSnapshot(cfg, bin, se.SpecVal, "spec", depth + 1, seen);
                 }
                 return out_;
             }
 
             if (val is Context ctx)
             {
-                return CleanSnapshot(cfg, ctx.RawRecord(), key, depth, seen);
+                return CleanSnapshot(cfg, bin, ctx.RawRecord(), key, depth, seen);
             }
 
             if (val is IEntity ent)
@@ -341,7 +449,7 @@ public static partial class SdkUtility
             foreach (var f in fields)
             {
                 var k = CleanCamel(f.Name);
-                var v = CleanSnapshot(cfg, f.GetValue(val), k, depth + 1, seen);
+                var v = CleanSnapshot(cfg, bin, f.GetValue(val), k, depth + 1, seen);
                 if (!ReferenceEquals(v, CleanDrop))
                 {
                     rec[k] = v;
@@ -370,17 +478,19 @@ public static partial class SdkUtility
             return CleanString(cfg, s);
         }
 
+        var bin = CleanBinaryBodyOf(ctx);
+
         if (val is ProjectNameError err)
         {
             err.SetMessage(CleanString(cfg, err.Message));
             err.Code = CleanString(cfg, err.Code);
             if (err.ResultVal != null && err.ResultVal is not string)
             {
-                err.ResultVal = CleanSnapshot(cfg, err.ResultVal, "result", 1, new List<object>());
+                err.ResultVal = CleanSnapshot(cfg, bin, err.ResultVal, "result", 1, new List<object>());
             }
             if (err.SpecVal != null && err.SpecVal is not string)
             {
-                err.SpecVal = CleanSnapshot(cfg, err.SpecVal, "spec", 1, new List<object>());
+                err.SpecVal = CleanSnapshot(cfg, bin, err.SpecVal, "spec", 1, new List<object>());
             }
             return err;
         }
@@ -392,7 +502,7 @@ public static partial class SdkUtility
             return new ProjectNameError("", CleanString(cfg, ex.Message), null);
         }
 
-        var out_ = CleanSnapshot(cfg, val, null, 0, new List<object>());
+        var out_ = CleanSnapshot(cfg, bin, val, null, 0, new List<object>());
         return ReferenceEquals(out_, CleanDrop) ? null : out_;
     }
 

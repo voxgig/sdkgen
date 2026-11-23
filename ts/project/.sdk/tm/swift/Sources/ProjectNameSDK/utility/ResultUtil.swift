@@ -181,10 +181,19 @@ extension Utility {
       }
     }
   }
+
+  // The live request body of a point the model marks binary, and its type.
+  struct CleanBinaryBody {
+    let live: [Value]
+    let media: String?
+  }
 }
 
 private let cleanMaxDepth = 32
 private let cleanCircular = "[circular]"
+
+// The key of what stands in for a body of bytes; its value is the kind.
+private let cleanBinary = "binary$"
 
 // encodeURIComponent's unreserved set.
 private let cleanUnreserved = CharacterSet(
@@ -327,20 +336,69 @@ private func cleanSensitiveKey(_ cfg: Utility.CleanConfig, _ key: String?) -> Bo
   return cfg.keys.contains { nk.contains($0) }
 }
 
+private func cleanBinaryBodyOf(_ ctx: Context) -> Utility.CleanBinaryBody? {
+  let body = gp(ctx.point, "body")
+  guard gp(body, "kind").asString == "raw", gp(body, "binary").asBool == true else {
+    return nil
+  }
+  var live: [Value] = []
+  if let spec = ctx.spec, !isNil(spec.body) { live.append(spec.body) }
+  let given = rawBodyOf(ctx.reqdata)
+  if !isNil(given) { live.append(given) }
+  return live.isEmpty
+    ? nil : Utility.CleanBinaryBody(live: live, media: gp(body, "media").asString)
+}
+
+// The size of a value that is bytes. The array is matched by its exact
+// type: an empty array of any element casts to an empty [UInt8].
+private func cleanByteCount(_ any: Any) -> Int? {
+  if let data = any as? Data { return data.count }
+  if type(of: any) == [UInt8].self, let bytes = any as? [UInt8] { return bytes.count }
+  return nil
+}
+
+private func cleanBytes(_ size: Int, _ media: String?) -> Value {
+  let desc = VMap()
+  desc.entries[cleanBinary] = .string("bytes")
+  desc.entries["size"] = .int(Int64(size))
+  if let media = media { desc.entries["type"] = .string(media) }
+  return .map(desc)
+}
+
+// Bytes are described, never copied (ADR-004): the kind, and the size and
+// media type where they are known. A string is bytes only as the body of a
+// point the model marks binary, and goes as UTF-8.
+private func cleanDescribeBinary(_ val: Value, _ bin: Utility.CleanBinaryBody?) -> Value? {
+  switch val {
+  case .string(let s):
+    guard let bin = bin, bin.live.contains(val) else { return nil }
+    return cleanBytes(s.utf8.count, bin.media)
+  case .native(let ref):
+    guard let size = cleanByteCount(ref.value) else { return nil }
+    let declared = bin?.live.contains(val) ?? false
+    return cleanBytes(size, declared ? bin?.media : nil)
+  default:
+    return nil
+  }
+}
+
 // A masked plain-data copy: closures dropped, cycles cut, and nothing shared
 // with the live value, whose spec must stay raw. A typed pipeline product
 // carried as a native (a Spec, a Result, a feature record) reads through its
 // stored properties, the way `dump` would; the context reads through its
 // own record so its client, options and config never enter.
 private func cleanSnapshot(
-  _ cfg: Utility.CleanConfig, _ val: Value, _ key: String?, _ depth: Int,
-  _ seen: inout [ObjectIdentifier]
+  _ cfg: Utility.CleanConfig, _ bin: Utility.CleanBinaryBody?, _ val: Value, _ key: String?,
+  _ depth: Int, _ seen: inout [ObjectIdentifier]
 ) -> Value {
   switch val {
   case .noval, .null, .sentinel:
     return val
   case .string(let s):
-    return .string(cleanSensitiveKey(cfg, key) ? cleanMaskValue(cfg, s) : cleanString(cfg, s))
+    if cleanSensitiveKey(cfg, key) {
+      return .string(cleanMaskValue(cfg, s))
+    }
+    return cleanDescribeBinary(val, bin) ?? .string(cleanString(cfg, s))
   case .function:
     return .noval
   case .bool, .int, .double:
@@ -352,9 +410,12 @@ private func cleanSnapshot(
     if cleanSensitiveKey(cfg, key) {
       return .string(cfg.mask)
     }
+    if let desc = cleanDescribeBinary(val, bin) {
+      return desc
+    }
     seen.append(ObjectIdentifier(ref))
     defer { seen.removeLast() }
-    return cleanNative(cfg, ref.value, key, depth, &seen)
+    return cleanNative(cfg, bin, ref.value, key, depth, &seen)
   case .list(let l):
     if cleanMaxDepth <= depth || seen.contains(ObjectIdentifier(l)) {
       return .string(cleanCircular)
@@ -366,7 +427,7 @@ private func cleanSnapshot(
     defer { seen.removeLast() }
     let out = VList()
     for item in l.items {
-      out.items.append(cleanSnapshot(cfg, item, nil, depth + 1, &seen))
+      out.items.append(cleanSnapshot(cfg, bin, item, nil, depth + 1, &seen))
     }
     return .list(out)
   case .map(let m):
@@ -380,7 +441,7 @@ private func cleanSnapshot(
     defer { seen.removeLast() }
     let out = VMap()
     for (k, item) in m.entries {
-      let v = cleanSnapshot(cfg, item, k, depth + 1, &seen)
+      let v = cleanSnapshot(cfg, bin, item, k, depth + 1, &seen)
       if !v.isNoval { out.entries[cleanName(cfg, out, k)] = v }
     }
     return .map(out)
@@ -400,7 +461,8 @@ private func cleanName(_ cfg: Utility.CleanConfig, _ out: VMap, _ key: String) -
 }
 
 private func cleanErrorRecord(
-  _ cfg: Utility.CleanConfig, _ err: Error, _ depth: Int, _ seen: inout [ObjectIdentifier]
+  _ cfg: Utility.CleanConfig, _ bin: Utility.CleanBinaryBody?, _ err: Error, _ depth: Int,
+  _ seen: inout [ObjectIdentifier]
 ) -> Value {
   let out = VMap()
   out.entries["message"] = .string(cleanString(cfg, errMessage(err)))
@@ -408,8 +470,8 @@ private func cleanErrorRecord(
     out.entries["sdk"] = .string(se.sdk)
     out.entries["code"] = .string(cleanString(cfg, se.code))
     out.entries["status"] = .int(Int64(se.status))
-    out.entries["result"] = cleanSnapshot(cfg, se.resultVal, "result", depth + 1, &seen)
-    out.entries["spec"] = cleanSnapshot(cfg, se.specVal, "spec", depth + 1, &seen)
+    out.entries["result"] = cleanSnapshot(cfg, bin, se.resultVal, "result", depth + 1, &seen)
+    out.entries["spec"] = cleanSnapshot(cfg, bin, se.specVal, "spec", depth + 1, &seen)
   }
   return .map(out)
 }
@@ -418,38 +480,38 @@ private func cleanErrorRecord(
 // through their stored properties; anything else (a closure, a foreign
 // object) is dropped, as a function is.
 private func cleanNative(
-  _ cfg: Utility.CleanConfig, _ any: Any, _ key: String?, _ depth: Int,
-  _ seen: inout [ObjectIdentifier]
+  _ cfg: Utility.CleanConfig, _ bin: Utility.CleanBinaryBody?, _ any: Any, _ key: String?,
+  _ depth: Int, _ seen: inout [ObjectIdentifier]
 ) -> Value {
   if let v = any as? Value {
-    return cleanSnapshot(cfg, v, key, depth, &seen)
+    return cleanSnapshot(cfg, bin, v, key, depth, &seen)
   }
   if let m = any as? VMap {
-    return cleanSnapshot(cfg, .map(m), key, depth, &seen)
+    return cleanSnapshot(cfg, bin, .map(m), key, depth, &seen)
   }
   if let l = any as? VList {
-    return cleanSnapshot(cfg, .list(l), key, depth, &seen)
+    return cleanSnapshot(cfg, bin, .list(l), key, depth, &seen)
   }
   if let s = any as? String {
-    return cleanSnapshot(cfg, .string(s), key, depth, &seen)
+    return cleanSnapshot(cfg, bin, .string(s), key, depth, &seen)
   }
   if let b = any as? Bool {
-    return cleanSnapshot(cfg, .bool(b), key, depth, &seen)
+    return cleanSnapshot(cfg, bin, .bool(b), key, depth, &seen)
   }
   if let i = any as? Int {
-    return cleanSnapshot(cfg, .int(Int64(i)), key, depth, &seen)
+    return cleanSnapshot(cfg, bin, .int(Int64(i)), key, depth, &seen)
   }
   if let i = any as? Int64 {
-    return cleanSnapshot(cfg, .int(i), key, depth, &seen)
+    return cleanSnapshot(cfg, bin, .int(i), key, depth, &seen)
   }
   if let d = any as? Double {
-    return cleanSnapshot(cfg, .double(d), key, depth, &seen)
+    return cleanSnapshot(cfg, bin, .double(d), key, depth, &seen)
   }
   if let err = any as? Error {
-    return cleanErrorRecord(cfg, err, depth, &seen)
+    return cleanErrorRecord(cfg, bin, err, depth, &seen)
   }
   if let ctx = any as? Context {
-    return cleanSnapshot(cfg, .map(ctx.rawRecord()), key, depth, &seen)
+    return cleanSnapshot(cfg, bin, .map(ctx.rawRecord()), key, depth, &seen)
   }
   if let ent = any as? Entity {
     return .string(ent.getName())
@@ -457,16 +519,20 @@ private func cleanNative(
   if any is ProjectNameSDK {
     return .noval
   }
+  // Bytes a typed product holds in a stored property are never mirrored.
+  if let size = cleanByteCount(any) {
+    return cleanSensitiveKey(cfg, key) ? .string(cfg.mask) : cleanBytes(size, nil)
+  }
 
   let mirror = Mirror(reflecting: any)
   if mirror.displayStyle == .optional {
     guard let inner = mirror.children.first?.value else { return .null }
-    return cleanNative(cfg, inner, key, depth, &seen)
+    return cleanNative(cfg, bin, inner, key, depth, &seen)
   }
   if mirror.displayStyle == .collection || mirror.displayStyle == .set {
     let out = VList()
     for child in mirror.children {
-      let v = cleanNative(cfg, child.value, nil, depth + 1, &seen)
+      let v = cleanNative(cfg, bin, child.value, nil, depth + 1, &seen)
       out.items.append(v)
     }
     return .list(out)
@@ -481,7 +547,7 @@ private func cleanNative(
     }
     let out = VMap()
     for (k, item) in pairs.sorted(by: { $0.0 < $1.0 }) {
-      let v = cleanNative(cfg, item, k, depth + 1, &seen)
+      let v = cleanNative(cfg, bin, item, k, depth + 1, &seen)
       if !v.isNoval { out.entries[cleanName(cfg, out, k)] = v }
     }
     return .map(out)
@@ -490,7 +556,7 @@ private func cleanNative(
     let out = VMap()
     for child in mirror.children {
       guard let label = child.label else { continue }
-      let v = cleanNative(cfg, child.value, label, depth + 1, &seen)
+      let v = cleanNative(cfg, bin, child.value, label, depth + 1, &seen)
       if !v.isNoval { out.entries[label] = v }
     }
     return .map(out)
@@ -510,15 +576,17 @@ func cleanUtil(_ ctx: Context, _ val: Value) -> Value {
     return .string(cleanString(cfg, s))
   }
 
+  let bin = cleanBinaryBodyOf(ctx)
+
   if let err = val.asNative as? ProjectNameError {
     var seen: [ObjectIdentifier] = []
     err.message = cleanString(cfg, err.message)
     err.code = cleanString(cfg, err.code)
     if !isNil(err.resultVal) {
-      err.resultVal = cleanSnapshot(cfg, err.resultVal, "result", 1, &seen)
+      err.resultVal = cleanSnapshot(cfg, bin, err.resultVal, "result", 1, &seen)
     }
     if !isNil(err.specVal) {
-      err.specVal = cleanSnapshot(cfg, err.specVal, "spec", 1, &seen)
+      err.specVal = cleanSnapshot(cfg, bin, err.specVal, "spec", 1, &seen)
     }
     return val
   }
@@ -528,7 +596,7 @@ func cleanUtil(_ ctx: Context, _ val: Value) -> Value {
   }
 
   var seen: [ObjectIdentifier] = []
-  return cleanSnapshot(cfg, val, nil, 0, &seen)
+  return cleanSnapshot(cfg, bin, val, nil, 0, &seen)
 }
 
 func cleanKeyUtil(_ ctx: Context, _ key: String) -> Bool {
