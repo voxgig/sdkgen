@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { scalaVarName, scalaListMatch, scalaLit } from './utility_scala'
+import { scalaVarName, scalaPackage, scalaListMatch, scalaLit } from './utility_scala'
 
 
 // Type names come from the shared canonToType 'scala' column (single source of truth).
@@ -72,6 +72,9 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 `)
 
     Content(`\`\`\`scala
+import ${scalaPackage(model)}.core.${SDK}
+import ${scalaPackage(model)}.core.SdkEntity
+
 val client = new ${SDK}(options)
 \`\`\`
 

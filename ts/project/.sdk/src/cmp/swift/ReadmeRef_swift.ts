@@ -64,6 +64,7 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { model } = props.ctx$
 
   const SDK = model.const.Name + 'SDK'
+  const MODULE = model.const.Name + 'Sdk'
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const feature = targetFeatures(model, target)
@@ -85,6 +86,8 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 `)
 
     Content(`\`\`\`swift
+import ${MODULE}
+
 let client = ${SDK}(options)
 \`\`\`
 
