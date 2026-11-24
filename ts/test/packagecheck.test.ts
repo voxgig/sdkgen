@@ -338,6 +338,20 @@ describe('package check — the model rules', () => {
   })
 
 
+  test('a surface outside the word list is an error, and seneca-provider is in it', () => {
+    const surface = (word: string) => check((dir) =>
+      editModel(dir, 'target', 'iotgo', (src) =>
+        src.replace('main: kit: target: iotgo: {',
+          "main: kit: target: iotgo: {\n  surface: '" + word + "'")))
+
+    const odd = surface('banana')
+    ok(points(odd, 'error').includes('target-surface-unknown'), points(odd).join(','))
+    ok(/`banana`/.test(noted(odd, 'target-surface-unknown')), noted(odd, 'target-surface-unknown'))
+
+    ok(!points(surface('seneca-provider')).includes('target-surface-unknown'))
+  })
+
+
   test('a hook the base schema does not list is an error', () => {
     const report = check((dir) =>
       editModel(dir, 'feature', 'retry', (src) =>

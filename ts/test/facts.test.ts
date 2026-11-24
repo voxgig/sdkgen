@@ -8,9 +8,15 @@ import { Project } from 'jostraca'
 
 import { SdkGen, applyFacts, fact } from '../dist/sdkgen.js'
 import { makeModel } from './generateharness'
+import { SURFACES, surfaceOf } from '../dist/helpers/surface'
 
 
 const KIT = 'kit'
+
+const TARGETS = Fs.readdirSync(Path.join(__dirname, '..', 'project', '.sdk', 'model', 'target'))
+  .filter((f: string) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
+  .map((f: string) => f.replace(/\.aontu$/, ''))
+  .sort()
 
 const FEATURES = Fs.readdirSync(Path.join(__dirname, '..', 'project', '.sdk', 'model', 'feature'))
   .filter((f: string) => f.endsWith('.aontu') && 'feature-index.aontu' !== f)
@@ -51,6 +57,54 @@ describe('facts', () => {
     throws(() => fact(model.main[KIT].feature.bare, 'on'), /has no fact 'on'/)
     throws(() => fact(model.main[KIT].target.bare, 'place'), /has no fact 'place'/)
     throws(() => fact({ name: 'raw' }, 'on'), /did not pass through applyFacts/)
+  })
+
+  test('surface: the legacy rows are exactly the bundled targets that generate nothing', () => {
+    const target = makeModel(TARGETS).main[KIT].target
+    const phases = ['entity', 'feature', 'readme', 'agentguide', 'test']
+    const consumers = TARGETS.filter((t) =>
+      phases.every((p) => false === target[t].phase?.[p]?.active))
+    deepStrictEqual(TARGETS.filter((t) => 'legacy' === fact(target[t], 'surfaceFrom')), consumers)
+    deepStrictEqual(Object.fromEntries(consumers.map((t) => [t, fact(target[t], 'surface')])),
+      { 'go-cli': 'cli', 'go-mcp': 'mcp', 'py-data': 'data' })
+    ok(TARGETS.filter((t) => !consumers.includes(t))
+      .every((t) => 'sdk' === fact(target[t], 'surface')), 'every other bundled target is an SDK')
+  })
+
+  test('surface: an alias and an older four-flag copy are classed by their origin', () => {
+    const off = { active: false }
+    const target = applyFacts({ main: { [KIT]: { target: {
+      go: { name: 'go' },
+      cli2: { name: 'cli2', origname: 'go-cli',
+        phase: { entity: off, feature: off, readme: off, test: off } },
+    } } } }).main[KIT].target
+    deepStrictEqual([fact(target.cli2, 'surface'), fact(target.cli2, 'surfaceFrom'),
+      fact(target.cli2, 'consumes')], ['cli', 'legacy', 'go'])
+    deepStrictEqual(fact(target.go, 'consumers'), ['cli2'])
+  })
+
+  test('surface: a declared word wins, and a word outside the list reads as unknown', () => {
+    const target = applyFacts({ main: { [KIT]: { target: {
+      sp: { name: 'sp', surface: 'seneca-provider', phase: { entity: { active: false } } },
+      odd: { name: 'odd', surface: 'banana' },
+      bare: { name: 'bare', phase: { entity: { active: false } } },
+    } } } }).main[KIT].target
+    ok(SURFACES.includes('seneca-provider'))
+    deepStrictEqual([surfaceOf(target.sp), fact(target.sp, 'surfaceFrom')], ['seneca-provider', 'slot'])
+    deepStrictEqual([fact(target.odd, 'surface'), surfaceOf(target.odd)], ['banana', ''])
+    deepStrictEqual([surfaceOf(target.bare), fact(target.bare, 'surfaceFrom')], ['', 'unknown'])
+  })
+
+  test('consumes: an alias of the wrapped target answers, and two of them name both', () => {
+    const cli = { name: 'go-cli', phase: { entity: { active: false } } }
+    const one = applyFacts({ main: { [KIT]: { target: {
+      go2: { name: 'go2', origname: 'go' }, 'go-cli': { ...cli },
+    } } } }).main[KIT].target
+    deepStrictEqual([fact(one['go-cli'], 'consumes'), fact(one.go2, 'consumers')], ['go2', ['go-cli']])
+
+    throws(() => applyFacts({ main: { [KIT]: { target: {
+      go2: { name: 'go2', origname: 'go' }, go3: { name: 'go3', origname: 'go' }, 'go-cli': { ...cli },
+    } } } }), /builds on go, and 2 installed targets come from it: go2, go3/)
   })
 
   test('applying the facts twice changes nothing', () => {

@@ -1,6 +1,7 @@
 import { kindCollection } from '../helpers/kindCollection'
 
 import { unknownTags, TAGS } from '../helpers/applicability'
+import { SURFACES } from '../helpers/surface'
 import Path from 'node:path'
 
 import { KIT } from '../types'
@@ -314,6 +315,14 @@ function checkDefinition(
 
   if ('target' === kind) {
     found.push(...checkTargetModel(checked, name, file, at))
+
+    const surface = (declared as any)?.surface
+    if ('string' === typeof surface && '' !== surface && !SURFACES.includes(surface)) {
+      found.push(at('error', 'target-surface-unknown',
+        'declares surface `' + surface + '`, which is not one of ' + SURFACES.join(', ') +
+        ' — a document names a target with any other word by its title, never as an ' +
+        'SDK, a CLI or an MCP server'))
+    }
   }
 
   if ('feature' === kind) {

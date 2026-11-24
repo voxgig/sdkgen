@@ -96,6 +96,10 @@ main: kit: target: &: {
   base:     *'' | string
   origname: *'' | string
   package:  *'' | string
+
+  surface:  *'' | string
+  consumes: *'' | string
+
   module: {
     name: string
 

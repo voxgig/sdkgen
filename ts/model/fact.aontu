@@ -26,7 +26,23 @@ main: kit: target: &: {
     agentguide: active: *true | boolean
     test: active: *true | boolean
   }
+
+  derive: {
+    origin: match(maybe(..origname), "", maybe(..name), maybe(..origname))
+    legacy: match(maybe(..scaffold), true, match(.origin,
+      "go-cli", { surface: "cli", consumes: "go" },
+      "go-mcp", { surface: "mcp", consumes: "go" },
+      "py-data", { surface: "data", consumes: "py" },
+      { surface: "", consumes: "" }), { surface: "", consumes: "" })
+    wraps: match(maybe(..consumes), "", maybe(.legacy.consumes), maybe(..consumes))
+  }
   fact: {
+    origin: maybe(..derive.origin)
+    surface: match(maybe(..surface), "", match(maybe(..derive.legacy.surface), "",
+      match(maybe(.phase.entity), false, "", "sdk"), maybe(..derive.legacy.surface)),
+      maybe(..surface))
+    surfaceFrom: match(maybe(..surface), "", match(maybe(..derive.legacy.surface), "",
+      match(maybe(.phase.entity), false, "unknown", "entities"), "legacy"), "slot")
     place: match(maybe(..output), { root: true }, "root", { path: "" }, "folder", "external")
     phase: {
       entity: ...phase.entity.active
