@@ -9265,33 +9265,30 @@ function docKey(doc: string): string {
   return '../README.md' === doc ? 'Root' : 'README.md' === doc ? 'Readme' : 'Reference'
 }
 
-// One C# file per page: its using directives, then a static method per block.
-// A using directive is valid at file scope only, so a block's own are lifted.
-function csharpExamples(blocks: DocBlock[], imports: string[], doc: string): string {
+// One C# file per block, so no import reaches another block: the page's first
+// using directives and the block's own, which are valid at file scope only.
+function csharpExample(block: DocBlock, i: number, imports: string[]): string {
   const isUsing = (l: string) => /^using\s+[\w.]+;\s*$/.test(l)
-  const usings = new Set(imports)
-  const parts: string[] = []
-  blocks.forEach((block, i) => {
-    const lines = block.code.split('\n')
-    lines.filter(isUsing).forEach((l) => usings.add(l))
-    const body = lines.filter((l) => !isUsing(l))
-    const given = givenNames(body.join('\n'),
-      (name) => new RegExp('^\\s*(?:var|[\\w.<>?,\\[\\] ]+?)\\s+' + name + '\\s*=', 'm'))
-    parts.push(
-      '    // ' + block.doc + ':' + block.line,
-      '    public static void Example' + i + '()',
-      '    {',
-      ...given.map((name) => '        ' + ('client' === name
-        ? 'var client = DemoSDK.TestSDK(null, null);'
-        : 'Dictionary<string, object?>? ' + name + ' = null;')),
-      '        {',
-      ...body,
-      '        }',
-      '    }',
-      '')
-  })
+  const lines = block.code.split('\n')
+  const usings = new Set([...imports, ...lines.filter(isUsing)])
+  const body = lines.filter((l) => !isUsing(l))
+  const given = givenNames(body.join('\n'),
+    (name) => new RegExp('^\\s*(?:var|[\\w.<>?,\\[\\] ]+?)\\s+' + name + '\\s*=', 'm'))
   return [...usings, '', 'namespace ReadmeExamples;', '',
-    'public static class ' + docKey(doc) + 'Examples', '{', ...parts, '}', ''].join('\n')
+    '// ' + block.doc + ':' + block.line,
+    'public static class ' + docKey(block.doc) + 'Example' + i,
+    '{',
+    '    public static void Run()',
+    '    {',
+    ...given.map((name) => '        ' + ('client' === name
+      ? 'var client = DemoSDK.TestSDK(null, null);'
+      : 'Dictionary<string, object?>? ' + name + ' = null;')),
+    '        {',
+    ...body,
+    '        }',
+    '    }',
+    '}',
+    ''].join('\n')
 }
 
 // One Scala file per page: its imports, then an object with a method per
@@ -9316,30 +9313,25 @@ function scalaExamples(blocks: DocBlock[], imports: string[], doc: string): stri
   return [...imports, '', 'object ' + docKey(doc) + 'Examples {', ...parts, '}', ''].join('\n')
 }
 
-// One Swift file per page: its imports, then a throwing function per block.
-// An import is valid at file scope only, so a block's own are lifted.
-function swiftExamples(blocks: DocBlock[], imports: string[], doc: string): string {
+// One Swift file per block, so no import reaches another block: the page's
+// first imports and the block's own, which are valid at file scope only.
+function swiftExample(block: DocBlock, i: number, imports: string[]): string {
   const isImport = (l: string) => /^import\s+\w+\s*$/.test(l)
-  const all = new Set(imports)
-  const parts: string[] = []
-  blocks.forEach((block, i) => {
-    const lines = block.code.split('\n')
-    lines.filter(isImport).forEach((l) => all.add(l))
-    const body = lines.filter((l) => !isImport(l))
-    const given = givenNames(body.join('\n'), (name) => new RegExp('\\b(?:let|var)\\s+' + name + '\\b'))
-    parts.push(
-      '// ' + block.doc + ':' + block.line,
-      'func ' + docKey(doc).toLowerCase() + 'Example' + i + '() throws {',
-      ...given.map((name) => '    ' + ('client' === name
-        ? 'let client = DemoSDK.testSDK(nil, nil)'
-        : 'let ' + name + ': VMap? = nil')),
-      '    do {',
-      ...body,
-      '    }',
-      '}',
-      '')
-  })
-  return [...all, '', ...parts].join('\n')
+  const lines = block.code.split('\n')
+  const all = new Set([...imports, ...lines.filter(isImport)])
+  const body = lines.filter((l) => !isImport(l))
+  const given = givenNames(body.join('\n'), (name) => new RegExp('\\b(?:let|var)\\s+' + name + '\\b'))
+  return [...all, '',
+    '// ' + block.doc + ':' + block.line,
+    'func ' + docKey(block.doc).toLowerCase() + 'Example' + i + '() throws {',
+    ...given.map((name) => '    ' + ('client' === name
+      ? 'let client = DemoSDK.testSDK(nil, nil)'
+      : 'let ' + name + ': VMap? = nil')),
+    '    do {',
+    ...body,
+    '    }',
+    '}',
+    ''].join('\n')
 }
 
 // A clojure block's top-level forms, each with the comments and blank lines
@@ -9396,20 +9388,21 @@ function clojureForms(code: string): { lead: string, form: string }[] {
 
 const isRequire = (form: string) => /^\(require\b/.test(form)
 
-// One clojure file for every page: the vars a block may use, then per block
-// its require forms (its own, else the first its page shows) at the top
-// level, where they take effect before the function holding the rest is
-// compiled. Loading the file compiles each function, which resolves every
-// symbol in it and checks no arity; nothing is called.
-function clojureExamples(blocks: DocBlock[], requires: Record<string, string[]>): string {
-  const parts: string[] = ['(ns readme.examples)', '', '(declare client options testopts sdkopts)', '']
+// One clojure file per page, a namespace of its own, so an alias one page
+// requires reaches no other. Each block's require forms (its own, else the
+// first its page shows) run ahead of the function holding the rest, so a block
+// sees the aliases required before it: a clojure section requires an entity's
+// namespace once, where the other languages reach the entity through the client.
+function clojurePage(blocks: DocBlock[], requires: string[], doc: string): string {
+  const parts = ['(ns readme.examples.' + docKey(doc).toLowerCase() + ')', '',
+    '(declare client options testopts sdkopts)', '']
   blocks.forEach((block, i) => {
     const forms = clojureForms(block.code)
     const own = forms.filter((f) => isRequire(f.form)).map((f) => f.form)
     const body = forms.filter((f) => !isRequire(f.form)).map((f) => f.lead + f.form).join('')
     parts.push(
       ';; ' + block.doc + ':' + block.line,
-      ...(0 < own.length ? own : requires[block.doc]),
+      ...(0 < own.length ? own : requires),
       '(defn example-' + i + ' []',
       body.trim(),
       ')',
@@ -9577,8 +9570,10 @@ const DOC_LANES: {
       const project = Fs.readFileSync(Path.join(sdkroot, sdkproj!), 'utf8')
       const setting = (name: string) => new RegExp('<' + name + '>([^<]+)</' + name + '>').exec(project)?.[1]
       for (const doc of DOC_PAGES) {
-        Fs.writeFileSync(Path.join(dir, docKey(doc) + 'Examples.cs'),
-          csharpExamples(blocks.filter((b) => b.doc === doc), pageImports(blocks, doc, /^using\s+[\w.]+;/), doc))
+        const imports = pageImports(blocks, doc, /^using\s+[\w.]+;/)
+        blocks.filter((b) => b.doc === doc).forEach((block, i) => {
+          Fs.writeFileSync(Path.join(dir, docKey(doc) + 'Example' + i + '.cs'), csharpExample(block, i, imports))
+        })
       }
       Fs.writeFileSync(Path.join(dir, 'Examples.csproj'), [
         '<Project Sdk="Microsoft.NET.Sdk">',
@@ -9641,8 +9636,10 @@ const DOC_LANES: {
       const product = /name:\s*"([^"]+)"/.exec(Fs.readFileSync(Path.join(sdkroot, 'Package.swift'), 'utf8'))
       ok(null != product, 'swift: Package.swift names no package')
       for (const doc of DOC_PAGES) {
-        Fs.writeFileSync(Path.join(src, docKey(doc) + 'Examples.swift'),
-          swiftExamples(blocks.filter((b) => b.doc === doc), pageImports(blocks, doc, /^import\s/), doc))
+        const imports = pageImports(blocks, doc, /^import\s/)
+        blocks.filter((b) => b.doc === doc).forEach((block, i) => {
+          Fs.writeFileSync(Path.join(src, docKey(doc) + 'Example' + i + '.swift'), swiftExample(block, i, imports))
+        })
       }
       // The SDK's platform floor, which a dependent must meet; the package
       // identity of a path dependency is its directory's name.
@@ -9683,14 +9680,21 @@ const DOC_LANES: {
         requires[doc] = null == first ? []
           : clojureForms(first.code).filter((f) => isRequire(f.form)).map((f) => f.form)
       }
-      const file = Path.join(sdkroot, '_readme', 'examples.clj')
-      Fs.mkdirSync(Path.dirname(file), { recursive: true })
-      Fs.writeFileSync(file, clojureExamples(blocks, requires))
+      const dir = Path.join(sdkroot, '_readme')
+      Fs.mkdirSync(dir, { recursive: true })
+      const files: string[] = []
+      for (const doc of DOC_PAGES) {
+        const name = docKey(doc).toLowerCase() + '.clj'
+        Fs.writeFileSync(Path.join(dir, name), clojurePage(blocks.filter((b) => b.doc === doc), requires[doc], doc))
+        files.push('_readme/' + name)
+      }
+      Fs.writeFileSync(Path.join(dir, 'all.clj'),
+        files.map((f) => '(load-file "' + f + '")').join('\n') + '\n')
       // -M alone puts src on the class path; shutdown-agents lets the JVM
-      // exit as soon as the file is loaded.
+      // exit as soon as the files are loaded.
       return [{
         label: 'every clojure example', bin: clj, timeoutMs: 10 * 60 * 1000,
-        args: ['-M', '-e', '(do (load-file "_readme/examples.clj") (shutdown-agents))'],
+        args: ['-M', '-e', '(do (load-file "_readme/all.clj") (shutdown-agents))'],
       }]
     },
   },
