@@ -916,13 +916,19 @@ emitted broken source reached the fleet unchallenged.
   own route — never a custom action folded into `create`. Custom actions are
   reachable only through `$action`, so `ReadmeRef` documents them; an
   undocumented action is an endpoint no reader can call.
-- **A documented example in c, cpp, rust or zig must COMPILE.** Their ops
-  return entity handles, so an example that treats the result as a record is
-  a type error, and their own README suites only check structure.
-  `generatedcompile.test.ts` compiles every block in those languages from the
-  README, REFERENCE and root README against a generated SDK, under four
-  models that each lead with a different entity, since a quick start shows
-  the first. A section's numbered steps compile as one program.
+- **A documented example in c, cpp, rust, zig, ocaml, csharp, scala, swift
+  or clojure must COMPILE.** Their ops return entity handles, so an example
+  that treats the result as a record is a type error; a page that never
+  shows an import its blocks need (swift's `Foundation` for `ProcessInfo`,
+  clojure's `require` of an entity namespace) is one too; and their own
+  README suites only check structure. `generatedcompile.test.ts` compiles
+  every block in those languages from the README, REFERENCE and root README
+  against a generated SDK, under models that each lead with a different
+  entity, since a quick start shows the first. A section's numbered steps
+  compile as one program, and a block that calls a method the SDK lacks must
+  fail each lane naming the method, so a lane that compiled nothing cannot
+  pass. The lanes run where the toolchain is: csharp's and swift's on the
+  push runners, the rest in the nightly.
 - **A project decision belongs in the MODEL, never in a forked component.**
   `target add` merges updates into `.sdk/src/cmp/**`, `.sdk/tm/**` AND
   `.sdk/model/target/<t>.aontu`, and overwrites them in a project set to

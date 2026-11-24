@@ -25,8 +25,14 @@ Added after the fourth version was checked: where the prototype is kept
 (below), and what the repository's comment gate reports on its source
 (section 8). Neither changes a figure or a verdict.
 
-What is genuinely not done is in section 8. In short: seven of the twenty
-languages were never compiled; the shared changes the integration recorded
+Added after the nightly run of 17 November (run 44079140246, dispatched by
+the maintainer on the frozen state): what the run shows for H4, in the
+table below and in sections 3.4 and 7. The count of languages never
+compiled falls from seven to four; no verdict changes.
+
+What is genuinely not done is in section 8. In short: four of the twenty
+languages were never compiled, seven before that nightly run (section
+3.4); the shared changes the integration recorded
 and did not make; the fix for the shared sentence the attack found false
 in 17 runtimes, which no one has made; one migration bypass still open
 and several migration states not re-run at the final state; and
@@ -67,7 +73,7 @@ section 1.3.
 | H1 | **Refuted** on the interface criterion: 44 breaking changes after the first four languages (25 to the provider interface, 19 to the forms framework the guard reads), by an independent re-count from the code history, against a limit of about 10; the newly ported languages alone caused 9 to 11 of them. Not crossed on the other two: no provider reads the model (0 open findings in all twenty), and per-language prose is at most 7.1% by source and 14.8% by the "printed by this language alone" measure (go, both) | 3.1 |
 | H2 | **Refuted** on every count that includes what each language must write for its facts to be checked: 1.54x with the forms, 1.20x with the guard, at twenty (independent, ran). Only documentation code counted alone passes 2x, by 3% (2.06x), and only at twenty; at nine and at thirteen every count was under 2x | 3.2 |
 | H3 | **Not refuted**: by the brief's rule 2.8% to 5.6% of the 36 in-scope catalogue entries still need a per-language edit at twenty (independent, ran), against a limit of about 10%. But one fix written once prints a sentence that is false in 17 of the 20 runtimes, and every check passed it; charged to its entry, the share is 5.6% to 8.3% by the brief's rule and 8.3% to 11.1% on the strict reading, over the limit only at the top of the strict range | 3.3 |
-| H4 | **Not refuted**: holds in the thirteen languages with a toolchain here, where every example lane passes on NEW (integrator, re-run identically by the attacker). Not shown in full: seven languages (csharp, scala, swift, lua, clojure, elixir and ocaml) were never compiled, and the lanes compile their own models and miss a dropped import or swapped arguments | 3.4 |
+| H4 | **Not refuted**: holds in the thirteen languages with a toolchain here, where every example lane passes on NEW (integrator, re-run identically by the attacker), and in lua and ocaml, whose example lanes passed in the nightly workflow's run of 17 November on the frozen state (run 44079140246, Ubuntu and macOS). Not shown in full: four languages (csharp, scala, swift and clojure) were never compiled, elixir's examples were only parsed, and the lanes compile their own models and miss a dropped import or swapped arguments | 3.4 |
 | H5 | **Not refuted**: packs keep generating, and every unsafe state found traces to one rule; each has a local fix but one. Not shown as built: one silent bypass is open (a provider that takes the interface constant by a deep import), and the remedy recorded for it is ruled out by sdkgen's own `package.json`; and the fix for a release that skips its list makes `doctor` fail a documented extension | 3.5 |
 | Reach | Not a hypothesis of the brief, but the maintainers' first question. Not a general solution to the catalogue: the mechanism reaches 66 of 329 entries (20%; 58 to 70 across the open borders); 81 (25%) are already written once, 46 of them needing a derivation the proposal does not supply; it does nothing for 175 (53%) | 4 |
 
@@ -209,17 +215,31 @@ reads it, does not hold at the frozen state.
   test constructor; kotlin: 0 errors in three models, through the Kotlin
   compiler in gradle's offline cache; js: 24/24, 17/17 and 17/17 programs
   run as written (OLD 20, 13, 13).
-- **Verdict: not refuted.** It holds in those thirteen languages: no example
-  test fails there. The failures the last wave found (js's mixed module
+- **Nightly, after the freeze** (ran; run 44079140246 of the repository's
+  nightly workflow, which installs lua, ocaml and elixir, dispatched by the
+  maintainer on 17 November on the frozen state plus one commit that
+  removes only the comment gate's call from `npm test`). Both jobs passed:
+  3,403 tests each, none failed, 17 skipped on Ubuntu and 117 on macOS,
+  none of them an example lane. lua: the README example suite passed under
+  its 12 model variants, and its negative control, an SDK that does not
+  load, failed as it should. ocaml: every documented example compiled under
+  its 6 models. elixir: nothing compiles the examples; the generated SDK's
+  own README test parses each block. csharp, scala, swift and clojure:
+  nothing compiles their documented examples, and their generated README
+  tests check that blocks exist and their brackets balance (clojure's that
+  each block reads); their SDKs built and passed their own suites in the
+  same run. `main` has the same four gaps. Details in section 3.4.
+- **Verdict: not refuted.** It holds in those thirteen languages, and since
+  the nightly run in lua and ocaml: no example test fails there. The failures the last wave found (js's mixed module
   forms, which OLD shares; java's `Map.of` with a null; kotlin's missing
   import in one variation; scala's comparison of an object with a primitive;
   csharp's duplicate local name in 5 of 21 root quick starts) were each a
   printer choice or a naming decision, fixed inside the interface or by an
-  optional fact; the scala and csharp ones were read, not compiled. Seven
-  languages were never compiled, the lanes compile their own models rather
-  than the 21 review variations, and some lanes are blind to a dropped
-  import or swapped arguments (section 3.4), so the claim is not shown in
-  full.
+  optional fact; the scala and csharp ones were read, not compiled. Four
+  languages were never compiled and elixir's examples only parsed, the
+  lanes compile their own models rather than the 21 review variations, and
+  some lanes are blind to a dropped import or swapped arguments (section
+  3.4), so the claim is not shown in full.
 
 ### H5. Existing projects, packs and aliases move safely
 
@@ -290,8 +310,9 @@ others; none was tried alone.
 Where the evidence stops. Three sections were built, not the other ten
 README families, two of which (Install and Explanation) were found to be
 about one language rather than shared text. Every page came from one
-demonstration model and 21 variations of it. Seven languages were never
-compiled. Nothing was measured over time: whether a shared change stays
+demonstration model and 21 variations of it. Four languages were never
+compiled, seven before the nightly run of 17 November (section 3.4).
+Nothing was measured over time: whether a shared change stays
 cheap once the tools stop needing re-aimed controls is unknown. The guard,
 the forms, the review tools and the hand records are working files of the
 prototype, kept on its branch and run by nothing on `main`; an adoption
@@ -521,7 +542,12 @@ scala, swift, lua, clojure, elixir and ocaml. When the guide for the last
 seven was written, the guide writer's check found php 8.3, composer,
 javac, mvn, gradle, g++ and make present, and kotlinc, kotlin, scala,
 scala-cli, sbt and dotnet missing (ran); the porters' own checks agreed,
-and the scala fixer found no Scala compiler jar anywhere on disk.
+and the scala fixer found no Scala compiler jar anywhere on disk. That was
+the inventory of the machines the work was done on. The repository's
+nightly workflow installs lua, ocaml and elixir, among others, and its run
+of 17 November on the frozen state (section 3.4) compiled lua's and
+ocaml's examples, which this record had counted among the seven never
+compiled.
 
 The documentation lanes that exist on `main` are uneven: the java and cpp
 README example tests check structure only, js has none, the swift test
@@ -1276,8 +1302,9 @@ defeats.
 
 ### 3.4 H4: examples still compile and run
 
-**Not refuted: holds in the thirteen languages with a toolchain here;
-untested in seven of the twenty.**
+**Not refuted: holds in the thirteen languages with a toolchain here, and
+in lua and ocaml since the nightly run of 17 November; untested in four of
+the twenty, and only parsed in a fifth.**
 
 At 3.4 the integrator ran every example lane with a toolchain on NEW and
 on the old code, and the attacker re-ran every NEW lane with identical
@@ -1409,13 +1436,39 @@ counted the blocks.
 
 **Standing at twenty:** not refuted. It holds for ts, js, go, py, php,
 rb, perl, java, kotlin, c, cpp, rust and zig: every example test passes on
-NEW, and none failed for a reason intrinsic to the approach. Not tested
-for csharp, scala, swift, lua, clojure, elixir and ocaml, whose changed
-blocks were read, not compiled, and the lanes compile their own models
-and are blind to a dropped import or swapped arguments, so the claim is
-not shown in full. Two failures were intrinsic to the interface as it
-stood (perl's root import at 3.3; csharp's shared name at 3.4, read) and
-each needed an additive change.
+NEW, and none failed for a reason intrinsic to the approach; and for lua
+and ocaml since the nightly run below. Not tested for csharp, scala, swift
+and clojure, whose changed blocks were read, not compiled, nor beyond a
+parse for elixir, and the lanes compile their own models and are blind to
+a dropped import or swapped arguments, so the claim is not shown in full.
+Two failures were intrinsic to the interface as it stood (perl's root
+import at 3.3; csharp's shared name at 3.4, read) and each needed an
+additive change.
+
+**The nightly run, after the freeze** (ran). The maintainer dispatched the
+repository's nightly workflow, which installs the toolchains the push
+workflow lacks (python, zig, lua, elixir, ocaml, scala and clojure), on 17
+November 2026 at 12:00 UTC as run 44079140246. It ran on the branch
+`claude/write-once-prototype-nightly`: the prototype branch plus one commit
+(`3efe0c0`) that removes only the comment gate's call from `npm test`,
+because the gate's 87 findings (section 8) had stopped the suite before any
+test. Both jobs passed, Ubuntu in 48 minutes and macOS in 61: 3,403 tests
+each, none failed; Ubuntu skipped 17 and macOS 117, none of them an example
+lane (go and php, which the workflow does not install on macOS; the probes
+with no live transport; c's secrets lane for want of TLS headers; the
+release-tag check). Read from both jobs' logs:
+
+| Language | In the run |
+|---|---|
+| lua | The README example suite passed under its 12 model variants, and its negative control, an SDK that does not load, failed as it should: 13 tests, both jobs |
+| ocaml | Every documented example compiled under its 6 models, both jobs |
+| elixir | Nothing compiles the examples. The generated SDK's own README test parses each block (`Code.string_to_quoted/1`), and every lane that builds an elixir SDK and runs its suite passed (58 tests on Ubuntu) |
+| csharp, scala, swift, clojure | Nothing compiles their documented examples. Their generated README tests check that blocks exist and their brackets balance, and for clojure that each block reads; every lane that builds one of their SDKs and runs its suite passed (61, 41, 48 and 44 tests on Ubuntu) |
+
+`main` has the same four gaps: its lanes compile no documented example of
+those languages either. So the run moves two languages from "never
+compiled" to compiled with no failure, and leaves the verdict where it
+was: not refuted, and not shown for four languages.
 
 ### 3.5 H5: existing projects, packs and aliases move safely
 
@@ -2634,12 +2687,14 @@ none of the seven by its own record.
 - **One model family.** Every page was generated from one demonstration
   model (`Demo`, seven entities) and 21 single-switch variations of it.
   Real specifications with other shapes were not used.
-- **Seven of twenty languages were never compiled.** csharp, scala, swift,
-  lua, clojure, elixir and ocaml examples were checked by structure and by
-  reading. Two failures in that group (csharp's duplicate local, scala's
-  comparison with a primitive) were found by reading, which also means
-  others may have been missed. kotlin was compiled only through a compiler
-  found in gradle's offline cache.
+- **Four of twenty languages were never compiled.** csharp, scala, swift
+  and clojure examples were checked by structure and by reading, and
+  elixir's were parsed. Two failures in that group (csharp's duplicate
+  local, scala's comparison with a primitive) were found by reading, which
+  also means others may have been missed. The count was seven until the
+  nightly run of 17 November compiled lua's and ocaml's examples (section
+  3.4). kotlin was compiled only through a compiler found in gradle's
+  offline cache.
 - **The lanes compile their own models**, not the 21 review variations. A
   changed block that no lane model produces is compiled by nothing even in
   a language with a toolchain.

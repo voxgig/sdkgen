@@ -37,9 +37,10 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const authActive = isAuthActive(model)
 
+  // ProcessInfo, which reads the credential, is Foundation's.
   Content(`\`\`\`swift
 import ${MODULE}
-
+${authActive ? 'import Foundation\n' : ''}
 `)
 
   if (authActive) {

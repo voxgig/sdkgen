@@ -51,6 +51,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
 \`\`\`swift
 import ${MODULE}
+import Foundation
 
 let options = VMap()
 options.entries["apikey"] = .string(
