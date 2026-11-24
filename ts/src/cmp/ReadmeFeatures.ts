@@ -2,7 +2,7 @@ import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import { optionalComponent } from '../helpers/optional'
-import { featureDocs, honoursActivationOrder } from './FeatureDocs'
+import { featureDocs, codeList, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 
@@ -24,21 +24,31 @@ const ReadmeFeatures = cmp(function ReadmeFeatures(props: any) {
     return
   }
 
+  const on = features.filter((f: FeatureDoc) => f.on).map((f: FeatureDoc) => f.name)
+  const off = features.length - on.length
+  const one = 1 === features.length
+  const state = 0 === on.length ?
+    `${one ? 'It is' : 'Each is'} **inactive until you switch it on**, so an SDK you have not
+configured behaves exactly as if ${one ? 'it did not exist' : 'none of them existed'}, with no measurable overhead.` :
+    `${codeList(on)} ${1 === on.length ?
+      'is **on by default** and runs until you switch it off.' :
+      'are **on by default** and run until you switch them off.'}${0 === off ? '' : 1 === off ?
+        '\nThe other is **inactive until you switch it on**.' :
+        '\nThe others are **inactive until you switch them on**.'}`
+
   Content(`## Features
 
-This SDK ships ${features.length} optional features. Each is **inactive until you
-switch it on**, so an SDK you have not configured behaves exactly as if none of
-them existed — no retries, no cache, no logging, no measurable overhead.
+This SDK ships ${features.length} optional feature${one ? '' : 's'}.
+${state}
 
-Activate a feature by name in the client options, alongside the options shown
-above:
+Activate a feature by name in the \`feature\` client option:
 
 | Feature | What it does |
 |---|---|
 `)
 
   for (const f of features) {
-    Content(`| [\`${f.name}\`](#${f.name}) | ${f.title} |
+    Content(`| [\`${f.name}\`](#${f.name}) | ${f.titleCell} |
 `)
   }
 
@@ -76,7 +86,7 @@ ${f.title}.
 |---|---|
 `)
       for (const o of f.options) {
-        Content(`| \`${o.name}\` | \`${o.value}\` |
+        Content(`| \`${o.name}\` | ${o.code} |
 `)
       }
       Content(`

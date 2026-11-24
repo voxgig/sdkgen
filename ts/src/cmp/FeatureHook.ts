@@ -22,6 +22,43 @@ const FeatureHook = cmp(function FeatureHook(props: any, children: any) {
 })
 
 
+// The stages every entity operation runs, in order; each fires its hook first.
+const PIPELINE_STAGES: { name: string, hook: string, purpose: string }[] = [
+  {
+    name: 'Point', hook: 'PrePoint',
+    purpose: 'Resolves which API endpoint to call based on the operation name and entity configuration.',
+  },
+  {
+    name: 'Spec', hook: 'PreSpec',
+    purpose: 'Builds the HTTP spec — URL, method, headers, body — from the resolved point and the caller\'s parameters.',
+  },
+  {
+    name: 'Request', hook: 'PreRequest',
+    purpose: 'Sends the HTTP request. Features can intercept here to replace the transport.',
+  },
+  {
+    name: 'Response', hook: 'PreResponse',
+    purpose: 'Parses the raw HTTP response.',
+  },
+  {
+    name: 'Result', hook: 'PreResult',
+    purpose: 'Extracts the business data from the parsed response.',
+  },
+  {
+    name: 'Done', hook: 'PreDone',
+    purpose: 'Final stage before returning to the caller. Entity state (match, data) is updated here.',
+  },
+]
+
+const COUNT_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+
+function pipelineLength(): string {
+  return COUNT_WORDS[PIPELINE_STAGES.length] ?? String(PIPELINE_STAGES.length)
+}
+
+
 export {
-  FeatureHook
+  FeatureHook,
+  PIPELINE_STAGES,
+  pipelineLength,
 }

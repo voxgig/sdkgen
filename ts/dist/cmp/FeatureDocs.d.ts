@@ -2,20 +2,22 @@ type FeatureDoc = {
     name: string;
     Name: string;
     title: string;
+    titleCell: string;
     transport: string;
     wraps: boolean;
+    on: boolean;
+    hooks: string[];
     options: Array<{
         name: string;
-        value: string;
+        code: string;
     }>;
     extras: Array<{
         name: string;
         type: string;
     }>;
 };
-declare function sentinelName(v: any): string;
-declare function renderValue(v: any): string;
 declare function featureDocs(model: any, target?: any): FeatureDoc[];
+declare function codeList(names: string[]): string;
 declare function honoursActivationOrder(target: any): boolean;
-export { featureDocs, renderValue, sentinelName, honoursActivationOrder, };
+export { featureDocs, codeList, honoursActivationOrder, };
 export type { FeatureDoc };

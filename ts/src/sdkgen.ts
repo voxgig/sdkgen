@@ -66,6 +66,7 @@ import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
 import { applyFacts, fact, refuseRootPlan } from './helpers/facts'
+import { docFindings } from './helpers/doccheck'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
 import { cmp as labelledCmp } from './helpers/component'
 import type { DepEntry } from './helpers/collectDeps'
@@ -370,7 +371,8 @@ function SdkGen(opts: SdkGenOptions) {
     // generator, so an outdated copy would otherwise be used without a word.
     await warnCopies(root, model)
 
-    const externalOverride = resolveExternalOverride(opts, log)
+    const externalOverride = resolveExternalOverride(
+      opts, log, Object.keys(model?.main?.[KIT]?.target || {}))
     // Snapshot the decision before preflight. In particular, do not check a
     // missing optional destination once for safety and AGAIN before writing:
     // if it appeared between those checks, the pass could write into content
@@ -387,6 +389,7 @@ function SdkGen(opts: SdkGenOptions) {
       () => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree))
 
     showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
+    checkDocs(tree.root, folder)
     pruneGenerated({
       fs, log, project: root, out: root, jres, claims: claimedFiles(tree.root, folder),
       dryrun: !!opts.dryrun,
@@ -434,6 +437,7 @@ function SdkGen(opts: SdkGenOptions) {
         }), etree))
 
       showChanges(jopts.log, 'generate-result', eres, Path.dirname(process.cwd()))
+      checkDocs(etree.root, ext.folder)
       pruneGenerated({
         fs, log, project: root, out: ext.folder, jres: eres,
         claims: claimedFiles(etree.root, ext.folder),
@@ -444,6 +448,15 @@ function SdkGen(opts: SdkGenOptions) {
     log.info({ point: 'generate-end' })
 
     return { ok: true, name: 'sdkgen' }
+  }
+
+
+  // A warning, never a failure: the text that breaks a link or a table may be
+  // the spec's, which the project cannot edit.
+  function checkDocs(tree: any, out: string) {
+    for (const f of docFindings(tree, out, (path: string) => fs.existsSync(path), !!opts.dryrun)) {
+      log.warn({ point: f.point, file: f.file, line: f.line, note: f.note })
+    }
   }
 
 
@@ -695,7 +708,7 @@ type ExternalPlan = ExternalSpec & {
 
 
 function resolveExternalOverride(
-  opts: SdkGenOptions, log: any,
+  opts: SdkGenOptions, log: any, targets: string[],
 ): Record<string, ExternalOverride> {
   const declared = opts.external || {}
   const raw = process.env.SDKGEN_EXTERNAL
@@ -722,6 +735,16 @@ function resolveExternalOverride(
       'SDKGEN_EXTERNAL must be a JSON OBJECT keyed by item name, for example:' +
       '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
       '\n  Got: ' + raw.slice(0, 200))
+  }
+
+  // A misspelled name would otherwise change nothing and still be logged as
+  // an override.
+  const unknown = Object.keys(parsed).filter((name: string) => !targets.includes(name)).sort()
+  if (0 < unknown.length) {
+    throw new SdkGenError(
+      'SDKGEN_EXTERNAL names ' + unknown.join(', ') + ', which ' +
+      (1 === unknown.length ? 'is not a target' : 'are not targets') + ' of this model' +
+      '\n  Its targets are: ' + [...targets].sort().join(', '))
   }
 
   const merged: Record<string, ExternalOverride> = { ...declared }

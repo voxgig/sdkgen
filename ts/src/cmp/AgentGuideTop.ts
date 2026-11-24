@@ -1,6 +1,7 @@
 
 import { names, Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
+import { fact } from '../helpers/facts'
 
 import {
   activeTargets,
@@ -13,11 +14,15 @@ import {
   aontuSection,
   claudePointer,
   langCmd,
+  writesFeatureGuides,
 } from './AgentGuideContent'
 
 
 const AgentGuideTopIntro = cmp(function AgentGuideTopIntro(props: any) {
-  const { Name } = props.s
+  const { Name, model, targets } = props.s
+
+  const featureGuides = targets.some((t: any) =>
+    fact(t, 'phase').agentguide && writesFeatureGuides(model, t))
 
   Content(`# ${Name} SDK — Agent Guide
 
@@ -28,8 +33,8 @@ from an API model; the generator, model, templates, and components all live in
 a template, or a component and regenerate.
 
 There are companion guides deeper in the tree: one per language
-(\`<lang>/AGENTS.md\`) and one per feature
-(\`<lang>/src/feature/<name>/AGENTS.md\`).
+(\`<lang>/AGENTS.md\`)${featureGuides ? `, and one per feature in a target that keeps each
+feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 
 ## Project map
 
@@ -64,9 +69,8 @@ const AgentGuideTopFeatures = cmp(function AgentGuideTopFeatures(props: any) {
     Content(`**Features** (${features.length}): `)
     Content(features.map((f: any) => `\`${f.name}\``).join(', ') + `.
 
-Each feature is generated into every SDK target — as a directory
-\`<lang>/src/feature/<name>/\` (ts/js) or a flat file in the \`<lang>/feature/\`
-package (other languages). Each target's guide documents its features.
+Each feature is generated into each SDK target that supports it, and each
+target's guide documents where that target keeps its features.
 
 `)
   }
@@ -93,10 +97,11 @@ const AgentGuideTopStation = cmp(function AgentGuideTopStation(props: any) {
   // on this repo should know the runtime story without leaving
   // AGENTS.md — and, first, that the application's integrations are
   // DECLARED in station.json, so that file is where to look.
-  if (features.some((f: any) => 'station' === f.name)) {
+  const station = features.find((f: any) => 'station' === f.name)
+  if (null != station) {
     Content(`**Station**: this SDK is a
 [voxgig/station](https://github.com/voxgig/station) plugin (the
-\`station\` feature, off by default). An application's outbound
+\`station\` feature, ${fact(station, 'on') ? 'on' : 'off'} by default). An application's outbound
 integrations are **declared in \`station.json\`** at its repo root —
 to learn what the application talks to, read that file: every SDK
 instance (\`sdk\`), per-api default (\`api\`), feature setting, and
@@ -116,8 +121,8 @@ target's feature container) for the generated adapter.
 })
 
 
-const AgentGuideTopWorkflow = cmp(function AgentGuideTopWorkflow() {
-  Content(workflowSection())
+const AgentGuideTopWorkflow = cmp(function AgentGuideTopWorkflow(props: any) {
+  Content(workflowSection(props.s.model))
 })
 
 
@@ -169,7 +174,7 @@ const AgentGuideTop = cmp(function AgentGuideTop(props: any) {
   const features = activeFeatures(model)
   const entities = activeEntities(model)
 
-  const s = { Name, targets, features, entities }
+  const s = { Name, model, targets, features, entities }
 
   File({ name: 'AGENTS.md' }, () => {
     AgentGuideTopIntro({ s })

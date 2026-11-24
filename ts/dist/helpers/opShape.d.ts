@@ -38,6 +38,7 @@ declare function invalidRequest(ent: any): {
 declare const CANON_OP_ORDER: string[];
 declare function entityOps(ent: any): string[];
 declare function introOps(model: any): string[];
+declare function generatedOps(model: any): string[];
 type UngeneratedOp = {
     entity: string;
     op: string;
@@ -56,5 +57,5 @@ declare function pickExampleEntity(entity: any): {
 };
 declare function entityDataIdField(ent: any): string | null;
 declare function entityRecordIdField(ent: any): string;
-export { CANON_OP_ORDER, OP_SUFFIX, bodyFieldNames, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
+export { CANON_OP_ORDER, OP_SUFFIX, bodyFieldNames, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, generatedOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
 export type { OpShapeItem, UngeneratedOp, };

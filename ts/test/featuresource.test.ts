@@ -11,7 +11,9 @@ import {
   featureOf, findFeatureSources, availableFeatures, srcFeatureExcludes,
   inactiveFeatureExcludes, pluginExcludes,
 } from '../dist/sdkgen.js'
-import { SCAFFOLD, PROJECT, KIT, addTarget } from './actionharness'
+import {
+  SCAFFOLD, PROJECT, KIT, ROOT, addTarget, makeProject, target_add, targetRef,
+} from './actionharness'
 
 
 function allTargets(): string[] {
@@ -454,5 +456,28 @@ describe('target add feature trimming', () => {
       deepStrictEqual(missing, [],
         target + ': template files dropped despite the full feature set')
     }
+  })
+
+
+  // The project's own trim setting is what generate reads, so the add follows
+  // it: a project that turns trimming off gets every feature's source.
+  test('a project that sets trim off gets the full feature source', async () => {
+    const project = makeProject({ target: { ts: { name: 'ts', feature: { trim: false } } } })
+    await target_add([targetRef('ts')], project.actx)
+    ok(project.files().some((p: string) => p.startsWith('tm/ts/src/feature/retry/')),
+      'the project\'s trim: false was ignored by target add')
+  })
+
+
+  // A value the project only holds because its old copy said so is not the
+  // project's: the incoming copy decides, as generate will once it lands.
+  test('a setting that came with the old copy follows the incoming one', async () => {
+    const project = makeProject({ target: { ts: { name: 'ts', feature: { trim: false } } } })
+    project.fs.writeFileSync(ROOT + '/model/target/ts.aontu',
+      "main: kit: target: ts: { feature: { trim: false } }\n")
+    project.actx.flags = { force: true }
+    await target_add([targetRef('ts')], project.actx)
+    ok(!project.files().some((p: string) => p.startsWith('tm/ts/src/feature/retry/')),
+      'the old copy\'s trim: false outlived the incoming copy')
   })
 })

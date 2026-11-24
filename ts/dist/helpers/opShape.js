@@ -20,6 +20,7 @@ exports.entityDataIdField = entityDataIdField;
 exports.entityRecordIdField = entityRecordIdField;
 exports.entityOps = entityOps;
 exports.introOps = introOps;
+exports.generatedOps = generatedOps;
 exports.invalidRequest = invalidRequest;
 exports.entityPrimaryOp = entityPrimaryOp;
 exports.pickExampleEntity = pickExampleEntity;
@@ -358,6 +359,17 @@ function introOps(model) {
     const names = CANON_OP_ORDER.filter((o) => found.has(o))
         .concat([...found].filter((o) => !CANON_OP_ORDER.includes(o)));
     return 0 < names.length ? names : ['list', 'load'];
+}
+// The operations the active entities have a generated method for, in
+// canonical order; none when no entity has one.
+function generatedOps(model) {
+    const entity = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`, { required: false }) || {};
+    const found = new Set();
+    for (const e of Object.values(entity)) {
+        for (const o of entityOps(e))
+            found.add(o);
+    }
+    return CANON_OP_ORDER.filter((o) => found.has(o));
 }
 // Every bundled target emits a method for the CANON_OP_ORDER ops and nothing
 // else, so any other active op of an active entity has none in those SDKs.

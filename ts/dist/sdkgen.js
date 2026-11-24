@@ -164,6 +164,7 @@ Object.defineProperty(exports, "guardFlowSteps", { enumerable: true, get: functi
 const facts_1 = require("./helpers/facts");
 Object.defineProperty(exports, "applyFacts", { enumerable: true, get: function () { return facts_1.applyFacts; } });
 Object.defineProperty(exports, "fact", { enumerable: true, get: function () { return facts_1.fact; } });
+const doccheck_1 = require("./helpers/doccheck");
 const generated_1 = require("./helpers/generated");
 const component_1 = require("./helpers/component");
 const canonType_1 = require("./helpers/canonType");
@@ -484,7 +485,7 @@ function SdkGen(opts) {
         // Generation renders from the copies in `.sdk`, not from the installed
         // generator, so an outdated copy would otherwise be used without a word.
         await warnCopies(root, model);
-        const externalOverride = resolveExternalOverride(opts, log);
+        const externalOverride = resolveExternalOverride(opts, log, Object.keys(model?.main?.[apidef_1.KIT]?.target || {}));
         // Snapshot the decision before preflight. In particular, do not check a
         // missing optional destination once for safety and AGAIN before writing:
         // if it appeared between those checks, the pass could write into content
@@ -496,6 +497,7 @@ function SdkGen(opts) {
         const tree = {};
         const jres = await jostraca.generate(jopts, keepingTree(() => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
+        checkDocs(tree.root, folder);
         (0, generated_1.pruneGenerated)({
             fs, log, project: root, out: root, jres, claims: (0, generated_1.claimedFiles)(tree.root, folder),
             dryrun: !!opts.dryrun,
@@ -533,6 +535,7 @@ function SdkGen(opts) {
                 sdkrelpath,
             }), etree));
             (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
+            checkDocs(etree.root, ext.folder);
             (0, generated_1.pruneGenerated)({
                 fs, log, project: root, out: ext.folder, jres: eres,
                 claims: (0, generated_1.claimedFiles)(etree.root, ext.folder),
@@ -541,6 +544,13 @@ function SdkGen(opts) {
         }
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };
+    }
+    // A warning, never a failure: the text that breaks a link or a table may be
+    // the spec's, which the project cannot edit.
+    function checkDocs(tree, out) {
+        for (const f of (0, doccheck_1.docFindings)(tree, out, (path) => fs.existsSync(path), !!opts.dryrun)) {
+            log.warn({ point: f.point, file: f.file, line: f.line, note: f.note });
+        }
     }
     // A warning, never a failure: a difference may be a deliberate edit, and a
     // check that cannot run must not stop a build.
@@ -710,7 +720,7 @@ SdkGen.makeBuild = async function (opts) {
         return await sdkgen.generate({ model, build, config, buildctx: ctx });
     };
 };
-function resolveExternalOverride(opts, log) {
+function resolveExternalOverride(opts, log, targets) {
     const declared = opts.external || {};
     const raw = process.env.SDKGEN_EXTERNAL;
     if (null == raw || '' === raw.trim()) {
@@ -730,6 +740,14 @@ function resolveExternalOverride(opts, log) {
         throw new utility_1.SdkGenError('SDKGEN_EXTERNAL must be a JSON OBJECT keyed by item name, for example:' +
             '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
             '\n  Got: ' + raw.slice(0, 200));
+    }
+    // A misspelled name would otherwise change nothing and still be logged as
+    // an override.
+    const unknown = Object.keys(parsed).filter((name) => !targets.includes(name)).sort();
+    if (0 < unknown.length) {
+        throw new utility_1.SdkGenError('SDKGEN_EXTERNAL names ' + unknown.join(', ') + ', which ' +
+            (1 === unknown.length ? 'is not a target' : 'are not targets') + ' of this model' +
+            '\n  Its targets are: ' + [...targets].sort().join(', '));
     }
     const merged = { ...declared };
     for (const name of Object.keys(parsed)) {

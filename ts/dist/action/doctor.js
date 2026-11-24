@@ -3,12 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.MODEL_FLOOR = exports.COPY_FLOOR = void 0;
 exports.action_doctor = action_doctor;
 exports.doctor = doctor;
 exports.copyCheck = copyCheck;
 exports.copyWarnings = copyWarnings;
 exports.refreshCommand = refreshCommand;
 const kindCollection_1 = require("../helpers/kindCollection");
+const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
@@ -18,10 +20,14 @@ const target_1 = require("./target");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const definition_1 = require("../helpers/definition");
+const modelcheck_1 = require("../helpers/modelcheck");
+const shipped_1 = require("../helpers/shipped");
 const featureSource_1 = require("../helpers/featureSource");
 const junk_1 = require("../helpers/junk");
 const copies_1 = require("./copies");
 const copymerge_1 = require("../helpers/copymerge");
+const semver_1 = require("../helpers/semver");
+const exportnames_1 = require("../helpers/exportnames");
 const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
@@ -37,6 +43,13 @@ const ROOT_COMPONENTS = [
     ['Changelog', 'the root CHANGELOG.md'],
     ['Deploy', 'the release/publish recipes'],
 ];
+// The oldest release of this generator whose component copies build with it.
+const COPY_FLOOR = '4.23.0';
+exports.COPY_FLOOR = COPY_FLOOR;
+// The oldest release whose copied model files this generator reads.
+const MODEL_FLOOR = '1.3.18';
+exports.MODEL_FLOOR = MODEL_FLOOR;
+const SHIPPED_PACKAGE = JSON.parse(node_fs_1.default.readFileSync(node_path_1.default.join((0, shipped_1.packageRoot)(), 'package.json'), 'utf8')).name;
 const CMD_MAP = {
     check: cmd_doctor_check,
     prune: cmd_doctor_prune,
@@ -140,7 +153,8 @@ async function doctor(actx, scope, selected) {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         superseded: [], unwired: [], orphanModel: [],
         resyncPending: [], aliasedDiff: [],
-        outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
+        outdated: [], ahead: [], unrecorded: [], customized: [], unfolded: [],
+        belowFloor: [], unreadable: [], unresolved: [], byItem: {},
         ignoredLog: false, ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
@@ -150,6 +164,7 @@ async function doctor(actx, scope, selected) {
     }
     report.superseded = supersededFiles(actx);
     report.orphanModel = orphanModelFiles(actx);
+    report.unreadable = unreadableModels(actx, report.orphanModel);
     const kinds = Object.keys(kind_1.KINDS).sort();
     const counts = {};
     for (const kind of kinds) {
@@ -209,8 +224,9 @@ async function doctor(actx, scope, selected) {
     // authoritative either way.
     report.ok = 0 === report.forked.length + report.edited.length -
         report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
-        report.orphanModel.length + report.outdated.length +
-        report.unresolved.length;
+        report.orphanModel.length + report.outdated.length + report.ahead.length +
+        report.unfolded.length + report.belowFloor.length +
+        report.unreadable.length + report.unresolved.length;
     const customized = new Set(report.customized);
     const unmergeable = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) ? new Set(report.unrecorded) : new Set();
     for (const [kind, note] of [
@@ -226,6 +242,7 @@ async function doctor(actx, scope, selected) {
         ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
         ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
         ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
+        ['ahead', 'AHEAD (unchanged since it was copied from a newer release than the one installed)'],
         ['unresolved', 'UNRESOLVED (declared, but its source is not installed; install it)'],
     ]) {
         for (const file of report[kind]) {
@@ -238,13 +255,48 @@ async function doctor(actx, scope, selected) {
             log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file });
         }
     }
+    for (const { file, item, error, oldSyntax } of report.unreadable) {
+        log.info({
+            point: 'doctor-finding', kind: 'unreadable', file, error,
+            note: 'UNREADABLE: ' + file + ' does not compile (' + error + '), so the ' +
+                'model leaves ' + item.replace('/', ' ') + ' out. ' + unreadableRemedy(item, oldSyntax)
+        });
+    }
+    for (const { file, names } of report.unfolded) {
+        log.info({
+            point: 'doctor-finding', kind: 'unfolded', file, names,
+            note: 'UNFOLDED (customized, but lacks ' + names.join(', ') +
+                ', which its source exports): ' + file
+        });
+    }
     for (const item of Object.keys(report.byItem).sort()) {
         const drift = report.byItem[item];
+        if (true === drift.belowFloor) {
+            log.info({ point: 'doctor-below-floor', item, ...drift, note: belowFloorNote(item, drift) });
+            continue;
+        }
+        if (null == copies.items[item] && null == drift.unresolved && 0 < drift.changed) {
+            log.info({
+                point: 'doctor-unrecorded-item', item, ...drift,
+                note: item.replace('/', ' ') + ': nothing records which release wrote ' +
+                    'its copies, and ' + drift.changed + ' differ from the installed ' +
+                    'source. Copies from before ' + COPY_FLOOR + ' do not build with this ' +
+                    'generator: if the .sdk build fails in them, commit, then run ' +
+                    '`voxgig-sdkgen ' + refreshCommand(item) + ' --force`.'
+            });
+        }
         if (0 < drift.outdated) {
             log.info({
                 point: 'doctor-outdated', item, ...drift,
                 note: outdatedNote(item, drift) + ' - `voxgig-sdkgen ' +
                     refreshCommand(item, drift.package) + '` refreshes them'
+            });
+        }
+        if (0 < drift.ahead) {
+            log.info({
+                point: 'doctor-ahead', item, ...drift,
+                note: aheadNote(item, drift) + ' - `voxgig-sdkgen ' +
+                    forwardCommand(drift.package) + '` moves it up to them'
             });
         }
     }
@@ -262,6 +314,10 @@ async function doctor(actx, scope, selected) {
         resyncPending: report.resyncPending.length,
         aliasedDiff: report.aliasedDiff.length,
         outdated: report.outdated.length,
+        ahead: report.ahead.length,
+        unfolded: report.unfolded.length,
+        belowFloor: report.belowFloor.length,
+        unreadable: report.unreadable.length,
         unresolved: report.unresolved.length,
         customized: report.customized.length,
         note: report.ok ?
@@ -270,7 +326,10 @@ async function doctor(actx, scope, selected) {
             ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
                 report.missing.length + ' missing, ' + report.outdated.length +
-                ' outdated, ' + report.unresolved.length + ' unresolved')
+                ' outdated, ' + report.ahead.length + ' ahead, ' +
+                report.unfolded.length + ' unfolded, ' + report.belowFloor.length +
+                ' below the floor, ' + report.unreadable.length + ' unreadable, ' +
+                report.unresolved.length + ' unresolved')
     });
     return { report };
 }
@@ -323,6 +382,7 @@ function noteUnresolved(actx, report, kind, name) {
     report.byItem[item] = {
         ...pkgOf(declared.package),
         outdated: 0,
+        ahead: 0,
         changed: 0,
         customized: 0,
         unresolved: from,
@@ -433,8 +493,12 @@ function compareTrees(actx, report, found, trees, opts) {
                 continue;
             }
             const from = landed.get(rel);
-            if (differs(fs, from, node_path_1.default.join(tree.project, rel), model, tree.replace, undefined, tree.rewrite)) {
-                found(tree.kind, label + rel);
+            const at = node_path_1.default.join(tree.project, rel);
+            if (differs(fs, from, at, model, tree.replace, undefined, tree.rewrite)) {
+                found(tree.kind, label + rel, (0, exportnames_1.isTypeScript)(rel) ? () => {
+                    const { expected, actual } = renderPair(fs, from, at, model, tree.replace, tree.rewrite);
+                    return (0, exportnames_1.missingExports)(expected, actual);
+                } : undefined);
             }
         }
         for (const rel of actual) {
@@ -582,13 +646,15 @@ function noteDrift(actx, report, copies, kind, source) {
     const item = (0, copies_1.itemKey)(kind, source.name);
     const copied = copies.items[item];
     const merging = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx);
-    return (category, label) => {
+    const ahead = null != source.package && copied?.package === source.package &&
+        0 < ((0, semver_1.compareVersions)(copied?.version ?? '', source.version ?? '') ?? 0);
+    return (category, label, lacking) => {
         let into = category;
         let custom = false;
         if ('forked' === category || 'edited' === category) {
             const same = (0, copies_1.untouched)(fs, actx.folder, copies, label);
             if (true === same) {
-                into = 'outdated';
+                into = ahead ? 'ahead' : 'outdated';
             }
             else if (undefined === same) {
                 report.unrecorded.push(label);
@@ -596,19 +662,31 @@ function noteDrift(actx, report, copies, kind, source) {
             else if (merging) {
                 custom = true;
                 report.customized.push(label);
+                const names = lacking?.() ?? [];
+                if (0 < names.length) {
+                    report.unfolded.push({ file: label, item, names });
+                }
             }
         }
         report[into].push(label);
+        if (null == report.byItem[item] && belowFloor(copied)) {
+            report.belowFloor.push(item);
+        }
         const drift = report.byItem[item] = report.byItem[item] ?? {
             ...pkgOf(source.package ?? copied?.package),
             ...(null == copied?.version ? {} : { from: copied.version }),
             ...(null == source.version ? {} : { to: source.version }),
             outdated: 0,
+            ahead: 0,
             changed: 0,
             customized: 0,
+            ...(belowFloor(copied) ? { belowFloor: true } : {}),
         };
         if ('outdated' === into) {
             drift.outdated++;
+        }
+        else if ('ahead' === into) {
+            drift.ahead++;
         }
         else {
             drift.changed++;
@@ -617,6 +695,50 @@ function noteDrift(actx, report, copies, kind, source) {
             drift.customized++;
         }
     };
+}
+// The floor holds for this generator's own copies; another package keeps its own.
+function belowFloor(copied) {
+    return SHIPPED_PACKAGE === copied?.package &&
+        0 > ((0, semver_1.compareVersions)(copied?.version ?? '', COPY_FLOOR) ?? 0);
+}
+function belowFloorNote(item, drift) {
+    return item.replace('/', ' ') + ': ' + (drift.outdated + drift.changed) +
+        ' file(s) were copied from ' + drift.package + ' ' + drift.from +
+        ', older than ' + COPY_FLOOR + ', the oldest release whose copies this ' +
+        'generator builds. Commit, then run `voxgig-sdkgen ' + refreshCommand(item) +
+        ' --force` to replace them.';
+}
+function unreadableRemedy(item, oldSyntax) {
+    return (oldSyntax ? 'It uses `//` comments, as model files copied before ' +
+        MODEL_FLOOR + ' do, and this generator does not read them. ' : '') +
+        'Commit, then run `voxgig-sdkgen ' + refreshCommand(item) + ' --force` to ' +
+        'replace it.';
+}
+// An included item model file that fails to compile leaves no error behind:
+// the model simply lacks the item. Compiled alone, the failure shows.
+function unreadableModels(actx, orphans) {
+    const fs = actx.fs();
+    const root = actx.folder;
+    const found = [];
+    for (const kind of Object.keys(kind_1.KINDS).sort()) {
+        const declared = (0, kindCollection_1.kindCollection)(actx.model, kind) ?? {};
+        for (const name of (0, definition_1.definitionNames)(fs, root, kind)) {
+            const path = (0, definition_1.definitionPath)(root, kind, name);
+            const file = node_path_1.default.relative(root, path).split(node_path_1.default.sep).join('/');
+            if (null != declared[name] || !fs.existsSync(path) || orphans.includes(file)) {
+                continue;
+            }
+            const text = String(fs.readFileSync(path, 'utf8'));
+            const compiled = (0, modelcheck_1.compileModel)((0, definition_1.migrateIncludes)(text), path, { strict: false });
+            if (0 < compiled.errors.length) {
+                found.push({
+                    file, item: (0, copies_1.itemKey)(kind, name), error: compiled.errors[0],
+                    oldSyntax: 0 < (0, modelcheck_1.slashComments)(text).length,
+                });
+            }
+        }
+    }
+    return found;
 }
 function pkgOf(name) {
     return null == name ? {} : { package: name };
@@ -629,6 +751,15 @@ function refreshCommand(item, pkg) {
     }
     const [kind, ...name] = item.split('/');
     return kind + ' add ' + name.join('/');
+}
+// Fetches the latest release, which a re-add from the installed one is not.
+function forwardCommand(pkg) {
+    return 'package update ' + pkg;
+}
+function aheadNote(item, drift) {
+    return item.replace('/', ' ') + ': ' + drift.ahead + ' file(s) are ' +
+        'unchanged copies from ' + drift.package + ' ' + drift.from +
+        ', newer than the installed ' + drift.to;
 }
 function outdatedNote(item, drift) {
     return item.replace('/', ' ') + ': ' + drift.outdated +
@@ -763,17 +894,35 @@ function copyWarnings(report) {
         group.drift.push(drift);
         groups.set(key, group);
     };
+    const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];
+    for (const { file, item, oldSyntax } of report.unreadable) {
+        lines.push(file + ' does not compile, so this run leaves ' +
+            item.replace('/', ' ') + ' out. ' + unreadableRemedy(item, oldSyntax)
+            .replace('`voxgig-sdkgen', '`npx voxgig-sdkgen'));
+    }
     for (const item of Object.keys(report.byItem).sort()) {
         const drift = report.byItem[item];
         const command = refreshCommand(item, drift.package);
+        if (true === drift.belowFloor) {
+            lines.push(belowFloorNote(item, drift).replace('`voxgig-sdkgen', '`npx voxgig-sdkgen'));
+            continue;
+        }
         if (0 < drift.outdated) {
             add('outdated\n' + command, item, drift.outdated, drift);
+        }
+        if (0 < drift.ahead) {
+            add('ahead\n' + forwardCommand(drift.package), item, drift.ahead, drift);
         }
         if (0 < drift.changed - drift.customized) {
             add('changed\n' + command, item, drift.changed - drift.customized, drift);
         }
     }
-    const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];
+    for (const { file, item, names } of report.unfolded) {
+        lines.push(file + ': lacks ' + names.join(', ') + ', which the installed ' +
+            'copy exports, so a copy that imports ' + (1 === names.length ? 'it' : 'them') +
+            ' does not compile. Fold the incoming change into it, or commit, then run ' +
+            '`npx voxgig-sdkgen ' + refreshCommand(item) + ' --force` to take the incoming copy.');
+    }
     for (const item of report.unresolved) {
         lines.push(item.replace('/', ' ') + ': declared from ' +
             report.byItem[item]?.unresolved + ', which is not installed, so this ' +
@@ -792,6 +941,14 @@ function copyWarnings(report) {
                 ' file(s) in .sdk are unchanged copies' +
                 sinceCopied(pkg, group.drift) + ', so this run generates from ' +
                 'older templates. Run ' + refresh + ' to refresh them.');
+        }
+        else if ('ahead' === what) {
+            lines.push(group.items.join(', ') + ': ' + group.files +
+                ' file(s) in .sdk were copied from a newer ' + pkg + ' than the ' +
+                'installed ' + installed + ', so this run generates from templates ' +
+                'written for a generator this is not. Run ' + refresh + ' to move ' +
+                'the installed package up to them; refreshing from ' + installed +
+                ' would put older copies back.');
         }
         else {
             lines.push(group.items.join(', ') + ': ' + group.files +

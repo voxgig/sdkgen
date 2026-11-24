@@ -554,32 +554,23 @@ function trimFeatures(
 }
 
 
+type TargetFeature = { trim: boolean, fullset: string[] }
+
+
 function readTargetFeature(
   ctx$: any,
   tfolder: string,
   torigname: string,
   tname: string,
-): { trim: boolean, fullset: string[] } {
+): TargetFeature {
   const { log } = ctx$
   const fs = ctx$.fs()
 
   const path = definitionPathAny(fs, tfolder, 'target', torigname)
 
+  let source: TargetFeature
   try {
-    const errs: any[] = []
-    const src = migrateIncludes(fs.readFileSync(path, 'utf8'))
-    const model = new Aontu().generate(src, { path, errs })
-
-    if (0 < errs.length) {
-      throw new Error(errs.map((e: any) => e.msg || String(e)).join('\n'))
-    }
-
-    const feature = model?.main?.[KIT]?.target?.[torigname]?.feature ?? {}
-
-    return {
-      trim: false !== feature.trim,
-      fullset: Array.isArray(feature.fullset) ? feature.fullset : [],
-    }
+    source = compiledTargetFeature(fs, path, torigname)
   }
   catch (err: any) {
     log.warn({
@@ -590,6 +581,66 @@ function readTargetFeature(
     })
     return { trim: false, fullset: [] }
   }
+
+  const own = projectTargetFeature(ctx$, tname)
+
+  return {
+    trim: own.trim ?? source.trim,
+    fullset: own.fullset ?? source.fullset,
+  }
+}
+
+
+function compiledTargetFeature(fs: any, path: string, name: string): TargetFeature {
+  const errs: any[] = []
+  const src = migrateIncludes(fs.readFileSync(path, 'utf8'))
+  const model = new Aontu().generate(src, { path, errs })
+
+  if (0 < errs.length) {
+    throw new Error(errs.map((e: any) => e.msg || String(e)).join('\n'))
+  }
+
+  const feature = model?.main?.[KIT]?.target?.[name]?.feature ?? {}
+
+  return {
+    trim: false !== feature.trim,
+    fullset: Array.isArray(feature.fullset) ? feature.fullset : [],
+  }
+}
+
+
+// What the project sets for itself: where its compiled model differs from
+// the copy of the target file it holds, the setting comes from elsewhere in
+// its model and survives the re-add, so the add must follow it as generate
+// does. Anything else came with the copy, and the incoming copy replaces it.
+function projectTargetFeature(ctx$: any, tname: string): Partial<TargetFeature> {
+  const compiled = ctx$.model?.main?.[KIT]?.target?.[tname]?.feature
+  if (null == compiled) {
+    return {}
+  }
+
+  const fs = ctx$.fs()
+  const path = definitionPathAny(fs, ctx$.folder ?? '.', 'target', tname)
+
+  let copied: TargetFeature = { trim: true, fullset: [] }
+  if (fs.existsSync(path)) {
+    try {
+      copied = compiledTargetFeature(fs, path, tname)
+    }
+    catch (_err) {
+      return {}
+    }
+  }
+
+  const own: Partial<TargetFeature> = {}
+  if ('boolean' === typeof compiled.trim && compiled.trim !== copied.trim) {
+    own.trim = compiled.trim
+  }
+  if (Array.isArray(compiled.fullset) &&
+    JSON.stringify(compiled.fullset) !== JSON.stringify(copied.fullset)) {
+    own.fullset = [...compiled.fullset]
+  }
+  return own
 }
 
 

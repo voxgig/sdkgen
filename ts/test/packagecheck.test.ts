@@ -338,6 +338,19 @@ describe('package check — the model rules', () => {
   })
 
 
+  test('a hook the base schema does not list is an error', () => {
+    const report = check((dir) =>
+      editModel(dir, 'feature', 'retry', (src) =>
+        src.replace('main: kit: feature: retry: {',
+          'main: kit: feature: retry: {\n  hook: PreRequst: active: true')))
+
+    ok(points(report, 'error').includes('feature-hook-unknown'), points(report).join(','))
+    ok(/PreRequst/.test(noted(report, 'feature-hook-unknown')),
+      noted(report, 'feature-hook-unknown'))
+    strictEqual(report.ok, false)
+  })
+
+
   test('the deps SLOT every target model declares is not a finding', () => {
     const report = check()
 

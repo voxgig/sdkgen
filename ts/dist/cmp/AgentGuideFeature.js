@@ -4,6 +4,7 @@ exports.AgentGuideFeature = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const facts_1 = require("../helpers/facts");
+const opShape_1 = require("../helpers/opShape");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 function cap(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -24,6 +25,7 @@ const AgentGuideFeature = (0, component_1.cmp)(function AgentGuideFeature(props)
         .map((h) => h.name || h.key$)
         .filter(Boolean);
     const defaultOn = (0, facts_1.fact)(feature, 'on');
+    const ops = (0, opShape_1.generatedOps)(ctx$.model);
     (0, jostraca_1.Folder)({ name: 'src/feature/' + name }, () => {
         (0, jostraca_1.File)({ name: 'AGENTS.md' }, () => {
             (0, jostraca_1.Content)(`# ${Name}Feature — Agent Guide
@@ -31,7 +33,7 @@ const AgentGuideFeature = (0, component_1.cmp)(function AgentGuideFeature(props)
 ${title} (v${version}).
 
 A **feature** is a pipeline extension: an object of hooks that fire at named
-stages of every entity operation (load, list, create, update, patch, remove) and of
+stages of every entity operation${0 < ops.length ? ' (' + ops.join(', ') + ')' : ''} and of
 the SDK/entity lifecycle. Features are how you inspect or modify the request
 pipeline without forking the SDK. This directory holds the **generated**
 runtime for the \`${name}\` feature in the ${target.title || lang} target — do
@@ -73,8 +75,8 @@ later feature can override an earlier one.
   \`.sdk/tm/${lang}/src/feature/${name}/\`, then regenerate.
 
 After any change: \`cd ../../../../.sdk && npm run generate\` (add
-\`npm run build\` first if you changed a component). If a regenerated file
-shows a literal \`FEATURE_Name\`/\`ProjectName\`, delete it and regenerate.
+\`npm run build\` first if you changed a component).
+${(0, AgentGuideContent_1.regenerationStatement)()}
 
 To author a **new** feature, copy this one's model + template shape — see the
 [project guide](../../../../AGENTS.md) and the

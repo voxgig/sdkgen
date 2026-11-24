@@ -8,17 +8,17 @@ import Path from 'node:path'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeIntro, introOps } from '../dist/sdkgen.js'
+import { ReadmeIntro, applyFacts, introOps } from '../dist/sdkgen.js'
 
 
-const model = {
+const model = applyFacts({
   name: 'demo', Name: 'Demo',
   main: { kit: {
     info: { tagline: 'Tagged.' },
     target: { body: {}, whole: {}, 'go-cli': {} },
     entity: {},
   } },
-}
+})
 
 
 describe('ReadmeIntro', () => {

@@ -100,6 +100,56 @@ describe('PublishWorkflow', () => {
   })
 
 
+  test('an inactive registry gets no workflow, a pending one does', async () => {
+    const npm = (state: string) => ({ name: 'npm', state })
+    const out = await render({
+      ts: { active: true, name: 'ts', publish: { registry: npm('inactive') } },
+      js: { active: true, name: 'js', publish: { registry: { ...npm('pending'), package: '@acme/demo-js' } } },
+    })
+    strictEqual(out['.github/workflows/publish-ts.yml'], undefined, 'inactive ts got a workflow')
+    ok(null != out['.github/workflows/publish-js.yml'], 'pending js lost its workflow')
+    const doc = out['.sdk/PUBLISHING.md']
+    ok(!doc.includes('`ts/`') && !doc.includes('publish-ts.yml'), 'the doc lists the inactive target')
+    ok(!out['.sdk/admin/setup-npm-trust.sh'].includes('publish-ts.yml'),
+      'the trust script registers the inactive target')
+
+    const none = await render({ ts: { active: true, name: 'ts', publish: { registry: npm('inactive') } } })
+    deepStrictEqual(Object.keys(none).filter((p) => p.startsWith('.github/') || p.startsWith('.sdk/')), [],
+      'emitted something for an inactive registry')
+  })
+
+
+  // The root Makefile publishes an active registry and only tags a pending
+  // one, so "it also publishes" is the reason for a dispatch only when active.
+  test('the dispatch reason follows the registry state', async () => {
+    const reason = (doc: string) => doc.slice(doc.indexOf('It is a DISPATCH'), doc.indexOf('## The release'))
+    const ts = (state?: string) => ({
+      active: true, name: 'ts',
+      publish: { registry: { name: 'npm', ...(state ? { state } : {}) } },
+    })
+
+    const active = await render({ ts: ts('active') })
+    ok(reason(active['.sdk/PUBLISHING.md']).includes('also\npublishes, with a vault-injected token'),
+      reason(active['.sdk/PUBLISHING.md']))
+    ok(active['.github/workflows/publish-ts.yml'].includes('The deploy Makefile publishes with a'))
+
+    for (const state of [undefined, 'pending']) {
+      const out = await render({ ts: ts(state) })
+      const why = reason(out['.sdk/PUBLISHING.md'])
+      ok(why.includes('only cuts the git tag') && !why.includes('also\npublishes'), why)
+      const wf = out['.github/workflows/publish-ts.yml']
+      ok(wf.includes('Makefile only cuts the git tag') && !wf.includes('Makefile publishes with a'), wf.slice(0, 1600))
+    }
+
+    const mixed = await render({
+      ts: ts('active'),
+      js: { active: true, name: 'js', publish: { registry: { name: 'npm', package: '@acme/demo-js' } } },
+    })
+    const why = reason(mixed['.sdk/PUBLISHING.md'])
+    ok(why.includes('Where a registry is active') && why.includes('Where one is pending'), why)
+  })
+
+
   test('each npm target names its own package', async () => {
     const out = await render({
       ts: {

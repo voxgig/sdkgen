@@ -427,6 +427,18 @@ function introOps(model: any): string[] {
 }
 
 
+// The operations the active entities have a generated method for, in
+// canonical order; none when no entity has one.
+function generatedOps(model: any): string[] {
+  const entity = getModelPath(model, `main.${KIT}.entity`, { required: false }) || {}
+  const found = new Set<string>()
+  for (const e of Object.values(entity) as any[]) {
+    for (const o of entityOps(e)) found.add(o)
+  }
+  return CANON_OP_ORDER.filter((o) => found.has(o))
+}
+
+
 type UngeneratedOp = { entity: string, op: string, points: string[] }
 
 
@@ -792,6 +804,7 @@ export {
   entityRecordIdField,
   entityOps,
   introOps,
+  generatedOps,
   invalidRequest,
   entityPrimaryOp,
   pickExampleEntity,

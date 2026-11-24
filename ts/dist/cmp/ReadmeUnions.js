@@ -4,11 +4,16 @@ exports.MIN_REPORTED_BRANCHES = exports.ReadmeUnions = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
+const canonType_1 = require("../helpers/canonType");
+const packageMeta_1 = require("../helpers/packageMeta");
 const MIN_REPORTED_BRANCHES = 3;
 exports.MIN_REPORTED_BRANCHES = MIN_REPORTED_BRANCHES;
 const ReadmeUnions = (0, component_1.cmp)(function ReadmeUnions(props) {
-    const { ctx$ } = props;
+    const { ctx$, target } = props;
     const { model } = ctx$;
+    // Where a language cannot join a union's branches, a two-variant field is
+    // an open value too, though it is below the table's threshold.
+    const joins = null != canonType_1.CANON_UNION_JOIN[(0, packageMeta_1.originName)(model, target?.name)];
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     const rows = [];
     (0, jostraca_1.each)(entity, (ent) => {
@@ -53,7 +58,8 @@ ${rows.map((r) => `| \`${r.entity}\` | \`${r.field}\` | ${r.branches} | ` +
 
 These values round-trip unchanged — read them, modify them, send them back. If
 the API adds a \`discriminator\` to the definition, regenerating will type them.
-Every other field is typed normally.
+${joins ? 'Every other field is typed normally.' :
+        'A field with two variants is an open value here too; every other field is\ntyped normally.'}
 `);
 });
 exports.ReadmeUnions = ReadmeUnions;

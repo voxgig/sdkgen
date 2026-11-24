@@ -19,5 +19,6 @@ declare function compileModel(src: string, path: string, opts?: {
 }): CompileResult;
 declare const PUBLISH_OVERRIDES: [string, string, string][];
 declare function publishOverrideProbe(src: string, path: string, tname: string): CompileResult;
+declare function schemaHooks(): string[];
 export type { CompileResult, };
-export { ANCHOR, ANCHOR_RE, PUBLISH_OVERRIDES, aontuKey, compileModel, includeLine, publishOverrideProbe, slashComments, strictAontu, unquoted, };
+export { ANCHOR, ANCHOR_RE, PUBLISH_OVERRIDES, aontuKey, compileModel, includeLine, publishOverrideProbe, schemaHooks, slashComments, strictAontu, unquoted, };

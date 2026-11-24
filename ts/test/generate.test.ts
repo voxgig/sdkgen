@@ -109,11 +109,13 @@ function quickStarts(readme: string): Record<string, string> {
 }
 
 
+// The agent guides name each feature's template by its path in `.sdk/tm/`, whose
+// folder keeps the placeholder name (`Sources/ProjectNameSDK`, `lib/projectname`).
 const PLACEHOLDER_PINNED = [
   /^swift\/Package\.swift$/,
   /^swift\/README\.md$/,
   /^swift\/Tests\/ProjectNameSDKTests\//,
-  /^[^/]+\/src\/feature\/[^/]+\/AGENTS\.md$/,
+  /^(elixir|swift)\/AGENTS\.md$/,
 ]
 
 
@@ -167,9 +169,46 @@ function foldedPaths(paths: string[]): string[] {
 }
 
 
+// What the generate-time check finds that another work package fixes. Each
+// pin goes when that fix lands.
+const DOC_PINS: { point: string, file: RegExp, note: RegExp, reason: string }[] = [
+  {
+    point: 'doc-link-dangling', file: /^(README|AGENTS)\.md$/, note: /^[\w-]+\/(README|AGENTS)\.md$/,
+    reason: 'S43, S44, S45 (WP14): a root document links the README or guide of a target that writes none',
+  },
+  {
+    point: 'doc-table-broken', file: /\/(README|REFERENCE)\.md$/, note: /`[^`]*\| null`/,
+    reason: 'New: a nullable field type prints as `T | null` in a field table, its pipe unescaped inside ' +
+      'the code span; the copy wave escapes these cells (WP33)',
+  },
+  {
+    point: 'doc-link-dangling', file: /^README\.md$/, note: /^\.sdk\//,
+    reason: 'The test stage has no `.sdk/def/`, which every project has',
+  },
+]
+
+function docBreaks(warnings: any[]): any[] {
+  return warnings.filter((w: any) => /^doc-/.test(w.point) &&
+    !DOC_PINS.some((pin) => pin.point === w.point && pin.file.test(w.file) && pin.note.test(w.note)))
+}
+
+
+// A project's generate only warns of a broken table or link; every generate
+// in this suite fails on one.
 async function generate(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
   buildctx?: any,
+): Promise<Record<string, string>> {
+  const warnings: any[] = []
+  const out = await generateWarning(targetNames, name, extra, sink, features, buildctx, warnings)
+  deepStrictEqual(docBreaks(warnings), [], 'a generated document breaks a table or a link')
+  return out
+}
+
+
+async function generateWarning(
+  targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
+  buildctx?: any, warnings?: any[],
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -177,7 +216,7 @@ async function generate(
     fs: layeredFs(fs),
     folder: STAGE,
     root: '',
-    pino: makeLog(sink),
+    pino: makeLog(sink, warnings),
   })
 
   // generate() either completes or throws — it has no failure return. Let the
@@ -760,6 +799,123 @@ describe('generate', () => {
   })
 
 
+  test('the root readme keeps a Packages row for every target, whatever its registry', async () => {
+    const rows = (readme: string): string[] => (topSections(readme)['Packages'] || '').split('\n')
+      .filter((line: string) => /^\| (?!Language |---)/.test(line))
+
+    const out = await generate(['java', 'c', 'rust'], undefined,
+      "main: kit: target: java: publish: registry: state: 'active'\n" +
+      "main: kit: target: rust: publish: registry: state: 'active'")
+    const table = rows(out['README.md'])
+    deepStrictEqual(table.map((line) => line.split(' | ')[0]).sort(), ['| C', '| Java', '| Rust'])
+    ok(table.some((line) => line.startsWith('| Java |') && line.includes('(java/README.md#install)')), table.join('\n'))
+    ok(table.some((line) => line.startsWith('| Rust |') && line.includes('`cargo add ')), table.join('\n'))
+    ok(table.some((line) => line.startsWith('| C |') && line.includes('build from source')), table.join('\n'))
+    ok(!table.some((line) => /none|publish pending/.test(line)), table.join('\n'))
+  })
+
+
+  test('the first changelog entry is the version the targets start at', async () => {
+    const one = await generate(['ts', 'py'], undefined,
+      "main: kit: target: ts: publish: version: '1.2.0'\n" +
+      "main: kit: target: py: publish: version: '1.2.0'")
+    ok(/^## \[1\.2\.0\]$/m.test(one['CHANGELOG.md']), one['CHANGELOG.md'])
+    ok(!one['CHANGELOG.md'].includes('[0.0.1]'), one['CHANGELOG.md'])
+
+    const two = await generate(['ts', 'py'], undefined, "main: kit: target: ts: publish: version: '2.0.0'")
+    ok(/^## Initial release$/m.test(two['CHANGELOG.md']), two['CHANGELOG.md'])
+
+    ok(/^## \[0\.0\.1\]$/m.test((await generate(['ts']))['CHANGELOG.md']))
+  })
+
+
+  // A table row that ends as its header ends, with as many cells.
+  const wellFormed = (doc: string): string[] => {
+    const bad: string[] = []
+    let header = ''
+    for (const line of doc.split('\n')) {
+      if (!line.startsWith('|')) { header = ''; continue }
+      if ('' === header) { header = line; continue }
+      const cells = (row: string) => (row.match(/(?<!\\)\|/g) || []).length
+      if (!line.endsWith('|') || cells(line) !== cells(header)) bad.push(line)
+    }
+    return bad
+  }
+
+
+  test('feature defaults and types holding a pipe or a backtick keep their rows whole', async () => {
+    const out = await generate(['ts'], undefined, [
+      "main: kit: feature: netsim: config: options: sep: 'a|b'",
+      "main: kit: feature: netsim: config: options: tick: 'x`y'",
+      "main: kit: feature: netsim: config: optspec: shape: ['`$ONE`', '`$NUMBER`', '`$MAP`']",
+    ].join('\n'), undefined, ['test', 'netsim'])
+    for (const doc of ['ts/README.md', 'ts/REFERENCE.md']) {
+      deepStrictEqual(wellFormed(out[doc]), [], doc)
+    }
+    ok(out['ts/README.md'].includes("| `sep` | `'a\\|b'` |"), 'the pipe default is not one code span')
+    ok(out['ts/README.md'].includes("| `tick` | `` 'x`y' `` |"), 'the backtick default is not fenced past it')
+    ok(out['ts/REFERENCE.md'].includes('| `shape` | number \\| map |'), 'the union type splits its row')
+  })
+
+
+  test('spec text in the root README keeps its table, its links and its fences in place', async () => {
+    const desc = 'Planets | moons.\n\n```python\nraise SystemExit(3)\n```\nSee [guide](guide.md) and $$name$$.'
+    const warnings: any[] = []
+    const out = await generateWarning(['ts'], undefined, [
+      'main: kit: entity: planet: short: ' + JSON.stringify(desc),
+      'main: kit: text: entity_desc: record: ' + JSON.stringify('Own [notes](notes.md) | here'),
+      "main: kit: info: summary: 'Summary with [a page](page.md) and [the site](https://example.com/a_(b))'",
+      "main: kit: info: website: 'https://example.com/a_(b) c/'",
+    ].join('\n'), undefined, undefined, undefined, warnings)
+    // The language docs print the spec's entity text as written until the copy
+    // wave; the project's own link stays, and dangles.
+    deepStrictEqual(docBreaks(warnings).filter((w: any) => !w.file.startsWith('ts/'))
+      .map((w: any) => w.point + ' ' + w.file + ' ' + w.note), ['doc-link-dangling README.md notes.md'])
+    const readme = out['README.md']
+    deepStrictEqual(wellFormed(readme), [])
+    const row = readme.split('\n').find((line: string) => line.startsWith('| **Planet** |')) || ''
+    strictEqual(row, '| **Planet** | Planets \\| moons.<br><br>&#96;&#96;&#96;python<br>raise SystemExit(3)<br>' +
+      '&#96;&#96;&#96;<br>See guide and $&#36;name$&#36;. | `/planet` |')
+    ok(readme.includes('| **Record** | Own [notes](notes.md) \\| here |'), 'the project\'s own link was unwrapped')
+    ok(readme.includes('Summary with a page and [the site](https://example.com/a_(b))'), 'the spec summary')
+    ok(readme.includes('at [example.com/a_(b) c](https://example.com/a_%28b%29%20c/).'), 'the website link')
+    ok(!/^```python$/m.test(readme), 'a fence from the spec opened in the root README')
+  })
+
+
+  test('a line break or a pipe in a field description warns of the table it breaks', async () => {
+    const warnings: any[] = []
+    await generateWarning(['ts'], undefined,
+      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('Mean | radius\nin km'),
+      undefined, undefined, undefined, warnings)
+    const broken = warnings.filter((w: any) => 'doc-table-broken' === w.point)
+    ok(broken.some((w: any) => 'ts/README.md' === w.file), JSON.stringify(warnings.map((w: any) => w.point)))
+    ok(broken.every((w: any) => 'number' === typeof w.line && '' !== w.note))
+  })
+
+
+  test('a link to nothing the run wrote warns, and an encoded URL does not', async () => {
+    const warnings: any[] = []
+    await generateWarning(['ts'], undefined, [
+      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('See [radius](radius.md).'),
+      "main: kit: info: website: 'https://example.com/a_(b)'",
+    ].join('\n'), undefined, undefined, undefined, warnings)
+    const dangling = warnings.filter((w: any) => 'doc-link-dangling' === w.point)
+    ok(dangling.some((w: any) => 'ts/radius.md' === w.note), JSON.stringify(dangling))
+    ok(!dangling.some((w: any) => /example\.com/.test(w.note)), JSON.stringify(dangling))
+  })
+
+
+  test('a link with a malformed escape warns, and the run completes', async () => {
+    const warnings: any[] = []
+    await generateWarning(['ts'], undefined,
+      'main: kit: text: entity_desc: record: ' + JSON.stringify('See [the guide](100%.md).'),
+      undefined, undefined, undefined, warnings)
+    const dangling = warnings.filter((w: any) => 'doc-link-dangling' === w.point)
+    ok(dangling.some((w: any) => 'README.md' === w.file && '100%.md' === w.note), JSON.stringify(dangling))
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 
@@ -932,7 +1088,8 @@ main: kit: target: js: phase: feature: active: false
 
 
   test('ts/js readme and agent guide lead with the declarative station flow', async () => {
-    const out = await generate(['ts', 'js'], undefined, STATION_FEATURE)
+    const out = await generate(['ts', 'js'], undefined,
+      "main: kit: config: auth: { active: true, prefix: 'Bearer' }\n" + STATION_FEATURE)
 
     const agents = out['AGENTS.md']
     ok(null != agents, 'no root AGENTS.md generated')
@@ -964,6 +1121,11 @@ main: kit: target: js: phase: feature: active: false
       ok(src.includes('docs/reference/station-errors.md'),
         target + ': README does not link the station error catalog')
     }
+
+    // The fixture's API has no auth, so there is no key to name.
+    const keyless = String((await generate(['ts', 'js'], undefined, STATION_FEATURE))['ts/README.md'])
+    ok(keyless.includes("station.sdk('demo')") && !keyless.includes('`DEMO_APIKEY`'),
+      'README names an API key secret for an API with no auth')
 
     const bare = await generate(['ts'])
     ok(!String(bare['ts/README.md']).includes('Use with Station'),

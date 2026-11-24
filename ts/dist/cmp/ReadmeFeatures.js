@@ -17,20 +17,29 @@ const ReadmeFeatures = (0, component_1.cmp)(function ReadmeFeatures(props) {
     if (0 === features.length) {
         return;
     }
+    const on = features.filter((f) => f.on).map((f) => f.name);
+    const off = features.length - on.length;
+    const one = 1 === features.length;
+    const state = 0 === on.length ?
+        `${one ? 'It is' : 'Each is'} **inactive until you switch it on**, so an SDK you have not
+configured behaves exactly as if ${one ? 'it did not exist' : 'none of them existed'}, with no measurable overhead.` :
+        `${(0, FeatureDocs_1.codeList)(on)} ${1 === on.length ?
+            'is **on by default** and runs until you switch it off.' :
+            'are **on by default** and run until you switch them off.'}${0 === off ? '' : 1 === off ?
+            '\nThe other is **inactive until you switch it on**.' :
+            '\nThe others are **inactive until you switch them on**.'}`;
     (0, jostraca_1.Content)(`## Features
 
-This SDK ships ${features.length} optional features. Each is **inactive until you
-switch it on**, so an SDK you have not configured behaves exactly as if none of
-them existed — no retries, no cache, no logging, no measurable overhead.
+This SDK ships ${features.length} optional feature${one ? '' : 's'}.
+${state}
 
-Activate a feature by name in the client options, alongside the options shown
-above:
+Activate a feature by name in the \`feature\` client option:
 
 | Feature | What it does |
 |---|---|
 `);
     for (const f of features) {
-        (0, jostraca_1.Content)(`| [\`${f.name}\`](#${f.name}) | ${f.title} |
+        (0, jostraca_1.Content)(`| [\`${f.name}\`](#${f.name}) | ${f.titleCell} |
 `);
     }
     (0, jostraca_1.Content)(`
@@ -64,7 +73,7 @@ ${f.title}.
 |---|---|
 `);
             for (const o of f.options) {
-                (0, jostraca_1.Content)(`| \`${o.name}\` | \`${o.value}\` |
+                (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.code} |
 `);
             }
             (0, jostraca_1.Content)(`

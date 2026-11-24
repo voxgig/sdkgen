@@ -6,6 +6,10 @@ import Fs from 'node:fs'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
+import { Jostraca, Project, Folder, File } from 'jostraca'
+import { memfs } from 'memfs'
+
+import { ReadmeErrors, ReadmeExplanation } from '../dist/sdkgen.js'
 
 import { makeProject, targetRef, target_add, SCAFFOLD, ROOT } from './actionharness'
 
@@ -300,5 +304,50 @@ describe('aliased target add', () => {
 
     ok(files.includes('model/target/go.aontu'), 'no model/target/go.aontu')
     ok(files.includes('src/cmp/go/Main_go.ts'), 'no src/cmp/go/Main_go.ts')
+  })
+})
+
+
+// An alias writes its origin's wording, and names its variables by its origin's rules.
+describe('aliased target documents', () => {
+
+  const quiet: any = { info() {}, debug() {}, warn() {}, error() {}, trace() {}, fatal() {} }
+  quiet.child = () => quiet
+
+  const model = () => ({
+    name: 'demo',
+    const: { name: 'demo', Name: 'Demo' },
+    main: { kit: {
+      target: { go: { name: 'go' }, go2: { name: 'go2', origname: 'go' } },
+      entity: {
+        // `func` is reserved in go but not in ts.
+        func: {
+          active: true, name: 'func', fields: { id: { n: 'id' } },
+          op: { load: { active: true, points: [{ params: [{ n: 'id', t: '$STRING' }] }] } },
+        },
+      },
+      feature: { test: { active: true, name: 'test', title: 'Test mode (offline)' } },
+    } },
+  })
+
+  async function render(comp: any, target: string): Promise<string> {
+    const { fs, vol } = memfs({})
+    await Jostraca().generate({ fs: () => fs, folder: '/x', model: model(), log: quiet }, () => {
+      Project({ folder: 'p' }, () => Folder({ name: 'd' }, () => File({ name: 'out.md' }, () => {
+        comp({ target: { name: target } })
+      })))
+    })
+    const json: any = vol.toJSON()
+    return json[Object.keys(json).find((k) => k.endsWith('out.md'))!]
+  }
+
+  test('go~go2 error handling and entity state equal go\'s', async () => {
+    for (const comp of [ReadmeErrors, ReadmeExplanation]) {
+      const go = await render(comp, 'go')
+      strictEqual(await render(comp, 'go2'), go)
+      ok(go.includes('```go\n'))
+      ok(!go.includes('```ts'))
+    }
+    ok((await render(ReadmeErrors, 'go2')).includes('func_, err := '))
   })
 })

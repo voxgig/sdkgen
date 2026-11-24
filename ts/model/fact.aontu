@@ -37,3 +37,23 @@ main: kit: target: &: {
     }
   }
 }
+
+
+escape: &: {
+  raw: string
+  vendor: boolean
+  text: rep(match(.vendor, true,
+    rep(rep(.raw, "!?\\[([^\\]]*)\\]\\((?:[^#:()/]|/[^/:()])[^:()]*\\)", "$1"), "```", "&#96;&#96;&#96;"),
+    .raw), "[$][$]", "$$&#36;")
+  inline: rep(rep(.text, "[ \t]*\r?\n[ \t]*", " "), "```", "&#96;&#96;&#96;")
+  cell: rep(rep(rep(.text, "[|]", "\\|"), "\r?\n", "<br>"), "```", "&#96;&#96;&#96;")
+  label: rep(rep(.inline, "^https?://", ""), "/$", "")
+  link: rep(rep(rep(rep(.raw, "[(]", "%28"), "[)]", "%29"), " ", "%20"), "[$][$]", "$$&#36;")
+  flat: rep(.raw, "\r?\n", " ")
+  code: match(.flat, "", "",
+    re(".*```.*"), "```` " + .flat + " ````",
+    re(".*``.*"), "``` " + .flat + " ```",
+    re(".*`.*"), "`` " + .flat + " ``",
+    "`" + .flat + "`")
+  codecell: rep(.code, "[|]", "\\|")
+}

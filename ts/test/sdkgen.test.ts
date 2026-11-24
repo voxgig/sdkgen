@@ -464,7 +464,9 @@ main: kit: java: {}
     return cmp(function Root(props: any) {
       const { model } = props
       Project({ folder: model.name }, () => {
+        // Every member is a language here, but for the facts the pass adds.
         each(model.main.kit, (kit: any) => {
+          if ('fact' === kit.key$) return
           Folder({ name: kit.name }, () => {
             File({ name: 'README.md' }, () => {
               Content(`

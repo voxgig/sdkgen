@@ -186,7 +186,7 @@ function seededList(lang: LiteralLang, ent: any, idF: string | null, key: string
 
 
 // An update or patch addressed only by id and route also changes a field.
-function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): string {
+function dataItems(ent: any, op: string, idF: string | null): any[] {
   const routed = new Set(opParams(ent?.op?.[op]).map((p: any) => p.n))
   const addresses = (it: any) => it.name === idF || it.name === 'id' || routed.has(it.name)
   const items = requestExampleItems(ent, op)
@@ -195,7 +195,12 @@ function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): s
   const required = items.filter((it: any) => !it.optional)
   const changed = ('update' === op || 'patch' === op) && required.every(addresses) ?
     items.filter((it: any) => it.optional && !addresses(it)).slice(0, 1) : []
-  const chosen = required.length ? [...required, ...changed] : items.slice(0, 3)
+  return required.length ? [...required, ...changed] : items.slice(0, 3)
+}
+
+
+function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): string {
+  const chosen = dataItems(ent, op, idF)
   const pairs = chosen.map((it: any) => litPair(lang, it.name, litFor(lang, it.type)))
   switch (lang) {
     case 'php': return `[${pairs.join(', ')}]`
@@ -203,6 +208,30 @@ function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): s
     case 'go': return `map[string]any{${pairs.join(', ')}}`
     default: return `{ ${pairs.join(', ')} }`
   }
+}
+
+
+type ArgItem = {
+  name: string
+  type: any
+  id: boolean
+}
+
+
+// The members a primary-op example sends: those matchArg, listMatchArg and
+// dataArg write, each marked when it carries the entity's id.
+function exampleArgItems(ent: any, op: string, idF: string | null): ArgItem[] {
+  const item = (it: any, id: boolean) => ({ name: it.name, type: it.type, id })
+  if ('list' === op) {
+    return requiredItems(ent, 'list').map((it: any) => item(it, false))
+  }
+  if ('load' === op || 'remove' === op) {
+    return requiredItems(ent, op).map((it: any) => item(it, it.name === idF))
+  }
+  if ('create' === op || 'update' === op || 'patch' === op) {
+    return dataItems(ent, op, idF).map((it: any) => item(it, false))
+  }
+  return []
 }
 
 
@@ -275,6 +304,8 @@ export {
   listMatchArg,
   seededList,
   dataArg,
+  dataItems,
+  exampleArgItems,
   javaMap,
   javaMapOf,
   javaMapItems,
@@ -284,6 +315,7 @@ export {
 }
 
 export type {
+  ArgItem,
   ExampleLang,
   LiteralLang,
   PrimaryCall,

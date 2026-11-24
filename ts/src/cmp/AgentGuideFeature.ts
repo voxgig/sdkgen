@@ -2,8 +2,9 @@
 import { each, Content, File, Folder } from 'jostraca'
 import { cmp } from '../helpers/component'
 import { fact } from '../helpers/facts'
+import { generatedOps } from '../helpers/opShape'
 
-import { claudePointer } from './AgentGuideContent'
+import { claudePointer, regenerationStatement } from './AgentGuideContent'
 
 
 function cap(s: string): string {
@@ -30,6 +31,7 @@ const AgentGuideFeature = cmp(function AgentGuideFeature(props: any) {
     .filter(Boolean)
 
   const defaultOn = fact(feature, 'on')
+  const ops = generatedOps(ctx$.model)
 
   Folder({ name: 'src/feature/' + name }, () => {
 
@@ -39,7 +41,7 @@ const AgentGuideFeature = cmp(function AgentGuideFeature(props: any) {
 ${title} (v${version}).
 
 A **feature** is a pipeline extension: an object of hooks that fire at named
-stages of every entity operation (load, list, create, update, patch, remove) and of
+stages of every entity operation${0 < ops.length ? ' (' + ops.join(', ') + ')' : ''} and of
 the SDK/entity lifecycle. Features are how you inspect or modify the request
 pipeline without forking the SDK. This directory holds the **generated**
 runtime for the \`${name}\` feature in the ${target.title || lang} target — do
@@ -83,8 +85,8 @@ later feature can override an earlier one.
   \`.sdk/tm/${lang}/src/feature/${name}/\`, then regenerate.
 
 After any change: \`cd ../../../../.sdk && npm run generate\` (add
-\`npm run build\` first if you changed a component). If a regenerated file
-shows a literal \`FEATURE_Name\`/\`ProjectName\`, delete it and regenerate.
+\`npm run build\` first if you changed a component).
+${regenerationStatement()}
 
 To author a **new** feature, copy this one's model + template shape — see the
 [project guide](../../../../AGENTS.md) and the

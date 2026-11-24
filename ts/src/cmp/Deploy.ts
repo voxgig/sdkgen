@@ -1,7 +1,7 @@
 import { each, Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { packageVersion } from '../helpers/packageMeta'
+import { packageVersion, registryState } from '../helpers/packageMeta'
 
 import {
   KIT,
@@ -29,27 +29,25 @@ const Deploy = cmp(function Deploy(props: any) {
 
   ctx$.log.info({
     point: 'generate-deploy',
-    note: 'targets: ' + targets.map((t: any) =>
-      t.name + (registryOf(t) ? (':' + registryOf(t).name + (regIsActive(registryOf(t)) ? '' : '(publish pending)')) : ':tag-only')
-    ).join(',')
+    note: 'targets: ' + targets.map((t: any) => {
+      const state = registryState(model, t.name)
+      return t.name + ('tag' === state ? ':tag-only' :
+        ':' + registryOf(t).name + ('active' === state ? '' : '(publish ' + pendingWord(state) + ')'))
+    }).join(',')
   })
 })
 
 
+// The declared registry block, `none` included: a port that declares one
+// has its release tag cut at the root, whatever registryState calls it.
 function registryOf(t: any): any | undefined {
   const reg = t.publish?.registry
   return (reg && '' !== (reg.name || '')) ? reg : undefined
 }
 
 
-// A registry is active (package really uploaded) when its tri-state
-// `state === 'active'`. The legacy boolean `active: true` is honoured as a
-// back-compat alias. Anything else — 'pending' (the default), 'inactive' —
-// means a deploy publishes the git tag only.
-function regIsActive(reg: any): boolean {
-  if (null == reg) return false
-  if (true === reg.active) return true
-  return 'active' === reg.state
+function pendingWord(state: string): string {
+  return 'inactive' === state ? 'inactive' : 'pending'
 }
 
 
@@ -92,16 +90,16 @@ function makeDeployMakefile(model: any, targets: any[]): string {
       aliasVars.set(aliasVarName(ghRecipe), tagVault.alias || ghRecipe)
     }
     const reg = registryOf(t)
-    if (reg && !aliasVars.has(aliasVarName(reg.name))) {
+    if (reg && 'tag' !== registryState(model, t.name) && !aliasVars.has(aliasVarName(reg.name))) {
       aliasVars.set(aliasVarName(reg.name), reg.vault?.alias || reg.name)
     }
   }
 
   const summary = targets.map((t: any) => {
     const reg = registryOf(t)
-    const state = reg
-      ? `${reg.name} (${regIsActive(reg) ? 'ACTIVE' : 'publish pending: deploy publishes the git tag only'}) ${reg.url || ''}`.trim()
-      : 'tag-only'
+    const rs = registryState(model, t.name)
+    const state = 'tag' === rs ? 'tag-only' :
+      `${reg.name} (${'active' === rs ? 'ACTIVE' : 'publish ' + pendingWord(rs) + ': deploy publishes the git tag only'}) ${reg.url || ''}`.trim()
     return `#   ${t.name.padEnd(8)} ${state}`
   }).join('\n')
 
@@ -113,8 +111,9 @@ function makeDeployMakefile(model: any, targets: any[]): string {
     const args = vaultExecArgs(t)
 
     const via = t.publish?.tag?.via || 'port'
+    const rs = registryState(model, t.name)
 
-    if (!reg && 'root' === via) {
+    if ('tag' === rs && (reg || 'root' === via)) {
       return `
 deploy-${t.name}:
 \t@echo "deploy-${t.name}: tag-only port — publishing the git tag."
@@ -126,15 +125,16 @@ ${tagPushRecipe(t.name, packageVersion(model, t.name), 'tag-only port')}
 `
     }
 
-    if (reg && !regIsActive(reg)) {
+    if ('tag' !== rs && 'active' !== rs) {
+      const word = pendingWord(rs)
       return `
 deploy-${t.name}:
-\t@echo "deploy-${t.name}: ${reg.name} publication is pending — publishing the git tag only."
+\t@echo "deploy-${t.name}: ${reg.name} publication is ${word} — publishing the git tag only."
 \tboru vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, packageVersion(model, t.name), reg.name + ' publication pending — tag-only deploy')}
+${tagPushRecipe(t.name, packageVersion(model, t.name), reg.name + ' publication ' + word + ' — tag-only deploy')}
 `
     }
 
@@ -192,7 +192,9 @@ deploy:
 \t@echo "Registry state is set in the model (.sdk/model/target/<t>.aontu):"
 ${targets.map((t: any) => {
     const reg = registryOf(t)
-    const state = reg ? `${reg.name} ${regIsActive(reg) ? 'ACTIVE' : 'publish pending (deploy = git tag only)'}` : 'tag-only'
+    const rs = registryState(model, t.name)
+    const state = 'tag' === rs ? 'tag-only' :
+      `${reg.name} ${'active' === rs ? 'ACTIVE' : 'publish ' + pendingWord(rs) + ' (deploy = git tag only)'}`
     return `\t@echo "  deploy-${t.name.padEnd(8)} ${state}"`
   }).join('\n')}
 \t@echo "Rehearse everything safely first: make deploy-dry"

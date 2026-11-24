@@ -134,6 +134,25 @@ describe('Deploy', () => {
     doesNotMatch(makefile, /deploy-old:|tag-push-old:/)
   })
 
+  test('a registry named none is tag-only, its tag cut at the root', async () => {
+    const makefile = await render({
+      c: { name: 'c', publish: { version: '1.0.0', registry: { name: 'none', vault: { alias: 'none', env: 'NONE' } } } },
+    })
+    match(makefile, /^#\s+c\s+tag-only$/m)
+    match(makefile, /deploy-c\s+tag-only/)
+    match(makefile, /deploy-c: tag-only port — publishing the git tag\./)
+    match(makefile, /^tag-push-c:/m)
+    doesNotMatch(makefile, /none \(|publication is pending|NONE_ALIAS/)
+  })
+
+  test('an inactive registry is called inactive, not pending', async () => {
+    const makefile = await render({
+      rb: { name: 'rb', publish: { registry: { name: 'gem', state: 'inactive' } } },
+    })
+    match(makefile, /gem publication is inactive — publishing the git tag only/)
+    doesNotMatch(makefile, /gem publication is pending|publish pending/)
+  })
+
   test('does not emit a Makefile without active targets', async () => {
     strictEqual(await render({}), '')
     strictEqual(await render({ py: { name: 'py', active: false } }), '')

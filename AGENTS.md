@@ -506,13 +506,17 @@ markers on toolchain bumps): [regeneration-overwrite](./docs/explanation/regener
 ```
 edit sdkgen template/component
   └─▶ (consumer .sdk/) npm run add-target <lang>   # copy updated files in
-       └─▶ npm run generate                         # substitute + merge into target dir
+       └─▶ npm run generate                         # substitute + overwrite target dir
 ```
 
-**Merge gotcha:** `generate` merges into existing files, and placeholder
-replacement (`ProjectName`, `GOMODULE`, …) is **not** re-applied to
-merged content. If you see a literal `ProjectName` in output, delete that
-generated file and re-run `generate` to recreate it fresh.
+**Generate overwrites; an add merges.** `generate` rewrites every file it
+generates, substituting the placeholders (`ProjectName`, `GOMODULE`, …) on
+every run, and deletes the files it generated before and no longer emits
+from the targets and phases that ran (`pruneGenerated`). `target add` and
+`feature add` merge toolchain updates into the project's edited copies under
+`.sdk/`, or overwrite them when the project sets `main: kit: copies:
+'overwrite'` (`copyMode`). The generated guides say both, from
+`regenerationStatement` and `copiesStatement` in `AgentGuideContent`.
 
 A PROJECT customises in its own `.sdk`, in this order: edit the template or
 component copy; else define a feature of its own (`.sdk/model/feature/`,
@@ -624,19 +628,27 @@ at the root. The variations come from the compiled fixture; none is listed by
 hand, and the fixture's entity names are opaque tokens so a mention scan
 cannot mistake `console` or `record` for prose. It reports:
 
-- `link`: a relative link, anchor or `cd` that does not resolve in what that
-  run wrote (`.sdk/` and the templates a target's Main copies count).
+- `link`: a relative link, anchor or `cd` that does not resolve in what the
+  full Root writes for that variation (`.sdk/` counts too).
 - `off`: a line, in the run without X, that names X.
 - `parity`: an SDK target's section that does not read a fact (auth, servers)
   its siblings read, from the model reads attributed to each component.
 - `reaction`: a prose line that left one target's document under a variation
   and survives verbatim in a sibling's.
 - `marker`: a `$$path$$` that never fired, outside a code span.
+- `starts-off`: a sentence saying features start off ("inactive until",
+  "off by default", "opt-in") that covers a feature whose `fact.on` is true.
+  A sentence covers the features it names; with "other" or "rest", every
+  feature but those its paragraph names as on; else those its heading names;
+  else every feature the document's target carries.
+- `fence`: a code block in a target's documents tagged with another
+  language; data and shell blocks are neutral, and a consumer writes the
+  language of the target it wraps.
 
 Each finding is keyed on (relation, the chain of labelled components that
 wrote the line, cause) and must match a pin in `test/textguard-pins.json`,
 which carries a reason. A pin that matches nothing fails, so fixing a writer
-means deleting its pin. `npm test` runs `link` on a fixed subset; `npm run
+means deleting its pin. `npm test` runs `link` and `fence` on a fixed subset; `npm run
 textguard` runs the full matrix, which is a CI lane. `npm run
 textguard-update` rewrites the pins from what it finds, keeping each reason;
 a new pin reads `TODO` and fails until it has one. The operation-level
@@ -995,8 +1007,8 @@ emitted broken source reached the fleet unchallenged.
   (`"paging"` in a context type, `"proxy"` in a fetcher), so widening the
   `featuresource.test.ts` guard to quoted names produces ~25 hits of which
   one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
-  `feature: { trim: false }` (currently `clojure`, `lean`, `ocaml`,
-  `scala`, `zig` bundled, plus `lean` in the language pack — see their
+  `feature: { trim: false }` (currently `clojure`, `scala` and `zig`
+  bundled, plus `haskell` and `lean` in the language pack — see their
   model files for what has to change first). Aggregate indexes must be GENERATED, not templated: that is why
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in
@@ -1098,7 +1110,8 @@ updating both, plus the lists in this file, `README.md`,
 `docs/reference/cli.md`, `docs/reference/project-layout.md`,
 `docs/how-to/add-a-target.md` and `docs/explanation/architecture.md`.
 
-Features (all inactive by default — opt in per SDK via
+Features (all inactive by default except `log`, as each model's
+`config.options.active` says — switch one per SDK with
 `options.feature.<name>.active`):
 
 - **Core:** `log` (structured logging), `test` (in-memory mock transport;

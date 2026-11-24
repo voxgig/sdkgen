@@ -24,6 +24,9 @@ const SHIPPED = JSON.parse(
 // Where 4.34.0 kept the record, as one rewritten file.
 const LEGACY = 'sdkgen-copies.json'
 
+const NEWER = SHIPPED.version.replace(/^(\d+)\.(\d+)\..*$/,
+  (_: string, major: string, minor: string) => major + '.' + (Number(minor) + 1) + '.0')
+
 
 async function added(target = 'ts', opts: any = {}): Promise<any> {
   const project = makeProject(opts)
@@ -67,6 +70,14 @@ function ageCopy(project: any, rel: string) {
   project.fs.writeFileSync(path, older)
   project.fs.appendFileSync(ROOT + '/' + COPY_LOG,
     JSON.stringify({ op: 'add', files: { [rel]: fingerprint(older) } }) + '\n')
+}
+
+
+// The item's copies as a later release recorded them, under an installed
+// package that is older.
+function fromRelease(project: any, item: string, version: string) {
+  project.fs.appendFileSync(ROOT + '/' + COPY_LOG, JSON.stringify(
+    { op: 'add', items: { [item]: { package: '@voxgig/sdkgen', version } } }) + '\n')
 }
 
 
@@ -224,8 +235,56 @@ describe('doctor reads the copy record', () => {
     strictEqual(report.ok, false, 'outdated is drift: generate would read it')
     deepStrictEqual(report.byItem['target/ts'], {
       package: '@voxgig/sdkgen', from: SHIPPED.version, to: SHIPPED.version,
-      outdated: 1, changed: 0, customized: 0,
+      outdated: 1, ahead: 0, changed: 0, customized: 0,
     })
+  })
+
+
+  test('an untouched copy from a newer release is AHEAD, and nothing refreshes it', async () => {
+    const log = recordLog()
+    const project = await added('ts', { log })
+    const rel = firstFile(project, 'tm/ts/')
+    ageCopy(project, rel)
+    fromRelease(project, 'target/ts', NEWER)
+
+    const start = log.lines.length
+    const report: any = (await doctor(project.actx)).report
+    const said = log.lines.slice(start)
+
+    deepStrictEqual(report.ahead, [rel])
+    deepStrictEqual(report.outdated, [])
+    strictEqual(report.ok, false, 'generate would read copies its generator predates')
+    deepStrictEqual(report.byItem['target/ts'], {
+      package: '@voxgig/sdkgen', from: NEWER, to: SHIPPED.version,
+      outdated: 0, ahead: 1, changed: 0, customized: 0,
+    })
+
+    const notes = said.map((l: any) => l.note ?? '').join('\n')
+    ok(!notes.includes('--no-fetch') && !notes.includes('target add'), notes)
+    const ahead = said.find((l: any) => 'doctor-ahead' === l.point)
+    ok(ahead.note.includes('from @voxgig/sdkgen ' + NEWER + ', newer than the installed ' +
+      SHIPPED.version), ahead.note)
+    ok(ahead.note.includes('`voxgig-sdkgen package update @voxgig/sdkgen`'), ahead.note)
+
+    const lines = await copyCheck(project.actx)
+    strictEqual(lines.length, 1, lines.join('\n'))
+    ok(lines[0].includes('copied from a newer @voxgig/sdkgen than the installed ' +
+      '@voxgig/sdkgen ' + SHIPPED.version), lines[0])
+    ok(lines[0].includes('`npx voxgig-sdkgen package update @voxgig/sdkgen` to move'), lines[0])
+    ok(!lines[0].includes('--no-fetch'), lines[0])
+  })
+
+
+  test('a copy from an older release is still OUTDATED', async () => {
+    const project = await added('ts')
+    const rel = firstFile(project, 'tm/ts/')
+    ageCopy(project, rel)
+    fromRelease(project, 'target/ts', '4.22.0')
+
+    const report: any = (await doctor(project.actx)).report
+
+    deepStrictEqual(report.outdated, [rel])
+    deepStrictEqual(report.ahead, [])
   })
 
 
@@ -343,6 +402,21 @@ describe('package update reads the copy record', () => {
     strictEqual(report.ok, true, JSON.stringify(report.outdated))
     ok(!String(project.fs.readFileSync(ROOT + '/' + rel, 'utf8'))
       .includes('older generator'), 'the outdated copy was not refreshed')
+  })
+
+
+  test('says --no-fetch puts older copies back over newer ones', async () => {
+    const log = recordLog()
+    const project = await added('ts', { log })
+    ageCopy(project, firstFile(project, 'tm/ts/'))
+    fromRelease(project, 'target/ts', NEWER)
+
+    project.actx.flags = { nofetch: true }
+    await package_update(['@voxgig/sdkgen'], project.actx)
+
+    const warned = log.lines.filter((l: any) => 'package-update-older' === l.point)
+    strictEqual(warned.length, 1, JSON.stringify(warned))
+    strictEqual(warned[0].level, 'warn')
   })
 
 

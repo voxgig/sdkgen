@@ -362,6 +362,8 @@ async function guardCopies<T>(
     basedir: BASE_DIR,
     conflictdir: CONFLICT_DIR,
     versions: gitVersions,
+    forget: (rels: string[]) => appendEntry(actx, 'keep',
+      { files: Object.fromEntries(rels.map((rel: string) => [rel, null])) }),
     error: (msg: string) => new SdkGenError(msg),
   }, (gfs: any) => run({ ...actx, fs: () => gfs, copyGuarded: true }))
 }

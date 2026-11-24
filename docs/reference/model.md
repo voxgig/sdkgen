@@ -284,6 +284,18 @@ locate the source through it.
 
 The same three keys exist on `main.kit.feature.<name>`.
 
+### The oldest copies this generator reads
+
+Copies have a floor. Components copied from a release before 4.23.0 do not
+compile against the current generator, and model files copied before
+1.3.18 use `//` comments, which the model compiler does not read. When the
+copy record dates an item's copies from below the floor, `doctor` reports
+it and `generate` warns, with one remedy: commit, then run
+`voxgig-sdkgen target add <name> --force`, which replaces every copy of
+that target. A copied model file that does not compile is reported the same
+way, because the model compile can leave an included file it cannot read
+out of the model without an error.
+
 ## `main.kit.target.<name>`
 
 From [`ts/model/sdkgen.aontu`](../../ts/model/sdkgen.aontu) and the per-target
@@ -415,6 +427,9 @@ else's repo.
 - `path` and `sdkrel` replace the model's values for that run only. The
   model object is never written back to, so `target add` cannot commit the
   override by accident.
+- A name in `SDKGEN_EXTERNAL` that is not a target of the model stops the
+  run with an error that lists the targets, so a misspelled name cannot pass
+  as an override that changes nothing.
 - An override may also send an item out of tree that the model generates in
   tree. Every destination check listed earlier still runs on it.
 - `enclosing: true` permits a destination that **contains** the SDK project

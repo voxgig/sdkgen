@@ -1,6 +1,7 @@
 
 import { Aontu } from 'aontu'
 import { createRequire } from 'node:module'
+import Fs from 'node:fs'
 import Path from 'node:path'
 
 import { schemaFile } from './shipped'
@@ -159,6 +160,20 @@ function publishOverrideProbe(
 }
 
 
+// A feature hook the schema does not list still unifies, through `hook: &:`,
+// so a misspelled one is caught only by comparing against this list.
+let schemaHookNames: string[] | null = null
+
+function schemaHooks(): string[] {
+  if (null == schemaHookNames) {
+    const probe = compileModel(Fs.readFileSync(schemaFile(), 'utf8') +
+      "\nmain: kit: feature: 'hook$': title: ''\n", schemaFile(), { strict: false })
+    schemaHookNames = Object.keys(probe.model?.main?.kit?.feature?.['hook$']?.hook ?? {}).sort()
+  }
+  return schemaHookNames
+}
+
+
 export type {
   CompileResult,
 }
@@ -171,6 +186,7 @@ export {
   compileModel,
   includeLine,
   publishOverrideProbe,
+  schemaHooks,
   slashComments,
   strictAontu,
   unquoted,
