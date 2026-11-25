@@ -17,7 +17,7 @@ const Feature = (0, component_1.cmp)(function Feature(props) {
     // missing template folder and abort the whole run, taking every other
     // target with it. See helpers/applicability and docs/design/feature-tags.
     if (!(0, applicability_1.featureApplies)(feature, target)) {
-        const provided = (0, applicability_1.featureTags)(target.provides);
+        const provided = (0, applicability_1.providedBy)(target);
         const unmet = (0, applicability_1.featureTags)(feature.needs).filter((n) => !provided.includes(n));
         const origin = (0, packageMeta_1.originName)(ctx$.model, target.name);
         const stale = (0, resolve_1.resolvesBundled)(target, target.name) &&
