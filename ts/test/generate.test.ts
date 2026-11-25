@@ -1098,7 +1098,10 @@ describe('generate', () => {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',
       rb: 'Ruby SDK', lua: 'Lua SDK', csharp: 'C# SDK', elixir: 'Elixir SDK',
       perl: 'Perl SDK', 'py-data': 'Python Data package',
+      rust: 'Rust SDK', java: 'Java SDK', ocaml: 'OCaml SDK', kotlin: 'Kotlin SDK',
     }
+    // go has no manifest slot, and says it in its package doc comment.
+    expected.go = makeModel(['go']).main[KIT].target.go.fact.title + ' SDK'
     const out = await generate(Object.keys(expected))
     for (const [target, name] of Object.entries(expected)) {
       const named = filesFor(out, target)
@@ -2826,7 +2829,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   test('an API title holding quotes, an ampersand and an interpolation reaches every manifest description intact', async () => {
     const TITLE = 'Bob\'s "Shop" & Co #{x}'
     const want = 'for the ' + TITLE + ' public API.'
-    const out = await generate(['csharp', 'elixir', 'js', 'lua', 'perl', 'php', 'py', 'py-data', 'rb', 'ts'],
+    const out = await generate(['csharp', 'elixir', 'js', 'lua', 'perl', 'php', 'py', 'py-data', 'rb', 'ts',
+      'rust', 'java', 'ocaml', 'kotlin', 'go'],
       undefined, "main: kit: text: { title: 'Bob\\'s \"Shop\" & Co #{x}' }")
     const bad: string[] = []
 
@@ -2846,6 +2850,11 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       ['py/pyproject.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
       ['py-data/pyproject.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
       ['rb/Demo_sdk.gemspec', 'for the Bob\'s \\"Shop\\" & Co \\#{x} public API.'],
+      ['rust/Cargo.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['java/pom.xml', 'for the Bob\'s "Shop" &amp; Co #{x} public API.'],
+      ['ocaml/voxgig-demo-sdk.opam', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['kotlin/build.gradle.kts', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['go/demo.go', 'for the Bob\'s "Shop" & Co #{x} public API.'],
     ]
     for (const [file, text] of literal) {
       if (!String(out[file]).includes(text)) bad.push(file + ' lacks ' + text)

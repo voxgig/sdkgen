@@ -6,12 +6,15 @@ import {
   collectDeps,
   packageVersion,
   packageName,
+  pkgDescription,
 } from '@voxgig/sdkgen'
 
 
 import type {
   Model,
 } from '@voxgig/apidef'
+
+import { kotlinString } from './utility_kotlin'
 
 
 // Generates the Gradle build files (build.gradle.kts + settings.gradle.kts),
@@ -52,6 +55,7 @@ const Package = cmp(async function Package(props: any) {
 
 group = "${group}"
 version = "${packageVersion(model, target.name)}"
+description = ${kotlinString(pkgDescription(model, target.name))}
 
 repositories {
     mavenCentral()

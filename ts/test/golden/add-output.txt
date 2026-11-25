@@ -521,7 +521,7 @@ src/cmp/go/EntityTypes_go.ts 3702d5d19fd2
 src/cmp/go/Entity_go.ts 7ee87e28bab9
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts b9f011d284f8
-src/cmp/go/Main_go.ts ecca9d84c618
+src/cmp/go/Main_go.ts e26d4d980fe1
 src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts 52b6a144ae95
@@ -657,7 +657,7 @@ src/cmp/java/Entity_java.ts 234ee14a0a72
 src/cmp/java/Gitignore_java.ts 549792550319
 src/cmp/java/MainEntity_java.ts 3f146ec80ca7
 src/cmp/java/Main_java.ts 9f711cf5ec30
-src/cmp/java/Package_java.ts 229bdccd9e3b
+src/cmp/java/Package_java.ts 109eb01eae15
 src/cmp/java/PrepareAuth_java.ts 2e8593a5f789
 src/cmp/java/ReadmeEntity_java.ts 63f97c38dd85
 src/cmp/java/ReadmeExamplesTest_java.ts 40e3f79a3fa0
@@ -899,7 +899,7 @@ src/cmp/kotlin/Entity_kotlin.ts 2e21c82ab01c
 src/cmp/kotlin/Gitignore_kotlin.ts f164b2f3bdde
 src/cmp/kotlin/MainEntity_kotlin.ts bca2e71d5f00
 src/cmp/kotlin/Main_kotlin.ts dbb0cc8a783e
-src/cmp/kotlin/Package_kotlin.ts 4c7f9e656550
+src/cmp/kotlin/Package_kotlin.ts 028b99bc328c
 src/cmp/kotlin/PrepareAuth_kotlin.ts 4f8679d0c503
 src/cmp/kotlin/ReadmeEntity_kotlin.ts c11b93b9dddd
 src/cmp/kotlin/ReadmeExamplesTest_kotlin.ts 6304f45cb224
@@ -1104,7 +1104,7 @@ src/cmp/ocaml/Entity_ocaml.ts 2669e7a3792b
 src/cmp/ocaml/Gitignore_ocaml.ts 17f97d494254
 src/cmp/ocaml/MainEntity_ocaml.ts ab4c2d6c3549
 src/cmp/ocaml/Main_ocaml.ts d5bc146ad714
-src/cmp/ocaml/Package_ocaml.ts c5c697f87503
+src/cmp/ocaml/Package_ocaml.ts 36b73078bd08
 src/cmp/ocaml/PrepareAuth_ocaml.ts 4faf9c4284b6
 src/cmp/ocaml/ReadmeEntity_ocaml.ts 98af9e5818cb
 src/cmp/ocaml/ReadmeExamplesTest_ocaml.ts fa124db31217
@@ -1613,7 +1613,7 @@ src/cmp/rust/Entity_rust.ts 5136b405582f
 src/cmp/rust/Gitignore_rust.ts 285a6decc9dd
 src/cmp/rust/MainEntity_rust.ts cfab71599f0a
 src/cmp/rust/Main_rust.ts 3704b920a823
-src/cmp/rust/Package_rust.ts f7fcb51e8878
+src/cmp/rust/Package_rust.ts c8b8bc33ced5
 src/cmp/rust/PrepareAuth_rust.ts f48748ac39c5
 src/cmp/rust/ReadmeEntity_rust.ts 3ff319020626
 src/cmp/rust/ReadmeExamplesTest_rust.ts fe0bd437773e

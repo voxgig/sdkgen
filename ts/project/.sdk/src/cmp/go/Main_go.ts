@@ -10,6 +10,7 @@ import {
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
   TargetVersion,
+  pkgDescription,
 } from '@voxgig/sdkgen'
 
 
@@ -143,7 +144,8 @@ var NewBaseFeatureFunc func() Feature
   const hasEntities = Object.keys(entity || {}).length > 0
   const entityImport = hasEntities ? `\n\t"${gomodule}/entity"` : ''
   File({ name: model.name + '.' + target.ext }, () => {
-    Content(`package ${gopackage}
+    Content(`// Package ${gopackage}: ${pkgDescription(model, target.name)}
+package ${gopackage}
 
 import (
 	"${gomodule}/core"${entityImport}
