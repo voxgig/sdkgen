@@ -3,8 +3,7 @@ import Path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
 import { applyFacts } from '../helpers/facts'
-import { guardFlowSteps } from '../helpers/flowGuard'
-import { guardModelNames } from '../helpers/modelNames'
+import { guardModel } from '../helpers/guardModel'
 import { readOverride, runFolder, runPlace } from '../helpers/placement'
 
 function command(cwd: string, bin: string, args: string[]) {
@@ -28,7 +27,7 @@ function workingTree(folder: string) {
 
 // The model a generate reads, which `sdk.json` is written before.
 function prepare(model: any): string | undefined {
-  try { guardModelNames(model); guardFlowSteps(model); applyFacts(model) }
+  try { applyFacts(guardModel(model)) }
   catch (err: any) { return 'Cannot prepare the compiled model: ' + err.message }
 }
 

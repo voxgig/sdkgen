@@ -9,8 +9,7 @@ const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const node_child_process_1 = require("node:child_process");
 const facts_1 = require("../helpers/facts");
-const flowGuard_1 = require("../helpers/flowGuard");
-const modelNames_1 = require("../helpers/modelNames");
+const guardModel_1 = require("../helpers/guardModel");
 const placement_1 = require("../helpers/placement");
 function command(cwd, bin, args) {
     return (0, node_child_process_1.spawnSync)(bin, args, { cwd, encoding: 'utf8', timeout: 15000, windowsHide: true, env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' } });
@@ -34,9 +33,7 @@ function workingTree(folder) {
 // The model a generate reads, which `sdk.json` is written before.
 function prepare(model) {
     try {
-        (0, modelNames_1.guardModelNames)(model);
-        (0, flowGuard_1.guardFlowSteps)(model);
-        (0, facts_1.applyFacts)(model);
+        (0, facts_1.applyFacts)((0, guardModel_1.guardModel)(model));
     }
     catch (err) {
         return 'Cannot prepare the compiled model: ' + err.message;
