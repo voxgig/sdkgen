@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.2.0 (go/voxgigstruct.go)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025 Voxgig Ltd. MIT LICENSE. */
 
@@ -169,6 +169,7 @@ type Injection struct {
 	Modify  Modify           // Modify injection output.
 	Prior   *Injection       // Parent (aka prior) injection.
 	Extra   any              // Extra data.
+	Named   bool             // Current map node names keys of its own (not $ commands).
 }
 
 // Apply a custom modification to injections.
@@ -227,7 +228,10 @@ func (inj *Injection) setval(val any, ancestor ...int) any {
 	}
 
 	if anc < 2 {
-		if val == nil {
+		// A list keeps the removed slot as a hole until Inject's loop ends.
+		if val == nil && IsList(inj.Parent) {
+			SetProp(inj.Parent, inj.Key, SKIP)
+		} else if val == nil {
 			inj.Parent = DelProp(inj.Parent, inj.Key)
 		} else {
 			SetProp(inj.Parent, inj.Key, val)
@@ -388,6 +392,11 @@ func denoval(val any) any {
 		return nil
 	}
 	return val
+}
+
+// A list slot setval removed, left until Inject's loop for the list ends.
+func _ishole(val any) bool {
+	return SKIP == val
 }
 
 func IsEmpty(val any) bool {
@@ -2331,6 +2340,8 @@ func Inject(
 
 	inj.descend()
 
+	inj.Named = false
+
 	// Descend into node
 	if IsNode(val) {
 		childkeys := KeysOf(val)
@@ -2350,6 +2361,7 @@ func Inject(
 		sort.Strings(normalKeys)
 		sort.Strings(transformKeys)
 		nodekeys := append(normalKeys, transformKeys...)
+		inj.Named = IsMap(val) && 0 < len(normalKeys)
 
 		nkI := 0
 		for nkI < len(nodekeys) {
@@ -2387,6 +2399,13 @@ func Inject(
 			nkI = nkI + 1
 		}
 
+		if lr, ok := val.(*ListRef[any]); ok {
+			lr.List = slices.DeleteFunc(lr.List, _ishole)
+		} else if list, ok := val.([]any); ok && slices.ContainsFunc(list, _ishole) {
+			val = slices.DeleteFunc(list, _ishole)
+			SetProp(inj.Parent, inj.Key, val)
+		}
+
 	} else if 0 < (T_string & valType) {
 
 		// Inject paths into string scalars.
@@ -2405,6 +2424,9 @@ func Inject(
 		mkey := inj.Key
 		mparent := inj.Parent
 		mval := GetProp(mparent, mkey)
+		if _ishole(mval) {
+			mval = nil
+		}
 		inj.Modify(
 			mval,
 			mkey,
@@ -2919,7 +2941,7 @@ var Transform_REF Injector = func(
 		return nil
 	}
 
-	// Get arguments: ['`$REF`', 'ref-path'].
+	// ['`$REF`', 'ref-path']: a relative path starts where this slot is, so .x is a sibling.
 	refpath := GetProp(inj.Parent, 1)
 	inj.KeyI = len(inj.Keys.List)
 
@@ -2936,13 +2958,23 @@ var Transform_REF Injector = func(
 	}
 
 	dpath := make([]string, 0)
-	if len(inj.Path.List) > 1 {
-		dpath = append(dpath, inj.Path.List[1:]...)
+	if n := len(inj.Path.List); n > 3 {
+		dpath = append(dpath, inj.Path.List[1:n-2]...)
 	}
-	refResult := GetPath(spec, refpath, &Injection{
-		Dpath:   dpath,
-		Dparent: GetPath(spec, dpath),
-	})
+	refinj := &Injection{Dpath: dpath, Dparent: GetPath(spec, dpath)}
+	refResult := GetPath(spec, refpath, refinj)
+
+	// A chain of references that comes back to a path it has named names nothing.
+	seen := []any{refpath}
+	for next := refResult; IsList(next) && "`$REF`" == GetProp(next, 0); {
+		nextpath := GetProp(next, 1)
+		if slices.ContainsFunc(seen, func(p any) bool { return _deepequal(p, nextpath) }) {
+			refResult = nil
+			break
+		}
+		seen = append(seen, nextpath)
+		next = GetPath(spec, nextpath, refinj)
+	}
 
 	hasSubRef := false
 	if IsNode(refResult) {
@@ -3525,18 +3557,20 @@ var validate_STRING Injector = func(
 	store any,
 ) any {
 	out := GetProp(inj.Dparent, inj.Key)
+	if nil == out {
+		out = _lookup(inj.Dparent, inj.Key)
+	}
 
 	t := Typify(out)
 	if 0 == (T_string & t) {
-		msg := _invalidTypeMsg(inj.Path.List, S_string, Typename(t), out)
+		msg := _invalidTypeMsg(inj.Path.List, S_string, Typename(t), denoval(out))
 		inj.Errs.Append(msg)
-		return nil
+		return _checked(inj, out)
 	}
 
 	if S_MT == out.(string) {
 		msg := "Empty string at " + Pathify(inj.Path.List, 1)
 		inj.Errs.Append(msg)
-		return nil
 	}
 
 	return out
@@ -3593,7 +3627,6 @@ var validate_TYPE Injector = func(
 	if 0 == (t & typev) {
 		msg := _invalidTypeMsg(inj.Path.List, tname, Typename(t), denoval(out))
 		inj.Errs.Append(msg)
-		return nil
 	}
 
 	return _checked(inj, out)
@@ -3703,6 +3736,69 @@ var validate_CHILD Injector = func(
 	}
 
 	return nil
+}
+
+// The members a spec does not name: the map form is a key, the list form a
+// tuple's last item. Each places clones of its spec for the loop to check.
+var validate_REST Injector = func(
+	inj *Injection,
+	_val any,
+	ref *string,
+	store any,
+) any {
+	if M_KEYPRE == inj.Mode {
+		resttm := denoval(_lookup(inj.Parent, inj.Key))
+		tval := GetProp(inj.Dparent, inj.Path.List[len(inj.Path.List)-2])
+
+		if IsMap(tval) {
+			for _, ckey := range KeysOf(tval) {
+				if !slices.Contains(inj.Keys.List, ckey) {
+					SetProp(inj.Parent, ckey, Clone(resttm))
+					inj.Keys.Append(ckey)
+				}
+			}
+		}
+
+		inj.setval(nil)
+		return nil
+	}
+
+	prior := inj.Prior
+	if M_VAL != inj.Mode || nil == prior || !IsList(prior.Parent) || 0 != inj.KeyI {
+		inj.Errs.Append(_restmsg(inj.Path.List[1:], " must be the last element of an array."))
+		return nil
+	}
+
+	inj.KeyI = len(inj.Keys.List)
+	prior.Modify = nil
+
+	tuple := prior.Parent
+	slot, _ := _listkey(prior.Key)
+	dlist := prior.Dparent
+	numitems := 0
+	if IsList(dlist) {
+		numitems = Size(dlist)
+	}
+
+	if numitems <= slot {
+		inj.setval(nil, 2)
+		return SKIP
+	}
+
+	resttm := denoval(_lookup(inj.Parent, 1))
+	for i := slot; i < numitems; i++ {
+		SetProp(tuple, i, Clone(resttm))
+	}
+	for i := len(prior.Keys.List); i < numitems; i++ {
+		prior.Keys.Append(StrKey(i))
+	}
+
+	prior.KeyI--
+	return SKIP
+}
+
+func _restmsg(path []string, problem string) string {
+	return "The $REST validator at field " + Pathify(path) + problem
 }
 
 // Set after Validate is defined: these validators call Validate.
@@ -4153,7 +4249,7 @@ func makeValidation(exact bool) Modify {
 			return
 		}
 
-		pval := GetProp(parent, key)
+		pval := val
 		ptype := Typify(pval)
 
 		// Delete any special commands remaining.
@@ -4186,8 +4282,8 @@ func makeValidation(exact bool) Modify {
 			ckeys := KeysOf(cval)
 			pkeys := KeysOf(pval)
 
-			// Empty spec object {} means object can be open (any keys).
-			if len(pkeys) > 0 && GetProp(pval, "`$OPEN`") != true {
+			// Only a spec written as {} is open, even if named keys resolved away.
+			if (len(pkeys) > 0 || inj.Named) && GetProp(pval, "`$OPEN`") != true {
 				// Literal presence: the shape DECLARES ckey even when its value
 				// is nil. Canonical uses `NONE === _lookup`; HasKey is Group A
 				// (value-based) and would drop records with a nil field from an
@@ -4216,6 +4312,19 @@ func makeValidation(exact bool) Modify {
 		} else if IsList(cval) {
 			if !IsList(val) {
 				inj.Errs.Append(_invalidTypeMsg(inj.Path.List, Typename(ptype), Typename(ctype), cval))
+			} else if 0 < Size(pval) {
+				// Closed list, so reject items past the end of the shape.
+				badkeys := []string{}
+				for i := Size(pval); i < Size(cval); i++ {
+					badkeys = append(badkeys, StrKey(i))
+				}
+				if len(badkeys) > 0 {
+					inj.Errs.Append("Unexpected keys at field " + Pathify(inj.Path.List, 1) +
+						": " + strings.Join(badkeys, ", "))
+				}
+			} else {
+				// Empty spec list [] means list can be open (any items).
+				Merge([]any{pval, cval})
 			}
 		} else if exact {
 			// Select needs exact matches for scalar values.
@@ -4347,6 +4456,7 @@ func Validate(
 		"$LEN":      validate_LEN,
 		"$RANGE":    validate_RANGE,
 		"$LIKE":     validate_LIKE,
+		"$REST":     validate_REST,
 	}
 
 	// Add any extra validation commands
@@ -4380,7 +4490,7 @@ func Validate(
 
 	// A spec that names an unknown checker validates nothing.
 	numerrs := len(errs.List)
-	_checknames(spec, store, []string{}, errs)
+	_checknames(spec, store, []string{}, errs, false)
 
 	var out any
 	if numerrs < len(errs.List) {
@@ -4691,6 +4801,7 @@ func validateCollectExact(
 		"$LEN":      validate_LEN,
 		"$RANGE":    validate_RANGE,
 		"$LIKE":     validate_LIKE,
+		"$REST":     validate_REST,
 	}
 
 	for k, fn := range extra {
@@ -4701,7 +4812,7 @@ func validateCollectExact(
 
 	// A spec that names an unknown checker validates nothing.
 	numerrs := len(errs.List)
-	_checknames(spec, store, []string{}, errs)
+	_checknames(spec, store, []string{}, errs, false)
 	if numerrs < len(errs.List) {
 		return
 	}
@@ -5325,26 +5436,49 @@ var validateNames = []string{
 	"$OPEN",
 }
 
-// Report each checker the spec names that validate lacks; $EXACT's arguments are literals.
-func _checknames(spec any, store map[string]any, path []string, errs *ListRef[any]) {
+// Report each checker the spec names that validate lacks, and each misplaced
+// $REST; $EXACT's arguments are literals. Last: spec is a list's last item.
+func _checknames(spec any, store map[string]any, path []string, errs *ListRef[any], last bool) {
 	name := _refname(spec)
 	if "" != name {
 		if _unknownname(name, store) {
 			errs.Append("Unknown validator " + name + " at field " + Pathify(path) + ".")
+		} else if "$REST" == name {
+			errs.Append(_restmsg(path, " must be the last element of an array."))
 		}
 		return
 	}
 
-	if IsList(spec) && "$EXACT" == _refname(GetProp(spec, 0)) {
+	head := ""
+	if IsList(spec) {
+		head = _refname(GetProp(spec, 0))
+	}
+	if "$EXACT" == head {
 		return
 	}
 
+	if "$REST" == head {
+		if !last {
+			errs.Append(_restmsg(path, " must be the last element of an array."))
+		} else if 2 != Size(spec) {
+			errs.Append(_restmsg(path, " must have exactly one spec."))
+		}
+		_checknames(GetProp(spec, 1), store, append(append(make([]string, 0, len(path)+1), path...), "1"), errs, false)
+		return
+	}
+
+	restkey := "`$REST`"
+	if IsMap(spec) && NOVAL != _lookup(spec, restkey) && NOVAL != _lookup(spec, "`$CHILD`") {
+		errs.Append(_restmsg(path, " cannot be used with $CHILD."))
+	}
+
+	lastkey := StrKey(Size(spec) - 1)
 	for _, key := range KeysOf(spec) {
-		if IsMap(spec) {
-			_checknames(key, store, path, errs)
+		if IsMap(spec) && restkey != key {
+			_checknames(key, store, path, errs, false)
 		}
 		kpath := append(append(make([]string, 0, len(path)+1), path...), key)
-		_checknames(GetProp(spec, key), store, kpath, errs)
+		_checknames(GetProp(spec, key), store, kpath, errs, IsList(spec) && lastkey == key)
 	}
 }
 

@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.3 (c/src/voxgig_struct.h)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
  *
@@ -115,6 +115,7 @@ struct voxgig_injection {
   voxgig_value* modify_val; /* owned */
   voxgig_injection* prior;  /* not owned */
   voxgig_value* extra;      /* borrowed */
+  bool named;               /* current map node names keys of its own (not $ commands) */
 };
 
 voxgig_injection* voxgig_inj_new(voxgig_value* val, voxgig_value* parent);

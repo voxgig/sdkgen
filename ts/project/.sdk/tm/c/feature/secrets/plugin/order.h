@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-local-nof (c/src/order.h)
-// Source: https://github.com/voxgig/plugin @ caa404b2dfa206d77db6c2869e5b31c2a3202b2d  [tag: sdk-local-nof]
+// VENDORED: @voxgig/plugin sdk-20261125-1959-0 (c/src/order.h)
+// Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Ordering (§7) — constraints, then bands, then declaration position.
  * CONSTRAINTS BEAT BANDS so the correct tool wins when both are

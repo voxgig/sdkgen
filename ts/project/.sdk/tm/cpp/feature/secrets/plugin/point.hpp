@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-local-nof (cpp/src/point.hpp)
-// Source: https://github.com/voxgig/plugin @ caa404b2dfa206d77db6c2869e5b31c2a3202b2d  [tag: sdk-local-nof]
+// VENDORED: @voxgig/plugin sdk-20261125-1959-0 (cpp/src/point.hpp)
+// Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Extension points (§6). Three kinds, chosen because they are what the
  * two existing systems actually needed, and no more.

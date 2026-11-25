@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (csharp/Struct.cs)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE. */
 
@@ -110,6 +110,7 @@ namespace Voxgig.Struct
         public Dictionary<string, object?> Meta { get; set; } = [];
         public object? Extra { get; set; }
         public object? Root { get; set; }
+        public bool Named { get; set; }  // Current map node names keys of its own (not $ commands).
 
         public object? Descend()
         {
@@ -183,7 +184,12 @@ namespace Voxgig.Struct
             bool del = val == null || ReferenceEquals(val, StructUtils.NONE);
             if (ancestor < 2)
             {
-                if (del)
+                if (del && Parent is List<object?>)
+                {
+                    // A list keeps the removed slot as a hole until Inject's loop ends.
+                    StructUtils.SetProp(Parent, Key, StructUtils.SKIP);
+                }
+                else if (del)
                 {
                     StructUtils.DelProp(Parent, Key);
                 }
@@ -1920,6 +1926,8 @@ namespace Voxgig.Struct
 
             state.Descend();
 
+            state.Named = false;
+
             // ── Node: recurse into children ──────────────────────────────────────
             if (IsNode(val))
             {
@@ -1931,6 +1939,7 @@ namespace Voxgig.Struct
                     var normal = allKeys.Where(k => !k.Contains(S_DS)).ToList();
                     var transform = allKeys.Where(k => k.Contains(S_DS)).ToList();
                     keys = [.. normal.Cast<object?>(), .. transform.Cast<object?>()];
+                    state.Named = 0 < normal.Count;
                 }
                 else
                 {
@@ -1974,6 +1983,11 @@ namespace Voxgig.Struct
 
                     nkI++;
                 }
+
+                if (val is List<object?> nodelist)
+                {
+                    nodelist.RemoveAll(item => ReferenceEquals(item, SKIP));
+                }
             }
 
             // ── String scalar: resolve backtick references ──────────────────────
@@ -1998,7 +2012,7 @@ namespace Voxgig.Struct
                 {
                     object? mparent = state.Parent;
                     object? mval = GetProp(mparent, state.Key);
-                    state.ModifyFn(mval, state.Key, mparent, state, store);
+                    state.ModifyFn(ReferenceEquals(SKIP, mval) ? NONE : mval, state.Key, mparent, state, store);
                 }
             }
 
@@ -2491,7 +2505,7 @@ namespace Voxgig.Struct
                 return null;
             }
 
-            // Get refpath from parent list element 1.
+            // ['`$REF`', 'ref-path']: a relative path starts where this slot is, so .x is a sibling.
             object? refpath = GetProp(inj.Parent, 1);
             inj.KeyI = inj.Keys.Count;   // skip remaining keys
 
@@ -2508,10 +2522,8 @@ namespace Voxgig.Struct
                 return null;
             }
 
-            // Build dpath from current path (skip first element "$TOP").
-            var dpath = inj.Path.Count > 1
-                ? inj.Path.GetRange(1, inj.Path.Count - 1).Select(p => (object?)(StrKey(p) ?? S_MT)).ToList()
-                : [];
+            var dpath = ((Slice(inj.Path, 1, -2) as List<object?>) ?? [])
+                .Select(p => (object?)(StrKey(p) ?? S_MT)).ToList();
             var dpathInj = new InjectState
             {
                 DPath = dpath,
@@ -2519,6 +2531,22 @@ namespace Voxgig.Struct
             };
 
             object? refResult = GetPath(spec, refpath, null, dpathInj);
+
+            // A chain of references that comes back to a path it has named names nothing.
+            var seen = new List<object?> { refpath };
+            object? next = refResult;
+            while (IsList(next) && Lookup(next, 0) is string head && head == "`$REF`")
+            {
+                object? nextpath = GetProp(next, 1);
+                if (seen.Contains(nextpath))
+                {
+                    refResult = null;
+                    break;
+                }
+
+                seen.Add(nextpath);
+                next = GetPath(spec, nextpath, null, dpathInj);
+            }
 
             // Check if refResult contains sub-references.
             bool hasSubRef = false;
@@ -2844,13 +2872,12 @@ namespace Voxgig.Struct
             if (0 == (T.Str & t))
             {
                 inj.Errs.Add(_InvalidTypeMsg(inj.Path, S_string, t, keyExists ? out_ : NONE));
-                return NONE;
+                return keyExists && null == out_ ? _KeepNull(inj) : out_;
             }
 
             if (S_MT == (out_ as string))
             {
                 inj.Errs.Add("Empty string at " + Pathify(inj.Path, 1));
-                return NONE;
             }
 
             return out_;
@@ -2871,7 +2898,6 @@ namespace Voxgig.Struct
             if (0 == (t & typev))
             {
                 inj.Errs.Add(_InvalidTypeMsg(inj.Path, tname, t, keyExists ? out_ : NONE));
-                return NONE;
             }
 
             return keyExists && null == out_ ? _KeepNull(inj) : out_;
@@ -2975,6 +3001,72 @@ namespace Voxgig.Struct
 
             return NONE;
         };
+
+        // The members a spec does not name: the map form is a key, the list form a
+        // tuple's last item. Each places clones of its spec for the loop to check.
+        private static readonly Injector _ValidateRest = (inj, val, refStr, store) =>
+        {
+            if (M_KEYPRE == inj.Mode)
+            {
+                object? resttm = Lookup(inj.Parent, inj.Key);
+                object? tval = GetProp(inj.DParent, GetElem(inj.Path, -2));
+
+                if (IsMap(tval))
+                {
+                    foreach (string ckey in KeysOf(tval))
+                    {
+                        if (!inj.Keys.Contains(ckey))
+                        {
+                            SetProp(inj.Parent, ckey, Clone(resttm));
+                            inj.Keys.Add(ckey);
+                        }
+                    }
+                }
+
+                inj.SetVal(NONE);
+                return NONE;
+            }
+
+            InjectState? prior = inj.Prior;
+            if (M_VAL != inj.Mode || null == prior || !IsList(prior.Parent) || 0 != inj.KeyI)
+            {
+                inj.Errs.Add(_RestMsg(Slice(inj.Path, 1), " must be the last element of an array."));
+                return NONE;
+            }
+
+            inj.KeyI = Size(inj.Keys);
+            prior.ModifyFn = null;
+
+            object? tuple = prior.Parent;
+            long slot = ListIndex(prior.Key);
+            object? dlist = prior.DParent;
+            int numitems = IsList(dlist) ? Size(dlist) : 0;
+
+            if (numitems <= slot)
+            {
+                inj.SetVal(NONE, 2);
+                return SKIP;
+            }
+
+            object? itemtm = Lookup(inj.Parent, 1);
+            for (long i = slot; i < numitems; i++)
+            {
+                SetProp(tuple, i, Clone(itemtm));
+            }
+
+            for (int i = Size(prior.Keys); i < numitems; i++)
+            {
+                prior.Keys.Add(StrKey(i));
+            }
+
+            prior.KeyI--;
+            return SKIP;
+        };
+
+        private static string _RestMsg(object? path, string problem)
+        {
+            return "The $REST validator at field " + Pathify(path) + problem;
+        }
 
         // Match one of the provided exact values.
         private static readonly Injector _ValidateExact = (inj, val, refStr, store) =>
@@ -3420,8 +3512,8 @@ namespace Voxgig.Struct
                 object? openFlag = GetProp(pval, "`$OPEN`");
                 bool isOpen = true == (openFlag as bool?);
 
-                // Empty spec map means open (accepts any keys).
-                if (0 < Size(pkeys) && !isOpen)
+                // Only a spec written as {} is open, even if named keys resolved away.
+                if ((0 < Size(pkeys) || inj.Named) && !isOpen)
                 {
                     var badkeys = new List<string>();
                     foreach (string ck in ckeys)
@@ -3439,7 +3531,7 @@ namespace Voxgig.Struct
                     if (0 < badkeys.Count)
                     {
                         string msg = "Unexpected keys at field " + Pathify(inj.Path, 1) +
-                            S_VIZ + Join(badkeys.Cast<object?>().ToList());
+                            S_VIZ + Join(badkeys.Cast<object?>().ToList(), ", ");
                         inj.Errs.Add(msg);
                         return null;
                     }
@@ -3458,6 +3550,27 @@ namespace Voxgig.Struct
                 if (!IsList(pval))
                 {
                     inj.Errs.Add(_InvalidTypeMsg(inj.Path, TypeName(ptype), ctype, cval));
+                }
+                else if (0 < Size(pval))
+                {
+                    // Closed list, so reject items past the end of the shape.
+                    var badkeys = new List<object?>();
+                    for (int i = Size(pval); i < Size(cval); i++)
+                    {
+                        badkeys.Add(StrKey(i));
+                    }
+
+                    if (0 < badkeys.Count)
+                    {
+                        string msg = "Unexpected keys at field " + Pathify(inj.Path, 1) +
+                            S_VIZ + Join(badkeys, ", ");
+                        inj.Errs.Add(msg);
+                    }
+                }
+                else
+                {
+                    // Empty spec list [] means list can be open (any items).
+                    Merge(new List<object?> { pval, cval });
                 }
             }
             else if (exact)
@@ -3561,6 +3674,7 @@ namespace Voxgig.Struct
                     ["$LEN"]      = _ValidateLen,
                     ["$RANGE"]    = _ValidateRange,
                     ["$LIKE"]     = _ValidateLike,
+                    ["$REST"]     = _ValidateRest,
 
                     [S_DERRS] = errs,
                 },
@@ -3610,8 +3724,10 @@ namespace Voxgig.Struct
             "$OPEN",
         ];
 
-        // Report each checker the spec names that validate lacks; $EXACT's arguments are literals.
-        private static void _CheckNames(object? spec, object? store, List<object?> path, List<object?> errs)
+        // Report each checker the spec names that validate lacks, and each misplaced
+        // $REST; $EXACT's arguments are literals. Last: spec is a list's last item.
+        private static void _CheckNames(
+            object? spec, object? store, List<object?> path, List<object?> errs, bool last = false)
         {
             string? name = _RefName(spec);
             if (null != name)
@@ -3620,21 +3736,48 @@ namespace Voxgig.Struct
                 {
                     errs.Add("Unknown validator " + name + " at field " + Pathify(path) + ".");
                 }
+                else if ("$REST" == name)
+                {
+                    errs.Add(_RestMsg(path, " must be the last element of an array."));
+                }
                 return;
             }
 
-            if (IsList(spec) && "$EXACT" == _RefName(Lookup(spec, 0)))
+            string? head = IsList(spec) ? _RefName(Lookup(spec, 0)) : null;
+            if ("$EXACT" == head)
             {
                 return;
             }
 
+            if ("$REST" == head)
+            {
+                if (!last)
+                {
+                    errs.Add(_RestMsg(path, " must be the last element of an array."));
+                }
+                else if (2 != Size(spec))
+                {
+                    errs.Add(_RestMsg(path, " must have exactly one spec."));
+                }
+                _CheckNames(Lookup(spec, 1), store, [.. path, 1], errs);
+                return;
+            }
+
+            const string restkey = "`$REST`";
+            if (IsMap(spec) && !ReferenceEquals(NONE, Lookup(spec, restkey)) &&
+                !ReferenceEquals(NONE, Lookup(spec, "`$CHILD`")))
+            {
+                errs.Add(_RestMsg(path, " cannot be used with $CHILD."));
+            }
+
+            string? lastkey = IsList(spec) ? StrKey(Size(spec) - 1) : null;
             foreach (string key in KeysOf(spec))
             {
-                if (IsMap(spec))
+                if (IsMap(spec) && restkey != key)
                 {
                     _CheckNames(key, store, path, errs);
                 }
-                _CheckNames(Lookup(spec, key), store, [.. path, key], errs);
+                _CheckNames(Lookup(spec, key), store, [.. path, key], errs, lastkey == key);
             }
         }
 
@@ -4047,20 +4190,12 @@ namespace Voxgig.Struct
                 });
             var results = new List<object?>();
 
+            // Bare names only: Transform reads a key without a leading $ as data.
             var selectExtra = new Dictionary<string, object?>
             {
-                ["`$AND`"] = _SelectAnd,
-                ["`$OR`"] = _SelectOr,
-                ["`$NOT`"] = _SelectNot,
                 ["$AND"] = _SelectAnd,
                 ["$OR"] = _SelectOr,
                 ["$NOT"] = _SelectNot,
-                // JSON/test fixtures use backtick-wrapped keys (`$GT`, etc.); GetPath resolves bare $NAME.
-                ["`$GT`"] = _SelectCmp,
-                ["`$LT`"] = _SelectCmp,
-                ["`$GTE`"] = _SelectCmp,
-                ["`$LTE`"] = _SelectCmp,
-                ["`$LIKE`"] = _SelectCmp,
                 ["$GT"] = _SelectCmp,
                 ["$LT"] = _SelectCmp,
                 ["$GTE"] = _SelectCmp,

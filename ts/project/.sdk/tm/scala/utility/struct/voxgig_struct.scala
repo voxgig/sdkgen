@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (scala/src/voxgig_struct.scala)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 //
@@ -57,6 +57,7 @@ object struct {
     var modify: Option[Modify] = None
     var prior: Option[Inj] = None
     var extra: Value = Noval
+    var named: Boolean = false // current map node names keys of its own (not $ commands)
   }
 
   final class InjDef {
@@ -1017,7 +1018,7 @@ object struct {
     i.keys = mkList(Seq(VStr(S_DTOP))); i.key = VStr(S_DTOP); i.ival = v; i.parent = parent
     i.path = mkList(Seq(VStr(S_DTOP))); i.nodes = mkList(Seq(parent)); i.handler = injectHandler
     i.errs = emptyList(); i.meta = emptyMap(); i.dparent = Noval; i.dpath = mkList(Seq(VStr(S_DTOP)))
-    i.base = VStr(S_DTOP); i.modify = None; i.prior = None; i.extra = Noval
+    i.base = VStr(S_DTOP); i.modify = None; i.prior = None; i.extra = Noval; i.named = false
     i
   }
 
@@ -1059,7 +1060,10 @@ object struct {
     val (target, key) =
       if (ancestor < 2) (inj.parent, inj.key)
       else (getelem(inj.nodes, VNum((-ancestor).toDouble)), getelem(inj.path, VNum((-ancestor).toDouble)))
-    if (isNoval(v)) delprop(target, key) else setprop(target, key, v)
+    // A list keeps the removed slot as a hole until inject's loop ends.
+    if (isNoval(v) && ancestor < 2 && islist(target)) setprop(target, key, SKIP)
+    else if (isNoval(v)) delprop(target, key)
+    else setprop(target, key, v)
   }
 
   // ---------------------------------------------------------------------------
@@ -1087,6 +1091,8 @@ object struct {
     }
     injDescend(state)
 
+    state.named = false
+
     val rv: Value =
       if (isnode(v)) {
         var nodekeys: Seq[String] = v match {
@@ -1094,6 +1100,7 @@ object struct {
             val ks = m.keysIterator.toSeq
             val normal = ks.filter(k => k.indexOf('$') < 0).sorted
             val trans = ks.filter(k => k.indexOf('$') >= 0).sorted
+            state.named = normal.nonEmpty
             normal ++ trans
           case VList(b) => b.indices.map(_.toString)
           case _ => Seq.empty
@@ -1116,6 +1123,7 @@ object struct {
           }
           nki = childinj.keyi + 1
         }
+        v match { case VList(b) => b.filterInPlace(x => !isSkip(x)); case _ => }
         v
       } else v match {
         case VStr(_) =>
@@ -1129,7 +1137,7 @@ object struct {
     state.modify match {
       case Some(f) if !isSkip(rv) =>
         val mkey = state.key; val mparent = state.parent; val mval = getprop(mparent, mkey)
-        f(mval, mkey, mparent, state)
+        f(if (isSkip(mval)) Noval else mval, mkey, mparent, state)
       case _ =>
     }
     state.ival = rv
@@ -1174,7 +1182,7 @@ object struct {
   // transform commands
   // ---------------------------------------------------------------------------
 
-  private val transformDelete: Injector = (inj, _v, _r, _s) => { delprop(inj.parent, inj.key); Noval }
+  private val transformDelete: Injector = (inj, _v, _r, _s) => { injSetval(inj, Noval); Noval }
 
   private val transformCopy: Injector = (inj, _v, _r, _s) => {
     if (inj.mode == M_KEYPRE || inj.mode == M_KEYPOST) inj.key
@@ -1351,12 +1359,23 @@ object struct {
   private val transformRef: Injector = (inj, _v, _r, store) => {
     if (inj.mode != M_VAL) Noval
     else {
+      // ['`$REF`', 'ref-path']: a relative path starts where this slot is, so .x is a sibling.
       val refpath = lookup_(inj.parent, VNum(1.0))
       inj.keyi = size(inj.keys)
       getprop(store, VStr(S_DSPEC)) match {
         case VFunc(f) =>
           val spec = f(inj, Noval, "", Noval)
-          val refv = getpath(spec, refpath, INone)
+          val dpath = slice(inj.path, VNum(1.0), VNum(-2.0))
+          val refdef = new InjDef; refdef.dPath = dpath; refdef.dParent = getpath(spec, dpath, INone)
+          var refv = getpath(spec, refpath, IDef(refdef))
+          // A chain of references that comes back to a path it has named names nothing.
+          val seen = ArrayBuffer(refpath)
+          var next = refv
+          while (islist(next) && lookup_(next, VNum(0.0)) == VStr("`$REF`")) {
+            val nextpath = lookup_(next, VNum(1.0))
+            if (seen.contains(nextpath)) { refv = Noval; next = Noval }
+            else { seen += nextpath; next = getpath(spec, nextpath, IDef(refdef)) }
+          }
           var hasSub = false
           if (isnode(refv)) walk(refv, before = Some((_k, v2, _p, _path) => { if (v2 == VStr("`$REF`")) hasSub = true; v2 }))
           // A recursive reference stops where the data does.
@@ -1543,9 +1562,9 @@ object struct {
   private val validateString: Injector = (inj, _v, _r, _s) => {
     val out = lookup_(inj.dparent, inj.key)
     val t = typify(out)
-    if ((T_string & t) == 0) { pushErr(inj, invalidTypeMsg(inj.path, S_string, t, out, "V1010")); Noval }
-    else if (out == VStr(S_MT)) { pushErr(inj, "Empty string at " + pathify(inj.path, VNum(1.0))); Noval }
-    else out
+    if ((T_string & t) == 0) pushErr(inj, invalidTypeMsg(inj.path, S_string, t, out, "V1010"))
+    else if (out == VStr(S_MT)) pushErr(inj, "Empty string at " + pathify(inj.path, VNum(1.0)))
+    out
   }
 
   private val validateType: Injector = (inj, _v, refstr, _s) => {
@@ -1555,8 +1574,8 @@ object struct {
     val typev = if (tname == S_nil) typev0 | T_null else typev0
     val out = lookup_(inj.dparent, inj.key)
     val t = typify(out)
-    if ((t & typev) == 0) { pushErr(inj, invalidTypeMsg(inj.path, tname, t, out, "V1001")); Noval }
-    else out
+    if ((t & typev) == 0) pushErr(inj, invalidTypeMsg(inj.path, tname, t, out, "V1001"))
+    out
   }
 
   private val validateAny: Injector = (inj, _v, _r, _s) => lookup_(inj.dparent, inj.key)
@@ -1606,6 +1625,43 @@ object struct {
       }
     } else Noval
   }
+
+  // The members a spec does not name: the map form is a key, the list form a
+  // tuple's last item. Each places clones of its spec for the loop to check.
+  private val validateRest: Injector = (inj, _v, _r, _s) => {
+    val parent = inj.parent; val key = inj.key; val path = inj.path; val keys = inj.keys
+    if (inj.mode == M_KEYPRE) {
+      val resttm = lookup_(parent, key)
+      val tval = getprop(inj.dparent, getelem(path, VNum(-2.0)))
+      if (ismap(tval)) keysof(tval).foreach { ckey =>
+        val named = keys match { case VList(b) => b.contains(VStr(ckey)); case _ => false }
+        if (!named) { setprop(parent, VStr(ckey), clone(resttm)); setprop(keys, VNum(size(keys).toDouble), VStr(ckey)) }
+      }
+      injSetval(inj, Noval)
+      Noval
+    } else inj.prior match {
+      case Some(prior) if inj.mode == M_VAL && islist(prior.parent) && inj.keyi == 0 =>
+        inj.keyi = size(keys)
+        prior.modify = None
+        val tuple = prior.parent
+        val slot = listIndex(prior.key).toInt
+        val dlist = prior.dparent
+        val numitems = if (islist(dlist)) size(dlist) else 0
+        if (numitems <= slot) { injSetval(inj, Noval, 2); SKIP }
+        else {
+          val resttm = lookup_(parent, VNum(1.0))
+          for (i <- slot until numitems) setprop(tuple, VNum(i.toDouble), clone(resttm))
+          for (i <- size(prior.keys) until numitems) setprop(prior.keys, VNum(size(prior.keys).toDouble), VStr(strkey(VNum(i.toDouble))))
+          prior.keyi = prior.keyi - 1
+          SKIP
+        }
+      case _ =>
+        pushErr(inj, restmsg(slice(path, VNum(1.0)), " must be the last element of an array."))
+        Noval
+    }
+  }
+
+  private def restmsg(path: Value, problem: String): String = "The $REST validator at field " + pathify(path) + problem
 
   // Lowers every `$NAME` marker in the joined description, nested ones included.
   private def describeAlternatives(tvals: Value): String =
@@ -1836,19 +1892,32 @@ object struct {
   // Names a validate spec may use besides its checkers: transform's that it keeps, and $OPEN.
   private val VALIDATE_NAMES = Seq("$TOP", "$SPEC", "$BT", "$DS", "$WHEN", "$ANNO", "$REF", "$FORMAT", "$APPLY", "$OPEN")
 
-  // Report each checker the spec names that validate lacks; $EXACT's arguments are literals.
-  private def checknames(spec: Value, store: Value, path: Seq[Value], errs: Value): Unit =
+  // Report each checker the spec names that validate lacks, and each misplaced
+  // $REST; $EXACT's arguments are literals. Last: spec is a list's last item.
+  private def checknames(spec: Value, store: Value, path: Seq[Value], errs: Value, last: Boolean = false): Unit = {
+    def push(msg: String): Unit = setprop(errs, VNum(size(errs).toDouble), VStr(msg))
+    val restkey = "`$REST`"
     refname(spec) match {
       case Some(name) =>
-        if (unknownname(name, store))
-          setprop(errs, VNum(size(errs).toDouble), VStr("Unknown validator " + name + " at field " + pathify(mkList(path)) + "."))
+        if (unknownname(name, store)) push("Unknown validator " + name + " at field " + pathify(mkList(path)) + ".")
+        else if (name == "$REST") push(restmsg(mkList(path), " must be the last element of an array."))
       case None =>
-        if (!(islist(spec) && refname(lookup_(spec, VNum(0.0))).contains("$EXACT")))
+        val head = if (islist(spec)) refname(lookup_(spec, VNum(0.0))) else None
+        if (head.contains("$REST")) {
+          if (!last) push(restmsg(mkList(path), " must be the last element of an array."))
+          else if (size(spec) != 2) push(restmsg(mkList(path), " must have exactly one spec."))
+          checknames(lookup_(spec, VNum(1.0)), store, path :+ VNum(1.0), errs)
+        } else if (!head.contains("$EXACT")) {
+          if (ismap(spec) && !isNoval(lookup_(spec, VStr(restkey))) && !isNoval(lookup_(spec, VStr("`$CHILD`"))))
+            push(restmsg(mkList(path), " cannot be used with $CHILD."))
+          val lastkey = if (islist(spec)) Some(strkey(VNum((size(spec) - 1).toDouble))) else None
           keysof(spec).foreach { key =>
-            if (ismap(spec)) checknames(VStr(key), store, path, errs)
-            checknames(lookup_(spec, VStr(key)), store, path :+ VStr(key), errs)
+            if (ismap(spec) && key != restkey) checknames(VStr(key), store, path, errs)
+            checknames(lookup_(spec, VStr(key)), store, path :+ VStr(key), errs, lastkey.contains(key))
           }
+        }
     }
+  }
 
   // R_CHECKER_NAME = ^\$[A-Z]+$
   private def checkerName(s: String): Boolean =
@@ -1970,7 +2039,8 @@ object struct {
             else {
               val ckeys = keysof(cval)
               val pkeys = keysof(pval)
-              if (pkeys.nonEmpty && !(getprop(pval, VStr(S_BOPEN)) == VBool(true))) {
+              // Only a spec written as {} is open, even if named keys resolved away.
+              if ((pkeys.nonEmpty || inj.named) && !(getprop(pval, VStr(S_BOPEN)) == VBool(true))) {
                 val badkeys = ckeys.filter(ck => isNoval(lookup_(pval, VStr(ck))))
                 if (badkeys.nonEmpty) pushErr(inj, "Unexpected keys at field " + pathify(inj.path, VNum(1.0)) + S_VIZ + badkeys.mkString(", "))
               } else {
@@ -1980,6 +2050,14 @@ object struct {
             }
           } else if (islist(cval)) {
             if (!islist(pval)) pushErr(inj, invalidTypeMsg(inj.path, typename(ptype), ctype, cval, "V0030"))
+            else if (size(pval) > 0) {
+              // Closed list, so reject items past the end of the shape.
+              val badkeys = (size(pval) until size(cval)).map(i => strkey(VNum(i.toDouble)))
+              if (badkeys.nonEmpty) pushErr(inj, "Unexpected keys at field " + pathify(inj.path, VNum(1.0)) + S_VIZ + badkeys.mkString(", "))
+            } else {
+              // Empty spec list [] means list can be open (any items).
+              merge(mkList(Seq(pval, cval)))
+            }
           } else if (exactB) {
             if (!veq(cval, pval)) {
               val pathmsg = if (size(inj.path) > 1) "at field " + pathify(inj.path, VNum(1.0)) + ": " else ""
@@ -2017,6 +2095,7 @@ object struct {
     put("$LEN", VFunc(validateLen))
     put("$RANGE", VFunc(validateRange))
     put("$LIKE", VFunc(validateLike))
+    put("$REST", VFunc(validateRest))
     val store = merge(mkList(Seq(base, if (isNoval(extra)) emptyMap() else extra, mkMap(Seq((S_DERRS, errs))))), VNum(1.0))
     val meta = inj match { case IDef(d) if !isNoval(d.dMeta) => d.dMeta; case _ => emptyMap() }
     setprop(meta, VStr(S_BEXACT), getprop(meta, VStr(S_BEXACT), VBool(false)))

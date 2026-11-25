@@ -1,5 +1,5 @@
 (* VENDORED: @voxgig/struct 0.1.1 (ocaml/src/vregex.ml) *)
-(* Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof] *)
+(* Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0] *)
 (* License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream. *)
 (* Minimal backtracking regex engine for the OCaml port of voxgig/struct.
  * Supports the RE2 subset the corpus exercises: literals, '.', anchors ^ $,

@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (java/src/Struct.java)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package SCALAPACKAGE.utility.struct;
 
@@ -1430,7 +1430,7 @@ public class Struct {
                 if (ascends <= size(dpath)) {
                   val = getpath(store, fullpath);
                 } else {
-                  val = null;
+                  val = UNDEF;
                 }
                 break;
               }
@@ -1520,6 +1520,8 @@ public class Struct {
 
     inj.descend();
 
+    inj.named = false;
+
     if (isnode(val)) {
       List<String> nodekeys = keysof(val);
 
@@ -1538,6 +1540,7 @@ public class Struct {
         nodekeys = new ArrayList<>(nonDollar.size() + dollar.size());
         nodekeys.addAll(nonDollar);
         nodekeys.addAll(dollar);
+        inj.named = !nonDollar.isEmpty();
       }
 
       for (int nkI = 0; nkI < nodekeys.size(); nkI++) {
@@ -1564,6 +1567,23 @@ public class Struct {
           nodekeys = childinj.keys;
         }
       }
+
+      if (val instanceof List<?> l) {
+        List<Object> list = (List<Object>) l;
+        int kept = 0;
+        for (int i = 0; i < list.size(); i++) {
+          Object item = list.get(i);
+          if (item != SKIP) {
+            if (kept != i) {
+              list.set(kept, item);
+            }
+            kept++;
+          }
+        }
+        while (list.size() > kept) {
+          list.remove(list.size() - 1);
+        }
+      }
     } else if (val instanceof String s) {
       inj.mode = M_VAL;
       Object newVal = _injectstr(s, store, inj);
@@ -1577,7 +1597,7 @@ public class Struct {
       Object mkey = inj.key;
       Object mparent = inj.parent;
       Object mval = getprop(mparent, mkey);
-      inj.modify.apply(mval, mkey, mparent, inj, store);
+      inj.modify.apply(SKIP == mval ? UNDEF : mval, mkey, mparent, inj, store);
     }
 
     inj.val = val;
@@ -2370,7 +2390,7 @@ public class Struct {
         if (!(injObj instanceof Injection inj)) return UNDEF;
         if (inj.mode != M_VAL) return UNDEF;
 
-        // Group B: $REF arg ['`$REF`','ref-path'] read raw (TS _lookup(parent,1)).
+        // Group B: ['`$REF`','ref-path'] read raw; a relative path starts where this slot is, so .x is a sibling.
         Object refpath = lookup(inj.parent, 1);
         inj.keyI = size(inj.keys);
 
@@ -2383,7 +2403,7 @@ public class Struct {
           spec = specHolder;
         }
 
-        Object dpathRaw = slice(inj.path, 1, null);
+        Object dpathRaw = slice(inj.path, 1, -2);
         List<String> dpath =
             dpathRaw instanceof List<?> dl
                 ? new ArrayList<>((List<String>) dl)
@@ -2393,6 +2413,19 @@ public class Struct {
         refInj.dparent = getpath(spec, dpath);
         refInj.handler = _injecthandler;
         Object refResolved = getpath(spec, refpath, refInj);
+
+        // A chain of references that comes back to a path it has named names nothing.
+        List<Object> seen = new ArrayList<>();
+        seen.add(refpath);
+        for (Object next = refResolved; islist(next) && "`$REF`".equals(lookup(next, 0)); ) {
+          Object nextpath = lookup(next, 1);
+          if (seen.contains(nextpath)) {
+            refResolved = UNDEF;
+            break;
+          }
+          seen.add(nextpath);
+          next = getpath(spec, nextpath, refInj);
+        }
 
         Object tref = clone(refResolved);
 
@@ -2532,11 +2565,11 @@ public class Struct {
         int t = typify(out);
         if ((T_string & t) == 0) {
           inj.errs.add(_invalidTypeMsg(inj.path, "string", t, out, "V1010"));
-          return UNDEF;
+          return out;
         }
         if ("".equals(out)) {
           inj.errs.add("Empty string at " + pathify(inj.path, 1));
-          return UNDEF;
+          return out;
         }
         return out;
       };
@@ -2561,7 +2594,7 @@ public class Struct {
         int t = typify(out);
         if ((t & typev) == 0) {
           inj.errs.add(_invalidTypeMsg(inj.path, tname, t, out, "V1001"));
-          return UNDEF;
+          return out;
         }
         return out;
       };
@@ -2649,6 +2682,66 @@ public class Struct {
 
         return UNDEF;
       };
+
+  // The members a spec does not name: the map form is a key, the list form a
+  // tuple's last item. Each places clones of its spec for the loop to check.
+  public static final Injector validate_REST =
+      (injObj, val, ref, store) -> {
+        if (!(injObj instanceof Injection inj)) return UNDEF;
+
+        if (inj.mode == M_KEYPRE) {
+          // Group B: a null template is a spec, so it is read raw (TS _lookup(parent,key)).
+          Object resttm = lookup(inj.parent, inj.key);
+          Object tval = getprop(inj.dparent, getelem(inj.path, -2));
+
+          if (ismap(tval)) {
+            for (String ckey : keysof(tval)) {
+              if (!inj.keys.contains(ckey)) {
+                setprop(inj.parent, ckey, clone(resttm));
+                inj.keys.add(ckey);
+              }
+            }
+          }
+
+          inj.setval(UNDEF);
+          return UNDEF;
+        }
+
+        Injection prior = inj.prior;
+        if (inj.mode != M_VAL || prior == null || !islist(prior.parent) || inj.keyI != 0) {
+          inj.errs.add(_restmsg(slice(inj.path, 1, null), " must be the last element of an array."));
+          return UNDEF;
+        }
+
+        inj.keyI = size(inj.keys);
+        prior.modify = null;
+
+        Object tuple = prior.parent;
+        int slot = (int) listIndex(prior.key);
+        Object dlist = prior.dparent;
+        int numitems = islist(dlist) ? size(dlist) : 0;
+
+        if (numitems <= slot) {
+          inj.setval(UNDEF, 2);
+          return SKIP;
+        }
+
+        // Group B: the $REST spec is read raw (TS _lookup(parent,1)).
+        Object resttm = lookup(inj.parent, 1);
+        for (int i = slot; i < numitems; i++) {
+          setprop(tuple, i, clone(resttm));
+        }
+        for (int i = size(prior.keys); i < numitems; i++) {
+          prior.keys.add(strkey(i));
+        }
+
+        prior.keyI--;
+        return SKIP;
+      };
+
+  private static String _restmsg(Object path, String problem) {
+    return "The $REST validator at field " + pathify(path) + problem;
+  }
 
   private static String _describeAlternatives(List<Object> tvals) {
     List<Object> parts = new ArrayList<>(tvals.size());
@@ -3036,27 +3129,50 @@ public class Struct {
   private static final List<String> VALIDATE_NAMES =
       List.of("$TOP", "$SPEC", "$BT", "$DS", "$WHEN", "$ANNO", "$REF", "$FORMAT", "$APPLY", "$OPEN");
 
-  // Report each checker the spec names that validate lacks; $EXACT's arguments are literals.
-  private static void _checknames(Object spec, Object store, List<String> path, List<Object> errs) {
+  // Report each checker the spec names that validate lacks, and each misplaced
+  // $REST; $EXACT's arguments are literals. Last: spec is a list's last item.
+  private static void _checknames(
+      Object spec, Object store, List<String> path, List<Object> errs, boolean last) {
     String name = _refname(spec);
     if (null != name) {
       if (_unknownname(name, store)) {
         errs.add("Unknown validator " + name + " at field " + pathify(path) + ".");
+      } else if ("$REST".equals(name)) {
+        errs.add(_restmsg(path, " must be the last element of an array."));
       }
       return;
     }
 
-    if (islist(spec) && "$EXACT".equals(_refname(lookup(spec, 0)))) {
+    String head = islist(spec) ? _refname(lookup(spec, 0)) : null;
+    if ("$EXACT".equals(head)) {
       return;
     }
 
+    if ("$REST".equals(head)) {
+      if (!last) {
+        errs.add(_restmsg(path, " must be the last element of an array."));
+      } else if (2 != size(spec)) {
+        errs.add(_restmsg(path, " must have exactly one spec."));
+      }
+      List<String> spath = new ArrayList<>(path);
+      spath.add("1");
+      _checknames(lookup(spec, 1), store, spath, errs, false);
+      return;
+    }
+
+    String restkey = "`$REST`";
+    if (ismap(spec) && UNDEF != lookup(spec, restkey) && UNDEF != lookup(spec, "`$CHILD`")) {
+      errs.add(_restmsg(path, " cannot be used with $CHILD."));
+    }
+
+    String lastkey = islist(spec) ? strkey(size(spec) - 1) : null;
     for (String key : keysof(spec)) {
-      if (ismap(spec)) {
-        _checknames(key, store, path, errs);
+      if (ismap(spec) && !restkey.equals(key)) {
+        _checknames(key, store, path, errs, false);
       }
       List<String> kpath = new ArrayList<>(path);
       kpath.add(key);
-      _checknames(lookup(spec, key), store, kpath, errs);
+      _checknames(lookup(spec, key), store, kpath, errs, key.equals(lastkey));
     }
   }
 
@@ -3204,9 +3320,9 @@ public class Struct {
 
   /**
    * Modify hook used by {@link #validate(Object, Object)}: runs after each
-   * inject step; performs type-mismatch checks, open-vs-closed map handling
-   * via {@code `$OPEN`}, exact-mode comparison, and default-value copy-over.
-   * Mirrors TS {@code _validation} (lines 2242–2333).
+   * inject step; performs type-mismatch checks, open-vs-closed map and list
+   * handling, exact-mode comparison, and default-value copy-over. Mirrors TS
+   * {@code _validation}.
    */
   public static final Modify _validation =
       (pval, key, parent, injObj, store) -> {
@@ -3237,7 +3353,8 @@ public class Struct {
           List<String> ckeys = keysof(cval);
           List<String> pkeys = keysof(pval);
 
-          if (size(pkeys) > 0 && !Boolean.TRUE.equals(getprop(pval, "`$OPEN`"))) {
+          // Only a spec written as {} is open, even if named keys resolved away.
+          if ((size(pkeys) > 0 || inj.named) && !Boolean.TRUE.equals(getprop(pval, "`$OPEN`"))) {
             List<String> badkeys = new ArrayList<>();
             for (String ck : ckeys) {
               // Group B literal presence: a key the SHAPE declares is allowed
@@ -3264,6 +3381,25 @@ public class Struct {
         } else if (islist(cval)) {
           if (!islist(pval)) {
             inj.errs.add(_invalidTypeMsg(inj.path, typename(ptype), ctype, cval, "V0030"));
+          } else if (size(pval) > 0) {
+            // Closed list, so reject items past the end of the shape.
+            List<String> badkeys = new ArrayList<>();
+            for (int i = size(pval); i < size(cval); i++) {
+              badkeys.add(strkey(i));
+            }
+            if (!badkeys.isEmpty()) {
+              inj.errs.add(
+                  "Unexpected keys at field "
+                      + pathify(inj.path, 1)
+                      + ": "
+                      + String.join(", ", badkeys));
+            }
+          } else {
+            // Empty spec list [] means list can be open (any items).
+            List<Object> mergeArgs = new ArrayList<>();
+            mergeArgs.add(pval);
+            mergeArgs.add(cval);
+            merge(mergeArgs);
           }
         } else if (exact) {
           if (!Objects.equals(cval, pval)) {
@@ -3512,6 +3648,7 @@ public class Struct {
     baseStore.put("$LEN", validate_LEN);
     baseStore.put("$RANGE", validate_RANGE);
     baseStore.put("$LIKE", validate_LIKE);
+    baseStore.put("$REST", validate_REST);
 
     List<Object> mergeList = new ArrayList<>();
     mergeList.add(baseStore);
@@ -3544,7 +3681,7 @@ public class Struct {
 
     // A spec that names an unknown checker validates nothing.
     int numerrs = errs.size();
-    _checknames(spec, store, new ArrayList<>(), errs);
+    _checknames(spec, store, new ArrayList<>(), errs, false);
 
     Object out = numerrs < errs.size() ? clone(data) : transform(data, spec, opts);
 
@@ -4144,12 +4281,14 @@ public class Struct {
     public Modify modify;                    // optional value-mutation hook
     public Injection prior;                  // calling injection (chain upwards)
     public Object extra;                     // free-form passthrough
+    public boolean named;                    // current map node names keys of its own (not $ commands)
 
     /** Top-level constructor: mirrors {@code new Injection(val, parent)} in TS. */
     public Injection(Object val, Object parent) {
       this.val = val;
       this.parent = parent;
       this.errs = new ArrayList<>();
+      this.named = false;
       this.dparent = UNDEF;
       this.dpath = new ArrayList<>(List.of(S_DTOP));
       this.mode = M_VAL;
@@ -4252,7 +4391,10 @@ public class Struct {
     public Object setval(Object val, int ancestor) {
       Object parent;
       if (ancestor < 2) {
-        if (val == UNDEF) {
+        if (val == UNDEF && islist(this.parent)) {
+          // A list keeps the removed slot as a hole until inject's loop ends.
+          parent = setprop(this.parent, this.key, SKIP);
+        } else if (val == UNDEF) {
           parent = delprop(this.parent, this.key);
           this.parent = parent;
         } else {

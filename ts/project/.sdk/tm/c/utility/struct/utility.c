@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.3 (c/src/utility.c)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
  *
@@ -2522,7 +2522,6 @@ voxgig_value* voxgig_getpath(voxgig_value* store, voxgig_value* path, voxgig_inj
           }
         } else {
           voxgig_value* k = voxgig_new_string(part);
-          /* PATCH (each step reads as getprop does: a stored null is no value; pending upstream fix) */
           voxgig_value* tv = voxgig_getprop(val, k, NULL);
           voxgig_release(k);
           voxgig_release(val);

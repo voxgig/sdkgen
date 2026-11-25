@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Injection.swift)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Injection state — passed through every recursive `inject` call as a
 // reference type so command handlers (`transform_*`, `validate_*`,
@@ -54,6 +54,8 @@ public final class Injection: @unchecked Sendable {
   public var modify: Modify? = nil
   public var prior: Injection? = nil
   public var extra: Value = .noval
+  // Current map node names keys of its own (not $ commands).
+  public var named: Bool = false
 
   public init(val: Value, parent: Value) {
     self.val = val
@@ -111,8 +113,8 @@ public final class Injection: @unchecked Sendable {
     return dparent
   }
 
-  // setval(val, ancestor?): write a value into the parent (or a
-  // higher ancestor when |ancestor| >= 2). NONE deletes the slot.
+  // setval(val, ancestor?): write into the parent (or the ancestor when |ancestor| >= 2). NONE
+  // deletes the slot, except a list keeps a SKIP hole for inject's loop (_setprop drops SKIP).
   @discardableResult
   public func setval(_ v: Value, ancestor: Int = 0) -> Value {
     // Canonical branches on the RAW ancestor (`null == ancestor || ancestor <
@@ -122,7 +124,15 @@ public final class Injection: @unchecked Sendable {
     // `err:` entry was skipped.
     let absAnc = abs(ancestor)
     if ancestor < 2 {
-      if v.isNoval {
+      if v.isNoval, case .list(let l) = parent {
+        if let idx = listIndex(.string(key)) {
+          if idx < l.items.count {
+            l.items[idx] = .sentinel(SKIP)
+          } else {
+            l.items.append(.sentinel(SKIP))
+          }
+        }
+      } else if v.isNoval {
         parent = _delprop(parent, .string(key))
       } else {
         parent = _setprop(parent, .string(key), v)

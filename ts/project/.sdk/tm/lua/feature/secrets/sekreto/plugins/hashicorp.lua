@@ -1,5 +1,5 @@
--- VENDORED: @voxgig/sekreto sdk-local-nof (lua/src/sekreto/plugins/hashicorp.lua)
--- Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-local-nof]
+-- VENDORED: @voxgig/sekreto sdk-20261125-1959-0 (lua/src/sekreto/plugins/hashicorp.lua)
+-- Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261125-1959-0]
 -- License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 -- The hashicorp plugin: HashiCorp Vault, over HTTPS. Needs a socket, so
 -- it is not a built-in kind - a chain that never names it never requires

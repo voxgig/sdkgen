@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.3 (c/src/transform.c)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
  *
@@ -660,6 +660,13 @@ static voxgig_value* tx_PACK(voxgig_injection* inj, voxgig_value* val, const cha
   return voxgig_new_undef();
 }
 
+static bool _isrefcmd(voxgig_value* v) {
+  if (!voxgig_is_list(v) || 0 == voxgig_list_len(voxgig_as_list(v)))
+    return false;
+  voxgig_value* head = voxgig_list_get(voxgig_as_list(v), 0);
+  return voxgig_is_string(head) && 0 == strcmp(voxgig_as_string(head), "`$REF`");
+}
+
 static voxgig_value* tx_REF(voxgig_injection* inj, voxgig_value* val, const char* ref,
                             voxgig_value* store, void* ud) {
   (void)val;
@@ -684,9 +691,9 @@ static voxgig_value* tx_REF(voxgig_injection* inj, voxgig_value* val, const char
     spec = voxgig_new_undef();
   }
 
-  /* dpath = slice(inj.path, 1) */
+  /* dpath = slice(inj.path, 1, -2): the node holding this slot, so .x is a sibling. */
   voxgig_value* dpath_v = voxgig_new_list();
-  for (size_t i = 1; i < inj->path.len; i++)
+  for (size_t i = 1; i + 2 < inj->path.len; i++)
     voxgig_list_push(voxgig_as_list(dpath_v), voxgig_new_string(inj->path.data[i]));
 
   /* Build child injection state for the inner getpath. */
@@ -699,7 +706,34 @@ static voxgig_value* tx_REF(voxgig_injection* inj, voxgig_value* val, const char
   voxgig_value* dparent = voxgig_getpath(spec, dpath_v, NULL);
   tmp_inj->dparent = dparent;
   voxgig_value* refv = voxgig_getpath(spec, refpath, tmp_inj);
+
+  /* A chain of references that comes back to a path it has named names nothing. */
+  voxgig_value* seen = voxgig_new_list();
+  voxgig_list_push(voxgig_as_list(seen), voxgig_retain(refpath));
+  voxgig_value* next = voxgig_retain(refv);
+  while (_isrefcmd(next)) {
+    voxgig_list* nl = voxgig_as_list(next);
+    voxgig_value* nextpath = 1 < nl->len ? voxgig_retain(nl->items[1]) : voxgig_new_undef();
+    bool cycle = false;
+    voxgig_list* sl = voxgig_as_list(seen);
+    for (size_t i = 0; !cycle && i < sl->len; i++)
+      cycle = voxgig_equals(sl->items[i], nextpath);
+    if (cycle) {
+      voxgig_release(nextpath);
+      voxgig_release(refv);
+      refv = voxgig_new_undef();
+      break;
+    }
+    voxgig_list_push(sl, nextpath);
+    voxgig_value* found = voxgig_getpath(spec, nextpath, tmp_inj);
+    voxgig_release(next);
+    next = found;
+  }
+  voxgig_release(next);
+  voxgig_release(seen);
+
   voxgig_inj_free(tmp_inj);
+  voxgig_release(dparent);
   voxgig_release(spec);
 
   /* Walk refv for sub-refs. */
@@ -1086,8 +1120,7 @@ static voxgig_value* va_STRING(voxgig_injection* inj, voxgig_value* val, const c
   if ((t & VOXGIG_T_STRING) == 0) {
     voxgig_value* msg = _invalid_type_msg(&inj->path, "string", t, out);
     voxgig_list_push(voxgig_as_list(inj->errs), msg);
-    voxgig_release(out);
-    return voxgig_new_undef();
+    return out;
   }
   if (voxgig_string_len(out) == 0) {
     /* Build "Empty string at <path>" message. */
@@ -1100,8 +1133,7 @@ static voxgig_value* va_STRING(voxgig_injection* inj, voxgig_value* val, const c
     snprintf(buf, sizeof(buf), "Empty string at %s", p);
     free(p);
     voxgig_list_push(voxgig_as_list(inj->errs), voxgig_new_string(buf));
-    voxgig_release(out);
-    return voxgig_new_undef();
+    return out;
   }
   return out;
 }
@@ -1134,8 +1166,7 @@ static voxgig_value* va_TYPE(voxgig_injection* inj, voxgig_value* val, const cha
   if ((t & typev) == 0) {
     voxgig_value* msg = _invalid_type_msg(&inj->path, tname, t, out);
     voxgig_list_push(voxgig_as_list(inj->errs), msg);
-    voxgig_release(out);
-    return voxgig_new_undef();
+    return out;
   }
   return out;
 }
@@ -1180,7 +1211,9 @@ static voxgig_value* va_CHILD(voxgig_injection* inj, voxgig_value* val, const ch
     voxgig_strvec ckeys = voxgig_keysof(tval);
     for (size_t i = 0; i < ckeys.len; i++) {
       voxgig_value* ckv = voxgig_new_string(ckeys.data[i]);
-      voxgig_setprop(inj->parent, ckv, voxgig_clone(childtm));
+      voxgig_value* ctm = voxgig_clone(childtm);
+      voxgig_setprop(inj->parent, ckv, ctm);
+      voxgig_release(ctm);
       voxgig_release(ckv);
       voxgig_strvec_push(&inj->keys, ckeys.data[i]);
     }
@@ -1468,6 +1501,109 @@ static bool _nofcount(voxgig_value* count, int64_t numtvals, int64_t* lo, int64_
   else
     snprintf(desc, desclen, "%lld to %lld", (long long)*lo, (long long)*hi);
   return true;
+}
+
+/* The caller frees the result. */
+static char* _restmsg(const char* field, const char* problem) {
+  return _concat(3, (const char*[]){"The $REST validator at field ", field, problem});
+}
+
+static bool _haskey(const voxgig_strvec* keys, const char* key) {
+  for (size_t i = 0; i < keys->len; i++) {
+    if (0 == strcmp(keys->data[i], key))
+      return true;
+  }
+  return false;
+}
+
+/* The members a spec does not name: the map form is a key, the list form a
+   tuple's last item. Each places clones of its spec for the loop to check. */
+static voxgig_value* va_REST(voxgig_injection* inj, voxgig_value* val, const char* ref,
+                             voxgig_value* store, void* ud) {
+  (void)val;
+  (void)ref;
+  (void)store;
+  (void)ud;
+  if (inj->mode == VOXGIG_M_KEYPRE) {
+    voxgig_value* keyv = voxgig_new_string(inj->key);
+    voxgig_value* stored = voxgig_lookup(inj->parent, keyv);
+    voxgig_value* resttm = stored ? voxgig_retain(stored) : voxgig_new_undef();
+    voxgig_release(keyv);
+    const char* pkey = inj->path.len >= 2 ? inj->path.data[inj->path.len - 2] : "";
+    voxgig_value* pkv = voxgig_new_string(pkey);
+    voxgig_value* tval = voxgig_getprop(inj->dparent, pkv, NULL);
+    voxgig_release(pkv);
+
+    if (voxgig_is_map(tval)) {
+      voxgig_strvec ckeys = voxgig_keysof(tval);
+      for (size_t i = 0; i < ckeys.len; i++) {
+        if (_haskey(&inj->keys, ckeys.data[i]))
+          continue;
+        voxgig_value* ckv = voxgig_new_string(ckeys.data[i]);
+        voxgig_value* ctm = voxgig_clone(resttm);
+        voxgig_setprop(inj->parent, ckv, ctm);
+        voxgig_release(ctm);
+        voxgig_release(ckv);
+        voxgig_strvec_push(&inj->keys, ckeys.data[i]);
+      }
+      voxgig_strvec_free(&ckeys);
+    }
+
+    voxgig_inj_setval(inj, NULL, 0);
+    voxgig_release(tval);
+    voxgig_release(resttm);
+    return voxgig_new_undef();
+  }
+
+  voxgig_injection* prior = inj->prior;
+  if (inj->mode != VOXGIG_M_VAL || !prior || !voxgig_is_list(prior->parent) || 0 != inj->keyI ||
+      inj->keyI_neg) {
+    char* field = _fieldpath(inj, 0);
+    _pushmsg(inj, _restmsg(field, " must be the last element of an array."));
+    free(field);
+    return voxgig_new_undef();
+  }
+
+  inj->keyI = inj->keys.len;
+  voxgig_release(prior->modify_val);
+  prior->modify_val = NULL;
+
+  voxgig_value* tuple = prior->parent;
+  int64_t slot = strtoll(prior->key, NULL, 10);
+  voxgig_value* dlist = prior->dparent;
+  int64_t numitems = voxgig_is_list(dlist) ? (int64_t)voxgig_list_len(voxgig_as_list(dlist)) : 0;
+
+  if (numitems <= slot) {
+    voxgig_inj_setval(inj, NULL, 2);
+    return voxgig_new_skip();
+  }
+
+  /* Held: the first clone replaces the $REST list that holds the template. */
+  voxgig_value* one = voxgig_new_int(1);
+  voxgig_value* found = voxgig_lookup(inj->parent, one);
+  voxgig_release(one);
+  voxgig_value* resttm = found ? voxgig_retain(found) : voxgig_new_undef();
+  for (int64_t i = slot; i < numitems; i++) {
+    voxgig_value* iv = voxgig_new_int(i);
+    voxgig_value* ctm = voxgig_clone(resttm);
+    voxgig_setprop(tuple, iv, ctm);
+    voxgig_release(ctm);
+    voxgig_release(iv);
+  }
+  voxgig_release(resttm);
+  for (size_t i = prior->keys.len; i < (size_t)numitems; i++) {
+    char kbuf[32];
+    snprintf(kbuf, sizeof(kbuf), "%zu", i);
+    voxgig_strvec_push(&prior->keys, kbuf);
+  }
+
+  /* keyI is a size_t, so keyI_neg stands for -1. */
+  if (prior->keyI > 0) {
+    prior->keyI--;
+  } else if (!prior->keyI_neg) {
+    prior->keyI_neg = true;
+  }
+  return voxgig_new_skip();
 }
 
 static voxgig_value* va_EXACT(voxgig_injection* inj, voxgig_value* val, const char* ref,
@@ -1896,11 +2032,10 @@ static void _validation(voxgig_value* pval, voxgig_value* key, voxgig_value* par
     voxgig_value* openv = voxgig_getprop(pval, bopen, NULL);
     bool is_open = voxgig_is_bool(openv) && voxgig_as_bool(openv);
     voxgig_release(openv);
-    if (pkeys.len > 0 && !is_open) {
+    /* Only a spec written as {} is open, even if named keys resolved away. */
+    if ((pkeys.len > 0 || inj->named) && !is_open) {
       /* Closed object: gather badkeys. */
-      char buf[4096];
-      buf[0] = '\0';
-      bool first = true;
+      voxgig_value* badkeys = voxgig_new_list();
       for (size_t i = 0; i < ckeys.len; i++) {
         voxgig_value* kv = voxgig_new_string(ckeys.data[i]);
         /* Literal presence: _validation needs to know if the SHAPE declares
@@ -1908,24 +2043,19 @@ static void _validation(voxgig_value* pval, voxgig_value* key, voxgig_value* par
            Group A's haskey would miss null-valued slots. */
         bool has = voxgig_lookup(pval, kv) != NULL;
         voxgig_release(kv);
-        if (!has) {
-          if (!first)
-            strcat(buf, ", ");
-          strcat(buf, ckeys.data[i]);
-          first = false;
-        }
+        if (!has)
+          voxgig_list_push(voxgig_as_list(badkeys), voxgig_new_string(ckeys.data[i]));
       }
-      if (buf[0] != '\0') {
-        voxgig_value* lst = voxgig_new_list();
-        for (size_t i = 1; i < inj->path.len; i++)
-          voxgig_list_push(voxgig_as_list(lst), voxgig_new_string(inj->path.data[i]));
-        char* ps = voxgig_pathify(lst, 0, 0);
-        voxgig_release(lst);
-        char full[4500];
-        snprintf(full, sizeof(full), "Unexpected keys at field %s: %s", ps, buf);
-        free(ps);
-        voxgig_list_push(voxgig_as_list(inj->errs), voxgig_new_string(full));
+      if (0 < voxgig_size(badkeys)) {
+        voxgig_value* sep = voxgig_new_string(", ");
+        char* keys = voxgig_join_v(badkeys, sep, NULL);
+        voxgig_release(sep);
+        char* field = _fieldpath(inj, 0);
+        _pushmsg(inj, _concat(4, (const char*[]){"Unexpected keys at field ", field, ": ", keys}));
+        free(field);
+        free(keys);
       }
+      voxgig_release(badkeys);
     } else {
       /* Open: merge cval into pval. */
       voxgig_value* ml = voxgig_new_list();
@@ -1944,6 +2074,32 @@ static void _validation(voxgig_value* pval, voxgig_value* key, voxgig_value* par
     if (!voxgig_is_list(pval)) {
       voxgig_value* msg = _invalid_type_msg(&inj->path, voxgig_typename(ptype), ctype, cval);
       voxgig_list_push(voxgig_as_list(inj->errs), msg);
+    } else if (0 < voxgig_size(pval)) {
+      /* Closed list, so reject items past the end of the shape. */
+      voxgig_value* badkeys = voxgig_new_list();
+      for (int64_t i = voxgig_size(pval); i < voxgig_size(cval); i++) {
+        char kbuf[32];
+        snprintf(kbuf, sizeof(kbuf), "%lld", (long long)i);
+        voxgig_list_push(voxgig_as_list(badkeys), voxgig_new_string(kbuf));
+      }
+      if (0 < voxgig_size(badkeys)) {
+        voxgig_value* sep = voxgig_new_string(", ");
+        char* keys = voxgig_join_v(badkeys, sep, NULL);
+        voxgig_release(sep);
+        char* field = _fieldpath(inj, 0);
+        _pushmsg(inj, _concat(4, (const char*[]){"Unexpected keys at field ", field, ": ", keys}));
+        free(field);
+        free(keys);
+      }
+      voxgig_release(badkeys);
+    } else {
+      /* Empty spec list [] means list can be open (any items). */
+      voxgig_value* ml = voxgig_new_list();
+      voxgig_list_push(voxgig_as_list(ml), voxgig_retain(pval));
+      voxgig_list_push(voxgig_as_list(ml), voxgig_retain(cval));
+      voxgig_value* m = voxgig_merge(ml, VOXGIG_MAXDEPTH);
+      voxgig_release(ml);
+      voxgig_release(m);
     }
   } else if (exact) {
     if (pnone ? !cval_undef : !voxgig_equals(cval, pval)) {
@@ -2228,41 +2384,77 @@ static bool _unknownname(const char* name, voxgig_value* store) {
   return unknown;
 }
 
-/* Report each checker the spec names that validate lacks; $EXACT's arguments are literals. */
+/* pathify(path). The caller frees the result. */
+static char* _pathof(const voxgig_strvec* path) {
+  voxgig_value* lst = voxgig_new_list();
+  for (size_t i = 0; i < path->len; i++)
+    voxgig_list_push(voxgig_as_list(lst), voxgig_new_string(path->data[i]));
+  char* field = voxgig_pathify(lst, 0, 0);
+  voxgig_release(lst);
+  return field;
+}
+
+static void _pushrest(voxgig_value* errs, const voxgig_strvec* path, const char* problem) {
+  char* field = _pathof(path);
+  char* msg = _restmsg(field, problem);
+  voxgig_list_push(voxgig_as_list(errs), voxgig_new_string(msg));
+  free(msg);
+  free(field);
+}
+
+/* Report each checker the spec names that validate lacks, and each misplaced
+   $REST; $EXACT's arguments are literals. Last: spec is a list's last item. */
 static void _checknames(voxgig_value* spec, voxgig_value* store, voxgig_strvec* path,
-                        voxgig_value* errs) {
+                        voxgig_value* errs, bool last) {
   char* name = _refname(spec);
   if (name) {
     if (_unknownname(name, store)) {
-      voxgig_value* lst = voxgig_new_list();
-      for (size_t i = 0; i < path->len; i++)
-        voxgig_list_push(voxgig_as_list(lst), voxgig_new_string(path->data[i]));
-      char* field = voxgig_pathify(lst, 0, 0);
-      voxgig_release(lst);
+      char* field = _pathof(path);
       char* msg = _concat(5, (const char*[]){"Unknown validator ", name, " at field ", field, "."});
       voxgig_list_push(voxgig_as_list(errs), voxgig_new_string(msg));
       free(msg);
       free(field);
+    } else if (0 == strcmp(name, "$REST")) {
+      _pushrest(errs, path, " must be the last element of an array.");
     }
     free(name);
     return;
   }
 
-  if (voxgig_is_list(spec) && 0 < voxgig_list_len(voxgig_as_list(spec))) {
-    char* head = _refname(voxgig_list_get(voxgig_as_list(spec), 0));
-    bool exact = head && 0 == strcmp(head, "$EXACT");
-    free(head);
-    if (exact)
-      return;
+  char* head = NULL;
+  if (voxgig_is_list(spec) && 0 < voxgig_list_len(voxgig_as_list(spec)))
+    head = _refname(voxgig_list_get(voxgig_as_list(spec), 0));
+  bool exact = head && 0 == strcmp(head, "$EXACT");
+  bool rest = head && 0 == strcmp(head, "$REST");
+  free(head);
+  if (exact)
+    return;
+
+  if (rest) {
+    if (!last)
+      _pushrest(errs, path, " must be the last element of an array.");
+    else if (2 != voxgig_list_len(voxgig_as_list(spec)))
+      _pushrest(errs, path, " must have exactly one spec.");
+    voxgig_value* one = voxgig_new_int(1);
+    voxgig_strvec_push(path, "1");
+    _checknames(voxgig_lookup(spec, one), store, path, errs, false);
+    _droplast(path);
+    voxgig_release(one);
+    return;
   }
+
+  if (voxgig_is_map(spec) && voxgig_map_get(voxgig_as_map(spec), "`$REST`") &&
+      voxgig_map_get(voxgig_as_map(spec), "`$CHILD`"))
+    _pushrest(errs, path, " cannot be used with $CHILD.");
 
   voxgig_strvec keys = voxgig_keysof(spec);
   for (size_t i = 0; i < keys.len; i++) {
     voxgig_value* key = voxgig_new_string(keys.data[i]);
-    if (voxgig_is_map(spec))
-      _checknames(key, store, path, errs);
+    if (voxgig_is_map(spec) && 0 != strcmp(keys.data[i], "`$REST`"))
+      _checknames(key, store, path, errs, false);
     voxgig_strvec_push(path, keys.data[i]);
-    _checknames(voxgig_lookup(spec, key), store, path, errs);
+    _checknames(voxgig_lookup(spec, key), store, path, errs,
+                voxgig_is_list(spec) && i + 1 == keys.len);
     _droplast(path);
     voxgig_release(key);
   }
@@ -2324,6 +2516,7 @@ voxgig_value* voxgig_validate(voxgig_value* data, voxgig_value* spec, voxgig_inj
   voxgig_map_set(voxgig_as_map(m1), "$LEN", voxgig_new_injector(va_LEN, NULL));
   voxgig_map_set(voxgig_as_map(m1), "$RANGE", voxgig_new_injector(va_RANGE, NULL));
   voxgig_map_set(voxgig_as_map(m1), "$LIKE", voxgig_new_injector(va_LIKE, NULL));
+  voxgig_map_set(voxgig_as_map(m1), "$REST", voxgig_new_injector(va_REST, NULL));
 
   voxgig_value* ext = extra_in ? voxgig_retain(extra_in) : voxgig_new_map();
   voxgig_value* errwrap = voxgig_new_map();
@@ -2353,7 +2546,7 @@ voxgig_value* voxgig_validate(voxgig_value* data, voxgig_value* spec, voxgig_inj
   size_t numerrs = voxgig_list_len(voxgig_as_list(errs));
   voxgig_strvec path;
   voxgig_strvec_init(&path);
-  _checknames(spec, store, &path, errs);
+  _checknames(spec, store, &path, errs, false);
   voxgig_strvec_free(&path);
 
   voxgig_value* out = numerrs < voxgig_list_len(voxgig_as_list(errs))

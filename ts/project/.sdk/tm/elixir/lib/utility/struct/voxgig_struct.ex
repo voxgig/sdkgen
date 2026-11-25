@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/struct 0.1.1 (elixir/lib/voxgig_struct.ex)
-# Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+# Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 #
@@ -1487,7 +1487,8 @@ defmodule Voxgig.Struct do
       modify: nil,
       prior: nil,
       extra: nil,
-      root: nil
+      root: nil,
+      named: false
     })
   end
 
@@ -1547,7 +1548,8 @@ defmodule Voxgig.Struct do
       dpath: vlist_new(list_items(ig(inj, :dpath))),
       dparent: ig(inj, :dparent),
       extra: ig(inj, :extra),
-      root: ig(inj, :root)
+      root: ig(inj, :root),
+      named: false
     })
   end
 
@@ -1560,6 +1562,8 @@ defmodule Voxgig.Struct do
       end
 
     cond do
+      # A list keeps the removed slot as a hole until inject's loop ends.
+      val == nil and ancestor < 2 and islist(target) -> setprop(target, key, @skip)
       val == nil -> delprop(target, key)
       val == @heldnull -> setprop(target, key, nil)
       true -> setprop(target, key, val)
@@ -1593,6 +1597,7 @@ defmodule Voxgig.Struct do
       end
 
     inj_descend(inj)
+    is_(inj, :named, false)
 
     rv =
       cond do
@@ -1602,6 +1607,7 @@ defmodule Voxgig.Struct do
               ks = Enum.map(map_pairs(val), &elem(&1, 0))
               normal = ks |> Enum.filter(fn k -> not String.contains?(k, @s_ds) end) |> Enum.sort()
               trans = ks |> Enum.filter(fn k -> String.contains?(k, @s_ds) end) |> Enum.sort()
+              is_(inj, :named, normal != [])
               normal ++ trans
             else
               n = length(list_items(val))
@@ -1609,6 +1615,7 @@ defmodule Voxgig.Struct do
             end
 
           inject_loop(inj, val, store, nodekeys, 0)
+          if islist(val), do: list_set_items(val, Enum.reject(list_items(val), &is_skip/1))
           val
 
         is_binary(val) ->
@@ -1625,14 +1632,15 @@ defmodule Voxgig.Struct do
       mkey = ig(inj, :key)
       mparent = ig(inj, :parent)
       mval = getprop(mparent, mkey)
-      ig(inj, :modify).(mval, mkey, mparent, inj)
+      ig(inj, :modify).(if(is_skip(mval), do: nil, else: mval), mkey, mparent, inj)
     end
 
     is_(inj, :ival, rv)
 
     cond do
-      # Read literally: a null a list directive set at $TOP is the result.
-      ig(inj, :prior) == nil and holds_(ig(inj, :root), @s_dtop) ->
+      # Read literally: a null a list directive set at $TOP is the result,
+      # and a $TOP a directive removed leaves no value.
+      ig(inj, :prior) == nil and ig(inj, :root) != nil ->
         lookup_(ig(inj, :root), @s_dtop)
 
       ig(inj, :key) == @s_dtop and ig(inj, :parent) != nil and haskey(ig(inj, :parent), @s_dtop) ->
@@ -1735,7 +1743,7 @@ defmodule Voxgig.Struct do
   # ---------------------------------------------------------------------------
 
   defp transform_delete(inj, _v, _r, _s) do
-    delprop(ig(inj, :parent), ig(inj, :key))
+    inj_setval(inj, nil)
     nil
   end
 
@@ -2002,7 +2010,11 @@ defmodule Voxgig.Struct do
         nil
       else
         spec = spec_func.(inj, nil, "", store)
-        refv = getpath(spec, refpath)
+        # A relative path starts where this slot is, so .x is a sibling.
+        dpath = slice(ig(inj, :path), 1, -2)
+        refinj = vmap_new([{"dpath", dpath}, {"dparent", getpath(spec, dpath)}])
+        ref = getpath(spec, refpath, refinj)
+        refv = refchain_(spec, refinj, ref, ref, [refpath])
         flag = vlist_new([false])
 
         if isnode(refv) do
@@ -2030,6 +2042,19 @@ defmodule Voxgig.Struct do
 
         @skip
       end
+    end
+  end
+
+  # A chain of references that comes back to a path it has named names nothing.
+  defp refchain_(spec, refinj, ref, next, seen) do
+    if islist(next) and lookup_(next, 0) == "`$REF`" do
+      nextpath = lookup_(next, 1)
+
+      if nextpath in seen,
+        do: nil,
+        else: refchain_(spec, refinj, ref, getpath(spec, nextpath, refinj), [nextpath | seen])
+    else
+      ref
     end
   end
 
@@ -2258,8 +2283,8 @@ defmodule Voxgig.Struct do
     t = typify(out)
 
     cond do
-      Bitwise.band(@t_string, t) == 0 -> push_err(inj, invalid_type_msg(ig(inj, :path), "string", t, out, "V1010")); nil
-      out == @s_mt -> push_err(inj, "Empty string at " <> pathify(ig(inj, :path), 1)); nil
+      Bitwise.band(@t_string, t) == 0 -> push_err(inj, invalid_type_msg(ig(inj, :path), "string", t, out, "V1010")); keepnull_(inj, out)
+      out == @s_mt -> push_err(inj, "Empty string at " <> pathify(ig(inj, :path), 1)); out
       true -> out
     end
   end
@@ -2277,10 +2302,9 @@ defmodule Voxgig.Struct do
 
     if Bitwise.band(t, typev) == 0 do
       push_err(inj, invalid_type_msg(ig(inj, :path), tname, t, out, "V1001"))
-      nil
-    else
-      keepnull_(inj, out)
     end
+
+    keepnull_(inj, out)
   end
 
   defp type_index(tname) do
@@ -2366,6 +2390,60 @@ defmodule Voxgig.Struct do
         nil
     end
   end
+
+  # The members a spec does not name: the map form is a key, the list form a
+  # tuple's last item. Each places clones of its spec for the loop to check.
+  defp validate_rest(inj, _v, _r, _s) do
+    parent = ig(inj, :parent)
+    keys = ig(inj, :keys)
+    path = ig(inj, :path)
+    prior = ig(inj, :prior)
+
+    cond do
+      ig(inj, :mode) == @m_keypre ->
+        resttm = lookup_(parent, ig(inj, :key))
+        tval = getprop(ig(inj, :dparent), getelem(path, -2))
+
+        if ismap(tval) do
+          Enum.each(keysof(tval), fn ckey ->
+            if ckey not in list_items(keys) do
+              setprop(parent, ckey, clone(resttm))
+              setprop(keys, size(keys), ckey)
+            end
+          end)
+        end
+
+        inj_setval(inj, nil)
+        nil
+
+      ig(inj, :mode) != @m_val or prior == nil or not islist(ig(prior, :parent)) or ig(inj, :keyi) != 0 ->
+        push_err(inj, restmsg_(slice(path, 1), " must be the last element of an array."))
+        nil
+
+      true ->
+        is_(inj, :keyi, size(keys))
+        is_(prior, :modify, nil)
+
+        tuple = ig(prior, :parent)
+        slot = listidx_(ig(prior, :key))
+        dlist = ig(prior, :dparent)
+        numitems = if islist(dlist), do: size(dlist), else: 0
+
+        if numitems <= slot do
+          inj_setval(inj, nil, 2)
+        else
+          resttm = lookup_(parent, 1)
+          Enum.each(slot..(numitems - 1)//1, fn i -> setprop(tuple, i, clone(resttm)) end)
+          pkeys = ig(prior, :keys)
+          Enum.each(size(pkeys)..(numitems - 1)//1, fn i -> setprop(pkeys, size(pkeys), strkey(i)) end)
+          is_(prior, :keyi, ig(prior, :keyi) - 1)
+        end
+
+        @skip
+    end
+  end
+
+  defp restmsg_(path, problem), do: "The $REST validator at field " <> pathify(path) <> problem
 
   defp validate_exact(inj, _v, _r, _s) do
     if ig(inj, :mode) != @m_val do
@@ -2658,7 +2736,8 @@ defmodule Voxgig.Struct do
                 ckeys = keysof(cval)
                 pkeys = keysof(pval)
 
-                if pkeys != [] and getprop(pval, @s_bopen) != true do
+                # Only a spec written as {} is open, even if named keys resolved away.
+                if (pkeys != [] or ig(inj, :named)) and getprop(pval, @s_bopen) != true do
                   # Literal presence: the shape DECLARES ck even when its value
                   # is nil. Canonical uses `NONE === _lookup`; `lookup_` here
                   # returns nil for BOTH absent and present-nil, so testing
@@ -2676,7 +2755,19 @@ defmodule Voxgig.Struct do
               end
 
             islist(cval) ->
-              if not islist(pval), do: push_err(inj, invalid_type_msg(ig(inj, :path), typename(ptype), ctype, cval, "V0030"))
+              cond do
+                not islist(pval) ->
+                  push_err(inj, invalid_type_msg(ig(inj, :path), typename(ptype), ctype, cval, "V0030"))
+
+                size(pval) > 0 ->
+                  # Closed list, so reject items past the end of the shape.
+                  badkeys = Enum.map(size(pval)..(size(cval) - 1)//1, &strkey/1)
+                  if badkeys != [], do: push_err(inj, "Unexpected keys at field " <> pathify(ig(inj, :path), 1) <> @s_viz <> Enum.join(badkeys, ", "))
+
+                true ->
+                  # Empty spec list [] means list can be open (any items).
+                  merge(vlist_new([pval, cval]))
+              end
 
             exact_b ->
               if not deepequal_(cval, pval) do
@@ -2724,6 +2815,7 @@ defmodule Voxgig.Struct do
     setprop(base, "$LEN", &validate_len/4)
     setprop(base, "$RANGE", &validate_range/4)
     setprop(base, "$LIKE", &validate_like/4)
+    setprop(base, "$REST", &validate_rest/4)
     store = merge(vlist_new([base, if(extra == nil, do: empty_map(), else: extra), vmap_new([{@s_derrs, errs}])]), 1)
     meta = getprop(injdef, "meta", empty_map())
     setprop(meta, @s_bexact, getprop(meta, @s_bexact, false))
@@ -2747,23 +2839,48 @@ defmodule Voxgig.Struct do
   # Names a validate spec may use besides its checkers: transform's that it keeps, and $OPEN.
   @validate_names ["$TOP", "$SPEC", "$BT", "$DS", "$WHEN", "$ANNO", "$REF", "$FORMAT", "$APPLY", "$OPEN"]
 
-  # Report each checker the spec names that validate lacks; $EXACT's arguments are literals.
-  defp checknames_(spec, store, path, errs) do
+  # Report each checker the spec names that validate lacks, and each misplaced
+  # $REST; $EXACT's arguments are literals. Last: spec is a list's last item.
+  defp checknames_(spec, store, path, errs, last \\ false) do
     name = refname_(spec)
+    head = if islist(spec), do: refname_(lookup_(spec, 0)), else: nil
+    restkey = "`$REST`"
 
     cond do
       name != nil ->
-        if unknownname_(name, store) do
-          setprop(errs, size(errs), "Unknown validator " <> name <> " at field " <> pathify(vlist_new(path)) <> ".")
+        cond do
+          unknownname_(name, store) ->
+            setprop(errs, size(errs), "Unknown validator " <> name <> " at field " <> pathify(vlist_new(path)) <> ".")
+
+          name == "$REST" ->
+            setprop(errs, size(errs), restmsg_(vlist_new(path), " must be the last element of an array."))
+
+          true ->
+            :ok
         end
 
-      islist(spec) and refname_(lookup_(spec, 0)) == "$EXACT" ->
+      head == "$EXACT" ->
         :ok
 
+      head == "$REST" ->
+        cond do
+          last != true -> setprop(errs, size(errs), restmsg_(vlist_new(path), " must be the last element of an array."))
+          size(spec) != 2 -> setprop(errs, size(errs), restmsg_(vlist_new(path), " must have exactly one spec."))
+          true -> :ok
+        end
+
+        checknames_(lookup_(spec, 1), store, path ++ [1], errs)
+
       true ->
+        if ismap(spec) and holds_(spec, restkey) and holds_(spec, "`$CHILD`") do
+          setprop(errs, size(errs), restmsg_(vlist_new(path), " cannot be used with $CHILD."))
+        end
+
+        lastkey = if islist(spec), do: strkey(size(spec) - 1), else: nil
+
         Enum.each(keysof(spec), fn key ->
-          if ismap(spec), do: checknames_(key, store, path, errs)
-          checknames_(lookup_(spec, key), store, path ++ [key], errs)
+          if ismap(spec) and key != restkey, do: checknames_(key, store, path, errs)
+          checknames_(lookup_(spec, key), store, path ++ [key], errs, lastkey == key)
         end)
     end
   end

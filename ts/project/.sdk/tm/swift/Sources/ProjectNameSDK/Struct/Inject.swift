@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Inject.swift)
-// Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // inject — recursive descent that resolves backtick references and
 // command-table injectors. The three-phase key processing
@@ -126,6 +126,7 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
     inj = injdef!
   }
   _ = inj.descend()
+  inj.named = false
   var out = val
   if isnode(val) {
     var nodekeys: [String] = []
@@ -135,6 +136,7 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
       let plain = allSorted.filter { !$0.contains(S_DS) }
       let cmd = allSorted.filter { $0.contains(S_DS) }
       nodekeys = plain + cmd
+      inj.named = !plain.isEmpty
     } else if case .list(let l) = val {
       nodekeys = (0..<l.items.count).map { String($0) }
     }
@@ -159,6 +161,12 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
       }
       nkI += 1
     }
+    if case .list(let l) = val {
+      l.items.removeAll { item in
+        if case .sentinel(let sn) = item { return sn === SKIP }
+        return false
+      }
+    }
   } else if case .string(let s) = val {
     inj.mode = M_VAL
     out = _injectstr(s, store, inj)
@@ -180,7 +188,11 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
       let mkey = inj.key
       let mparent = inj.parent
       let mval = getprop(mparent, .string(mkey))
-      mod(mval, .string(mkey), mparent, inj, store)
+      let hole: Bool = {
+        if case .sentinel(let sn) = mval { return sn === SKIP }
+        return false
+      }()
+      mod(hole ? .noval : mval, .string(mkey), mparent, inj, store)
     }
   }
   inj.val = out

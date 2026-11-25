@@ -381,8 +381,6 @@ describe('vendored', () => {
     // Every vendored file is upstream's as it stands but these, whose
     // deviation an `adapt` in routes.json applies at each resync.
     const patched: Record<string, number> = {
-      'tm/c/utility/struct/utility.c': 1,
-      'tm/cpp/utility/voxgigstruct/voxgig_struct.hpp': 1,
       'tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift': 1,
       'tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift': 1,
       'tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift': 3,

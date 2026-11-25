@@ -1,5 +1,5 @@
 ;; VENDORED: @voxgig/struct 0.1.1 (clojure/src/voxgig/struct.clj)
-;; Source: https://github.com/voxgig/struct @ 03b9f2f54a7df24ea3f6baef647c5a5292fc072c  [tag: sdk-local-nof]
+;; Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 ;; License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 ;; Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 ;;
@@ -167,16 +167,6 @@
 (defn- jbool? [v] (instance? Boolean v))
 (defn- jdouble? [v] (or (instance? Double v) (instance? Float v)))
 (defn- jint? [v] (and (number? v) (not (jbool? v)) (not (jdouble? v))))
-
-(defn- parse-long-strict
-  "Mirror Python int(key): coerce numbers (floor), parse integer strings."
-  [k]
-  (cond
-    (jbool? k) nil
-    (jint? k) (long k)
-    (jdouble? k) (long (Math/floor (double k)))
-    (string? k) (try (Long/parseLong (.trim ^String k)) (catch Exception _ nil))
-    :else nil))
 
 ;; A list key's index, possibly negative, or nil: an integral number, or the
 ;; string String(n) prints for one ("01", " 1", "+1", "1.0" and "-0" are not).
@@ -956,7 +946,7 @@
                :path (alist-of (concat (ig inj :path) [key]))
                :nodes (alist-of (concat (ig inj :nodes) [val]))
                :handler (ig inj :handler) :errs (ig inj :errs) :meta (ig inj :meta)
-               :base (ig inj :base) :modify (ig inj :modify)})]
+               :base (ig inj :base) :modify (ig inj :modify) :named false})]
     (is! cinj :prior inj)
     (is! cinj :dpath (alist-of (ig inj :dpath)))
     (is! cinj :dparent (ig inj :dparent))
@@ -967,10 +957,13 @@
 (defn- inj-setval
   ([^Inj inj val] (inj-setval inj val nil))
   ([^Inj inj val ancestor]
-   (let [[target key] (if (or (nil? ancestor) (< ancestor 2))
+   (let [near (or (nil? ancestor) (< ancestor 2))
+         [target key] (if near
                         [(ig inj :parent) (ig inj :key)]
                         [(getelem (ig inj :nodes) (- ancestor)) (getelem (ig inj :path) (- ancestor))])]
      (cond
+       ;; A list keeps the removed slot as a hole until inject's loop ends.
+       (and (nil? val) near (islist target)) (setprop target key SKIP)
        (nil? val) (delprop target key)
        (identical? val HELDNULL) (setprop target key nil)
        :else (setprop target key val)))))
@@ -989,7 +982,7 @@
                  inj (new-inj
                       {:mode S-MVAL :full false :keyI 0 :keys (alist-of [S-DTOP]) :key S-DTOP
                        :val val :parent parent :path (alist-of [S-DTOP]) :nodes (alist-of [parent])
-                       :handler _injecthandler :base S-DTOP
+                       :handler _injecthandler :base S-DTOP :named false
                        :modify (when injdef (getprop injdef "modify"))
                        :meta (getprop injdef "meta" (lhm))
                        :errs (getprop store S-DERRS (alist))})]
@@ -1003,6 +996,7 @@
                (when (getprop injdef "dpath") (is! inj :dpath (getprop injdef "dpath"))))
              inj))]
      (inj-descend inj)
+     (is! inj :named false)
 
      (let [val
            (cond
@@ -1012,6 +1006,7 @@
                                (let [ks (vec (map str (map-keys val)))
                                      normal (sort (clojure.core/filter #(not (.contains ^String % S-DS)) ks))
                                      trans (sort (clojure.core/filter #(.contains ^String % S-DS) ks))]
+                                 (is! inj :named (> (count normal) 0))
                                  (alist-of (concat normal trans)))
                                (alist-of (map str (range (.size ^List val))))))]
                (loop [nkI 0]
@@ -1030,6 +1025,8 @@
                          (_injectstr nodekey store childinj)
                          (reset! nodekeys (ig childinj :keys)))
                        (recur (inc (ig childinj :keyI)))))))
+               (when (islist val)
+                 (.removeIf ^List val (reify java.util.function.Predicate (test [_ x] (identical? x SKIP)))))
                val)
 
              (string? val)
@@ -1044,13 +1041,14 @@
        ;; Custom modification (runs after special commands).
        (when (and (ig inj :modify) (not (identical? val SKIP)))
          (let [mkey (ig inj :key) mparent (ig inj :parent) mval (getprop mparent mkey)]
-           ((ig inj :modify) mval mkey mparent inj)))
+           ((ig inj :modify) (when-not (identical? mval SKIP) mval) mkey mparent inj)))
 
        (is! inj :val val)
 
        (cond
-         ;; Read literally: a null a list directive set at $TOP is the result.
-         (and (nil? (ig inj :prior)) (_holds (ig inj :root) S-DTOP))
+         ;; Read literally: a null a list directive set at $TOP is the result,
+         ;; and a $TOP a directive removed leaves no value.
+         (and (nil? (ig inj :prior)) (some? (ig inj :root)))
          (_lookup (ig inj :root) S-DTOP)
          (and (= (ig inj :key) S-DTOP) (some? (ig inj :parent)) (haskey (ig inj :parent) S-DTOP))
          (getprop (ig inj :parent) S-DTOP)
@@ -1098,19 +1096,13 @@
 ;; ---------------------------------------------------------------------------
 
 (defn- transform_DELETE [inj _val _ref _store]
-  (delprop (ig inj :parent) (ig inj :key)) nil)
+  (inj-setval inj nil) nil)
 
 (defn- transform_COPY [inj _val _ref _store]
   (let [mode (ig inj :mode) key (ig inj :key)]
     (if (.startsWith ^String mode "key")
       key
-      (let [dparent (ig inj :dparent) path (ig inj :path)
-            out (if-not (isnode dparent)
-                  (if (not= (size path) 2)
-                    dparent
-                    (if (parse-long-strict key) dparent nil))
-                  (let [o (getprop dparent key)]
-                    (if (and (nil? o) (some? key) (parse-long-strict key)) dparent o)))]
+      (let [out (_lookup (ig inj :dparent) key)]
         (inj-setval inj out)
         out))))
 
@@ -1270,6 +1262,16 @@
                   (setprop target tkey @rval)
                   nil)))))))))
 
+;; A chain of references that comes back to a path it has named names nothing.
+(defn- _refchain [spec refinj ref refpath]
+  (loop [nxt ref seen #{refpath}]
+    (if (and (islist nxt) (= "`$REF`" (_lookup nxt 0)))
+      (let [nextpath (_lookup nxt 1)]
+        (if (contains? seen nextpath)
+          nil
+          (recur (getpath spec nextpath refinj) (conj seen nextpath))))
+      ref)))
+
 (defn- transform_REF [inj _val _ref store]
   (if (not= (ig inj :mode) S-MVAL)
     nil
@@ -1279,7 +1281,10 @@
         (if-not (isfunc spec-func)
           nil
           (let [spec (spec-func)
-                ref (getpath spec refpath)
+                ;; A relative path starts where this slot is, so .x is a sibling.
+                dpath (slice (ig inj :path) 1 -2)
+                refinj (doto (lhm) (.put "dpath" dpath) (.put "dparent" (getpath spec dpath)))
+                ref (_refchain spec refinj (getpath spec refpath refinj) refpath)
                 hasSubRef (atom false)]
             (when (isnode ref)
               (walk ref (fn [_k v _p _path] (when (= v "`$REF`") (reset! hasSubRef true)) v)))
@@ -1460,19 +1465,19 @@
 ;; validate
 ;; ---------------------------------------------------------------------------
 
-(defn- validate_STRING [inj _val _ref _store]
-  (let [out (_lookup (ig inj :dparent) (ig inj :key)) t (typify out)]
-    (cond
-      (zero? (bit-and T_string t)) (do (.add ^List (ig inj :errs) (_invalidTypeMsg (ig inj :path) S-string t out "V1010")) nil)
-      (= out S-MT) (do (.add ^List (ig inj :errs) (str "Empty string at " (pathify (ig inj :path) 1))) nil)
-      :else out)))
-
 ;; A null the data holds comes back as HELDNULL, which inj-setval writes:
 ;; it deletes the slot for nil, and a list would shift down.
 (defn- _keepnull [inj out]
   (if (and (nil? out) (= (ig inj :mode) S-MVAL) (true? (ig inj :full)) (_holds (ig inj :dparent) (ig inj :key)))
     HELDNULL
     out))
+
+(defn- validate_STRING [inj _val _ref _store]
+  (let [out (_lookup (ig inj :dparent) (ig inj :key)) t (typify out)]
+    (cond
+      (zero? (bit-and T_string t)) (do (.add ^List (ig inj :errs) (_invalidTypeMsg (ig inj :path) S-string t out "V1010")) (_keepnull inj out))
+      (= out S-MT) (do (.add ^List (ig inj :errs) (str "Empty string at " (pathify (ig inj :path) 1))) out)
+      :else out)))
 
 (defn- validate_TYPE [inj _val ref _store]
   (let [tname (if (and (string? ref) (> (count ref) 1)) (clojure.string/lower-case (slice ref 1)) S-any)
@@ -1484,9 +1489,9 @@
         out (_lookup dparent key)
         ;; One nil: only the slot tells a missing field (no value) from a held null.
         t (if (or (some? out) (_holds dparent key)) (typify out) T_noval)]
-    (if (zero? (bit-and t typev))
-      (do (.add ^List (ig inj :errs) (_invalidTypeMsg (ig inj :path) tname t out "V1001")) nil)
-      (_keepnull inj out))))
+    (when (zero? (bit-and t typev))
+      (.add ^List (ig inj :errs) (_invalidTypeMsg (ig inj :path) tname t out "V1001")))
+    (_keepnull inj out)))
 
 (defn- validate_ANY [inj _val _ref _store]
   (_keepnull inj (_lookup (ig inj :dparent) (ig inj :key))))
@@ -1530,6 +1535,46 @@
               ;; element so the resumed loop can validate it.
               SKIP)))
       :else nil)))
+
+(defn- _restmsg [path problem]
+  (str "The $REST validator at field " (pathify path) problem))
+
+;; The members a spec does not name: the map form is a key, the list form a
+;; tuple's last item. Each places clones of its spec for the loop to check.
+(defn- validate_REST [inj _val _ref _store]
+  (let [mode (ig inj :mode) parent (ig inj :parent) keys (ig inj :keys)
+        path (ig inj :path) prior (ig inj :prior)]
+    (cond
+      (= mode S-MKEYPRE)
+      (let [resttm (_lookup parent (ig inj :key))
+            tval (getprop (ig inj :dparent) (getelem path -2))]
+        (when (ismap tval)
+          (doseq [ckey (keysof tval)]
+            (when-not (.contains ^List keys ckey)
+              (setprop parent ckey (clone resttm))
+              (.add ^List keys ckey))))
+        (inj-setval inj nil)
+        nil)
+
+      (or (not= mode S-MVAL) (nil? prior) (not (islist (ig prior :parent))) (not= 0 (ig inj :keyI)))
+      (do (.add ^List (ig inj :errs) (_restmsg (slice path 1) " must be the last element of an array."))
+          nil)
+
+      :else
+      (let [tuple (ig prior :parent)
+            slot (listindex (ig prior :key))
+            dlist (ig prior :dparent)
+            numitems (if (islist dlist) (size dlist) 0)]
+        (is! inj :keyI (size keys))
+        (is! prior :modify nil)
+        (if (<= numitems slot)
+          (inj-setval inj nil 2)
+          (let [resttm (_lookup parent 1)
+                ^List pkeys (ig prior :keys)]
+            (doseq [i (range slot numitems)] (setprop tuple i (clone resttm)))
+            (doseq [i (range (size pkeys) numitems)] (.add pkeys (strkey i)))
+            (is! prior :keyI (dec (ig prior :keyI)))))
+        SKIP))))
 
 ;; The data value at a list directive's slot, and whether the slot holds one.
 ;; The directive's own dparent was read with getprop, which reports a stored
@@ -1818,7 +1863,8 @@
                 (if-not (ismap pval)
                   (.add ^List (ig inj :errs) (_invalidTypeMsg (ig inj :path) (typename ptype) ctype cval "V0020"))
                   (let [ckeys (keysof cval) pkeys (keysof pval)]
-                    (if (and (> (count pkeys) 0) (not (true? (getprop pval "`$OPEN`"))))
+                    ;; Only a spec written as {} is open, even if named keys resolved away.
+                    (if (and (or (> (count pkeys) 0) (ig inj :named)) (not (true? (getprop pval "`$OPEN`"))))
                       ;; Literal presence: the shape DECLARES the key even when
                       ;; its value is nil. Canonical uses `NONE === _lookup`;
                       ;; `haskey` is Group A (value-based) and would drop records
@@ -1834,8 +1880,19 @@
                           (when (isnode pval) (delprop pval "`$OPEN`"))))))
 
                 (islist cval)
-                (when-not (islist pval)
-                  (.add ^List (ig inj :errs) (_invalidTypeMsg (ig inj :path) (typename ptype) ctype cval "V0030")))
+                (cond
+                  (not (islist pval))
+                  (.add ^List (ig inj :errs) (_invalidTypeMsg (ig inj :path) (typename ptype) ctype cval "V0030"))
+
+                  ;; Closed list, so reject items past the end of the shape.
+                  (> (size pval) 0)
+                  (let [badkeys (alist-of (map strkey (range (size pval) (size cval))))]
+                    (when (> (size badkeys) 0)
+                      (.add ^List (ig inj :errs)
+                            (str "Unexpected keys at field " (pathify (ig inj :path) 1) S-VIZ (join badkeys ", ")))))
+
+                  ;; Empty spec list [] means list can be open (any items).
+                  :else (merge (alist-of [pval cval])))
 
                 exact
                 (when (not= cval pval)
@@ -1871,21 +1928,42 @@
         upper (.toUpperCase ^String name java.util.Locale/ROOT)]
     (and (not (known name)) (or (= upper name) (known upper)))))
 
-;; Report each checker the spec names that validate lacks; $EXACT's arguments are literals.
-(defn- _checknames [spec store path errs]
-  (let [name (_refname spec)]
-    (cond
-      (some? name)
-      (when (_unknownname name store)
-        (.add ^List errs (str "Unknown validator " name " at field " (pathify (alist-of path)) ".")))
+;; Report each checker the spec names that validate lacks, and each misplaced
+;; $REST; $EXACT's arguments are literals. islast: spec is a list's last item.
+(defn- _checknames
+  ([spec store path errs] (_checknames spec store path errs false))
+  ([spec store path errs islast]
+   (let [name (_refname spec)
+         head (when (islist spec) (_refname (_lookup spec 0)))
+         restkey "`$REST`"]
+     (cond
+       (some? name)
+       (cond
+         (_unknownname name store)
+         (.add ^List errs (str "Unknown validator " name " at field " (pathify (alist-of path)) "."))
+         (= "$REST" name)
+         (.add ^List errs (_restmsg (alist-of path) " must be the last element of an array.")))
 
-      (and (islist spec) (= "$EXACT" (_refname (_lookup spec 0))))
-      nil
+       (= "$EXACT" head)
+       nil
 
-      :else
-      (doseq [key (keysof spec)]
-        (when (ismap spec) (_checknames key store path errs))
-        (_checknames (_lookup spec key) store (conj path key) errs)))))
+       (= "$REST" head)
+       (do
+         (cond
+           (not (true? islast))
+           (.add ^List errs (_restmsg (alist-of path) " must be the last element of an array."))
+           (not= 2 (size spec))
+           (.add ^List errs (_restmsg (alist-of path) " must have exactly one spec.")))
+         (_checknames (_lookup spec 1) store (conj path 1) errs))
+
+       :else
+       (do
+         (when (and (ismap spec) (_holds spec restkey) (_holds spec "`$CHILD`"))
+           (.add ^List errs (_restmsg (alist-of path) " cannot be used with $CHILD.")))
+         (let [lastkey (when (islist spec) (strkey (dec (size spec))))]
+           (doseq [key (keysof spec)]
+             (when (and (ismap spec) (not= restkey key)) (_checknames key store path errs))
+             (_checknames (_lookup spec key) store (conj path key) errs (= lastkey key)))))))))
 
 (defn validate
   ([data spec] (validate data spec nil))
@@ -1902,7 +1980,8 @@
                     ["$FUNCTION" validate_TYPE] ["$INSTANCE" validate_TYPE]
                     ["$ANY" validate_ANY] ["$CHILD" validate_CHILD]
                     ["$EXACT" validate_EXACT] ["$NOF" validate_NOF] ["$ALL" validate_ALL]
-                    ["$LEN" validate_LEN] ["$RANGE" validate_RANGE] ["$LIKE" validate_LIKE]]]
+                    ["$LEN" validate_LEN] ["$RANGE" validate_RANGE] ["$LIKE" validate_LIKE]
+                    ["$REST" validate_REST]]]
        (.put base k v))
      (let [store (merge (alist-of [base (if (nil? extra) (lhm) extra) (doto (lhm) (.put "$ERRS" errs))]) 1)
            meta (getprop injdef "meta" (lhm))

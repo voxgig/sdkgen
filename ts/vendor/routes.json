@@ -40,7 +40,7 @@
   "routed cannot see it. Declared, not derived - deriving it swept each",
   "port's CLI and tests in too."
  ],
- "tag": "sdk-local-nof",
+ "tag": "sdk-20261125-1959-0",
  "ignorenote": [
   "What a routed directory is EXPECTED to hold that is not vendored.",
   "--audit reports every OTHER unrouted file, so this list is what keeps a",
@@ -2045,14 +2045,7 @@
     "c/src/value_io.c": "tm/c/utility/struct/value_io.c",
     "c/src/value_io.h": "tm/c/utility/struct/value_io.h",
     "c/src/voxgig_struct.h": "tm/c/utility/struct/voxgig_struct.h"
-   },
-   "adapt": [
-    {
-     "match": "utility/struct/utility\\.c$",
-     "from": "          voxgig_value* nv = voxgig_lookup(val, k);\n          voxgig_release(k);\n          voxgig_value* tv = nv ? voxgig_retain(nv) : voxgig_new_undef();\n",
-     "to": "          /* PATCH (each step reads as getprop does: a stored null is no value; pending upstream fix) */\n          voxgig_value* tv = voxgig_getprop(val, k, NULL);\n          voxgig_release(k);\n"
-    }
-   ]
+   }
   },
   {
    "lib": "struct",
@@ -2078,14 +2071,7 @@
     "cpp/src/value.hpp": "tm/cpp/utility/voxgigstruct/value.hpp",
     "cpp/src/value_io.hpp": "tm/cpp/utility/voxgigstruct/value_io.hpp",
     "cpp/src/voxgig_struct.hpp": "tm/cpp/utility/voxgigstruct/voxgig_struct.hpp"
-   },
-   "adapt": [
-    {
-     "match": "utility/voxgigstruct/voxgig_struct\\.hpp$",
-     "from": "  if (0 == ((T_list | T_map) & typify(val)) || val.is_list() != out.is_list() || !isnode(out))\n    return deepequal(val, out);\n",
-     "to": "  // PATCH (no two cpp functions compare equal, so one is kept while it stays one; pending upstream fix)\n  if (0 == ((T_list | T_map) & typify(val)) || val.is_list() != out.is_list() || !isnode(out))\n    return deepequal(val, out) || (val.is_func() && out.is_func() && val.is_injector() == out.is_injector());\n"
-    }
-   ]
+   }
   },
   {
    "lib": "struct",
