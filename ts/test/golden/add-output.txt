@@ -790,7 +790,7 @@ src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
 src/cmp/js/Main_js.ts 9bfa6b81bac7
 src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 9742af3eb16d
-src/cmp/js/ReadmeEntity_js.ts 20cb70a7e456
+src/cmp/js/ReadmeEntity_js.ts 2d00cb31f641
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
 src/cmp/js/ReadmeHowto_js.ts 2d8a9c38bce3
 src/cmp/js/ReadmeInstall_js.ts b32a0d558675
@@ -798,7 +798,7 @@ src/cmp/js/ReadmeIntro_js.ts ff6e22583d99
 src/cmp/js/ReadmeModel_js.ts 0aa3606835e7
 src/cmp/js/ReadmeOptions_js.ts 6a3950ed95f9
 src/cmp/js/ReadmeQuick_js.ts acc7fb56525f
-src/cmp/js/ReadmeRef_js.ts 936cd097bd5b
+src/cmp/js/ReadmeRef_js.ts c2f8582fa665
 src/cmp/js/ReadmeTopHowto_js.ts 1fd0efc85561
 src/cmp/js/ReadmeTopQuick_js.ts ac185f82a7ff
 src/cmp/js/ReadmeTopTest_js.ts 58f6a02f2a39

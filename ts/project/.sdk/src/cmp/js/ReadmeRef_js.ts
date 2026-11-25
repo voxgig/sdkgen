@@ -67,8 +67,8 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
-    Content(`\`\`\`ts
-new ${model.Name}SDK(options?: object)
+    Content(`\`\`\`js
+new ${model.Name}SDK(options)
 \`\`\`
 
 Create a new SDK client instance.
@@ -97,7 +97,7 @@ ${isAuthActive(model) ? '| \`options.apikey\` | \`string\` | API key for authent
 
 Create a test client with mock features active.
 
-\`\`\`ts
+\`\`\`js
 const client = ${model.Name}SDK.test()
 \`\`\`
 
@@ -216,7 +216,7 @@ as \`callopts.signal\`, and ends when it aborts.
 `)
       }
 
-      Content(`\`\`\`ts
+      Content(`\`\`\`js
 const ${eVar} = client.${ent.Name}()
 \`\`\`
 
@@ -302,14 +302,14 @@ ${info.desc}
                 `${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')} }`
               : ''
-            Content(`\`\`\`ts
+            Content(`\`\`\`js
 const result = await client.${ent.Name}().${opname}(${arg})
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
-            Content(`\`\`\`ts
+            Content(`\`\`\`js
 const results = await client.${ent.Name}().${opname}(${listMatchArg('js', ent)})
 \`\`\`
 
@@ -323,7 +323,7 @@ const results = await client.${ent.Name}().${opname}(${listMatchArg('js', ent)})
             // `name: /* type */` comment is not a value and yields invalid code.
             const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
-            Content(`\`\`\`ts
+            Content(`\`\`\`js
 const result = await client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
@@ -345,7 +345,7 @@ const result = await client.${ent.Name}().create({
             const updateLines = updateItems.map((it: any) =>
               `  ${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
-            Content(`\`\`\`ts
+            Content(`\`\`\`js
 const result = await client.${ent.Name}().${opname}({
 ${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 })
@@ -418,7 +418,7 @@ Features are activated via the \`feature\` option:
 
 `)
 
-      Content(`\`\`\`ts
+      Content(`\`\`\`js
 const client = new ${model.Name}SDK({
   feature: {
 `)
