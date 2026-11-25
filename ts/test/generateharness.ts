@@ -1489,6 +1489,44 @@ main: kit: flow: BasicFruitFlow: {
 }
 
 
+// Artil's access rules: read for all channels by the agent's id, set one
+// channel at a time, so the match key is `agent_id` and the update's route
+// also needs an `id` of its own.
+function parentKeyedUpdate(): string {
+  const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
+  return entityOnly(`
+main: kit: entity: access: {
+  alias: field: {}
+  name: "access"
+  id: { field: "agent_id", name: "id" }
+  fields: {
+    "admit": { h: 'Admit', n: "admit", r: false, t: "\`$STRING\`" }
+    "agent_id": { h: 'AgentId', n: "agent_id", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [ {
+      g: { params: [ ${param('agent_id')} ] }
+      m: "GET", o: "/agents/{agent_id}/access", s: [{ lit: "agents" }, { var: "agent_id" }, { lit: "access" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+      q: { exist: ["agent_id"] } } ] }
+    update: { name: "update", points: [ {
+      bf: ["admit"]
+      g: { params: [ ${param('agent_id')}, ${param('id')} ] }
+      m: "PUT", o: "/agents/{agent_id}/access/{id}"
+      s: [{ lit: "agents" }, { var: "agent_id" }, { lit: "access" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+      q: { exist: ["agent_id", "id"] } } ] }
+  }
+}
+
+main: kit: flow: BasicAccessFlow: {
+  entity: "access", kind: "basic", name: "BasicAccessFlow"
+  step: [ { o: "load", i: { ref: "access_ref01" } } ]
+}
+`)
+}
+
+
 // A create whose routes are each nested under a parent of their own, so the
 // parameter every route needs reaches none of them, as loppee's attachment URL.
 function parentedCreate(): string {
@@ -2437,6 +2475,7 @@ export {
   parentedCreate,
   underscoreKeyed,
   idlessUpdate,
+  parentKeyedUpdate,
   namedFieldEntity,
   retypedList,
   seedableList,
