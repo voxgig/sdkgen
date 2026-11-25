@@ -233,7 +233,7 @@ sub byte_length {
   return length $bytes;
 }
 
-# Bytes are described, never copied (ADR-004): the kind, and the size and
+# Bytes are described, never copied (ADR-006): the kind, and the size and
 # media type where they are known. A string is bytes only as the body of a
 # point the model marks binary; a filehandle is read once, so it is a stream.
 sub describe_binary {

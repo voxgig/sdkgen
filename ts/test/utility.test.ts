@@ -176,6 +176,30 @@ describe('utility', () => {
   })
 
 
+  // PrepareAuth reads `basic` only with the key in the header, so only there
+  // does the generated Config carry it.
+  describe('configDefinition basic auth', () => {
+
+    const modelIn = (where: string) => ({
+      const: { Name: 'Demo' }, name: 'demo',
+      main: { kit: {
+        entity: {}, feature: {}, info: { servers: [{ url: 'http://x/api' }] },
+        config: { headers: {}, auth: { active: true, prefix: 'Basic', basic: true, in: where, name: 'Authorization' } },
+      } },
+    })
+
+    test('Basic in the header carries the flag', () => {
+      deepStrictEqual(configDefinition(modelIn('header')).def.options.auth, { prefix: 'Basic', basic: true })
+    })
+
+    for (const where of ['query', 'cookie']) {
+      test('Basic in the ' + where + ' carries no flag', () => {
+        deepStrictEqual(configDefinition(modelIn(where)).def.options.auth, { prefix: 'Basic' })
+      })
+    }
+  })
+
+
   // A record addressed by its slug, never an id, still fills the route of an
   // entity a list returned: the point names the field its `id` is read from.
   describe('configDefinition identity alias', () => {

@@ -286,7 +286,7 @@ public static partial class SdkUtility
         return false;
     }
 
-    // Bytes are described, never copied (ADR-004): the kind, and the size and
+    // Bytes are described, never copied (ADR-006): the kind, and the size and
     // media type where they are known. A string is bytes only as the body of a
     // point the model marks binary, and goes as UTF-8. A Stream is not asked
     // for its length, which it may refuse to give.

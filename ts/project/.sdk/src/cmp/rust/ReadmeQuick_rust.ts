@@ -147,7 +147,7 @@ match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
     // shape so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
       const items = requestExampleItems(exampleEntity, opname)
-        .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
+        .filter((it: any) => (it.name !== idF && (it.name !== 'id' || !it.optional)) ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
       const optional = items.filter((it: any) => it.optional)

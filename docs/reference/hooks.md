@@ -50,6 +50,11 @@ PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone
                                             (exception) → PreUnexpected
 ```
 
+These are the hooks the base schema lists for a feature, and
+`voxgig-sdkgen package check` reports a feature hook outside them as an
+error. The schema also lists `PreTarget` and `PostOperation`, which no
+target fires.
+
 ## Which shipped feature uses which hook
 
 The features that ship with the generator, and the hooks each one declares.

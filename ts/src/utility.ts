@@ -335,7 +335,8 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
 
   const authActive = isAuthActive(model)
   const authPrefix = resolveAuthPrefix(model)
-  const authBasic = isHttpBasicAuth(model)
+  // PrepareAuth composes Basic only in the header; elsewhere nothing reads the flag.
+  const authBasic = isHttpBasicAuth(model) && 'header' === resolveAuthIn(model)
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }

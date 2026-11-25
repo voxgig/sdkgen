@@ -318,7 +318,7 @@ local function binary_body(ctx, cfg)
 end
 
 
--- Bytes are described, never copied (ADR-004): the kind, the size, and the
+-- Bytes are described, never copied (ADR-006): the kind, the size, and the
 -- media type the point declares. A string is the only carrier here, and it
 -- is bytes only as the body of a point the model marks binary.
 local function describe_binary(val, bin)

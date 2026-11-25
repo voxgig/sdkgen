@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, underscoreKeyed, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, underscoreKeyed, idlessUpdate, parentKeyedUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY, REQUEST_SHAPED_ENTITY, multiRouteLoad, keylessLoad,
   namedEntity, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY,
 } from './generateharness'
@@ -712,7 +712,7 @@ describe('generated SDK compiles', () => {
   for (const target of ['ts', 'js']) {
     test(target + ': paging isolates independent operations', async () => {
       const sdkroot = Path.join(tmp, target + '-paging')
-      await generateTo(target, sdkroot, undefined, ['paging'])
+      await generateTo(target, sdkroot, undefined, ['test', 'paging'])
       linkDeps(sdkroot)
       if ('ts' === target) {
         const compiled = tsc(sdkroot, 'src')
@@ -1104,6 +1104,8 @@ pub fn main() void {
     ['create examples whose routes each need a parent of their own', 'ts-readme-parented-create',
       parentedCreate()],
     ['an update example whose request carries no id', 'ts-readme-idless-update', idlessUpdate()],
+    ['an update example keyed by a parent id whose route needs an id', 'ts-readme-parent-keyed-update',
+      parentKeyedUpdate()],
     ['update and remove examples on a record keyed by _id', 'ts-readme-underscore-id', underscoreKeyed()],
     ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
       namedFieldEntity('a"b\\c')],
@@ -1438,7 +1440,7 @@ pub fn main() void {
       }
 
       const sdkroot = Path.join(tmp, 'go-optnum')
-      const files = await generateTo('go', sdkroot, undefined, ['retry'])
+      const files = await generateTo('go', sdkroot, undefined, ['test', 'retry'])
       ok(null != files['test/feature_test.go'],
         'the feature suite was not generated into the SDK')
 
@@ -6866,6 +6868,17 @@ function cppTsanUnusable(ran: Run): string | null {
 }
 
 
+// ThreadSanitizer keeps its shadow memory at fixed addresses, which the high
+// address randomisation of recent Linux kernels can hand the binary first: the
+// runtime then stops with "unexpected memory mapping" or, now and then, dies
+// with a bare SIGSEGV that reads as the SDK's own crash. `setarch -R` starts it
+// unrandomised wherever the system allows that.
+function cppTsanLaunch(bin: string): [string, string[]] {
+  const setarch = 'linux' === process.platform ? toolchain('setarch') : null
+  return null != setarch && probeOk(setarch, ['-R', 'true']) ? [setarch, ['-R', bin]] : [bin, []]
+}
+
+
 // The suite under ThreadSanitizer, else built and run plainly where the
 // compiler has none or its runtime cannot start here.
 function cppConcurrency(sdkroot: string, make: Command): SuiteRun {
@@ -6879,7 +6892,8 @@ function cppConcurrency(sdkroot: string, make: Command): SuiteRun {
     make.env, CPP_CONCURRENCY_TIMEOUT_MS)
   let why = 'the compiler has no ThreadSanitizer'
   if (tsan.ok) {
-    const ran = run(bin, [], sdkroot, {
+    const [tsanBin, tsanArgs] = cppTsanLaunch(bin)
+    const ran = run(tsanBin, tsanArgs, sdkroot, {
       ...env,
       TSAN_OPTIONS: 'halt_on_error=1 suppressions=tsan.supp',
       [CPP_ROUNDS_ENV]: CPP_TSAN_ROUNDS,
@@ -9077,6 +9091,12 @@ describe('the README examples run for a slug carrying the word client', () => {
           'update example on the fruit')
       })
 
+    test(lane.target + ': the README examples run where an update keyed by a parent id needs an id in its route',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-parent-keyed-update', parentKeyedUpdate(), /update/i,
+          'update example on the access rules')
+      })
+
     test(lane.target + ': the README examples run where a load parameter and a create field hold a quote and a backslash',
       async (t) => {
         await readmeLane(t, lane, lane.target + '-quoted', namedFieldEntity('a"b\\c'), /a\\"b|a"b\\\\c/,
@@ -9121,8 +9141,8 @@ describe('the README examples run for a slug carrying the word client', () => {
 })
 
 
-// The examples the docs of c, cpp, rust, zig and ocaml show, compiled against
-// the generated SDK: each block in the target's language in its README, its
+// The documented examples of the languages below, compiled against the
+// generated SDK: each block in the target's language in its README, its
 // REFERENCE and the root README. A fragment is compiled inside a function, with
 // the client and the arguments a signature names in scope, and with the first
 // imports its page shows when it has none of its own.
@@ -9147,7 +9167,10 @@ function docBlocks(sdkroot: string, fence: string, join = '\n'): DocBlock[] {
     lines.forEach((line, i) => {
       const mark = /^\s*```\s*(\S*)\s*$/.exec(line)
       if (null == mark) {
-        if (open < 0 && /^## /.test(line)) section = i
+        if (open < 0 && /^## /.test(line)) {
+          section = i
+          step = false
+        }
         if (open < 0 && /^### /.test(line)) step = /^### \d+\./.test(line)
         return
       }
@@ -9336,7 +9359,171 @@ function ocamlExample(block: DocBlock, imports: string[]): string {
   ].join('\n')
 }
 
-type DocCompile = { label: string, bin: string, args: string[], env?: NodeJS.ProcessEnv }
+// The names a block may use without declaring: a test client, and the option
+// maps the signatures take. A block gets only those it uses and does not
+// declare, because C# refuses a local that shadows one in an enclosing scope.
+const GIVEN_NAMES = ['client', 'options', 'testopts', 'sdkopts']
+
+function givenNames(code: string, declared: (name: string) => RegExp): string[] {
+  const bare = code.replace(/\/\/.*$|;;.*$/gm, '')
+  return GIVEN_NAMES.filter((name) =>
+    new RegExp('\\b' + name + '\\b').test(bare) && !declared(name).test(bare))
+}
+
+// A page's part of a generated name: Root, Readme or Reference.
+function docKey(doc: string): string {
+  return '../README.md' === doc ? 'Root' : 'README.md' === doc ? 'Readme' : 'Reference'
+}
+
+// One C# file per block, so no import reaches another block: the page's first
+// using directives and the block's own, which are valid at file scope only.
+function csharpExample(block: DocBlock, i: number, imports: string[]): string {
+  const isUsing = (l: string) => /^using\s+[\w.]+;\s*$/.test(l)
+  const lines = block.code.split('\n')
+  const usings = new Set([...imports, ...lines.filter(isUsing)])
+  const body = lines.filter((l) => !isUsing(l))
+  const given = givenNames(body.join('\n'),
+    (name) => new RegExp('^\\s*(?:var|[\\w.<>?,\\[\\] ]+?)\\s+' + name + '\\s*=', 'm'))
+  return [...usings, '', 'namespace ReadmeExamples;', '',
+    '// ' + block.doc + ':' + block.line,
+    'public static class ' + docKey(block.doc) + 'Example' + i,
+    '{',
+    '    public static void Run()',
+    '    {',
+    ...given.map((name) => '        ' + ('client' === name
+      ? 'var client = DemoSDK.TestSDK(null, null);'
+      : 'Dictionary<string, object?>? ' + name + ' = null;')),
+    '        {',
+    ...body,
+    '        }',
+    '    }',
+    '}',
+    ''].join('\n')
+}
+
+// One Scala file per page: its imports, then an object with a method per
+// block. A block keeps its own imports, which Scala takes inside a block.
+function scalaExamples(blocks: DocBlock[], imports: string[], doc: string): string {
+  const parts: string[] = []
+  blocks.forEach((block, i) => {
+    const given = givenNames(block.code, (name) => new RegExp('\\b(?:val|var)\\s+' + name + '\\b'))
+    parts.push(
+      '  // ' + block.doc + ':' + block.line,
+      '  def example' + i + '(): Unit = {',
+      ...given.map((name) => '    ' + ('client' === name
+        ? 'val client = DemoSDK.testSDK(null, null)'
+        : 'val ' + name + ': java.util.Map[String, Object] = null')),
+      // Not a bare block: a `{` opening the line after an expression is its argument.
+      '    locally {',
+      ...block.code.split('\n'),
+      '    }',
+      '  }',
+      '')
+  })
+  return [...imports, '', 'object ' + docKey(doc) + 'Examples {', ...parts, '}', ''].join('\n')
+}
+
+// One Swift file per block, so no import reaches another block: the page's
+// first imports and the block's own, which are valid at file scope only.
+function swiftExample(block: DocBlock, i: number, imports: string[]): string {
+  const isImport = (l: string) => /^import\s+\w+\s*$/.test(l)
+  const lines = block.code.split('\n')
+  const all = new Set([...imports, ...lines.filter(isImport)])
+  const body = lines.filter((l) => !isImport(l))
+  const given = givenNames(body.join('\n'), (name) => new RegExp('\\b(?:let|var)\\s+' + name + '\\b'))
+  return [...all, '',
+    '// ' + block.doc + ':' + block.line,
+    'func ' + docKey(block.doc).toLowerCase() + 'Example' + i + '() throws {',
+    ...given.map((name) => '    ' + ('client' === name
+      ? 'let client = DemoSDK.testSDK(nil, nil)'
+      : 'let ' + name + ': VMap? = nil')),
+    '    do {',
+    ...body,
+    '    }',
+    '}',
+    ''].join('\n')
+}
+
+// A clojure block's top-level forms, each with the comments and blank lines
+// before it, so the forms that load code can be run ahead of the rest.
+function clojureForms(code: string): { lead: string, form: string }[] {
+  const forms: { lead: string, form: string }[] = []
+  let i = 0
+  let lead = ''
+  while (i < code.length) {
+    const c = code[i]
+    if (/\s/.test(c)) {
+      lead += c
+      i++
+      continue
+    }
+    if (';' === c) {
+      const eol = code.indexOf('\n', i)
+      const end = eol < 0 ? code.length : eol
+      lead += code.slice(i, end)
+      i = end
+      continue
+    }
+    let j = i
+    let depth = 0
+    let inStr = false
+    for (; j < code.length; j++) {
+      const d = code[j]
+      if (inStr) {
+        if ('\\' === d) j++
+        else if ('"' === d) inStr = false
+      }
+      else if ('"' === d) inStr = true
+      else if ('\\' === d) j++
+      else if (';' === d) {
+        const eol = code.indexOf('\n', j)
+        j = (eol < 0 ? code.length : eol) - 1
+      }
+      else if ('(' === d || '[' === d || '{' === d) depth++
+      else if (')' === d || ']' === d || '}' === d) {
+        depth--
+        if (0 === depth) {
+          j++
+          break
+        }
+      }
+      else if (0 === depth && /\s/.test(d)) break
+    }
+    forms.push({ lead, form: code.slice(i, j) })
+    lead = ''
+    i = j
+  }
+  return forms
+}
+
+const isRequire = (form: string) => /^\(require\b/.test(form)
+
+// One clojure file per page, a namespace of its own, so an alias one page
+// requires reaches no other. Each block's require forms (its own, else the
+// first its page shows) run ahead of the function holding the rest, so a block
+// sees the aliases required before it: a clojure section requires an entity's
+// namespace once, where the other languages reach the entity through the client.
+function clojurePage(blocks: DocBlock[], requires: string[], doc: string): string {
+  const parts = ['(ns readme.examples.' + docKey(doc).toLowerCase() + ')', '',
+    '(declare client options testopts sdkopts)', '']
+  blocks.forEach((block, i) => {
+    const forms = clojureForms(block.code)
+    const own = forms.filter((f) => isRequire(f.form)).map((f) => f.form)
+    const body = forms.filter((f) => !isRequire(f.form)).map((f) => f.lead + f.form).join('')
+    parts.push(
+      ';; ' + block.doc + ':' + block.line,
+      ...(0 < own.length ? own : requires),
+      '(defn example-' + i + ' []',
+      body.trim(),
+      ')',
+      '')
+  })
+  return parts.join('\n')
+}
+
+type DocCompile = {
+  label: string, bin: string, args: string[], env?: NodeJS.ProcessEnv, timeoutMs?: number,
+}
 
 const DOC_LANES: {
   target: string,
@@ -9346,6 +9533,8 @@ const DOC_LANES: {
   manifest?: (block: DocBlock) => boolean,
   // How the steps of one section join into one program.
   join?: string,
+  // A block calling a method the SDK lacks, which the lane must refuse.
+  bogus: string,
   // Writes the examples into the SDK, and returns how to compile them, or
   // null when this machine has no toolchain for them.
   compile: (sdkroot: string, blocks: DocBlock[]) => DocCompile[] | null,
@@ -9354,6 +9543,7 @@ const DOC_LANES: {
     target: 'c',
     fence: 'c',
     needs: 'C compiler',
+    bogus: 'no_such_function(client);',
     compile: (sdkroot, blocks) => {
       const cc = cCompiler()
       const make = toolchain('make')
@@ -9385,6 +9575,7 @@ const DOC_LANES: {
     target: 'cpp',
     fence: 'cpp',
     needs: 'C++ compiler',
+    bogus: 'client.noSuchMethod();',
     compile: (sdkroot, blocks) => {
       const cxx = cleanCxx()
       if (null == cxx) return null
@@ -9409,6 +9600,7 @@ const DOC_LANES: {
     target: 'rust',
     fence: 'rust',
     needs: 'cargo',
+    bogus: 'client.no_such_method();',
     compile: (sdkroot, blocks) => {
       const cargo = toolchain('cargo')
       if (null == cargo) return null
@@ -9430,6 +9622,7 @@ const DOC_LANES: {
     target: 'zig',
     fence: 'zig',
     needs: 'zig 0.16',
+    bogus: '_ = client.no_such_method();',
     manifest: (block) => /^\s*\./.test(block.code.replace(/^\s*\n/, '')),
     compile: (sdkroot, blocks) => {
       const zig = toolchain('zig')
@@ -9453,6 +9646,7 @@ const DOC_LANES: {
     fence: 'ocaml',
     needs: 'ocamlc and make',
     join: '\n;;\n',
+    bogus: 'let _ = Sdk_client.no_such_function client',
     compile: (sdkroot, blocks) => {
       const ocamlc = toolchain('ocamlc')
       const make = toolchain('make')
@@ -9469,10 +9663,155 @@ const DOC_LANES: {
       ]
     },
   },
+  {
+    target: 'csharp',
+    fence: 'csharp',
+    needs: 'dotnet',
+    bogus: 'client.NoSuchMethod();',
+    compile: (sdkroot, blocks) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+      // Beside the SDK, not inside it: its project compiles every .cs below
+      // its own directory, and would take the examples as its own source.
+      const dir = Path.join(sdkroot, '..', '_readme')
+      Fs.mkdirSync(dir, { recursive: true })
+      const sdkproj = Fs.readdirSync(sdkroot).find((f) => f.endsWith('.csproj'))
+      ok(null != sdkproj, 'csharp: no .csproj was generated')
+      const project = Fs.readFileSync(Path.join(sdkroot, sdkproj!), 'utf8')
+      const setting = (name: string) => new RegExp('<' + name + '>([^<]+)</' + name + '>').exec(project)?.[1]
+      for (const doc of DOC_PAGES) {
+        const imports = pageImports(blocks, doc, /^using\s+[\w.]+;/)
+        blocks.filter((b) => b.doc === doc).forEach((block, i) => {
+          Fs.writeFileSync(Path.join(dir, docKey(doc) + 'Example' + i + '.cs'), csharpExample(block, i, imports))
+        })
+      }
+      Fs.writeFileSync(Path.join(dir, 'Examples.csproj'), [
+        '<Project Sdk="Microsoft.NET.Sdk">',
+        '  <PropertyGroup>',
+        '    <TargetFramework>' + (setting('TargetFramework') || 'net8.0') + '</TargetFramework>',
+        '    <LangVersion>' + (setting('LangVersion') || 'latest') + '</LangVersion>',
+        '    <Nullable>enable</Nullable>',
+        '    <ImplicitUsings>enable</ImplicitUsings>',
+        '    <NoWarn>$(NoWarn);' + (setting('NoWarn') || '').replace('$(NoWarn);', '') + '</NoWarn>',
+        '  </PropertyGroup>',
+        '  <ItemGroup>',
+        '    <ProjectReference Include="../' + Path.basename(sdkroot) + '/' + sdkproj + '" />',
+        '  </ItemGroup>',
+        '</Project>',
+        ''].join('\n'))
+      return [{
+        label: 'every csharp example', bin: dotnet, timeoutMs: 15 * 60 * 1000,
+        args: ['build', '--nologo', '-v', 'quiet', Path.join('..', '_readme', 'Examples.csproj')],
+      }]
+    },
+  },
+  {
+    target: 'scala',
+    fence: 'scala',
+    needs: 'scala-cli (which resolves the Scala compiler from the network)',
+    bogus: 'client.noSuchMethod()',
+    compile: (sdkroot, blocks) => {
+      const scalacli = toolchain('scala-cli')
+      if (null == scalacli) return null
+      // Inside the SDK: scala-cli compiles every .scala below the project
+      // directory, as `make build` does, so the examples join that compile.
+      const dir = Path.join(sdkroot, '_readme')
+      Fs.mkdirSync(dir, { recursive: true })
+      for (const doc of DOC_PAGES) {
+        Fs.writeFileSync(Path.join(dir, docKey(doc) + 'Examples.scala'),
+          scalaExamples(blocks.filter((b) => b.doc === doc), pageImports(blocks, doc, /^import\s/), doc))
+      }
+      return [{
+        label: 'every scala example', bin: scalacli, timeoutMs: 15 * 60 * 1000,
+        args: ['compile', '.'],
+      }]
+    },
+  },
+  {
+    target: 'swift',
+    fence: 'swift',
+    needs: 'swift',
+    // The Package.swift dependency entry is shown in a swift block.
+    manifest: (block) => /^\s*dependencies:\s*\[/.test(block.code),
+    bogus: 'client.noSuchMethod()',
+    compile: (sdkroot, blocks) => {
+      const swift = toolchain('swift')
+      if (null == swift) return null
+      // A package of its own that depends on the SDK's by path, as a consumer
+      // does. Its library target takes declarations only, so each block is
+      // the body of a function.
+      const dir = Path.join(sdkroot, '_readme')
+      const src = Path.join(dir, 'Sources', 'ReadmeExamples')
+      Fs.mkdirSync(src, { recursive: true })
+      const product = /name:\s*"([^"]+)"/.exec(Fs.readFileSync(Path.join(sdkroot, 'Package.swift'), 'utf8'))
+      ok(null != product, 'swift: Package.swift names no package')
+      for (const doc of DOC_PAGES) {
+        const imports = pageImports(blocks, doc, /^import\s/)
+        blocks.filter((b) => b.doc === doc).forEach((block, i) => {
+          Fs.writeFileSync(Path.join(src, docKey(doc) + 'Example' + i + '.swift'), swiftExample(block, i, imports))
+        })
+      }
+      // The SDK's platform floor, which a dependent must meet; the package
+      // identity of a path dependency is its directory's name.
+      Fs.writeFileSync(Path.join(dir, 'Package.swift'), [
+        '// swift-tools-version:5.9',
+        'import PackageDescription',
+        '',
+        'let package = Package(',
+        '    name: "ReadmeExamples",',
+        '    platforms: [.macOS(.v10_15)],',
+        '    dependencies: [.package(path: "..")],',
+        '    targets: [',
+        '        .target(name: "ReadmeExamples", dependencies: [',
+        '            .product(name: "' + product![1] + '", package: "' + Path.basename(sdkroot).toLowerCase() + '"),',
+        '        ]),',
+        '    ]',
+        ')',
+        ''].join('\n'))
+      return [{
+        label: 'every swift example', bin: swift, timeoutMs: 30 * 60 * 1000,
+        args: ['build', '--package-path', '_readme', '-j', '2'],
+      }]
+    },
+  },
+  {
+    target: 'clojure',
+    fence: 'clojure',
+    needs: 'the clojure CLI (`clojure`)',
+    // The deps.edn entries are shown in clojure blocks.
+    manifest: (block) => /^;; deps\.edn/.test(block.code),
+    bogus: '(api/no-such-function client)',
+    compile: (sdkroot, blocks) => {
+      const clj = toolchain('clojure')
+      if (null == clj) return null
+      const requires: Record<string, string[]> = {}
+      for (const doc of DOC_PAGES) {
+        const first = blocks.find((b) => b.doc === doc && clojureForms(b.code).some((f) => isRequire(f.form)))
+        requires[doc] = null == first ? []
+          : clojureForms(first.code).filter((f) => isRequire(f.form)).map((f) => f.form)
+      }
+      const dir = Path.join(sdkroot, '_readme')
+      Fs.mkdirSync(dir, { recursive: true })
+      const files: string[] = []
+      for (const doc of DOC_PAGES) {
+        const name = docKey(doc).toLowerCase() + '.clj'
+        Fs.writeFileSync(Path.join(dir, name), clojurePage(blocks.filter((b) => b.doc === doc), requires[doc], doc))
+        files.push('_readme/' + name)
+      }
+      Fs.writeFileSync(Path.join(dir, 'all.clj'),
+        files.map((f) => '(load-file "' + f + '")').join('\n') + '\n')
+      // -M alone puts src on the class path; shutdown-agents lets the JVM
+      // exit as soon as the files are loaded.
+      return [{
+        label: 'every clojure example', bin: clj, timeoutMs: 10 * 60 * 1000,
+        args: ['-M', '-e', '(do (load-file "_readme/all.clj") (shutdown-agents))'],
+      }]
+    },
+  },
 ]
 
 
-describe('the documented c, cpp, rust, zig and ocaml examples compile', () => {
+describe('the documented c, cpp, rust, zig, ocaml, csharp, scala, swift and clojure examples compile', () => {
 
   let tmp = ''
 
@@ -9502,7 +9841,7 @@ describe('the documented c, cpp, rust, zig and ocaml examples compile', () => {
 
       const failed: string[] = []
       for (const c of compiles) {
-        const res = run(c.bin, c.args, sdkroot, c.env)
+        const res = run(c.bin, c.args, sdkroot, c.env, c.timeoutMs)
         if (res.unlaunchable) {
           return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(res.out, 3))
         }
@@ -9510,6 +9849,35 @@ describe('the documented c, cpp, rust, zig and ocaml examples compile', () => {
       }
       ok(0 === failed.length, lane.target + ': ' + failed.length + ' of ' + compiles.length +
         ' compile(s) of ' + blocks.length + ' documented example(s) failed:\n' + failed.join('\n'))
+    })
+  }
+
+  // A block calling a method the SDK lacks fails the lane, and the failure
+  // names the method: a lane that compiled nothing could not tell.
+  for (const lane of DOC_LANES) {
+    test(lane.target + ': a documented example calling a method the SDK lacks fails to compile', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target + '-bogus', lane.target)
+      await generateTo(lane.target, sdkroot, undefined, undefined, { top: true })
+      Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n```' + lane.fence + '\n' + lane.bogus + '\n```\n')
+
+      const blocks = docBlocks(sdkroot, lane.fence, lane.join).filter((b) => !lane.manifest?.(b))
+      ok(blocks.some((b) => b.code.includes(lane.bogus)), lane.target + ': the added block was not read')
+
+      const compiles = lane.compile(sdkroot, blocks)
+      if (null == compiles) return t.skip('no ' + lane.needs + ' here')
+
+      const name = /[Nn]o[_-]?[Ss]uch[_-]?\w*/.exec(lane.bogus)![0]
+      const failed: string[] = []
+      for (const c of compiles) {
+        const res = run(c.bin, c.args, sdkroot, c.env, c.timeoutMs)
+        if (res.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(res.out, 3))
+        }
+        if (!res.ok) failed.push(res.out)
+      }
+      ok(0 < failed.length, lane.target + ': every compile passed with a block calling ' + name)
+      ok(failed.some((out) => out.includes(name)),
+        lane.target + ': a compile failed, but not on ' + name + ':\n' + tail(failed.join('\n')))
     })
   }
 })

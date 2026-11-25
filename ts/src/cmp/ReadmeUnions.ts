@@ -6,13 +6,20 @@ import {
   getModelPath
 } from '../types'
 
+import { CANON_UNION_JOIN } from '../helpers/canonType'
+import { originName } from '../helpers/packageMeta'
+
 
 const MIN_REPORTED_BRANCHES = 3
 
 
 const ReadmeUnions = cmp(function ReadmeUnions(props: any) {
-  const { ctx$ } = props
+  const { ctx$, target } = props
   const { model } = ctx$
+
+  // Where a language cannot join a union's branches, a two-variant field is
+  // an open value too, though it is below the table's threshold.
+  const joins = null != (CANON_UNION_JOIN as any)[originName(model, target?.name)]
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -65,7 +72,8 @@ ${rows.map((r) =>
 
 These values round-trip unchanged — read them, modify them, send them back. If
 the API adds a \`discriminator\` to the definition, regenerating will type them.
-Every other field is typed normally.
+${joins ? 'Every other field is typed normally.' :
+    'A field with two variants is an open value here too; every other field is\ntyped normally.'}
 `)
 })
 

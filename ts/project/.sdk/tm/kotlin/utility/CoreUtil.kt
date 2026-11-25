@@ -309,7 +309,7 @@ private fun binaryBody(ctx: Context?, cfg: CleanConfig): BinaryBody? {
   return BinaryBody(live, Struct.getprop(body, "media", null) as? String)
 }
 
-// Bytes are described, never copied (ADR-004): the kind, and the size and
+// Bytes are described, never copied (ADR-006): the kind, and the size and
 // media type where they are known. A string is bytes only as the body of a
 // point the model marks binary. Null for a value that is not bytes.
 private fun describeBinary(v: Any, bin: BinaryBody?): MutableMap<String, Any?>? {

@@ -431,7 +431,7 @@ func (c *cleaner) sensitiveKey(key string) bool {
 	return c.cfg.sensitive(key)
 }
 
-// Bytes are described, never copied (ADR-004): the kind, and the size and
+// Bytes are described, never copied (ADR-006): the kind, and the size and
 // media type where they are known. A string is bytes only as the body of a
 // point the model marks binary; a reader is not read, since it reads once.
 func (c *cleaner) describe(val any) map[string]any {

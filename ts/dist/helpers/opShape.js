@@ -20,6 +20,7 @@ exports.entityDataIdField = entityDataIdField;
 exports.entityRecordIdField = entityRecordIdField;
 exports.entityOps = entityOps;
 exports.introOps = introOps;
+exports.generatedOps = generatedOps;
 exports.invalidRequest = invalidRequest;
 exports.entityPrimaryOp = entityPrimaryOp;
 exports.pickExampleEntity = pickExampleEntity;
@@ -330,18 +331,16 @@ function invalidRequest(ent) {
     }
     return null;
 }
-// The entity's ACTIVE op names, in canonical CRUD order, then any others
-// sorted. Doc generators gate an op example on this, NOT on the raw
-// `Object.keys(ent.op)`: an `active: false` op generates no method, and an op
-// whose every route is an action is refused without one, so a plain example
-// of either would fail.
+// The entity's ACTIVE op names that the bundled targets generate, in canonical
+// CRUD order. Doc generators gate an op example on this, NOT on the raw
+// `Object.keys(ent.op)`: an op outside `CANON_OP_ORDER` generates no method,
+// and an op whose every route is an action is refused without one, so a plain
+// example of either would fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove'];
 exports.CANON_OP_ORDER = CANON_OP_ORDER;
 function entityOps(ent) {
     const ops = (ent && ent.op) || {};
-    const active = Object.keys(ops).filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]));
-    return CANON_OP_ORDER.filter((o) => active.includes(o))
-        .concat(active.filter((o) => !CANON_OP_ORDER.includes(o)).sort());
+    return CANON_OP_ORDER.filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]));
 }
 // Unlike entityOps, keeps action-only ops: the README introductions always have.
 function introOps(model) {
@@ -355,9 +354,19 @@ function introOps(model) {
                 found.add(o);
         }
     }
-    const names = CANON_OP_ORDER.filter((o) => found.has(o))
-        .concat([...found].filter((o) => !CANON_OP_ORDER.includes(o)));
+    const names = CANON_OP_ORDER.filter((o) => found.has(o));
     return 0 < names.length ? names : ['list', 'load'];
+}
+// The operations the active entities have a generated method for, in
+// canonical order; none when no entity has one.
+function generatedOps(model) {
+    const entity = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`, { required: false }) || {};
+    const found = new Set();
+    for (const e of Object.values(entity)) {
+        for (const o of entityOps(e))
+            found.add(o);
+    }
+    return CANON_OP_ORDER.filter((o) => found.has(o));
 }
 // Every bundled target emits a method for the CANON_OP_ORDER ops and nothing
 // else, so any other active op of an active entity has none in those SDKs.
@@ -391,8 +400,8 @@ function ungeneratedOps(model) {
     }
     return out;
 }
-// Speaks only for the bundled targets: a target from another package may
-// generate more ops, so it is named as outside the claim rather than judged.
+// Speaks only for the bundled targets: a target from another package or the
+// project's own may generate more ops, so it is named outside the claim.
 function warnUngeneratedOps(model, log, origins) {
     const dropped = 0 === origins.bundled.length ? [] : ungeneratedOps(model);
     if (0 < dropped.length && log && log.warn) {
@@ -400,11 +409,14 @@ function warnUngeneratedOps(model, log, origins) {
             (0 < d.points.length ? ` (${d.points.join(', ')})` : ''));
         const generated = CANON_OP_ORDER.slice(0, -1).join(', ') + ' and ' +
             CANON_OP_ORDER[CANON_OP_ORDER.length - 1];
-        const external = origins.external.map((t) => `${t.name} from ${t.from}`);
+        const outside = [
+            ...origins.external.map((t) => `${t.name} from ${t.from}`),
+            ...origins.owned.map((name) => `${name} (the project's own)`),
+        ];
         log.warn({
             point: 'entity-op-ungenerated', ops: dropped,
-            bundled: origins.bundled, external: origins.external,
-            note: 0 === external.length
+            bundled: origins.bundled, external: origins.external, owned: origins.owned,
+            note: 0 === outside.length
                 ? `operation(s) in the model that the bundled targets do not ` +
                     `generate (each generates ${generated} only), so the SDK has no ` +
                     `method for them: ${listed.join(', ')}. To reach one, reclassify it ` +
@@ -413,8 +425,8 @@ function warnUngeneratedOps(model, log, origins) {
                 : `operation(s) in the model that the bundled targets ` +
                     `(${origins.bundled.join(', ')}) do not generate (each generates ` +
                     `${generated} only), so their SDKs have no method for them: ` +
-                    `${listed.join(', ')}. Targets installed from elsewhere may ` +
-                    `generate them, so they are not judged here: ${external.join(', ')}. ` +
+                    `${listed.join(', ')}. Targets from elsewhere may generate them, ` +
+                    `so they are not judged here: ${outside.join(', ')}. ` +
                     `To reach one in a bundled target, reclassify it in the guide ` +
                     `(.sdk/model/guide/guide.aontu)`,
         });

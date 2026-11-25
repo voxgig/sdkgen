@@ -9,7 +9,7 @@ const resolved_1 = require("../helpers/resolved");
 const Test = (0, component_1.cmp)(function Test(props) {
     const { target, ctx$ } = props;
     const { model, log } = ctx$;
-    const stdrep = (0, stdrep_1.ensureStdrep)(ctx$);
+    const stdrep = (0, stdrep_1.ensureStdrep)(ctx$, target);
     const points = Object.values(model.main.kit.entity || {}).flatMap((entity) => Object.values(entity.op || {}).flatMap((op) => op.points || []));
     if (points.some(point => (0, resolved_1.liveHint)(point))) {
         const supported = ['ts', 'js'].includes(target.name);

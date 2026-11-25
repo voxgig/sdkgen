@@ -16,11 +16,14 @@ type GuardSpec = {
     basedir: string;
     conflictdir: string;
     versions?: (abs: string) => Iterable<Buffer>;
+    forget?: (rels: string[]) => void;
     error?: (msg: string) => Error;
 };
 type MergeOutcome = {
     merged: string[];
     kept: string[];
+    unrecorded: string[];
+    lacking: Record<string, string[]>;
     retained: string[];
     spared: string[];
 };

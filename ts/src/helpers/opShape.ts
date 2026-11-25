@@ -395,19 +395,17 @@ function invalidRequest(ent: any):
 }
 
 
-// The entity's ACTIVE op names, in canonical CRUD order, then any others
-// sorted. Doc generators gate an op example on this, NOT on the raw
-// `Object.keys(ent.op)`: an `active: false` op generates no method, and an op
-// whose every route is an action is refused without one, so a plain example
-// of either would fail.
+// The entity's ACTIVE op names that the bundled targets generate, in canonical
+// CRUD order. Doc generators gate an op example on this, NOT on the raw
+// `Object.keys(ent.op)`: an op outside `CANON_OP_ORDER` generates no method,
+// and an op whose every route is an action is refused without one, so a plain
+// example of either would fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove']
 
 function entityOps(ent: any): string[] {
   const ops = (ent && ent.op) || {}
-  const active = Object.keys(ops).filter((o: string) =>
+  return CANON_OP_ORDER.filter((o: string) =>
     ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]))
-  return CANON_OP_ORDER.filter((o) => active.includes(o))
-    .concat(active.filter((o) => !CANON_OP_ORDER.includes(o)).sort())
 }
 
 
@@ -422,8 +420,19 @@ function introOps(model: any): string[] {
     }
   }
   const names = CANON_OP_ORDER.filter((o) => found.has(o))
-    .concat([...found].filter((o) => !CANON_OP_ORDER.includes(o)))
   return 0 < names.length ? names : ['list', 'load']
+}
+
+
+// The operations the active entities have a generated method for, in
+// canonical order; none when no entity has one.
+function generatedOps(model: any): string[] {
+  const entity = getModelPath(model, `main.${KIT}.entity`, { required: false }) || {}
+  const found = new Set<string>()
+  for (const e of Object.values(entity) as any[]) {
+    for (const o of entityOps(e)) found.add(o)
+  }
+  return CANON_OP_ORDER.filter((o) => found.has(o))
 }
 
 
@@ -470,8 +479,8 @@ function ungeneratedOps(model: any): UngeneratedOp[] {
 }
 
 
-// Speaks only for the bundled targets: a target from another package may
-// generate more ops, so it is named as outside the claim rather than judged.
+// Speaks only for the bundled targets: a target from another package or the
+// project's own may generate more ops, so it is named outside the claim.
 function warnUngeneratedOps(
   model: any, log: any, origins: TargetOrigins,
 ): UngeneratedOp[] {
@@ -481,11 +490,14 @@ function warnUngeneratedOps(
       (0 < d.points.length ? ` (${d.points.join(', ')})` : ''))
     const generated = CANON_OP_ORDER.slice(0, -1).join(', ') + ' and ' +
       CANON_OP_ORDER[CANON_OP_ORDER.length - 1]
-    const external = origins.external.map((t) => `${t.name} from ${t.from}`)
+    const outside = [
+      ...origins.external.map((t) => `${t.name} from ${t.from}`),
+      ...origins.owned.map((name) => `${name} (the project's own)`),
+    ]
     log.warn({
       point: 'entity-op-ungenerated', ops: dropped,
-      bundled: origins.bundled, external: origins.external,
-      note: 0 === external.length
+      bundled: origins.bundled, external: origins.external, owned: origins.owned,
+      note: 0 === outside.length
         ? `operation(s) in the model that the bundled targets do not ` +
         `generate (each generates ${generated} only), so the SDK has no ` +
         `method for them: ${listed.join(', ')}. To reach one, reclassify it ` +
@@ -494,8 +506,8 @@ function warnUngeneratedOps(
         : `operation(s) in the model that the bundled targets ` +
         `(${origins.bundled.join(', ')}) do not generate (each generates ` +
         `${generated} only), so their SDKs have no method for them: ` +
-        `${listed.join(', ')}. Targets installed from elsewhere may ` +
-        `generate them, so they are not judged here: ${external.join(', ')}. ` +
+        `${listed.join(', ')}. Targets from elsewhere may generate them, ` +
+        `so they are not judged here: ${outside.join(', ')}. ` +
         `To reach one in a bundled target, reclassify it in the guide ` +
         `(.sdk/model/guide/guide.aontu)`,
     })
@@ -792,6 +804,7 @@ export {
   entityRecordIdField,
   entityOps,
   introOps,
+  generatedOps,
   invalidRequest,
   entityPrimaryOp,
   pickExampleEntity,

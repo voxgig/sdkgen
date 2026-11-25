@@ -1,5 +1,6 @@
 import { kindCollection } from '../helpers/kindCollection'
 
+import Fs from 'node:fs'
 import Path from 'node:path'
 
 import { getelem } from '@voxgig/struct'
@@ -9,6 +10,7 @@ import { KIT } from '../types'
 import { SdkGenError } from '../utility'
 
 import { definitionPathAny } from '../helpers/definition'
+import { scaffoldFolder } from '../helpers/shipped'
 import { readManifest, checkShape, ITEM_NAME_RE } from '../helpers/manifest'
 
 
@@ -364,12 +366,14 @@ function resolvesBundled(declared: any, name: string): boolean {
 type TargetOrigins = {
   bundled: string[]
   external: { name: string, from: string }[]
+  owned: string[]
 }
 
 
+// A bare name the shipped scaffold lacks is the project's own.
 function targetOrigins(model: any): TargetOrigins {
   const targets = kindCollection(model, 'target')
-  const origins: TargetOrigins = { bundled: [], external: [] }
+  const origins: TargetOrigins = { bundled: [], external: [], owned: [] }
 
   for (const name of Object.keys(targets).sort()) {
     const target = targets[name]
@@ -377,11 +381,14 @@ function targetOrigins(model: any): TargetOrigins {
       continue
     }
 
-    if (resolvesBundled(target, name)) {
-      origins.bundled.push(name)
+    if (!resolvesBundled(target, name)) {
+      origins.external.push({ name, from: normaliseBase(target.base) })
+    }
+    else if (!Fs.existsSync(definitionPathAny(Fs, scaffoldFolder(), 'target', target.origname || name))) {
+      origins.owned.push(name)
     }
     else {
-      origins.external.push({ name, from: normaliseBase(target.base) })
+      origins.bundled.push(name)
     }
   }
 

@@ -129,6 +129,7 @@
     "goVersion",
     "graphqlDirectSkip",
     "guardFlowSteps",
+    "guardModel",
     "guardModelNames",
     "hasLiveScenarios",
     "hasPackageName",
@@ -264,6 +265,7 @@
     "serverVarEnv",
     "serverVariables",
     "snakify",
+    "sourceString",
     "srcFeatureExcludes",
     "stationLibrary",
     "swiftSafeTypeName",
@@ -309,7 +311,6 @@
     "TEST_CONTROL_EXCLUDE",
     "TestControl",
     "apiName",
-    "applyFacts",
     "authorInfo",
     "availableFeatures",
     "bodyNote",
@@ -497,5 +498,14 @@
     "validateSeeds",
     "vendorCommand",
     "warnUngeneratedOps"
+  ],
+  "testkit": [
+    "PLACEHOLDERS",
+    "SDKGEN_ROOT",
+    "generateInto",
+    "manifestParity",
+    "stageConsumer",
+    "textGuard",
+    "volumeKey"
   ]
 }

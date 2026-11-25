@@ -3,27 +3,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuideTop = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
+const facts_1 = require("../helpers/facts");
+const surface_1 = require("../helpers/surface");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideTopIntro = (0, component_1.cmp)(function AgentGuideTopIntro(props) {
-    const { Name } = props.s;
+    const { Name, model, targets } = props.s;
+    const featureGuides = targets.some((t) => (0, facts_1.fact)(t, 'phase').agentguide && (0, AgentGuideContent_1.writesFeatureGuides)(model, t));
+    // One SDK is named by its title; only several make a multi-language project.
+    const sdks = targets.filter((t) => 'sdk' === (0, surface_1.surfaceOf)(t));
+    const project = 1 < sdks.length ? `multi-language SDK project. The client libraries in
+each language directory are` : 1 === sdks.length ? `${(0, facts_1.fact)(sdks[0], 'title')} SDK project. The client library
+is` : `project. Its targets are`;
+    const output = 1 < sdks.length ? 'the language directories' : 'the generated code';
     (0, jostraca_1.Content)(`# ${Name} SDK — Agent Guide
 
-This is a **generated** multi-language SDK project. The client libraries in
-each language directory are produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
+This is a **generated** ${project} produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
 from an API model; the generator, model, templates, and components all live in
-\`.sdk/\`. Treat the language directories as build output — change the model,
+\`.sdk/\`. Treat ${output} as build output — change the model,
 a template, or a component and regenerate.
 
 There are companion guides deeper in the tree: one per language
-(\`<lang>/AGENTS.md\`) and one per feature
-(\`<lang>/src/feature/<name>/AGENTS.md\`).
+(\`<lang>/AGENTS.md\`)${featureGuides ? `, and one per feature in a target that keeps each
+feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 
 ## Project map
 
 `);
 });
 const AgentGuideTopTargets = (0, component_1.cmp)(function AgentGuideTopTargets(props) {
-    const { targets } = props.s;
+    const { model, targets } = props.s;
     if (0 < targets.length) {
         (0, jostraca_1.Content)(`**Targets** (${targets.length}):
 
@@ -31,8 +39,10 @@ const AgentGuideTopTargets = (0, component_1.cmp)(function AgentGuideTopTargets(
 | --- | --- | --- |
 `);
         targets.forEach((t) => {
-            const note = (0, AgentGuideContent_1.langCmd)(t.name).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name).note : '';
-            (0, jostraca_1.Content)(`| \`${t.name}\` | \`${t.name}/\`${note} | [\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md) |
+            const note = (0, AgentGuideContent_1.langCmd)(t.name, model).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name, model).note : '';
+            const dir = 'folder' === (0, facts_1.fact)(t, 'place') ? `\`${t.name}/\`` : '—';
+            const guide = (0, facts_1.fact)(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—';
+            (0, jostraca_1.Content)(`| \`${t.name}\` | ${dir}${note} | ${guide} |
 `);
         });
         (0, jostraca_1.Content)(`
@@ -45,9 +55,8 @@ const AgentGuideTopFeatures = (0, component_1.cmp)(function AgentGuideTopFeature
         (0, jostraca_1.Content)(`**Features** (${features.length}): `);
         (0, jostraca_1.Content)(features.map((f) => `\`${f.name}\``).join(', ') + `.
 
-Each feature is generated into every SDK target — as a directory
-\`<lang>/src/feature/<name>/\` (ts/js) or a flat file in the \`<lang>/feature/\`
-package (other languages). Each target's guide documents its features.
+Each feature is generated into each SDK target that supports it, and each
+target's guide documents where that target keeps its features.
 
 `);
     }
@@ -68,10 +77,11 @@ const AgentGuideTopStation = (0, component_1.cmp)(function AgentGuideTopStation(
     // on this repo should know the runtime story without leaving
     // AGENTS.md — and, first, that the application's integrations are
     // DECLARED in station.json, so that file is where to look.
-    if (features.some((f) => 'station' === f.name)) {
+    const station = features.find((f) => 'station' === f.name);
+    if (null != station) {
         (0, jostraca_1.Content)(`**Station**: this SDK is a
 [voxgig/station](https://github.com/voxgig/station) plugin (the
-\`station\` feature, off by default). An application's outbound
+\`station\` feature, ${(0, facts_1.fact)(station, 'on') ? 'on' : 'off'} by default). An application's outbound
 integrations are **declared in \`station.json\`** at its repo root —
 to learn what the application talks to, read that file: every SDK
 instance (\`sdk\`), per-api default (\`api\`), feature setting, and
@@ -89,8 +99,8 @@ target's feature container) for the generated adapter.
 `);
     }
 });
-const AgentGuideTopWorkflow = (0, component_1.cmp)(function AgentGuideTopWorkflow() {
-    (0, jostraca_1.Content)((0, AgentGuideContent_1.workflowSection)());
+const AgentGuideTopWorkflow = (0, component_1.cmp)(function AgentGuideTopWorkflow(props) {
+    (0, jostraca_1.Content)((0, AgentGuideContent_1.workflowSection)(props.s.model));
 });
 const AgentGuideTopFeatureGuide = (0, component_1.cmp)(function AgentGuideTopFeatureGuide() {
     (0, jostraca_1.Content)((0, AgentGuideContent_1.featureSection)());
@@ -98,8 +108,8 @@ const AgentGuideTopFeatureGuide = (0, component_1.cmp)(function AgentGuideTopFea
 const AgentGuideTopCustomise = (0, component_1.cmp)(function AgentGuideTopCustomise() {
     (0, jostraca_1.Content)((0, AgentGuideContent_1.customiseSection)());
 });
-const AgentGuideTopAontu = (0, component_1.cmp)(function AgentGuideTopAontu() {
-    (0, jostraca_1.Content)((0, AgentGuideContent_1.aontuSection)());
+const AgentGuideTopAontu = (0, component_1.cmp)(function AgentGuideTopAontu(props) {
+    (0, jostraca_1.Content)((0, AgentGuideContent_1.aontuSection)(props.s.model));
 });
 const AgentGuideTopLayout = (0, component_1.cmp)(function AgentGuideTopLayout() {
     (0, jostraca_1.Content)(`## Where things live
@@ -130,7 +140,7 @@ const AgentGuideTop = (0, component_1.cmp)(function AgentGuideTop(props) {
     const targets = (0, AgentGuideContent_1.activeTargets)(model);
     const features = (0, AgentGuideContent_1.activeFeatures)(model);
     const entities = (0, AgentGuideContent_1.activeEntities)(model);
-    const s = { Name, targets, features, entities };
+    const s = { Name, model, targets, features, entities };
     (0, jostraca_1.File)({ name: 'AGENTS.md' }, () => {
         AgentGuideTopIntro({ s });
         AgentGuideTopTargets({ s });

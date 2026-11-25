@@ -19,7 +19,7 @@ const Entity = cmp(function Entity(props: any) {
   // Entity_<lang> components pull stdrep off ctx$ for their fragments, and
   // Entity is the FIRST phase Root runs — so the generator-owned keys have to
   // exist by here, not just by Main.
-  ensureStdrep(ctx$)
+  ensureStdrep(ctx$, target)
 
   const entitySDK = getModelPath(ctx$.model, `main.${KIT}.entity.${entity.name}`)
 

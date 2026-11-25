@@ -10,12 +10,21 @@ type DoctorReport = {
     orphanModel: string[];
     resyncPending: string[];
     aliasedDiff: string[];
+    aliasedBehind: {
+        file: string;
+        slots: string[];
+    }[];
     outdated: string[];
+    ahead: string[];
     unrecorded: string[];
     customized: string[];
+    unfolded: Unfolded[];
+    belowFloor: string[];
+    unreadable: Unreadable[];
     unresolved: string[];
     byItem: Record<string, ItemDrift>;
     ignoredLog: boolean;
+    untested: string[];
     ok: boolean;
 };
 type ItemDrift = {
@@ -23,9 +32,24 @@ type ItemDrift = {
     from?: string;
     to?: string;
     outdated: number;
+    ahead: number;
     changed: number;
     customized: number;
+    belowFloor?: boolean;
     unresolved?: string;
+};
+type Unreadable = {
+    file: string;
+    item: string;
+    error: string;
+    oldSyntax: boolean;
+};
+declare const COPY_FLOOR = "4.23.0";
+declare const MODEL_FLOOR = "1.3.18";
+type Unfolded = {
+    file: string;
+    item: string;
+    names: string[];
 };
 declare function action_doctor(args: string[], actx: ActionContext): Promise<ActionResult>;
 type DoctorScope = (kind: string, name: string) => boolean;
@@ -33,5 +57,5 @@ declare function doctor(actx: ActionContext, scope?: DoctorScope, selected?: str
 declare function refreshCommand(item: string, pkg?: string): string;
 declare function copyCheck(actx: ActionContext): Promise<string[]>;
 declare function copyWarnings(report: DoctorReport): string[];
-export type { DoctorReport, DoctorScope, ItemDrift, };
-export { action_doctor, doctor, copyCheck, copyWarnings, refreshCommand, };
+export type { DoctorReport, DoctorScope, ItemDrift, Unfolded, Unreadable, };
+export { COPY_FLOOR, MODEL_FLOOR, action_doctor, doctor, copyCheck, copyWarnings, refreshCommand, };

@@ -61,11 +61,13 @@ main: kit: text: close({
 
 # Who publishes the SDK: the LICENSE copyright holder, the default package
 # author, and where SECURITY.md sends a vulnerability report. An empty name
-# is Voxgig, whose url and security contact then apply.
+# is Voxgig, whose url and security contact then apply. An official
+# publisher owns the API, so nothing calls the SDK unofficial.
 main: kit: publisher: {
   name: *'' | string
   url: *'' | string
   security: *'' | string
+  official: *false | boolean
 }
 
 
@@ -96,6 +98,10 @@ main: kit: target: &: {
   base:     *'' | string
   origname: *'' | string
   package:  *'' | string
+
+  surface:  *'' | string
+  consumes: *'' | string
+
   module: {
     name: string
 
@@ -179,6 +185,8 @@ main: kit: entity: &: {
   active: *true | boolean
 
   alias: {}
+
+  op: &: active: *true | boolean
 }
 
 
@@ -210,8 +218,8 @@ main: kit: feature: &: {
     title: *'' | string
 
     # What this plugin needs of the RUNTIME - 'fs', 'fetch', 'crypto'.
-    # Declared so a target that cannot provide it is refused at
-    # generation rather than at the consumer's first lookup.
+    # Nothing refuses a target that cannot provide it; the ocaml target
+    # reads fetch to group the plugins that need TLS.
     needs: &: boolean
 
     path: *[] | [&: string]
@@ -236,13 +244,17 @@ main: kit: feature: &: {
     PostConstructEntity: {}
     SetData: {}
     GetData: {}
+    SetMatch: {}
     GetMatch: {}
 
     PreTarget: {}
+    PrePoint: {}
     PreSpec: {}
     PreRequest: {}
     PreResponse: {}
     PreResult: {}
+    PreDone: {}
+    PreUnexpected: {}
     PostOperation: {}
   }
 

@@ -1,23 +1,18 @@
-import { each, Content, File } from 'jostraca'
+import { Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { packageVersion } from '../helpers/packageMeta'
+import { packageVersion, registryState } from '../helpers/packageMeta'
+import { fact } from '../helpers/facts'
 
-import {
-  KIT,
-  getModelPath
-} from '../types'
+import { KIT } from '../types'
 
 
 const Deploy = cmp(function Deploy(props: any) {
   const { ctx$ } = props
   const { model } = ctx$
 
-  const targetMap = getModelPath(model, `main.${KIT}.target`) || {}
-  const targets: any[] = []
-  each(targetMap, (t: any) => {
-    if (false !== t.active) targets.push(t)
-  })
+  const kit = model.main[KIT]
+  const targets: any[] = fact(kit, 'active').map((name: string) => kit.target[name])
 
   if (0 === targets.length) {
     return
@@ -29,27 +24,25 @@ const Deploy = cmp(function Deploy(props: any) {
 
   ctx$.log.info({
     point: 'generate-deploy',
-    note: 'targets: ' + targets.map((t: any) =>
-      t.name + (registryOf(t) ? (':' + registryOf(t).name + (regIsActive(registryOf(t)) ? '' : '(publish pending)')) : ':tag-only')
-    ).join(',')
+    note: 'targets: ' + targets.map((t: any) => {
+      const state = registryState(model, t.name)
+      return t.name + ('tag' === state ? ':tag-only' :
+        ':' + registryOf(t).name + ('active' === state ? '' : '(publish ' + pendingWord(state) + ')'))
+    }).join(',')
   })
 })
 
 
+// The declared registry block, `none` included: a port that declares one
+// has its release tag cut at the root, whatever registryState calls it.
 function registryOf(t: any): any | undefined {
   const reg = t.publish?.registry
   return (reg && '' !== (reg.name || '')) ? reg : undefined
 }
 
 
-// A registry is active (package really uploaded) when its tri-state
-// `state === 'active'`. The legacy boolean `active: true` is honoured as a
-// back-compat alias. Anything else — 'pending' (the default), 'inactive' —
-// means a deploy publishes the git tag only.
-function regIsActive(reg: any): boolean {
-  if (null == reg) return false
-  if (true === reg.active) return true
-  return 'active' === reg.state
+function pendingWord(state: string): string {
+  return 'inactive' === state ? 'inactive' : 'pending'
 }
 
 
@@ -92,16 +85,16 @@ function makeDeployMakefile(model: any, targets: any[]): string {
       aliasVars.set(aliasVarName(ghRecipe), tagVault.alias || ghRecipe)
     }
     const reg = registryOf(t)
-    if (reg && !aliasVars.has(aliasVarName(reg.name))) {
+    if (reg && 'tag' !== registryState(model, t.name) && !aliasVars.has(aliasVarName(reg.name))) {
       aliasVars.set(aliasVarName(reg.name), reg.vault?.alias || reg.name)
     }
   }
 
   const summary = targets.map((t: any) => {
     const reg = registryOf(t)
-    const state = reg
-      ? `${reg.name} (${regIsActive(reg) ? 'ACTIVE' : 'publish pending: deploy publishes the git tag only'}) ${reg.url || ''}`.trim()
-      : 'tag-only'
+    const rs = registryState(model, t.name)
+    const state = 'tag' === rs ? 'tag-only' :
+      `${reg.name} (${'active' === rs ? 'ACTIVE' : 'publish ' + pendingWord(rs) + ': deploy publishes the git tag only'}) ${reg.url || ''}`.trim()
     return `#   ${t.name.padEnd(8)} ${state}`
   }).join('\n')
 
@@ -113,8 +106,22 @@ function makeDeployMakefile(model: any, targets: any[]): string {
     const args = vaultExecArgs(t)
 
     const via = t.publish?.tag?.via || 'port'
+    const dir = fact(t, 'dir')
+    const rs = registryState(model, t.name)
+    const tag = fact(t, 'tag')
 
-    if (!reg && 'root' === via) {
+    if (('tag' === rs && (reg || 'root' === via)) || ('tag' !== rs && 'active' !== rs)) {
+      if ('' === tag) {
+        return `
+deploy-${t.name}:
+\t@echo "deploy-${t.name}: nothing to deploy — the model cuts no release tag for ${t.name} (publish.tag.active is false)."
+
+deploy-dry-${t.name}: deploy-${t.name}
+`
+      }
+    }
+
+    if ('tag' === rs && (reg || 'root' === via)) {
       return `
 deploy-${t.name}:
 \t@echo "deploy-${t.name}: tag-only port — publishing the git tag."
@@ -122,28 +129,29 @@ deploy-${t.name}:
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, packageVersion(model, t.name), 'tag-only port')}
+${tagPushRecipe(t.name, tag, packageVersion(model, t.name), 'tag-only port')}
 `
     }
 
-    if (reg && !regIsActive(reg)) {
+    if ('tag' !== rs && 'active' !== rs) {
+      const word = pendingWord(rs)
       return `
 deploy-${t.name}:
-\t@echo "deploy-${t.name}: ${reg.name} publication is pending — publishing the git tag only."
+\t@echo "deploy-${t.name}: ${reg.name} publication is ${word} — publishing the git tag only."
 \tboru vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, packageVersion(model, t.name), reg.name + ' publication pending — tag-only deploy')}
+${tagPushRecipe(t.name, tag, packageVersion(model, t.name), reg.name + ' publication ' + word + ' — tag-only deploy')}
 `
     }
 
     return `
 deploy-${t.name}:
-\tboru vault exec ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec ${args} -- $(MAKE) -C ${dir} publish
 
 deploy-dry-${t.name}:
-\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${dir} publish
 `
   }).join('')
 
@@ -154,10 +162,9 @@ deploy-dry-${t.name}:
 # on every \`npm run generate\` in .sdk/; publication details live in the
 # model (.sdk/model/target/<target>.aontu, \`publish\` section).
 #
-# Every port gets a git release tag <target>/vX.Y.Z. Ports with an ACTIVE
-# registry also publish a package there. Credentials are injected at exec
-# time by the boru key vault (https://github.com/boru-lang/boru) — never
-# stored on disk or passed on the command line.
+${commentBlock(tagSentence(targets) + ' Ports with an ACTIVE registry also publish a package there.' +
+    ' Credentials are injected at exec time by the boru key vault' +
+    ' (https://github.com/boru-lang/boru) — never stored on disk or passed on the command line.', 72)}
 #
 # Publication state (from the model):
 ${summary}
@@ -192,7 +199,9 @@ deploy:
 \t@echo "Registry state is set in the model (.sdk/model/target/<t>.aontu):"
 ${targets.map((t: any) => {
     const reg = registryOf(t)
-    const state = reg ? `${reg.name} ${regIsActive(reg) ? 'ACTIVE' : 'publish pending (deploy = git tag only)'}` : 'tag-only'
+    const rs = registryState(model, t.name)
+    const state = 'tag' === rs ? 'tag-only' :
+      `${reg.name} ${'active' === rs ? 'ACTIVE' : 'publish ' + pendingWord(rs) + ' (deploy = git tag only)'}`
     return `\t@echo "  deploy-${t.name.padEnd(8)} ${state}"`
   }).join('\n')}
 \t@echo "Rehearse everything safely first: make deploy-dry"
@@ -204,10 +213,42 @@ ${deployRules}`
 
 
 
+// The Makefile header's sentence on release tags, read from the tag facts: a
+// port whose tag is not `<target>/vX.Y.Z` is named with its own.
+function tagSentence(targets: any[]): string {
+  const odd = targets.filter((t: any) => t.name + '/v' !== fact(t, 'tag'))
+  if (0 === odd.length) {
+    return 'Every port gets a git release tag <target>/vX.Y.Z.'
+  }
+  return 'Every port gets a git release tag <target>/vX.Y.Z, except ' +
+    odd.map((t: any) => '' === fact(t, 'tag') ? t.name + ', which gets none' :
+      t.name + ', tagged ' + fact(t, 'tag') + 'X.Y.Z').join(', and ') + '.'
+}
+
+
+// A paragraph as Makefile comment lines of at most `width` characters after
+// the `# `.
+function commentBlock(text: string, width: number): string {
+  const lines: string[] = []
+  let line = ''
+  for (const word of text.split(' ')) {
+    if ('' !== line && width < line.length + 1 + word.length) {
+      lines.push(line)
+      line = word
+    }
+    else {
+      line = '' === line ? word : line + ' ' + word
+    }
+  }
+  lines.push(line)
+  return lines.map((l: string) => '# ' + l).join('\n')
+}
+
+
 // The root-level tag creation + push recipe for a target: boru --dry-run
 // filler cooperation, idempotent tag creation, token-authenticated https
 // push (works from an ssh-remote clone without ssh keys).
-function tagPushRecipe(name: string, version: string, note: string): string {
+function tagPushRecipe(name: string, tagPrefix: string, version: string, note: string): string {
   // The version is embedded in both Make and shell syntax.
   if (!/^[0-9A-Za-z][0-9A-Za-z.+-]*$/.test(version)) {
     throw new Error('Deploy: invalid publish.version for target "' + name + '": ' + JSON.stringify(version))
@@ -215,7 +256,7 @@ function tagPushRecipe(name: string, version: string, note: string): string {
 
   return `
 tag-push-${name}:
-\t@set -e; tag="${name}/v${version}"; \\
+\t@set -e; tag="${tagPrefix}${version}"; \\
 \ttoken="\$\${GITHUB_TOKEN:-$$GH_TOKEN}"; \\
 \tif [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \\
 \t  echo "[dry-run] boru filler token detected: would create (if missing) and push tag $$tag; nothing pushed."; exit 0; fi; \\

@@ -1,6 +1,11 @@
 import { kindCollection } from '../helpers/kindCollection'
 
 import { unknownTags, TAGS } from '../helpers/applicability'
+import { SURFACES, SURFACE_SINCE } from '../helpers/surface'
+import { applyFacts, fact } from '../helpers/facts'
+import { admitsBelow } from '../helpers/semver'
+import { SDKGEN_VERSION } from '../helpers/shipped'
+import { entityless, entitylessNote } from '../helpers/targetguard'
 import Path from 'node:path'
 
 import { KIT } from '../types'
@@ -14,6 +19,7 @@ import { SdkGenError } from '../utility'
 
 import {
   MANIFEST,
+  parityFinding,
   probePackage,
   validateManifest,
 } from '../helpers/manifest'
@@ -32,6 +38,7 @@ import {
   ANCHOR_RE,
   compileModel,
   publishOverrideProbe,
+  schemaHooks,
   slashComments,
 } from '../helpers/modelcheck'
 
@@ -189,7 +196,11 @@ function checkItems(fs: any, sdk: string, manifest?: Manifest): Finding[] {
         continue
       }
 
-      found.push(...checkDefinition(fs, kind, name, file))
+      found.push(...checkDefinition(fs, kind, name, file, {
+        manifest: Path.join(sdk, '..', MANIFEST),
+        tier: manifest?.parity?.[name],
+        range: manifest?.engines?.sdkgen,
+      }))
     }
   }
 
@@ -197,8 +208,12 @@ function checkItems(fs: any, sdk: string, manifest?: Manifest): Finding[] {
 }
 
 
+// What the manifest says about an item, for the checks that compare the two.
+type Declared = { manifest: string, tier?: string, range?: string }
+
+
 function checkDefinition(
-  fs: any, kind: string, name: string, file: string,
+  fs: any, kind: string, name: string, file: string, pkg?: Declared,
 ): Finding[] {
   const found: Finding[] = []
   const raw = String(fs.readFileSync(file, 'utf8'))
@@ -208,7 +223,7 @@ function checkDefinition(
   const legacyFile = isLegacyPath(file)
   const legacy = legacyFile || src !== raw
 
-  const at = (level: 'error' | 'warn', point: string, note: string): Finding =>
+  const at = (level: 'error' | 'warn' | 'info', point: string, note: string): Finding =>
     ({ level, point, kind, name, file, note: file + ': ' + note })
 
   if (legacy) {
@@ -313,17 +328,78 @@ function checkDefinition(
 
   if ('target' === kind) {
     found.push(...checkTargetModel(checked, name, file, at))
+
+    if (0 === unified.errors.length && null != declared) {
+      found.push(...checkTargetSurface(unified.model, name, pkg, at))
+    }
+
+    const title = (declared as any)?.title
+    if (null != declared && ('string' !== typeof title || '' === title.trim())) {
+      found.push(at('warn', 'target-title-missing',
+        'declares no `title` — the generated documents name this target by its ' +
+        "origin's label, else as `" + name + '`'))
+    }
   }
 
   if ('feature' === kind) {
     found.push(...checkFeatureModel(strict.model, name, at))
+    found.push(...checkFeatureHooks(strict.model, name, at))
   }
 
   return found
 }
 
 
-type At = (level: 'error' | 'warn', point: string, note: string) => Finding
+type At = (level: 'error' | 'warn' | 'info', point: string, note: string) => Finding
+
+
+// The surface the fact rules give the target, against its parity tier, and
+// its declared word against the releases that read it. Generation reads a
+// word it does not know as unknown, so no word fails it.
+function checkTargetSurface(
+  model: any, name: string, pkg: Declared | undefined, at: At,
+): Finding[] {
+  let surface: string
+
+  try {
+    applyFacts(model)
+    surface = fact(model.main[KIT].target[name], 'surface')
+  }
+  catch (err: any) {
+    return [at('error', 'target-facts', 'the fact rules fail on this target alone: ' + err.message)]
+  }
+
+  const found: Finding[] = null == pkg?.tier ? [] :
+    parityFinding(pkg.manifest, name, pkg.tier, surface)
+
+  const target = model.main[KIT].target[name]
+  if (entityless(target)) {
+    found.push(at('error', 'target-entity-off', entitylessNote(name)))
+  }
+
+  const word = target.surface
+  if ('string' !== typeof word || '' === word) {
+    return found
+  }
+
+  const since = SURFACE_SINCE[word]
+  if (null == since) {
+    found.push(at('warn', 'target-surface-unknown',
+      'declares surface `' + word + '`, which sdkgen ' + SDKGEN_VERSION +
+      ' does not know (' + SURFACES.join(', ') + '): generation reads it as unknown ' +
+      'and names the target by its title. A release that introduces the word reads it, ' +
+      'from that release on; otherwise it is a misspelling'))
+  }
+  else if (false !== admitsBelow(pkg?.range ?? '', since)) {
+    found.push(at('info', 'target-surface-since',
+      'declares surface `' + word + '`, which sdkgen reads from ' + since + '; ' +
+      (null == pkg?.range ? 'the manifest declares no `engines.sdkgen`, so it' :
+        '`engines.sdkgen` `' + pkg.range + '`') +
+      ' admits older releases, which ignore the slot'))
+  }
+
+  return found
+}
 
 
 // The publish-override probe: unify the target model with a project that sets
@@ -386,6 +462,25 @@ function checkFeatureModel(model: any, name: string, at: At): Finding[] {
   }
 
   return found
+}
+
+
+function checkFeatureHooks(model: any, name: string, at: At): Finding[] {
+  const hook = model?.main?.[KIT]?.feature?.[name]?.hook
+  if (null == hook || 'object' !== typeof hook) {
+    return []
+  }
+
+  const known = schemaHooks()
+  const unknown = Object.keys(hook).filter((h: string) => !known.includes(h)).sort()
+  if (0 === unknown.length) {
+    return []
+  }
+
+  return [at('error', 'feature-hook-unknown',
+    'declares hook(s) the base schema does not list: ' + unknown.join(', ') +
+    ' — no pipeline fires them, so the feature never runs there. The hooks are: ' +
+    known.join(', '))]
 }
 
 

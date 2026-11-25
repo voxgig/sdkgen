@@ -1,11 +1,15 @@
 
 import { test, describe } from 'node:test'
-import { ok } from 'node:assert'
+import { ok, deepStrictEqual } from 'node:assert'
+
+import Fs from 'node:fs'
+import Path from 'node:path'
 
 import { Jostraca, Project, Folder } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { AgentGuideTop, AgentGuide, AgentGuideFeature, applyFacts } from '../dist/sdkgen.js'
+import { AgentGuideTop, AgentGuide, AgentGuideFeature, applyFacts, SdkGen } from '../dist/sdkgen.js'
+import { STAGE, SCAFFOLD, makeModel as compileModel, makeRoot, layeredFs, makeLog } from './generateharness'
 
 
 const noop = () => {}
@@ -14,19 +18,23 @@ const log: any = {
   child() { return log },
 }
 
-const T_TS = { name: 'ts', title: 'TypeScript', ext: 'ts' }
-const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false }
-const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } } }
+const OUT = { path: '', root: false }
+const T_TS = { name: 'ts', title: 'TypeScript', ext: 'ts', output: OUT }
+const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false, output: OUT }
+const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } }, output: OUT }
 
-function makeModel() {
+function makeModel(over: { ts?: boolean, copies?: string, targets?: Record<string, any>, top?: boolean } = {}) {
   return applyFacts({
     name: 'demo', Name: 'Demo', const: { Name: 'Demo' },
     main: { kit: {
+      phase: { top: { active: false !== over.top } },
+      ...(null == over.copies ? {} : { copies: over.copies }),
       target: {
-        ts: { active: true, ...T_TS },
+        ts: { active: false !== over.ts, ...T_TS },
         go: { active: true, ...T_GO },
         old: { active: false, name: 'old', title: 'Old' },
         'go-cli': { active: false, ...T_GOCLI },
+        ...over.targets,
       },
       feature: {
         log: {
@@ -41,7 +49,10 @@ function makeModel() {
         },
       },
       entity: {
-        advice: { active: true, name: 'advice', Name: 'Advice' },
+        advice: {
+          active: true, name: 'advice', Name: 'Advice',
+          op: { load: { active: true }, list: { active: true } },
+        },
       },
     } },
   })
@@ -50,11 +61,19 @@ function makeModel() {
 
 // Render a component (optionally inside an ambient target folder) and return
 // the memfs file map (path -> content). A target is named, and read from the
-// model, which is where its facts are.
-async function render(comp: any, props: any, folder?: string): Promise<Record<string, string>> {
+// model, which is where its facts are. `seed` puts files in the tree, such as
+// a target's templates, relative to the working directory.
+async function render(
+  comp: any, props: any, folder?: string,
+  opts: { seed?: string[], model?: any } = {},
+): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
+  for (const file of opts.seed || []) {
+    fs.mkdirSync(Path.dirname(Path.resolve(file)), { recursive: true })
+    fs.writeFileSync(Path.resolve(file), '')
+  }
   const jostraca = Jostraca()
-  const model = makeModel()
+  const model = opts.model || makeModel()
   if ('string' === typeof props.target) {
     props = { ...props, target: model.main.kit.target[props.target] }
   }
@@ -77,6 +96,17 @@ async function render(comp: any, props: any, folder?: string): Promise<Record<st
 function find(files: Record<string, string>, suffix: string): string | undefined {
   const key = Object.keys(files).find((k) => k.endsWith(suffix))
   return key ? files[key] : undefined
+}
+
+
+// Keys become STAGE-relative with forward slashes: on Windows a memfs key does
+// not match the absolute path Path.join builds for it.
+function staged(vol: any): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    out[Path.relative(STAGE, path).split(Path.sep).join('/')] = content
+  }
+  return out
 }
 
 
@@ -104,7 +134,39 @@ describe('AgentGuideTop', () => {
     ok(agents!.includes('`log`') && agents!.includes('`test`'), 'lists features')
     ok(agents!.includes('`Advice`'), 'lists entities')
     ok(agents!.includes('ts/AGENTS.md'), 'links per-language guide')
-    ok(agents!.includes('ProjectName') && agents!.includes('regenerate'), 'merge gotcha')
+    const flat = agents!.replace(/\s+/g, ' ')
+    ok(!agents!.includes('merges** into') && !agents!.includes('never DELETES'), 'no merge or keep claim')
+    ok(flat.includes('deletes the files it generated before and no longer emits'), 'generate prunes')
+    ok(flat.includes('merge toolchain updates into the copies this project has edited'), 'an add merges')
+    ok(!agents!.includes('Built-in features'), 'no fixed list of built-in features')
+    ok(agents!.includes('each SDK target that supports it'), 'features reach the targets that take them')
+    ok(!agents!.includes('every SDK target'), 'no claim that every target takes every feature')
+    ok(agents!.includes('<lang>/src/feature/<name>/AGENTS.md'), 'names the per-feature guides ts writes')
+  })
+
+  test('one SDK target is a project in its language, several a multi-language one', async () => {
+    const lone = find(await render(AgentGuideTop, {}, undefined,
+      { model: makeModel({ ts: false }) }), '/p/AGENTS.md')!
+    ok(lone.includes('This is a **generated** Go SDK project.'), lone.slice(0, 300))
+    ok(!lone.includes('multi-language') && !lone.includes('each language directory'), lone.slice(0, 300))
+
+    const both = find(await render(AgentGuideTop, {}), '/p/AGENTS.md')!
+    ok(both.includes('This is a **generated** multi-language SDK project.'), both.slice(0, 300))
+  })
+
+  test('says the add overwrites when the project regenerates .sdk in full', async () => {
+    const files = await render(AgentGuideTop, {}, undefined, { model: makeModel({ copies: 'overwrite' }) })
+    const agents = find(files, '/p/AGENTS.md')!.replace(/\s+/g, ' ')
+    ok(agents.includes("overwrite the templates and components in `.sdk/` (`main: kit: copies: 'overwrite'`)"),
+      'the overwrite rule')
+    ok(!agents.includes('merge toolchain updates into the copies this project has edited'), 'not the merge rule')
+  })
+
+  test('names no per-feature guide when no target writes one', async () => {
+    const files = await render(AgentGuideTop, {}, undefined, { model: makeModel({ ts: false }) })
+    const agents = find(files, '/p/AGENTS.md')
+    ok(agents!.includes('`<lang>/AGENTS.md`'), 'still names the per-language guides')
+    ok(!agents!.includes('src/feature/<name>/AGENTS.md'), 'no per-feature guide for a flat-layout project')
   })
 
   test('emits a thin CLAUDE.md pointing at AGENTS.md', async () => {
@@ -135,6 +197,10 @@ describe('AgentGuide — dir layout (ts/js)', () => {
     ok(find(files, 'ts/CLAUDE.md'), 'ts/CLAUDE.md exists')
 
     // Per-feature guides co-located (dir layout only).
+    const flat = agents!.replace(/\s+/g, ' ')
+    ok(flat.includes('Each `npm run generate` rewrites every file it generates'), 'regeneration')
+    ok(flat.includes('merge toolchain updates into the copies'), 'the add rule')
+
     ok(find(files, 'ts/src/feature/log/AGENTS.md'), 'log feature guide co-located')
     ok(find(files, 'ts/src/feature/test/AGENTS.md'), 'test feature guide co-located')
     ok(agents!.includes('./src/feature/log/AGENTS.md'), 'links the feature guide')
@@ -144,7 +210,10 @@ describe('AgentGuide — dir layout (ts/js)', () => {
 
 describe('AgentGuide — flat layout (go/py/php/rb/lua)', () => {
   test('documents features inline, emits no per-feature files', async () => {
-    const files = await render(AgentGuide, { target: 'go' }, 'go')
+    const files = await render(AgentGuide, { target: 'go' }, 'go', {
+      seed: ['tm/go/feature/log_feature.go', 'tm/go/feature/test_feature.go',
+        'tm/go/src/feature/log/.gitkeep'],
+    })
 
     const agents = find(files, 'go/AGENTS.md')
     ok(agents, 'go/AGENTS.md exists')
@@ -153,10 +222,90 @@ describe('AgentGuide — flat layout (go/py/php/rb/lua)', () => {
     ok(!find(files, 'go/feature/log/AGENTS.md'), 'no feature/<name> per-feature file')
     // Features documented inline with the real flat runtime file + hooks.
     ok(agents!.includes('## Features in this target'), 'feature section present')
-    ok(agents!.includes('`feature/log_feature.go`'), 'real flat runtime path')
+    ok(agents!.includes('`.sdk/tm/go/feature/log_feature.go`'), 'the template discovery finds')
+    ok(!agents!.includes('src/feature/log'), 'not the empty per-feature directory')
     ok(agents!.includes('`PreRequest`') && agents!.includes('`PreResponse`'), 'active hooks inline')
-    ok(agents!.includes('.sdk/tm/go/feature/'), 'flat template path')
     ok(agents!.includes('cd ../.sdk') && agents!.includes('make test'), 'commands fixed here too')
+  })
+
+  test('says so when the target keeps no template per feature', async () => {
+    const files = await render(AgentGuide, { target: 'go' }, 'go')
+    const agents = find(files, 'go/AGENTS.md')
+    ok(agents!.replace(/\s+/g, ' ').includes('no template per feature'), 'no per-feature template to name')
+    ok(!agents!.includes('| Template |'), 'no template column')
+  })
+})
+
+
+// The root guide and the README read the same copy mode.
+describe('AgentGuideTop — the copy mode agrees with the README', () => {
+  for (const copies of ['merge', 'overwrite']) {
+    test(copies, async () => {
+      const { fs, vol } = memfs({})
+      const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog([]) })
+      const cwd = process.cwd()
+      process.chdir(SCAFFOLD)
+      try {
+        const res = await sdkgen.generate({
+          model: compileModel(['ts'], undefined, `main: kit: copies: '${copies}'`), root: makeRoot(),
+        })
+        ok(true === res.ok, 'generated')
+      }
+      finally {
+        process.chdir(cwd)
+      }
+      const files = staged(vol)
+      const agents = files['AGENTS.md'].replace(/\s+/g, ' ')
+      const readme = files['README.md'].replace(/\s+/g, ' ')
+      const declared = "`main: kit: copies: 'overwrite'`"
+      deepStrictEqual([agents.includes(declared), readme.includes(declared)],
+        'overwrite' === copies ? [true, true] : [false, false])
+    })
+  }
+})
+
+
+// Every bundled target, generated for real: each template a guide lists
+// exists in the scaffold, and the run writes a runtime file of that name.
+describe('AgentGuide — feature templates in a generated tree', () => {
+  test('every listed template exists and is generated', async () => {
+    const targets = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'target'))
+      .filter((f: string) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
+      .map((f: string) => f.replace(/\.aontu$/, '')).sort()
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog([]) })
+    const cwd = process.cwd()
+    process.chdir(SCAFFOLD)
+    try {
+      const res = await sdkgen.generate({
+        model: compileModel(targets, undefined, '', ['test', 'log', 'retry']), root: makeRoot(),
+      })
+      ok(true === res.ok, 'generated')
+    }
+    finally {
+      process.chdir(cwd)
+    }
+
+    const files = staged(vol)
+    const written = Object.keys(files)
+    const listed: string[] = []
+    const shared: string[] = []
+    for (const t of targets) {
+      const guide = files[t + '/AGENTS.md']
+      if (null == guide || !guide.includes('## Features in this target')) continue
+      if (guide.replace(/\s+/g, ' ').includes('no template per feature')) shared.push(t)
+      for (const m of guide.matchAll(/\| \*\*([a-z]+)\*\*[^|]*\| `\.sdk\/tm\/([^`]+)` \|/g)) {
+        const rel = m[2]
+        listed.push(t + ':' + m[1])
+        ok(Fs.existsSync(Path.join(SCAFFOLD, 'tm', rel)), t + ': listed template exists: ' + rel)
+        const base = Path.posix.basename(rel)
+        ok(written.some((w: string) => w.startsWith(t + '/') && w.endsWith('/' + base)),
+          t + ': the run writes ' + base)
+      }
+    }
+    ok(listed.includes('c:retry') && listed.includes('py:retry') && listed.includes('swift:retry'),
+      'flat targets list their templates')
+    deepStrictEqual(shared, ['clojure', 'ocaml'], 'targets with one shared feature runtime')
   })
 })
 
@@ -172,6 +321,46 @@ describe('AgentGuide — feature phase disabled (go-cli/go-mcp)', () => {
     ok(!find(files, 'go-cli/src/feature/log/AGENTS.md'), 'no per-feature files')
     ok(!find(files, 'go-cli/feature/log/AGENTS.md'), 'no per-feature files')
   })
+
+  test('an alias of go-cli reads go-cli\'s row', async () => {
+    const model = makeModel({ targets: { cli: { active: true, ...T_GOCLI, name: 'cli', origname: 'go-cli' } } })
+
+    const agents = find(await render(AgentGuide, { target: 'cli' }, 'cli', { model }), 'cli/AGENTS.md')!
+    ok(agents.includes('CLI surface'), 'the alias guide does not note the CLI surface')
+    ok(agents.includes('go build ./...'), 'the alias guide does not build with go')
+    ok(!agents.includes('make test'), 'the alias guide takes the default commands')
+
+    const top = find(await render(AgentGuideTop, {}, undefined, { model }), '/p/AGENTS.md')!
+    ok(top.includes('| `cli` | `cli/` — A CLI surface, not an SDK client library. |'),
+      'the root guide lost the alias\'s note')
+  })
+})
+
+
+describe('AgentGuide — what is written beside it', () => {
+  test('with the top phase off, no guide links a project guide', async () => {
+    const files = await render(AgentGuide, { target: 'ts' }, 'ts', { model: makeModel({ top: false }) })
+    const guides = Object.keys(files).filter((k) => k.endsWith('AGENTS.md'))
+    ok(1 < guides.length, 'no feature guide was written: ' + guides.join(', '))
+    for (const key of guides) {
+      ok(!files[key].includes('project guide'), key + ' links the project guide')
+    }
+  })
+
+  test('the root guide names the directories it has', async () => {
+    const top = find(await render(AgentGuideTop, {}, undefined, { model: makeModel({ ts: false }) }), '/p/AGENTS.md')!
+    ok(top.includes('directory (`go/`) is **build output**'), top)
+    ok(!top.includes('`ts/`'), 'names ts/, which this project does not generate')
+  })
+
+  test('a target guide not written is not linked', async () => {
+    const top = find(await render(AgentGuideTop, {}, undefined, {
+      model: makeModel({ targets: { 'go-cli': { ...T_GOCLI, active: true,
+        phase: { feature: { active: false }, agentguide: { active: false } } } } }),
+    }), '/p/AGENTS.md')!
+    ok(top.includes('| `go-cli` | `go-cli/` — A CLI surface, not an SDK client library. | — |'), top)
+    ok(top.includes('[`go/AGENTS.md`](./go/AGENTS.md)'), top)
+  })
 })
 
 
@@ -179,7 +368,7 @@ describe('AgentGuideFeature (dir layout)', () => {
   test('feature guide has active hooks, .aontu paths, root-relative regenerate', async () => {
     const files = await render(
       AgentGuideFeature,
-      { target: T_TS, feature: makeModel().main.kit.feature.log },
+      { target: 'ts', feature: makeModel().main.kit.feature.log },
       'ts',
     )
 
@@ -194,12 +383,25 @@ describe('AgentGuideFeature (dir layout)', () => {
     ok(agents!.includes('cd ../../../../.sdk'), 'regenerate path relative to feature dir depth')
     ok(agents!.includes('Active by default: **yes**'), 'log is active by default')
     ok(find(files, 'ts/src/feature/log/CLAUDE.md'), 'feature CLAUDE.md')
+    ok(agents!.includes('every entity operation (list, load) and'), 'the operations the entities have')
+    ok(agents!.replace(/\s+/g, ' ').includes('deletes the files it generated before'), 'regeneration')
+    ok(!agents!.includes('ProjectName'), 'no placeholder leak advice')
+    ok(!agents!.includes('patch'), 'no operation the model lacks')
+  })
+
+  test('names no operation when no entity has one', async () => {
+    const model = makeModel()
+    model.main.kit.entity.advice.op = {}
+    const files = await render(AgentGuideFeature,
+      { target: 'ts', feature: model.main.kit.feature.log }, 'ts', { model })
+    const agents = find(files, 'ts/src/feature/log/AGENTS.md')
+    ok(agents!.includes('stages of every entity operation and of'), 'no empty parenthesis')
   })
 
   test('feature inactive-by-default renders as no', async () => {
     const files = await render(
       AgentGuideFeature,
-      { target: T_TS, feature: makeModel().main.kit.feature.test },
+      { target: 'ts', feature: makeModel().main.kit.feature.test },
       'ts',
     )
     const agents = find(files, 'ts/src/feature/test/AGENTS.md')

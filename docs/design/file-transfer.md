@@ -500,14 +500,14 @@ compress a file point, so the decoding `#475` added has nothing to do
 there; S18 replaces the fixed deadlines of `php`, `c` and `csharp` on file
 points.
 
-### 5.3 ADR-004
+### 5.3 ADR-006
 
 Two of these rules are of the kind `ADR.md` exists for: reversing either
 would change what every SDK is. The maintainer ruled that the entry go into
 the register now, as **Proposed**, and become Accepted when the tests that
 enforce it exist.
 
-> **ADR-004 — File bytes are neither data nor diagnostics, and a string is
+> **ADR-006 — File bytes are neither data nor diagnostics, and a string is
 > never a path.** A file's bytes never enter an entity's record, and never
 > reach an error, a log or any other record the SDK emits. A local file is
 > opened only through a source the caller's own code constructed.
@@ -836,7 +836,7 @@ Sizes are relative. Each phase ends at something that can be released.
 - `cache` skips non-JSON bodies (H5). `stream()`'s upload claim is removed
   or made true (H4).
 - apidef A1 and A2.
-- ADR-004 is in `ADR.md` as Proposed (section 5.3). It becomes Accepted
+- ADR-006 is in `ADR.md` as Proposed (section 5.3). It becomes Accepted
   with the first test that enforces it.
 
 **Phase 1: body codecs, every target.** Large only by multiplication.
@@ -895,7 +895,7 @@ ruling of this document that the item answers.
 | `p0-feature-claims` | `cache` passes a body that is not JSON by; `stream()` stops documenting an upload nothing sends | sdkgen | H4, H5 |
 | `p0-apidef-verb-noun` | A collection named for a verb keeps its plain create, in both ports | apidef | H9, A1 |
 | `p0-apidef-flow-files` | Basic flows leave file routes out until file steps exist, in both ports | apidef | H10, A2 |
-| `p0-adr` | ADR-004 in the decision register: entered as Proposed, Accepted with its first enforcing test | sdkgen | section 5.3 |
+| `p0-adr` | ADR-006 in the decision register: entered as Proposed, Accepted with its first enforcing test | sdkgen | section 5.3 |
 
 **Phase 1**
 
@@ -958,7 +958,7 @@ Every question the plan raised is ruled. R1 to R8 were given on
 
 | # | Question | Ruling | Gates |
 | --- | --- | --- | --- |
-| **R1** | What a file is in the entity model | N1: a named slot beside the record. Bytes never enter `data()` | Phase 2, ADR-004 |
+| **R1** | What a file is in the entity model | N1: a named slot beside the record. Bytes never enter `data()` | Phase 2, ADR-006 |
 | **R2** | How a transfer is an operation | V1: the six operations, with action-aware policy keys | Phase 2 |
 | **R3** | The example API's domain | A podcast studio | Phase 1 |
 | **R4** | Rollout across targets | Declared tiers, enforced; every target at Encoded first | All |
@@ -983,7 +983,7 @@ Three more rulings came with them:
 - **Text is plain data.** A body that is raw but not binary comes back
   through the ordinary operation as a string under `$body` in the record.
   Only bytes are slots (section 4.1).
-- **ADR-004 enters the register now, as Proposed** (section 5.3).
+- **ADR-006 enters the register now, as Proposed** (section 5.3).
 - **The security findings come first**: `p0-error-bytes`,
   `p0-redirect-credentials` and `p0-binary-response`, each from a failing
   test.

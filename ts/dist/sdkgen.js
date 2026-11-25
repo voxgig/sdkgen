@@ -39,10 +39,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports.ReadmeOptions = exports.ReadmeModel = exports.ReadmeIntro = exports.ReadmeErrors = exports.ReadmeQuick = exports.ReadmeInstall = exports.AgentGuideFeature = exports.AgentGuide = exports.AgentGuideTop = exports.ReadmeTop = exports.Readme = exports.TEST_CONTROL_EXCLUDE = exports.TestControl = exports.Test = exports.Feature = exports.Entity = exports.Changelog = exports.npmTrustScript = exports.PublishWorkflow = exports.Security = exports.License = exports.Deploy = exports.Main = exports.List = exports.Slot = exports.Line = exports.Inject = exports.Fragment = exports.Copy = exports.Content = exports.File = exports.Folder = exports.Project = exports.omap = exports.deep = exports.indent = exports.template = exports.getx = exports.get = exports.vmap = exports.cmap = exports.kebabify = exports.camelify = exports.snakify = exports.each = exports.names = exports.cmp = void 0;
 exports.canonToSpec = exports.canonToType = exports.liveDirectDiscovery = exports.graphqlDirectSkip = exports.primaryPoint = exports.ownPointFirst = exports.pointIsGraphql = exports.pointPathKey = exports.pointTerminalParam = exports.pointPlaceholders = exports.pointSlash = exports.pointParts = exports.pointSegments = exports.collectDeps = exports.getMatchEntries = exports.flowSteps = exports.entityRelationName = exports.buildIdNames = exports.SdkGenError = exports.rawStringLiteral = exports.clean = exports.configDefinition = exports.configReprSetting = exports.configRepr = exports.isConfigData = exports.CONFIG_REPR_VALUES = exports.CONFIG_DATA_THRESHOLD = exports.isHttpBasicAuth = exports.isAuthSuppressed = exports.credentialPlacement = exports.resolveAuthName = exports.resolveAuthIn = exports.resolveAuthPrefix = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.opRequestBody = exports.opRawBody = exports.bodyNote = exports.RAW_BODY = exports.definitionPlan = exports.hasLiveScenarios = exports.boundedFacts = exports.pointFacts = exports.liveHint = exports.resolvedFor = exports.registerComponent = exports.FeatureHook = exports.ReadmeRefFeatures = exports.ReadmeRef = void 0;
-exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbSdkConstant = exports.isRbCoreConstant = exports.entityCacheField = exports.phpEntityAccessor = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.fact = exports.applyFacts = exports.guardFlowSteps = exports.guardModelNames = exports.entityCollection = exports.deriveEntityNames = exports.warnUngeneratedOps = exports.ungeneratedOps = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityConstructorName = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.introOps = exports.entityOps = exports.entityRecordIdField = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = exports.entityActions = exports.opActions = exports.ownPoint = exports.opNeedsAction = exports.invalidRequest = exports.opReachable = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonScalarKey = exports.canonKey = exports.canonToDtype = exports.entitySpecMap = exports.featureOptionSpec = exports.optionSpec = exports.validateSeeds = exports.entitySpecs = exports.entityOpSpec = exports.entityDataSpec = void 0;
-exports.idLiteral = exports.primaryOpCall = exports.liveExcludedSummary = exports.liveExcludedLines = exports.liveDirectGetOnly = exports.liveGates = exports.liveFlowPlan = exports.liveGetOnlyReason = exports.liveGetOnly = exports.liveStepId = exports.liveFlowSteps = exports.LIVE_GETONLY_ENV = exports.liveEntity = exports.liveFlowRoutes = exports.flowLoadReadsRecord = exports.flowLoadRoute = exports.liveStepExamples = exports.liveRouteExamples = exports.liveQueryExamples = exports.liveExampleIds = exports.liveIdKey = exports.liveUnrouted = exports.liveLoadComparesId = exports.liveRepeatsId = exports.liveIdentity = exports.liveFlowNeeds = exports.liveStrictNote = exports.liveStrict = exports.serverVarEnv = exports.hasServerVariables = exports.serverVariables = exports.MCP_WRITE_OPS = exports.MCP_READ_OPS = exports.mcpTools = exports.swiftTypeName = exports.phpTypeName = exports.rbTypeName = exports.tsTypeName = exports.elixirAccessor = exports.elixirAccessorNames = exports.elixirTypeName = exports.elixirTypeNames = exports.elixirSafeTypeName = exports.isElixirReservedType = exports.tsSafeTypeName = exports.isTsSdkType = exports.isTsReservedType = exports.phpSafeTypeName = exports.isPhpSdkClass = exports.isPhpReservedType = void 0;
-exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.sdkName = exports.hasPackageName = exports.packageName = exports.prefixLeadingDigit = exports.luaString = exports.luaKey = exports.jsQuote = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.validateManifest = exports.readManifest = exports.manifestPath = exports.MANIFEST = exports.definitionNames = exports.definitionFolder = exports.definitionPath = exports.TAGS = exports.unknownTags = exports.featureTags = exports.targetFeatures = exports.featureApplies = exports.stationLibrary = exports.pluginExcludesFor = exports.pluginExcludes = exports.inactiveFeatureExcludes = exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litString = exports.litPair = exports.litFor = exports.dataArg = exports.javaMapItems = exports.javaMapOf = exports.javaMap = exports.seededList = exports.listMatchArg = exports.matchArg = exports.matchExampleItems = exports.sendsId = exports.requestExampleItems = exports.requiredItems = void 0;
-exports.npmScriptTestSome = exports.npmScriptEnv = exports.npmScriptRm = exports.alongsideNote = exports.modelText = exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.securityContact = exports.isDefaultPublisher = exports.publisherInfo = exports.keywords = exports.nonAffiliation = exports.tomlString = exports.pkgDescription = exports.vendorCommand = void 0;
+exports.rbSafeTypeName = exports.isRbSdkConstant = exports.isRbCoreConstant = exports.entityCacheField = exports.phpEntityAccessor = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.fact = exports.applyFacts = exports.sourceString = exports.guardModel = exports.guardFlowSteps = exports.guardModelNames = exports.entityCollection = exports.deriveEntityNames = exports.warnUngeneratedOps = exports.ungeneratedOps = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityConstructorName = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.introOps = exports.entityOps = exports.entityRecordIdField = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = exports.entityActions = exports.opActions = exports.ownPoint = exports.opNeedsAction = exports.invalidRequest = exports.opReachable = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonScalarKey = exports.canonKey = exports.canonToDtype = exports.entitySpecMap = exports.featureOptionSpec = exports.optionSpec = exports.validateSeeds = exports.entitySpecs = exports.entityOpSpec = exports.entityDataSpec = void 0;
+exports.liveExcludedSummary = exports.liveExcludedLines = exports.liveDirectGetOnly = exports.liveGates = exports.liveFlowPlan = exports.liveGetOnlyReason = exports.liveGetOnly = exports.liveStepId = exports.liveFlowSteps = exports.LIVE_GETONLY_ENV = exports.liveEntity = exports.liveFlowRoutes = exports.flowLoadReadsRecord = exports.flowLoadRoute = exports.liveStepExamples = exports.liveRouteExamples = exports.liveQueryExamples = exports.liveExampleIds = exports.liveIdKey = exports.liveUnrouted = exports.liveLoadComparesId = exports.liveRepeatsId = exports.liveIdentity = exports.liveFlowNeeds = exports.liveStrictNote = exports.liveStrict = exports.serverVarEnv = exports.hasServerVariables = exports.serverVariables = exports.MCP_WRITE_OPS = exports.MCP_READ_OPS = exports.mcpTools = exports.swiftTypeName = exports.phpTypeName = exports.rbTypeName = exports.tsTypeName = exports.elixirAccessor = exports.elixirAccessorNames = exports.elixirTypeName = exports.elixirTypeNames = exports.elixirSafeTypeName = exports.isElixirReservedType = exports.tsSafeTypeName = exports.isTsSdkType = exports.isTsReservedType = exports.phpSafeTypeName = exports.isPhpSdkClass = exports.isPhpReservedType = exports.swiftSafeTypeName = exports.isSwiftSdkType = void 0;
+exports.registryState = exports.installCommand = exports.sdkName = exports.hasPackageName = exports.packageName = exports.prefixLeadingDigit = exports.luaString = exports.luaKey = exports.jsQuote = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.validateManifest = exports.readManifest = exports.manifestPath = exports.MANIFEST = exports.definitionNames = exports.definitionFolder = exports.definitionPath = exports.TAGS = exports.unknownTags = exports.featureTags = exports.targetFeatures = exports.featureApplies = exports.stationLibrary = exports.pluginExcludesFor = exports.pluginExcludes = exports.inactiveFeatureExcludes = exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litString = exports.litPair = exports.litFor = exports.dataArg = exports.javaMapItems = exports.javaMapOf = exports.javaMap = exports.seededList = exports.listMatchArg = exports.matchArg = exports.matchExampleItems = exports.sendsId = exports.requestExampleItems = exports.requiredItems = exports.idLiteral = exports.primaryOpCall = void 0;
+exports.npmScriptTestSome = exports.npmScriptEnv = exports.npmScriptRm = exports.alongsideNote = exports.modelText = exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.securityContact = exports.isDefaultPublisher = exports.publisherInfo = exports.keywords = exports.nonAffiliation = exports.tomlString = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = void 0;
 exports.SdkGen = SdkGen;
 exports.projectConst = projectConst;
 const node_fs_1 = __importDefault(require("node:fs"));
@@ -78,6 +78,8 @@ Object.defineProperty(exports, "featureTags", { enumerable: true, get: function 
 Object.defineProperty(exports, "unknownTags", { enumerable: true, get: function () { return applicability_1.unknownTags; } });
 Object.defineProperty(exports, "TAGS", { enumerable: true, get: function () { return applicability_1.TAGS; } });
 const ExternalTarget_1 = require("./cmp/ExternalTarget");
+const placement_1 = require("./helpers/placement");
+const targetguard_1 = require("./helpers/targetguard");
 const apidef_1 = require("@voxgig/apidef");
 const Deploy_1 = require("./cmp/Deploy");
 Object.defineProperty(exports, "Deploy", { enumerable: true, get: function () { return Deploy_1.Deploy; } });
@@ -161,9 +163,14 @@ const modelNames_1 = require("./helpers/modelNames");
 Object.defineProperty(exports, "guardModelNames", { enumerable: true, get: function () { return modelNames_1.guardModelNames; } });
 const flowGuard_1 = require("./helpers/flowGuard");
 Object.defineProperty(exports, "guardFlowSteps", { enumerable: true, get: function () { return flowGuard_1.guardFlowSteps; } });
+const guardModel_1 = require("./helpers/guardModel");
+Object.defineProperty(exports, "guardModel", { enumerable: true, get: function () { return guardModel_1.guardModel; } });
+const sourcestring_1 = require("./helpers/sourcestring");
+Object.defineProperty(exports, "sourceString", { enumerable: true, get: function () { return sourcestring_1.sourceString; } });
 const facts_1 = require("./helpers/facts");
 Object.defineProperty(exports, "applyFacts", { enumerable: true, get: function () { return facts_1.applyFacts; } });
 Object.defineProperty(exports, "fact", { enumerable: true, get: function () { return facts_1.fact; } });
+const doccheck_1 = require("./helpers/doccheck");
 const generated_1 = require("./helpers/generated");
 const component_1 = require("./helpers/component");
 const canonType_1 = require("./helpers/canonType");
@@ -443,17 +450,16 @@ function SdkGen(opts) {
         const { model, config } = spec;
         log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' });
         log.debug({ point: 'generate-spec', spec });
-        // BEFORE ANYTHING READS A NAME. A digit-leading name, or a pair of names
-        // that meet once case is ignored, yields identifiers or files no target
-        // can hold, and the consumer's own Root.ts re-derives those names per
-        // target — so the only correction that survives is one made to the model
-        // itself, before Root runs. See helpers/modelNames.
-        (0, modelNames_1.guardModelNames)(model, log);
-        (0, opShape_1.warnUngeneratedOps)(model, log, (0, resolve_1.targetOrigins)(model));
-        // A flow step whose call the runtime would refuse is switched off, so no
-        // generated test makes it; see helpers/flowGuard.
-        (0, flowGuard_1.guardFlowSteps)(model, log);
+        // BEFORE ANYTHING READS A NAME: the consumer's own Root.ts re-derives the
+        // names per target, so only a correction made to the model itself
+        // survives. A flow step whose call the runtime would refuse is switched
+        // off too. See helpers/modelNames and helpers/flowGuard.
+        (0, guardModel_1.guardModel)(model, log);
         (0, facts_1.applyFacts)(model);
+        // A target that would generate an SDK broken at build or run time is a
+        // named error, so no document is gated on its state; see helpers/targetguard.
+        (0, targetguard_1.refuseBrokenTargets)(model);
+        (0, opShape_1.warnUngeneratedOps)(model, log, (0, resolve_1.targetOrigins)(model));
         let Root = spec.root;
         if (null == Root && null != config?.root) {
             clear(config.root);
@@ -484,7 +490,7 @@ function SdkGen(opts) {
         // Generation renders from the copies in `.sdk`, not from the installed
         // generator, so an outdated copy would otherwise be used without a word.
         await warnCopies(root, model);
-        const externalOverride = resolveExternalOverride(opts, log);
+        const externalOverride = resolveExternalOverride(opts, log, Object.keys(model?.main?.[apidef_1.KIT]?.target || {}));
         // Snapshot the decision before preflight. In particular, do not check a
         // missing optional destination once for safety and AGAIN before writing:
         // if it appeared between those checks, the pass could write into content
@@ -493,12 +499,19 @@ function SdkGen(opts) {
             .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }));
         checkExternalFolders(external, root, fs);
         (0, facts_1.refuseRootPlan)(model, external.map((ext) => ext.name));
+        // A run override moves a target for this run only, so the committed files
+        // keep describing the declared layout: the Root keeps the target, and the
+        // components that write the target's own files skip it.
+        const declaredOut = external.filter((ext) => '' !== String(model.main[apidef_1.KIT][ext.kind]?.[ext.name]?.output?.path ?? ''));
+        const relocated = external.filter((ext) => !declaredOut.includes(ext)).map((ext) => ext.name);
+        warnStale(fs, log, root, external.filter((ext) => relocated.includes(ext.name)));
         const tree = {};
-        const jres = await jostraca.generate(jopts, keepingTree(() => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree));
+        const jres = await jostraca.generate({ ...jopts, meta: { ...jopts.meta, relocated } }, keepingTree(() => Root({ model: 0 === declaredOut.length ? model : withoutExternal(model, declaredOut) }), tree));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
+        checkDocs(tree.root, folder);
         (0, generated_1.pruneGenerated)({
             fs, log, project: root, out: root, jres, claims: (0, generated_1.claimedFiles)(tree.root, folder),
-            dryrun: !!opts.dryrun,
+            dryrun: !!opts.dryrun, keep: relocated.map((name) => name + '/'),
         });
         // Docgen owns editions, destinations, templates, text QA and deployment.
         if (model?.main?.[apidef_1.KIT]?.doc?.active !== false && Object.values(model?.main?.[apidef_1.KIT]?.doc?.edition ?? {})
@@ -511,7 +524,7 @@ function SdkGen(opts) {
         for (const ext of external) {
             const gone = false === ext.target.output?.create && !fs.existsSync(ext.folder);
             if (null != ext.skip || gone) {
-                log.info({
+                log[ext.active ? 'warn' : 'info']({
                     point: 'generate-external-skip', target: ext.name, folder: ext.folder,
                     note: ext.skip ?? (ext.name + ' output folder disappeared after ' +
                         'preflight and output.create=false, not generated')
@@ -533,6 +546,7 @@ function SdkGen(opts) {
                 sdkrelpath,
             }), etree));
             (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
+            checkDocs(etree.root, ext.folder);
             (0, generated_1.pruneGenerated)({
                 fs, log, project: root, out: ext.folder, jres: eres,
                 claims: (0, generated_1.claimedFiles)(etree.root, ext.folder),
@@ -541,6 +555,13 @@ function SdkGen(opts) {
         }
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };
+    }
+    // A warning, never a failure: the text that breaks a link or a table may be
+    // the spec's, which the project cannot edit.
+    function checkDocs(tree, out) {
+        for (const f of (0, doccheck_1.docFindings)(tree, out, (path) => fs.existsSync(path), !!opts.dryrun)) {
+            log.warn({ point: f.point, file: f.file, line: f.line, note: f.note });
+        }
     }
     // A warning, never a failure: a difference may be a deliberate edit, and a
     // check that cannot run must not stop a build.
@@ -623,6 +644,9 @@ function SdkGen(opts) {
             throw modelError(path, errs[0], errs);
         }
         model.const = projectConst(model);
+        // The model a generate prepares, without the notices, which belong to it.
+        (0, guardModel_1.guardModel)(model);
+        (0, facts_1.applyFacts)(model);
         return {
             model,
             url: path,
@@ -710,41 +734,19 @@ SdkGen.makeBuild = async function (opts) {
         return await sdkgen.generate({ model, build, config, buildctx: ctx });
     };
 };
-function resolveExternalOverride(opts, log) {
-    const declared = opts.external || {};
-    const raw = process.env.SDKGEN_EXTERNAL;
-    if (null == raw || '' === raw.trim()) {
-        return declared;
-    }
-    let parsed;
-    try {
-        parsed = JSON.parse(raw);
-    }
-    catch (err) {
-        throw new utility_1.SdkGenError('SDKGEN_EXTERNAL is not valid JSON: ' + (err?.message || err) +
-            '\n  Expected an object keyed by item name, for example:' +
-            '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
-            '\n  Got: ' + raw.slice(0, 200));
-    }
-    if (null == parsed || 'object' !== typeof parsed || Array.isArray(parsed)) {
-        throw new utility_1.SdkGenError('SDKGEN_EXTERNAL must be a JSON OBJECT keyed by item name, for example:' +
-            '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
-            '\n  Got: ' + raw.slice(0, 200));
-    }
-    const merged = { ...declared };
-    for (const name of Object.keys(parsed)) {
-        merged[name] = { ...(declared[name] || {}), ...(parsed[name] || {}) };
-    }
+function resolveExternalOverride(opts, log, targets) {
+    const { override, named } = (0, placement_1.readOverride)(opts.external, process.env.SDKGEN_EXTERNAL, targets);
     // LOUDLY. Generation writing somewhere other than the model says is
     // exactly the thing whose only previous trace was one INFO line naming a
     // resolved folder, and that cost a silent green run that emitted nothing.
-    const named = Object.keys(parsed).sort();
-    log.info({
-        point: 'external-override',
-        items: named.join(','),
-        note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
-    });
-    return merged;
+    if (0 < named.length) {
+        log.info({
+            point: 'external-override',
+            items: named.join(','),
+            note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
+        });
+    }
+    return override;
 }
 // SDK targets can generate into separately owned repositories. Documentation
 // editions are confined to this SDK repository and are handled by docgen.
@@ -755,19 +757,9 @@ function externalItems(model, folder, kinds, override) {
             .map((name) => {
             // Overrides are keyed by installed target name.
             const ov = override[name] || {};
-            // A SHALLOW CLONE, so the override never writes back into the model.
-            // The in-tree pass still reads it, and `target add` still round-trips
-            // it to disk; an override is for THIS RUN. Nothing compares these by
-            // identity — withoutExternal keys by kind:name.
-            const output = { ...(items[name]?.output || {}) };
-            if (null != ov.path && '' !== ov.path) {
-                output.path = ov.path;
-                // The override relocates this run's output, root placement included.
-                delete output.root;
-            }
-            if (null != ov.sdkrel && '' !== ov.sdkrel) {
-                output.sdkrel = ov.sdkrel;
-            }
+            // A copy, so the override never writes back into the model: the
+            // in-tree pass still reads it, and `target add` round-trips it to disk.
+            const output = (0, placement_1.runOutput)(items[name]?.output, ov);
             return { kind, name, target: { ...items[name], output }, ov };
         })
             // AFTER the override, so it can send an item out of tree that the
@@ -787,6 +779,19 @@ function externalItems(model, folder, kinds, override) {
             active: false !== t.target.active,
         }));
     });
+}
+// A target this run writes elsewhere leaves its earlier in-tree output as it was.
+function warnStale(fs, log, root, moved) {
+    for (const ext of moved) {
+        const folder = node_path_1.default.join(root, ext.name);
+        if (fs.existsSync(folder)) {
+            log.warn({
+                point: 'generate-external-stale', target: ext.name, folder,
+                note: ext.name + '/ holds an earlier in-tree generation, and this run writes ' +
+                    ext.name + ' to ' + ext.folder + ': the in-tree copy is left as it was, and is stale'
+            });
+        }
+    }
 }
 function externalSkipReason(ext, fs) {
     if (!ext.active) {
@@ -913,6 +918,9 @@ function withoutExternal(model, external) {
             }
         }
         kit[kind] = kept;
+    }
+    if (Array.isArray(kit.fact?.active)) {
+        kit.fact = { ...kit.fact, active: kit.fact.active.filter((name) => !drop.has('target:' + name)) };
     }
     return {
         ...model,

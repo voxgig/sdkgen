@@ -70,6 +70,15 @@ function setup(
 }
 
 
+function files(vol: any): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    out[norm(path)] = content
+  }
+  return out
+}
+
+
 function under(all: Record<string, string>, folder: string) {
   const out: Record<string, string> = {}
   for (const [path, content] of Object.entries(all)) {
@@ -155,6 +164,16 @@ describe('external target', () => {
   })
 
 
+  test('a target that names its own repository points its manifest and install text there', async () => {
+    const { outside } = await generate(['ts'], 'ts', "main: kit: target: ts: output: repo: 'acme/demo-ts'")
+    const pkg = JSON.parse(outside['package.json'])
+    for (const url of [pkg.repository?.url ?? pkg.repository, pkg.homepage, pkg.bugs?.url ?? pkg.bugs]) {
+      ok(String(url).includes('github.com/acme/demo-ts'), JSON.stringify(url))
+    }
+    ok(outside['README.md'].includes('github.com/acme/demo-ts'), 'the install text names the SDK repository')
+  })
+
+
   test('a relative output path resolves against the SDK project, not the CWD',
     async () => {
       const gen = setup(['go', 'go-cli'], { 'go-cli': REL })
@@ -207,6 +226,80 @@ describe('external target', () => {
           rootFiles.join(', '))
       }
     }
+  })
+
+
+  // The SDK repository's files are not beside a package in another repository.
+  test('no document written out of tree links above the destination', async () => {
+    const { outside } = await generate(['ts', 'go'], 'ts')
+    const up: string[] = []
+    for (const [file, text] of Object.entries(outside).filter(([f]) => f.endsWith('.md'))) {
+      for (const m of String(text).matchAll(/\]\(([^)#\s]+)[^)]*\)/g)) {
+        if (/^[a-z]+:/i.test(m[1])) continue
+        const to = Path.posix.normalize(Path.posix.join(Path.posix.dirname(file), m[1]))
+        if (to.startsWith('../')) up.push(file + ' -> ' + m[1])
+      }
+    }
+    ok(null != outside['README.md'], 'nothing was written out of tree')
+    deepStrictEqual(up, [])
+  })
+
+
+  // A run override is for this run: the SDK repository's committed files
+  // describe the model's layout either way.
+  test('an override changes no document or release file in tree', async () => {
+    const plain = setup(['ts', 'go'], {})
+    await plain.run()
+    const moved = setup(['ts', 'go'], {}, { external: { ts: { path: OUT2, sdkrel: '../sdk' } } })
+    await moved.run()
+
+    // A null entry is a directory, which git does not hold.
+    const committed = (all: Record<string, string>) => Object.fromEntries(Object.entries(all)
+      .filter(([file, text]) => null != text && !file.startsWith('ts/') && !file.startsWith('.sdk/log/')))
+    const before = committed(under(plain.files(), norm(STAGE)))
+    const after = under(moved.files(), norm(STAGE))
+    for (const file of ['README.md', 'AGENTS.md', 'Makefile']) {
+      ok(null != before[file], file + ' is not written without the override')
+    }
+    deepStrictEqual(committed(after), before, 'a committed file differs under the override')
+    deepStrictEqual(Object.keys(after).filter((file) => file.startsWith('ts/')), [])
+    ok(null != under(moved.files(), OUT2)['package.json'], 'ts was not written out of tree')
+  })
+
+
+  test('relocating the only SDK prunes nothing and names the stale folder', async () => {
+    const { fs, vol } = memfs({})
+    const sink: any[] = []
+    const warnings: any[] = []
+    const run = (external?: any) => SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(sink, warnings), external,
+    }).generate({ model: makeModel(['ts']), root: makeRoot() })
+
+    await run()
+    const first = Object.keys(under(files(vol), norm(STAGE)))
+    ok(first.includes('ts/package.json') && first.includes('Makefile'), first.join('\n'))
+
+    await run({ ts: { path: OUT2, sdkrel: '../sdk' } })
+    const second = Object.keys(under(files(vol), norm(STAGE)))
+    deepStrictEqual(first.filter((file) => !second.includes(file)), [], 'a file was pruned')
+    deepStrictEqual(sink.filter((e: any) => 'generate-prune' === e?.point), [])
+    const stale = warnings.filter((w: any) => 'generate-external-stale' === w?.point)
+    strictEqual(stale.length, 1, JSON.stringify(stale))
+    ok(String(stale[0].note).startsWith('ts/'), stale[0].note)
+  })
+
+
+  test('an absent destination with create: false is skipped with one warning', async () => {
+    const warnings: any[] = []
+    const { fs } = memfs({})
+    const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog([], warnings) })
+    await sdkgen.generate({
+      model: makeModel(['go', 'go-cli'], undefined,
+        `main: kit: target: 'go-cli': output: { path: '${OUT}', create: false, sdkrel: '../sdk' }`),
+      root: makeRoot(),
+    })
+    const skipped = warnings.filter((w: any) => 'generate-external-skip' === w?.point)
+    strictEqual(skipped.length, 1, JSON.stringify(warnings.map((w: any) => w?.point)))
   })
 
 
@@ -769,6 +862,21 @@ describe('external target', () => {
         ok(null != err, 'a malformed SDKGEN_EXTERNAL was accepted')
         ok(String(err.message).includes('SDKGEN_EXTERNAL'),
           'the error does not name the variable: ' + err.message)
+      })
+
+
+      test('a name that is not a target is refused, naming it', async () => {
+        process.env.SDKGEN_EXTERNAL = JSON.stringify({ 'go-clii': { path: OUT2 } })
+
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT })
+
+        let err: any = null
+        try { await gen.run() } catch (e: any) { err = e }
+
+        ok(null != err, 'an override naming no target was accepted')
+        ok(/SDKGEN_EXTERNAL names go-clii, which is not a target of this model/.test(String(err.message)),
+          err.message)
+        ok(/go-cli/.test(String(err.message).split('\n')[1]), 'the error does not list the targets: ' + err.message)
       })
 
 

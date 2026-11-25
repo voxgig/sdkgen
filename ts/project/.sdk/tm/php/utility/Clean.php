@@ -295,7 +295,7 @@ class ProjectNameClean
         return is_resource($val) || 'resource (closed)' === gettype($val);
     }
 
-    // Bytes are described, never copied (ADR-004): the kind, and the size and
+    // Bytes are described, never copied (ADR-006): the kind, and the size and
     // media type where they are known. A string is bytes only as the body of
     // a point the model marks binary; a resource is read once, so a stream.
     private static function describe_binary(mixed $val, ?array $bin): ?array

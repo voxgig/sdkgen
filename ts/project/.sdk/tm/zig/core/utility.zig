@@ -404,7 +404,7 @@ fn clean_binary_body(ctx: *Context) ?CleanBinary {
     return .{ .live = live, .media = h.get_str(body, "media") };
 }
 
-// Bytes are described, never copied (ADR-004). The value union has no
+// Bytes are described, never copied (ADR-006). The value union has no
 // variant for bytes: a string is bytes only as the body of a point the
 // model marks binary, by equal content.
 fn clean_describe_binary(bin: ?CleanBinary, s: []const u8) ?Value {

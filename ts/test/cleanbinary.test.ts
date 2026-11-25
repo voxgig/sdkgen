@@ -10,7 +10,7 @@ import * as struct from '@voxgig/struct'
 import { CLEAN_DEFAULTS, sandboxLoad } from './featureharness'
 
 
-// ADR-004: a body of bytes never reaches a diagnostic. The shipped ts and js
+// ADR-006: a body of bytes never reaches a diagnostic. The shipped ts and js
 // utilities, run for real, with a marker inside the bytes that is searched
 // for in everything that leaves.
 

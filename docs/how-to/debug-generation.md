@@ -43,7 +43,7 @@ Generated files in `go/`, `ts/`, `js/`, … are overwritten by
 `ts/project/.sdk/`, then propagate. **Never** edit the generated file as the
 fix.
 
-## 4. Propagate and force a clean copy when needed
+## 4. Propagate the change
 
 ```bash
 # consumer .sdk/
@@ -51,16 +51,11 @@ npm run add-target <lang>
 npm run generate
 ```
 
-Remember the merge gotcha: placeholder replacement is not re-applied to
-merged content. If you see a literal `ProjectName` / `GOMODULE` in the
-output, delete that generated file and regenerate it fresh:
-
-```bash
-rm <project>/<lang>/<path>/<file>
-npm run generate
-```
-
-(Full explanation in
+`generate` rewrites every file it generates and substitutes the
+placeholders (`ProjectName`, `GOMODULE`, and the rest) on every run, so a
+regenerated file never keeps a stale copy. A literal placeholder in the
+output means the copy that wrote the file had no value for it. (Full
+explanation in
 [Customize templates and propagate the change](./customize-and-propagate-templates.md).)
 
 ## 5. Check cross-language parity
@@ -91,7 +86,7 @@ reference implementation.
 
 | Symptom | Likely cause | Where to look |
 | --- | --- | --- |
-| Literal `ProjectName`/`GOMODULE` in output | merge skipped substitution | delete file, regenerate |
+| Literal `ProjectName`/`GOMODULE` in output | the copy that wrote the file had no value for it | the `replace` map of the target's `Main_<lang>` copy |
 | A README section empty or missing | the target has no component for it | the `optional-component-missing` warning names the file to write |
 | A README section throws during generate | bug in an optional component (no longer swallowed) | the stack trace names the file |
 | Entity method missing | component didn't emit it for that op | `cmp/<lang>/Entity*_<lang>` |

@@ -506,13 +506,17 @@ markers on toolchain bumps): [regeneration-overwrite](./docs/explanation/regener
 ```
 edit sdkgen template/component
   └─▶ (consumer .sdk/) npm run add-target <lang>   # copy updated files in
-       └─▶ npm run generate                         # substitute + merge into target dir
+       └─▶ npm run generate                         # substitute + overwrite target dir
 ```
 
-**Merge gotcha:** `generate` merges into existing files, and placeholder
-replacement (`ProjectName`, `GOMODULE`, …) is **not** re-applied to
-merged content. If you see a literal `ProjectName` in output, delete that
-generated file and re-run `generate` to recreate it fresh.
+**Generate overwrites; an add merges.** `generate` rewrites every file it
+generates, substituting the placeholders (`ProjectName`, `GOMODULE`, …) on
+every run, and deletes the files it generated before and no longer emits
+from the targets and phases that ran (`pruneGenerated`). `target add` and
+`feature add` merge toolchain updates into the project's edited copies under
+`.sdk/`, or overwrite them when the project sets `main: kit: copies:
+'overwrite'` (`copyMode`). The generated guides say both, from
+`regenerationStatement` and `copiesStatement` in `AgentGuideContent`.
 
 A PROJECT customises in its own `.sdk`, in this order: edit the template or
 component copy; else define a feature of its own (`.sdk/model/feature/`,
@@ -624,23 +628,30 @@ at the root. The variations come from the compiled fixture; none is listed by
 hand, and the fixture's entity names are opaque tokens so a mention scan
 cannot mistake `console` or `record` for prose. It reports:
 
-- `link`: a relative link, anchor or `cd` that does not resolve in what that
-  run wrote (`.sdk/` and the templates a target's Main copies count).
+- `link`: a relative link, anchor or `cd` that does not resolve in what the
+  full Root writes for that variation (`.sdk/` counts too).
 - `off`: a line, in the run without X, that names X.
 - `parity`: an SDK target's section that does not read a fact (auth, servers)
   its siblings read, from the model reads attributed to each component.
 - `reaction`: a prose line that left one target's document under a variation
   and survives verbatim in a sibling's.
 - `marker`: a `$$path$$` that never fired, outside a code span.
+- `starts-off`: a sentence saying features start off ("inactive until",
+  "off by default", "opt-in") that covers a feature whose `fact.on` is true.
+  A sentence covers the features it names; with "other" or "rest", every
+  feature but those its paragraph names as on; else those its heading names;
+  else every feature the document's target carries.
+- `fence`: a code block in a target's documents tagged with another
+  language; data and shell blocks are neutral, and a consumer writes the
+  language of the target it wraps.
 
 Each finding is keyed on (relation, the chain of labelled components that
 wrote the line, cause) and must match a pin in `test/textguard-pins.json`,
 which carries a reason. A pin that matches nothing fails, so fixing a writer
-means deleting its pin. `npm test` runs `link` on a fixed subset; `npm run
+means deleting its pin. `npm test` runs `link` and `fence` on a fixed subset; `npm run
 textguard` runs the full matrix, which is a CI lane. `npm run
 textguard-update` rewrites the pins from what it finds, keeping each reason;
-a new pin reads `TODO` and fails until it has one. The operation-level
-`active: false` family is suspended as one entry until decision DQ1.
+a new pin reads `TODO` and fails until it has one.
 
 A finding keys on the writing component, so split a component that writes
 many sections into labelled ones (`ReadmeTop`, `AgentGuideTop`) rather than
@@ -895,7 +906,7 @@ emitted broken source reached the fleet unchallenged.
   `main.kit.optspec`, once; `active: false` is the only opt-out. The sweep
   every SDK ships proves its own sensitivity by switching clean off and
   finding the canary — keep that negative control when porting.
-- **A body of bytes is DESCRIBED in a cleaned copy, never copied (ADR-004).**
+- **A body of bytes is DESCRIBED in a cleaned copy, never copied (ADR-006).**
   `clean` used to copy one like any other value, so a failed upload carried
   its file into the error, the explain record, the context a hook serialises
   and the log. The copy now holds `{binary$, size, type}`, by two rules: a
@@ -919,13 +930,19 @@ emitted broken source reached the fleet unchallenged.
   own route — never a custom action folded into `create`. Custom actions are
   reachable only through `$action`, so `ReadmeRef` documents them; an
   undocumented action is an endpoint no reader can call.
-- **A documented example in c, cpp, rust or zig must COMPILE.** Their ops
-  return entity handles, so an example that treats the result as a record is
-  a type error, and their own README suites only check structure.
-  `generatedcompile.test.ts` compiles every block in those languages from the
-  README, REFERENCE and root README against a generated SDK, under four
-  models that each lead with a different entity, since a quick start shows
-  the first. A section's numbered steps compile as one program.
+- **A documented example in c, cpp, rust, zig, ocaml, csharp, scala, swift
+  or clojure must COMPILE.** Their ops return entity handles, so an example
+  that treats the result as a record is a type error; a page that never
+  shows an import its blocks need (swift's `Foundation` for `ProcessInfo`,
+  clojure's `require` of an entity namespace) is one too; and their own
+  README suites only check structure. `generatedcompile.test.ts` compiles
+  every block in those languages from the README, REFERENCE and root README
+  against a generated SDK, under models that each lead with a different
+  entity, since a quick start shows the first. A section's numbered steps
+  compile as one program, and a block that calls a method the SDK lacks must
+  fail each lane naming the method, so a lane that compiled nothing cannot
+  pass. The lanes run where the toolchain is: csharp's and swift's on the
+  push runners, the rest in the nightly.
 - **A project decision belongs in the MODEL, never in a forked component.**
   `target add` merges updates into `.sdk/src/cmp/**`, `.sdk/tm/**` AND
   `.sdk/model/target/<t>.aontu`, and overwrites them in a project set to
@@ -975,7 +992,11 @@ emitted broken source reached the fleet unchallenged.
   scaffold holds a copy of. It says so in its own words rather than repeating
   the standard "move it into `.sdk/model/`", which names the place the file
   already is; `--force` is the only way past it. Do not "fix" one half to
-  match the other — they answer different questions.
+  match the other — they answer different questions. Because the add keeps
+  that file, a slot its origin gains later never reaches it: doctor names
+  each one in `aliasedBehind` (also outside `report.ok`), and
+  `featureApplies` reads the origin's `provides` for an alias of a bundled
+  target that declares none.
 - **Derive an env-var name with `envToken`/`envName`, never from the camel
   form.** `nom(model, 'Name').toUpperCase()` swallows a hyphen, so a slug like
   `voxgig-solardemo` produced BOTH `VOXGIG_SOLARDEMO_TEST_LIVE` and
@@ -1010,8 +1031,8 @@ emitted broken source reached the fleet unchallenged.
   (`"paging"` in a context type, `"proxy"` in a fetcher), so widening the
   `featuresource.test.ts` guard to quoted names produces ~25 hits of which
   one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
-  `feature: { trim: false }` (currently `clojure`, `lean`, `ocaml`,
-  `scala`, `zig` bundled, plus `lean` in the language pack — see their
+  `feature: { trim: false }` (currently `clojure`, `scala` and `zig`
+  bundled, plus `haskell` and `lean` in the language pack — see their
   model files for what has to change first). Aggregate indexes must be GENERATED, not templated: that is why
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in
@@ -1113,7 +1134,8 @@ updating both, plus the lists in this file, `README.md`,
 `docs/reference/cli.md`, `docs/reference/project-layout.md`,
 `docs/how-to/add-a-target.md` and `docs/explanation/architecture.md`.
 
-Features (all inactive by default — opt in per SDK via
+Features (all inactive by default except `log`, as each model's
+`config.options.active` says — switch one per SDK with
 `options.feature.<name>.active`):
 
 - **Core:** `log` (structured logging), `test` (in-memory mock transport;

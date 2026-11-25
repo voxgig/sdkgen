@@ -1,6 +1,10 @@
 
 import { featureApplies } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
+import { findFeatureSources } from '../helpers/featureSource'
+import { copyMode, MERGE } from '../helpers/copymerge'
+import { originName } from '../helpers/packageMeta'
+import { definitionName } from '../helpers/text'
 
 import { each } from 'jostraca'
 
@@ -34,16 +38,17 @@ const LANG_CMD: Record<string, LangCmd> = {
 }
 
 
-function langCmd(name: string): LangCmd {
-  return LANG_CMD[name] || { viaMake: true }
+// Keyed by origin, so an alias reads its origin's row.
+function langCmd(name: string, model?: any): LangCmd {
+  return LANG_CMD[null == model ? name : originName(model, name)] || { viaMake: true }
 }
 
 
 // A fenced shell block of the per-target build/test commands, run **in the
 // target directory** (the per-language guide already lives there). Prefers the
 // target's Makefile recipes (`make build` / `make test`).
-function langCommandsBlock(name: string): string {
-  const c = langCmd(name)
+function langCommandsBlock(name: string, model?: any): string {
+  const c = langCmd(name, model)
   const lines: string[] = []
   if (c.install) lines.push(c.install)
   if (c.viaMake) {
@@ -57,7 +62,10 @@ function langCommandsBlock(name: string): string {
   if (0 === lines.length) {
     return `Build and test with \`${name}\`'s standard toolchain.\n`
   }
-  return '```bash\n# in this target directory (' + name + '/):\n' + lines.join('\n') + '\n```\n'
+  const node = model?.main?.[KIT]?.target?.[name]
+  const place = null == node ? 'folder' : fact(node, 'place')
+  const dir = 'folder' === place ? name + '/' : 'root' === place ? 'the project root' : "this package's root"
+  return '```bash\n# in this target directory (' + dir + '):\n' + lines.join('\n') + '\n```\n'
 }
 
 
@@ -66,23 +74,29 @@ function featuresEnabled(target: any): boolean {
   return fact(target, 'phase').feature
 }
 
-// ts/js lay each feature out as a directory `src/feature/<name>/`; the other
-// SDK targets (`srcfeature: false`) use flat files in a shared `feature/`
-// package. Drives where feature guides live / are referenced.
+// ts/js lay each feature out as a directory `src/feature/<name>/`, which also
+// holds its guide; the other SDK targets (`srcfeature: false`) do not.
 function isDirLayout(target: any): boolean {
   return target?.srcfeature !== false
 }
 
-function featureBase(target: any): string {
-  return isDirLayout(target) ? 'src/feature' : 'feature'
+// Each feature's runtime template as discovery finds it in the target's tree,
+// skipping the empty `src/feature/<name>/` a flat-layout target also keeps.
+function featureTemplates(fs: any, target: any, features: any[]): Record<string, string> {
+  const dirLayout = isDirLayout(target)
+  const out: Record<string, string> = {}
+  const found = findFeatureSources(fs, 'tm/' + target.name,
+    features.map((f: any) => String(f.name).toLowerCase()))
+  for (const s of found) {
+    if (!dirLayout && s.path.startsWith('src/feature/')) continue
+    if (null == out[s.name]) out[s.name] = s.path + (s.folder ? '/' : '')
+  }
+  return out
 }
 
-function featureRuntimeFile(target: any, feature: any): string {
-  const ext = target?.ext || target?.name || ''
-  if ('php' === target?.name) {
-    return (feature.Name || feature.name) + 'Feature.php'
-  }
-  return feature.name + '_feature.' + ext
+function writesFeatureGuides(model: any, target: any): boolean {
+  return featuresEnabled(target) && isDirLayout(target) &&
+    0 < activeFeatures(model, target).length
 }
 
 function featureHooks(feature: any): string[] {
@@ -95,8 +109,8 @@ function featureHooks(feature: any): string[] {
 
 
 function activeTargets(model: any): any[] {
-  const target = getModelPath(model, `main.${KIT}.target`) || {}
-  return each(target).filter((t: any) => t && t.active !== false)
+  const kit = model.main[KIT]
+  return fact(kit, 'active').map((name: string) => kit.target[name])
 }
 
 // With a target, also drops features that do not APPLY to it — a guide
@@ -120,11 +134,35 @@ function projectName(model: any): string {
 
 
 
-function workflowSection(): string {
+// What a run does to the files it generates, stated once for every guide.
+function regenerationStatement(): string {
+  return `Each \`npm run generate\` rewrites every file it generates, so an edit
+made to generated output is lost, and deletes the files it generated before
+and no longer emits. A target or a phase switched off is left as it was.`
+}
+
+function copiesStatement(model: any): string {
+  return MERGE === copyMode(model?.main?.[KIT]?.copies) ?
+    `\`target add\` and \`feature add\` copy templates and components into
+\`.sdk/\`, and merge toolchain updates into the copies this project has
+edited.` :
+    `\`target add\` and \`feature add\` overwrite the templates and components
+in \`.sdk/\` (\`main: kit: copies: 'overwrite'\`): set \`copies\` to
+\`'merge'\` before customising them, so that an add merges toolchain updates
+into the edited copies.`
+}
+
+
+function workflowSection(model: any): string {
+  const dirs = activeTargets(model).filter((t: any) => 'folder' === fact(t, 'place'))
+    .map((t: any) => '\`' + t.name + '/\`')
+  const output = 0 === dirs.length ? 'The generated output is **build output** — never edit it by' :
+    1 === dirs.length ? 'The generated\ndirectory (' + dirs[0] + ') is **build output** — never edit it by' :
+      'The generated language\ndirectories (' + dirs.slice(0, 2).join(', ') + (2 < dirs.length ? ', …' : '') +
+      ') are **build output** — never edit them by'
   return `## Generating and updating the SDK
 
-All generation is driven from the \`.sdk/\` directory. The generated language
-directories (\`ts/\`, \`go/\`, …) are **build output** — never edit them by
+All generation is driven from the \`.sdk/\` directory. ${output}
 hand; fix the model, a template, or a component and regenerate.
 
 \`\`\`bash
@@ -135,15 +173,8 @@ npm run build                 # compile .sdk/src/cmp -> .sdk/dist
 npm run generate              # emit/refresh the SDK into ../<lang>
 \`\`\`
 
-\`generate\` **merges** into existing files and does **not** re-apply
-placeholder substitution to merged content. If you ever see a literal
-\`ProjectName\` or \`GOMODULE\` in generated output, delete that one file and
-regenerate it fresh:
-
-\`\`\`bash
-rm <lang>/<the-file-with-the-placeholder>
-npm run generate
-\`\`\`
+${regenerationStatement()}
+${copiesStatement(model)}
 
 Note: the \`voxgig-sdkgen\` CLI only *scaffolds* (\`target add\` /
 \`feature add\`). Generation itself runs via \`npm run generate\` (backed by
@@ -171,13 +202,11 @@ so nothing downstream complains. To inspect the model layer **without side
 effects**, use \`npm run dry-generate\` (\`-y\`, writes nothing). Never
 \`--no-config\` in anything whose output might be committed.
 
-**Regeneration never DELETES.** A file the generator has stopped emitting
-stays in the tree, and \`git status\` is silent because it is committed and
-unchanged. Narrowing a feature's plugin selection, or dropping a target, can
-leave whole modules behind that nothing references and no test covers.
-
-To find either, the target trees must be deleted and regenerated — a
-regeneration in place cannot see stale output at all.
+**Dropping a target deletes nothing.** A run deletes only what it no longer
+emits from the targets and phases that ran, so a target dropped from the
+model, or a phase switched off, leaves its files in the tree, and \`git
+status\` is silent because they are committed and unchanged. Delete them by
+hand.
 `
 }
 
@@ -187,7 +216,7 @@ function featureSection(): string {
 
 A **feature** is a pipeline extension: an object of hooks that fire at named
 stages of every entity operation (each target's guide documents its
-features). Built-in features are \`log\` and \`test\`.
+features).
 
 \`\`\`bash
 cd .sdk
@@ -242,12 +271,12 @@ deps live in \`.sdk/model/target/<lang>.aontu\`; features in
 }
 
 
-function aontuSection(): string {
+function aontuSection(model: any): string {
   return `## The model language (aontu, \`.aontu\` files)
 
 The model is one structured object assembled by **aontu** (a unification
 engine) from three sources: the API model (entities/operations, from the
-OpenAPI spec via \`@voxgig/apidef\`), the base schema, and the target/feature
+${definitionName(fact(model.main[KIT], 'definitionKind'))} via \`@voxgig/apidef\`), the base schema, and the target/feature
 definitions in \`.sdk/model/\`. An \`.aontu\` file is a relaxed JSON (jsonic
 syntax) with unification semantics:
 
@@ -296,14 +325,16 @@ export {
   langCommandsBlock,
   featuresEnabled,
   isDirLayout,
-  featureBase,
-  featureRuntimeFile,
+  featureTemplates,
+  writesFeatureGuides,
   featureHooks,
   activeTargets,
   activeFeatures,
   activeEntities,
   projectName,
   workflowSection,
+  regenerationStatement,
+  copiesStatement,
   featureSection,
   customiseSection,
   aontuSection,

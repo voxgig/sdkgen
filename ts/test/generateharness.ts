@@ -15,6 +15,8 @@ import {
 } from '../dist/sdkgen.js'
 import { provenanceReplace } from '../dist/helpers/stdrep.js'
 import { BUNDLED } from '../dist/action/resolve.js'
+import { kindDef } from '../dist/action/kind.js'
+import { aliasCmpText } from '../dist/action/target.js'
 
 
 const KIT = 'kit'
@@ -1489,6 +1491,42 @@ main: kit: flow: BasicFruitFlow: {
 }
 
 
+// Artil's access rules: matched by `agent_id`, updated per channel at a route that also needs `id`.
+function parentKeyedUpdate(): string {
+  const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
+  return entityOnly(`
+main: kit: entity: access: {
+  alias: field: {}
+  name: "access"
+  id: { field: "agent_id", name: "id" }
+  fields: {
+    "admit": { h: 'Admit', n: "admit", r: false, t: "\`$STRING\`" }
+    "agent_id": { h: 'AgentId', n: "agent_id", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [ {
+      g: { params: [ ${param('agent_id')} ] }
+      m: "GET", o: "/agents/{agent_id}/access", s: [{ lit: "agents" }, { var: "agent_id" }, { lit: "access" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+      q: { exist: ["agent_id"] } } ] }
+    update: { name: "update", points: [ {
+      bf: ["admit"]
+      g: { params: [ ${param('agent_id')}, ${param('id')} ] }
+      m: "PUT", o: "/agents/{agent_id}/access/{id}"
+      s: [{ lit: "agents" }, { var: "agent_id" }, { lit: "access" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+      q: { exist: ["agent_id", "id"] } } ] }
+  }
+}
+
+main: kit: flow: BasicAccessFlow: {
+  entity: "access", kind: "basic", name: "BasicAccessFlow"
+  step: [ { o: "load", i: { ref: "access_ref01" } } ]
+}
+`)
+}
+
+
 // A create whose routes are each nested under a parent of their own, so the
 // parameter every route needs reaches none of them, as loppee's attachment URL.
 function parentedCreate(): string {
@@ -2200,6 +2238,44 @@ function makeStampedModel(targetNames: string[], extra?: string): any {
 }
 
 
+// The model file `target add <origin>~<alias>` writes: keyed by the alias,
+// with its origin recorded.
+function aliasModel(origin: string, alias: string): string {
+  let model = kindDef('target').rename!(
+    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', origin + '.aontu'), 'utf8'), origin, alias)
+  const replace = provenanceReplace(
+    { base: BUNDLED, name: alias, origname: origin, package: '@voxgig/sdkgen' })
+  for (const [at, to] of Object.entries(replace)) {
+    model = model.split(at).join(to)
+  }
+  return model
+}
+
+
+// What the same add installs, staged for a generate run: the components
+// renamed to the alias, their fragments, and the model file. `remove` deletes
+// the staged trees.
+function stageAlias(origin: string, alias: string): { model: string, remove: () => void } {
+  const sdk = Path.join(STAGE, '.sdk')
+  const from = Path.join(sdk, 'dist', 'cmp', origin)
+  const dirs = [Path.join(sdk, 'dist', 'cmp', alias), Path.join(sdk, 'src', 'cmp', alias)]
+  Fs.mkdirSync(dirs[0], { recursive: true })
+  for (const file of Fs.readdirSync(from).filter((name: string) => name.endsWith('.js'))) {
+    writeFileSync(Path.join(dirs[0], file.replace('_' + origin + '.js', '_' + alias + '.js')),
+      aliasCmpText(Fs.readFileSync(Path.join(from, file), 'utf8'), origin, alias))
+  }
+  const fragment = Path.join(sdk, 'src', 'cmp', origin, 'fragment')
+  if (Fs.existsSync(fragment)) {
+    Fs.cpSync(fragment, Path.join(dirs[1], 'fragment'), { recursive: true })
+  }
+
+  return {
+    model: aliasModel(origin, alias),
+    remove: () => dirs.forEach((dir) => Fs.rmSync(dir, { recursive: true, force: true })),
+  }
+}
+
+
 // Stand-ins for a project's own components. `ReadmeTopQuick` is implemented
 // by every target, so it proves dispatch; nothing implements `NoSuchThing`,
 // so it proves a target that opts out is skipped rather than fatal.
@@ -2437,6 +2513,7 @@ export {
   parentedCreate,
   underscoreKeyed,
   idlessUpdate,
+  parentKeyedUpdate,
   namedFieldEntity,
   retypedList,
   seedableList,
@@ -2463,6 +2540,8 @@ export {
   layeredFs,
   makeModel,
   makeStampedModel,
+  aliasModel,
+  stageAlias,
   makeRoot,
   namedEntity,
 }

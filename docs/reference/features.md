@@ -585,7 +585,9 @@ directly for the common cases. See
 
 Replaces the transport with a mock API served from seed data, so a
 generated SDK's test suite runs with no server, no fixtures on disk, and
-no network. `load`, `list`, `create`, `update`, `patch` and `remove` are all
+no network. Every SDK target carries it: `target add` installs it,
+`feature remove test` is refused, and `generate` refuses a model without
+it. `load`, `list`, `create`, `update`, `patch` and `remove` are all
 served from the seed map, including writes: a `create` is readable by a following
 `load` in the same test.
 
@@ -1148,7 +1150,7 @@ and takes any pino-compatible logger instead.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `active` | `false` | Enable the feature. |
+| `active` | `true` | The one feature on by default; `false` switches it off. |
 | `level` | `'info'` | Log level. |
 | `logger` | pino + pino-pretty | Supply your own logger instead. |
 

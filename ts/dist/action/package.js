@@ -20,6 +20,8 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const manifest_1 = require("../helpers/manifest");
 const semver_1 = require("../helpers/semver");
+const shipped_1 = require("../helpers/shipped");
+Object.defineProperty(exports, "SDKGEN_VERSION", { enumerable: true, get: function () { return shipped_1.SDKGEN_VERSION; } });
 const npm_1 = require("../helpers/npm");
 const kind_1 = require("./kind");
 const check_1 = require("./check");
@@ -83,34 +85,22 @@ function checkEngine(src, actx) {
     if (null == range || '' === range) {
         return;
     }
-    const ok = (0, semver_1.satisfies)(SDKGEN_VERSION, range);
+    const ok = (0, semver_1.satisfies)(shipped_1.SDKGEN_VERSION, range);
     if (false === ok) {
         throw new utility_1.SdkGenError(src.ref + ': needs @voxgig/sdkgen ' + range +
-            ', this is ' + SDKGEN_VERSION +
+            ', this is ' + shipped_1.SDKGEN_VERSION +
             '\n  upgrade @voxgig/sdkgen, or install an earlier version of ' + src.ref);
     }
     if (null == ok) {
         actx.log.warn({
             point: 'package-engine-unparsed', package: src.manifest.name,
-            range, version: SDKGEN_VERSION,
+            range, version: shipped_1.SDKGEN_VERSION,
             note: src.ref + ': cannot compare `engines.sdkgen` range ' +
-                JSON.stringify(range) + ' against ' + SDKGEN_VERSION +
+                JSON.stringify(range) + ' against ' + shipped_1.SDKGEN_VERSION +
                 '; proceeding — see helpers/semver for the supported subset'
         });
     }
 }
-// This generator's own version, read from the package.json beside `dist`.
-// Not from the consumer's model: `engines.sdkgen` is about the GENERATOR
-// doing the installing, and the model describes the SDK being generated.
-const SDKGEN_VERSION = (() => {
-    try {
-        return require('../../package.json').version;
-    }
-    catch (err) {
-        return '0.0.0';
-    }
-})();
-exports.SDKGEN_VERSION = SDKGEN_VERSION;
 function selectItems(src, only, log) {
     const provides = src.manifest.provides ?? {};
     if (null == only) {
@@ -438,6 +428,15 @@ async function preCheck(pkgname, installed, actx) {
             note: pkgname + ': ' + report.outdated.length + ' outdated file(s) ' +
                 'will be refreshed; .sdk/' + copies_1.COPY_LOG + ' shows nothing in them ' +
                 'was changed'
+        });
+    }
+    if (0 < report.ahead.length && true === flags.nofetch) {
+        actx.log.warn({
+            point: 'package-update-older', package: pkgname,
+            files: report.ahead.length,
+            note: pkgname + ': ' + report.ahead.length + ' file(s) were copied ' +
+                'from a newer release than the one installed; --no-fetch puts its ' +
+                'older copies back'
         });
     }
     const changed = [...report.forked, ...report.edited];

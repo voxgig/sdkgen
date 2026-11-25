@@ -373,10 +373,29 @@ export type {
   Finding,
 }
 
+// A target is graded CONSUMER exactly when its surface is not `sdk`: the
+// corpus tiers grade an SDK, and nothing else runs the corpus.
+function parityFinding(file: string, name: string, tier: string, surface: string): Finding[] {
+  if (!PARITY.includes(tier) || ('CONSUMER' === tier) === ('sdk' !== surface)) {
+    return []
+  }
+
+  const what = '' === surface ? 'a surface the model does not say' : 'surface `' + surface + '`'
+  return [{
+    level: 'error', point: 'manifest-parity-surface', file, kind: 'target', name,
+    note: file + ': `parity.' + name + '` is ' + tier + ', and the target has ' + what +
+      ' — ' + ('CONSUMER' === tier ?
+        'CONSUMER grades a target that is not an SDK; grade an SDK FULL, MIRRORED or UNCOVERED' :
+        'a target that is not an SDK runs no corpus, so it is graded CONSUMER'),
+  }]
+}
+
+
 export {
   MANIFEST,
   SCHEMA,
   PARITY,
+  parityFinding,
   ITEM_NAME_RE,
   manifestPath,
   probePackage,

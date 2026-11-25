@@ -1,12 +1,11 @@
+import { LANG_LABEL, langLabel } from './title';
 declare const PUBLISHER = "Voxgig";
 declare const PUBLISHER_URL = "https://voxgig.com";
 declare const SECURITY_EMAIL = "security@voxgig.com";
 declare const GENERATOR_URL = "https://github.com/voxgig/sdkgen";
-declare const LANG_LABEL: Record<string, string>;
-declare function langLabel(target: string): string;
 declare function originName(model: any, target: string): string;
 declare function sdkName(slug: string): string;
-declare function repoInfo(model: any): {
+declare function repoInfo(model: any, target?: string): {
     slug: any;
     origin: any;
     host: any;
@@ -19,6 +18,7 @@ declare function repoInfo(model: any): {
     releasesUrl: string;
     tagsUrl: string;
 };
+declare function releaseBranch(model: any): string;
 declare function docsSiteUrl(model: any): string;
 declare function goModule(model: any, target: string): string;
 declare function packageVersion(model: any, target: string): string;
@@ -27,6 +27,7 @@ declare function goPackageIdent(model: any, target: string): string;
 declare function registryState(model: any, target: string): 'tag' | 'pending' | 'active' | 'inactive';
 declare function isPublished(model: any, target: string): boolean;
 declare function registryName(model: any, target: string): string;
+declare function registryLabel(name: string): string;
 declare function vendorCommand(model: any, target: string): string;
 declare function apiName(model: any): string;
 declare function packageName(model: any, eco: string): string;
@@ -40,6 +41,7 @@ declare function publisherInfo(model: any): {
     name: string;
     url: string;
     security: string;
+    official: boolean;
 };
 declare function isDefaultPublisher(model: any): boolean;
 declare function securityContact(model: any): string;
@@ -53,4 +55,4 @@ declare function contributorList(model: any): {
 }[];
 declare function envToken(name: any): string;
 declare function envName(model: any): string;
-export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, hasPackageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, tomlString, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };
+export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, releaseBranch, apiName, packageName, hasPackageName, installCommand, registryState, isPublished, registryName, registryLabel, vendorCommand, pkgDescription, tomlString, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };

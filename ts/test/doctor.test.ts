@@ -6,9 +6,13 @@ import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
 
-import { action_doctor, doctor } from '../dist/action/doctor.js'
 import {
-  SCAFFOLD, SCAFFOLD_BASE, ROOT, KIT, makeProject, targetRef, target_add,
+  action_doctor, doctor, copyCheck, COPY_FLOOR, MODEL_FLOOR,
+} from '../dist/action/doctor.js'
+import { COPY_LOG, fingerprint, readCopies } from '../dist/action/copies.js'
+import { applyFacts } from '../dist/helpers/facts.js'
+import {
+  SCAFFOLD, SCAFFOLD_BASE, ROOT, KIT, makeProject, recordLog, targetRef, target_add,
   feature_add,
 } from './actionharness'
 
@@ -55,6 +59,25 @@ describe('doctor', () => {
     deepStrictEqual(report.stale, [], 'fresh project reports stale files')
     deepStrictEqual(report.missing, [], 'fresh project reports missing files')
     strictEqual(report.ok, true, 'fresh project is not ok')
+  })
+
+
+  // Generate refuses the same model, so doctor says so before a run does.
+  test('an SDK target without the test feature is an error, with the repair', async () => {
+    const log = recordLog()
+    const project = await addedProject()
+    project.actx.log = log
+    applyFacts(project.actx.model)
+
+    const report = await check(project)
+    deepStrictEqual(report.untested, ['go'])
+    strictEqual(report.ok, false)
+    ok(log.lines.some((l: any) => 'untested' === l.kind &&
+      /`voxgig-sdkgen target add go`/.test(l.note)), JSON.stringify(log.lines.map((l: any) => l.note)))
+
+    const tested = await addedProject({ test: { name: 'test', active: true } })
+    applyFacts(tested.actx.model)
+    deepStrictEqual((await check(tested)).untested, [])
   })
 
 
@@ -292,6 +315,27 @@ const Top = () => {
     ok(after.edited.includes('tm/go2/Makefile'),
       'an edit to an aliased template was not detected: ' +
       JSON.stringify(after.edited))
+  })
+
+
+  // An add keeps an alias's own model file, so a slot its origin gains later
+  // never reaches it.
+  test('an aliased model file lacking a slot its origin declares is behind', async () => {
+    const project = makeProject({ copies: 'overwrite' })
+    await target_add([targetRef('go') + '~go2'], project.actx)
+    project.actx.model.main[KIT].target.go2 = { name: 'go2', base: SCAFFOLD_BASE, origname: 'go' }
+
+    deepStrictEqual((await check(project)).aliasedBehind, [])
+
+    const file = 'model/target/go2.aontu'
+    const before = read(project, file)
+    ok(/^\s*provides:/m.test(before), 'the go model declares no provides')
+    write(project, file, before.replace(/^\s*provides:.*\n/m, ''))
+
+    const report = await check(project)
+    deepStrictEqual(report.aliasedBehind, [{ file, slots: ['provides'] }])
+    ok(report.aliasedDiff.includes(file), JSON.stringify(report.aliasedDiff))
+    strictEqual(report.ok, true, 'a slot behind failed doctor')
   })
 
 
@@ -736,5 +780,95 @@ main: kit: target: 'acme-go': {
       'deleting a real `module: package:` line was not reported as a fork: ' +
       JSON.stringify(report))
     strictEqual(report.ok, false)
+  })
+})
+
+
+describe('doctor: the copy floor', () => {
+
+  async function addedTs(log?: any): Promise<any> {
+    const project = makeProject({ log })
+    await target_add([targetRef('ts')], project.actx)
+    return project
+  }
+
+
+  // An untouched copy an add from `version` recorded, which the installed
+  // source now writes differently.
+  function agedFrom(project: any, version: string): string {
+    const rel = Object.keys(readCopies(project.actx.fs(), ROOT).files)
+      .find((rel: string) => rel.startsWith('tm/ts/') && rel.endsWith('.ts')) as string
+    const older = read(project, rel) + '\n// written by an older generator\n'
+    write(project, rel, older)
+    project.fs.appendFileSync(ROOT + '/' + COPY_LOG, JSON.stringify({
+      op: 'add', items: { 'target/ts': { package: '@voxgig/sdkgen', version } },
+      files: { [rel]: fingerprint(older) },
+    }) + '\n')
+    return rel
+  }
+
+
+  test('copies recorded from below the floor name the forced re-add', async () => {
+    const log = recordLog()
+    const project = await addedTs(log)
+    agedFrom(project, '4.22.0')
+
+    const start = log.lines.length
+    const report = await check(project)
+    const said = log.lines.slice(start)
+
+    deepStrictEqual(report.belowFloor, ['target/ts'])
+    strictEqual(report.ok, false)
+
+    const below = said.find((l: any) => 'doctor-below-floor' === l.point)
+    ok(below.note.includes('copied from @voxgig/sdkgen 4.22.0, older than ' + COPY_FLOOR),
+      below.note)
+    ok(below.note.includes('Commit, then run `voxgig-sdkgen target add ts --force`'), below.note)
+    ok(!said.some((l: any) => 'doctor-outdated' === l.point),
+      'a refresh that merges into a tree this generator cannot build is no remedy')
+
+    const lines = await copyCheck(project.actx)
+    strictEqual(lines.length, 1, lines.join('\n'))
+    ok(lines[0].includes('`npx voxgig-sdkgen target add ts --force`'), lines[0])
+  })
+
+
+  test('copies recorded at the floor are outdated, as before', async () => {
+    const project = await addedTs()
+    const rel = agedFrom(project, COPY_FLOOR)
+
+    const report = await check(project)
+
+    deepStrictEqual(report.belowFloor, [])
+    deepStrictEqual(report.outdated, [rel])
+  })
+
+
+  test('an included model file that does not compile is named', async () => {
+    const project = await addedTs()
+    write(project, 'model/target/ts.aontu',
+      '// a comment an older release wrote\n' + read(project, 'model/target/ts.aontu'))
+
+    // What compiling the project's model does with it: no error, no item.
+    delete project.actx.model.main[KIT].target.ts
+
+    const report = await check(project)
+
+    deepStrictEqual(report.unreadable.map((u: any) => [u.file, u.item, u.oldSyntax]),
+      [['model/target/ts.aontu', 'target/ts', true]])
+    strictEqual(report.ok, false)
+
+    const lines = await copyCheck(project.actx)
+    ok(lines.some((line: string) => line.startsWith('model/target/ts.aontu does not compile') &&
+      line.includes(MODEL_FLOOR) && line.includes('`npx voxgig-sdkgen target add ts --force`')),
+      lines.join('\n'))
+  })
+
+
+  test('the pages state the floors doctor holds', () => {
+    for (const page of ['explanation/copies-merge.md', 'reference/model.md']) {
+      const text = Fs.readFileSync(Path.join(__dirname, '..', '..', 'docs', page), 'utf8')
+      ok(text.includes(COPY_FLOOR) && text.includes(MODEL_FLOOR), page)
+    }
   })
 })

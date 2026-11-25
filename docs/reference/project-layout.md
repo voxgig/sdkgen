@@ -74,7 +74,8 @@ From packs: `dart`, `haskell` and `lean` in
 (wraps `ts`) in `@voxgig/sdkgen-infrapack`. Built-in features: `log`, `test`, plus the enterprise
 features `retry`, `timeout`, `ratelimit`, `cache`, `idempotency`,
 `paging`, `streaming`, `proxy`, `telemetry`, `metrics`, `debug`, `audit`,
-`clienttrack`, `rbac`, and `netsim` (all inactive by default).
+`clienttrack`, `rbac`, and `netsim` (all inactive by default except
+`log`).
 
 ## An sdkgen package
 
@@ -202,6 +203,11 @@ package registries. Ahead/behind counts use local tracking refs.
 `--github` also reads recent workflow runs and Pages status through `gh`.
 Publication settings describe the model; they do not verify registry releases.
 
+Each target's folder is where a `generate` run would write it: in its own
+folder, at the project root, or out of tree, with `SDKGEN_EXTERNAL` applied
+as generation applies it. A target written out of tree whose `<name>/` folder
+still sits in the project is reported as a stale in-tree folder.
+
 Create-sdkgen supplies the launcher, and sdkgen supplies its reporting code.
 Docgen generates `.sdk/admin/setup-github-pages.sh` when a Pages edition and its
 CI workflow are enabled. Its `--dry-run` option previews setup, and `--check`
@@ -210,7 +216,7 @@ creates or updates the Pages configuration. It does not commit, push, merge,
 or deploy.
 
 Sdkgen generates `.sdk/admin/setup-npm-trust.sh` when a target publishes to
-npm. For a repository on `github.com`, it registers each
+npm and its registry state is not `inactive`. For a repository on `github.com`, it registers each
 `publish-<target>.yml` workflow as the trusted publisher of its package, using
 the package name and repository that the workflow was generated from, so the
 two cannot disagree. npm cannot trust GitHub Actions for a repository hosted

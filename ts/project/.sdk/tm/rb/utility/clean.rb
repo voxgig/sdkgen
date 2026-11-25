@@ -150,7 +150,7 @@ module ProjectNameUtilities
       live == val || (live.encoding != val.encoding && live.b == val.b)
     end
 
-    # Bytes are described, never copied (ADR-004): the kind, and the size and
+    # Bytes are described, never copied (ADR-006): the kind, and the size and
     # media type where they are known. A String is bytes only as the body of
     # a point the model marks binary; an IO is read once, so it is a stream.
     def self.describe_binary(val, bin)

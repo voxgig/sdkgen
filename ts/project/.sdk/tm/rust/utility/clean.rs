@@ -318,7 +318,7 @@ fn is_live_body(bin: &BinaryBody, val: &Value) -> bool {
     }
 }
 
-// Bytes are described, never copied (ADR-004). The value union has no
+// Bytes are described, never copied (ADR-006). The value union has no
 // variant for bytes: a string, or a list of byte values, is bytes only as
 // the body of a point the model marks binary, by identity or equal content.
 fn describe_binary(val: &Value, bin: Option<&BinaryBody>) -> Option<Value> {

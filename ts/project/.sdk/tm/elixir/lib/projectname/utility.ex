@@ -361,7 +361,7 @@ defmodule ProjectName.Utility do
     end
   end
 
-  # Bytes are described, never copied (ADR-004): the kind, the size, and the
+  # Bytes are described, never copied (ADR-006): the kind, the size, and the
   # media type the point declares. A binary is the only carrier here, and it
   # is bytes only as the body of a point the model marks binary.
   defp describe_binary(val, bin) do

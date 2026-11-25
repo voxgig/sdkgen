@@ -425,7 +425,7 @@ let binary_body (ctx : ctx) (cfg : value) : binary_body option =
                 bin_type = (match getp body "media" with Str m -> Some m | _ -> None) }
   | _ -> None
 
-(* Bytes are described, never copied (ADR-004): the kind, the size, and the
+(* Bytes are described, never copied (ADR-006): the kind, the size, and the
  * media type the point declares. A Str is the only carrier here, and it is
  * bytes only as the body of a point the model marks binary. *)
 let describe_binary (bin : binary_body option) (s : string) : value option =

@@ -311,7 +311,7 @@ inline bool cleanIsLiveBody(const CleanBinary& bin, const std::string& text) {
   return nullptr != given && given->is_string() && given->as_string() == text;
 }
 
-// Bytes are described, never copied (ADR-004). The value union has no
+// Bytes are described, never copied (ADR-006). The value union has no
 // variant for bytes: a string is bytes only as the body of a point the
 // model marks binary, by equal content. Undef when val is not that body.
 inline Value cleanDescribeBinary(const CleanBinary& bin, const Value& val) {

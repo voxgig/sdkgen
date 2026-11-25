@@ -3,8 +3,10 @@ import { Copy, Folder } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import { ensureStdrep } from '../helpers/stdrep'
-import { featureApplies, featureTags } from '../helpers/applicability'
+import { featureApplies, featureTags, providedBy, shippedProvides } from '../helpers/applicability'
 import { pluginExcludesFor } from '../helpers/featureSource'
+import { originName } from '../helpers/packageMeta'
+import { resolvesBundled } from '../action/resolve'
 
 const Feature = cmp(function Feature(props: any) {
   const { target, feature, ctx$ } = props
@@ -16,14 +18,19 @@ const Feature = cmp(function Feature(props: any) {
   // missing template folder and abort the whole run, taking every other
   // target with it. See helpers/applicability and docs/design/feature-tags.
   if (!featureApplies(feature, target)) {
-    const provided = featureTags(target.provides)
+    const provided = providedBy(target)
     const unmet = featureTags(feature.needs).filter((n) => !provided.includes(n))
+    const origin = originName(ctx$.model, target.name)
+    const stale = resolvesBundled(target, target.name) &&
+      unmet.every((n) => shippedProvides(origin).includes(n))
 
-    log.info({
+    log.warn({
       point: 'feature-not-applicable', target: target.name, feature: feature.name,
       needs: feature.needs, provides: target.provides, unmet,
-      note: feature.name + ': target ' + target.name +
-        ' does not provide ' + unmet.join(', ')
+      note: feature.name + ' is active but not generated for ' + target.name +
+        ', which does not provide ' + unmet.join(', ') + (stale ? '; the installed ' +
+          origin + ' target does: `voxgig-sdkgen package update @voxgig/sdkgen --no-fetch`' +
+          ' or `voxgig-sdkgen target add ' + target.name + '` refreshes the copy' : ''),
     })
     return
   }
@@ -37,7 +44,7 @@ const Feature = cmp(function Feature(props: any) {
         // files, because this Copy has already written them.
         exclude: pluginExcludesFor(ctx$.model, feature.name),
         replace: {
-          ...ensureStdrep(ctx$),
+          ...ensureStdrep(ctx$, target),
           FEATURE_VERSION: feature.version,
           FEATURE_Name: feature.Name,
         }

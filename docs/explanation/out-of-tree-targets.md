@@ -91,7 +91,8 @@ main: kit: target: 'seneca-provider': output: {
 
 `create: false` says that the other repo is an optional checkout. The target
 remains active and remains excluded from the in-tree pass, but sdkgen skips
-its external pass while the destination folder is absent. Once that folder
+its external pass while the destination folder is absent, with a warning
+(`generate-external-skip`) on each run that does. Once that folder
 exists, generation proceeds without another model change and all ordinary
 destination-safety checks still apply. The default is `true`, which preserves
 the original behaviour of creating a missing destination and its parents.
@@ -113,8 +114,9 @@ anything ascending further. A project declaring
 `'../../seneca/solardemo-provider'` derived
 `'../../voxgig-sdk/voxgig-solardemo-sdk'`, where `voxgig-sdk` is the name
 of the *workspace directory* on one machine and no part of the model —
-committed into the destination's README and three test files. Generation
-warns until such a project declares it.
+committed into the destination's README and three test files. So declare
+`sdkrel` for every out-of-tree target; generation warns until it is
+declared.
 
 ## One model, two layouts
 
@@ -156,6 +158,12 @@ identical, and nothing can tell which was meant.
 
 An override relocates an item. It can also send an item out of tree that
 the model generates in tree, and every destination guard still runs on it.
+
+The SDK repository's committed files describe the model's layout either
+way. The root README, the agent guides, the deploy Makefile and the publish
+workflows are the same with and without an override, and only the relocated
+item's own files move. Its earlier in-tree output is left as it was, and
+generation warns (`generate-external-stale`) that it is stale.
 
 ## Writing into a folder that holds the project
 

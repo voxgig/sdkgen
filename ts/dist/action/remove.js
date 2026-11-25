@@ -18,6 +18,7 @@ const resolve_1 = require("./resolve");
 const action_1 = require("./action");
 const doctor_1 = require("./doctor");
 const copies_1 = require("./copies");
+const placement_1 = require("../helpers/placement");
 async function kind_remove(kind, names, actx) {
     const log = actx.log;
     const dryrun = !!actx.opts?.dryrun;
@@ -193,12 +194,23 @@ function planFeature(plan, actx) {
 function planOutput(plan, actx, declared, deleteOutput) {
     const fs = actx.fs();
     const root = actx.folder;
-    if (null != declared?.output?.path) {
-        plan.notes.push(plan.name + ': generates out of tree (' +
-            declared.output.path + '); that output is not touched');
+    const output = node_path_1.default.join(root, '..', plan.name);
+    // Where a generate run here would write, the run override included.
+    const targets = Object.keys(actx.model?.main?.[types_1.KIT]?.target ?? {});
+    const { override, named } = (0, placement_1.readOverride)(actx.opts?.external, process.env.SDKGEN_EXTERNAL, targets);
+    const run = (0, placement_1.runOutput)(declared?.output, override[plan.name]);
+    // The base schema defaults the path to '', which declares no output.
+    if ('' !== (run.path ?? '') || true === run.root) {
+        const where = true === run.root ? 'at the project root' :
+            'out of tree (' + run.path +
+                (named.includes(plan.name) ? ', from SDKGEN_EXTERNAL' : '') + ')';
+        plan.notes.push(plan.name + ': generates ' + where + '; that output is not touched');
+        if (fs.existsSync(output)) {
+            plan.notes.push(plan.name + ': ' + rel(root, output) + ' is not where ' +
+                'it is generated, and is kept; remove it yourself if it is stale');
+        }
         return;
     }
-    const output = node_path_1.default.join(root, '..', plan.name);
     if (!fs.existsSync(output)) {
         return;
     }

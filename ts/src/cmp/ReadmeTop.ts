@@ -9,7 +9,8 @@ import {
 
 import { credentialPlacement } from '../utility'
 import { optionalComponent } from '../helpers/optional'
-import { featureDocs } from './FeatureDocs'
+import { featureDocs, codeList } from './FeatureDocs'
+import { PIPELINE_STAGES, pipelineLength } from './FeatureHook'
 import type { FeatureDoc } from './FeatureDocs'
 
 import {
@@ -20,8 +21,10 @@ import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
-import { modelText } from '../helpers/text'
-import { isConsumer } from '../helpers/alongside'
+import { definitionName, modelText } from '../helpers/text'
+import { fact } from '../helpers/facts'
+import { documentOrder, surfaceOf } from '../helpers/surface'
+import { copyMode, MERGE } from '../helpers/copymerge'
 
 import {
   installCommand as pkgInstall,
@@ -31,6 +34,7 @@ import {
   vendorCommand,
   apiName,
   nonAffiliation,
+  publisherInfo,
   docsSiteUrl,
   originName,
   isDefaultPublisher,
@@ -144,18 +148,18 @@ ${tagline}
 
 
 const ReadmeTopSurfaceLine = cmp(function ReadmeTopSurfaceLine(props: any) {
-  const { hasCli, hasMcp, sdkTargets, consumerTargets, langList } = props.s
+  const { hasCli, hasMcp, sdkTargets, consumerTargets, langList, definition } = props.s
 
   if (sdkTargets.length > 1) {
     const surfaces = []
     surfaces.push(`${langList} SDKs`)
     if (hasCli) surfaces.push('a CLI with an interactive REPL')
     if (hasMcp) surfaces.push('an MCP server for AI agents')
-    consumerTargets.forEach((t: any) => surfaces.push(`the ${t.title} package`))
+    consumerTargets.forEach((t: any) => surfaces.push(`the ${fact(t, 'title')} package`))
     const surfaceList = surfaces.length > 1
       ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
       : surfaces[0]
-    Content(`> ${surfaceList} — all generated from one OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+    Content(`> ${surfaceList} — all generated from one ${definition} by [@voxgig/sdkgen](${SDKGEN_REPO}).
 
 `)
   }
@@ -172,8 +176,12 @@ const ReadmeTopFeatureLine = cmp(function ReadmeTopFeatureLine(props: any) {
   // Named here, in one line, with the detail left to each target's README.
   const features = featureDocs(model)
   if (0 < features.length) {
-    Content(`> **Features:** ${features.map((f: FeatureDoc) => '`' + f.name + '`').join(', ')} — opt-in,
-> inactive until switched on, and configured per client. See the Features
+    const on = features.filter((f: FeatureDoc) => f.on).map((f: FeatureDoc) => f.name)
+    const state = 0 === on.length ? `opt-in,
+> inactive until switched on, and configured per client.` : `configured per client.
+> ${codeList(on)} ${1 === on.length ? 'runs' : 'run'} by default${on.length < features.length ?
+      '; the rest are opt-in, inactive until switched on' : ''}.`
+    Content(`> **Features:** ${features.map((f: FeatureDoc) => '`' + f.name + '`').join(', ')} — ${state} See the Features
 > section of any SDK README below for what each one does.
 
 `)
@@ -182,16 +190,16 @@ const ReadmeTopFeatureLine = cmp(function ReadmeTopFeatureLine(props: any) {
 
 
 const ReadmeTopAbout = cmp(function ReadmeTopAbout(props: any) {
-  const { def, productName, aboutMd } = props.s
+  const { text, productName, aboutMd } = props.s
 
   if (aboutMd) {
     Content(`## About ${productName}
 
-${aboutMd.trim()}
+${aboutMd}
 
 `)
-  } else if (def.desc) {
-    Content(`${def.desc}
+  } else if (text.desc.text) {
+    Content(`${text.desc.text}
 
 `)
   }
@@ -302,7 +310,7 @@ network, and no credentials:
       const Test =
         optionalComponent(ctx$, tgt, 'ReadmeTopTest')
       if (Test) {
-        Content(`### ${tgt.title}
+        Content(`### ${fact(tgt, 'title')}
 
 `)
         Test['ReadmeTopTest']({ target: tgt })
@@ -330,22 +338,25 @@ const ReadmeTopPackages = cmp(function ReadmeTopPackages(props: any) {
 `)
     pkgTargets.forEach((tgt: any) => {
       const state = registryState(model, tgt.name)
+      const readme = fact(tgt, 'docs').readme
       let cell: string
       if ('active' === state) {
         const cmd = installCommand(tgt, model)
-        if (!cmd) return
-        cell = '`' + cmd + '`'
+        cell = cmd
+          ? '`' + cmd + '`'
+          : readme ? `see [${tgt.name}/README.md](${tgt.name}/README.md#install)` : `see \`${tgt.name}/\``
       } else if ('tag' === state) {
         const cmd = vendorCommand(model, tgt.name)
         cell = cmd
           ? '`' + cmd + '`'
-          : `build from source — [${tgt.name}/README.md](${tgt.name}/README.md)`
+          : 'build from source — ' + (readme ? `[${tgt.name}/README.md](${tgt.name}/README.md)` : `\`${tgt.name}/\``)
       } else {
         // The target README always gives a route that works without a
         // tag, which a repository may not have.
-        cell = `publish pending — [install from source](${tgt.name}/README.md#install)`
+        cell = readme ? `publish pending — [install from source](${tgt.name}/README.md#install)` :
+          `publish pending — install from source in \`${tgt.name}/\``
       }
-      Content(`| ${tgt.title} | \`${packageName(model, tgt.name)}\` | ${cell} |
+      Content(`| ${fact(tgt, 'title')} | \`${packageName(model, tgt.name)}\` | ${cell} |
 `)
     })
     Content(`
@@ -360,7 +371,7 @@ const ReadmeTopQuickstart = cmp(function ReadmeTopQuickstart(props: any) {
   if (leadTarget) {
     Content(`## Quickstart
 
-### ${leadTarget.title}
+### ${fact(leadTarget, 'title')}
 
 `)
     const LeadQuick =
@@ -370,7 +381,8 @@ const ReadmeTopQuickstart = cmp(function ReadmeTopQuickstart(props: any) {
     }
     const placement = credentialPlacement(model)
     Content(`
-${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}${fact(leadTarget, 'docs').readme ?
+  `See the [${fact(leadTarget, 'title')} README](${leadTarget.name}/README.md) for the full guide.` : ''}
 
 `)
   }
@@ -378,7 +390,8 @@ ${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README
 
 
 const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
-  const { hasCli, hasMcp, sdkTargets, consumerTargets, langList } = props.s
+  const { hasCli, hasMcp, cliTargets, mcpTargets, sdkTargets, consumerTargets, langList } = props.s
+  const paths = (targets: any[]) => targets.map((t: any) => `\`${t.name}/\``).join(' ')
 
   if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0) {
     Content(`## Surfaces
@@ -387,20 +400,19 @@ const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
 | --- | --- |
 `)
     if (sdkTargets.length > 0) {
-      const paths = sdkTargets.map((t: any) => `\`${t.name}/\``).join(' ')
-      Content(`| **SDK** (${langList}) | ${paths} |
+      Content(`| **SDK** (${langList}) | ${paths(sdkTargets)} |
 `)
     }
     if (hasCli) {
-      Content(`| **CLI** | \`go-cli/\` |
+      Content(`| **CLI** | ${paths(cliTargets)} |
 `)
     }
     if (hasMcp) {
-      Content(`| **MCP server** | \`go-mcp/\` |
+      Content(`| **MCP server** | ${paths(mcpTargets)} |
 `)
     }
     consumerTargets.forEach((t: any) => {
-      Content(`| **${t.title}** | \`${t.name}/\` |
+      Content(`| **${fact(t, 'title')}** | \`${t.name}/\` |
 `)
     })
     Content(`
@@ -410,12 +422,13 @@ const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
 
 
 const ReadmeTopMcp = cmp(function ReadmeTopMcp(props: any) {
-  const { model, hasMcp } = props.s
+  const { model, hasMcp, mcpTargets } = props.s
 
   if (hasMcp) {
-    const mcpOps = mcpTools(model).map((tool) => tool.op)
-    const mcpWrite = true === model.main?.[KIT]?.target?.['go-mcp']?.tool?.write
-    const toggle = "`main: kit: target: 'go-mcp': tool: write: true`"
+    const mcp = mcpTargets[0].name
+    const mcpOps = mcpTools(model, mcp).map((tool) => tool.op)
+    const mcpWrite = true === mcpTargets[0].tool?.write
+    const toggle = `\`main: kit: target: '${mcp}': tool: write: true\``
     const opText = mcpOps.length < 2 ? mcpOps.join('') :
       mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1]
     // What the server reads and writes is what it registers, not the flag.
@@ -437,7 +450,7 @@ The generated MCP server exposes this SDK's ${opText} operations as
 can call directly.${reads} Build and register it:
 
 \`\`\`bash
-cd go-mcp && go build -o ${model.name}-mcp .
+cd ${mcp} && go build -o ${model.name}-mcp .
 \`\`\`
 
 Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
@@ -458,7 +471,7 @@ Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
 
 
 const ReadmeTopEntities = cmp(function ReadmeTopEntities(props: any) {
-  const { entityDesc, activeEntities } = props.s
+  const { activeEntities } = props.s
 
   if (activeEntities.length > 0) {
     Content(`## Entities
@@ -472,7 +485,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
     activeEntities.map((ent: any) => {
       const ops = ent.op || {}
       const opNames = Object.keys(ops).filter((o: string) => (ops as any)[o]?.active !== false)
-      const entdesc = entityDesc[ent.name] || ent.short || ent.desc ||
+      const entdesc = fact(ent, 'desc').cell ||
         `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`
       const path = entityPath(ent)
       Content(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
@@ -505,7 +518,7 @@ const ReadmeTopOtherLanguages = cmp(function ReadmeTopOtherLanguages(props: any)
       const Quick =
         optionalComponent(ctx$, tgt, 'ReadmeTopQuick')
       if (Quick) {
-        Content(`### ${tgt.title}
+        Content(`### ${fact(tgt, 'title')}
 
 `)
         Quick['ReadmeTopQuick']({ target: tgt })
@@ -561,41 +574,40 @@ const ReadmeTopAdvanced = cmp(function ReadmeTopAdvanced(props: any) {
 > Everyday use only needs the sections above. This explains the internals
 > behind every call — relevant when writing custom features.
 
-Every SDK call runs the same five-stage pipeline:
+Every entity operation runs the same ${pipelineLength()}-stage pipeline:
 
-1. **Point** — resolve the API endpoint from the operation definition.
-2. **Spec** — build the HTTP specification (URL, method, headers, body).
-3. **Request** — send the HTTP request.
-4. **Response** — receive and parse the response.
-5. **Result** — extract the result data for the caller.
+${PIPELINE_STAGES.map((s, i) => (i + 1) + '. **' + s.name + '** — ' + s.purpose).join('\n')}
 
-A feature hook fires at each stage (e.g. \`PrePoint\`, \`PreSpec\`,
-\`PreRequest\`), so features can inspect or modify the pipeline without
+A feature hook fires before each stage (e.g. \`${PIPELINE_STAGES[0].hook}\`, \`${PIPELINE_STAGES[1].hook}\`,
+\`${PIPELINE_STAGES[2].hook}\`), so features can inspect or modify the pipeline without
 forking the SDK.
 
-### Features
-
 `)
 
-  Content(`| Feature | Purpose |
+  const active = each(feature).filter((feat: any) => feat.active)
+  if (0 < active.length) {
+    Content(`### Features
+
+| Feature | Purpose |
 | --- | --- |
 `)
-  each(feature, (feat: any) => {
-    if (!feat.active) return
-    const purpose = feat.title || feat.Name || feat.name
-    Content(`| **${feat.Name || feat.name}Feature** | ${purpose} |
+    for (const feat of active) {
+      const purpose = fact(feat, 'title').cell || feat.Name || feat.name
+      Content(`| **${feat.Name || feat.name}Feature** | ${purpose} |
 `)
-  })
+    }
+    Content(`
+`)
+  }
 
-  Content(`
-Pass custom features via the \`extend\` option at construction time.
+  Content(`Pass custom features via the \`extend\` option at construction time.
 
 `)
 })
 
 
 const ReadmeTopCustomizing = cmp(function ReadmeTopCustomizing(props: any) {
-  const { model, sdkTargets, docTargets } = props.s
+  const { model, sdkTargets, docTargets, definition } = props.s
 
   // 11c. Customization: model-driven declarations, in-repo templates and
   // components, regeneration that overwrites, customising in `.sdk`, and a
@@ -604,7 +616,7 @@ const ReadmeTopCustomizing = cmp(function ReadmeTopCustomizing(props: any) {
   // regenerates `.sdk` in full says so, since its copies do not merge.
   const mapTarget = sdkTargets[0] || docTargets[0]
   const targetDir = mapTarget ? `\`<target>/\`, such as \`${mapTarget.name}/\`` : `\`<target>/\``
-  const merging = 'overwrite' !== model.main?.kit?.copies
+  const merging = MERGE === copyMode(model.main?.[KIT]?.copies)
   const mergeNote = merging ?
     `An add merges toolchain updates into the
   edited copies, and \`voxgig-sdkgen doctor\` reports any drift from what a
@@ -650,7 +662,7 @@ customizable without forking any upstream tool:
 | \`.sdk/model/text.aontu\` | The README wording, in \`main.kit.text\`: the tagline, the summary and the entity descriptions | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/guide/guide.aontu\` | How the spec's paths map onto entities and operations | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/\`, the rest | The API model built from the spec, and the target and feature definitions | Not by hand. Generation, \`target add\` and a new scaffold run rewrite it, apart from a feature or target this project defines itself. |
-| \`.sdk/def/\` | The OpenAPI spec | Replace it when the API changes. Generation rebuilds the model from it. |
+| \`.sdk/def/\` | The ${definition} | Replace it when the API changes. Generation rebuilds the model from it. |
 | \`.sdk/src/cmp/<target>/\`, \`.sdk/tm/<target>/\` | The components and templates that generate each target | ${copiesRow} |
 | \`.sdk/test/\` | The shared test cases the generated tests run | No. |
 | ${targetDir} | One generated SDK per target, with its own tests | No. Generation overwrites it. |
@@ -683,8 +695,8 @@ const ReadmeTopPerLanguage = cmp(function ReadmeTopPerLanguage(props: any) {
     Content(`## Per-language documentation
 
 `)
-    docTargets.forEach((tgt: any) => {
-      Content(`- [${tgt.title}](${tgt.name}/README.md)
+    docTargets.filter((tgt: any) => fact(tgt, 'docs').readme).forEach((tgt: any) => {
+      Content(`- [${fact(tgt, 'title')}](${tgt.name}/README.md)
 `)
     })
     Content(`
@@ -694,35 +706,33 @@ const ReadmeTopPerLanguage = cmp(function ReadmeTopPerLanguage(props: any) {
 
 
 const ReadmeTopUpstream = cmp(function ReadmeTopUpstream(props: any) {
-  const { info, homepage, docsUrl } = props.s
-
-  const upstreamUrl = (info.contact && info.contact.url)
-    || (info.servers && info.servers[0] && info.servers[0].url)
-    || homepage
+  const { text, definition, definitionFull, model } = props.s
+  const upstream = text.upstream
+  const docs = text.docs_url
   Content(`## Upstream API
 
-This SDK is generated from the upstream OpenAPI specification. It is an
-unofficial client and is not affiliated with the API provider.
+This SDK is generated from the upstream ${definitionFull}.${publisherInfo(model).official ? '' : ` It is an
+unofficial client and is not affiliated with the API provider.`}
 
-The OpenAPI spec(s) this SDK was generated from are kept in the
+The ${definition}(s) this SDK was generated from are kept in the
 [\`.sdk/def/\`](.sdk/def/) folder.
 
 `)
-  if (upstreamUrl) {
+  if (upstream.raw) {
     // A per-tenant server URL carries an OpenAPI server variable —
     // `https://{instance}.dreamapply.com/api` — and is the right thing to
     // SHOW, because it tells the reader the host is theirs to fill in. It is
     // not a thing to LINK: the braces are not a resolvable address, so a
     // markdown link renders as clickable and dead. Show it as code instead.
-    const templated = /[{}]/.test(upstreamUrl)
+    const templated = /[{}]/.test(upstream.raw)
     Content(templated
-      ? `- Upstream API: \`${upstreamUrl}\`
+      ? `- Upstream API: ${upstream.code}
 `
-      : `- Upstream API: [${upstreamUrl}](${upstreamUrl})
+      : `- Upstream API: [${upstream.inline}](${upstream.link})
 `)
   }
-  if (docsUrl && docsUrl !== upstreamUrl) {
-    Content(`- Documentation: [${docsUrl}](${docsUrl})
+  if (docs.raw && docs.raw !== upstream.raw) {
+    Content(`- Documentation: [${docs.inline}](${docs.link})
 `)
   }
   Content(`
@@ -743,11 +753,11 @@ Do not open public issues for suspected vulnerabilities.
 
 
 const ReadmeTopFooter = cmp(function ReadmeTopFooter(props: any) {
-  const { productName } = props.s
+  const { productName, definition } = props.s
 
   Content(`---
 
-Generated from the ${productName} OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+Generated from the ${productName} ${definition} by [@voxgig/sdkgen](${SDKGEN_REPO}).
 `)
 })
 
@@ -761,32 +771,30 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const info = modelText(model)
   const def = (model.main && model.main.def) || {}
 
-  const productName = info.title || `${model.Name} API`
+  const text = fact(model.main[KIT], 'text')
 
-  const tagline = info.tagline
-    || def.tagline
-    || `${productName} client, generated from the OpenAPI spec.`
+  const productName = fact(model.main[KIT], 'apiName').inline
 
-  const aboutMd = info.about_md || ''
-  const homepage = info.homepage || ''
-  const docsUrl = info.docs_url || ''
-  const entityDesc = info.entity_desc || {}
+  const kind = fact(model.main[KIT], 'definitionKind')
+  const definition = definitionName(kind)
+  const definitionFull = definitionName(kind, true)
 
-  const apiSummary = (info.summary || '').trim()
-  const apiWebsite = (info.website || '').trim()
-  const websiteLine = apiWebsite
-    ? `Learn more about ${productName} at ` +
-    `[${apiWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${apiWebsite}).`
+  const tagline = text.tagline.inline
+    || `${productName} client, generated from the ${definition}.`
+
+  const aboutMd = text.about_md.text
+
+  const apiSummary = text.summary.inline
+  const websiteLine = text.website.raw
+    ? `Learn more about ${productName} at [${text.website.label}](${text.website.link}).`
     : ''
 
   // Attribution for API metadata sourced from a third-party catalogue (e.g.
   // freepublicapis.com). Rendered only when the model carries an
   // `info.meta_source` URL, so first-party SDKs never show it. The link points
   // back to the catalogue that kindly supplied the metadata.
-  const metaSource = (info.meta_source || '').trim()
-  const metaSourceLine = metaSource
-    ? `Metadata kindly supplied by ` +
-    `[${metaSource.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${metaSource}).`
+  const metaSourceLine = text.meta_source.raw
+    ? `Metadata kindly supplied by [${text.meta_source.label}](${text.meta_source.link}).`
     : ''
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -797,41 +805,28 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   each(feature, (feat: any) => { if (!feat.Name) names(feat, feat.name) })
 
   const activeEntities = each(entity).filter((e: any) => e.active !== false)
-  const activeTargets = each(target).filter((t: any) => t.active !== false)
+  const activeTargets = fact(model.main[KIT], 'active').map((name: string) => target[name])
 
-  const hasCli = activeTargets.some((t: any) => t.name === 'go-cli')
-  const hasMcp = activeTargets.some((t: any) => t.name === 'go-mcp')
+  const cliTargets = activeTargets.filter((t: any) => 'cli' === surfaceOf(t))
+  const mcpTargets = activeTargets.filter((t: any) => 'mcp' === surfaceOf(t))
+  const hasCli = 0 < cliTargets.length
+  const hasMcp = 0 < mcpTargets.length
 
 
-  const docsOrder: string[] = (getModelPath(model, `main.${KIT}.config.docs_order`,
-    { only_active: false, required: false }) as any) || []
+  const ordered = documentOrder(model, activeTargets)
 
-  const orderOf = (name: string): number => {
-    const i = docsOrder.indexOf(name)
-    if (i !== -1) return i
-    if (name === 'go-cli') return docsOrder.length + 1
-    if (name === 'go-mcp') return docsOrder.length + 2
-    return docsOrder.length
-  }
+  const isCliOrMcp = (t: any) => ['cli', 'mcp'].includes(surfaceOf(t))
 
-  const ordered = activeTargets
-    .slice()
-    .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
-
-  const isCliOrMcp = (t: any) => t.name === 'go-cli' || t.name === 'go-mcp'
-
-  const sdkTargets = ordered.filter((t: any) => !isConsumer(t))
+  const sdkTargets = ordered.filter((t: any) => 'sdk' === surfaceOf(t))
 
   // The CLI and the MCP server have surfaces of their own below.
-  const consumerTargets = ordered.filter((t: any) => isConsumer(t) && !isCliOrMcp(t))
+  const consumerTargets = ordered.filter((t: any) => 'sdk' !== surfaceOf(t) && !isCliOrMcp(t))
 
   const docTargets = ordered.filter((t: any) => !isCliOrMcp(t))
 
-  const pkgTargets = activeTargets
-    .filter((t: any) => hasPackageName(model, t.name))
-    .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
+  const pkgTargets = ordered.filter((t: any) => hasPackageName(model, t.name))
 
-  const langList = sdkTargets.map((t: any) => t.title).join(', ')
+  const langList = sdkTargets.map((t: any) => fact(t, 'title')).join(', ')
   const leadTarget = pickLeadTarget(sdkTargets)
 
   const s = {
@@ -839,12 +834,12 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     ctx$,
     info,
     def,
+    text,
     productName,
+    definition,
+    definitionFull,
     tagline,
     aboutMd,
-    homepage,
-    docsUrl,
-    entityDesc,
     apiSummary,
     websiteLine,
     metaSourceLine,
@@ -852,6 +847,8 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     activeEntities,
     hasCli,
     hasMcp,
+    cliTargets,
+    mcpTargets,
     sdkTargets,
     consumerTargets,
     docTargets,

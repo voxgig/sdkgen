@@ -5,19 +5,25 @@ import { memfs } from 'memfs'
 import { each, names, Project, Folder, File, Content } from 'jostraca'
 
 import {
-  SdkGen, cmp, fact, Main, Readme, AgentGuide, ReadmeTop, AgentGuideTop, Security, Changelog,
+  SdkGen, cmp, fact, featureApplies, Main, Readme, AgentGuide, ReadmeTop, AgentGuideTop, Security,
+  Changelog,
 } from '../dist/sdkgen.js'
+import {
+  FENCES, mention, linkFindings, markerFindings, fenceFindings, offFindings,
+} from '../dist/helpers/textguard.js'
+import type { GuardFinding } from '../dist/helpers/textguard.js'
+import { REQUIRED_FEATURE } from '../dist/helpers/targetguard.js'
 
 import {
-  API_MODEL, KIT, STAGE, SCAFFOLD, makeModel, layeredFs, makeLog,
+  API_MODEL, KIT, STAGE, SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog,
 } from './generateharness'
 
 
-// The text guard: the documentation regenerated under single-switch
-// variations of the model, read for links that do not resolve (`link`),
-// lines naming what the run removed (`off`), siblings that read different
-// facts (`parity`), a fix that reached one language and not its siblings
-// (`reaction`), and template markers that never fired (`marker`).
+// The text guard: the documentation under single-switch variations of the
+// model, read for unresolved links (`link`), lines naming what the run removed
+// (`off`), siblings reading different facts (`parity`), a fix that reached one
+// sibling only (`reaction`), unfired markers (`marker`), features said to start
+// off that start on (`starts-off`) and foreign code (`fence`).
 
 
 type Line = { text: string, chain: string }
@@ -28,6 +34,8 @@ type Run = {
   lines: Record<string, Line[]>
   present: Set<string>
   reads?: Record<string, Set<string>>
+  on: Record<string, boolean>
+  applies: Record<string, string[]>
 }
 
 type Subject = { kind: 'target' | 'feature' | 'entity' | 'op', key: string, words: RegExp[] }
@@ -120,10 +128,7 @@ const ENTITY_OPS: Record<string, string[]> = Object.fromEntries(
     .map(([k, v]: [string, any]) => [k, Object.keys(v.op || {}).sort()]))
 
 
-// A title is a word only where no letter, `+` or `#` continues it: `C` is
-// not a mention inside `C++` or `C#`.
-const word = (w: string): RegExp =>
-  new RegExp('(?<![A-Za-z0-9_+#-])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z0-9_+#])')
+const word = mention
 
 
 function targetWords(name: string, model: any): RegExp[] {
@@ -186,7 +191,11 @@ function variations(): Variation[] {
       subject: { kind: 'target', key: t, words: targetWords(t, model) },
     })
   }
-  for (const f of FEATURES) {
+  // Generation refuses a model without the required feature, so every
+  // sentence about it is true by construction and no variation removes it.
+  const optional = FEATURES.filter((f: string) => REQUIRED_FEATURE !== f)
+  const required = FEATURES.filter((f: string) => REQUIRED_FEATURE === f)
+  for (const f of optional) {
     with_('feature-' + f, 'feature', {
       features: FEATURES.filter((x: string) => x !== f),
       subject: { kind: 'feature', key: f, words: featureWords(f, model) },
@@ -208,8 +217,8 @@ function variations(): Variation[] {
 
   with_('targets-empty', 'empty', { targets: [] })
   with_('targets-lone', 'lone', { targets: [lead] })
-  with_('features-empty', 'empty', { features: [] })
-  with_('features-lone', 'lone', { features: [FEATURES[0]] })
+  with_('features-empty', 'empty', { features: required })
+  with_('features-lone', 'lone', { features: [optional[0], ...required] })
   with_('entities-empty', 'empty', {
     extra: base.extra + ENTITIES.map((e: string) => `\nmain: kit: entity: ${TOKEN[e]}: active: false`).join(''),
   })
@@ -373,43 +382,18 @@ function recording(model: any, reads: Record<string, Set<string>>): any {
 }
 
 
-// A path the docs-only run does not write but the full run does: a target's
-// template tree, copied by its Main.
-function templatePaths(model: any): Set<string> {
-  const out = new Set<string>()
-  for (const [name, t] of Object.entries(model.main[KIT].target) as [string, any][]) {
-    if (false === t.active) continue
-    const origin = '' !== (t.origname || '') ? t.origname : name
-    const tm = Path.join(SCAFFOLD, 'tm', origin)
-    if (!Fs.existsSync(tm)) continue
-    const prefix = 'root' === fact(t, 'place') ? '' : name + '/'
-    const walk = (dir: string, rel: string) => {
-      for (const entry of Fs.readdirSync(dir, { withFileTypes: true })) {
-        const r = '' === rel ? entry.name : rel + '/' + entry.name
-        if (entry.isDirectory()) walk(Path.join(dir, entry.name), r)
-        else out.add(prefix + r)
-      }
-    }
-    walk(tm, '')
-  }
-  return out
+function compile(v: Variation): any {
+  return makeModel(v.targets, undefined, v.extra, v.features, 'target', API)
 }
 
 
-async function generateDocs(
-  v: Variation, opts: { control?: () => void, reads?: boolean, root?: any } = {},
-): Promise<Run> {
+async function run(v: Variation, root: any, model: any): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
   const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
-  const holder: { node?: any } = {}
-  const reads: Record<string, Set<string>> = {}
-  const compiled = makeModel(v.targets, undefined, v.extra, v.features, 'target', API)
-  const model = opts.reads ? recording(compiled, reads) : compiled
-
   const cwd = process.cwd()
   process.chdir(SCAFFOLD)
   try {
-    const res = await sdkgen.generate({ model, root: opts.root ?? docsRoot(holder, opts.control) })
+    const res = await sdkgen.generate({ model, root })
     if (true !== res.ok) throw new Error(v.id + ': generation did not report ok')
   }
   finally {
@@ -422,10 +406,35 @@ async function generateDocs(
     if (null == c || rel.includes('.jostraca/') || rel.startsWith('.sdk/') || rel.startsWith('../')) continue
     files[rel] = c
   }
+  return files
+}
 
-  const present = new Set<string>([...Object.keys(files), ...templatePaths(compiled)])
+
+// A link resolves against everything the full Root writes for the variation,
+// where each Main placed its templates, not where the scaffold keeps them.
+const written = new Map<string, Set<string>>()
+
+async function writtenPaths(v: Variation): Promise<Set<string>> {
+  if (!written.has(v.id)) {
+    written.set(v.id, new Set(Object.keys(await run(v, makeRoot(), compile(v)))))
+  }
+  return written.get(v.id) as Set<string>
+}
+
+
+async function generateDocs(
+  v: Variation, opts: { control?: () => void, reads?: boolean, root?: any } = {},
+): Promise<Run> {
+  const holder: { node?: any } = {}
+  const reads: Record<string, Set<string>> = {}
+  const compiled = compile(v)
+  const model = opts.reads ? recording(compiled, reads) : compiled
+  const files = await run(v, opts.root ?? docsRoot(holder, opts.control), model)
+
+  const present = new Set<string>(Object.keys(files))
+  if (null == opts.root) for (const p of await writtenPaths(v)) present.add(p)
   return {
-    id: v.id, files, present,
+    id: v.id, files, present, ...featureState(compiled),
     lines: null == holder.node ? {} : attribute(holder.node, Object.fromEntries(
       Object.entries(files).filter(([p]: [string, string]) => p.endsWith('.md')))),
     reads: opts.reads ? reads : undefined,
@@ -433,111 +442,39 @@ async function generateDocs(
 }
 
 
-function isDir(present: Set<string>, dir: string): boolean {
-  const d = dir.replace(/\/+$/, '')
-  if ('' === d || '.' === d || '.sdk' === d || d.startsWith('.sdk/')) return true
-  for (const p of present) if (p.startsWith(d + '/')) return true
-  return false
-}
-
-
-// GitHub's heading anchors, which is what a reader's browser follows.
-function slug(heading: string): string {
-  return heading.trim().toLowerCase()
-    .replace(/`/g, '')
-    .replace(/[^\p{L}\p{N}\s_-]/gu, '')
-    .replace(/\s/g, '-')
-}
-
-function anchors(text: string): Set<string> {
-  const out = new Set<string>()
-  const seen: Record<string, number> = {}
-  let fence = false
-  for (const line of text.split('\n')) {
-    if (/^\s*(```|~~~)/.test(line)) fence = !fence
-    if (fence) continue
-    const m = /^#{1,6}\s+(.*)$/.exec(line)
-    if (!m) continue
-    const s = slug(m[1])
-    const n = seen[s] || 0
-    out.add(0 === n ? s : s + '-' + n)
-    seen[s] = n + 1
+// Each active feature's default, and which of them each target carries.
+function featureState(model: any): { on: Record<string, boolean>, applies: Record<string, string[]> } {
+  const kit = model.main[KIT]
+  const active = Object.values(kit.feature || {})
+    .filter((f: any) => false !== f.active && 'base' !== f.name) as any[]
+  return {
+    on: Object.fromEntries(active.map((f: any) => [f.name, true === fact(f, 'on')])),
+    applies: Object.fromEntries(Object.entries(kit.target || {}).map(([name, t]: [string, any]) =>
+      [name, active.filter((f: any) => featureApplies(f, t)).map((f: any) => f.name)])),
   }
-  return out
 }
 
+
+const tagged = (run: Run, found: GuardFinding[]): Finding[] =>
+  found.map((f: GuardFinding) => ({ ...f, variation: run.id }))
 
 function link(run: Run): Finding[] {
-  const out: Finding[] = []
-  for (const [doc, lines] of Object.entries(run.lines)) {
-    const dir = Path.posix.dirname(doc)
-    let fence = ''
-    for (const { text, chain } of lines) {
-      const open = /^\s*(```|~~~)\s*(\S*)/.exec(text)
-      if (open) {
-        fence = '' === fence ? (open[2] || 'text') : ''
-        continue
-      }
-      if ('' !== fence) {
-        if (/^(bash|sh|shell|console)$/.test(fence)) {
-          const cd = /^\s*(?:\$\s*)?cd\s+([^\s;&|)]+)/.exec(text)
-          if (cd && !/^[~$\/]/.test(cd[1])) {
-            const fromDoc = Path.posix.normalize(Path.posix.join(dir, cd[1]))
-            const fromRoot = Path.posix.normalize(cd[1])
-            if (!isDir(run.present, fromDoc) && !isDir(run.present, fromRoot)) {
-              out.push({ relation: 'link', chain, cause: 'cd ' + cd[1], doc, line: text, variation: run.id })
-            }
-          }
-        }
-        continue
-      }
-      const bare = text.replace(/`[^`]*`/g, '')
-      for (const m of bare.matchAll(/\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
-        const href = m[1]
-        if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('/')) continue
-        const [rel, frag] = href.split('#')
-        const target = '' === rel ? doc : Path.posix.normalize(Path.posix.join(dir, rel))
-        if ('' !== rel && !run.present.has(target) && !isDir(run.present, target)) {
-          out.push({ relation: 'link', chain, cause: target, doc, line: text, variation: run.id })
-          continue
-        }
-        if (null != frag && '' !== frag && target.endsWith('.md') && null != run.files[target] &&
-          !anchors(run.files[target]).has(frag)) {
-          out.push({ relation: 'link', chain, cause: target + '#' + frag, doc, line: text, variation: run.id })
-        }
-      }
-    }
-  }
-  return out
+  return tagged(run, linkFindings(run.lines, run.files, run.present))
 }
 
 
 function off(run: Run, subject: Subject): Finding[] {
-  const out: Finding[] = []
-  if (0 === subject.words.length) return out
-  for (const [doc, lines] of Object.entries(run.lines)) {
-    for (const { text, chain } of lines) {
-      if (subject.words.some((w: RegExp) => w.test(text))) {
-        out.push({ relation: 'off', chain, cause: subject.kind, doc, line: text, variation: run.id })
-      }
-    }
-  }
-  return out
+  return tagged(run, offFindings(run.lines, subject.words.map((w: RegExp) => [subject.kind, w])))
 }
 
 
-const MARKER = /\$\$[A-Za-z_][\w.$]*\$\$/
-
 function marker(run: Run): Finding[] {
-  const out: Finding[] = []
-  for (const [doc, lines] of Object.entries(run.lines)) {
-    for (const { text, chain } of lines) {
-      if (MARKER.test(text.replace(/`[^`]*`/g, ''))) {
-        out.push({ relation: 'marker', chain, cause: 'unfired', doc, line: text, variation: run.id })
-      }
-    }
-  }
-  return out
+  return tagged(run, markerFindings(run.lines))
+}
+
+
+function codeFences(run: Run): Finding[] {
+  return tagged(run, fenceFindings(run.lines, FENCES))
 }
 
 
@@ -629,6 +566,74 @@ function parity(run: Run): Finding[] {
 }
 
 
+// A sentence saying features start off covers those it names; with `other`
+// or `rest`, every feature but those the paragraph names as on; else those its
+// heading names; else every feature the document's target carries. It counts
+// only where it, or its heading, is about features.
+const STARTS_OFF = /inactive until|inactive by default|off by default|opt-in/i
+const OTHERS = /\b(other|others|rest)\b/i
+const FEATURE_WORD = /\bfeatures?\b/i
+
+function startsOff(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    const all = run.applies[doc.split('/')[0]] ?? Object.keys(run.on)
+    const named = (text: string): string[] => all.filter((f: string) => text.includes('`' + f + '`'))
+    let heading = { names: [] as string[], about: false }
+    let para: Line[] = []
+
+    const flush = () => {
+      const parts = para.map((l: Line) => l.text.replace(/^\s*>\s?/, ''))
+      const text = parts.join(' ')
+      const ends: number[] = []
+      for (const part of parts) ends.push((ends[ends.length - 1] ?? -1) + part.length + 1)
+      let from = 0
+      for (const s of text.split(/(?<=[.!?])\s+/)) {
+        const start = text.indexOf(s, from)
+        from = start + s.length
+        if (!STARTS_OFF.test(s) || !(FEATURE_WORD.test(s) || 0 < named(s).length || heading.about)) {
+          continue
+        }
+        const covered = OTHERS.test(s) ?
+          all.filter((f: string) => !(run.on[f] && named(text).includes(f))) :
+          0 < named(s).length ? named(s) :
+            0 < heading.names.length ? heading.names : all
+        const bad = covered.filter((f: string) => run.on[f]).sort()
+        if (0 === bad.length) continue
+        const at = start + s.search(STARTS_OFF)
+        const line = para[ends.findIndex((e: number) => at < e)] ?? para[0]
+        out.push({ relation: 'starts-off', chain: line.chain, cause: bad.join(','), doc,
+          line: line.text, variation: run.id })
+      }
+      para = []
+    }
+
+    let fence = false
+    for (const l of lines) {
+      const bare = l.text.replace(/^\s*>\s?/, '').trim()
+      if (/^(```|~~~)/.test(bare)) {
+        flush()
+        fence = !fence
+        continue
+      }
+      if (fence) continue
+      const h = /^#{1,6}\s+(.*)$/.exec(l.text)
+      if (h || '' === bare || bare.startsWith('|')) flush()
+      if (h) {
+        const names = all.filter((f: string) => new RegExp('(?<![\\w-])' + f + '(?![\\w-])', 'i').test(h[1]))
+        heading = { names, about: 0 < names.length || FEATURE_WORD.test(h[1]) }
+      }
+      else if ('' !== bare) {
+        para.push(l)
+        if (bare.startsWith('|')) flush()
+      }
+    }
+    flush()
+  }
+  return out
+}
+
+
 // A test-only component: a stale sentence, a dangling link and an unfired
 // marker, each of which the guard must report.
 function negativeControl(feature: string): () => void {
@@ -665,8 +670,10 @@ export {
   link,
   off,
   marker,
+  codeFences,
   reaction,
   parity,
+  startsOff,
   negativeControl,
   key,
 }

@@ -25,6 +25,7 @@ type TargetOrigins = {
         name: string;
         from: string;
     }[];
+    owned: string[];
 };
 declare function targetOrigins(model: any): TargetOrigins;
 export type { Source, TargetOrigins, };

@@ -7,13 +7,16 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
+const FeatureHook_1 = require("./FeatureHook");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
 const mcpTools_1 = require("../helpers/mcpTools");
 const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
 const text_1 = require("../helpers/text");
-const alongside_1 = require("../helpers/alongside");
+const facts_1 = require("../helpers/facts");
+const surface_1 = require("../helpers/surface");
+const copymerge_1 = require("../helpers/copymerge");
 const packageMeta_1 = require("../helpers/packageMeta");
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen';
 const VOXGIG_SDK = 'https://voxgig.com/sdk/';
@@ -109,7 +112,7 @@ ${tagline}
     }
 });
 const ReadmeTopSurfaceLine = (0, component_1.cmp)(function ReadmeTopSurfaceLine(props) {
-    const { hasCli, hasMcp, sdkTargets, consumerTargets, langList } = props.s;
+    const { hasCli, hasMcp, sdkTargets, consumerTargets, langList, definition } = props.s;
     if (sdkTargets.length > 1) {
         const surfaces = [];
         surfaces.push(`${langList} SDKs`);
@@ -117,11 +120,11 @@ const ReadmeTopSurfaceLine = (0, component_1.cmp)(function ReadmeTopSurfaceLine(
             surfaces.push('a CLI with an interactive REPL');
         if (hasMcp)
             surfaces.push('an MCP server for AI agents');
-        consumerTargets.forEach((t) => surfaces.push(`the ${t.title} package`));
+        consumerTargets.forEach((t) => surfaces.push(`the ${(0, facts_1.fact)(t, 'title')} package`));
         const surfaceList = surfaces.length > 1
             ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
             : surfaces[0];
-        (0, jostraca_1.Content)(`> ${surfaceList} — all generated from one OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+        (0, jostraca_1.Content)(`> ${surfaceList} — all generated from one ${definition} by [@voxgig/sdkgen](${SDKGEN_REPO}).
 
 `);
     }
@@ -135,24 +138,28 @@ const ReadmeTopFeatureLine = (0, component_1.cmp)(function ReadmeTopFeatureLine(
     // Named here, in one line, with the detail left to each target's README.
     const features = (0, FeatureDocs_1.featureDocs)(model);
     if (0 < features.length) {
-        (0, jostraca_1.Content)(`> **Features:** ${features.map((f) => '`' + f.name + '`').join(', ')} — opt-in,
-> inactive until switched on, and configured per client. See the Features
+        const on = features.filter((f) => f.on).map((f) => f.name);
+        const state = 0 === on.length ? `opt-in,
+> inactive until switched on, and configured per client.` : `configured per client.
+> ${(0, FeatureDocs_1.codeList)(on)} ${1 === on.length ? 'runs' : 'run'} by default${on.length < features.length ?
+            '; the rest are opt-in, inactive until switched on' : ''}.`;
+        (0, jostraca_1.Content)(`> **Features:** ${features.map((f) => '`' + f.name + '`').join(', ')} — ${state} See the Features
 > section of any SDK README below for what each one does.
 
 `);
     }
 });
 const ReadmeTopAbout = (0, component_1.cmp)(function ReadmeTopAbout(props) {
-    const { def, productName, aboutMd } = props.s;
+    const { text, productName, aboutMd } = props.s;
     if (aboutMd) {
         (0, jostraca_1.Content)(`## About ${productName}
 
-${aboutMd.trim()}
+${aboutMd}
 
 `);
     }
-    else if (def.desc) {
-        (0, jostraca_1.Content)(`${def.desc}
+    else if (text.desc.text) {
+        (0, jostraca_1.Content)(`${text.desc.text}
 
 `);
     }
@@ -254,7 +261,7 @@ network, and no credentials:
         sdkTargets.forEach((tgt) => {
             const Test = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopTest');
             if (Test) {
-                (0, jostraca_1.Content)(`### ${tgt.title}
+                (0, jostraca_1.Content)(`### ${(0, facts_1.fact)(tgt, 'title')}
 
 `);
                 Test['ReadmeTopTest']({ target: tgt });
@@ -279,25 +286,27 @@ const ReadmeTopPackages = (0, component_1.cmp)(function ReadmeTopPackages(props)
 `);
         pkgTargets.forEach((tgt) => {
             const state = (0, packageMeta_1.registryState)(model, tgt.name);
+            const readme = (0, facts_1.fact)(tgt, 'docs').readme;
             let cell;
             if ('active' === state) {
                 const cmd = installCommand(tgt, model);
-                if (!cmd)
-                    return;
-                cell = '`' + cmd + '`';
+                cell = cmd
+                    ? '`' + cmd + '`'
+                    : readme ? `see [${tgt.name}/README.md](${tgt.name}/README.md#install)` : `see \`${tgt.name}/\``;
             }
             else if ('tag' === state) {
                 const cmd = (0, packageMeta_1.vendorCommand)(model, tgt.name);
                 cell = cmd
                     ? '`' + cmd + '`'
-                    : `build from source — [${tgt.name}/README.md](${tgt.name}/README.md)`;
+                    : 'build from source — ' + (readme ? `[${tgt.name}/README.md](${tgt.name}/README.md)` : `\`${tgt.name}/\``);
             }
             else {
                 // The target README always gives a route that works without a
                 // tag, which a repository may not have.
-                cell = `publish pending — [install from source](${tgt.name}/README.md#install)`;
+                cell = readme ? `publish pending — [install from source](${tgt.name}/README.md#install)` :
+                    `publish pending — install from source in \`${tgt.name}/\``;
             }
-            (0, jostraca_1.Content)(`| ${tgt.title} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
+            (0, jostraca_1.Content)(`| ${(0, facts_1.fact)(tgt, 'title')} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
 `);
         });
         (0, jostraca_1.Content)(`
@@ -309,7 +318,7 @@ const ReadmeTopQuickstart = (0, component_1.cmp)(function ReadmeTopQuickstart(pr
     if (leadTarget) {
         (0, jostraca_1.Content)(`## Quickstart
 
-### ${leadTarget.title}
+### ${(0, facts_1.fact)(leadTarget, 'title')}
 
 `);
         const LeadQuick = (0, optional_1.optionalComponent)(ctx$, leadTarget, 'ReadmeTopQuick');
@@ -318,13 +327,15 @@ const ReadmeTopQuickstart = (0, component_1.cmp)(function ReadmeTopQuickstart(pr
         }
         const placement = (0, utility_1.credentialPlacement)(model);
         (0, jostraca_1.Content)(`
-${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}${(0, facts_1.fact)(leadTarget, 'docs').readme ?
+            `See the [${(0, facts_1.fact)(leadTarget, 'title')} README](${leadTarget.name}/README.md) for the full guide.` : ''}
 
 `);
     }
 });
 const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props) {
-    const { hasCli, hasMcp, sdkTargets, consumerTargets, langList } = props.s;
+    const { hasCli, hasMcp, cliTargets, mcpTargets, sdkTargets, consumerTargets, langList } = props.s;
+    const paths = (targets) => targets.map((t) => `\`${t.name}/\``).join(' ');
     if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0) {
         (0, jostraca_1.Content)(`## Surfaces
 
@@ -332,20 +343,19 @@ const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props)
 | --- | --- |
 `);
         if (sdkTargets.length > 0) {
-            const paths = sdkTargets.map((t) => `\`${t.name}/\``).join(' ');
-            (0, jostraca_1.Content)(`| **SDK** (${langList}) | ${paths} |
+            (0, jostraca_1.Content)(`| **SDK** (${langList}) | ${paths(sdkTargets)} |
 `);
         }
         if (hasCli) {
-            (0, jostraca_1.Content)(`| **CLI** | \`go-cli/\` |
+            (0, jostraca_1.Content)(`| **CLI** | ${paths(cliTargets)} |
 `);
         }
         if (hasMcp) {
-            (0, jostraca_1.Content)(`| **MCP server** | \`go-mcp/\` |
+            (0, jostraca_1.Content)(`| **MCP server** | ${paths(mcpTargets)} |
 `);
         }
         consumerTargets.forEach((t) => {
-            (0, jostraca_1.Content)(`| **${t.title}** | \`${t.name}/\` |
+            (0, jostraca_1.Content)(`| **${(0, facts_1.fact)(t, 'title')}** | \`${t.name}/\` |
 `);
         });
         (0, jostraca_1.Content)(`
@@ -353,11 +363,12 @@ const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props)
     }
 });
 const ReadmeTopMcp = (0, component_1.cmp)(function ReadmeTopMcp(props) {
-    const { model, hasMcp } = props.s;
+    const { model, hasMcp, mcpTargets } = props.s;
     if (hasMcp) {
-        const mcpOps = (0, mcpTools_1.mcpTools)(model).map((tool) => tool.op);
-        const mcpWrite = true === model.main?.[types_1.KIT]?.target?.['go-mcp']?.tool?.write;
-        const toggle = "`main: kit: target: 'go-mcp': tool: write: true`";
+        const mcp = mcpTargets[0].name;
+        const mcpOps = (0, mcpTools_1.mcpTools)(model, mcp).map((tool) => tool.op);
+        const mcpWrite = true === mcpTargets[0].tool?.write;
+        const toggle = `\`main: kit: target: '${mcp}': tool: write: true\``;
         const opText = mcpOps.length < 2 ? mcpOps.join('') :
             mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1];
         // What the server reads and writes is what it registers, not the flag.
@@ -379,7 +390,7 @@ The generated MCP server exposes this SDK's ${opText} operations as
 can call directly.${reads} Build and register it:
 
 \`\`\`bash
-cd go-mcp && go build -o ${model.name}-mcp .
+cd ${mcp} && go build -o ${model.name}-mcp .
 \`\`\`
 
 Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
@@ -398,7 +409,7 @@ Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
     }
 });
 const ReadmeTopEntities = (0, component_1.cmp)(function ReadmeTopEntities(props) {
-    const { entityDesc, activeEntities } = props.s;
+    const { activeEntities } = props.s;
     if (activeEntities.length > 0) {
         (0, jostraca_1.Content)(`## Entities
 
@@ -410,7 +421,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
         activeEntities.map((ent) => {
             const ops = ent.op || {};
             const opNames = Object.keys(ops).filter((o) => ops[o]?.active !== false);
-            const entdesc = entityDesc[ent.name] || ent.short || ent.desc ||
+            const entdesc = (0, facts_1.fact)(ent, 'desc').cell ||
                 `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`;
             const path = (0, opShape_1.entityPath)(ent);
             (0, jostraca_1.Content)(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
@@ -439,7 +450,7 @@ const ReadmeTopOtherLanguages = (0, component_1.cmp)(function ReadmeTopOtherLang
         otherTargets.forEach((tgt) => {
             const Quick = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopQuick');
             if (Quick) {
-                (0, jostraca_1.Content)(`### ${tgt.title}
+                (0, jostraca_1.Content)(`### ${(0, facts_1.fact)(tgt, 'title')}
 
 `);
                 Quick['ReadmeTopQuick']({ target: tgt });
@@ -485,38 +496,36 @@ const ReadmeTopAdvanced = (0, component_1.cmp)(function ReadmeTopAdvanced(props)
 > Everyday use only needs the sections above. This explains the internals
 > behind every call — relevant when writing custom features.
 
-Every SDK call runs the same five-stage pipeline:
+Every entity operation runs the same ${(0, FeatureHook_1.pipelineLength)()}-stage pipeline:
 
-1. **Point** — resolve the API endpoint from the operation definition.
-2. **Spec** — build the HTTP specification (URL, method, headers, body).
-3. **Request** — send the HTTP request.
-4. **Response** — receive and parse the response.
-5. **Result** — extract the result data for the caller.
+${FeatureHook_1.PIPELINE_STAGES.map((s, i) => (i + 1) + '. **' + s.name + '** — ' + s.purpose).join('\n')}
 
-A feature hook fires at each stage (e.g. \`PrePoint\`, \`PreSpec\`,
-\`PreRequest\`), so features can inspect or modify the pipeline without
+A feature hook fires before each stage (e.g. \`${FeatureHook_1.PIPELINE_STAGES[0].hook}\`, \`${FeatureHook_1.PIPELINE_STAGES[1].hook}\`,
+\`${FeatureHook_1.PIPELINE_STAGES[2].hook}\`), so features can inspect or modify the pipeline without
 forking the SDK.
 
-### Features
-
 `);
-    (0, jostraca_1.Content)(`| Feature | Purpose |
+    const active = (0, jostraca_1.each)(feature).filter((feat) => feat.active);
+    if (0 < active.length) {
+        (0, jostraca_1.Content)(`### Features
+
+| Feature | Purpose |
 | --- | --- |
 `);
-    (0, jostraca_1.each)(feature, (feat) => {
-        if (!feat.active)
-            return;
-        const purpose = feat.title || feat.Name || feat.name;
-        (0, jostraca_1.Content)(`| **${feat.Name || feat.name}Feature** | ${purpose} |
+        for (const feat of active) {
+            const purpose = (0, facts_1.fact)(feat, 'title').cell || feat.Name || feat.name;
+            (0, jostraca_1.Content)(`| **${feat.Name || feat.name}Feature** | ${purpose} |
 `);
-    });
-    (0, jostraca_1.Content)(`
-Pass custom features via the \`extend\` option at construction time.
+        }
+        (0, jostraca_1.Content)(`
+`);
+    }
+    (0, jostraca_1.Content)(`Pass custom features via the \`extend\` option at construction time.
 
 `);
 });
 const ReadmeTopCustomizing = (0, component_1.cmp)(function ReadmeTopCustomizing(props) {
-    const { model, sdkTargets, docTargets } = props.s;
+    const { model, sdkTargets, docTargets, definition } = props.s;
     // 11c. Customization: model-driven declarations, in-repo templates and
     // components, regeneration that overwrites, customising in `.sdk`, and a
     // map of which paths are the project's to edit. Every SDK repo carries
@@ -524,7 +533,7 @@ const ReadmeTopCustomizing = (0, component_1.cmp)(function ReadmeTopCustomizing(
     // regenerates `.sdk` in full says so, since its copies do not merge.
     const mapTarget = sdkTargets[0] || docTargets[0];
     const targetDir = mapTarget ? `\`<target>/\`, such as \`${mapTarget.name}/\`` : `\`<target>/\``;
-    const merging = 'overwrite' !== model.main?.kit?.copies;
+    const merging = copymerge_1.MERGE === (0, copymerge_1.copyMode)(model.main?.[types_1.KIT]?.copies);
     const mergeNote = merging ?
         `An add merges toolchain updates into the
   edited copies, and \`voxgig-sdkgen doctor\` reports any drift from what a
@@ -570,7 +579,7 @@ customizable without forking any upstream tool:
 | \`.sdk/model/text.aontu\` | The README wording, in \`main.kit.text\`: the tagline, the summary and the entity descriptions | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/guide/guide.aontu\` | How the spec's paths map onto entities and operations | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/\`, the rest | The API model built from the spec, and the target and feature definitions | Not by hand. Generation, \`target add\` and a new scaffold run rewrite it, apart from a feature or target this project defines itself. |
-| \`.sdk/def/\` | The OpenAPI spec | Replace it when the API changes. Generation rebuilds the model from it. |
+| \`.sdk/def/\` | The ${definition} | Replace it when the API changes. Generation rebuilds the model from it. |
 | \`.sdk/src/cmp/<target>/\`, \`.sdk/tm/<target>/\` | The components and templates that generate each target | ${copiesRow} |
 | \`.sdk/test/\` | The shared test cases the generated tests run | No. |
 | ${targetDir} | One generated SDK per target, with its own tests | No. Generation overwrites it. |
@@ -600,8 +609,8 @@ const ReadmeTopPerLanguage = (0, component_1.cmp)(function ReadmeTopPerLanguage(
         (0, jostraca_1.Content)(`## Per-language documentation
 
 `);
-        docTargets.forEach((tgt) => {
-            (0, jostraca_1.Content)(`- [${tgt.title}](${tgt.name}/README.md)
+        docTargets.filter((tgt) => (0, facts_1.fact)(tgt, 'docs').readme).forEach((tgt) => {
+            (0, jostraca_1.Content)(`- [${(0, facts_1.fact)(tgt, 'title')}](${tgt.name}/README.md)
 `);
         });
         (0, jostraca_1.Content)(`
@@ -609,34 +618,33 @@ const ReadmeTopPerLanguage = (0, component_1.cmp)(function ReadmeTopPerLanguage(
     }
 });
 const ReadmeTopUpstream = (0, component_1.cmp)(function ReadmeTopUpstream(props) {
-    const { info, homepage, docsUrl } = props.s;
-    const upstreamUrl = (info.contact && info.contact.url)
-        || (info.servers && info.servers[0] && info.servers[0].url)
-        || homepage;
+    const { text, definition, definitionFull, model } = props.s;
+    const upstream = text.upstream;
+    const docs = text.docs_url;
     (0, jostraca_1.Content)(`## Upstream API
 
-This SDK is generated from the upstream OpenAPI specification. It is an
-unofficial client and is not affiliated with the API provider.
+This SDK is generated from the upstream ${definitionFull}.${(0, packageMeta_1.publisherInfo)(model).official ? '' : ` It is an
+unofficial client and is not affiliated with the API provider.`}
 
-The OpenAPI spec(s) this SDK was generated from are kept in the
+The ${definition}(s) this SDK was generated from are kept in the
 [\`.sdk/def/\`](.sdk/def/) folder.
 
 `);
-    if (upstreamUrl) {
+    if (upstream.raw) {
         // A per-tenant server URL carries an OpenAPI server variable —
         // `https://{instance}.dreamapply.com/api` — and is the right thing to
         // SHOW, because it tells the reader the host is theirs to fill in. It is
         // not a thing to LINK: the braces are not a resolvable address, so a
         // markdown link renders as clickable and dead. Show it as code instead.
-        const templated = /[{}]/.test(upstreamUrl);
+        const templated = /[{}]/.test(upstream.raw);
         (0, jostraca_1.Content)(templated
-            ? `- Upstream API: \`${upstreamUrl}\`
+            ? `- Upstream API: ${upstream.code}
 `
-            : `- Upstream API: [${upstreamUrl}](${upstreamUrl})
+            : `- Upstream API: [${upstream.inline}](${upstream.link})
 `);
     }
-    if (docsUrl && docsUrl !== upstreamUrl) {
-        (0, jostraca_1.Content)(`- Documentation: [${docsUrl}](${docsUrl})
+    if (docs.raw && docs.raw !== upstream.raw) {
+        (0, jostraca_1.Content)(`- Documentation: [${docs.inline}](${docs.link})
 `);
     }
     (0, jostraca_1.Content)(`
@@ -652,10 +660,10 @@ Do not open public issues for suspected vulnerabilities.
 `);
 });
 const ReadmeTopFooter = (0, component_1.cmp)(function ReadmeTopFooter(props) {
-    const { productName } = props.s;
+    const { productName, definition } = props.s;
     (0, jostraca_1.Content)(`---
 
-Generated from the ${productName} OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+Generated from the ${productName} ${definition} by [@voxgig/sdkgen](${SDKGEN_REPO}).
 `);
 });
 const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
@@ -665,28 +673,24 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         (0, jostraca_1.names)(model, model.name);
     const info = (0, text_1.modelText)(model);
     const def = (model.main && model.main.def) || {};
-    const productName = info.title || `${model.Name} API`;
-    const tagline = info.tagline
-        || def.tagline
-        || `${productName} client, generated from the OpenAPI spec.`;
-    const aboutMd = info.about_md || '';
-    const homepage = info.homepage || '';
-    const docsUrl = info.docs_url || '';
-    const entityDesc = info.entity_desc || {};
-    const apiSummary = (info.summary || '').trim();
-    const apiWebsite = (info.website || '').trim();
-    const websiteLine = apiWebsite
-        ? `Learn more about ${productName} at ` +
-            `[${apiWebsite.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${apiWebsite}).`
+    const text = (0, facts_1.fact)(model.main[types_1.KIT], 'text');
+    const productName = (0, facts_1.fact)(model.main[types_1.KIT], 'apiName').inline;
+    const kind = (0, facts_1.fact)(model.main[types_1.KIT], 'definitionKind');
+    const definition = (0, text_1.definitionName)(kind);
+    const definitionFull = (0, text_1.definitionName)(kind, true);
+    const tagline = text.tagline.inline
+        || `${productName} client, generated from the ${definition}.`;
+    const aboutMd = text.about_md.text;
+    const apiSummary = text.summary.inline;
+    const websiteLine = text.website.raw
+        ? `Learn more about ${productName} at [${text.website.label}](${text.website.link}).`
         : '';
     // Attribution for API metadata sourced from a third-party catalogue (e.g.
     // freepublicapis.com). Rendered only when the model carries an
     // `info.meta_source` URL, so first-party SDKs never show it. The link points
     // back to the catalogue that kindly supplied the metadata.
-    const metaSource = (info.meta_source || '').trim();
-    const metaSourceLine = metaSource
-        ? `Metadata kindly supplied by ` +
-            `[${metaSource.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${metaSource}).`
+    const metaSourceLine = text.meta_source.raw
+        ? `Metadata kindly supplied by [${text.meta_source.label}](${text.meta_source.link}).`
         : '';
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);
     const target = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`);
@@ -696,44 +700,31 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     (0, jostraca_1.each)(feature, (feat) => { if (!feat.Name)
         (0, jostraca_1.names)(feat, feat.name); });
     const activeEntities = (0, jostraca_1.each)(entity).filter((e) => e.active !== false);
-    const activeTargets = (0, jostraca_1.each)(target).filter((t) => t.active !== false);
-    const hasCli = activeTargets.some((t) => t.name === 'go-cli');
-    const hasMcp = activeTargets.some((t) => t.name === 'go-mcp');
-    const docsOrder = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.config.docs_order`, { only_active: false, required: false }) || [];
-    const orderOf = (name) => {
-        const i = docsOrder.indexOf(name);
-        if (i !== -1)
-            return i;
-        if (name === 'go-cli')
-            return docsOrder.length + 1;
-        if (name === 'go-mcp')
-            return docsOrder.length + 2;
-        return docsOrder.length;
-    };
-    const ordered = activeTargets
-        .slice()
-        .sort((a, b) => orderOf(a.name) - orderOf(b.name));
-    const isCliOrMcp = (t) => t.name === 'go-cli' || t.name === 'go-mcp';
-    const sdkTargets = ordered.filter((t) => !(0, alongside_1.isConsumer)(t));
+    const activeTargets = (0, facts_1.fact)(model.main[types_1.KIT], 'active').map((name) => target[name]);
+    const cliTargets = activeTargets.filter((t) => 'cli' === (0, surface_1.surfaceOf)(t));
+    const mcpTargets = activeTargets.filter((t) => 'mcp' === (0, surface_1.surfaceOf)(t));
+    const hasCli = 0 < cliTargets.length;
+    const hasMcp = 0 < mcpTargets.length;
+    const ordered = (0, surface_1.documentOrder)(model, activeTargets);
+    const isCliOrMcp = (t) => ['cli', 'mcp'].includes((0, surface_1.surfaceOf)(t));
+    const sdkTargets = ordered.filter((t) => 'sdk' === (0, surface_1.surfaceOf)(t));
     // The CLI and the MCP server have surfaces of their own below.
-    const consumerTargets = ordered.filter((t) => (0, alongside_1.isConsumer)(t) && !isCliOrMcp(t));
+    const consumerTargets = ordered.filter((t) => 'sdk' !== (0, surface_1.surfaceOf)(t) && !isCliOrMcp(t));
     const docTargets = ordered.filter((t) => !isCliOrMcp(t));
-    const pkgTargets = activeTargets
-        .filter((t) => (0, packageMeta_1.hasPackageName)(model, t.name))
-        .sort((a, b) => orderOf(a.name) - orderOf(b.name));
-    const langList = sdkTargets.map((t) => t.title).join(', ');
+    const pkgTargets = ordered.filter((t) => (0, packageMeta_1.hasPackageName)(model, t.name));
+    const langList = sdkTargets.map((t) => (0, facts_1.fact)(t, 'title')).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     const s = {
         model,
         ctx$,
         info,
         def,
+        text,
         productName,
+        definition,
+        definitionFull,
         tagline,
         aboutMd,
-        homepage,
-        docsUrl,
-        entityDesc,
         apiSummary,
         websiteLine,
         metaSourceLine,
@@ -741,6 +732,8 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         activeEntities,
         hasCli,
         hasMcp,
+        cliTargets,
+        mcpTargets,
         sdkTargets,
         consumerTargets,
         docTargets,

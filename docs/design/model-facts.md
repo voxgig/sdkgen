@@ -33,10 +33,67 @@ read it; none of them computes it.
     `readme`, `agentguide`, `test`), each on unless the target's model turns
     it off. The base model declares no target phases, so the rules declare
     their defaults, for the fact pass only (WP02).
+  - The escaped forms of every text a neutral document prints (WP18): the
+    `escape` rule computes, for one raw text, `text`, `inline`, `cell`,
+    `code`, `codecell`, `link` and `label`. Spec text (`vendor: true`) loses
+    its relative links (DQ19) and its fences; `$$` becomes `$&#36;`
+    everywhere. The pass supplies each raw text, from `helpers/doctext`, and
+    writes the forms beside what it describes: `main.kit.fact.text.<slot>`,
+    an entity's `desc`, a feature's `title` and `option.<name>.value` or
+    `.type`. They cost about 170 ms of the pass with 20 targets and 20
+    features, and about 0.75 s for 600 texts.
+  - `main.kit.fact.auth` (WP19): `apikey`, `suppressed`, `basic`, `in`,
+    `name`, `prefix` and `secret`, each equal to the helper it is computed
+    for (`isAuthActive`, `isAuthSuppressed`, `isHttpBasicAuth`,
+    `resolveAuthIn`, `resolveAuthName`, `resolveAuthPrefix`). `secret` is
+    Basic, header placement and not suppressed, which is exactly when every
+    bundled PrepareAuth composes the secret, measured over twenty targets and
+    eight auth states. The rules declare, for the pass only, an unset slot of
+    `config.auth` and `info.security` as `''`, and an unset prefix as `false`,
+    because `''` is a prefix a project may declare.
+  - `main.kit.fact.server` (WP19): the server variables, as `serverVariables`
+    lists them. A rule decides `required` from `re()` built from each
+    variable's key, `key(2)` where it sits; only a word-character name can be
+    one the URL uses. The pass supplies the first server as a map, declares a
+    variable the URL names and the spec omits, and lists the result in the
+    URL's order, then the declared order, since aontu lists no map's keys.
+  - `main.kit.fact.env` (WP19): `prefix`, `apikey`, `secret`, `base`, `live`,
+    a name per server variable under `server` and per entity under `entid`.
+    The rule spells a token as `envToken` does, with `upper` and `rep`: aontu's
+    `nom(name, 'upper')` splits a digit into a word of its own
+    (`n3ds_session` becomes `N_3_DS_SESSION`), which would rename the
+    variables of any project or entity whose name holds a digit.
+  - `target.fact.dir` and `target.fact.sdkrel` (WP19): the directory a reader
+    enters, and the path from there back to the project: `.` at the root, the
+    target's name and `..` in a folder, `output.path` and `output.sdkrel` out
+    of tree. An out-of-tree target that declares no `sdkrel` has it derived
+    from the layout at generate, as before. Every pass gives a template the
+    path as `SDKREL`, and no template names it yet.
+- **What the pass computes in code**, because aontu cannot list a map's keys
+  or compare package names (WP19):
+  - `main.kit.fact.active`: the active targets, in key order.
+  - `target.fact.tag`: the release tag before its version: `<prefix>/v` when
+    `publish.tag.prefix` names one, else `v` for the one npm package the tree
+    publishes or the npm package of the ts SDK, else `<target>/v`; `''` when
+    `publish.tag.active` is false (WP25). The publish workflow's tag job and
+    PUBLISHING table read it, and so do the root Makefile's tag recipe and
+    header. The per-target Makefile templates still spell `<target>/v` until
+    WP35 gives them the tag through a token.
+  - `main.kit.fact.ops`: each entity's canonical operations, by entity name,
+    in canonical order, action-only ones included, with no fallback. They sit
+    outside the entities because the ts and js live tests print an entity
+    whole into generated source.
+  - `main.kit.fact.package`: the JVM package of java, kotlin and scala, and the
+    Python package py and py-data import, which is jostraca's `Name` for the
+    project lower-cased.
+  - `main.kit.fact.option`: one row per client option in `main.kit.optspec`,
+    `name` and `type`, in key order.
 - **The pass** is `applyFacts` (`ts/src/helpers/facts.ts`). `generate()` runs
-  it after `guardModelNames` and `guardFlowSteps`, before Root. It evaluates
-  the rules over the generated model, minus the entity and flow maps that no
-  rule reads, and copies each `fact` map into the model.
+  it after `guardModel`, before Root. It evaluates the rules over the
+  generated model, minus the entity and flow maps that no rule reads and the
+  facts of an earlier pass, and copies each `fact` map into the model. An
+  entity reaches the rules as its name alone: over 500 entities the pass takes
+  about 1.6 s, against 0.19 s for seven.
 - **The accessor** is `fact(node, name)`. It throws when the node has no
   such fact, which names both causes: the model did not pass through
   `applyFacts`, or it lacks what the rule reads.
@@ -56,6 +113,27 @@ and checks that `generate()` applies the facts before Root runs.
 
 With all 20 SDK targets and all 20 bundled features, the pass reads 73 KB of
 model and takes 120 to 190 ms.
+
+## The generate-time document check (WP18)
+
+After each pass, `generate()` reads the Markdown `File` nodes of the tree it
+kept and warns, as `doc-link-dangling` or `doc-table-broken`, of a relative
+link that resolves to nothing the pass wrote or the project holds, and of a
+table row that does not end as its header ends or holds a different number
+of cells. A dry run writes no copies, so there a path under a copy's
+destination counts as written. sdkgen's generate suite fails on either,
+except what `DOC_PINS` in `ts/test/generate.test.ts` names: the dangling
+target links of S43 to S45 (WP14), and a new finding, the nullable field
+type `T | null` printed unescaped in a code span in the per-language field
+tables, which the copy wave's cell escaping fixes (WP33).
+
+U104 is settled: a fenced block in an entity description, spliced raw, is
+extracted and compiled by the README example tests. Before WP18 the rb, go,
+py and perl README lanes all failed on one in the root README's entity table
+(`main.kit.text.entity_desc`) and on one in an entity's `short`, which the
+per-language READMEs print. After WP18 the root README case passes in all
+four; the per-language case still fails, because those sites are the copy
+wave's (WP33). A lone run of three backticks inline failed no lane.
 
 ## Why the rules run over the generated model
 

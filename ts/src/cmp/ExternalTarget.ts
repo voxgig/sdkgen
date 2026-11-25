@@ -7,6 +7,7 @@ import { Project } from 'jostraca'
 import { KIT } from '@voxgig/apidef'
 
 import { fact } from '../helpers/facts'
+import { repoInfo } from '../helpers/packageMeta'
 
 import { Main } from './Main'
 import { Entity } from './Entity'
@@ -40,6 +41,11 @@ const ExternalTarget = cmp(function ExternalTarget(props: any) {
 
   ctx$.stdrep = ctx$.stdrep || {}
   names(ctx$.stdrep, model.Name, 'Project' + 'Name')
+
+  if ('' !== (target.output?.repo || '')) {
+    const { host, path } = repoInfo(model, target.name)
+    ctx$.model = { ...model, main: { ...model.main, [KIT]: { ...model.main[KIT], repo: { host, path } } } }
+  }
 
   const entity = model.main[KIT].entity || {}
   const feature = model.main[KIT].feature || {}

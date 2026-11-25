@@ -3,8 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeStation = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
-const types_1 = require("../types");
 const packageMeta_1 = require("../helpers/packageMeta");
+const applicability_1 = require("../helpers/applicability");
+const facts_1 = require("../helpers/facts");
+const types_1 = require("../types");
 // Targets where station.connect(SDK) is the idiomatic binding; everything
 // else uses inverted binding through the SDK's own constructor.
 const CONNECT_TARGETS = ['ts', 'js', 'py', 'rb', 'php', 'lua', 'perl'];
@@ -13,8 +15,7 @@ const ERROR_CATALOG_URL = 'https://github.com/voxgig/sdkgen/blob/main/docs/refer
 const ReadmeStation = (0, component_1.cmp)(function ReadmeStation(props) {
     const { target } = props;
     const { model } = props.ctx$;
-    const features = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`, { only_active: false, required: false }) || {};
-    const station = Object.values(features)
+    const station = Object.values((0, applicability_1.targetFeatures)(model, target))
         .find((f) => 'station' === f?.name);
     if (null == station) {
         return;
@@ -23,18 +24,20 @@ const ReadmeStation = (0, component_1.cmp)(function ReadmeStation(props) {
     // main.slug in the embedded config); an untagged instance ref IS the
     // slug, so this is also the default instance name.
     const slug = model.name;
-    const env = (0, packageMeta_1.envName)(model);
+    const env = (0, facts_1.fact)(model.main[types_1.KIT], 'env').prefix;
     const secretbase = env.toLowerCase();
     const secretname = secretbase + '.apikey';
-    const connect = CONNECT_TARGETS.includes(target.name);
-    const selfreg = SELF_REGISTER_TARGETS.includes(target.name);
+    const origin = (0, packageMeta_1.originName)(model, target.name);
+    const connect = CONNECT_TARGETS.includes(origin);
+    const selfreg = SELF_REGISTER_TARGETS.includes(origin);
     (0, jostraca_1.Content)(`
 ## Use with Station
 
 This SDK ships as a [voxgig/station](https://github.com/voxgig/station)
 plugin: bind it to a local \`Station\` and outbound configuration,
 credentials, and observability move to one place. The feature is
-present but **off by default** — nothing changes until you bind.
+present ${(0, facts_1.fact)(station, 'on') ? 'and **on by default**.' :
+        'but **off by default** — nothing changes until you bind.'}
 
 ### Declarative: \`station.json\` + \`station.sdk()\`
 
@@ -73,7 +76,7 @@ SDK features are configured in the same file too: fleet-wide, per api,
 or per instance. \`station.check()\` resolves and constructs every
 active instance without sending a request — run it in CI.
 
-### The secret name derives from the instance
+${(0, facts_1.fact)(model.main[types_1.KIT], 'auth').apikey ? `### The secret name derives from the instance
 
 The credential comes from [sekreto](https://github.com/voxgig/sekreto)
 under a name derived from the **instance** name — the instance token
@@ -89,7 +92,7 @@ vault later and application code does not change; sekreto's own
 documentation covers the stores. The key stays out of \`options()\` and
 \`prepare()\` output; \`station.tap(...)\` shows live traffic.
 
-### Imperative: ${connect ? '`connect()`' : 'inverted binding'} — the retrofit path
+` : ''}### Imperative: ${connect ? '`connect()`' : 'inverted binding'} — the retrofit path
 
 ${connect
         ? `Bind by passing the SDK class to the station:
