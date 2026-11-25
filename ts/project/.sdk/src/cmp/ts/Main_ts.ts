@@ -6,6 +6,7 @@ import {
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   inactiveFeatureExcludes,
   entityClassName, entityCollection, srcFeatureExcludes, pluginExcludes,
+  fact,
   stationLibrary,
   targetFeatures,
   TEST_CONTROL_EXCLUDE
@@ -75,7 +76,7 @@ const Main = cmp(async function Main(props: any) {
 
     File({ name: model.const.Name + 'SDK.' + target.name }, () => {
 
-      Line(`// ${model.const.Name} ${target.Name} SDK\n`)
+      Line(`// ${model.const.Name} ${fact(target, 'title')} SDK\n`)
 
       List({ item: entity }, ({ item }: any) => {
         const cls = entityClassName(item, entityCollection(model))

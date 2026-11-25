@@ -787,7 +787,7 @@ src/cmp/js/EntityTypes_js.ts 6c115a92a18f
 src/cmp/js/Entity_js.ts debbc06d5c79
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
-src/cmp/js/Main_js.ts 5964cdac192d
+src/cmp/js/Main_js.ts 9bfa6b81bac7
 src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 9742af3eb16d
 src/cmp/js/ReadmeEntity_js.ts 20cb70a7e456
@@ -2029,7 +2029,7 @@ src/cmp/ts/EntityTypes_ts.ts 4d45bb867597
 src/cmp/ts/Entity_ts.ts 866beb700dc7
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
-src/cmp/ts/Main_ts.ts 1220d104f55d
+src/cmp/ts/Main_ts.ts ff8fe17495ba
 src/cmp/ts/Package_ts.ts 61d52a361614
 src/cmp/ts/PrepareAuth_ts.ts 13cc5f3c7f72
 src/cmp/ts/ReadmeEntity_ts.ts 4f1fb3daec35

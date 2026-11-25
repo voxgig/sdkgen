@@ -785,6 +785,17 @@ describe('generate', () => {
   })
 
 
+  // The title, which an alias keeps, rather than the key, which it renames.
+  test('ts, js: the main SDK file is headed with the target\'s title', async () => {
+    for (const target of ['ts', 'js']) {
+      const out = await generate([target])
+      const main = out[target + '/src/DemoSDK.' + target]
+      ok(null != main, target + ': no main SDK file')
+      strictEqual(main.split('\n')[0], '// Demo ' + targetTitle(target) + ' SDK')
+    }
+  })
+
+
   test('clojure: the namespace example names an entity namespace the run writes', async () => {
     const structure = (readme: string): string =>
       readme.slice(readme.indexOf('### Namespace structure'), readme.indexOf('### Entity state'))
