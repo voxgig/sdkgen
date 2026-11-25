@@ -26,9 +26,9 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // that fails on its first line.
   const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const goServerField = 0 === svars.length ? '' :
-    `\n    "server": map[string]any{` +
-    svars.map((v: any) => `\n        "${v.name}": "<${v.name}>",`).join('') +
-    `\n    },`
+    `\n        "server": map[string]any{` +
+    svars.map((v: any) => `\n            "${v.name}": "<${v.name}>",`).join('') +
+    `\n        },`
 
   const ctor = authActive
     ? `sdk.New${model.const.Name}SDK(map[string]any{\n        "apikey": os.Getenv("${envName(model)}_APIKEY"),${goServerField}\n    })`

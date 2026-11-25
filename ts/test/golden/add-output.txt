@@ -541,7 +541,7 @@ src/cmp/go/ReadmeInstall_go.ts f77e8b14f711
 src/cmp/go/ReadmeIntro_go.ts 40fb911321fe
 src/cmp/go/ReadmeModel_go.ts 4d353fdbe8f9
 src/cmp/go/ReadmeOptions_go.ts 47c8f1e458b1
-src/cmp/go/ReadmeQuick_go.ts 4ab0c3655656
+src/cmp/go/ReadmeQuick_go.ts 266b025c4472
 src/cmp/go/ReadmeRef_go.ts 97151bc24d01
 src/cmp/go/ReadmeTopHowto_go.ts 2d7332aca33c
 src/cmp/go/ReadmeTopQuick_go.ts b6cda53a2f81

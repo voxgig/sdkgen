@@ -1486,6 +1486,12 @@ main: kit: target: js: phase: feature: active: false
       'variables: `tenant`, `region` (default `eu`).'), 'the ts options row does not say which variable has a default')
   })
 
+  test('the go quick start indents its server block as its other keys', async () => {
+    const readme = String((await generate(['go'], undefined, BASIC_TEMPLATED))['go/README.md'])
+    ok(/\n {8}"apikey": [^\n]*\n {8}"server": map\[string\]any\{\n {12}"tenant": "<tenant>",\n {8}\},/.test(readme),
+      readme.slice(readme.indexOf('"apikey"') - 80, readme.indexOf('"apikey"') + 200))
+  })
+
   // The template pass reads `$$path$$` in what a component prints, so text from
   // the spec reaches generated source with each `$$` escaped for its language.
   for (const repr of ['literal', 'data']) {
