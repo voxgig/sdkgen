@@ -26,18 +26,6 @@ function zigVarName(name: string): string {
 }
 
 
-// A name zig would refuse as too long keeps its head and gains a hash of the whole.
-const ZIG_NAME_MAX = 32
-
-
-function zigModuleName(model: any): string {
-  const snake = `${model.name}_sdk`.toLowerCase().replace(/[^a-z0-9_]/g, '_')
-  const name = /^[0-9]/.test(snake) ? '_' + snake : snake
-  return name.length <= ZIG_NAME_MAX ? name :
-    name.slice(0, ZIG_NAME_MAX - 9) + '_' + crc32(name).toString(16).padStart(8, '0')
-}
-
-
 // CRC-32 (IEEE 802.3, reflected, poly 0xEDB88320) — the one zig's
 // std.hash.Crc32 and zlib both compute.
 function crc32(text: string): number {
@@ -166,7 +154,6 @@ export {
   zigListMatch,
   clean,
   formatZigValue,
-  zigModuleName,
   zigPackageFingerprint,
   zigVarName,
 }

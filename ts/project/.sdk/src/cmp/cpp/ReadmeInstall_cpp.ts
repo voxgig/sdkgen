@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, repoInfo, sdkName, readerDir } from '@voxgig/sdkgen'
+import { cmp, Content, repoInfo, sdkName, readerDir, registryNote, registryState } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -16,8 +16,8 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const dir = readerDir(target)
   const vendored = '.' === dir ? 'repository' : '\`' + dir + '/\` directory'
 
-  Content(`The ${target.title} SDK is **header-only** — there is no package to install
-from a registry. Vendor the ${vendored} into your project (or add the
+  Content(`The ${target.title} SDK is **header-only**${'tag' === registryState(model, target.name) ?
+    ' — there is no package to install\nfrom a registry.' : '. ' + registryNote(model, target.name)} Vendor the ${vendored} into your project (or add the
 repository as a git submodule) and put it on your compiler's include path.
 Releases are cut as the git tag \`${target.name}/vX.Y.Z\` (see
 [Tags](${tagsUrl})).

@@ -6,10 +6,11 @@ import {
   packageVersion,
   authorInfo,
   repoInfo,
+  packageName,
 } from '@voxgig/sdkgen'
 
 
-import { ocamlString, packageName } from './utility_ocaml'
+import { ocamlString } from './utility_ocaml'
 import { secretsBuild } from './Config_ocaml'
 
 
@@ -38,7 +39,7 @@ depexts: [
   // constant here did.
   const author = authorInfo(model, target.name)
 
-  const pkg = packageName(model)
+  const pkg = packageName(model, target.name)
   const { repoUrl, issuesUrl } = repoInfo(model)
 
   File({ name: pkg + '.opam' }, () => {

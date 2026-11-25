@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo, collectDeps } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, collectDeps, registryNote } from '@voxgig/sdkgen'
 
 import { minPerl, perlVersionLabel } from './utility_perl'
 
@@ -31,7 +31,7 @@ cpanm .
   // Publish pending: not yet on CPAN. A pure-Perl SDK installs by adding its
   // \`lib\` directory to Perl's module search path (\`@INC\`).
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to CPAN. Install it from the ${hostName}
+  Content(`${registryNote(model, target.name)} Install it from the ${hostName}
 release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout.
 

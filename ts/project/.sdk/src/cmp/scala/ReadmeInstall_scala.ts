@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, collectDeps, packageName } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, collectDeps, packageName, registryNote } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -35,7 +35,7 @@ ${cdTarget(target)}scala-cli compile .
   // release tag or a local source checkout and compile with scala-cli.
   const { hostName, tagsUrl } = repoInfo(model)
   const free = 0 === collectDeps(model, target.name, target.deps).length
-  Content(`This package is not yet published to Maven Central. The generated SDK is a
+  Content(`${registryNote(model, target.name)} The generated SDK is a
 plain-source scala-cli project (no build tool${free ? ', no third-party runtime\ndependencies' : ''}). Install it from the ${hostName} release tag
 (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or from a source
 checkout — compile it with scala-cli:

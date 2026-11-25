@@ -1,8 +1,11 @@
 
-// The OTP application: an atom mix holds to lower snake case. The main module
-// file, its folder and the typespec module are named after it too.
-function elixirApp(model: any): string {
-  return String(model.const.name).toLowerCase().replace(/[^a-z0-9_]+/g, '_')
+import { packageName } from '@voxgig/sdkgen'
+
+
+// The OTP application, which is the hex package: the main module file, its
+// folder and the typespec module are named after it too.
+function elixirApp(model: any, target: any): string {
+  return packageName(model, target.name)
 }
 
 

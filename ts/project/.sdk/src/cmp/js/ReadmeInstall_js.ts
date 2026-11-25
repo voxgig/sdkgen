@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, installCommand, isPublished, repoInfo, readerDir } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, readerDir, registryNote } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -20,7 +20,7 @@ ${installCommand(model, target.name)}
   // Publish pending, as in the ts target: a tag may not exist, so a clone is
   // always offered. The js target needs no build.
   const { hostName, tagsUrl, repoUrl, repo } = repoInfo(model)
-  Content(`This package is not yet published to npm. Install it from the ${hostName}
+  Content(`${registryNote(model, target.name)} Install it from the ${hostName}
 release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})), or from a
 clone:
 

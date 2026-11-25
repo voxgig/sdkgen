@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, readerDir, collectDeps } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, readerDir, collectDeps, registryNote, registryState } from '@voxgig/sdkgen'
 
 import { cIdent } from './utility_c'
 
@@ -43,11 +43,12 @@ ${linking(target, model)}`)
     return
   }
 
-  // Publish pending: C has no central package registry — the release IS the
-  // git tag. Build from a source checkout.
+  // No registry to install from: the release is the git tag. Build from a
+  // source checkout.
   const { tagsUrl } = repoInfo(model)
   const free = 0 === collectDeps(model, target.name, target.deps).length
-  Content(`C has no central package registry — a release is the git tag
+  Content(`${'tag' === registryState(model, target.name) ? 'C has no central package registry' :
+    registryNote(model, target.name).replace(/\.$/, '')} — a release is the git tag
 (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})). Build from a
 source checkout with the bundled \`Makefile\`; the voxgig struct library is
 vendored under \`utility/struct\`${free ? ', so there are no external dependencies to\nfetch' : ''}:

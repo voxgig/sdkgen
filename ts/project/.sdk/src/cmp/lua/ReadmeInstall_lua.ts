@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, registryNote } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -25,7 +25,7 @@ export LUA_PATH="path/to/lua/?.lua;path/to/lua/?/init.lua;;"
   // Publish pending: not yet on LuaRocks. Install from the git release tag,
   // or add the source directory to LUA_PATH.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to LuaRocks. Install it from the
+  Content(`${registryNote(model, target.name)} Install it from the
 ${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})),
 or add the source directory to your \`LUA_PATH\`:
 

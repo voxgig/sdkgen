@@ -66,7 +66,7 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: 'lib' }, () => {
     Copy({
       from: 'tm/' + target.name + '/lib/projectname',
-      to: elixirApp(model),
+      to: elixirApp(model, target),
       exclude: [
         ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/lib/projectname'),
         ...pluginExcludes(model),
@@ -80,7 +80,7 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: 'lib' }, () => {
 
     // Main SDK module (entity factory fns injected at the slot).
-    File({ name: elixirApp(model) + '.' + target.ext }, () => {
+    File({ name: elixirApp(model, target) + '.' + target.ext }, () => {
       Fragment(
         {
           from: ff + 'Main.fragment.ex',

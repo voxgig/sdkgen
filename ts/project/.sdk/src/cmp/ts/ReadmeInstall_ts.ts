@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, installCommand, isPublished, repoInfo, readerDir, fact } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, readerDir, fact, registryNote } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -25,7 +25,7 @@ ${installCommand(model, target.name)}
   const tag = fact(target, 'tag')
   const from = '' === tag ? 'from a clone' : `from the ${hostName}
 release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})), or from a clone`
-  Content(`This package is not yet published to npm. Install it ${from}, which carries
+  Content(`${registryNote(model, target.name)} Install it ${from}, which carries
 the compiled \`dist/\`:
 
 \`\`\`bash

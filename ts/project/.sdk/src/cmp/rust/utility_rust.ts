@@ -44,12 +44,6 @@ function rustVarName(name: string): string {
 }
 
 
-function crateName(model: any): string {
-  const org = (model.origin || 'voxgig-sdk').replace(/-sdk$/, '')
-  return `${org}-${sdkName(model.name)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
-}
-
-
 // The rust library (crate) identifier used in `use <crate>::...` paths,
 // e.g. solar_sdk. This is the RUSTCRATE placeholder value.
 function crateIdent(model: any): string {
@@ -140,7 +134,6 @@ function clean(o: any, dropDefaults?: boolean): any {
 }
 
 
-
 function rustRawString(s: string): string {
   let level = 0
   while (s.includes('"' + '#'.repeat(level))) {
@@ -167,7 +160,6 @@ export {
   rustRawString,
   clean,
   crateIdent,
-  crateName,
   formatRustValue,
   rustVarName,
 }

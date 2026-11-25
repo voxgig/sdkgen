@@ -40,14 +40,6 @@ function ocamlOpField(opname: string): string {
 }
 
 
-// The opam / distribution package name, e.g. voxgig-solar-sdk (mirrors the go
-// module naming: org prefix from model.origin).
-function packageName(model: any): string {
-  const org = (model.origin || 'voxgig-sdk').replace(/-sdk$/, '')
-  return `${org}-${sdkName(model.name)}`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
-}
-
-
 // Escape a JS string as an OCaml string literal body (byte string). OCaml
 // accepts `\\`, `\"`, `\n`, `\r`, `\t` and decimal `\ddd` escapes; other bytes
 // (incl. UTF-8) pass through literally.
@@ -170,5 +162,4 @@ export {
   ocamlOpField,
   ocamlString,
   ocamlVarName,
-  packageName,
 }

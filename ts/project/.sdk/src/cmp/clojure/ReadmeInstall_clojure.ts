@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, isPublished, repoInfo, readerDir } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, readerDir, packageName, registryNote } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -15,7 +15,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
 \`\`\`clojure
 ;; deps.edn
-{:deps {org.clojars.${origin}/${repo} {:mvn/version "X.Y.Z"}}}
+{:deps {${packageName(model, target.name)} {:mvn/version "X.Y.Z"}}}
 \`\`\`
 
 `)
@@ -24,7 +24,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
   // Publish pending: not yet on Clojars. Depend on the library directly from
   // the release tag, or from a local checkout via :local/root.
-  Content(`This package is not yet published to Clojars. Depend on it directly from the
+  Content(`${registryNote(model, target.name)} Depend on it directly from the
 ${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})),
 using a \`tools.deps\` git dependency:
 

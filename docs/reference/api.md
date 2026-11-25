@@ -199,6 +199,14 @@ then it names the SDK project that generates the target, with the path back
 to it from the target's directory. A `ReadmeHowto_<lang>` component ends its
 "Create a `.env.local` file" sentence with it.
 
+### `registryNote(model, targetName) → string`
+
+The sentence a target's install section states its registry with, read from
+the target's registry state: published to the registry, not yet published to
+it, not published to it, or not published to any package registry. A
+`ReadmeInstall_<lang>` component writes it where the section turns to a
+release tag or a source checkout.
+
 ### `readerDir(target) → string` and `cdTarget(target) → string`
 
 A target's directory as its own documents name it. For a target generated

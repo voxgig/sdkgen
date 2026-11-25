@@ -28,7 +28,7 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  Folder({ name: elixirApp(model) }, () => {
+  Folder({ name: elixirApp(model, target) }, () => {
     File({ name: 'prepare_auth.' + target.ext }, () => {
       Content(render({
         Name: model.const.Name,

@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, registryNote, registryState } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -25,7 +25,8 @@ ${cdTarget(target)}zig build
   // on it via the Zig package manager (a git-tagged url in build.zig.zon) or
   // build from a local source checkout.
   const { tagsUrl } = repoInfo(model)
-  Content(`Zig has no central package registry, so this package is distributed as a
+  Content(`${'tag' === registryState(model, target.name) ? 'Zig has no central package registry, so this package' :
+    registryNote(model, target.name).replace(/\.$/, '') + ', and it'} is distributed as a
 git tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})). Add it to
 your \`build.zig.zon\` dependencies, or build from a source checkout:
 

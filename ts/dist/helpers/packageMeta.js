@@ -13,6 +13,7 @@ exports.registryState = registryState;
 exports.isPublished = isPublished;
 exports.registryName = registryName;
 exports.registryLabel = registryLabel;
+exports.registryNote = registryNote;
 exports.vendorCommand = vendorCommand;
 exports.pkgDescription = pkgDescription;
 exports.tomlString = tomlString;
@@ -209,6 +210,14 @@ const REGISTRY_LABEL = {
 function registryLabel(name) {
     return REGISTRY_LABEL[name] || name;
 }
+// What an install section says of the target's registry.
+function registryNote(model, target) {
+    const state = registryState(model, target);
+    const label = registryLabel(registryName(model, target));
+    return 'tag' === state ? 'This package is not published to a package registry.' :
+        'active' === state ? 'This package is published to ' + label + '.' :
+            'This package is ' + ('inactive' === state ? 'not' : 'not yet') + ' published to ' + label + '.';
+}
 // The install route for a target not on a registry: `go get <module>@latest`
 // for go, resolved by the proxy from the `go/vX.Y.Z` tag. go-cli, go-mcp and a
 // port with no registry get '', and their README's build steps are the route.
@@ -288,9 +297,50 @@ function packageName(model, eco) {
         case 'kotlin':
         case 'scala':
             return mavenGroup(origin) + ':' + base;
+        case 'rust':
+        case 'ocaml':
+            return `${origin.replace(/-sdk$/, '')}-${base}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        case 'zig':
+            return zigName(`${slug}_sdk`);
+        case 'elixir':
+            return String(slug).toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+        case 'csharp':
+            return projectName(slug) + '.Sdk';
+        case 'perl':
+            return projectName(slug) + 'SDK';
+        case 'swift':
+            return projectName(slug) + 'Sdk';
+        case 'clojure':
+            return `org.clojars.${origin}/${base}`;
         default:
             return `${origin}-${base}`;
     }
+}
+// The project's Name as the Root names its classes and modules.
+function projectName(slug) {
+    const named = {};
+    (0, jostraca_1.names)(named, String(slug));
+    return named.Name;
+}
+// A zig package name is an identifier zig holds to ZIG_NAME_MAX; a longer one
+// keeps its head and gains a hash of the whole.
+const ZIG_NAME_MAX = 32;
+function zigName(raw) {
+    const snake = raw.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const name = /^[0-9]/.test(snake) ? '_' + snake : snake;
+    return name.length <= ZIG_NAME_MAX ? name :
+        name.slice(0, ZIG_NAME_MAX - 9) + '_' + crc32(name).toString(16).padStart(8, '0');
+}
+// CRC-32 (IEEE 802.3, reflected), the one zig's std.hash.Crc32 computes.
+function crc32(text) {
+    let crc = 0xffffffff;
+    for (let i = 0; i < text.length; i++) {
+        crc ^= text.charCodeAt(i) & 0xff;
+        for (let b = 0; b < 8; b++) {
+            crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+        }
+    }
+    return (crc ^ 0xffffffff) >>> 0;
 }
 // A JVM package is published as `<group>:<artifact>`; a declared name without
 // a group is the artifact.

@@ -251,6 +251,7 @@
     "readerDir",
     "registerComponent",
     "registryName",
+    "registryNote",
     "registryState",
     "repoInfo",
     "requestExampleItems",

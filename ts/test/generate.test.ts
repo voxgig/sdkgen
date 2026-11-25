@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -989,6 +989,66 @@ describe('generate', () => {
     const bare = await generate(['java'], undefined, declare('acme-client', ['java']))
     ok(/<groupId>com\.voxgig<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(bare['java/pom.xml']),
       'a declared artifact keeps the default group')
+  })
+
+
+  // A reader installs the name the manifest publishes and the root Packages
+  // table lists, whatever state the registry is in.
+  test('the install line, the Packages row and the manifest name agree in every registry state', async () => {
+    const file = (out: Record<string, string>, t: string, re: RegExp) =>
+      out[Object.keys(out).find((path) => path.startsWith(t + '/') && re.test(path))!]
+    const first = (text: string, re: RegExp) => String(re.exec(text)?.[1])
+    const MANIFEST: Record<string, (out: Record<string, string>) => string> = {
+      ts: (out) => JSON.parse(out['ts/package.json']).name,
+      js: (out) => JSON.parse(out['js/package.json']).name,
+      py: (out) => first(out['py/pyproject.toml'], /^name = "([^"]+)"/m),
+      php: (out) => JSON.parse(out['php/composer.json']).name,
+      rb: (out) => first(file(out, 'rb', /\.gemspec$/), /spec\.name\s*=\s*"([^"]+)"/),
+      lua: (out) => first(file(out, 'lua', /\.rockspec$/), /^package = "([^"]+)"/m),
+      go: (out) => first(out['go/go.mod'], /^module (\S+)/m),
+      rust: (out) => first(out['rust/Cargo.toml'], /^name = "([^"]+)"/m),
+      csharp: (out) => first(file(out, 'csharp', /\.csproj$/), /<PackageId>([^<]+)</),
+      perl: (out) => first(out['perl/Makefile.PL'], /NAME\s*=>\s*'([^']+)'/),
+      ocaml: (out) => first(file(out, 'ocaml', /\.opam$/), /^name: "([^"]+)"/m),
+      java: (out) => first(out['java/pom.xml'], /<groupId>([^<]+)</) + ':' +
+        first(out['java/pom.xml'], /<artifactId>([^<]+)</),
+      kotlin: (out) => first(out['kotlin/build.gradle.kts'], /^group = "([^"]+)"/m) + ':' +
+        first(out['kotlin/settings.gradle.kts'], /rootProject\.name = "([^"]+)"/),
+      zig: (out) => first(out['zig/build.zig.zon'], /\.name = \.(\w+)/),
+      elixir: (out) => first(out['elixir/mix.exs'], /app: :(\w+)/),
+      swift: (out) => first(out['swift/Package.swift'], /name: "([^"]+)"/),
+    }
+    // swift's and zig's install sections give a URL, and c and cpp have no package.
+    const NAMED = ['ts', 'js', 'py', 'php', 'rb', 'lua', 'go', 'rust', 'csharp', 'perl', 'ocaml',
+      'java', 'kotlin', 'elixir', 'scala', 'clojure']
+    const targets = [...Object.keys(MANIFEST), 'scala', 'clojure', 'c', 'cpp']
+
+    for (const active of [true, false]) {
+      const extra = targets.map((t) => `main: kit: target: ${t}: publish: registry: active: ${active}`).join('\n')
+      const model = makeModel(targets, undefined, extra)
+      const out = await generate(targets, undefined, extra)
+      const row = (t: string) => out['README.md'].split('\n').find((line) => line.startsWith(
+        '| ' + model.main[KIT].target[t].fact.title + ' | `' + packageName(model, t) + '` | '))
+
+      for (const t of targets.filter((t) => !['c', 'cpp'].includes(t))) {
+        const pkg = packageName(model, t)
+        ok(null != row(t), t + ': the Packages table does not list ' + pkg)
+        if (null != MANIFEST[t]) strictEqual(MANIFEST[t](out), pkg, t + ': the manifest publishes another name')
+      }
+      if (!active) continue
+
+      for (const t of NAMED) {
+        const pkg = packageName(model, t)
+        const install = out[t + '/README.md'].split('## Install')[1].split('\n## ')[0]
+        ok(pkg.split(':').every((part) => install.includes(part)), t + ': the install section does not name ' +
+          pkg + ':\n' + install)
+        const command = installCommand(model, t)
+        if ('' !== command) {
+          ok(install.includes(command), t + ': the install section does not run ' + command)
+          ok(row(t)!.includes('`' + command + '`'), t + ': the Packages row does not run ' + command)
+        }
+      }
+    }
   })
 
 

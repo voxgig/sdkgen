@@ -7,7 +7,7 @@ import { elixirApp } from './app_elixir'
 const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const { target, ctx$: { model } } = props
 
-  const app = elixirApp(model)
+  const app = elixirApp(model, target)
 
   Content(`### Data as struct value nodes
 

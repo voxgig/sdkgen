@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, registryNote } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -24,7 +24,7 @@ pip install -e .
   // Publish pending: not yet on PyPI. Install from the git release tag or
   // from a local source checkout.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to PyPI. Install it from the ${hostName}
+  Content(`${registryNote(model, target.name)} Install it from the ${hostName}
 release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout:
 

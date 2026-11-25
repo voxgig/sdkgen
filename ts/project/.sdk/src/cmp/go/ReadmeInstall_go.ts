@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, packageName, repoInfo, readerDir } from '@voxgig/sdkgen'
+import { cmp, Content, packageName, repoInfo, readerDir, installCommand } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -16,7 +16,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const dir = readerDir(target)
 
   Content(`\`\`\`bash
-go get ${gomodule}@latest
+${installCommand(model, target.name)}
 \`\`\`
 
 The Go module proxy resolves the version from the \`go/vX.Y.Z\` ${hostName}

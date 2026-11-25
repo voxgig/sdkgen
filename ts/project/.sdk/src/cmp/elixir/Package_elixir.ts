@@ -25,7 +25,7 @@ const Package = cmp(async function Package(props: any) {
   const model: Model = ctx$.model
 
   const Name = model.const.Name
-  const app = elixirApp(model)
+  const app = elixirApp(model, target)
   const { repoUrl } = repoInfo(model)
 
   const entries: string[] = []

@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, readerDir } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, readerDir, registryNote } from '@voxgig/sdkgen'
 
 import { elixirApp } from './app_elixir'
 
@@ -10,7 +10,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const app = elixirApp(model)
+  const app = elixirApp(model, target)
 
   if (isPublished(model, target.name)) {
     // Live on Hex: add the dependency to mix.exs deps/0.
@@ -37,7 +37,7 @@ mix deps.get
   // Publish pending: not yet on Hex. Install from the git release tag or a
   // local path checkout.
   const { hostName, repoUrl, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to [Hex](https://hex.pm). Install it from
+  Content(`${registryNote(model, target.name)} Install it from
 the ${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl}))
 by adding a git dependency to your \`mix.exs\`:
 

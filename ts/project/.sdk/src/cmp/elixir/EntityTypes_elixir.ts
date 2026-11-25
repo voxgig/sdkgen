@@ -51,7 +51,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   const { model, log } = props.ctx$
 
   const Name = model.const.Name
-  const app = elixirApp(model)
+  const app = elixirApp(model, props.target)
 
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   // Emit for EVERY entity that gets an entity module: the consumer scaffold
