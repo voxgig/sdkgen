@@ -6,7 +6,7 @@ import Path from 'node:path'
 
 
 // `undocumented` is the baseline the list started from: it may only shrink.
-const LIST: { exports: string[], undocumented: string[] } = JSON.parse(
+const LIST: { exports: string[], undocumented: string[], testkit: string[] } = JSON.parse(
   readFileSync(Path.resolve(__dirname, '..', 'test', 'exports.json'), 'utf8'))
 
 const API_MD = readFileSync(
@@ -14,6 +14,9 @@ const API_MD = readFileSync(
 
 const runtime: string[] =
   Object.keys(require(Path.resolve(__dirname, '..', 'dist', 'sdkgen.js'))).sort()
+
+const testkit: string[] =
+  Object.keys(require(Path.resolve(__dirname, '..', 'dist', 'testkit.js'))).sort()
 
 
 function documented(name: string): boolean {
@@ -51,6 +54,18 @@ describe('exports', () => {
     deepStrictEqual(missing, [],
       'each export needs an entry in docs/reference/api.md, written as ' +
       'the name in backticks')
+  })
+
+  test('the testkit export surface equals the committed list, each documented', () => {
+    const removed = LIST.testkit.filter((n: string) => !testkit.includes(n))
+    const added = testkit.filter((n: string) => !LIST.testkit.includes(n))
+
+    deepStrictEqual({ removed, added }, { removed: [], added: [] },
+      'dist/testkit.js no longer exports what test/exports.json lists under ' +
+      '`testkit`; a package suite imports these by name')
+    deepStrictEqual(LIST.testkit, sortedUnique(LIST.testkit))
+    deepStrictEqual(LIST.testkit.filter((n: string) => !documented(n)), [],
+      'each testkit export needs an entry in docs/reference/api.md')
   })
 
   test('the undocumented baseline only shrinks', () => {

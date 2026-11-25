@@ -236,6 +236,24 @@ Four details worth knowing:
   (`output: root: true`) needs `main: kit: phase: top: active: false`, or
   generation refuses the model, as it does for a project.
 
+The kit also checks the documents a generation wrote. `textGuard` reads
+the Markdown in `files` and returns a finding for each link that resolves
+to nothing written, each unfired `$$path$$` marker, each code block in
+another language, and each line naming a word you list as absent:
+
+```js
+const { textGuard } = require('@voxgig/sdkgen/testkit')
+
+const { files } = await generateInto(consumer, { model, top: true })
+assert.deepEqual(textGuard(files, { fences: { 'iot-go': 'go' } }), [])
+```
+
+Generate with `top: true` so a link to the root README resolves, name the
+code-block tag of each of your own targets in `fences`, and pass
+`absent: ['<feature>']` over a generation without a feature to find a
+document that still mentions it. The
+[API reference](../reference/api.md#test-kit) lists the findings.
+
 A worked example ships with sdkgen: `ts/test/fixture/acme-widgets/` is a
 complete package — a target, a feature with an overlay, and a docs item —
 and `ts/test/testkit.test.ts` is the suite over it.

@@ -16,6 +16,9 @@ import { KIT } from './types'
 
 import type { ExternalOverride } from './helpers/placement'
 
+import { textGuard } from './helpers/textguard'
+import type { TextFinding, TextGuardOptions } from './helpers/textguard'
+
 
 // This package's own root — `<...>/node_modules/@voxgig/sdkgen` for a
 // consumer, or the checkout when sdkgen tests itself. Computed from this
@@ -666,6 +669,8 @@ export type {
   StageOptions,
   GenerateOptions,
   GenerateResult,
+  TextFinding,
+  TextGuardOptions,
 }
 
 export {
@@ -675,4 +680,5 @@ export {
   stageConsumer,
   generateInto,
   manifestParity,
+  textGuard,
 }
