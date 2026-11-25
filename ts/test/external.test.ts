@@ -526,6 +526,104 @@ describe('external target', () => {
   })
 
 
+  // The root README and AGENTS.md describe the whole project, so they name a
+  // target generated into another repository; the documents about the
+  // packages this repository publishes do not.
+  describe('root documents', () => {
+
+    const REPO = "main: kit: target: 'go-cli': output: repo: 'acme/demo-cli'"
+
+    const LINKED = '[Go CLI](https://github.com/acme/demo-cli)'
+
+    const inTree = (inside: Record<string, string>, name: string) =>
+      Object.keys(inside).filter((p) => name === p || p.startsWith(name + '/'))
+
+
+    test('name a declared out-of-tree target, linked to its own repository', async () => {
+      const { inside } = await generate(['ts', 'go', 'go-cli'], 'go-cli', REPO)
+      const readme = inside['README.md']
+      const agents = inside['AGENTS.md']
+
+      ok(readme.includes('> TypeScript, Golang SDKs, and the ' + LINKED + ' — all generated from one'), readme)
+      ok(readme.includes('| **' + LINKED + '** | generated into its own repository |'), readme)
+      ok(agents.includes('**Targets** (3):'), agents)
+      ok(agents.includes('| `go-cli` | ' + LINKED + ', generated into its own repository | — |'), agents)
+
+      for (const doc of ['README.md', 'AGENTS.md']) {
+        ok(!inside[doc].includes('go-cli/'), doc + ' names an in-tree go-cli folder')
+      }
+    })
+
+
+    test('name it without a link when the model names no repository', async () => {
+      const { inside } = await generate(['ts', 'go', 'go-cli'], 'go-cli')
+      const readme = inside['README.md']
+      const agents = inside['AGENTS.md']
+
+      ok(readme.includes('> TypeScript, Golang SDKs, and the Go CLI — all generated from one'), readme)
+      ok(readme.includes('| **Go CLI** | generated into its own repository |'), readme)
+      ok(agents.includes('| `go-cli` | Go CLI, generated into its own repository | — |'), agents)
+      ok(!(readme + agents).includes('[Go CLI]('), 'a link with no repository to link')
+    })
+
+
+    test('name it while this run skips it, and never once it is inactive', async () => {
+      const skipped = await generate(['ts', 'go', 'go-cli'], 'go-cli',
+        REPO + "\nmain: kit: target: 'go-cli': output: create: false")
+      deepStrictEqual(Object.keys(skipped.outside), [], 'the absent destination was generated into')
+      ok(skipped.inside['README.md'].includes('| **' + LINKED + '** |'), skipped.inside['README.md'])
+      ok(skipped.inside['AGENTS.md'].includes('| `go-cli` | ' + LINKED), skipped.inside['AGENTS.md'])
+
+      const off = await generate(['ts', 'go', 'go-cli'], 'go-cli',
+        REPO + "\nmain: kit: target: 'go-cli': active: false")
+      for (const doc of ['README.md', 'AGENTS.md']) {
+        ok(!/go-cli|Go CLI/.test(off.inside[doc]), doc + ' names an inactive target')
+      }
+    })
+
+
+    test('keep SECURITY.md and the release files to the packages this repository publishes', async () => {
+      const both = await generate(['ts', 'go'], {})
+      ok(both.inside['SECURITY.md'].includes('repository (npm and the Go module).'), both.inside['SECURITY.md'])
+      ok(/^TARGETS := .*\bgo\b/m.test(both.inside['Makefile']), 'control: go is not released in tree')
+
+      const { inside } = await generate(['ts', 'go'], 'go', "main: kit: target: go: output: repo: 'acme/demo-go'")
+      ok(inside['README.md'].includes('| **[Golang SDK](https://github.com/acme/demo-go)** | generated into its own repository |'),
+        inside['README.md'])
+      ok(inside['SECURITY.md'].includes('repository (npm).'), inside['SECURITY.md'])
+      ok(!inside['SECURITY.md'].includes('Go module'), inside['SECURITY.md'])
+      ok(/^TARGETS := ts$/m.test(inside['Makefile']), 'the release Makefile acts on go')
+      ok(!inside['CHANGELOG.md'].includes('Golang'), inside['CHANGELOG.md'])
+    })
+
+
+    test('read the same under a run override, which moves only the target\'s own files', async () => {
+      const plain = setup(['ts', 'go', 'go-cli'], { 'go-cli': OUT }, { extra: REPO })
+      await plain.run()
+      const moved = setup(['ts', 'go', 'go-cli'], { 'go-cli': OUT },
+        { extra: REPO, external: { 'go-cli': { path: OUT2, sdkrel: '../sdk' } } })
+      await moved.run()
+
+      const committed = (all: Record<string, string>) => Object.fromEntries(Object.entries(under(all, norm(STAGE)))
+        .filter(([file, text]) => null != text && !file.startsWith('.sdk/log/')))
+      const before = committed(plain.files())
+      ok(before['README.md'].includes(LINKED), 'the out-of-tree target is not named without the override')
+      deepStrictEqual(committed(moved.files()), before, 'a committed file differs under the override')
+      ok(null != under(moved.files(), OUT2)['go.mod'], 'go-cli was not written where the override says')
+      deepStrictEqual(under(moved.files(), OUT), {}, 'go-cli was written to its declared path as well')
+      deepStrictEqual(inTree(under(moved.files(), norm(STAGE)), 'go-cli'), [])
+    })
+
+
+    test('leave no per-target file and no folder in tree', async () => {
+      const { inside, outside } = await generate(['ts', 'go', 'go-cli'], 'go-cli', REPO)
+      ok(null != outside['go.mod'], 'go-cli was not generated out of tree')
+      deepStrictEqual(inTree(inside, 'go-cli'), [])
+      ok(0 < inTree(inside, 'go').length, 'control: go wrote nothing in tree')
+    })
+  })
+
+
   describe('path back to the SDK project', () => {
 
     test('a derivation that names undeclared directories warns', async () => {

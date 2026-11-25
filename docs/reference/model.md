@@ -330,7 +330,7 @@ files in `ts/project/.sdk/model/target/`:
 | `feature.fullset` | string[] | `[]` | Templates that only compile with the COMPLETE feature set (the cross-feature test suite), as paths under the target template root. Dropped whenever the set is trimmed. |
 | `output.path` | string | `''` | Generate this target into ANOTHER repo (see below). `''` is the ordinary `<sdk-repo>/<target>/`. |
 | `output.root` | boolean | `false` | Generate this target at the project root instead of `<project>/<target>/` (see [below](#generating-at-the-project-root-outputroot)). |
-| `output.repo` | string | `''` | `'<org>/<repo>'` for that other repo, so the target's manifest homepage, repository and bugs links and its install text point there and not at the SDK's own repo. |
+| `output.repo` | string | `''` | `'<org>/<repo>'` for that other repo, so the target's manifest homepage, repository and bugs links and its install text point there and not at the SDK's own repo. The SDK repo's root README and agent guide link the target there, and name it without a link when this is `''`. |
 | `output.create` | boolean | `true` | Whether sdkgen may create a missing out-of-tree destination. `false` keeps the target active but skips it until the destination folder exists. |
 | `output.adopt` | boolean | `false` | Allow a destination that already holds content this generator did not write. Generation refuses one otherwise — it overwrites, and the path is taken verbatim from the model. |
 | `output.sdkrel` | string | `''` | The path from the destination BACK to the SDK project, which the target's docs, scripts and live tests name. `''` derives it by inverting `path`; declare it when the destination is more than one level away. |
@@ -401,6 +401,11 @@ main: kit: target: 'seneca-provider': output: {
   URLs point at. Left unset, a target may supply its own convention, and
   otherwise falls back to the SDK's own repo — which would be wrong for a
   package released from somewhere else.
+- The SDK repo's root README and root agent guide still name the target,
+  by its title, as generated into its own repository: linked to `repo`
+  when it is set, and unlinked when it is not. SECURITY.md, the changelog,
+  the release Makefile and the publish workflows leave it out, because they
+  describe only the packages the SDK repo publishes.
 - `create: false` keeps the target active but skips its external pass when
   the destination folder is absent. This is useful when the separate target
   fleet is an optional set of checkouts: creating or cloning the folder later

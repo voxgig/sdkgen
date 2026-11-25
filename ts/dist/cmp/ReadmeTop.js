@@ -112,7 +112,7 @@ ${tagline}
     }
 });
 const ReadmeTopSurfaceLine = (0, component_1.cmp)(function ReadmeTopSurfaceLine(props) {
-    const { hasCli, hasMcp, sdkTargets, consumerTargets, langList, definition } = props.s;
+    const { hasCli, hasMcp, sdkTargets, consumerTargets, external, langList, definition } = props.s;
     if (sdkTargets.length > 1) {
         const surfaces = [];
         surfaces.push(`${langList} SDKs`);
@@ -121,6 +121,7 @@ const ReadmeTopSurfaceLine = (0, component_1.cmp)(function ReadmeTopSurfaceLine(
         if (hasMcp)
             surfaces.push('an MCP server for AI agents');
         consumerTargets.forEach((t) => surfaces.push(`the ${(0, facts_1.fact)(t, 'title')} package`));
+        external.forEach((t) => surfaces.push('the ' + (0, surface_1.externalName)(t)));
         const surfaceList = surfaces.length > 1
             ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
             : surfaces[0];
@@ -334,9 +335,9 @@ ${'' === placement ? '' : placement + '\n\n'}${(0, facts_1.fact)(leadTarget, 'do
     }
 });
 const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props) {
-    const { hasCli, hasMcp, cliTargets, mcpTargets, sdkTargets, consumerTargets, langList } = props.s;
+    const { hasCli, hasMcp, cliTargets, mcpTargets, sdkTargets, consumerTargets, external, langList } = props.s;
     const paths = (targets) => targets.map((t) => `\`${t.name}/\``).join(' ');
-    if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0) {
+    if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0 || external.length > 0) {
         (0, jostraca_1.Content)(`## Surfaces
 
 | Surface | Path |
@@ -356,6 +357,10 @@ const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props)
         }
         consumerTargets.forEach((t) => {
             (0, jostraca_1.Content)(`| **${(0, facts_1.fact)(t, 'title')}** | \`${t.name}/\` |
+`);
+        });
+        external.forEach((t) => {
+            (0, jostraca_1.Content)(`| **${(0, surface_1.externalName)(t)}** | generated into its own repository |
 `);
         });
         (0, jostraca_1.Content)(`
@@ -712,6 +717,7 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     const consumerTargets = ordered.filter((t) => 'sdk' !== (0, surface_1.surfaceOf)(t) && !isCliOrMcp(t));
     const docTargets = ordered.filter((t) => !isCliOrMcp(t));
     const pkgTargets = ordered.filter((t) => (0, packageMeta_1.hasPackageName)(model, t.name));
+    const external = (0, facts_1.fact)(model.main[types_1.KIT], 'external');
     const langList = sdkTargets.map((t) => (0, facts_1.fact)(t, 'title')).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     const s = {
@@ -738,6 +744,7 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         consumerTargets,
         docTargets,
         pkgTargets,
+        external,
         langList,
         leadTarget,
     };

@@ -23,7 +23,7 @@ import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
 import { definitionName, modelText } from '../helpers/text'
 import { fact } from '../helpers/facts'
-import { documentOrder, surfaceOf } from '../helpers/surface'
+import { documentOrder, externalName, surfaceOf } from '../helpers/surface'
 import { copyMode, MERGE } from '../helpers/copymerge'
 
 import {
@@ -148,7 +148,7 @@ ${tagline}
 
 
 const ReadmeTopSurfaceLine = cmp(function ReadmeTopSurfaceLine(props: any) {
-  const { hasCli, hasMcp, sdkTargets, consumerTargets, langList, definition } = props.s
+  const { hasCli, hasMcp, sdkTargets, consumerTargets, external, langList, definition } = props.s
 
   if (sdkTargets.length > 1) {
     const surfaces = []
@@ -156,6 +156,7 @@ const ReadmeTopSurfaceLine = cmp(function ReadmeTopSurfaceLine(props: any) {
     if (hasCli) surfaces.push('a CLI with an interactive REPL')
     if (hasMcp) surfaces.push('an MCP server for AI agents')
     consumerTargets.forEach((t: any) => surfaces.push(`the ${fact(t, 'title')} package`))
+    external.forEach((t: any) => surfaces.push('the ' + externalName(t)))
     const surfaceList = surfaces.length > 1
       ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
       : surfaces[0]
@@ -390,10 +391,10 @@ ${'' === placement ? '' : placement + '\n\n'}${fact(leadTarget, 'docs').readme ?
 
 
 const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
-  const { hasCli, hasMcp, cliTargets, mcpTargets, sdkTargets, consumerTargets, langList } = props.s
+  const { hasCli, hasMcp, cliTargets, mcpTargets, sdkTargets, consumerTargets, external, langList } = props.s
   const paths = (targets: any[]) => targets.map((t: any) => `\`${t.name}/\``).join(' ')
 
-  if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0) {
+  if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0 || external.length > 0) {
     Content(`## Surfaces
 
 | Surface | Path |
@@ -413,6 +414,10 @@ const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
     }
     consumerTargets.forEach((t: any) => {
       Content(`| **${fact(t, 'title')}** | \`${t.name}/\` |
+`)
+    })
+    external.forEach((t: any) => {
+      Content(`| **${externalName(t)}** | generated into its own repository |
 `)
     })
     Content(`
@@ -826,6 +831,8 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   const pkgTargets = ordered.filter((t: any) => hasPackageName(model, t.name))
 
+  const external = fact(model.main[KIT], 'external')
+
   const langList = sdkTargets.map((t: any) => fact(t, 'title')).join(', ')
   const leadTarget = pickLeadTarget(sdkTargets)
 
@@ -853,6 +860,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     consumerTargets,
     docTargets,
     pkgTargets,
+    external,
     langList,
     leadTarget,
   }

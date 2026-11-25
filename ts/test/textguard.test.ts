@@ -21,7 +21,7 @@ const PINNED: { suspended: { family: string, reason: string }[], pins: Pin[] } =
 const FULL = '1' === process.env.SDKGEN_TEXTGUARD_FULL
 const UPDATE = '1' === process.env.SDKGEN_TEXTGUARD_UPDATE
 const SUBSET = ['baseline', 'phase-top-off', 'phase-readme-off-ts', 'phase-agentguide-off-ts',
-  'root-ts', 'targets-lone']
+  'root-ts', 'external-go-cli', 'targets-lone']
 
 
 function findings(base: Run, run: Run, v: Variation, full: boolean): Finding[] {
@@ -104,9 +104,10 @@ describe('textguard', () => {
   })
 
   // The guard reads what a docs-only Root writes, which must be what the full
-  // Root writes, including with the top phase off and a target at the root.
+  // Root writes, including with the top phase off, a target at the root and one
+  // in another repository.
   test('the docs-only Root writes the documents the full Root writes', async () => {
-    for (const id of ['baseline', 'phase-top-off', 'root-ts']) {
+    for (const id of ['baseline', 'phase-top-off', 'root-ts', 'external-go-cli']) {
       const v = matrix.find((m: Variation) => id === m.id)!
       const docs = await generateDocs(v)
       const full = await generateDocs(v, { root: makeRoot() })

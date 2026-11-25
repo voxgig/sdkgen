@@ -5,6 +5,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const facts_1 = require("../helpers/facts");
 const surface_1 = require("../helpers/surface");
+const types_1 = require("../types");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideTopIntro = (0, component_1.cmp)(function AgentGuideTopIntro(props) {
     const { Name, model, targets } = props.s;
@@ -31,21 +32,20 @@ feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 `);
 });
 const AgentGuideTopTargets = (0, component_1.cmp)(function AgentGuideTopTargets(props) {
-    const { model, targets } = props.s;
-    if (0 < targets.length) {
-        (0, jostraca_1.Content)(`**Targets** (${targets.length}):
+    const { model, targets, external } = props.s;
+    const rows = targets.map((t) => {
+        const note = (0, AgentGuideContent_1.langCmd)(t.name, model).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name, model).note : '';
+        const dir = 'folder' === (0, facts_1.fact)(t, 'place') ? `\`${t.name}/\`` : '—';
+        const guide = (0, facts_1.fact)(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—';
+        return [t.name, `| \`${t.name}\` | ${dir}${note} | ${guide} |`];
+    }).concat(external.map((t) => [t.name, `| \`${t.name}\` | ${(0, surface_1.externalName)(t)}, generated into its own repository | — |`]))
+        .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+    if (0 < rows.length) {
+        (0, jostraca_1.Content)(`**Targets** (${rows.length}):
 
 | Target | Directory | Build guide |
 | --- | --- | --- |
-`);
-        targets.forEach((t) => {
-            const note = (0, AgentGuideContent_1.langCmd)(t.name, model).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name, model).note : '';
-            const dir = 'folder' === (0, facts_1.fact)(t, 'place') ? `\`${t.name}/\`` : '—';
-            const guide = (0, facts_1.fact)(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—';
-            (0, jostraca_1.Content)(`| \`${t.name}\` | ${dir}${note} | ${guide} |
-`);
-        });
-        (0, jostraca_1.Content)(`
+${rows.map(([, row]) => row + '\n').join('')}
 `);
     }
 });
@@ -138,9 +138,10 @@ const AgentGuideTop = (0, component_1.cmp)(function AgentGuideTop(props) {
         (0, jostraca_1.names)(model, model.name);
     const Name = (0, AgentGuideContent_1.projectName)(model);
     const targets = (0, AgentGuideContent_1.activeTargets)(model);
+    const external = (0, facts_1.fact)(model.main[types_1.KIT], 'external');
     const features = (0, AgentGuideContent_1.activeFeatures)(model);
     const entities = (0, AgentGuideContent_1.activeEntities)(model);
-    const s = { Name, model, targets, features, entities };
+    const s = { Name, model, targets, external, features, entities };
     (0, jostraca_1.File)({ name: 'AGENTS.md' }, () => {
         AgentGuideTopIntro({ s });
         AgentGuideTopTargets({ s });

@@ -925,6 +925,8 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Output change.** Docs and release files: unchanged by an override run
   (today about 31 root README lines change).
 - **Depends on.** WP14; decision DQ3.
+- **Answered after R2.** V28 by DQ25, carried by a follow-up; U92 by DQ26,
+  which keeps the warning.
 - **Release.** R2 (sdkgen minor 4.47.0), in sdkgen.
 - **Size.** About 8 source files plus `ts/dist`, 1 documentation page, 1 test
   file.
@@ -1714,6 +1716,31 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   it; the text says one page when the SDK has no paging. If answered the other
   way: Text only: py-data documents one page unless the caller activates
   paging. Affects WP36.
+- **DQ25. Do the root documents in the tree list the targets the model places
+  out of tree? (V28)** Answered (2026-11-25): yes. The root README and
+  AGENTS.md name each active out-of-tree target by title, linked to its
+  `output.repo`, or without a link when none is set. Sentences about this
+  repository's own packages leave it out: SECURITY.md's scope, CHANGELOG.md,
+  the release Makefile and the publish workflows. The fact pass lists the
+  targets as `main.kit.fact.external`. Affects WP23's V28 half, carried after
+  R2.
+- **DQ26. Is a derived `sdkrel` an error rather than a warning? (U92)**
+  Answered (2026-11-25): no. It stays a warning, because the derivation is
+  right for the layout `output.path` describes and an error would break
+  projects that rely on it in a minor release; the documentation keeps saying
+  to declare it. Affects WP23's U92 half.
+- **DQ27. SECURITY.md's release channels: "git tags" for a port with no
+  registry, and "Swift Package Manager" for swift?** Answered (2026-11-25):
+  kept as written, since each names how a consumer obtains that package.
+  Affects WP15, already released.
+- **DQ28. Report the aontu 0.76.3 failure at `relations.ancestors` upstream?**
+  Answered (2026-11-25): yes, filed as aontu-lang/aontu#985. One spread
+  stated three times fails on 0.76.3 and passes on aontu's main, which is not
+  released; a spread's template split across statements still meets `path()`
+  too early on main in both ports, the ports' side of aontu-lang/aontu#474.
+  Until a release, a fixture keeps its additions for one entity in one
+  statement. aontu's main also renames `rel()` to `relate()`, which
+  `apidef.aontu` uses, so apidef moves with the aontu release that carries it.
 
 An unanswered decision leaves its commits out of the release being cut; it
 never holds the rest back.

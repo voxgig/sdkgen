@@ -7,7 +7,7 @@ import { KIT } from '@voxgig/apidef'
 import { docTexts, sentinelName } from './doctext'
 import { factRulesFile } from './shipped'
 import { CANON_OP_ORDER } from './opShape'
-import { hasPackageName, packageName, registryState } from './packageMeta'
+import { hasPackageName, packageName, registryState, repoInfo } from './packageMeta'
 import { SdkGenError } from '../utility'
 import { resolvesBundled } from '../action/resolve'
 import { titleFacts } from './title'
@@ -93,8 +93,24 @@ function applyFacts(model: any): any {
   releaseTags(model)
   texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]))
   titleFacts(kit.target)
+  kit.fact.external = externalTargets(model)
   place(kit, ['definitionKind'], definitionKind(model))
   return model
+}
+
+
+// The active targets placed in another repository, read here because the model
+// the project's Root receives, which its documents read, leaves them out.
+function externalTargets(model: any): { name: string, title: string, surface: string, url: string }[] {
+  const target = mapOr(model.main[KIT].target)
+  return model.main[KIT].fact.active
+    .filter((name: string) => 'external' === target[name].fact?.place)
+    .map((name: string) => ({
+      name,
+      title: target[name].fact.title,
+      surface: target[name].fact.surface,
+      url: '' === String(target[name].output?.repo ?? '') ? '' : repoInfo(model, name).repoUrl,
+    }))
 }
 
 
