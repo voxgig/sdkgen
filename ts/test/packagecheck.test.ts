@@ -338,17 +338,76 @@ describe('package check — the model rules', () => {
   })
 
 
-  test('a surface outside the word list is an error, and seneca-provider is in it', () => {
-    const surface = (word: string) => check((dir) =>
-      editModel(dir, 'target', 'iotgo', (src) =>
-        src.replace('main: kit: target: iotgo: {',
-          "main: kit: target: iotgo: {\n  surface: '" + word + "'")))
+  const MANIFEST_BASE = {
+    sdkgen: { package: 1 },
+    name: '@acme/sdkgen-iot',
+    version: '1.4.0',
+    provides: { target: ['iotgo'], feature: ['retry'] },
+  }
 
-    const odd = surface('banana')
-    ok(points(odd, 'error').includes('target-surface-unknown'), points(odd).join(','))
-    ok(/`banana`/.test(noted(odd, 'target-surface-unknown')), noted(odd, 'target-surface-unknown'))
+  const surfaced = (word: string, manifest: any = MANIFEST_BASE) => check((dir) => {
+    editModel(dir, 'target', 'iotgo', (src) =>
+      src.replace('main: kit: target: iotgo: {',
+        "main: kit: target: iotgo: {\n  surface: '" + word + "'"))
+    writeManifest(dir, manifest)
+  })
 
-    ok(!points(surface('seneca-provider')).includes('target-surface-unknown'))
+
+  // Generation reads a word it does not know as unknown, so the check names
+  // the release instead of failing a pack whose floor predates the word.
+  test('a surface outside the word list warns, naming this release, and fails nothing', () => {
+    const odd = surfaced('banana')
+    ok(points(odd, 'warn').includes('target-surface-unknown'), points(odd).join(','))
+    ok(/`banana`, which sdkgen \d+\.\d+\.\d+ does not know/.test(noted(odd, 'target-surface-unknown')),
+      noted(odd, 'target-surface-unknown'))
+    ok(!points(odd).includes('target-facts'), noted(odd, 'target-facts'))
+    strictEqual(odd.ok, true)
+
+    ok(!points(surfaced('seneca-provider')).includes('target-surface-unknown'))
+  })
+
+
+  test('a known surface word names the release that reads it, while the floor admits older ones', () => {
+    const floor = (range: string) =>
+      surfaced('cli', { ...MANIFEST_BASE, engines: { sdkgen: range } })
+
+    const low = floor('>=4.40.0')
+    ok(points(low, 'info').includes('target-surface-since'), points(low).join(','))
+    ok(/`cli`, which sdkgen reads from 4\.47\.0; `engines.sdkgen` `>=4\.40\.0` admits older releases/
+      .test(noted(low, 'target-surface-since')), noted(low, 'target-surface-since'))
+    strictEqual(low.ok, true)
+
+    ok(!points(floor('>=4.47.0')).includes('target-surface-since'))
+    ok(!points(floor('^4.47.0')).includes('target-surface-since'))
+    ok(points(floor('>=3.0.0 <4.10.0')).includes('target-surface-since'))
+    ok(points(surfaced('cli')).includes('target-surface-since'), 'no floor admits every release')
+  })
+
+
+  // The corpus tiers grade an SDK; a consumer runs no corpus.
+  test('parity is CONSUMER exactly when the target is not an SDK', () => {
+    const graded = (tier: string, word: string = '') => check((dir) => {
+      if ('' !== word) {
+        editModel(dir, 'target', 'iotgo', (src) =>
+          src.replace('main: kit: target: iotgo: {',
+            "main: kit: target: iotgo: {\n  surface: '" + word + "'"))
+      }
+      writeManifest(dir, { ...MANIFEST_BASE, parity: { iotgo: tier } })
+    })
+
+    const sdkConsumer = graded('CONSUMER')
+    ok(points(sdkConsumer, 'error').includes('manifest-parity-surface'), points(sdkConsumer).join(','))
+    ok(/CONSUMER grades a target that is not an SDK/.test(noted(sdkConsumer, 'manifest-parity-surface')),
+      noted(sdkConsumer, 'manifest-parity-surface'))
+    strictEqual(sdkConsumer.ok, false)
+
+    const cliFull = graded('FULL', 'cli')
+    ok(points(cliFull, 'error').includes('manifest-parity-surface'), points(cliFull).join(','))
+    ok(/surface `cli`/.test(noted(cliFull, 'manifest-parity-surface')), noted(cliFull, 'manifest-parity-surface'))
+
+    for (const [tier, word] of [['FULL', ''], ['UNCOVERED', 'sdk'], ['CONSUMER', 'cli'], ['CONSUMER', 'seneca-provider']]) {
+      ok(!points(graded(tier, word)).includes('manifest-parity-surface'), tier + ' on ' + (word || 'sdk'))
+    }
   })
 
 

@@ -48,4 +48,5 @@ declare function probePackage(fs: any, project: string, ref: string): {
     search: string[];
 };
 export type { Manifest, ManifestRead, PackageProbe, Finding, };
-export { MANIFEST, SCHEMA, PARITY, ITEM_NAME_RE, manifestPath, probePackage, readManifest, validateManifest, checkShape, };
+declare function parityFinding(file: string, name: string, tier: string, surface: string): Finding[];
+export { MANIFEST, SCHEMA, PARITY, parityFinding, ITEM_NAME_RE, manifestPath, probePackage, readManifest, validateManifest, checkShape, };

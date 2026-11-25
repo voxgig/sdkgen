@@ -22,6 +22,7 @@ import {
 import type { Manifest, Finding } from '../helpers/manifest'
 
 import { satisfies } from '../helpers/semver'
+import { SDKGEN_VERSION } from '../helpers/shipped'
 
 import { npmCommand } from '../helpers/npm'
 import type { NpmCommand, NpmHost } from '../helpers/npm'
@@ -150,19 +151,6 @@ function checkEngine(src: PackageSource, actx: ActionContext) {
     })
   }
 }
-
-
-// This generator's own version, read from the package.json beside `dist`.
-// Not from the consumer's model: `engines.sdkgen` is about the GENERATOR
-// doing the installing, and the model describes the SDK being generated.
-const SDKGEN_VERSION: string = (() => {
-  try {
-    return require('../../package.json').version
-  }
-  catch (err: any) {
-    return '0.0.0'
-  }
-})()
 
 
 function selectItems(

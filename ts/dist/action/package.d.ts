@@ -1,5 +1,6 @@
 import type { ActionContext, ActionResult } from '../types';
 import type { Manifest } from '../helpers/manifest';
+import { SDKGEN_VERSION } from '../helpers/shipped';
 import type { NpmCommand, NpmHost } from '../helpers/npm';
 declare function action_package(args: string[], actx: ActionContext): Promise<ActionResult>;
 type PackageSource = {
@@ -9,7 +10,6 @@ type PackageSource = {
     manifest: Manifest;
 };
 declare function resolvePackage(ref: string, actx: ActionContext): PackageSource;
-declare const SDKGEN_VERSION: string;
 declare function selectItems(src: PackageSource, only: string | undefined, log: any): Record<string, string[]>;
 declare function parseAliases(alias: string | undefined, wanted: Record<string, string[]>): Record<string, string>;
 declare function package_add(refs: string[], actx: ActionContext): Promise<ActionResult>;
