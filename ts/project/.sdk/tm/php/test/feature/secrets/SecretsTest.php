@@ -294,7 +294,8 @@ class ProjectNameSecretsTest extends TestCase
             function (\Throwable $error) use (&$caught) {
                 // A call whose route it cannot fill is refused before the
                 // chain is consulted, so it is not the refusal under test.
-                if ($error instanceof ProjectNameError && 'url_param_missing' !== $error->sdk_code) {
+                if ($error instanceof ProjectNameError &&
+                    !in_array($error->sdk_code, ['url_param_missing', 'point_no_match', 'point_action_required'], true)) {
                     $caught = $error;
                 }
             });
