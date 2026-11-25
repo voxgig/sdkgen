@@ -858,6 +858,36 @@ describe('generate', () => {
   })
 
 
+  test('the root documents name the definition the model was built from', async () => {
+    const docs = ['README.md', 'AGENTS.md', 'CHANGELOG.md']
+
+    const graphql = await generate(['ts', 'go'], undefined, graphqlOnly())
+    for (const file of docs) {
+      ok(!graphql[file].includes('OpenAPI'), file + ' names OpenAPI for a GraphQL model')
+      ok(graphql[file].includes('GraphQL schema'), file + ' does not name the GraphQL schema')
+    }
+
+    const openapi = await generate(['ts', 'go'])
+    for (const file of docs) {
+      ok(openapi[file].includes('OpenAPI spec'), file + ' no longer names the OpenAPI spec')
+    }
+  })
+
+
+  test('the API has one name, the project\'s title, in every document that names it', async () => {
+    const out = await generate(['ts'], undefined, "main: kit: text: title: 'Solar System API'")
+    ok(out['README.md'].includes('Solar System API client, generated from the OpenAPI spec.'),
+      out['README.md'].slice(0, 200))
+    ok(out['README.md'].includes('Generated from the Solar System API OpenAPI spec'), 'README footer')
+    ok(out['ts/AGENTS.md'].includes('The TypeScript client for the Solar System API.'), 'target guide')
+    ok(out['SECURITY.md'].includes('for the Solar System public API'), 'SECURITY.md')
+    ok(out['ts/package.json'].includes('for the Solar System public API'), 'package description')
+    for (const file of ['README.md', 'AGENTS.md', 'ts/AGENTS.md', 'SECURITY.md', 'ts/package.json']) {
+      ok(!out[file].includes('Demo API') && !out[file].includes('Demo public API'), file + ' names the slug')
+    }
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',

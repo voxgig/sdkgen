@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.definitionName = definitionName;
 exports.modelText = modelText;
 exports.seriesList = seriesList;
 const apidef_1 = require("@voxgig/apidef");
@@ -24,6 +25,15 @@ function modelText(model) {
 }
 function given(value) {
     return null != value && '' !== value;
+}
+const DEFINITION_NAME = {
+    openapi: ['OpenAPI spec', 'OpenAPI specification'],
+    graphql: ['GraphQL schema', 'GraphQL schema'],
+};
+// What a document calls the definition an SDK is generated from, by the
+// definition-kind fact: in short, or in full.
+function definitionName(kind, full = false) {
+    return DEFINITION_NAME[kind]?.[full ? 1 : 0] ?? 'API definition';
 }
 // "a", "a and b", "a, b, and c".
 function seriesList(items) {

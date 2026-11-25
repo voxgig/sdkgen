@@ -106,8 +106,8 @@ const AgentGuideTopFeatureGuide = (0, component_1.cmp)(function AgentGuideTopFea
 const AgentGuideTopCustomise = (0, component_1.cmp)(function AgentGuideTopCustomise() {
     (0, jostraca_1.Content)((0, AgentGuideContent_1.customiseSection)());
 });
-const AgentGuideTopAontu = (0, component_1.cmp)(function AgentGuideTopAontu() {
-    (0, jostraca_1.Content)((0, AgentGuideContent_1.aontuSection)());
+const AgentGuideTopAontu = (0, component_1.cmp)(function AgentGuideTopAontu(props) {
+    (0, jostraca_1.Content)((0, AgentGuideContent_1.aontuSection)(props.s.model));
 });
 const AgentGuideTopLayout = (0, component_1.cmp)(function AgentGuideTopLayout() {
     (0, jostraca_1.Content)(`## Where things live

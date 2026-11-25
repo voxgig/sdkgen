@@ -4,6 +4,7 @@ import { cmp } from '../helpers/component'
 
 import { optionalComponent } from '../helpers/optional'
 import { fact } from '../helpers/facts'
+import { apiName } from '../helpers/packageMeta'
 
 import {
   activeFeatures,
@@ -45,7 +46,7 @@ const AgentGuide = cmp(function AgentGuide(props: any) {
 
 ${surface
   ? surface + '\n\nGenerated from the shared model; see the [project guide](../AGENTS.md) for the full workflow.'
-  : `The ${title} client for the ${Name} API. This directory is **generated** — do not edit it by hand; change the model/template/component in \`.sdk/\` and regenerate. See the [project guide](../AGENTS.md) for the full workflow and the aontu model language.`}
+  : `The ${title} client for the ${apiName(model)} API. This directory is **generated** — do not edit it by hand; change the model/template/component in \`.sdk/\` and regenerate. See the [project guide](../AGENTS.md) for the full workflow and the aontu model language.`}
 
 > Paths below (\`.sdk/…\`) are relative to the **project root** — one level up
 > from this \`${lang}/\` directory.

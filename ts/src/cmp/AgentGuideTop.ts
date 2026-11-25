@@ -143,8 +143,8 @@ const AgentGuideTopCustomise = cmp(function AgentGuideTopCustomise() {
 })
 
 
-const AgentGuideTopAontu = cmp(function AgentGuideTopAontu() {
-  Content(aontuSection())
+const AgentGuideTopAontu = cmp(function AgentGuideTopAontu(props: any) {
+  Content(aontuSection(props.s.model))
 })
 
 

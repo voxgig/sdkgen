@@ -47,6 +47,7 @@ const Changelog = (0, component_1.cmp)(function Changelog(props) {
     const first = 1 < versions.size ? 'Initial release' :
         `[${[...versions][0] || (0, packageMeta_1.packageVersion)(model, '')}]`;
     const scope = releaseScope(targets);
+    const definition = (0, text_1.definitionName)((0, facts_1.fact)(model.main[types_1.KIT], 'definitionKind'), true);
     (0, jostraca_1.File)({ name: 'CHANGELOG.md', exclude: true }, () => {
         (0, jostraca_1.Content)(`# Changelog
 
@@ -60,7 +61,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com) and
 
 ${listItem('Initial generated release of the ' + name + ' SDK' +
             ('' === scope ? '' : ' (' + scope + ')') +
-            ', generated from the upstream OpenAPI specification by @voxgig/sdkgen.')}
+            ', generated from the upstream ' + definition + ' by @voxgig/sdkgen.')}
 `);
     });
 });

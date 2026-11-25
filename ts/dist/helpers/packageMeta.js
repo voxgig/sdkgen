@@ -34,7 +34,6 @@ const apidef_1 = require("@voxgig/apidef");
 const surface_1 = require("./surface");
 const facts_1 = require("./facts");
 const kindCollection_1 = require("./kindCollection");
-const text_1 = require("./text");
 const title_1 = require("./title");
 Object.defineProperty(exports, "LANG_LABEL", { enumerable: true, get: function () { return title_1.LANG_LABEL; } });
 Object.defineProperty(exports, "langLabel", { enumerable: true, get: function () { return title_1.langLabel; } });
@@ -228,10 +227,10 @@ function vendorCommand(model, target) {
         }
     }
 }
+// The API's name fact without a trailing "API", for "the <name> public API".
 function apiName(model) {
-    const info = (0, text_1.modelText)(model);
-    const raw = (null != info.title ? String(info.title) : '').trim();
-    const stripped = raw.replace(/\s*API\s*$/i, '').trim();
+    const stripped = String((0, facts_1.fact)(model.main[apidef_1.KIT], 'apiName').raw).trim()
+        .replace(/\s*API\s*$/i, '').trim();
     return stripped || (0, apidef_1.nom)(model, 'Name') || model.name;
 }
 function packageName(model, eco) {

@@ -112,7 +112,7 @@ ${tagline}
     }
 });
 const ReadmeTopSurfaceLine = (0, component_1.cmp)(function ReadmeTopSurfaceLine(props) {
-    const { hasCli, hasMcp, sdkTargets, consumerTargets, langList } = props.s;
+    const { hasCli, hasMcp, sdkTargets, consumerTargets, langList, definition } = props.s;
     if (sdkTargets.length > 1) {
         const surfaces = [];
         surfaces.push(`${langList} SDKs`);
@@ -124,7 +124,7 @@ const ReadmeTopSurfaceLine = (0, component_1.cmp)(function ReadmeTopSurfaceLine(
         const surfaceList = surfaces.length > 1
             ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
             : surfaces[0];
-        (0, jostraca_1.Content)(`> ${surfaceList} — all generated from one OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+        (0, jostraca_1.Content)(`> ${surfaceList} — all generated from one ${definition} by [@voxgig/sdkgen](${SDKGEN_REPO}).
 
 `);
     }
@@ -522,7 +522,7 @@ forking the SDK.
 `);
 });
 const ReadmeTopCustomizing = (0, component_1.cmp)(function ReadmeTopCustomizing(props) {
-    const { model, sdkTargets, docTargets } = props.s;
+    const { model, sdkTargets, docTargets, definition } = props.s;
     // 11c. Customization: model-driven declarations, in-repo templates and
     // components, regeneration that overwrites, customising in `.sdk`, and a
     // map of which paths are the project's to edit. Every SDK repo carries
@@ -576,7 +576,7 @@ customizable without forking any upstream tool:
 | \`.sdk/model/text.aontu\` | The README wording, in \`main.kit.text\`: the tagline, the summary and the entity descriptions | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/guide/guide.aontu\` | How the spec's paths map onto entities and operations | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/\`, the rest | The API model built from the spec, and the target and feature definitions | Not by hand. Generation, \`target add\` and a new scaffold run rewrite it, apart from a feature or target this project defines itself. |
-| \`.sdk/def/\` | The OpenAPI spec | Replace it when the API changes. Generation rebuilds the model from it. |
+| \`.sdk/def/\` | The ${definition} | Replace it when the API changes. Generation rebuilds the model from it. |
 | \`.sdk/src/cmp/<target>/\`, \`.sdk/tm/<target>/\` | The components and templates that generate each target | ${copiesRow} |
 | \`.sdk/test/\` | The shared test cases the generated tests run | No. |
 | ${targetDir} | One generated SDK per target, with its own tests | No. Generation overwrites it. |
@@ -615,15 +615,15 @@ const ReadmeTopPerLanguage = (0, component_1.cmp)(function ReadmeTopPerLanguage(
     }
 });
 const ReadmeTopUpstream = (0, component_1.cmp)(function ReadmeTopUpstream(props) {
-    const { text } = props.s;
+    const { text, definition, definitionFull } = props.s;
     const upstream = text.upstream;
     const docs = text.docs_url;
     (0, jostraca_1.Content)(`## Upstream API
 
-This SDK is generated from the upstream OpenAPI specification. It is an
+This SDK is generated from the upstream ${definitionFull}. It is an
 unofficial client and is not affiliated with the API provider.
 
-The OpenAPI spec(s) this SDK was generated from are kept in the
+The ${definition}(s) this SDK was generated from are kept in the
 [\`.sdk/def/\`](.sdk/def/) folder.
 
 `);
@@ -657,10 +657,10 @@ Do not open public issues for suspected vulnerabilities.
 `);
 });
 const ReadmeTopFooter = (0, component_1.cmp)(function ReadmeTopFooter(props) {
-    const { productName } = props.s;
+    const { productName, definition } = props.s;
     (0, jostraca_1.Content)(`---
 
-Generated from the ${productName} OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+Generated from the ${productName} ${definition} by [@voxgig/sdkgen](${SDKGEN_REPO}).
 `);
 });
 const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
@@ -671,9 +671,12 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     const info = (0, text_1.modelText)(model);
     const def = (model.main && model.main.def) || {};
     const text = (0, facts_1.fact)(model.main[types_1.KIT], 'text');
-    const productName = text.title.inline || `${model.Name} API`;
+    const productName = (0, facts_1.fact)(model.main[types_1.KIT], 'apiName').inline;
+    const kind = (0, facts_1.fact)(model.main[types_1.KIT], 'definitionKind');
+    const definition = (0, text_1.definitionName)(kind);
+    const definitionFull = (0, text_1.definitionName)(kind, true);
     const tagline = text.tagline.inline
-        || `${productName} client, generated from the OpenAPI spec.`;
+        || `${productName} client, generated from the ${definition}.`;
     const aboutMd = text.about_md.text;
     const apiSummary = text.summary.inline;
     const websiteLine = text.website.raw
@@ -715,6 +718,8 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         def,
         text,
         productName,
+        definition,
+        definitionFull,
         tagline,
         aboutMd,
         apiSummary,

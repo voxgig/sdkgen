@@ -6,7 +6,6 @@ import { KIT, nom } from '@voxgig/apidef'
 import { surfaceName, surfaceOf } from './surface'
 import { fact } from './facts'
 import { kindCollection } from './kindCollection'
-import { modelText } from './text'
 import { LANG_LABEL, langLabel } from './title'
 
 const PUBLISHER = 'Voxgig'
@@ -231,10 +230,10 @@ function vendorCommand(model: any, target: string): string {
   }
 }
 
+// The API's name fact without a trailing "API", for "the <name> public API".
 function apiName(model: any): string {
-  const info = modelText(model)
-  const raw = (null != info.title ? String(info.title) : '').trim()
-  const stripped = raw.replace(/\s*API\s*$/i, '').trim()
+  const stripped = String(fact(model.main[KIT], 'apiName').raw).trim()
+    .replace(/\s*API\s*$/i, '').trim()
   return stripped || nom(model, 'Name') || model.name
 }
 

@@ -5,6 +5,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const optional_1 = require("../helpers/optional");
 const facts_1 = require("../helpers/facts");
+const packageMeta_1 = require("../helpers/packageMeta");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideFeature_1 = require("./AgentGuideFeature");
 // Per-language agent guide. Emitted inside the ambient target folder (the Root
@@ -26,7 +27,7 @@ const AgentGuide = (0, component_1.cmp)(function AgentGuide(props) {
 
 ${surface
             ? surface + '\n\nGenerated from the shared model; see the [project guide](../AGENTS.md) for the full workflow.'
-            : `The ${title} client for the ${Name} API. This directory is **generated** — do not edit it by hand; change the model/template/component in \`.sdk/\` and regenerate. See the [project guide](../AGENTS.md) for the full workflow and the aontu model language.`}
+            : `The ${title} client for the ${(0, packageMeta_1.apiName)(model)} API. This directory is **generated** — do not edit it by hand; change the model/template/component in \`.sdk/\` and regenerate. See the [project guide](../AGENTS.md) for the full workflow and the aontu model language.`}
 
 > Paths below (\`.sdk/…\`) are relative to the **project root** — one level up
 > from this \`${lang}/\` directory.

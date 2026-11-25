@@ -3,7 +3,7 @@ import { cmp } from '../helpers/component'
 import { fact } from '../helpers/facts'
 import { packageVersion } from '../helpers/packageMeta'
 import { SURFACE_WORD, documentOrder, surfaceOf } from '../helpers/surface'
-import { seriesList } from '../helpers/text'
+import { definitionName, seriesList } from '../helpers/text'
 import { KIT, getModelPath } from '../types'
 
 
@@ -57,6 +57,7 @@ const Changelog = cmp(function Changelog(props: any) {
     `[${[...versions][0] || packageVersion(model, '')}]`
 
   const scope = releaseScope(targets)
+  const definition = definitionName(fact(model.main[KIT], 'definitionKind'), true)
 
   File({ name: 'CHANGELOG.md', exclude: true }, () => {
     Content(`# Changelog
@@ -71,7 +72,7 @@ This project follows [Keep a Changelog](https://keepachangelog.com) and
 
 ${listItem('Initial generated release of the ' + name + ' SDK' +
   ('' === scope ? '' : ' (' + scope + ')') +
-  ', generated from the upstream OpenAPI specification by @voxgig/sdkgen.')}
+  ', generated from the upstream ' + definition + ' by @voxgig/sdkgen.')}
 `)
   })
 })

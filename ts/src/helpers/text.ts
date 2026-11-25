@@ -28,6 +28,19 @@ function given(value: any): boolean {
 }
 
 
+const DEFINITION_NAME: Record<string, [string, string]> = {
+  openapi: ['OpenAPI spec', 'OpenAPI specification'],
+  graphql: ['GraphQL schema', 'GraphQL schema'],
+}
+
+
+// What a document calls the definition an SDK is generated from, by the
+// definition-kind fact: in short, or in full.
+function definitionName(kind: string, full = false): string {
+  return DEFINITION_NAME[kind]?.[full ? 1 : 0] ?? 'API definition'
+}
+
+
 // "a", "a and b", "a, b, and c".
 function seriesList(items: string[]): string {
   return items.length < 3 ? items.join(' and ') :
@@ -36,6 +49,7 @@ function seriesList(items: string[]): string {
 
 
 export {
+  definitionName,
   modelText,
   seriesList,
 }

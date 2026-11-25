@@ -4,7 +4,7 @@ import { deepStrictEqual, match, strictEqual } from 'node:assert'
 import { Jostraca, Project } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { Security } from '../dist/sdkgen.js'
+import { Security, applyFacts } from '../dist/sdkgen.js'
 
 import {
   publisherInfo,
@@ -28,10 +28,10 @@ async function security(repo?: any): Promise<string> {
 
 
 function model(publisher?: any, rest?: any): any {
-  return {
+  return applyFacts({
     name: 'demo',
     main: { kit: { ...(publisher ? { publisher } : {}), ...(rest || {}) } },
-  }
+  })
 }
 
 
