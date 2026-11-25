@@ -92,7 +92,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   Folder({ name: entity.name }, () => {
 
-    File({ name: nom(entity, 'Name') + 'Direct.test.' + target.name }, () => {
+    File({ name: nom(entity, 'Name') + 'Direct.test.' + target.ext }, () => {
 
       Fragment({
         from: ff + 'Direct.test.fragment.js',

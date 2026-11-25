@@ -113,7 +113,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   Folder({ name: entity.name }, () => {
 
-    File({ name: nom(entity, 'Name') + 'Entity.test.' + target.name }, () => {
+    File({ name: nom(entity, 'Name') + 'Entity.test.' + target.ext }, () => {
 
       Fragment({
         from: ff + 'Entity.test.fragment.js',
