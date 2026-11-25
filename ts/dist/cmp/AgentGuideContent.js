@@ -68,7 +68,10 @@ function langCommandsBlock(name, model) {
     if (0 === lines.length) {
         return `Build and test with \`${name}\`'s standard toolchain.\n`;
     }
-    return '```bash\n# in this target directory (' + name + '/):\n' + lines.join('\n') + '\n```\n';
+    const node = model?.main?.[types_1.KIT]?.target?.[name];
+    const place = null == node ? 'folder' : (0, facts_1.fact)(node, 'place');
+    const dir = 'folder' === place ? name + '/' : 'root' === place ? 'the project root' : "this package's root";
+    return '```bash\n# in this target directory (' + dir + '):\n' + lines.join('\n') + '\n```\n';
 }
 function featuresEnabled(target) {
     return (0, facts_1.fact)(target, 'phase').feature;
@@ -139,10 +142,15 @@ in \`.sdk/\` (\`main: kit: copies: 'overwrite'\`): set \`copies\` to
 into the edited copies.`;
 }
 function workflowSection(model) {
+    const dirs = activeTargets(model).filter((t) => 'folder' === (0, facts_1.fact)(t, 'place'))
+        .map((t) => '\`' + t.name + '/\`');
+    const output = 0 === dirs.length ? 'The generated output is **build output** — never edit it by' :
+        1 === dirs.length ? 'The generated\ndirectory (' + dirs[0] + ') is **build output** — never edit it by' :
+            'The generated language\ndirectories (' + dirs.slice(0, 2).join(', ') + (2 < dirs.length ? ', …' : '') +
+                ') are **build output** — never edit them by';
     return `## Generating and updating the SDK
 
-All generation is driven from the \`.sdk/\` directory. The generated language
-directories (\`ts/\`, \`go/\`, …) are **build output** — never edit them by
+All generation is driven from the \`.sdk/\` directory. ${output}
 hand; fix the model, a template, or a component and regenerate.
 
 \`\`\`bash

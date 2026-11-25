@@ -337,21 +337,23 @@ const ReadmeTopPackages = cmp(function ReadmeTopPackages(props: any) {
 `)
     pkgTargets.forEach((tgt: any) => {
       const state = registryState(model, tgt.name)
+      const readme = fact(tgt, 'docs').readme
       let cell: string
       if ('active' === state) {
         const cmd = installCommand(tgt, model)
         cell = cmd
           ? '`' + cmd + '`'
-          : `see [${tgt.name}/README.md](${tgt.name}/README.md#install)`
+          : readme ? `see [${tgt.name}/README.md](${tgt.name}/README.md#install)` : `see \`${tgt.name}/\``
       } else if ('tag' === state) {
         const cmd = vendorCommand(model, tgt.name)
         cell = cmd
           ? '`' + cmd + '`'
-          : `build from source — [${tgt.name}/README.md](${tgt.name}/README.md)`
+          : 'build from source — ' + (readme ? `[${tgt.name}/README.md](${tgt.name}/README.md)` : `\`${tgt.name}/\``)
       } else {
         // The target README always gives a route that works without a
         // tag, which a repository may not have.
-        cell = `publish pending — [install from source](${tgt.name}/README.md#install)`
+        cell = readme ? `publish pending — [install from source](${tgt.name}/README.md#install)` :
+          `publish pending — install from source in \`${tgt.name}/\``
       }
       Content(`| ${tgt.title} | \`${packageName(model, tgt.name)}\` | ${cell} |
 `)
@@ -378,7 +380,8 @@ const ReadmeTopQuickstart = cmp(function ReadmeTopQuickstart(props: any) {
     }
     const placement = credentialPlacement(model)
     Content(`
-${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}${fact(leadTarget, 'docs').readme ?
+  `See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.` : ''}
 
 `)
   }
@@ -691,7 +694,7 @@ const ReadmeTopPerLanguage = cmp(function ReadmeTopPerLanguage(props: any) {
     Content(`## Per-language documentation
 
 `)
-    docTargets.forEach((tgt: any) => {
+    docTargets.filter((tgt: any) => fact(tgt, 'docs').readme).forEach((tgt: any) => {
       Content(`- [${tgt.title}](${tgt.name}/README.md)
 `)
     })

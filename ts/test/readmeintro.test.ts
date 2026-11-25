@@ -15,7 +15,8 @@ const model = applyFacts({
   name: 'demo', Name: 'Demo',
   main: { kit: {
     info: { tagline: 'Tagged.' },
-    target: { body: {}, whole: {}, 'go-cli': {} },
+    phase: { top: { active: true } },
+    target: { body: { output: { path: '', root: false } }, whole: { output: { path: '', root: false } }, 'go-cli': { output: { path: '', root: false } } },
     entity: {},
   } },
 })

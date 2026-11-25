@@ -2,6 +2,7 @@ import { each, Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import { packageVersion, registryState } from '../helpers/packageMeta'
+import { fact } from '../helpers/facts'
 
 import {
   KIT,
@@ -111,6 +112,7 @@ function makeDeployMakefile(model: any, targets: any[]): string {
     const args = vaultExecArgs(t)
 
     const via = t.publish?.tag?.via || 'port'
+    const dir = 'root' === fact(t, 'place') ? '.' : t.name
     const rs = registryState(model, t.name)
 
     if ('tag' === rs && (reg || 'root' === via)) {
@@ -140,10 +142,10 @@ ${tagPushRecipe(t.name, packageVersion(model, t.name), reg.name + ' publication 
 
     return `
 deploy-${t.name}:
-\tboru vault exec ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec ${args} -- $(MAKE) -C ${dir} publish
 
 deploy-dry-${t.name}:
-\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${dir} publish
 `
   }).join('')
 

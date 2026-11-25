@@ -25,7 +25,8 @@ function makeModel(targets: any, host: string) {
     main: {
       kit: {
         repo: { host, org: 'acme', name: 'demo-sdk' },
-        target: structuredClone(targets),
+        target: Object.fromEntries(Object.entries(structuredClone(targets))
+          .map(([name, t]: [string, any]) => [name, { output: { path: '', root: false }, ...t }])),
       },
     },
   })
@@ -68,6 +69,13 @@ const NPM_TS = {
 
 
 describe('PublishWorkflow', () => {
+
+  // The first release goes out by hand, from the first npm target's directory.
+  test('the first-release command enters the first npm target\'s own directory', async () => {
+    const doc = (await render({ js: { ...NPM_TS.ts, name: 'js' } }))['.sdk/PUBLISHING.md']
+    ok(doc.includes('    cd js && npm publish --access public'), doc)
+    ok(!doc.includes('cd ts'), doc)
+  })
 
   test('emits a dispatch workflow per npm target', async () => {
     const out = await render(NPM_TS)

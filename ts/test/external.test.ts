@@ -210,6 +210,22 @@ describe('external target', () => {
   })
 
 
+  // The SDK repository's files are not beside a package in another repository.
+  test('no document written out of tree links above the destination', async () => {
+    const { outside } = await generate(['ts', 'go'], 'ts')
+    const up: string[] = []
+    for (const [file, text] of Object.entries(outside).filter(([f]) => f.endsWith('.md'))) {
+      for (const m of String(text).matchAll(/\]\(([^)#\s]+)[^)]*\)/g)) {
+        if (/^[a-z]+:/i.test(m[1])) continue
+        const to = Path.posix.normalize(Path.posix.join(Path.posix.dirname(file), m[1]))
+        if (to.startsWith('../')) up.push(file + ' -> ' + m[1])
+      }
+    }
+    ok(null != outside['README.md'], 'nothing was written out of tree')
+    deepStrictEqual(up, [])
+  })
+
+
   test('the other targets still generate normally', async () => {
     const { inside } = await generate(['ts', 'go', 'go-cli'], 'go-cli')
 

@@ -27,7 +27,9 @@ const canRunMake = 'win32' !== process.platform &&
 // A test reuses its target objects, and the fact pass writes into each.
 async function render(target: Record<string, ModelTarget>): Promise<string> {
   const { fs, vol } = memfs({})
-  const model = applyFacts({ Name: 'Demo', main: { kit: { target: structuredClone(target) } } })
+  const placed = Object.fromEntries(Object.entries(structuredClone(target))
+    .map(([name, t]: [string, any]) => [name, { output: { path: '', root: false }, ...t }]))
+  const model = applyFacts({ Name: 'Demo', main: { kit: { target: placed } } })
   await Jostraca().generate(
     { fs: () => fs, folder: '/deploy', model, log },
     () => Project({}, () => Deploy({})),

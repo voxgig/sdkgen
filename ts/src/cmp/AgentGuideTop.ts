@@ -53,7 +53,9 @@ const AgentGuideTopTargets = cmp(function AgentGuideTopTargets(props: any) {
 `)
     targets.forEach((t: any) => {
       const note = langCmd(t.name, model).note ? ' — ' + langCmd(t.name, model).note : ''
-      Content(`| \`${t.name}\` | \`${t.name}/\`${note} | [\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md) |
+      const dir = 'folder' === fact(t, 'place') ? `\`${t.name}/\`` : '—'
+      const guide = fact(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—'
+      Content(`| \`${t.name}\` | ${dir}${note} | ${guide} |
 `)
     })
     Content(`

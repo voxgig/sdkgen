@@ -34,7 +34,9 @@ const AgentGuideTopTargets = (0, component_1.cmp)(function AgentGuideTopTargets(
 `);
         targets.forEach((t) => {
             const note = (0, AgentGuideContent_1.langCmd)(t.name, model).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name, model).note : '';
-            (0, jostraca_1.Content)(`| \`${t.name}\` | \`${t.name}/\`${note} | [\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md) |
+            const dir = 'folder' === (0, facts_1.fact)(t, 'place') ? `\`${t.name}/\`` : '—';
+            const guide = (0, facts_1.fact)(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—';
+            (0, jostraca_1.Content)(`| \`${t.name}\` | ${dir}${note} | ${guide} |
 `);
         });
         (0, jostraca_1.Content)(`

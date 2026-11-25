@@ -2017,7 +2017,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
   test('alongsideNote words each combination of surfaces', () => {
     const note = (targets: Record<string, any>) =>
-      alongsideNote(applyFacts({ main: { [KIT]: { target: targets } } }), 'py').split(' alongside')[0]
+      alongsideNote(applyFacts({ main: { [KIT]: { target: targets } } }), 'py', '../README.md').split(' alongside')[0]
     // applyFacts writes into each target object, so every target gets its own.
     const off = () => ({ active: false })
     const consumer = () => ({ phase: { entity: off(), feature: off(), readme: off(), agentguide: off(), test: off() } })

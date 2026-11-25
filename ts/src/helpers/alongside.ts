@@ -1,11 +1,17 @@
 import { KIT } from '@voxgig/apidef'
 
+import { fact } from './facts'
 import { surfaceOf } from './surface'
 
 
-// Names only the active surfaces, so a project with go-mcp off is not promised one.
-function alongsideNote(model: any, self: string): string {
+// Names only the active surfaces, so a project with go-mcp off is not promised
+// one. `link` is the root README from this target's folder, and without one
+// there is no note.
+function alongsideNote(model: any, self: string, link?: string): string {
   const target = model?.main?.[KIT]?.target || {}
+  const readme = link ?? (null == target[self] ? '' : fact(target[self], 'link').readme)
+  if ('' === readme) return ''
+
   const others = Object.entries(target)
     .filter(([name, t]: [string, any]) => name !== self && null != t && false !== t.active)
     .map(([, t]: [string, any]) => surfaceOf(t))
@@ -26,7 +32,7 @@ function alongsideNote(model: any, self: string): string {
   const verb = 1 === parts.length && !langs ? 'lives' : 'live'
 
   return `> ${list[0].toUpperCase() + list.slice(1)} ${verb} alongside this one — see
-> the [top-level README](../README.md).
+> the [top-level README](${readme}).
 
 `
 }

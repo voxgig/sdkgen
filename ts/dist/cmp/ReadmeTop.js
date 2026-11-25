@@ -286,23 +286,25 @@ const ReadmeTopPackages = (0, component_1.cmp)(function ReadmeTopPackages(props)
 `);
         pkgTargets.forEach((tgt) => {
             const state = (0, packageMeta_1.registryState)(model, tgt.name);
+            const readme = (0, facts_1.fact)(tgt, 'docs').readme;
             let cell;
             if ('active' === state) {
                 const cmd = installCommand(tgt, model);
                 cell = cmd
                     ? '`' + cmd + '`'
-                    : `see [${tgt.name}/README.md](${tgt.name}/README.md#install)`;
+                    : readme ? `see [${tgt.name}/README.md](${tgt.name}/README.md#install)` : `see \`${tgt.name}/\``;
             }
             else if ('tag' === state) {
                 const cmd = (0, packageMeta_1.vendorCommand)(model, tgt.name);
                 cell = cmd
                     ? '`' + cmd + '`'
-                    : `build from source — [${tgt.name}/README.md](${tgt.name}/README.md)`;
+                    : 'build from source — ' + (readme ? `[${tgt.name}/README.md](${tgt.name}/README.md)` : `\`${tgt.name}/\``);
             }
             else {
                 // The target README always gives a route that works without a
                 // tag, which a repository may not have.
-                cell = `publish pending — [install from source](${tgt.name}/README.md#install)`;
+                cell = readme ? `publish pending — [install from source](${tgt.name}/README.md#install)` :
+                    `publish pending — install from source in \`${tgt.name}/\``;
             }
             (0, jostraca_1.Content)(`| ${tgt.title} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
 `);
@@ -325,7 +327,8 @@ const ReadmeTopQuickstart = (0, component_1.cmp)(function ReadmeTopQuickstart(pr
         }
         const placement = (0, utility_1.credentialPlacement)(model);
         (0, jostraca_1.Content)(`
-${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}${(0, facts_1.fact)(leadTarget, 'docs').readme ?
+            `See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.` : ''}
 
 `);
     }
@@ -606,7 +609,7 @@ const ReadmeTopPerLanguage = (0, component_1.cmp)(function ReadmeTopPerLanguage(
         (0, jostraca_1.Content)(`## Per-language documentation
 
 `);
-        docTargets.forEach((tgt) => {
+        docTargets.filter((tgt) => (0, facts_1.fact)(tgt, 'docs').readme).forEach((tgt) => {
             (0, jostraca_1.Content)(`- [${tgt.title}](${tgt.name}/README.md)
 `);
         });
