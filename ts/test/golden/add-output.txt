@@ -634,7 +634,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-cli.aontu 7a1c45e58e4f
 model/target/target-index.aontu fbd86a3a35fb
-src/cmp/go-cli/Main_go-cli.ts 2e388ac58923
+src/cmp/go-cli/Main_go-cli.ts c93d59dc05e1
 src/cmp/go-cli/fragment/main.fragment.go edad9cbfb479
 src/cmp/go-cli/fragment/words.fragment.go a382337cb162
 tm/go-cli/src/feature/README.md 2c5a3094a7ed
@@ -647,7 +647,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-mcp.aontu 1ea6f206f321
 model/target/target-index.aontu d043228b9b1a
-src/cmp/go-mcp/Main_go-mcp.ts 091190541cb3
+src/cmp/go-mcp/Main_go-mcp.ts 7749b337d426
 src/cmp/go-mcp/fragment/main.fragment.go 26cd4ae5eee2
 src/cmp/go-mcp/fragment/tools.fragment.go 626e299be379
 tm/go-mcp/src/feature/README.md 2c5a3094a7ed
@@ -1502,9 +1502,9 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/py-data.aontu 45b0b0ae0829
 model/target/target-index.aontu fab6a58fafb8
-src/cmp/py-data/Main_py-data.ts c9c6c5d20048
+src/cmp/py-data/Main_py-data.ts 9527fb77179b
 tm/py-data/LICENSE 52acd47c245f
-tm/py-data/Makefile e9b508ae41a7
+tm/py-data/Makefile 6b7f45226456
 tm/py-data/pkg/auth.py a84c020b8eb1
 tm/py-data/pkg/fetch.py 5a3573da5894
 tm/py-data/pkg/frames.py ac33e1a16cb4

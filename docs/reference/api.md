@@ -238,6 +238,22 @@ the MCP server, read from the active targets. It returns an empty string when
 the project generates nothing else. A per-language component that writes its
 whole introduction itself can call it for the same note.
 
+### `consumedTarget(model, target, sdkrel) → Consumed`
+
+The installed target that a consumer such as `go-cli` builds on, which the
+consumer's model names with `consumes`, and where that target is. `sdkrel` is
+the path from the consumer's folder back to the project, which `Main` gives a
+component as `ctx$.stdrep.SDKREL`. It throws an `SdkGenError` that names
+`voxgig-sdkgen target add` when the model has no target of that origin, and one
+that names the switch when the model has one but switches it off.
+
+- `name`: the target's installed name, the origin or an alias of it.
+- `path`: the path from the consumer's folder to the target's.
+- `dir`: the target's folder in the repository the two share, `''` when they
+  share none.
+- `away`: whether the target is generated into a repository of its own, and
+  `url`, that repository's address when the model names one.
+
 ### Typing helpers
 
 The typed-model subsystem (full picture:

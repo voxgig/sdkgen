@@ -4,10 +4,11 @@ import {
   File, Content, Copy, Folder,
   entityCollection, entityOps, entityIdField, canonToDtype,
   collectDeps, pkgDescription, tomlString, keywords, repoInfo, envName, apiName,
-  packageName, registryState, serverVariables,
-  SdkGenError,
+  packageName, registryState, serverVariables, consumedTarget, fact,
   packageVersion,
 } from '@voxgig/sdkgen'
+
+import type { Consumed } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,19 +25,12 @@ const Main = cmp(function Main(props: any) {
   const { target, ctx$ } = props
   const { model, log } = ctx$
 
-  const targets = model.main[KIT].target || {}
-  if (null == targets.py) {
-    throw new SdkGenError(
-      'py-data requires the `py` target in the same SDK: it imports the ' +
-      'Python SDK that `py` generates. Add it with:\n' +
-      '  npm run add-target py\n' +
-      'then regenerate.')
-  }
+  const sdk = consumedTarget(model, target, ctx$.stdrep.SDKREL)
 
   const name = model.const.Name
   const lower = String(name).toLowerCase()
   const ENV = envName(model)
-  const sdkModule = `${lower}_sdk`
+  const sdkModule = fact(model.main[KIT], 'package').py
   const sdkClass = `${name}SDK`
   const dataModule = `${lower}_data`
 
@@ -62,7 +56,7 @@ const Main = cmp(function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, /pkg\//],
-    replace: { ...ctx$.stdrep },
+    replace: { ...ctx$.stdrep, CONSUMEDREL: sdk.path },
   })
 
   Folder({ name: dataModule }, () => {
@@ -75,12 +69,34 @@ const Main = cmp(function Main(props: any) {
   })
 
   Gitignore({})
-  Package({ target, model, lower, dataModule })
+  Package({ target, model, lower, dataModule, sdk })
   EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule })
-  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, svars })
-  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase })
-  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase })
+  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, svars, sdk })
+  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, sdk })
+  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase, sdk })
 })
+
+
+// The pip arguments that install this package and the Python SDK it wraps
+// before either is on PyPI: from this repository, where it holds both.
+function gitInstall(model: any, target: any, sdk: Consumed): [string, string] {
+  const { repoUrl } = repoInfo(model)
+  const sub = (dir: string) => '.' === dir ? '' : '#subdirectory=' + dir
+  const own = 'external' === fact(target, 'place') ? '.' : fact(target, 'dir')
+  return [
+    '' === sdk.dir ? `"${packageName(model, sdk.name)}"` : `"git+${repoUrl}${sub(sdk.dir)}"`,
+    `"git+${repoUrl}${sub(own)}"`,
+  ]
+}
+
+
+// The Python SDK as a document names it, and where it is.
+function pySdk(sdk: Consumed, link: boolean): string {
+  return '' !== sdk.dir ? (link ? `the sibling [Python SDK](${sdk.path}) in this repo` :
+    `the sibling Python SDK at \`${sdk.path}\``) :
+    sdk.away ? 'the Python SDK in ' + ('' === sdk.url ? 'its own repository' :
+      `[its own repository](${sdk.url})`) : `the Python SDK at \`${sdk.path}\``
+}
 
 
 const Gitignore = cmp(function Gitignore(_props: any) {
@@ -96,13 +112,12 @@ const Gitignore = cmp(function Gitignore(_props: any) {
 
 
 const Package = cmp(function Package(props: any) {
-  const { target, model, lower, dataModule } = props
+  const { target, model, lower, dataModule, sdk } = props
   const ctx$ = props.ctx$
 
   const distName = packageName(model, target.name)
-  // The `py` SDK this package WRAPS — a different target, so it keeps its
-  // own name and does not follow this target's alias.
-  const sdkDist = packageName(model, 'py')
+  // The Python SDK this package WRAPS, under its own installed name.
+  const sdkDist = packageName(model, sdk.name)
   const { repoUrl, issuesUrl } = repoInfo(model)
   const kw = keywords(model).concat(['pandas', 'dataframe', 'notebook', 'colab'])
     .map((k) => `"${k}"`).join(', ')
@@ -573,18 +588,19 @@ class TestFramesAgainstTestMode:
 // ---------------------------------------------------------------------------
 
 const Readme = cmp(function Readme(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase } = props
+  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase, sdk } = props
   const ctx$ = props.ctx$
 
   const distName = packageName(model, target.name)
-  const sdkDist = packageName(model, 'py')
+  const sdkDist = packageName(model, sdk.name)
   const pending = 'active' !== registryState(model, target.name)
-  const { repoUrl, releasesUrl } = repoInfo(model)
+  const { releasesUrl } = repoInfo(model)
+  const [sdkPip, ownPip] = gitInstall(model, target, sdk)
 
   const install = pending
     ? `# Not yet on PyPI — install both packages from this repo:
-!pip install "git+${repoUrl}#subdirectory=py" \\
-             "git+${repoUrl}#subdirectory=${target.name}"`
+!pip install ${sdkPip} \\
+             ${ownPip}`
     : `!pip install ${distName}`
 
   const first = frameEnts[0]
@@ -617,7 +633,7 @@ const Readme = cmp(function Readme(props: any) {
   File({ name: 'README.md' }, () => Content(`# ${name} Data
 
 ${apiName(model)} as **pandas DataFrames**, for data analysts working in
-notebooks. Built on the sibling [Python SDK](../py) in this repo.
+notebooks. Built on ${pySdk(sdk, true)}.
 
 ${ctx$.stdrep ? '' : ''}\`\`\`python
 ${install}
@@ -639,8 +655,8 @@ ${pending
 from the repo — in a notebook, prefix with \`!\`:
 
 \`\`\`sh
-pip install "git+${repoUrl}#subdirectory=py" \\
-            "git+${repoUrl}#subdirectory=${target.name}"
+pip install ${sdkPip} \\
+            ${ownPip}
 \`\`\`
 
 Released versions are tagged at ${releasesUrl}.`
@@ -741,7 +757,7 @@ affiliated with or endorsed by the upstream API provider.
 
 
 const AgentGuide = cmp(function AgentGuide(props: any) {
-  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase } = props
+  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase, sdk } = props
 
   const accessorLines = frameEnts.map((e: any) => {
     const fs = entFields(e)
@@ -756,8 +772,8 @@ const AgentGuide = cmp(function AgentGuide(props: any) {
   const guide = `# ${name} Data — agent guide
 
 Notebook-oriented pandas access to the ${name} API. If you are writing an
-analysis cell, use THIS package; if you are writing an application, use the
-sibling SDK at \`../py\` instead.
+analysis cell, use THIS package; if you are writing an application, use
+${pySdk(sdk, false)} instead.
 
 ## Getting a client
 
@@ -815,15 +831,15 @@ are overwritten. Change the model and regenerate.
 // A runnable Colab notebook. .ipynb is just JSON; keeping outputs empty means
 // the file is diffable and CI can execute it as a smoke test.
 const Quickstart = cmp(function Quickstart(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, needsBase } = props
+  const { target, model, name, ENV, dataModule, frameEnts, needsBase, sdk } = props
 
-  const { repoUrl } = repoInfo(model)
   const pending = 'active' !== registryState(model, target.name)
   const distName = packageName(model, target.name)
+  const [sdkPip, ownPip] = gitInstall(model, target, sdk)
 
   const installCode = pending
-    ? [`!pip install -q "git+${repoUrl}#subdirectory=py" \\`,
-    `                "git+${repoUrl}#subdirectory=${target.name}"`]
+    ? [`!pip install -q ${sdkPip} \\`,
+    `                ${ownPip}`]
     : [`!pip install -q ${distName}`]
 
   const first = frameEnts[0]

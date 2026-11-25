@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, Main, fact } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -22,7 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks, slugKeyed, liveIdentities,
+  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, stageAlias,
 } from './generateharness'
 
 
@@ -197,10 +197,10 @@ function docBreaks(warnings: any[]): any[] {
 // in this suite fails on one.
 async function generate(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
-  buildctx?: any,
+  buildctx?: any, root?: any,
 ): Promise<Record<string, string>> {
   const warnings: any[] = []
-  const out = await generateWarning(targetNames, name, extra, sink, features, buildctx, warnings)
+  const out = await generateWarning(targetNames, name, extra, sink, features, buildctx, warnings, root)
   deepStrictEqual(docBreaks(warnings), [], 'a generated document breaks a table or a link')
   return out
 }
@@ -208,7 +208,7 @@ async function generate(
 
 async function generateWarning(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
-  buildctx?: any, warnings?: any[],
+  buildctx?: any, warnings?: any[], root?: any,
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -223,7 +223,7 @@ async function generateWarning(
   // throw reach the caller, which names the target it came from.
   const res = await sdkgen.generate({
     model: makeModel(targetNames, name, extra, features),
-    root: makeRoot(),
+    root: root ?? makeRoot(),
     buildctx,
   })
   strictEqual(res.ok, true, 'generation did not report ok')
@@ -1749,7 +1749,7 @@ main: kit: target: js: phase: feature: active: false
       for (const [path, content] of files) {
         ok('string' === typeof content, target + ': ' + path + ' has no content')
 
-        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION']) {
+        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION', 'CONSUMEDREL']) {
           if (content.includes(token) &&
             !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
             leaks.push(path + ': ' + token)
@@ -1770,6 +1770,86 @@ main: kit: target: js: phase: feature: active: false
     strictEqual(leaks.length, 0,
       'a consumer target leaked a placeholder into its output:\n  ' +
       leaks.join('\n  '))
+  })
+
+
+  // A consumer reads what it builds on from its `consumes` fact, so without
+  // an active target of that origin there is nothing for it to wrap.
+  test('a consumer refuses a model without the target it builds on', async () => {
+    const refused = async (targets: string[], extra = ''): Promise<string> => {
+      try {
+        await generate(targets, undefined, extra)
+      }
+      catch (err: any) {
+        return String(err.message)
+      }
+      return fail(targets.join(', ') + ': generated without the target it builds on')
+    }
+
+    for (const [target, sibling] of Object.entries(NON_SDK_SIBLING)) {
+      const absent = await refused([target])
+      ok(absent.includes('Target "' + target + '" builds on the `' + sibling + '` target, and the model has none') &&
+        absent.includes('`voxgig-sdkgen target add ' + sibling + '`'), absent)
+
+      const off = await refused([sibling, target], `main: kit: target: ${sibling}: active: false`)
+      ok(off.includes('builds on the `' + sibling + '` target, which the model switches off'), off)
+    }
+  })
+
+
+  // A Root that runs only the consumers, as an alias of an SDK target has no
+  // templates staged here.
+  const ConsumersOnly = cmp(function Root(props: any) {
+    const { model, ctx$ } = props
+    model.const = { name: model.name, year: 2026 }
+    names(model.const, model.name)
+    names(model, model.name)
+    ctx$.model = model
+    ctx$.stdrep = {}
+    names(ctx$.stdrep, model.Name, 'ProjectName')
+    Project({}, () => each(model.main[KIT].target)
+      .filter((target: any) => false !== target.active && '' !== fact(target, 'consumes'))
+      .map((target: any) => {
+        names(target, target.name)
+        Folder({ name: target.name }, () => Main({ target }))
+      }))
+  })
+
+  test('a consumer builds on an alias of its target, by the alias', async () => {
+    const golang = stageAlias('go', 'golang')
+    try {
+      const out = await generate(['go-cli', 'go-mcp'], undefined, golang.model,
+        undefined, undefined, undefined, ConsumersOnly)
+      for (const target of ['go-cli', 'go-mcp']) {
+        const mod = out[target + '/go.mod']
+        ok(/^require \S+\/golang v0\.0\.0$/m.test(mod) && /^replace \S+\/golang => \.\.\/golang$/m.test(mod),
+          target + ': go.mod does not reach golang:\n' + mod)
+        ok(out[target + '/README.md'].includes('the sibling Go SDK at `../golang`'), target + ': README')
+        ok(!/`\.\.\/go`/.test(out[target + '/README.md']), target + ': README names ../go')
+      }
+    }
+    finally {
+      golang.remove()
+    }
+
+    const py2 = stageAlias('py', 'py2')
+    try {
+      // The link to py2 resolves once a full Root writes py2.
+      const warnings: any[] = []
+      const out = await generateWarning(['py-data'], undefined, py2.model,
+        undefined, undefined, undefined, warnings, ConsumersOnly)
+      deepStrictEqual(docBreaks(warnings).map((w: any) => w.file + ' ' + w.note), ['py-data/README.md py2'])
+      ok(out['py-data/README.md'].includes('Built on the sibling [Python SDK](../py2) in this repo.'),
+        out['py-data/README.md'])
+      ok(out['py-data/README.md'].includes('#subdirectory=py2"'), 'py-data installs py from another folder')
+      ok(!/#subdirectory=py"/.test(out['py-data/README.md'] + out['py-data/notebooks/quickstart.ipynb']),
+        'py-data installs the absent py')
+      ok(out['py-data/AGENTS.md'].includes('the sibling Python SDK at `../py2`'), out['py-data/AGENTS.md'])
+      ok(/pip install -e \.\.\/py2$/m.test(out['py-data/Makefile']), out['py-data/Makefile'])
+    }
+    finally {
+      py2.remove()
+    }
   })
 
 

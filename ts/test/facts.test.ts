@@ -147,6 +147,7 @@ describe('facts', () => {
       go2: { name: 'go2', origname: 'go' }, 'go-cli': { ...cli },
     } } } }).main[KIT].target
     deepStrictEqual([fact(one['go-cli'], 'consumes'), fact(one.go2, 'consumers')], ['go2', ['go-cli']])
+    deepStrictEqual([fact(one['go-cli'], 'wraps'), fact(one.go2, 'wraps')], ['go', ''])
 
     throws(() => applyFacts({ main: { [KIT]: { target: {
       go2: { name: 'go2', origname: 'go' }, go3: { name: 'go3', origname: 'go' }, 'go-cli': { ...cli },
@@ -406,8 +407,8 @@ describe('target, entity and project facts', () => {
       'main: kit: target: go: output: root: true',
     ].join('\n')).main[KIT]
     deepStrictEqual(fact(kit, 'external'), [
-      { name: 'go-cli', title: 'Go CLI', surface: 'cli', url: 'https://github.com/acme/demo-cli' },
-      { name: 'py', title: 'Python', surface: 'sdk', url: '' },
+      { name: 'go-cli', title: 'Go CLI', surface: 'cli', dir: '../acme-cli', url: 'https://github.com/acme/demo-cli' },
+      { name: 'py', title: 'Python', surface: 'sdk', dir: '../acme-py', url: '' },
     ])
 
     const hosted = makeModel(['ts'], undefined, [

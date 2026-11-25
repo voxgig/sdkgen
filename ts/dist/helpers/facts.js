@@ -95,6 +95,7 @@ function externalTargets(model) {
         name,
         title: target[name].fact.title,
         surface: target[name].fact.surface,
+        dir: target[name].fact.dir,
         url: '' === String(target[name].output?.repo ?? '') ? '' : (0, packageMeta_1.repoInfo)(model, name).repoUrl,
     }));
 }
@@ -217,7 +218,9 @@ function linkConsumers(target, derived) {
     }
     const names = Object.keys(target).sort().filter((name) => isMap(target[name]?.fact));
     for (const name of names) {
-        target[name].fact.consumes = consumed(target, name, derived[name]?.derive?.wraps);
+        const wraps = derived[name]?.derive?.wraps;
+        target[name].fact.wraps = 'string' === typeof wraps ? wraps : '';
+        target[name].fact.consumes = consumed(target, name, wraps);
     }
     for (const name of names) {
         target[name].fact.consumers = names.filter((other) => false !== target[other].active && name === target[other].fact.consumes);

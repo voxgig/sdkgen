@@ -293,6 +293,30 @@ describe('external target', () => {
   })
 
 
+  // A consumer in tree names the target it wraps by where the model puts it.
+  test('a consumer generates in tree while the target it wraps is out of tree', async () => {
+    const py = await generate(['py', 'py-data'], 'py')
+    ok(py.inside['py-data/README.md'].includes('Built on the Python SDK in its own repository.'),
+      py.inside['py-data/README.md'])
+    ok(/^\tpython3 -m pip install -e \/elsewhere\/acme-cli$/m.test(py.inside['py-data/Makefile']),
+      py.inside['py-data/Makefile'])
+    ok(null != py.outside['setup.py'] || null != py.outside['pyproject.toml'], 'py was not written out of tree')
+
+    const go = await generate(['go', 'go-cli'], 'go')
+    ok(/^replace \S+ => \/elsewhere\/acme-cli$/m.test(go.inside['go-cli/go.mod']), go.inside['go-cli/go.mod'])
+  })
+
+
+  test('an override that moves the target a consumer wraps leaves the consumer on the declared layout',
+    async () => {
+      const moved = setup(['py', 'py-data'], {}, { external: { py: { path: OUT2, sdkrel: '../sdk' } } })
+      strictEqual((await moved.run()).ok, true)
+      const inside = under(moved.files(), norm(STAGE))
+      ok(inside['py-data/README.md'].includes('Built on the sibling [Python SDK](../py) in this repo.'),
+        inside['py-data/README.md'])
+    })
+
+
   test('relocating the only SDK prunes nothing and names the stale folder', async () => {
     const { fs, vol } = memfs({})
     const sink: any[] = []

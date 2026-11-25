@@ -101,7 +101,8 @@ function applyFacts(model: any): any {
 
 // The active targets placed in another repository, read here because the model
 // the project's Root receives, which its documents read, leaves them out.
-function externalTargets(model: any): { name: string, title: string, surface: string, url: string }[] {
+function externalTargets(model: any):
+  { name: string, title: string, surface: string, dir: string, url: string }[] {
   const target = mapOr(model.main[KIT].target)
   return model.main[KIT].fact.active
     .filter((name: string) => 'external' === target[name].fact?.place)
@@ -109,6 +110,7 @@ function externalTargets(model: any): { name: string, title: string, surface: st
       name,
       title: target[name].fact.title,
       surface: target[name].fact.surface,
+      dir: target[name].fact.dir,
       url: '' === String(target[name].output?.repo ?? '') ? '' : repoInfo(model, name).repoUrl,
     }))
 }
@@ -263,7 +265,9 @@ function linkConsumers(target: any, derived: any): void {
 
   const names = Object.keys(target).sort().filter((name: string) => isMap(target[name]?.fact))
   for (const name of names) {
-    target[name].fact.consumes = consumed(target, name, derived[name]?.derive?.wraps)
+    const wraps = derived[name]?.derive?.wraps
+    target[name].fact.wraps = 'string' === typeof wraps ? wraps : ''
+    target[name].fact.consumes = consumed(target, name, wraps)
   }
   for (const name of names) {
     target[name].fact.consumers = names.filter((other: string) =>
