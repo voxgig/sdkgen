@@ -69,6 +69,10 @@ impl Utility {
         u::clean::clean_key(ctx, key)
     }
 
+    pub fn clean_secret(&self, ctx: &Rc<Context>, key: &str, value: &str) -> bool {
+        u::clean::clean_secret(ctx, key, value)
+    }
+
     pub fn done(&self, ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
         u::done::done_util(ctx)
     }

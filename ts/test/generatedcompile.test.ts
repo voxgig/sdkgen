@@ -44,7 +44,7 @@ import { SCALAR_EXPECT, SCALAR_PROBES, scalarsListed } from './scalarprobes'
 import { REQD_EXPECT, REQD_PROBES, reqdListed } from './reqdprobes'
 import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 import {
-  NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
+  NONJSON_PROBES, NONJSON_SERVER, nonjsonCases, nonjsonFailures, nonjsonTsv,
 } from './nonjsonprobes'
 import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
 import { LOAD_LIVE, LOAD_PROBES, loadOutcomes } from './loadprobes'
@@ -6023,6 +6023,74 @@ const CLEAN_FEATURES = [
 
 const CLEAN_LINE = /clean: swept (\d+) surface\(s\), (\d+) leak\(s\)/
 
+// The second line a sweep prints: the same search, for a body of bytes.
+const CLEAN_CONTENT_LINE = /clean: content swept (\d+) surface\(s\), (\d+) leak\(s\)/
+
+// The third: the same search, for a response of bytes.
+const CLEAN_RESPONSE_LINE = /clean: response swept (\d+) surface\(s\), (\d+) leak\(s\)/
+
+// The targets whose sweep answers an operation with bytes.
+const CLEAN_RESPONSE_TARGETS = ['ts', 'js']
+
+// An operation that sends a raw body the model marks binary, which no
+// fixture entity has and the content sweep needs: an action point, as
+// apidef models a file route beneath an item.
+const CLEAN_BINARY = `
+main: kit: entity: scan: {
+  alias: field: {}
+  name: "scan"
+  id: { field: "id", name: "id" }
+  field: {
+    id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
+    label: { name: "label", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    load: {
+      name: "load"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+        ] }
+        m: "GET", o: "/scan/{id}", s: [{ lit: "scan" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    update: {
+      name: "update"
+      points: [
+        {
+          g: { params: [
+            { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+          ] }
+          m: "PUT", o: "/scan/{id}", s: [{ lit: "scan" }, { var: "id" }]
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+        }
+        {
+          g: { params: [
+            { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+          ] }
+          m: "PUT", o: "/scan/{id}/image", s: [{ lit: "scan" }, { var: "id" }, { lit: "image" }]
+          q: { "$action": "image", exist: ["id"] }
+          rb: { kind: 'raw', media: 'image/png', binary: true }
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+        }
+      ]
+    }
+  }
+}
+
+main: kit: flow: BasicScanFlow: {
+  entity: "scan", kind: "basic", name: "BasicScanFlow"
+  step: [
+    { o: "load", i: { ref: "scan_ref01", srcdatavar: "scan_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
 // Two of the three also template the server URL on a variable the spec
 // gives no usable default, which the sweep's client must still be built with.
 const CLEAN_MODELS: { name: string, server: string, extra: string }[] = [
@@ -6432,7 +6500,8 @@ describe('the canary sweep runs from a generated SDK', () => {
         auth.server + ')',
         async (t) => {
           const sdkroot = Path.join(tmp, lane.target + '-' + auth.name)
-          const files = await generateTo(lane.target, sdkroot, auth.extra, CLEAN_FEATURES)
+          const files = await generateTo(lane.target, sdkroot, auth.extra + CLEAN_BINARY,
+            CLEAN_FEATURES)
 
           ok(null != files[lane.runner],
             'the sweep was not generated into the SDK: expected ' + lane.runner +
@@ -6467,6 +6536,24 @@ describe('the canary sweep runs from a generated SDK', () => {
             tail(ran.out))
           ok(0 < Number(swept![1]), 'the ' + lane.target + ' sweep swept nothing')
           strictEqual(Number(swept![2]), 0, 'the ' + lane.target + ' sweep found leaks')
+
+          const content = ran.out.match(CLEAN_CONTENT_LINE)
+          ok(null != content, 'the ' + lane.target + ' sweep did not report a search ' +
+            'for a body of bytes:\n' + tail(ran.out))
+          ok(0 < Number(content![1]), 'the ' + lane.target + ' sweep sent no body of bytes')
+          strictEqual(Number(content![2]), 0,
+            'the ' + lane.target + ' sweep found a body of bytes that left the SDK')
+
+          const answered = ran.out.match(CLEAN_RESPONSE_LINE)
+          if (CLEAN_RESPONSE_TARGETS.includes(lane.target)) {
+            ok(null != answered, 'the ' + lane.target + ' sweep did not report a search ' +
+              'for a response of bytes:\n' + tail(ran.out))
+          }
+          if (null != answered) {
+            ok(0 < Number(answered[1]), 'the ' + lane.target + ' sweep answered with no bytes')
+            strictEqual(Number(answered[2]), 0,
+              'the ' + lane.target + ' sweep found a response of bytes that left the SDK')
+          }
 
           const noise = null == lane.quiet ? null : ran.out.match(lane.quiet)
           strictEqual(noise?.[0], undefined, 'the ' + lane.target + ' sweep run printed noise')
@@ -10379,11 +10466,11 @@ describe('probes driven through a generated SDK', () => {
         ok(null != NONJSON_PROBES[key], lane.target + ': no non-JSON probe')
 
         const sdkroot = await sdkFor(lane.target, ['test', 'log', 'cache'])
-        const cases = Path.join(sdkroot, 'nonjson-cases.json')
-        Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
-        const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
-        Fs.writeFileSync(tsv, nonjsonTsv())
         const seam = null != lane.seam && lane.seam()
+        const cases = Path.join(sdkroot, 'nonjson-cases.json')
+        Fs.writeFileSync(cases, JSON.stringify(nonjsonCases(seam)))
+        const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
+        Fs.writeFileSync(tsv, nonjsonTsv(seam))
         const server = seam ? null : await nonjsonServer(sdkroot, cases)
         let ran: ReturnType<typeof run>
         try {
@@ -10417,9 +10504,9 @@ describe('probes driven through a generated SDK', () => {
 
       const sdkroot = await sdkFor(lane.target, ['test', 'log', 'cache'], "\nmain: kit: http: useragent: 'plain'\n")
       const cases = Path.join(sdkroot, 'nonjson-cases.json')
-      Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
+      Fs.writeFileSync(cases, JSON.stringify(nonjsonCases(false)))
       const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
-      Fs.writeFileSync(tsv, nonjsonTsv())
+      Fs.writeFileSync(tsv, nonjsonTsv(false))
       const server = await nonjsonServer(sdkroot, cases)
       let ran: ReturnType<typeof run>
       try {

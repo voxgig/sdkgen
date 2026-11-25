@@ -432,6 +432,134 @@ class TestPrimaryUtility:
             server.shutdown()
             server.server_close()
 
+    # The API's origin redirects; another port is another origin, and records
+    # what reaches it. A credential, under any name, is sent to neither that
+    # origin nor any hop after it, and a body is not sent on.
+    def test_fetcher_redirect_origin(self):
+        pytest.importorskip("requests")
+        secret = "REDIRECT-SECRET-q7w3e9r1"
+        arrived = []
+        bases = {}
+
+        def recorder(where):
+            class Handler(http.server.BaseHTTPRequestHandler):
+                def log_message(self, *args):
+                    pass
+
+                def answer(self):
+                    length = int(self.headers.get("Content-Length") or 0)
+                    path = self.path.split("?")[0]
+                    arrived.append({
+                        "line": where + " " + self.command + " " + path,
+                        "body": self.rfile.read(length).decode("utf-8"),
+                        "headers": {k.lower(): v for k, v in self.headers.items()},
+                    })
+                    hop = {
+                        "/out": (302, bases["other"] + "/landed"),
+                        "/out307": (307, bases["other"] + "/landed"),
+                        "/chain": (302, bases["other"] + "/in"),
+                        "/back": (302, bases["other"] + "/home"),
+                        "/home": (302, bases["api"] + "/landed"),
+                        "/in": (302, "/landed"),
+                        "/in307": (307, "/landed"),
+                    }.get(path)
+                    out = b"" if hop else b'{"id":"r1"}'
+                    self.send_response(hop[0] if hop else 200)
+                    if hop:
+                        self.send_header("Location", hop[1])
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(out)))
+                    self.send_header("Connection", "close")
+                    self.end_headers()
+                    self.wfile.write(out)
+
+                do_GET = answer
+                do_PUT = answer
+
+            return Handler
+
+        servers = {}
+        for where in ["api", "other"]:
+            servers[where] = http.server.ThreadingHTTPServer(("127.0.0.1", 0), recorder(where))
+            threading.Thread(target=servers[where].serve_forever, daemon=True).start()
+            bases[where] = "http://127.0.0.1:%d" % servers[where].server_address[1]
+
+        def headers(more=None):
+            out = {
+                "authorization": "Bearer " + secret,
+                "cookie": "sid=" + secret,
+                "x-api-key": secret,
+                "private-token": "pt-12345",
+                # Not a sensitive name: a credential by the value it holds.
+                "x-acme-auth": "v1 " + secret,
+                "x-tenant": "acme",
+            }
+            out.update(more or {})
+            return out
+
+        credentials = ["authorization", "cookie", "x-api-key", "private-token", "x-acme-auth"]
+
+        # The secret is registered as a caller's is: it is the client's apikey.
+        def fetch(path, fetchdef, cleanactive=True):
+            live_client = ProjectNameSDK(
+                {"base": bases["api"], "apikey": secret, "clean": {"active": cleanactive}})
+            live_utility = live_client._utility
+            ctx = live_utility.make_context({"opname": "load"}, live_client.get_root_ctx())
+            del arrived[:]
+            res, err = live_utility.fetcher(ctx, bases["api"] + path, fetchdef)
+            assert err is None, path + ": " + str(err)
+            return res["status"], list(arrived)
+
+        def lines(got):
+            return [a["line"] for a in got]
+
+        # From `start` on, no request carries a credential; each still says
+        # whose it is, and nothing the client adds quotes the secret.
+        def stripped(path, got, start):
+            for name in credentials:
+                assert name in got[0]["headers"], path + ": the API itself was not sent " + name
+            for a in got[start:]:
+                for name in credentials:
+                    assert name not in a["headers"], path + ": " + a["line"] + " was sent " + name
+                assert a["headers"].get("x-tenant") == "acme", path + ": " + a["line"] + " lost x-tenant"
+                assert secret not in str(a["headers"]), path + ": " + a["line"] + " was sent the secret"
+
+        try:
+            for cleanactive in [True, False]:
+                path = "/out?api_key=" + secret
+                status, got = fetch(path, {"method": "GET", "headers": headers()}, cleanactive)
+                assert status == 200 and lines(got) == ["api GET /out", "other GET /landed"], lines(got)
+                stripped(path, got, 1)
+
+            status, got = fetch("/chain", {"method": "GET", "headers": headers()})
+            assert status == 200 and lines(got) == [
+                "api GET /chain", "other GET /in", "other GET /landed"], lines(got)
+            stripped("/chain", got, 1)
+
+            status, got = fetch("/back", {"method": "GET", "headers": headers()})
+            assert status == 200 and lines(got) == [
+                "api GET /back", "other GET /home", "api GET /landed"], lines(got)
+            stripped("/back", got, 1)
+
+            status, got = fetch("/in", {"method": "GET", "headers": headers()})
+            assert status == 200 and lines(got) == ["api GET /in", "api GET /landed"], lines(got)
+            for name in credentials + ["x-tenant"]:
+                assert name in got[1]["headers"], "/in: the same origin lost " + name
+
+            def upload(body):
+                return {"method": "PUT", "body": body, "headers": headers({"content-type": "audio/wav"})}
+
+            status, got = fetch("/out307", upload("BODY-" + secret))
+            assert status == 307 and lines(got) == ["api PUT /out307"], (status, lines(got))
+
+            status, got = fetch("/in307", upload("BODY-1"))
+            assert status == 200 and lines(got) == ["api PUT /in307", "api PUT /landed"], lines(got)
+            assert got[1]["body"] == "BODY-1" and got[1]["headers"].get("content-type") == "audio/wav"
+        finally:
+            for server in servers.values():
+                server.shutdown()
+                server.server_close()
+
     def test_fetcher_getonly_guard(self, monkeypatch):
         live_client = ProjectNameSDK({"base": "http://127.0.0.1:9"})
         live_utility = live_client._utility

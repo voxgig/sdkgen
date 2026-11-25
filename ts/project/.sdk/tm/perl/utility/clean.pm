@@ -13,6 +13,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/../schema.pm"));
+require(Cwd::abs_path("$__dir/media.pm"));
 
 # Everything that leaves the pipeline passes through clean: the error, the
 # explain record, the serialised context, and whatever a feature emits.
@@ -27,6 +28,9 @@ my $CIRCULAR = '[circular]';
 
 # Marks a value the copy omits (a coderef), as ts omits `undefined`.
 my $DROP = \'drop';
+
+# The key of what stands in for a body of bytes; its value is the kind.
+my $BINARY = 'binary$';
 
 sub _dropped {
   my ($v) = @_;
@@ -183,21 +187,89 @@ sub sensitive_key {
   return 0;
 }
 
+# The live request body of a point the model marks binary, and its type.
+sub binary_body {
+  my ($ctx) = @_;
+  return undef unless Voxgig::Struct::ismap($ctx);
+  my $body = ProjectNameHelpers::gp($ctx->{point}, 'body');
+  my $kind = ProjectNameHelpers::gp($body, 'kind');
+  return undef unless defined $kind && 'raw' eq $kind
+    && ProjectNameHelpers::is_true(ProjectNameHelpers::gp($body, 'binary'));
+  # A string shorter than the registry accepts is not told from ordinary text.
+  my $min = config($ctx)->{min};
+  my @live = grep { defined $_ && (ref $_ || length($_) >= $min) } (
+    ProjectNameHelpers::gp($ctx->{spec}, 'body'),
+    ProjectNameHelpers::gp($ctx->{reqdata}, $ProjectNameUtilities::RAW_BODY),
+  );
+  return undef unless @live;
+  my $media = ProjectNameHelpers::gp($body, 'media');
+  return { 'live' => \@live, 'type' => (defined $media && !ref $media ? $media : undef) };
+}
+
+# The same reference, or a scalar equal to it.
+sub same_body {
+  my ($live, $val) = @_;
+  if (ref $live && ref $val) {
+    return Scalar::Util::refaddr($live) == Scalar::Util::refaddr($val) ? 1 : 0;
+  }
+  return (!ref $live && !ref $val && $live eq $val) ? 1 : 0;
+}
+
+# A filehandle, open or closed, or an object that reads like one.
+sub is_stream {
+  my ($val) = @_;
+  return 0 unless ref $val;
+  my $type = Scalar::Util::reftype($val) // '';
+  return 1 if 'GLOB' eq $type || 'IO' eq $type;
+  return (Scalar::Util::blessed($val) && $val->can('read')) ? 1 : 0;
+}
+
+# The bytes a string is sent as: a character string goes as UTF-8.
+sub byte_length {
+  my ($text) = @_;
+  return length $text unless utf8::is_utf8($text);
+  my $bytes = "$text";
+  utf8::encode($bytes);
+  return length $bytes;
+}
+
+# Bytes are described, never copied (ADR-006): the kind, and the size and
+# media type where they are known. A string is bytes only as the body of a
+# point the model marks binary; a filehandle is read once, so it is a stream.
+sub describe_binary {
+  my ($val, $bin) = @_;
+  my ($live) = $bin ? grep { same_body($_, $val) } @{ $bin->{live} } : ();
+  my $desc;
+  if (!ref $val) {
+    $desc = { $BINARY => 'bytes', 'size' => byte_length($live) } if defined $live;
+  }
+  elsif (is_stream($val)) {
+    $desc = { $BINARY => 'stream' };
+  }
+  $desc->{type} = $bin->{type} if $desc && defined $live && defined $bin->{type};
+  return $desc;
+}
+
 # A plain-data copy of what is about to leave: TO_JSON is honoured (an
 # entity gives its data, a context its record), coderefs are dropped,
 # cycles are cut, and no live object is shared with the copy - masking the
 # copy must never mask the pipeline's own spec. Any other blessed hash
 # copies as its fields; the error keeps its context out of them.
 sub snapshot {
-  my ($cfg, $val, $key, $depth, $seen) = @_;
+  my ($cfg, $bin, $val, $key, $depth, $seen) = @_;
   return $val unless defined $val;
 
   if (!ref $val) {
-    return sensitive_key($cfg, $key) ? mask_value($cfg, "$val") : clean_string($cfg, $val);
+    return mask_value($cfg, "$val") if sensitive_key($cfg, $key);
+    return describe_binary($val, $bin) // clean_string($cfg, $val);
   }
 
   if (Voxgig::Struct::is_jbool($val) || Voxgig::Struct::is_jnull($val) || Voxgig::Struct::is_none($val)) {
     return sensitive_key($cfg, $key) ? $cfg->{mask} : $val;
+  }
+
+  if (is_stream($val)) {
+    return sensitive_key($cfg, $key) ? $cfg->{mask} : describe_binary($val, $bin);
   }
 
   my $type = Scalar::Util::reftype($val) // '';
@@ -212,30 +284,31 @@ sub snapshot {
   if ('ARRAY' eq $type) {
     $out = [];
     for (my $i = 0; $i < @$val; $i++) {
-      my $v = snapshot($cfg, $val->[$i], "$i", $depth + 1, $seen);
+      my $v = snapshot($cfg, $bin, $val->[$i], "$i", $depth + 1, $seen);
       push @$out, $v unless _dropped($v);
     }
   }
   elsif (Scalar::Util::blessed($val) && $val->isa('ProjectNameError')) {
-    $out = plain($cfg, $val, $depth, $seen);
+    $out = plain($cfg, $bin, $val, $depth, $seen);
     $out->{message} = clean_string($cfg, defined $val->{msg} ? "$val->{msg}" : '');
   }
   elsif (Scalar::Util::blessed($val) && $val->can('TO_JSON')) {
     my $json = eval { $val->TO_JSON };
-    $out = $@ ? plain($cfg, $val, $depth, $seen) : snapshot($cfg, $json, $key, $depth + 1, $seen);
+    $out = $@ ? plain($cfg, $bin, $val, $depth, $seen)
+      : snapshot($cfg, $bin, $json, $key, $depth + 1, $seen);
   }
   else {
-    $out = plain($cfg, $val, $depth, $seen);
+    $out = plain($cfg, $bin, $val, $depth, $seen);
   }
   delete $seen->{$addr};
   return $out;
 }
 
 sub plain {
-  my ($cfg, $val, $depth, $seen) = @_;
+  my ($cfg, $bin, $val, $depth, $seen) = @_;
   my $out = {};
   for my $k (sort keys %$val) {
-    my $v = snapshot($cfg, $val->{$k}, $k, $depth + 1, $seen);
+    my $v = snapshot($cfg, $bin, $val->{$k}, $k, $depth + 1, $seen);
     $out->{ clean_name($cfg, $out, $k) } = $v unless _dropped($v);
   }
   return $out;
@@ -255,8 +328,7 @@ sub clean_name {
 
 # Clean a value on its way out. A string is redacted; an SDK error is
 # redacted IN PLACE (it is about to be thrown, and its identity matters to
-# the caller); another blessed object is not this SDK's to rewrite and comes
-# back as it is; anything else comes back as a masked plain-data copy.
+# the caller); anything else comes back as a masked plain-data copy.
 sub clean {
   my ($ctx, $val) = @_;
   my $cfg = config($ctx);
@@ -265,8 +337,9 @@ sub clean {
   return $val unless defined $val;
   return clean_string($cfg, $val) unless ref $val;
 
-  if (Scalar::Util::blessed($val)) {
-    return $val unless $val->isa('ProjectNameError');
+  my $bin = binary_body($ctx);
+
+  if (Scalar::Util::blessed($val) && $val->isa('ProjectNameError')) {
     $val->{msg} = clean_string($cfg, "$val->{msg}") if defined $val->{msg};
     for my $k (sort keys %$val) {
       next if 'msg' eq $k;
@@ -274,8 +347,8 @@ sub clean {
       if (defined $v && !ref $v) {
         $v = sensitive_key($cfg, $k) ? mask_value($cfg, "$v") : clean_string($cfg, $v);
       }
-      elsif (ref $v && (Scalar::Util::reftype($v) // '') =~ /\A(?:HASH|ARRAY)\z/) {
-        $v = snapshot($cfg, $v, $k, 1, {});
+      elsif (ref $v && ((Scalar::Util::reftype($v) // '') =~ /\A(?:HASH|ARRAY)\z/ || is_stream($v))) {
+        $v = snapshot($cfg, $bin, $v, $k, 1, {});
       }
       my $name = clean_string($cfg, $k);
       delete $val->{$k} if $name ne $k;
@@ -284,7 +357,7 @@ sub clean {
     return $val;
   }
 
-  my $out = snapshot($cfg, $val, undef, 0, {});
+  my $out = snapshot($cfg, $bin, $val, undef, 0, {});
   return _dropped($out) ? undef : $out;
 }
 
@@ -347,6 +420,19 @@ sub key {
   return sensitive_key(config($ctx), $key);
 }
 
+# Whether a named value is a secret: by its name, or by a registered value
+# it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+sub secret {
+  my ($ctx, $key, $value) = @_;
+  my $cfg = config($ctx);
+  return 1 if sensitive_key($cfg, $key);
+  return 0 unless defined $value && !ref $value;
+  for my $v (@{ $cfg->{values} }) {
+    return 1 if index("$value", $v) >= 0;
+  }
+  return 0;
+}
+
 package ProjectNameUtilities;
 
 our %REGISTRY;
@@ -359,6 +445,11 @@ $REGISTRY{clean} = sub {
 $REGISTRY{clean_add} = sub {
   my ($ctx, $value) = @_;
   return ProjectNameCleanSupport::add($ctx, $value);
+};
+
+$REGISTRY{clean_secret} = sub {
+  my ($ctx, $key, $value) = @_;
+  return ProjectNameCleanSupport::secret($ctx, $key, $value);
 };
 
 1;

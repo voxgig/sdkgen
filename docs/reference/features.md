@@ -211,8 +211,8 @@ for the TCP and TLS handshake once rather than on every call.
 | --- | --- |
 | `ts`, `js` | The global `fetch` of the runtime, which pools connections on its own. |
 | `go` | `http.DefaultClient`, plus one cached client per proxy URL. |
-| `java`, `kotlin`, `scala`, `csharp` | One `HttpClient` per redirect policy and proxy, built once. |
-| `rust` | One `ureq::Agent` for the plain case, plus one per proxy or manual-redirect setting. |
+| `java`, `kotlin`, `scala`, `csharp` | One `HttpClient` per proxy, built once. |
+| `rust` | One `ureq::Agent` per proxy setting. |
 | `py` | One `requests.Session`. |
 | `rb` | A pool of started `Net::HTTP` connections keyed by scheme, host, port and proxy. A connection the server closed while it sat idle is dropped and the request is sent once more on a fresh one. |
 | `php` | One cURL handle, reset between calls so its connection cache survives. |
@@ -242,12 +242,35 @@ A default transport follows a `301`, `302`, `303`, `307` or `308` answer to
 a `GET` or `HEAD`, resolving a relative `Location` against the URL that
 answered. A route its server answers with a redirect, such as one asked for
 without the trailing slash the server expects, still reaches its record.
-Where the HTTP client follows no redirect, or not that way, the SDK follows
-it in its own loop: `php`, `rb`, `lua`, `perl`, `c` and `swift`. There each
-hop passes the GET-only guard first, a hop to another origin goes without
-the `authorization`, `cookie` and `proxy-authorization` headers, and after
-five hops the last redirect response is the answer. The other targets leave
-it to their client, which keeps its own hop limit.
+
+In most targets the SDK follows the redirect in its own loop, since the
+HTTP client either follows none or offers no way to decide what a hop
+carries: `ts`, `js`, `php`, `rb`, `lua`, `perl`, `c`, `swift`, `csharp`,
+`rust`, `elixir`, `clojure`, `java`, `kotlin` and `scala`. There each hop
+passes the GET-only guard first, and after five hops the last redirect
+response is the answer. `go` and `py` leave the hops to their client and
+decide what each one carries in the client's own redirect hook; `go` stops
+after five hops in the same way, and `py` reports an error past its limit.
+
+Whether a redirect that answers another method is followed is each client's
+own rule, kept as it was. In `php`, `rb`, `lua`, `perl`, `c` and `swift` it
+is not: the redirect response is the answer. In the other targets a `POST`
+answered by a `301`, `302` or `303` becomes a `GET` without the body. Where
+the SDK follows, a request rewritten to `GET` loses its `content-*` headers.
+
+A credential stays on its origin. A hop to another origin goes without the
+`authorization`, `cookie` and `proxy-authorization` headers, and without any
+header the SDK holds as a secret: one whose name `clean.keys` covers, such
+as `x-api-key`, or one whose value holds a registered secret. This does not
+depend on `clean.active`. A request body is not sent on to another origin
+either: a `307` or `308` that points a `PUT` elsewhere is the answer, and
+the body goes nowhere. A hop on the same origin keeps every header. In `go`
+the `Referer` header its client adds, which names the URL the request came
+from, is dropped on a hop to another origin too.
+
+In `ts` and `js` this holds outside a browser, where the SDK follows a
+redirect itself. A browser does not show a script where a redirect points,
+so there the browser follows it by its own rules.
 
 A fetch definition whose `redirect` is `manual`, which a transport feature
 sets under a hosts policy, is answered by the redirect response itself in

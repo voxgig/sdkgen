@@ -11,6 +11,7 @@ function Utility.new()
   -- All utility functions are set by the register module
   self.clean = nil
   self.clean_add = nil
+  self.clean_secret = nil
   self.clean_explain = nil
   self.done = nil
   self.make_error = nil
@@ -54,6 +55,7 @@ function Utility.copy(src)
   local u = Utility.new()
   u.clean = src.clean
   u.clean_add = src.clean_add
+  u.clean_secret = src.clean_secret
   u.clean_explain = src.clean_explain
   u.done = src.done
   u.make_error = src.make_error

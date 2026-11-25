@@ -14,6 +14,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
@@ -31,26 +32,19 @@ final class Fetcher {
 
   private Fetcher() {}
 
-  // Clients keyed by redirect policy and proxy. Each HttpClient owns a
-  // connection pool and a selector thread, so one per request reused
-  // nothing; one per key pools across calls.
+  // Clients keyed by proxy. Each HttpClient owns a connection pool and a
+  // selector thread, so one per request reused nothing; one per key pools
+  // across calls. None follows a redirect: followRedirects does.
   private static final ConcurrentHashMap<String, HttpClient> CLIENTS =
       new ConcurrentHashMap<>();
 
   private static HttpClient clientFor(Map<String, Object> fetchdef) {
-    // "manual" (set by the station feature's middleware under a hosts
-    // policy) returns a 3xx like any other response: an automatic follow
-    // would carry injected credentials to a host no policy approved.
-    final HttpClient.Redirect redirectPolicy =
-        "manual".equals(fetchdef.get("redirect"))
-            ? HttpClient.Redirect.NEVER
-            : HttpClient.Redirect.NORMAL;
-
     Object praw = fetchdef.get("proxy");
     final String proxy = praw instanceof String ? (String) praw : "";
 
-    return CLIENTS.computeIfAbsent(redirectPolicy + "|" + proxy, key -> {
-      HttpClient.Builder clientb = HttpClient.newBuilder().followRedirects(redirectPolicy);
+    return CLIENTS.computeIfAbsent(proxy, key -> {
+      HttpClient.Builder clientb =
+          HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER);
       if (!"".equals(proxy)) {
         try {
           URI proxyUri = URI.create(proxy);
@@ -82,6 +76,107 @@ final class Fetcher {
     String path = rest.split("[?#]", 2)[0];
     return new SdkError("fetch_getonly_block",
         "[GET-ONLY GUARD] blocked " + method + " " + ("".equals(path) ? "/" : path), null);
+  }
+
+  private static final List<Integer> REDIRECT_STATUS = List.of(301, 302, 303, 307, 308);
+  private static final int REDIRECT_MAX = 5;
+  private static final List<String> CREDENTIAL_HEADERS =
+      List.of("authorization", "cookie", "proxy-authorization");
+
+  // Scheme, host and port, the scheme's own port made explicit.
+  private static String originOf(URI uri) {
+    String scheme = String.valueOf(uri.getScheme()).toLowerCase(Locale.ROOT);
+    int port = uri.getPort() < 0 ? ("https".equals(scheme) ? 443 : 80) : uri.getPort();
+    String host = uri.getHost() == null ? String.valueOf(uri.getRawAuthority()) : uri.getHost();
+    return scheme + "://" + host.toLowerCase(Locale.ROOT) + ":" + port;
+  }
+
+  // What another origin is not sent: the names every client drops, and
+  // whatever the SDK holds as a secret, by its name or by its value. Where
+  // no registry is at hand to ask, the clean module answers.
+  private static boolean isCredential(Context ctx, String name, Object value) {
+    if (CREDENTIAL_HEADERS.contains(name.toLowerCase(Locale.ROOT))) {
+      return true;
+    }
+    return ctx != null && ctx.utility != null && ctx.utility.cleanSecret != null
+        ? ctx.utility.cleanSecret.apply(ctx, name, value)
+        : Clean.cleanSecret(ctx, name, value);
+  }
+
+  // Left to follow, the JDK client sends another origin every header it does
+  // not know for a credential, and a 307's body with them. Followed here
+  // instead: each hop passes the GET-only guard; past REDIRECT_MAX hops, or
+  // where a body would go to another origin, the 3xx is the answer.
+  static Map<String, Object> followRedirects(Context ctx, String fullurl,
+      Map<String, Object> fetchdef) {
+    // "manual" (set by the station feature's middleware under a hosts
+    // policy) is answered by the 3xx, like any other response.
+    boolean manual = "manual".equals(fetchdef.get("redirect"));
+    String url = fullurl;
+    Map<String, Object> def = fetchdef;
+
+    for (int hops = 0; ; hops++) {
+      Map<String, Object> res = defaultHttpFetch(url, def);
+      Object location = Struct.getprop(res.get("headers"), "location", null);
+      if (manual || !(location instanceof String)
+          || !REDIRECT_STATUS.contains(res.get("status")) || REDIRECT_MAX <= hops) {
+        return res;
+      }
+
+      URI from;
+      URI next;
+      try {
+        from = URI.create(url);
+        next = from.resolve(URI.create(((String) location).trim()));
+      }
+      catch (RuntimeException e) {
+        return res;
+      }
+
+      // As the JDK client follows: to the same scheme, or up to https.
+      String scheme = next.getScheme();
+      if (scheme == null
+          || !(scheme.equalsIgnoreCase(from.getScheme()) || "https".equalsIgnoreCase(scheme))) {
+        return res;
+      }
+
+      // As the JDK client rewrites it: a 303, and a 301 or 302 answering a
+      // POST, become a GET without the body.
+      Object given = def.get("method");
+      String method = given instanceof String && !"".equals(given)
+          ? ((String) given).toUpperCase(Locale.ROOT) : "GET";
+      int status = (Integer) res.get("status");
+      boolean toget = 303 == status
+          || ("POST".equals(method) && 307 != status && 308 != status);
+      boolean cross = !originOf(next).equals(originOf(from));
+      Object body = toget ? null : def.get("body");
+
+      // A stream is read once, so it cannot be sent again either.
+      if (body != null && (cross || body instanceof InputStream)) {
+        return res;
+      }
+
+      Map<String, Object> headers = new LinkedHashMap<>();
+      if (def.get("headers") instanceof Map) {
+        for (Map.Entry<String, Object> h : ((Map<String, Object>) def.get("headers")).entrySet()) {
+          boolean dropped = (toget && h.getKey().toLowerCase(Locale.ROOT).startsWith("content-"))
+              || (cross && isCredential(ctx, h.getKey(), h.getValue()));
+          if (!dropped) {
+            headers.put(h.getKey(), h.getValue());
+          }
+        }
+      }
+
+      Map<String, Object> nextdef = new LinkedHashMap<>(def);
+      nextdef.put("method", toget ? "GET" : method);
+      nextdef.put("headers", headers);
+      if (body == null) {
+        nextdef.remove("body");
+      }
+
+      url = next.toString();
+      def = nextdef;
+    }
   }
 
   static Map<String, Object> defaultHttpFetch(String fullurl, Map<String, Object> fetchdef) {
@@ -289,7 +384,7 @@ final class Fetcher {
     }
 
     if (sysFetch == null) {
-      return defaultHttpFetch(fullurl, fetchdef);
+      return followRedirects(ctx, fullurl, fetchdef);
     }
 
     if (sysFetch instanceof BiFunction) {

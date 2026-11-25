@@ -65,7 +65,8 @@ pub fn unreadable_body(
         if agent.is_empty() { "transport default" } else { &agent },
         match text {
             Value::Noval | Value::Null => String::new(),
-            t => format!(", body: {}", preview(ctx, t)),
+            t if quotable(ctx, &ctype) => format!(", body: {}", preview(ctx, t)),
+            _ => String::new(),
         }
     );
 
@@ -103,6 +104,20 @@ fn text_of(v: &Value) -> String {
         Value::Str(s) => s.clone(),
         other => stringify(other, None, false),
     }
+}
+
+const TEXT_MEDIA: [&str; 8] = [
+    "json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql",
+];
+
+// Only text is quoted: bytes are a file's, by the model or by their type.
+// Text is no declared type, text/*, or a structured text format.
+fn quotable(ctx: &Rc<Context>, ctype: &str) -> bool {
+    if getp(&getp(&ctx.point.borrow(), "response"), "binary") == Value::Bool(true) {
+        return false;
+    }
+    let media = ctype.split(';').next().unwrap_or("").trim().to_lowercase();
+    media.is_empty() || media.starts_with("text/") || TEXT_MEDIA.iter().any(|part| media.contains(part))
 }
 
 // Cleaned whole: a secret the bound would split could leave its prefix.

@@ -1,8 +1,11 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
 use crate::core::helpers::{getp, getpath, jo, setp};
+use crate::core::spec::Spec;
+use crate::utility::media::{is_raw_request, RAW_BODY};
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
@@ -16,12 +19,23 @@ const MAXDEPTH: usize = 32;
 const CIRCULAR: &str = "[circular]";
 const DEFAULT_MASK: &str = "[redacted]";
 
+// The key of what stands in for a body of bytes; its value is the kind.
+const BINARY: &str = "binary$";
+
 struct CleanConfig {
     active: bool,
     keys: Vec<String>,
     values: Vec<String>,
     mask: String,
     hint: usize,
+}
+
+// Where the live request body of a point the model marks binary is held,
+// and its type. Handles, so the body is compared in place, never copied.
+struct BinaryBody {
+    spec: Option<Rc<RefCell<Spec>>>,
+    reqdata: Value,
+    media: Option<String>,
 }
 
 fn normkey(key: &str) -> String {
@@ -261,15 +275,90 @@ fn node_ptr(val: &Value) -> Option<usize> {
     }
 }
 
+// A string or a list shorter than the registry accepts is not told from
+// ordinary data.
+fn binary_body(ctx: &Context) -> Option<BinaryBody> {
+    let point = ctx.point.borrow();
+    let body = getp(&point, "body");
+    if !is_raw_request(&point) || getp(&body, "binary") != Value::Bool(true) {
+        return None;
+    }
+    let min = count(&getp(&config_block(ctx), "min"), 4).max(1);
+    let long = |live: &Value| match live {
+        Value::Str(s) => min <= s.chars().take(min).count(),
+        Value::List(l) => min <= l.borrow().len(),
+        _ => false,
+    };
+    let spec = ctx.spec.borrow().clone().filter(|spec| long(&spec.borrow().body));
+    let reqdata = match &*ctx.reqdata.borrow() {
+        Value::Map(data) if data.borrow().get(RAW_BODY).map_or(false, &long) => {
+            Value::Map(data.clone())
+        }
+        _ => Value::Noval,
+    };
+    if spec.is_none() && reqdata.is_noval() {
+        return None;
+    }
+    let media = match getp(&body, "media") {
+        Value::Str(s) => Some(s),
+        _ => None,
+    };
+    Some(BinaryBody { spec, reqdata, media })
+}
+
+fn is_live_body(bin: &BinaryBody, val: &Value) -> bool {
+    if let Some(spec) = &bin.spec {
+        if spec.borrow().body == *val {
+            return true;
+        }
+    }
+    match &bin.reqdata {
+        Value::Map(data) => data.borrow().get(RAW_BODY).map_or(false, |body| body == val),
+        _ => false,
+    }
+}
+
+// Bytes are described, never copied (ADR-006). The value union has no
+// variant for bytes: a string, or a list of byte values, is bytes only as
+// the body of a point the model marks binary, by identity or equal content.
+fn describe_binary(val: &Value, bin: Option<&BinaryBody>) -> Option<Value> {
+    let bin = bin?;
+    let size = match val {
+        Value::Str(s) => s.len(),
+        Value::List(l) => l.borrow().len(),
+        _ => return None,
+    };
+    if !is_live_body(bin, val) {
+        return None;
+    }
+    let desc = jo(vec![
+        (BINARY, Value::str("bytes")),
+        ("size", Value::Num(size as f64)),
+    ]);
+    if let Some(media) = &bin.media {
+        setp(&desc, "type", Value::str(media.clone()));
+    }
+    Some(desc)
+}
+
 // A plain-data copy of what is about to leave: functions are dropped,
 // cycles are cut, and no live node is shared with the copy - masking the
 // copy must never mask the pipeline's own spec.
-fn snapshot(cfg: &CleanConfig, val: &Value, key: Option<&str>, depth: usize, seen: &mut Vec<usize>) -> Value {
+fn snapshot(
+    cfg: &CleanConfig,
+    bin: Option<&BinaryBody>,
+    val: &Value,
+    key: Option<&str>,
+    depth: usize,
+    seen: &mut Vec<usize>,
+) -> Value {
     match val {
         Value::Noval | Value::Null => val.clone(),
         Value::Str(s) => {
             if sensitive_key(cfg, key) {
                 Value::str(mask_value(cfg, s))
+            } else if let Some(desc) = describe_binary(val, bin) {
+                desc
             } else {
                 Value::str(clean_string(cfg, s))
             }
@@ -290,20 +379,23 @@ fn snapshot(cfg: &CleanConfig, val: &Value, key: Option<&str>, depth: usize, see
             if sensitive_key(cfg, key) {
                 return Value::str(cfg.mask.clone());
             }
+            if let Some(desc) = describe_binary(val, bin) {
+                return desc;
+            }
             seen.push(ptr);
             let out = match val {
                 Value::List(l) => {
                     let items: Vec<Value> = l
                         .borrow()
                         .iter()
-                        .map(|v| snapshot(cfg, v, None, depth + 1, seen))
+                        .map(|v| snapshot(cfg, bin, v, None, depth + 1, seen))
                         .collect();
                     Value::list(items)
                 }
                 Value::Map(m) => {
                     let out = Value::empty_map();
                     for (k, v) in m.borrow().iter() {
-                        let cv = snapshot(cfg, v, Some(k), depth + 1, seen);
+                        let cv = snapshot(cfg, bin, v, Some(k), depth + 1, seen);
                         if !cv.is_noval() {
                             let name = clean_name(cfg, &out, k);
                             setp(&out, &name, cv);
@@ -337,13 +429,13 @@ fn clean_name(cfg: &CleanConfig, out: &Value, key: &str) -> String {
     format!("{}#{}", name, i)
 }
 
-fn clean_with(cfg: &CleanConfig, val: &Value) -> Value {
+fn clean_with(cfg: &CleanConfig, bin: Option<&BinaryBody>, val: &Value) -> Value {
     if !cfg.active {
         return val.clone();
     }
     match val {
         Value::Str(s) => Value::str(clean_string(cfg, s)),
-        _ => snapshot(cfg, val, None, 0, &mut Vec::new()),
+        _ => snapshot(cfg, bin, val, None, 0, &mut Vec::new()),
     }
 }
 
@@ -351,7 +443,7 @@ fn clean_with(cfg: &CleanConfig, val: &Value) -> Value {
 /// back as a masked plain-data copy. Takes the bare context so a `Debug`
 /// impl can reach it.
 pub fn clean_value(ctx: &Context, val: &Value) -> Value {
-    clean_with(&read_config(&config_block(ctx)), val)
+    clean_with(&read_config(&config_block(ctx)), binary_body(ctx).as_ref(), val)
 }
 
 pub fn clean_util(ctx: &Rc<Context>, val: &Value) -> Value {
@@ -374,7 +466,7 @@ pub fn clean_opts(options: &Value, val: &Value) -> Value {
     if !matches!(block, Value::Map(_)) {
         return val.clone();
     }
-    clean_with(&read_config(&block), val)
+    clean_with(&read_config(&block), None, val)
 }
 
 /// Is this key name sensitive under the context's clean configuration?
@@ -387,10 +479,11 @@ pub fn clean_key(ctx: &Rc<Context>, key: &str) -> bool {
 pub fn clean_error(ctx: &Rc<Context>, mut err: ProjectNameError) -> ProjectNameError {
     let cfg = read_config(&config_block(ctx));
     if cfg.active {
+        let bin = binary_body(ctx);
         err.msg = clean_string(&cfg, &err.msg);
         err.code = clean_string(&cfg, &err.code);
-        err.result = clean_with(&cfg, &err.result);
-        err.spec = clean_with(&cfg, &err.spec);
+        err.result = clean_with(&cfg, bin.as_ref(), &err.result);
+        err.spec = clean_with(&cfg, bin.as_ref(), &err.spec);
     }
     err
 }
@@ -449,4 +542,11 @@ fn add_sensitive(
         }
         _ => {}
     }
+}
+
+/// Whether a named value is a secret: by its name, or by a registered value
+/// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+pub fn clean_secret(ctx: &Rc<Context>, key: &str, value: &str) -> bool {
+    let cfg = read_config(&config_block(ctx));
+    sensitive_key(&cfg, Some(key)) || cfg.values.iter().any(|v| value.contains(v.as_str()))
 }

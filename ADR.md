@@ -16,7 +16,9 @@ Each entry states the decision, the context that forced it, the
 consequences we accept in exchange, and how the decision is enforced in
 practice. Entries are append-only and numbered in order. A decision that
 no longer holds is not deleted: its status changes to **Superseded by
-ADR-NNN**, so the reasoning that led there stays readable.
+ADR-NNN**, so the reasoning that led there stays readable. An entry marked
+**Proposed** states a decision that is made and not yet enforced: it
+becomes Accepted when the enforcement it names exists.
 
 | ADR | Decision | Status |
 |-----|----------|--------|
@@ -25,6 +27,7 @@ ADR-NNN**, so the reasoning that led there stays readable.
 | [ADR-003](#adr-003--diagnostics-are-redacted-by-default) | Diagnostics are redacted by default | Accepted |
 | [ADR-004](#adr-004--generated-text-states-only-what-the-model-declares) | Generated text states only what the model declares | Accepted |
 | [ADR-005](#adr-005--every-sdk-target-carries-test-mode-and-its-entities) | Every SDK target carries test mode and its entities | Accepted |
+| [ADR-006](#adr-006--file-bytes-are-neither-data-nor-diagnostics-and-a-string-is-never-a-path) | File bytes are neither data nor diagnostics, and a string is never a path | Proposed |
 
 ---
 
@@ -396,3 +399,103 @@ after the fact pass. `doctor` reports a target without the feature as an
 error, and `package check` a package's SDK target with its entity phase off.
 The text guard keeps the feature in every variation it generates.
 
+---
+
+## ADR-006 — File bytes are neither data nor diagnostics, and a string is never a path
+
+**Status:** Proposed
+
+**Companion:** [the file plan](docs/design/file-transfer.md), which works
+the subsystem out; its section 5 holds the security rules this entry
+rests on.
+
+### Context
+
+A generated SDK moves JSON records, and APIs also move bytes: an episode's
+audio, a document's content, an avatar. Before any of that is built, three
+facts decide where bytes may go.
+
+1. **A record is plain data.** `data()` clones on the way in and out,
+   `toJSON` serialises it, and in `rust`, `c`, `cpp`, `zig` and `ocaml` it
+   is a closed value union with no variant for bytes, a handle or a
+   stream. A design that put a file, or a live handle to one, inside the
+   record would work in fifteen targets and could not exist in five.
+2. **What the SDK sent, it also copied into what it threw.** `makeError`
+   sets `err.spec` to a cleaned copy of the request, and `clean` copied a
+   byte array key by key. A failed upload carried the file into its error,
+   and the same copy reached the explain record, the context a hook
+   serialises and the log feature's output: the sweep of a generated SDK
+   found the bytes on all four. ADR-003 masks secrets in a diagnostic;
+   nothing kept a payload out of one.
+3. **A string that means a path is a vulnerability class.** PHP's cURL
+   binding once read `@/path` in a field value as "upload this file", so
+   any untrusted string that reached a form field could send a local file
+   away. An SDK that opened a path found in request data would rebuild
+   that defect in twenty languages.
+
+### Decision
+
+1. **A file's bytes never enter an entity's record.** They belong to a
+   named slot beside the record, reached as `entity.binary(name)`. The
+   record may hold a slot's metadata, such as its size, type and tag.
+2. **A file's bytes never reach a diagnostic.** In an error, an explain
+   record, a log, an audit record or a span, a body of bytes is a
+   placeholder that states its kind, and its size and media type where
+   they are known. `clean` writes it, by two rules: a value of a byte or
+   stream type is described wherever it sits, and the request body of a
+   point the model marks binary is described whatever carries it.
+3. **A local file is opened only through a source the caller's own code
+   constructed.** A string in request data, an option, a model value, an
+   environment variable or a response is never opened as a path, and a
+   server never chooses a local path.
+
+"Bytes" here means a body the model marks binary. A text body is data: by
+the maintainer's ruling it comes back in the record as a string, within
+the memory bound.
+
+### Consequences we accept
+
+- **An entity has two accessors where one might have done**, `data()` for
+  the record and `binary(name)` for a slot, and a caller holds both.
+- **The five closed-union targets take a source as a typed argument**
+  beside the data. Elsewhere it travels in the data, in a field the model
+  declares binary, and is lifted out before any transform, validation or
+  cleaning sees it.
+- **There is no shorthand for a path.** A caller writes
+  `binary.path(...)`; a bare string is always content.
+- **Debugging an upload shows a placeholder**, never the payload. The one
+  way to see the payload in a diagnostic is ADR-003's own opt-out,
+  `clean.active: false`, which switches all cleaning off. There is no
+  switch for this alone.
+- **Text is the exception, and it is bounded.** A text body larger than
+  the memory bound fails; it is not streamed.
+
+### Enforcement
+
+In part, which is why this entry is still Proposed. It becomes Accepted
+when all of these exist.
+
+What exists, for an uploaded body:
+
+- **The content canary**, in the clean sweep every SDK ships: an operation
+  that sends a binary body carries a marker in every value type the SDK
+  accepts, through success, two HTTP failures and a transport failure,
+  and every surface that leaves is searched for the marker as text, as
+  byte values, as hex and as base64. The sweep checks that the transport
+  received the body whole, that the placeholder stands where the body
+  was, and that with `clean` off the marker shows.
+- `ts/test/generatedcompile.test.ts` generates each target with such an
+  operation, runs that sweep, and requires its
+  `clean: content swept N surface(s), 0 leak(s)` line.
+- `ts/test/cleanbinary.test.ts` runs the shipped `ts` and `js` `clean`,
+  `makeError` and `done` against each of those value types.
+
+What does not exist yet:
+
+- **The same canary for a downloaded body.** No target reads one into a
+  result today. Work items `p0-binary-response` and `p2-corpus-feature`
+  of the plan.
+- **The path guard**: a source scan that finds no file open outside the
+  `fs` plugin, and a corpus case that sends a path-shaped string in a
+  binary field and receives it back as bytes. Work item
+  `p2-plugins-stream-fs`.

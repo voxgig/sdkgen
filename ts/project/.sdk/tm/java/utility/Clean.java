@@ -1,10 +1,13 @@
 package JAVAPACKAGE.utility;
 
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -49,6 +52,23 @@ final class Clean {
 
   // A function has no place in a plain-data copy; the snapshot omits it.
   private static final Object DROP = new Object();
+
+  // The key of what stands in for a body of bytes; its value is the kind.
+  private static final String BINARY = "binary$";
+
+  // The live request body of a point the model marks binary, and its type.
+  private record BinaryBody(List<Object> live, String type) {
+
+    // The same object, or for a string an equal one.
+    boolean holds(Object val) {
+      for (Object body : this.live) {
+        if (body == val || (val instanceof String && val.equals(body))) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
 
   private Clean() {}
 
@@ -347,20 +367,112 @@ final class Clean {
     return sw.toString();
   }
 
+  // The UTF-8 length a string is sent with, counted rather than encoded.
+  private static int utf8Length(String text) {
+    int n = 0;
+    for (int i = 0; i < text.length(); i++) {
+      char c = text.charAt(i);
+      if (c < 0x80) {
+        n += 1;
+      }
+      else if (c < 0x800) {
+        n += 2;
+      }
+      else if (!Character.isSurrogate(c)) {
+        n += 3;
+      }
+      else if (Character.isHighSurrogate(c) && i + 1 < text.length()
+          && Character.isLowSurrogate(text.charAt(i + 1))) {
+        n += 4;
+        i++;
+      }
+      else {
+        // An unpaired half is sent as one replacement byte.
+        n += 1;
+      }
+    }
+    return n;
+  }
+
+  // A string shorter than the registry accepts is not told from ordinary text.
+  private static BinaryBody binaryBody(Context ctx, Map<String, Object> cfg) {
+    if (ctx == null) {
+      return null;
+    }
+    Object body = Struct.getprop(ctx.point, "body");
+    if (!"raw".equals(Struct.getprop(body, "kind"))
+        || !Boolean.TRUE.equals(Struct.getprop(body, "binary"))) {
+      return null;
+    }
+    List<Object> live = new ArrayList<>();
+    for (Object given : new Object[] {
+        ctx.spec == null ? null : ctx.spec.body,
+        ctx.reqdata == null ? null : ctx.reqdata.get(Media.RAW_BODY)}) {
+      if (given != null
+          && (!(given instanceof String) || min(cfg) <= ((String) given).length())) {
+        live.add(given);
+      }
+    }
+    if (live.isEmpty()) {
+      return null;
+    }
+    Object media = Struct.getprop(body, "media");
+    return new BinaryBody(live, media instanceof String ? (String) media : null);
+  }
+
+  // Bytes are described, never copied (ADR-006): the kind, and the size and
+  // media type where they are known. A string is bytes only as the body of a
+  // point the model marks binary. Null for a value that is not bytes.
+  private static Map<String, Object> describeBinary(Object val, BinaryBody bin) {
+    boolean declared = bin != null && bin.holds(val);
+    Map<String, Object> desc = new LinkedHashMap<>();
+
+    if (val instanceof String) {
+      if (!declared) {
+        return null;
+      }
+      desc.put(BINARY, "bytes");
+      desc.put("size", utf8Length((String) val));
+    }
+    else if (val instanceof byte[]) {
+      desc.put(BINARY, "bytes");
+      desc.put("size", ((byte[]) val).length);
+    }
+    else if (val instanceof ByteBuffer) {
+      desc.put(BINARY, "bytes");
+      desc.put("size", ((ByteBuffer) val).remaining());
+    }
+    else if (val instanceof InputStream || val instanceof Reader) {
+      desc.put(BINARY, "stream");
+    }
+    else {
+      return null;
+    }
+
+    if (declared && bin.type() != null) {
+      desc.put("type", bin.type());
+    }
+    return desc;
+  }
+
   // A plain-data copy of what is about to leave. Java has no toJSON hook, so
   // the SDK's own types are read the way a serialiser would: a context as
   // its record, an entity as its data, an error as its message and stack,
   // and any other object through its public fields. Functions are dropped,
   // cycles are cut, and no live object is shared with the copy - masking the
   // copy must never mask the pipeline's own spec.
-  private static Object snapshot(Map<String, Object> cfg, Object val, Object key, int depth,
-      IdentityHashMap<Object, Boolean> seen) {
+  private static Object snapshot(Map<String, Object> cfg, BinaryBody bin, Object val, Object key,
+      int depth, IdentityHashMap<Object, Boolean> seen) {
     if (val == null || val == Struct.UNDEF) {
       return null;
     }
 
     if (val instanceof String) {
-      return sensitive(cfg, key) ? maskValue(cfg, (String) val) : cleanString(cfg, (String) val);
+      if (sensitive(cfg, key)) {
+        return maskValue(cfg, (String) val);
+      }
+      Object desc = describeBinary(val, bin);
+      return desc != null ? desc : cleanString(cfg, (String) val);
     }
 
     if (isFunction(val) || val instanceof SdkClient || val instanceof Utility) {
@@ -379,13 +491,18 @@ final class Clean {
       return mask(cfg);
     }
 
+    Object desc = describeBinary(val, bin);
+    if (desc != null) {
+      return desc;
+    }
+
     seen.put(val, Boolean.TRUE);
     try {
       if (val instanceof Map) {
         Map<String, Object> out = new LinkedHashMap<>();
         for (Map.Entry<?, ?> e : ((Map<?, ?>) val).entrySet()) {
           String k = String.valueOf(e.getKey());
-          Object v = snapshot(cfg, e.getValue(), k, depth + 1, seen);
+          Object v = snapshot(cfg, bin, e.getValue(), k, depth + 1, seen);
           if (v != DROP) {
             out.put(cleanName(cfg, out, k), v);
           }
@@ -397,20 +514,20 @@ final class Clean {
         List<Object> out = new ArrayList<>();
         Object[] items = val instanceof Object[] ? (Object[]) val : ((Collection<?>) val).toArray();
         for (int i = 0; i < items.length; i++) {
-          Object v = snapshot(cfg, items[i], i, depth + 1, seen);
+          Object v = snapshot(cfg, bin, items[i], i, depth + 1, seen);
           out.add(v == DROP ? null : v);
         }
         return out;
       }
 
       if (val instanceof Context) {
-        return snapshot(cfg, ((Context) val).record(), key, depth + 1, seen);
+        return snapshot(cfg, bin, ((Context) val).record(), key, depth + 1, seen);
       }
 
       if (val instanceof Entity) {
         Object data = ((Entity) val).data();
         Map<String, Object> out = new LinkedHashMap<>();
-        Object v = snapshot(cfg, data, key, depth + 1, seen);
+        Object v = snapshot(cfg, bin, data, key, depth + 1, seen);
         if (v instanceof Map) {
           out.putAll((Map<String, Object>) v);
         }
@@ -423,19 +540,19 @@ final class Clean {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("message", cleanString(cfg, String.valueOf(err.getMessage())));
         out.put("stack", cleanString(cfg, stackOf(err)));
-        out.putAll(fields(cfg, val, depth, seen));
+        out.putAll(fields(cfg, bin, val, depth, seen));
         return out;
       }
 
-      return fields(cfg, val, depth, seen);
+      return fields(cfg, bin, val, depth, seen);
     }
     finally {
       seen.remove(val);
     }
   }
 
-  private static Map<String, Object> fields(Map<String, Object> cfg, Object val, int depth,
-      IdentityHashMap<Object, Boolean> seen) {
+  private static Map<String, Object> fields(Map<String, Object> cfg, BinaryBody bin, Object val,
+      int depth, IdentityHashMap<Object, Boolean> seen) {
     Map<String, Object> out = new LinkedHashMap<>();
     for (Field f : val.getClass().getFields()) {
       if (Modifier.isStatic(f.getModifiers())) {
@@ -448,7 +565,7 @@ final class Clean {
       catch (ReflectiveOperationException | RuntimeException e) {
         continue;
       }
-      Object v = snapshot(cfg, fv, f.getName(), depth + 1, seen);
+      Object v = snapshot(cfg, bin, fv, f.getName(), depth + 1, seen);
       if (v != DROP) {
         out.put(cleanName(cfg, out, f.getName()), v);
       }
@@ -470,13 +587,18 @@ final class Clean {
     return name + "#" + i;
   }
 
+  // With no operation there is no body to name: bytes go by type alone.
+  static Object cleanWith(Map<String, Object> cfg, Object val) {
+    return cleanWith(cfg, null, val);
+  }
+
   // Clean a value on its way out. A string is redacted; the SDK's own error
   // is redacted IN PLACE (it is about to be thrown, and its identity matters
   // to the caller); anything else comes back as a masked plain-data copy.
   // A foreign exception's message cannot be rewritten, so it is replaced by
   // an SDK error with the cleaned message and the original frames; the
   // original is not attached, as a printed stack trace would show it.
-  static Object cleanWith(Map<String, Object> cfg, Object val) {
+  private static Object cleanWith(Map<String, Object> cfg, Context ctx, Object val) {
     if (!active(cfg)) {
       return val;
     }
@@ -485,14 +607,16 @@ final class Clean {
       return cleanString(cfg, (String) val);
     }
 
+    BinaryBody bin = binaryBody(ctx, cfg);
+
     if (val instanceof SdkError) {
       SdkError err = (SdkError) val;
       err.msg = cleanString(cfg, String.valueOf(err.msg));
       if (err.code != null) {
         err.code = cleanString(cfg, err.code);
       }
-      err.result = cleanField(cfg, "result", err.result);
-      err.spec = cleanField(cfg, "spec", err.spec);
+      err.result = cleanField(cfg, bin, "result", err.result);
+      err.spec = cleanField(cfg, bin, "spec", err.spec);
       return err;
     }
 
@@ -504,23 +628,24 @@ final class Clean {
       return out;
     }
 
-    Object out = snapshot(cfg, val, null, 0, new IdentityHashMap<>());
+    Object out = snapshot(cfg, bin, val, null, 0, new IdentityHashMap<>());
     return out == DROP ? null : out;
   }
 
-  private static Object cleanField(Map<String, Object> cfg, String key, Object val) {
+  private static Object cleanField(Map<String, Object> cfg, BinaryBody bin, String key,
+      Object val) {
     if (val instanceof String) {
       return sensitive(cfg, key) ? maskValue(cfg, (String) val) : cleanString(cfg, (String) val);
     }
     if (val == null || isScalar(val)) {
       return val;
     }
-    Object out = snapshot(cfg, val, key, 1, new IdentityHashMap<>());
+    Object out = snapshot(cfg, bin, val, key, 1, new IdentityHashMap<>());
     return out == DROP ? null : out;
   }
 
   static Object clean(Context ctx, Object val) {
-    return cleanWith(cleanConfig(ctx), val);
+    return cleanWith(cleanConfig(ctx), ctx, val);
   }
 
   // Is this key name sensitive under the context's clean configuration?
@@ -541,5 +666,22 @@ final class Clean {
       explain.clear();
       explain.putAll(cleaned);
     }
+  }
+
+  // Whether a named value is a secret: by its name, or by a registered value
+  // it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+  static boolean cleanSecret(Context ctx, Object key, Object value) {
+    Map<String, Object> cfg = cleanConfig(ctx);
+    if (sensitive(cfg, key)) {
+      return true;
+    }
+    if (value instanceof String) {
+      for (String registered : values(cfg)) {
+        if (((String) value).contains(registered)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 }

@@ -61,7 +61,8 @@ public class Response {
       agent = "transport default";
     }
     String detail = "HTTP " + status + ", content-type " + (type.isEmpty() ? "none" : type)
-        + ", user-agent " + agent + (text == null ? "" : ", body: " + preview(ctx, text));
+        + ", user-agent " + agent
+        + (text != null && quotable(ctx, type) ? ", body: " + preview(ctx, text) : "");
 
     if (failed != null) {
       if (failed instanceof SdkError) {
@@ -89,6 +90,18 @@ public class Response {
       }
     }
     return "";
+  }
+
+  // Only text is quoted: bytes are a file's, by the model or by their type.
+  // Text is no declared type, text/*, or a structured text format.
+  private static boolean quotable(Context ctx, String type) {
+    Object response = ctx.point == null ? null : ctx.point.get("response");
+    if (response instanceof Map && Boolean.TRUE.equals(((Map<?, ?>) response).get("binary"))) {
+      return false;
+    }
+    String media = type.split(";", 2)[0].trim().toLowerCase(java.util.Locale.ROOT);
+    return media.isEmpty() || media.startsWith("text/")
+        || media.matches(".*(json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql).*");
   }
 
   // Cleaned whole: a secret the bound would split could leave its prefix.

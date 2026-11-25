@@ -185,6 +185,8 @@ pub const Utility = struct {
 
 const CLEAN_MAXDEPTH: usize = 32;
 const CLEAN_CIRCULAR = "[circular]";
+// The key of what stands in for a body of bytes; its value is the kind.
+const CLEAN_BINARY_KEY = "binary$";
 // The schema's own default, for a context that reaches clean before any
 // options exist.
 const CLEAN_DEFAULT_KEYS = "key,secret,token,password,passwd,authorization,cookie,credential,signature";
@@ -196,6 +198,12 @@ const CleanCfg = struct {
     mask: []const u8,
     hint: i64,
     min: i64,
+};
+
+// The live request body of a point the model marks binary, and its type.
+const CleanBinary = struct {
+    live: [2]Value,
+    media: ?[]const u8,
 };
 
 fn clean_normkey(key: []const u8) []const u8 {
@@ -383,12 +391,42 @@ fn clean_name(c: CleanCfg, out: Value, key: []const u8) []const u8 {
     return fmt("{s}#{d}", .{ name, i });
 }
 
+// A string shorter than the registry accepts is not told from ordinary text.
+fn clean_binary_body(ctx: *Context) ?CleanBinary {
+    const body = h.getp(ctx.point, "body");
+    if (!is_raw_request(ctx.point) or !is_true(h.getp(body, "binary"))) return null;
+    const min = clean_view(clean_config(ctx)).min;
+    var live = [2]Value{ if (ctx.spec) |s| s.body else h.vnull(), raw_body(ctx.reqdata) };
+    for (&live) |*at| {
+        if (at.* != .string or @as(i64, @intCast(at.string.len)) < min) at.* = h.vnull();
+    }
+    if (live[0] == .null and live[1] == .null) return null;
+    return .{ .live = live, .media = h.get_str(body, "media") };
+}
+
+// Bytes are described, never copied (ADR-006). The value union has no
+// variant for bytes: a string is bytes only as the body of a point the
+// model marks binary, by equal content.
+fn clean_describe_binary(bin: ?CleanBinary, s: []const u8) ?Value {
+    const b = bin orelse return null;
+    for (b.live) |live| {
+        if (live != .string or !std.mem.eql(u8, live.string, s)) continue;
+        const desc = h.jo(&.{ .{ CLEAN_BINARY_KEY, h.vstr("bytes") }, .{ "size", h.vnum(@intCast(s.len)) } });
+        if (b.media) |media| h.setp(desc, "type", h.vstr(media));
+        return desc;
+    }
+    return null;
+}
+
 // A masked plain-data copy: functions dropped, cycles cut, and nothing
 // shared with the live value, whose spec must stay raw.
-fn clean_snapshot(c: CleanCfg, val: Value, key: ?[]const u8, depth: usize, seen: *std.ArrayList(usize)) Value {
+fn clean_snapshot(c: CleanCfg, bin: ?CleanBinary, val: Value, key: ?[]const u8, depth: usize, seen: *std.ArrayList(usize)) Value {
     switch (val) {
         .null => return val,
-        .string => |s| return h.vstr(if (clean_sensitive_key(c, key)) clean_mask_value(c, s) else clean_string(c, s)),
+        .string => |s| {
+            if (clean_sensitive_key(c, key)) return h.vstr(clean_mask_value(c, s));
+            return clean_describe_binary(bin, s) orelse h.vstr(clean_string(c, s));
+        },
         .function => return h.vnull(),
         .bool, .integer, .float, .number_string => return if (clean_sensitive_key(c, key)) h.vstr(c.mask) else val,
         .object => |m| {
@@ -401,7 +439,7 @@ fn clean_snapshot(c: CleanCfg, val: Value, key: ?[]const u8, depth: usize, seen:
             var it = m.iterator();
             while (it.next()) |kv| {
                 if (kv.value_ptr.* == .function) continue;
-                const v = clean_snapshot(c, kv.value_ptr.*, kv.key_ptr.*, depth + 1, seen);
+                const v = clean_snapshot(c, bin, kv.value_ptr.*, kv.key_ptr.*, depth + 1, seen);
                 h.setp(out, clean_name(c, out, kv.key_ptr.*), v);
             }
             return out;
@@ -414,7 +452,7 @@ fn clean_snapshot(c: CleanCfg, val: Value, key: ?[]const u8, depth: usize, seen:
             defer _ = seen.pop();
             const out = h.olist();
             for (l.data.items) |item| {
-                out.array.append(clean_snapshot(c, item, null, depth + 1, seen)) catch {};
+                out.array.append(clean_snapshot(c, bin, item, null, depth + 1, seen)) catch {};
             }
             return out;
         },
@@ -424,8 +462,10 @@ fn clean_snapshot(c: CleanCfg, val: Value, key: ?[]const u8, depth: usize, seen:
 pub fn clean_util(ctx: *Context, val: Value) Value {
     const c = clean_view(clean_config(ctx));
     if (!c.active) return val;
+    // A string on its own stays a string, whatever a point sends.
+    if (val == .string) return h.vstr(clean_string(c, val.string));
     var seen: std.ArrayList(usize) = .empty;
-    return clean_snapshot(c, val, null, 0, &seen);
+    return clean_snapshot(c, clean_binary_body(ctx), val, null, 0, &seen);
 }
 
 pub fn clean_str_util(ctx: *Context, val: []const u8) []const u8 {
@@ -2105,7 +2145,10 @@ pub fn unreadable_body(
         status,
         if (ctype.len == 0) "none" else ctype,
         if (agent.len == 0) "transport default" else agent,
-        if (h.is_noval(text) or text == .null) "" else fmt(", body: {s}", .{body_preview(ctx, text)}),
+        if (h.is_noval(text) or text == .null or !body_quotable(ctx, ctype))
+            ""
+        else
+            fmt(", body: {s}", .{body_preview(ctx, text)}),
     });
 
     if (failed) |f| {
@@ -2131,6 +2174,23 @@ fn body_header(headers: Value, name: []const u8) []const u8 {
         }
     }
     return "";
+}
+
+const TEXT_MEDIA = [_][]const u8{
+    "json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql",
+};
+
+// Only text is quoted: bytes are a file's, by the model or by their type.
+// Text is no declared type, text/*, or a structured text format.
+fn body_quotable(ctx: *Context, ctype: []const u8) bool {
+    if (is_true(h.getp(h.getp(ctx.point, "response"), "binary"))) return false;
+    const end = std.mem.indexOfScalar(u8, ctype, ';') orelse ctype.len;
+    const media = std.mem.trim(u8, ctype[0..end], &std.ascii.whitespace);
+    if (media.len == 0 or std.ascii.startsWithIgnoreCase(media, "text/")) return true;
+    for (TEXT_MEDIA) |part| {
+        if (std.ascii.indexOfIgnoreCase(media, part) != null) return true;
+    }
+    return false;
 }
 
 // Cleaned whole: a secret the bound would split could leave its prefix.

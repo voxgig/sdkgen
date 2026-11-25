@@ -19,7 +19,7 @@ import { cppVarName } from './utility_cpp'
 // operations the ts sweep discovers from the client are emitted from the
 // model, each with the path parameters its config points declare, and the
 // transport is scripted through `system.fetch`, the seam a closed options
-// union leaves for it.
+// union leaves for it. A second sweep does the same for a body of bytes.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props
@@ -101,8 +101,9 @@ function render(
   auth: { suppressed: boolean, where: string, name: string, basic: boolean },
   candidates: Candidate[],
 ): string {
-  return `// Generated canary sweep: no credential leaves this SDK in any form.
-// Mirrors test/clean.test.ts in the ts reference. Do not hand-edit.
+  return `// Generated canary sweep: no credential and no body of bytes leaves this
+// SDK in any form. Mirrors test/clean.test.ts in the ts reference. Do not
+// hand-edit.
 
 #include <functional>
 #include <iostream>
@@ -126,6 +127,9 @@ static const std::string CANARY_HEADER = "CANARY-HEADER-z1x4c7v0b3";
 static const std::string CANARY_VALUE = "CANARY-VALUE-n5m8b2v9c4";
 
 static const std::string MASK = "[redacted]";
+
+// The marker a body of bytes carries.
+static const std::string CONTENT = "CANARY-CONTENT-b7n3v9x1c5";
 
 
 struct Sink {
@@ -153,6 +157,34 @@ static std::vector<std::string> leaks(const std::string& text) {
     if (std::string::npos != text.find(f)) out.push_back(f);
   }
   return out;
+}
+
+
+// The forms bytes travel in once copied: the text, and with the whitespace
+// of a pretty print dropped, a list of byte values, hex, base64.
+static std::vector<std::string> contentLeaks(const std::string& text) {
+  static const char* DIGITS[2] = {"0123456789abcdef", "0123456789ABCDEF"};
+  std::string flat;
+  for (char c : text) {
+    if (!std::isspace(static_cast<unsigned char>(c))) flat.push_back(c);
+  }
+  std::string values;
+  std::string hex[2];
+  for (unsigned char c : CONTENT) {
+    values += (values.empty() ? "" : ",") + std::to_string(static_cast<int>(c));
+    for (int i = 0; i < 2; i++) {
+      hex[i].push_back(DIGITS[i][c >> 4]);
+      hex[i].push_back(DIGITS[i][c & 0x0f]);
+    }
+  }
+  std::vector<std::string> found;
+  if (std::string::npos != text.find(CONTENT)) found.push_back("text");
+  if (std::string::npos != flat.find(values)) found.push_back("byte values");
+  if (std::string::npos != flat.find(hex[0]) || std::string::npos != flat.find(hex[1])) {
+    found.push_back("hex");
+  }
+  if (std::string::npos != flat.find(util::cleanBase64(CONTENT))) found.push_back("base64");
+  return found;
 }
 
 
@@ -483,17 +515,62 @@ static Target usableOp(const std::vector<Candidate>& cands) {
 static const char* NOTHING_TO_SWEEP =
   "SKIP: no operation of this SDK completes against a plain 200; nothing to sweep";
 
+static const char* NO_BINARY_BODY =
+  "SKIP: no operation of this SDK sends a binary body; nothing to sweep";
 
+
+struct BinaryTarget {
+  Target target;
+  Value media;
+};
+
+
+// The first operation with a point that sends a raw body the model marks
+// binary, with every path parameter of that point filled in, and the media
+// type the point declares.
+static BinaryTarget binaryOp(const std::vector<Candidate>& cands) {
+  auto plain = construct(vmap({{"apikey", Value(CANARY_APIKEY)}}));
+  Value entities = getp(plain->getRootCtx()->config, "entity");
+  for (size_t i = 0; i < cands.size(); i++) {
+    size_t dot = cands[i].name.find('.');
+    if (std::string::npos == dot) continue;
+    Value ops = getp(getp(entities, cands[i].name.substr(0, dot)), "op");
+    Value points = getp(getp(ops, cands[i].name.substr(dot + 1)), "points");
+    if (!points.is_list()) continue;
+    for (const Value& point : *points.as_list()) {
+      Value body = getp(point, "body");
+      if (getp(body, "kind") != Value("raw") || !is_true(getp(body, "binary"))) continue;
+      Value match = vmap();
+      Value params = getp(getp(point, "args"), "params");
+      if (params.is_list()) {
+        for (const Value& p : *params.as_list()) {
+          Value pname = getp(p, "name");
+          if (pname.is_string()) map_put(match, pname.as_string(), Value("p1"));
+        }
+      }
+      Value action = getp(getp(point, "select"), "$action");
+      if (!is_nullish(action)) map_put(match, "$action", action);
+      return {{static_cast<int>(i), match}, getp(body, "media")};
+    }
+  }
+  return {{-1, Value::undef()}, Value::undef()};
+}
+
+
+// A raw body, when one is given, travels beside the match.
 static SdkErrorPtr drive(${ProjectName}SDK& sdk, const Candidate& cand, const Target& target,
-                         const Value& ctrl, std::vector<Sink>& sinks) {
+                         const Value& ctrl, std::vector<Sink>& sinks,
+                         const Value& body = Value::undef()) {
   // A caller may keep the record it passed rather than read ctrl.explain.
   Value held = getp(ctrl, "explain");
   SdkErrorPtr err;
   Value out = Value::undef();
   Value match = Value::undef();
   bool got = false;
+  Value args = Struct::clone(target.match);
+  if (!body.is_undef()) map_put(args, "$body", body);
   try {
-    out = cand.run(sdk, Struct::clone(target.match), ctrl, &match);
+    out = cand.run(sdk, args, ctrl, &match);
     got = true;
   } catch (const SdkErrorPtr& e) {
     err = e;
@@ -808,12 +885,108 @@ static void a_feature_name_is_read_as_a_name() {
 }
 
 
+static void no_body_of_bytes_leaves_the_sdk() {
+  std::vector<Candidate> cands = candidates();
+  BinaryTarget binary = binaryOp(cands);
+  if (0 > binary.target.index) {
+    std::cout << NO_BINARY_BODY << std::endl;
+    return;
+  }
+  const Candidate& cand = cands[binary.target.index];
+
+  std::vector<Sink> sinks;
+  std::map<std::string, Value> sent;
+  std::map<std::string, SdkErrorPtr> errors;
+  std::map<std::string, Value> explains;
+
+  // A std::string holding the bytes is the one raw body this SDK accepts.
+  std::vector<Scenario> reaching = scenarios();
+  reaching.resize(4);
+  for (const Scenario& scenario : reaching) {
+    for (const Variant& variant : variants()) {
+      std::string key = scenario.name + "/" + variant.name;
+      // The transport is where the bytes are meant to arrive, whole.
+      Scenario seen{scenario.name, [&sent, key, scenario](const std::string& url, const Value& fetchdef) {
+        sent[key] = getp(fetchdef, "body");
+        return scenario.respond(url, fetchdef);
+      }};
+      auto sdk = makeSdk(seen, &sinks, Value::undef());
+      Value ctrl = variant.ctrl();
+      SdkErrorPtr err = drive(*sdk, cand, binary.target, ctrl, sinks, Value(CONTENT));
+      if (err) errors[key] = err;
+      Value explain = getp(ctrl, "explain");
+      if (explain.is_map()) explains[key] = explain;
+      sinks.push_back({"sdk:string", sdk->to_string()});
+    }
+  }
+
+  std::string leaked;
+  int leakcount = 0;
+  for (const Sink& s : sinks) {
+    std::vector<std::string> found = contentLeaks(s.text);
+    if (found.empty()) continue;
+    leakcount++;
+    if (!leaked.empty()) leaked += "; ";
+    leaked += s.name + " [";
+    for (size_t i = 0; i < found.size(); i++) leaked += (0 < i ? ", " : "") + found[i];
+    leaked += "]";
+  }
+
+  std::cout << "clean: content swept " << sinks.size() << " surface(s), " << leakcount
+            << " leak(s)" << std::endl;
+
+  ASSERT_EQ(leakcount, 0, "a body of bytes leaked through: " + leaked);
+
+  // The request itself is untouched: what the transport was handed is the body.
+  ASSERT_EQ_VAL(sent["notfound/throw"], Value(CONTENT), "the transport was handed something else");
+
+  // The positive half: where the body was, what describes it now is.
+  Value desc = vmap({
+    {"binary$", Value("bytes")},
+    {"size", Value(static_cast<long long>(CONTENT.size()))},
+  });
+  if (binary.media.is_string()) map_put(desc, "type", binary.media);
+  auto failed = errors.find("notfound/throw");
+  ASSERT_TRUE(errors.end() != failed, "the 404 scenario must throw");
+  if (errors.end() != failed) {
+    ASSERT_EQ_VAL(getp(failed->second->spec, "body"), desc, "the thrown spec");
+  }
+  auto ex = explains.find("ok/explain");
+  ASSERT_EQ_VAL(explains.end() == ex ? Value::undef() : getp(getp(ex->second, "spec"), "body"),
+                desc, "the explain record");
+}
+
+
+static void the_sweep_can_see_a_body() {
+  std::vector<Candidate> cands = candidates();
+  BinaryTarget binary = binaryOp(cands);
+  if (0 > binary.target.index) {
+    std::cout << NO_BINARY_BODY << std::endl;
+    return;
+  }
+
+  std::vector<Sink> sinks;
+  auto sdk = makeSdk(scenarios()[1], &sinks, vmap({{"active", Value(false)}}));
+  SdkErrorPtr err = drive(*sdk, cands[binary.target.index], binary.target, vmap(), sinks,
+                          Value(CONTENT));
+  ASSERT_TRUE((bool)err, "the 404 scenario must throw");
+
+  int leaked = 0;
+  for (const Sink& s : sinks) {
+    if (!contentLeaks(s.text).empty()) leaked++;
+  }
+  ASSERT_TRUE(0 < leaked, "with clean off, nothing showed the bytes: the sweep is blind");
+}
+
+
 int main() {
   T_RUN(no_credential_leaves_the_sdk);
   T_RUN(the_sweep_can_see_a_leak);
   T_RUN(a_registered_value_used_as_a_name_is_masked);
   T_RUN(the_generated_configs_own_clean_block_is_honoured);
   T_RUN(a_feature_name_is_read_as_a_name);
+  T_RUN(no_body_of_bytes_leaves_the_sdk);
+  T_RUN(the_sweep_can_see_a_body);
   return sdktest::summary("clean_test");
 }
 `

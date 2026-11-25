@@ -23,6 +23,7 @@ function loadClean(): any {
   return sandboxLoad(Path.join(TM, 'ts', 'src', 'utility', 'CleanUtility.ts'), {
     '../types': {},
     '../Schema': { OPTSPEC: { clean: CLEAN_DEFAULTS } },
+    './MediaUtility': sandboxLoad(Path.join(TM, 'ts', 'src', 'utility', 'MediaUtility.ts'), {}),
   })
 }
 
@@ -30,6 +31,7 @@ function loadClean(): any {
 function loadCleanJs(): any {
   return sandboxLoad(Path.join(TM, 'js', 'src', 'utility', 'CleanUtility.js'), {
     '../Schema': { OPTSPEC: { clean: CLEAN_DEFAULTS } },
+    './MediaUtility': sandboxLoad(Path.join(TM, 'js', 'src', 'utility', 'MediaUtility.js'), {}),
   })
 }
 

@@ -48,13 +48,28 @@ class ProjectNameFetcher
 
     public const REDIRECT_STATUS = [301, 302, 303, 307, 308];
     public const REDIRECT_MAX = 5;
+    public const CREDENTIAL_HEADERS = ['authorization', 'cookie', 'proxy-authorization'];
+
+    // What another origin is not sent: the names every client drops, and
+    // whatever the SDK holds as a secret, by its name or by its value. A call
+    // with no context is answered from the schema's sensitive names.
+    private static function isCredential(?ProjectNameContext $ctx, string $name, mixed $value): bool
+    {
+        if (in_array(strtolower($name), self::CREDENTIAL_HEADERS, true)) {
+            return true;
+        }
+        $secret = $ctx?->utility?->clean_secret ?? [ProjectNameClean::class, 'secret'];
+        return is_callable($secret) && true === $secret($ctx, $name, $value);
+    }
 
     // Neither transport below follows a redirect. A GET or HEAD follows one
     // here, unless the fetch definition says "manual", each hop passing the
-    // GET-only guard first; past REDIRECT_MAX hops the last 3xx is the answer.
-    // Another origin is not sent the request's credentials.
-    public static function defaultHttpFetch(string $fullurl, array $fetchdef): array
-    {
+    // GET-only guard first; past REDIRECT_MAX hops, or where a body would go
+    // to another origin, the 3xx is the answer. Another origin is not sent
+    // the request's credentials.
+    public static function defaultHttpFetch(
+        string $fullurl, array $fetchdef, ?ProjectNameContext $ctx = null
+    ): array {
         $method_str = strtoupper($fetchdef['method'] ?? 'GET');
         $follow = in_array($method_str, ['GET', 'HEAD'], true) && ($fetchdef['redirect'] ?? null) !== 'manual';
         $url = $fullurl;
@@ -72,9 +87,11 @@ class ProjectNameFetcher
                 return [$res, $err];
             }
             if (self::origin($next) !== self::origin($url)) {
+                if (null !== ($fetchdef['body'] ?? null)) {
+                    return [$res, $err];
+                }
                 $fetchdef['headers'] = array_filter($fetchdef['headers'] ?? [],
-                    fn($k) => !in_array(strtolower((string)$k), ['authorization', 'cookie', 'proxy-authorization'], true),
-                    ARRAY_FILTER_USE_KEY);
+                    fn($v, $k) => !self::isCredential($ctx, (string)$k, $v), ARRAY_FILTER_USE_BOTH);
             }
             $url = $next;
         }
@@ -365,7 +382,7 @@ class ProjectNameFetcher
             if (null !== $ctx->spec) {
                 $ctx->spec->headers = self::sentHeaders($ctx->spec->headers);
             }
-            return self::defaultHttpFetch($fullurl, $fetchdef);
+            return self::defaultHttpFetch($fullurl, $fetchdef, $ctx);
         }
         if (is_callable($sys_fetch)) {
             return $sys_fetch($fullurl, $fetchdef);

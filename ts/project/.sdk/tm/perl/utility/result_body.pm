@@ -43,7 +43,7 @@ sub unreadable_body {
   $agent = 'transport default' unless defined $agent && length $agent;
   my $detail = 'HTTP ' . (defined $status ? $status : -1) . ', content-type '
     . (length $type ? $type : 'none') . ", user-agent $agent";
-  $detail .= ', body: ' . _body_preview($ctx, $text) if defined $text;
+  $detail .= ', body: ' . _body_preview($ctx, $text) if defined $text && _body_quotable($ctx, $type);
 
   if (defined $failed) {
     if (Scalar::Util::blessed($failed) && 'HASH' eq Scalar::Util::reftype($failed)
@@ -70,6 +70,19 @@ sub _body_header {
     return defined $headers->{$k} ? "$headers->{$k}" : '';
   }
   return '';
+}
+
+# Only text is quoted: bytes are a file's, by the model or by their type.
+# Text is no declared type, text/*, or a structured text format.
+sub _body_quotable {
+  my ($ctx, $type) = @_;
+  my $response = 'HASH' eq ref $ctx->{point} ? $ctx->{point}{response} : undef;
+  return 0 if 'HASH' eq ref $response && $response->{binary};
+  my ($media) = split /;/, (defined $type ? $type : ''), 2;
+  $media = lc(defined $media ? $media : '');
+  $media =~ s/^\s+|\s+$//g;
+  return 1 if !length $media || $media =~ m{^text/};
+  return $media =~ /json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/ ? 1 : 0;
 }
 
 # Cleaned whole: a secret the bound would split could leave its prefix.

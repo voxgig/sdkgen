@@ -172,6 +172,7 @@ function makeClient(spec: {
   const cleanmod = sandboxLoad(Path.join(UTILITY_DIR, 'CleanUtility.ts'), {
     '../types': {},
     '../Schema': { OPTSPEC: { clean: CLEAN_DEFAULTS } },
+    './MediaUtility': sandboxLoad(Path.join(UTILITY_DIR, 'MediaUtility.ts'), {}),
   })
 
   // Shared utility singleton (features wrap `utility.fetcher` in init).

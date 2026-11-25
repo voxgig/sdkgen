@@ -16,8 +16,8 @@ import type { Model } from '@voxgig/apidef'
 // The canary sweep (test/clean.test.ts in the ts reference): canaries in
 // every credential slot, every diagnostic feature on with a capturing sink,
 // a real operation through every outcome, every string that leaves searched
-// for the canaries and their encoded forms, and the negative control. A
-// scala-cli main of its own, named in the Makefile's test target.
+// for the canaries and for a body of bytes, and a negative control for each.
+// A scala-cli main of its own, named in the Makefile's test target.
 const TestClean = cmp(function TestClean(props: any) {
   const model: Model = props.ctx$.model
   const target = props.target
@@ -44,11 +44,11 @@ function render(scalapackage: string, SDK: string, auth: AuthSpec): string {
   return `// The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
-// the SDK is searched for the canaries and their encoded forms. It also
-// proves its own sensitivity: with clean switched off the canary MUST show.
+// is searched for the canaries and their encoded forms; a second sweep does
+// the same for a body of bytes. With clean off the canary MUST show.
 // Run: scala-cli run . --main-class SdkCleanTestMain
 
-import java.io.{PrintWriter, StringWriter}
+import java.io.{ByteArrayInputStream, InputStream, PrintWriter, StringWriter}
 import java.lang.reflect.{Method, Modifier}
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -83,6 +83,17 @@ object SdkCleanTestMain {
       .flatMap(v => List(v, b64(v), URLEncoder.encode(v, StandardCharsets.UTF_8))) :+
       b64(CANARY_APIKEY + ":" + CANARY_SECRET)
 
+  // The marker a body of bytes carries.
+  private val CONTENT = "CANARY-CONTENT-b7n3v9x1c5"
+  private val CONTENT_BYTES: Array[Byte] = CONTENT.getBytes(StandardCharsets.UTF_8)
+
+  // Every value this SDK accepts as a raw body.
+  private val CARRIERS: List[(String, () => Object)] = List(
+    ("Array[Byte]", () => CONTENT_BYTES.clone()),
+    ("InputStream", () => new ByteArrayInputStream(CONTENT_BYTES)),
+    ("String", () => CONTENT),
+  )
+
   final class Sink(val name: String, val text: String)
 
   private def om(kv: (String, Object)*): JMap[String, Object] = SdkTestSupport.om(kv*)
@@ -108,14 +119,40 @@ object SdkCleanTestMain {
 
   private def leaks(text: String): List[String] = FORMS.filter(f => text.contains(f))
 
+  // The forms bytes travel in once copied: text, a list of byte values, hex,
+  // base64 with or without its padding.
+  private def contentLeaks(text: String): List[String] = {
+    val flat = text.replaceAll("\\\\s+", "")
+    val hex = CONTENT_BYTES.map(b => String.format("%02x", I(b & 0xff))).mkString
+    List(
+      ("text", text.contains(CONTENT)),
+      ("byte values", flat.contains(CONTENT_BYTES.mkString(","))),
+      ("hex", flat.toLowerCase.contains(hex)),
+      ("base64", flat.contains(b64(CONTENT).replace("=", ""))),
+    ).filter(f => f._2).map(f => f._1)
+  }
+
   // The SDK's own objects print their data, not a class name, so a raw spec
-  // handed back with clean off shows what it holds.
+  // handed back with clean off shows what it holds. Bytes print as their
+  // values wherever they sit, which is how a serialiser shows them.
   private def plain(v: Object): Object = v match {
     case s: Spec => om("method" -> s.method, "url" -> s.url, "path" -> s.path,
-      "headers" -> s.headers, "query" -> s.query, "body" -> s.body)
+      "headers" -> s.headers, "query" -> s.query, "body" -> plain(s.body))
     case r: Result => om("status" -> I(r.status), "headers" -> r.headers,
       "body" -> r.body, "resdata" -> r.resdata)
     case e: SdkEntity => e.data()
+    case b: Array[Byte] =>
+      val out = new ArrayList[Object]()
+      b.foreach(x => out.add(I(x.toInt)))
+      out
+    case m: JMap[_, _] =>
+      val out = new LinkedHashMap[String, Object]()
+      m.asInstanceOf[JMap[Object, Object]].forEach((k, x) => out.put(String.valueOf(k), plain(x)))
+      out
+    case l: JList[_] =>
+      val out = new ArrayList[Object]()
+      l.asInstanceOf[JList[Object]].forEach(x => out.add(plain(x)))
+      out
     case _ => v
   }
 
@@ -140,13 +177,13 @@ object SdkCleanTestMain {
     }
     v match {
       case e: SdkError =>
-        push("map") { Struct.jsonify(e.toMap()) }
+        push("map") { Struct.jsonify(plain(e.toMap())) }
         push("spec") { Struct.jsonify(plain(e.spec)) }
         push("result") { Struct.jsonify(plain(e.result)) }
       case _ =>
     }
     v match {
-      case c: Context => push("record") { Struct.jsonify(c.toMap()) }
+      case c: Context => push("record") { Struct.jsonify(plain(c.toMap())) }
       case _ =>
     }
     out.toArray(new Array[Sink](0)).toList
@@ -288,7 +325,16 @@ object SdkCleanTestMain {
     construct(opts)
   }
 
-  final class Target(val accessor: Method, val op: String, val matchArgs: JMap[String, Object])
+  // media: the type its point declares for a raw body, when it sends one.
+  final class Target(val accessor: Method, val op: String, val matchArgs: JMap[String, Object],
+      val media: Object = null) {
+    // The same operation passing more data, as an upload passes its body.
+    def withData(data: JMap[String, Object]): Target = {
+      val more = new LinkedHashMap[String, Object](matchArgs)
+      more.putAll(data)
+      new Target(accessor, op, more, media)
+    }
+  }
 
   private def accessors(): List[Method] =
     classOf[${SDK}].getMethods.toList
@@ -374,6 +420,60 @@ object SdkCleanTestMain {
   }
 
   private val NO_OP = "no operation of this SDK completes against a plain 200; nothing to sweep"
+
+  // The first operation with a point that sends a raw body the model marks
+  // binary, with every path parameter of that point filled in.
+  private def binaryOp(): Target = {
+    val client = construct(om("apikey" -> CANARY_APIKEY))
+    val entities = Helpers.toMapAny(Config.sharedConfig().get("entity"))
+    if (entities == null) return null
+    var found: Target = null
+    val mit = accessors().iterator
+    while (found == null && mit.hasNext) {
+      val m = mit.next()
+      val inst = entityOf(client, m)
+      val ecfg = if (inst == null) null else Helpers.toMapAny(entities.get(inst.getName()))
+      val opmap = if (ecfg == null) null else Helpers.toMapAny(ecfg.get("op"))
+      val ops =
+        if (opmap == null) Nil
+        else opmap.keySet().toArray.toList.map(k => String.valueOf(k)).sorted
+      val oit = ops.iterator
+      while (found == null && oit.hasNext) {
+        val op = oit.next()
+        Struct.getprop(opmap.get(op), "points") match {
+          case points: JList[_] =>
+            val pit = points.asInstanceOf[JList[Object]].iterator()
+            while (found == null && pit.hasNext) {
+              val point = pit.next()
+              val body = Struct.getprop(point, "body")
+              if ("raw" == Struct.getprop(body, "kind") &&
+                  java.lang.Boolean.TRUE == Struct.getprop(body, "binary")) {
+                val matchArgs = filled(om("points" -> SdkTestSupport.jl(point)))
+                val action = Struct.getprop(Struct.getprop(point, "select"), "$action", null)
+                if (action != null) matchArgs.put("$action", action)
+                found = new Target(m, op, matchArgs, Struct.getprop(body, "media", null))
+              }
+            }
+          case _ =>
+        }
+      }
+    }
+    found
+  }
+
+  private val NO_BINARY_OP = "no operation of this SDK sends a binary body; nothing to sweep"
+
+  // What the transport was handed, as text.
+  private def sentText(body: Object): String = body match {
+    case b: Array[Byte] => new String(b, StandardCharsets.UTF_8)
+    case s: InputStream => new String(s.readAllBytes(), StandardCharsets.UTF_8)
+    case other => String.valueOf(other)
+  }
+
+  private def bodyOf(record: Object): Object = {
+    val m = Helpers.toMapAny(record)
+    if (m == null) null else m.get("body")
+  }
 
   private def drive(sdk: ${SDK}, target: Target, ctrl: JMap[String, Object], sinks: ArrayList[Sink]): Throwable = {
     // A caller may keep the record it passed rather than read ctrl's entry.
@@ -559,6 +659,127 @@ object SdkCleanTestMain {
     }
   }
 
+  private def contentSweep(rep: SdkTestReport): Unit = {
+    val target = binaryOp()
+    if (target == null) {
+      println("clean: skipped: " + NO_BINARY_OP)
+      return
+    }
+
+    val sinks = new ArrayList[Sink]()
+    val sent = new LinkedHashMap[String, Object]()
+    val errors = new LinkedHashMap[String, Throwable]()
+    val explains = new LinkedHashMap[String, JMap[String, Object]]()
+
+    for ((carrier, make) <- CARRIERS) {
+      for (scenario <- SCENARIOS.take(4)) {
+        for (variant <- List("throw", "explain", "nothrow")) {
+          val key = carrier + "/" + scenario.name + "/" + variant
+          // The transport is where the bytes are meant to arrive, whole.
+          val seen = new Scenario(scenario.name, (url, fetchdef) => {
+            sent.put(key, fetchdef.get("body"))
+            scenario.respond(url, fetchdef)
+          })
+          val sdk = makeSdk(seen, sinks, null)
+          val ctrl: JMap[String, Object] = variant match {
+            case "throw" => null
+            case "explain" => om("explain" -> new LinkedHashMap[String, Object]())
+            case _ => om("throw" -> B(false), "explain" -> new LinkedHashMap[String, Object]())
+          }
+          val err = drive(sdk, target.withData(om("$body" -> make())), ctrl, sinks)
+          if (err != null) errors.put(key, err)
+          val explain = if (ctrl == null) null else Helpers.toMapAny(ctrl.get("explain"))
+          if (explain != null) explains.put(key, explain)
+          collect(sinks, "sdk", sdk)
+        }
+      }
+    }
+
+    val all = sinks.toArray(new Array[Sink](0)).toList
+    val leaked = all.map(s => (s.name, contentLeaks(s.text))).filter(l => l._2.nonEmpty)
+
+    println("clean: content swept " + all.size + " surface(s), " + leaked.size + " leak(s)")
+
+    rep.check("clean.content.no-leak", leaked.isEmpty, "a body of bytes leaked through: " +
+      leaked.map(l => l._1 + " [" + l._2.mkString(", ") + "]").mkString("; "))
+
+    // The positive half: where the body was, what describes it now is, and
+    // the request is untouched. A stream is read into bytes before the
+    // request is built, so its body is described as bytes too.
+    val desc = om("binary$" -> "bytes", "size" -> I(CONTENT_BYTES.length), "type" -> target.media)
+    for ((carrier, _) <- CARRIERS) {
+      val name = "clean.content." + carrier
+      rep.eq(name + ".sent", CONTENT, sentText(sent.get(carrier + "/notfound/throw")))
+      errors.get(carrier + "/notfound/throw") match {
+        case failed: SdkError =>
+          rep.eq(name + ".thrown-spec", desc, bodyOf(failed.spec))
+          val live = if (failed.ctx == null || failed.ctx.spec == null) null else failed.ctx.spec.body
+          rep.eq(name + ".live-request", CONTENT, sentText(live))
+        case other =>
+          rep.fail(name + ".sdkerror", "the 404 scenario should throw an SdkError, got " + other)
+      }
+      val explained = explains.get(carrier + "/ok/explain")
+      rep.check(name + ".explained", explained != null, "the explain record is missing")
+      if (explained != null) {
+        rep.eq(name + ".explain-spec", desc, bodyOf(explained.get("spec")))
+        rep.eq(name + ".explain-fetch", desc, bodyOf(explained.get("fetchdef")))
+      }
+    }
+
+    // By type, wherever it sits and whatever the operation: a stream is
+    // described without being read, and a sensitive name still masks.
+    val bytes = om("binary$" -> "bytes", "size" -> I(CONTENT_BYTES.length))
+    val probe = makeSdk(SCENARIOS.head, new ArrayList[Sink](), null)
+    val unread = new ByteArrayInputStream(CONTENT_BYTES)
+    rep.eq("clean.content.by-type",
+      om("upload" -> om("binary$" -> "stream"), "parts" -> SdkTestSupport.jl(bytes), "token" -> MASK),
+      probe.getUtility().clean(probe.getRootCtx(), om("upload" -> unread,
+        "parts" -> SdkTestSupport.jl(CONTENT_BYTES.clone()), "token" -> CONTENT_BYTES.clone())))
+    rep.eqI("clean.content.stream-unread", CONTENT_BYTES.length, unread.available())
+
+    // An error is cleaned in place, and what it holds is described.
+    val held = new SdkError("held", "upload failed", null)
+    held.spec = om("body" -> CONTENT_BYTES.clone())
+    held.result = CONTENT_BYTES.clone()
+    rep.check("clean.content.error-in-place",
+      probe.getUtility().clean(probe.getRootCtx(), held) eq held, "clean should return the error it was given")
+    rep.eq("clean.content.error-spec", om("body" -> bytes), held.spec)
+    rep.eq("clean.content.error-result", bytes, held.result)
+
+    // By the model: the body is described wherever it sits in what is
+    // cleaned, other text stays, and a string cleaned alone stays a string.
+    errors.get("String/notfound/throw") match {
+      case failed: SdkError if failed.ctx != null =>
+        val opctx = failed.ctx
+        rep.eq("clean.content.by-model", om("held" -> SdkTestSupport.jl(desc), "note" -> "kept"),
+          opctx.utility.clean(opctx, om("held" -> SdkTestSupport.jl(CONTENT), "note" -> "kept")))
+        rep.eq("clean.content.string-stays", CONTENT, opctx.utility.clean(opctx, CONTENT))
+      case other =>
+        rep.fail("clean.content.by-model", "the string carrier should fail with its context, got " + other)
+    }
+    rep.eq("clean.content.text-stays", om("held" -> CONTENT),
+      probe.getUtility().clean(probe.getRootCtx(), om("held" -> CONTENT)))
+  }
+
+  private def contentSensitivity(rep: SdkTestReport): Unit = {
+    val target = binaryOp()
+    if (target == null) {
+      println("clean: skipped: " + NO_BINARY_OP)
+      return
+    }
+
+    for ((carrier, make) <- CARRIERS) {
+      val sinks = new ArrayList[Sink]()
+      val sdk = makeSdk(SCENARIOS(1), sinks, om("active" -> B(false)))
+      val err = drive(sdk, target.withData(om("$body" -> make())), null, sinks)
+      rep.check("clean.content.off." + carrier + ".throws", err != null,
+        carrier + ": the 404 scenario must throw")
+      val leaked = sinks.toArray(new Array[Sink](0)).toList.filter(s => contentLeaks(s.text).nonEmpty)
+      rep.check("clean.content.off." + carrier + ".shows-bytes", leaked.nonEmpty,
+        carrier + ": with clean off, nothing showed the bytes: the sweep is blind")
+    }
+  }
+
   // A feature's name is not a field name: only the sensitive names inside its
   // settings register. An entity block, of per-entity settings or seeded
   // records keyed by entity name and id, is not read at all, and nor are
@@ -614,6 +835,8 @@ object SdkCleanTestMain {
 
     rep.scope("clean-no-credential-leaves-the-sdk") { sweep(rep) }
     rep.scope("clean-the-sweep-can-see-a-leak") { sensitivity(rep) }
+    rep.scope("clean-no-body-of-bytes-leaves-the-sdk") { contentSweep(rep) }
+    rep.scope("clean-the-sweep-can-see-a-body") { contentSensitivity(rep) }
     rep.scope("clean-a-feature-name-does-not-make-its-settings-secret") { featureNames(rep) }
     rep.scope("clean-the-config-clean-block-is-honoured") { configBlock(rep) }
     rep.scope("clean-with-no-clean-block-the-schema-defaults-apply") { noBlock(rep) }

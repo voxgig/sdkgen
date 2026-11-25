@@ -7,6 +7,7 @@ import Foundation
 public final class Utility {
   public var clean: ((Context, Value) -> Value)!
   public var cleanAdd: ((Context, Value) -> Void)!
+  public var cleanSecret: ((Context, String, Value) -> Bool)!
   public var done: ((Context) throws -> Value)!
   public var makeError: ((Context, Error?) throws -> Value)!
   public var featureAdd: ((Context, BaseFeature) -> Void)!
@@ -51,6 +52,7 @@ public final class Utility {
     let u = Utility(noregister: true)
     u.clean = src.clean
     u.cleanAdd = src.cleanAdd
+    u.cleanSecret = src.cleanSecret
     u.done = src.done
     u.makeError = src.makeError
     u.featureAdd = src.featureAdd

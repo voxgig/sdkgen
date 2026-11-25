@@ -2,9 +2,11 @@ package utility
 
 import (
 	"bytes"
+	"encoding"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"reflect"
 	"sort"
@@ -25,6 +27,9 @@ import (
 
 const cleanMaxDepth = 32
 const cleanCircular = "[circular]"
+
+// The key of what stands in for a body of bytes; its value is the kind.
+const cleanBinaryKey = "binary$"
 
 // The derived clean block makeOptions builds, shared by every context of a
 // client. Unlike the ts reference it is appended to from any goroutine
@@ -311,12 +316,78 @@ func cleanAddSensitive(ctx *core.Context, val any) {
 	cleanConfigOf(ctx).addSensitive(val, false, 0, nil)
 }
 
+// The live request body of a point the model marks binary, and its type.
+type cleanBinary struct {
+	live  []any
+	media string
+}
+
+// A string shorter than the registry accepts is not told from ordinary text.
+func cleanBinaryOf(ctx *core.Context, cfg *cleanConfig) *cleanBinary {
+	if ctx == nil || !isRawRequest(ctx.Point) ||
+		true != vs.GetPath(ctx.Point, []any{"body", "binary"}) {
+		return nil
+	}
+	bodies := []any{nil, ctx.Reqdata[rawBodyKey]}
+	if ctx.Spec != nil {
+		bodies[0] = ctx.Spec.Body
+	}
+	bin := &cleanBinary{}
+	for _, body := range bodies {
+		text, isText := body.(string)
+		if body != nil && (!isText || cfg.min <= len(text)) {
+			bin.live = append(bin.live, body)
+		}
+	}
+	if 0 == len(bin.live) {
+		return nil
+	}
+	bin.media, _ = vs.GetPath(ctx.Point, []any{"body", "media"}).(string)
+	return bin
+}
+
+// The live body is the same object, or for a string an equal one. A slice
+// has no ==, so it is the same when it shares its start and its length.
+func (bin *cleanBinary) is(val any) bool {
+	if bin == nil {
+		return false
+	}
+	text, isText := val.(string)
+	for _, live := range bin.live {
+		if isText {
+			if body, ok := live.(string); ok && body == text {
+				return true
+			}
+			continue
+		}
+		lv, rv := reflect.ValueOf(live), reflect.ValueOf(val)
+		if lv.Type() != rv.Type() {
+			continue
+		}
+		switch rv.Kind() {
+		case reflect.Slice:
+			if lv.Pointer() == rv.Pointer() && lv.Len() == rv.Len() {
+				return true
+			}
+		case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.UnsafePointer:
+			if lv.Pointer() == rv.Pointer() {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // One pass over one value: the registry as it stood when the pass began,
-// and the ancestors of the node in hand, for cutting cycles.
+// the ancestors of the node in hand, for cutting cycles, the body of bytes
+// the operation in hand sends, if it sends one, and how many values the
+// pass has described so far.
 type cleaner struct {
-	cfg    *cleanConfig
-	values []string
-	seen   []uintptr
+	cfg       *cleanConfig
+	values    []string
+	seen      []uintptr
+	bin       *cleanBinary
+	described int
 }
 
 func newCleaner(cfg *cleanConfig) *cleaner {
@@ -360,6 +431,47 @@ func (c *cleaner) sensitiveKey(key string) bool {
 	return c.cfg.sensitive(key)
 }
 
+// Bytes are described, never copied (ADR-006): the kind, and the size and
+// media type where they are known. A string is bytes only as the body of a
+// point the model marks binary; a reader is not read, since it reads once.
+func (c *cleaner) describe(val any) map[string]any {
+	declared := c.bin.is(val)
+	var desc map[string]any
+
+	if text, ok := val.(string); ok {
+		if declared {
+			desc = map[string]any{cleanBinaryKey: "bytes", "size": len(text)}
+		}
+	} else {
+		rv := reflect.ValueOf(val)
+		switch rv.Kind() {
+		case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.Slice:
+			if rv.IsNil() {
+				return nil
+			}
+		}
+		switch val.(type) {
+		case io.Reader:
+			desc = map[string]any{cleanBinaryKey: "stream"}
+		case json.Marshaler, encoding.TextMarshaler:
+			// A type that states its own form is data, and left to it.
+		default:
+			if reflect.Slice == rv.Kind() && reflect.Uint8 == rv.Type().Elem().Kind() {
+				desc = map[string]any{cleanBinaryKey: "bytes", "size": rv.Len()}
+			}
+		}
+	}
+
+	if desc == nil {
+		return nil
+	}
+	if declared && "" != c.bin.media {
+		desc["type"] = c.bin.media
+	}
+	c.described++
+	return desc
+}
+
 // A plain-data copy of what is about to leave: the SDK's own types become
 // their records, a json.Marshaler is honoured (the go spelling of toJSON),
 // functions and channels are dropped, cycles are cut, and no live object is
@@ -377,6 +489,9 @@ func (c *cleaner) snapshot(val any, key string, haskey bool, depth int) any {
 		if sensitive {
 			return c.maskValue(v)
 		}
+		if desc := c.describe(v); desc != nil {
+			return desc
+		}
 		return c.cleanString(v)
 	case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64,
 		float32, float64, json.Number:
@@ -392,6 +507,10 @@ func (c *cleaner) snapshot(val any, key string, haskey bool, depth int) any {
 
 	if cleanMaxDepth <= depth {
 		return cleanCircular
+	}
+
+	if desc := c.describe(val); desc != nil {
+		return desc
 	}
 
 	rv := reflect.ValueOf(val)
@@ -469,10 +588,62 @@ func (c *cleaner) snapshot(val any, key string, haskey bool, depth int) any {
 		}
 		return out
 	case reflect.Struct:
+		// encoding/json writes bytes as base64, so a struct found to hold
+		// bytes or a stream leaves by its exported fields instead.
+		described := c.described
+		if fields := c.plain(cleanFields(rv), depth); described != c.described {
+			return fields
+		}
 		return c.roundtrip(val, key, haskey, depth)
 	}
 
 	return val
+}
+
+// The exported fields of a struct under the names encoding/json gives them.
+// An embedded struct's fields are its parent's, whose own win a clash.
+func cleanFields(rv reflect.Value) map[string]any {
+	out := map[string]any{}
+	rt := rv.Type()
+	for i := 0; i < rt.NumField(); i++ {
+		field, fv := rt.Field(i), rv.Field(i)
+		name, opts, listed := strings.Cut(field.Tag.Get("json"), ",")
+		if field.Anonymous && "" == name {
+			for reflect.Ptr == fv.Kind() && !fv.IsNil() {
+				fv = fv.Elem()
+			}
+			if reflect.Struct == fv.Kind() {
+				for k, v := range cleanFields(fv) {
+					if _, own := out[k]; !own {
+						out[k] = v
+					}
+				}
+				continue
+			}
+		}
+		if !field.IsExported() || ("-" == name && !listed) {
+			continue
+		}
+		if "" == name {
+			name = field.Name
+		}
+		if strings.Contains(","+opts+",", ",omitempty,") && cleanEmpty(fv) {
+			continue
+		}
+		out[name] = fv.Interface()
+	}
+	return out
+}
+
+// What encoding/json's omitempty leaves out.
+func cleanEmpty(rv reflect.Value) bool {
+	switch rv.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return 0 == rv.Len()
+	case reflect.Struct:
+		return false
+	}
+	return rv.IsZero()
 }
 
 // A struct leaves as encoding/json would write it, then reads back as plain
@@ -570,9 +741,13 @@ func cleanUtil(ctx *core.Context, val any) any {
 
 	c := newCleaner(cfg)
 
+	if text, ok := val.(string); ok {
+		return c.cleanString(text)
+	}
+
+	c.bin = cleanBinaryOf(ctx, cfg)
+
 	switch v := val.(type) {
-	case string:
-		return c.cleanString(v)
 	case *core.ProjectNameError:
 		if v == nil {
 			return v
@@ -587,4 +762,25 @@ func cleanUtil(ctx *core.Context, val any) any {
 	}
 
 	return c.item(val, -1)
+}
+
+// Whether a named value is a secret: by its name, or by a registered value
+// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+func cleanSecretUtil(ctx *core.Context, key string, val any) bool {
+	cfg := cleanConfigOf(ctx)
+	if cfg.sensitive(key) {
+		return true
+	}
+	text, ok := val.(string)
+	if !ok {
+		return false
+	}
+	cfg.mu.RLock()
+	defer cfg.mu.RUnlock()
+	for _, value := range cfg.values {
+		if strings.Contains(text, value) {
+			return true
+		}
+	}
+	return false
 }

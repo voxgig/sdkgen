@@ -30,7 +30,8 @@ def unreadable_body(ctx, status, headers, text, sent, failed):
     agent = ctx.utility.clean(ctx, _header_value(sent, "user-agent")) or "transport default"
     detail = ("HTTP " + str(status) + ", content-type " + (ctype or "none") +
               ", user-agent " + str(agent) +
-              ("" if text is None else ", body: " + _preview(ctx, text)))
+              (", body: " + _preview(ctx, text)
+               if text is not None and _quotable(ctx, ctype) else ""))
 
     if failed is not None:
         if isinstance(failed, str):
@@ -55,6 +56,20 @@ def _header_value(headers, name):
         if name == str(key).lower():
             return str(val)
     return ""
+
+
+_TEXT_MEDIA = ("json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql")
+
+
+# Only text is quoted: bytes are a file's, by the model or by their type.
+# Text is no declared type, text/*, or a structured text format.
+def _quotable(ctx, ctype):
+    point = getattr(ctx, "point", None)
+    response = point.get("response") if isinstance(point, dict) else None
+    if isinstance(response, dict) and response.get("binary") is True:
+        return False
+    media = str(ctype or "").split(";", 1)[0].strip().lower()
+    return media == "" or media.startswith("text/") or any(part in media for part in _TEXT_MEDIA)
 
 
 # Cleaned whole: a secret the bound would split could leave its prefix.

@@ -81,7 +81,7 @@ func UnreadableBody(ctx *Context, status int, headers any, text any, sent any, f
 		shown = "none"
 	}
 	detail := fmt.Sprintf("HTTP %d, content-type %s, user-agent %s", status, shown, agent)
-	if text != nil {
+	if text != nil && quotable(ctx, ctype) {
 		detail += ", body: " + bodyPreview(ctx, text)
 	}
 
@@ -98,6 +98,18 @@ func UnreadableBody(ctx *Context, status int, headers any, text any, sent any, f
 	}
 	return ctx.MakeError("response_content_type",
 		"response: expected JSON, got "+ctype+" ("+detail+")")
+}
+
+var textMedia = regexp.MustCompile(`json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql`)
+
+// Only text is quoted: bytes are a file's, by the model or by their type.
+// Text is no declared type, text/*, or a structured text format.
+func quotable(ctx *Context, ctype string) bool {
+	if response, ok := ctx.Point["response"].(map[string]any); ok && true == response["binary"] {
+		return false
+	}
+	media := strings.ToLower(strings.TrimSpace(strings.SplitN(ctype, ";", 2)[0]))
+	return media == "" || strings.HasPrefix(media, "text/") || textMedia.MatchString(media)
 }
 
 func headerValue(headers any, name string) string {

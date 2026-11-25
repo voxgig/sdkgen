@@ -81,9 +81,9 @@ function render(model: any, entity: any[], auth: {
 ;;
 ;; Every credential slot holds a distinctive value, every diagnostic feature
 ;; this SDK ships is switched on with a capturing sink, a real operation runs
-;; through every outcome, and every string that leaves the SDK is searched
-;; for the canaries and their encoded forms. It also proves its own
-;; sensitivity: with clean switched off the canary MUST show.
+;; through every outcome, and every string that leaves is searched for the
+;; canaries and their encoded forms; a second sweep does the same for a body
+;; of bytes. With clean switched off the canary MUST show.
 (ns sdk.test.clean
   (:require [sdk.api :as api]
             [sdk.core :as core]
@@ -113,6 +113,30 @@ function render(model: any, entity: any[], auth: {
                [(b64 (str (:apikey CANARY) ":" (:secret CANARY)))])))
 
 (defn- leaks [^String text] (filterv (fn [^String f] (.contains text f)) FORMS))
+
+;; The marker a body of bytes carries.
+(def CONTENT "CANARY-CONTENT-b7n3v9x1c5")
+
+(defn- content-bytes [] (.getBytes ^String CONTENT "UTF-8"))
+
+;; Every value this SDK accepts as a raw body. An InputStream is read into
+;; bytes before the request is built, so its size is known as well.
+(def CARRIERS
+  [{:name "bytes" :make (fn [] (content-bytes))}
+   {:name "string" :make (fn [] CONTENT)}
+   {:name "stream" :make (fn [] (java.io.ByteArrayInputStream. (content-bytes)))}])
+
+;; The forms bytes travel in once copied: text, a list of byte values (as a
+;; vector, a seq or a JSON list prints one), hex, base64.
+(defn- content-leaks [text]
+  (let [flat (str/replace text #"\\s+" "")
+        values (str/replace text #"[\\s,]+" ",")
+        marker (seq (content-bytes))]
+    (cond-> []
+      (str/includes? text CONTENT) (conj "text")
+      (str/includes? values (str/join "," marker)) (conj "byte values")
+      (str/includes? (str/lower-case flat) (apply str (map #(format "%02x" %) marker))) (conj "hex")
+      (str/includes? flat (b64 CONTENT)) (conj "base64"))))
 
 ;; Header maps keep the caller's spelling; the assertion should not care.
 (defn- header [m name]
@@ -248,6 +272,31 @@ ${candidates(entity)}
                   [{} (into {} (map (fn [p] [p "p1"]) (:params c)))]))
           CANDIDATES)))
 
+;; The first operation with a point that sends a raw body the model marks
+;; binary, with every path parameter of that point filled in.
+(defn- binary-op []
+  (let [plain (construct (vs/jm "apikey" (:apikey CANARY)))
+        config (core/oget (core/client-root-ctx plain) :config)]
+    (some (fn [c]
+            (let [at (str/last-index-of (:name c) ".")
+                  opcfg (vs/getpath config (str "entity." (subs (:name c) 0 at) ".op." (subs (:name c) (inc at))))
+                  points (when (vs/ismap opcfg) (vs/getprop opcfg "points"))]
+              (some (fn [point]
+                      (let [body (when (vs/ismap point) (vs/getprop point "body"))]
+                        (when (and (vs/ismap body) (= "raw" (vs/getprop body "kind"))
+                                   (true? (vs/getprop body "binary")))
+                          (let [params (vs/getprop (vs/getprop point "args") "params")
+                                action (vs/getprop (vs/getprop point "select") "$action")
+                                match (into {} (keep (fn [p]
+                                                       (let [n (vs/getprop p "name")]
+                                                         (when (string? n) [n "p1"])))
+                                                     (when (vs/islist params) (vec params))))]
+                            (assoc c
+                                   :match (cond-> match (some? action) (assoc "$action" action))
+                                   :media (vs/getprop body "media"))))))
+                    (when (vs/islist points) (vec points)))))
+          CANDIDATES)))
+
 ;; A feature that throws from inside the pipeline, quoting the request it
 ;; saw: an error make-error never handled.
 (defn- hook-saw [ctx]
@@ -304,6 +353,7 @@ ${candidates(entity)}
     err))
 
 (def ^:private NO-TARGET "no operation of this SDK completes against a plain 200; nothing to sweep")
+(def ^:private NO-BINARY "no operation of this SDK sends a binary body; nothing to sweep")
 
 (defn run [rec]
   (t/run-check rec "clean-no-credential-leaves-the-sdk"
@@ -488,6 +538,68 @@ ${candidates(entity)}
         (t/is-true (.contains ^java.util.List values "LISTED-SECRET-2") "listed under a token header")
         (t/is-true (.contains ^java.util.List values "123456789") "a number, as its text")
         (t/is-false (.contains ^java.util.List values "not-a-secret") "an ordinary name"))))
+
+  (t/run-check rec "clean-no-body-of-bytes-leaves-the-sdk"
+    (fn []
+      (if-let [target (binary-op)]
+        (let [sinks (atom []) sent (atom {}) errors (atom {}) explains (atom {})]
+          (doseq [carrier CARRIERS
+                  scenario (take 4 SCENARIOS)
+                  variant [{:name "throw" :ctrl (fn [] (vs/jm))}
+                           {:name "explain" :ctrl (fn [] (vs/jm "explain" (vs/jm)))}
+                           {:name "nothrow" :ctrl (fn [] (vs/jm "throw" false "explain" (vs/jm)))}]]
+            (let [key (str (:name carrier) "/" (:name scenario) "/" (:name variant))
+                  ;; The transport is where the bytes are meant to arrive, whole.
+                  seen (assoc scenario :respond (fn [url fd]
+                                                  (swap! sent assoc key (vs/getprop fd "body"))
+                                                  ((:respond scenario) url fd)))
+                  sdk (make-sdk seen sinks nil)
+                  ctrl ((:ctrl variant))
+                  err (drive sdk (assoc-in target [:match "$body"] ((:make carrier))) ctrl sinks)]
+              (when err (swap! errors assoc key err))
+              (when-let [ex (vs/getprop ctrl "explain")] (swap! explains assoc key ex))
+              (swap! sinks into (forms "sdk" sdk))))
+          (let [leaked (filterv (fn [s] (seq (content-leaks (:text s)))) @sinks)]
+            (println (str "clean: content swept " (count @sinks) " surface(s), " (count leaked) " leak(s)"))
+            (t/is-eq (count leaked) 0
+                     (str "a body of bytes leaked through: "
+                          (str/join "; " (map (fn [s] (str (:name s) " [" (str/join ", " (content-leaks (:text s))) "]"))
+                                              leaked)))))
+          (let [desc (vs/jm "binary$" "bytes" "size" (alength ^bytes (content-bytes)))]
+            (when (some? (:media target)) (.put ^java.util.Map desc "type" (:media target)))
+            (doseq [carrier CARRIERS]
+              (let [cname (:name carrier)
+                    body (get @sent (str cname "/notfound/throw"))
+                    failed (core/ex->sdk (get @errors (str cname "/notfound/throw")))
+                    explained (vs/getprop (get @explains (str cname "/ok/explain")) "spec")]
+                ;; The request itself is untouched: what the transport was handed is the body.
+                (t/is-eq (if (bytes? body) (String. ^bytes body "UTF-8") body) CONTENT
+                         (str cname ": the transport was handed something else"))
+                ;; The positive half: where the body was, what describes it now is.
+                (t/is-some failed (str cname ": the 404 scenario must throw an SDK error"))
+                (t/is-deep (vs/getprop (:spec failed) "body") desc (str cname ": the thrown spec"))
+                (t/is-deep (vs/getprop explained "body") desc (str cname ": the explain record")))))
+          ;; A stream held anywhere else is described by its kind, and not read.
+          (let [in (java.io.ByteArrayInputStream. (content-bytes))
+                root (core/client-root-ctx (construct (vs/jm "apikey" (:apikey CANARY))))]
+            (t/is-deep (core/u-clean root (vs/jm "in" in)) (vs/jm "in" (vs/jm "binary$" "stream"))
+                       "a stream is described by its kind")
+            (t/is-eq (.available in) (alength ^bytes (content-bytes)) "the stream was not read")))
+        (println (str "SKIP clean-no-body-of-bytes-leaves-the-sdk: " NO-BINARY)))))
+
+  (t/run-check rec "clean-the-sweep-can-see-a-body"
+    (fn []
+      (if-let [target (binary-op)]
+        ;; A byte array prints as its identity with clean on or off, so only
+        ;; a string shows its bytes.
+        (doseq [carrier (filterv #(= "string" (:name %)) CARRIERS)]
+          (let [sinks (atom [])
+                sdk (make-sdk (nth SCENARIOS 1) sinks {"active" false})
+                err (drive sdk (assoc-in target [:match "$body"] ((:make carrier))) (vs/jm) sinks)]
+            (t/is-some err (str (:name carrier) ": the 404 scenario must throw"))
+            (t/is-true (some (fn [s] (seq (content-leaks (:text s)))) @sinks)
+                       (str (:name carrier) ": with clean off, nothing showed the bytes: the sweep is blind"))))
+        (println (str "SKIP clean-the-sweep-can-see-a-body: " NO-BINARY)))))
   nil)
 `
 }

@@ -22,6 +22,8 @@
 #define CLEAN_MAXDEPTH 32
 #define CLEAN_CIRCULAR "[circular]"
 #define CLEAN_DEFAULT_MASK "[redacted]"
+// The key of what stands in for a body of bytes; its value is the kind.
+#define CLEAN_BINARY_KEY "binary$"
 
 typedef struct {
   bool active;
@@ -31,6 +33,13 @@ typedef struct {
   int64_t hint;
   int64_t min;
 } CleanCfg;
+
+// The live request body of a point the model marks binary, and its type.
+typedef struct {
+  voxgig_value* live[2];
+  size_t n;
+  const char* media; // NULL when the point declares none
+} BinaryBody;
 
 static char* dup_str(const char* s) {
   if (!s) s = "";
@@ -362,16 +371,59 @@ static char* clean_name(const CleanCfg* cfg, voxgig_value* out, const char* key)
   return alt;
 }
 
+// A string shorter than the registry accepts is not told from ordinary text.
+static bool binary_body(Context* ctx, BinaryBody* bin) {
+  bin->n = 0;
+  bin->media = NULL;
+  if (!ctx) return false;
+  voxgig_value* body = getp(ctx->point, "body");
+  bool binary = false;
+  if (!media_is_raw_request(ctx->point) || !get_bool(body, "binary", &binary) || !binary) {
+    return false;
+  }
+  int64_t min = count(getp(config_block(ctx), "min"), 4);
+  if (min < 1) min = 1;
+  voxgig_value* live[2] = { ctx->spec ? ctx->spec->body : NULL, media_raw_body(ctx->reqdata) };
+  for (size_t i = 0; i < 2; i++) {
+    if (voxgig_is_string(live[i]) && min <= (int64_t)voxgig_string_len(live[i])) {
+      bin->live[bin->n++] = live[i];
+    }
+  }
+  bin->media = get_str(body, "media");
+  return 0 < bin->n;
+}
+
+// Bytes are described, never copied (ADR-006). The value union has no
+// variant for bytes: a string value is bytes only as the body of a point
+// the model marks binary, by identity or equal content. Its length, not a
+// NUL, ends it.
+static voxgig_value* describe_binary(const BinaryBody* bin, voxgig_value* val) {
+  if (!bin || !voxgig_is_string(val)) return NULL;
+  bool declared = false;
+  for (size_t i = 0; i < bin->n && !declared; i++) {
+    declared = voxgig_equals(bin->live[i], val);
+  }
+  if (!declared) return NULL;
+  voxgig_value* desc = cmap(2,
+    CLEAN_BINARY_KEY, v_str("bytes"),
+    "size", v_int((int64_t)voxgig_string_len(val)));
+  if (bin->media) setp(desc, "type", v_str(bin->media));
+  return desc;
+}
+
 // A plain-data copy of what is about to leave: functions are dropped
 // (NULL), cycles are cut, and no live node is shared with the copy -
 // masking the copy must never mask the pipeline's own spec.
-static voxgig_value* snapshot(const CleanCfg* cfg, voxgig_value* val, const char* key,
-                              size_t depth, Seen* seen) {
+static voxgig_value* snapshot(const CleanCfg* cfg, const BinaryBody* bin, voxgig_value* val,
+                              const char* key, size_t depth, Seen* seen) {
   if (!val || voxgig_is_undef(val) || voxgig_is_null(val)) return val;
 
   if (voxgig_is_string(val)) {
-    char* s = sensitive_key(cfg, key) ? mask_value(cfg, voxgig_as_string(val))
-                                      : clean_string(cfg, voxgig_as_string(val));
+    bool sensitive = sensitive_key(cfg, key);
+    voxgig_value* desc = sensitive ? NULL : describe_binary(bin, val);
+    if (desc) return desc;
+    char* s = sensitive ? mask_value(cfg, voxgig_as_string(val))
+                        : clean_string(cfg, voxgig_as_string(val));
     voxgig_value* out = v_str(s);
     free(s);
     return out;
@@ -393,14 +445,14 @@ static voxgig_value* snapshot(const CleanCfg* cfg, voxgig_value* val, const char
     out = v_list();
     voxgig_list* l = voxgig_as_list(val);
     for (size_t i = 0; i < l->len; i++) {
-      voxgig_value* cv = snapshot(cfg, l->items[i], NULL, depth + 1, seen);
+      voxgig_value* cv = snapshot(cfg, bin, l->items[i], NULL, depth + 1, seen);
       if (cv) voxgig_list_push(voxgig_as_list(out), voxgig_retain(cv));
     }
   } else {
     out = v_map();
     voxgig_map* m = voxgig_as_map(val);
     for (size_t i = 0; i < m->len; i++) {
-      voxgig_value* cv = snapshot(cfg, m->entries[i].value, m->entries[i].key, depth + 1, seen);
+      voxgig_value* cv = snapshot(cfg, bin, m->entries[i].value, m->entries[i].key, depth + 1, seen);
       if (cv) {
         char* name = clean_name(cfg, out, m->entries[i].key);
         setp(out, name, cv);
@@ -412,7 +464,7 @@ static voxgig_value* snapshot(const CleanCfg* cfg, voxgig_value* val, const char
   return out;
 }
 
-static voxgig_value* clean_with(const CleanCfg* cfg, voxgig_value* val) {
+static voxgig_value* clean_with(const CleanCfg* cfg, const BinaryBody* bin, voxgig_value* val) {
   if (!cfg->active) return val;
   if (voxgig_is_string(val)) {
     char* s = clean_string(cfg, voxgig_as_string(val));
@@ -422,7 +474,7 @@ static voxgig_value* clean_with(const CleanCfg* cfg, voxgig_value* val) {
   }
   Seen seen;
   seen.n = 0;
-  voxgig_value* out = snapshot(cfg, val, NULL, 0, &seen);
+  voxgig_value* out = snapshot(cfg, bin, val, NULL, 0, &seen);
   return out ? out : v_undef();
 }
 
@@ -431,7 +483,8 @@ static voxgig_value* clean_with(const CleanCfg* cfg, voxgig_value* val) {
 voxgig_value* clean_util(Context* ctx, voxgig_value* val) {
   CleanCfg cfg;
   read_cfg(config_block(ctx), &cfg);
-  return clean_with(&cfg, val);
+  BinaryBody bin;
+  return clean_with(&cfg, binary_body(ctx, &bin) ? &bin : NULL, val);
 }
 
 char* clean_str(Context* ctx, const char* val) {
@@ -449,7 +502,7 @@ voxgig_value* clean_opts(voxgig_value* options, voxgig_value* val) {
   if (!voxgig_is_map(block)) return val;
   CleanCfg cfg;
   read_cfg(block, &cfg);
-  return clean_with(&cfg, val);
+  return clean_with(&cfg, NULL, val);
 }
 
 // Is this key name sensitive under the context's clean configuration?
@@ -472,8 +525,10 @@ void clean_error_util(Context* ctx, PNError* err) {
   char* code = clean_string(&cfg, err->code ? err->code : "");
   free(err->code);
   err->code = code;
-  if (err->result) err->result = clean_with(&cfg, err->result);
-  if (err->spec) err->spec = clean_with(&cfg, err->spec);
+  BinaryBody found;
+  const BinaryBody* bin = binary_body(ctx, &found) ? &found : NULL;
+  if (err->result) err->result = clean_with(&cfg, bin, err->result);
+  if (err->spec) err->spec = clean_with(&cfg, bin, err->spec);
 }
 
 typedef struct {
@@ -539,4 +594,19 @@ void clean_add_sensitive_opts(voxgig_value* options, voxgig_value* val) {
 void clean_add_sensitive_util(Context* ctx, voxgig_value* val) {
   if (!ctx) return;
   clean_add_sensitive_opts(ctx->options, val);
+}
+
+// Whether a named value is a secret: by its name, or by a registered value
+// it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+bool clean_secret_util(Context* ctx, const char* key, const char* value) {
+  CleanCfg cfg;
+  read_cfg(config_block(ctx), &cfg);
+  if (sensitive_key(&cfg, key)) return true;
+  if (!value) return false;
+  voxgig_list* vl = voxgig_as_list(cfg.values);
+  for (size_t i = 0; i < vl->len; i++) {
+    const char* form = voxgig_as_string(vl->items[i]);
+    if (form[0] != '\0' && strstr(value, form)) return true;
+  }
+  return false;
 }

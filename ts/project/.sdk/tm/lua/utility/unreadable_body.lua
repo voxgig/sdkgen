@@ -36,6 +36,29 @@ local function preview(ctx, text)
 end
 
 
+local TEXT_MEDIA = { "json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql" }
+
+-- Only text is quoted: bytes are a file's, by the model or by their type.
+-- Text is no declared type, text/*, or a structured text format.
+local function quotable(ctx, ctype)
+  local response = type(ctx.point) == "table" and ctx.point.response or nil
+  if type(response) == "table" and response.binary == true then
+    return false
+  end
+  local media = string.lower((string.match(ctype or "", "^%s*([^;]*)") or ""))
+  media = string.gsub(media, "%s+$", "")
+  if media == "" or string.sub(media, 1, 5) == "text/" then
+    return true
+  end
+  for _, part in ipairs(TEXT_MEDIA) do
+    if string.find(media, part, 1, true) then
+      return true
+    end
+  end
+  return false
+end
+
+
 -- A body that is not JSON. An HTTP failure keeps its own error, with the
 -- response described; otherwise the code tells a wrong content type from
 -- malformed JSON.
@@ -47,7 +70,7 @@ local function unreadable_body(ctx, status, headers, text, sent, failed)
   end
   local detail = "HTTP " .. tostring(status) .. ", content-type " ..
     (ctype == "" and "none" or ctype) .. ", user-agent " .. tostring(agent)
-  if text ~= nil then
+  if text ~= nil and quotable(ctx, ctype) then
     detail = detail .. ", body: " .. preview(ctx, text)
   end
 
