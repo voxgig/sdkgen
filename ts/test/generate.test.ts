@@ -1492,6 +1492,18 @@ main: kit: target: js: phase: feature: active: false
       readme.slice(readme.indexOf('"apikey"') - 80, readme.indexOf('"apikey"') + 200))
   })
 
+  // PrepareAuth composes a Basic credential only with the key in the header.
+  test('the ts documents ask for a secret exactly where PrepareAuth reads one', async () => {
+    for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(['ts'], undefined, extra)
+      for (const file of ['README.md', 'ts/README.md', 'ts/REFERENCE.md']) {
+        strictEqual(/secret[:?]|options\.secret|_SECRET/.test(String(out[file])), wanted, file + ', ' +
+          (wanted ? 'Basic in the header' : 'Basic in the query'))
+      }
+    }
+  })
+
+
   // The template pass reads `$$path$$` in what a component prints, so text from
   // the spec reaches generated source with each `$$` escaped for its language.
   for (const repr of ['literal', 'data']) {

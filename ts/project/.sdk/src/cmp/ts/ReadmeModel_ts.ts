@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, isHttpBasicAuth, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -49,7 +49,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const returnBullets = retBullets.join('\n')
 
   const authActive = isAuthActive(model)
-  const authBasic = authActive && isHttpBasicAuth(model)
+  const authBasic = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyOptionType = authActive ? `\n  apikey?: string` : ''
   const secretOptionType = authBasic ? `\n  secret?: string` : ''
   const apikeyOptionRow = authActive

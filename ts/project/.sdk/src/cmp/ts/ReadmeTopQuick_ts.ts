@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, isHttpBasicAuth, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -29,7 +29,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const ctorFields = (authActive
     ? `\n  apikey: process.env.${envName(model)}_APIKEY,${
-      isHttpBasicAuth(model) ? `\n  secret: process.env.${envName(model)}_SECRET,` : ''}`
+      fact(model.main[KIT], 'auth').secret ? `\n  secret: process.env.${envName(model)}_SECRET,` : ''}`
     : '') + serverField
 
   const ctor = '' === ctorFields
