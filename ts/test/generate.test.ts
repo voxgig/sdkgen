@@ -891,9 +891,9 @@ describe('generate', () => {
     ok(null != out['rb/README.md'], 'rb: no README.md')
 
     const top = topSections(out['README.md'])
-    deepStrictEqual(subheads(top['Quickstart']), ['Golang'], 'the lead quickstart')
+    deepStrictEqual(subheads(top['Quickstart']), ['Go'], 'the lead quickstart')
     deepStrictEqual(subheads(top['Quickstart in other languages']), ['Ruby'])
-    deepStrictEqual(subheads(top['Offline unit testing']), ['Golang', 'Ruby'])
+    deepStrictEqual(subheads(top['Offline unit testing']), ['Go', 'Ruby'])
     ok(top['How-to guides'].includes('client.Direct('),
       'the direct call guide has no go example')
     deepStrictEqual(sink.filter((e: any) => 'optional-component-missing' === e?.point), [])
@@ -990,7 +990,7 @@ describe('generate', () => {
     ok(zig.includes('(Zig)') && !zig.includes('TypeScript'), zig)
 
     const cli = await entry(['go', 'go-cli'])
-    ok(cli.includes('(Golang, plus the CLI surface)') && !cli.includes('MCP'), cli)
+    ok(cli.includes('(Go, plus the CLI surface)') && !cli.includes('MCP'), cli)
   })
 
 
