@@ -1399,7 +1399,7 @@ src/cmp/py/Package_py.ts 69c4ddb165ed
 src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts c0fff5be4178
 src/cmp/py/ReadmeExamplesTest_py.ts e962e254edcb
-src/cmp/py/ReadmeExplanation_py.ts d7c6b57925cf
+src/cmp/py/ReadmeExplanation_py.ts 4c7106557c46
 src/cmp/py/ReadmeHowto_py.ts c6edf97e409e
 src/cmp/py/ReadmeInstall_py.ts 1b6d219a6182
 src/cmp/py/ReadmeIntro_py.ts 606b93bc8b3a

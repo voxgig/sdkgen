@@ -324,6 +324,24 @@ function findFile(out: Record<string, string>, suffix: string): string | undefin
 }
 
 
+// The lines of the layout tree a README draws under its `### ... structure`
+// heading, each with the path it names below the tree's root.
+function structureTree(readme: string): { line: string, path: string }[] {
+  const block = /^### [A-Za-z ]*[Ss]tructure\n\n```\n([\s\S]*?)\n```/m.exec(readme)
+  if (null == block) return []
+  const stack: string[] = []
+  return block[1].split('\n').slice(1).map((line: string) => {
+    const m = /^((?:│ {3}| {4})*)(?:├── |└── )(\S+)/.exec(line)
+    if (null == m) return { line, path: '' }
+    const depth = m[1].length / 4
+    stack.length = depth
+    const path = [...stack, m[2]].join('/')
+    stack[depth] = m[2].replace(/\/$/, '')
+    return { line, path }
+  })
+}
+
+
 describe('generate', () => {
 
   let cwd = ''
@@ -720,6 +738,31 @@ describe('generate', () => {
 
     for (const target of targets) {
       ok(0 < filesFor(out, target).length, target + ': generated no files')
+    }
+  })
+
+
+  // A build writes these, and generation does not.
+  const BUILD_OUTPUT: Record<string, string[]> = { ts: ['dist/'] }
+
+  test('every path a README layout tree names is one the target writes', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets)
+
+    for (const target of targets) {
+      const tree = structureTree(out[target + '/README.md'])
+      ok(0 < tree.length, target + ': the README draws no layout tree')
+      const written = filesFor(out, target).map(([p]) => p.slice(target.length + 1))
+
+      for (const { line, path } of tree) {
+        ok('' !== path, target + ': a tree line names no path: ' + line)
+        if ((BUILD_OUTPUT[target] || []).includes(path)) continue
+        const pattern = new RegExp('^' + path.split('*')
+          .map((part: string) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') +
+          (path.endsWith('/') ? '' : '$'))
+        ok(written.some((p: string) => pattern.test(p)),
+          target + ': the layout tree names ' + path + ', which generation does not write')
+      }
     }
   })
 
