@@ -7,6 +7,7 @@ exports.cmd_package_check = cmd_package_check;
 exports.checkPackage = checkPackage;
 const kindCollection_1 = require("../helpers/kindCollection");
 const applicability_1 = require("../helpers/applicability");
+const surface_1 = require("../helpers/surface");
 const node_path_1 = __importDefault(require("node:path"));
 const types_1 = require("../types");
 const utility_1 = require("../utility");
@@ -196,6 +197,12 @@ function checkDefinition(fs, kind, name, file) {
     }
     if ('target' === kind) {
         found.push(...checkTargetModel(checked, name, file, at));
+        const surface = declared?.surface;
+        if ('string' === typeof surface && '' !== surface && !surface_1.SURFACES.includes(surface)) {
+            found.push(at('error', 'target-surface-unknown', 'declares surface `' + surface + '`, which is not one of ' + surface_1.SURFACES.join(', ') +
+                ' — a document names a target with any other word by its title, never as an ' +
+                'SDK, a CLI or an MCP server'));
+        }
     }
     if ('feature' === kind) {
         found.push(...checkFeatureModel(strict.model, name, at));

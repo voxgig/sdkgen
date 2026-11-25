@@ -4,16 +4,13 @@ exports.Deploy = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
+const facts_1 = require("../helpers/facts");
 const types_1 = require("../types");
 const Deploy = (0, component_1.cmp)(function Deploy(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
-    const targetMap = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`) || {};
-    const targets = [];
-    (0, jostraca_1.each)(targetMap, (t) => {
-        if (false !== t.active)
-            targets.push(t);
-    });
+    const kit = model.main[types_1.KIT];
+    const targets = (0, facts_1.fact)(kit, 'active').map((name) => kit.target[name]);
     if (0 === targets.length) {
         return;
     }
@@ -90,6 +87,7 @@ function makeDeployMakefile(model, targets) {
         const ghArgs = `--for=${ghRecipe}=$(${aliasVarName(ghRecipe)})`;
         const args = vaultExecArgs(t);
         const via = t.publish?.tag?.via || 'port';
+        const dir = 'root' === (0, facts_1.fact)(t, 'place') ? '.' : t.name;
         const rs = (0, packageMeta_1.registryState)(model, t.name);
         if ('tag' === rs && (reg || 'root' === via)) {
             return `
@@ -116,10 +114,10 @@ ${tagPushRecipe(t.name, (0, packageMeta_1.packageVersion)(model, t.name), reg.na
         }
         return `
 deploy-${t.name}:
-\tboru vault exec ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec ${args} -- $(MAKE) -C ${dir} publish
 
 deploy-dry-${t.name}:
-\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${dir} publish
 `;
     }).join('');
     const varLines = Array.from(aliasVars.entries())

@@ -1,23 +1,18 @@
-import { each, Content, File } from 'jostraca'
+import { Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import { packageVersion, registryState } from '../helpers/packageMeta'
+import { fact } from '../helpers/facts'
 
-import {
-  KIT,
-  getModelPath
-} from '../types'
+import { KIT } from '../types'
 
 
 const Deploy = cmp(function Deploy(props: any) {
   const { ctx$ } = props
   const { model } = ctx$
 
-  const targetMap = getModelPath(model, `main.${KIT}.target`) || {}
-  const targets: any[] = []
-  each(targetMap, (t: any) => {
-    if (false !== t.active) targets.push(t)
-  })
+  const kit = model.main[KIT]
+  const targets: any[] = fact(kit, 'active').map((name: string) => kit.target[name])
 
   if (0 === targets.length) {
     return
@@ -111,6 +106,7 @@ function makeDeployMakefile(model: any, targets: any[]): string {
     const args = vaultExecArgs(t)
 
     const via = t.publish?.tag?.via || 'port'
+    const dir = 'root' === fact(t, 'place') ? '.' : t.name
     const rs = registryState(model, t.name)
 
     if ('tag' === rs && (reg || 'root' === via)) {
@@ -140,10 +136,10 @@ ${tagPushRecipe(t.name, packageVersion(model, t.name), reg.name + ' publication 
 
     return `
 deploy-${t.name}:
-\tboru vault exec ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec ${args} -- $(MAKE) -C ${dir} publish
 
 deploy-dry-${t.name}:
-\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${dir} publish
 `
   }).join('')
 

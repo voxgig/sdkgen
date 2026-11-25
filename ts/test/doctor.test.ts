@@ -298,6 +298,27 @@ const Top = () => {
   })
 
 
+  // An add keeps an alias's own model file, so a slot its origin gains later
+  // never reaches it.
+  test('an aliased model file lacking a slot its origin declares is behind', async () => {
+    const project = makeProject({ copies: 'overwrite' })
+    await target_add([targetRef('go') + '~go2'], project.actx)
+    project.actx.model.main[KIT].target.go2 = { name: 'go2', base: SCAFFOLD_BASE, origname: 'go' }
+
+    deepStrictEqual((await check(project)).aliasedBehind, [])
+
+    const file = 'model/target/go2.aontu'
+    const before = read(project, file)
+    ok(/^\s*provides:/m.test(before), 'the go model declares no provides')
+    write(project, file, before.replace(/^\s*provides:.*\n/m, ''))
+
+    const report = await check(project)
+    deepStrictEqual(report.aliasedBehind, [{ file, slots: ['provides'] }])
+    ok(report.aliasedDiff.includes(file), JSON.stringify(report.aliasedDiff))
+    strictEqual(report.ok, true, 'a slot behind failed doctor')
+  })
+
+
   // A project whose copies predate the provenance rollout differs from the
   // scaffold by exactly the anchor line. The project changed nothing, so
   // calling that a fork would turn every existing consumer's CI red at once.

@@ -15,7 +15,7 @@ const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
 const text_1 = require("../helpers/text");
 const facts_1 = require("../helpers/facts");
-const alongside_1 = require("../helpers/alongside");
+const surface_1 = require("../helpers/surface");
 const copymerge_1 = require("../helpers/copymerge");
 const packageMeta_1 = require("../helpers/packageMeta");
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen';
@@ -286,23 +286,25 @@ const ReadmeTopPackages = (0, component_1.cmp)(function ReadmeTopPackages(props)
 `);
         pkgTargets.forEach((tgt) => {
             const state = (0, packageMeta_1.registryState)(model, tgt.name);
+            const readme = (0, facts_1.fact)(tgt, 'docs').readme;
             let cell;
             if ('active' === state) {
                 const cmd = installCommand(tgt, model);
                 cell = cmd
                     ? '`' + cmd + '`'
-                    : `see [${tgt.name}/README.md](${tgt.name}/README.md#install)`;
+                    : readme ? `see [${tgt.name}/README.md](${tgt.name}/README.md#install)` : `see \`${tgt.name}/\``;
             }
             else if ('tag' === state) {
                 const cmd = (0, packageMeta_1.vendorCommand)(model, tgt.name);
                 cell = cmd
                     ? '`' + cmd + '`'
-                    : `build from source — [${tgt.name}/README.md](${tgt.name}/README.md)`;
+                    : 'build from source — ' + (readme ? `[${tgt.name}/README.md](${tgt.name}/README.md)` : `\`${tgt.name}/\``);
             }
             else {
                 // The target README always gives a route that works without a
                 // tag, which a repository may not have.
-                cell = `publish pending — [install from source](${tgt.name}/README.md#install)`;
+                cell = readme ? `publish pending — [install from source](${tgt.name}/README.md#install)` :
+                    `publish pending — install from source in \`${tgt.name}/\``;
             }
             (0, jostraca_1.Content)(`| ${tgt.title} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
 `);
@@ -325,13 +327,15 @@ const ReadmeTopQuickstart = (0, component_1.cmp)(function ReadmeTopQuickstart(pr
         }
         const placement = (0, utility_1.credentialPlacement)(model);
         (0, jostraca_1.Content)(`
-${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}${(0, facts_1.fact)(leadTarget, 'docs').readme ?
+            `See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.` : ''}
 
 `);
     }
 });
 const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props) {
-    const { hasCli, hasMcp, sdkTargets, consumerTargets, langList } = props.s;
+    const { hasCli, hasMcp, cliTargets, mcpTargets, sdkTargets, consumerTargets, langList } = props.s;
+    const paths = (targets) => targets.map((t) => `\`${t.name}/\``).join(' ');
     if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0) {
         (0, jostraca_1.Content)(`## Surfaces
 
@@ -339,16 +343,15 @@ const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props)
 | --- | --- |
 `);
         if (sdkTargets.length > 0) {
-            const paths = sdkTargets.map((t) => `\`${t.name}/\``).join(' ');
-            (0, jostraca_1.Content)(`| **SDK** (${langList}) | ${paths} |
+            (0, jostraca_1.Content)(`| **SDK** (${langList}) | ${paths(sdkTargets)} |
 `);
         }
         if (hasCli) {
-            (0, jostraca_1.Content)(`| **CLI** | \`go-cli/\` |
+            (0, jostraca_1.Content)(`| **CLI** | ${paths(cliTargets)} |
 `);
         }
         if (hasMcp) {
-            (0, jostraca_1.Content)(`| **MCP server** | \`go-mcp/\` |
+            (0, jostraca_1.Content)(`| **MCP server** | ${paths(mcpTargets)} |
 `);
         }
         consumerTargets.forEach((t) => {
@@ -360,11 +363,12 @@ const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props)
     }
 });
 const ReadmeTopMcp = (0, component_1.cmp)(function ReadmeTopMcp(props) {
-    const { model, hasMcp } = props.s;
+    const { model, hasMcp, mcpTargets } = props.s;
     if (hasMcp) {
-        const mcpOps = (0, mcpTools_1.mcpTools)(model).map((tool) => tool.op);
-        const mcpWrite = true === model.main?.[types_1.KIT]?.target?.['go-mcp']?.tool?.write;
-        const toggle = "`main: kit: target: 'go-mcp': tool: write: true`";
+        const mcp = mcpTargets[0].name;
+        const mcpOps = (0, mcpTools_1.mcpTools)(model, mcp).map((tool) => tool.op);
+        const mcpWrite = true === mcpTargets[0].tool?.write;
+        const toggle = `\`main: kit: target: '${mcp}': tool: write: true\``;
         const opText = mcpOps.length < 2 ? mcpOps.join('') :
             mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1];
         // What the server reads and writes is what it registers, not the flag.
@@ -386,7 +390,7 @@ The generated MCP server exposes this SDK's ${opText} operations as
 can call directly.${reads} Build and register it:
 
 \`\`\`bash
-cd go-mcp && go build -o ${model.name}-mcp .
+cd ${mcp} && go build -o ${model.name}-mcp .
 \`\`\`
 
 Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
@@ -605,7 +609,7 @@ const ReadmeTopPerLanguage = (0, component_1.cmp)(function ReadmeTopPerLanguage(
         (0, jostraca_1.Content)(`## Per-language documentation
 
 `);
-        docTargets.forEach((tgt) => {
+        docTargets.filter((tgt) => (0, facts_1.fact)(tgt, 'docs').readme).forEach((tgt) => {
             (0, jostraca_1.Content)(`- [${tgt.title}](${tgt.name}/README.md)
 `);
         });
@@ -693,31 +697,34 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     (0, jostraca_1.each)(feature, (feat) => { if (!feat.Name)
         (0, jostraca_1.names)(feat, feat.name); });
     const activeEntities = (0, jostraca_1.each)(entity).filter((e) => e.active !== false);
-    const activeTargets = (0, jostraca_1.each)(target).filter((t) => t.active !== false);
-    const hasCli = activeTargets.some((t) => t.name === 'go-cli');
-    const hasMcp = activeTargets.some((t) => t.name === 'go-mcp');
+    const activeTargets = (0, facts_1.fact)(model.main[types_1.KIT], 'active').map((name) => target[name]);
+    const cliTargets = activeTargets.filter((t) => 'cli' === (0, surface_1.surfaceOf)(t));
+    const mcpTargets = activeTargets.filter((t) => 'mcp' === (0, surface_1.surfaceOf)(t));
+    const hasCli = 0 < cliTargets.length;
+    const hasMcp = 0 < mcpTargets.length;
     const docsOrder = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.config.docs_order`, { only_active: false, required: false }) || [];
-    const orderOf = (name) => {
-        const i = docsOrder.indexOf(name);
+    const orderOf = (t) => {
+        const i = docsOrder.indexOf((0, packageMeta_1.originName)(model, t.name));
         if (i !== -1)
             return i;
-        if (name === 'go-cli')
+        const surface = (0, surface_1.surfaceOf)(t);
+        if ('cli' === surface)
             return docsOrder.length + 1;
-        if (name === 'go-mcp')
+        if ('mcp' === surface)
             return docsOrder.length + 2;
         return docsOrder.length;
     };
     const ordered = activeTargets
         .slice()
-        .sort((a, b) => orderOf(a.name) - orderOf(b.name));
-    const isCliOrMcp = (t) => t.name === 'go-cli' || t.name === 'go-mcp';
-    const sdkTargets = ordered.filter((t) => !(0, alongside_1.isConsumer)(t));
+        .sort((a, b) => orderOf(a) - orderOf(b));
+    const isCliOrMcp = (t) => ['cli', 'mcp'].includes((0, surface_1.surfaceOf)(t));
+    const sdkTargets = ordered.filter((t) => 'sdk' === (0, surface_1.surfaceOf)(t));
     // The CLI and the MCP server have surfaces of their own below.
-    const consumerTargets = ordered.filter((t) => (0, alongside_1.isConsumer)(t) && !isCliOrMcp(t));
+    const consumerTargets = ordered.filter((t) => 'sdk' !== (0, surface_1.surfaceOf)(t) && !isCliOrMcp(t));
     const docTargets = ordered.filter((t) => !isCliOrMcp(t));
     const pkgTargets = activeTargets
         .filter((t) => (0, packageMeta_1.hasPackageName)(model, t.name))
-        .sort((a, b) => orderOf(a.name) - orderOf(b.name));
+        .sort((a, b) => orderOf(a) - orderOf(b));
     const langList = sdkTargets.map((t) => t.title).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     const s = {
@@ -736,6 +743,8 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         activeEntities,
         hasCli,
         hasMcp,
+        cliTargets,
+        mcpTargets,
         sdkTargets,
         consumerTargets,
         docTargets,

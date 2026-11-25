@@ -328,13 +328,13 @@ function SdkGen(opts: SdkGenOptions) {
     // target — so the only correction that survives is one made to the model
     // itself, before Root runs. See helpers/modelNames.
     guardModelNames(model, log)
-    warnUngeneratedOps(model, log, targetOrigins(model))
 
     // A flow step whose call the runtime would refuse is switched off, so no
     // generated test makes it; see helpers/flowGuard.
     guardFlowSteps(model, log)
 
     applyFacts(model)
+    warnUngeneratedOps(model, log, targetOrigins(model))
 
     let Root = spec.root
 
@@ -384,15 +384,23 @@ function SdkGen(opts: SdkGenOptions) {
     checkExternalFolders(external, root, fs)
     refuseRootPlan(model, external.map((ext) => ext.name))
 
+    // A run override moves a target for this run only, so the committed files
+    // keep describing the declared layout: the Root keeps the target, and the
+    // components that write the target's own files skip it.
+    const declaredOut = external.filter((ext) =>
+      '' !== String(model.main[KIT][ext.kind]?.[ext.name]?.output?.path ?? ''))
+    const relocated = external.filter((ext) => !declaredOut.includes(ext)).map((ext) => ext.name)
+    warnStale(fs, log, root, external.filter((ext) => relocated.includes(ext.name)))
+
     const tree: { root?: any } = {}
-    const jres = await jostraca.generate(jopts, keepingTree(
-      () => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree))
+    const jres = await jostraca.generate({ ...jopts, meta: { ...jopts.meta, relocated } }, keepingTree(
+      () => Root({ model: 0 === declaredOut.length ? model : withoutExternal(model, declaredOut) }), tree))
 
     showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
     checkDocs(tree.root, folder)
     pruneGenerated({
       fs, log, project: root, out: root, jres, claims: claimedFiles(tree.root, folder),
-      dryrun: !!opts.dryrun,
+      dryrun: !!opts.dryrun, keep: relocated.map((name: string) => name + '/'),
     })
 
     // Docgen owns editions, destinations, templates, text QA and deployment.
@@ -408,7 +416,7 @@ function SdkGen(opts: SdkGenOptions) {
       const gone = false === ext.target.output?.create && !fs.existsSync(ext.folder)
 
       if (null != ext.skip || gone) {
-        log.info({
+        log[ext.active ? 'warn' : 'info']({
           point: 'generate-external-skip', target: ext.name, folder: ext.folder,
           note: ext.skip ?? (ext.name + ' output folder disappeared after ' +
             'preflight and output.create=false, not generated')
@@ -570,6 +578,11 @@ function SdkGen(opts: SdkGenOptions) {
     }
 
     model.const = projectConst(model)
+
+    // The model a generate prepares, without the notices, which belong to it.
+    guardModelNames(model)
+    guardFlowSteps(model)
+    applyFacts(model)
 
     return {
       model,
@@ -818,6 +831,21 @@ function externalItems(
 }
 
 
+// A target this run writes elsewhere leaves its earlier in-tree output as it was.
+function warnStale(fs: any, log: any, root: string, moved: ExternalSpec[]): void {
+  for (const ext of moved) {
+    const folder = Path.join(root, ext.name)
+    if (fs.existsSync(folder)) {
+      log.warn({
+        point: 'generate-external-stale', target: ext.name, folder,
+        note: ext.name + '/ holds an earlier in-tree generation, and this run writes ' +
+          ext.name + ' to ' + ext.folder + ': the in-tree copy is left as it was, and is stale'
+      })
+    }
+  }
+}
+
+
 function externalSkipReason(ext: ExternalSpec, fs: any): string | null {
   if (!ext.active) {
     return ext.name + ' inactive, not generated'
@@ -982,6 +1010,10 @@ function withoutExternal(
     }
 
     kit[kind] = kept
+  }
+
+  if (Array.isArray(kit.fact?.active)) {
+    kit.fact = { ...kit.fact, active: kit.fact.active.filter((name: string) => !drop.has('target:' + name)) }
   }
 
   return {

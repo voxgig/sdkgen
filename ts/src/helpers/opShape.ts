@@ -482,8 +482,8 @@ function ungeneratedOps(model: any): UngeneratedOp[] {
 }
 
 
-// Speaks only for the bundled targets: a target from another package may
-// generate more ops, so it is named as outside the claim rather than judged.
+// Speaks only for the bundled targets: a target from another package or the
+// project's own may generate more ops, so it is named outside the claim.
 function warnUngeneratedOps(
   model: any, log: any, origins: TargetOrigins,
 ): UngeneratedOp[] {
@@ -493,11 +493,14 @@ function warnUngeneratedOps(
       (0 < d.points.length ? ` (${d.points.join(', ')})` : ''))
     const generated = CANON_OP_ORDER.slice(0, -1).join(', ') + ' and ' +
       CANON_OP_ORDER[CANON_OP_ORDER.length - 1]
-    const external = origins.external.map((t) => `${t.name} from ${t.from}`)
+    const outside = [
+      ...origins.external.map((t) => `${t.name} from ${t.from}`),
+      ...origins.owned.map((name) => `${name} (the project's own)`),
+    ]
     log.warn({
       point: 'entity-op-ungenerated', ops: dropped,
-      bundled: origins.bundled, external: origins.external,
-      note: 0 === external.length
+      bundled: origins.bundled, external: origins.external, owned: origins.owned,
+      note: 0 === outside.length
         ? `operation(s) in the model that the bundled targets do not ` +
         `generate (each generates ${generated} only), so the SDK has no ` +
         `method for them: ${listed.join(', ')}. To reach one, reclassify it ` +
@@ -506,8 +509,8 @@ function warnUngeneratedOps(
         : `operation(s) in the model that the bundled targets ` +
         `(${origins.bundled.join(', ')}) do not generate (each generates ` +
         `${generated} only), so their SDKs have no method for them: ` +
-        `${listed.join(', ')}. Targets installed from elsewhere may ` +
-        `generate them, so they are not judged here: ${external.join(', ')}. ` +
+        `${listed.join(', ')}. Targets from elsewhere may generate them, ` +
+        `so they are not judged here: ${outside.join(', ')}. ` +
         `To reach one in a bundled target, reclassify it in the guide ` +
         `(.sdk/model/guide/guide.aontu)`,
     })

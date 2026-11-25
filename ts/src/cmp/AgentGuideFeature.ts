@@ -33,6 +33,14 @@ const AgentGuideFeature = cmp(function AgentGuideFeature(props: any) {
   const defaultOn = fact(feature, 'on')
   const ops = generatedOps(ctx$.model)
 
+  const place = fact(target, 'place')
+  const guide = fact(target, 'link').agents
+  const root = 'folder' === place ? '../../../../' : 'root' === place ? '../../../' :
+    null == ctx$.sdkrelpath ? null : '../../../' + ctx$.sdkrelpath + '/'
+  const where = 'folder' === place ? 'the **project root** — four levels up from here' :
+    'root' === place ? 'the **project root** — three levels up from here' :
+      'the SDK project that generates this package'
+
   Folder({ name: 'src/feature/' + name }, () => {
 
     File({ name: 'AGENTS.md' }, () => {
@@ -73,7 +81,7 @@ later feature can override an earlier one.
 | Registered in | \`.sdk/model/feature/feature-index.aontu\` (\`@"${name}.aontu"\`) |
 | Runtime template | \`.sdk/tm/${lang}/src/feature/${name}/\` (copied here on \`generate\`; \`FEATURE_Name\`/\`FEATURE_VERSION\` substituted) |
 
-(Paths are relative to the **project root** — four levels up from here.)
+(Paths are relative to ${where}.)
 
 ## Customising this feature
 
@@ -84,12 +92,13 @@ later feature can override an earlier one.
 - **Behaviour**: edit the runtime template under
   \`.sdk/tm/${lang}/src/feature/${name}/\`, then regenerate.
 
-After any change: \`cd ../../../../.sdk && npm run generate\` (add
+After any change: \`${null == root ? '' : 'cd ' + root + '.sdk && '}npm run generate\`${null == root ?
+  ' in the SDK project\'s `.sdk/`' : ''} (add
 \`npm run build\` first if you changed a component).
 ${regenerationStatement()}
 
-To author a **new** feature, copy this one's model + template shape — see the
-[project guide](../../../../AGENTS.md) and the
+To author a **new** feature, copy this one's model + template shape — see ${'' === guide ? '' :
+  `the\n[project guide](../../../${guide}) and `}the
 [${target.title || lang} guide](../../../AGENTS.md).
 `)
     })

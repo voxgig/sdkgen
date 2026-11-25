@@ -315,6 +315,8 @@ files in `ts/project/.sdk/model/target/`:
 | `base` | string | — | **Provenance.** The `.sdk` folder this copy came from, always `/`-normalised. Project-relative when the source is inside the project (`node_modules/@acme/sdkgen-iot/.sdk`); a source outside it records what the ref resolved to — `../acme-sdkgen-iot/.sdk` for a relative ref, an absolute path for an absolute one, which is then specific to the machine that ran the add. Ships as the literal `'BASE'`; `add` replaces that one line with the preceding block. |
 | `origname` | string | `''` | **Provenance.** The name in the SOURCE, when it differs — i.e. this was installed as `<origname>~<name>`. What makes an alias checkable. |
 | `package` | string | `''` | **Provenance.** The sdkgen package that supplied it, when the source declares a manifest. What `package update` and `package list` act on. |
+| `surface` | string | `''` | What the target is: `sdk`, `cli`, `mcp`, `data` or `seneca-provider`. `''` leaves the answer to the target's origin for the bundled `go-cli`, `go-mcp` and `py-data`, makes a target that generates entities an SDK, and otherwise leaves it unknown, so the documents name the target by its title. `package check` reports any other word. |
+| `consumes` | string | `''` | The origin of the target this one builds on, such as `go` for `go-cli`. When two installed targets come from that origin, name one by its installed name. |
 | `srcfeature` | boolean | `true` | Whether per-feature source is copied into `src/feature/`. |
 | `phase.<name>.active` | boolean | `true` | Switch a standard generation phase off (see below). |
 | `feature.trim` | boolean | `true` | Whether `target add` trims feature source to the model's selection. `false` keeps the complete set (see below). |
@@ -504,10 +506,10 @@ false` on the operation, on its path) to accept the gap. An inactive
 entity, or an operation already switched off, is not reported.
 
 The warning covers the bundled targets only, identified by the provenance
-each target's model file records. A target installed from another package
-may generate more operations, so the warning lists it as not judged and
-drops the advice to switch the operation off. When every active target
-comes from another package, there is no warning.
+each target's model file records. A target installed from another package,
+or one the project defines in its own `.sdk`, may generate more operations,
+so the warning lists it as not judged and drops the advice to switch the
+operation off. When no active target is bundled, there is no warning.
 
 An entity name is also an identifier stem: the class name, the SDK method
 that returns it, the generated type names and the per-language module names

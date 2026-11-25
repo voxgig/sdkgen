@@ -152,7 +152,7 @@ async function doctor(actx, scope, selected) {
     const report = {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         superseded: [], unwired: [], orphanModel: [],
-        resyncPending: [], aliasedDiff: [],
+        resyncPending: [], aliasedDiff: [], aliasedBehind: [],
         outdated: [], ahead: [], unrecorded: [], customized: [], unfolded: [],
         belowFloor: [], unreadable: [], unresolved: [], byItem: {},
         ignoredLog: false, ok: true,
@@ -262,6 +262,13 @@ async function doctor(actx, scope, selected) {
                 'model leaves ' + item.replace('/', ' ') + ' out. ' + unreadableRemedy(item, oldSyntax)
         });
     }
+    for (const { file, slots } of report.aliasedBehind) {
+        log.info({
+            point: 'doctor-finding', kind: 'aliasedBehind', file, slots,
+            note: 'ALIASED BEHIND (lacks ' + slots.join(', ') + ', which its origin declares; ' +
+                'an add keeps this file, so copy them in by hand): ' + file
+        });
+    }
     for (const { file, names } of report.unfolded) {
         log.info({
             point: 'doctor-finding', kind: 'unfolded', file, names,
@@ -313,6 +320,7 @@ async function doctor(actx, scope, selected) {
         orphanModel: report.orphanModel.length,
         resyncPending: report.resyncPending.length,
         aliasedDiff: report.aliasedDiff.length,
+        aliasedBehind: report.aliasedBehind.length,
         outdated: report.outdated.length,
         ahead: report.ahead.length,
         unfolded: report.unfolded.length,
@@ -631,6 +639,10 @@ function checkItemModel(actx, kind, source, report, found) {
     }
     if (aliased) {
         report.aliasedDiff.push(label);
+        const slots = slotsBehind(fs, kind, scaffold, origname, project, name);
+        if (0 < slots.length) {
+            report.aliasedBehind.push({ file: label, slots });
+        }
         return;
     }
     if (stampOnly(fs, scaffold, project, actx.model, provenance, rewrite)) {
@@ -638,6 +650,22 @@ function checkItemModel(actx, kind, source, report, found) {
         return;
     }
     found('forked', label);
+}
+const PROVENANCE_SLOTS = ['base', 'origname', 'package'];
+// The slots the origin's model file declares that the alias's own file lacks.
+function slotsBehind(fs, kind, scaffold, origname, project, name) {
+    const block = (path, key) => {
+        const text = (0, definition_1.migrateIncludes)(String(fs.readFileSync(path, 'utf8')));
+        const compiled = (0, modelcheck_1.compileModel)(text, path, { strict: false });
+        return 0 === compiled.errors.length ? (0, kindCollection_1.kindCollection)(compiled.model, kind)[key] : undefined;
+    };
+    const origin = block(scaffold, origname);
+    const alias = block(project, name);
+    if (null == origin || null == alias) {
+        return [];
+    }
+    return Object.keys(origin)
+        .filter((slot) => !PROVENANCE_SLOTS.includes(slot) && !(slot in alias)).sort();
 }
 // Files every finding through one place: a forked or edited copy the record
 // shows untouched is outdated instead, and every item keeps a tally.

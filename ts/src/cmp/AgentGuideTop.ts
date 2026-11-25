@@ -43,7 +43,7 @@ feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 
 
 const AgentGuideTopTargets = cmp(function AgentGuideTopTargets(props: any) {
-  const { targets } = props.s
+  const { model, targets } = props.s
 
   if (0 < targets.length) {
     Content(`**Targets** (${targets.length}):
@@ -52,8 +52,10 @@ const AgentGuideTopTargets = cmp(function AgentGuideTopTargets(props: any) {
 | --- | --- | --- |
 `)
     targets.forEach((t: any) => {
-      const note = langCmd(t.name).note ? ' — ' + langCmd(t.name).note : ''
-      Content(`| \`${t.name}\` | \`${t.name}/\`${note} | [\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md) |
+      const note = langCmd(t.name, model).note ? ' — ' + langCmd(t.name, model).note : ''
+      const dir = 'folder' === fact(t, 'place') ? `\`${t.name}/\`` : '—'
+      const guide = fact(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—'
+      Content(`| \`${t.name}\` | ${dir}${note} | ${guide} |
 `)
     })
     Content(`

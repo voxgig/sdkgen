@@ -49,6 +49,8 @@ type PruneContext = {
   jres: any
   claims?: Claims
   dryrun: boolean
+  // Path prefixes never pruned: a relocated target's in-tree output.
+  keep?: string[]
 }
 
 
@@ -406,7 +408,7 @@ function pruneGenerated(ctx: PruneContext): string[] {
 
   for (const [rel, owner] of known ?? []) {
     if (emitted.has(rel) || seen.has(rel) || declared.has(rel) || injected.has(rel) ||
-      canonical(out, rel) !== rel) {
+      canonical(out, rel) !== rel || true === ctx.keep?.some((prefix: string) => rel.startsWith(prefix))) {
       continue
     }
 

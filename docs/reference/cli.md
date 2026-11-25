@@ -165,6 +165,11 @@ edit at all.
 An ALIASED target (`target add go~go2`) is exempt from the model-file
 comparison: the scaffold ships no `go2.aontu` to compare against, and
 editing that file is how an alias is differentiated in the first place.
+Doctor still names each slot that the origin's model file declares and the
+alias's own file lacks, such as a `provides` added after the alias was
+made, as **aliased behind**. Like the difference itself, it does not fail
+the check: copy the slot in by hand. Until then, an alias of a bundled
+target with no `provides` of its own takes its origin's.
 
 A model file installed from a source that still ships `<name>.aon` is
 compared after the same include renaming `add` applied, so the renaming

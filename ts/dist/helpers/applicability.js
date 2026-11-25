@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TAGS = void 0;
 exports.featureApplies = featureApplies;
+exports.providedBy = providedBy;
 exports.shippedProvides = shippedProvides;
 exports.targetFeatures = targetFeatures;
 exports.featureTags = tags;
@@ -14,6 +15,7 @@ const aontu_1 = require("aontu");
 const apidef_1 = require("@voxgig/apidef");
 const definition_1 = require("./definition");
 const shipped_1 = require("./shipped");
+const resolve_1 = require("../action/resolve");
 function tags(val) {
     if (Array.isArray(val)) {
         return val.filter((t) => 'string' === typeof t);
@@ -29,8 +31,19 @@ function featureApplies(feature, target) {
     if (0 === needs.length) {
         return true;
     }
-    const provides = tags(target && target.provides);
+    const provides = providedBy(target);
     return needs.every((need) => provides.includes(need));
+}
+// An add keeps an alias's own model file, so one that declares no `provides`
+// takes its origin's.
+function providedBy(target) {
+    const own = target?.provides;
+    const origin = target?.origname;
+    if ((null != own && 0 < Object.keys(own).length) || 'string' !== typeof origin ||
+        '' === origin || origin === target.name || !(0, resolve_1.resolvesBundled)(target, target.name)) {
+        return tags(own);
+    }
+    return shippedProvides(origin);
 }
 function targetFeatures(model, target) {
     const feature = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature`, { required: false }) || {};

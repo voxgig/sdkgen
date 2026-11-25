@@ -657,7 +657,7 @@ are unused: review folded those packages into WP28 and WP26a.
   else `LEGACY_SURFACE`, an aontu table in the rules keyed by `origname`; else
   `sdk` for a target that generates entities; else unknown. Another gives each
   target its consumers, over a `copy()` of the targets. `SURFACES` (`sdk`,
-  `cli`, `mcp`, `data`, plus `provider` if DQ20) is the closed word list
+  `cli`, `mcp`, `data`, plus `seneca-provider` by DQ20) is the closed word list
   `package check` holds the slot to. `docs/reference/model.md` documents both
   slots; `ADR.md` gains the rule "generated text states only what the model
   declares; an unknown answer writes no sentence" (DQ5). Commit 2:
@@ -810,6 +810,8 @@ are unused: review folded those packages into WP28 and WP26a.
   the surface fact is not `sdk`, `package check` applying the facts to the
   model it compiles for each target (U100), and report an unknown surface
   word naming the release that knows it, never failing generate (U101).
+  By DQ4, the text guard is also exported from testkit with a stable
+  signature.
 - **Tests.** `ts/test/admin-status.test.ts` and `ts/test/remove.test.ts` with
   `SDKGEN_EXTERNAL`, and status over an `sdk.json` without facts;
   `ts/test/testkit.test.ts`; `ts/test/packagecheck.test.ts`.
@@ -1581,13 +1583,13 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
 ## 6. Decisions and authorisations
 
 - **DQ1. What does operation-level `active: false` mean? (design note D1)**
-  Recommendation: An inactive operation is an absent one: a pre-pass in
-  `guardModel` removes it before Root, the schema declares `op: &: active:
-  *true | boolean`, and docgen receives it through `guardModel`. If answered
-  the other way: WP21 deletes the `active` filters in `introOps`/`entityOps`
-  and the two false comments instead; WP31 makes go's two gated components
-  follow the raw list; S23 becomes a documentation correction in the copies.
-  Affects WP21, WP31.
+  Answered (2026-11-24): as recommended. Recommendation: An inactive operation
+  is an absent one: a pre-pass in `guardModel` removes it before Root, the
+  schema declares `op: &: active: *true | boolean`, and docgen receives it
+  through `guardModel`. If answered the other way: WP21 deletes the `active`
+  filters in `introOps`/`entityOps` and the two false comments instead; WP31
+  makes go's two gated components follow the raw list; S23 becomes a
+  documentation correction in the copies. Affects WP21, WP31.
 - **DQ2. Where does `surface` live for the three bundled consumers? (D2)**
   Answered (2026-11-20) by the ruling that facts live in the model: in their
   own model files, with `LEGACY_SURFACE` as an aontu table in the fact rules.
@@ -1597,19 +1599,23 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   model-file edits, and doctor reports three fewer outdated files at R3.
   Affects WP13, WP15, WP36.
 - **DQ3. Do documents committed in the SDK repository follow the declared
-  layout under a run override? (D3)** Recommendation: Yes: an override changes
-  no in-tree document or release file. If answered the other way: WP23
-  becomes: docgen receives the same filtered set and `docLink` drops links
-  consistently; G20 becomes not a defect; WP26b, WP32 and WP36 follow the run.
-  Affects WP14, WP23, WP26b, WP32, WP36.
-- **DQ4. Does the text guard become public testkit API? (D4)** Recommendation:
-  Not until a pack asks; then packs skip by version, not by name. If answered
-  the other way: WP03 exports the guard from testkit with a stable signature,
-  and WP41 adopts it. Affects WP03, WP20.
+  layout under a run override? (D3)** Answered (2026-11-24): as recommended.
+  Recommendation: Yes: an override changes no in-tree document or release
+  file. If answered the other way: WP23 becomes: docgen receives the same
+  filtered set and `docLink` drops links consistently; G20 becomes not a
+  defect; WP26b, WP32 and WP36 follow the run. Affects WP14, WP23, WP26b,
+  WP32, WP36.
+- **DQ4. Does the text guard become public testkit API? (D4)** Answered
+  (2026-11-24) the other way: the guard is exported from testkit now, with a
+  stable signature, in WP20, since WP03 has shipped; WP41 adopts it.
+  Recommendation: Not until a pack asks; then packs skip by version, not by
+  name. If answered the other way: WP03 exports the guard from testkit with a
+  stable signature, and WP41 adopts it. Affects WP03, WP20.
 - **DQ5. Does "generated text states only what the model declares; an unknown
-  answer writes no sentence" earn an ADR? (D5)** Recommendation: Yes, added to
-  `ADR.md` in WP13. If answered the other way: The rule lives only in the
-  agent guide's "Where do I make this change?" row. Affects WP13.
+  answer writes no sentence" earn an ADR? (D5)** Answered (2026-11-24): as
+  recommended. Recommendation: Yes, added to `ADR.md` in WP13. If answered the
+  other way: The rule lives only in the agent guide's "Where do I make this
+  change?" row. Affects WP13.
 - **DQ6. Scope beyond markdown: consumer run-time strings and source comments?
   (D6)** Recommendation: Include the consumer run-time strings (WP36); one
   comment pass with no gate (WP38). If answered the other way: Without
@@ -1617,22 +1623,24 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   and U82 are not fixed; without comments, WP38 is dropped and its six issues
   are not fixed. Affects WP36, WP38.
 - **DQ7. Should generate and doctor fail a target without the `test` feature,
-  or with `phase.entity` off?** Recommendation: Yes, a named error with
-  `target add <t>` as the repair. If answered the other way: WP22 becomes a
-  warning, and the S11 family needs gates in about 40 copies, new wave work.
-  Affects WP22.
+  or with `phase.entity` off?** Answered (2026-11-24): as recommended.
+  Recommendation: Yes, a named error with `target add <t>` as the repair. If
+  answered the other way: WP22 becomes a warning, and the S11 family needs
+  gates in about 40 copies, new wave work. Affects WP22.
 - **DQ8. `publish.tag.active` and `publish.tag.prefix`: implement or remove?
-  Which tag does the primary npm target get?** Recommendation: Implement in
-  one `releaseTag`; keep the primary npm target's bare `v<version>` and say so
-  in the Makefile header. If answered the other way: Remove the two slots,
-  their documentation rows and the modelcheck entry; `releaseTag` keeps
-  today's two rules, made explicit. Affects WP19, WP25, WP35.
+  Which tag does the primary npm target get?** Answered (2026-11-24): as
+  recommended. Recommendation: Implement in one `releaseTag`; keep the primary
+  npm target's bare `v<version>` and say so in the Makefile header. If
+  answered the other way: Remove the two slots, their documentation rows and
+  the modelcheck entry; `releaseTag` keeps today's two rules, made explicit.
+  Affects WP19, WP25, WP35.
 - **DQ9. `ReadmeOptions` (neutral, 20 copies, the pack's): delete, or rebuild
-  from `main.kit.optspec`?** Recommendation: Delete the copies; keep the
-  neutral export writing nothing; option rows come from `requiredOptions` and
-  optspec through one neutral helper. If answered the other way: Rebuild
-  `ReadmeOptions` from the option spec in every language, a larger wave plus a
-  parity test. Affects WP19, WP29, WP41.
+  from `main.kit.optspec`?** Answered (2026-11-24): as recommended.
+  Recommendation: Delete the copies; keep the neutral export writing nothing;
+  option rows come from `requiredOptions` and optspec through one neutral
+  helper. If answered the other way: Rebuild `ReadmeOptions` from the option
+  spec in every language, a larger wave plus a parity test. Affects WP19,
+  WP29, WP41.
 - **DQ10. Six targets (c, elixir, ocaml, scala, swift, zig) document live
   tests they lack: delete the sections, or implement the harnesses?**
   Recommendation: Delete the sections now; harnesses are separate work. If
@@ -1646,17 +1654,19 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
 - **DQ12. Is the generated `patch` method flow-tested in every language?**
   Recommendation: Yes, in the wave. If answered the other way: State it in the
   generated agent guide and warn once per run; no copy change. Affects WP39.
-- **DQ13. `output.repo`: implement or delete?** Recommendation: Implement in
-  `repoInfo(model, target)`. If answered the other way: Delete the slot and
-  its documentation row; package check warns on it for one release. Affects
-  WP25.
-- **DQ14. Where does the release branch live?** Recommendation: Reuse
-  `main.kit.doc.ci.branch` through one helper. If answered the other way: A
-  new `main.kit.release.branch` slot with a documentation row. Affects WP25.
+- **DQ13. `output.repo`: implement or delete?** Answered (2026-11-24): as
+  recommended. Recommendation: Implement in `repoInfo(model, target)`. If
+  answered the other way: Delete the slot and its documentation row; package
+  check warns on it for one release. Affects WP25.
+- **DQ14. Where does the release branch live?** Answered (2026-11-24): as
+  recommended. Recommendation: Reuse `main.kit.doc.ci.branch` through one
+  helper. If answered the other way: A new `main.kit.release.branch` slot with
+  a documentation row. Affects WP25.
 - **DQ15. Add a publisher slot that omits the "unofficial / not affiliated"
-  disclosure when the publisher owns the API?** Recommendation: Yes,
-  `main.kit.publisher.official`, default false. If answered the other way: U68
-  is not fixed: the disclosure is always written. Affects WP25.
+  disclosure when the publisher owns the API?** Answered (2026-11-24): as
+  recommended. Recommendation: Yes, `main.kit.publisher.official`, default
+  false. If answered the other way: U68 is not fixed: the disclosure is always
+  written. Affects WP25.
 - **DQ16. Should `feature add secrets` install it active, like every other
   feature?** Recommendation: Yes: `active: true` in `secrets.aontu`, in the
   wave. If answered the other way: Document inactive-on-add in
@@ -1666,32 +1676,39 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   break. If answered the other way: The constructors return an error, a
   breaking change for generated go and rust SDKs, announced as such. Affects
   WP40.
-- **DQ18. How is `$$` in vendor text protected in generated source?**
-  Recommendation: A per-language string escaper in a new sdkgen helper file
-  (the design note excludes jostraca changes). If answered the other way: A
-  jostraca release adds a raw `Content` mode first; sdkgen and docgen adopt
-  it; WP33 waits for that release. Affects WP19, WP33.
+- **DQ18. How is `$$` in vendor text protected in generated source?** Answered
+  (2026-11-24): as recommended. Recommendation: A per-language string escaper
+  in a new sdkgen helper file (the design note excludes jostraca changes). If
+  answered the other way: A jostraca release adds a raw `Content` mode first;
+  sdkgen and docgen adopt it; WP33 waits for that release. Affects WP19, WP33.
 - **DQ19. Do the escapers unwrap relative links in vendor text to their
-  label?** Recommendation: Yes; absolute URLs are kept. If answered the other
-  way: Relative vendor links stay, and the generate-time link check warns on
-  them in real projects; G29 is pinned, not fixed. Affects WP18.
-- **DQ20. Which `surface` word describes seneca-provider?** Recommendation:
-  Add `provider` to `SURFACES` in WP13. If answered the other way:
-  seneca-provider stays undeclared and is named by its title as an unknown
-  surface; WP27 is dropped. Affects WP13, WP27.
+  label?** Answered (2026-11-21, in WP18): as recommended, refined by source:
+  the spec's text loses its relative links and its fences, and the project's
+  own text (`main.kit.text`) keeps both, with a warning when its links dangle.
+  Recommendation: Yes; absolute URLs are kept. If answered the other way:
+  Relative vendor links stay, and the generate-time link check warns on them
+  in real projects; G29 is pinned, not fixed. Affects WP18.
+- **DQ20. Which `surface` word describes seneca-provider?** Answered
+  (2026-11-24): the word is `seneca-provider`, which WP13 adds to `SURFACES`;
+  neither `provider` nor leaving it undeclared. A later provider target, such
+  as terraform-provider, takes a word of its own. Recommendation: Add
+  `provider` to `SURFACES` in WP13. If answered the other way: seneca-provider
+  stays undeclared and is named by its title as an unknown surface; WP27 is
+  dropped. Affects WP13, WP27.
 - **DQ21. Are feature descriptions definitions of the feature, with docgen
   filtering by applicability?** Recommendation: Yes; the 20 feature model
   files are not reworded. If answered the other way: Reword the 20 feature
   descriptions in the wave (WP34). Affects WP26b.
 - **DQ22. One rule for the path from a target back to `.sdk`, computed for
-  every pass?** Recommendation: Yes, from `targetPlace` and `output.sdkrel`,
-  `..` in tree. If answered the other way: Keep the literal for in-tree
-  targets and document that out-of-tree targets do not run the corpus. Affects
-  WP19, WP32.
+  every pass?** Answered (2026-11-24): as recommended. Recommendation: Yes,
+  from `targetPlace` and `output.sdkrel`, `..` in tree. If answered the other
+  way: Keep the literal for in-tree targets and document that out-of-tree
+  targets do not run the corpus. Affects WP19, WP32.
 - **DQ23. Deprecate published `@voxgig/sdkgen` up to 4.41.0, which fails on a
-  fresh install?** Recommendation: Yes, with a message naming the pin move. If
-  answered the other way: Only the upgrade how-to of WP12 records it. Affects
-  no package.
+  fresh install?** Answered (2026-11-23): as recommended; `@voxgig/sdkgen` up
+  to 4.41.0 carries the deprecation message. Recommendation: Yes, with a
+  message naming the pin move. If answered the other way: Only the upgrade
+  how-to of WP12 records it. Affects no package.
 - **DQ24. Should py-data's `data()` activate the paging feature when the
   wrapped py target declares it?** Recommendation: Yes, unless the caller set
   it; the text says one page when the SDK has no paging. If answered the other

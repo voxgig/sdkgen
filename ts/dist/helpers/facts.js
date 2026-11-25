@@ -9,6 +9,7 @@ const apidef_1 = require("@voxgig/apidef");
 const doctext_1 = require("./doctext");
 const shipped_1 = require("./shipped");
 const utility_1 = require("../utility");
+const resolve_1 = require("../action/resolve");
 // No fact rule reads these, and they are most of a large model.
 const UNREAD = ['entity', 'flow'];
 function isMap(v) {
@@ -39,6 +40,9 @@ function applyFacts(model) {
             input[key] = val;
         }
     }
+    if (isMap(kit.target)) {
+        input.target = ruleTargets(kit.target);
+    }
     const texts = (0, doctext_1.docTexts)(model);
     const escape = Object.fromEntries(texts.map((t, i) => ['t' + i, { raw: t.raw, vendor: t.vendor }]));
     const path = (0, shipped_1.factRulesFile)();
@@ -51,8 +55,62 @@ function applyFacts(model) {
             errs.map((e) => `[${e.why}] ${e.msg}`).join(' | '));
     }
     copyFacts(out.main[apidef_1.KIT], kit);
+    linkConsumers(kit.target, out.main[apidef_1.KIT].target);
+    kit.fact = isMap(kit.fact) ? kit.fact : {};
+    kit.fact.active = activeNames(kit.target);
     texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]));
     return model;
+}
+// aontu lists no map's keys, so the active targets are named here.
+function activeNames(target) {
+    return !isMap(target) ? [] : Object.keys(target).sort()
+        .filter((name) => isMap(target[name]) && false !== target[name].active);
+}
+// A hand-built model may lack the slots the rules read, and only code can say
+// whether a target's provenance leads to the bundled scaffold.
+function ruleTargets(target) {
+    const out = {};
+    for (const [name, t] of Object.entries(target)) {
+        const decl = t;
+        out[name] = !isMap(decl) ? decl : {
+            ...decl,
+            name: null == decl.name ? name : decl.name,
+            origname: null == decl.origname ? '' : decl.origname,
+            surface: null == decl.surface ? '' : decl.surface,
+            consumes: null == decl.consumes ? '' : decl.consumes,
+            scaffold: (0, resolve_1.resolvesBundled)(decl, name),
+        };
+    }
+    return out;
+}
+// The rules name the origin a target builds on; only the installed keys can
+// say which target that is, and which targets build on each one.
+function linkConsumers(target, derived) {
+    if (!isMap(target) || !isMap(derived)) {
+        return;
+    }
+    const names = Object.keys(target).sort().filter((name) => isMap(target[name]?.fact));
+    for (const name of names) {
+        target[name].fact.consumes = consumed(target, name, derived[name]?.derive?.wraps);
+    }
+    for (const name of names) {
+        target[name].fact.consumers = names.filter((other) => false !== target[other].active && name === target[other].fact.consumes);
+    }
+}
+function consumed(target, name, wraps) {
+    if ('string' !== typeof wraps || '' === wraps) {
+        return '';
+    }
+    if (isMap(target[wraps])) {
+        return wraps;
+    }
+    const found = Object.keys(target).sort().filter((other) => other !== name && wraps === target[other]?.fact?.origin);
+    if (1 < found.length) {
+        throw new utility_1.SdkGenError('Target "' + name + '" builds on ' + wraps + ', and ' +
+            found.length + ' installed targets come from it: ' + found.join(', ') +
+            '. Name one in its own model, as `consumes: \'<target>\'`.');
+    }
+    return found[0] ?? '';
 }
 function place(at, path, forms) {
     let node = at.fact = isMap(at.fact) ? at.fact : {};

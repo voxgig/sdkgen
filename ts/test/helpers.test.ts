@@ -35,6 +35,7 @@ import {
   luaString,
   tomlString,
   invalidRequest,
+  applyFacts,
 } from '../dist/sdkgen.js'
 
 
@@ -626,7 +627,7 @@ describe('helpers', () => {
     // `origname` is what `target add` stamps for an alias, and '' when the
     // target was installed under its own name.
     function makeModel() {
-      return {
+      return applyFacts({
         name: 'demo',
         origin: 'acme',
         main: {
@@ -648,7 +649,7 @@ describe('helpers', () => {
             },
           },
         },
-      }
+      })
     }
 
 
@@ -777,10 +778,10 @@ describe('helpers', () => {
         strictEqual(printers.includes(origin), true, origin + ' no longer prints installCommand')
       }
       for (const t of printers) {
-        const model: any = {
+        const model: any = applyFacts({
           name: 'demo', origin: 'acme',
           main: { kit: { target: { [t]: { name: t, publish: { registry: { name: 'reg', state: 'active' } } } } } },
-        }
+        })
         strictEqual(isPublished(model, t), true, t)
         strictEqual(0 < installCommand(model, t).length, true, t + ' prints an empty install command')
       }
@@ -805,7 +806,7 @@ describe('helpers', () => {
     const off = { active: false }
     const phase = { entity: off, feature: off, readme: off, agentguide: off, test: off }
 
-    const model = {
+    const model = applyFacts({
       name: 'demo',
       origin: 'acme',
       main: {
@@ -823,7 +824,7 @@ describe('helpers', () => {
           },
         },
       },
-    }
+    })
 
     test('an SDK target, and a consumer packageName derives a name for', () => {
       for (const target of ['ts', 'py-data', 'go-cli', 'cli2']) {

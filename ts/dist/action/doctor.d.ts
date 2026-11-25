@@ -10,6 +10,10 @@ type DoctorReport = {
     orphanModel: string[];
     resyncPending: string[];
     aliasedDiff: string[];
+    aliasedBehind: {
+        file: string;
+        slots: string[];
+    }[];
     outdated: string[];
     ahead: string[];
     unrecorded: string[];

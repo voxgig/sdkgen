@@ -7,7 +7,7 @@ import Path from 'node:path'
 import { Jostraca, Project } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { PublishWorkflow } from '../dist/sdkgen.js'
+import { PublishWorkflow, applyFacts } from '../dist/sdkgen.js'
 
 
 const noop = () => {}
@@ -17,17 +17,19 @@ const log: any = {
 }
 
 
+// A test reuses its target objects, and the fact pass writes into each.
 function makeModel(targets: any, host: string) {
-  return {
+  return applyFacts({
     name: 'demo',
     origin: 'voxgig-sdk',
     main: {
       kit: {
         repo: { host, org: 'acme', name: 'demo-sdk' },
-        target: targets,
+        target: Object.fromEntries(Object.entries(structuredClone(targets))
+          .map(([name, t]: [string, any]) => [name, { output: { path: '', root: false }, ...t }])),
       },
     },
-  }
+  })
 }
 
 
@@ -67,6 +69,13 @@ const NPM_TS = {
 
 
 describe('PublishWorkflow', () => {
+
+  // The first release goes out by hand, from the first npm target's directory.
+  test('the first-release command enters the first npm target\'s own directory', async () => {
+    const doc = (await render({ js: { ...NPM_TS.ts, name: 'js' } }))['.sdk/PUBLISHING.md']
+    ok(doc.includes('    cd js && npm publish --access public'), doc)
+    ok(!doc.includes('cd ts'), doc)
+  })
 
   test('emits a dispatch workflow per npm target', async () => {
     const out = await render(NPM_TS)

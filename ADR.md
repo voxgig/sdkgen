@@ -23,6 +23,7 @@ ADR-NNN**, so the reasoning that led there stays readable.
 | [ADR-001](#adr-001--the-model-is-the-only-input-no-spec-annotations) | The model is the only input; no spec annotations | Accepted |
 | [ADR-002](#adr-002--a-generated-sdk-carries-only-what-it-uses) | A generated SDK carries only what it uses | Accepted |
 | [ADR-003](#adr-003--diagnostics-are-redacted-by-default) | Diagnostics are redacted by default | Accepted |
+| [ADR-004](#adr-004--generated-text-states-only-what-the-model-declares) | Generated text states only what the model declares | Accepted |
 
 ---
 
@@ -308,4 +309,46 @@ err)`. That is the right advice, and it printed the key.
   table and pins the harness defaults to the model.
 - `ts/test/cleancoverage.test.ts` classifies every target and scans the
   fixed ones for the `clean` call at each egress.
+
+
+---
+
+## ADR-004 — Generated text states only what the model declares
+
+**Status:** Accepted
+
+### Context
+
+The generated documents are written once per project and read as true. A
+sentence that guesses (a target named `go-cli` must be the CLI, every
+feature must start off, a link must lead somewhere) is wrong for the project
+whose model says otherwise, and nothing in its own output shows it. Most of
+the defects the generated-text plan catalogued were guesses of this kind:
+a fixed list standing in for the model, or a name matched where a slot
+should have been read.
+
+### Decision
+
+Generated text states only what the model declares. Each fact a sentence
+depends on is computed once from the model, by a rule in
+`ts/model/fact.aontu`, and written into it beside what it describes. Where
+the model gives no answer, the fact is unknown, and an unknown answer writes
+no sentence: the text says less rather than say something false. A target
+whose surface is unknown is named by its title, never as an SDK, a CLI or an
+MCP server.
+
+### Consequences
+
+A document can grow shorter when a project declares less, and a new slot is
+the remedy for a missing sentence, not a default in a component. A rule that
+aontu cannot yet express is computed by the fact pass in code and still
+written into the model, so every reader sees one answer.
+
+### Enforcement
+
+The text guard regenerates the documents under every single-switch variation
+of the model and reports a sentence that names what a run removed, a link
+that resolves nowhere and a sentence its siblings do not reach. `fact` throws
+on a model that did not pass through the rules, so a component cannot read an
+answer the rules did not give.
 

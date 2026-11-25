@@ -1,17 +1,18 @@
 
-import { test, describe } from 'node:test'
+import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
-import { Jostraca, Project, Folder, File } from 'jostraca'
+import { Jostraca, Project, Folder, File, names } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeErrors, ReadmeExplanation } from '../dist/sdkgen.js'
+import { ReadmeErrors, ReadmeExplanation, ReadmeTop, SdkGen, cmp } from '../dist/sdkgen.js'
 
 import { makeProject, targetRef, target_add, SCAFFOLD, ROOT } from './actionharness'
+import { STAGE, SCAFFOLD as SDK_SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog, aliasModel, stageAlias } from './generateharness'
 
 
 function scaffoldCmpFiles(target: string): string[] {
@@ -349,5 +350,81 @@ describe('aliased target documents', () => {
       ok(!go.includes('```ts'))
     }
     ok((await render(ReadmeErrors, 'go2')).includes('func_, err := '))
+  })
+})
+
+
+// Only the root README, which needs no target's own components.
+const TopOnly = cmp(function TopOnly(props: any) {
+  const { model, ctx$ } = props
+  model.const = { name: model.name }
+  names(model.const, model.name)
+  names(model, model.name)
+  ctx$.model = model
+  ctx$.stdrep = {}
+  Project({}, () => ReadmeTop({}))
+})
+
+
+// What a generate run writes, keyed relative to the stage, less the records
+// whose timestamps differ from run to run.
+async function generated(targets: string[], extra = '', root = makeRoot()): Promise<Record<string, string>> {
+  const { fs, vol } = memfs({})
+  const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog([]) })
+  await sdkgen.generate({ model: makeModel(targets, undefined, extra), root })
+  const out: Record<string, string> = {}
+  for (const [path, text] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    const file = Path.relative(STAGE, path).split(Path.sep).join('/')
+    if (!file.startsWith('.jostraca/') && !file.startsWith('.sdk/log/')) out[file] = text
+  }
+  return out
+}
+
+
+// An alias is classed by its origin: the documents name the alias where they
+// named the origin, and say nothing else differently.
+describe('aliased targets in the generated documents', () => {
+
+  // A target's templates are copied from `tm/<target>` under the working directory.
+  let cwd = ''
+  before(() => {
+    cwd = process.cwd()
+    process.chdir(SDK_SCAFFOLD)
+  })
+  after(() => {
+    if ('' !== cwd) process.chdir(cwd)
+  })
+
+  test('go-cli~go-clj and go-mcp~go-mcq write what go-cli and go-mcp write', async () => {
+    const base = await generated(['go', 'go-cli', 'go-mcp'])
+    const staged = [stageAlias('go-cli', 'go-clj'), stageAlias('go-mcp', 'go-mcq')]
+    try {
+      const out = await generated(['go'], staged.map((s) => s.model).join('\n'))
+      const back = (text: string) => text.split('go-clj').join('go-cli').split('go-mcq').join('go-mcp')
+      const mapped: Record<string, string> =
+        Object.fromEntries(Object.entries(out).map(([file, text]) => [back(file), back(text)]))
+
+      deepStrictEqual(Object.keys(mapped).sort(), Object.keys(base).sort())
+      for (const file of Object.keys(base)) {
+        strictEqual(mapped[file], base[file], file + ' differs once the aliases are mapped back')
+      }
+      ok(out['README.md'].includes('## Use it from an AI agent (MCP)'), 'no MCP section for go-mcq')
+      ok(out['README.md'].includes('cd go-mcq && go build'), 'the MCP section builds another directory')
+    }
+    finally {
+      staged.forEach((s) => s.remove())
+    }
+  })
+
+  test('go~go2 sorts where go sorts in the root README packages table', async () => {
+    const rows = async (targets: string[], extra = '') => {
+      const readme = (await generated(targets, extra, TopOnly))['README.md']
+      const table = readme.slice(readme.indexOf('## Packages'))
+      return table.slice(0, table.indexOf('\n\n', table.indexOf('| ---'))).split('\n').slice(4)
+    }
+    const base = await rows(['ts', 'py', 'go', 'rb'])
+    strictEqual(base.length, 4, 'the packages table does not list the four targets:\n' + base.join('\n'))
+    deepStrictEqual((await rows(['ts', 'py', 'rb'], aliasModel('go', 'go2')))
+      .map((row: string) => row.split('/go2').join('/go')), base)
   })
 })

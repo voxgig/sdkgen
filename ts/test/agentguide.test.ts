@@ -18,20 +18,23 @@ const log: any = {
   child() { return log },
 }
 
-const T_TS = { name: 'ts', title: 'TypeScript', ext: 'ts' }
-const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false }
-const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } } }
+const OUT = { path: '', root: false }
+const T_TS = { name: 'ts', title: 'TypeScript', ext: 'ts', output: OUT }
+const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false, output: OUT }
+const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } }, output: OUT }
 
-function makeModel(over: { ts?: boolean, copies?: string } = {}) {
+function makeModel(over: { ts?: boolean, copies?: string, targets?: Record<string, any>, top?: boolean } = {}) {
   return applyFacts({
     name: 'demo', Name: 'Demo', const: { Name: 'Demo' },
     main: { kit: {
+      phase: { top: { active: false !== over.top } },
       ...(null == over.copies ? {} : { copies: over.copies }),
       target: {
         ts: { active: false !== over.ts, ...T_TS },
         go: { active: true, ...T_GO },
         old: { active: false, name: 'old', title: 'Old' },
         'go-cli': { active: false, ...T_GOCLI },
+        ...over.targets,
       },
       feature: {
         log: {
@@ -308,6 +311,46 @@ describe('AgentGuide — feature phase disabled (go-cli/go-mcp)', () => {
     ok(!find(files, 'go-cli/src/feature/log/AGENTS.md'), 'no per-feature files')
     ok(!find(files, 'go-cli/feature/log/AGENTS.md'), 'no per-feature files')
   })
+
+  test('an alias of go-cli reads go-cli\'s row', async () => {
+    const model = makeModel({ targets: { cli: { active: true, ...T_GOCLI, name: 'cli', origname: 'go-cli' } } })
+
+    const agents = find(await render(AgentGuide, { target: 'cli' }, 'cli', { model }), 'cli/AGENTS.md')!
+    ok(agents.includes('CLI surface'), 'the alias guide does not note the CLI surface')
+    ok(agents.includes('go build ./...'), 'the alias guide does not build with go')
+    ok(!agents.includes('make test'), 'the alias guide takes the default commands')
+
+    const top = find(await render(AgentGuideTop, {}, undefined, { model }), '/p/AGENTS.md')!
+    ok(top.includes('| `cli` | `cli/` — A CLI surface, not an SDK client library. |'),
+      'the root guide lost the alias\'s note')
+  })
+})
+
+
+describe('AgentGuide — what is written beside it', () => {
+  test('with the top phase off, no guide links a project guide', async () => {
+    const files = await render(AgentGuide, { target: 'ts' }, 'ts', { model: makeModel({ top: false }) })
+    const guides = Object.keys(files).filter((k) => k.endsWith('AGENTS.md'))
+    ok(1 < guides.length, 'no feature guide was written: ' + guides.join(', '))
+    for (const key of guides) {
+      ok(!files[key].includes('project guide'), key + ' links the project guide')
+    }
+  })
+
+  test('the root guide names the directories it has', async () => {
+    const top = find(await render(AgentGuideTop, {}, undefined, { model: makeModel({ ts: false }) }), '/p/AGENTS.md')!
+    ok(top.includes('directory (`go/`) is **build output**'), top)
+    ok(!top.includes('`ts/`'), 'names ts/, which this project does not generate')
+  })
+
+  test('a target guide not written is not linked', async () => {
+    const top = find(await render(AgentGuideTop, {}, undefined, {
+      model: makeModel({ targets: { 'go-cli': { ...T_GOCLI, active: true,
+        phase: { feature: { active: false }, agentguide: { active: false } } } } }),
+    }), '/p/AGENTS.md')!
+    ok(top.includes('| `go-cli` | `go-cli/` — A CLI surface, not an SDK client library. | — |'), top)
+    ok(top.includes('[`go/AGENTS.md`](./go/AGENTS.md)'), top)
+  })
 })
 
 
@@ -315,7 +358,7 @@ describe('AgentGuideFeature (dir layout)', () => {
   test('feature guide has active hooks, .aontu paths, root-relative regenerate', async () => {
     const files = await render(
       AgentGuideFeature,
-      { target: T_TS, feature: makeModel().main.kit.feature.log },
+      { target: 'ts', feature: makeModel().main.kit.feature.log },
       'ts',
     )
 
@@ -340,7 +383,7 @@ describe('AgentGuideFeature (dir layout)', () => {
     const model = makeModel()
     model.main.kit.entity.advice.op = {}
     const files = await render(AgentGuideFeature,
-      { target: T_TS, feature: model.main.kit.feature.log }, 'ts', { model })
+      { target: 'ts', feature: model.main.kit.feature.log }, 'ts', { model })
     const agents = find(files, 'ts/src/feature/log/AGENTS.md')
     ok(agents!.includes('stages of every entity operation and of'), 'no empty parenthesis')
   })
@@ -348,7 +391,7 @@ describe('AgentGuideFeature (dir layout)', () => {
   test('feature inactive-by-default renders as no', async () => {
     const files = await render(
       AgentGuideFeature,
-      { target: T_TS, feature: makeModel().main.kit.feature.test },
+      { target: 'ts', feature: makeModel().main.kit.feature.test },
       'ts',
     )
     const agents = find(files, 'ts/src/feature/test/AGENTS.md')

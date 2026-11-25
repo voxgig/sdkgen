@@ -6,6 +6,7 @@ import { KIT } from '@voxgig/apidef'
 import { docTexts } from './doctext'
 import { factRulesFile } from './shipped'
 import { SdkGenError } from '../utility'
+import { resolvesBundled } from '../action/resolve'
 
 
 // No fact rule reads these, and they are most of a large model.
@@ -45,6 +46,9 @@ function applyFacts(model: any): any {
       input[key] = val
     }
   }
+  if (isMap(kit.target)) {
+    input.target = ruleTargets(kit.target)
+  }
 
   const texts = docTexts(model)
   const escape = Object.fromEntries(texts.map((t, i) => ['t' + i, { raw: t.raw, vendor: t.vendor }]))
@@ -61,8 +65,74 @@ function applyFacts(model: any): any {
   }
 
   copyFacts(out.main[KIT], kit)
+  linkConsumers(kit.target, out.main[KIT].target)
+  kit.fact = isMap(kit.fact) ? kit.fact : {}
+  kit.fact.active = activeNames(kit.target)
   texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]))
   return model
+}
+
+
+// aontu lists no map's keys, so the active targets are named here.
+function activeNames(target: any): string[] {
+  return !isMap(target) ? [] : Object.keys(target).sort()
+    .filter((name: string) => isMap(target[name]) && false !== target[name].active)
+}
+
+
+// A hand-built model may lack the slots the rules read, and only code can say
+// whether a target's provenance leads to the bundled scaffold.
+function ruleTargets(target: any): any {
+  const out: any = {}
+  for (const [name, t] of Object.entries(target)) {
+    const decl: any = t
+    out[name] = !isMap(decl) ? decl : {
+      ...decl,
+      name: null == decl.name ? name : decl.name,
+      origname: null == decl.origname ? '' : decl.origname,
+      surface: null == decl.surface ? '' : decl.surface,
+      consumes: null == decl.consumes ? '' : decl.consumes,
+      scaffold: resolvesBundled(decl, name),
+    }
+  }
+  return out
+}
+
+
+// The rules name the origin a target builds on; only the installed keys can
+// say which target that is, and which targets build on each one.
+function linkConsumers(target: any, derived: any): void {
+  if (!isMap(target) || !isMap(derived)) {
+    return
+  }
+
+  const names = Object.keys(target).sort().filter((name: string) => isMap(target[name]?.fact))
+  for (const name of names) {
+    target[name].fact.consumes = consumed(target, name, derived[name]?.derive?.wraps)
+  }
+  for (const name of names) {
+    target[name].fact.consumers = names.filter((other: string) =>
+      false !== target[other].active && name === target[other].fact.consumes)
+  }
+}
+
+
+function consumed(target: any, name: string, wraps: any): string {
+  if ('string' !== typeof wraps || '' === wraps) {
+    return ''
+  }
+  if (isMap(target[wraps])) {
+    return wraps
+  }
+
+  const found = Object.keys(target).sort().filter((other: string) =>
+    other !== name && wraps === target[other]?.fact?.origin)
+  if (1 < found.length) {
+    throw new SdkGenError('Target "' + name + '" builds on ' + wraps + ', and ' +
+      found.length + ' installed targets come from it: ' + found.join(', ') +
+      '. Name one in its own model, as `consumes: \'<target>\'`.')
+  }
+  return found[0] ?? ''
 }
 
 

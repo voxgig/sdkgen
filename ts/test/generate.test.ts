@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -2017,17 +2017,19 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
   test('alongsideNote words each combination of surfaces', () => {
     const note = (targets: Record<string, any>) =>
-      alongsideNote({ main: { [KIT]: { target: targets } } }, 'py').split(' alongside')[0]
-    const off = { active: false }
-    const consumer = { phase: { entity: off, feature: off, readme: off, agentguide: off, test: off } }
+      alongsideNote(applyFacts({ main: { [KIT]: { target: targets } } }), 'py', '../README.md').split(' alongside')[0]
+    // applyFacts writes into each target object, so every target gets its own.
+    const off = () => ({ active: false })
+    const consumer = () => ({ phase: { entity: off(), feature: off(), readme: off(), agentguide: off(), test: off() } })
 
     strictEqual(note({ py: {}, rb: {}, 'go-cli': {}, 'go-mcp': {} }), '> Other languages, the CLI, and MCP server live')
     strictEqual(note({ py: {}, rb: {}, 'go-mcp': {} }), '> Other languages and the MCP server live')
-    strictEqual(note({ py: {}, rb: {}, 'go-cli': {}, 'go-mcp': off }), '> Other languages and the CLI live')
+    strictEqual(note({ py: {}, rb: {}, 'go-cli': {}, 'go-mcp': off() }), '> Other languages and the CLI live')
     strictEqual(note({ py: {}, 'go-cli': {}, 'go-mcp': {} }), '> The CLI and MCP server live')
     strictEqual(note({ py: {}, 'go-cli': {} }), '> The CLI lives')
     strictEqual(note({ py: {}, 'go-mcp': {} }), '> The MCP server lives')
-    strictEqual(note({ py: {}, rb: off, 'py-data': consumer }), '')
+    strictEqual(note({ py: {}, rb: off(), 'py-data': consumer() }), '')
+    strictEqual(note({ py: {}, cli2: { origname: 'go-cli', ...consumer() } }), '> The CLI lives')
   })
 
 

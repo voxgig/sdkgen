@@ -3,7 +3,8 @@ import { each } from 'jostraca'
 
 import { KIT, nom } from '@voxgig/apidef'
 
-import { isConsumer } from './alongside'
+import { surfaceOf } from './surface'
+import { fact } from './facts'
 import { kindCollection } from './kindCollection'
 import { modelText } from './text'
 
@@ -173,10 +174,8 @@ function goPackageIdent(model: any, target: string): string {
 
 // A registry named `none` is no registry: c, cpp and zig declare it.
 function registryState(model: any, target: string): 'tag' | 'pending' | 'active' | 'inactive' {
-  const eco = originName(model, target)
-  if ('go' === eco || 'go-cli' === eco || 'go-mcp' === eco) return 'tag'
   const reg = model?.main?.[KIT]?.target?.[target]?.publish?.registry
-  if (null == reg || '' === registryName(model, target)) return 'tag'
+  if (null == reg || '' === registryName(model, target) || goFamily(model, target)) return 'tag'
   if (true === reg.active) return 'active'
   const s = reg.state
   if ('active' === s || 'inactive' === s || 'pending' === s) return s
@@ -188,6 +187,13 @@ function registryState(model: any, target: string): 'tag' | 'pending' | 'active'
 // else — pending, inactive, tag-only — installs from the git tag instead.
 function isPublished(model: any, target: string): boolean {
   return 'active' === registryState(model, target)
+}
+
+// Go installs from its git tag whatever the registry, as does a target built on it.
+function goFamily(model: any, target: string): boolean {
+  if ('go' === originName(model, target)) return true
+  const wraps = fact(model.main[KIT].target[target], 'consumes')
+  return '' !== wraps && 'go' === originName(model, wraps)
 }
 
 // The registry a target uploads to (npm | pypi | packagist | ...), or ''
@@ -287,7 +293,7 @@ const NAMED_CONSUMERS = ['go-cli', 'go-mcp', 'py-data']
 
 function hasPackageName(model: any, target: string): boolean {
   const declared = model?.main?.[KIT]?.target?.[target]
-  if (!isConsumer(declared)) {
+  if ('sdk' === surfaceOf(declared)) {
     return true
   }
   const pkg = declared?.publish?.registry?.package
