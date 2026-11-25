@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SURFACE_WORD = exports.SURFACES = void 0;
 exports.documentOrder = documentOrder;
+exports.surfaceName = surfaceName;
 exports.surfaceOf = surfaceOf;
 const types_1 = require("../types");
 const facts_1 = require("./facts");
@@ -10,7 +11,6 @@ const facts_1 = require("./facts");
 // title alone.
 const SURFACES = ['sdk', 'cli', 'mcp', 'data', 'seneca-provider'];
 exports.SURFACES = SURFACES;
-// A surface as one word of a list such as "CLI and MCP surfaces".
 const SURFACE_WORD = {
     sdk: 'SDK',
     cli: 'CLI',
@@ -19,12 +19,30 @@ const SURFACE_WORD = {
     'seneca-provider': 'Seneca provider',
 };
 exports.SURFACE_WORD = SURFACE_WORD;
+const SURFACE_NOUN = {
+    sdk: 'SDK',
+    cli: 'CLI',
+    mcp: 'MCP server',
+    data: 'data package',
+    'seneca-provider': 'Seneca provider',
+};
 function surfaceOf(target) {
     const surface = (0, facts_1.fact)(target, 'surface');
     return SURFACES.includes(surface) ? surface : '';
 }
-// The order every document lists targets in: the configured languages by
-// origin, then the rest, then the CLI and the MCP server.
+// The title and the noun for what the target is, with the noun's words the
+// title already ends with said once: "Go CLI", "Python Data package".
+function surfaceName(target) {
+    const title = String((0, facts_1.fact)(target, 'title')).split(' ');
+    const noun = (SURFACE_NOUN[surfaceOf(target)] ?? 'package').split(' ');
+    for (let k = Math.min(title.length, noun.length); 0 < k; k--) {
+        if (title.slice(-k).join(' ').toLowerCase() === noun.slice(0, k).join(' ').toLowerCase()) {
+            return [...title, ...noun.slice(k)].join(' ');
+        }
+    }
+    return [...title, ...noun].join(' ');
+}
+// The configured languages by origin, then the rest, then the CLI and MCP server.
 function documentOrder(model, targets) {
     const order = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.config.docs_order`, { only_active: false, required: false }) || [];
     const rank = (t) => {

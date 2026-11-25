@@ -858,6 +858,23 @@ describe('generate', () => {
   })
 
 
+  test('a manifest description names its target by title and by what it is', async () => {
+    const expected: Record<string, string> = {
+      ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',
+      rb: 'Ruby SDK', lua: 'Lua SDK', csharp: 'C# SDK', elixir: 'Elixir SDK',
+      perl: 'Perl SDK', 'py-data': 'Python Data package',
+    }
+    const out = await generate(Object.keys(expected))
+    for (const [target, name] of Object.entries(expected)) {
+      const named = filesFor(out, target)
+        .map(([, text]) => /Unofficial generated (.+?) for the Demo public API/.exec(text)?.[1])
+        .filter((found) => null != found)
+      ok(0 < named.length, target + ': no manifest description')
+      deepStrictEqual([...new Set(named)], [name], target)
+    }
+  })
+
+
   test('a target with no title is named by its origin\'s label, never undefined', async () => {
     const dir = Path.join(STAGE, '.sdk', 'model', 'untitled')
     Fs.mkdirSync(dir, { recursive: true })

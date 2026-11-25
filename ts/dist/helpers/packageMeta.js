@@ -332,7 +332,7 @@ function installCommand(model, target) {
     }
 }
 function pkgDescription(model, target) {
-    return `Unofficial generated ${(0, title_1.langLabel)(originName(model, target))} SDK` +
+    return `Unofficial generated ${(0, surface_1.surfaceName)(model.main[apidef_1.KIT].target[target])}` +
         ` for the ${apiName(model)} public API.` +
         ` Not affiliated with or endorsed by the upstream API provider.`;
 }

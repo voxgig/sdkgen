@@ -3,7 +3,7 @@ import { each } from 'jostraca'
 
 import { KIT, nom } from '@voxgig/apidef'
 
-import { surfaceOf } from './surface'
+import { surfaceName, surfaceOf } from './surface'
 import { fact } from './facts'
 import { kindCollection } from './kindCollection'
 import { modelText } from './text'
@@ -343,7 +343,7 @@ function installCommand(model: any, target: string): string {
 }
 
 function pkgDescription(model: any, target: string): string {
-  return `Unofficial generated ${langLabel(originName(model, target))} SDK` +
+  return `Unofficial generated ${surfaceName(model.main[KIT].target[target])}` +
     ` for the ${apiName(model)} public API.` +
     ` Not affiliated with or endorsed by the upstream API provider.`
 }

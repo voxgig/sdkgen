@@ -2,16 +2,29 @@
 // A target's display name when its model declares no title, by the target's
 // origin. A test holds each equal to the title its bundled model declares.
 const LANG_LABEL: Record<string, string> = {
-  ts: 'TypeScript',
-  js: 'JavaScript',
-  py: 'Python',
-  php: 'PHP',
-  rb: 'Ruby',
-  lua: 'Lua',
+  c: 'C',
+  clojure: 'Clojure',
+  cpp: 'C++',
+  csharp: 'C#',
+  elixir: 'Elixir',
   go: 'Golang',
   'go-cli': 'Go CLI',
   'go-mcp': 'Go MCP server',
+  java: 'Java',
+  js: 'JavaScript',
+  kotlin: 'Kotlin',
+  lua: 'Lua',
+  ocaml: 'OCaml',
+  perl: 'Perl',
+  php: 'PHP',
+  py: 'Python',
   'py-data': 'Python Data',
+  rb: 'Ruby',
+  rust: 'Rust',
+  scala: 'Scala',
+  swift: 'Swift',
+  ts: 'TypeScript',
+  zig: 'Zig',
 }
 
 

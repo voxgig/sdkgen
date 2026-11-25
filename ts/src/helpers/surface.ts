@@ -8,12 +8,20 @@ import { fact } from './facts'
 const SURFACES = ['sdk', 'cli', 'mcp', 'data', 'seneca-provider']
 
 
-// A surface as one word of a list such as "CLI and MCP surfaces".
 const SURFACE_WORD: Record<string, string> = {
   sdk: 'SDK',
   cli: 'CLI',
   mcp: 'MCP',
   data: 'data',
+  'seneca-provider': 'Seneca provider',
+}
+
+
+const SURFACE_NOUN: Record<string, string> = {
+  sdk: 'SDK',
+  cli: 'CLI',
+  mcp: 'MCP server',
+  data: 'data package',
   'seneca-provider': 'Seneca provider',
 }
 
@@ -24,8 +32,21 @@ function surfaceOf(target: any): string {
 }
 
 
-// The order every document lists targets in: the configured languages by
-// origin, then the rest, then the CLI and the MCP server.
+// The title and the noun for what the target is, with the noun's words the
+// title already ends with said once: "Go CLI", "Python Data package".
+function surfaceName(target: any): string {
+  const title = String(fact(target, 'title')).split(' ')
+  const noun = (SURFACE_NOUN[surfaceOf(target)] ?? 'package').split(' ')
+  for (let k = Math.min(title.length, noun.length); 0 < k; k--) {
+    if (title.slice(-k).join(' ').toLowerCase() === noun.slice(0, k).join(' ').toLowerCase()) {
+      return [...title, ...noun.slice(k)].join(' ')
+    }
+  }
+  return [...title, ...noun].join(' ')
+}
+
+
+// The configured languages by origin, then the rest, then the CLI and MCP server.
 function documentOrder(model: any, targets: any[]): any[] {
   const order: string[] = (getModelPath(model, `main.${KIT}.config.docs_order`,
     { only_active: false, required: false }) as any) || []
@@ -47,5 +68,6 @@ export {
   SURFACES,
   SURFACE_WORD,
   documentOrder,
+  surfaceName,
   surfaceOf,
 }

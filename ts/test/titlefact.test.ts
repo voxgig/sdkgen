@@ -49,9 +49,14 @@ describe('title facts', () => {
       { ts2: 'TypeScript', bash: 'bash', go: LANG_LABEL.go })
   })
 
-  test('every label equals the title its bundled target declares', () => {
-    for (const [name, label] of Object.entries(LANG_LABEL)) {
-      strictEqual(label, declaredTitle(name), name)
+  test('every bundled target has a label, equal to the title it declares', () => {
+    const bundled = Fs.readdirSync(TARGET_DIR)
+      .filter((f: string) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+      .sort()
+    deepStrictEqual(Object.keys(LANG_LABEL).sort(), bundled)
+    for (const name of bundled) {
+      strictEqual(LANG_LABEL[name], declaredTitle(name), name)
     }
   })
 
