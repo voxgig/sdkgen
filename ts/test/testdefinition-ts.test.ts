@@ -10,7 +10,7 @@ import { transform } from 'sucrase'
 
 
 const CMP = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp', 'ts', 'TestDefinition_ts.ts')
-const TSC = Path.resolve(__dirname, '..', 'node_modules', '.bin', 'tsc')
+const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin', 'tsc')
 
 
 // The shipped component, rendered with the given plan: its sdkgen imports are
@@ -65,8 +65,8 @@ function typecheck(source: string): string {
       '  export function describe(name: string, fn: () => void): void\n' +
       '  export function test(name: string, fn: (t: any) => any): void\n}\n')
     writeFileSync(Path.join(dir, 'test', 'definition.test.ts'), source)
-    const res = spawnSync(TSC, ['--noEmit', '--strict', '--types', '', '--target', 'es2021',
-      '--module', 'commonjs', 'test/node-test.d.ts', 'test/definition.test.ts'],
+    const res = spawnSync(process.execPath, [TSC, '--noEmit', '--strict', '--types', '',
+      '--target', 'es2021', '--module', 'commonjs', 'test/node-test.d.ts', 'test/definition.test.ts'],
     { cwd: dir, encoding: 'utf8' })
     return (res.stdout ?? '') + (res.stderr ?? '') + (null == res.error ? '' : String(res.error))
   }
