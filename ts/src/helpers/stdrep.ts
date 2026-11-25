@@ -1,9 +1,14 @@
 
 import { envName, packageVersion, publisherInfo } from './packageMeta'
+import { fact } from './facts'
 
 
-function ensureStdrep(ctx$: any): any {
+function ensureStdrep(ctx$: any, target?: any): any {
   const stdrep = ctx$.stdrep = (ctx$.stdrep || {})
+
+  if (null != target) {
+    stdrep.SDKREL = null != ctx$.sdkrelpath ? ctx$.sdkrelpath : fact(target, 'sdkrel')
+  }
 
   if (null == stdrep.PROJECTENV) {
     stdrep.PROJECTENV = envName(ctx$.model)

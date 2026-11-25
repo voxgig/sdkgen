@@ -87,7 +87,7 @@ function makeDeployMakefile(model, targets) {
         const ghArgs = `--for=${ghRecipe}=$(${aliasVarName(ghRecipe)})`;
         const args = vaultExecArgs(t);
         const via = t.publish?.tag?.via || 'port';
-        const dir = 'root' === (0, facts_1.fact)(t, 'place') ? '.' : t.name;
+        const dir = (0, facts_1.fact)(t, 'dir');
         const rs = (0, packageMeta_1.registryState)(model, t.name);
         if ('tag' === rs && (reg || 'root' === via)) {
             return `

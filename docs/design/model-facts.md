@@ -42,10 +42,54 @@ read it; none of them computes it.
     an entity's `desc`, a feature's `title` and `option.<name>.value` or
     `.type`. They cost about 170 ms of the pass with 20 targets and 20
     features, and about 0.75 s for 600 texts.
+  - `main.kit.fact.auth` (WP19): `apikey`, `suppressed`, `basic`, `in`,
+    `name`, `prefix` and `secret`, each equal to the helper it is computed
+    for (`isAuthActive`, `isAuthSuppressed`, `isHttpBasicAuth`,
+    `resolveAuthIn`, `resolveAuthName`, `resolveAuthPrefix`). `secret` is
+    Basic, header placement and not suppressed, which is exactly when every
+    bundled PrepareAuth composes the secret, measured over twenty targets and
+    eight auth states. The rules declare, for the pass only, an unset slot of
+    `config.auth` and `info.security` as `''`, and an unset prefix as `false`,
+    because `''` is a prefix a project may declare.
+  - `main.kit.fact.server` (WP19): the server variables, as `serverVariables`
+    lists them. A rule decides `required` from `re()` built from each
+    variable's key, `key(2)` where it sits; only a word-character name can be
+    one the URL uses. The pass supplies the first server as a map, declares a
+    variable the URL names and the spec omits, and lists the result in the
+    URL's order, then the declared order, since aontu lists no map's keys.
+  - `main.kit.fact.env` (WP19): `prefix`, `apikey`, `secret`, `base`, `live`,
+    a name per server variable under `server` and per entity under `entid`.
+    The rule spells a token as `envToken` does, with `upper` and `rep`: aontu's
+    `nom(name, 'upper')` splits a digit into a word of its own
+    (`n3ds_session` becomes `N_3_DS_SESSION`), which would rename the
+    variables of any project or entity whose name holds a digit.
+  - `target.fact.dir` and `target.fact.sdkrel` (WP19): the directory a reader
+    enters, and the path from there back to the project: `.` at the root, the
+    target's name and `..` in a folder, `output.path` and `output.sdkrel` out
+    of tree. An out-of-tree target that declares no `sdkrel` has it derived
+    from the layout at generate, as before. Every pass gives a template the
+    path as `SDKREL`, and no template names it yet.
+- **What the pass computes in code**, because aontu cannot list a map's keys
+  or compare package names (WP19):
+  - `main.kit.fact.active`: the active targets, in key order.
+  - `target.fact.tag`: the release tag before its version, `v` for the one npm
+    package the tree publishes or the npm package of the ts SDK, else
+    `<target>/v`, as the publish workflow named it.
+  - `main.kit.fact.ops`: each entity's canonical operations, by entity name,
+    in canonical order, action-only ones included, with no fallback. They sit
+    outside the entities because the ts and js live tests print an entity
+    whole into generated source.
+  - `main.kit.fact.package`: the JVM package of java, kotlin and scala, and the
+    Python package py and py-data import, which is jostraca's `Name` for the
+    project lower-cased.
+  - `main.kit.fact.option`: one row per client option in `main.kit.optspec`,
+    `name` and `type`, in key order.
 - **The pass** is `applyFacts` (`ts/src/helpers/facts.ts`). `generate()` runs
-  it after `guardModelNames` and `guardFlowSteps`, before Root. It evaluates
-  the rules over the generated model, minus the entity and flow maps that no
-  rule reads, and copies each `fact` map into the model.
+  it after `guardModel`, before Root. It evaluates the rules over the
+  generated model, minus the entity and flow maps that no rule reads and the
+  facts of an earlier pass, and copies each `fact` map into the model. An
+  entity reaches the rules as its name alone: over 500 entities the pass takes
+  about 1.6 s, against 0.19 s for seven.
 - **The accessor** is `fact(node, name)`. It throws when the node has no
   such fact, which names both causes: the model did not pass through
   `applyFacts`, or it lacks what the rule reads.

@@ -106,7 +106,7 @@ function makeDeployMakefile(model: any, targets: any[]): string {
     const args = vaultExecArgs(t)
 
     const via = t.publish?.tag?.via || 'port'
-    const dir = 'root' === fact(t, 'place') ? '.' : t.name
+    const dir = fact(t, 'dir')
     const rs = registryState(model, t.name)
 
     if ('tag' === rs && (reg || 'root' === via)) {

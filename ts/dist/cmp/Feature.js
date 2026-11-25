@@ -41,7 +41,7 @@ const Feature = (0, component_1.cmp)(function Feature(props) {
                 // files, because this Copy has already written them.
                 exclude: (0, featureSource_1.pluginExcludesFor)(ctx$.model, feature.name),
                 replace: {
-                    ...(0, stdrep_1.ensureStdrep)(ctx$),
+                    ...(0, stdrep_1.ensureStdrep)(ctx$, target),
                     FEATURE_VERSION: feature.version,
                     FEATURE_Name: feature.Name,
                 }

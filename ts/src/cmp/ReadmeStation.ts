@@ -2,11 +2,10 @@
 import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { envName, originName, packageName } from '../helpers/packageMeta'
+import { originName, packageName } from '../helpers/packageMeta'
 import { targetFeatures } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
-import { isAuthActive } from '../utility'
-
+import { KIT } from '../types'
 
 
 // Targets where station.connect(SDK) is the idiomatic binding; everything
@@ -31,7 +30,7 @@ const ReadmeStation = cmp(function ReadmeStation(props: any) {
   // main.slug in the embedded config); an untagged instance ref IS the
   // slug, so this is also the default instance name.
   const slug = model.name
-  const env = envName(model)
+  const env = fact(model.main[KIT], 'env').prefix
   const secretbase = env.toLowerCase()
   const secretname = secretbase + '.apikey'
   const origin = originName(model, target.name)
@@ -84,7 +83,7 @@ SDK features are configured in the same file too: fleet-wide, per api,
 or per instance. \`station.check()\` resolves and constructs every
 active instance without sending a request — run it in CI.
 
-${isAuthActive(model) ? `### The secret name derives from the instance
+${fact(model.main[KIT], 'auth').apikey ? `### The secret name derives from the instance
 
 The credential comes from [sekreto](https://github.com/voxgig/sekreto)
 under a name derived from the **instance** name — the instance token
