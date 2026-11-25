@@ -14,7 +14,7 @@ src/cmp/c/EntityTypes_c.ts f00a21c238c1
 src/cmp/c/Entity_c.ts c3dbf7462270
 src/cmp/c/Gitignore_c.ts cfb70ab8b595
 src/cmp/c/MainEntity_c.ts d6e780384b49
-src/cmp/c/Main_c.ts c1dce7783690
+src/cmp/c/Main_c.ts 5f42273440e9
 src/cmp/c/Package_c.ts e1fcd4b774ba
 src/cmp/c/PrepareAuth_c.ts ba13d256f46b
 src/cmp/c/ReadmeEntity_c.ts b1b24f6b4c2f
@@ -45,9 +45,7 @@ src/cmp/c/fragment/EntityUpdateOp.fragment.c e458ce724b0a
 src/cmp/c/fragment/Main.fragment.c 8ac3961bb6c3
 src/cmp/c/tsconfig.json 720a3f229019
 src/cmp/c/utility_c.ts 412b3308b0d9
-tm/c/LICENSE 52acd47c245f
 tm/c/Makefile ce4dd15b4736
-tm/c/VERSION e6635045e1d2
 tm/c/core/context.c 3d02628a07f0
 tm/c/core/control.c acb5a3790b08
 tm/c/core/error.c af8a13c8bcce
@@ -137,7 +135,7 @@ src/cmp/clojure/EntityOperation_clojure.ts 89f82bc53713
 src/cmp/clojure/Entity_clojure.ts 180f52ef5ca9
 src/cmp/clojure/Gitignore_clojure.ts 02def6714f53
 src/cmp/clojure/MainEntity_clojure.ts 7c402f26036e
-src/cmp/clojure/Main_clojure.ts 12e7f6f00f73
+src/cmp/clojure/Main_clojure.ts 3cf0a7357a6a
 src/cmp/clojure/Package_clojure.ts d675493d467e
 src/cmp/clojure/PrepareAuth_clojure.ts f367a47086b2
 src/cmp/clojure/ReadmeEntity_clojure.ts 115f1e2c1b2a
@@ -168,9 +166,7 @@ src/cmp/clojure/fragment/EntityRemoveOp.fragment.clj 3c87bd0a68f1
 src/cmp/clojure/fragment/EntityUpdateOp.fragment.clj 0245cb72c0ee
 src/cmp/clojure/tsconfig.json 720a3f229019
 src/cmp/clojure/utility_clojure.ts fa25f9feb766
-tm/clojure/LICENSE 52acd47c245f
 tm/clojure/Makefile d3ac03fe6a52
-tm/clojure/VERSION e6635045e1d2
 tm/clojure/feature/secrets/sdk/feature/secrets.clj b7de61ebf569
 tm/clojure/feature/secrets/voxgig/plugin.clj 9685e8620632
 tm/clojure/feature/secrets/voxgig/plugin/capability.clj a152592fc1b2
@@ -262,7 +258,7 @@ src/cmp/cpp/EntityTypes_cpp.ts 877e78442ec7
 src/cmp/cpp/Entity_cpp.ts 32524dfa5e12
 src/cmp/cpp/Gitignore_cpp.ts 164c931b3983
 src/cmp/cpp/MainEntity_cpp.ts e419d3bb76ae
-src/cmp/cpp/Main_cpp.ts 1ecaff97452a
+src/cmp/cpp/Main_cpp.ts bbf5180b9f61
 src/cmp/cpp/Package_cpp.ts e1fcd4b774ba
 src/cmp/cpp/PrepareAuth_cpp.ts 06c46235ac63
 src/cmp/cpp/ReadmeEntity_cpp.ts 823fb70799cc
@@ -293,9 +289,7 @@ src/cmp/cpp/fragment/EntityUpdateOp.fragment.cpp bb008751959b
 src/cmp/cpp/fragment/Main.fragment.cpp 202d212074c2
 src/cmp/cpp/tsconfig.json 720a3f229019
 src/cmp/cpp/utility_cpp.ts b34388805840
-tm/cpp/LICENSE 52acd47c245f
 tm/cpp/Makefile 80ab5d610748
-tm/cpp/VERSION e6635045e1d2
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
 tm/cpp/core/types.hpp 3a4ea3bcae0e
@@ -342,7 +336,7 @@ src/cmp/csharp/EntityTypes_csharp.ts 37693d02b675
 src/cmp/csharp/Entity_csharp.ts 5deffffa349f
 src/cmp/csharp/Gitignore_csharp.ts bd603cc2c5c7
 src/cmp/csharp/MainEntity_csharp.ts 1c24807ab2fe
-src/cmp/csharp/Main_csharp.ts 45456e223adc
+src/cmp/csharp/Main_csharp.ts 69a655474e80
 src/cmp/csharp/Package_csharp.ts 7b9366f52cbe
 src/cmp/csharp/PrepareAuth_csharp.ts 31a115d93de8
 src/cmp/csharp/ReadmeEntity_csharp.ts 2dcd4dcb59dd
@@ -376,9 +370,7 @@ src/cmp/csharp/fragment/Main.fragment.cs 00fdc1221a8c
 src/cmp/csharp/fragment/SdkError.fragment.cs f10488189e97
 src/cmp/csharp/tsconfig.json 720a3f229019
 src/cmp/csharp/utility_csharp.ts 3eddc480b97e
-tm/csharp/LICENSE 52acd47c245f
 tm/csharp/Makefile 4b54c2bb4309
-tm/csharp/VERSION e6635045e1d2
 tm/csharp/core/Context.cs 39e91387bb45
 tm/csharp/core/Control.cs eac6511c1bd1
 tm/csharp/core/Helpers.cs c4fc14005a8f
@@ -455,7 +447,7 @@ src/cmp/elixir/EntityTypes_elixir.ts 86dcfbca72f8
 src/cmp/elixir/Entity_elixir.ts 184381df5efb
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 9a4a93d98814
-src/cmp/elixir/Main_elixir.ts 97c5e55c7c7f
+src/cmp/elixir/Main_elixir.ts 915b77f5d2c7
 src/cmp/elixir/Package_elixir.ts 4000e161bbd7
 src/cmp/elixir/PrepareAuth_elixir.ts 21d2949f35d5
 src/cmp/elixir/ReadmeEntity_elixir.ts 4fbe9da24c13
@@ -488,9 +480,7 @@ src/cmp/elixir/fragment/Main.fragment.ex 98cb5b4657d3
 src/cmp/elixir/fragment/Pipeline.fragment.ex 841c454450ca
 src/cmp/elixir/tsconfig.json 720a3f229019
 src/cmp/elixir/utility_elixir.ts bdfc9c5a3a23
-tm/elixir/LICENSE 7a036af3f8a4
 tm/elixir/Makefile 411daea82111
-tm/elixir/VERSION e6635045e1d2
 tm/elixir/lib/projectname/context.ex c08da12e3546
 tm/elixir/lib/projectname/core.ex 2c5a27f9ef03
 tm/elixir/lib/projectname/entity_base.ex fc35f1c786f2
@@ -531,7 +521,7 @@ src/cmp/go/EntityTypes_go.ts 3702d5d19fd2
 src/cmp/go/Entity_go.ts 7ee87e28bab9
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts b9f011d284f8
-src/cmp/go/Main_go.ts 174638830097
+src/cmp/go/Main_go.ts ecca9d84c618
 src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts 52b6a144ae95
@@ -562,9 +552,7 @@ src/cmp/go/fragment/EntityUpdateOp.fragment.go 5a4d3ece6e71
 src/cmp/go/fragment/Main.fragment.go 96957579ca8d
 src/cmp/go/tsconfig.json 720a3f229019
 src/cmp/go/utility_go.ts 7373c070ad75
-tm/go/LICENSE 52acd47c245f
 tm/go/Makefile b3e31dd9b764
-tm/go/VERSION e6635045e1d2
 tm/go/core/context.go 2927b6340012
 tm/go/core/control.go e5f055beb2f1
 tm/go/core/error.go e2bc537a8ccc
@@ -668,7 +656,7 @@ src/cmp/java/EntityTypes_java.ts 7c70fc1164ed
 src/cmp/java/Entity_java.ts 234ee14a0a72
 src/cmp/java/Gitignore_java.ts 549792550319
 src/cmp/java/MainEntity_java.ts 3f146ec80ca7
-src/cmp/java/Main_java.ts e66b76cce845
+src/cmp/java/Main_java.ts 9f711cf5ec30
 src/cmp/java/Package_java.ts 229bdccd9e3b
 src/cmp/java/PrepareAuth_java.ts 2e8593a5f789
 src/cmp/java/ReadmeEntity_java.ts 63f97c38dd85
@@ -702,9 +690,7 @@ src/cmp/java/fragment/Main.fragment.java a2f2bdda49f5
 src/cmp/java/fragment/SdkError.fragment.java 4a0e738dbcc0
 src/cmp/java/tsconfig.json 720a3f229019
 src/cmp/java/utility_java.ts cbb8a5c9ae7f
-tm/java/LICENSE 52acd47c245f
 tm/java/Makefile 2ef8ff19ee5f
-tm/java/VERSION e6635045e1d2
 tm/java/core/Context.java 12ccc4a38ed0
 tm/java/core/Control.java 565185ed2b10
 tm/java/core/Entity.java 50d3208bc31e
@@ -788,7 +774,7 @@ src/cmp/js/EntityTypes_js.ts 6c115a92a18f
 src/cmp/js/Entity_js.ts debbc06d5c79
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
-src/cmp/js/Main_js.ts 5964cdac192d
+src/cmp/js/Main_js.ts b1dfe2341516
 src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 9742af3eb16d
 src/cmp/js/ReadmeEntity_js.ts 20cb70a7e456
@@ -828,7 +814,6 @@ src/cmp/js/fragment/Main.fragment.js 5e8692c09265
 src/cmp/js/fragment/MainStation.fragment.js c19757d85e46
 src/cmp/js/fragment/SdkError.fragment.js 22b5a9cd3050
 src/cmp/js/utility_js.ts ddc2dcd4344a
-tm/js/LICENSE 52acd47c245f
 tm/js/Makefile 43d4bd6d5621
 tm/js/jsconfig.json 2a568c53a9fc
 tm/js/src/Context.js 89458341b809
@@ -913,7 +898,7 @@ src/cmp/kotlin/EntityTypes_kotlin.ts 70cb3a8168d5
 src/cmp/kotlin/Entity_kotlin.ts 2e21c82ab01c
 src/cmp/kotlin/Gitignore_kotlin.ts f164b2f3bdde
 src/cmp/kotlin/MainEntity_kotlin.ts bca2e71d5f00
-src/cmp/kotlin/Main_kotlin.ts adb4c559efa5
+src/cmp/kotlin/Main_kotlin.ts dbb0cc8a783e
 src/cmp/kotlin/Package_kotlin.ts 4c7f9e656550
 src/cmp/kotlin/PrepareAuth_kotlin.ts 4f8679d0c503
 src/cmp/kotlin/ReadmeEntity_kotlin.ts c11b93b9dddd
@@ -947,9 +932,7 @@ src/cmp/kotlin/fragment/Main.fragment.kt da2bcd732d11
 src/cmp/kotlin/fragment/SdkError.fragment.kt c7864044bb8d
 src/cmp/kotlin/tsconfig.json 720a3f229019
 src/cmp/kotlin/utility_kotlin.ts 4309ecb5fbb6
-tm/kotlin/LICENSE 52acd47c245f
 tm/kotlin/Makefile 6de7aef9a5ef
-tm/kotlin/VERSION e6635045e1d2
 tm/kotlin/core/Context.kt 9a1c45790776
 tm/kotlin/core/Control.kt 49fe61178ad1
 tm/kotlin/core/Helpers.kt 8648bcb75c20
@@ -1011,7 +994,7 @@ src/cmp/lua/EntityTypes_lua.ts ea893834ebd9
 src/cmp/lua/Entity_lua.ts 480ffabdb329
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
-src/cmp/lua/Main_lua.ts 12d209201ab5
+src/cmp/lua/Main_lua.ts 027add4c78d9
 src/cmp/lua/Package_lua.ts 91a0b781bab1
 src/cmp/lua/PrepareAuth_lua.ts cc49fb94005b
 src/cmp/lua/ReadmeEntity_lua.ts 999d57a4df76
@@ -1042,7 +1025,6 @@ src/cmp/lua/fragment/EntityUpdateOp.fragment.lua e57920dc8776
 src/cmp/lua/fragment/Main.fragment.lua 20eff1639c03
 src/cmp/lua/tsconfig.json 720a3f229019
 src/cmp/lua/utility_lua.ts 216f2c0aab05
-tm/lua/LICENSE 52acd47c245f
 tm/lua/Makefile 669a51248d17
 tm/lua/core/context.lua 461608869e61
 tm/lua/core/control.lua bcd4e848f7f2
@@ -1121,7 +1103,7 @@ src/cmp/ocaml/EntityOperation_ocaml.ts a015984bac63
 src/cmp/ocaml/Entity_ocaml.ts 2669e7a3792b
 src/cmp/ocaml/Gitignore_ocaml.ts 17f97d494254
 src/cmp/ocaml/MainEntity_ocaml.ts ab4c2d6c3549
-src/cmp/ocaml/Main_ocaml.ts 017cbbaf15a1
+src/cmp/ocaml/Main_ocaml.ts d5bc146ad714
 src/cmp/ocaml/Package_ocaml.ts c5c697f87503
 src/cmp/ocaml/PrepareAuth_ocaml.ts 4faf9c4284b6
 src/cmp/ocaml/ReadmeEntity_ocaml.ts 98af9e5818cb
@@ -1146,9 +1128,7 @@ src/cmp/ocaml/Test_ocaml.ts 97451223ef72
 src/cmp/ocaml/fragment/RunOp.fragment.ml fe471fb75caa
 src/cmp/ocaml/tsconfig.json 720a3f229019
 src/cmp/ocaml/utility_ocaml.ts 41c5dce373e6
-tm/ocaml/LICENSE 7a036af3f8a4
 tm/ocaml/Makefile 9cd7fa6d512e
-tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml be2b76a3332f
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
@@ -1183,7 +1163,7 @@ src/cmp/perl/EntityOperation_perl.ts 8d50a8beeb42
 src/cmp/perl/Entity_perl.ts 7f52bce83f14
 src/cmp/perl/Gitignore_perl.ts cef200d91d8f
 src/cmp/perl/MainEntity_perl.ts 49d50e77add8
-src/cmp/perl/Main_perl.ts dbbd7bcdcdde
+src/cmp/perl/Main_perl.ts ce8121a59458
 src/cmp/perl/Package_perl.ts d2ec55eddbfc
 src/cmp/perl/PrepareAuth_perl.ts f6a9d71e3a11
 src/cmp/perl/ReadmeEntity_perl.ts 3caae01227dc
@@ -1214,7 +1194,6 @@ src/cmp/perl/fragment/EntityUpdateOp.fragment.pm 93327e7772aa
 src/cmp/perl/fragment/Main.fragment.pm 748b9517f292
 src/cmp/perl/tsconfig.json 720a3f229019
 src/cmp/perl/utility_perl.ts 30622889a579
-tm/perl/LICENSE 52acd47c245f
 tm/perl/Makefile f2eb4b627fd1
 tm/perl/core/context.pm 44f4c0eaa3f0
 tm/perl/core/control.pm cb6185bbc19f
@@ -1290,7 +1269,7 @@ src/cmp/php/EntityTypes_php.ts 4ffa1b893ae1
 src/cmp/php/Entity_php.ts 11d4cc8b9dae
 src/cmp/php/Gitignore_php.ts e6379c0edbe7
 src/cmp/php/MainEntity_php.ts 63d270027217
-src/cmp/php/Main_php.ts 7cf40a8baf83
+src/cmp/php/Main_php.ts a6613e29fcff
 src/cmp/php/Package_php.ts d6e54478a53a
 src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts a7b6d0434fe8
@@ -1321,9 +1300,7 @@ src/cmp/php/fragment/EntityUpdateOp.fragment.php 708596fd1802
 src/cmp/php/fragment/Main.fragment.php 369e3abf1654
 src/cmp/php/tsconfig.json 720a3f229019
 src/cmp/php/utility_php.ts c65bddbe5deb
-tm/php/LICENSE 52acd47c245f
 tm/php/Makefile b9f4aa19ca8a
-tm/php/VERSION e6635045e1d2
 tm/php/core/Context.php 1d48cfbe8e57
 tm/php/core/Control.php 6cb0e03bea15
 tm/php/core/Error.php d3ddfe0c0238
@@ -1395,7 +1372,7 @@ src/cmp/py/EntityTypes_py.ts fb8f811e2680
 src/cmp/py/Entity_py.ts 4cd98dd60bc0
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
-src/cmp/py/Main_py.ts 5630f0feb88c
+src/cmp/py/Main_py.ts 175cad17e6de
 src/cmp/py/Package_py.ts 69c4ddb165ed
 src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts c0fff5be4178
@@ -1426,7 +1403,6 @@ src/cmp/py/fragment/EntityUpdateOp.fragment.py 9fee208f42c0
 src/cmp/py/fragment/Main.fragment.py 8b87526d0835
 src/cmp/py/tsconfig.json 720a3f229019
 src/cmp/py/utility_py.ts dcadf423b5da
-tm/py/LICENSE 52acd47c245f
 tm/py/Makefile 7ff36e6ad70c
 tm/py/pkg/core/__init__.py e3b0c44298fc
 tm/py/pkg/core/context.py b15c87b8fd33
@@ -1503,8 +1479,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/py-data.aontu 255883bf8af3
 model/target/target-index.aontu fab6a58fafb8
-src/cmp/py-data/Main_py-data.ts c9c6c5d20048
-tm/py-data/LICENSE 52acd47c245f
+src/cmp/py-data/Main_py-data.ts 375b243be6b1
 tm/py-data/Makefile bafe4ec2f3c6
 tm/py-data/pkg/auth.py a84c020b8eb1
 tm/py-data/pkg/fetch.py 5a3573da5894
@@ -1530,7 +1505,7 @@ src/cmp/rb/EntityTypes_rb.ts 632232bd2ef4
 src/cmp/rb/Entity_rb.ts a7ca2f61dccf
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
-src/cmp/rb/Main_rb.ts d92e24cb896b
+src/cmp/rb/Main_rb.ts 3261abc29536
 src/cmp/rb/Package_rb.ts 2391c7fb8c9b
 src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts cbeafa4bd3d4
@@ -1562,7 +1537,6 @@ src/cmp/rb/fragment/Main.fragment.rb c0ac7653ab3f
 src/cmp/rb/tsconfig.json 720a3f229019
 src/cmp/rb/utility_rb.ts 4cbd0b86307b
 tm/rb/Gemfile 2cf46ddd24ec
-tm/rb/LICENSE 52acd47c245f
 tm/rb/Makefile ca8ba78b7770
 tm/rb/core/context.rb 053a5f15082d
 tm/rb/core/control.rb 14d11fa63c1f
@@ -1638,7 +1612,7 @@ src/cmp/rust/EntityTypes_rust.ts 60b14ada2b1f
 src/cmp/rust/Entity_rust.ts 5136b405582f
 src/cmp/rust/Gitignore_rust.ts 285a6decc9dd
 src/cmp/rust/MainEntity_rust.ts cfab71599f0a
-src/cmp/rust/Main_rust.ts 28620b21729d
+src/cmp/rust/Main_rust.ts 3704b920a823
 src/cmp/rust/Package_rust.ts f7fcb51e8878
 src/cmp/rust/PrepareAuth_rust.ts f48748ac39c5
 src/cmp/rust/ReadmeEntity_rust.ts 3ff319020626
@@ -1671,9 +1645,7 @@ src/cmp/rust/fragment/Main.fragment.rs 15fc5f09b417
 src/cmp/rust/fragment/SdkError.fragment.rs f7b9f189768a
 src/cmp/rust/tsconfig.json 720a3f229019
 src/cmp/rust/utility_rust.ts 25cb11a8462c
-tm/rust/LICENSE 52acd47c245f
 tm/rust/Makefile c11cff067e5c
-tm/rust/VERSION e6635045e1d2
 tm/rust/core/context.rs ccbcb67e5f81
 tm/rust/core/control.rs ef87c0e6b6fd
 tm/rust/core/helpers.rs e6da13e4c2b3
@@ -1758,7 +1730,7 @@ src/cmp/scala/EntityTypes_scala.ts 3c495d07e70b
 src/cmp/scala/Entity_scala.ts db47d209fd9d
 src/cmp/scala/Gitignore_scala.ts 4c75b5801ca5
 src/cmp/scala/MainEntity_scala.ts 911328e9d2ca
-src/cmp/scala/Main_scala.ts 5f8d4af4b296
+src/cmp/scala/Main_scala.ts 586d5c0dd872
 src/cmp/scala/Package_scala.ts 8ae04e6b348b
 src/cmp/scala/PrepareAuth_scala.ts b9a5ce33389e
 src/cmp/scala/ReadmeEntity_scala.ts d3d4cf89862b
@@ -1790,9 +1762,7 @@ src/cmp/scala/fragment/EntityUpdateOp.fragment.scala e7b5cdee3a50
 src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
 src/cmp/scala/utility_scala.ts 052eabfb65fa
-tm/scala/LICENSE 52acd47c245f
 tm/scala/Makefile 605055b1cf84
-tm/scala/VERSION e6635045e1d2
 tm/scala/core/Context.scala d82e7dbca9ff
 tm/scala/core/Contracts.scala 0988ea4929ee
 tm/scala/core/Control.scala 1adcb3343fe0
@@ -1926,7 +1896,7 @@ src/cmp/swift/EntityTypes_swift.ts d5ff1cf4a57c
 src/cmp/swift/Entity_swift.ts 4d27dc352489
 src/cmp/swift/Gitignore_swift.ts 335a862c06a8
 src/cmp/swift/MainEntity_swift.ts a077a33118e1
-src/cmp/swift/Main_swift.ts 2117f9682f71
+src/cmp/swift/Main_swift.ts e04cc7f28542
 src/cmp/swift/Package_swift.ts 3867408088b4
 src/cmp/swift/PrepareAuth_swift.ts c61d7cfcd37e
 src/cmp/swift/ReadmeEntity_swift.ts e2bc6df72b91
@@ -1960,7 +1930,6 @@ src/cmp/swift/fragment/Main.fragment.swift f358ae414821
 src/cmp/swift/fragment/SdkError.fragment.swift 927b9a03be0d
 src/cmp/swift/tsconfig.json 720a3f229019
 src/cmp/swift/utility_swift.ts 9e76972fbb77
-tm/swift/LICENSE 52acd47c245f
 tm/swift/Makefile 739c886b61af
 tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift ed5ff2870004
 tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift 28a6f4a6a47b
@@ -2012,7 +1981,6 @@ tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift 3d82e702a544
 tm/swift/Tests/vendor/omni/Json.swift e468095da542
 tm/swift/Tests/vendor/omni/Runner.swift 4d39eebfd019
 tm/swift/Tests/vendor/omni/Util.swift 92e2d3924b57
-tm/swift/VERSION e6635045e1d2
 tm/swift/src/feature/README.md ea8b8ace9e1f
 tm/swift/src/feature/base/.gitkeep e3b0c44298fc
 tm/swift/src/feature/test/.gitkeep e3b0c44298fc
@@ -2030,7 +1998,7 @@ src/cmp/ts/EntityTypes_ts.ts 4d45bb867597
 src/cmp/ts/Entity_ts.ts 866beb700dc7
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
-src/cmp/ts/Main_ts.ts 1220d104f55d
+src/cmp/ts/Main_ts.ts d4d29e62fdd0
 src/cmp/ts/Package_ts.ts 61d52a361614
 src/cmp/ts/PrepareAuth_ts.ts 13cc5f3c7f72
 src/cmp/ts/ReadmeEntity_ts.ts 4f1fb3daec35
@@ -2073,7 +2041,6 @@ src/cmp/ts/fragment/MainStation.fragment.ts 87d629c6b32f
 src/cmp/ts/fragment/SdkError.fragment.ts cbfaeffafd6a
 src/cmp/ts/tsconfig.json 720a3f229019
 src/cmp/ts/utility_ts.ts e480b7d17e3a
-tm/ts/LICENSE 52acd47c245f
 tm/ts/Makefile 347b29cf40e1
 tm/ts/src/Context.ts cd904fde5881
 tm/ts/src/Control.ts 7e8448264396
@@ -2158,7 +2125,7 @@ src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 5e0f147b7e57
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
 src/cmp/zig/MainEntity_zig.ts d0d2ec1fe12a
-src/cmp/zig/Main_zig.ts 8f91bc6af36f
+src/cmp/zig/Main_zig.ts eecc2f1df415
 src/cmp/zig/Package_zig.ts 5da49f4a8d5b
 src/cmp/zig/PrepareAuth_zig.ts ff18ef091eeb
 src/cmp/zig/ReadmeEntity_zig.ts 9a69dff638cb
@@ -2191,9 +2158,7 @@ src/cmp/zig/fragment/Main.fragment.zig 32efb16a4951
 src/cmp/zig/fragment/Root.fragment.zig 7ab6408a7808
 src/cmp/zig/tsconfig.json 720a3f229019
 src/cmp/zig/utility_zig.ts d694f805810c
-tm/zig/LICENSE 7a036af3f8a4
 tm/zig/Makefile 623289c8876a
-tm/zig/VERSION e6635045e1d2
 tm/zig/core/context.zig b980c8f20fda
 tm/zig/core/control.zig 6b36b44b2ee7
 tm/zig/core/error.zig 4fd51e9b0765

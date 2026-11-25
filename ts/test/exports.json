@@ -52,6 +52,8 @@
     "Slot",
     "TAGS",
     "TEST_CONTROL_EXCLUDE",
+    "TargetLicense",
+    "TargetVersion",
     "Test",
     "TestControl",
     "alongsideNote",

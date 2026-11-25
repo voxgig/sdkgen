@@ -6,7 +6,8 @@ import {
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   inactiveFeatureExcludes,
   targetFeatures, pluginExcludes,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
 } from '@voxgig/sdkgen'
 
 
@@ -47,6 +48,7 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
 
   const containerExcludes = CONTAINED
     .filter((name: string) => null == feature[name])

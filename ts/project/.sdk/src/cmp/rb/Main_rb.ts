@@ -7,7 +7,8 @@ import {
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
 } from '@voxgig/sdkgen'
 
 
@@ -45,6 +46,7 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
 
   // Copy tm/rb files with replacements
   Copy({

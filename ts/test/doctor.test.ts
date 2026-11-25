@@ -81,6 +81,17 @@ describe('doctor', () => {
   })
 
 
+  // The version is the model's at every generate, so no copy holds it.
+  test('a version bump leaves every copy current', async () => {
+    const project = await addedProject()
+    project.actx.model.main[KIT].target.go.publish = { version: '9.9.9' }
+
+    const report = await check(project)
+    deepStrictEqual([...report.edited, ...report.forked, ...report.outdated], [])
+    strictEqual(report.ok, true)
+  })
+
+
   test('superseded output is a finding, and prune deletes exactly it', async () => {
     const project = await addedProject()
 
@@ -171,11 +182,11 @@ describe('doctor', () => {
   test('it finds a file target add would write', async () => {
     const project = await addedProject()
 
-    project.fs.unlinkSync(Path.join(ROOT, 'tm/go/VERSION'))
+    project.fs.unlinkSync(Path.join(ROOT, 'tm/go/Makefile'))
 
     const report = await check(project)
 
-    deepStrictEqual(report.missing, ['tm/go/VERSION'])
+    deepStrictEqual(report.missing, ['tm/go/Makefile'])
     strictEqual(report.ok, false)
   })
 

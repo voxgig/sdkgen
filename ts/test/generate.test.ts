@@ -1082,6 +1082,17 @@ describe('generate', () => {
   })
 
 
+  // Written at every generate from the model, not copied once at add.
+  test('a port\'s VERSION is its publish version and its LICENSE the project\'s', async () => {
+    const out = await generate(['go', 'ts'], undefined, "main: kit: target: go: publish: version: '2.3.4'")
+    strictEqual(out['go/VERSION'], '2.3.4\n')
+    for (const t of ['go', 'ts']) {
+      strictEqual(out[t + '/LICENSE'], out['LICENSE'], t + ': the LICENSE is not the project\'s')
+    }
+    ok(out['LICENSE'].includes('Copyright (c) 2026 Voxgig'), out['LICENSE'].slice(0, 80))
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',
@@ -2666,9 +2677,12 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
 
   describe('the publisher', () => {
-    const tmDir = Path.join(SCAFFOLD, 'tm')
-    const licensed = readdirSync(tmDir)
-      .filter((t) => existsSync(Path.join(tmDir, t, 'LICENSE')))
+    // The ports whose Main writes their LICENSE.
+    const cmpDir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const licensed = readdirSync(cmpDir).filter((t) => {
+      const main = Path.join(cmpDir, t, 'Main_' + t + '.ts')
+      return existsSync(main) && /\bTargetLicense\(/.test(readFileSync(main, 'utf8'))
+    })
 
     // Each consumer target generates beside the target it wraps.
     const targets = [...licensed.filter((t) => !NON_SDK_TARGETS.includes(t)),

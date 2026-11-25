@@ -7,7 +7,9 @@ import {
   inactiveFeatureExcludes,
   entityConstructorName, entityCollection, goModule, goPackageIdent, pluginExcludes,
   targetFeatures,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -53,6 +55,8 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   Copy({
     from: 'tm/' + target.name,

@@ -37,7 +37,7 @@ import { ReadmeTop } from './cmp/ReadmeTop'
 import { AgentGuideTop } from './cmp/AgentGuideTop'
 import { AgentGuide } from './cmp/AgentGuide'
 import { AgentGuideFeature } from './cmp/AgentGuideFeature'
-import { License } from './cmp/License'
+import { License, TargetLicense, TargetVersion } from './cmp/License'
 import { Security } from './cmp/Security'
 import { PublishWorkflow } from './cmp/PublishWorkflow'
 import { npmTrustScript } from './admin/npm-trust'
@@ -1077,6 +1077,8 @@ export {
   Main,
   Deploy,
   License,
+  TargetLicense,
+  TargetVersion,
   Security,
   PublishWorkflow,
   npmTrustScript,

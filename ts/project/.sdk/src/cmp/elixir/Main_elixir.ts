@@ -7,6 +7,8 @@ import {
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
 
 import { elixirApp } from './app_elixir'
@@ -51,6 +53,8 @@ const Main = cmp(async function Main(props: any) {
 
   Package({ target })
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   // Generate the documented typespec module (lib/<app>_types.ex).
   EntityTypes({ target })

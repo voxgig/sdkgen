@@ -120,6 +120,14 @@ is not promised an MCP server, and a project with one target gets no note. A
 per-language file that exports a whole `ReadmeIntro` instead writes the
 introduction itself, unframed.
 
+#### `TargetLicense` and `TargetVersion`
+
+A port's own `LICENSE` and `VERSION` files, which a per-language `Main` writes
+into the target's directory on every `generate`. The licence is the project's
+MIT text, with the year and the publisher the root `LICENSE` names; the
+version file holds the target's `publish.version`. A template copied at
+`target add` would keep the year and the version of the day it was copied.
+
 #### `FeatureHook`
 
 ```ts

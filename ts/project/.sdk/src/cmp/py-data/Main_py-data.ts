@@ -7,6 +7,7 @@ import {
   packageName, registryState, serverVariables,
   SdkGenError,
   packageVersion,
+  TargetLicense,
 } from '@voxgig/sdkgen'
 
 import {
@@ -75,6 +76,7 @@ const Main = cmp(function Main(props: any) {
   })
 
   Gitignore({})
+  TargetLicense({ target })
   Package({ target, model, lower, dataModule })
   EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule })
   Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, svars })
