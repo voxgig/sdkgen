@@ -6,8 +6,9 @@ import * as Jostraca from 'jostraca'
 const COMPONENT = 'cmp'
 
 
-// The components that write one target's own files.
-const PER_TARGET = ['Main', 'Entity', 'Feature', 'Readme', 'Test', 'AgentGuide']
+// The components that write one target's own files, a project's registered
+// ones included.
+const PER_TARGET = ['Main', 'Entity', 'Feature', 'Readme', 'Test', 'AgentGuide', 'Registered']
 
 
 // jostraca's cmp, labelling each node it makes with the component's name. A
