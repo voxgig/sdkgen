@@ -8,7 +8,8 @@ import Path from 'node:path'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeIntro, applyFacts, introOps } from '../dist/sdkgen.js'
+import { ReadmeIntro, SdkGen, applyFacts, entityCollection, introOps } from '../dist/sdkgen.js'
+import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs } from './generateharness'
 
 
 const model = applyFacts({
@@ -94,5 +95,45 @@ describe('introOps', () => {
   test('names list and load when nothing is active', () => {
     deepStrictEqual(ops({}), ['list', 'load'])
     deepStrictEqual(ops({ a: { active: false, op: { create: {} } } }), ['list', 'load'])
+  })
+})
+
+
+describe('the generated introductions', () => {
+
+  let cwd = ''
+  before(() => {
+    cwd = process.cwd()
+    process.chdir(SCAFFOLD)
+  })
+  after(() => {
+    if ('' !== cwd) process.chdir(cwd)
+  })
+
+  test('call the Entities capitalised only beside an accessor that is', async () => {
+    const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const targets = Fs.readdirSync(cmpdir)
+      .filter((t: string) => Fs.existsSync(Path.join(cmpdir, t, 'ReadmeIntro_' + t + '.ts'))).sort()
+    const model = makeModel(targets)
+    const pascal = Object.values(entityCollection(model)).map((e: any) => e.Name)
+
+    const { fs, vol } = memfs({})
+    await SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+      .generate({ model, root: makeRoot() })
+    const out: any = vol.toJSON()
+
+    const named: string[] = []
+    for (const target of targets) {
+      const readme: string = out[Path.join(STAGE, target, 'README.md')]
+      const para = readme.split(/\n\n/).find((p: string) => p.includes('semantic **Entities**'))
+      strictEqual(null != para, true, target + ': no Entities paragraph')
+      const span = (/`([^`]+)`/.exec(para!) || [])[1] || ''
+      if (/capitalised/i.test(para!)) {
+        strictEqual(pascal.some((name: string) => new RegExp('\\b' + name + '\\b').test(span)), true,
+          target + ': capitalised Entities beside ' + span)
+        named.push(target)
+      }
+    }
+    strictEqual(0 < named.length, true, 'no introduction calls its Entities capitalised')
   })
 })
