@@ -6781,6 +6781,17 @@ function cppTsanUnusable(ran: Run): string | null {
 }
 
 
+// ThreadSanitizer keeps its shadow memory at fixed addresses, which the high
+// address randomisation of recent Linux kernels can hand the binary first: the
+// runtime then stops with "unexpected memory mapping" or, now and then, dies
+// with a bare SIGSEGV that reads as the SDK's own crash. `setarch -R` starts it
+// unrandomised wherever the system allows that.
+function cppTsanLaunch(bin: string): [string, string[]] {
+  const setarch = 'linux' === process.platform ? toolchain('setarch') : null
+  return null != setarch && probeOk(setarch, ['-R', 'true']) ? [setarch, ['-R', bin]] : [bin, []]
+}
+
+
 // The suite under ThreadSanitizer, else built and run plainly where the
 // compiler has none or its runtime cannot start here.
 function cppConcurrency(sdkroot: string, make: Command): SuiteRun {
@@ -6794,7 +6805,8 @@ function cppConcurrency(sdkroot: string, make: Command): SuiteRun {
     make.env, CPP_CONCURRENCY_TIMEOUT_MS)
   let why = 'the compiler has no ThreadSanitizer'
   if (tsan.ok) {
-    const ran = run(bin, [], sdkroot, {
+    const [tsanBin, tsanArgs] = cppTsanLaunch(bin)
+    const ran = run(tsanBin, tsanArgs, sdkroot, {
       ...env,
       TSAN_OPTIONS: 'halt_on_error=1 suppressions=tsan.supp',
       [CPP_ROUNDS_ENV]: CPP_TSAN_ROUNDS,
