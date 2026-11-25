@@ -69,8 +69,10 @@ function makeLog() {
 
 // Fixture model. Field/param `type` values use the exact sentinel forms
 // apidef stores (backtick-quoted, unions as ['`$ONE`', [members]]).
+// Passed through the fact pass, whose JVM package the java, kotlin and scala
+// emitters read.
 function makeModel() {
-  return {
+  return sdkgen.applyFacts({
     name: 'demo',
     origin: 'voxgig-sdk',
     const: { Name: 'Demo', name: 'demo' },
@@ -115,7 +117,7 @@ function makeModel() {
         },
       },
     },
-  }
+  })
 }
 
 

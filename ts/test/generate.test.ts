@@ -968,6 +968,30 @@ describe('generate', () => {
   })
 
 
+  // The Maven coordinates are the package name: the declared one, else the
+  // origin's group and the SDK's artifact.
+  test('a JVM target publishes and documents the coordinates its model declares', async () => {
+    const declare = (pkg: string, targets: string[]) => targets.map((t) =>
+      `main: kit: target: ${t}: publish: registry: { package: '${pkg}', active: true }`).join('\n')
+
+    const jvm = ['java', 'kotlin', 'scala']
+    const out = await generate(jvm, undefined, declare('io.acme:acme-client', jvm))
+    ok(/<groupId>io\.acme<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(out['java/pom.xml']), 'pom')
+    ok(out['kotlin/build.gradle.kts'].includes('group = "io.acme"'), 'gradle group')
+    ok(out['kotlin/settings.gradle.kts'].includes('rootProject.name = "acme-client"'), 'gradle artifact')
+    ok(/<groupId>io\.acme<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(out['java/README.md']), 'java README')
+    ok(out['kotlin/README.md'].includes('implementation("io.acme:acme-client:'), 'kotlin README')
+    ok(out['scala/README.md'].includes('"io.acme:acme-client_3:'), 'scala README')
+    for (const t of ['Java', 'Kotlin', 'Scala']) {
+      ok(new RegExp('\\| ' + t + ' \\| `io\\.acme:acme-client` \\|').test(out['README.md']), t + ' packages row')
+    }
+
+    const bare = await generate(['java'], undefined, declare('acme-client', ['java']))
+    ok(/<groupId>com\.voxgig<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(bare['java/pom.xml']),
+      'a declared artifact keeps the default group')
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',

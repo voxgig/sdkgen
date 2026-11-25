@@ -5,16 +5,13 @@ import {
   cmp,
   collectDeps,
   packageVersion,
-  sdkName,
+  packageName,
 } from '@voxgig/sdkgen'
 
 
 import type {
   Model,
 } from '@voxgig/apidef'
-
-
-import { mavenGroupId } from './utility_java'
 
 
 // Generates the Maven pom.xml (the java analog of go.mod, which the go
@@ -28,8 +25,7 @@ const Package = cmp(async function Package(props: any) {
 
   const model: Model = ctx$.model
 
-  const groupId = mavenGroupId(model)
-  const artifactId = sdkName(model.name)
+  const [groupId, artifactId] = packageName(model, target.name).split(':')
 
   // Dep name convention: "groupId:artifactId" with an explicit version.
   const deps: { groupId: string, artifactId: string, version: string, kind: string }[] = []

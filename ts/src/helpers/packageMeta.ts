@@ -256,8 +256,9 @@ function packageName(model: any, eco: string): string {
   }
   const declared = model?.main?.[KIT]?.target?.[ECO_TARGET[eco] || eco]
     ?.publish?.registry?.package
+  const jvm = JVM_ORIGINS.includes(originName(model, eco))
   if (null != declared && '' !== declared) {
-    return String(declared)
+    return jvm && !String(declared).includes(':') ? mavenGroup(origin) + ':' + declared : String(declared)
   }
 
   // The lookup above is keyed by the target's OWN name, so an alias reads its
@@ -290,9 +291,22 @@ function packageName(model: any, eco: string): string {
       return goModule(model, eco)
     case 'py-data':
       return `${origin}-${base}-data`
+    case 'java':
+    case 'kotlin':
+    case 'scala':
+      return mavenGroup(origin) + ':' + base
     default:
       return `${origin}-${base}`
   }
+}
+
+
+// A JVM package is published as `<group>:<artifact>`; a declared name without
+// a group is the artifact.
+const JVM_ORIGINS = ['java', 'kotlin', 'scala']
+
+function mavenGroup(origin: string): string {
+  return 'com.' + origin.replace(/-sdk$/, '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
 }
 
 

@@ -669,13 +669,13 @@ src/cmp/java/Entity_java.ts 234ee14a0a72
 src/cmp/java/Gitignore_java.ts 549792550319
 src/cmp/java/MainEntity_java.ts 3f146ec80ca7
 src/cmp/java/Main_java.ts e66b76cce845
-src/cmp/java/Package_java.ts 2ed76b17901b
+src/cmp/java/Package_java.ts 229bdccd9e3b
 src/cmp/java/PrepareAuth_java.ts 2e8593a5f789
 src/cmp/java/ReadmeEntity_java.ts 63f97c38dd85
 src/cmp/java/ReadmeExamplesTest_java.ts 40e3f79a3fa0
 src/cmp/java/ReadmeExplanation_java.ts e2c006f92e81
 src/cmp/java/ReadmeHowto_java.ts efbd4a2375d9
-src/cmp/java/ReadmeInstall_java.ts c4e765039ddb
+src/cmp/java/ReadmeInstall_java.ts 2f5fb1458063
 src/cmp/java/ReadmeIntro_java.ts 20c352a58d33
 src/cmp/java/ReadmeModel_java.ts 4487884b8c96
 src/cmp/java/ReadmeOptions_java.ts c90bce878518
@@ -701,7 +701,7 @@ src/cmp/java/fragment/EntityUpdateOp.fragment.java f25ffe51c7f5
 src/cmp/java/fragment/Main.fragment.java a2f2bdda49f5
 src/cmp/java/fragment/SdkError.fragment.java 4a0e738dbcc0
 src/cmp/java/tsconfig.json 720a3f229019
-src/cmp/java/utility_java.ts 1690775675d7
+src/cmp/java/utility_java.ts cbb8a5c9ae7f
 tm/java/LICENSE 52acd47c245f
 tm/java/Makefile def672a803b0
 tm/java/VERSION e6635045e1d2
@@ -914,13 +914,13 @@ src/cmp/kotlin/Entity_kotlin.ts 2e21c82ab01c
 src/cmp/kotlin/Gitignore_kotlin.ts f164b2f3bdde
 src/cmp/kotlin/MainEntity_kotlin.ts bca2e71d5f00
 src/cmp/kotlin/Main_kotlin.ts adb4c559efa5
-src/cmp/kotlin/Package_kotlin.ts caea8d967fed
+src/cmp/kotlin/Package_kotlin.ts 4c7f9e656550
 src/cmp/kotlin/PrepareAuth_kotlin.ts 4f8679d0c503
 src/cmp/kotlin/ReadmeEntity_kotlin.ts c11b93b9dddd
 src/cmp/kotlin/ReadmeExamplesTest_kotlin.ts 6304f45cb224
 src/cmp/kotlin/ReadmeExplanation_kotlin.ts 7a3e0bc261d0
 src/cmp/kotlin/ReadmeHowto_kotlin.ts 16ab7603ccd1
-src/cmp/kotlin/ReadmeInstall_kotlin.ts 4816afbf0bf4
+src/cmp/kotlin/ReadmeInstall_kotlin.ts ce74a4233d93
 src/cmp/kotlin/ReadmeIntro_kotlin.ts 3edc60fc57ff
 src/cmp/kotlin/ReadmeModel_kotlin.ts 2f1384cd9686
 src/cmp/kotlin/ReadmeOptions_kotlin.ts cfce450043b8
@@ -946,7 +946,7 @@ src/cmp/kotlin/fragment/EntityUpdateOp.fragment.kt 0d106792f6c1
 src/cmp/kotlin/fragment/Main.fragment.kt da2bcd732d11
 src/cmp/kotlin/fragment/SdkError.fragment.kt c7864044bb8d
 src/cmp/kotlin/tsconfig.json 720a3f229019
-src/cmp/kotlin/utility_kotlin.ts 22ac1e31c8e2
+src/cmp/kotlin/utility_kotlin.ts 4309ecb5fbb6
 tm/kotlin/LICENSE 52acd47c245f
 tm/kotlin/Makefile 5102e29f09a6
 tm/kotlin/VERSION e6635045e1d2
@@ -1765,7 +1765,7 @@ src/cmp/scala/ReadmeEntity_scala.ts d3d4cf89862b
 src/cmp/scala/ReadmeExamplesTest_scala.ts 29ebfa47559d
 src/cmp/scala/ReadmeExplanation_scala.ts 52019da816a0
 src/cmp/scala/ReadmeHowto_scala.ts a4baab97f2f4
-src/cmp/scala/ReadmeInstall_scala.ts c47dd52ab4de
+src/cmp/scala/ReadmeInstall_scala.ts 505fcb4a4646
 src/cmp/scala/ReadmeIntro_scala.ts f0ed7e16f36a
 src/cmp/scala/ReadmeModel_scala.ts d7519593b40f
 src/cmp/scala/ReadmeOptions_scala.ts 6c961d32294b
@@ -1789,7 +1789,7 @@ src/cmp/scala/fragment/EntityRemoveOp.fragment.scala b2b382ba8af4
 src/cmp/scala/fragment/EntityUpdateOp.fragment.scala e7b5cdee3a50
 src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
-src/cmp/scala/utility_scala.ts 05b03af31afd
+src/cmp/scala/utility_scala.ts 052eabfb65fa
 tm/scala/LICENSE 52acd47c245f
 tm/scala/Makefile 605055b1cf84
 tm/scala/VERSION e6635045e1d2

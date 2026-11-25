@@ -5,16 +5,13 @@ import {
   cmp,
   collectDeps,
   packageVersion,
-  sdkName,
+  packageName,
 } from '@voxgig/sdkgen'
 
 
 import type {
   Model,
 } from '@voxgig/apidef'
-
-
-import { gradleGroup } from './utility_kotlin'
 
 
 // Generates the Gradle build files (build.gradle.kts + settings.gradle.kts),
@@ -27,8 +24,7 @@ const Package = cmp(async function Package(props: any) {
 
   const model: Model = ctx$.model
 
-  const group = gradleGroup(model)
-  const artifactId = sdkName(model.name)
+  const [group, artifactId] = packageName(model, target.name).split(':')
 
   // Dep name convention: "group:artifact" with an explicit version.
   const deps: { group: string, artifact: string, version: string, kind: string }[] = []

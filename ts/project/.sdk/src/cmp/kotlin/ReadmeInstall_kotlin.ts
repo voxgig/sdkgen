@@ -1,15 +1,12 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, cdTarget } from '@voxgig/sdkgen'
-
-import { gradleGroup } from './utility_kotlin'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, packageName } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const group = gradleGroup(model)
-  const artifactId = sdkName(model.name)
+  const [group, artifactId] = packageName(model, target.name).split(':')
 
   if (isPublished(model, target.name)) {
     Content(`Add the dependency to your \`build.gradle.kts\`:
