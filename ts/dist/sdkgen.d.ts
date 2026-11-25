@@ -3,6 +3,7 @@ import type { ActionResult } from './types';
 import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, credentialPlacement, isAuthSuppressed, isHttpBasicAuth, CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr, configReprSetting, configDefinition, clean, rawStringLiteral } from './utility';
 import { Main } from './cmp/Main';
 import { featureApplies, targetFeatures, featureTags, unknownTags, TAGS } from './helpers/applicability';
+import type { ExternalOverride } from './helpers/placement';
 import { Deploy } from './cmp/Deploy';
 import { Entity } from './cmp/Entity';
 import { Feature } from './cmp/Feature';
@@ -91,11 +92,6 @@ type SdkGenOptions = {
     };
     dryrun?: boolean;
     external?: Record<string, ExternalOverride>;
-};
-type ExternalOverride = {
-    path?: string;
-    sdkrel?: string;
-    enclosing?: boolean;
 };
 declare const Jostraca: typeof JostracaModule.Jostraca;
 declare function projectConst(model: any): any;

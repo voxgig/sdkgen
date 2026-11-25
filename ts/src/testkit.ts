@@ -14,6 +14,8 @@ import { ACTION_MAP } from './action/dispatch'
 
 import { KIT } from './types'
 
+import type { ExternalOverride } from './helpers/placement'
+
 
 // This package's own root — `<...>/node_modules/@voxgig/sdkgen` for a
 // consumer, or the checkout when sdkgen tests itself. Computed from this
@@ -402,6 +404,9 @@ type GenerateOptions = {
   allowPlaceholder?: (path: string, token: string) => boolean
 
   outside?: string[]
+
+  // Generate's `external` option: SDKGEN_EXTERNAL for this call alone.
+  external?: Record<string, ExternalOverride>
 }
 
 
@@ -444,6 +449,7 @@ async function generateInto(
     folder: consumer.root,
     root: '',
     pino: consumer.log,
+    external: opts.external,
   })
 
   const prevcwd = process.cwd()

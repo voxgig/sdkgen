@@ -59,3 +59,42 @@ test('admin status handles a new scaffold and reports malformed compiled models'
     Assert.match(JSON.parse(result.stdout).model.error, /Invalid compiled model/)
   } finally { Fs.rmSync(root, { recursive: true, force: true }) }
 })
+
+test('admin status places each target as generate would, the run override included', () => {
+  const root = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdk-admin-place-'))
+  try {
+    Fs.mkdirSync(Path.join(root, '.sdk/model'), { recursive: true })
+    Fs.mkdirSync(Path.join(root, 'ts'))
+    Fs.mkdirSync(Path.join(root, 'out-ts'))
+    const model = { name: 'example', main: { kit: {
+      phase: { top: { active: false } },
+      target: { ts: { output: { path: '' } }, py: { output: { path: '', root: true } } },
+    } } }
+    Fs.writeFileSync(Path.join(root, '.sdk/model/sdk.json'), JSON.stringify(model))
+
+    const plain = repositoryStatus(root, {})
+    const ts = plain.targets.find(t => t.name === 'ts')
+    Assert.equal(plain.model.compiled, true, String(plain.model.error))
+    Assert.equal(ts?.place, 'folder')
+    Assert.equal(ts?.path, Path.join(root, 'ts'))
+    Assert.equal(ts?.stale, null)
+    Assert.equal(plain.targets.find(t => t.name === 'py')?.place, 'root')
+    Assert.equal(plain.targets.find(t => t.name === 'py')?.path, Path.resolve(root))
+
+    const moved = repositoryStatus(root, { SDKGEN_EXTERNAL: JSON.stringify({ ts: { path: 'out-ts' } }) })
+    const away = moved.targets.find(t => t.name === 'ts')
+    Assert.deepEqual(moved.override.targets, ['ts'])
+    Assert.equal(away?.place, 'external')
+    Assert.equal(away?.path, Path.join(root, 'out-ts'))
+    Assert.equal(away?.present, true)
+    Assert.equal(away?.stale, Path.join(root, 'ts'))
+
+    const bad = repositoryStatus(root, { SDKGEN_EXTERNAL: '{ nope' })
+    Assert.match(String(bad.override.error), /SDKGEN_EXTERNAL is not valid JSON/)
+    const cli = spawnSync(process.execPath, [Path.resolve(__dirname, '../dist/admin/status.js'), root],
+      { encoding: 'utf8', env: { ...process.env, SDKGEN_EXTERNAL: JSON.stringify({ ts: { path: 'out-ts' } }) } })
+    Assert.equal(cli.status, 0, cli.stderr)
+    Assert.match(cli.stdout, /Override: SDKGEN_EXTERNAL places ts for this run/)
+    Assert.match(cli.stdout, /stale in-tree folder /)
+  } finally { Fs.rmSync(root, { recursive: true, force: true }) }
+})

@@ -31,6 +31,8 @@ import { doctor } from './doctor'
 
 import { forgetCopies } from './copies'
 
+import { readOverride, runOutput } from '../helpers/placement'
+
 
 // Everything one `remove` would touch, decided before anything is written.
 type RemovePlan = {
@@ -289,15 +291,27 @@ function planOutput(
 ) {
   const fs = actx.fs()
   const root = actx.folder
+  const output = Path.join(root, '..', plan.name)
+
+  // Where a generate run here would write, the run override included.
+  const targets = Object.keys((actx.model as any)?.main?.[KIT]?.target ?? {})
+  const { override, named } = readOverride(
+    actx.opts?.external, process.env.SDKGEN_EXTERNAL, targets)
+  const run = runOutput(declared?.output, override[plan.name])
 
   // The base schema defaults the path to '', which declares no output.
-  if ('' !== (declared?.output?.path ?? '')) {
-    plan.notes.push(plan.name + ': generates out of tree (' +
-      declared.output.path + '); that output is not touched')
+  if ('' !== (run.path ?? '') || true === run.root) {
+    const where = true === run.root ? 'at the project root' :
+      'out of tree (' + run.path +
+      (named.includes(plan.name) ? ', from SDKGEN_EXTERNAL' : '') + ')'
+    plan.notes.push(plan.name + ': generates ' + where + '; that output is not touched')
+
+    if (fs.existsSync(output)) {
+      plan.notes.push(plan.name + ': ' + rel(root, output) + ' is not where ' +
+        'it is generated, and is kept; remove it yourself if it is stale')
+    }
     return
   }
-
-  const output = Path.join(root, '..', plan.name)
 
   if (!fs.existsSync(output)) {
     return

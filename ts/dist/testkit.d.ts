@@ -1,3 +1,4 @@
+import type { ExternalOverride } from './helpers/placement';
 declare const SDKGEN_ROOT: string;
 declare const PLACEHOLDERS: string[];
 type StageOptions = {
@@ -30,6 +31,7 @@ type GenerateOptions = {
     top?: boolean;
     allowPlaceholder?: (path: string, token: string) => boolean;
     outside?: string[];
+    external?: Record<string, ExternalOverride>;
 };
 type GenerateResult = {
     files: Record<string, string>;

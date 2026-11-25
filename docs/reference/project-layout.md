@@ -203,6 +203,11 @@ package registries. Ahead/behind counts use local tracking refs.
 `--github` also reads recent workflow runs and Pages status through `gh`.
 Publication settings describe the model; they do not verify registry releases.
 
+Each target's folder is where a `generate` run would write it: in its own
+folder, at the project root, or out of tree, with `SDKGEN_EXTERNAL` applied
+as generation applies it. A target written out of tree whose `<name>/` folder
+still sits in the project is reported as a stale in-tree folder.
+
 Create-sdkgen supplies the launcher, and sdkgen supplies its reporting code.
 Docgen generates `.sdk/admin/setup-github-pages.sh` when a Pages edition and its
 CI workflow are enabled. Its `--dry-run` option previews setup, and `--check`

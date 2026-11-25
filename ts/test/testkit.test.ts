@@ -194,6 +194,24 @@ describe('testkit over the fixture package', () => {
     })
 
 
+  // The run override reaches generation as the build option, scoped to this
+  // call: no process-wide SDKGEN_EXTERNAL for a parallel runner to share.
+  test('the run override relocates a target for one call', async () => {
+    const out = await generateInto(consumer, {
+      model: consumerModel(consumer.sdk),
+      external: { wtest: { path: '../wtest-out' } },
+      outside: ['../wtest-out'],
+    })
+
+    ok(null != out.outside['../wtest-out']['src/client.wt'],
+      'not generated at the override; got:\n  ' +
+      Object.keys(out.outside['../wtest-out']).join('\n  '))
+    deepStrictEqual(
+      Object.keys(out.files).filter((p) => p.startsWith('wtest/')), [],
+      'still generated under wtest/')
+  })
+
+
   // The same property the bundled targets are now held to, for an EXTERNAL
   // one. A package author reading the authoring guide has to end up here by
   // default, so the fixture models the correct access and this pins it.

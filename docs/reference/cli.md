@@ -294,7 +294,10 @@ Three things `remove` deliberately leaves alone, and says so:
 - **Generated output.** `<name>/` beside `.sdk/` stays unless
   `--delete-output` is passed: a retired port often wants its last
   generated state kept in history rather than deleted in the same commit.
-  A target that generates out of tree (`output.path`) is never touched.
+  A target that generates out of tree (`output.path`, or a path
+  `SDKGEN_EXTERNAL` gives it for the run) or at the project root
+  (`output.root`) is never touched, and a `<name>/` folder left beside
+  `.sdk/` is reported and kept.
 - **The project's own declarations.** A `main: kit: target: <name>:` block
   in `.sdk/model/sdk.aontu` is the project's, not the toolchain's; `remove`
   reports the file that still carries it.

@@ -298,6 +298,7 @@ async function generateInto(consumer, opts) {
         folder: consumer.root,
         root: '',
         pino: consumer.log,
+        external: opts.external,
     });
     const prevcwd = process.cwd();
     process.chdir(consumer.sdk);

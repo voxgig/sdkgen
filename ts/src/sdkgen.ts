@@ -24,6 +24,8 @@ import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthI
 import { Main } from './cmp/Main'
 import { featureApplies, targetFeatures, featureTags, unknownTags, TAGS } from './helpers/applicability'
 import { ExternalTarget } from './cmp/ExternalTarget'
+import { readOverride, runOutput } from './helpers/placement'
+import type { ExternalOverride } from './helpers/placement'
 
 import { KIT, resolvedSpec } from '@voxgig/apidef'
 import { Deploy } from './cmp/Deploy'
@@ -227,13 +229,6 @@ type SdkGenOptions = {
   dryrun?: boolean
 
   external?: Record<string, ExternalOverride>
-}
-
-
-type ExternalOverride = {
-  path?: string
-  sdkrel?: string
-  enclosing?: boolean
 }
 
 
@@ -715,60 +710,20 @@ type ExternalPlan = ExternalSpec & {
 function resolveExternalOverride(
   opts: SdkGenOptions, log: any, targets: string[],
 ): Record<string, ExternalOverride> {
-  const declared = opts.external || {}
-  const raw = process.env.SDKGEN_EXTERNAL
-
-  if (null == raw || '' === raw.trim()) {
-    return declared
-  }
-
-  let parsed: any
-
-  try {
-    parsed = JSON.parse(raw)
-  }
-  catch (err: any) {
-    throw new SdkGenError(
-      'SDKGEN_EXTERNAL is not valid JSON: ' + (err?.message || err) +
-      '\n  Expected an object keyed by item name, for example:' +
-      '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
-      '\n  Got: ' + raw.slice(0, 200))
-  }
-
-  if (null == parsed || 'object' !== typeof parsed || Array.isArray(parsed)) {
-    throw new SdkGenError(
-      'SDKGEN_EXTERNAL must be a JSON OBJECT keyed by item name, for example:' +
-      '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
-      '\n  Got: ' + raw.slice(0, 200))
-  }
-
-  // A misspelled name would otherwise change nothing and still be logged as
-  // an override.
-  const unknown = Object.keys(parsed).filter((name: string) => !targets.includes(name)).sort()
-  if (0 < unknown.length) {
-    throw new SdkGenError(
-      'SDKGEN_EXTERNAL names ' + unknown.join(', ') + ', which ' +
-      (1 === unknown.length ? 'is not a target' : 'are not targets') + ' of this model' +
-      '\n  Its targets are: ' + [...targets].sort().join(', '))
-  }
-
-  const merged: Record<string, ExternalOverride> = { ...declared }
-
-  for (const name of Object.keys(parsed)) {
-    merged[name] = { ...(declared[name] || {}), ...(parsed[name] || {}) }
-  }
+  const { override, named } = readOverride(opts.external, process.env.SDKGEN_EXTERNAL, targets)
 
   // LOUDLY. Generation writing somewhere other than the model says is
   // exactly the thing whose only previous trace was one INFO line naming a
   // resolved folder, and that cost a silent green run that emitted nothing.
-  const named = Object.keys(parsed).sort()
-  log.info({
-    point: 'external-override',
-    items: named.join(','),
-    note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
-  })
+  if (0 < named.length) {
+    log.info({
+      point: 'external-override',
+      items: named.join(','),
+      note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
+    })
+  }
 
-  return merged
+  return override
 }
 
 
@@ -786,20 +741,9 @@ function externalItems(
         // Overrides are keyed by installed target name.
         const ov = override[name] || {}
 
-        // A SHALLOW CLONE, so the override never writes back into the model.
-        // The in-tree pass still reads it, and `target add` still round-trips
-        // it to disk; an override is for THIS RUN. Nothing compares these by
-        // identity — withoutExternal keys by kind:name.
-        const output = { ...(items[name]?.output || {}) }
-
-        if (null != ov.path && '' !== ov.path) {
-          output.path = ov.path
-          // The override relocates this run's output, root placement included.
-          delete output.root
-        }
-        if (null != ov.sdkrel && '' !== ov.sdkrel) {
-          output.sdkrel = ov.sdkrel
-        }
+        // A copy, so the override never writes back into the model: the
+        // in-tree pass still reads it, and `target add` round-trips it to disk.
+        const output = runOutput(items[name]?.output, ov)
 
         return { kind, name, target: { ...items[name], output }, ov }
       })

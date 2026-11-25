@@ -215,7 +215,10 @@ Four details worth knowing:
   writes outside the root on purpose, so pass those destinations as
   `outside: ['../acme-provider']` and read their files back from the
   `outside` map in the result, keyed by destination. A path under neither
-  the root nor a declared destination still fails.
+  the root nor a declared destination still fails. To relocate a target for
+  one call, as `SDKGEN_EXTERNAL` relocates it for a run, pass
+  `external: { 'iot-go': { path: '../iot-go-out' } }` and name the same
+  destination in `outside`.
 - **`compile()` transpiles; it does not type-check.** Type-checking your
   components is your build's job (`tsc --noEmit` over `src/cmp/**`), and
   repeating it per staged consumer would add seconds to every test for an
