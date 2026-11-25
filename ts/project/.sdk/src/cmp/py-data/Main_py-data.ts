@@ -4,7 +4,7 @@ import {
   File, Content, Copy, Folder,
   entityCollection, entityOps, entityIdField, canonToDtype, matchArg, dataArg, idLiteral,
   collectDeps, pkgDescription, tomlString, keywords, repoInfo, apiName,
-  packageName, registryState, consumedTarget, fact,
+  packageName, registryState, consumedTarget, fact, targetFeatures,
   packageVersion,
 } from '@voxgig/sdkgen'
 
@@ -41,6 +41,9 @@ const Main = cmp(function Main(props: any) {
   const keyed = fact(kit, 'auth').apikey
   const secret = fact(kit, 'auth').secret
   const needsBase = (fact(kit, 'server') as any[]).some((v: any) => v.required)
+  // With the SDK's paging feature, data() switches it on and an accessor
+  // fetches every page; without it there is one page to fetch.
+  const paging = null != targetFeatures(model, sdk.name).paging
 
   const ents = each(entityCollection(model))
     .filter((e: any) => e && null != e.name && false !== e.active)
@@ -67,16 +70,19 @@ const Main = cmp(function Main(props: any) {
       from: 'tm/' + target.name + '/pkg',
       replace: { ...ctx$.stdrep },
     })
-    DataClient({ model, name, lower, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret, write })
-    EntityFrames({ model, frameEnts, seriesEnts, lower, dataModule })
+    DataClient({ model, name, lower, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret, write, paging })
+    EntityFrames({ model, frameEnts, seriesEnts, lower, dataModule, paging })
   })
 
   Gitignore({})
   Package({ target, model, lower, dataModule, sdk })
-  EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule })
-  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write })
-  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write })
-  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk, write })
+  EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule, keyed, secret, needsBase,
+    paging })
+  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write,
+    paging })
+  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write,
+    paging })
+  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk, write, paging })
 })
 
 
@@ -189,7 +195,7 @@ include = ["${dataModule}*"]
 // The DataClient module: `data()` plus the wrapper that owns credential
 // discovery and exposes the raw SDK as an escape hatch.
 const DataClient = cmp(function DataClient(props: any) {
-  const { name, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret, write } = props
+  const { name, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret, write, paging } = props
 
   const baseCheck = needsBase
     ? `
@@ -289,14 +295,21 @@ ${params}    **options,
     """Build a ${name}Data client${keyed ? ', finding credentials automatically' : ''}.
 ${discovery}
     Extra keyword arguments are passed straight through to the SDK client, so
-    anything the SDK accepts (feature options, headers, timeouts) works here.
+    anything the SDK accepts (feature options, headers, timeouts) works here.${paging ? `
+    The SDK's paging feature is switched on, so accessors fetch every page,
+    unless \`feature\` sets it.` : ''}
     """
 ${resolve}${resolveSecret}${baseCheck}
     opts: dict = {${credentials.join(', ')}}
     if base_url:
         opts["base"] = base_url
     opts.update(options)
-
+${paging ? `    feature = opts.get("feature")
+    if feature is None or isinstance(feature, dict):
+        feature = dict(feature or {})
+        feature.setdefault("paging", {"active": True})
+        opts["feature"] = feature
+` : ''}
     return ${name}Data(${sdkClass}(opts), base_url)
 `))
 })
@@ -305,7 +318,7 @@ ${resolve}${resolveSecret}${baseCheck}
 // The generated per-entity surface. One DataFrame accessor per entity with a
 // `list` op; one Series accessor per entity with a keyed `load`.
 const EntityFrames = cmp(function EntityFrames(props: any) {
-  const { frameEnts, seriesEnts, lower } = props
+  const { frameEnts, seriesEnts, lower, paging } = props
 
   const accessorNames = frameEnts.map((e: any) => pluralAccessor(e))
     .concat(seriesEnts.map((e: any) => singularAccessor(e)))
@@ -333,7 +346,7 @@ class EntityFrames:
 `)
 
     for (const ent of frameEnts) {
-      Content(frameAccessor(ent))
+      Content(frameAccessor(ent, paging))
     }
     for (const ent of seriesEnts) {
       Content(seriesAccessor(ent))
@@ -444,7 +457,7 @@ function fieldDoc(fields: any[], indent: string): string {
 }
 
 
-function frameAccessor(ent: any): string {
+function frameAccessor(ent: any, paging: boolean): string {
   const acc = pluralAccessor(ent)
   const entMethod = ent.Name
   const fields = entFields(ent)
@@ -467,7 +480,7 @@ function frameAccessor(ent: any): string {
 
 ${fieldDoc(fields, '        ')}
 
-        Every page is fetched by default. Pass limit= for a slice.
+        ${paging ? 'Every page is fetched by default.' : 'One page is fetched: the SDK has no paging feature.'} Pass limit= for a slice.
         Keyword arguments not named above are passed to the API as filters.
         """
         ent = self.sdk.${entMethod}()
@@ -527,7 +540,11 @@ ${fieldDoc(fields, '        ')}
 // ---------------------------------------------------------------------------
 
 const EntityFramesTest = cmp(function EntityFramesTest(props: any) {
-  const { frameEnts, seriesEnts, sdkClass, sdkModule, dataModule } = props
+  const { frameEnts, seriesEnts, sdkClass, sdkModule, dataModule, keyed, secret, needsBase, paging } = props
+
+  // What data() needs to build a client without looking anywhere.
+  const given = [...(keyed ? ['token="k"'] : []), ...(secret ? ['secret="s"'] : []),
+    ...(needsBase ? ['base_url="https://example.test"'] : []), '**options'].join(', ')
 
   const accessors = frameEnts.map((e: any) => pluralAccessor(e))
   const singles = seriesEnts.map((e: any) => singularAccessor(e))
@@ -610,6 +627,29 @@ class TestFramesAgainstTestMode:
         ad = self._client()
         df = getattr(ad, TEST_ACCESSOR)(limit=1, quiet=True)
         assert len(df) <= 1
+
+
+# data() switches the SDK's paging feature on when the SDK has one, so that an
+# accessor drains every page, and leaves one the caller sets alone.
+PAGING = ${paging ? 'True' : 'False'}
+
+
+class TestPagingOption:
+
+    def _options(self, monkeypatch, **options):
+        import ${dataModule}
+        seen = []
+        monkeypatch.setattr(${dataModule}, "${sdkClass}", lambda opts: seen.append(opts) or object())
+        ${dataModule}.data(${given})
+        return seen[0]
+
+    def test_paging_is_on_exactly_when_the_sdk_has_it(self, monkeypatch):
+        feature = self._options(monkeypatch).get("feature") or {}
+        assert feature.get("paging") == ({"active": True} if PAGING else None)
+
+    def test_a_paging_option_given_is_kept(self, monkeypatch):
+        opts = self._options(monkeypatch, feature={"paging": {"active": False}})
+        assert opts["feature"]["paging"] == {"active": False}
 `))
 })
 
@@ -619,7 +659,7 @@ class TestFramesAgainstTestMode:
 // ---------------------------------------------------------------------------
 
 const Readme = cmp(function Readme(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write } =
+  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write, paging } =
     props
   const ctx$ = props.ctx$
 
@@ -711,12 +751,12 @@ ${install}
 from ${dataModule} import data
 
 ad = data(${baseArg})${firstAcc ? `
-df = ad.${firstAcc}()          # every page, flattened, typed -> DataFrame
+df = ad.${firstAcc}()          # ${paging ? 'every page' : 'one page'}, flattened, typed -> DataFrame
 df.groupby("${firstCol}").size()` : ''}
 \`\`\`
 
-No client to construct, no pagination loop to write, no \`json_normalize\`
-boilerplate.${found}
+${paging ? 'No client to construct, no pagination loop to write, no \`json_normalize\`\nboilerplate.' :
+    'No client to construct and no \`json_normalize\` boilerplate.'}${found}
 
 ## Install
 
@@ -760,11 +800,13 @@ ${columnSections || '_No entities with declared fields._'}
 
 ## How it works
 
-- **Every page, eagerly.** Analysts want the whole table, not an iterator. The
+${paging ? `- **Every page, eagerly.** Analysts want the whole table, not an iterator. The
   SDK's paging feature already normalises \`Link: rel="next"\`, \`X-Next-Page\`
-  and body-level \`cursor\`/\`hasMore\` signals; this package just drives them to
-  exhaustion. \`limit=\` stops early; \`max_pages\` is a backstop against a
-  server that never stops offering more.
+  and body-level \`cursor\`/\`hasMore\` signals; \`data()\` switches it on unless
+  its \`feature\` option sets it, and this package drives them to exhaustion.
+  \`limit=\` stops early; \`max_pages\` is a backstop against a server that
+  never stops offering more.` : `- **One page.** Each accessor fetches one page: the SDK has no paging feature.
+  \`limit=\` takes a slice of it.`}
 - **Nullable dtypes.** Columns use pandas' nullable types (\`Int64\`, not
   \`int64\`). Optional fields are omitted freely by APIs, and NumPy's \`int64\`
   cannot hold a null — it would silently upcast to \`float64\` partway through a
@@ -807,7 +849,7 @@ affiliated with or endorsed by the upstream API provider.
 
 
 const AgentGuide = cmp(function AgentGuide(props: any) {
-  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write } = props
+  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write, paging } = props
 
   const credentials = keyed ? `Credentials resolve from, in order: the \`token=\` argument, the Colab secret
 \`${ENV}_APIKEY\`, then the environment variable \`${ENV}_APIKEY\`.${secret ? `
@@ -848,8 +890,10 @@ ${accessorLines || '_This API exposes no list or load operations._'}
 
 ## Semantics you must not get wrong
 
-- Accessors fetch **every page** by default. For a preview, pass \`limit=N\` —
-  do not write a pagination loop, and do not call the accessor repeatedly.
+${paging ? `- Accessors fetch **every page** by default. For a preview, pass \`limit=N\` —
+  do not write a pagination loop, and do not call the accessor repeatedly.` :
+    `- Accessors fetch **one page**: the SDK has no paging feature. For a preview,
+  pass \`limit=N\`.`}
 - Filters go in as **keyword arguments**: \`ad.things(status="open")\`. There is
   no \`match=\` parameter.
 - Columns use **nullable pandas dtypes** (\`Int64\`, \`boolean\`, \`string\`).
@@ -887,7 +931,7 @@ are overwritten. Change the model and regenerate.
 // A runnable Colab notebook. .ipynb is just JSON; keeping outputs empty means
 // the file is diffable and CI can execute it as a smoke test.
 const Quickstart = cmp(function Quickstart(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk, write } = props
+  const { target, model, name, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk, write, paging } = props
 
   const pending = 'active' !== registryState(model, target.name)
   const distName = packageName(model, target.name)
@@ -957,7 +1001,8 @@ const Quickstart = cmp(function Quickstart(props: any) {
     cells.push(md([
       `## ${++step}. Load a table`,
       '',
-      'Every page is fetched. `limit=` takes a slice while you explore.',
+      (paging ? 'Every page is fetched.' : 'One page is fetched: the SDK has no paging feature.') +
+        ' `limit=` takes a slice while you explore.',
     ]))
     cells.push(code([
       `df = ad.${firstAcc}(limit=100)`,

@@ -6357,6 +6357,24 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   })
 
 
+  // The fixture's features are test and log; paging is the feature that pages.
+  test('py-data fetches every page only where the SDK pages, and turns paging on there', async () => {
+    const one = await generate(['py', 'py-data'])
+    const docs = ['README.md', 'AGENTS.md', 'notebooks/quickstart.ipynb', 'demo_data/entity_frames.py']
+      .map((file) => one['py-data/' + file]).join('\n')
+    ok(!/every page|Every page/.test(docs), 'py-data promises every page without paging')
+    ok(/One page is fetched: the SDK has no paging feature/.test(docs), 'py-data does not say it fetches one page')
+    ok(!/"paging"/.test(one['py-data/demo_data/__init__.py']), 'data() sets paging without the feature')
+    ok(/^PAGING = False$/m.test(one['py-data/test/test_entity_frames.py']), 'the generated test expects paging')
+
+    const all = await generate(['py', 'py-data'], undefined, '', undefined, ['test', 'log', 'paging'])
+    ok(/feature\.setdefault\("paging", \{"active": True\}\)/.test(all['py-data/demo_data/__init__.py']),
+      'data() does not switch paging on')
+    ok(all['py-data/README.md'].includes('**Every page, eagerly.**'), 'py-data: the README with paging')
+    ok(/^PAGING = True$/m.test(all['py-data/test/test_entity_frames.py']), 'the generated test expects no paging')
+  })
+
+
   // planet alone writes in the fixture; with its writes off the API has none.
   test('consumers name a write only where the API has one', async () => {
     const readonly = await generate(['go', 'go-mcp', 'py', 'py-data'], undefined,
