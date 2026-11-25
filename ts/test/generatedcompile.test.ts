@@ -1373,6 +1373,35 @@ pub fn main() void {
     })
 
 
+  // What the binaries read and register follows the model: no auth and no
+  // update, HTTP Basic with a templated URL, and no entity a word runs on.
+  test('go-cli and go-mcp: the binaries vet clean whatever credentials, servers and words the model has',
+    async (t) => {
+      const go = toolchain('go')
+      if (null == go) {
+        return t.skip('no go toolchain here')
+      }
+
+      const off = (names: string[]) => names.map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+      const variants: [string, string][] = [
+        ['readonly', 'main: kit: entity: planet: op: update: active: false\n'],
+        ['basic', BASIC_TEMPLATED],
+        ['wordless', CREATE_ONLY_ENTITY +
+          off(['ambient', 'console', 'graph_ql', 'history', 'planet', 'record', 'utility']) +
+          'main: kit: flow: BasicZincFlow: { entity: "zinc", kind: "basic", name: "BasicZincFlow", ' +
+          'step: [ { o: "create", i: { ref: "zinc_ref01" } } ] }\n'],
+      ]
+      for (const [name, extra] of variants) {
+        const root = Path.join(tmp, 'consumers-' + name)
+        await generateBeside(['go', 'go-cli', 'go-mcp'], root, extra)
+        for (const target of ['go-cli', 'go-mcp']) {
+          const vet = run(go, ['vet', './...'], Path.join(root, target))
+          ok(vet.ok, name + ': ' + target + ' does not vet clean:\n' + tail(vet.out))
+        }
+      }
+    })
+
+
   // go-mcp builds on the go SDK it wraps, and an agent host reads each tool's
   // schema and hints from tools/list. ROUTING_MODEL's signal and ambient load
   // without a plain list, and planet alone creates, updates and removes.
