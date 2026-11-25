@@ -9,11 +9,11 @@ build:
 clean:
 	mvn -q clean
 
-# --- Release: the git tag -----------------------------------------------------
-# Maven Central publication (Sonatype Central Portal) is pending for this
-# target; publishing a version currently means pushing its release
-# tag. Run headless under the boru key vault, which injects the GitHub token
-# so nothing lands on disk or argv:
+# --- Release: the git tag (no Maven Central upload) ------------------------
+# This template has no Maven Central (Sonatype Central Portal) upload step:
+# publishing a version means pushing its release tag. Run headless under the
+# boru key vault, which injects the GitHub token so nothing lands on disk or
+# argv:
 #   boru vault exec --for=github=<alias> -- make publish
 # boru `--dry-run` injects a filler token we detect to rehearse (no tag/push).
 # set -e + tag-last: a failed push never leaves a tag behind.

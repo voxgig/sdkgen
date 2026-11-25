@@ -34,6 +34,7 @@ main: kit: feature: &: target: rust: deps: &: {
 
 
 main: kit: target: rust: publish: {
+  recipe: false
   registry: {
     name: 'crates.io'
     url: 'https://crates.io'

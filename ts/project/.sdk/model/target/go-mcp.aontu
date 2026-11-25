@@ -36,5 +36,6 @@ main: kit: feature: &: target: 'go-mcp': deps: &: {
 
 
 main: kit: target: 'go-mcp': publish: {
+  recipe: false
   tag: { via: 'root' }
 }

@@ -5,7 +5,7 @@
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/c.aontu a815ea8be12c
+model/target/c.aontu 86d097196c8e
 model/target/target-index.aontu 221a8f331196
 src/cmp/c/Config_c.ts 25d671979d39
 src/cmp/c/EntityBase_c.ts 70f610b1220f
@@ -130,7 +130,7 @@ tm/c/utility/transform_response.c 51ac106169eb
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/clojure.aontu e1dbbbfb604a
+model/target/clojure.aontu f431c380a087
 model/target/target-index.aontu ef2f3c2f2351
 src/cmp/clojure/Config_clojure.ts a7a458dabbfd
 src/cmp/clojure/EntityOperation_clojure.ts 89f82bc53713
@@ -253,7 +253,7 @@ tm/clojure/test/vendor/omni/voxgig/omni/util.clj 2fa0005fb5dc
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/cpp.aontu b250e51f2033
+model/target/cpp.aontu 3f0079a9452c
 model/target/target-index.aontu cbd80772cfc1
 src/cmp/cpp/Config_cpp.ts 735f7e02d4dd
 src/cmp/cpp/EntityBase_cpp.ts 8218701f0ef9
@@ -333,7 +333,7 @@ tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2fd1e8054158
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/csharp.aontu 095ccb129366
+model/target/csharp.aontu a4414aed37d7
 model/target/target-index.aontu c862ffdb5f93
 src/cmp/csharp/Config_csharp.ts 6252d831b3fa
 src/cmp/csharp/EntityBase_csharp.ts 89ab732c9c91
@@ -377,7 +377,7 @@ src/cmp/csharp/fragment/SdkError.fragment.cs f10488189e97
 src/cmp/csharp/tsconfig.json 720a3f229019
 src/cmp/csharp/utility_csharp.ts 3eddc480b97e
 tm/csharp/LICENSE 52acd47c245f
-tm/csharp/Makefile b022f0677b73
+tm/csharp/Makefile 4b54c2bb4309
 tm/csharp/VERSION e6635045e1d2
 tm/csharp/core/Context.cs 39e91387bb45
 tm/csharp/core/Control.cs eac6511c1bd1
@@ -447,7 +447,7 @@ tm/csharp/utility/struct/Struct.cs d662e83b5213
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/elixir.aontu 592d52bb02bd
+model/target/elixir.aontu c0dcb034e7ae
 model/target/target-index.aontu 40e30f8962fd
 src/cmp/elixir/Config_elixir.ts a2d76b98acda
 src/cmp/elixir/EntityOperation_elixir.ts a8cc83998c86
@@ -633,7 +633,7 @@ tm/go/utility/transform_response.go 3c0e1101ed39
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/go-cli.aontu 566a90791202
+model/target/go-cli.aontu 9cca0e381e9c
 model/target/target-index.aontu fbd86a3a35fb
 src/cmp/go-cli/Main_go-cli.ts 2e388ac58923
 src/cmp/go-cli/fragment/main.fragment.go edad9cbfb479
@@ -646,7 +646,7 @@ tm/go-cli/src/feature/test/.gitkeep e3b0c44298fc
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/go-mcp.aontu 8e5723cdb2fe
+model/target/go-mcp.aontu 816ffe549983
 model/target/target-index.aontu d043228b9b1a
 src/cmp/go-mcp/Main_go-mcp.ts 091190541cb3
 src/cmp/go-mcp/fragment/main.fragment.go 26cd4ae5eee2
@@ -659,7 +659,7 @@ tm/go-mcp/src/feature/test/.gitkeep e3b0c44298fc
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/java.aontu 5ad79a7782ae
+model/target/java.aontu 2a3f313be15b
 model/target/target-index.aontu 8d89e7d2f73a
 src/cmp/java/Config_java.ts dbf747822bbe
 src/cmp/java/EntityBase_java.ts ac3da23ea6f8
@@ -703,7 +703,7 @@ src/cmp/java/fragment/SdkError.fragment.java 4a0e738dbcc0
 src/cmp/java/tsconfig.json 720a3f229019
 src/cmp/java/utility_java.ts cbb8a5c9ae7f
 tm/java/LICENSE 52acd47c245f
-tm/java/Makefile 946c4443fcb6
+tm/java/Makefile 2ef8ff19ee5f
 tm/java/VERSION e6635045e1d2
 tm/java/core/Context.java 12ccc4a38ed0
 tm/java/core/Control.java 565185ed2b10
@@ -904,7 +904,7 @@ tm/js/test/vendor/omni/util.js 8c8c45cd0abb
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/kotlin.aontu 3e22fd40e08d
+model/target/kotlin.aontu ba765480d42c
 model/target/target-index.aontu 5312fdf85ea6
 src/cmp/kotlin/Config_kotlin.ts 3acaf3d96500
 src/cmp/kotlin/EntityBase_kotlin.ts afa36713ef4c
@@ -948,7 +948,7 @@ src/cmp/kotlin/fragment/SdkError.fragment.kt c7864044bb8d
 src/cmp/kotlin/tsconfig.json 720a3f229019
 src/cmp/kotlin/utility_kotlin.ts 4309ecb5fbb6
 tm/kotlin/LICENSE 52acd47c245f
-tm/kotlin/Makefile 3ee2f4bdfc9b
+tm/kotlin/Makefile 6de7aef9a5ef
 tm/kotlin/VERSION e6635045e1d2
 tm/kotlin/core/Context.kt 9a1c45790776
 tm/kotlin/core/Control.kt 49fe61178ad1
@@ -1114,7 +1114,7 @@ tm/lua/utility/unreadable_body.lua 41cc983b1903
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/ocaml.aontu 39943175a5a3
+model/target/ocaml.aontu c9f7fb499865
 model/target/target-index.aontu 52806c23ff35
 src/cmp/ocaml/Config_ocaml.ts 5e0548612946
 src/cmp/ocaml/EntityOperation_ocaml.ts a015984bac63
@@ -1176,7 +1176,7 @@ tm/ocaml/utility/vregex.ml 8720dd560814
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/perl.aontu b0c215ecf1f9
+model/target/perl.aontu 31f74cc66e17
 model/target/target-index.aontu 5539e1afd228
 src/cmp/perl/Config_perl.ts 3618ed5ff071
 src/cmp/perl/EntityOperation_perl.ts 8d50a8beeb42
@@ -1215,7 +1215,7 @@ src/cmp/perl/fragment/Main.fragment.pm 748b9517f292
 src/cmp/perl/tsconfig.json 720a3f229019
 src/cmp/perl/utility_perl.ts 30622889a579
 tm/perl/LICENSE 52acd47c245f
-tm/perl/Makefile 0271bd9dc07c
+tm/perl/Makefile f2eb4b627fd1
 tm/perl/core/context.pm 44f4c0eaa3f0
 tm/perl/core/control.pm cb6185bbc19f
 tm/perl/core/error.pm d1bec69c8ee7
@@ -1629,7 +1629,7 @@ tm/rb/utility/transform_response.rb 13e4100890d3
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/rust.aontu 40ee46e6ee52
+model/target/rust.aontu b25f60472095
 model/target/target-index.aontu aace94ec721e
 src/cmp/rust/Config_rust.ts 8e853c0d3e02
 src/cmp/rust/EntityBase_rust.ts 252bec7e6beb
@@ -1672,7 +1672,7 @@ src/cmp/rust/fragment/SdkError.fragment.rs f7b9f189768a
 src/cmp/rust/tsconfig.json 720a3f229019
 src/cmp/rust/utility_rust.ts 25cb11a8462c
 tm/rust/LICENSE 52acd47c245f
-tm/rust/Makefile bb2000ecf694
+tm/rust/Makefile c11cff067e5c
 tm/rust/VERSION e6635045e1d2
 tm/rust/core/context.rs ccbcb67e5f81
 tm/rust/core/control.rs ef87c0e6b6fd
@@ -1749,7 +1749,7 @@ tm/rust/utility/voxgigstruct/value.rs 0cc4a80f7927
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/scala.aontu 4cdf74ce532f
+model/target/scala.aontu b203424bd6c8
 model/target/target-index.aontu e1085548f758
 src/cmp/scala/Config_scala.ts 12ed6618ad10
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
@@ -1961,7 +1961,7 @@ src/cmp/swift/fragment/SdkError.fragment.swift 927b9a03be0d
 src/cmp/swift/tsconfig.json 720a3f229019
 src/cmp/swift/utility_swift.ts 9e76972fbb77
 tm/swift/LICENSE 52acd47c245f
-tm/swift/Makefile fb55f75efe33
+tm/swift/Makefile 739c886b61af
 tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift ed5ff2870004
 tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift 28a6f4a6a47b
 tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift abe69d38fdac
@@ -2152,7 +2152,7 @@ model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/target-index.aontu 98b75581970f
-model/target/zig.aontu c5f2b41ef82d
+model/target/zig.aontu 9b4e83c37a98
 src/cmp/zig/Config_zig.ts 9b5f57c28488
 src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 5e0f147b7e57

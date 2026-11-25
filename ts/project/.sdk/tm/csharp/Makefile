@@ -10,11 +10,10 @@ clean:
 	dotnet clean ProjectNameSDK.csproj 2>/dev/null || true
 	rm -rf bin obj test/bin test/obj
 
-# --- Release: tag for NuGet ------------------------------------------------
-# NuGet publication is pending (see model/target/csharp.aontu publish block);
-# publishing a version currently means pushing its release tag. When the
-# registry goes live, `dotnet pack` + `dotnet nuget push` slot in before the
-# tag (mirroring the voxgig/struct csharp Makefile). Run headless under the
+# --- Release: the git tag (no NuGet upload) --------------------------------
+# Publishing a version means pushing its release tag: this template has no
+# `dotnet pack` + `dotnet nuget push` step, which would slot in before the
+# tag (as in the voxgig/struct csharp Makefile). Run headless under the
 # boru key vault, which injects the GitHub token so nothing lands on disk or
 # argv:
 #   boru vault exec --for=github=<alias> -- make publish

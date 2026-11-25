@@ -10,10 +10,9 @@ clean:
 	swift package clean 2>/dev/null || true
 	rm -rf .build
 
-# --- Release: tag for the SwiftPM registry ---------------------------------
-# SwiftPM has no upload step - publishing IS the git tag. Publication is
-# pending (see model/target/swift.aontu publish block); publishing a version
-# currently means pushing its release tag. Run headless under the boru key
+# --- Release: the git tag (SwiftPM) ----------------------------------------
+# SwiftPM has no upload step - publishing IS the git tag, so publishing a
+# version means pushing its release tag. Run headless under the boru key
 # vault, which injects the GitHub token so nothing lands on disk or argv:
 #   boru vault exec --for=github=<alias> -- make publish
 # boru `--dry-run` injects a filler token we detect to rehearse (no tag/push).

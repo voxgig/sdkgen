@@ -144,6 +144,35 @@ describe('Deploy', () => {
     doesNotMatch(makefile, /deploy-old:|tag-push-old:/)
   })
 
+  test('an active registry the port has no publish recipe for deploys the tag only', async () => {
+    const makefile = await render({
+      rust: { name: 'rust', publish: { version: '1.2.0', recipe: false, registry: { name: 'crates.io', active: true } } },
+    })
+    doesNotMatch(makefile, /-C rust publish/)
+    match(makefile, /^tag-push-rust:/m)
+    match(makefile, /crates\.io is active, but the rust port has no recipe that publishes there/)
+  })
+
+  // A registry-active deploy runs the port's own `publish` rule unless the
+  // target model declares that the template has none that publishes.
+  test('every bundled port deployed through its Makefile has the publish rule it runs', async () => {
+    const scaffold = Path.resolve(__dirname, '..', 'project', '.sdk')
+    const names = Fs.readdirSync(Path.join(scaffold, 'model', 'target'))
+      .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index')).map((f: string) => f.replace(/\.aontu$/, ''))
+    for (const name of names) {
+      const src = Fs.readFileSync(Path.join(scaffold, 'model', 'target', name + '.aontu'), 'utf8')
+      const recipe = !/^\s*recipe: false$/m.test(src)
+      const make = Path.join(scaffold, 'tm', name, 'Makefile')
+      const rule = Fs.existsSync(make) && /^publish:/m.test(Fs.readFileSync(make, 'utf8'))
+      ok(!recipe || rule, name + ' has no publish rule and does not declare `recipe: false`')
+      const makefile = await render({
+        [name]: { name, publish: { recipe, registry: { name: 'reg', active: true } } },
+      })
+      // go releases from its tag whatever the registry.
+      strictEqual(new RegExp('-C ' + name + ' publish').test(makefile), recipe && 'go' !== name, name)
+    }
+  })
+
   test('the primary npm package is tagged as its workflow tags it, and the header says so', async () => {
     const makefile = await render({
       ts: { name: 'ts', publish: { version: '1.2.0', registry: { name: 'npm', state: 'pending' } } },

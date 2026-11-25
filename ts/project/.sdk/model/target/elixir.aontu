@@ -32,6 +32,7 @@ main: kit: feature: &: target: elixir: deps: &: {
 
 
 main: kit: target: elixir: publish: {
+  recipe: false
   registry: {
     name: 'hex'
     url: 'https://hex.pm'

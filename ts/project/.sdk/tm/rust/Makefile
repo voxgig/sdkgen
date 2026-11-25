@@ -9,10 +9,9 @@ build:
 clean:
 	cargo clean
 
-# --- Release: tag-only for now (crates.io publish pending) -----------------
-# The crates.io registry entry is declared in the model with
-# state: 'pending' — a real deploy publishes its release tag only;
-# `cargo publish` starts when the registry state flips to 'active'. Run
+# --- Release: the git tag (no crates.io upload) ----------------------------
+# `make publish` pushes the release tag: this template has no `cargo publish`
+# step, so a deploy publishes the tag only, whatever the registry state. Run
 # headless under the boru key vault, which injects the GitHub token so
 # nothing lands on disk or argv:
 #   boru vault exec --for=github=<alias> -- make publish

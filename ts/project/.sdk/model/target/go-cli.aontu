@@ -31,5 +31,6 @@ main: kit: feature: &: target: 'go-cli': deps: &: {
 
 
 main: kit: target: 'go-cli': publish: {
+  recipe: false
   tag: { via: 'root' }
 }

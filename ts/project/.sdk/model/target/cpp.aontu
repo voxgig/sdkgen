@@ -28,6 +28,7 @@ main: kit: feature: &: target: cpp: deps: &: {
 
 
 main: kit: target: cpp: publish: {
+  recipe: false
   registry: {
     name: 'none'
     url: ''

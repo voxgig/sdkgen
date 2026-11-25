@@ -21,12 +21,12 @@ clean:
 	@rm -rf .release
 	@find . -name '*.bak' -delete
 
-# --- Release: git tag (CPAN registry pending) ------------------------------
+# --- Release: git tag (no CPAN upload) ------------------------------------
 # Build a CPAN dist in a throwaway .release/ dir to validate the package,
-# then push its release tag (version from $VERSION in lib/*SDK.pm). The CPAN
-# registry entry for this port is declared but pending, so publish is
-# tag-only: no upload happens. Run headless under the boru key vault, which
-# injects the GitHub token (never on disk or argv):
+# then push its release tag (version from $VERSION in lib/*SDK.pm). This
+# template has no CPAN upload step, so publish is tag-only. Run headless
+# under the boru key vault, which injects the GitHub token (never on disk or
+# argv):
 #   boru vault exec --for=github=<alias> -- make publish
 # boru `--dry-run` injects a filler token we detect to rehearse (build only,
 # no tag). set -e + tag-last: a failed build never leaves a tag behind.
@@ -60,4 +60,4 @@ publish: test
 	else \
 	  git push origin "$(TAG)"; \
 	fi; \
-	echo "Published tag $(TAG) (CPAN registry pending — tag-only)."
+	echo "Published tag $(TAG) (tag-only: no CPAN upload)."

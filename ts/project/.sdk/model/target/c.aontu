@@ -32,6 +32,7 @@ main: kit: feature: &: target: c: deps: &: {
 
 
 main: kit: target: c: publish: {
+  recipe: false
   registry: {
     name: 'none'
     url: ''
