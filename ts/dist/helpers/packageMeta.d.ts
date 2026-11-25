@@ -1,9 +1,8 @@
+import { LANG_LABEL, langLabel } from './title';
 declare const PUBLISHER = "Voxgig";
 declare const PUBLISHER_URL = "https://voxgig.com";
 declare const SECURITY_EMAIL = "security@voxgig.com";
 declare const GENERATOR_URL = "https://github.com/voxgig/sdkgen";
-declare const LANG_LABEL: Record<string, string>;
-declare function langLabel(target: string): string;
 declare function originName(model: any, target: string): string;
 declare function sdkName(slug: string): string;
 declare function repoInfo(model: any): {

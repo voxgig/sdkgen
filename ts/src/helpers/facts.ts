@@ -7,6 +7,8 @@ import { docTexts } from './doctext'
 import { factRulesFile } from './shipped'
 import { SdkGenError } from '../utility'
 import { resolvesBundled } from '../action/resolve'
+import { titleFacts } from './title'
+import { definitionKind } from './graphqlPoint'
 
 
 // No fact rule reads these, and they are most of a large model.
@@ -67,6 +69,8 @@ function applyFacts(model: any): any {
   copyFacts(out.main[KIT], kit)
   linkConsumers(kit.target, out.main[KIT].target)
   texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]))
+  titleFacts(kit.target)
+  place(kit, ['definitionKind'], definitionKind(model))
   return model
 }
 

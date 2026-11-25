@@ -10,6 +10,8 @@ const doctext_1 = require("./doctext");
 const shipped_1 = require("./shipped");
 const utility_1 = require("../utility");
 const resolve_1 = require("../action/resolve");
+const title_1 = require("./title");
+const graphqlPoint_1 = require("./graphqlPoint");
 // No fact rule reads these, and they are most of a large model.
 const UNREAD = ['entity', 'flow'];
 function isMap(v) {
@@ -57,6 +59,8 @@ function applyFacts(model) {
     copyFacts(out.main[apidef_1.KIT], kit);
     linkConsumers(kit.target, out.main[apidef_1.KIT].target);
     texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]));
+    (0, title_1.titleFacts)(kit.target);
+    place(kit, ['definitionKind'], (0, graphqlPoint_1.definitionKind)(model));
     return model;
 }
 // A hand-built model may lack the slots the rules read, and only code can say

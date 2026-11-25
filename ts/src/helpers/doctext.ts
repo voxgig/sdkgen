@@ -1,4 +1,4 @@
-import { KIT } from '@voxgig/apidef'
+import { KIT, nom } from '@voxgig/apidef'
 
 import { modelText } from './text'
 
@@ -73,6 +73,8 @@ function docTexts(model: any): DocText[] {
     add(kit, ['text', name], raw, !given(own[name]))
 
   slot('title', str(info.title))
+  add(kit, ['apiName'], str(info.title) || nom(model, 'Name') + ' API',
+    given(info.title) && !given(own.title))
   slot('tagline', str(info.tagline) || str(def.tagline))
   slot('summary', str(info.summary, true))
   slot('about_md', str(info.about_md, true))

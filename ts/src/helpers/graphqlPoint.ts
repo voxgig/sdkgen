@@ -1,9 +1,27 @@
 import { snakify } from 'jostraca'
-import { depluralize } from '@voxgig/apidef'
+import { KIT, depluralize } from '@voxgig/apidef'
 
 
 function pointIsGraphql(point: any): boolean {
   return 'graphql' === point?.k
+}
+
+
+// What the model was built from, as its active entities' points agree: '' when
+// they do not, or there are none.
+function definitionKind(model: any): string {
+  const kinds = new Set<string>()
+  for (const ent of Object.values(model?.main?.[KIT]?.entity || {}) as any[]) {
+    if (false === ent?.active) {
+      continue
+    }
+    for (const op of Object.values(ent?.op || {}) as any[]) {
+      for (const point of Object.values(op?.points || {})) {
+        kinds.add(pointIsGraphql(point) ? 'graphql' : 'openapi')
+      }
+    }
+  }
+  return 1 === kinds.size ? [...kinds][0] : ''
 }
 
 
@@ -83,6 +101,7 @@ function graphqlDirectSkip(opname: string, entityName: string): string {
 
 
 export {
+  definitionKind,
   pointIsGraphql,
   pointGraphql,
   ownPointFirst,
