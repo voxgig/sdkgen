@@ -269,7 +269,7 @@ src/cmp/cpp/ReadmeEntity_cpp.ts 823fb70799cc
 src/cmp/cpp/ReadmeExamplesTest_cpp.ts 76497cfc63d1
 src/cmp/cpp/ReadmeExplanation_cpp.ts beb3014070b4
 src/cmp/cpp/ReadmeHowto_cpp.ts f8212ac5097c
-src/cmp/cpp/ReadmeInstall_cpp.ts f9e86be92a4a
+src/cmp/cpp/ReadmeInstall_cpp.ts 7a98629a8336
 src/cmp/cpp/ReadmeIntro_cpp.ts 61d4716331c9
 src/cmp/cpp/ReadmeModel_cpp.ts 93f050aec32e
 src/cmp/cpp/ReadmeOptions_cpp.ts 460af294815f
@@ -1644,7 +1644,7 @@ src/cmp/rust/ReadmeEntity_rust.ts 3ff319020626
 src/cmp/rust/ReadmeExamplesTest_rust.ts fe0bd437773e
 src/cmp/rust/ReadmeExplanation_rust.ts c5fc0dca76a9
 src/cmp/rust/ReadmeHowto_rust.ts 14c083bc21a5
-src/cmp/rust/ReadmeInstall_rust.ts 52c30b12b070
+src/cmp/rust/ReadmeInstall_rust.ts 954383ab9d48
 src/cmp/rust/ReadmeIntro_rust.ts ff8ade9a8b24
 src/cmp/rust/ReadmeModel_rust.ts d205e3754c09
 src/cmp/rust/ReadmeOptions_rust.ts 3ced16eb7ae4
@@ -1932,7 +1932,7 @@ src/cmp/swift/ReadmeEntity_swift.ts e2bc6df72b91
 src/cmp/swift/ReadmeExamplesTest_swift.ts ce2a5ee1841a
 src/cmp/swift/ReadmeExplanation_swift.ts 9d20df0c92d9
 src/cmp/swift/ReadmeHowto_swift.ts 2c5e56bff513
-src/cmp/swift/ReadmeInstall_swift.ts bc696dc74caf
+src/cmp/swift/ReadmeInstall_swift.ts 62ca1b0c8ab2
 src/cmp/swift/ReadmeIntro_swift.ts a1c0402aab9d
 src/cmp/swift/ReadmeModel_swift.ts 835703794d2f
 src/cmp/swift/ReadmeOptions_swift.ts 6b19e9a71414
@@ -2164,7 +2164,7 @@ src/cmp/zig/ReadmeEntity_zig.ts 9a69dff638cb
 src/cmp/zig/ReadmeExamplesTest_zig.ts 297a208374be
 src/cmp/zig/ReadmeExplanation_zig.ts b1c49bcd7f93
 src/cmp/zig/ReadmeHowto_zig.ts c0465ebf0867
-src/cmp/zig/ReadmeInstall_zig.ts a64195643562
+src/cmp/zig/ReadmeInstall_zig.ts ed3d02d42c83
 src/cmp/zig/ReadmeIntro_zig.ts 04e7058e1817
 src/cmp/zig/ReadmeModel_zig.ts 957ed3c603bf
 src/cmp/zig/ReadmeOptions_zig.ts 536a27a337d8

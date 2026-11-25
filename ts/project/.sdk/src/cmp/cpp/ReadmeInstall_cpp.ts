@@ -24,7 +24,7 @@ Releases are cut as the git tag \`${target.name}/vX.Y.Z\` (see
 
 \`\`\`bash
 # Add the SDK as a submodule (or copy ${'.' === dir ? 'it' : 'the ' + dir + '/ directory'} into your tree).
-git submodule add <repo-url> third_party/${sdkName(model.const.Name.toLowerCase())}
+git submodule add ${repoInfo(model).repoUrl} third_party/${sdkName(model.const.Name.toLowerCase())}
 \`\`\`
 
 Then include the umbrella header and compile with C++17:

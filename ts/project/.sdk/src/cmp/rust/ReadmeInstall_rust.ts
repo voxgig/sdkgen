@@ -39,7 +39,7 @@ from a source checkout by adding it to your \`Cargo.toml\`:
 ${crateName(model)} = { path = "${Path.posix.join('..', repoInfo(model).repo, readerDir(target))}" }
 
 # Or from the git release tag:
-# ${crateName(model)} = { git = "<repo-url>", tag = "${target.name}/vX.Y.Z" }
+# ${crateName(model)} = { git = "${repoInfo(model).repoUrl}", tag = "${target.name}/vX.Y.Z" }
 \`\`\`
 
 `)

@@ -923,6 +923,17 @@ describe('generate', () => {
   })
 
 
+  // A placeholder a reader has to replace is a step the generator could take.
+  test('no install section asks for the repository URL by placeholder', async () => {
+    const targets = ['swift', 'rust', 'cpp', 'zig']
+    for (const extra of ['', targets.map((t) => `main: kit: target: ${t}: publish: registry: active: true`).join('\n')]) {
+      const out = await generate(targets, undefined, extra)
+      const left = Object.keys(out).filter((path) => out[path].includes('<repo-url>'))
+      deepStrictEqual(left, [], 'these print <repo-url>')
+    }
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',

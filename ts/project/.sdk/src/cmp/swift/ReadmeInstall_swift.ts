@@ -11,7 +11,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
 \`\`\`swift
 dependencies: [
-    .package(url: "<repo-url>", from: "${packageVersion(model, target.name)}"),
+    .package(url: "${repoInfo(model).repoUrl}", from: "${packageVersion(model, target.name)}"),
 ],
 \`\`\`
 
@@ -39,7 +39,7 @@ your \`Package.swift\`:
 \`\`\`swift
 dependencies: [
     // From the git release tag:
-    .package(url: "<repo-url>", exact: "${packageVersion(model, target.name)}"),
+    .package(url: "${repoInfo(model).repoUrl}", exact: "${packageVersion(model, target.name)}"),
 ],
 \`\`\`
 

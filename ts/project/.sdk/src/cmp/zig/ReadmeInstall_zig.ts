@@ -39,7 +39,7 @@ To depend on it from another project, add the tagged archive to
 \`\`\`zig
 .dependencies = .{
     .sdk = .{
-        .url = "<repo-url>/archive/refs/tags/${target.name}/vX.Y.Z.tar.gz",
+        .url = "${repoInfo(model).repoUrl}/archive/refs/tags/${target.name}/vX.Y.Z.tar.gz",
         // .hash = "...", // filled in by \`zig fetch\`
     },
 },
