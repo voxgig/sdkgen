@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, repoInfo, sdkName, readerDir, registryNote, registryState } from '@voxgig/sdkgen'
+import { cmp, Content, repoInfo, sdkName, readerDir, registryNote, registryState, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -10,17 +10,18 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
   // The C++ SDK is header-only: there is no package registry to install from.
   // Consumers vendor the source tree (or add it as a submodule) and put the
-  // SDK directory on the compiler include path. The git release tag
-  // (`cpp/vX.Y.Z`) is the unit of distribution.
+  // SDK directory on the compiler include path. The git release tag is the
+  // unit of distribution.
   const { tagsUrl } = repoInfo(model)
   const dir = readerDir(target)
+  const tag = fact(target, 'tag')
   const vendored = '.' === dir ? 'repository' : '\`' + dir + '/\` directory'
 
   Content(`The ${target.title} SDK is **header-only**${'tag' === registryState(model, target.name) ?
     ' — there is no package to install\nfrom a registry.' : '. ' + registryNote(model, target.name)} Vendor the ${vendored} into your project (or add the
-repository as a git submodule) and put it on your compiler's include path.
-Releases are cut as the git tag \`${target.name}/vX.Y.Z\` (see
-[Tags](${tagsUrl})).
+repository as a git submodule) and put it on your compiler's include path.${'' === tag ? '' : `
+Releases are cut as the git tag \`${tag}X.Y.Z\` (see
+[Tags](${tagsUrl})).`}
 
 \`\`\`bash
 # Add the SDK as a submodule (or copy ${'.' === dir ? 'it' : 'the ' + dir + '/ directory'} into your tree).

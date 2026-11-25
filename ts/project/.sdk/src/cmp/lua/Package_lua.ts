@@ -9,6 +9,7 @@ import {
   luaString,
   keywords,
   repoInfo, packageName,
+  fact,
   packageVersion,
   targetFeatures,
 } from '@voxgig/sdkgen'
@@ -72,17 +73,19 @@ const Package = cmp(async function Package(props: any) {
   const labels = keywords(model).map((k) => `"${k}"`).join(', ')
 
   // Single source for the version so the rockspec version and the source.tag
-  // (which `make publish` pushes as lua/v<rockVersion>) can never drift apart.
+  // `make publish` pushes can never drift apart. With no release tag the
+  // source is the default branch.
   const rockVersion = packageVersion(model, target.name)
+  const tag = fact(target, 'tag')
 
   File({ name: model.name + '.rockspec' }, () => {
     Content(`package = "${rockName}"
 version = "${rockVersion}-1"
 source = {
-  -- git+https (GitHub dropped git:// in 2022); pin the install to the release
-  -- tag pushed by \`make publish\`, and point at the lua/ subdir of the monorepo.
-  url = "git+${repoUrl}.git",
-  tag = "lua/v${rockVersion}",
+  -- git+https (GitHub dropped git:// in 2022), at the release tag
+  -- \`make publish\` pushes when there is one, in the package's subdir.
+  url = "git+${repoUrl}.git",${'' === tag ? '' : `
+  tag = "${tag}${rockVersion}",`}
   dir = "${repo}/lua"
 }
 description = {

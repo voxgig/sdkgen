@@ -425,7 +425,7 @@ describe('generate', () => {
         // map without the standard replacements — the generated SDK then names
         // itself "ProjectName" at runtime, or fails to compile outright. Every
         // offender is collected so one fix pass can clear them all.
-        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT|SDKREL/.test(content) &&
+        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT|SDKREL|RELEASETAG/.test(content) &&
           !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
           leaks.push(path)
         }
@@ -438,7 +438,7 @@ describe('generate', () => {
     }
 
     strictEqual(leaks.length, 0,
-      'generated files leak a ProjectName, PROJECTNAME, projectname or SDKREL placeholder:\n  ' +
+      'generated files leak a ProjectName, PROJECTNAME, projectname, SDKREL or RELEASETAG placeholder:\n  ' +
       leaks.join('\n  '))
     deepStrictEqual(undef, [], 'direct tests that name undefined')
   })
@@ -1048,6 +1048,36 @@ describe('generate', () => {
           ok(row(t)!.includes('`' + command + '`'), t + ': the Packages row does not run ' + command)
         }
       }
+    }
+  })
+
+
+  // One release tag per port: the tag fact, which the publish workflow and the
+  // root Makefile's recipe read, is what the port's own Makefile and its
+  // install section name.
+  test('a port\'s Makefile and install section name the release tag the model gives it', async () => {
+    const targets = ['ts', 'js', 'go', 'py', 'rb', 'php', 'lua', 'rust', 'java', 'kotlin', 'csharp',
+      'perl', 'swift', 'cpp', 'c', 'zig', 'ocaml', 'scala', 'clojure', 'elixir']
+    const model = makeModel(targets)
+    const out = await generate(targets)
+    for (const t of targets) {
+      const tag = model.main[KIT].target[t].fact.tag
+      const make = out[t + '/Makefile']
+      if (/^TAG := /m.test(make)) {
+        ok(make.includes('\nTAG := ' + tag + '$(VERSION)\n'), t + ': the Makefile tags otherwise')
+      }
+      const install = out[t + '/README.md'].split('## Install')[1].split('\n## ')[0]
+      deepStrictEqual(install.match(/\b[\w-]+\/vX\.Y\.Z/g)?.filter((m) => m !== tag + 'X.Y.Z') ?? [], [],
+        t + ': the install section names another tag')
+    }
+    ok(out['ts/Makefile'].includes('\nTAG := v$(VERSION)\n'), 'the primary npm package keeps its bare tag')
+
+    const off = await generate(targets, undefined,
+      targets.map((t) => `main: kit: target: ${t}: publish: tag: active: false`).join('\n'))
+    for (const t of targets) {
+      ok(!/^TAG := \S/m.test(off[t + '/Makefile'] ?? ''), t + ': a Makefile tags with no tag')
+      ok(!/vX\.Y\.Z/.test(off[t + '/README.md'].split('## Install')[1].split('\n## ')[0]),
+        t + ': the install section names a tag the model does not cut')
     }
   })
 
@@ -1886,7 +1916,7 @@ main: kit: target: js: phase: feature: active: false
       for (const [path, content] of files) {
         ok('string' === typeof content, target + ': ' + path + ' has no content')
 
-        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION', 'SDKREL']) {
+        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION', 'SDKREL', 'RELEASETAG']) {
           if (content.includes(token) &&
             !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
             leaks.push(path + ': ' + token)

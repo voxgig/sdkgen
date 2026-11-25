@@ -77,8 +77,8 @@ read it; none of them computes it.
     publishes or the npm package of the ts SDK, else `<target>/v`; `''` when
     `publish.tag.active` is false (WP25). The publish workflow's tag job and
     PUBLISHING table read it, and so do the root Makefile's tag recipe and
-    header. The per-target Makefile templates still spell `<target>/v` until
-    WP35 gives them the tag through a token.
+    header, each port's own Makefile, through the `RELEASETAG` token every
+    pass sets, and each port's install section.
   - `main.kit.fact.ops`: each entity's canonical operations, by entity name,
     in canonical order, action-only ones included, with no fallback. They sit
     outside the entities because the ts and js live tests print an entity

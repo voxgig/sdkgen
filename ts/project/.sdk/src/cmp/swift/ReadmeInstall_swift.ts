@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, collectDeps, registryNote } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, collectDeps, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -29,10 +29,11 @@ ${cdTarget(target)}swift build
   // install it from the git release tag or a local source checkout.
   const { hostName, tagsUrl } = repoInfo(model)
   const free = 0 === collectDeps(model, target.name, target.deps).length
+  const tag = fact(target, 'tag')
   Content(`${registryNote(model, target.name)}${free ? ` The generated SDK
 is a dependency-free SwiftPM package (Foundation only, plus the vendored
-Voxgig Struct port).` : ''} Depend on it from the ${hostName} release tag
-(\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) by adding it to
+Voxgig Struct port).` : ''}${'' === tag ? ' Build it' : ` Depend on it from the ${hostName} release tag
+(\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})) by adding it to
 your \`Package.swift\`:
 
 \`\`\`swift
@@ -42,7 +43,7 @@ dependencies: [
 ],
 \`\`\`
 
-Or build from a source checkout with SwiftPM:
+Or build`} from a source checkout with SwiftPM:
 
 \`\`\`bash
 ${cdTarget(target)}swift build

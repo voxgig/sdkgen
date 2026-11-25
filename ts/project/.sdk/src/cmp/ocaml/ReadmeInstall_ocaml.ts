@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, collectDeps, registryNote } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, collectDeps, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -26,9 +26,10 @@ ${cdTarget(target)}make build
   // Publish pending: not yet on the opam registry. Build from the git release
   // tag or from a local source checkout.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`${registryNote(model, target.name)} Install it from the
-${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl}))
-or from a source checkout${free ? `. The SDK is dependency-free and compiles with the
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)} Install it from ${'' === tag ? '' : `the
+${hostName} release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl}))
+or from `}a source checkout${free ? `. The SDK is dependency-free and compiles with the
 stock \`ocamlc\` — no opam packages, no dune` : ''}:
 
 \`\`\`bash

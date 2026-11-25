@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, registryNote, registryState } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, registryNote, registryState, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -25,27 +25,29 @@ ${cdTarget(target)}zig build
   // on it via the Zig package manager (a git-tagged url in build.zig.zon) or
   // build from a local source checkout.
   const { tagsUrl } = repoInfo(model)
+  const tag = fact(target, 'tag')
   Content(`${'tag' === registryState(model, target.name) ? 'Zig has no central package registry, so this package' :
-    registryNote(model, target.name).replace(/\.$/, '') + ', and it'} is distributed as a
-git tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})). Add it to
-your \`build.zig.zon\` dependencies, or build from a source checkout:
+    registryNote(model, target.name).replace(/\.$/, '') + ', and it'} ${'' === tag ?
+    'is built from a source checkout' : `is distributed as a
+git tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})). Add it to
+your \`build.zig.zon\` dependencies, or build from a source checkout`}:
 
 \`\`\`bash
 ${cdTarget(target)}zig build
 \`\`\`
-
+${'' === tag ? '' : `
 To depend on it from another project, add the tagged archive to
 \`build.zig.zon\`:
 
 \`\`\`zig
 .dependencies = .{
     .sdk = .{
-        .url = "${repoInfo(model).repoUrl}/archive/refs/tags/${target.name}/vX.Y.Z.tar.gz",
+        .url = "${repoInfo(model).repoUrl}/archive/refs/tags/${tag}X.Y.Z.tar.gz",
         // .hash = "...", // filled in by \`zig fetch\`
     },
 },
 \`\`\`
-
+`}
 `)
 })
 

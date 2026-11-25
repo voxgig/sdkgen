@@ -13,13 +13,13 @@ clean:
 # --- Release: tag for the SwiftPM registry ---------------------------------
 # SwiftPM has no upload step - publishing IS the git tag. Publication is
 # pending (see model/target/swift.aontu publish block); publishing a version
-# currently means pushing the tag swift/vX.Y.Z. Run headless under the boru key
+# currently means pushing its release tag. Run headless under the boru key
 # vault, which injects the GitHub token so nothing lands on disk or argv:
 #   boru vault exec --for=github=<alias> -- make publish
 # boru `--dry-run` injects a filler token we detect to rehearse (no tag/push).
 # set -e + tag-last: a failed push never leaves a tag behind.
 VERSION := $(shell cat VERSION)
-TAG := swift/v$(VERSION)
+TAG := RELEASETAG
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish: test
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
@@ -30,6 +30,7 @@ publish: test
 	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
+	if [ -z "$(TAG)" ]; then echo "No release tag: the model cuts none for this package."; exit 0; fi; \
 	git tag -a "$(TAG)" -m "swift v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \

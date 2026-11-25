@@ -677,8 +677,11 @@ describe('external target', () => {
           `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
 
         deepStrictEqual(code(away), code(tree), t + ': out of tree writes other files')
+        // A target out of tree is not the tree's one npm package, and its
+        // release tag follows the tag fact.
+        const tagless = (text: string) => text.replace(/^TAG := .*$/m, 'TAG :=')
         const differ = code(tree).filter((path: string) =>
-          away[path].split('../../zzproj').join('..') !== tree[path])
+          tagless(away[path].split('../../zzproj').join('..')) !== tagless(tree[path]))
         deepStrictEqual(differ, [], t + ': these differ from the in-tree files by more than the path back')
         ok(code(away).some((path: string) => away[path].includes('zzproj')),
           t + ': no file names the declared path back')

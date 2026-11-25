@@ -13,15 +13,15 @@ build:
 clean:
 	$(GRADLE) clean
 
-# --- Release: tag kotlin/vX.Y.Z ---------------------------------------------
+# --- Release: the git tag ------------------------------------------------------
 # Maven Central publication (Sonatype Central Portal) is pending for this
-# target; publishing a version currently means pushing the kotlin/vX.Y.Z git
+# target; publishing a version currently means pushing its release
 # tag. Run headless under the boru key vault, which injects the GitHub token
 # so nothing lands on disk or argv:
 #   boru vault exec --for=github=<alias> -- make publish
 # boru `--dry-run` injects a filler token we detect to rehearse (no tag/push).
 VERSION := $(shell cat VERSION)
-TAG := kotlin/v$(VERSION)
+TAG := RELEASETAG
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish:
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
@@ -32,6 +32,7 @@ publish:
 	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
+	if [ -z "$(TAG)" ]; then echo "No release tag: the model cuts none for this package."; exit 0; fi; \
 	git tag -a "$(TAG)" -m "kotlin v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \

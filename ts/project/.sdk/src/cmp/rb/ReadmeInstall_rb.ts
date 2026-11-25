@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, installCommand, isPublished, packageName, repoInfo, readerDir, registryNote } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, packageName, repoInfo, readerDir, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -32,9 +32,10 @@ bundle install
   // Publish pending: not yet on RubyGems. Install from the git release tag,
   // or from a clone through Bundler, since a tag may not exist.
   const { hostName, tagsUrl, repoUrl, repo } = repoInfo(model)
-  Content(`${registryNote(model, target.name)} Install it from the
-${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})), or
-from a clone:
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)} Install it from ${'' === tag ? '' : `the
+${hostName} release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})), or
+from `}a clone:
 
 \`\`\`bash
 git clone ${repoUrl}

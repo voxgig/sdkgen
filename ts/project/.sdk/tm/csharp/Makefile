@@ -12,7 +12,7 @@ clean:
 
 # --- Release: tag for NuGet ------------------------------------------------
 # NuGet publication is pending (see model/target/csharp.aontu publish block);
-# publishing a version currently means pushing the tag csharp/vX.Y.Z. When the
+# publishing a version currently means pushing its release tag. When the
 # registry goes live, `dotnet pack` + `dotnet nuget push` slot in before the
 # tag (mirroring the voxgig/struct csharp Makefile). Run headless under the
 # boru key vault, which injects the GitHub token so nothing lands on disk or
@@ -21,7 +21,7 @@ clean:
 # boru `--dry-run` injects a filler token we detect to rehearse (no tag/push).
 # set -e + tag-last: a failed push never leaves a tag behind.
 VERSION := $(shell cat VERSION)
-TAG := csharp/v$(VERSION)
+TAG := RELEASETAG
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish: test
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
@@ -32,6 +32,7 @@ publish: test
 	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
+	if [ -z "$(TAG)" ]; then echo "No release tag: the model cuts none for this package."; exit 0; fi; \
 	git tag -a "$(TAG)" -m "csharp v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \

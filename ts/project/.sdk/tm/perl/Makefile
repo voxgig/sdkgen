@@ -23,7 +23,7 @@ clean:
 
 # --- Release: git tag (CPAN registry pending) ------------------------------
 # Build a CPAN dist in a throwaway .release/ dir to validate the package,
-# then tag perl/vX.Y.Z (version from $VERSION in lib/*SDK.pm). The CPAN
+# then push its release tag (version from $VERSION in lib/*SDK.pm). The CPAN
 # registry entry for this port is declared but pending, so publish is
 # tag-only: no upload happens. Run headless under the boru key vault, which
 # injects the GitHub token (never on disk or argv):
@@ -35,7 +35,7 @@ clean:
 # `Makefile`, which would OVERWRITE this hand-written Makefile - so the
 # dist build always happens inside .release/, never in place.
 VERSION := $(shell sed -nE "s/.*VERSION *= *'([^']+)'.*/\1/p" lib/*SDK.pm | head -1)
-TAG := perl/v$(VERSION)
+TAG := RELEASETAG
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish: test
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
@@ -51,6 +51,7 @@ publish: test
 	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
+	if [ -z "$(TAG)" ]; then echo "No release tag: the model cuts none for this package."; exit 0; fi; \
 	git tag -a "$(TAG)" -m "perl v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \

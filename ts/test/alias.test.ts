@@ -431,8 +431,10 @@ describe('aliased targets in the generated documents', () => {
       const files = Object.keys(out).filter((file: string) => file.startsWith('fz/'))
       ok(0 < files.length, 'nothing generated for fz')
       ok(out['fz/README.md'].includes('cd fz && go test'), 'the how-to does not enter fz/')
+      ok(out['fz/Makefile'].includes('\nTAG := fz/v$(VERSION)\n'), 'the Makefile tags another folder')
+      ok(out['Makefile'].includes('$(MAKE) -C fz publish'), 'the root Makefile deploys fz elsewhere')
       const origin = files.flatMap((file: string) => out[file].split('\n')
-        .filter((line: string) => /\bcd go\b|\.\.\/[\w.-]+\/go\b/.test(line))
+        .filter((line: string) => /\bcd go\b|\.\.\/[\w.-]+\/go\b|\bgo\/v[$\dX]/.test(line))
         .map((line: string) => file + ': ' + line))
       deepStrictEqual(origin, [], 'these name the origin\'s folder')
     }

@@ -9,9 +9,9 @@ build:
 clean:
 	mvn -q clean
 
-# --- Release: tag java/vX.Y.Z ----------------------------------------------
+# --- Release: the git tag -----------------------------------------------------
 # Maven Central publication (Sonatype Central Portal) is pending for this
-# target; publishing a version currently means pushing the java/vX.Y.Z git
+# target; publishing a version currently means pushing its release
 # tag. Run headless under the boru key vault, which injects the GitHub token
 # so nothing lands on disk or argv:
 #   boru vault exec --for=github=<alias> -- make publish
@@ -22,7 +22,7 @@ clean:
 # other target's deploy just pushes its tag; a generated-test quirk must not
 # block the tag). Run `make test` separately in CI to gate quality.
 VERSION := $(shell cat VERSION)
-TAG := java/v$(VERSION)
+TAG := RELEASETAG
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish:
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
@@ -33,6 +33,7 @@ publish:
 	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
+	if [ -z "$(TAG)" ]; then echo "No release tag: the model cuts none for this package."; exit 0; fi; \
 	git tag -a "$(TAG)" -m "java v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \

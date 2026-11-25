@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, readerDir, registryNote } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, readerDir, registryNote, fact } from '@voxgig/sdkgen'
 
 import { elixirApp } from './app_elixir'
 
@@ -37,19 +37,20 @@ mix deps.get
   // Publish pending: not yet on Hex. Install from the git release tag or a
   // local path checkout.
   const { hostName, repoUrl, tagsUrl } = repoInfo(model)
-  Content(`${registryNote(model, target.name)} Install it from
-the ${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl}))
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)}${'' === tag ? ' Install it from' : ` Install it from
+the ${hostName} release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl}))
 by adding a git dependency to your \`mix.exs\`:
 
 \`\`\`elixir
 def deps do
   [
-    {:${app}, git: "${repoUrl}.git", tag: "${target.name}/vX.Y.Z"}
+    {:${app}, git: "${repoUrl}.git", tag: "${tag}X.Y.Z"}
   ]
 end
 \`\`\`
 
-Or from a local source checkout:
+Or from`} a local source checkout:
 
 \`\`\`elixir
 def deps do

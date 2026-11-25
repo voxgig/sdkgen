@@ -8,6 +8,7 @@ function ensureStdrep(ctx$: any, target?: any): any {
 
   if (null != target) {
     stdrep.SDKREL = null != ctx$.sdkrelpath ? ctx$.sdkrelpath : fact(target, 'sdkrel')
+    stdrep.RELEASETAG = '' === fact(target, 'tag') ? '' : fact(target, 'tag') + '$(VERSION)'
   }
 
   if (null == stdrep.PROJECTENV) {
@@ -26,9 +27,8 @@ function templateReplacements(model: any, tname: string): Record<string, string>
   return {
     ProjectName: model?.const?.Name,
 
-    // The port's release version, read by its Makefile to build the
-    // `<target>/v<version>` tag. It comes from the same model field the
-    // generated manifest uses, so the tag and the package cannot disagree.
+    // The port's release version, which its Makefile tags. It comes from the
+    // model field the generated manifest uses, so the two cannot disagree.
     PROJECTVERSION: packageVersion(model, tname),
   }
 }

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, packageName, registryNote } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, packageName, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -32,9 +32,10 @@ ${cdTarget(target)}mvn install
   // Publish pending: not yet on Maven Central. Install from the git release
   // tag or from a local source checkout built with Maven.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`${registryNote(model, target.name)} Install it from the ${hostName}
-release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
-from a source checkout — build the library with Maven:
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)} Install it from ${'' === tag ? '' : `the ${hostName}
+release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})) or
+from `}a source checkout — build the library with Maven:
 
 \`\`\`bash
 ${cdTarget(target)}mvn install
