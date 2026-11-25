@@ -67,28 +67,8 @@ const PublishWorkflow = cmp(function PublishWorkflow(props: any) {
 })
 
 
-// A root-placed target is the repository itself.
-function targetDir(target: any): string {
-  return 'root' === fact(target, 'place') ? '.' : target.name
-}
-
-
 function workflowFile(target: any): string {
   return `publish-${target.name}.yml`
-}
-
-
-function isPrimaryNpm(model: any, target: any, npmTargets: any[]): boolean {
-  if (1 === npmTargets.length) {
-    return true
-  }
-  return packageName(model, target.name) === packageName(model, 'npm')
-}
-
-
-function releaseTag(model: any, target: any, npmTargets: any[]): string {
-  return isPrimaryNpm(model, target, npmTargets) ?
-    'v$VERSION' : `${target.name}/v$VERSION`
 }
 
 
@@ -96,8 +76,8 @@ function publishWorkflow(
   model: any, target: any, npmTargets: any[], repository: string | null,
 ): string {
   const name = target.name
-  const dir = targetDir(target)
-  const tag = releaseTag(model, target, npmTargets)
+  const dir = fact(target, 'dir')
+  const tag = fact(target, 'tag') + '$VERSION'
   const pkg = packageName(model, name)
   const setup = null == repository ? '' : `
 # .sdk/admin/setup-npm-trust.sh registers exactly this, and with --check
@@ -338,7 +318,7 @@ An npm with no \`npm trust\` command is bypassed for \`npx npm@latest\`.
   // prefixed, so with more than one npm target the answer differs per row.
   const tagRows = '| target | tag |\n|---|---|\n' + targets.map((t: any) =>
     `| \`${t.name}/\` | \`` +
-    releaseTag(model, t, targets).replace('$VERSION', '<version>') +
+    fact(t, 'tag') + '<version>' +
     '\` |').join('\n')
 
   return `# Publishing
@@ -417,7 +397,7 @@ ${setupCheck}
 trusted-publisher settings once a version exists, so the FIRST release of a
 package goes out by hand from an authenticated machine:
 
-    ${'.' === targetDir(targets[0]) ? '' : 'cd ' + targetDir(targets[0]) + ' && '}npm publish --access public
+    ${'.' === fact(targets[0], 'dir') ? '' : 'cd ' + fact(targets[0], 'dir') + ' && '}npm publish --access public
 
 After that, register the publisher and every later release is a dispatch.
 

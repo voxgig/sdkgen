@@ -169,6 +169,27 @@ APIs that need no authentication. An API whose spec omits its security
 schemes (GitHub's official OpenAPI does) still gets a credential when the
 project sets `config: auth: { active: true, prefix: 'Bearer' }`.
 
+### `guardModel(model, log?) → model`
+
+Prepare a model before anything reads a fact from it. It renames an entity
+name no target can hold, a leading digit or two names that meet once case is
+ignored, together with the model's references to that name. It also switches
+off a flow step whose call the runtime would refuse. Given a `log`, it reports
+each change.
+
+`generate()` applies it and then the fact pass, `applyFacts(model)`. A tool
+that reads facts from a model `generate()` did not prepare, such as docgen
+running alone over `sdk.json`, applies both in that order. Applying it to a
+prepared model changes nothing.
+
+### `sourceString(lang, text) → string`
+
+The inside of a double-quoted string literal in the language `lang` that
+holds `text`, with every `$` written as that language's escape. A component
+prints text from the spec in generated source through it, so the template
+pass never reads a `$$` in the text as a model path. It throws for a language
+it does not know.
+
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 
 Collect target-language dependencies from features and from the target's

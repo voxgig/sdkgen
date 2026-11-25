@@ -51,27 +51,13 @@ const PublishWorkflow = (0, component_1.cmp)(function PublishWorkflow(props) {
     });
 });
 exports.PublishWorkflow = PublishWorkflow;
-// A root-placed target is the repository itself.
-function targetDir(target) {
-    return 'root' === (0, facts_1.fact)(target, 'place') ? '.' : target.name;
-}
 function workflowFile(target) {
     return `publish-${target.name}.yml`;
 }
-function isPrimaryNpm(model, target, npmTargets) {
-    if (1 === npmTargets.length) {
-        return true;
-    }
-    return (0, packageMeta_1.packageName)(model, target.name) === (0, packageMeta_1.packageName)(model, 'npm');
-}
-function releaseTag(model, target, npmTargets) {
-    return isPrimaryNpm(model, target, npmTargets) ?
-        'v$VERSION' : `${target.name}/v$VERSION`;
-}
 function publishWorkflow(model, target, npmTargets, repository) {
     const name = target.name;
-    const dir = targetDir(target);
-    const tag = releaseTag(model, target, npmTargets);
+    const dir = (0, facts_1.fact)(target, 'dir');
+    const tag = (0, facts_1.fact)(target, 'tag') + '$VERSION';
     const pkg = (0, packageMeta_1.packageName)(model, name);
     const setup = null == repository ? '' : `
 # .sdk/admin/setup-npm-trust.sh registers exactly this, and with --check
@@ -303,7 +289,7 @@ An npm with no \`npm trust\` command is bypassed for \`npx npm@latest\`.
     // primary npm target owns the bare `v<version>` and every other one is
     // prefixed, so with more than one npm target the answer differs per row.
     const tagRows = '| target | tag |\n|---|---|\n' + targets.map((t) => `| \`${t.name}/\` | \`` +
-        releaseTag(model, t, targets).replace('$VERSION', '<version>') +
+        (0, facts_1.fact)(t, 'tag') + '<version>' +
         '\` |').join('\n');
     return `# Publishing
 
@@ -381,7 +367,7 @@ ${setupCheck}
 trusted-publisher settings once a version exists, so the FIRST release of a
 package goes out by hand from an authenticated machine:
 
-    ${'.' === targetDir(targets[0]) ? '' : 'cd ' + targetDir(targets[0]) + ' && '}npm publish --access public
+    ${'.' === (0, facts_1.fact)(targets[0], 'dir') ? '' : 'cd ' + (0, facts_1.fact)(targets[0], 'dir') + ' && '}npm publish --access public
 
 After that, register the publisher and every later release is a dispatch.
 

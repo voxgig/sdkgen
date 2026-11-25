@@ -7,7 +7,7 @@ import {
   getModelPath
 } from '../types'
 
-import { isAuthActive } from '../utility'
+import { fact } from '../helpers/facts'
 import { optionalComponent } from '../helpers/optional'
 
 
@@ -36,7 +36,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   else {
     // Fallback: generic reference summary
-    ReadmeModelGeneric({ target, model, entityList, authActive: isAuthActive(model) })
+    ReadmeModelGeneric({ target, model, entityList, authActive: fact(model.main[KIT], 'auth').apikey })
   }
 })
 

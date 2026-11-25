@@ -4,7 +4,7 @@ exports.ReadmeModel = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
-const utility_1 = require("../utility");
+const facts_1 = require("../helpers/facts");
 const optional_1 = require("../helpers/optional");
 const ReadmeModel = (0, component_1.cmp)(function ReadmeModel(props) {
     const { target, ctx$ } = props;
@@ -26,7 +26,7 @@ const ReadmeModel = (0, component_1.cmp)(function ReadmeModel(props) {
     }
     else {
         // Fallback: generic reference summary
-        ReadmeModelGeneric({ target, model, entityList, authActive: (0, utility_1.isAuthActive)(model) });
+        ReadmeModelGeneric({ target, model, entityList, authActive: (0, facts_1.fact)(model.main[types_1.KIT], 'auth').apikey });
     }
 });
 exports.ReadmeModel = ReadmeModel;

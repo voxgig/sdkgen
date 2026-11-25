@@ -67,6 +67,8 @@ import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
+import { guardModel } from './helpers/guardModel'
+import { sourceString } from './helpers/sourcestring'
 import { applyFacts, fact, refuseRootPlan } from './helpers/facts'
 import { docFindings } from './helpers/doccheck'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
@@ -317,16 +319,11 @@ function SdkGen(opts: SdkGenOptions) {
     log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' })
     log.debug({ point: 'generate-spec', spec })
 
-    // BEFORE ANYTHING READS A NAME. A digit-leading name, or a pair of names
-    // that meet once case is ignored, yields identifiers or files no target
-    // can hold, and the consumer's own Root.ts re-derives those names per
-    // target — so the only correction that survives is one made to the model
-    // itself, before Root runs. See helpers/modelNames.
-    guardModelNames(model, log)
-
-    // A flow step whose call the runtime would refuse is switched off, so no
-    // generated test makes it; see helpers/flowGuard.
-    guardFlowSteps(model, log)
+    // BEFORE ANYTHING READS A NAME: the consumer's own Root.ts re-derives the
+    // names per target, so only a correction made to the model itself
+    // survives. A flow step whose call the runtime would refuse is switched
+    // off too. See helpers/modelNames and helpers/flowGuard.
+    guardModel(model, log)
 
     applyFacts(model)
     warnUngeneratedOps(model, log, targetOrigins(model))
@@ -575,8 +572,7 @@ function SdkGen(opts: SdkGenOptions) {
     model.const = projectConst(model)
 
     // The model a generate prepares, without the notices, which belong to it.
-    guardModelNames(model)
-    guardFlowSteps(model)
+    guardModel(model)
     applyFacts(model)
 
     return {
@@ -1193,6 +1189,8 @@ export {
   entityCollection,
   guardModelNames,
   guardFlowSteps,
+  guardModel,
+  sourceString,
   applyFacts,
   fact,
   projectConst,

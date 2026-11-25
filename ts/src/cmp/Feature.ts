@@ -44,7 +44,7 @@ const Feature = cmp(function Feature(props: any) {
         // files, because this Copy has already written them.
         exclude: pluginExcludesFor(ctx$.model, feature.name),
         replace: {
-          ...ensureStdrep(ctx$),
+          ...ensureStdrep(ctx$, target),
           FEATURE_VERSION: feature.version,
           FEATURE_Name: feature.Name,
         }

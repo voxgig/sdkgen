@@ -20,7 +20,7 @@ import {
 const Test = cmp(function Test(props: any) {
   const { target, ctx$ } = props
   const { model, log } = ctx$
-  const stdrep = ensureStdrep(ctx$)
+  const stdrep = ensureStdrep(ctx$, target)
 
   const points = Object.values(model.main.kit.entity || {}).flatMap((entity: any) =>
     Object.values(entity.op || {}).flatMap((op: any) => op.points || [])) as any[]

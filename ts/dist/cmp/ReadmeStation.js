@@ -6,7 +6,7 @@ const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
 const applicability_1 = require("../helpers/applicability");
 const facts_1 = require("../helpers/facts");
-const utility_1 = require("../utility");
+const types_1 = require("../types");
 // Targets where station.connect(SDK) is the idiomatic binding; everything
 // else uses inverted binding through the SDK's own constructor.
 const CONNECT_TARGETS = ['ts', 'js', 'py', 'rb', 'php', 'lua', 'perl'];
@@ -24,7 +24,7 @@ const ReadmeStation = (0, component_1.cmp)(function ReadmeStation(props) {
     // main.slug in the embedded config); an untagged instance ref IS the
     // slug, so this is also the default instance name.
     const slug = model.name;
-    const env = (0, packageMeta_1.envName)(model);
+    const env = (0, facts_1.fact)(model.main[types_1.KIT], 'env').prefix;
     const secretbase = env.toLowerCase();
     const secretname = secretbase + '.apikey';
     const origin = (0, packageMeta_1.originName)(model, target.name);
@@ -76,7 +76,7 @@ SDK features are configured in the same file too: fleet-wide, per api,
 or per instance. \`station.check()\` resolves and constructs every
 active instance without sending a request — run it in CI.
 
-${(0, utility_1.isAuthActive)(model) ? `### The secret name derives from the instance
+${(0, facts_1.fact)(model.main[types_1.KIT], 'auth').apikey ? `### The secret name derives from the instance
 
 The credential comes from [sekreto](https://github.com/voxgig/sekreto)
 under a name derived from the **instance** name — the instance token

@@ -3,12 +3,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.serverVariables = serverVariables;
 exports.hasServerVariables = hasServerVariables;
 exports.serverVarEnv = serverVarEnv;
+const apidef_1 = require("@voxgig/apidef");
 // Match {name} placeholders in a server URL template. OpenAPI variable
 // names are restricted to word characters in practice; a brace group that
 // is not a well-formed name is left untouched rather than guessed at.
 const SERVER_VAR_RE = /\{([A-Za-z0-9_]+)\}/g;
 function serverVariables(model) {
-    const info = model?.main?.kit?.info || model?.main?.KIT?.info;
+    const info = model?.main?.[apidef_1.KIT]?.info;
     const server = info?.servers?.[0];
     const url = server?.url || '';
     const declared = server?.variables || {};
@@ -52,7 +53,7 @@ function serverVarEnv(projenvname, name) {
 }
 // Does the model's server URL contain any {name} placeholders at all?
 function hasServerVariables(model) {
-    const info = model?.main?.kit?.info || model?.main?.KIT?.info;
+    const info = model?.main?.[apidef_1.KIT]?.info;
     const url = info?.servers?.[0]?.url || '';
     SERVER_VAR_RE.lastIndex = 0;
     return SERVER_VAR_RE.test(url);

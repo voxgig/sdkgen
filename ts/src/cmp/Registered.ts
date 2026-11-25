@@ -25,7 +25,7 @@ function registerComponent(name: string, options: RegisterOptions = {}) {
     const { target, ctx$ } = props
     const { model, log } = ctx$
 
-    const stdrep = ensureStdrep(ctx$)
+    const stdrep = ensureStdrep(ctx$, target)
 
     const path = `./cmp/${target.name}/${name}_${target.name}`
     const mod: any = optional ? loadOptional(ctx$, path) : requirePath(ctx$, path)
