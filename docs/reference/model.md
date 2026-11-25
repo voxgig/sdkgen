@@ -120,6 +120,7 @@ merge to resolve. These are the keys that exist for that purpose:
 | --- | --- |
 | `main.kit.copies` | `'merge'` (the default) or `'overwrite'`: how an add, and a re-scaffold, treat a copy in `.sdk` the project changed. `'overwrite'` is for a project regenerated in full. |
 | `main.kit.repo.path` / `.host` | Repo identity. The repo is NOT always `<origin>/<name>-sdk`; deriving it from the slug produced a go module path that returns 404 and homepage/bugs URLs for a repo that does not exist. |
+| `main.kit.doc.ci.branch` | The branch releases come from, `main` when unset. The publish workflows refuse any other, PUBLISHING.md names it, and the changelog links point at it. docgen's site deployment reads the same slot. |
 | `main.kit.author` / `main.kit.contributor.<key>` | Manifest attribution. Hand-edited credit in a `package.json` is DELETED by the next regeneration — which is what happened to a hand-written provider repo the first time it was regenerated. |
 | `main.kit.target.<t>.author` | Attribution for ONE target, overriding the model-wide value. A generated SDK is an artefact of the publisher; a Seneca provider is independently released by named people. One model produces both. |
 | `main.kit.text` | The README wording: tagline, summary, the About section, entity descriptions. Text edited into `README.md` is lost on the next `generate`, and text in `config.aontu` on the next re-scaffold. |

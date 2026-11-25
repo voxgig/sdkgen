@@ -443,6 +443,15 @@ describe('PublishWorkflow', () => {
   })
 
 
+  test('releases come from the branch the model names', async () => {
+    const out = await render(NPM_TS, undefined, { doc: { ci: { branch: 'trunk' } } })
+    const wf = out['.github/workflows/publish-ts.yml']
+    ok(wf.includes('if [ "${GITHUB_REF_NAME}" != "trunk" ]; then'), wf)
+    ok(!/\bmain\b/.test(wf.replace(/main\.\$\{KIT\}/g, '')), 'the workflow still names main')
+    ok(out['.sdk/PUBLISHING.md'].includes('--ref trunk -f expect_sha'))
+  })
+
+
   // Every action pinned to a SHA: an org can require it, and a workflow
   // naming a tag then fails to START, with no jobs and no logs.
   test('every action is pinned to a SHA', async () => {

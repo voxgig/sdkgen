@@ -54,7 +54,7 @@ function repoInfo(model: any) {
   const repo = seg[seg.length - 1]
 
   const repoUrl = `https://${host}/${path}`
-  const pages = repoPages(host, repoUrl)
+  const pages = repoPages(host, repoUrl, releaseBranch(model))
 
   return {
     slug,
@@ -74,12 +74,12 @@ function repoInfo(model: any) {
 
 // GitLab keeps a project's pages under `/-/`, and Bitbucket lists its tags
 // among its downloads; any other host is laid out as GitHub is.
-function repoPages(host: string, repoUrl: string) {
+function repoPages(host: string, repoUrl: string, branch: string) {
   if (host.includes('gitlab')) {
     return {
       name: 'GitLab',
       issues: `${repoUrl}/-/issues`,
-      changelog: `${repoUrl}/-/blob/main/CHANGELOG.md`,
+      changelog: `${repoUrl}/-/blob/${branch}/CHANGELOG.md`,
       releases: `${repoUrl}/-/releases`,
       tags: `${repoUrl}/-/tags`,
     }
@@ -88,7 +88,7 @@ function repoPages(host: string, repoUrl: string) {
     return {
       name: 'Bitbucket',
       issues: `${repoUrl}/issues`,
-      changelog: `${repoUrl}/src/main/CHANGELOG.md`,
+      changelog: `${repoUrl}/src/${branch}/CHANGELOG.md`,
       releases: `${repoUrl}/downloads/?tab=tags`,
       tags: `${repoUrl}/downloads/?tab=tags`,
     }
@@ -96,10 +96,16 @@ function repoPages(host: string, repoUrl: string) {
   return {
     name: host.includes('github') ? 'GitHub' : host,
     issues: `${repoUrl}/issues`,
-    changelog: `${repoUrl}/blob/main/CHANGELOG.md`,
+    changelog: `${repoUrl}/blob/${branch}/CHANGELOG.md`,
     releases: `${repoUrl}/releases`,
     tags: `${repoUrl}/tags`,
   }
+}
+
+
+function releaseBranch(model: any): string {
+  const branch = model?.main?.[KIT]?.doc?.ci?.branch
+  return 'string' === typeof branch && '' !== branch ? branch : 'main'
 }
 
 
@@ -447,6 +453,7 @@ export {
   langLabel,
   originName,
   repoInfo,
+  releaseBranch,
   apiName,
   packageName,
   hasPackageName,

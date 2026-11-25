@@ -5,6 +5,7 @@ exports.sdkName = sdkName;
 exports.langLabel = langLabel;
 exports.originName = originName;
 exports.repoInfo = repoInfo;
+exports.releaseBranch = releaseBranch;
 exports.apiName = apiName;
 exports.packageName = packageName;
 exports.hasPackageName = hasPackageName;
@@ -75,7 +76,7 @@ function repoInfo(model) {
     const seg = path.split('/');
     const repo = seg[seg.length - 1];
     const repoUrl = `https://${host}/${path}`;
-    const pages = repoPages(host, repoUrl);
+    const pages = repoPages(host, repoUrl, releaseBranch(model));
     return {
         slug,
         origin,
@@ -92,12 +93,12 @@ function repoInfo(model) {
 }
 // GitLab keeps a project's pages under `/-/`, and Bitbucket lists its tags
 // among its downloads; any other host is laid out as GitHub is.
-function repoPages(host, repoUrl) {
+function repoPages(host, repoUrl, branch) {
     if (host.includes('gitlab')) {
         return {
             name: 'GitLab',
             issues: `${repoUrl}/-/issues`,
-            changelog: `${repoUrl}/-/blob/main/CHANGELOG.md`,
+            changelog: `${repoUrl}/-/blob/${branch}/CHANGELOG.md`,
             releases: `${repoUrl}/-/releases`,
             tags: `${repoUrl}/-/tags`,
         };
@@ -106,7 +107,7 @@ function repoPages(host, repoUrl) {
         return {
             name: 'Bitbucket',
             issues: `${repoUrl}/issues`,
-            changelog: `${repoUrl}/src/main/CHANGELOG.md`,
+            changelog: `${repoUrl}/src/${branch}/CHANGELOG.md`,
             releases: `${repoUrl}/downloads/?tab=tags`,
             tags: `${repoUrl}/downloads/?tab=tags`,
         };
@@ -114,10 +115,14 @@ function repoPages(host, repoUrl) {
     return {
         name: host.includes('github') ? 'GitHub' : host,
         issues: `${repoUrl}/issues`,
-        changelog: `${repoUrl}/blob/main/CHANGELOG.md`,
+        changelog: `${repoUrl}/blob/${branch}/CHANGELOG.md`,
         releases: `${repoUrl}/releases`,
         tags: `${repoUrl}/tags`,
     };
+}
+function releaseBranch(model) {
+    const branch = model?.main?.[apidef_1.KIT]?.doc?.ci?.branch;
+    return 'string' === typeof branch && '' !== branch ? branch : 'main';
 }
 function docsSiteUrl(model) {
     const { host, path } = repoInfo(model);

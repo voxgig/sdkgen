@@ -8,7 +8,7 @@ import {
   getModelPath
 } from '../types'
 
-import { hasPackageName, packageName, packageVersion, registryState, repoInfo } from '../helpers/packageMeta'
+import { hasPackageName, packageName, packageVersion, registryState, releaseBranch, repoInfo } from '../helpers/packageMeta'
 
 import { npmTrustScript } from '../admin/npm-trust'
 import { fact } from '../helpers/facts'
@@ -79,6 +79,7 @@ function publishWorkflow(
   const dir = fact(target, 'dir')
   const tag = fact(target, 'tag') + '$VERSION'
   const tagged = '' !== fact(target, 'tag')
+  const branch = releaseBranch(model)
   const pkg = packageName(model, name)
   const setup = null == repository ? '' : `
 # .sdk/admin/setup-npm-trust.sh registers exactly this, and with --check
@@ -140,7 +141,7 @@ on:
   workflow_dispatch:
     inputs:
       expect_sha:
-        description: 'Optional: refuse unless main is still at this commit'
+        description: 'Optional: refuse unless ${branch} is still at this commit'
         type: string
         default: ''
 
@@ -164,19 +165,19 @@ jobs:
         with:
           node-version: 24.x
 
-      # RELEASES COME FROM main, INCLUDING FROM THE BUTTON. workflow_dispatch
+      # RELEASES COME FROM ${branch}, INCLUDING FROM THE BUTTON. workflow_dispatch
       # accepts any ref, so without this the Actions UI can release a branch.
-      - name: This ref is main, and is where the caller thinks it is
+      - name: This ref is ${branch}, and is where the caller thinks it is
         env:
           EXPECT: \${{ inputs.expect_sha }}
         run: |
           set -euo pipefail
-          if [ "\${GITHUB_REF_NAME}" != "main" ]; then
-            echo "::error::releases come from main, not \${GITHUB_REF_NAME}"
+          if [ "\${GITHUB_REF_NAME}" != "${branch}" ]; then
+            echo "::error::releases come from ${branch}, not \${GITHUB_REF_NAME}"
             exit 1
           fi
           if [ -n "\$EXPECT" ] && [ "\$EXPECT" != "\$GITHUB_SHA" ]; then
-            echo "::error::main is at \$GITHUB_SHA, not \$EXPECT"
+            echo "::error::${branch} is at \$GITHUB_SHA, not \$EXPECT"
             exit 1
           fi
 
@@ -304,6 +305,7 @@ function tagJob(tag: string): string {
 
 
 function publishingDoc(model: any, targets: any[], repository: string | null): string {
+  const branch = releaseBranch(model)
   const pkg = packageName(model, targets[0].name)
   const first = workflowFile(targets[0])
 
@@ -360,12 +362,12 @@ publish credential, and attaches SLSA provenance as it goes.
 
        main: kit: target: ${targets[0].name}: publish: version: '<x.y.z>'
 
-2. Commit and push to \`main\`, and let CI go green.
+2. Commit and push to \`${branch}\`, and let CI go green.
 3. Run the workflow from the Actions tab, or:
 
-       gh workflow run ${first} --ref main -f expect_sha=$(git rev-parse HEAD)
+       gh workflow run ${first} --ref ${branch} -f expect_sha=$(git rev-parse HEAD)
 
-\`expect_sha\` is optional and worth using: it refuses if \`main\` moved between
+\`expect_sha\` is optional and worth using: it refuses if \`${branch}\` moved between
 the commit you checked and the run resolving.
 
 ${dispatchReason(model, targets)}
