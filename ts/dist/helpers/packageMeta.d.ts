@@ -41,6 +41,7 @@ declare function publisherInfo(model: any): {
     name: string;
     url: string;
     security: string;
+    official: boolean;
 };
 declare function isDefaultPublisher(model: any): boolean;
 declare function securityContact(model: any): string;

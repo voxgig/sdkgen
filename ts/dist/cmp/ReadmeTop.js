@@ -618,13 +618,13 @@ const ReadmeTopPerLanguage = (0, component_1.cmp)(function ReadmeTopPerLanguage(
     }
 });
 const ReadmeTopUpstream = (0, component_1.cmp)(function ReadmeTopUpstream(props) {
-    const { text } = props.s;
+    const { text, model } = props.s;
     const upstream = text.upstream;
     const docs = text.docs_url;
     (0, jostraca_1.Content)(`## Upstream API
 
-This SDK is generated from the upstream OpenAPI specification. It is an
-unofficial client and is not affiliated with the API provider.
+This SDK is generated from the upstream OpenAPI specification.${(0, packageMeta_1.publisherInfo)(model).official ? '' : ` It is an
+unofficial client and is not affiliated with the API provider.`}
 
 The OpenAPI spec(s) this SDK was generated from are kept in the
 [\`.sdk/def/\`](.sdk/def/) folder.

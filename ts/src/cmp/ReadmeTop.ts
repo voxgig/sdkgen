@@ -34,6 +34,7 @@ import {
   vendorCommand,
   apiName,
   nonAffiliation,
+  publisherInfo,
   docsSiteUrl,
   originName,
   isDefaultPublisher,
@@ -705,13 +706,13 @@ const ReadmeTopPerLanguage = cmp(function ReadmeTopPerLanguage(props: any) {
 
 
 const ReadmeTopUpstream = cmp(function ReadmeTopUpstream(props: any) {
-  const { text } = props.s
+  const { text, model } = props.s
   const upstream = text.upstream
   const docs = text.docs_url
   Content(`## Upstream API
 
-This SDK is generated from the upstream OpenAPI specification. It is an
-unofficial client and is not affiliated with the API provider.
+This SDK is generated from the upstream OpenAPI specification.${publisherInfo(model).official ? '' : ` It is an
+unofficial client and is not affiliated with the API provider.`}
 
 The OpenAPI spec(s) this SDK was generated from are kept in the
 [\`.sdk/def/\`](.sdk/def/) folder.
