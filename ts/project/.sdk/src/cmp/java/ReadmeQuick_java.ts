@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps , serverVariables, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps , javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -36,7 +36,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // - the SDK throws rather than request a URL with a literal
   // {account_id} in it - so a quickstart that omits them is a quickstart
   // that fails on its first line.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const javaServerLines = 0 === svars.length ? '' :
     'Map<String, Object> server = new java.util.LinkedHashMap<>();\n' +
     svars.map((v: any) =>

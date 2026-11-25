@@ -1467,6 +1467,25 @@ main: kit: target: js: phase: feature: active: false
   }
 
 
+  // BASIC_TEMPLATED's URL uses `tenant` with no default and `region` with one.
+  test('a quick start asks for the server variables a client must supply, and no others', async () => {
+    const out = await generate(['ts', 'go', 'py', 'java'], undefined, BASIC_TEMPLATED)
+    for (const target of ['ts', 'go', 'py', 'java']) {
+      const fence = '```' + ('py' === target ? 'python' : target) + '\n'
+      for (const file of [target + '/README.md', 'README.md']) {
+        const ctors = String(out[file]).split(fence).slice(1).map((b: string) => b.slice(0, b.indexOf('```')))
+          .filter((b: string) => /DEMO_APIKEY/.test(b))
+        ok(0 < ctors.length, target + ', ' + file + ': no quick start constructs a client')
+        for (const block of ctors) {
+          ok(/tenant/.test(block), target + ', ' + file + ': the quick start omits the required tenant')
+          ok(!/region/.test(block), target + ', ' + file + ': the quick start asks for the defaulted region')
+        }
+      }
+    }
+    ok(out['ts/README.md'].includes('| `server` | `object` | **Required.** Values for the server-URL ' +
+      'variables: `tenant`, `region` (default `eu`).'), 'the ts options row does not say which variable has a default')
+  })
+
   // The template pass reads `$$path$$` in what a component prints, so text from
   // the spec reaches generated source with each `$$` escaped for its language.
   for (const repr of ['literal', 'data']) {
