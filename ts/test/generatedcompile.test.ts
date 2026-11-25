@@ -4865,6 +4865,23 @@ describe('the feature corpus runs from a generated SDK', () => {
     })
 
 
+  // Out of tree no root README sits beside the target, so the quick start the
+  // README example test runs is the tutorial in the target's own README.
+  test('ts generated out of tree: the README example test runs its own README', async () => {
+    const sdkroot = Path.join(tmp, 'away-readme', 'ts')
+    await generateAway('ts', sdkroot, '../project')
+    linkDeps(sdkroot)
+    for (const tree of ['src', 'test']) {
+      const built = tsc(sdkroot, tree)
+      ok(built.ok, 'ts: the relocated ' + tree + ' does not compile:\n' + tail(built.out))
+    }
+    const res = run(process.execPath, ['--test', '--test-reporter=tap',
+      Path.join('dist-test', 'ReadmeExample.test.js')], sdkroot, nestedTestEnv())
+    ok(res.ok, 'ts: the README example test failed out of tree:\n' + tail(res.out))
+    ok(/^# pass 1$/m.test(res.out), 'ts: the README example test did not run:\n' + tail(res.out))
+  })
+
+
 })
 
 

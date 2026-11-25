@@ -1,10 +1,19 @@
 
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeExampleTest = cmp(function ReadmeExampleTest(props: any) {
-  const { ctx$: { model } } = props
+  const { target, ctx$: { model } } = props
   const Name = model.const.Name
+
+  // The root README's quick start where the run writes one for this target,
+  // else the tutorial in the target's own README.
+  const root = fact(target, 'link').readme
+  if ('' === root && !fact(target, 'phase').readme) {
+    return
+  }
+  const readme = '' === root ? 'README.md' : root
+  const section = '' === root ? 'Tutorial: your first API call' : 'Quickstart'
 
   File({ name: 'ReadmeExample.test.ts' }, () => {
     Content(`// Verifies the README's lead-language quickstart still runs.
@@ -36,11 +45,11 @@ function transformForTestMode(code: string, name: string): string {
 
 describe('README example', () => {
   it('lead-language quickstart runs in test mode', async () => {
-    const readmePath = Path.join(__dirname, '..', '..', 'README.md')
+    const readmePath = Path.join(__dirname, '..', '${readme}')
     const md = Fs.readFileSync(readmePath, 'utf8')
 
-    const block = findFirstTsBlock(md, 'Quickstart')
-    assert(block, 'No TypeScript code block found under "## Quickstart" in README.md')
+    const block = findFirstTsBlock(md, '${section}')
+    assert(block, 'No TypeScript code block found under "## ${section}" in ${readme}')
 
     const code = transformForTestMode(block, '${Name}')
 

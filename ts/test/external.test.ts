@@ -667,8 +667,9 @@ describe('external target', () => {
       const sdks = all.filter((t: string) => 'sdk' === fact(kit.target[t], 'surface'))
       ok(15 < sdks.length, 'expected every bundled SDK target: ' + sdks.join(', '))
 
+      // The ts README example test reads whichever README the placement writes.
       const code = (tree: Record<string, string>) => Object.keys(tree)
-        .filter((path: string) => !path.endsWith('.md')).sort()
+        .filter((path: string) => !path.endsWith('.md') && 'test/ReadmeExample.test.ts' !== path).sort()
 
       for (const t of sdks) {
         const tree = under((await generate([t], {})).inside, t)
@@ -714,6 +715,20 @@ describe('external target', () => {
           .map((line: string) => path + ': ' + line))
         deepStrictEqual(entered, [], t + ': a relocated tree enters ' + t + '/')
       }
+    })
+
+
+    test('a relocated ts runs the quick start of its own README', async () => {
+      const read = "const readmePath = Path.join(__dirname, '..', "
+      const tree = under((await generate(['ts'], {})).inside, 'ts')
+      ok(tree['test/ReadmeExample.test.ts'].includes(read + "'../README.md')"),
+        'in tree the test does not read the root README')
+      const away = (await generate(['ts'], 'ts',
+        "main: kit: target: ts: output: sdkrel: '../../zzproj'")).outside
+      ok(away['test/ReadmeExample.test.ts'].includes(read + "'README.md')"),
+        'out of tree the test does not read its own README')
+      ok(away['test/ReadmeExample.test.ts'].includes("'Tutorial: your first API call'"),
+        'out of tree the test does not read the tutorial')
     })
 
 
