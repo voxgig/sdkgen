@@ -11,6 +11,7 @@ const surface_1 = require("../helpers/surface");
 const facts_1 = require("../helpers/facts");
 const semver_1 = require("../helpers/semver");
 const shipped_1 = require("../helpers/shipped");
+const targetguard_1 = require("../helpers/targetguard");
 const node_path_1 = __importDefault(require("node:path"));
 const types_1 = require("../types");
 const utility_1 = require("../utility");
@@ -228,7 +229,11 @@ function checkTargetSurface(model, name, pkg, at) {
     }
     const found = null == pkg?.tier ? [] :
         (0, manifest_1.parityFinding)(pkg.manifest, name, pkg.tier, surface);
-    const word = model.main[types_1.KIT].target[name].surface;
+    const target = model.main[types_1.KIT].target[name];
+    if ((0, targetguard_1.entityless)(target)) {
+        found.push(at('error', 'target-entity-off', (0, targetguard_1.entitylessNote)(name)));
+    }
+    const word = target.surface;
     if ('string' !== typeof word || '' === word) {
         return found;
     }

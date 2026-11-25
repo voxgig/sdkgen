@@ -42,7 +42,6 @@
         "feature-secrets",
         "feature-streaming",
         "feature-telemetry",
-        "feature-test",
         "feature-timeout",
         "feature-validate",
         "features-empty",
@@ -115,7 +114,6 @@
         "feature-secrets",
         "feature-streaming",
         "feature-telemetry",
-        "feature-test",
         "feature-timeout",
         "feature-validate",
         "features-empty",
@@ -159,16 +157,6 @@
       "line": "cd ts && npm test",
       "variations": [
         "root-ts"
-      ]
-    },
-    {
-      "relation": "off",
-      "chain": "AgentGuide > AgentGuideFeature",
-      "cause": "feature",
-      "reason": "Undecided: `test` is the example of a feature switched on, in a sentence about every feature; whether an example must be in the model is open.",
-      "line": "in the model). It only runs when explicitly enabled (e.g. the `test` feature is switched on for test mode).",
-      "variations": [
-        "feature-test"
       ]
     },
     {

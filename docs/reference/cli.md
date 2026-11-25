@@ -138,7 +138,7 @@ voxgig-sdkgen doctor
 It compares the three things `target add` copies:
 `.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
 
-Thirteen categories:
+Fourteen categories:
 
 | Category | Meaning |
 | --- | --- |
@@ -153,10 +153,11 @@ Thirteen categories:
 | **below the floor** | The copy record dates an item's copies from before 4.23.0, the oldest release whose copies the generator builds. Commit, then run `target add <t> --force`. |
 | **unreadable** | A copied model file that does not compile, so the model leaves its item out without an error. Model files copied before 1.3.18 use `//` comments, which the compiler does not read. Commit, then run `target add <t> --force`. |
 | **unresolved** | A declared target, feature or edition whose source is not installed, so its copies cannot be compared. Install the package it names. Until then its files are not reported as stale, and `target add` keeps an active feature's files rather than pruning them. |
+| **untested** | An active SDK target in a model with no active `test` feature, which its generated tests and test mode need. `generate` refuses the model; `target add <t>` installs the feature. |
 | **additive** | A project-owned component the scaffold never shipped. Reported, never a failure — this is the supported way to extend a target (see `registerComponent`). |
 | **unwired** | A root-level component this sdkgen provides that the project's `src/*.ts` wiring never calls. Informational: opting out is legitimate. |
 
-**forked** to **unresolved** fail the check, except the copies reported as
+**forked** to **untested** fail the check, except the copies reported as
 **customized** that are not also **unfolded**. A plain `diff -r` against the scaffold cannot
 do this job: `target add` writes template masters with substitution partly
 applied and inconsistently, so most of what a naive diff reports is not an
@@ -306,7 +307,9 @@ Three things `remove` deliberately leaves alone, and says so:
   the removed feature.
 
 The `test` feature cannot be removed: every target's generated suite
-depends on it, and `target add` installs it unconditionally.
+depends on it, and `target add` installs it unconditionally. A model that
+drops it by hand fails `generate`, which names `target add <t>` as the
+repair.
 
 ### `package add <pkg>[,<pkg>...]`
 
@@ -379,6 +382,7 @@ gate. What it checks:
 | `target-surface-unknown` | warn | The target declares a `surface` word this release does not know. Generation reads it as unknown and names the target by its title; a later release that introduces the word reads it. |
 | `target-surface-since` | info | The target declares a known `surface` word, and `engines.sdkgen` admits releases older than the one that first reads it. Those releases ignore the slot. |
 | `target-facts` | error | The fact rules fail on the target's model alone, so a project that installs it cannot generate. |
+| `target-entity-off` | error | An SDK target switches its entity phase off. Its main module and documents still name the entity classes that phase writes, so the SDK does not build, and `generate` refuses it. |
 | `feature-deps-misplaced` | warn | Dependencies under `feature.<f>.target.<t>.deps`, which nothing reads. They go directly under the feature: `deps: <target>: {…}`. |
 | `feature-source-undelivered` | warn | `targetsSupported` claims a target for which no feature source can be found. |
 | `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aontu` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |

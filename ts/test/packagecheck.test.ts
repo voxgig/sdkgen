@@ -411,6 +411,24 @@ describe('package check — the model rules', () => {
   })
 
 
+  // Its main module imports the entity classes the phase writes.
+  test('an SDK target with its entity phase off is an error', () => {
+    const off = check((dir) =>
+      editModel(dir, 'target', 'iotgo', (src) =>
+        src.replace('main: kit: target: iotgo: {',
+          "main: kit: target: iotgo: {\n  surface: 'sdk'\n  phase: entity: active: false")))
+    ok(points(off, 'error').includes('target-entity-off'), points(off).join(','))
+    ok(/Target "iotgo" is an SDK with its entity phase off/.test(noted(off, 'target-entity-off')),
+      noted(off, 'target-entity-off'))
+
+    const consumer = check((dir) =>
+      editModel(dir, 'target', 'iotgo', (src) =>
+        src.replace('main: kit: target: iotgo: {',
+          "main: kit: target: iotgo: {\n  surface: 'cli'\n  phase: entity: active: false")))
+    ok(!points(consumer).includes('target-entity-off'), points(consumer).join(','))
+  })
+
+
   test('a hook the base schema does not list is an error', () => {
     const report = check((dir) =>
       editModel(dir, 'feature', 'retry', (src) =>

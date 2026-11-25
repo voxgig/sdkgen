@@ -55,6 +55,9 @@ import { compareVersions } from '../helpers/semver'
 
 import { isTypeScript, missingExports } from '../helpers/exportnames'
 
+import { untestedTargets } from '../helpers/targetguard'
+import type { BrokenTarget } from '../helpers/targetguard'
+
 
 const IGNORED_RE = /(~|-jostraca-off)$/
 
@@ -154,6 +157,10 @@ type DoctorReport = {
 
   // `.sdk/.gitignore` hides the copy record from git. Informational.
   ignoredLog: boolean
+
+  // Active SDK targets the model gives no active `test` feature, which
+  // generate refuses.
+  untested: string[]
 
   ok: boolean
 }
@@ -356,10 +363,11 @@ async function doctor(
     resyncPending: [], aliasedDiff: [], aliasedBehind: [],
     outdated: [], ahead: [], unrecorded: [], customized: [], unfolded: [],
     belowFloor: [], unreadable: [], unresolved: [], byItem: {},
-    ignoredLog: false, ok: true,
+    ignoredLog: false, untested: [], ok: true,
   }
 
   const copies = readCopies(fs, root)
+  const untested: BrokenTarget[] = []
 
   report.ignoredLog = ignoredLog(fs, root)
   if (report.ignoredLog) {
@@ -440,6 +448,13 @@ async function doctor(
 
   if (null == scope) {
     checkWiring(actx, report)
+
+    // Only a prepared model has the facts to judge by; resolveModel prepares
+    // every action's.
+    if (null != (model as any)?.main?.[KIT]?.fact) {
+      untested.push(...untestedTargets(model))
+      report.untested = untested.map((b: BrokenTarget) => b.target)
+    }
   }
 
   // orphanModel counts, and `unwired` does not. Not skipping a root
@@ -451,7 +466,7 @@ async function doctor(
     report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
     report.orphanModel.length + report.outdated.length + report.ahead.length +
     report.unfolded.length + report.belowFloor.length +
-    report.unreadable.length + report.unresolved.length
+    report.unreadable.length + report.unresolved.length + report.untested.length
 
   const customized = new Set(report.customized)
   const unmergeable = MERGE === projectCopyMode(actx) ? new Set(report.unrecorded) : new Set()
@@ -481,6 +496,10 @@ async function doctor(
         note
       log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file })
     }
+  }
+
+  for (const b of untested) {
+    log.info({ point: 'doctor-finding', kind: 'untested', target: b.target, note: 'UNTESTED: ' + b.note })
   }
 
   for (const { file, item, error, oldSyntax } of report.unreadable) {
@@ -562,6 +581,7 @@ async function doctor(
     belowFloor: report.belowFloor.length,
     unreadable: report.unreadable.length,
     unresolved: report.unresolved.length,
+    untested: report.untested.length,
     customized: report.customized.length,
     note: report.ok ?
       ('.sdk matches the scaffold (' + report.additive.length + ' additive, ' +
@@ -572,7 +592,7 @@ async function doctor(
         ' outdated, ' + report.ahead.length + ' ahead, ' +
         report.unfolded.length + ' unfolded, ' + report.belowFloor.length +
         ' below the floor, ' + report.unreadable.length + ' unreadable, ' +
-        report.unresolved.length + ' unresolved')
+        report.unresolved.length + ' unresolved, ' + report.untested.length + ' untested')
   })
 
   return { report }

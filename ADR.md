@@ -24,6 +24,7 @@ ADR-NNN**, so the reasoning that led there stays readable.
 | [ADR-002](#adr-002--a-generated-sdk-carries-only-what-it-uses) | A generated SDK carries only what it uses | Accepted |
 | [ADR-003](#adr-003--diagnostics-are-redacted-by-default) | Diagnostics are redacted by default | Accepted |
 | [ADR-004](#adr-004--generated-text-states-only-what-the-model-declares) | Generated text states only what the model declares | Accepted |
+| [ADR-005](#adr-005--every-sdk-target-carries-test-mode-and-its-entities) | Every SDK target carries test mode and its entities | Accepted |
 
 ---
 
@@ -351,4 +352,47 @@ of the model and reports a sentence that names what a run removed, a link
 that resolves nowhere and a sentence its siblings do not reach. `fact` throws
 on a model that did not pass through the rules, so a component cannot read an
 answer the rules did not give.
+
+---
+
+## ADR-005 — Every SDK target carries test mode and its entities
+
+**Status:** Accepted
+
+### Context
+
+Every generated SDK has a test mode: `test()` and `tester()` build a client
+whose transport is the `test` feature's in-memory mock, and the generated
+suite runs through it. `target add` installs the feature for every target and
+`feature remove test` is refused, so only a hand edit removes it. A project
+that did so got an SDK that compiled and then failed at run time, and a red
+suite of its own. A target whose entity phase is off fails earlier: its main
+module still imports the entity classes the phase writes. Gating each
+document on the two states would put a condition in about forty copies of the
+documents, for projects that cannot build.
+
+### Decision
+
+An active SDK target always carries the active `test` feature and runs its
+entity phase. `generate` refuses a model that breaks either rule, naming the
+target and the repair (`voxgig-sdkgen target add <t>` for the feature), and no
+document is gated on them: a sentence about test mode or the entity classes is
+true by construction.
+
+This is an exception to ADR-002. Every SDK ships test mode, whether or not its
+configuration reaches it.
+
+### Consequences
+
+A hand-edited project without the feature fails `generate` instead of
+producing an SDK that fails at run time. An SDK target cannot switch its entity
+phase off to publish documents alone; a target that generates no entities is
+a different product, a consumer, with its own surface.
+
+### Enforcement
+
+`refuseBrokenTargets` in `ts/src/helpers/targetguard.ts` runs in `generate`
+after the fact pass. `doctor` reports a target without the feature as an
+error, and `package check` a package's SDK target with its entity phase off.
+The text guard keeps the feature in every variation it generates.
 

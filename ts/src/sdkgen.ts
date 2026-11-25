@@ -25,6 +25,7 @@ import { Main } from './cmp/Main'
 import { featureApplies, targetFeatures, featureTags, unknownTags, TAGS } from './helpers/applicability'
 import { ExternalTarget } from './cmp/ExternalTarget'
 import { readOverride, runOutput } from './helpers/placement'
+import { refuseBrokenTargets } from './helpers/targetguard'
 import type { ExternalOverride } from './helpers/placement'
 
 import { KIT, resolvedSpec } from '@voxgig/apidef'
@@ -329,6 +330,11 @@ function SdkGen(opts: SdkGenOptions) {
     guardFlowSteps(model, log)
 
     applyFacts(model)
+
+    // A target that would generate an SDK broken at build or run time is a
+    // named error, so no document is gated on its state; see helpers/targetguard.
+    refuseBrokenTargets(model)
+
     warnUngeneratedOps(model, log, targetOrigins(model))
 
     let Root = spec.root

@@ -12,6 +12,7 @@ import {
   FENCES, mention, linkFindings, markerFindings, fenceFindings, offFindings,
 } from '../dist/helpers/textguard.js'
 import type { GuardFinding } from '../dist/helpers/textguard.js'
+import { REQUIRED_FEATURE } from '../dist/helpers/targetguard.js'
 
 import {
   API_MODEL, KIT, STAGE, SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog,
@@ -190,7 +191,11 @@ function variations(): Variation[] {
       subject: { kind: 'target', key: t, words: targetWords(t, model) },
     })
   }
-  for (const f of FEATURES) {
+  // Generation refuses a model without the required feature, so every
+  // sentence about it is true by construction and no variation removes it.
+  const optional = FEATURES.filter((f: string) => REQUIRED_FEATURE !== f)
+  const required = FEATURES.filter((f: string) => REQUIRED_FEATURE === f)
+  for (const f of optional) {
     with_('feature-' + f, 'feature', {
       features: FEATURES.filter((x: string) => x !== f),
       subject: { kind: 'feature', key: f, words: featureWords(f, model) },
@@ -212,8 +217,8 @@ function variations(): Variation[] {
 
   with_('targets-empty', 'empty', { targets: [] })
   with_('targets-lone', 'lone', { targets: [lead] })
-  with_('features-empty', 'empty', { features: [] })
-  with_('features-lone', 'lone', { features: [FEATURES[0]] })
+  with_('features-empty', 'empty', { features: required })
+  with_('features-lone', 'lone', { features: [optional[0], ...required] })
   with_('entities-empty', 'empty', {
     extra: base.extra + ENTITIES.map((e: string) => `\nmain: kit: entity: ${TOKEN[e]}: active: false`).join(''),
   })

@@ -5,6 +5,7 @@ import { SURFACES, SURFACE_SINCE } from '../helpers/surface'
 import { applyFacts, fact } from '../helpers/facts'
 import { admitsBelow } from '../helpers/semver'
 import { SDKGEN_VERSION } from '../helpers/shipped'
+import { entityless, entitylessNote } from '../helpers/targetguard'
 import Path from 'node:path'
 
 import { KIT } from '../types'
@@ -364,7 +365,12 @@ function checkTargetSurface(
   const found: Finding[] = null == pkg?.tier ? [] :
     parityFinding(pkg.manifest, name, pkg.tier, surface)
 
-  const word = model.main[KIT].target[name].surface
+  const target = model.main[KIT].target[name]
+  if (entityless(target)) {
+    found.push(at('error', 'target-entity-off', entitylessNote(name)))
+  }
+
+  const word = target.surface
   if ('string' !== typeof word || '' === word) {
     return found
   }

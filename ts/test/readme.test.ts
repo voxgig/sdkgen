@@ -337,8 +337,12 @@ describe('feature lead-ins', () => {
     ok((await renderExplanation('ts')).includes('later features can override earlier ones'))
   })
 
+  // An SDK always carries the test feature, so only a project of consumers
+  // has no feature at all.
   test('the root README writes no features table without a feature', async () => {
-    const run = await generateDocs({ id: 'nofeat', family: 'nofeat', targets: ['ts'], features: [], extra: '' })
+    const consumer = 'main: kit: target: ts: phase: { entity: active: false, feature: active: false, ' +
+      'readme: active: false, agentguide: active: false, test: active: false }'
+    const run = await generateDocs({ id: 'nofeat', family: 'nofeat', targets: ['ts'], features: [], extra: consumer })
     ok(!run.files['README.md'].includes('| Feature | Purpose |'))
     ok(run.files['README.md'].includes('Pass custom features via the `extend` option'))
   })
