@@ -5,7 +5,7 @@ declare const SECURITY_EMAIL = "security@voxgig.com";
 declare const GENERATOR_URL = "https://github.com/voxgig/sdkgen";
 declare function originName(model: any, target: string): string;
 declare function sdkName(slug: string): string;
-declare function repoInfo(model: any): {
+declare function repoInfo(model: any, target?: string): {
     slug: any;
     origin: any;
     host: any;
@@ -18,6 +18,7 @@ declare function repoInfo(model: any): {
     releasesUrl: string;
     tagsUrl: string;
 };
+declare function releaseBranch(model: any): string;
 declare function docsSiteUrl(model: any): string;
 declare function goModule(model: any, target: string): string;
 declare function packageVersion(model: any, target: string): string;
@@ -40,6 +41,7 @@ declare function publisherInfo(model: any): {
     name: string;
     url: string;
     security: string;
+    official: boolean;
 };
 declare function isDefaultPublisher(model: any): boolean;
 declare function securityContact(model: any): string;
@@ -53,4 +55,4 @@ declare function contributorList(model: any): {
 }[];
 declare function envToken(name: any): string;
 declare function envName(model: any): string;
-export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, hasPackageName, installCommand, registryState, isPublished, registryName, registryLabel, vendorCommand, pkgDescription, tomlString, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };
+export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, releaseBranch, apiName, packageName, hasPackageName, installCommand, registryState, isPublished, registryName, registryLabel, vendorCommand, pkgDescription, tomlString, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };

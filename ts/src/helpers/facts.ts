@@ -188,9 +188,9 @@ function optionType(spec: any): string {
 }
 
 
-// A release tag is `<target>/v<version>`, but the one npm package this tree
-// publishes, or the npm package of the project's ts SDK, is tagged `v<version>`.
-// Only code can compare package names, so this is the pass's, not a rule's.
+// The tag before a version: `<prefix>/v`, else `v` for the tree's one npm
+// package or the ts SDK's, else `<target>/v`, and empty when switched off.
+// Only code compares package names, so this is the pass's, not a rule's.
 function releaseTags(model: any): void {
   const kit = model.main[KIT]
   const target = mapOr(kit.target)
@@ -204,7 +204,10 @@ function releaseTags(model: any): void {
 
   for (const name of Object.keys(target)) {
     if (isMap(target[name]?.fact)) {
-      target[name].fact.tag = primary(name) ? 'v' : name + '/v'
+      const tag = mapOr(target[name].publish?.tag)
+      const prefix = 'string' === typeof tag.prefix ? tag.prefix : ''
+      target[name].fact.tag = false === tag.active ? '' :
+        '' !== prefix ? prefix + '/v' : primary(name) ? 'v' : name + '/v'
     }
   }
 }

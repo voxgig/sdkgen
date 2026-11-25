@@ -164,6 +164,16 @@ describe('external target', () => {
   })
 
 
+  test('a target that names its own repository points its manifest and install text there', async () => {
+    const { outside } = await generate(['ts'], 'ts', "main: kit: target: ts: output: repo: 'acme/demo-ts'")
+    const pkg = JSON.parse(outside['package.json'])
+    for (const url of [pkg.repository?.url ?? pkg.repository, pkg.homepage, pkg.bugs?.url ?? pkg.bugs]) {
+      ok(String(url).includes('github.com/acme/demo-ts'), JSON.stringify(url))
+    }
+    ok(outside['README.md'].includes('github.com/acme/demo-ts'), 'the install text names the SDK repository')
+  })
+
+
   test('a relative output path resolves against the SDK project, not the CWD',
     async () => {
       const gen = setup(['go', 'go-cli'], { 'go-cli': REL })
