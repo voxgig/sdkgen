@@ -177,11 +177,6 @@ const DOC_PINS: { point: string, file: RegExp, note: RegExp, reason: string }[] 
     reason: 'S43, S44, S45 (WP14): a root document links the README or guide of a target that writes none',
   },
   {
-    point: 'doc-table-broken', file: /\/(README|REFERENCE)\.md$/, note: /`[^`]*\| null`/,
-    reason: 'New: a nullable field type prints as `T | null` in a field table, its pipe unescaped inside ' +
-      'the code span; the copy wave escapes these cells (WP33)',
-  },
-  {
     point: 'doc-link-dangling', file: /^README\.md$/, note: /^\.sdk\//,
     reason: 'The test stage has no `.sdk/def/`, which every project has',
   },
@@ -1019,10 +1014,12 @@ describe('generate', () => {
   })
 
 
-  test('a line break or a pipe in a field description warns of the table it breaks', async () => {
+  // A field's name is printed as the spec spells it, so a pipe in one is a
+  // table the check sees broken.
+  test('a pipe in a field name warns of the table it breaks', async () => {
     const warnings: any[] = []
     await generateWarning(['ts'], undefined,
-      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('Mean | radius\nin km'),
+      "main: kit: entity: planet: fields: 'a|b': { n: 'a|b', h: 'AB', r: false, t: '`$STRING`' }",
       undefined, undefined, undefined, warnings)
     const broken = warnings.filter((w: any) => 'doc-table-broken' === w.point)
     ok(broken.some((w: any) => 'ts/README.md' === w.file), JSON.stringify(warnings.map((w: any) => w.point)))
@@ -1030,10 +1027,11 @@ describe('generate', () => {
   })
 
 
+  // The project's own wording keeps its links; the spec's loses them.
   test('a link to nothing the run wrote warns, and an encoded URL does not', async () => {
     const warnings: any[] = []
     await generateWarning(['ts'], undefined, [
-      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('See [radius](radius.md).'),
+      'main: kit: text: entity_desc: planet: ' + JSON.stringify('See [radius](radius.md).'),
       "main: kit: info: website: 'https://example.com/a_(b)'",
     ].join('\n'), undefined, undefined, undefined, warnings)
     const dangling = warnings.filter((w: any) => 'doc-link-dangling' === w.point)
@@ -1467,6 +1465,25 @@ main: kit: target: js: phase: feature: active: false
         }
       })
   }
+
+
+  // A spec's field description is cell text, and a project's wording of an
+  // entity is what every target's entity section says.
+  test('every target escapes a field description and words an entity as the project does', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined,
+      'main: kit: entity: planet: fields: radius: sh: "In km | miles, $$name$$\\nor [see](guide.md)"\n' +
+      "main: kit: text: entity_desc: planet: 'A worded planet.'\n")
+    for (const target of targets) {
+      const docs = filesFor(out, target).filter(([file]) => file.endsWith('.md'))
+        .map(([, text]) => String(text)).join('\n')
+      ok(docs.includes('In km \\| miles, $&#36;name$&#36;<br>or see'), target + ': no escaped field description')
+      ok(!docs.includes('$$name$$') && !docs.includes('](guide.md)'), target + ': a raw field description')
+      for (const doc of ['README.md', 'REFERENCE.md']) {
+        ok(String(out[target + '/' + doc]).includes('A worded planet.'), target + '/' + doc + ': not the project\'s wording')
+      }
+    }
+  })
 
 
   // Every literal takes its auth block from configDefinition, which flags Basic

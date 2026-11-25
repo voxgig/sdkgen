@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, listMatchArg, matchExampleItems, litPair, litFor } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, listMatchArg, matchExampleItems, litPair, litFor, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -150,7 +150,7 @@ Only \`direct()\` returns a response envelope — a \`table\` with \`ok\`,
 | --- | --- |
 `)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 

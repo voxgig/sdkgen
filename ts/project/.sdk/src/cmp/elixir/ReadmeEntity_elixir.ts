@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opNeedsAction, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opNeedsAction, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -61,8 +61,8 @@ takes an entity handle built from the client:
 
 `)
 
-    if (entity.short) {
-      Content(`${entity.short}
+    if (fact(entity, 'desc').inline) {
+      Content(`${fact(entity, 'desc').inline}
 
 `)
     }
@@ -97,8 +97,8 @@ takes an entity handle built from the client:
 `)
 
       each(fields, (field: any) => {
-        const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'elixir')}\` | ${desc} |
+        const desc = fact(model.main[KIT], 'field')[entity.name]?.[field.n]?.desc.cell ?? ''
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'elixir').replace(/\|/g, '\\|')}\` | ${desc} |
 `)
       })
 
