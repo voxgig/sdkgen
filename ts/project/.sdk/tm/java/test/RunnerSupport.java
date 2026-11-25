@@ -2,7 +2,7 @@ package JAVAPACKAGE.sdktest;
 
 // Shared test-runner SUPPORT (vendor-tag rollout): env overrides, the
 // sdk-test-control.json skip machinery, live pacing, the
-// ../.sdk/test/test.json spec loader, ctx/entity conversion helpers, and
+// SDKREL/.sdk/test/test.json spec loader, ctx/entity conversion helpers, and
 // the canon/jsonStr comparison helpers the feature tests use. The corpus
 // ENGINE that used to live beside them (runset/matchDeep/matchString) is
 // retired: both corpora now run on the vendored omni runner through
@@ -243,7 +243,7 @@ public final class RunnerSupport {
       return cachedTestSpec;
     }
     try {
-      String data = Files.readString(Path.of("..", ".sdk", "test", "test.json"));
+      String data = Files.readString(Path.of("SDKREL", ".sdk", "test", "test.json"));
       cachedTestSpec = (Map<String, Object>) Json.parse(data);
     }
     catch (Exception e) {

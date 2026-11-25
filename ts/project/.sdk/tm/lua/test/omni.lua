@@ -12,7 +12,7 @@
 --
 -- 1. SPEC PATH. omni's own spec loading expects a usable path. A relative
 --    path is absolutized against THIS module's directory (test/), so the
---    existing '../../.sdk/test/test.json' constant keeps working verbatim
+--    existing '../SDKREL/.sdk/test/test.json' constant keeps working verbatim
 --    wherever the suite is run from.
 --
 -- 2. PROVIDER DELEGATION. Corpus-driven contexts get `ctx.client` set to

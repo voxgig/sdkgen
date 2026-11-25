@@ -425,7 +425,7 @@ describe('generate', () => {
         // map without the standard replacements — the generated SDK then names
         // itself "ProjectName" at runtime, or fails to compile outright. Every
         // offender is collected so one fix pass can clear them all.
-        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT/.test(content) &&
+        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT|SDKREL/.test(content) &&
           !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
           leaks.push(path)
         }
@@ -438,7 +438,7 @@ describe('generate', () => {
     }
 
     strictEqual(leaks.length, 0,
-      'generated files leak a ProjectName, PROJECTNAME or projectname placeholder:\n  ' +
+      'generated files leak a ProjectName, PROJECTNAME, projectname or SDKREL placeholder:\n  ' +
       leaks.join('\n  '))
     deepStrictEqual(undef, [], 'direct tests that name undefined')
   })
@@ -1749,7 +1749,7 @@ main: kit: target: js: phase: feature: active: false
       for (const [path, content] of files) {
         ok('string' === typeof content, target + ': ' + path + ' has no content')
 
-        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION']) {
+        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION', 'SDKREL']) {
           if (content.includes(token) &&
             !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
             leaks.push(path + ': ' + token)

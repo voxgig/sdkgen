@@ -160,7 +160,7 @@ function basicSetup(extra?: any) {
   // TODO: needs test utility to resolve path
   const entityDataFile =
     Path.resolve(__dirname, 
-      '../../../../.sdk/test/entity/${entity.name}/${nom(entity, 'Name')}TestData.json')
+      '../../../${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${nom(entity, 'Name')}TestData.json')
 
   // TODO: file ready util needed?
   const entityDataSource = Fs.readFileSync(entityDataFile).toString('utf8')

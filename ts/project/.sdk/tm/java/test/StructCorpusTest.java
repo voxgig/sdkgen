@@ -1,6 +1,6 @@
 package JAVAPACKAGE.sdktest;
 
-// Drives the shared struct corpus (../.sdk/test/test.json, root key
+// Drives the shared struct corpus (SDKREL/.sdk/test/test.json, root key
 // "struct") against the vendored struct utility THROUGH the vendored omni
 // runner (OmniResolver over test/vendor/omni) - the engine half of the
 // retired StructRunner. Mirrors the go target's struct_utility_test.go
@@ -31,7 +31,7 @@ import JAVAPACKAGE.utility.struct.Struct;
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class StructCorpusTest {
 
-  static final String TEST_JSON_FILE = "../.sdk/test/test.json";
+  static final String TEST_JSON_FILE = "SDKREL/.sdk/test/test.json";
 
   private static OmniResolver.Run RUN;
 

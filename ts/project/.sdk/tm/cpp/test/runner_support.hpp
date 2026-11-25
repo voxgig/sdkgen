@@ -1,6 +1,6 @@
 // ProjectName SDK — shared test runner SUPPORT (mirrors java
 // test/RunnerSupport.java): env overrides, sdk-test-control.json skips, the
-// ../.sdk/test/test.json loader, and Context construction from a test-entry
+// SDKREL/.sdk/test/test.json loader, and Context construction from a test-entry
 // ctx map.
 //
 // SUPPORT ONLY. The runset/match ENGINE that used to live here (and the
@@ -109,7 +109,7 @@ inline Value env_override(Value m) {
 inline Value& cached_spec() { static Value v = Value::undef(); return v; }
 inline Value load_test_spec() {
   if (cached_spec().is_undef()) {
-    std::string data = read_file("../.sdk/test/test.json");
+    std::string data = read_file("SDKREL/.sdk/test/test.json");
     cached_spec() = vs::parse_json(data);
   }
   return cached_spec();

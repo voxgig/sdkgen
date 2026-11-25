@@ -17,7 +17,7 @@
 ;; from the MIRRORED parity tier to FULL — a mirrored suite cannot notice a
 ;; corpus case that changed, or one that was added.
 
-(def ^:private CORPUS "../.sdk/test/test.json")
+(def ^:private CORPUS "SDKREL/.sdk/test/test.json")
 
 (defn- lower-headers [m]
   ;; Header names arrive in any case and the contract is lowercase; the SDK

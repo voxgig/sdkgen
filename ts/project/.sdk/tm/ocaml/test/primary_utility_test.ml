@@ -185,7 +185,7 @@ let rec auth_retarget (cred : auth_cred) (node : O.json) : O.json =
   | other -> other
 
 let () =
-  let testfile = if Array.length Sys.argv > 1 then Sys.argv.(1) else "../.sdk/test/test.json" in
+  let testfile = if Array.length Sys.argv > 1 then Sys.argv.(1) else "SDKREL/.sdk/test/test.json" in
   let r = R.make_run testfile "primary" in
 
   let cl = client () in

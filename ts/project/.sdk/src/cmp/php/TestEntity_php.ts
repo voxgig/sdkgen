@@ -327,7 +327,7 @@ ${liveExcludedLines(plan).map((line) =>
 {
     Runner::load_env_local();
 
-    $entity_data_file = __DIR__ . '/../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json';
+    $entity_data_file = __DIR__ . '/../${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${entity.Name}TestData.json';
     $entity_data_source = file_get_contents($entity_data_file);
     $entity_data = json_decode($entity_data_source, true);
 ${fixtureIdentity(entity)}

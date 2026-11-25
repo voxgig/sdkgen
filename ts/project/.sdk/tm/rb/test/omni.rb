@@ -10,7 +10,7 @@
 #
 # 1. SPEC PATH. omni's own spec resolution expects the caller to hand it
 #    a usable path. A relative path is absolutized against THIS file's
-#    directory (test/), so the existing '../../.sdk/test/test.json'
+#    directory (test/), so the existing '../SDKREL/.sdk/test/test.json'
 #    constant keeps working verbatim wherever the suite is run from.
 #
 # 2. PROVIDER DELEGATION. Corpus-driven contexts get `ctx.client` set to

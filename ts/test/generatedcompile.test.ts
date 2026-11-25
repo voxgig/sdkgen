@@ -368,6 +368,38 @@ async function generateTo(
 }
 
 
+// A target generated out of tree, with `sdkrel` its declared path back to the
+// project, written to root.
+async function generateAway(
+  target: string, root: string, sdkrel: string, features?: string[],
+): Promise<Record<string, string>> {
+  const { fs, vol } = memfs({})
+  const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+  const dest = '/away/' + target
+  const cwd = process.cwd()
+  process.chdir(SCAFFOLD)
+  try {
+    const res = await sdkgen.generate({ root: makeRoot(), model: makeModel([target], undefined,
+      `main: kit: target: '${target}': output: { path: '${dest}', sdkrel: '${sdkrel}' }`, features) })
+    strictEqual(res.ok, true, target + ': generation did not report ok')
+  }
+  finally {
+    process.chdir(cwd)
+  }
+
+  const out: Record<string, string> = {}
+  for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    const rel = path.split(Path.sep).join('/').replace(/^[A-Za-z]:/, '')
+    if (rel.startsWith(dest + '/') && !rel.includes('/.jostraca/')) {
+      out[rel.slice(dest.length + 1)] = content
+    }
+  }
+  ok(0 < Object.keys(out).length, 'nothing generated out of tree for ' + target)
+  materialise(out, root)
+  return out
+}
+
+
 // Several targets of one model, each in its own directory under root, as a
 // consumer target's `replace ../go` expects of the SDK it wraps.
 async function generateBeside(targets: string[], root: string, extra?: string): Promise<void> {
@@ -4724,6 +4756,72 @@ describe('auth null suppresses the credential', () => {
 })
 
 
+// Runs a lane's runner in a generated SDK whose corpus is in place, and reads
+// the line each section prints.
+function runCorpus(t: any, lane: CorpusLane, sdkroot: string, files: Record<string, string>) {
+  ok(null != files[lane.runner],
+    'the corpus runner was not generated into the SDK: expected ' +
+    lane.runner + ' among ' + Object.keys(files).length + ' files')
+
+  const cmd = lane.command()
+  if (null == cmd) {
+    return t.skip(
+      'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+  }
+
+  const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+  ok(null == notready, lane.target + ': ' + notready)
+
+  const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+  if (ran.unlaunchable) {
+    return t.skip(lane.target + ': the toolchain could not be started ' +
+      'here: ' + tail(ran.out, 3))
+  }
+
+  const gap = UNUSABLE.find((re) => re.test(ran.out))
+  if (null != gap && !ran.ok) {
+    return t.skip(lane.target + ': toolchain present but not usable (' +
+      gap.source + '):\n' + tail(ran.out))
+  }
+
+  ok(ran.ok, 'the feature corpus FAILED against the generated ' +
+    lane.target + ' SDK:\n' + tail(ran.out))
+
+  // Exit zero is not enough: every runner skips a feature the SDK was
+  // not generated with, and a fully-skipped suite exits zero in every
+  // one of these frameworks. Each runner prints how many cases it ran,
+  // in the same wording, precisely so this can read it - once per
+  // section, so a section that silently skips still fails.
+  for (const name of CORPUS_INERT) {
+    ok(inertLine(name).test(ran.out),
+      'the ' + lane.target + ' corpus runner did not say that ' +
+      'feature.' + name + ' is inert:\n' + tail(ran.out))
+  }
+
+  for (const name of Object.keys(CORPUS_FIXTURE.feature)) {
+    if (CORPUS_INERT.includes(name)) continue
+    const counted = ran.out.match(ranLine(name))
+    ok(null != counted,
+      'the ' + lane.target + ' corpus runner did not report running ' +
+      'feature.' + name + ' - it SKIPPED the section, so the generated ' +
+      'client is missing the feature or has no operation the cases can ' +
+      'drive:\n' + tail(ran.out))
+    ok(0 < Number(counted![1]),
+      'the ' + lane.target + ' corpus ran zero feature.' + name +
+      ' cases:\n' + tail(ran.out))
+  }
+
+  ok(SKIPPED_LINE.test(ran.out),
+    'the ' + lane.target + ' corpus runner did not skip, by name, a case ' +
+    'composing a feature the SDK does not generate:\n' + tail(ran.out))
+  const retry = ran.out.match(ranLine('retry'))!
+  ok(Number(retry[1]) < Number(retry[2]),
+    'the ' + lane.target + ' corpus runner counted the skipped case as run: ' +
+    retry[0])
+}
+
+
 describe('the feature corpus runs from a generated SDK', () => {
 
   let tmp = ''
@@ -4748,70 +4846,23 @@ describe('the feature corpus runs from a generated SDK', () => {
         const files = await generateTo(
           lane.target, sdkroot, undefined, CORPUS_FEATURES)
 
-        ok(null != files[lane.runner],
-          'the corpus runner was not generated into the SDK: expected ' +
-          lane.runner + ' among ' + Object.keys(files).length + ' files')
-
         writeCorpus(tmp)
-
-        const cmd = lane.command()
-        if (null == cmd) {
-          return t.skip(
-            'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
-        }
-
-        const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
-        ok(null == notready, lane.target + ': ' + notready)
-
-        const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
-
-        if (ran.unlaunchable) {
-          return t.skip(lane.target + ': the toolchain could not be started ' +
-            'here: ' + tail(ran.out, 3))
-        }
-
-        const gap = UNUSABLE.find((re) => re.test(ran.out))
-        if (null != gap && !ran.ok) {
-          return t.skip(lane.target + ': toolchain present but not usable (' +
-            gap.source + '):\n' + tail(ran.out))
-        }
-
-        ok(ran.ok, 'the feature corpus FAILED against the generated ' +
-          lane.target + ' SDK:\n' + tail(ran.out))
-
-        // Exit zero is not enough: every runner skips a feature the SDK was
-        // not generated with, and a fully-skipped suite exits zero in every
-        // one of these frameworks. Each runner prints how many cases it ran,
-        // in the same wording, precisely so this can read it - once per
-        // section, so a section that silently skips still fails.
-        for (const name of CORPUS_INERT) {
-          ok(inertLine(name).test(ran.out),
-            'the ' + lane.target + ' corpus runner did not say that ' +
-            'feature.' + name + ' is inert:\n' + tail(ran.out))
-        }
-
-        for (const name of Object.keys(CORPUS_FIXTURE.feature)) {
-          if (CORPUS_INERT.includes(name)) continue
-          const counted = ran.out.match(ranLine(name))
-          ok(null != counted,
-            'the ' + lane.target + ' corpus runner did not report running ' +
-            'feature.' + name + ' - it SKIPPED the section, so the generated ' +
-            'client is missing the feature or has no operation the cases can ' +
-            'drive:\n' + tail(ran.out))
-          ok(0 < Number(counted![1]),
-            'the ' + lane.target + ' corpus ran zero feature.' + name +
-            ' cases:\n' + tail(ran.out))
-        }
-
-        ok(SKIPPED_LINE.test(ran.out),
-          'the ' + lane.target + ' corpus runner did not skip, by name, a case ' +
-          'composing a feature the SDK does not generate:\n' + tail(ran.out))
-        const retry = ran.out.match(ranLine('retry'))!
-        ok(Number(retry[1]) < Number(retry[2]),
-          'the ' + lane.target + ' corpus runner counted the skipped case as run: ' +
-          retry[0])
+        return runCorpus(t, lane, sdkroot, files)
       })
   }
+
+
+  // Out of tree the runner reaches the corpus through the declared path back.
+  test('ts generated out of tree: the feature corpus executes against the generated client',
+    async (t) => {
+      const lane = CORPUS_LANES.find((l) => 'ts' === l.target)!
+      const away = Path.join(tmp, 'away')
+      const sdkroot = Path.join(away, 'ts')
+      const files = await generateAway('ts', sdkroot, '../project', CORPUS_FEATURES)
+
+      writeCorpus(Path.join(away, 'project'))
+      return runCorpus(t, lane, sdkroot, files)
+    })
 
 
 })

@@ -27,16 +27,16 @@ test:
 	scala-cli run . --main-class SdkServerTestMain
 	scala-cli run . --main-class SdkConcurrencyTestMain
 	scala-cli run . --main-class SecretsTestMain
-	scala-cli run . --main-class Runner -- ../.sdk/test/test.json
-	scala-cli run . --main-class PrimaryCorpusMain -- ../.sdk/test/test.json
+	scala-cli run . --main-class Runner -- SDKREL/.sdk/test/test.json
+	scala-cli run . --main-class PrimaryCorpusMain -- SDKREL/.sdk/test/test.json
 
 # The vendored omni engine alone: proves the corpus runner can still fail.
 smoke:
 	scala-cli run . --main-class OmniSmoke
 
 corpus:
-	scala-cli run . --main-class Runner -- ../.sdk/test/test.json
-	scala-cli run . --main-class PrimaryCorpusMain -- ../.sdk/test/test.json
+	scala-cli run . --main-class Runner -- SDKREL/.sdk/test/test.json
+	scala-cli run . --main-class PrimaryCorpusMain -- SDKREL/.sdk/test/test.json
 
 # "Lint": a clean compile means the code type-checks.
 lint:

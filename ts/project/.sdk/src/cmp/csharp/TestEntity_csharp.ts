@@ -362,7 +362,7 @@ ${liveExcludedLines(plan).map((line) => '            Console.WriteLine(' + forma
         TestRunner.LoadEnvLocal();
 
         var entityDataFile = Path.Combine(TestRunner.TestDir(),
-            "..", "..", ".sdk", "test", "entity", "${entity.name}",
+            "..", "${ctx$.stdrep.SDKREL}", ".sdk", "test", "entity", "${entity.name}",
             "${entity.Name}TestData.json");
 
         var entityDataEl = JsonSerializer.Deserialize<JsonElement>(

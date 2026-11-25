@@ -282,7 +282,7 @@ ${liveExcludedLines(plan).map((line) => '    note(' + perlLit(line) + ');\n').jo
   ${N}TestRunner::load_env_local();
 
   my $entity_data_file = Cwd::abs_path(
-    "$FindBin::Bin/../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json");
+    "$FindBin::Bin/../${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${entity.Name}TestData.json");
   my $entity_data = do {
     open my $fh, '<:raw', $entity_data_file or die "Cannot open $entity_data_file: $!";
     local $/;

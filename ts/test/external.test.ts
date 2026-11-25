@@ -7,7 +7,7 @@ import Path from 'node:path'
 
 import { memfs } from 'memfs'
 
-import { SdkGen, registerComponent } from '../dist/sdkgen.js'
+import { SdkGen, fact, registerComponent } from '../dist/sdkgen.js'
 
 import { makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD } from './generateharness'
 
@@ -17,6 +17,11 @@ const OUT = '/elsewhere/acme-cli'
 const OUT2 = '/elsewhere/acme-sdk'
 
 const REL = '../elsewhere/rel-cli'
+
+
+// The in-tree walk from a target back to the project's `.sdk`: `../.sdk`,
+// `"..", ".sdk"`, or `push("..")` then `push(".sdk")`.
+const IN_TREE_BACK = /\.\.(?:\/|["'],\s*["']|["']\);\s*\w+\.push\(["'])\.sdk\b/
 
 
 const norm = (path: string) =>
@@ -648,6 +653,37 @@ describe('external target', () => {
       const warn = sink.find((e: any) => 'external-sdkrel-derived' === e.point)
       strictEqual(warn, undefined,
         'a destination one level from the SDK project should derive cleanly')
+    })
+
+
+    // Outside its documents, a target generated out of tree is the target
+    // generated in tree, but for the path back, which every reader of the
+    // project's `.sdk` and `.env.local` takes from the run.
+    test('every SDK target reads the project through its declared path back', async () => {
+      const all = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'target'))
+        .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+        .map((f: string) => f.replace(/\.aontu$/, ''))
+      const kit = makeModel(all).main.kit
+      const sdks = all.filter((t: string) => 'sdk' === fact(kit.target[t], 'surface'))
+      ok(15 < sdks.length, 'expected every bundled SDK target: ' + sdks.join(', '))
+
+      const code = (tree: Record<string, string>) => Object.keys(tree)
+        .filter((path: string) => !path.endsWith('.md')).sort()
+
+      for (const t of sdks) {
+        const tree = under((await generate([t], {})).inside, t)
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+
+        deepStrictEqual(code(away), code(tree), t + ': out of tree writes other files')
+        const differ = code(tree).filter((path: string) =>
+          away[path].split('../../zzproj').join('..') !== tree[path])
+        deepStrictEqual(differ, [], t + ': these differ from the in-tree files by more than the path back')
+        ok(code(away).some((path: string) => away[path].includes('zzproj')),
+          t + ': no file names the declared path back')
+        deepStrictEqual(code(away).filter((path: string) => IN_TREE_BACK.test(away[path])), [],
+          t + ': these still walk back to the project as they do in tree')
+      }
     })
 
 

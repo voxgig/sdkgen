@@ -844,6 +844,24 @@ describe('doctor: the copy floor', () => {
   })
 
 
+  // A kept copy that walks back to the project by a literal path differs from
+  // the template, which takes SDKREL from the run.
+  test('a template kept with the in-tree path back is outdated', async () => {
+    const project = await addedTs()
+    const rel = 'tm/ts/test/utility/index.ts'
+    const older = read(project, rel)
+      .replace("'../SDKREL/.sdk/test/test.json'", "'../../.sdk/test/test.json'")
+    ok(older !== read(project, rel), 'the copy does not read the path back from the run')
+    write(project, rel, older)
+    project.fs.appendFileSync(ROOT + '/' + COPY_LOG, JSON.stringify({
+      op: 'add', items: { 'target/ts': { package: '@voxgig/sdkgen', version: COPY_FLOOR } },
+      files: { [rel]: fingerprint(older) },
+    }) + '\n')
+
+    deepStrictEqual((await check(project)).outdated, [rel])
+  })
+
+
   test('an included model file that does not compile is named', async () => {
     const project = await addedTs()
     write(project, 'model/target/ts.aontu',

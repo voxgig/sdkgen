@@ -32,7 +32,7 @@ pub fn read_json(path: &PathBuf) -> Value {
 
 pub fn load_test_spec() -> Value {
     let mut p = manifest_dir();
-    p.push("..");
+    p.push("SDKREL");
     p.push(".sdk");
     p.push("test");
     p.push("test.json");

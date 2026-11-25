@@ -351,7 +351,7 @@ ${liveExcludedLines(plan).map((line) => '      System.out.println(' + javaLit(li
     Map<String, Object> entityData;
     try {
       String entityDataSource = Files.readString(Path.of(
-          "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json"));
+          "${ctx$.stdrep.SDKREL}", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json"));
       entityData = Helpers.toMapAny(Json.parse(entityDataSource));
     }
     catch (Exception e) {

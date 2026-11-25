@@ -2,7 +2,7 @@ package KOTLINPACKAGE.sdktest
 
 // Shared test-runner SUPPORT (vendor-tag rollout): env overrides, the
 // sdk-test-control.json skip machinery, live pacing, the
-// ../.sdk/test/test.json spec loader, ctx/entity conversion helpers, and
+// SDKREL/.sdk/test/test.json spec loader, ctx/entity conversion helpers, and
 // the canon comparison helper the feature tests use. The corpus ENGINE
 // that used to live beside them (runset/matchDeep/matchString) is
 // retired: both corpora now run on the vendored omni runner through
@@ -172,7 +172,7 @@ object RunnerSupport {
       return cached
     }
     val result = try {
-      val data = Files.readString(Paths.get("..", ".sdk", "test", "test.json"))
+      val data = Files.readString(Paths.get("SDKREL", ".sdk", "test", "test.json"))
       Json.parse(data) as Map<String, Any?>
     } catch (e: Exception) {
       throw AssertionError("Failed to load test.json: " + e.message, e)

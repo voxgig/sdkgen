@@ -1,5 +1,5 @@
 // Primary utility test suite - drives every utility on the client utility
-// object against the shared corpus in ../../.sdk/test/test.json ("primary"
+// object against the shared corpus in ../SDKREL/.sdk/test/test.json ("primary"
 // section) through the VENDORED omni runner (OmniResolver over
 // test/vendor/omni), plus direct checks. C# twin of
 // tm/go/test/primary_utility_test.go.

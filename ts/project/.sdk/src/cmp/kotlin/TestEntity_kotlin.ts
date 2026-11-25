@@ -313,7 +313,7 @@ ${liveExcludedLines(plan).map((line) => '      println(' + kotlinLit(line) + ')\
       val entityData: MutableMap<String, Any?>
       try {
         val entityDataSource = Files.readString(Paths.get(
-            "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json"))
+            "${ctx$.stdrep.SDKREL}", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json"))
         entityData = Helpers.toMapAny(Json.parse(entityDataSource)) ?: linkedMapOf()
       } catch (e: Exception) {
         throw AssertionError("failed to read ${entity.name} test data: " + e.message, e)

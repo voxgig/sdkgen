@@ -386,7 +386,7 @@ inline std::shared_ptr<::omni::Provider> sdk_provider(std::shared_ptr<ProjectNam
 /**
  * Make a runner for a spec FILE. The path is resolved by omni against the
  * process working directory; cpp test binaries run from the SDK root as
- * `./test/x.out`, so the "../.sdk/test/test.json" constant the suites
+ * `./test/x.out`, so the "SDKREL/.sdk/test/test.json" constant the suites
  * already use carries over unchanged.
  */
 inline NamedRunner makeRunner(const std::string& path, std::shared_ptr<ProjectNameSDK> client) {

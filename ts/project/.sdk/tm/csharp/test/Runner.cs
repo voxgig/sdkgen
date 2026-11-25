@@ -1,6 +1,6 @@
 // ProjectName SDK test-runner SUPPORT (vendor-tag rollout): env overrides,
 // the sdk-test-control.json skip machinery, live pacing, the
-// ../../.sdk/test/test.json spec loader, and ctx/entity conversion
+// ../SDKREL/.sdk/test/test.json spec loader, and ctx/entity conversion
 // helpers. The corpus ENGINE that used to live beside them
 // (RunSet/MatchDeep/MatchString) is retired: both corpora now run on the
 // vendored omni runner through OmniResolver.cs. The class names are
@@ -44,11 +44,11 @@ public static class StructRunner
         => Path.GetDirectoryName(path)!;
 
     // The shared SDK test spec lives at <sdk-project>/.sdk/test/test.json,
-    // i.e. ../../.sdk/test/test.json relative to this test folder.
+    // i.e. ../SDKREL/.sdk/test/test.json relative to this test folder.
     public static string TestJsonPath()
     {
         return Path.GetFullPath(
-            Path.Combine(SourceDir(), "..", "..", ".sdk", "test", "test.json"));
+            Path.Combine(SourceDir(), "..", "SDKREL", ".sdk", "test", "test.json"));
     }
 
     // Convert a JsonElement tree into native C# types.

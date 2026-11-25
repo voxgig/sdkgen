@@ -12,7 +12,7 @@
 #
 # 1. SPEC PATH. omni's own spec resolution expects the caller to hand it a
 #    usable path. A relative path is absolutized against THIS file's
-#    directory (t/), so the existing '../../.sdk/test/test.json' constant
+#    directory (t/), so the existing '../SDKREL/.sdk/test/test.json' constant
 #    keeps working verbatim wherever the suite is run from.
 #
 # 2. TWO VALUE MODELS. omni-perl and this SDK's vendored struct model JSON

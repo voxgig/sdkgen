@@ -214,7 +214,7 @@ func loadTestSpec(t *testing.T) map[string]any {
 	if cachedTestSpec != nil {
 		return cachedTestSpec
 	}
-	data, err := os.ReadFile("../../.sdk/test/test.json")
+	data, err := os.ReadFile("../SDKREL/.sdk/test/test.json")
 	if err != nil {
 		t.Fatalf("Failed to load test.json: %v", err)
 	}

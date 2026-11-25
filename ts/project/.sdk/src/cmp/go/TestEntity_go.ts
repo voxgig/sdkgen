@@ -302,7 +302,7 @@ ${liveExcludedLines(plan).map((line) => '\t\t\tt.Log(' + JSON.stringify(line) + 
 	_, filename, _, _ := runtime.Caller(0)
 	dir := filepath.Dir(filename)
 
-	entityDataFile := filepath.Join(dir, "..", "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json")
+	entityDataFile := filepath.Join(dir, "..", "${ctx$.stdrep.SDKREL}", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json")
 
 	entityDataSource, err := os.ReadFile(entityDataFile)
 	if err != nil {
