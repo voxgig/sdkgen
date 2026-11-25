@@ -55,6 +55,9 @@ import { compareVersions } from '../helpers/semver'
 
 import { isTypeScript, missingExports } from '../helpers/exportnames'
 
+import { untestedTargets } from '../helpers/targetguard'
+import type { BrokenTarget } from '../helpers/targetguard'
+
 
 const IGNORED_RE = /(~|-jostraca-off)$/
 
@@ -115,6 +118,10 @@ type DoctorReport = {
   // it is what an alias is FOR.
   aliasedDiff: string[]
 
+  // Of those, a file lacking slots its origin's file declares. An add keeps
+  // the file, so a slot added since never reaches it. Informational.
+  aliasedBehind: { file: string, slots: string[] }[]
+
   // Differs from its source, but the copy record shows it untouched since an
   // add wrote it: the source moved on, so refreshing it discards nothing.
   outdated: string[]
@@ -150,6 +157,10 @@ type DoctorReport = {
 
   // `.sdk/.gitignore` hides the copy record from git. Informational.
   ignoredLog: boolean
+
+  // Active SDK targets the model gives no active `test` feature, which
+  // generate refuses.
+  untested: string[]
 
   ok: boolean
 }
@@ -349,13 +360,14 @@ async function doctor(
   const report: DoctorReport = {
     forked: [], edited: [], stale: [], missing: [], additive: [],
     superseded: [], unwired: [], orphanModel: [],
-    resyncPending: [], aliasedDiff: [],
+    resyncPending: [], aliasedDiff: [], aliasedBehind: [],
     outdated: [], ahead: [], unrecorded: [], customized: [], unfolded: [],
     belowFloor: [], unreadable: [], unresolved: [], byItem: {},
-    ignoredLog: false, ok: true,
+    ignoredLog: false, untested: [], ok: true,
   }
 
   const copies = readCopies(fs, root)
+  const untested: BrokenTarget[] = []
 
   report.ignoredLog = ignoredLog(fs, root)
   if (report.ignoredLog) {
@@ -436,6 +448,13 @@ async function doctor(
 
   if (null == scope) {
     checkWiring(actx, report)
+
+    // Only a prepared model has the facts to judge by; resolveModel prepares
+    // every action's.
+    if (null != (model as any)?.main?.[KIT]?.fact) {
+      untested.push(...untestedTargets(model))
+      report.untested = untested.map((b: BrokenTarget) => b.target)
+    }
   }
 
   // orphanModel counts, and `unwired` does not. Not skipping a root
@@ -447,7 +466,7 @@ async function doctor(
     report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
     report.orphanModel.length + report.outdated.length + report.ahead.length +
     report.unfolded.length + report.belowFloor.length +
-    report.unreadable.length + report.unresolved.length
+    report.unreadable.length + report.unresolved.length + report.untested.length
 
   const customized = new Set(report.customized)
   const unmergeable = MERGE === projectCopyMode(actx) ? new Set(report.unrecorded) : new Set()
@@ -479,11 +498,23 @@ async function doctor(
     }
   }
 
+  for (const b of untested) {
+    log.info({ point: 'doctor-finding', kind: 'untested', target: b.target, note: 'UNTESTED: ' + b.note })
+  }
+
   for (const { file, item, error, oldSyntax } of report.unreadable) {
     log.info({
       point: 'doctor-finding', kind: 'unreadable', file, error,
       note: 'UNREADABLE: ' + file + ' does not compile (' + error + '), so the ' +
         'model leaves ' + item.replace('/', ' ') + ' out. ' + unreadableRemedy(item, oldSyntax)
+    })
+  }
+
+  for (const { file, slots } of report.aliasedBehind) {
+    log.info({
+      point: 'doctor-finding', kind: 'aliasedBehind', file, slots,
+      note: 'ALIASED BEHIND (lacks ' + slots.join(', ') + ', which its origin declares; ' +
+        'an add keeps this file, so copy them in by hand): ' + file
     })
   }
 
@@ -543,12 +574,14 @@ async function doctor(
     orphanModel: report.orphanModel.length,
     resyncPending: report.resyncPending.length,
     aliasedDiff: report.aliasedDiff.length,
+    aliasedBehind: report.aliasedBehind.length,
     outdated: report.outdated.length,
     ahead: report.ahead.length,
     unfolded: report.unfolded.length,
     belowFloor: report.belowFloor.length,
     unreadable: report.unreadable.length,
     unresolved: report.unresolved.length,
+    untested: report.untested.length,
     customized: report.customized.length,
     note: report.ok ?
       ('.sdk matches the scaffold (' + report.additive.length + ' additive, ' +
@@ -559,7 +592,7 @@ async function doctor(
         ' outdated, ' + report.ahead.length + ' ahead, ' +
         report.unfolded.length + ' unfolded, ' + report.belowFloor.length +
         ' below the floor, ' + report.unreadable.length + ' unreadable, ' +
-        report.unresolved.length + ' unresolved')
+        report.unresolved.length + ' unresolved, ' + report.untested.length + ' untested')
   })
 
   return { report }
@@ -997,6 +1030,10 @@ function checkItemModel(
 
   if (aliased) {
     report.aliasedDiff.push(label)
+    const slots = slotsBehind(fs, kind, scaffold, origname, project, name)
+    if (0 < slots.length) {
+      report.aliasedBehind.push({ file: label, slots })
+    }
     return
   }
 
@@ -1006,6 +1043,27 @@ function checkItemModel(
   }
 
   found('forked', label)
+}
+
+
+const PROVENANCE_SLOTS = ['base', 'origname', 'package']
+
+// The slots the origin's model file declares that the alias's own file lacks.
+function slotsBehind(
+  fs: any, kind: string, scaffold: string, origname: string, project: string, name: string,
+): string[] {
+  const block = (path: string, key: string): Record<string, any> | undefined => {
+    const text = migrateIncludes(String(fs.readFileSync(path, 'utf8')))
+    const compiled = compileModel(text, path, { strict: false })
+    return 0 === compiled.errors.length ? kindCollection(compiled.model, kind)[key] : undefined
+  }
+  const origin = block(scaffold, origname)
+  const alias = block(project, name)
+  if (null == origin || null == alias) {
+    return []
+  }
+  return Object.keys(origin)
+    .filter((slot: string) => !PROVENANCE_SLOTS.includes(slot) && !(slot in alias)).sort()
 }
 
 

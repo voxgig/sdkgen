@@ -6,6 +6,7 @@ import { KIT, getModelPath } from '@voxgig/apidef'
 
 import { definitionPathAny, migrateIncludes } from './definition'
 import { scaffoldFolder } from './shipped'
+import { resolvesBundled } from '../action/resolve'
 
 
 function tags(val: any): string[] {
@@ -29,9 +30,22 @@ function featureApplies(feature: any, target: any): boolean {
     return true
   }
 
-  const provides = tags(target && target.provides)
+  const provides = providedBy(target)
 
   return needs.every((need: string) => provides.includes(need))
+}
+
+
+// An add keeps an alias's own model file, so one that declares no `provides`
+// takes its origin's.
+function providedBy(target: any): string[] {
+  const own = target?.provides
+  const origin = target?.origname
+  if ((null != own && 0 < Object.keys(own).length) || 'string' !== typeof origin ||
+    '' === origin || origin === target.name || !resolvesBundled(target, target.name)) {
+    return tags(own)
+  }
+  return shippedProvides(origin)
 }
 
 
@@ -96,6 +110,7 @@ function unknownTags(val: any): string[] {
 
 export {
   featureApplies,
+  providedBy,
   shippedProvides,
   targetFeatures,
   tags as featureTags,

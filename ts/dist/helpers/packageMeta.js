@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LANG_LABEL = exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = void 0;
+exports.langLabel = exports.LANG_LABEL = exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = void 0;
 exports.sdkName = sdkName;
-exports.langLabel = langLabel;
 exports.originName = originName;
 exports.repoInfo = repoInfo;
+exports.releaseBranch = releaseBranch;
 exports.apiName = apiName;
 exports.packageName = packageName;
 exports.hasPackageName = hasPackageName;
@@ -12,6 +12,7 @@ exports.installCommand = installCommand;
 exports.registryState = registryState;
 exports.isPublished = isPublished;
 exports.registryName = registryName;
+exports.registryLabel = registryLabel;
 exports.vendorCommand = vendorCommand;
 exports.pkgDescription = pkgDescription;
 exports.tomlString = tomlString;
@@ -31,9 +32,12 @@ exports.packageVersion = packageVersion;
 exports.docsSiteUrl = docsSiteUrl;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
-const alongside_1 = require("./alongside");
+const surface_1 = require("./surface");
+const facts_1 = require("./facts");
 const kindCollection_1 = require("./kindCollection");
-const text_1 = require("./text");
+const title_1 = require("./title");
+Object.defineProperty(exports, "LANG_LABEL", { enumerable: true, get: function () { return title_1.LANG_LABEL; } });
+Object.defineProperty(exports, "langLabel", { enumerable: true, get: function () { return title_1.langLabel; } });
 const PUBLISHER = 'Voxgig';
 exports.PUBLISHER = PUBLISHER;
 const PUBLISHER_URL = 'https://voxgig.com';
@@ -42,22 +46,6 @@ const SECURITY_EMAIL = 'security@voxgig.com';
 exports.SECURITY_EMAIL = SECURITY_EMAIL;
 const GENERATOR_URL = 'https://github.com/voxgig/sdkgen';
 exports.GENERATOR_URL = GENERATOR_URL;
-const LANG_LABEL = {
-    ts: 'TypeScript',
-    js: 'JavaScript',
-    py: 'Python',
-    php: 'PHP',
-    rb: 'Ruby',
-    lua: 'Lua',
-    go: 'Go',
-    'go-cli': 'Go CLI',
-    'go-mcp': 'Go MCP server',
-    'py-data': 'Python Data',
-};
-exports.LANG_LABEL = LANG_LABEL;
-function langLabel(target) {
-    return LANG_LABEL[target] || target;
-}
 function originName(model, target) {
     const orig = model?.main?.[apidef_1.KIT]?.target?.[target]?.origname;
     return (null != orig && '' !== orig) ? String(orig) : target;
@@ -65,16 +53,18 @@ function originName(model, target) {
 function sdkName(slug) {
     return slug.endsWith('-sdk') ? slug : `${slug}-sdk`;
 }
-function repoInfo(model) {
+function repoInfo(model, target) {
     const slug = model.name;
     const origin = model.origin || 'voxgig-sdk';
     const declared = (model && model.main && model.main[apidef_1.KIT] && model.main[apidef_1.KIT].repo) || {};
+    const targetRepo = null == target ? '' : model?.main?.[apidef_1.KIT]?.target?.[target]?.output?.repo;
     const host = '' === (declared.host || '') ? 'github.com' : (declared.host || 'github.com');
-    const path = '' === (declared.path || '') ? `${origin}/${sdkName(slug)}` : String(declared.path);
+    const path = null != targetRepo && '' !== targetRepo ? String(targetRepo) :
+        '' === (declared.path || '') ? `${origin}/${sdkName(slug)}` : String(declared.path);
     const seg = path.split('/');
     const repo = seg[seg.length - 1];
     const repoUrl = `https://${host}/${path}`;
-    const pages = repoPages(host, repoUrl);
+    const pages = repoPages(host, repoUrl, releaseBranch(model));
     return {
         slug,
         origin,
@@ -91,12 +81,12 @@ function repoInfo(model) {
 }
 // GitLab keeps a project's pages under `/-/`, and Bitbucket lists its tags
 // among its downloads; any other host is laid out as GitHub is.
-function repoPages(host, repoUrl) {
+function repoPages(host, repoUrl, branch) {
     if (host.includes('gitlab')) {
         return {
             name: 'GitLab',
             issues: `${repoUrl}/-/issues`,
-            changelog: `${repoUrl}/-/blob/main/CHANGELOG.md`,
+            changelog: `${repoUrl}/-/blob/${branch}/CHANGELOG.md`,
             releases: `${repoUrl}/-/releases`,
             tags: `${repoUrl}/-/tags`,
         };
@@ -105,7 +95,7 @@ function repoPages(host, repoUrl) {
         return {
             name: 'Bitbucket',
             issues: `${repoUrl}/issues`,
-            changelog: `${repoUrl}/src/main/CHANGELOG.md`,
+            changelog: `${repoUrl}/src/${branch}/CHANGELOG.md`,
             releases: `${repoUrl}/downloads/?tab=tags`,
             tags: `${repoUrl}/downloads/?tab=tags`,
         };
@@ -113,10 +103,14 @@ function repoPages(host, repoUrl) {
     return {
         name: host.includes('github') ? 'GitHub' : host,
         issues: `${repoUrl}/issues`,
-        changelog: `${repoUrl}/blob/main/CHANGELOG.md`,
+        changelog: `${repoUrl}/blob/${branch}/CHANGELOG.md`,
         releases: `${repoUrl}/releases`,
         tags: `${repoUrl}/tags`,
     };
+}
+function releaseBranch(model) {
+    const branch = model?.main?.[apidef_1.KIT]?.doc?.ci?.branch;
+    return 'string' === typeof branch && '' !== branch ? branch : 'main';
 }
 function docsSiteUrl(model) {
     const { host, path } = repoInfo(model);
@@ -169,11 +163,8 @@ function goPackageIdent(model, target) {
 }
 // A registry named `none` is no registry: c, cpp and zig declare it.
 function registryState(model, target) {
-    const eco = originName(model, target);
-    if ('go' === eco || 'go-cli' === eco || 'go-mcp' === eco)
-        return 'tag';
     const reg = model?.main?.[apidef_1.KIT]?.target?.[target]?.publish?.registry;
-    if (null == reg || '' === registryName(model, target))
+    if (null == reg || '' === registryName(model, target) || goFamily(model, target))
         return 'tag';
     if (true === reg.active)
         return 'active';
@@ -182,18 +173,41 @@ function registryState(model, target) {
         return s;
     return 'pending';
 }
-// True only when the package is actually live on its registry (so a README
-// may print the real `npm install`/`pip install`/... command). Everything
-// else — pending, inactive, tag-only — installs from the git tag instead.
+// Only a package live on its registry gets a registry install command; any
+// other installs from the git tag.
 function isPublished(model, target) {
     return 'active' === registryState(model, target);
 }
-// The registry a target uploads to (npm | pypi | packagist | ...), or ''
-// for tag-only ports. Used in the "not yet on <registry>" pending message.
+// Go installs from its git tag whatever the registry, as does a target built on it.
+function goFamily(model, target) {
+    if ('go' === originName(model, target))
+        return true;
+    const wraps = (0, facts_1.fact)(model.main[apidef_1.KIT].target[target], 'consumes');
+    return '' !== wraps && 'go' === originName(model, wraps);
+}
+// The registry a target uploads to (npm | pypi | packagist | ...), or '' for a tag-only port.
 function registryName(model, target) {
     const reg = model?.main?.[apidef_1.KIT]?.target?.[target]?.publish?.registry;
     const name = (reg && reg.name) ? String(reg.name) : '';
     return 'none' === name ? '' : name;
+}
+const REGISTRY_LABEL = {
+    npm: 'npm',
+    pypi: 'PyPI',
+    packagist: 'Packagist',
+    rubygems: 'RubyGems',
+    luarocks: 'LuaRocks',
+    'crates.io': 'crates.io',
+    nuget: 'NuGet',
+    'maven-central': 'Maven Central',
+    clojars: 'Clojars',
+    hex: 'Hex',
+    cpan: 'CPAN',
+    opam: 'opam',
+    swiftpm: 'Swift Package Manager',
+};
+function registryLabel(name) {
+    return REGISTRY_LABEL[name] || name;
 }
 // The install route for a target not on a registry: `go get <module>@latest`
 // for go, resolved by the proxy from the `go/vX.Y.Z` tag. go-cli, go-mcp and a
@@ -220,10 +234,10 @@ function vendorCommand(model, target) {
         }
     }
 }
+// The API's name fact without a trailing "API", for "the <name> public API".
 function apiName(model) {
-    const info = (0, text_1.modelText)(model);
-    const raw = (null != info.title ? String(info.title) : '').trim();
-    const stripped = raw.replace(/\s*API\s*$/i, '').trim();
+    const stripped = String((0, facts_1.fact)(model.main[apidef_1.KIT], 'apiName').raw).trim()
+        .replace(/\s*API\s*$/i, '').trim();
     return stripped || (0, apidef_1.nom)(model, 'Name') || model.name;
 }
 function packageName(model, eco) {
@@ -277,7 +291,7 @@ function packageName(model, eco) {
 const NAMED_CONSUMERS = ['go-cli', 'go-mcp', 'py-data'];
 function hasPackageName(model, target) {
     const declared = model?.main?.[apidef_1.KIT]?.target?.[target];
-    if (!(0, alongside_1.isConsumer)(declared)) {
+    if ('sdk' === (0, surface_1.surfaceOf)(declared)) {
         return true;
     }
     const pkg = declared?.publish?.registry?.package;
@@ -324,9 +338,12 @@ function installCommand(model, target) {
     }
 }
 function pkgDescription(model, target) {
-    return `Unofficial generated ${langLabel(originName(model, target))} SDK` +
-        ` for the ${apiName(model)} public API.` +
-        ` Not affiliated with or endorsed by the upstream API provider.`;
+    const what = (0, surface_1.surfaceName)(model.main[apidef_1.KIT].target[target]);
+    return publisherInfo(model).official ?
+        `Generated ${what} for the ${apiName(model)} API.` :
+        `Unofficial generated ${what}` +
+            ` for the ${apiName(model)} public API.` +
+            ` Not affiliated with or endorsed by the upstream API provider.`;
 }
 // JSON's string escapes are all TOML's; TOML also refuses a raw DEL.
 function tomlString(s) {
@@ -336,9 +353,13 @@ function tomlString(s) {
 // SECURITY.md. Generic on the upstream owner (owner names are only ~45%
 // reliably known across the fleet).
 function nonAffiliation(model) {
-    return `This is an unofficial SDK for the ${apiName(model)} public API, generated by ` +
-        `${publisherInfo(model).name} with [\`@voxgig/sdkgen\`](${GENERATOR_URL}). ` +
-        `It is not affiliated with, endorsed by, or sponsored by the upstream API provider.`;
+    const { name, official } = publisherInfo(model);
+    return official ?
+        `This SDK for the ${apiName(model)} API is generated by ${name} with ` +
+            `[\`@voxgig/sdkgen\`](${GENERATOR_URL}).` :
+        `This is an unofficial SDK for the ${apiName(model)} public API, generated by ` +
+            `${name} with [\`@voxgig/sdkgen\`](${GENERATOR_URL}). ` +
+            `It is not affiliated with, endorsed by, or sponsored by the upstream API provider.`;
 }
 function keywords(model) {
     return [...(isDefaultPublisher(model) ? ['voxgig'] : []),
@@ -356,6 +377,7 @@ function publisherInfo(model) {
         name,
         url: declaredText(declared.url) || (own ? PUBLISHER_URL : ''),
         security: declaredText(declared.security) || (own ? SECURITY_EMAIL : ''),
+        official: true === declared.official,
     };
 }
 function isDefaultPublisher(model) {

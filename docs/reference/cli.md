@@ -138,7 +138,7 @@ voxgig-sdkgen doctor
 It compares the three things `target add` copies:
 `.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
 
-Thirteen categories:
+Fourteen categories:
 
 | Category | Meaning |
 | --- | --- |
@@ -153,10 +153,11 @@ Thirteen categories:
 | **below the floor** | The copy record dates an item's copies from before 4.23.0, the oldest release whose copies the generator builds. Commit, then run `target add <t> --force`. |
 | **unreadable** | A copied model file that does not compile, so the model leaves its item out without an error. Model files copied before 1.3.18 use `//` comments, which the compiler does not read. Commit, then run `target add <t> --force`. |
 | **unresolved** | A declared target, feature or edition whose source is not installed, so its copies cannot be compared. Install the package it names. Until then its files are not reported as stale, and `target add` keeps an active feature's files rather than pruning them. |
+| **untested** | An active SDK target in a model with no active `test` feature, which its generated tests and test mode need. `generate` refuses the model; `target add <t>` installs the feature. |
 | **additive** | A project-owned component the scaffold never shipped. Reported, never a failure — this is the supported way to extend a target (see `registerComponent`). |
 | **unwired** | A root-level component this sdkgen provides that the project's `src/*.ts` wiring never calls. Informational: opting out is legitimate. |
 
-**forked** to **unresolved** fail the check, except the copies reported as
+**forked** to **untested** fail the check, except the copies reported as
 **customized** that are not also **unfolded**. A plain `diff -r` against the scaffold cannot
 do this job: `target add` writes template masters with substitution partly
 applied and inconsistently, so most of what a naive diff reports is not an
@@ -165,6 +166,11 @@ edit at all.
 An ALIASED target (`target add go~go2`) is exempt from the model-file
 comparison: the scaffold ships no `go2.aontu` to compare against, and
 editing that file is how an alias is differentiated in the first place.
+Doctor still names each slot that the origin's model file declares and the
+alias's own file lacks, such as a `provides` added after the alias was
+made, as **aliased behind**. Like the difference itself, it does not fail
+the check: copy the slot in by hand. Until then, an alias of a bundled
+target with no `provides` of its own takes its origin's.
 
 A model file installed from a source that still ships `<name>.aon` is
 compared after the same include renaming `add` applied, so the renaming
@@ -289,7 +295,10 @@ Three things `remove` deliberately leaves alone, and says so:
 - **Generated output.** `<name>/` beside `.sdk/` stays unless
   `--delete-output` is passed: a retired port often wants its last
   generated state kept in history rather than deleted in the same commit.
-  A target that generates out of tree (`output.path`) is never touched.
+  A target that generates out of tree (`output.path`, or a path
+  `SDKGEN_EXTERNAL` gives it for the run) or at the project root
+  (`output.root`) is never touched, and a `<name>/` folder left beside
+  `.sdk/` is reported and kept.
 - **The project's own declarations.** A `main: kit: target: <name>:` block
   in `.sdk/model/sdk.aontu` is the project's, not the toolchain's; `remove`
   reports the file that still carries it.
@@ -298,7 +307,9 @@ Three things `remove` deliberately leaves alone, and says so:
   the removed feature.
 
 The `test` feature cannot be removed: every target's generated suite
-depends on it, and `target add` installs it unconditionally.
+depends on it, and `target add` installs it unconditionally. A model that
+drops it by hand fails `generate`, which names `target add <t>` as the
+repair.
 
 ### `package add <pkg>[,<pkg>...]`
 
@@ -367,6 +378,12 @@ gate. What it checks:
 | `model-key-missing` | error | `model/<kind>/<name>.aontu` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
 | `model-schema` | error | It does not unify with the base schema: a non-defaulted key is missing (`ext`, `comment.line`, `module.name`, a feature's `title`). This is what a consumer compiles. |
 | `target-publish-pinned` | error | The target model sets a publication value the *project* owns, so the project can no longer set it (concrete-vs-concrete is a conflict) — and the failure would name the project's file. |
+| `manifest-parity-surface` | error | A target's `parity` tier disagrees with its surface: `CONSUMER` on an SDK, or another tier on a target that is not one. A target is graded `CONSUMER` exactly when its surface is not `sdk`. |
+| `target-surface-unknown` | warn | The target declares a `surface` word this release does not know. Generation reads it as unknown and names the target by its title; a later release that introduces the word reads it. |
+| `target-surface-since` | info | The target declares a known `surface` word, and `engines.sdkgen` admits releases older than the one that first reads it. Those releases ignore the slot. |
+| `target-facts` | error | The fact rules fail on the target's model alone, so a project that installs it cannot generate. |
+| `target-entity-off` | error | An SDK target switches its entity phase off. Its main module and documents still name the entity classes that phase writes, so the SDK does not build, and `generate` refuses it. |
+| `target-title-missing` | warn | A target model with no `title`. The generated documents name the target by the label of its origin, else by its name. |
 | `feature-deps-misplaced` | warn | Dependencies under `feature.<f>.target.<t>.deps`, which nothing reads. They go directly under the feature: `deps: <target>: {…}`. |
 | `feature-source-undelivered` | warn | `targetsSupported` claims a target for which no feature source can be found. |
 | `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aontu` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |

@@ -3,6 +3,8 @@ import { featureApplies } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
 import { findFeatureSources } from '../helpers/featureSource'
 import { copyMode, MERGE } from '../helpers/copymerge'
+import { originName } from '../helpers/packageMeta'
+import { definitionName } from '../helpers/text'
 
 import { each } from 'jostraca'
 
@@ -36,16 +38,17 @@ const LANG_CMD: Record<string, LangCmd> = {
 }
 
 
-function langCmd(name: string): LangCmd {
-  return LANG_CMD[name] || { viaMake: true }
+// Keyed by origin, so an alias reads its origin's row.
+function langCmd(name: string, model?: any): LangCmd {
+  return LANG_CMD[null == model ? name : originName(model, name)] || { viaMake: true }
 }
 
 
 // A fenced shell block of the per-target build/test commands, run **in the
 // target directory** (the per-language guide already lives there). Prefers the
 // target's Makefile recipes (`make build` / `make test`).
-function langCommandsBlock(name: string): string {
-  const c = langCmd(name)
+function langCommandsBlock(name: string, model?: any): string {
+  const c = langCmd(name, model)
   const lines: string[] = []
   if (c.install) lines.push(c.install)
   if (c.viaMake) {
@@ -59,7 +62,10 @@ function langCommandsBlock(name: string): string {
   if (0 === lines.length) {
     return `Build and test with \`${name}\`'s standard toolchain.\n`
   }
-  return '```bash\n# in this target directory (' + name + '/):\n' + lines.join('\n') + '\n```\n'
+  const node = model?.main?.[KIT]?.target?.[name]
+  const place = null == node ? 'folder' : fact(node, 'place')
+  const dir = 'folder' === place ? name + '/' : 'root' === place ? 'the project root' : "this package's root"
+  return '```bash\n# in this target directory (' + dir + '):\n' + lines.join('\n') + '\n```\n'
 }
 
 
@@ -103,8 +109,8 @@ function featureHooks(feature: any): string[] {
 
 
 function activeTargets(model: any): any[] {
-  const target = getModelPath(model, `main.${KIT}.target`) || {}
-  return each(target).filter((t: any) => t && t.active !== false)
+  const kit = model.main[KIT]
+  return fact(kit, 'active').map((name: string) => kit.target[name])
 }
 
 // With a target, also drops features that do not APPLY to it — a guide
@@ -148,10 +154,15 @@ into the edited copies.`
 
 
 function workflowSection(model: any): string {
+  const dirs = activeTargets(model).filter((t: any) => 'folder' === fact(t, 'place'))
+    .map((t: any) => '\`' + t.name + '/\`')
+  const output = 0 === dirs.length ? 'The generated output is **build output** — never edit it by' :
+    1 === dirs.length ? 'The generated\ndirectory (' + dirs[0] + ') is **build output** — never edit it by' :
+      'The generated language\ndirectories (' + dirs.slice(0, 2).join(', ') + (2 < dirs.length ? ', …' : '') +
+      ') are **build output** — never edit them by'
   return `## Generating and updating the SDK
 
-All generation is driven from the \`.sdk/\` directory. The generated language
-directories (\`ts/\`, \`go/\`, …) are **build output** — never edit them by
+All generation is driven from the \`.sdk/\` directory. ${output}
 hand; fix the model, a template, or a component and regenerate.
 
 \`\`\`bash
@@ -260,12 +271,12 @@ deps live in \`.sdk/model/target/<lang>.aontu\`; features in
 }
 
 
-function aontuSection(): string {
+function aontuSection(model: any): string {
   return `## The model language (aontu, \`.aontu\` files)
 
 The model is one structured object assembled by **aontu** (a unification
 engine) from three sources: the API model (entities/operations, from the
-OpenAPI spec via \`@voxgig/apidef\`), the base schema, and the target/feature
+${definitionName(fact(model.main[KIT], 'definitionKind'))} via \`@voxgig/apidef\`), the base schema, and the target/feature
 definitions in \`.sdk/model/\`. An \`.aontu\` file is a relaxed JSON (jsonic
 syntax) with unification semantics:
 

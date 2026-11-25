@@ -2,6 +2,7 @@
 import { names, Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 import { fact } from '../helpers/facts'
+import { surfaceOf } from '../helpers/surface'
 
 import {
   activeTargets,
@@ -24,12 +25,18 @@ const AgentGuideTopIntro = cmp(function AgentGuideTopIntro(props: any) {
   const featureGuides = targets.some((t: any) =>
     fact(t, 'phase').agentguide && writesFeatureGuides(model, t))
 
+  // One SDK is named by its title; only several make a multi-language project.
+  const sdks = targets.filter((t: any) => 'sdk' === surfaceOf(t))
+  const project = 1 < sdks.length ? `multi-language SDK project. The client libraries in
+each language directory are` : 1 === sdks.length ? `${fact(sdks[0], 'title')} SDK project. The client library
+is` : `project. Its targets are`
+  const output = 1 < sdks.length ? 'the language directories' : 'the generated code'
+
   Content(`# ${Name} SDK — Agent Guide
 
-This is a **generated** multi-language SDK project. The client libraries in
-each language directory are produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
+This is a **generated** ${project} produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
 from an API model; the generator, model, templates, and components all live in
-\`.sdk/\`. Treat the language directories as build output — change the model,
+\`.sdk/\`. Treat ${output} as build output — change the model,
 a template, or a component and regenerate.
 
 There are companion guides deeper in the tree: one per language
@@ -43,7 +50,7 @@ feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 
 
 const AgentGuideTopTargets = cmp(function AgentGuideTopTargets(props: any) {
-  const { targets } = props.s
+  const { model, targets } = props.s
 
   if (0 < targets.length) {
     Content(`**Targets** (${targets.length}):
@@ -52,8 +59,10 @@ const AgentGuideTopTargets = cmp(function AgentGuideTopTargets(props: any) {
 | --- | --- | --- |
 `)
     targets.forEach((t: any) => {
-      const note = langCmd(t.name).note ? ' — ' + langCmd(t.name).note : ''
-      Content(`| \`${t.name}\` | \`${t.name}/\`${note} | [\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md) |
+      const note = langCmd(t.name, model).note ? ' — ' + langCmd(t.name, model).note : ''
+      const dir = 'folder' === fact(t, 'place') ? `\`${t.name}/\`` : '—'
+      const guide = fact(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—'
+      Content(`| \`${t.name}\` | ${dir}${note} | ${guide} |
 `)
     })
     Content(`
@@ -136,8 +145,8 @@ const AgentGuideTopCustomise = cmp(function AgentGuideTopCustomise() {
 })
 
 
-const AgentGuideTopAontu = cmp(function AgentGuideTopAontu() {
-  Content(aontuSection())
+const AgentGuideTopAontu = cmp(function AgentGuideTopAontu(props: any) {
+  Content(aontuSection(props.s.model))
 })
 
 

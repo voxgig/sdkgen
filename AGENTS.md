@@ -651,8 +651,7 @@ which carries a reason. A pin that matches nothing fails, so fixing a writer
 means deleting its pin. `npm test` runs `link` and `fence` on a fixed subset; `npm run
 textguard` runs the full matrix, which is a CI lane. `npm run
 textguard-update` rewrites the pins from what it finds, keeping each reason;
-a new pin reads `TODO` and fails until it has one. The operation-level
-`active: false` family is suspended as one entry until decision DQ1.
+a new pin reads `TODO` and fails until it has one.
 
 A finding keys on the writing component, so split a component that writes
 many sections into labelled ones (`ReadmeTop`, `AgentGuideTop`) rather than
@@ -978,7 +977,11 @@ emitted broken source reached the fleet unchallenged.
   scaffold holds a copy of. It says so in its own words rather than repeating
   the standard "move it into `.sdk/model/`", which names the place the file
   already is; `--force` is the only way past it. Do not "fix" one half to
-  match the other — they answer different questions.
+  match the other — they answer different questions. Because the add keeps
+  that file, a slot its origin gains later never reaches it: doctor names
+  each one in `aliasedBehind` (also outside `report.ok`), and
+  `featureApplies` reads the origin's `provides` for an alias of a bundled
+  target that declares none.
 - **Derive an env-var name with `envToken`/`envName`, never from the camel
   form.** `nom(model, 'Name').toUpperCase()` swallows a hyphen, so a slug like
   `voxgig-solardemo` produced BOTH `VOXGIG_SOLARDEMO_TEST_LIVE` and

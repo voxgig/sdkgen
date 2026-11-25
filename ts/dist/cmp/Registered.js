@@ -10,7 +10,7 @@ function registerComponent(name, options = {}) {
     return (0, component_1.cmp)(function Registered(props) {
         const { target, ctx$ } = props;
         const { model, log } = ctx$;
-        const stdrep = (0, stdrep_1.ensureStdrep)(ctx$);
+        const stdrep = (0, stdrep_1.ensureStdrep)(ctx$, target);
         const path = `./cmp/${target.name}/${name}_${target.name}`;
         const mod = optional ? (0, utility_1.loadOptional)(ctx$, path) : (0, utility_1.requirePath)(ctx$, path);
         if (null == mod) {

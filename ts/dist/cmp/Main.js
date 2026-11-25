@@ -10,7 +10,7 @@ const Main = (0, component_1.cmp)(function Main(props) {
     const { model, log } = ctx$;
     // Generator-owned placeholders (PROJECTENV) that the project's frozen
     // Root.ts cannot know about.
-    const stdrep = (0, stdrep_1.ensureStdrep)(ctx$);
+    const stdrep = (0, stdrep_1.ensureStdrep)(ctx$, target);
     // Per target, as `plain` names the target's own release; each Main_<lang>
     // copies its templates with this map before the next target sets it.
     stdrep.PROJECTUSERAGENT = (0, useragent_1.userAgent)(model, target.name);

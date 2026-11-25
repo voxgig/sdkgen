@@ -21,7 +21,7 @@ const ReadmeIntro = (0, component_1.cmp)(function ReadmeIntro(props) {
         intro.ReadmeIntro({ target });
         return;
     }
-    (0, jostraca_1.Content)(`# ${model.Name} ${target.title} SDK
+    (0, jostraca_1.Content)(`# ${model.Name} ${(0, facts_1.fact)(target, 'title')} SDK
 
 ${(0, facts_1.fact)(model.main[types_1.KIT], 'text').tagline.inline}
 

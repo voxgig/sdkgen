@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SDKGEN_ROOT = exports.PLACEHOLDERS = void 0;
+exports.textGuard = exports.SDKGEN_ROOT = exports.PLACEHOLDERS = void 0;
 exports.volumeKey = volumeKey;
 exports.stageConsumer = stageConsumer;
 exports.generateInto = generateInto;
@@ -17,6 +17,8 @@ const sdkgen_1 = require("./sdkgen");
 const package_1 = require("./action/package");
 const dispatch_1 = require("./action/dispatch");
 const types_1 = require("./types");
+const textguard_1 = require("./helpers/textguard");
+Object.defineProperty(exports, "textGuard", { enumerable: true, get: function () { return textguard_1.textGuard; } });
 // This package's own root — `<...>/node_modules/@voxgig/sdkgen` for a
 // consumer, or the checkout when sdkgen tests itself. Computed from this
 // module's location rather than by `require.resolve`, which would go through
@@ -298,6 +300,7 @@ async function generateInto(consumer, opts) {
         folder: consumer.root,
         root: '',
         pino: consumer.log,
+        external: opts.external,
     });
     const prevcwd = process.cwd();
     process.chdir(consumer.sdk);

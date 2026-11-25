@@ -320,6 +320,53 @@ describe('target remove', () => {
   })
 
 
+  // The output a generate run would write, so the override a run takes is
+  // read here as generate reads it.
+  test('a target the run override relocates is out of tree for this run', async () => {
+    const prev = process.env.SDKGEN_EXTERNAL
+    process.env.SDKGEN_EXTERNAL = JSON.stringify({ go: { path: '../elsewhere/go' } })
+    try {
+      const project = await addedProject({ log: recordLog() })
+      write(project, '../go/go.mod', 'module demo\n')
+      project.actx.flags = { deleteOutput: true }
+
+      const res: any = await kind_remove('target', ['go'], project.actx)
+      const notes = res.report.notes.join('\n')
+      match(notes, /out of tree \(\.\.\/elsewhere\/go, from SDKGEN_EXTERNAL\); that output is not touched/)
+      match(notes, /\.\.\/go is not where it is generated, and is kept/)
+      ok(has(project, '../go/go.mod'), 'the in-tree folder was deleted for a relocated target')
+    }
+    finally {
+      if (null == prev) delete process.env.SDKGEN_EXTERNAL
+      else process.env.SDKGEN_EXTERNAL = prev
+    }
+  })
+
+
+  test('the build option relocates a target as the variable does', async () => {
+    const project = await addedProject({ log: recordLog() })
+    project.actx.opts = { ...project.actx.opts, external: { go: { path: '../other/go' } } }
+    project.actx.flags = { deleteOutput: true }
+    write(project, '../go/go.mod', 'module demo\n')
+
+    const res: any = await kind_remove('target', ['go'], project.actx)
+    match(res.report.notes.join('\n'), /out of tree \(\.\.\/other\/go\)/)
+    ok(has(project, '../go/go.mod'))
+  })
+
+
+  test('a target generated at the project root leaves its namesake folder alone', async () => {
+    const project = await addedProject({ log: recordLog() })
+    project.actx.model.main[KIT].target.go.output = { path: '', root: true }
+    write(project, '../go/go.mod', 'module demo\n')
+    project.actx.flags = { deleteOutput: true }
+
+    const res: any = await kind_remove('target', ['go'], project.actx)
+    match(res.report.notes.join('\n'), /generates at the project root/)
+    ok(has(project, '../go/go.mod'))
+  })
+
+
   test('a target that is not installed is an error', async () => {
     const project = makeProject()
 

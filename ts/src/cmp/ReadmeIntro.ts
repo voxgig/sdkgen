@@ -24,7 +24,7 @@ const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
     return
   }
 
-  Content(`# ${model.Name} ${target.title} SDK
+  Content(`# ${model.Name} ${fact(target, 'title')} SDK
 
 ${fact(model.main[KIT], 'text').tagline.inline}
 

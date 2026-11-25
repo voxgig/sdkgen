@@ -23,6 +23,8 @@ const applicability_1 = require("../helpers/applicability");
 const facts_1 = require("../helpers/facts");
 const featureSource_1 = require("../helpers/featureSource");
 const copymerge_1 = require("../helpers/copymerge");
+const packageMeta_1 = require("../helpers/packageMeta");
+const text_1 = require("../helpers/text");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const LANG_CMD = {
@@ -42,14 +44,15 @@ const LANG_CMD = {
     },
 };
 exports.LANG_CMD = LANG_CMD;
-function langCmd(name) {
-    return LANG_CMD[name] || { viaMake: true };
+// Keyed by origin, so an alias reads its origin's row.
+function langCmd(name, model) {
+    return LANG_CMD[null == model ? name : (0, packageMeta_1.originName)(model, name)] || { viaMake: true };
 }
 // A fenced shell block of the per-target build/test commands, run **in the
 // target directory** (the per-language guide already lives there). Prefers the
 // target's Makefile recipes (`make build` / `make test`).
-function langCommandsBlock(name) {
-    const c = langCmd(name);
+function langCommandsBlock(name, model) {
+    const c = langCmd(name, model);
     const lines = [];
     if (c.install)
         lines.push(c.install);
@@ -66,7 +69,10 @@ function langCommandsBlock(name) {
     if (0 === lines.length) {
         return `Build and test with \`${name}\`'s standard toolchain.\n`;
     }
-    return '```bash\n# in this target directory (' + name + '/):\n' + lines.join('\n') + '\n```\n';
+    const node = model?.main?.[types_1.KIT]?.target?.[name];
+    const place = null == node ? 'folder' : (0, facts_1.fact)(node, 'place');
+    const dir = 'folder' === place ? name + '/' : 'root' === place ? 'the project root' : "this package's root";
+    return '```bash\n# in this target directory (' + dir + '):\n' + lines.join('\n') + '\n```\n';
 }
 function featuresEnabled(target) {
     return (0, facts_1.fact)(target, 'phase').feature;
@@ -101,8 +107,8 @@ function featureHooks(feature) {
         .filter(Boolean);
 }
 function activeTargets(model) {
-    const target = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`) || {};
-    return (0, jostraca_1.each)(target).filter((t) => t && t.active !== false);
+    const kit = model.main[types_1.KIT];
+    return (0, facts_1.fact)(kit, 'active').map((name) => kit.target[name]);
 }
 // With a target, also drops features that do not APPLY to it — a guide
 // must not document a feature the target has no implementation for.
@@ -137,10 +143,15 @@ in \`.sdk/\` (\`main: kit: copies: 'overwrite'\`): set \`copies\` to
 into the edited copies.`;
 }
 function workflowSection(model) {
+    const dirs = activeTargets(model).filter((t) => 'folder' === (0, facts_1.fact)(t, 'place'))
+        .map((t) => '\`' + t.name + '/\`');
+    const output = 0 === dirs.length ? 'The generated output is **build output** — never edit it by' :
+        1 === dirs.length ? 'The generated\ndirectory (' + dirs[0] + ') is **build output** — never edit it by' :
+            'The generated language\ndirectories (' + dirs.slice(0, 2).join(', ') + (2 < dirs.length ? ', …' : '') +
+                ') are **build output** — never edit them by';
     return `## Generating and updating the SDK
 
-All generation is driven from the \`.sdk/\` directory. The generated language
-directories (\`ts/\`, \`go/\`, …) are **build output** — never edit them by
+All generation is driven from the \`.sdk/\` directory. ${output}
 hand; fix the model, a template, or a component and regenerate.
 
 \`\`\`bash
@@ -243,12 +254,12 @@ deps live in \`.sdk/model/target/<lang>.aontu\`; features in
 \`.sdk/model/feature/<name>.aontu\`.
 `;
 }
-function aontuSection() {
+function aontuSection(model) {
     return `## The model language (aontu, \`.aontu\` files)
 
 The model is one structured object assembled by **aontu** (a unification
 engine) from three sources: the API model (entities/operations, from the
-OpenAPI spec via \`@voxgig/apidef\`), the base schema, and the target/feature
+${(0, text_1.definitionName)((0, facts_1.fact)(model.main[types_1.KIT], 'definitionKind'))} via \`@voxgig/apidef\`), the base schema, and the target/feature
 definitions in \`.sdk/model/\`. An \`.aontu\` file is a relaxed JSON (jsonic
 syntax) with unification semantics:
 

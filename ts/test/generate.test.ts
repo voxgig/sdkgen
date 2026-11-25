@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -339,6 +339,33 @@ describe('generate', () => {
 
   after(() => {
     if ('' !== cwd) process.chdir(cwd)
+  })
+
+
+  // A project whose model breaks either rule would build an SDK that fails at
+  // run time or does not compile, so generation names the target and stops.
+  test('an SDK target without the test feature, or with its entity phase off, is refused', async () => {
+    const refused = async (extra: string, features?: string[]) => {
+      try {
+        await generate(['ts', 'go-cli', 'go'], undefined, extra, undefined, features)
+      }
+      catch (err: any) {
+        return String(err.message)
+      }
+      return fail('generated a model it should refuse')
+    }
+
+    const untested = await refused('', ['log'])
+    ok(/Target "go" is an SDK, and the model has no active `test` feature/.test(untested), untested)
+    ok(/`voxgig-sdkgen target add ts`/.test(untested), untested)
+    ok(!/go-cli/.test(untested), 'a consumer needs no test feature: ' + untested)
+
+    const entityless = await refused('main: kit: target: ts: phase: entity: active: false')
+    ok(/Target "ts" is an SDK with its entity phase off/.test(entityless), entityless)
+    ok(!/"go"|go-cli/.test(entityless), entityless)
+
+    const consumer = await generate(['go', 'go-cli'], undefined, '', undefined, ['test', 'log'])
+    ok(Object.keys(consumer).some((p: string) => p.startsWith('go-cli/')), 'go-cli was not generated')
   })
 
 
@@ -826,6 +853,115 @@ describe('generate', () => {
     ok(/^## Initial release$/m.test(two['CHANGELOG.md']), two['CHANGELOG.md'])
 
     ok(/^## \[0\.0\.1\]$/m.test((await generate(['ts']))['CHANGELOG.md']))
+  })
+
+
+  test('the first changelog entry names the languages and surfaces the model has', async () => {
+    const entry = async (targets: string[]) =>
+      (await generate(targets))['CHANGELOG.md'].split('## [0.0.1]')[1].replace(/\s+/g, ' ')
+
+    const ts = await entry(['ts'])
+    ok(ts.includes('the Demo SDK (TypeScript),'), ts)
+    ok(!/CLI|MCP/.test(ts), ts)
+
+    const zig = await entry(['zig'])
+    ok(zig.includes('(Zig)') && !zig.includes('TypeScript'), zig)
+
+    const cli = await entry(['go', 'go-cli'])
+    ok(cli.includes('(Golang, plus the CLI surface)') && !cli.includes('MCP'), cli)
+  })
+
+
+  test('SECURITY.md names only the registries its SDK targets publish to', async () => {
+    const scope = async (targets: string[]) =>
+      (await generate(targets))['SECURITY.md'].split('## Scope')[1].replace(/\s+/g, ' ')
+
+    const js = await scope(['js'])
+    ok(js.includes('published from this repository (npm).'), js)
+    ok(!/PyPI|Packagist|RubyGems|LuaRocks|Go module/.test(js), js)
+
+    const mixed = await scope(['ts', 'go', 'zig', 'go-cli'])
+    ok(mixed.includes('(npm, the Go module, and git tags).'), mixed)
+  })
+
+
+  test('the root documents name the definition the model was built from', async () => {
+    const docs = ['README.md', 'AGENTS.md', 'CHANGELOG.md']
+
+    const graphql = await generate(['ts', 'go'], undefined, graphqlOnly())
+    for (const file of docs) {
+      ok(!graphql[file].includes('OpenAPI'), file + ' names OpenAPI for a GraphQL model')
+      ok(graphql[file].includes('GraphQL schema'), file + ' does not name the GraphQL schema')
+    }
+
+    const openapi = await generate(['ts', 'go'])
+    for (const file of docs) {
+      ok(openapi[file].includes('OpenAPI spec'), file + ' no longer names the OpenAPI spec')
+    }
+  })
+
+
+  test('the API has one name, the project\'s title, in every document that names it', async () => {
+    const out = await generate(['ts'], undefined, "main: kit: text: title: 'Solar System API'")
+    ok(out['README.md'].includes('Solar System API client, generated from the OpenAPI spec.'),
+      out['README.md'].slice(0, 200))
+    ok(out['README.md'].includes('Generated from the Solar System API OpenAPI spec'), 'README footer')
+    ok(out['ts/AGENTS.md'].includes('The TypeScript client for the Solar System API.'), 'target guide')
+    ok(out['SECURITY.md'].includes('for the Solar System public API'), 'SECURITY.md')
+    ok(out['ts/package.json'].includes('for the Solar System public API'), 'package description')
+    for (const file of ['README.md', 'AGENTS.md', 'ts/AGENTS.md', 'SECURITY.md', 'ts/package.json']) {
+      ok(!out[file].includes('Demo API') && !out[file].includes('Demo public API'), file + ' names the slug')
+    }
+  })
+
+
+  test('a manifest description names its target by title and by what it is', async () => {
+    const expected: Record<string, string> = {
+      ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',
+      rb: 'Ruby SDK', lua: 'Lua SDK', csharp: 'C# SDK', elixir: 'Elixir SDK',
+      perl: 'Perl SDK', 'py-data': 'Python Data package',
+    }
+    const out = await generate(Object.keys(expected))
+    for (const [target, name] of Object.entries(expected)) {
+      const named = filesFor(out, target)
+        .map(([, text]) => /Unofficial generated (.+?) for the Demo public API/.exec(text)?.[1])
+        .filter((found) => null != found)
+      ok(0 < named.length, target + ': no manifest description')
+      deepStrictEqual([...new Set(named)], [name], target)
+    }
+  })
+
+
+  test('a target with no title is named by its origin\'s label, never undefined', async () => {
+    const dir = Path.join(STAGE, '.sdk', 'model', 'untitled')
+    Fs.mkdirSync(dir, { recursive: true })
+    try {
+      const src = readFileSync(Path.join(STAGE, '.sdk', 'model', 'target', 'ts.aontu'), 'utf8')
+        .replace(/^\s*title:.*$/m, '')
+      ok(!/^\s*title:/m.test(src), 'the ts model still declares a title')
+      writeFileSync(Path.join(dir, 'ts.aontu'), src)
+
+      const { fs, vol } = memfs({})
+      const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+      const res = await sdkgen.generate({
+        model: makeModel(['ts'], undefined, undefined, undefined, 'untitled'), root: makeRoot(),
+      })
+      strictEqual(res.ok, true, 'generation did not report ok')
+
+      const docs: Record<string, string> = {}
+      for (const [path, text] of Object.entries(vol.toJSON() as Record<string, string>)) {
+        const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+        if (rel.endsWith('.md') && !rel.includes('.jostraca/')) docs[rel] = text
+      }
+      // The generator's own documents; the per-language README bodies are the target's copies.
+      const own = ['README.md', 'AGENTS.md', 'CHANGELOG.md', 'SECURITY.md', 'ts/AGENTS.md']
+      deepStrictEqual(own.filter((file) => docs[file].includes('undefined')), [])
+      ok(docs['ts/README.md'].startsWith('# Demo TypeScript SDK\n'), docs['ts/README.md'].slice(0, 80))
+      ok(docs['README.md'].includes('### TypeScript'), 'the root README does not name ts by its label')
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
   })
 
 
@@ -2017,17 +2153,19 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
   test('alongsideNote words each combination of surfaces', () => {
     const note = (targets: Record<string, any>) =>
-      alongsideNote({ main: { [KIT]: { target: targets } } }, 'py').split(' alongside')[0]
-    const off = { active: false }
-    const consumer = { phase: { entity: off, feature: off, readme: off, agentguide: off, test: off } }
+      alongsideNote(applyFacts({ main: { [KIT]: { target: targets } } }), 'py', '../README.md').split(' alongside')[0]
+    // applyFacts writes into each target object, so every target gets its own.
+    const off = () => ({ active: false })
+    const consumer = () => ({ phase: { entity: off(), feature: off(), readme: off(), agentguide: off(), test: off() } })
 
     strictEqual(note({ py: {}, rb: {}, 'go-cli': {}, 'go-mcp': {} }), '> Other languages, the CLI, and MCP server live')
     strictEqual(note({ py: {}, rb: {}, 'go-mcp': {} }), '> Other languages and the MCP server live')
-    strictEqual(note({ py: {}, rb: {}, 'go-cli': {}, 'go-mcp': off }), '> Other languages and the CLI live')
+    strictEqual(note({ py: {}, rb: {}, 'go-cli': {}, 'go-mcp': off() }), '> Other languages and the CLI live')
     strictEqual(note({ py: {}, 'go-cli': {}, 'go-mcp': {} }), '> The CLI and MCP server live')
     strictEqual(note({ py: {}, 'go-cli': {} }), '> The CLI lives')
     strictEqual(note({ py: {}, 'go-mcp': {} }), '> The MCP server lives')
-    strictEqual(note({ py: {}, rb: off, 'py-data': consumer }), '')
+    strictEqual(note({ py: {}, rb: off(), 'py-data': consumer() }), '')
+    strictEqual(note({ py: {}, cli2: { origname: 'go-cli', ...consumer() } }), '> The CLI lives')
   })
 
 

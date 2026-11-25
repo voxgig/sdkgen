@@ -13,11 +13,13 @@ exports.registerInstalled = registerInstalled;
 exports.nameConflict = nameConflict;
 exports.lastSegment = lastSegment;
 const kindCollection_1 = require("../helpers/kindCollection");
+const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const struct_1 = require("@voxgig/struct");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
 const definition_1 = require("../helpers/definition");
+const shipped_1 = require("../helpers/shipped");
 const manifest_1 = require("../helpers/manifest");
 const BUNDLED = 'node_modules/@voxgig/sdkgen/project/.sdk';
 exports.BUNDLED = BUNDLED;
@@ -266,19 +268,23 @@ function resolvesBundled(declared, name) {
     return isBare(ref) ||
         BUNDLED === normaliseBase(node_path_1.default.join(node_path_1.default.dirname(ref), '.sdk'));
 }
+// A bare name the shipped scaffold lacks is the project's own.
 function targetOrigins(model) {
     const targets = (0, kindCollection_1.kindCollection)(model, 'target');
-    const origins = { bundled: [], external: [] };
+    const origins = { bundled: [], external: [], owned: [] };
     for (const name of Object.keys(targets).sort()) {
         const target = targets[name];
         if (null == target || 'object' !== typeof target || false === target.active) {
             continue;
         }
-        if (resolvesBundled(target, name)) {
-            origins.bundled.push(name);
+        if (!resolvesBundled(target, name)) {
+            origins.external.push({ name, from: normaliseBase(target.base) });
+        }
+        else if (!node_fs_1.default.existsSync((0, definition_1.definitionPathAny)(node_fs_1.default, (0, shipped_1.scaffoldFolder)(), 'target', target.origname || name))) {
+            origins.owned.push(name);
         }
         else {
-            origins.external.push({ name, from: normaliseBase(target.base) });
+            origins.bundled.push(name);
         }
     }
     return origins;

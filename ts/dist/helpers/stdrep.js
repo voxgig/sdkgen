@@ -4,8 +4,12 @@ exports.ensureStdrep = ensureStdrep;
 exports.templateReplacements = templateReplacements;
 exports.provenanceReplace = provenanceReplace;
 const packageMeta_1 = require("./packageMeta");
-function ensureStdrep(ctx$) {
+const facts_1 = require("./facts");
+function ensureStdrep(ctx$, target) {
     const stdrep = ctx$.stdrep = (ctx$.stdrep || {});
+    if (null != target) {
+        stdrep.SDKREL = null != ctx$.sdkrelpath ? ctx$.sdkrelpath : (0, facts_1.fact)(target, 'sdkrel');
+    }
     if (null == stdrep.PROJECTENV) {
         stdrep.PROJECTENV = (0, packageMeta_1.envName)(ctx$.model);
     }

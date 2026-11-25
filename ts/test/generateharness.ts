@@ -15,6 +15,8 @@ import {
 } from '../dist/sdkgen.js'
 import { provenanceReplace } from '../dist/helpers/stdrep.js'
 import { BUNDLED } from '../dist/action/resolve.js'
+import { kindDef } from '../dist/action/kind.js'
+import { aliasCmpText } from '../dist/action/target.js'
 
 
 const KIT = 'kit'
@@ -2200,6 +2202,44 @@ function makeStampedModel(targetNames: string[], extra?: string): any {
 }
 
 
+// The model file `target add <origin>~<alias>` writes: keyed by the alias,
+// with its origin recorded.
+function aliasModel(origin: string, alias: string): string {
+  let model = kindDef('target').rename!(
+    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', origin + '.aontu'), 'utf8'), origin, alias)
+  const replace = provenanceReplace(
+    { base: BUNDLED, name: alias, origname: origin, package: '@voxgig/sdkgen' })
+  for (const [at, to] of Object.entries(replace)) {
+    model = model.split(at).join(to)
+  }
+  return model
+}
+
+
+// What the same add installs, staged for a generate run: the components
+// renamed to the alias, their fragments, and the model file. `remove` deletes
+// the staged trees.
+function stageAlias(origin: string, alias: string): { model: string, remove: () => void } {
+  const sdk = Path.join(STAGE, '.sdk')
+  const from = Path.join(sdk, 'dist', 'cmp', origin)
+  const dirs = [Path.join(sdk, 'dist', 'cmp', alias), Path.join(sdk, 'src', 'cmp', alias)]
+  Fs.mkdirSync(dirs[0], { recursive: true })
+  for (const file of Fs.readdirSync(from).filter((name: string) => name.endsWith('.js'))) {
+    writeFileSync(Path.join(dirs[0], file.replace('_' + origin + '.js', '_' + alias + '.js')),
+      aliasCmpText(Fs.readFileSync(Path.join(from, file), 'utf8'), origin, alias))
+  }
+  const fragment = Path.join(sdk, 'src', 'cmp', origin, 'fragment')
+  if (Fs.existsSync(fragment)) {
+    Fs.cpSync(fragment, Path.join(dirs[1], 'fragment'), { recursive: true })
+  }
+
+  return {
+    model: aliasModel(origin, alias),
+    remove: () => dirs.forEach((dir) => Fs.rmSync(dir, { recursive: true, force: true })),
+  }
+}
+
+
 // Stand-ins for a project's own components. `ReadmeTopQuick` is implemented
 // by every target, so it proves dispatch; nothing implements `NoSuchThing`,
 // so it proves a target that opts out is skipped rather than fatal.
@@ -2463,6 +2503,8 @@ export {
   layeredFs,
   makeModel,
   makeStampedModel,
+  aliasModel,
+  stageAlias,
   makeRoot,
   namedEntity,
 }

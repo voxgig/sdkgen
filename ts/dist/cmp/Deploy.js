@@ -4,16 +4,13 @@ exports.Deploy = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
+const facts_1 = require("../helpers/facts");
 const types_1 = require("../types");
 const Deploy = (0, component_1.cmp)(function Deploy(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
-    const targetMap = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`) || {};
-    const targets = [];
-    (0, jostraca_1.each)(targetMap, (t) => {
-        if (false !== t.active)
-            targets.push(t);
-    });
+    const kit = model.main[types_1.KIT];
+    const targets = (0, facts_1.fact)(kit, 'active').map((name) => kit.target[name]);
     if (0 === targets.length) {
         return;
     }
@@ -90,7 +87,19 @@ function makeDeployMakefile(model, targets) {
         const ghArgs = `--for=${ghRecipe}=$(${aliasVarName(ghRecipe)})`;
         const args = vaultExecArgs(t);
         const via = t.publish?.tag?.via || 'port';
+        const dir = (0, facts_1.fact)(t, 'dir');
         const rs = (0, packageMeta_1.registryState)(model, t.name);
+        const tag = (0, facts_1.fact)(t, 'tag');
+        if (('tag' === rs && (reg || 'root' === via)) || ('tag' !== rs && 'active' !== rs)) {
+            if ('' === tag) {
+                return `
+deploy-${t.name}:
+\t@echo "deploy-${t.name}: nothing to deploy — the model cuts no release tag for ${t.name} (publish.tag.active is false)."
+
+deploy-dry-${t.name}: deploy-${t.name}
+`;
+            }
+        }
         if ('tag' === rs && (reg || 'root' === via)) {
             return `
 deploy-${t.name}:
@@ -99,7 +108,7 @@ deploy-${t.name}:
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, (0, packageMeta_1.packageVersion)(model, t.name), 'tag-only port')}
+${tagPushRecipe(t.name, tag, (0, packageMeta_1.packageVersion)(model, t.name), 'tag-only port')}
 `;
         }
         if ('tag' !== rs && 'active' !== rs) {
@@ -111,15 +120,15 @@ deploy-${t.name}:
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, (0, packageMeta_1.packageVersion)(model, t.name), reg.name + ' publication ' + word + ' — tag-only deploy')}
+${tagPushRecipe(t.name, tag, (0, packageMeta_1.packageVersion)(model, t.name), reg.name + ' publication ' + word + ' — tag-only deploy')}
 `;
         }
         return `
 deploy-${t.name}:
-\tboru vault exec ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec ${args} -- $(MAKE) -C ${dir} publish
 
 deploy-dry-${t.name}:
-\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${t.name} publish
+\tboru vault exec --dry-run ${args} -- $(MAKE) -C ${dir} publish
 `;
     }).join('');
     const varLines = Array.from(aliasVars.entries())
@@ -128,10 +137,9 @@ deploy-dry-${t.name}:
 # on every \`npm run generate\` in .sdk/; publication details live in the
 # model (.sdk/model/target/<target>.aontu, \`publish\` section).
 #
-# Every port gets a git release tag <target>/vX.Y.Z. Ports with an ACTIVE
-# registry also publish a package there. Credentials are injected at exec
-# time by the boru key vault (https://github.com/boru-lang/boru) — never
-# stored on disk or passed on the command line.
+${commentBlock(tagSentence(targets) + ' Ports with an ACTIVE registry also publish a package there.' +
+        ' Credentials are injected at exec time by the boru key vault' +
+        ' (https://github.com/boru-lang/boru) — never stored on disk or passed on the command line.', 72)}
 #
 # Publication state (from the model):
 ${summary}
@@ -177,17 +185,45 @@ deploy-dry: $(addprefix deploy-dry-,$(TARGETS))
 \t@echo "deploy-dry: all targets rehearsed OK ($(TARGETS))"
 ${deployRules}`;
 }
+// The Makefile header's sentence on release tags, read from the tag facts: a
+// port whose tag is not `<target>/vX.Y.Z` is named with its own.
+function tagSentence(targets) {
+    const odd = targets.filter((t) => t.name + '/v' !== (0, facts_1.fact)(t, 'tag'));
+    if (0 === odd.length) {
+        return 'Every port gets a git release tag <target>/vX.Y.Z.';
+    }
+    return 'Every port gets a git release tag <target>/vX.Y.Z, except ' +
+        odd.map((t) => '' === (0, facts_1.fact)(t, 'tag') ? t.name + ', which gets none' :
+            t.name + ', tagged ' + (0, facts_1.fact)(t, 'tag') + 'X.Y.Z').join(', and ') + '.';
+}
+// A paragraph as Makefile comment lines of at most `width` characters after
+// the `# `.
+function commentBlock(text, width) {
+    const lines = [];
+    let line = '';
+    for (const word of text.split(' ')) {
+        if ('' !== line && width < line.length + 1 + word.length) {
+            lines.push(line);
+            line = word;
+        }
+        else {
+            line = '' === line ? word : line + ' ' + word;
+        }
+    }
+    lines.push(line);
+    return lines.map((l) => '# ' + l).join('\n');
+}
 // The root-level tag creation + push recipe for a target: boru --dry-run
 // filler cooperation, idempotent tag creation, token-authenticated https
 // push (works from an ssh-remote clone without ssh keys).
-function tagPushRecipe(name, version, note) {
+function tagPushRecipe(name, tagPrefix, version, note) {
     // The version is embedded in both Make and shell syntax.
     if (!/^[0-9A-Za-z][0-9A-Za-z.+-]*$/.test(version)) {
         throw new Error('Deploy: invalid publish.version for target "' + name + '": ' + JSON.stringify(version));
     }
     return `
 tag-push-${name}:
-\t@set -e; tag="${name}/v${version}"; \\
+\t@set -e; tag="${tagPrefix}${version}"; \\
 \ttoken="\$\${GITHUB_TOKEN:-$$GH_TOKEN}"; \\
 \tif [ "$$token" = "$(BORU_DRY_RUN_FILLER)" ]; then \\
 \t  echo "[dry-run] boru filler token detected: would create (if missing) and push tag $$tag; nothing pushed."; exit 0; fi; \\

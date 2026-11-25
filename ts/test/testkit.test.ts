@@ -8,7 +8,7 @@ import Path from 'node:path'
 import { Aontu } from 'aontu'
 
 import {
-  stageConsumer, generateInto, manifestParity, PLACEHOLDERS, volumeKey,
+  stageConsumer, generateInto, manifestParity, PLACEHOLDERS, volumeKey, textGuard,
 } from '../dist/testkit.js'
 
 import { checkPackage } from '../dist/action/check.js'
@@ -194,6 +194,24 @@ describe('testkit over the fixture package', () => {
     })
 
 
+  // The run override reaches generation as the build option, scoped to this
+  // call: no process-wide SDKGEN_EXTERNAL for a parallel runner to share.
+  test('the run override relocates a target for one call', async () => {
+    const out = await generateInto(consumer, {
+      model: consumerModel(consumer.sdk),
+      external: { wtest: { path: '../wtest-out' } },
+      outside: ['../wtest-out'],
+    })
+
+    ok(null != out.outside['../wtest-out']['src/client.wt'],
+      'not generated at the override; got:\n  ' +
+      Object.keys(out.outside['../wtest-out']).join('\n  '))
+    deepStrictEqual(
+      Object.keys(out.files).filter((p) => p.startsWith('wtest/')), [],
+      'still generated under wtest/')
+  })
+
+
   // The same property the bundled targets are now held to, for an EXTERNAL
   // one. A package author reading the authoring guide has to end up here by
   // default, so the fixture models the correct access and this pins it.
@@ -224,6 +242,39 @@ describe('testkit over the fixture package', () => {
     const errors = report.findings.filter((f: any) => 'error' === f.level)
     deepStrictEqual(errors.map((f: any) => f.point + ': ' + f.note), [],
       'the fixture package does not pass its own checker')
+  })
+
+
+  // The guard as a package author runs it: over a generation of a package
+  // that is not the bundled scaffold, with nothing of sdkgen's own suite.
+  test('the exported text guard reads a package\'s documents', async () => {
+    const out = await generateInto(consumer, { model: consumerModel(consumer.sdk), top: true })
+    const opts = { fences: { wtest: 'wtest' } }
+
+    strictEqual(textGuard.length, 1, 'textGuard(files, opts?)')
+    deepStrictEqual(textGuard(out.files, opts), [], 'the fixture\'s documents')
+
+    const control = 'See [the missing page](missing.md).\n' +
+      'An unfired $$model.nothing$$ marker.\n' +
+      '```ts\nconst x = 1\n```\n' +
+      'The wfeat feature is on.\n'
+    const found = textGuard({ ...out.files, 'wtest/GUARD.md': control },
+      { ...opts, absent: ['wfeat'] }).filter((f: any) => 'wtest/GUARD.md' === f.doc)
+    deepStrictEqual(found.map((f: any) => [f.relation, f.cause]), [
+      ['link', 'wtest/missing.md'],
+      ['marker', 'unfired'],
+      ['fence', 'ts'],
+      ['off', 'wfeat'],
+    ])
+    deepStrictEqual(Object.keys(found[0]).sort(), ['cause', 'doc', 'line', 'relation'])
+
+    ok(0 < textGuard(out.files, { ...opts, absent: ['wfeat'] }).length,
+      'no document names the feature the run carries')
+    const left = consumerModel(consumer.sdk)
+    delete left.main.kit.feature.wfeat
+    const without = await generateInto(consumer, { model: left, top: true })
+    deepStrictEqual(textGuard(without.files, { ...opts, absent: ['wfeat'] }), [],
+      'a document still names the feature the run left out')
   })
 
 

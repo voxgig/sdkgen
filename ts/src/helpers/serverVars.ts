@@ -1,3 +1,5 @@
+import { KIT } from '@voxgig/apidef'
+
 
 // One declared server variable. `required` is true when the spec gives no
 // usable default — the caller MUST supply it for live use.
@@ -16,7 +18,7 @@ const SERVER_VAR_RE = /\{([A-Za-z0-9_]+)\}/g
 
 
 function serverVariables(model: any): ServerVar[] {
-  const info = model?.main?.kit?.info || model?.main?.KIT?.info
+  const info = model?.main?.[KIT]?.info
   const server = info?.servers?.[0]
   const url: string = server?.url || ''
   const declared = server?.variables || {}
@@ -64,7 +66,7 @@ function serverVarEnv(projenvname: string, name: string): string {
 
 // Does the model's server URL contain any {name} placeholders at all?
 function hasServerVariables(model: any): boolean {
-  const info = model?.main?.kit?.info || model?.main?.KIT?.info
+  const info = model?.main?.[KIT]?.info
   const url: string = info?.servers?.[0]?.url || ''
   SERVER_VAR_RE.lastIndex = 0
   return SERVER_VAR_RE.test(url)

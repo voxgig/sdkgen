@@ -1,4 +1,4 @@
-export declare function repositoryStatus(root: string): {
+export declare function repositoryStatus(root: string, env?: Record<string, string | undefined>): {
     root: string;
     name: any;
     repository: {
@@ -15,6 +15,10 @@ export declare function repositoryStatus(root: string): {
         error: string | undefined;
         generatedAt: string | null;
     };
+    override: {
+        targets: string[];
+        error: string | undefined;
+    };
     toolchain: {
         node: string;
         packages: {
@@ -25,8 +29,10 @@ export declare function repositoryStatus(root: string): {
     targets: {
         name: string;
         active: boolean;
+        place: import("../helpers/placement").Place;
         path: string;
         present: boolean;
+        stale: string | null;
         state: string;
         readme: boolean;
         version: any;

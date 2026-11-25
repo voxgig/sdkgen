@@ -7,5 +7,6 @@ type McpTool = {
 declare const MCP_READ_OPS: string[];
 declare const MCP_WRITE_OPS: string[];
 declare function mcpTools(model: SdkModel, target?: string): McpTool[];
+declare function mcpTarget(model: SdkModel): string;
 export type { McpTool, };
-export { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS, };
+export { mcpTools, mcpTarget, MCP_READ_OPS, MCP_WRITE_OPS, };

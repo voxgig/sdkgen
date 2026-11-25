@@ -35,9 +35,10 @@ async function added(target = 'ts', opts: any = {}): Promise<any> {
 }
 
 
-// As the CLI adds: with the `const` block its model compilation derives.
+// As the CLI adds: with the `const` block its model compilation derives, and
+// the `test` feature every `target add` installs.
 async function addedAsTheCli(target = 'ts'): Promise<any> {
-  const project = makeProject({})
+  const project = makeProject({ feature: { test: { name: 'test', active: true } } })
   project.actx.model.name = 'demo'
   project.actx.model.const = projectConst(project.actx.model)
   await target_add([targetRef(target)], project.actx)

@@ -4,7 +4,7 @@ import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 import { memfs } from 'memfs'
 
 import { SdkGen } from '../dist/sdkgen.js'
-import { shippedProvides } from '../dist/helpers/applicability.js'
+import { featureApplies, shippedProvides } from '../dist/helpers/applicability.js'
 import { STAGE, SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog } from './generateharness'
 
 
@@ -61,5 +61,18 @@ describe('feature tags', () => {
 
   test('a target that provides the tag warns about nothing', async () => {
     deepStrictEqual(await warningsFor(() => { }), [])
+  })
+
+
+  // An add keeps an alias's own model file, so one from before `provides`
+  // takes its origin's.
+  test('an alias that declares no provides takes its origin\'s', () => {
+    const secrets = { needs: { sekreto: true } }
+    ok(featureApplies(secrets, { name: 'ts2', origname: 'ts', provides: {} }))
+    ok(!featureApplies(secrets, { name: 'ts', provides: {} }), 'an unaliased copy took the shipped tags')
+    ok(!featureApplies(secrets, { name: 'ts2', origname: 'ts', base: '/elsewhere/pack/.sdk', provides: {} }),
+      'an alias from another package took this package\'s tags')
+    ok(!featureApplies(secrets, { name: 'ts2', origname: 'ts', provides: { schema: true } }),
+      'an alias that declares its tags took its origin\'s')
   })
 })

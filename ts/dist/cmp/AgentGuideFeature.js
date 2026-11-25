@@ -26,6 +26,13 @@ const AgentGuideFeature = (0, component_1.cmp)(function AgentGuideFeature(props)
         .filter(Boolean);
     const defaultOn = (0, facts_1.fact)(feature, 'on');
     const ops = (0, opShape_1.generatedOps)(ctx$.model);
+    const place = (0, facts_1.fact)(target, 'place');
+    const guide = (0, facts_1.fact)(target, 'link').agents;
+    const root = 'folder' === place ? '../../../../' : 'root' === place ? '../../../' :
+        null == ctx$.sdkrelpath ? null : '../../../' + ctx$.sdkrelpath + '/';
+    const where = 'folder' === place ? 'the **project root** — four levels up from here' :
+        'root' === place ? 'the **project root** — three levels up from here' :
+            'the SDK project that generates this package';
     (0, jostraca_1.Folder)({ name: 'src/feature/' + name }, () => {
         (0, jostraca_1.File)({ name: 'AGENTS.md' }, () => {
             (0, jostraca_1.Content)(`# ${Name}Feature — Agent Guide
@@ -36,7 +43,7 @@ A **feature** is a pipeline extension: an object of hooks that fire at named
 stages of every entity operation${0 < ops.length ? ' (' + ops.join(', ') + ')' : ''} and of
 the SDK/entity lifecycle. Features are how you inspect or modify the request
 pipeline without forking the SDK. This directory holds the **generated**
-runtime for the \`${name}\` feature in the ${target.title || lang} target — do
+runtime for the \`${name}\` feature in the ${(0, facts_1.fact)(target, 'title')} target — do
 not edit it by hand; change its template/model in \`.sdk/\` and regenerate.
 
 Active by default: **${defaultOn ? 'yes' : 'no'}** (\`config.options.active\`
@@ -63,7 +70,7 @@ later feature can override an earlier one.
 | Registered in | \`.sdk/model/feature/feature-index.aontu\` (\`@"${name}.aontu"\`) |
 | Runtime template | \`.sdk/tm/${lang}/src/feature/${name}/\` (copied here on \`generate\`; \`FEATURE_Name\`/\`FEATURE_VERSION\` substituted) |
 
-(Paths are relative to the **project root** — four levels up from here.)
+(Paths are relative to ${where}.)
 
 ## Customising this feature
 
@@ -74,13 +81,14 @@ later feature can override an earlier one.
 - **Behaviour**: edit the runtime template under
   \`.sdk/tm/${lang}/src/feature/${name}/\`, then regenerate.
 
-After any change: \`cd ../../../../.sdk && npm run generate\` (add
+After any change: \`${null == root ? '' : 'cd ' + root + '.sdk && '}npm run generate\`${null == root ?
+                ' in the SDK project\'s `.sdk/`' : ''} (add
 \`npm run build\` first if you changed a component).
 ${(0, AgentGuideContent_1.regenerationStatement)()}
 
-To author a **new** feature, copy this one's model + template shape — see the
-[project guide](../../../../AGENTS.md) and the
-[${target.title || lang} guide](../../../AGENTS.md).
+To author a **new** feature, copy this one's model + template shape — see ${'' === guide ? '' :
+                `the\n[project guide](../../../${guide}) and `}the
+[${(0, facts_1.fact)(target, 'title')} guide](../../../AGENTS.md).
 `);
         });
         (0, jostraca_1.File)({ name: 'CLAUDE.md' }, () => {

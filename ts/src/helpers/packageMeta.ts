@@ -3,32 +3,15 @@ import { each } from 'jostraca'
 
 import { KIT, nom } from '@voxgig/apidef'
 
-import { isConsumer } from './alongside'
+import { surfaceName, surfaceOf } from './surface'
+import { fact } from './facts'
 import { kindCollection } from './kindCollection'
-import { modelText } from './text'
+import { LANG_LABEL, langLabel } from './title'
 
 const PUBLISHER = 'Voxgig'
 const PUBLISHER_URL = 'https://voxgig.com'
 const SECURITY_EMAIL = 'security@voxgig.com'
 const GENERATOR_URL = 'https://github.com/voxgig/sdkgen'
-
-const LANG_LABEL: Record<string, string> = {
-  ts: 'TypeScript',
-  js: 'JavaScript',
-  py: 'Python',
-  php: 'PHP',
-  rb: 'Ruby',
-  lua: 'Lua',
-  go: 'Go',
-  'go-cli': 'Go CLI',
-  'go-mcp': 'Go MCP server',
-  'py-data': 'Python Data',
-}
-
-function langLabel(target: string): string {
-  return LANG_LABEL[target] || target
-}
-
 
 function originName(model: any, target: string): string {
   const orig = model?.main?.[KIT]?.target?.[target]?.origname
@@ -40,20 +23,22 @@ function sdkName(slug: string): string {
 }
 
 
-function repoInfo(model: any) {
+function repoInfo(model: any, target?: string) {
   const slug = model.name
   const origin = model.origin || 'voxgig-sdk'
 
   const declared = (model && model.main && model.main[KIT] && model.main[KIT].repo) || {}
+  const targetRepo = null == target ? '' : model?.main?.[KIT]?.target?.[target]?.output?.repo
 
   const host = '' === (declared.host || '') ? 'github.com' : (declared.host || 'github.com')
-  const path = '' === (declared.path || '') ? `${origin}/${sdkName(slug)}` : String(declared.path)
+  const path = null != targetRepo && '' !== targetRepo ? String(targetRepo) :
+    '' === (declared.path || '') ? `${origin}/${sdkName(slug)}` : String(declared.path)
 
   const seg = path.split('/')
   const repo = seg[seg.length - 1]
 
   const repoUrl = `https://${host}/${path}`
-  const pages = repoPages(host, repoUrl)
+  const pages = repoPages(host, repoUrl, releaseBranch(model))
 
   return {
     slug,
@@ -73,12 +58,12 @@ function repoInfo(model: any) {
 
 // GitLab keeps a project's pages under `/-/`, and Bitbucket lists its tags
 // among its downloads; any other host is laid out as GitHub is.
-function repoPages(host: string, repoUrl: string) {
+function repoPages(host: string, repoUrl: string, branch: string) {
   if (host.includes('gitlab')) {
     return {
       name: 'GitLab',
       issues: `${repoUrl}/-/issues`,
-      changelog: `${repoUrl}/-/blob/main/CHANGELOG.md`,
+      changelog: `${repoUrl}/-/blob/${branch}/CHANGELOG.md`,
       releases: `${repoUrl}/-/releases`,
       tags: `${repoUrl}/-/tags`,
     }
@@ -87,7 +72,7 @@ function repoPages(host: string, repoUrl: string) {
     return {
       name: 'Bitbucket',
       issues: `${repoUrl}/issues`,
-      changelog: `${repoUrl}/src/main/CHANGELOG.md`,
+      changelog: `${repoUrl}/src/${branch}/CHANGELOG.md`,
       releases: `${repoUrl}/downloads/?tab=tags`,
       tags: `${repoUrl}/downloads/?tab=tags`,
     }
@@ -95,10 +80,16 @@ function repoPages(host: string, repoUrl: string) {
   return {
     name: host.includes('github') ? 'GitHub' : host,
     issues: `${repoUrl}/issues`,
-    changelog: `${repoUrl}/blob/main/CHANGELOG.md`,
+    changelog: `${repoUrl}/blob/${branch}/CHANGELOG.md`,
     releases: `${repoUrl}/releases`,
     tags: `${repoUrl}/tags`,
   }
+}
+
+
+function releaseBranch(model: any): string {
+  const branch = model?.main?.[KIT]?.doc?.ci?.branch
+  return 'string' === typeof branch && '' !== branch ? branch : 'main'
 }
 
 
@@ -173,29 +164,52 @@ function goPackageIdent(model: any, target: string): string {
 
 // A registry named `none` is no registry: c, cpp and zig declare it.
 function registryState(model: any, target: string): 'tag' | 'pending' | 'active' | 'inactive' {
-  const eco = originName(model, target)
-  if ('go' === eco || 'go-cli' === eco || 'go-mcp' === eco) return 'tag'
   const reg = model?.main?.[KIT]?.target?.[target]?.publish?.registry
-  if (null == reg || '' === registryName(model, target)) return 'tag'
+  if (null == reg || '' === registryName(model, target) || goFamily(model, target)) return 'tag'
   if (true === reg.active) return 'active'
   const s = reg.state
   if ('active' === s || 'inactive' === s || 'pending' === s) return s
   return 'pending'
 }
 
-// True only when the package is actually live on its registry (so a README
-// may print the real `npm install`/`pip install`/... command). Everything
-// else — pending, inactive, tag-only — installs from the git tag instead.
+// Only a package live on its registry gets a registry install command; any
+// other installs from the git tag.
 function isPublished(model: any, target: string): boolean {
   return 'active' === registryState(model, target)
 }
 
-// The registry a target uploads to (npm | pypi | packagist | ...), or ''
-// for tag-only ports. Used in the "not yet on <registry>" pending message.
+// Go installs from its git tag whatever the registry, as does a target built on it.
+function goFamily(model: any, target: string): boolean {
+  if ('go' === originName(model, target)) return true
+  const wraps = fact(model.main[KIT].target[target], 'consumes')
+  return '' !== wraps && 'go' === originName(model, wraps)
+}
+
+// The registry a target uploads to (npm | pypi | packagist | ...), or '' for a tag-only port.
 function registryName(model: any, target: string): string {
   const reg = model?.main?.[KIT]?.target?.[target]?.publish?.registry
   const name = (reg && reg.name) ? String(reg.name) : ''
   return 'none' === name ? '' : name
+}
+
+const REGISTRY_LABEL: Record<string, string> = {
+  npm: 'npm',
+  pypi: 'PyPI',
+  packagist: 'Packagist',
+  rubygems: 'RubyGems',
+  luarocks: 'LuaRocks',
+  'crates.io': 'crates.io',
+  nuget: 'NuGet',
+  'maven-central': 'Maven Central',
+  clojars: 'Clojars',
+  hex: 'Hex',
+  cpan: 'CPAN',
+  opam: 'opam',
+  swiftpm: 'Swift Package Manager',
+}
+
+function registryLabel(name: string): string {
+  return REGISTRY_LABEL[name] || name
 }
 
 // The install route for a target not on a registry: `go get <module>@latest`
@@ -224,10 +238,10 @@ function vendorCommand(model: any, target: string): string {
   }
 }
 
+// The API's name fact without a trailing "API", for "the <name> public API".
 function apiName(model: any): string {
-  const info = modelText(model)
-  const raw = (null != info.title ? String(info.title) : '').trim()
-  const stripped = raw.replace(/\s*API\s*$/i, '').trim()
+  const stripped = String(fact(model.main[KIT], 'apiName').raw).trim()
+    .replace(/\s*API\s*$/i, '').trim()
   return stripped || nom(model, 'Name') || model.name
 }
 
@@ -287,7 +301,7 @@ const NAMED_CONSUMERS = ['go-cli', 'go-mcp', 'py-data']
 
 function hasPackageName(model: any, target: string): boolean {
   const declared = model?.main?.[KIT]?.target?.[target]
-  if (!isConsumer(declared)) {
+  if ('sdk' === surfaceOf(declared)) {
     return true
   }
   const pkg = declared?.publish?.registry?.package
@@ -336,7 +350,10 @@ function installCommand(model: any, target: string): string {
 }
 
 function pkgDescription(model: any, target: string): string {
-  return `Unofficial generated ${langLabel(originName(model, target))} SDK` +
+  const what = surfaceName(model.main[KIT].target[target])
+  return publisherInfo(model).official ?
+    `Generated ${what} for the ${apiName(model)} API.` :
+    `Unofficial generated ${what}` +
     ` for the ${apiName(model)} public API.` +
     ` Not affiliated with or endorsed by the upstream API provider.`
 }
@@ -351,8 +368,12 @@ function tomlString(s: string): string {
 // SECURITY.md. Generic on the upstream owner (owner names are only ~45%
 // reliably known across the fleet).
 function nonAffiliation(model: any): string {
-  return `This is an unofficial SDK for the ${apiName(model)} public API, generated by ` +
-    `${publisherInfo(model).name} with [\`@voxgig/sdkgen\`](${GENERATOR_URL}). ` +
+  const { name, official } = publisherInfo(model)
+  return official ?
+    `This SDK for the ${apiName(model)} API is generated by ${name} with ` +
+    `[\`@voxgig/sdkgen\`](${GENERATOR_URL}).` :
+    `This is an unofficial SDK for the ${apiName(model)} public API, generated by ` +
+    `${name} with [\`@voxgig/sdkgen\`](${GENERATOR_URL}). ` +
     `It is not affiliated with, endorsed by, or sponsored by the upstream API provider.`
 }
 
@@ -368,7 +389,7 @@ function declaredText(value: any): string {
 
 
 // Voxgig's url and security contact apply only while Voxgig is the publisher.
-function publisherInfo(model: any): { name: string, url: string, security: string } {
+function publisherInfo(model: any): { name: string, url: string, security: string, official: boolean } {
   const declared = model?.main?.[KIT]?.publisher || {}
 
   const name = declaredText(declared.name) || PUBLISHER
@@ -378,6 +399,7 @@ function publisherInfo(model: any): { name: string, url: string, security: strin
     name,
     url: declaredText(declared.url) || (own ? PUBLISHER_URL : ''),
     security: declaredText(declared.security) || (own ? SECURITY_EMAIL : ''),
+    official: true === declared.official,
   }
 }
 
@@ -441,6 +463,7 @@ export {
   langLabel,
   originName,
   repoInfo,
+  releaseBranch,
   apiName,
   packageName,
   hasPackageName,
@@ -448,6 +471,7 @@ export {
   registryState,
   isPublished,
   registryName,
+  registryLabel,
   vendorCommand,
   pkgDescription,
   tomlString,

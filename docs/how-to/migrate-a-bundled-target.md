@@ -204,7 +204,10 @@ has to exercise the shapes that have historically broken this target.
 the point of moving it. The vocabulary is `FULL`, `MIRRORED`, `UNCOVERED`
 and `CONSUMER`, and `package check` rejects anything else. It also warns on
 an entry naming a target the package does not provide, and on a target left
-ungraded when the manifest grades others.
+ungraded when the manifest grades others. A target is graded `CONSUMER`
+exactly when its surface is not `sdk`, and `package check` reports the
+other combinations as errors: the corpus tiers grade an SDK, and a CLI, an
+MCP server or a provider runs no corpus.
 
 Declare the sdkgen range from the API the target actually uses, not from the
 oldest release that understands a package. A target calling a helper added in

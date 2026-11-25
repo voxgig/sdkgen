@@ -712,7 +712,7 @@ describe('generated SDK compiles', () => {
   for (const target of ['ts', 'js']) {
     test(target + ': paging isolates independent operations', async () => {
       const sdkroot = Path.join(tmp, target + '-paging')
-      await generateTo(target, sdkroot, undefined, ['paging'])
+      await generateTo(target, sdkroot, undefined, ['test', 'paging'])
       linkDeps(sdkroot)
       if ('ts' === target) {
         const compiled = tsc(sdkroot, 'src')
@@ -1438,7 +1438,7 @@ pub fn main() void {
       }
 
       const sdkroot = Path.join(tmp, 'go-optnum')
-      const files = await generateTo('go', sdkroot, undefined, ['retry'])
+      const files = await generateTo('go', sdkroot, undefined, ['test', 'retry'])
       ok(null != files['test/feature_test.go'],
         'the feature suite was not generated into the SDK')
 

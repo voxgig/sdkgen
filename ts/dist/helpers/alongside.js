@@ -1,22 +1,23 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isConsumer = isConsumer;
 exports.alongsideNote = alongsideNote;
 const apidef_1 = require("@voxgig/apidef");
-const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test'];
-// A consumer (py-data) switches every phase off and has no ReadmeTop components.
-function isConsumer(target) {
-    return PHASES.every((name) => false === target?.phase?.[name]?.active);
-}
-// Names only the active surfaces, so a project with go-mcp off is not promised one.
-function alongsideNote(model, self) {
+const facts_1 = require("./facts");
+const surface_1 = require("./surface");
+// Names only the active surfaces, so a project with go-mcp off is not promised
+// one. `link` is the root README from this target's folder, and without one
+// there is no note.
+function alongsideNote(model, self, link) {
     const target = model?.main?.[apidef_1.KIT]?.target || {};
-    const others = Object.entries(target)
-        .filter(([name, t]) => name !== self && null != t && false !== t.active);
-    const has = (name) => others.some(([other]) => other === name);
-    const cli = has('go-cli');
-    const mcp = has('go-mcp');
-    const langs = others.some(([name, t]) => 'go-cli' !== name && 'go-mcp' !== name && !isConsumer(t));
+    const readme = link ?? (null == target[self] ? '' : (0, facts_1.fact)(target[self], 'link').readme);
+    if ('' === readme)
+        return '';
+    const others = (0, facts_1.fact)(model.main[apidef_1.KIT], 'active')
+        .filter((name) => name !== self)
+        .map((name) => (0, surface_1.surfaceOf)(target[name]));
+    const cli = others.includes('cli');
+    const mcp = others.includes('mcp');
+    const langs = others.includes('sdk');
     const parts = [];
     if (langs)
         parts.push('Other languages');
@@ -31,7 +32,7 @@ function alongsideNote(model, self) {
             : parts.slice(0, -1).join(', ') + ', and ' + parts[parts.length - 1];
     const verb = 1 === parts.length && !langs ? 'lives' : 'live';
     return `> ${list[0].toUpperCase() + list.slice(1)} ${verb} alongside this one — see
-> the [top-level README](../README.md).
+> the [top-level README](${readme}).
 
 `;
 }

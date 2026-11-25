@@ -1,5 +1,5 @@
 import { describe, test } from 'node:test'
-import { match, doesNotMatch, rejects, strictEqual } from 'node:assert'
+import { match, doesNotMatch, ok, rejects, strictEqual } from 'node:assert'
 import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process'
 import { Jostraca, Project } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { Deploy } from '../dist/sdkgen.js'
+import { Deploy, applyFacts } from '../dist/sdkgen.js'
 import type { ModelTarget } from '../dist/types'
 
 
@@ -24,15 +24,25 @@ const canRunMake = 'win32' !== process.platform &&
   0 === spawnSync('/bin/bash', ['--version']).status
 
 
-async function render(target: Record<string, ModelTarget>): Promise<string> {
+// A test reuses its target objects, and the fact pass writes into each.
+async function render(target: Record<string, ModelTarget>, project: any = {}): Promise<string> {
   const { fs, vol } = memfs({})
+  const placed = Object.fromEntries(Object.entries(structuredClone(target))
+    .map(([name, t]: [string, any]) => [name, { output: { path: '', root: false }, ...t }]))
+  const model = applyFacts({ ...project, Name: 'Demo', main: { kit: { target: placed } } })
   await Jostraca().generate(
-    { fs: () => fs, folder: '/deploy', model: { Name: 'Demo', main: { kit: { target } } }, log },
+    { fs: () => fs, folder: '/deploy', model, log },
     () => Project({}, () => Deploy({})),
   )
   const files = vol.toJSON()
   const path = Object.keys(files).find((p) => p.endsWith('/Makefile'))
   return path ? String(files[path]) : ''
+}
+
+
+// The Makefile's comment lines as one paragraph, so a wrap moves no assertion.
+function prose(makefile: string): string {
+  return makefile.split('\n').filter((l: string) => l.startsWith('# ')).map((l: string) => l.slice(2)).join(' ')
 }
 
 
@@ -132,6 +142,32 @@ describe('Deploy', () => {
       doesNotMatch(makefile, new RegExp('^tag-push-' + name + ':', 'm'))
     }
     doesNotMatch(makefile, /deploy-old:|tag-push-old:/)
+  })
+
+  test('the primary npm package is tagged as its workflow tags it, and the header says so', async () => {
+    const makefile = await render({
+      ts: { name: 'ts', publish: { version: '1.2.0', registry: { name: 'npm', state: 'pending' } } },
+      js: { name: 'js', publish: { version: '1.2.0', registry: { name: 'npm', state: 'pending' } } },
+    }, { name: 'demo' })
+    match(makefile, /^tag-push-ts:\n\t@set -e; tag="v1\.2\.0"/m)
+    match(makefile, /^tag-push-js:\n\t@set -e; tag="js\/v1\.2\.0"/m)
+    match(prose(makefile), /Every port gets a git release tag <target>\/vX\.Y\.Z, except ts, tagged vX\.Y\.Z\./)
+    const lines = makefile.split('\n')
+    const from = lines.findIndex((l: string) => l.startsWith('# Every port'))
+    const para = lines.slice(from, lines.indexOf('#', from))
+    ok(0 < para.length && para.every((l: string) => l.length <= 74),
+      'the tag paragraph runs past the width the rest of the header keeps:\n' + para.join('\n'))
+  })
+
+  test('a declared prefix names the tag, and a tag switched off gives deploy nothing to push', async () => {
+    const makefile = await render({
+      py: { name: 'py', publish: { version: '1.2.0', tag: { prefix: 'python' }, registry: { name: 'pypi', state: 'pending' } } },
+      rb: { name: 'rb', publish: { version: '3.4.0', tag: { active: false }, registry: { name: 'gem', state: 'pending' } } },
+    })
+    match(makefile, /^tag-push-py:\n\t@set -e; tag="python\/v1\.2\.0"/m)
+    doesNotMatch(makefile, /^tag-push-rb:/m)
+    match(makefile, /deploy-rb: nothing to deploy — the model cuts no release tag for rb/)
+    match(prose(makefile), /except py, tagged python\/vX\.Y\.Z, and rb, which gets none\./)
   })
 
   test('a registry named none is tag-only, its tag cut at the root', async () => {

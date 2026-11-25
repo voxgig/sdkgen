@@ -1,3 +1,6 @@
+import type { ExternalOverride } from './helpers/placement';
+import { textGuard } from './helpers/textguard';
+import type { TextFinding, TextGuardOptions } from './helpers/textguard';
 declare const SDKGEN_ROOT: string;
 declare const PLACEHOLDERS: string[];
 type StageOptions = {
@@ -30,6 +33,7 @@ type GenerateOptions = {
     top?: boolean;
     allowPlaceholder?: (path: string, token: string) => boolean;
     outside?: string[];
+    external?: Record<string, ExternalOverride>;
 };
 type GenerateResult = {
     files: Record<string, string>;
@@ -38,5 +42,5 @@ type GenerateResult = {
 };
 declare function generateInto(consumer: Consumer, opts: GenerateOptions): Promise<GenerateResult>;
 declare function manifestParity(pkgRoot: string): Record<string, string>;
-export type { Consumer, StageOptions, GenerateOptions, GenerateResult, };
-export { PLACEHOLDERS, SDKGEN_ROOT, volumeKey, stageConsumer, generateInto, manifestParity, };
+export type { Consumer, StageOptions, GenerateOptions, GenerateResult, TextFinding, TextGuardOptions, };
+export { PLACEHOLDERS, SDKGEN_ROOT, volumeKey, stageConsumer, generateInto, manifestParity, textGuard, };

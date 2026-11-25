@@ -15,7 +15,12 @@ const model = applyFacts({
   name: 'demo', Name: 'Demo',
   main: { kit: {
     info: { tagline: 'Tagged.' },
-    target: { body: {}, whole: {}, 'go-cli': {} },
+    phase: { top: { active: true } },
+    target: {
+      body: { name: 'body', title: 'Body', output: { path: '', root: false } },
+      whole: { name: 'whole', title: 'Whole', output: { path: '', root: false } },
+      'go-cli': { output: { path: '', root: false } },
+    },
     entity: {},
   } },
 })
@@ -52,7 +57,7 @@ describe('ReadmeIntro', () => {
       child() { return log } }
     await Jostraca().generate({ fs: () => fs, folder, model, log }, () => {
       Project({ folder: 'p' }, () => Folder({ name: 'd' }, () => File({ name: 'out.md' }, () => {
-        ReadmeIntro({ target: { name, title: name[0].toUpperCase() + name.slice(1) } })
+        ReadmeIntro({ target: model.main.kit.target[name] })
       })))
     })
     const json: any = vol.toJSON()
@@ -78,12 +83,12 @@ describe('ReadmeIntro', () => {
 describe('introOps', () => {
   const ops = (entity: any) => introOps({ main: { kit: { entity } } })
 
-  test('names the active ops of the active entities, canonical first', () => {
+  test('names the active ops of the active entities that the targets generate, in canonical order', () => {
     deepStrictEqual(ops({
       a: { op: { remove: {}, search: {}, list: {}, load: { active: false } } },
       b: { op: { create: {}, archive: {} } },
       c: { active: false, op: { update: {} } },
-    }), ['list', 'create', 'remove', 'search', 'archive'])
+    }), ['list', 'create', 'remove'])
   })
 
   test('names list and load when nothing is active', () => {

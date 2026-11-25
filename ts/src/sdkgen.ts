@@ -24,6 +24,9 @@ import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthI
 import { Main } from './cmp/Main'
 import { featureApplies, targetFeatures, featureTags, unknownTags, TAGS } from './helpers/applicability'
 import { ExternalTarget } from './cmp/ExternalTarget'
+import { readOverride, runOutput } from './helpers/placement'
+import { refuseBrokenTargets } from './helpers/targetguard'
+import type { ExternalOverride } from './helpers/placement'
 
 import { KIT, resolvedSpec } from '@voxgig/apidef'
 import { Deploy } from './cmp/Deploy'
@@ -65,6 +68,8 @@ import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
+import { guardModel } from './helpers/guardModel'
+import { sourceString } from './helpers/sourcestring'
 import { applyFacts, fact, refuseRootPlan } from './helpers/facts'
 import { docFindings } from './helpers/doccheck'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
@@ -230,13 +235,6 @@ type SdkGenOptions = {
 }
 
 
-type ExternalOverride = {
-  path?: string
-  sdkrel?: string
-  enclosing?: boolean
-}
-
-
 const { Jostraca } = JostracaModule
 
 
@@ -322,19 +320,19 @@ function SdkGen(opts: SdkGenOptions) {
     log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' })
     log.debug({ point: 'generate-spec', spec })
 
-    // BEFORE ANYTHING READS A NAME. A digit-leading name, or a pair of names
-    // that meet once case is ignored, yields identifiers or files no target
-    // can hold, and the consumer's own Root.ts re-derives those names per
-    // target — so the only correction that survives is one made to the model
-    // itself, before Root runs. See helpers/modelNames.
-    guardModelNames(model, log)
-    warnUngeneratedOps(model, log, targetOrigins(model))
-
-    // A flow step whose call the runtime would refuse is switched off, so no
-    // generated test makes it; see helpers/flowGuard.
-    guardFlowSteps(model, log)
+    // BEFORE ANYTHING READS A NAME: the consumer's own Root.ts re-derives the
+    // names per target, so only a correction made to the model itself
+    // survives. A flow step whose call the runtime would refuse is switched
+    // off too. See helpers/modelNames and helpers/flowGuard.
+    guardModel(model, log)
 
     applyFacts(model)
+
+    // A target that would generate an SDK broken at build or run time is a
+    // named error, so no document is gated on its state; see helpers/targetguard.
+    refuseBrokenTargets(model)
+
+    warnUngeneratedOps(model, log, targetOrigins(model))
 
     let Root = spec.root
 
@@ -384,15 +382,23 @@ function SdkGen(opts: SdkGenOptions) {
     checkExternalFolders(external, root, fs)
     refuseRootPlan(model, external.map((ext) => ext.name))
 
+    // A run override moves a target for this run only, so the committed files
+    // keep describing the declared layout: the Root keeps the target, and the
+    // components that write the target's own files skip it.
+    const declaredOut = external.filter((ext) =>
+      '' !== String(model.main[KIT][ext.kind]?.[ext.name]?.output?.path ?? ''))
+    const relocated = external.filter((ext) => !declaredOut.includes(ext)).map((ext) => ext.name)
+    warnStale(fs, log, root, external.filter((ext) => relocated.includes(ext.name)))
+
     const tree: { root?: any } = {}
-    const jres = await jostraca.generate(jopts, keepingTree(
-      () => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree))
+    const jres = await jostraca.generate({ ...jopts, meta: { ...jopts.meta, relocated } }, keepingTree(
+      () => Root({ model: 0 === declaredOut.length ? model : withoutExternal(model, declaredOut) }), tree))
 
     showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
     checkDocs(tree.root, folder)
     pruneGenerated({
       fs, log, project: root, out: root, jres, claims: claimedFiles(tree.root, folder),
-      dryrun: !!opts.dryrun,
+      dryrun: !!opts.dryrun, keep: relocated.map((name: string) => name + '/'),
     })
 
     // Docgen owns editions, destinations, templates, text QA and deployment.
@@ -408,7 +414,7 @@ function SdkGen(opts: SdkGenOptions) {
       const gone = false === ext.target.output?.create && !fs.existsSync(ext.folder)
 
       if (null != ext.skip || gone) {
-        log.info({
+        log[ext.active ? 'warn' : 'info']({
           point: 'generate-external-skip', target: ext.name, folder: ext.folder,
           note: ext.skip ?? (ext.name + ' output folder disappeared after ' +
             'preflight and output.create=false, not generated')
@@ -571,6 +577,10 @@ function SdkGen(opts: SdkGenOptions) {
 
     model.const = projectConst(model)
 
+    // The model a generate prepares, without the notices, which belong to it.
+    guardModel(model)
+    applyFacts(model)
+
     return {
       model,
       url: path,
@@ -710,60 +720,20 @@ type ExternalPlan = ExternalSpec & {
 function resolveExternalOverride(
   opts: SdkGenOptions, log: any, targets: string[],
 ): Record<string, ExternalOverride> {
-  const declared = opts.external || {}
-  const raw = process.env.SDKGEN_EXTERNAL
-
-  if (null == raw || '' === raw.trim()) {
-    return declared
-  }
-
-  let parsed: any
-
-  try {
-    parsed = JSON.parse(raw)
-  }
-  catch (err: any) {
-    throw new SdkGenError(
-      'SDKGEN_EXTERNAL is not valid JSON: ' + (err?.message || err) +
-      '\n  Expected an object keyed by item name, for example:' +
-      '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
-      '\n  Got: ' + raw.slice(0, 200))
-  }
-
-  if (null == parsed || 'object' !== typeof parsed || Array.isArray(parsed)) {
-    throw new SdkGenError(
-      'SDKGEN_EXTERNAL must be a JSON OBJECT keyed by item name, for example:' +
-      '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
-      '\n  Got: ' + raw.slice(0, 200))
-  }
-
-  // A misspelled name would otherwise change nothing and still be logged as
-  // an override.
-  const unknown = Object.keys(parsed).filter((name: string) => !targets.includes(name)).sort()
-  if (0 < unknown.length) {
-    throw new SdkGenError(
-      'SDKGEN_EXTERNAL names ' + unknown.join(', ') + ', which ' +
-      (1 === unknown.length ? 'is not a target' : 'are not targets') + ' of this model' +
-      '\n  Its targets are: ' + [...targets].sort().join(', '))
-  }
-
-  const merged: Record<string, ExternalOverride> = { ...declared }
-
-  for (const name of Object.keys(parsed)) {
-    merged[name] = { ...(declared[name] || {}), ...(parsed[name] || {}) }
-  }
+  const { override, named } = readOverride(opts.external, process.env.SDKGEN_EXTERNAL, targets)
 
   // LOUDLY. Generation writing somewhere other than the model says is
   // exactly the thing whose only previous trace was one INFO line naming a
   // resolved folder, and that cost a silent green run that emitted nothing.
-  const named = Object.keys(parsed).sort()
-  log.info({
-    point: 'external-override',
-    items: named.join(','),
-    note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
-  })
+  if (0 < named.length) {
+    log.info({
+      point: 'external-override',
+      items: named.join(','),
+      note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
+    })
+  }
 
-  return merged
+  return override
 }
 
 
@@ -781,20 +751,9 @@ function externalItems(
         // Overrides are keyed by installed target name.
         const ov = override[name] || {}
 
-        // A SHALLOW CLONE, so the override never writes back into the model.
-        // The in-tree pass still reads it, and `target add` still round-trips
-        // it to disk; an override is for THIS RUN. Nothing compares these by
-        // identity — withoutExternal keys by kind:name.
-        const output = { ...(items[name]?.output || {}) }
-
-        if (null != ov.path && '' !== ov.path) {
-          output.path = ov.path
-          // The override relocates this run's output, root placement included.
-          delete output.root
-        }
-        if (null != ov.sdkrel && '' !== ov.sdkrel) {
-          output.sdkrel = ov.sdkrel
-        }
+        // A copy, so the override never writes back into the model: the
+        // in-tree pass still reads it, and `target add` round-trips it to disk.
+        const output = runOutput(items[name]?.output, ov)
 
         return { kind, name, target: { ...items[name], output }, ov }
       })
@@ -815,6 +774,21 @@ function externalItems(
         active: false !== t.target.active,
       }))
   })
+}
+
+
+// A target this run writes elsewhere leaves its earlier in-tree output as it was.
+function warnStale(fs: any, log: any, root: string, moved: ExternalSpec[]): void {
+  for (const ext of moved) {
+    const folder = Path.join(root, ext.name)
+    if (fs.existsSync(folder)) {
+      log.warn({
+        point: 'generate-external-stale', target: ext.name, folder,
+        note: ext.name + '/ holds an earlier in-tree generation, and this run writes ' +
+          ext.name + ' to ' + ext.folder + ': the in-tree copy is left as it was, and is stale'
+      })
+    }
+  }
 }
 
 
@@ -982,6 +956,10 @@ function withoutExternal(
     }
 
     kit[kind] = kept
+  }
+
+  if (Array.isArray(kit.fact?.active)) {
+    kit.fact = { ...kit.fact, active: kit.fact.active.filter((name: string) => !drop.has('target:' + name)) }
   }
 
   return {
@@ -1217,6 +1195,8 @@ export {
   entityCollection,
   guardModelNames,
   guardFlowSteps,
+  guardModel,
+  sourceString,
   applyFacts,
   fact,
   projectConst,

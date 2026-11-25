@@ -2,6 +2,10 @@ import Fs from 'node:fs'
 import Path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
+import { applyFacts } from '../helpers/facts'
+import { guardModel } from '../helpers/guardModel'
+import { readOverride, runFolder, runPlace } from '../helpers/placement'
+
 function command(cwd: string, bin: string, args: string[]) {
   return spawnSync(bin, args, { cwd, encoding: 'utf8', timeout: 15000, windowsHide: true, env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' } })
 }
@@ -21,8 +25,14 @@ function workingTree(folder: string) {
   return state === null ? 'not a git repository' : state ? 'modified' : 'clean'
 }
 
+// The model a generate reads, which `sdk.json` is written before.
+function prepare(model: any): string | undefined {
+  try { applyFacts(guardModel(model)) }
+  catch (err: any) { return 'Cannot prepare the compiled model: ' + err.message }
+}
+
 // Read the compiled model and working trees. Never fetch, build, test, or publish.
-export function repositoryStatus(root: string) {
+export function repositoryStatus(root: string, env: Record<string, string | undefined> = process.env) {
   root = Path.resolve(root)
   const sdk = Path.join(root, '.sdk')
   if (!directory(sdk)) throw new Error('Expected an SDK repository containing .sdk: ' + root)
@@ -34,7 +44,11 @@ export function repositoryStatus(root: string) {
       if (!model?.main?.kit) throw new Error('missing main.kit')
     } catch (err: any) { modelError = 'Invalid compiled model: ' + err.message }
   }
+  if (model && !modelError) modelError = prepare(model)
   const kit = model?.main?.kit || {}
+  let override: any = {}, overridden: string[] = [], overrideError: string | undefined
+  try { ({ override, named: overridden } = readOverride(undefined, env.SDKGEN_EXTERNAL, Object.keys(kit.target || {}))) }
+  catch (err: any) { overrideError = err.message }
   const upstream = git(root, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'])
   const counts = upstream && git(root, ['rev-list', '--left-right', '--count', 'HEAD...@{upstream}'])
   const [ahead, behind] = counts ? counts.split(/\s+/).map(Number) : [null, null]
@@ -51,11 +65,15 @@ export function repositoryStatus(root: string) {
     },
     model: { path: file, compiled: !!model && !modelError, error: modelError,
       generatedAt: Fs.existsSync(file) ? Fs.statSync(file).mtime.toISOString() : null },
+    override: { targets: overridden, error: overrideError },
     toolchain: { node: process.version, packages },
     targets: entries(kit.target).map(([name, target]) => {
-      const folder = Path.resolve(root, target.output?.path || name)
+      const place = runPlace(target, override[name])
+      const folder = runFolder(target, name, root, override[name])
       const present = directory(folder)
-      return { name, active: target.active !== false, path: folder, present,
+      const intree = Path.resolve(root, name)
+      const stale = 'external' === place && intree !== folder && directory(intree) ? intree : null
+      return { name, active: target.active !== false, place, path: folder, present, stale,
         state: workingTree(folder), readme: Fs.existsSync(Path.join(folder, 'README.md')),
         version: target.publish?.version || null,
         publication: target.publish?.registry?.state || 'not recorded',
@@ -95,7 +113,7 @@ export function main(args = process.argv.slice(2)): number {
   }
   if (!root || args.some(arg => !['--json', '--github'].includes(arg))) throw new Error('Usage: status.sh [--json] [--github]')
   const report: any = repositoryStatus(root)
-  let failed = !!report.model.error
+  let failed = !!report.model.error || !!report.override.error
   if (args.includes('--github')) {
     try { report.github = githubStatus(report.root) }
     catch (err: any) { report.github = { error: err.message }; failed = true }
@@ -107,8 +125,10 @@ export function main(args = process.argv.slice(2)): number {
     console.log('Upstream: ' + (report.repository.upstream ? report.repository.upstream + ' | ahead ' + report.repository.ahead + ', behind ' + report.repository.behind + ' (local tracking refs)' : 'not configured'))
     console.log('Model: ' + (report.model.error || (report.model.compiled ? 'compiled ' + report.model.generatedAt : 'not generated; run npm run generate from .sdk')))
     console.log('Toolchain: Node ' + report.toolchain.node + '; ' + report.toolchain.packages.map((p: any) => p.name + ' ' + p.version).join('; '))
+    if (report.override.error) console.log('Override: ' + report.override.error)
+    else if (report.override.targets.length) console.log('Override: SDKGEN_EXTERNAL places ' + report.override.targets.join(', ') + ' for this run')
     console.log('\nSDKs and tools (publication state comes from the model):')
-    for (const t of report.targets) console.log('  ' + t.name + ' | ' + (t.active ? 'active' : 'inactive') + ' | ' + t.state + ' | version ' + (t.version || 'not recorded') + ' | ' + t.publication + ' | ' + t.path)
+    for (const t of report.targets) console.log('  ' + t.name + ' | ' + (t.active ? 'active' : 'inactive') + ' | ' + t.state + ' | version ' + (t.version || 'not recorded') + ' | ' + t.publication + ' | ' + t.path + (t.stale ? ' | stale in-tree folder ' + t.stale : ''))
     if (!report.targets.length) console.log('  No targets in the compiled model.')
     console.log('\nDocumentation:')
     for (const e of report.editions) console.log('  ' + e.name + ' | ' + (e.active ? 'active' : 'inactive') + ' | ' + (e.present ? 'present' : 'missing') + ' | ' + (e.path || 'no output path'))

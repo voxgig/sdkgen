@@ -73,7 +73,6 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
     if (false === entity.active) continue
 
     for (const [op, operation] of Object.entries(entity.op || {}) as any[]) {
-      // An inactive operation stays in the model but gets no method.
       if (false === operation?.active || !GENERATED_OPS.includes(op)) continue
 
       const points = (operation?.points || []).filter((p: any) => false !== p.a)

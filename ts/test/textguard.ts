@@ -8,7 +8,11 @@ import {
   SdkGen, cmp, fact, featureApplies, Main, Readme, AgentGuide, ReadmeTop, AgentGuideTop, Security,
   Changelog,
 } from '../dist/sdkgen.js'
-import { anchors } from '../dist/helpers/doccheck.js'
+import {
+  FENCES, mention, linkFindings, markerFindings, fenceFindings, offFindings,
+} from '../dist/helpers/textguard.js'
+import type { GuardFinding } from '../dist/helpers/textguard.js'
+import { REQUIRED_FEATURE } from '../dist/helpers/targetguard.js'
 
 import {
   API_MODEL, KIT, STAGE, SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog,
@@ -124,10 +128,7 @@ const ENTITY_OPS: Record<string, string[]> = Object.fromEntries(
     .map(([k, v]: [string, any]) => [k, Object.keys(v.op || {}).sort()]))
 
 
-// A title is a word only where no letter, `+` or `#` continues it: `C` is
-// not a mention inside `C++` or `C#`.
-const word = (w: string): RegExp =>
-  new RegExp('(?<![A-Za-z0-9_+#-])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z0-9_+#])')
+const word = mention
 
 
 function targetWords(name: string, model: any): RegExp[] {
@@ -190,7 +191,11 @@ function variations(): Variation[] {
       subject: { kind: 'target', key: t, words: targetWords(t, model) },
     })
   }
-  for (const f of FEATURES) {
+  // Generation refuses a model without the required feature, so every
+  // sentence about it is true by construction and no variation removes it.
+  const optional = FEATURES.filter((f: string) => REQUIRED_FEATURE !== f)
+  const required = FEATURES.filter((f: string) => REQUIRED_FEATURE === f)
+  for (const f of optional) {
     with_('feature-' + f, 'feature', {
       features: FEATURES.filter((x: string) => x !== f),
       subject: { kind: 'feature', key: f, words: featureWords(f, model) },
@@ -212,8 +217,8 @@ function variations(): Variation[] {
 
   with_('targets-empty', 'empty', { targets: [] })
   with_('targets-lone', 'lone', { targets: [lead] })
-  with_('features-empty', 'empty', { features: [] })
-  with_('features-lone', 'lone', { features: [FEATURES[0]] })
+  with_('features-empty', 'empty', { features: required })
+  with_('features-lone', 'lone', { features: [optional[0], ...required] })
   with_('entities-empty', 'empty', {
     extra: base.extra + ENTITIES.map((e: string) => `\nmain: kit: entity: ${TOKEN[e]}: active: false`).join(''),
   })
@@ -450,117 +455,26 @@ function featureState(model: any): { on: Record<string, boolean>, applies: Recor
 }
 
 
-function isDir(present: Set<string>, dir: string): boolean {
-  const d = dir.replace(/\/+$/, '')
-  if ('' === d || '.' === d || '.sdk' === d || d.startsWith('.sdk/')) return true
-  for (const p of present) if (p.startsWith(d + '/')) return true
-  return false
-}
-
+const tagged = (run: Run, found: GuardFinding[]): Finding[] =>
+  found.map((f: GuardFinding) => ({ ...f, variation: run.id }))
 
 function link(run: Run): Finding[] {
-  const out: Finding[] = []
-  for (const [doc, lines] of Object.entries(run.lines)) {
-    const dir = Path.posix.dirname(doc)
-    let fence = ''
-    for (const { text, chain } of lines) {
-      const open = /^\s*(```|~~~)\s*(\S*)/.exec(text)
-      if (open) {
-        fence = '' === fence ? (open[2] || 'text') : ''
-        continue
-      }
-      if ('' !== fence) {
-        if (/^(bash|sh|shell|console)$/.test(fence)) {
-          const cd = /^\s*(?:\$\s*)?cd\s+([^\s;&|)]+)/.exec(text)
-          if (cd && !/^[~$\/]/.test(cd[1])) {
-            const fromDoc = Path.posix.normalize(Path.posix.join(dir, cd[1]))
-            const fromRoot = Path.posix.normalize(cd[1])
-            if (!isDir(run.present, fromDoc) && !isDir(run.present, fromRoot)) {
-              out.push({ relation: 'link', chain, cause: 'cd ' + cd[1], doc, line: text, variation: run.id })
-            }
-          }
-        }
-        continue
-      }
-      const bare = text.replace(/`[^`]*`/g, '')
-      for (const m of bare.matchAll(/\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
-        const href = m[1]
-        if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('/')) continue
-        const [rel, frag] = href.split('#')
-        const target = '' === rel ? doc : Path.posix.normalize(Path.posix.join(dir, rel))
-        if ('' !== rel && !run.present.has(target) && !isDir(run.present, target)) {
-          out.push({ relation: 'link', chain, cause: target, doc, line: text, variation: run.id })
-          continue
-        }
-        if (null != frag && '' !== frag && target.endsWith('.md') && null != run.files[target] &&
-          !anchors(run.files[target]).has(frag)) {
-          out.push({ relation: 'link', chain, cause: target + '#' + frag, doc, line: text, variation: run.id })
-        }
-      }
-    }
-  }
-  return out
+  return tagged(run, linkFindings(run.lines, run.files, run.present))
 }
 
 
 function off(run: Run, subject: Subject): Finding[] {
-  const out: Finding[] = []
-  if (0 === subject.words.length) return out
-  for (const [doc, lines] of Object.entries(run.lines)) {
-    for (const { text, chain } of lines) {
-      if (subject.words.some((w: RegExp) => w.test(text))) {
-        out.push({ relation: 'off', chain, cause: subject.kind, doc, line: text, variation: run.id })
-      }
-    }
-  }
-  return out
+  return tagged(run, offFindings(run.lines, subject.words.map((w: RegExp) => [subject.kind, w])))
 }
 
-
-const MARKER = /\$\$[A-Za-z_][\w.$]*\$\$/
 
 function marker(run: Run): Finding[] {
-  const out: Finding[] = []
-  for (const [doc, lines] of Object.entries(run.lines)) {
-    for (const { text, chain } of lines) {
-      if (MARKER.test(text.replace(/`[^`]*`/g, ''))) {
-        out.push({ relation: 'marker', chain, cause: 'unfired', doc, line: text, variation: run.id })
-      }
-    }
-  }
-  return out
+  return tagged(run, markerFindings(run.lines))
 }
 
-
-// A code block in a target's documents is in that target's language, or is
-// data or a shell session; a consumer writes the language of what it wraps.
-const OWN_FENCE: Record<string, string> = {
-  c: 'c', clojure: 'clojure', cpp: 'cpp', csharp: 'csharp', elixir: 'elixir', go: 'go',
-  java: 'java', js: 'js', kotlin: 'kotlin', lua: 'lua', ocaml: 'ocaml', perl: 'perl',
-  php: 'php', py: 'python', rb: 'ruby', rust: 'rust', scala: 'scala', swift: 'swift',
-  ts: 'ts', zig: 'zig',
-}
-
-const NEUTRAL_FENCE = new Set(['', 'bash', 'sh', 'shell', 'console', 'text', 'json', 'jsonc',
-  'toml', 'yaml', 'xml', 'ini', 'diff'])
 
 function codeFences(run: Run): Finding[] {
-  const out: Finding[] = []
-  for (const [doc, lines] of Object.entries(run.lines)) {
-    const dir = doc.slice(0, Math.max(0, doc.indexOf('/')))
-    const own = OWN_FENCE[dir] ?? OWN_FENCE[TARGETS.find((t: string) => dir.startsWith(t + '-')) ?? '']
-    if (null == own) continue
-    let open = false
-    for (const { text, chain } of lines) {
-      const m = /^\s*```\s*(\S*)\s*$/.exec(text)
-      if (null == m) continue
-      if (!open && own !== m[1] && !NEUTRAL_FENCE.has(m[1])) {
-        out.push({ relation: 'fence', chain, cause: m[1], doc, line: text, variation: run.id })
-      }
-      open = !open
-    }
-  }
-  return out
+  return tagged(run, fenceFindings(run.lines, FENCES))
 }
 
 
