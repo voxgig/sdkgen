@@ -2219,6 +2219,31 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // The sentence over an agent guide's feature table says what its Template
+  // column shows: a template for every feature, for none, or for some.
+  test('an agent guide says which features run from a template of their own', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, 'main: kit: feature: secrets: active: true',
+      undefined, ['test', 'log', 'secrets'])
+
+    const mixed: string[] = []
+    for (const target of targets) {
+      const guide = out[target + '/AGENTS.md']
+      const at = guide.indexOf('## Features in this target')
+      if (at < 0 || !guide.slice(at).includes('| Feature | Template |')) continue
+      const section = guide.slice(at, guide.indexOf('\n---\n', at))
+      const some = [...section.matchAll(/^\| \*\*[^|]+\| ([^|]+) \|/gm)].some((m) => '—' === m[1].trim())
+      const prose = section.replace(/\s+/g, ' ')
+      strictEqual(prose.includes('Its runtime is generated from the template listed here'), !some,
+        target + ': the guide says every feature has a template')
+      strictEqual(prose.includes('The others run from the runtime under'), some,
+        target + ': the guide says nothing of the features without a template')
+      if (some) mixed.push(target)
+    }
+    ok(mixed.includes('clojure'), 'no target templates some of its features: ' + mixed.join(', '))
+  })
+
+
   test('the root readme says regeneration overwrites', async () => {
     const readme = (await generate(['ts']))['README.md']
     ok(readme.includes('**Regeneration overwrites.**'), 'the overwrite bullet is gone')

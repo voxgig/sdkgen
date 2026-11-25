@@ -108,14 +108,17 @@ Each feature's runtime and its own guide live in \`src/feature/<name>/\`.
       }
       else {
         const templates = featureTemplates(ctx$.fs(), target, features)
-        const shared = 0 === Object.keys(templates).length
+        const templated = Object.keys(templates).length
+        const shared = 0 === templated
         Content(`Each feature's hooks and default activation come from
 \`.sdk/model/feature/<name>.aontu\`. ${shared
   ? `This target has no template per
 feature: customise its features in the runtime under \`.sdk/tm/${lang}/\`
 and regenerate.`
-  : `Its runtime is generated from the template
-listed here: customise that and regenerate.`}
+  : templated === features.length ? `Its runtime is generated from the template
+listed here: customise that and regenerate.` : `A feature with a template
+listed here is generated from it: customise that and regenerate. The others
+run from the runtime under \`.sdk/tm/${lang}/\`: customise them there.`}
 
 | Feature | ${shared ? '' : 'Template | '}Active hooks |
 | --- | ${shared ? '' : '--- | '}--- |
