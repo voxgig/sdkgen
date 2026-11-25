@@ -506,10 +506,10 @@ false` on the operation, on its path) to accept the gap. An inactive
 entity, or an operation already switched off, is not reported.
 
 The warning covers the bundled targets only, identified by the provenance
-each target's model file records. A target installed from another package
-may generate more operations, so the warning lists it as not judged and
-drops the advice to switch the operation off. When every active target
-comes from another package, there is no warning.
+each target's model file records. A target installed from another package,
+or one the project defines in its own `.sdk`, may generate more operations,
+so the warning lists it as not judged and drops the advice to switch the
+operation off. When no active target is bundled, there is no warning.
 
 An entity name is also an identifier stem: the class name, the SDK method
 that returns it, the generated type names and the per-language module names
