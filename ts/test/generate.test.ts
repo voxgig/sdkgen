@@ -119,11 +119,11 @@ const PLACEHOLDER_PINNED = [
 ]
 
 
-const NON_SDK_SIBLING: Record<string, string> = {
-  'go-cli': 'go',
-  'go-mcp': 'go',
-  'py-data': 'py',
-}
+// A consumer names the target it builds on in its own model file.
+const NON_SDK_SIBLING: Record<string, string> = Object.fromEntries(
+  Object.entries(makeModel(allTargets(), undefined, '', []).main[KIT].target)
+    .filter(([, t]: [string, any]) => '' !== t.consumes)
+    .map(([name, t]: [string, any]) => [name, t.consumes]))
 
 const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
 

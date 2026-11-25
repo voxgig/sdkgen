@@ -632,7 +632,7 @@ tm/go/utility/transform_response.go 3c0e1101ed39
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/go-cli.aontu 566a90791202
+model/target/go-cli.aontu 7a1c45e58e4f
 model/target/target-index.aontu fbd86a3a35fb
 src/cmp/go-cli/Main_go-cli.ts 2e388ac58923
 src/cmp/go-cli/fragment/main.fragment.go edad9cbfb479
@@ -645,7 +645,7 @@ tm/go-cli/src/feature/test/.gitkeep e3b0c44298fc
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/go-mcp.aontu 8e5723cdb2fe
+model/target/go-mcp.aontu 1ea6f206f321
 model/target/target-index.aontu d043228b9b1a
 src/cmp/go-mcp/Main_go-mcp.ts 091190541cb3
 src/cmp/go-mcp/fragment/main.fragment.go 26cd4ae5eee2
@@ -1500,7 +1500,7 @@ tm/py/test/voxgig_omni/util.py 7c75f11dd7bb
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
-model/target/py-data.aontu 255883bf8af3
+model/target/py-data.aontu 45b0b0ae0829
 model/target/target-index.aontu fab6a58fafb8
 src/cmp/py-data/Main_py-data.ts c9c6c5d20048
 tm/py-data/LICENSE 52acd47c245f

@@ -105,6 +105,9 @@ function checkManifest(fs, sdk, read) {
 }
 function checkItems(fs, sdk, manifest) {
     const found = [];
+    // The bundled scaffold ships inside this generator, so no other release reads it.
+    const range = manifest?.engines?.sdkgen ??
+        (node_path_1.default.resolve(sdk) === node_path_1.default.resolve((0, shipped_2.scaffoldFolder)()) ? shipped_1.SDKGEN_VERSION : undefined);
     for (const kind of Object.keys(kind_1.KINDS).sort()) {
         const claimed = claims(manifest?.provides, kind);
         const ondisk = (0, definition_1.definitionNames)(fs, sdk, kind);
@@ -117,7 +120,7 @@ function checkItems(fs, sdk, manifest) {
             found.push(...checkDefinition(fs, kind, name, file, {
                 manifest: node_path_1.default.join(sdk, '..', manifest_1.MANIFEST),
                 tier: manifest?.parity?.[name],
-                range: manifest?.engines?.sdkgen,
+                range,
             }));
         }
     }
