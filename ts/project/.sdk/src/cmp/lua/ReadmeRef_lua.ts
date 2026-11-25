@@ -209,7 +209,7 @@ local ${eVar} = client:${ent.Name}(nil)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
           const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'lua')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -302,7 +302,7 @@ local results, err = client:${ent.Name}():list(${listMatchArg('lua', ent)})
 local result, err = client:${ent.Name}():create({
 `)
             createItems.map((it: any) => {
-              Content(`  ${luaKey(it.name)} = --[[ ${canonToType(it.type, target.name)} ]],
+              Content(`  ${luaKey(it.name)} = --[[ ${canonToType(it.type, 'lua')} ]],
 `)
             })
             Content(`})

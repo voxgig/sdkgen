@@ -102,7 +102,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'php')}\` | ${desc} |
 `)
       })
 
@@ -152,7 +152,7 @@ $${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list(${listMatc
 $${entity.name} = $client->${phpEntityAccessor(entity.Name)}()->create([
 `)
       createItems.map((it: any) => {
-        Content(`    ${litString('php', it.name)} => null, // ${canonToType(it.type, target.name)}
+        Content(`    ${litString('php', it.name)} => null, // ${canonToType(it.type, 'php')}
 `)
       })
       Content(`]);

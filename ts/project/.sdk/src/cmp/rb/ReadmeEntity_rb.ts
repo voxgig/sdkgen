@@ -104,7 +104,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'rb')}\` | ${desc} |
 `)
       })
 
@@ -157,7 +157,7 @@ ${eVar}s.each { |item| puts item.data_get }
 ${eVar} = client.${entity.Name}.create({
 `)
       createItems.map((it: any) => {
-        Content(`  ${litString('rb', it.name)} => ${rbLit(it.type, 'example_' + it.name)}, # ${canonToType(it.type, target.name)}
+        Content(`  ${litString('rb', it.name)} => ${rbLit(it.type, 'example_' + it.name)}, # ${canonToType(it.type, 'rb')}
 `)
       })
       Content(`})

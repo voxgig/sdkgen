@@ -107,7 +107,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'cpp')}\` | ${desc} |
 `)
       })
 
@@ -160,7 +160,7 @@ for (const auto& ${eVar} : ${eVar}s) {
 SdkEntityPtr ${eVar} = client->${acc}()->create(vmap({
 `)
       createItems.map((it: any) => {
-        Content(`    {"${cppEscape(it.name)}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, target.name)}
+        Content(`    {"${cppEscape(it.name)}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, 'cpp')}
 `)
       })
       Content(`}), Value::undef());

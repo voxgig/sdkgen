@@ -89,7 +89,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'go')}\` | ${desc} |
 `)
       })
 

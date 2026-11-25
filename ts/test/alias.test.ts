@@ -458,4 +458,14 @@ describe('aliased targets in the generated documents', () => {
       deepStrictEqual(aliased.map((file) => origin + file.slice(alias.length)).sort(), own.sort())
     }
   })
+
+  test('go~go2 types its fields as go does', async () => {
+    const go = await generated(['go'])
+    const go2 = await generatedAlias('go', 'go2')
+    const typed = (text: string) => text.split('\n').filter((line) => /^\| `[^`]+` \| `[^`]+` \|/.test(line))
+    for (const doc of ['README.md', 'REFERENCE.md']) {
+      ok(typed(go['go/' + doc]).some((row) => row.includes('`string`')), 'go ' + doc + ' types no field')
+      deepStrictEqual(typed(go2['go2/' + doc]), typed(go['go/' + doc]), doc)
+    }
+  })
 })

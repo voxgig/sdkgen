@@ -98,7 +98,7 @@ takes an entity handle built from the client:
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'elixir')}\` | ${desc} |
 `)
       })
 
@@ -149,7 +149,7 @@ ${eVar} = ${Name}.${eCall}(sdk)
 ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
       createItems.map((it: any) => {
-        Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+        Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, 'elixir')}
 `)
       })
       Content(`}))

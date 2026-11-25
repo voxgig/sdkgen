@@ -204,7 +204,7 @@ ${eVar} = client.${ent.Name}()
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
           const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'py')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -301,7 +301,7 @@ for ${eVar} in results:
 result = client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
-              Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+              Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, 'py')}
 `)
             })
             Content(`})

@@ -95,7 +95,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'scala')}\` | ${desc} |
 `)
       })
 
@@ -148,7 +148,7 @@ val ${eVar} = client.${accessor}(null).create(${createMap.open}
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    ${createMap.pair(`${JSON.stringify(it.name)}, ${scalaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
+        Content(`    ${createMap.pair(`${JSON.stringify(it.name)}, ${scalaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, 'scala')}
 `)
       })
       Content(`), null)

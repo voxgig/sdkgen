@@ -100,7 +100,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'py')}\` | ${desc} |
 `)
       })
 
@@ -153,7 +153,7 @@ ${eVar}s = client.${entity.Name}().list(${listMatchArg('py', entity)})
 ${eVar} = client.${entity.Name}().create({
 `)
       createItems.map((it: any) => {
-        Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+        Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, 'py')}
 `)
       })
       Content(`})

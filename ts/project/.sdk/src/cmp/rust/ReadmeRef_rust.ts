@@ -206,7 +206,7 @@ let ${eVar} = client.${method}(Value::Noval);
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
           const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'rust')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -294,7 +294,7 @@ for ${eVar} in &results {
 let result = client.${method}(Value::Noval).create(jo(vec![
 `)
             createItems.map((it: any) => {
-              Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
+              Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, 'rust')}
 `)
             })
             Content(`]), Value::Noval).unwrap();

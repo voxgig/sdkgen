@@ -107,7 +107,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'csharp')}\` | ${desc} |
 `)
       })
 
@@ -159,7 +159,7 @@ var ${eVar} = client.${entity.Name}().Create(new Dictionary<string, object?>
 {
 `)
       createItems.map((it: any) => {
-        Content(`    [${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
+        Content(`    [${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, 'csharp')}
 `)
       })
       Content(`});

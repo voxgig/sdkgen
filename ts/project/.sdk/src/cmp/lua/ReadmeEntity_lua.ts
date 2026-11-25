@@ -103,7 +103,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'lua')}\` | ${desc} |
 `)
       })
 
@@ -153,7 +153,7 @@ local ${eVar}s, err = client:${entity.Name}():list(${listMatchArg('lua', entity)
 local ${eVar}, err = client:${entity.Name}():create({
 `)
       createItems.map((it: any) => {
-        Content(`  ${luaKey(it.name)} = ${luaLit(it.type, 'example_' + it.name)}, -- ${canonToType(it.type, target.name)}
+        Content(`  ${luaKey(it.name)} = ${luaLit(it.type, 'example_' + it.name)}, -- ${canonToType(it.type, 'lua')}
 `)
       })
       Content(`})

@@ -178,7 +178,7 @@ ${eVar} = ${Name}.${eCall}(sdk)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
           const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'elixir')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -236,7 +236,7 @@ ${eVar}s = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(ent, Name)})
 ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
             createItems.map((it: any) => {
-              Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+              Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, 'elixir')}
 `)
             })
             Content(`}))

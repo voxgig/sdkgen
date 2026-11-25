@@ -208,7 +208,7 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
           const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'php')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -300,7 +300,7 @@ $results = $client->${phpEntityAccessor(ent.Name)}()->list(${listMatchArg('php',
 $result = $client->${phpEntityAccessor(ent.Name)}()->create([
 `)
             createItems.map((it: any) => {
-              Content(`  ${litString('php', it.name)} => null, // ${canonToType(it.type, target.name)}
+              Content(`  ${litString('php', it.name)} => null, // ${canonToType(it.type, 'php')}
 `)
             })
             Content(`]);

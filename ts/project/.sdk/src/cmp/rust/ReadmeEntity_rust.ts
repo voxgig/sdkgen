@@ -104,7 +104,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'rust')}\` | ${desc} |
 `)
       })
 
@@ -153,7 +153,7 @@ for ${eVar} in &${eVar}s {
 let ${eVar} = client.${method}(Value::Noval).create(jo(vec![
 `)
       createItems.map((it: any) => {
-        Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
+        Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, 'rust')}
 `)
       })
       Content(`]), Value::Noval).unwrap();

@@ -108,7 +108,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       each(fields, (field: any) => {
         const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'kotlin')}\` | ${desc} |
 `)
       })
 
@@ -160,7 +160,7 @@ val ${eVar} = client.${accessor}(null).create(mutableMapOf<String, Any?>(
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    ${kotlinString(it.name)} to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
+        Content(`    ${kotlinString(it.name)} to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, 'kotlin')}
 `)
       })
       Content(`), null)

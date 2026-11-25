@@ -232,7 +232,7 @@ const ${eVar} = client.${ent.Name}()
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
           const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'js')}\` | ${req} | ${desc} |
 `)
         })
 
