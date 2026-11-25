@@ -800,7 +800,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   each(feature, (feat: any) => { if (!feat.Name) names(feat, feat.name) })
 
   const activeEntities = each(entity).filter((e: any) => e.active !== false)
-  const activeTargets = each(target).filter((t: any) => t.active !== false)
+  const activeTargets = fact(model.main[KIT], 'active').map((name: string) => target[name])
 
   const cliTargets = activeTargets.filter((t: any) => 'cli' === surfaceOf(t))
   const mcpTargets = activeTargets.filter((t: any) => 'mcp' === surfaceOf(t))

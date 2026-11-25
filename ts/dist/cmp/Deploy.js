@@ -9,12 +9,8 @@ const types_1 = require("../types");
 const Deploy = (0, component_1.cmp)(function Deploy(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
-    const targetMap = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`) || {};
-    const targets = [];
-    (0, jostraca_1.each)(targetMap, (t) => {
-        if (false !== t.active)
-            targets.push(t);
-    });
+    const kit = model.main[types_1.KIT];
+    const targets = (0, facts_1.fact)(kit, 'active').map((name) => kit.target[name]);
     if (0 === targets.length) {
         return;
     }

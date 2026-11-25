@@ -16,16 +16,10 @@ const PublishWorkflow = (0, component_1.cmp)(function PublishWorkflow(props) {
     // npm's OIDC exchange — and a PyPI or RubyGems target needs a different
     // workflow rather than this one with a word changed. Emitting nothing for
     // them is the honest answer until those exist.
-    const npmTargets = [];
-    (0, jostraca_1.each)(targetMap, (t) => {
-        if (false === t.active) {
-            return;
-        }
-        if ('npm' === (t.publish?.registry?.name || '') && (0, packageMeta_1.hasPackageName)(model, t.name) &&
-            'inactive' !== (0, packageMeta_1.registryState)(model, t.name)) {
-            npmTargets.push(t);
-        }
-    });
+    const npmTargets = (0, facts_1.fact)(model.main[types_1.KIT], 'active')
+        .map((name) => targetMap[name])
+        .filter((t) => 'npm' === (t.publish?.registry?.name || '') && (0, packageMeta_1.hasPackageName)(model, t.name) &&
+        'inactive' !== (0, packageMeta_1.registryState)(model, t.name));
     if (0 === npmTargets.length) {
         return;
     }

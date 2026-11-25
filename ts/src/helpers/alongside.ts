@@ -12,9 +12,9 @@ function alongsideNote(model: any, self: string, link?: string): string {
   const readme = link ?? (null == target[self] ? '' : fact(target[self], 'link').readme)
   if ('' === readme) return ''
 
-  const others = Object.entries(target)
-    .filter(([name, t]: [string, any]) => name !== self && null != t && false !== t.active)
-    .map(([, t]: [string, any]) => surfaceOf(t))
+  const others = fact(model.main[KIT], 'active')
+    .filter((name: string) => name !== self)
+    .map((name: string) => surfaceOf(target[name]))
 
   const cli = others.includes('cli')
   const mcp = others.includes('mcp')

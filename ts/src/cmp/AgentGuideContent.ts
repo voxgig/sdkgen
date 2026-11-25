@@ -108,8 +108,8 @@ function featureHooks(feature: any): string[] {
 
 
 function activeTargets(model: any): any[] {
-  const target = getModelPath(model, `main.${KIT}.target`) || {}
-  return each(target).filter((t: any) => t && t.active !== false)
+  const kit = model.main[KIT]
+  return fact(kit, 'active').map((name: string) => kit.target[name])
 }
 
 // With a target, also drops features that do not APPLY to it — a guide

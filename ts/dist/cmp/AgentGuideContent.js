@@ -106,8 +106,8 @@ function featureHooks(feature) {
         .filter(Boolean);
 }
 function activeTargets(model) {
-    const target = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`) || {};
-    return (0, jostraca_1.each)(target).filter((t) => t && t.active !== false);
+    const kit = model.main[types_1.KIT];
+    return (0, facts_1.fact)(kit, 'active').map((name) => kit.target[name]);
 }
 // With a target, also drops features that do not APPLY to it — a guide
 // must not document a feature the target has no implementation for.

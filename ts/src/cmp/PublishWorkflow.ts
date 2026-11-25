@@ -1,6 +1,6 @@
 /* Copyright (c) 2024-2026 Voxgig Ltd, MIT License */
 
-import { each, Content, File, Folder } from 'jostraca'
+import { Content, File, Folder } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import {
@@ -24,16 +24,10 @@ const PublishWorkflow = cmp(function PublishWorkflow(props: any) {
   // npm's OIDC exchange — and a PyPI or RubyGems target needs a different
   // workflow rather than this one with a word changed. Emitting nothing for
   // them is the honest answer until those exist.
-  const npmTargets: any[] = []
-  each(targetMap, (t: any) => {
-    if (false === t.active) {
-      return
-    }
-    if ('npm' === (t.publish?.registry?.name || '') && hasPackageName(model, t.name) &&
-      'inactive' !== registryState(model, t.name)) {
-      npmTargets.push(t)
-    }
-  })
+  const npmTargets: any[] = fact(model.main[KIT], 'active')
+    .map((name: string) => targetMap[name])
+    .filter((t: any) => 'npm' === (t.publish?.registry?.name || '') && hasPackageName(model, t.name) &&
+      'inactive' !== registryState(model, t.name))
 
   if (0 === npmTargets.length) {
     return

@@ -1,24 +1,18 @@
-import { each, Content, File } from 'jostraca'
+import { Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import { packageVersion, registryState } from '../helpers/packageMeta'
 import { fact } from '../helpers/facts'
 
-import {
-  KIT,
-  getModelPath
-} from '../types'
+import { KIT } from '../types'
 
 
 const Deploy = cmp(function Deploy(props: any) {
   const { ctx$ } = props
   const { model } = ctx$
 
-  const targetMap = getModelPath(model, `main.${KIT}.target`) || {}
-  const targets: any[] = []
-  each(targetMap, (t: any) => {
-    if (false !== t.active) targets.push(t)
-  })
+  const kit = model.main[KIT]
+  const targets: any[] = fact(kit, 'active').map((name: string) => kit.target[name])
 
   if (0 === targets.length) {
     return

@@ -697,7 +697,7 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     (0, jostraca_1.each)(feature, (feat) => { if (!feat.Name)
         (0, jostraca_1.names)(feat, feat.name); });
     const activeEntities = (0, jostraca_1.each)(entity).filter((e) => e.active !== false);
-    const activeTargets = (0, jostraca_1.each)(target).filter((t) => t.active !== false);
+    const activeTargets = (0, facts_1.fact)(model.main[types_1.KIT], 'active').map((name) => target[name]);
     const cliTargets = activeTargets.filter((t) => 'cli' === (0, surface_1.surfaceOf)(t));
     const mcpTargets = activeTargets.filter((t) => 'mcp' === (0, surface_1.surfaceOf)(t));
     const hasCli = 0 < cliTargets.length;

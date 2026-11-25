@@ -12,9 +12,9 @@ function alongsideNote(model, self, link) {
     const readme = link ?? (null == target[self] ? '' : (0, facts_1.fact)(target[self], 'link').readme);
     if ('' === readme)
         return '';
-    const others = Object.entries(target)
-        .filter(([name, t]) => name !== self && null != t && false !== t.active)
-        .map(([, t]) => (0, surface_1.surfaceOf)(t));
+    const others = (0, facts_1.fact)(model.main[apidef_1.KIT], 'active')
+        .filter((name) => name !== self)
+        .map((name) => (0, surface_1.surfaceOf)(target[name]));
     const cli = others.includes('cli');
     const mcp = others.includes('mcp');
     const langs = others.includes('sdk');
