@@ -2282,7 +2282,7 @@ tm/zig/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
-tm/zig/test/feature/secrets/secrets_test.zig 849eb18a3166
+tm/zig/test/feature/secrets/secrets_test.zig fd57451acf0c
 tm/zig/test/feature_test.zig dfbcd6a18307
 tm/zig/test/fh.zig fd96cda8dbdc
 tm/zig/test/gotcha_test.zig adfd2d0772c0
