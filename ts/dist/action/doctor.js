@@ -28,6 +28,7 @@ const copies_1 = require("./copies");
 const copymerge_1 = require("../helpers/copymerge");
 const semver_1 = require("../helpers/semver");
 const exportnames_1 = require("../helpers/exportnames");
+const targetguard_1 = require("../helpers/targetguard");
 const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
@@ -155,9 +156,10 @@ async function doctor(actx, scope, selected) {
         resyncPending: [], aliasedDiff: [], aliasedBehind: [],
         outdated: [], ahead: [], unrecorded: [], customized: [], unfolded: [],
         belowFloor: [], unreadable: [], unresolved: [], byItem: {},
-        ignoredLog: false, ok: true,
+        ignoredLog: false, untested: [], ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
+    const untested = [];
     report.ignoredLog = (0, copies_1.ignoredLog)(fs, root);
     if (report.ignoredLog) {
         log.warn({ point: 'doctor-copies-ignored', note: copies_1.IGNORED_LOG });
@@ -216,6 +218,12 @@ async function doctor(actx, scope, selected) {
     }
     if (null == scope) {
         checkWiring(actx, report);
+        // Only a prepared model has the facts to judge by; resolveModel prepares
+        // every action's.
+        if (null != model?.main?.[types_1.KIT]?.fact) {
+            untested.push(...(0, targetguard_1.untestedTargets)(model));
+            report.untested = untested.map((b) => b.target);
+        }
     }
     // orphanModel counts, and `unwired` does not. Not skipping a root
     // component is a legitimate project choice that doctor only mentions; a
@@ -226,7 +234,7 @@ async function doctor(actx, scope, selected) {
         report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
         report.orphanModel.length + report.outdated.length + report.ahead.length +
         report.unfolded.length + report.belowFloor.length +
-        report.unreadable.length + report.unresolved.length;
+        report.unreadable.length + report.unresolved.length + report.untested.length;
     const customized = new Set(report.customized);
     const unmergeable = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) ? new Set(report.unrecorded) : new Set();
     for (const [kind, note] of [
@@ -254,6 +262,9 @@ async function doctor(actx, scope, selected) {
                 note;
             log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file });
         }
+    }
+    for (const b of untested) {
+        log.info({ point: 'doctor-finding', kind: 'untested', target: b.target, note: 'UNTESTED: ' + b.note });
     }
     for (const { file, item, error, oldSyntax } of report.unreadable) {
         log.info({
@@ -327,6 +338,7 @@ async function doctor(actx, scope, selected) {
         belowFloor: report.belowFloor.length,
         unreadable: report.unreadable.length,
         unresolved: report.unresolved.length,
+        untested: report.untested.length,
         customized: report.customized.length,
         note: report.ok ?
             ('.sdk matches the scaffold (' + report.additive.length + ' additive, ' +
@@ -337,7 +349,7 @@ async function doctor(actx, scope, selected) {
                 ' outdated, ' + report.ahead.length + ' ahead, ' +
                 report.unfolded.length + ' unfolded, ' + report.belowFloor.length +
                 ' below the floor, ' + report.unreadable.length + ' unreadable, ' +
-                report.unresolved.length + ' unresolved')
+                report.unresolved.length + ' unresolved, ' + report.untested.length + ' untested')
     });
     return { report };
 }

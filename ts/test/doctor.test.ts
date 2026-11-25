@@ -10,6 +10,7 @@ import {
   action_doctor, doctor, copyCheck, COPY_FLOOR, MODEL_FLOOR,
 } from '../dist/action/doctor.js'
 import { COPY_LOG, fingerprint, readCopies } from '../dist/action/copies.js'
+import { applyFacts } from '../dist/helpers/facts.js'
 import {
   SCAFFOLD, SCAFFOLD_BASE, ROOT, KIT, makeProject, recordLog, targetRef, target_add,
   feature_add,
@@ -58,6 +59,25 @@ describe('doctor', () => {
     deepStrictEqual(report.stale, [], 'fresh project reports stale files')
     deepStrictEqual(report.missing, [], 'fresh project reports missing files')
     strictEqual(report.ok, true, 'fresh project is not ok')
+  })
+
+
+  // Generate refuses the same model, so doctor says so before a run does.
+  test('an SDK target without the test feature is an error, with the repair', async () => {
+    const log = recordLog()
+    const project = await addedProject()
+    project.actx.log = log
+    applyFacts(project.actx.model)
+
+    const report = await check(project)
+    deepStrictEqual(report.untested, ['go'])
+    strictEqual(report.ok, false)
+    ok(log.lines.some((l: any) => 'untested' === l.kind &&
+      /`voxgig-sdkgen target add go`/.test(l.note)), JSON.stringify(log.lines.map((l: any) => l.note)))
+
+    const tested = await addedProject({ test: { name: 'test', active: true } })
+    applyFacts(tested.actx.model)
+    deepStrictEqual((await check(tested)).untested, [])
   })
 
 

@@ -342,6 +342,33 @@ describe('generate', () => {
   })
 
 
+  // A project whose model breaks either rule would build an SDK that fails at
+  // run time or does not compile, so generation names the target and stops.
+  test('an SDK target without the test feature, or with its entity phase off, is refused', async () => {
+    const refused = async (extra: string, features?: string[]) => {
+      try {
+        await generate(['ts', 'go-cli', 'go'], undefined, extra, undefined, features)
+      }
+      catch (err: any) {
+        return String(err.message)
+      }
+      return fail('generated a model it should refuse')
+    }
+
+    const untested = await refused('', ['log'])
+    ok(/Target "go" is an SDK, and the model has no active `test` feature/.test(untested), untested)
+    ok(/`voxgig-sdkgen target add ts`/.test(untested), untested)
+    ok(!/go-cli/.test(untested), 'a consumer needs no test feature: ' + untested)
+
+    const entityless = await refused('main: kit: target: ts: phase: entity: active: false')
+    ok(/Target "ts" is an SDK with its entity phase off/.test(entityless), entityless)
+    ok(!/"go"|go-cli/.test(entityless), entityless)
+
+    const consumer = await generate(['go', 'go-cli'], undefined, '', undefined, ['test', 'log'])
+    ok(Object.keys(consumer).some((p: string) => p.startsWith('go-cli/')), 'go-cli was not generated')
+  })
+
+
   test('py-data preserves compact field metadata', async () => {
     const out = await generate(['py', 'py-data'])
     const frames = Object.entries(out).find(([path]) =>

@@ -24,6 +24,7 @@ type DoctorReport = {
     unresolved: string[];
     byItem: Record<string, ItemDrift>;
     ignoredLog: boolean;
+    untested: string[];
     ok: boolean;
 };
 type ItemDrift = {

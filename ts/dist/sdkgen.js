@@ -79,6 +79,7 @@ Object.defineProperty(exports, "unknownTags", { enumerable: true, get: function 
 Object.defineProperty(exports, "TAGS", { enumerable: true, get: function () { return applicability_1.TAGS; } });
 const ExternalTarget_1 = require("./cmp/ExternalTarget");
 const placement_1 = require("./helpers/placement");
+const targetguard_1 = require("./helpers/targetguard");
 const apidef_1 = require("@voxgig/apidef");
 const Deploy_1 = require("./cmp/Deploy");
 Object.defineProperty(exports, "Deploy", { enumerable: true, get: function () { return Deploy_1.Deploy; } });
@@ -455,6 +456,9 @@ function SdkGen(opts) {
         // off too. See helpers/modelNames and helpers/flowGuard.
         (0, guardModel_1.guardModel)(model, log);
         (0, facts_1.applyFacts)(model);
+        // A target that would generate an SDK broken at build or run time is a
+        // named error, so no document is gated on its state; see helpers/targetguard.
+        (0, targetguard_1.refuseBrokenTargets)(model);
         (0, opShape_1.warnUngeneratedOps)(model, log, (0, resolve_1.targetOrigins)(model));
         let Root = spec.root;
         if (null == Root && null != config?.root) {
